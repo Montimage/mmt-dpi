@@ -1,0 +1,1 @@
+gdb -d /home/edmo/Desktop/SVN/mmt/MMT_ExtractLib/MMT_ExtractLibv0.1/src ../dist/Debug_Linux/GNU-Linux-x86/mmt_security

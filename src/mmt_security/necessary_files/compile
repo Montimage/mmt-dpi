@@ -1,0 +1,12 @@
+
+cd /home/edmo/Desktop/SVN/mmt/MMT_SecurityLib;
+
+gcc    -c -g -DLINUX -I/usr/include -I/usr/include/libxml2 -Iplugins -I/home/edmo/Desktop/SVN/mmt/Thales_TDMA_Plugin2/dependency_lux/mmt_extract/include -fPIC  -MMD -MP -MF build/Debug_Linux/GNU-Linux-x86/tips.o.d -o build/Debug_Linux/GNU-Linux-x86/tips.o tips.c;
+gcc     -shared -o dist/Debug_Linux/GNU-Linux-x86/libMMT_SecurityLib.so -ldl -fPIC build/Debug_Linux/GNU-Linux-x86/tips.o /usr/lib/libxml2.a /home/edmo/Desktop/SVN/mmt/Thales_TDMA_Plugin2/dependency_lux/mmt_extract/lib/libMMT_ExtractLib.so /home/edmo/Desktop/SVN/mmt/MMT_Security/embedded_functions.so;
+
+cd /home/edmo/Desktop/SVN/mmt/MMT_Security;
+
+gcc    -c -g -DLINUX -I/usr/include -I/usr/include/postgresql -I/home/edmo/Desktop/SVN/mmt/MMT_Security/plugins -I/home/edmo/Desktop/SVN/mmt/Thales_TDMA_Plugin2/dependency_lux/mmt_extract/include -I/home/edmo/Desktop/SVN/mmt/MMT_SecurityLib -MMD -MP -MF build/Debug_Linux/GNU-Linux-x86/main.o.d -o build/Debug_Linux/GNU-Linux-x86/main.o main.c;
+gcc     -o dist/Debug_Linux/GNU-Linux-x86/mmt_security build/Debug_Linux/GNU-Linux-x86/main.o /usr/lib/libpcap.so -lpq /lib/i386-linux-gnu/libz.so.1.2.3.4 /lib/i386-linux-gnu/libm.so.6 /home/edmo/Desktop/SVN/mmt/MMT_SecurityLib/dist/Debug_Linux/GNU-Linux-x86/libMMT_SecurityLib.so /home/edmo/Desktop/SVN/mmt/Thales_TDMA_Plugin2/dependency_lux/mmt_extract/lib/libMMT_ExtractLib.so;
+
+cd /home/edmo/Desktop/SVN/mmt/MMT_Security/test;

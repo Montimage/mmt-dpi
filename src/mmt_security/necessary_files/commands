@@ -1,0 +1,7 @@
+../dist/Debug_Linux/GNU-Linux-x86/mmt_security;
+
+#firefox /tmp/properties.xml &
+firefox /tmp/result_1.xml &
+
+#./commands > /tmp/res_temp 2>&1
+#valgrind -v --error-limit=no --tool=memcheck ../dist/Debug_Linux/GNU-Linux-x86/mmt_security  > /tmp/res_temp 2>&1
