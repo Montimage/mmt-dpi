@@ -959,7 +959,8 @@ int proto_session_id_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     if (packet->session == NULL) {
-        extracted_data->data = NULL;
+        *((uint64_t *) extracted_data->data) = -1; //we should never get this id (-1)
+        //extracted_data->data = NULL;
         return 0;
     }
     
