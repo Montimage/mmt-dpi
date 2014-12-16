@@ -58,6 +58,15 @@ void ip_dgram_init( ip_dgram_t *dg )
 
 void ip_dgram_cleanup( ip_dgram_t *dg )
 {
+   ip_frags_t *holes = &dg->holes;
+   ip_frag_t  *hole  = holes->lh_first;
+   ip_frag_t  *safe_to_delete;
+   while( hole ) {
+      safe_to_delete = hole;
+      hole = hole->frags.le_next;
+      ip_frag_free(safe_to_delete);
+   }
+
    if( dg->x )
       mmt_free( dg->x );
 
@@ -228,6 +237,7 @@ void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsi
 
    unsigned loff = off;
    unsigned roff = off+len;
+   int do_delete = 0;
 
    while( hole ) {
       //if(( hole->roff < loff ) || ( hole->loff > roff )) {
@@ -266,7 +276,9 @@ void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsi
       } else {
          // payload is overlapping the entire hole
          // -> remove it from the list
+         //BW: at this point we should delete the fragment, first need to step into the next frag
          LIST_REMOVE( hole, frags );
+         do_delete = 1;
       }
 
       // copy the payload, possibly growing the reassembly buffer
@@ -277,7 +289,14 @@ void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsi
       }
       (void)memcpy( dg->x + off, x, len );
 
-      hole = hole->frags.le_next;
+      //BW: delete the fragment if necessary
+      if( do_delete ) {
+         ip_frag_t  * to_delete = hole;
+         hole = hole->frags.le_next;
+         ip_frag_free( to_delete );      
+      } else {
+         hole = hole->frags.le_next;
+      }
    }
 }
 

@@ -172,6 +172,8 @@ int hashmap_remove( mmt_hashmap_t *map, mmt_key_t key )
       return 0; /* not found */
 
    LIST_REMOVE( he, entries );
+   //BW: now free the hash entry (it was allocated in @method hashmap_insert_kv)
+   hent_free( he );
 
    return 1;
 }
