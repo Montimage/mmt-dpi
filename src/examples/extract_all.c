@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
     init_extraction();
 
     //Initialize an MMT handler
-    mmt_handler = mmt_init_handler(624, 0, mmt_errbuf);
+    mmt_handler = mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);
     if (!mmt_handler) { /* pcap error ? */
         fprintf(stderr, "MMT handler init failed for the following reason: %s\n", mmt_errbuf);
         return EXIT_FAILURE;
