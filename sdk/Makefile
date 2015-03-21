@@ -1,10 +1,9 @@
-
 ARCH         ?= linux
 TOPDIR       := $(realpath $(CURDIR)/..)
 RULESDIR     := $(TOPDIR)/rules
 
 default: sdk
-.PHONY: sdk install clean
+.PHONY: sdk install clean dist-clean
 
 include $(RULESDIR)/arch-$(ARCH).mk
 
@@ -35,4 +34,12 @@ install: sdk $(PREFIX)
 clean:
 	$(QUIET) $(RM) $(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS)
 	$(QUIET) $(RM) $(SDKLIB) $(SDKBIN) $(SDKINC) $(SDKDOC) $(SDKXAM)
+
+
+# - - - - - - - - - - 
+# D I S T - C L E A N
+# - - - - - - - - - - 
+
+dist-clean:
+	$(QUIET) $(RM) $(PREFIX)/*
 
