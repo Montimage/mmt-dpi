@@ -5,7 +5,9 @@
 
 #include "rtp.h"
 #include "packet_processing.h"
+#ifndef _MMT_BUILD_SDK
 #include "mmt_quality_estimation_calculation.h"
+#endif /* _MMT_BUILD_SDK */
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define RTP_MAX_OUT_OF_ORDER 11
@@ -14,7 +16,10 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-#ifndef _MMT_BUILD_SDK
+double dummy_estimation(application_quality_estimation_internal_t * app_internal_struct) {
+    return 0.0;
+}
+
 static rtp_payload_mime_type_t static_rtp_payload_mime_types[MAX_RTP_PT] = {
      [0] = { MMT_RTP_FORMAT_PCMU,  AUDIO,        8000, 1, "PCMU"  },
      [3] = { MMT_RTP_FORMAT_GSM,   AUDIO,        8000, 1, "GSM"   },
@@ -41,8 +46,9 @@ static rtp_payload_mime_type_t static_rtp_payload_mime_types[MAX_RTP_PT] = {
     [33] = { MMT_RTP_FORMAT_MP2T,  AUDIO_VIDEO, 90000, 1, "PM2T"  },
     [34] = { MMT_RTP_FORMAT_H263,  VIDEO,       90000, 1, "H263"  },
 };
-#endif /* _MMT_BUILD_SDK */
 
+
+#ifndef _MMT_BUILD_SDK
 void update_multimedia_quality_index_context(multimedia_quality_index_context_t * quality_index_context, multimedia_session_context_t * session_context) {
     int timediff = short_time_diff(&quality_index_context->last_quality_estimation_time, &session_context->last_arrival_time);
 
@@ -62,14 +68,12 @@ void update_multimedia_quality_index_context(multimedia_quality_index_context_t 
     }
 
 }
+#endif /* _MMT_BUILD_SDK */
 
 int rtp_version_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
 
     *(uint8_t *) extracted_data->data = ((struct rtphdr *) & packet->data[proto_offset])->version;
     return 1;
@@ -79,9 +83,6 @@ int rtp_padding_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
 
     *(uint8_t *) extracted_data->data = ((struct rtphdr *) & packet->data[proto_offset])->padding;
     return 1;
@@ -91,9 +92,6 @@ int rtp_extension_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
 
     *(uint8_t *) extracted_data->data = ((struct rtphdr *) & packet->data[proto_offset])->ext;
     return 1;
@@ -103,9 +101,6 @@ int rtp_cc_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
 
     *(uint8_t *) extracted_data->data = ((struct rtphdr *) & packet->data[proto_offset])->cc;
     return 1;
@@ -115,9 +110,6 @@ int rtp_marker_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
 
     *(uint8_t *) extracted_data->data = ((struct rtphdr *) & packet->data[proto_offset])->mark;
     return 1;
@@ -127,9 +119,6 @@ int rtp_payload_type_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
 
     *(uint8_t *) extracted_data->data = ((struct rtphdr *) & packet->data[proto_offset])->pt;
     return 1;
@@ -140,7 +129,6 @@ int rtp_csrc_list_extraction(const ipacket_t * packet, unsigned proto_index,
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
 
     uint8_t i;
     uint8_t cc = ((struct rtphdr *) & packet->data[proto_offset])->cc * 4; //TODO: shifting is more optimal no?
@@ -429,7 +417,7 @@ void process_packet_loss_order(struct rtp_session_data_struct * rtp_session_data
 
             rtp_session_data->rtp_media_session_context.high_seqnb = seqnb;
             rtp_session_data->rtp_media_session_context.low_seqnb = seqnb;
-            rtp_session_data->rtp_media_session_context.index_high.index = 0; //We can chose the index as there will only be one non zero
+            rtp_session_data->rtp_media_session_context.index_high.index = 0; //We can choose the index as there will only be one non zero
             rtp_session_data->rtp_media_session_context.index_low.index = rtp_session_data->rtp_media_session_context.index_high.index;
             rtp_session_data->rtp_media_session_context.seqnb_cache[rtp_session_data->rtp_media_session_context.index_low.index] = seqnb; //This is the only received packet in the cache
         }
@@ -474,6 +462,7 @@ int rtp_session_data_processing(ipacket_t * ipacket, unsigned index) {
 
     process_packet_timediff_jitter(ipacket, rtp_session_data, ntohl(rtp_hdr->tstmp));
 
+#ifndef _MMT_BUILD_SDK
     update_multimedia_quality_index_context(&rtp_session_data->rtp_quality_index_context, &rtp_session_data->rtp_media_session_context);
 
     if (rtp_session_data->rtp_quality_index_context.do_estimate) {
@@ -487,11 +476,11 @@ int rtp_session_data_processing(ipacket_t * ipacket, unsigned index) {
         rtp_session_data->rtp_quality_index_context.media_packet_count_cumulative = 0;
         rtp_session_data->rtp_quality_index_context.nb_lost_cumulative = 0;
     }
+#endif /* _MMT_BUILD_SDK */
 
     return 0;
 }
 
-#ifndef _MMT_BUILD_SDK
 int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
     struct rtp_session_data_struct * rtp_session_data = ipacket->session->session_data[index];
     int offset = get_packet_offset_at_index(ipacket, index);
@@ -520,6 +509,7 @@ int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
     rtp_session_data->mime_type = &static_rtp_payload_mime_types[rtp_hdr->pt];
 
     ////////////////////////////////////////////TODO: replace by generic function
+#ifndef _MMT_BUILD_SDK
     application_quality_estimation_internal_t * app_internal_struct;
     app_internal_struct = init_new_internal_application_quality_estimation_struct(init_application_quality_estimation_structures("rtp_q_inf_rules.xml"));
     if (app_internal_struct != NULL) {
@@ -531,10 +521,11 @@ int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
         //Every thing is OK, Set the quality estimation routine
         rtp_session_data->rtp_quality_index_estimation = estimate_quality_index;
     }
+    rtp_session_data->rtp_quality_index_context.last_quality_estimation_time = ipacket->p_hdr->ts;
+#endif /* _MMT_BUILD_SDK */
 
     rtp_session_data->rtp_media_session_context.last_tstmp = ntohl(rtp_hdr->tstmp);
     rtp_session_data->rtp_media_session_context.last_arrival_time = ipacket->p_hdr->ts;
-    rtp_session_data->rtp_quality_index_context.last_quality_estimation_time = ipacket->p_hdr->ts;
 
     rtp_session_data->rtp_data_analysis = rtp_session_data_processing;
 
@@ -549,15 +540,19 @@ void rtp_session_data_init(ipacket_t * ipacket, unsigned index) {
     //Set the processing function to initial processing this will deal with the first incoming packet(s)
     rtp_session_data->rtp_data_analysis = rtp_initial_data_processing;
 
-    rtp_session_data->rtp_quality_index_estimation = dummy_quality_index_estimation;
+#ifndef _MMT_BUILD_SDK
+    rtp_session_data->rtp_quality_index_estimation = dummy_estimation;
     //////////////////////////////////////////////////End replace by generic function
+#endif /* _MMT_BUILD_SDK */
 }
 
 void rtp_session_data_cleanup(mmt_session_t * session, unsigned index) {
     if (session->session_data[index] != NULL) {
         mmt_free(session->session_data[index]);
+#ifndef _MMT_BUILD_SDK
         //TODO: free the fuzz quality estimation context
         //rtp_session_data->rtp_quality_index_context.quality_index_internal_struct
+#endif /* _MMT_BUILD_SDK */
     }
 }
 
@@ -567,7 +562,6 @@ int rtp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     rtp_session_data->rtp_data_analysis(ipacket, index);
     return MMT_CONTINUE;
 }
-#endif /* _MMT_BUILD_SDK */
 
 static attribute_metadata_t rtp_attributes_metadata[RTP_ATTRIBUTES_NB] = {
     {RTP_VERSION, RTP_VERSION_SHORT_LABEL, MMT_U8_DATA, sizeof (uint8_t), 0, SCOPE_PACKET, rtp_version_extraction},
@@ -955,7 +949,7 @@ int init_proto_rtp_struct() {
 
         mmt_init_classify_me_rtp();
 
-#ifndef _MMT_BUILD_SDK
+#ifdef _MMT_BUILD_SDK
         register_session_data_initialization_function(protocol_struct, rtp_session_data_init);
         register_session_data_cleanup_function(protocol_struct, rtp_session_data_cleanup);
         register_session_data_analysis_function(protocol_struct, rtp_session_data_analysis);
