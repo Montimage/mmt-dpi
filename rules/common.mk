@@ -1,5 +1,5 @@
  
-VERSION  := 0.99
+VERSION  := 0.100
 PREFIX   ?= /opt/mmt
 
 CFLAGS   := -Wall
@@ -14,8 +14,8 @@ ifndef VERBOSE
 endif
 
 ifdef DEBUG
- CFLAGS   += -g -DDEBUG
- CXXFLAGS += -g -DDEBUG
+CFLAGS   += -g -DDEBUG
+CXXFLAGS += -g -DDEBUG
 endif
 
 .PHONY: libraries includes tools documentation examples
@@ -36,11 +36,12 @@ SDKDIR       := $(TOPDIR)/sdk
 SDKDOC       := $(SDKDIR)/doc
 SDKINC       := $(SDKDIR)/include
 SDKINC_TCPIP := $(SDKDIR)/include/tcpip
+SDKINC_FUZZ  := $(SDKDIR)/include/fuzz
 SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(PREFIX):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(PREFIX):
 	@mkdir -p $@
 
 
@@ -52,6 +53,7 @@ LIBCORE     := libmmt_core
 LIBTCPIP    := libmmt_tcpip
 LIBEXTRACT  := libmmt_extract
 LIBSECURITY := libmmt_security
+LIBFUZZ     := libmmt_fuzz
 
 CORE_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_core/src/*.c)) \
@@ -62,7 +64,7 @@ CORE_OBJECTS := $(filter-out $(SRCDIR)/mmt_core/src/mmt_tcpip_init.o,$(CORE_OBJE
 
 TCPIP_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/*.c)) \
- $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/protocols/*.c))
+ $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/protocols/*.c)) 
 
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))
@@ -85,6 +87,12 @@ $(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS)
 
+# FUZZ
+
+$(SDKLIB)/$(LIBFUZZ).a: $(SDKLIB) $(FUZZ_OBJECTS)
+	@echo "[ARCHIVE] $(notdir $@)"
+	$(QUIET) $(AR) $@ $(FUZZ_OBJECTS)
+
 # SECURITY
 
 $(SDKLIB)/$(LIBSECURITY).a: $(SDKLIB) $(SECURITY_OBJECTS)
@@ -102,7 +110,10 @@ SDK_HEADERS       = $(addprefix $(SDKINC)/,$(notdir $(MMT_HEADERS)))
 MMT_TCPIP_HEADERS = $(wildcard $(SRCDIR)/mmt_tcpip/include/*.h)
 SDK_TCPIP_HEADERS = $(addprefix $(SDKINC_TCPIP)/,$(notdir $(MMT_TCPIP_HEADERS)))
 
-includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS)
+MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)
+SDK_FUZZ_HEADERS = $(addprefix $(SDKINC_FUZZ)/,$(notdir $(MMT_FUZZ_HEADERS)))
+
+includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_FUZZ_HEADERS)
 
 $(SDKINC)/%.h: $(SRCDIR)/mmt_core/public_include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
@@ -112,7 +123,11 @@ $(SDKINC_TCPIP)/%.h: $(SRCDIR)/mmt_tcpip/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 
-$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP)
+$(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h
+	@echo "[INCLUDE] $(notdir $@)"
+	$(QUIET) cp -f $< $@
+
+$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ)
 
 
 #  - - - - -
