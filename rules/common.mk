@@ -148,7 +148,7 @@ documentation: $(SDKDOC)
 #  E X A M P L E S
 #  - - - - - - - -
 
-MMT_EXAMPLES_SRC = extract_all.c proto_attributes_iterator.c
+MMT_EXAMPLES_SRC = extract_all.c proto_attributes_iterator.c attribute_handler_session_counter.c packet_handler.c simple_traffic_reporting.c tcp_plugin_image.pcap
 SDK_EXAMPLES_SRC = $(addprefix $(SDKXAM)/,$(MMT_EXAMPLES_SRC))
 
 examples: $(SDK_EXAMPLES_SRC)
