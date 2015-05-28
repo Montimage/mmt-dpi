@@ -1,3 +1,41 @@
+/**
+ * This example is intended to extract everything from a pcap file! This means all the attributes of all registered protocols will be registed for extraction. When a packet is processed, the attributes found in the packet will be print out.
+ * To run this example, mmt-sdk installing is required. After installing mmt-sdk, add the mmt library to project library path by following command:
+ * 
+ * $ export LD_LIBRARY_PATH=/opt/mmt/lib:/usr/local/lib:$LD_LIBRARY_PATH
+ * 
+ * Compile this example with:
+ * 
+ * $ gcc -g -I/opt/mmt/include -o extract_all extract_all.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap
+ *   
+ * 
+ * Also need to copy TCPIP plugin to plugins folder:
+ * 
+ * $ mkdir plugins
+ * 
+ * $ cp /opt/mmt/lib/libmmt_tcpip.so.0.100 plugins/libmmt_tcpip.so
+ * 
+ * And get a data file (.pcap file) by using wireShark application to capture some packet.
+ * 
+ * Then execute the program:
+ * 
+ * -> Extract from a pcap file
+ * $ ./extract_all -t tcp_plugin_image.pcap > exta_output.txt
+ * 
+ * You can see the example result in file: exta_output.txt
+ * 
+ * -> Extract from live streaming
+ * 
+ * Need sudo permission:
+ * $ sudo -i
+ * $ export LD_LIBRARY_PATH=/opt/mmt/lib:/usr/local/lib:$LD_LIBRARY_PATH
+ * $ ./extract_all -i eth0 > extra_live_output.txt
+ * 
+ * You can see the example result in file: exta_live_output.txt
+ * That is it!
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
