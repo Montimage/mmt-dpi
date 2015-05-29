@@ -6,7 +6,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap 
+ * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -lmmt_tcpip -ldl -lpcap 
  *   
  * 
  * Also need to copy TCPIP plugin to plugins folder:
