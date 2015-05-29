@@ -13,7 +13,8 @@ extern "C" {
 #endif
 
 #include "mmt_core.h"
-#include "mmt_tcpip_utils.h"
+// #include "mmt_tcpip_utils.h"
+#include "mmt_tcpip_protocols.h"
 
     /**
      * Returns the Content class id corresponding to the given content flags.
