@@ -73,6 +73,11 @@ extern "C" {
 typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
 
 /**
+ * Generic packet handler callback
+ */
+typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+
+/**
  * Signature of the session timeout handler.
  */
 typedef void (*generic_session_timeout_handler_function)(const mmt_session_t * expired_session, void * args);

@@ -29,6 +29,7 @@ typedef struct mmt_session_struct               mmt_session_t;
 typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
 typedef struct protocol_struct                  protocol_t;
 typedef struct ipacket_struct                   ipacket_t;
+typedef struct extra_struct                     extra_t;
 
 //BW - TODO: de we really need to override these??
 /** Switches the order of bytes of a short int value */
@@ -94,6 +95,7 @@ struct ipacket_struct {
     mmt_handler_t * mmt_handler;              /**< pointer to the mmt handler that processed this packet */
     pkthdr_t * p_hdr;                         /**< the meta-data of the packet */
     const u_char * data;                      /**< pointer to the packet data */
+    extra_t *extra;                           /**< The extra field for tcp packet handler */
 };
 
 /**

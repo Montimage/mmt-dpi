@@ -48,6 +48,14 @@ typedef struct mmt_proto_data_analysis_struct      mmt_analyser_t;
 typedef struct protocol_instance_struct            protocol_instance_t;
 typedef struct proto_statistics_internal_struct    proto_statistics_internal_t;
 typedef struct protocol_stack_struct               protocol_stack_t;
+typedef int (*next_process_function) (const ipacket_t * ipacket,proto_statistics_internal_t * parent_stats,int index);
+
+typedef struct extra_struct{
+    proto_statistics_internal_t * parent_stats;
+    int index;
+    int status;// MMT_CONTINUE/ MMT_SKIP
+    next_process_function next_process;
+}extra_t;
 
 /**
  * Defines the attribute information.
