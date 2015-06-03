@@ -6,7 +6,7 @@
 #include "tcp.h"
 
 ////////////// LIBNTOH LIBRARY INTEGRATION CODE /////////////////
-#include "libntoh/libntoh.h"
+#include "../../../../vendors/libntoh/install/include/libntoh/libntoh.h"
 typedef struct libntoh_packet_t
 {
     ipacket_t *ipacket;
