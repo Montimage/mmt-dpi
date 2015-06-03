@@ -33,7 +33,7 @@ $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 	@echo "[SYMLINK] $(notdir $@)"
 	$(QUIET) ln -sf $(LIBTCPIP).so.$(VERSION) $@
 
-$(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a $(PREFIX)/lib/libntoh.a
+$(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a $(VENDORDIR)/libntoh/install/lib/libntoh.a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so
 
