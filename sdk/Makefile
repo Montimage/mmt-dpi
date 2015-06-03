@@ -1,7 +1,7 @@
 ARCH         ?= linux
 TOPDIR       := $(realpath $(CURDIR)/..)
 RULESDIR     := $(TOPDIR)/rules
-VENDORDIR	 := $(TOPDIR)/vendors/
+VENDORDIR	 := $(TOPDIR)/vendors
 
 default: sdk
 .PHONY: sdk install clean dist-clean
@@ -13,15 +13,9 @@ include $(RULESDIR)/arch-$(ARCH).mk
 #  S D K
 #  - - -
 
-sdk: ntoh libraries includes tools documentation examples
+sdk: libraries includes tools documentation examples
 
 
-#  - - -
-#  S D K
-#  - - -
-
-ntoh:
-	cd $(VENDORDIR)/libntoh/src;mkdir build;cd build;cmake .. -DCMAKE_INSTALL_PREFIX=$(PREFIX);make;sudo make install;
 #  - - - - - - -
 #  I N S T A L L
 #  - - - - - - -
