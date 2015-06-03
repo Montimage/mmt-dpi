@@ -10,7 +10,7 @@
  * 
  * With libntoh integrated:
  * 
- * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -lmmt_tcpip -ldl -lpcap $(pkg-config ntoh --cflags --libs)  
+ * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap $(pkg-config ntoh --cflags --libs)  
  * 
  * Also need to copy TCPIP plugin to plugins folder:
  * 
@@ -50,7 +50,7 @@ typedef int socklen_t;
 #endif
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <libntoh/libntoh.h>
+// #include <libntoh/libntoh.h>
     typedef struct ipv4_ipv6_id_struct {
         union {
             uint32_t ipv4;
@@ -191,7 +191,7 @@ void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
             );
 }
 int main(int argc, const char **argv) {
-    ntoh_version();
+    // ntoh_version();
     mmt_handler_t *mmt_handler, *m1;
     char mmt_errbuf[1024];
     int packets_count = 0;
