@@ -2,8 +2,8 @@
 VERSION  := 0.100
 PREFIX   ?= /opt/mmt
 
-CFLAGS   := -Wall
-CXXFLAGS := -Wall
+CFLAGS   := -Wall -g
+CXXFLAGS := -Wall -g
 
 CP       := cp -R
 RM       := rm -rf
@@ -64,7 +64,7 @@ CORE_OBJECTS := $(filter-out $(SRCDIR)/mmt_core/src/mmt_tcpip_init.o,$(CORE_OBJE
 
 TCPIP_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/*.c)) \
- $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/protocols/*.c)) 
+ $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/protocols/*.c))
 
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))
@@ -72,7 +72,7 @@ FUZZ_OBJECTS := \
 SECURITY_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_security/*.c))
 
-$(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS   += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+$(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
 # CORE
@@ -83,9 +83,9 @@ $(SDKLIB)/$(LIBCORE).a: $(SDKLIB) $(CORE_OBJECTS)
 
 # TCP/IP
 
-$(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
+$(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS) 
 	@echo "[ARCHIVE] $(notdir $@)"
-	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS)
+	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS) 
 
 # FUZZ
 
