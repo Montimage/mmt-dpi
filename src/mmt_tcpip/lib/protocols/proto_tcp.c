@@ -31,13 +31,12 @@ plibntoh_packet_t copy_packet_to_buffer (ipacket_t * ipacket, size_t total_len,u
     plibntoh_packet_t ret = 0;
     
     /* gets peer information */
-    ret = (plibntoh_packet_t) calloc ( 1 , sizeof ( libntoh_packet_t ) );
+    ret =malloc (sizeof ( libntoh_packet_t ) );
 
     ret->total_len = total_len;
     ret->index=index;
-    ret->ipacket = (ipacket_t *) calloc ( ipacket->p_hdr->len , sizeof ( ipacket_t ) );
-    ret->ipacket->extra = mmt_malloc(sizeof(extra_t));
-    memcpy ( ret->ipacket , ipacket , sizeof(*ipacket));
+    ret->ipacket = ipacket;
+    // memcpy ( ret->ipacket , ipacket , sizeof(*ipacket));
     // memcpy (ret->ipacket->extra,ipacket->extra)
     return ret;
 }
@@ -49,7 +48,7 @@ void free_peer_info ( plibntoh_packet_t pinfo )
 {
     if ( ! pinfo )
         return;
-    free ( pinfo->ipacket);
+    // free ( pinfo->ipacket);
     free ( pinfo );
 
     return;
@@ -84,6 +83,11 @@ void callback_packet_handler(ipacket_t* ipacket){
  */
 void ntoh_send_tcp_segment ( ipacket_t *ipacket, unsigned index)
 {
+    mmt_handler_t *mmt = ipacket->mmt_handler;
+    if(mmt->cleanup_function==NULL){
+        printf("MYLOG: Set cleanup function for mmt_handler\n");
+        mmt->cleanup_function = ntoh_tcp_exit;
+    }
     // printf("TEST:ntoh_send_tcp_segment %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra->index,index,ipacket->p_hdr->len);
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     int l3_offset = get_packet_offset_at_index(ipacket,index-1);
@@ -143,14 +147,14 @@ void ntoh_send_tcp_segment ( ipacket_t *ipacket, unsigned index)
         case NTOH_SYNCHRONIZING:
             // printf("TEST: ret=NTOH_SYNCHRONIZING after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra->index,index,ipacket->p_hdr->len);
             // callback_packet_handler(ipacket);
-            // free_peer_info ( pinfo );
+            free_peer_info ( pinfo );
             return;
 
         default:
             // printf("TEST: ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra->index,index,ipacket->p_hdr->len);
             // callback_packet_handler(ipacket);
             fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
-            // free_peer_info ( pinfo );
+            free_peer_info ( pinfo );
             return;
     }
 }
