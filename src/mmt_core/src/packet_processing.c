@@ -1887,10 +1887,10 @@ int register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id,
                 }
             }
 
-            //Finally we increment the registration count of this attribute.
-            extract_attribute->registration_count++;
-            return 1;
         }
+        //Finally we increment the registration count of this attribute.
+        extract_attribute->registration_count++;
+        return 1;
     }
     return 0;
 }
