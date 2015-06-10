@@ -6,7 +6,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -lmmt_tcpip -ldl -lpcap 
+ * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap 
  *   
  * 
  * Also need to copy TCPIP plugin to plugins folder:
@@ -22,7 +22,8 @@
  * $ ./simple_traffic_reporting tcp_plugin_image.pcap > simple_traffic_reporting.txt
  * 
  * You can see the example result in file: simple_traffic_reporting.txt
- 
+ * Debug with Valgrind:
+ * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all --num-callers ./simple_traffic_reporting tcp_plugin_image.pcap 2> simple_valgrind.txt
  * That is it!
  * 
  */
@@ -84,7 +85,7 @@ void new_flow_handle(const ipacket_t * ipacket, attribute_t * attribute, void * 
     if (attribute->data == NULL) {
         return; //This should never happen! check it anyway
     }
-    internal_session_struct_t *temp_session = malloc(sizeof (internal_session_struct_t));
+    internal_session_struct_t *temp_session = (internal_session_struct_t*)mmt_malloc(sizeof (internal_session_struct_t));
     if (temp_session == NULL) {
         return;
     }
@@ -169,7 +170,7 @@ void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
     int proto_id = (get_session_protocol_hierarchy(expired_session))->proto_path[proto_index];
     fprintf(out_file, "%"PRIu64",%lu.%lu,%lu.%lu,"
             "%u,%s,%s,%hu,%hu,%hu,"
-            "%"PRIu64",%"PRIu64",%"PRIu64",%"PRIu64",%u,%u,%s,%s,%s"
+            "%"PRIu64",%"PRIu64",%"PRIu64",%"PRIu64",%u,%u,%s,%s"
             "\n", 
             get_session_id(expired_session),
             (get_session_last_activity_time(expired_session)).tv_sec, (get_session_last_activity_time(expired_session)).tv_usec,
@@ -182,7 +183,7 @@ void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
             (keep_direction) ? get_session_ul_byte_count(expired_session): get_session_dl_byte_count(expired_session),
             (keep_direction) ? get_session_dl_byte_count(expired_session) : get_session_ul_byte_count(expired_session),
             rtt_ms, get_session_retransmission_count(expired_session),
-            get_application_class_name_by_protocol_id(proto_id),
+            // get_application_class_name_by_protocol_id(proto_id),
             path, get_protocol_name_by_id(proto_id)
             );
 }
