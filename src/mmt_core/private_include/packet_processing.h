@@ -48,14 +48,6 @@ typedef struct mmt_proto_data_analysis_struct      mmt_analyser_t;
 typedef struct protocol_instance_struct            protocol_instance_t;
 typedef struct proto_statistics_internal_struct    proto_statistics_internal_t;
 typedef struct protocol_stack_struct               protocol_stack_t;
-typedef int (*next_process_function) (const ipacket_t * ipacket,proto_statistics_internal_t * parent_stats,int index);
-
-typedef struct extra_struct{
-    proto_statistics_internal_t * parent_stats;
-    int index;
-    int status;// MMT_CONTINUE/ MMT_SKIP
-    next_process_function next_process;
-}extra_t;
 
 /**
  * Defines the attribute information.
@@ -186,9 +178,9 @@ struct packet_info_struct {
     uint32_t packet_id; /**< identifier of the packet. */
     unsigned int packet_len; /**< length of the packet. */
     struct timeval time; /**< time of arrival of the packet. */
-    proto_hierarchy_t proto_hierarchy; /**< the protocol layers corresponding to this packet */
-    proto_hierarchy_t proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
-    proto_hierarchy_t proto_classif_status; /**< the classification status of the protocols in the path */
+    // proto_hierarchy_t proto_hierarchy; /**< the protocol layers corresponding to this packet */
+    // proto_hierarchy_t proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
+    // proto_hierarchy_t proto_classif_status; /**< the classification status of the protocols in the path */
 };
 
 /**
@@ -345,6 +337,8 @@ struct protocol_instance_struct {
     void * args; /**< For internal use. MUST not be changed. */
 };
 
+typedef void (*void_function)();
+
 struct mmt_handler_struct {
     protocol_stack_t * link_layer_stack;
     protocol_instance_t configured_protocols[PROTO_MAX_IDENTIFIER];
@@ -366,6 +360,8 @@ struct mmt_handler_struct {
     uint32_t stats_reporting_status;
 
     mmt_hashmap_t *ip_streams;
+
+    void_function clean_up_fct;
 };
 
 

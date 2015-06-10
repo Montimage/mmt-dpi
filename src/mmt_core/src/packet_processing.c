@@ -1157,6 +1157,9 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
 
     //Remove the handler from the registered handlers in the global context
     delete_key_value(mmt_configured_handlers_map, mmt_handler);
+    // if(mmt_handler->clean_up_fct!=NULL){
+    //     mmt_handler->clean_up_fct();
+    // }
     mmt_free(mmt_handler);
 }
 
@@ -2553,10 +2556,11 @@ void process_packet_handler(ipacket_t *ipacket){
         temp_packet_handler->function(ipacket, temp_packet_handler->args);
         temp_packet_handler = temp_packet_handler->next;
     }
-    // mmt_free(&ipacket); 
+    // mmt_free(ipacket->extra);
+    mmt_free(ipacket); 
 }
 
-int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
+int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats, unsigned index) {
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     int target = MMT_CONTINUE;
@@ -2573,7 +2577,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
     }
     //Update the protocol statistics
-    parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset, is_new_session);
+    parent_stats = (proto_statistics_t*)update_proto_stats_on_packet(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, proto_offset, is_new_session);
     //Update next_process
     
     //Analyze packet data
@@ -2590,9 +2594,9 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     }
 
     //Update next
-    ipacket->extra->parent_stats = parent_stats;
-    ipacket->extra->index = index+1;
-    ipacket->extra->next_process = (next_process_function)proto_packet_process;
+    ipacket->extra.parent_stats = parent_stats;
+    ipacket->extra.index = index+1;
+    ipacket->extra.next_process = (next_process_function)proto_packet_process;
     
 
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
@@ -2603,7 +2607,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         if (ipacket->proto_hierarchy->len > (index + 1)) {
             if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
                 /* process the packet by the next encapsulated protocol */
-                if(ipacket->extra->status == MMT_SKIP){
+                if(ipacket->extra.status == MMT_SKIP){
                     return target;
                 }else{
                     return proto_packet_process(ipacket, parent_stats, index + 1);
@@ -2642,23 +2646,24 @@ int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     // TODO: do we need a special processing for truncated packets?
     ipacket_t *ipacket;
     ipacket = mmt_malloc(sizeof(ipacket_t));
-    ipacket->data =mmt_malloc(header->caplen);
-    memcpy((void*)ipacket->data,(const void*)packet,header->caplen);
-    ipacket->p_hdr = mmt_malloc(sizeof(struct pkthdr));
-    memcpy(ipacket->p_hdr,header,sizeof(*header));
-    ipacket->proto_hierarchy =  mmt_malloc(sizeof(proto_hierarchy_t));
-    memcpy(ipacket->proto_hierarchy,&mmt->last_received_packet.proto_hierarchy,sizeof(mmt->last_received_packet.proto_hierarchy));
-    ipacket->proto_headers_offset = mmt_malloc(sizeof(proto_hierarchy_t));
-    memcpy(ipacket->proto_headers_offset,&mmt->last_received_packet.proto_headers_offset,sizeof(mmt->last_received_packet.proto_headers_offset));
-    ipacket->proto_classif_status = mmt_malloc(sizeof(proto_hierarchy_t));
-    memcpy(ipacket->proto_classif_status,&mmt->last_received_packet.proto_classif_status,sizeof(mmt->last_received_packet.proto_classif_status));
+    ipacket->data=packet;
+    ipacket->proto_hierarchy =&ipacket->internal_proto_hierarchy;
+    ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
+    ipacket->proto_classif_status = &ipacket->internal_proto_classif_status;
+    // Move this copying to function
+    ipacket->p_hdr = &ipacket->internal_p_hdr;
+    ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
+    ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
+    ipacket->p_hdr->caplen = header->caplen;
+    ipacket->p_hdr->len = header->len;
+    ipacket->p_hdr->user_args = header->user_args;
+    // End of function
     ipacket->proto_hierarchy->len = 0;
     ipacket->proto_headers_offset->len = 0;
     ipacket->proto_classif_status->len = 0;
     ipacket->session = NULL;
     ipacket->mmt_handler = mmt;
-    ipacket->extra = mmt_malloc(sizeof(extra_t));
-    ipacket->extra->status = MMT_CONTINUE;
+    ipacket->extra.status = MMT_CONTINUE;
 
     update_last_received_packet(&mmt->last_received_packet, ipacket);
 
@@ -2672,11 +2677,12 @@ int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     proto_packet_process(ipacket,NULL,index);
     process_timedout_sessions(mmt, header->ts.tv_sec);
     if ((mmt->link_layer_stack->stack_id == DLT_EN10MB)
-            && (*ipacket->data != *packet)) {
+            && (ipacket->data != packet)) {
         // data was dynamically allocated during the reassembly process:
         //   . free dynamically allocated ipacket->data
         //   . reset ipacket->data to its original value
-        memcpy((void*)ipacket->data,(const void*)packet,sizeof(*packet));
+        mmt_free((void *) ipacket->data);
+        ipacket->data = packet;
     }
 
     return 1;
