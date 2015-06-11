@@ -2557,7 +2557,7 @@ void process_packet_handler(ipacket_t *ipacket){
         temp_packet_handler->function(ipacket, temp_packet_handler->args);
         temp_packet_handler = temp_packet_handler->next;
     }
-   
+    
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
     if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
@@ -2573,7 +2573,7 @@ void process_packet_handler(ipacket_t *ipacket){
         mmt_free(ipacket->internal_packet);
     }
     mmt_free((void *)ipacket->data);
-    mmt_free(ipacket);
+    mmt_free(ipacket); 
 }
 
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
