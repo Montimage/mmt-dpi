@@ -1158,9 +1158,9 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
 
     //Remove the handler from the registered handlers in the global context
     delete_key_value(mmt_configured_handlers_map, mmt_handler);
-    if(mmt_handler->clean_up_fct!=NULL){
-        mmt_handler->clean_up_fct();
-    }
+    // if(mmt_handler->clean_up_fct!=NULL){
+    //     mmt_handler->clean_up_fct();
+    // }
     mmt_free(mmt_handler);
 }
 
@@ -2557,6 +2557,7 @@ void process_packet_handler(ipacket_t *ipacket){
         temp_packet_handler->function(ipacket, temp_packet_handler->args);
         temp_packet_handler = temp_packet_handler->next;
     }
+
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
     if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
@@ -2576,8 +2577,6 @@ void process_packet_handler(ipacket_t *ipacket){
 }
 
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
-    printf("\nPROCESSING: \n"); 
-    printf("%p | %p | %p| %p | %p | %p| %p\n",ipacket,ipacket->p_hdr,ipacket->data, ipacket->proto_hierarchy,ipacket->proto_headers_offset,ipacket->proto_classif_status,ipacket->extra);
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     int target = MMT_CONTINUE;
