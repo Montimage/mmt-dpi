@@ -16,7 +16,8 @@ Makefile
 Makefile.in
 *.swp
 *~
-
+*.txt
+*.pcap
 # ignoring binaries
 
 src/examples/extract_all
