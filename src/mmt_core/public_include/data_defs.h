@@ -104,6 +104,7 @@ struct ipacket_struct {
     mmt_handler_t * mmt_handler;              /**< pointer to the mmt handler that processed this packet */
     pkthdr_t * p_hdr;                         /**< the meta-data of the packet */
     const u_char * data;                      /**< pointer to the packet data */
+    const u_char * original_data;             /**< internal: - never modify it. pointer to the original packet data. It will be different than ipacket->data in case of IP assembled data*/
     extra_t extra;                           /**< The extra field for tcp packet handler */
     proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */
     proto_hierarchy_t internal_proto_headers_offset; /**< internal: - never modify it.  the offsets corresponding to the protocol layers of this packet */

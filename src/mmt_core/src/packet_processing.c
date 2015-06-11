@@ -2556,7 +2556,22 @@ void process_packet_handler(ipacket_t *ipacket){
         temp_packet_handler->function(ipacket, temp_packet_handler->args);
         temp_packet_handler = temp_packet_handler->next;
     }
-    // mmt_free(ipacket->extra);
+    
+    process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
+
+    if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
+            && (ipacket->data != ipacket->original_data)) {
+        // data was dynamically allocated during the reassembly process:
+        //   . free dynamically allocated ipacket->data
+        //   . reset ipacket->data to its original value
+        mmt_free((void *) ipacket->data);
+        ipacket->data = ipacket->original_data;
+    }
+
+    if(ipacket->internal_packet){
+        mmt_free(ipacket->internal_packet);
+    }
+    mmt_free((void *)ipacket->data);
     mmt_free(ipacket); 
 }
 
@@ -2619,6 +2634,43 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
     return target;
 } 
 
+ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
+    ipacket_t *ipacket;
+    ipacket = mmt_malloc(sizeof(ipacket_t));
+    // TODO: configuration option whether mmt need to allocate data or just refer it.
+    ipacket->data=mmt_malloc(header->caplen);
+    memcpy((void *)ipacket->data,(void *)packet,header->caplen);
+    ipacket->original_data = ipacket->data;
+    ipacket->proto_hierarchy =&ipacket->internal_proto_hierarchy;
+    ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
+    ipacket->proto_classif_status = &ipacket->internal_proto_classif_status;
+    // Move this copying to function
+    ipacket->p_hdr = &ipacket->internal_p_hdr;
+    ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
+    ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
+    ipacket->p_hdr->caplen = header->caplen;
+    ipacket->p_hdr->len = header->len;
+    ipacket->p_hdr->user_args = header->user_args;
+    // End of function
+    ipacket->proto_hierarchy->len = 0;
+    ipacket->proto_headers_offset->len = 0;
+    ipacket->proto_classif_status->len = 0;
+    ipacket->session = NULL;
+    ipacket->mmt_handler = mmt;
+    ipacket->extra.status = MMT_CONTINUE;
+    ipacket->internal_packet=NULL;
+
+    update_last_received_packet(&mmt->last_received_packet, ipacket);
+
+    //First set the meta protocol
+    classified_proto_t classified_proto;
+    classified_proto.proto_id = PROTO_META;
+    classified_proto.offset = 0;
+    classified_proto.status = Classified;
+
+    (void) set_classified_proto(ipacket, 0, classified_proto);
+    return ipacket;
+}
 
 
 int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
@@ -2643,47 +2695,9 @@ int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
 
     unsigned index = 0;
 
-    // TODO: do we need a special processing for truncated packets?
-    ipacket_t *ipacket;
-    ipacket = mmt_malloc(sizeof(ipacket_t));
-    ipacket->data=packet;
-    ipacket->proto_hierarchy =&ipacket->internal_proto_hierarchy;
-    ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
-    ipacket->proto_classif_status = &ipacket->internal_proto_classif_status;
-    // Move this copying to function
-    ipacket->p_hdr = &ipacket->internal_p_hdr;
-    ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
-    ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
-    ipacket->p_hdr->caplen = header->caplen;
-    ipacket->p_hdr->len = header->len;
-    ipacket->p_hdr->user_args = header->user_args;
-    // End of function
-    ipacket->proto_hierarchy->len = 0;
-    ipacket->proto_headers_offset->len = 0;
-    ipacket->proto_classif_status->len = 0;
-    ipacket->session = NULL;
-    ipacket->mmt_handler = mmt;
-    ipacket->extra.status = MMT_CONTINUE;
+    ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
 
-    update_last_received_packet(&mmt->last_received_packet, ipacket);
-
-    //First set the meta protocol
-    classified_proto_t classified_proto;
-    classified_proto.proto_id = PROTO_META;
-    classified_proto.offset = 0;
-    classified_proto.status = Classified;
-
-    (void) set_classified_proto(ipacket, index, classified_proto);
-    proto_packet_process(ipacket,NULL,index);
-    process_timedout_sessions(mmt, header->ts.tv_sec);
-    if ((mmt->link_layer_stack->stack_id == DLT_EN10MB)
-            && (ipacket->data != packet)) {
-        // data was dynamically allocated during the reassembly process:
-        //   . free dynamically allocated ipacket->data
-        //   . reset ipacket->data to its original value
-        mmt_free((void *) ipacket->data);
-        ipacket->data = packet;
-    }
+    proto_packet_process(ipacket, NULL, index);
 
     return 1;
 }
