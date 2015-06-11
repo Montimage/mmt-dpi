@@ -2657,46 +2657,11 @@ int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     ++mmt->packet_count;
 #endif /*CFG_OS_MAX_PACKET*/
 
-        unsigned index = 0;
+    unsigned index = 0;
 
     ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
 
     proto_packet_process(ipacket, NULL, index);
-    ipacket->p_hdr = mmt_malloc(sizeof(struct pkthdr));
-    memcpy(ipacket->p_hdr,header,sizeof(*header));
-    // ipacket->proto_hierarchy =  mmt_malloc(sizeof(proto_hierarchy_t));
-    // memcpy(ipacket->proto_hierarchy,&mmt->last_received_packet.proto_hierarchy,sizeof(mmt->last_received_packet.proto_hierarchy));
-    // ipacket->proto_headers_offset = mmt_malloc(sizeof(proto_hierarchy_t));
-    // memcpy(ipacket->proto_headers_offset,&mmt->last_received_packet.proto_headers_offset,sizeof(mmt->last_received_packet.proto_headers_offset));
-    // ipacket->proto_classif_status = mmt_malloc(sizeof(proto_hierarchy_t));
-    // memcpy(ipacket->proto_classif_status,&mmt->last_received_packet.proto_classif_status,sizeof(mmt->last_received_packet.proto_classif_status));
-    ipacket->proto_hierarchy->len = 0;
-    ipacket->proto_headers_offset->len = 0;
-    ipacket->proto_classif_status->len = 0;
-    ipacket->session = NULL;
-    ipacket->mmt_handler = mmt;
-    ipacket->extra = mmt_malloc(sizeof(extra_t));
-    ipacket->extra->status = MMT_CONTINUE;
-    printf("\nINITILIZED: \n"); 
-    printf("%p | %p | %p| %p | %p | %p| %p\n",ipacket,ipacket->p_hdr,ipacket->data, ipacket->proto_hierarchy,ipacket->proto_headers_offset,ipacket->proto_classif_status,ipacket->extra);
-    update_last_received_packet(&mmt->last_received_packet, ipacket);
-
-    //First set the meta protocol
-    classified_proto_t classified_proto;
-    classified_proto.proto_id = PROTO_META;
-    classified_proto.offset = 0;
-    classified_proto.status = Classified;
-
-    (void) set_classified_proto(ipacket, index, classified_proto);
-    proto_packet_process(ipacket,NULL,index);
-    process_timedout_sessions(mmt, header->ts.tv_sec);
-    if ((mmt->link_layer_stack->stack_id == DLT_EN10MB)
-            && (ipacket->data != packet)) {
-        // data was dynamically allocated during the reassembly process:
-        //   . free dynamically allocated ipacket->data
-        //   . reset ipacket->data to its original value
-        memcpy((void*)ipacket->data,(const void*)packet,sizeof(*packet));
-    }
 
     return 1;
 }
