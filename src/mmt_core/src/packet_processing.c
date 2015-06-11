@@ -2657,18 +2657,11 @@ int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     ++mmt->packet_count;
 #endif /*CFG_OS_MAX_PACKET*/
 
-    unsigned index = 0;
+        unsigned index = 0;
 
-    // TODO: do we need a special processing for truncated packets?
-    ipacket_t *ipacket;
-    ipacket = mmt_malloc(sizeof(ipacket_t));
-    // ipacket->data=packet;
-    // ipacket->p_hdr=header;
-    ipacket->proto_hierarchy=&mmt->last_received_packet.proto_hierarchy;
-    ipacket->proto_headers_offset=&mmt->last_received_packet.proto_headers_offset;
-    ipacket->proto_classif_status = &mmt->last_received_packet.proto_classif_status;
-    ipacket->data =mmt_malloc(header->caplen);
-    memcpy((void*)ipacket->data,(const void*)packet,header->caplen);
+    ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
+
+    proto_packet_process(ipacket, NULL, index);
     ipacket->p_hdr = mmt_malloc(sizeof(struct pkthdr));
     memcpy(ipacket->p_hdr,header,sizeof(*header));
     // ipacket->proto_hierarchy =  mmt_malloc(sizeof(proto_hierarchy_t));
