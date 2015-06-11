@@ -29,7 +29,16 @@ typedef struct mmt_session_struct               mmt_session_t;
 typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
 typedef struct protocol_struct                  protocol_t;
 typedef struct ipacket_struct                   ipacket_t;
+typedef struct proto_statistics_struct          proto_statistics_t;
 typedef struct extra_struct                     extra_t;
+typedef int (*next_process_function) (const ipacket_t * ipacket,proto_statistics_t * parent_stats,int index);
+
+typedef struct extra_struct{
+    proto_statistics_t * parent_stats;
+    int index;
+    int status;// MMT_CONTINUE/ MMT_SKIP
+    next_process_function next_process;
+}extra_t;
 
 //BW - TODO: de we really need to override these??
 /** Switches the order of bytes of a short int value */
@@ -95,7 +104,12 @@ struct ipacket_struct {
     mmt_handler_t * mmt_handler;              /**< pointer to the mmt handler that processed this packet */
     pkthdr_t * p_hdr;                         /**< the meta-data of the packet */
     const u_char * data;                      /**< pointer to the packet data */
-    extra_t *extra;                           /**< The extra field for tcp packet handler */
+    const u_char * original_data;             /**< internal: - never modify it. pointer to the original packet data. It will be different than ipacket->data in case of IP assembled data*/
+    extra_t extra;                           /**< The extra field for tcp packet handler */
+    proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */
+    proto_hierarchy_t internal_proto_headers_offset; /**< internal: - never modify it.  the offsets corresponding to the protocol layers of this packet */
+    proto_hierarchy_t internal_proto_classif_status; /**< internal: - never modify it.  the classification status of the protocols in the path */
+    pkthdr_t internal_p_hdr;                         /**< internal: - never modify it. the meta-data of the packet */
 };
 
 /**
@@ -129,7 +143,7 @@ typedef struct attribute_struct {
  * according to the protocol path in appears in. For example, facebook will have a statistics instance corresponding
  * to the path: eth.ip.tcp.http.facebook and another one corresponding to the path: eth.ip.tcp.ssl.facebook.
  */
-typedef struct proto_statistics_struct {
+struct proto_statistics_struct {
     uint32_t touched;                     /**< Indicates if the statistics have been updated since the last reset */
     uint64_t packets_count;               /**< Total number of packets seen by the protocol on a particular protocol path */
     uint64_t data_volume;                 /**< Total data volume seen by the protocol  on a particular protocol path */
@@ -140,7 +154,7 @@ typedef struct proto_statistics_struct {
     uint64_t sessions_count;              /**< Total number of sessions seen by the protocol  on a particular protocol path */
     uint64_t timedout_sessions_count;     /**< Total number of timedout sessions (this is the difference between sessions count and active sessions count) on a particular protocol path */
     struct proto_statistics_struct *next; /**< next instance of statistics for the same protocol */
-} proto_statistics_t;
+};
 
 enum proto_stats_attr {
     PROTO_HEADER = 0x1000,

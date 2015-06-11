@@ -2576,7 +2576,7 @@ void process_packet_handler(ipacket_t *ipacket){
     mmt_free(ipacket); 
 }
 
-int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
+int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats, unsigned index) {
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     int target = MMT_CONTINUE;
@@ -2593,7 +2593,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
     }
     //Update the protocol statistics
-    parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset, is_new_session);
+    parent_stats = (proto_statistics_t*)update_proto_stats_on_packet(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, proto_offset, is_new_session);
     //Update next_process
     
     //Analyze packet data
@@ -2610,9 +2610,9 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     }
 
     //Update next
-    ipacket->extra->parent_stats = parent_stats;
-    ipacket->extra->index = index+1;
-    ipacket->extra->next_process = (next_process_function)proto_packet_process;
+    ipacket->extra.parent_stats = parent_stats;
+    ipacket->extra.index = index+1;
+    ipacket->extra.next_process = (next_process_function)proto_packet_process;
     
 
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
@@ -2623,7 +2623,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         if (ipacket->proto_hierarchy->len > (index + 1)) {
             if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
                 /* process the packet by the next encapsulated protocol */
-                if(ipacket->extra->status == MMT_SKIP){
+                if(ipacket->extra.status == MMT_SKIP){
                     return target;
                 }else{
                     return proto_packet_process(ipacket, parent_stats, index + 1);
@@ -2635,6 +2635,43 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     return target;
 } 
 
+ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
+    ipacket_t *ipacket;
+    ipacket = mmt_malloc(sizeof(ipacket_t));
+    // TODO: configuration option whether mmt need to allocate data or just refer it.
+    ipacket->data=mmt_malloc(header->caplen);
+    memcpy((void *)ipacket->data,(void *)packet,header->caplen);
+    ipacket->original_data = ipacket->data;
+    ipacket->proto_hierarchy =&ipacket->internal_proto_hierarchy;
+    ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
+    ipacket->proto_classif_status = &ipacket->internal_proto_classif_status;
+    // Move this copying to function
+    ipacket->p_hdr = &ipacket->internal_p_hdr;
+    ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
+    ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
+    ipacket->p_hdr->caplen = header->caplen;
+    ipacket->p_hdr->len = header->len;
+    ipacket->p_hdr->user_args = header->user_args;
+    // End of function
+    ipacket->proto_hierarchy->len = 0;
+    ipacket->proto_headers_offset->len = 0;
+    ipacket->proto_classif_status->len = 0;
+    ipacket->session = NULL;
+    ipacket->mmt_handler = mmt;
+    ipacket->extra.status = MMT_CONTINUE;
+    ipacket->internal_packet=NULL;
+
+    update_last_received_packet(&mmt->last_received_packet, ipacket);
+
+    //First set the meta protocol
+    classified_proto_t classified_proto;
+    classified_proto.proto_id = PROTO_META;
+    classified_proto.offset = 0;
+    classified_proto.status = Classified;
+
+    (void) set_classified_proto(ipacket, 0, classified_proto);
+    return ipacket;
+}
 
 
 int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
