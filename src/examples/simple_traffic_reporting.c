@@ -10,7 +10,7 @@
  * 
  * With libntoh integrated:
  * 
- * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap $(pkg-config ntoh --cflags --libs)  
+ * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap -lpthread
  * 
  * Also need to copy TCPIP plugin to plugins folder:
  * 
@@ -25,7 +25,9 @@
  * $ ./simple_traffic_reporting tcp_plugin_image.pcap > simple_traffic_reporting.txt
  * 
  * You can see the example result in file: simple_traffic_reporting.txt
- 
+ * Test with valgrind:
+ * valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes ./simple_traffic_reporting tcp_plugin_image.pcap 2> valgrind_output.txt
+ *
  * That is it!
  * 
  */
