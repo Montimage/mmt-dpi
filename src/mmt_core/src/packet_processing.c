@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #ifdef _WIN32
 #include <ws2tcpip.h>
+#elif _OSX
+#include <arpa/inet.h>
 #else
 #include <arpa/inet.h>
 #include <netinet/ether.h>
+#include <netinet/in.h>
 #endif
 
 #include "packet_processing.h"

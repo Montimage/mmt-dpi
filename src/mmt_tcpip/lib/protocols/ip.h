@@ -21,6 +21,8 @@ extern "C" {
         unsigned char s6_addr[16]; /* IPv6 address */
     };
  #endif
+#elif _OSX
+
 #else
 #include <netinet/in.h>
 #endif //WIN32
@@ -32,7 +34,7 @@ extern "C" {
 
     //#define IP_ATTRIBUTES_NB    7
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_OSX)
 
     struct iphdr {
 #if BYTE_ORDER == LITTLE_ENDIAN
