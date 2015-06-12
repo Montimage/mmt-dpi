@@ -16,14 +16,14 @@ extern "C" {
 #include "mmt_core.h"
 
    
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_OSX)
     struct tcphdr {
         uint16_t source;
         uint16_t dest;
         uint32_t seq;
         uint32_t ack_seq;
 #if BYTE_ORDER == LITTLE_ENDIAN
-        uint16_t res1 : 4, doff : 4, fin : 1, syn : 1, rst : 1, psh : 1, ack : 1, urg : 1, ece : 1, cwr : 1;
+        uint16_t res2 : 4, doff : 4, fin : 1, syn : 1, rst : 1, psh : 1, ack : 1, urg : 1, ece : 1, cwr : 1;
 #elif BYTE_ORDER == BIG_ENDIAN
         uint16_t doff : 4, res1 : 4, cwr : 1, ece : 1, urg : 1, ack : 1, psh : 1, rst : 1, syn : 1, fin : 1;
 #else
