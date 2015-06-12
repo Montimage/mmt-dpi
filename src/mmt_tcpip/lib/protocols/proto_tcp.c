@@ -96,18 +96,16 @@ void ntoh_send_tcp_segment ( ipacket_t *ipacket, unsigned index)
     {
         case NTOH_OK:
             // printf("TEST: ret=NTOH_OK after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
-            return;
+        return;
 
         case NTOH_SYNCHRONIZING:
             // printf("TEST: ret=NTOH_SYNCHRONIZING after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
-            ipacket->extra.status=MMT_CONTINUE;
-            return;
+        return;
 
         default:
             // printf("TEST: ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
             fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
-            ipacket->extra.status=MMT_CONTINUE;
-            return;
+        return;
     }
 }
 
