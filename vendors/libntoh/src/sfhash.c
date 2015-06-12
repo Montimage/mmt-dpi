@@ -7,7 +7,7 @@
  * of bytes.  No alignment or length assumptions are made about
  * the input key.
  */
-_HIDDEN unsigned int sfhash(const void * key, unsigned int len, unsigned int initval)
+unsigned int sfhash(const void * key, unsigned int len, unsigned int initval)
 {
 	const char * data = key;
 	unsigned int hash = len + initval, tmp;
@@ -58,7 +58,7 @@ _HIDDEN unsigned int sfhash(const void * key, unsigned int len, unsigned int ini
 
 /* Special versions for hashing exactly 3 words.
  */
-_HIDDEN unsigned int sfhash_3words(unsigned int a, unsigned int b, unsigned int c, unsigned int initval)
+unsigned int sfhash_3words(unsigned int a, unsigned int b, unsigned int c, unsigned int initval)
 {
 	unsigned int aux[3] = {a,b,c};
 
