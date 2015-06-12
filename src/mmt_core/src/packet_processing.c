@@ -1158,9 +1158,9 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
 
     //Remove the handler from the registered handlers in the global context
     delete_key_value(mmt_configured_handlers_map, mmt_handler);
-    // if(mmt_handler->clean_up_fct!=NULL){
-    //     mmt_handler->clean_up_fct();
-    // }
+    if(mmt_handler->cleanup_function){
+        mmt_handler->cleanup_function();
+    }
     mmt_free(mmt_handler);
 }
 
@@ -2635,6 +2635,15 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
     return target;
 } 
 
+void copy_ipacket_header(ipacket_t *ipacket,struct pkthdr *header){
+    ipacket->p_hdr = &ipacket->internal_p_hdr;
+    ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
+    ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
+    ipacket->p_hdr->caplen = header->caplen;
+    ipacket->p_hdr->len = header->len;
+    ipacket->p_hdr->user_args = header->user_args;
+}
+
 ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
     ipacket_t *ipacket;
     ipacket = mmt_malloc(sizeof(ipacket_t));
@@ -2645,14 +2654,7 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
     ipacket->proto_hierarchy =&ipacket->internal_proto_hierarchy;
     ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
     ipacket->proto_classif_status = &ipacket->internal_proto_classif_status;
-    // Move this copying to function
-    ipacket->p_hdr = &ipacket->internal_p_hdr;
-    ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
-    ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
-    ipacket->p_hdr->caplen = header->caplen;
-    ipacket->p_hdr->len = header->len;
-    ipacket->p_hdr->user_args = header->user_args;
-    // End of function
+    copy_ipacket_header(ipacket,header);
     ipacket->proto_hierarchy->len = 0;
     ipacket->proto_headers_offset->len = 0;
     ipacket->proto_classif_status->len = 0;
@@ -2697,7 +2699,6 @@ int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     unsigned index = 0;
 
     ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
-
     proto_packet_process(ipacket, NULL, index);
 
     return 1;

@@ -31,7 +31,7 @@ typedef struct protocol_struct                  protocol_t;
 typedef struct ipacket_struct                   ipacket_t;
 typedef struct proto_statistics_struct          proto_statistics_t;
 typedef struct extra_struct                     extra_t;
-typedef int (*next_process_function) (const ipacket_t * ipacket,proto_statistics_t * parent_stats,int index);
+typedef int (*next_process_function) (ipacket_t * ipacket,proto_statistics_t * parent_stats,int index);
 
 typedef struct extra_struct{
     proto_statistics_t * parent_stats;
