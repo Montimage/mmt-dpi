@@ -2997,6 +2997,12 @@ int mmt_stats_sprintf(char * buff, int len, attribute_internal_t * attr) {
     return snprintf(buff, len, "%s", "TODO");
 }
 
+int mmt_header_line_pointer_sprintf(char * buff, int len, attribute_internal_t * attr) {
+    mmt_header_line_t * data = (mmt_header_line_t *) attr->data;
+    int copy_len = (len > (data->len + 1) )? data->len + 1 : len;
+    return snprintf(buff, copy_len, "%s", (char *) data->ptr);
+}
+
 int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
     switch(attr->data_type) {
@@ -3032,6 +3038,8 @@ int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
             return mmt_string_sprintf(buff, len, attr);
         case MMT_STRING_DATA_POINTER:
             return mmt_string_pointer_sprintf(buff, len, attr);
+        case MMT_HEADER_LINE:
+            return mmt_header_line_pointer_sprintf(buff, len, attr);
         case MMT_STATS:
             return mmt_stats_sprintf(buff, len, attr);
         default:
@@ -3112,6 +3120,14 @@ int mmt_string_pointer_fprintf(FILE * f, attribute_internal_t * attr){
     return fprintf(f, "%s", (char *) attr->data);
 }
 
+int mmt_header_line_pointer_fprintf(FILE * f, attribute_internal_t * attr){
+    char buff[8096 + 1]; //Max accepted header line length is 8K (default for Apache)
+    if (mmt_header_line_pointer_sprintf(buff, 8096, attr)) {
+        return fprintf(f, "%s", buff);
+    }
+    return -1;
+}
+
 int mmt_stats_fprintf(FILE *f, attribute_internal_t * attr) {
     return fprintf(f, "%s", "TODO");
 }
@@ -3151,6 +3167,8 @@ int mmt_attr_fprintf(FILE * f, attribute_t * a) {
             return mmt_string_fprintf(f, attr);
         case MMT_STRING_DATA_POINTER:
             return mmt_string_pointer_fprintf(f, attr);
+        case MMT_HEADER_LINE:
+            return mmt_header_line_pointer_fprintf(f, attr);
         case MMT_STATS:
             return mmt_stats_fprintf(f, attr);
         default:
@@ -3245,6 +3263,15 @@ int mmt_string_pointer_format(FILE * f, attribute_internal_t * attr){
                 get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (char *) attr->data);
 }
 
+int mmt_header_line_pointer_format(FILE * f, attribute_internal_t * attr){
+    char buff[8096 + 1]; //Max accepted header line length is 8K (default for Apache)
+    if (mmt_header_line_pointer_sprintf(buff, 8096, attr)) {
+        return fprintf(f, "Attribute %s.%s = %s\n",
+                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+    }
+    return -1;
+}
+
 int mmt_stats_format(FILE *f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s = %s\n",
                 get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), "TODO");
@@ -3285,6 +3312,8 @@ int mmt_attr_format(FILE * f, attribute_t * a) {
             return mmt_string_format(f, attr);
         case MMT_STRING_DATA_POINTER:
             return mmt_string_pointer_format(f, attr);
+        case MMT_HEADER_LINE:
+            return mmt_header_line_pointer_format(f, attr);
         case MMT_STATS:
             return mmt_stats_format(f, attr);
         default:
