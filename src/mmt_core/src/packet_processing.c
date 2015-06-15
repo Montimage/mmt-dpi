@@ -2415,7 +2415,7 @@ void reset_proto_stats(protocol_instance_t * proto) {
     }
 }
 
-proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset, int new_session) {
+proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset) {
     if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
         return NULL;
     }
@@ -2428,6 +2428,19 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
         proto_stats->data_volume += ipacket->p_hdr->len;
         proto_stats->payload_volume += ipacket->p_hdr->len - proto_offset;
         proto_stats->packets_count += 1;
+    }
+    return proto_stats;
+}
+
+proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session) {
+    if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
+        return NULL;
+    }
+
+    /* TODO: Throughout metrics should be replaced by periodic handlers! */
+    proto_statistics_internal_t * proto_stats = get_protocol_stats_from_parent(configured_protocol, parent_stats);
+
+    if (proto_stats) {
         if (new_session) {
             proto_stats->sessions_count += 1;
         }
@@ -2547,6 +2560,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
 
     int target = MMT_CONTINUE;
+    int is_new_session = 0;
     int proto_offset = get_packet_offset_at_index(ipacket, index);
 
     //Make sure this protocol has data to analyse
@@ -2555,14 +2569,15 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         return target;
     }
 
+    //Update the protocol statistics
+    parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
+
     //The protocol is registered: First we check if it requires to maintain a session
-    int is_new_session = proto_session_management(ipacket, configured_protocol, index);
+    is_new_session = proto_session_management(ipacket, configured_protocol, index);
     if (is_new_session == NEW_SESSION) {
+        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
     }
-
-    //Update the protocol statistics
-    parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset, is_new_session);
 
     //Analyze packet data
     target = proto_packet_analyze(ipacket, configured_protocol, index);
