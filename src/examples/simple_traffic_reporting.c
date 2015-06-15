@@ -6,7 +6,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap 
+ * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap -pthread
  *   
  * 
  * Also need to copy TCPIP plugin to plugins folder:
@@ -23,7 +23,7 @@
  * 
  * You can see the example result in file: simple_traffic_reporting.txt
  * Debug with Valgrind:
- * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all --num-callers ./simple_traffic_reporting tcp_plugin_image.pcap 2> simple_valgrind.txt
+ * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./simple_traffic_reporting tcp_plugin_image.pcap 2> simple_valgrind.txt
  * That is it!
  * 
  */
