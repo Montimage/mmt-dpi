@@ -648,7 +648,7 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
 
 //////////////// SSL attributes
 static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
-    {SSL_SERVER_NAME, SSL_SERVER_NAME_ALIAS, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ssl_server_name_extraction},
+    {SSL_SERVER_NAME, SSL_SERVER_NAME_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ssl_server_name_extraction},
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
