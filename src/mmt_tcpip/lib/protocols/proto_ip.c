@@ -1098,6 +1098,10 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
         return NULL;
     }
 
+    // re-point to the reassempled IP header if reassembly took place
+    // points to the same pointer if no fragmentation
+    ip_hdr = (struct iphdr *) & ipacket->data[offset];
+
     // Get the session of this packet and set it to the packet's session
     packet_direction = build_ipv4_session_key((u_char *) ip_hdr, &ipv4_session_key);
 
