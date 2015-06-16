@@ -2568,6 +2568,7 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  * @param ipacket Packet to process
  */
 void process_packet_handler(ipacket_t *ipacket){
+    debug("process_packet_handler of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,ipacket->extra.index);
     packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;            
     while (temp_packet_handler != NULL) {
         temp_packet_handler->function(ipacket, temp_packet_handler->args);
@@ -2593,6 +2594,7 @@ void process_packet_handler(ipacket_t *ipacket){
 }
 
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats, unsigned index) {
+    debug("proto_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     int target = MMT_CONTINUE;
@@ -2607,7 +2609,6 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
 
     //Update the protocol statistics
     parent_stats = (proto_statistics_t*)update_proto_stats_on_packet(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, proto_offset);
-
     //The protocol is registered: First we check if it requires to maintain a session
     is_new_session = proto_session_management(ipacket, configured_protocol, index);
     if (is_new_session == NEW_SESSION) {
@@ -2616,7 +2617,6 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
     }
     //Analyze packet data
     target = proto_packet_analyze(ipacket, configured_protocol, index);
-
     //Proceed with the extraction and the handlers notification for this protocol
     //if the target action is CONTINUE or SKIP (skip means continue with this proto but no further)
     if (target != MMT_DROP) {
@@ -2626,7 +2626,6 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
         //process attribute handlers
         proto_process_attribute_handlers(ipacket, index);
     }
-
     //Update next
     ipacket->extra.parent_stats = parent_stats;
     ipacket->extra.index = index+1;
