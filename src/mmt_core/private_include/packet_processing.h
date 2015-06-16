@@ -337,8 +337,6 @@ struct protocol_instance_struct {
     void * args; /**< For internal use. MUST not be changed. */
 };
 
-typedef void (*void_function)();
-
 struct mmt_handler_struct {
     protocol_stack_t * link_layer_stack;
     protocol_instance_t configured_protocols[PROTO_MAX_IDENTIFIER];
@@ -358,10 +356,7 @@ struct mmt_handler_struct {
     uint32_t last_expiry_timeout;
     uint32_t attr_extraction_strategy;
     uint32_t stats_reporting_status;
-    void_function cleanup_function;
     mmt_hashmap_t *ip_streams;
-
-    void_function clean_up_fct;
 };
 
 
