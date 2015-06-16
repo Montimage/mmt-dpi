@@ -16,6 +16,7 @@ extern "C" {
 #include "mmt_exports.h"
 #include "plugin_defs.h"
 #include "proto_meta.h"
+#include "dbg.h"
 
 //TODO: should be moved outside MMT. These definitions belong to the protocols/protocol stacks!
 #ifndef DLT_EN10MB
