@@ -1161,9 +1161,6 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
 
     //Remove the handler from the registered handlers in the global context
     delete_key_value(mmt_configured_handlers_map, mmt_handler);
-    if(mmt_handler->cleanup_function){
-        mmt_handler->cleanup_function();
-    }
     mmt_free(mmt_handler);
 }
 

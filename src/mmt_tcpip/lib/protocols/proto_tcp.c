@@ -13,7 +13,7 @@ pntoh_tcp_session_t     tcp_session;
 
 void process_ipacket_next_process(ipacket_t* ipacket)
 {
-    // printf("TEST: process_ipacket_next_process of packet %"PRIu64" is called at index:%d\n",ipacket->packet_id,ipacket->extra.index);
+    debug("process_ipacket_next_process of packet %"PRIu64" is called at index:%d\n",ipacket->packet_id,ipacket->extra.index);
     ipacket->extra.status=MMT_CONTINUE;
     ipacket->extra.next_process(ipacket,ipacket->extra.parent_stats,ipacket->extra.index);
 }
@@ -30,14 +30,9 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
 /**
  * @brief Send a TCP segment to libntoh
  */
-void ntoh_send_tcp_segment ( ipacket_t *ipacket, unsigned index)
+void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
  {
-    mmt_handler_t *mmt = ipacket->mmt_handler;
-    if(mmt->cleanup_function==NULL){
-        printf("MYLOG: Set cleanup function for mmt_handler\n");
-        mmt->cleanup_function = ntoh_tcp_exit;
-    }
-
+    debug("ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     int l3_offset = get_packet_offset_at_index(ipacket,index-1);
     packet->iph = (struct iphdr*)&ipacket->data[l3_offset];
@@ -95,16 +90,16 @@ void ntoh_send_tcp_segment ( ipacket_t *ipacket, unsigned index)
     switch (ret)
     {
         case NTOH_OK:
-            // printf("TEST: ret=NTOH_OK after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
+            debug("ret=NTOH_OK after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
             return;
 
         case NTOH_SYNCHRONIZING:
-            // printf("TEST: ret=NTOH_SYNCHRONIZING after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
+            debug("ret=NTOH_SYNCHRONIZING after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
             ipacket->extra.status=MMT_CONTINUE;
             return;
 
         default:
-            // printf("TEST: ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
+            debug("ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
             fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
             ipacket->extra.status=MMT_CONTINUE;
             return;
@@ -364,7 +359,9 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     }
     // INJECT LIBNOTH PROCESS //
     ipacket->extra.status=MMT_SKIP;
-    ntoh_send_tcp_segment(ipacket,index);
+    debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    ntoh_packet_process(ipacket,index);
+    debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     // END OF INJECTING LIBNTOH PROCESS
     return 1;
 }
@@ -418,10 +415,10 @@ int init_proto_tcp_struct() {
     // INITIALIZE LIBNTOH
 
     unsigned int libntoh_error = 0;
-    printf("MYLOG: libntoh version: %s\n",ntoh_version());
+    debug("libntoh version: %s\n",ntoh_version());
     
     ntoh_tcp_init();
-    printf("MYLOG: Creates a new TCP session\n");
+    debug("Creates a new TCP session\n");
     
     /* Creates a new TCP session  */
     tcp_session=ntoh_tcp_new_session(0,0,&libntoh_error);
@@ -430,8 +427,8 @@ int init_proto_tcp_struct() {
         printf("\n[e] Error %d creating the TCP session: %s",libntoh_error,ntoh_get_errdesc(libntoh_error));
         ntoh_tcp_exit();
     }else{
-        printf("MYLOG: Now you can using libntoh in mmt\n");
-        printf("MYLOG: Max TCP streams allowd: %d\n", ntoh_tcp_get_size(tcp_session));
+        debug("Now you can using libntoh in mmt\n");
+        debug("Max TCP streams allowd: %d\n", ntoh_tcp_get_size(tcp_session));
     }
 
     // END OF INITIALIZING LIBNTOH
