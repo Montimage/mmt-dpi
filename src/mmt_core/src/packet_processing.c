@@ -1142,6 +1142,15 @@ void free_handler_protocols_statistics(mmt_handler_t *mmt_handler) {
 }
 
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
+    if(mmt_handler->ready_to_close_fct){
+        debug("Check ready_to_close_fct for mmt_handler!");
+        int ready;
+        ready= mmt_handler->ready_to_close_fct();
+        while(ready==0){
+            ready= mmt_handler->ready_to_close_fct();
+            debug("mmt_handler is not ready to close!\n");
+        }
+    }
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
     // Clear timeout milestones
@@ -1557,14 +1566,15 @@ void mmt_close_handler_internal(mmt_handler_t *mmt_handler, void * args) {
 }
 
 void close_extraction() {
-    // Iterate over the registered protocol stacks
-    iterate_through_protocol_stacks(protocol_stack_callback_fct, NULL);
-    // Clear the protocol stacks map
-    clear_protocol_stack_map();
+    debug("CLOSE EXTRACTION!!!!!");
     //Iterate over the registered handlers
     iterate_through_mmt_handlers(mmt_close_handler_internal, NULL);
     //Delete the handlers map
     delete_map_space(mmt_configured_handlers_map);
+    // Iterate over the registered protocol stacks
+    iterate_through_protocol_stacks(protocol_stack_callback_fct, NULL);
+    // Clear the protocol stacks map
+    clear_protocol_stack_map();
     // Free the protocol structs
     free_registered_protocols();
     // unload plugins

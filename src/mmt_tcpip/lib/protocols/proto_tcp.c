@@ -11,6 +11,27 @@
 
 pntoh_tcp_session_t     tcp_session;
 
+
+// pntoh_tcp_session_t get_tcp_session(ipacket_t *ipacket, unsigned index){
+//     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+//             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+//     uint32_t proto_id = ipacket->proto_hierarchy->proto_path[index];
+//     return (pntoh_tcp_session_t)configured_protocol[proto_id].args;
+// }
+
+int ready_to_close(){
+    debug("Check if mmt_handler ready to close");
+    int tcps;
+    if(tcp_session){
+        if((tcps = ntoh_tcp_count_streams(tcp_session))>0){
+            debug("There are curently %d stored TCP streams\n", tcps);
+            ntoh_tcp_exit();
+            return 1;
+        }
+    }        
+    return 1;
+}
+
 void process_ipacket_next_process(ipacket_t* ipacket)
 {
     debug("process_ipacket_next_process of packet %"PRIu64" is called at index:%d\n",ipacket->packet_id,ipacket->extra.index);
@@ -32,7 +53,17 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
  */
 void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
  {
+    // pntoh_tcp_session_t tcp_session;
+    // tcp_session = get_tcp_session(ipacket,index);
+    
+    mmt_handler_t *mmt_handler = ipacket->mmt_handler;
+    if(mmt_handler->ready_to_close_fct==NULL){
+        debug("Set ready_to_close_fct for mmt_handler!");
+        mmt_handler->ready_to_close_fct = (generic_ready_to_close_fct)ready_to_close;
+    }
+
     debug("ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    debug("Number of stored streams: %d\n",ntoh_tcp_count_streams(tcp_session));
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     int l3_offset = get_packet_offset_at_index(ipacket,index-1);
     packet->iph = (struct iphdr*)&ipacket->data[l3_offset];
@@ -408,18 +439,37 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     }
     return new_retval;
 }
+
+void tcp_context_cleanup(void * proto_context, void * args) {
+    ntoh_tcp_free_session((pntoh_tcp_session_t)((protocol_instance_t *) proto_context)->args);
+}
+
+void * setup_tcp_context(void * proto_context, void * args) {
+    unsigned int libntoh_error = 0;
+    debug("Creates a new TCP session\n");
+        // if(!tcp_session){
+    //     printf("\n[e] Error %d creating the TCP session: %s",libntoh_error,ntoh_get_errdesc(libntoh_error));
+    //     ntoh_tcp_exit();
+    // }else{
+    //     debug("Now you can using libntoh in mmt\n");
+    //     debug("Max TCP streams allowd: %d\n", ntoh_tcp_get_size(tcp_session));
+    // }
+    return (void *) ntoh_tcp_new_session(0,0,&libntoh_error);
+}
+
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_tcp_struct() {
 
     // INITIALIZE LIBNTOH
 
-    unsigned int libntoh_error = 0;
+    ntoh_tcp_init();
+
     debug("libntoh version: %s\n",ntoh_version());
     
-    ntoh_tcp_init();
+    unsigned int libntoh_error = 0;
     debug("Creates a new TCP session\n");
-    
+
     /* Creates a new TCP session  */
     tcp_session=ntoh_tcp_new_session(0,0,&libntoh_error);
 
@@ -443,9 +493,21 @@ int init_proto_tcp_struct() {
         }
 
         register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
+        // register_proto_context_init_cleanup_function(protocol_struct, setup_tcp_context, tcp_context_cleanup, NULL);
         return register_protocol(protocol_struct, PROTO_TCP);
     } else {
         return 0;
     }
 }
 
+int cleanup_proto_tcp_struct(){
+    debug("Cleanup tcp protocol");
+    // int tcps;
+    // if((tcps = ntoh_tcp_count_streams(tcp_session))>0){
+    //     printf("There are curently %d stored TCP streams\n", tcps);
+    // }
+    // if(tcp_session){
+    //     ntoh_tcp_exit();
+    // }
+    return 1;
+}
