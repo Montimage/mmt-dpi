@@ -1142,15 +1142,6 @@ void free_handler_protocols_statistics(mmt_handler_t *mmt_handler) {
 }
 
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
-    if(mmt_handler->ready_to_close_fct){
-        debug("Check ready_to_close_fct for mmt_handler!");
-        int ready;
-        ready= mmt_handler->ready_to_close_fct();
-        while(ready==0){
-            ready= mmt_handler->ready_to_close_fct();
-            debug("mmt_handler is not ready to close!\n");
-        }
-    }
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
     // Clear timeout milestones
@@ -1579,7 +1570,7 @@ void close_extraction() {
     free_registered_protocols();
     // unload plugins
     close_plugins();
-
+    
 #ifdef DEBUG
     mmt_meminfo_t m;
     mmt_meminfo(&m);

@@ -16,6 +16,7 @@ int cleanup_tcpip_plugin(){
     if(!cleanup_proto_tcp_struct()){
         fprintf(stderr, "No cleanup function for protocol proto_tcp\n");
     }
+    return 1;
 }
 
 int init_tcpip_plugin() {
