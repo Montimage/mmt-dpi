@@ -20,6 +20,7 @@ extern "C" {
 
 #define PLUGINS_REPOSITORY "plugins"
 #define PLUGIN_INIT_FUNCTION_NAME "init_proto"
+#define PLUGIN_CLEANUP_FUNCTION_NAME "cleanup_proto"
 
     struct plugin_handler_struct {
 #ifdef _WIN32

@@ -109,7 +109,7 @@ int load_plugin(char * plugin_path_name) {
     }
     dlerror(); /* Clear any existing error */
     init_proto_fct = dlsym(plugin_handler->handler, PLUGIN_INIT_FUNCTION_NAME);
-
+    
     if ((error = dlerror()) != NULL) {
         fprintf(stderr, "%s\n", error);
         dlclose(plugin_handler->handler);
@@ -127,9 +127,24 @@ void close_plugins() {
     struct plugin_handler_struct * temp_plugin = plugin_handlers_list;
     while (temp_plugin != NULL) {
         struct plugin_handler_struct * temp_plugin_to_free = temp_plugin;
+        generic_cleanup_proto cleanup_proto_fct;
 #ifdef _WIN32
+        FARPROC cleaner = GetProcAddress(temp_plugin->handler,PLUGIN_CLEANUP_FUNCTION_NAME);
+        if (cleaner == NULL) {
+            debug("Cannot load function clean up when extracting plugin content. Function %s was not found\n", PLUGIN_CLEANUP_FUNCTION_NAME);
+        }else{
+            cleanup_proto_fct = (generic_cleanup_proto)cleaner;
+        }
+        cleanup_proto_fct();
         FreeLibrary(temp_plugin->handler);
 #else
+        char *error;
+        cleanup_proto_fct = dlsym(temp_plugin->handler,PLUGIN_CLEANUP_FUNCTION_NAME);
+        if((error=dlerror())==NULL){
+            cleanup_proto_fct();
+        }else{
+            debug("Cannot load function clean up when extracting plugin content. Function %s was not found\n", PLUGIN_CLEANUP_FUNCTION_NAME);
+        }
         dlclose(temp_plugin->handler);
 #endif
         temp_plugin = temp_plugin->next;

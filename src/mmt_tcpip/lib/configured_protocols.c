@@ -8,6 +8,16 @@ int init_proto() {
     return init_tcpip_plugin();
 }
 
+int cleanup_proto(){
+    return cleanup_tcpip_plugin();
+}
+
+int cleanup_tcpip_plugin(){
+    if(!cleanup_proto_tcp_struct()){
+        fprintf(stderr, "No cleanup function for protocol proto_tcp\n");
+    }
+}
+
 int init_tcpip_plugin() {
     int retval = 1;
 

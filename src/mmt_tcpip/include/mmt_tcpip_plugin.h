@@ -17,6 +17,9 @@ extern "C" {
 int init_proto();
 MMTAPI int init_tcpip_plugin();
 
+int cleanup_proto();
+MMTAPI int cleanup_tcpip_plugin();
+
 #ifdef __cplusplus
 }
 #endif
