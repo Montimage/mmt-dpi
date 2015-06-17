@@ -22,6 +22,8 @@
  * -> Extract from a pcap file
  * $ ./extract_all -t tcp_plugin_image.pcap > exta_output.txt
  * 
+ * -> Test with valgrind tool:
+ * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./extract_all -t tcp_plugin_image.pcap 2> valgrind_test_.txt
  * You can see the example result in file: exta_output.txt
  * 
  * -> Extract from live streaming
@@ -107,6 +109,7 @@ void write_data_ipacket(const ipacket_t *ipacket){
         }
         write(fd,payload,size_payload);
         close(fd);
+        free(filename);
         return;
     }
     
@@ -225,8 +228,8 @@ void protocols_stats_iterator(uint32_t proto_id, void * args) {
 }
 
 void packet_handler(const ipacket_t * ipacket, void * args) {
-    printf("TEST: packet_handler of %"PRIu64" index: %d\n",ipacket->packet_id,ipacket->extra.index);
-    write_data_ipacket(ipacket);
+    debug("packet_handler of %"PRIu64" index: %d\n",ipacket->packet_id,ipacket->extra.index);
+    // write_data_ipacket(ipacket);
     static time_t last_report_time = 0;
     if (last_report_time == 0) {
         last_report_time = ipacket->p_hdr->ts.tv_sec;
@@ -283,7 +286,7 @@ int main(int argc, char** argv) {
     register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler /* built in packet handler that will print all of the attributes */, &quiet);
 
     //Register a packet handler to periodically report protocol statistics
-    register_packet_handler(mmt_handler, 2, packet_handler /* built in packet handler that will print all of the attributes */, mmt_handler);
+    // register_packet_handler(mmt_handler, 2, packet_handler /* built in packet handler that will print all of the attributes */, mmt_handler);
 
     if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace
