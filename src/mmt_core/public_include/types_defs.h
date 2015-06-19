@@ -129,6 +129,12 @@ typedef struct mmt_header_line_struct {
     uint16_t len;
 }mmt_header_line_t;
 
+/** Defines a generic header line data type */
+typedef struct mmt_generic_header_line_struct {
+    const char * hfield; /**< Header field */
+    const char * hvalue; /**< Header value */
+}mmt_generic_header_line_t;
+
 /** Defines the different data types that can be used */
 enum data_types {
     MMT_UNDEFINED_TYPE, /**< no type constant value */
@@ -161,6 +167,7 @@ enum data_types {
     MMT_STRING_DATA, /**< text string data constant value. Len plus data. Data is expected to be '\0' terminated and maximum BINARY_64DATA_LEN long */
     MMT_STRING_LONG_DATA, /**< text string data constant value. Len plus data. Data is expected to be '\0' terminated and maximum STRING_DATA_LEN long */
     MMT_HEADER_LINE, /**< string pointer value with a variable size. The string is not necessary null terminating */
+    MMT_GENERIC_HEADER_LINE, /**< structure representing an RFC2822 header line with null terminating field and value elements. */
     MMT_STRING_DATA_POINTER, /**< pointer constant value (size is void *). The data pointed to is of type string with null terminating character included */
 };
 

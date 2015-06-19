@@ -73,10 +73,10 @@ enum {
    HTTP_VERSION = HTTP_HEADERS_NB + 1,
    HTTP_TYPE,
    HTTP_METHOD,
-   HTTP_RESPONSE,
+   HTTP_Response,
    HTTP_URI,
    HTTP_Referer_URL,
-   HTTP_RESPONSE_TIME,
+   HTTP_Response_TIME,
    HTTP_Time_of_Request,
    HTTP_Time_of_response,
 };
@@ -87,20 +87,20 @@ enum {
 #define HTTP_VERSION_LABEL "VERSION"
 #define HTTP_TYPE_LABEL "TYPE"
 #define HTTP_METHOD_LABEL "METHOD"
-#define HTTP_RESPONSE_LABEL "RESPONSE"
+#define HTTP_Response_LABEL "RESPONSE"
 #define HTTP_URI_LABEL "URI"
 #define HTTP_Referer_URL_LABEL "REFERER_URI"
-#define HTTP_RESPONSE_TIME_LABEL "RESPONSE_TIME"
+#define HTTP_Response_TIME_LABEL "RESPONSE_TIME"
 #define HTTP_REQ_TIME_LABEL "REQ_TIME"
 #define HTTP_RESP_TIME_LABEL "RESP_TIME"
 
 #define HTTP_VERSION_SHORT_LABEL "version"
 #define HTTP_TYPE_SHORT_LABEL "type"
 #define HTTP_METHOD_SHORT_LABEL "method"
-#define HTTP_RESPONSE_SHORT_LABEL "response"
+#define HTTP_Response_SHORT_LABEL "response"
 #define HTTP_URI_SHORT_LABEL "uri"
 #define HTTP_Referer_URL_SHORT_LABEL "ref_uri"
-#define HTTP_RESPONSE_TIME_SHORT_LABEL "response_time"
+#define HTTP_Response_TIME_SHORT_LABEL "response_time"
 #define HTTP_REQ_TIME_SHORT_LABEL "time_of_request"
 #define HTTP_RESP_TIME_SHORT_LABEL "time_of_response"
 
