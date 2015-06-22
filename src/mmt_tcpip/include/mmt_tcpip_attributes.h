@@ -167,7 +167,14 @@ extern "C" {
         RFC2822_CONTENT_LEN,
         RFC2822_SERVER,
         RFC2822_XCDN_SEEN,
+        HTTP_MESSAGE_START, // Beginning of an HTTP message
+        HTTP_HEADER, // Generic HTTP header
+        HTTP_HEADERS_END, // End of an HTTP message headers
+        HTTP_DATA, // HTTP data chunk
+        HTTP_MESSAGE_END, // End of an HTTP message
     };
+
+#define RFC2822_ATTRIBUTES_NB HTTP_MESSAGE_END
 
 #define RFC2822_HOST_ALIAS "host"
 #define RFC2822_METHOD_ALIAS "method"
@@ -179,6 +186,11 @@ extern "C" {
 #define RFC2822_CONTENT_LEN_ALIAS "content_len"
 #define RFC2822_SERVER_ALIAS "server"
 #define RFC2822_XCDN_SEEN_ALIAS "xcdn_seen"
+#define HTTP_MESSAGE_START_ALIAS "msg_start"
+#define HTTP_HEADER_ALIAS "header"
+#define HTTP_HEADERS_END_ALIAS "headers_end"
+#define HTTP_DATA_ALIAS "data"
+#define HTTP_MESSAGE_END_ALIAS "msg_end"
 
     enum arp_attributes {
         ARP_AR_HRD = 1,

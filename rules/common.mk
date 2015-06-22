@@ -14,8 +14,11 @@ ifndef VERBOSE
 endif
 
 ifdef DEBUG
-CFLAGS   += -g -DDEBUG
-CXXFLAGS += -g -DDEBUG
+CFLAGS   += -g -DDEBUG -DHTTP_PARSER_STRICT=1
+CXXFLAGS += -g -DDEBUG -DHTTP_PARSER_STRICT=1
+else
+CFLAGS   += -DHTTP_PARSER_STRICT=0
+CXXFLAGS += -DHTTP_PARSER_STRICT=0
 endif
 
 .PHONY: libraries includes tools documentation examples
