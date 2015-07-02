@@ -2633,7 +2633,10 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
     if (target == MMT_CONTINUE) {
         /* Try to classify the encapsulated data */
+	uint64_t packet_id = ipacket->packet_id;
         proto_packet_classify_next(ipacket, configured_protocol, index);
+	if(packet_id==ipacket->packet_id){
+        // Need to check if the ipacket is still exist
 	// send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
         if (ipacket->proto_hierarchy->len > (index + 1)) {
             if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
@@ -2646,7 +2649,8 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
             }
         }
         process_packet_handler(ipacket);
-    }
+	}    
+	}
     return target;
 } 
 
