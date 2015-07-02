@@ -27,11 +27,31 @@ void process_ipacket_next_process(ipacket_t* ipacket)
 
 void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pntoh_tcp_peer_t dest , pntoh_tcp_segment_t seg , int reason , int extra )
 {
-    if(seg){
-        if(seg->user_data){
-            process_ipacket_next_process((ipacket_t *)seg->user_data);
-        }
-    }
+    debug("ntoh_tcp_callback");
+    switch(reason){
+		case NTOH_REASON_SYNC:
+			switch(extra){
+				case NTOH_REASON_MAX_SYN_RETRIES_REACHED:
+				case NTOH_REASON_MAX_SYNACK_RETRIES_REACHED:
+				case NTOH_REASON_HSFAILED:
+				case NTOH_REASON_EXIT:
+				case NTOH_REASON_TIMEDOUT:
+				case NTOH_REASON_CLOSED:
+					if(extra == NTOH_REASON_CLOSED){
+						debug("connection closed by %s (%s)",stream->closedby == NTOH_CLOSEDBY_CLIENT?"Client":"Server",inet_ntoa(*(struct in_addr*)&(stream->client.addr)));
+					}else{
+						debug("%s/%s - %s",ntoh_get_reason(reason),ntoh_get_reason(extra),ntoh_tcp_get_status(stream->status));	
+					}
+					break;
+			}
+			break;
+		case NTOH_REASON_DATA:
+			debug("Segment payload len: %i",seg->payload_len);
+			if(seg->user_data){
+            			process_ipacket_next_process((ipacket_t *)seg->user_data);
+			}
+			break;
+	}	
 }
 
 /**
