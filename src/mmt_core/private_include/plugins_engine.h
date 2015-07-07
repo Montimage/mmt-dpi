@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 #define PLUGINS_REPOSITORY "plugins"
+#define PLUGINS_REPOSITORY_OPT "/opt/mmt/plugins"
 #define PLUGIN_INIT_FUNCTION_NAME "init_proto"
 #define PLUGIN_CLEANUP_FUNCTION_NAME "cleanup_proto"
 

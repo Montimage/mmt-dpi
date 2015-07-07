@@ -20,12 +20,20 @@ sdk: libraries includes tools documentation examples
 #  I N S T A L L
 #  - - - - - - -
 
-install: sdk $(PREFIX)
+install: sdk $(PREFIX) 
 	$(CP) $(SDKLIB) $(PREFIX)
 	$(CP) $(SDKBIN) $(PREFIX)
 	$(CP) $(SDKINC) $(PREFIX)
 	$(CP) $(SDKDOC) $(PREFIX)
 	$(CP) $(SDKXAM) $(PREFIX)
+	if ! grep -Fxq "$(PREFIX)/lib" /etc/ld.so.conf;then \
+		echo "$(PREFIX)/lib" >> /etc/ld.so.conf; \
+	fi
+	if ! grep -Fxq "/usr/local/lib" /etc/ld.so.conf;then \
+		echo "/usr/local/lib" >> /etc/ld.so.conf; \
+	fi 	
+	mkdir -p "/opt/mmt/plugins"
+	$(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(PREFIX)/plugins/libmmt_tcpip.so
 
 #  - - - - -
 #  C L E A N
