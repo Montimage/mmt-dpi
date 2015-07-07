@@ -28,9 +28,11 @@ install: sdk $(PREFIX)
 	$(CP) $(SDKXAM) $(PREFIX)
 	if ! grep -Fxq "$(PREFIX)/lib" /etc/ld.so.conf;then \
 		echo "$(PREFIX)/lib" >> /etc/ld.so.conf; \
+		ldconfig; \
 	fi
 	if ! grep -Fxq "/usr/local/lib" /etc/ld.so.conf;then \
 		echo "/usr/local/lib" >> /etc/ld.so.conf; \
+		ldconfig;\
 	fi 	
 	mkdir -p "/opt/mmt/plugins"
 	$(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(PREFIX)/plugins/libmmt_tcpip.so
