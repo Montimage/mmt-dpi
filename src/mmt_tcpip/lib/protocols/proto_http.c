@@ -192,8 +192,9 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
       if (parser->upgrade) {
         // handle new protocol 
       } else if (nparsed != packet->payload_packet_len) {
-        // Handle error. Usually just close the connection. 
-        fprintf(stdout, "Error while parsing this ghul -Error %s - ya mama\n", http_errno_description(HTTP_PARSER_ERRNO(parser)));
+        // Handle error. Usually just close the connection.
+        //TODO: LN uncomment the next line please :p
+        //debug(stdout, "Error while parsing this HTTP message -Error %s\n", http_errno_description(HTTP_PARSER_ERRNO(parser)));
         ipacket->session->session_data[index] = close_http_parser(ipacket->session->session_data[index]);
       }
     }
