@@ -47,21 +47,27 @@ int load_plugins() {
 
     struct dirent **entries;
     struct dirent *entry;
-
+    int plugins_path=0;
     int n = scandir( PLUGINS_REPOSITORY, &entries, load_filter, alphasort );
     if( n < 0 ) {
         /* can't read PLUGINS_REPOSITORY -> just ignore and return success
          * (the directory may not exist or may be inaccessible, that's ok)
          * note: no entries were allocated at this point, no need for free().
          */
-        return 1;
+	plugins_path=1;
+        n = scandir( PLUGINS_REPOSITORY_OPT, &entries, load_filter, alphasort );
+	if (n<0){
+		printf("You don't have any plugin");
+	        return 1;
+	}
     }
 
     int i;
     for( i = 0 ; i < n ; ++i ) {
         entry = entries[i];
-        (void)snprintf( path, 256, "%s/%s", PLUGINS_REPOSITORY, entry->d_name );
-        (void)load_plugin( path );
+        (void)snprintf( path, 256, "%s/%s",plugins_path==0?PLUGINS_REPOSITORY:PLUGINS_REPOSITORY_OPT,entry->d_name );
+        printf("Loading plugins from: %s",path);
+	(void)load_plugin( path );
         free( entry );
     }
 
