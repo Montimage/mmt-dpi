@@ -283,10 +283,10 @@ int main(int argc, char** argv) {
     iterate_through_protocols(protocols_iterator, mmt_handler);
 
     //Register a packet handler, it will be called for every processed packet
-    register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler /* built in packet handler that will print all of the attributes */, &quiet);
+    //register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler /* built in packet handler that will print all of the attributes */, &quiet);
 
     //Register a packet handler to periodically report protocol statistics
-    // register_packet_handler(mmt_handler, 2, packet_handler /* built in packet handler that will print all of the attributes */, mmt_handler);
+    register_packet_handler(mmt_handler, 1, packet_handler /* built in packet handler that will print all of the attributes */, mmt_handler);
 
     if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace
