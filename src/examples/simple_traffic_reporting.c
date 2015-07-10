@@ -35,7 +35,7 @@
 #include <dirent.h>
 #include <time.h>
 #include "mmt_core.h"
-#include <tcpip/mmt_tcpip.h>
+#include "mmt/tcpip/mmt_tcpip.h"
 #ifdef WIN32
 #include <ws2tcpip.h>
 #include <windows.h>
