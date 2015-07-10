@@ -17,7 +17,6 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include "../../vendors/libntoh/install/include/libntoh/libntoh.h"
 
 bool session_timeout_comp_fn_pt(uint32_t l_timeout, uint32_t r_timeout) {
     return (l_timeout < r_timeout);
