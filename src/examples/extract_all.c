@@ -228,7 +228,7 @@ void protocols_stats_iterator(uint32_t proto_id, void * args) {
 }
 
 void packet_handler(const ipacket_t * ipacket, void * args) {
-    debug("packet_handler of %"PRIu64" index: %d\n",ipacket->packet_id,ipacket->extra.index);
+    //debug("packet_handler of %"PRIu64" index: %d\n",ipacket->packet_id,ipacket->extra.index);
     // write_data_ipacket(ipacket);
     static time_t last_report_time = 0;
     if (last_report_time == 0) {
