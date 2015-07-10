@@ -22,13 +22,13 @@ sdk: libraries includes tools documentation examples
 
 install: sdk $(USR_INCLUDE) $(OPT_MMT_PLUGINS) 
 	@ cp $(SDKLIB)/* $(USR_LIB)
-	@ echo "Installed  "$(SDKLIB)" at "$(USR_LIB)
-	@ cp -R $(SDKINC) $(USR_INCLUDE)
-	@ echo "Installed  "$(SDKINC)" at "$(USR_INCLUDE)
+	@ echo "Installed  "$(USR_LIB)/libmmt_*
+	@ cp -R $(SDKINC)/* $(USR_INCLUDE)
+	@ echo "Installed "$(USR_INCLUDE)
 	@ echo "# include \"mmt/mmt_core.h\"" >> /usr/include/mmt_core.h
 	@ echo "Installed /usr/include/mmt_core.h"
 	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(OPT_MMT_PLUGINS)/libmmt_tcpip.so
-	@ echo "Installed  "$(SDKLIB)/libmmt_tcpip.so.$(VERSION)" at "$(OPT_MMT_PLUGINS)/libmmt_tcpip.so
+	@ echo "Installed "$(OPT_MMT_PLUGINS)/libmmt_tcpip.so
 
 #  - - - - -
 #  C L E A N
