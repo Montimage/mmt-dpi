@@ -7,7 +7,7 @@
 
 ////////////// LIBNTOH LIBRARY INTEGRATION CODE /////////////////
 
-#include "../../../../vendors/libntoh/install/include/libntoh/libntoh.h"
+#include "libntoh/libntoh.h"
 
 // pntoh_tcp_session_t     tcp_session;
 
