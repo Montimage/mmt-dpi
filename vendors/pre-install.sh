@@ -1,6 +1,3 @@
-# Install python-dev
-sudo apt-get install -y python-dev
-
 # Install pcre-8.37
 if [ ! -f /usr/local/lib/libpcre.a ]; then
 	tar xvfz pcre-8.37.tar.gz
