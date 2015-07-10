@@ -1348,12 +1348,7 @@ void * get_attribute_extracted_data_at_index(const ipacket_t * ipacket, uint32_t
             return tmp_attr_ref->data;
         }
     }else {
-        if(tmp_attr_ref->packet_id == (ipacket->mmt_handler)->last_received_packet.packet_id) {
-#ifdef DEBUG
-            (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): attribute data is null (2/2)\n" );
-#endif /*DEBUG*/
-            return tmp_attr_ref->data;
-        }
+	/* THIS IS SCOPE_EVENT  should do nothing*/
     }
 #ifdef DEBUG
     (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): unexpected failure\n" );

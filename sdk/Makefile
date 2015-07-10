@@ -20,22 +20,15 @@ sdk: libraries includes tools documentation examples
 #  I N S T A L L
 #  - - - - - - -
 
-install: sdk $(PREFIX) 
-	$(CP) $(SDKLIB) $(PREFIX)
-	$(CP) $(SDKBIN) $(PREFIX)
-	$(CP) $(SDKINC) $(PREFIX)
-	$(CP) $(SDKDOC) $(PREFIX)
-	$(CP) $(SDKXAM) $(PREFIX)
-	if ! grep -Fxq "$(PREFIX)/lib" /etc/ld.so.conf;then \
-		echo "$(PREFIX)/lib" >> /etc/ld.so.conf; \
-		ldconfig; \
-	fi
-	if ! grep -Fxq "/usr/local/lib" /etc/ld.so.conf;then \
-		echo "/usr/local/lib" >> /etc/ld.so.conf; \
-		ldconfig;\
-	fi 	
-	mkdir -p "/opt/mmt/plugins"
-	$(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(PREFIX)/plugins/libmmt_tcpip.so
+install: sdk $(USR_INCLUDE) $(OPT_MMT_PLUGINS) 
+	@ cp $(SDKLIB)/* $(USR_LIB)
+	@ echo "Installed  "$(SDKLIB)" at "$(USR_LIB)
+	@ cp -R $(SDKINC) $(USR_INCLUDE)
+	@ echo "Installed  "$(SDKINC)" at "$(USR_INCLUDE)
+	@ echo "# include \"mmt/mmt_core.h\"" >> /usr/include/mmt_core.h
+	@ echo "Installed /usr/include/mmt_core.h"
+	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(OPT_MMT_PLUGINS)/libmmt_tcpip.so
+	@ echo "Installed  "$(SDKLIB)/libmmt_tcpip.so.$(VERSION)" at "$(OPT_MMT_PLUGINS)/libmmt_tcpip.so
 
 #  - - - - -
 #  C L E A N
@@ -51,5 +44,12 @@ clean:
 # - - - - - - - - - - 
 
 dist-clean:
-	$(QUIET) $(RM) $(PREFIX)/*
+	$(QUIET) $(RM) $(USR_LIB)/libmmt_*
+	@ echo "Removed " $(USR_LIB)/libmmt_*
+	$(QUIET) $(RM) $(USR_INCLUDE)/*
+	@ echo "Removed " $(USR_INCLUDE)
+	$(QUIET) $(RM) $(OPT_MMT_PLUGINS)
+	@ echo "Removed " $(OPT_MMT_PLUGINS)
+	$(QUIET) rm -f /usr/include/mmt_core.h
+	@ echo "Removed " /usr/include/mmt_core.h
 
