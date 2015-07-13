@@ -22,7 +22,7 @@ sdk: libraries includes tools documentation examples
 install: sdk $(USR_INCLUDE) $(OPT_MMT_PLUGINS) 
 	@ cp $(SDKLIB)/* $(USR_LIB)
 	@ echo "Installed  "$(SDKLIB)" at "$(USR_LIB)
-	@ cp -R $(SDKINC) $(USR_INCLUDE)
+	@ cp -R $(SDKINC)/* $(USR_INCLUDE)
 	@ echo "Installed  "$(SDKINC)" at "$(USR_INCLUDE)
 	@ echo "# include \"mmt/mmt_core.h\"" >> /usr/include/mmt_core.h
 	@ echo "Installed /usr/include/mmt_core.h"
