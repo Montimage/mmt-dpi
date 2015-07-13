@@ -28,7 +28,7 @@
  */
 
 // COMPILE with
-// gcc -g -I/opt/mmt/include -o reconstruct_body reconstruct_body.c html_integration.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap -lhtmlstreamparser -lz
+// gcc -g -o reconstruct_body reconstruct_body.c html_integration.c -lmmt_core -ldl -lpcap -lhtmlstreamparser -lz -lpthread
 
 //TODOs: content reconstruction
 // - add user data at session detection - OK
