@@ -1,19 +1,11 @@
 /**
  * This example is intended to show a simple packet handler - show the size of received packets. That is a callback function that will be called after the processing of every packet by the MMT core
  * 
- * To run this example, mmt-sdk installing is required. After installing mmt-sdk, add the mmt library to project library path by following command:
- * 
- * $ export LD_LIBRARY_PATH=/opt/mmt/lib:/usr/local/lib:$LD_LIBRARY_PATH
  * 
  * Compile this example with:
  * 
- * $ gcc -g -I/opt/mmt/include -o packet_handler packet_handler.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap
+ * $ gcc -g -o packet_handler packet_handler.c -lmmt_core -ldl -lpcap
  * 
- * Also need to copy TCPIP plugin to plugins folder:
- * 
- * $ mkdir plugins
- * 
- * $ cp /opt/mmt/lib/libmmt_tcpip.so.0.99 plugins/libmmt_tcpip.so
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
  * 

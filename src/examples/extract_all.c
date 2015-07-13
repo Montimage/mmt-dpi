@@ -1,19 +1,10 @@
 /**
  * This example is intended to extract everything from a pcap file! This means all the attributes of all registered protocols will be registed for extraction. When a packet is processed, the attributes found in the packet will be print out.
- * To run this example, mmt-sdk installing is required. After installing mmt-sdk, add the mmt library to project library path by following command:
- * 
- * $ export LD_LIBRARY_PATH=/opt/mmt/lib:/usr/local/lib:$LD_LIBRARY_PATH
  * 
  * Compile this example with:
  * 
- * $ gcc -g -I/opt/mmt/include -o extract_all extract_all.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap -lpthread
+ * $ gcc -g -o extract_all extract_all.c -lmmt_core -ldl -lpcap -lpthread
  *   
- * 
- * Also need to copy TCPIP plugin to plugins folder:
- * 
- * $ mkdir plugins
- * 
- * $ cp /opt/mmt/lib/libmmt_tcpip.so.0.100 plugins/libmmt_tcpip.so
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
  * 
@@ -28,10 +19,7 @@
  * 
  * -> Extract from live streaming
  * 
- * Need sudo permission:
- * $ sudo -i
- * $ export LD_LIBRARY_PATH=/opt/mmt/lib:/usr/local/lib:$LD_LIBRARY_PATH
- * $ ./extract_all -i eth0 > extra_live_output.txt
+ * $ sudo ./extract_all -i eth0 > extra_live_output.txt
  * 
  * You can see the example result in file: exta_live_output.txt
  * That is it!
@@ -283,10 +271,10 @@ int main(int argc, char** argv) {
     iterate_through_protocols(protocols_iterator, mmt_handler);
 
     //Register a packet handler, it will be called for every processed packet
-    //register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler /* built in packet handler that will print all of the attributes */, &quiet);
+    register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler /* built in packet handler that will print all of the attributes */, &quiet);
 
     //Register a packet handler to periodically report protocol statistics
-    register_packet_handler(mmt_handler, 1, packet_handler /* built in packet handler that will print all of the attributes */, mmt_handler);
+    //register_packet_handler(mmt_handler, 1, packet_handler /* built in packet handler that will print all of the attributes */, mmt_handler);
 
     if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace

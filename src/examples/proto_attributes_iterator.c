@@ -1,13 +1,9 @@
 /**
  * This example is intened to provide the list of available protocols and for each protocol, the list of its attributes
  * 
- * To run this example, mmt-sdk installing is required. After installing mmt-sdk, add the mmt library to project library path by following command:
- * 
- * export LD_LIBRARY_PATH=/opt/mmt/lib:/usr/local/lib:$LD_LIBRARY_PATH
- * 
  * Compile this example with:
  * 
- * gcc -I/opt/mmt/include -o proto_attributes_iterator proto_attributes_iterator.c -L/opt/mmt/lib -lmmt_core -ldl
+ * gcc -o proto_attributes_iterator proto_attributes_iterator.c -lmmt_core -ldl
  * 
  * Then execute the program:
  * 

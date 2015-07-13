@@ -1,19 +1,10 @@
 /**
  * This example is intended to extract everything from a pcap file! This means all the attributes of all registered protocols will be registed for extraction. When a packet is processed, the attributes found in the packet will be print out.
- * To run this example, mmt-sdk installing is required. After installing mmt-sdk, add the mmt library to project library path by following command:
- * 
- * $ export LD_LIBRARY_PATH=/opt/mmt/lib:/usr/local/lib:$LD_LIBRARY_PATH
  * 
  * Compile this example with:
  * 
- * $ gcc -g -I/opt/mmt/include -o simple_traffic_reporting simple_traffic_reporting.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap -pthread
+ * $ gcc -g -o simple_traffic_reporting simple_traffic_reporting.c -lmmt_core -ldl -lpcap -pthread
  *   
- * 
- * Also need to copy TCPIP plugin to plugins folder:
- * 
- * $ mkdir plugins
- * 
- * $ cp /opt/mmt/lib/libmmt_tcpip.so.0.100 plugins/libmmt_tcpip.so
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
  * 
