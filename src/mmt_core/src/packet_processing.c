@@ -3008,9 +3008,10 @@ int mmt_stats_sprintf(char * buff, int len, attribute_internal_t * attr) {
 }
 
 int mmt_header_line_pointer_sprintf(char * buff, int len, attribute_internal_t * attr) {
-    mmt_header_line_t * data = (mmt_header_line_t *) attr->data;
-    int copy_len = (len > (data->len + 1) )? data->len + 1 : len;
-    return snprintf(buff, copy_len, "%s", (char *) data->ptr);
+	mmt_header_line_t * data = (mmt_header_line_t *) attr->data;
+	int copy_len = (len > (data->len) )? data->len : len;
+	int retval = snprintf(buff, copy_len+1, "%s", (char *) data->ptr);
+	return (copy_len < retval)? copy_len : retval;
 }
 
 int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
