@@ -3026,7 +3026,7 @@ int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
             return mmt_uint32_sprintf(buff, len, attr);
         case MMT_U64_DATA:
             return mmt_uint64_sprintf(buff, len, attr);
-        case MMT_DATA_CHAR:;
+        case MMT_DATA_CHAR:
             return mmt_char_sprintf(buff, len, attr);
         case MMT_DATA_POINTER:
             return mmt_pointer_sprintf(buff, len, attr);
