@@ -28,7 +28,7 @@ This is an example how to generate simple data set:
 
 4. Look at the trace in wireshark, if there is the test case which you want to test -> save this trace to a trace file .pcap. If there is not the test case which you need, restart new tracing process in wireshark and return to step 3 . Do this step until you get your test case.
 
-5. Put the trace file to `mmt-sdk/trace-files/` folder
+5. Put the trace file to `mmt-sdk/data-set/` folder
 
 6. Make the test and write the test-case file.
 
