@@ -2613,9 +2613,6 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
     //if the target action is CONTINUE or SKIP (skip means continue with this proto but no further)
     if (target != MMT_DROP) {
         //Attributes extraction
-        //generic_data_extraction(index, ipacket);
-
-        //process attribute handlers
         proto_process_attribute_handlers(ipacket, index);
     }
     //Update next
@@ -2627,9 +2624,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
     if (target == MMT_CONTINUE) {
         /* Try to classify the encapsulated data */
-	uint64_t packet_id = ipacket->packet_id;
         proto_packet_classify_next(ipacket, configured_protocol, index);
-	if(packet_id==ipacket->packet_id){
         // Need to check if the ipacket is still exist
 	// send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
         if (ipacket->proto_hierarchy->len > (index + 1)) {
@@ -2643,7 +2638,6 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
             }
         }
         process_packet_handler(ipacket);
-	}    
 	}
     return target;
 } 
@@ -3054,9 +3048,11 @@ int mmt_stats_sprintf(char * buff, int len, attribute_internal_t * attr) {
 }
 
 int mmt_header_line_pointer_sprintf(char * buff, int len, attribute_internal_t * attr) {
-    mmt_header_line_t * data = (mmt_header_line_t *) attr->data;
-    int copy_len = (len > (data->len + 1) )? data->len + 1 : len;
-    return snprintf(buff, copy_len, "%s", (char *) data->ptr);
+	mmt_header_line_t * data = (mmt_header_line_t *) attr->data;
+	int copy_len = (data->len > (len - 1)) ? len - 1 : data->len;
+	memcpy((void *) buff, (void *) data->ptr, copy_len);
+	buff[copy_len] = '\0';
+	return copy_len;
 }
 
 int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
