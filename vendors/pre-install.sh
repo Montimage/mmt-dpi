@@ -25,7 +25,6 @@ sudo ldconfig
 # Install libntoh
 if [ ! -f /usr/local/lib/libntoh.a ]; then
 	cd libntoh/
-	mkdir -p install
 	cd src/
 	mkdir -p build
 	cd build/
