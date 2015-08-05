@@ -57,7 +57,7 @@ int load_plugins() {
 	plugins_path=1;
         n = scandir( PLUGINS_REPOSITORY_OPT, &entries, load_filter, alphasort );
 	if (n<0){
-		printf("You don't have any plugin");
+		printf("You don't have any plugin\n");
 	        return 1;
 	}
     }
@@ -66,7 +66,7 @@ int load_plugins() {
     for( i = 0 ; i < n ; ++i ) {
         entry = entries[i];
         (void)snprintf( path, 256, "%s/%s",plugins_path==0?PLUGINS_REPOSITORY:PLUGINS_REPOSITORY_OPT,entry->d_name );
-        printf("Loading plugins from: %s",path);
+        printf("Loading plugins from: %s \n",path);
 	(void)load_plugin( path );
         free( entry );
     }
