@@ -4,7 +4,6 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include "mmt_core.h"
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -15,7 +14,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
- 
+#include "data_defs.h" 
 /**
  * Print payload field of a tcp packet
  */

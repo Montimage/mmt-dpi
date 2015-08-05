@@ -1,7 +1,6 @@
 ARCH         ?= linux
 TOPDIR       := $(realpath $(CURDIR)/..)
 RULESDIR     := $(TOPDIR)/rules
-VENDORDIR	 := $(TOPDIR)/vendors
 
 default: sdk
 .PHONY: sdk install clean dist-clean
@@ -25,7 +24,7 @@ install: sdk $(USR_INCLUDE) $(OPT_MMT_PLUGINS)
 	@ echo "Installed  "$(USR_LIB)/libmmt_*
 	@ cp -R $(SDKINC)/* $(USR_INCLUDE)
 	@ echo "Installed "$(USR_INCLUDE)
-	@ echo "# include \"mmt/mmt_core.h\"" >> /usr/include/mmt_core.h
+	@ echo "#include \"mmt/mmt_core.h\"" >> /usr/include/mmt_core.h
 	@ echo "Installed /usr/include/mmt_core.h"
 	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(OPT_MMT_PLUGINS)/libmmt_tcpip.so
 	@ echo "Installed "$(OPT_MMT_PLUGINS)/libmmt_tcpip.so

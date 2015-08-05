@@ -7,7 +7,6 @@
 
 void write_tcp_packet (const ipacket_t* ipacket)
 {
-    debug("Write data of packet: %lu",ipacket->packet_id);
     int fd=0;
     char path[1024] = {0};
     int len = 0;
