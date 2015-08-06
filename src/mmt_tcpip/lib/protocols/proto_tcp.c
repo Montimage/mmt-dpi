@@ -7,7 +7,7 @@
 
 ////////////// LIBNTOH LIBRARY INTEGRATION CODE /////////////////
 
-#include "libntoh/libntoh.h"
+#include "libntoh.h"
 
 
 pntoh_tcp_session_t get_tcp_session(ipacket_t *ipacket, unsigned index){
