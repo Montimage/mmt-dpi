@@ -2,7 +2,7 @@ Package: mmt-sdk
 Version: 0.1-0
 Section: base
 Priority: standard
-Architecture: amd64
+Architecture: all
 Maintainer: Montimage <contact@montimage.com>
 Description: MMT-SDK
  A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis
