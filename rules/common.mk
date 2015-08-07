@@ -1,8 +1,9 @@
  
 VERSION  := 0.100
 USR_LIB ?= /usr/lib
-USR_INCLUDE ?=/usr/include/mmt
-OPT_MMT_PLUGINS ?=/opt/mmt/plugins
+MMT_INC ?= /usr/local/include/mmt
+OPT_MMT_PLUGINS ?= /opt/mmt/plugins
+OPT_MMT_EXAMS ?= /opt/mmt/examples
 
 CFLAGS   := -Wall -g
 CXXFLAGS := -Wall -g
@@ -46,7 +47,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(USR_INCLUDE) $(OPT_MMT_PLUGINS):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_INC) $(OPT_MMT_PLUGINS) $(OPT_MMT_EXAMS):
 	@mkdir -p $@
 
 
