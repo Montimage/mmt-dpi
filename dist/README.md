@@ -1,4 +1,7 @@
+
 # **How to make .deb and .zip file**
+
+[TOC]
 
 ## Make .deb file
 
