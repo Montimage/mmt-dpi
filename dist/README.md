@@ -5,10 +5,11 @@
 
 ## Make .deb file
 
-### 1. Update DEBIAN/
+### Update DEBIAN/
 
-#### 1. DEBIAN/control file
+#### DEBIAN/control file
 
+Location: DEBIAN/control
 Contains the metadata for the package. Put/update something like this:
 
 ```sh
@@ -26,34 +27,39 @@ Description: MMT-SDK
 
 The space before each line in the description is important
 
-#### 2. DEBIAN/conffile file
+#### DEBIAN/conffile file
 
+Location: DEBIAN/conffile
 Needs to contain a list of configuration files (usually placed in /etc) that the package management system will not overwrite when the package is upgraded.
 To determine exactly which files are preserved during an upgrade:
 ```sh
 dpkg --status package
 ```
 
-#### 3. DEBIAN/preinst script
+#### DEBIAN/preinst script
 
+Location: DEBIAN/preinst
 When: This script executes before that package will be unpacked from its Debian archive (".deb") file.
 Why: stop services for packages which are being upgraded until their installation or upgrade is completed
 
-#### 4. DEBIAN/postinst
+#### DEBIAN/postinst
 
+Location: DEBIAN/postinst
 When: typically completes any required configuration of the package `foo` once `foo` has been unpacked from its Debian archive (".deb"). Often it asks the user for input, and/or warn the user that if he accepts default values.
 Why: execute any commands necessary to start or restart a service once a new package has been installed or upgraded
 
-#### 5. DEBIAN/prerm
+#### DEBIAN/prerm
 
+Location: DEBIAN/prerm
 Why: stops any deamons which a associated with a package.
 When: Before the removal of files associated with the package
 
-#### 6. DEBIAN/postrm
+#### DEBIAN/postrm
 
+Location: DEBIAN/postrm
 Why: modifies links or other files associated with `foo` and/or removes files created by the package
 
-### 2. Build .deb file
+### Build .deb file
 
 Before building the .deb file, we need to compile mmt-sdk to get the source code.
 
@@ -69,7 +75,7 @@ cd mmt-sdk/dist
 
 ```
 
-### 3. Name for package:
+### Name for package:
 
 The name of package conform to the following convention: `<foo>_<VersionNumer>-<DebianRevisionNumber>_<DebianArchitecture>.deb`
 
@@ -79,7 +85,7 @@ Example: `mmt_sdk_0.1-0_i386.deb`, `mmt_sdk_0.4-0_amd64.deb`, `mmt_sdk_1.2-1_all
 mv mm_sdk.deb mmt_sdk_0.1-0_all.deb
 
 ```
-### 4. Install .deb file
+### Install .deb file
 
 To install .deb file into your system
 ```sh
