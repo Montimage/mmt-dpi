@@ -86,7 +86,7 @@ To install .deb file into your system
 dpkg -i ./mmt_sdk_0.1-0_all.deb
 ```
 
-# Make .zip file
+## Make .zip file
 
 ### Make .zip file
 
@@ -117,14 +117,14 @@ To uninstall mmt-sdk:
 sudo make uninstall
 ```
 
-# Test mmt-sdk
+## Test mmt-sdk
 
 To know how mmt-sdk work and to test installation of mmt-sdk, we can go to /opt/mmt/examples to see the examples
 
 To run the examples, we need to install `libpcap` which is the packet capturing tool we use in the examples.
 
 
-### References
+## References
 
 [1 - Basic of the Debian package management system](https://www.debian.org/doc/manuals/debian-faq/ch-pkg_basics.en.html)
 
