@@ -3,7 +3,6 @@ Version: 0.1-0
 Section: base
 Priority: standard
 Architecture: all
-Depends: libxml2 (>= 2.7.0)
 Maintainer: Montimage <contact@montimage.com>
 Description: MMT-SDK
  A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis
