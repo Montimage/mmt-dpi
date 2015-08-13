@@ -1,0 +1,3 @@
+Loading plugins from: /opt/mmt/plugins/libmmt_tcpip.so 
+packet_id,tcp_src_port,tcp_dest_port,tcp_seq_nb,tcp_ack_nb,tcp_data_offset,tcp_flags,tcp_fin,tcp_syn,tcp_rst,tcp_psh,tcp_ack,tcp_urg,tcp_ece,tcp_cwr,tcp_window,tcp_checksum,tcp_urg_ptr,tcp_syn_rcv,tcp_conn_established,tcp_rtt->tv_sec,tcp_rtt->tv_usec
+1,554,2461,4151371855,284981919,5,24,NULL,1,1,NULL,NULL,NULL,NULL,NULL,64704,37196,0,NULL,NULL,NUL,NULL,
