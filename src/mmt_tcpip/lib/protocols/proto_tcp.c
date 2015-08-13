@@ -91,7 +91,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
     size_payload = total_len - ( size_ip + size_tcp );
 
     ntoh_tcp_get_tuple5 ( iphdr , tcp , &tcpt5 );
-    printf("\nTuple5 of packet: %p\n",ipacket);
+    // printf("\nTuple5 of packet: %p\n",ipacket);
     
     /* Find a stream */
     if ( !(stream = ntoh_tcp_find_stream( tcp_session , &tcpt5 ))){
