@@ -16,9 +16,10 @@ Test avec appli ChronoChat (fourni par NDN)
 
 ## Scénario pour NDN/IP:
 
-Pour Wireshark : échanges entres les 2 machines : phrase dans un sens puis une autre dans l’autre sens puis envoi de AAAAAAAAAAAAAAAAA dans un sens, puis envoie de ZZZZZZZZZZZZZZZZZ dans l’autre sens.
-Pour NDNDUMP : échanges entres les 2 machines : phrase dans un sens puis une autre dans l’autre sens puis envoi de XXXXXXXXXXXXXXXXXX dans un sens, puis envoie de WWWWWWWWWWWW dans l’autre sens.
+**Pour Wireshark** : échanges entres les 2 machines : phrase dans un sens puis une autre dans l’autre sens puis envoi de AAAAAAAAAAAAAAAAA dans un sens, puis envoie de ZZZZZZZZZZZZZZZZZ dans l’autre sens.
+
+**Pour NDNDUMP** : échanges entres les 2 machines : phrase dans un sens puis une autre dans l’autre sens puis envoi de XXXXXXXXXXXXXXXXXX dans un sens, puis envoie de WWWWWWWWWWWW dans l’autre sens.
 
 ## Scénario pour NDN/Ethernet:
 
-Pour Wireshark : échanges entres les 2 machines : envoi de HELLLLLLLLLLLLLLLLLLLLLLLOOOO  dans un sens, puis envoie de YEEEEEEEEEEEEEEEESSSSSSSSSSS dans l’autre sens.
+**Pour Wireshark** : échanges entres les 2 machines : envoi de HELLLLLLLLLLLLLLLLLLLLLLLOOOO  dans un sens, puis envoie de YEEEEEEEEEEEEEEEESSSSSSSSSSS dans l’autre sens.
