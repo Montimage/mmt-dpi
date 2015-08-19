@@ -203,8 +203,43 @@ _Analysis_
 		
 ### How to classify NDN packet?
 
-		
-	
+* C1: Start with **05** or **06**
+
+* C2: Assume that the packet is satisfied C1, calculate the length of packet(follow T-L-V format) and compare with the total length of packet.
+
+* C3:(Considering...) Check the mask: T-V-07:.... -> The NDN packet must have the common field.
+
+There could be two ways to classify:
+
+**Solution 1**: Uss MMT\_NDN\_BITS\_MASK to check:
+
+Interest packet:
+
+* M1: 0000 0101 xxxx xxxx 0000 0111 (\<253)
+
+* M2: 0000 0101 1111 1101 xxxx xxxx xxxx xxxx 0000 0111 (=253)
+
+* M3: 0000 0101 1111 1110 xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx 0000 0111 (=254)
 	 
+* M4: 0000 0101 1111 1111 xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx 0000 0111 (=255)
+
+Data packet:
+
+* M1: 0000 0110 xxxx xxxx 0000 0111 (\<253: ex: )
+
+* M2: 0000 0110 1111 1101 xxxx xxxx xxxx xxxx 0000 0111 (=253)
+
+* M3: 0000 0110 1111 1110 xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx 0000 0111 (=254)
 	 
+* M4: 0000 0110 1111 1111 xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx 0000 0111 (=255)
+
+**Solution 2**: Parse the packet data:
+
+* Check first condition C1
+
+* If C1 is satified then check C2
+
+* If C1, C2 is satified then check C3
+
+
 
