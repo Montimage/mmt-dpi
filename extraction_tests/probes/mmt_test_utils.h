@@ -14,7 +14,7 @@
 /**
  * Print value
  */
-void printvalue(int dataType,void* data){
+void printValue(int dataType,void* data){
 	switch(dataType){
 		// uint32_t
 		case 1:

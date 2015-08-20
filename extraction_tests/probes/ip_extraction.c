@@ -51,23 +51,23 @@ void packet_handler(const ipacket_t * ipacket, void * user_args){
 
 	
 	printf("%lu,", ipacket->packet_id);
-	printvalue(3,ip_version);
-	printvalue(3,ip_header_len);
-	printvalue(3,ip_proto_tos);
-	printvalue(2,ip_tot_len);
-	printvalue(2,ip_identification);
-	printvalue(3,ip_df_flag);
-	printvalue(3,ip_mf_flag);
-	printvalue(3,ip_frag_offset);
-	printvalue(3,ip_proto_ttl);
-	printvalue(3,ip_proto_id);
-	printvalue(2,ip_checksum);
-	printvalue(5,ip_src);
-	printvalue(5,ip_dst);
-	printvalue(5,ip_client_addr);
-	printvalue(5,ip_server_addr);
-	printvalue(2,ip_client_port);
-	printvalue(2,ip_server_port);
+	printValue(3,ip_version);
+	printValue(3,ip_header_len);
+	printValue(3,ip_proto_tos);
+	printValue(2,ip_tot_len);
+	printValue(2,ip_identification);
+	printValue(3,ip_df_flag);
+	printValue(3,ip_mf_flag);
+	printValue(3,ip_frag_offset);
+	printValue(3,ip_proto_ttl);
+	printValue(3,ip_proto_id);
+	printValue(2,ip_checksum);
+	printValue(5,ip_src);
+	printValue(5,ip_dst);
+	printValue(5,ip_client_addr);
+	printValue(5,ip_server_addr);
+	printValue(2,ip_client_port);
+	printValue(2,ip_server_port);
 	printf("\n");
 }
 

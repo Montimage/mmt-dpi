@@ -28,6 +28,7 @@
  
 // #include "../src/mmt_tcpip/lib/mmt_tcpip_plugin_structs.h"
 void packet_handler(const ipacket_t * ipacket, void * user_args){
+	uint16_t * ip_identification = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_IDENTIFICATION); //Request TCP data offset
 	// log_info("packet_handler is called for packet %lu",ipacket->packet_id);
 	uint16_t* tcp_src_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_SRC_PORT);
 	uint16_t * tcp_dest_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_DEST_PORT);
@@ -59,6 +60,7 @@ void packet_handler(const ipacket_t * ipacket, void * user_args){
 	//struct mmt_tcpip_internal_packet_struct *packet = (mmt_tcpip_internal_packet_t *) ipacket->internal_packet;
 	//printf("Outoforder: %lu : %i\n",ipacket->packet_id,packet->tcp_outoforder);
 	printf("%lu,", ipacket->packet_id);
+	printValue(2,ip_identification);
 	printValue(2,tcp_src_port);
 	printValue(2,tcp_dest_port);
 	printValue(1,tcp_seq_nb);
@@ -109,6 +111,9 @@ int main(int argc, char ** argv){
 		fprintf(stderr, "MMT handler init failed for the following reason: %s\n",mmt_errbuf );
 		return EXIT_FAILURE;
 	}
+
+	register_extraction_attribute(mmt_handler,PROTO_IP,IP_IDENTIFICATION); //Request TCP data offset
+
 	//Register the protocol attributes we need
 	register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_SRC_PORT); //Request TCP source port
 	register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_DEST_PORT); //Request TCP destination port 
@@ -130,6 +135,7 @@ int main(int argc, char ** argv){
 	register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_RTT); //Request TCP ACK number
 	register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_SYN_RCV); //Request TCP ACK number
 	register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_CONN_ESTABLISHED); //Request TCP ACK number
+
 	//Register a packet handler, it will be called for every processed packet
 	register_packet_handler(mmt_handler,1,packet_handler, NULL);
 
@@ -138,7 +144,7 @@ int main(int argc, char ** argv){
 		fprintf(stderr, "pcap_open failed for the following reason: %s\n", errbuf);
 		return;
 	}
-	printf("packet_id,tcp_src_port,tcp_dest_port,tcp_seq_nb,tcp_ack_nb,tcp_data_offset,tcp_flags,tcp_fin,tcp_syn,tcp_rst,tcp_psh,tcp_ack,tcp_urg,tcp_ece,tcp_cwr,tcp_window,tcp_checksum,tcp_urg_ptr,tcp_syn_rcv,tcp_conn_established,tcp_rtt->tv_sec,tcp_rtt->tv_usec\n");
+	printf("packet_id,ip->ip_id,tcp_src_port,tcp_dest_port,tcp_seq_nb,tcp_ack_nb,tcp_data_offset,tcp_flags,tcp_fin,tcp_syn,tcp_rst,tcp_psh,tcp_ack,tcp_urg,tcp_ece,tcp_cwr,tcp_window,tcp_checksum,tcp_urg_ptr,tcp_syn_rcv,tcp_conn_established,tcp_rtt->tv_sec,tcp_rtt->tv_usec\n");
 	while((data=pcap_next(pcap,&p_pkthdr))){
 		header.ts = p_pkthdr.ts;
 		header.caplen = p_pkthdr.caplen;
