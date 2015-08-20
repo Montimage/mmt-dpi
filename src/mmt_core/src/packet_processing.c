@@ -47,7 +47,7 @@ const char * get_application_name(const proto_hierarchy_t * proto_hierarchy) {
  * @param header A pointer to the metadata associated with the packet.
  * @param packet The data packet starting from the protocol header corresponding to the provided @param proto_id.
  */
-void generic_data_extraction(uint32_t proto_id, ipacket_t * ipacket);
+ void generic_data_extraction(uint32_t proto_id, ipacket_t * ipacket);
 
 /**
  * Updates the protocol statistics on session timeout. It will basically increase the number
@@ -55,17 +55,17 @@ void generic_data_extraction(uint32_t proto_id, ipacket_t * ipacket);
  * @param timed_out_session the timed out session.
  * @param parent_proto_stats pointer to the parent protocol statistics
  */
-void update_proto_stats_on_session_timeout(mmt_session_t * timed_out_session, proto_statistics_internal_t * parent_proto_stats);
+ void update_proto_stats_on_session_timeout(mmt_session_t * timed_out_session, proto_statistics_internal_t * parent_proto_stats);
 
 /**
  * Resets the statistics for the given protocol
  * @param proto protocol to reset its statistics
  */
-void reset_proto_stats(protocol_instance_t * proto);
+ void reset_proto_stats(protocol_instance_t * proto);
 
 // Dummy stack
 
-classified_proto_t dummy_stack_classification(ipacket_t * ipacket) {
+ classified_proto_t dummy_stack_classification(ipacket_t * ipacket) {
     classified_proto_t retval;
     retval.offset = -1;
     retval.proto_id = -1;
@@ -199,7 +199,7 @@ int validate_attribute_metadata(attribute_metadata_t * attribute_meta_data) {
     if ((strlen(attribute_meta_data->alias) == 0) || (strlen(attribute_meta_data->alias) > Max_Alias_Len)) return false;
     // The data type should have a value greater than MMT_UNDEFINED_TYPE and less than MMT_HIGHER_VALUED_VALID_DATA_TYPE
     if ((attribute_meta_data->data_type <= MMT_UNDEFINED_TYPE)
-            || (attribute_meta_data->data_type >= MMT_HIGHER_VALUED_VALID_DATA_TYPE))
+        || (attribute_meta_data->data_type >= MMT_HIGHER_VALUED_VALID_DATA_TYPE))
         return false;
     // The scope should be one of SCOPE_PACKET, SCOPE_SESSION, SCOPE_SESSION_CHANGING
     if (!((attribute_meta_data->scope & SCOPE_ON_DEMAND) || (attribute_meta_data->scope & SCOPE_EVENT))) return false;
@@ -278,7 +278,7 @@ void iterate_through_protocols(generic_protocol_iteration_callback iterator_fct,
  * @param iterator_fct pointer to the user function that will be called for every registered mmt handler.
  * @param args pointer to the user argument. It will be passed to the iterator callback function.
  */
-void iterate_through_mmt_handlers(generic_handler_iteration_callback iterator_fct, void * args) {
+ void iterate_through_mmt_handlers(generic_handler_iteration_callback iterator_fct, void * args) {
     struct internal_handler_iterator_struct temp_handler_iterator_struct;
     temp_handler_iterator_struct.iterator_fct = iterator_fct;
     temp_handler_iterator_struct.args = args;
@@ -326,7 +326,7 @@ int register_protocol_stack(uint32_t s_id, char * s_name, generic_stack_classifi
 }
 
 int register_protocol_stack_full(uint32_t s_id, char * s_name, generic_stack_classification_function fct,
-        stack_internal_cleanup stack_cleanup, void * stack_internal_context) {
+    stack_internal_cleanup stack_cleanup, void * stack_internal_context) {
     if (get_protocol_stack_from_map(s_id) == NULL) {
         protocol_stack_t * new_stack = (protocol_stack_t *) mmt_malloc(sizeof (protocol_stack_t));
         if (new_stack != NULL) {
@@ -387,7 +387,7 @@ void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
 
     // Clean the session context
     ((generic_session_context_cleanup_function) ((protocol_instance_t *) timed_out_session->protocol_container_context)->protocol->session_context_cleanup)((protocol_instance_t *) timed_out_session->protocol_container_context,
-            timed_out_session, NULL);
+        timed_out_session, NULL);
 }
 
 void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args) {
@@ -526,8 +526,8 @@ int register_classification_function(protocol_t *proto, generic_classification_f
 }
 
 int register_pre_post_classification_functions(protocol_t *proto,
-        generic_classification_function pre_classification,
-        generic_classification_function post_classification) {
+    generic_classification_function pre_classification,
+    generic_classification_function post_classification) {
 
     proto->classify_next.pre_classify = pre_classification;
     proto->classify_next.post_classify = post_classification;
@@ -537,7 +537,7 @@ int register_pre_post_classification_functions(protocol_t *proto,
 }
 
 int register_classification_function_full(protocol_t *proto, generic_classification_function classification_fct, int weight,
-        generic_classification_function pre_classification, generic_classification_function post_classification) {
+    generic_classification_function pre_classification, generic_classification_function post_classification) {
     if (weight < 10) weight = 10;
     if (weight > 90) weight = 90;
 
@@ -553,7 +553,7 @@ int register_classification_function_full(protocol_t *proto, generic_classificat
 }
 
 void register_sessionizer_function(protocol_t *proto, generic_sessionizer_function sessionizer_fct,
-        generic_session_context_cleanup_function session_context_cleanup_fct, generic_comparison_fct session_keys_comparison_fct) {
+    generic_session_context_cleanup_function session_context_cleanup_fct, generic_comparison_fct session_keys_comparison_fct) {
     proto->sessionize = (void *) sessionizer_fct;
     proto->session_context_cleanup = (void *) session_context_cleanup_fct;
     proto->has_session = HAS_SESSION_CONTEXT;
@@ -561,7 +561,7 @@ void register_sessionizer_function(protocol_t *proto, generic_sessionizer_functi
 }
 
 void register_proto_context_init_cleanup_function(protocol_t *proto, generic_proto_context_init_function context_init_fct,
-        generic_proto_context_cleanup_function context_cleanup_fct, void * args) {
+    generic_proto_context_cleanup_function context_cleanup_fct, void * args) {
     proto->protocol_context_init = (void *) context_init_fct;
     proto->protocol_context_cleanup = (void *) context_cleanup_fct;
     proto->protocol_context_args = args;
@@ -623,7 +623,7 @@ int register_data_analysis_function_internal(protocol_t * proto, generic_session
 }
 
 int register_session_data_analysis_function_with_protocol(uint32_t proto_id,
-        generic_session_data_analysis_function session_data_analysis_fct, int weight) {
+    generic_session_data_analysis_function session_data_analysis_fct, int weight) {
     if (session_data_analysis_fct != NULL) {
         protocol_t * proto = get_protocol_struct_by_protocol_id(proto_id);
         if (proto) {
@@ -637,7 +637,7 @@ int register_session_data_analysis_function_with_protocol(uint32_t proto_id,
 }
 
 int register_session_data_analysis_function(protocol_t *proto,
-        generic_session_data_analysis_function session_data_analysis_fct) {
+    generic_session_data_analysis_function session_data_analysis_fct) {
     if (session_data_analysis_fct != NULL) {
         return register_data_analysis_function_internal(proto, session_data_analysis_fct, 50); //TODO: replace with a definition
     }
@@ -645,8 +645,8 @@ int register_session_data_analysis_function(protocol_t *proto,
 }
 
 int register_pre_post_analysis_functions(protocol_t *proto,
-        generic_session_data_analysis_function pre_analysis,
-        generic_session_data_analysis_function post_analysis) {
+    generic_session_data_analysis_function pre_analysis,
+    generic_session_data_analysis_function post_analysis) {
 
     proto->data_analyser.pre_analyse  = pre_analysis;
     proto->data_analyser.post_analyse = post_analysis;
@@ -655,10 +655,10 @@ int register_pre_post_analysis_functions(protocol_t *proto,
 }
 
 int register_session_data_analysis_function_full(protocol_t *proto,
-        generic_session_data_analysis_function session_data_analysis_fct,
-        int weight,
-        generic_session_data_analysis_function pre_analysis,
-        generic_session_data_analysis_function post_analysis) {
+    generic_session_data_analysis_function session_data_analysis_fct,
+    int weight,
+    generic_session_data_analysis_function pre_analysis,
+    generic_session_data_analysis_function post_analysis) {
     if (weight < 10) weight = 10;
     if (weight > 90) weight = 90;
 
@@ -681,10 +681,10 @@ int is_registered_protocol(uint32_t proto_id) {
     if (is_valid_protocol_id(proto_id) > 0)
         if (configured_protocols[proto_id]->is_registered && configured_protocols[proto_id]->proto_id == proto_id)
             return PROTO_REGISTERED;
-    return PROTO_NOT_REGISTERED;
-}
+        return PROTO_NOT_REGISTERED;
+    }
 
-int is_free_protocol_id_for_registractionl(uint32_t proto_id) {
+    int is_free_protocol_id_for_registractionl(uint32_t proto_id) {
     if (proto_id > PROTO_MAX_IDENTIFIER) return 0; //The prtocol id is not valid
 
     protocol_t *proto = configured_protocols[proto_id];
@@ -815,7 +815,7 @@ void free_protocols_contexts(mmt_handler_t *mmt_handler) {
 }
 
 int proto_packet_count_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
@@ -833,7 +833,7 @@ int proto_packet_count_extraction(const ipacket_t * packet, unsigned proto_index
 }
 
 int proto_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     uint64_t count = 0;
@@ -850,7 +850,7 @@ int proto_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     uint64_t count = 0;
@@ -867,7 +867,7 @@ int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_ind
 }
 
 int proto_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     uint64_t count = 0;
@@ -884,7 +884,7 @@ int proto_sessions_count_extraction(const ipacket_t * packet, unsigned proto_ind
 }
 
 int proto_active_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     uint64_t count = 0;
@@ -901,7 +901,7 @@ int proto_active_sessions_count_extraction(const ipacket_t * packet, unsigned pr
 }
 
 int proto_timedout_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     uint64_t count = 0;
@@ -918,21 +918,21 @@ int proto_timedout_sessions_count_extraction(const ipacket_t * packet, unsigned 
 }
 
 int proto_header_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     extracted_data->data = (void *) &packet->data[proto_offset];
     return 1;
 }
 
 int proto_data_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     extracted_data->data = (void *) &packet->data[proto_offset];
     return 1;
 }
 
 int proto_payload_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     int proto_offset;
     if (proto_index + 1 == packet->proto_hierarchy->len) {
         proto_offset = get_packet_offset_at_index(packet, proto_index);
@@ -945,7 +945,7 @@ int proto_payload_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int proto_session_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     if (packet->session == NULL) {
         extracted_data->data = NULL;
@@ -959,7 +959,7 @@ int proto_session_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int proto_session_id_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     if (packet->session == NULL) {
         *((uint64_t *) extracted_data->data) = -1; //we should never get this id (-1)
@@ -972,7 +972,7 @@ int proto_session_id_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int proto_stats_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
     mmt_handler_t *mmt_handler = packet->mmt_handler;
     protocol_instance_t proto = mmt_handler->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     extracted_data->data = (void *) proto.proto_stats;
@@ -1087,7 +1087,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
         // Initialize the protocol context if the protocol has such context
         if (new_handler->configured_protocols[i].protocol->protocol_context_init != NULL) {
             new_handler->configured_protocols[i].args =
-                    (void *) ((generic_proto_context_init_function) new_handler->configured_protocols[i].protocol->protocol_context_init)((void *) &new_handler->configured_protocols[i], new_handler->configured_protocols[i].protocol->protocol_context_args);
+            (void *) ((generic_proto_context_init_function) new_handler->configured_protocols[i].protocol->protocol_context_init)((void *) &new_handler->configured_protocols[i], new_handler->configured_protocols[i].protocol->protocol_context_args);
         }
         new_handler->proto_registered_attributes[i] = NULL;
         new_handler->proto_registered_attribute_handlers[i] = NULL;
@@ -1112,7 +1112,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
  * @param dltype identifier of the data link type.
  * @return data identifier of data link type of \mmt_handler
  */
-int get_data_link_type(mmt_handler_t *mmt_handler) {
+ int get_data_link_type(mmt_handler_t *mmt_handler) {
     if (!mmt_handler) return -1;
     return (mmt_handler)->link_layer_stack->stack_id;
 }
@@ -1167,7 +1167,7 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  * Enables the maintenance of protocol statistics for the given \mmt_handler
  * @param mmt_handler mmt handler
  */
-void enable_protocol_statistics(mmt_handler_t *mmt_handler) {
+ void enable_protocol_statistics(mmt_handler_t *mmt_handler) {
     if (mmt_handler == NULL) return;
     mmt_handler->stats_reporting_status = 1;
 }
@@ -1176,7 +1176,7 @@ void enable_protocol_statistics(mmt_handler_t *mmt_handler) {
  * Disables the maintenance of protocol statistics for the given \mmt_handler
  * @param mmt_handler mmt handler
  */
-void disable_protocol_statistics(mmt_handler_t *mmt_handler) {
+ void disable_protocol_statistics(mmt_handler_t *mmt_handler) {
     if (mmt_handler == NULL) return;
     int i;
     mmt_handler->stats_reporting_status = 0;
@@ -1190,7 +1190,7 @@ void disable_protocol_statistics(mmt_handler_t *mmt_handler) {
  * @param mmt_handler mmt handler
  * @param proto_id protocol identifier
  */
-void enable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
+ void enable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
         mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 1;
     }
@@ -1201,7 +1201,7 @@ void enable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
  * @param mmt_handler mmt handler
  * @param proto_id protocol identifier
  */
-void disable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
+ void disable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
         mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 0;
     }
@@ -1212,7 +1212,7 @@ void disable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
  * @param mmt_handler mmt handler
  * @param proto_id protocol identifier
  */
-void enable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_id) {
+ void enable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
         mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 1;
     }
@@ -1223,7 +1223,7 @@ void enable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_i
  * @param mmt_handler mmt handler
  * @param proto_id protocol identifier
  */
-void disable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_id) {
+ void disable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
         mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 0;
     }
@@ -1281,7 +1281,7 @@ struct attribute_internal_struct * get_registered_attribute_internal_struct(cons
  * @param index index of the protocol in the path
  * @return a positive value if the extraction was done, zero otherwise
  */
-int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_internal_struct * tmp_attr_ref, unsigned index) {
+ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_internal_struct * tmp_attr_ref, unsigned index) {
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     if (tmp_attr_ref->extraction_function(ipacket, index, (attribute_t *) tmp_attr_ref) > 0) {
         //We set the status of the protocol
@@ -1305,7 +1305,7 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
  * @param index index of the protocol in the protocol path.
  * @return a pointer to the extracted data if it exists, NULL otherwise.
  */
-void * get_attribute_extracted_data_at_index(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
+ void * get_attribute_extracted_data_at_index(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
     if ((int) index < 0 || index >= ipacket->proto_hierarchy->len) {
         //the given index is not valid
 #ifdef DEBUG
@@ -1419,7 +1419,7 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
  * @param index index of the protocol in the protocol path.
  * @return a pointer to the extracted data if it exists, NULL otherwise.
  */
-void * get_attribute_extracted_data_at_index_by_name(const ipacket_t * ipacket, const char *protocol_name, const char *attribute_name, unsigned index) {
+ void * get_attribute_extracted_data_at_index_by_name(const ipacket_t * ipacket, const char *protocol_name, const char *attribute_name, unsigned index) {
     if ((int) index < 0 || index >= ipacket->proto_hierarchy->len) {
         //the given index is not valid
 #ifdef DEBUG
@@ -1542,7 +1542,7 @@ attribute_t * get_extracted_attribute(const ipacket_t * ipacket, uint32_t proto_
 #ifdef DEBUG
     (void)fprintf( stderr, "get_extracted_attribute(): proto_id #%u not found in path\n", proto_id );
 #endif /*DEBUG*/
- 
+
     return NULL;
 }
 
@@ -1593,8 +1593,8 @@ int is_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint3
     struct attribute_internal_struct * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
     while (tmp_attribute != NULL) {
         if (proto_id == tmp_attribute->proto_id &&
-                field_id == tmp_attribute->field_id) return 1;
-        tmp_attribute = tmp_attribute->next;
+            field_id == tmp_attribute->field_id) return 1;
+            tmp_attribute = tmp_attribute->next;
     }
     return retval;
 }
@@ -1604,8 +1604,8 @@ struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_h
         struct attribute_internal_struct * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
         while (tmp_attribute != NULL) {
             if (proto_id == tmp_attribute->proto_id &&
-                    field_id == tmp_attribute->field_id) return tmp_attribute;
-            tmp_attribute = tmp_attribute->next;
+                field_id == tmp_attribute->field_id) return tmp_attribute;
+                tmp_attribute = tmp_attribute->next;
         }
     }
     return NULL;
@@ -1618,7 +1618,7 @@ int has_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_
     attribute_internal_t * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
     while (tmp_attribute != NULL) {
         if (proto_id == tmp_attribute->proto_id &&
-                attribute_id == tmp_attribute->field_id &&
+            attribute_id == tmp_attribute->field_id &&
                 tmp_attribute->attribute_handler != NULL /* The attribute has at least one registered handler */) {
             return 1;
         }
@@ -1628,14 +1628,14 @@ int has_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_
 }
 
 int is_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id,
-        uint32_t attribute_id, attribute_handler_function handler_fct) {
+    uint32_t attribute_id, attribute_handler_function handler_fct) {
     if (!is_valid_protocol_id(proto_id)) {
         return 0;
     }
     attribute_internal_t * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
     while (tmp_attribute != NULL) {
         if (proto_id == tmp_attribute->proto_id &&
-                attribute_id == tmp_attribute->field_id &&
+            attribute_id == tmp_attribute->field_id &&
                 tmp_attribute->attribute_handler != NULL /* The attribute has at least one registered handler */) {
             attribute_handler_t * att_handler_fct = tmp_attribute->attribute_handler;
             while (att_handler_fct != NULL) {
@@ -1742,7 +1742,7 @@ int unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_i
 }
 
 int unregister_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char *protocol_name,
-        const char *attribute_name, attribute_handler_function handler_fct) {
+    const char *attribute_name, attribute_handler_function handler_fct) {
     uint32_t proto_id, attribute_id;
     proto_id = get_protocol_id_by_name(protocol_name);
     if (!proto_id) {
@@ -2163,48 +2163,48 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 if (ipacket->p_hdr->ts.tv_sec > session->s_last_activity_time.tv_sec) {// No need to update the timeout if we are still in the same second
                     //if(!session->force_timeout) { //Sessions with force timeout should not be updated! they need to timeout :)
                     if (update_session_timeout_milestone(mmt_handler, session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec,
-                            session->session_timeout_milestone, session) == 0) {
+                        session->session_timeout_milestone, session) == 0) {
                         process_outofmemory_force_sessions_timeout(ipacket->mmt_handler, ipacket);
-                        insert_session_timeout_milestone(mmt_handler, session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec, session);
-                    }
-                    session->session_timeout_milestone = session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec;
-                    //}
+                    insert_session_timeout_milestone(mmt_handler, session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec, session);
                 }
-            }
-
-            //Now update the packet structure to point to the flow and the protocol hierarchy info
-            ipacket->proto_hierarchy = &session->proto_path;
-            ipacket->proto_headers_offset = &session->proto_headers_offset;
-            ipacket->proto_classif_status = &session->proto_classif_status;
-            ipacket->session = session;
-
-            //update the session basic statistics
-            session->packet_count++;
-            session->data_volume += ipacket->p_hdr->len;
-
-            session->s_last_activity_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
-            session->s_last_activity_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
-
-        } else {
-            //We arrive here if the protocol has session context but the sessionize reported NULL session
-            //This might be an out of memory problem! Check this out
-            if (is_new_session) {
-                process_outofmemory_force_sessions_timeout(ipacket->mmt_handler, ipacket);
-                is_new_session = 0;
+                session->session_timeout_milestone = session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec;
+                    //}
             }
         }
 
+            //Now update the packet structure to point to the flow and the protocol hierarchy info
+        ipacket->proto_hierarchy = &session->proto_path;
+        ipacket->proto_headers_offset = &session->proto_headers_offset;
+        ipacket->proto_classif_status = &session->proto_classif_status;
+        ipacket->session = session;
+
+            //update the session basic statistics
+        session->packet_count++;
+        session->data_volume += ipacket->p_hdr->len;
+
+        session->s_last_activity_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+        session->s_last_activity_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+
     } else {
+            //We arrive here if the protocol has session context but the sessionize reported NULL session
+            //This might be an out of memory problem! Check this out
+        if (is_new_session) {
+            process_outofmemory_force_sessions_timeout(ipacket->mmt_handler, ipacket);
+            is_new_session = 0;
+        }
+    }
+
+} else {
         //The protocol does not maintain sessions by it own.
         //Rather, it belongs to a session maintained by a parent protocol
 
         //At this point we should check if the current protocol is newly detected or reclassified
         //If this is the case, initialize its session data if required and copy its registered attributes to the session context
-        if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION))) {
+    if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION))) {
             //Initialize its session data if such initialization function exists
-            if (configured_protocol->protocol->session_data_init != NULL) {
-                ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
-            }
+        if (configured_protocol->protocol->session_data_init != NULL) {
+            ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
+        }
             is_new_session = NEW_PROTO_IN_SESSION; //This is not a new session, rather a new protocol in the session
         }
         //Mark this protocol as done with the classification process
@@ -2254,7 +2254,7 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
  * @param parent_proto_stats pointer to the parent protocol stats
  * @return pointer to the created protocol statistics on success, NULL on failure
  */
-proto_statistics_internal_t * create_protocol_stats_instance(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats) {
+ proto_statistics_internal_t * create_protocol_stats_instance(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats) {
     proto_statistics_internal_t * proto_stats = (proto_statistics_internal_t *) mmt_malloc(sizeof (proto_statistics_internal_t));
     if (!proto_stats) {
         return NULL;
@@ -2278,7 +2278,7 @@ proto_statistics_internal_t * create_protocol_stats_instance(protocol_instance_t
  * @param child_proto_id identifier of the child protocol
  * @return pointer to the child protocol statistics if it exists, NULL otherwise.
  */
-proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal_t * proto_stats, uint32_t child_proto_id) {
+ proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal_t * proto_stats, uint32_t child_proto_id) {
     return (proto_statistics_internal_t *) find_int_key_value(proto_stats->encap_proto_stats, child_proto_id);
 }
 
@@ -2288,20 +2288,20 @@ proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal
  * @param parent_proto_stats pointer to the parent protocol stats instance
  * @return pointer to the protocol statistics. If it does not exist, it will be created.
  */
-proto_statistics_internal_t * get_protocol_stats_from_parent(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats) {
+ proto_statistics_internal_t * get_protocol_stats_from_parent(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats) {
     proto_statistics_internal_t * proto_stats;
     if (parent_proto_stats == NULL /* Always the case for META protocol */) {
-        proto_stats = proto->proto_stats;
-        if (proto_stats == NULL) {
-            proto_stats = create_protocol_stats_instance(proto, parent_proto_stats);
-        }
-    } else {
-        proto_stats = get_child_protocol_stats(parent_proto_stats, proto->protocol->proto_id);
-        if (proto_stats == NULL) {
-            proto_stats = create_protocol_stats_instance(proto, parent_proto_stats);
-        }
+    proto_stats = proto->proto_stats;
+    if (proto_stats == NULL) {
+        proto_stats = create_protocol_stats_instance(proto, parent_proto_stats);
     }
-    return proto_stats;
+} else {
+    proto_stats = get_child_protocol_stats(parent_proto_stats, proto->protocol->proto_id);
+    if (proto_stats == NULL) {
+        proto_stats = create_protocol_stats_instance(proto, parent_proto_stats);
+    }
+}
+return proto_stats;
 }
 
 /**
@@ -2309,18 +2309,18 @@ proto_statistics_internal_t * get_protocol_stats_from_parent(protocol_instance_t
  * @param f file descriptor
  * @param proto pointer to the root protocol
  */
-void print_protocol_stats_tree(FILE * f, protocol_instance_t * proto);
+ void print_protocol_stats_tree(FILE * f, protocol_instance_t * proto);
 
 /**
  * Prints the protocol stats for the given protocol
  * @param f file descriptor
  * @param proto pointer to the protocol
  */
-void print_protocol_stats(FILE * f, protocol_instance_t * proto) {
+ void print_protocol_stats(FILE * f, protocol_instance_t * proto) {
     proto_statistics_internal_t * proto_stats = proto->proto_stats;
     while (proto_stats) {
         fprintf(f, "Proto %u: \nnb\tpackets %"PRIu64" --- byte count %"PRIu64" --- sessions count %"PRIu64" --- timeout sessions count %"PRIu64"\n",
-                proto_stats->proto->protocol->proto_id, proto_stats->packets_count, proto_stats->data_volume, proto_stats->sessions_count, proto_stats->timedout_sessions_count);
+            proto_stats->proto->protocol->proto_id, proto_stats->packets_count, proto_stats->data_volume, proto_stats->sessions_count, proto_stats->timedout_sessions_count);
         proto_stats = proto_stats->next;
     }
 }
@@ -2358,7 +2358,7 @@ void update_proto_stats_on_session_timeout(mmt_session_t * timed_out_session, pr
     int i = 0;
     for (; i < timed_out_session->proto_path.len; i++) {
         proto_stats = get_protocol_stats_from_parent(&(timed_out_session->mmt_handler)->configured_protocols[timed_out_session->proto_path.proto_path[i]],
-                proto_stats);
+            proto_stats);
         if (i >= timed_out_session->session_protocol_index) {
             proto_stats->timedout_sessions_count += 1;
             proto_stats->touched = 1;
@@ -2484,7 +2484,7 @@ void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * confi
  * @param attribute_id attribute identifier
  * @param data pointer to the attribute data
  */
-void fire_attribute_event(ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index, void * data) {
+ void fire_attribute_event(ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index, void * data) {
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     struct attribute_internal_struct * attr = get_registered_attribute(mmt_handler, proto_id, attribute_id);
     if (attr != NULL) {
@@ -2559,7 +2559,7 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  * 
  * @param ipacket Packet to process
  */
-void process_packet_handler(ipacket_t *ipacket){
+ void process_packet_handler(ipacket_t *ipacket){
     debug("process_packet_handler of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,ipacket->extra.index);
     packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;            
     while (temp_packet_handler != NULL) {
@@ -2570,25 +2570,25 @@ void process_packet_handler(ipacket_t *ipacket){
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
     if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
-            && (ipacket->data != ipacket->original_data)) {
+        && (ipacket->data != ipacket->original_data)) {
         // data was dynamically allocated during the reassembly process:
         //   . free dynamically allocated ipacket->data
         //   . reset ipacket->data to its original value
         mmt_free((void *) ipacket->data);
-        ipacket->data = ipacket->original_data;
-    }
+    ipacket->data = ipacket->original_data;
+}
 
-    if(ipacket->internal_packet){
-        mmt_free(ipacket->internal_packet);
-    }
-    mmt_free((void *)ipacket->data);
-    mmt_free(ipacket); 
+if(ipacket->internal_packet){
+    mmt_free(ipacket->internal_packet);
+}
+mmt_free((void *)ipacket->data);
+mmt_free(ipacket); 
 }
 
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats, unsigned index) {
     debug("proto_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
-            ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+    ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     int target = MMT_CONTINUE;
     int is_new_session = 0;
     int proto_offset = get_packet_offset_at_index(ipacket, index);
@@ -2626,19 +2626,19 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
         /* Try to classify the encapsulated data */
         proto_packet_classify_next(ipacket, configured_protocol, index);
         // Need to check if the ipacket is still exist
-	// send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
-        if (ipacket->proto_hierarchy->len > (index + 1)) {
-            if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
-                /* process the packet by the next encapsulated protocol */
-                if(ipacket->extra.status == MMT_SKIP){
-                    return target;
-                }else{
+    	// send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
+        if(ipacket->extra.status == MMT_SKIP){ // Avoid calling process_packet_handler when the extra.status == MMT_SCKIP
+            return target;
+        }else{
+            if (ipacket->proto_hierarchy->len > (index + 1)) {
+                if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
+                        /* process the packet by the next encapsulated protocol */
                     return proto_packet_process(ipacket, parent_stats, index + 1);
                 }
             }
+            process_packet_handler(ipacket);
         }
-        process_packet_handler(ipacket);
-	}
+    }
     return target;
 } 
 
@@ -2684,31 +2684,31 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
 
 
 int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
-    
+
     //Testing packet header and data integrity
     if (!header || !packet /* The header and packet must be not null */
             || !(header->caplen > 0) || !(header->len > 0) || !(header->len >= header->caplen) /* Packet data len must not be zero.
                                                                                                * Real data size MUST be greater or equal
                                                                                                * to the captured data len */
-            ) {
+                                                                                               ) {
         return 0;
-    }
+}
 
 #ifdef CFG_OS_MAX_PACKET
-    if( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
-        (void)fprintf( stderr, "This demo version of MMT is limited to %lu packets.\n", (unsigned long)CFG_OS_MAX_PACKET );
-        return 0;
-    }
+if( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
+    (void)fprintf( stderr, "This demo version of MMT is limited to %lu packets.\n", (unsigned long)CFG_OS_MAX_PACKET );
+    return 0;
+}
 
-    ++mmt->packet_count;
+++mmt->packet_count;
 #endif /*CFG_OS_MAX_PACKET*/
 
-    unsigned index = 0;
+unsigned index = 0;
 
-    ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
-    proto_packet_process(ipacket, NULL, index);
+ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
+proto_packet_process(ipacket, NULL, index);
 
-    return 1;
+return 1;
 }
 
 
@@ -2722,7 +2722,7 @@ int base_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 /**
  * generic packet processing
  */
-void generic_data_extraction(unsigned protocol_index, ipacket_t * ipacket) {
+ void generic_data_extraction(unsigned protocol_index, ipacket_t * ipacket) {
     uint32_t proto_id = get_protocol_id_at_index(ipacket, protocol_index);
     struct attribute_internal_struct * tmp_attr_ref;
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
@@ -3059,120 +3059,120 @@ int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
     switch(attr->data_type) {
         case MMT_U8_DATA:
-            return mmt_uint8_sprintf(buff, len, attr);
+        return mmt_uint8_sprintf(buff, len, attr);
         case MMT_U16_DATA:
-            return mmt_uint16_sprintf(buff, len, attr);
+        return mmt_uint16_sprintf(buff, len, attr);
         case MMT_U32_DATA:
-            return mmt_uint32_sprintf(buff, len, attr);
+        return mmt_uint32_sprintf(buff, len, attr);
         case MMT_U64_DATA:
-            return mmt_uint64_sprintf(buff, len, attr);
+        return mmt_uint64_sprintf(buff, len, attr);
         case MMT_DATA_CHAR:
-            return mmt_char_sprintf(buff, len, attr);
+        return mmt_char_sprintf(buff, len, attr);
         case MMT_DATA_POINTER:
-            return mmt_pointer_sprintf(buff, len, attr);
+        return mmt_pointer_sprintf(buff, len, attr);
         case MMT_DATA_MAC_ADDR:
-            return mmt_mac_sprintf(buff, len, attr);
+        return mmt_mac_sprintf(buff, len, attr);
         case MMT_DATA_IP_ADDR:
-            return mmt_ip_sprintf(buff, len, attr);
+        return mmt_ip_sprintf(buff, len, attr);
         case MMT_DATA_IP6_ADDR:
-            return mmt_ip6_sprintf(buff, len, attr);
+        return mmt_ip6_sprintf(buff, len, attr);
         case MMT_DATA_PATH:
-            return mmt_path_sprintf(buff, len, attr);
+        return mmt_path_sprintf(buff, len, attr);
         case MMT_DATA_TIMEVAL:
-            return mmt_timeval_sprintf(buff, len, attr);
+        return mmt_timeval_sprintf(buff, len, attr);
         case MMT_BINARY_DATA:
-            return mmt_binary_sprintf(buff, len, attr);
+        return mmt_binary_sprintf(buff, len, attr);
         case MMT_BINARY_VAR_DATA:
-            return mmt_binary_sprintf(buff, len, attr);
+        return mmt_binary_sprintf(buff, len, attr);
         case MMT_STRING_DATA:
-            return mmt_string_sprintf(buff, len, attr);
+        return mmt_string_sprintf(buff, len, attr);
         case MMT_STRING_LONG_DATA:
-            return mmt_string_sprintf(buff, len, attr);
+        return mmt_string_sprintf(buff, len, attr);
         case MMT_STRING_DATA_POINTER:
-            return mmt_string_pointer_sprintf(buff, len, attr);
+        return mmt_string_pointer_sprintf(buff, len, attr);
         case MMT_HEADER_LINE:
-            return mmt_header_line_pointer_sprintf(buff, len, attr);
+        return mmt_header_line_pointer_sprintf(buff, len, attr);
         case MMT_STATS:
-            return mmt_stats_sprintf(buff, len, attr);
+        return mmt_stats_sprintf(buff, len, attr);
         default:
             return mmt_stats_sprintf(buff, len, attr); //TODO
+        }
     }
-}
 
-int mmt_char_fprintf(FILE * f, attribute_internal_t * attr) {
-    return fprintf(f, "%c", *(char *) attr->data);
-}
-
-int mmt_uint8_fprintf(FILE * f, attribute_internal_t * attr) {
-    return fprintf(f, "%hu", (uint16_t) *(uint8_t *) attr->data);
-}
-
-int mmt_uint16_fprintf(FILE * f, attribute_internal_t * attr) {
-    return fprintf(f, "%hu", *(uint16_t *) attr->data);
-}
-
-int mmt_uint32_fprintf(FILE * f, attribute_internal_t * attr) {
-    return fprintf(f, "%u", *(uint32_t *) attr->data);
-}
-
-int mmt_uint64_fprintf(FILE * f, attribute_internal_t * attr) {
-    return fprintf(f, "%"PRIu64, *(uint64_t *) attr->data);
-}
-
-int mmt_pointer_fprintf(FILE * f, attribute_internal_t * attr) {
-    return fprintf(f, "%p", (void *) attr->data);
-}
-
-int mmt_mac_fprintf(FILE * f, attribute_internal_t * attr) {
-    char buff[MMT_MAC_STRLEN];
-    if (mmt_mac_sprintf(buff, MMT_MAC_STRLEN, attr)) {
-        return fprintf(f, "%s", buff);
+    int mmt_char_fprintf(FILE * f, attribute_internal_t * attr) {
+        return fprintf(f, "%c", *(char *) attr->data);
     }
-    return -1;
-}
 
-int mmt_ip_fprintf(FILE * f, attribute_internal_t * attr) {
-    char buff[MMT_IP_STRLEN];
-    if (mmt_ip_sprintf(buff, MMT_IP_STRLEN, attr)) {
-        return fprintf(f, "%s", buff);
+    int mmt_uint8_fprintf(FILE * f, attribute_internal_t * attr) {
+        return fprintf(f, "%hu", (uint16_t) *(uint8_t *) attr->data);
     }
-    return -1;
-}
 
-int mmt_ip6_fprintf(FILE * f, attribute_internal_t * attr){
-    char buff[MMT_IP6_STRLEN];
-    if (mmt_ip6_sprintf(buff, MMT_IP6_STRLEN, attr)) {
-        return fprintf(f, "%s", buff);
+    int mmt_uint16_fprintf(FILE * f, attribute_internal_t * attr) {
+        return fprintf(f, "%hu", *(uint16_t *) attr->data);
     }
-    return -1;
-}
 
-int mmt_path_fprintf(FILE * f, attribute_internal_t * attr) {
-    char buff[MMT_PATH_STRLEN];
-    if (mmt_path_sprintf(buff, MMT_PATH_STRLEN, attr)) {
-        return fprintf(f, "%s", buff);
+    int mmt_uint32_fprintf(FILE * f, attribute_internal_t * attr) {
+        return fprintf(f, "%u", *(uint32_t *) attr->data);
     }
-    return -1;
-}
-int mmt_timeval_fprintf(FILE * f, attribute_internal_t * attr){
-    return fprintf(f, "%lu.%lu", ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
-}
-int mmt_binary_fprintf(FILE * f, attribute_internal_t * attr){
-    char buff[MMT_BINARYVAR_STRLEN];
-    if (mmt_binary_sprintf(buff, MMT_BINARY_STRLEN, attr)) {
-        return fprintf(f, "%s", buff);
-    }
-    return -1;
-}
-int mmt_string_fprintf(FILE * f, attribute_internal_t * attr){
-    mmt_binary_var_data_t * b = (mmt_binary_var_data_t *) attr->data;
-    return fprintf(f, "%s", (char *) &b->data);
-}
-int mmt_string_pointer_fprintf(FILE * f, attribute_internal_t * attr){
-    return fprintf(f, "%s", (char *) attr->data);
-}
 
-int mmt_header_line_pointer_fprintf(FILE * f, attribute_internal_t * attr){
+    int mmt_uint64_fprintf(FILE * f, attribute_internal_t * attr) {
+        return fprintf(f, "%"PRIu64, *(uint64_t *) attr->data);
+    }
+
+    int mmt_pointer_fprintf(FILE * f, attribute_internal_t * attr) {
+        return fprintf(f, "%p", (void *) attr->data);
+    }
+
+    int mmt_mac_fprintf(FILE * f, attribute_internal_t * attr) {
+        char buff[MMT_MAC_STRLEN];
+        if (mmt_mac_sprintf(buff, MMT_MAC_STRLEN, attr)) {
+            return fprintf(f, "%s", buff);
+        }
+        return -1;
+    }
+
+    int mmt_ip_fprintf(FILE * f, attribute_internal_t * attr) {
+        char buff[MMT_IP_STRLEN];
+        if (mmt_ip_sprintf(buff, MMT_IP_STRLEN, attr)) {
+            return fprintf(f, "%s", buff);
+        }
+        return -1;
+    }
+
+    int mmt_ip6_fprintf(FILE * f, attribute_internal_t * attr){
+        char buff[MMT_IP6_STRLEN];
+        if (mmt_ip6_sprintf(buff, MMT_IP6_STRLEN, attr)) {
+            return fprintf(f, "%s", buff);
+        }
+        return -1;
+    }
+
+    int mmt_path_fprintf(FILE * f, attribute_internal_t * attr) {
+        char buff[MMT_PATH_STRLEN];
+        if (mmt_path_sprintf(buff, MMT_PATH_STRLEN, attr)) {
+            return fprintf(f, "%s", buff);
+        }
+        return -1;
+    }
+    int mmt_timeval_fprintf(FILE * f, attribute_internal_t * attr){
+        return fprintf(f, "%lu.%lu", ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
+    }
+    int mmt_binary_fprintf(FILE * f, attribute_internal_t * attr){
+        char buff[MMT_BINARYVAR_STRLEN];
+        if (mmt_binary_sprintf(buff, MMT_BINARY_STRLEN, attr)) {
+            return fprintf(f, "%s", buff);
+        }
+        return -1;
+    }
+    int mmt_string_fprintf(FILE * f, attribute_internal_t * attr){
+        mmt_binary_var_data_t * b = (mmt_binary_var_data_t *) attr->data;
+        return fprintf(f, "%s", (char *) &b->data);
+    }
+    int mmt_string_pointer_fprintf(FILE * f, attribute_internal_t * attr){
+        return fprintf(f, "%s", (char *) attr->data);
+    }
+
+    int mmt_header_line_pointer_fprintf(FILE * f, attribute_internal_t * attr){
     char buff[8096 + 1]; //Max accepted header line length is 8K (default for Apache)
     if (mmt_header_line_pointer_sprintf(buff, 8096, attr)) {
         return fprintf(f, "%s", buff);
@@ -3188,81 +3188,81 @@ int mmt_attr_fprintf(FILE * f, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
     switch(attr->data_type) {
         case MMT_U8_DATA:
-            return mmt_uint8_fprintf(f, attr);
+        return mmt_uint8_fprintf(f, attr);
         case MMT_U16_DATA:
-            return mmt_uint16_fprintf(f, attr);
+        return mmt_uint16_fprintf(f, attr);
         case MMT_U32_DATA:
-            return mmt_uint32_fprintf(f, attr);
+        return mmt_uint32_fprintf(f, attr);
         case MMT_U64_DATA:
-            return mmt_uint64_fprintf(f, attr);
+        return mmt_uint64_fprintf(f, attr);
         case MMT_DATA_CHAR:
-            return mmt_char_fprintf(f, attr);
+        return mmt_char_fprintf(f, attr);
         case MMT_DATA_POINTER:
-            return mmt_pointer_fprintf(f, attr);
+        return mmt_pointer_fprintf(f, attr);
         case MMT_DATA_MAC_ADDR:
-            return mmt_mac_fprintf(f, attr);
+        return mmt_mac_fprintf(f, attr);
         case MMT_DATA_IP_ADDR:
-            return mmt_ip_fprintf(f, attr);
+        return mmt_ip_fprintf(f, attr);
         case MMT_DATA_IP6_ADDR:
-            return mmt_ip6_fprintf(f, attr);
+        return mmt_ip6_fprintf(f, attr);
         case MMT_DATA_PATH:
-            return mmt_path_fprintf(f, attr);
+        return mmt_path_fprintf(f, attr);
         case MMT_DATA_TIMEVAL:
-            return mmt_timeval_fprintf(f, attr);
+        return mmt_timeval_fprintf(f, attr);
         case MMT_BINARY_DATA:
-            return mmt_binary_fprintf(f, attr);
+        return mmt_binary_fprintf(f, attr);
         case MMT_BINARY_VAR_DATA:
-            return mmt_binary_fprintf(f, attr);
+        return mmt_binary_fprintf(f, attr);
         case MMT_STRING_DATA:
-            return mmt_string_fprintf(f, attr);
+        return mmt_string_fprintf(f, attr);
         case MMT_STRING_LONG_DATA:
-            return mmt_string_fprintf(f, attr);
+        return mmt_string_fprintf(f, attr);
         case MMT_STRING_DATA_POINTER:
-            return mmt_string_pointer_fprintf(f, attr);
+        return mmt_string_pointer_fprintf(f, attr);
         case MMT_HEADER_LINE:
-            return mmt_header_line_pointer_fprintf(f, attr);
+        return mmt_header_line_pointer_fprintf(f, attr);
         case MMT_STATS:
-            return mmt_stats_fprintf(f, attr);
+        return mmt_stats_fprintf(f, attr);
         default:
-            return mmt_stats_fprintf(f, attr);
+        return mmt_stats_fprintf(f, attr);
     }
 }
 
 int mmt_char_format(FILE * f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s = %c\n",
-            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), *(char *) attr->data);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), *(char *) attr->data);
 }
 
 int mmt_uint8_format(FILE * f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s = %hu\n",
-            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (uint16_t) *(uint8_t *) attr->data);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (uint16_t) *(uint8_t *) attr->data);
 }
 
 int mmt_uint16_format(FILE * f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s = %hu\n",
-            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), *(uint16_t *) attr->data);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), *(uint16_t *) attr->data);
 }
 
 int mmt_uint32_format(FILE * f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s = %u\n",
-            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), *(uint32_t *) attr->data);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), *(uint32_t *) attr->data);
 }
 
 int mmt_uint64_format(FILE * f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s = %"PRIu64"\n",
-            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), *(uint64_t *) attr->data);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), *(uint64_t *) attr->data);
 }
 
 int mmt_pointer_format(FILE * f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s = %p\n",
-            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (void *) attr->data);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (void *) attr->data);
 }
 
 int mmt_mac_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_MAC_STRLEN];
     if (mmt_mac_sprintf(buff, MMT_MAC_STRLEN, attr)) {
         return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
 }
@@ -3271,7 +3271,7 @@ int mmt_ip_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_IP_STRLEN];
     if (mmt_ip_sprintf(buff, MMT_IP_STRLEN, attr)) {
         return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
 }
@@ -3280,7 +3280,7 @@ int mmt_ip6_format(FILE * f, attribute_internal_t * attr){
     char buff[MMT_IP6_STRLEN];
     if (mmt_ip6_sprintf(buff, MMT_IP6_STRLEN, attr)) {
         return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
 }
@@ -3289,86 +3289,86 @@ int mmt_path_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_PATH_STRLEN];
     if (mmt_path_sprintf(buff, MMT_PATH_STRLEN, attr)) {
         return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
 }
 int mmt_timeval_format(FILE * f, attribute_internal_t * attr){
     return fprintf(f, "Attribute %s.%s  = %lu.%lu\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
 }
 int mmt_binary_format(FILE * f, attribute_internal_t * attr){
     char buff[MMT_BINARYVAR_STRLEN];
     if (mmt_binary_sprintf(buff, MMT_BINARY_STRLEN, attr)) {
         return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
 }
 int mmt_string_format(FILE * f, attribute_internal_t * attr){
     mmt_binary_var_data_t * b = (mmt_binary_var_data_t *) attr->data;
     return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (char *) &b->data);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (char *) &b->data);
 }
 int mmt_string_pointer_format(FILE * f, attribute_internal_t * attr){
     return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (char *) attr->data);
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (char *) attr->data);
 }
 
 int mmt_header_line_pointer_format(FILE * f, attribute_internal_t * attr){
     char buff[8096 + 1]; //Max accepted header line length is 8K (default for Apache)
     if (mmt_header_line_pointer_sprintf(buff, 8096, attr)) {
         return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+            get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
 }
 
 int mmt_stats_format(FILE *f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s = %s\n",
-                get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), "TODO");
+        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), "TODO");
 }
 
 int mmt_attr_format(FILE * f, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
     switch(attr->data_type) {
         case MMT_U8_DATA:
-            return mmt_uint8_format(f, attr);
+        return mmt_uint8_format(f, attr);
         case MMT_U16_DATA:
-            return mmt_uint16_format(f, attr);
+        return mmt_uint16_format(f, attr);
         case MMT_U32_DATA:
-            return mmt_uint32_format(f, attr);
+        return mmt_uint32_format(f, attr);
         case MMT_U64_DATA:
-            return mmt_uint64_format(f, attr);
+        return mmt_uint64_format(f, attr);
         case MMT_DATA_CHAR:
-            return mmt_char_format(f, attr);
+        return mmt_char_format(f, attr);
         case MMT_DATA_POINTER:
-            return mmt_pointer_format(f, attr);
+        return mmt_pointer_format(f, attr);
         case MMT_DATA_MAC_ADDR:
-            return mmt_mac_format(f, attr);
+        return mmt_mac_format(f, attr);
         case MMT_DATA_IP_ADDR:
-            return mmt_ip_format(f, attr);
+        return mmt_ip_format(f, attr);
         case MMT_DATA_IP6_ADDR:
-            return mmt_ip6_format(f, attr);
+        return mmt_ip6_format(f, attr);
         case MMT_DATA_PATH:
-            return mmt_path_format(f, attr);
+        return mmt_path_format(f, attr);
         case MMT_DATA_TIMEVAL:
-            return mmt_timeval_format(f, attr);
+        return mmt_timeval_format(f, attr);
         case MMT_BINARY_DATA:
-            return mmt_binary_format(f, attr);
+        return mmt_binary_format(f, attr);
         case MMT_BINARY_VAR_DATA:
-            return mmt_binary_format(f, attr);
+        return mmt_binary_format(f, attr);
         case MMT_STRING_DATA:
-            return mmt_string_format(f, attr);
+        return mmt_string_format(f, attr);
         case MMT_STRING_LONG_DATA:
-            return mmt_string_format(f, attr);
+        return mmt_string_format(f, attr);
         case MMT_STRING_DATA_POINTER:
-            return mmt_string_pointer_format(f, attr);
+        return mmt_string_pointer_format(f, attr);
         case MMT_HEADER_LINE:
-            return mmt_header_line_pointer_format(f, attr);
+        return mmt_header_line_pointer_format(f, attr);
         case MMT_STATS:
-            return mmt_stats_format(f, attr);
+        return mmt_stats_format(f, attr);
         default:
-            return mmt_stats_format(f, attr);
+        return mmt_stats_format(f, attr);
     }
 }
