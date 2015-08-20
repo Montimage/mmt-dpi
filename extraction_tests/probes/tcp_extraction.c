@@ -211,7 +211,7 @@ int main(int argc, char ** argv){
 
 	//Register a packet handler, it will be called for every processed packet
 	register_packet_handler(mmt_handler,1,packet_handler, NULL);
-
+	printf("packet_id,ip->ip_id,tcp_src_port,tcp_dest_port,tcp_seq_nb,tcp_ack_nb,tcp_data_offset,tcp_flags,tcp_fin,tcp_syn,tcp_rst,tcp_psh,tcp_ack,tcp_urg,tcp_ece,tcp_cwr,tcp_window,tcp_checksum,tcp_urg_ptr,tcp_syn_rcv,tcp_conn_established,tcp_rtt->tv_sec,tcp_rtt->tv_usec\n");
 	if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace
         if (!pcap) { /* pcap error ? */

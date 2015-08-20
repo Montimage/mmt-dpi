@@ -199,6 +199,7 @@ int main(int argc, char ** argv){
 	//Register a packet handler, it will be called for every processed packet
 	register_packet_handler(mmt_handler,1,packet_handler, NULL);
 
+	printf("packet_id,ip_version,ip_header_len,ip_proto_tos,ip_tot_len,ip_identification,ip_df_flag,ip_mf_flag,ip_frag_offset,ip_proto_ttl,ip_proto_id,ip_checksum,ip_src,ip_dst,ip_client_addr,ip_server_addr,ip_client_port,ip_server_port\n");
 	if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace
         if (!pcap) { /* pcap error ? */
