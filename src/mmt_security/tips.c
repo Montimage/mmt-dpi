@@ -306,7 +306,7 @@ void *get_data(long type, int size, void *str)
     unsigned long long ll = 0L;
     void * data = (void *) xmalloc(size);
     unsigned char *temp_MAC;
-
+    mmt_header_line_t tmp_header_line;
     switch (type) {
         case MMT_DATA_MAC_ADDR:
             temp_MAC = xmalloc(22);
@@ -337,6 +337,7 @@ void *get_data(long type, int size, void *str)
             return (void *) data;
             break;
         case MMT_STRING_DATA:
+        case MMT_DATA_PATH:
         case MMT_STRING_LONG_DATA:
         case MMT_BINARY_VAR_DATA:
         case MMT_BINARY_DATA:
@@ -345,6 +346,14 @@ void *get_data(long type, int size, void *str)
             memcpy(data, (void *) str, size);
             return (void *) data;
             break;
+        case MMT_HEADER_LINE:
+        	//str is an instance of mmt_string_data_t
+        	tmp_header_line.len =  ((mmt_string_data_t *) str)->len;
+        	char *tmp = xcalloc(0, tmp_header_line.len);
+        	memcpy(tmp, ((mmt_string_data_t *) str)->data, tmp_header_line.len);
+        	tmp_header_line.ptr = tmp;
+        	memcpy( data, (void*) (&tmp_header_line), size);
+        	return data;
         case MMT_DATA_TIMEVAL:
         case MMT_DATA_IP_ADDR:
         case MMT_DATA_IP6_ADDR:
@@ -359,16 +368,18 @@ void *get_data(long type, int size, void *str)
         case MMT_DATA_FILTER_STATE:
 
         default:
-            (void)fprintf(stderr, "Error 2: Type not implemented yet, data type unknown.\n");
+            (void)fprintf(stderr, "Error 2: Type [%ld], size [%d] not implemented yet, data type unknown.\n [%s]\n", type, size, (char *)data);
             exit(-1);
     }//end of switch
 }
 
 char *get_d(void *data1, short size, long type) {
     char *buff1 = xmalloc(100);
+    char *buff0 = xmalloc(10);
     void * data2 = NULL;
     mmt_binary_data_t *db1;
-    int data_size, j;
+    mmt_header_line_t *tmp_header_line;
+    int data_size=0, j=0, stop=0;
     buff1[0] = '\0';
     switch (type) {
         case MMT_DATA_IP6_ADDR:
@@ -416,6 +427,28 @@ char *get_d(void *data1, short size, long type) {
         case MMT_DATA_CHAR:
             (void)sprintf(buff1, "%c", *(unsigned char*) (data1));
             break;
+        case MMT_DATA_PATH:
+            stop = *(int*) (data1 + j*sizeof (int));
+            if(stop>0 && stop < 20){
+              for(j=1;j<stop;j++){
+                (void)sprintf(buff0, "%d", *(int*) (data1 + j*sizeof (int)));
+                if(j==1)strcpy(buff1, buff0);
+                else {
+                  strcat(buff1, ".");
+                  strcat(buff1, buff0);
+                }
+              }
+            }
+            break;
+        case MMT_HEADER_LINE:
+        	tmp_header_line = (mmt_header_line_t *) data1;
+        	xfree(buff1);
+        	buff1 = xmalloc( tmp_header_line->len * sizeof( char ) );
+        	memcpy(buff1, tmp_header_line->ptr, tmp_header_line->len);
+        	buff1[ tmp_header_line->len ] = '\0';
+        	//printf( "\n----\n%s\n%s\n----%d", buff1, tmp_header_line->ptr, tmp_header_line->len );
+        	break;
+
         case MMT_STRING_LONG_DATA:
         case MMT_STRING_DATA:
             (void)sprintf(buff1, "%s", (char*) (data1 + sizeof (int)));
@@ -456,7 +489,7 @@ char *get_d(void *data1, short size, long type) {
             // TODO
             break;
         default:
-            (void)fprintf(stderr, "Error 15: Type not implemented yet. Data type unknown.\n");
+            (void)fprintf(stderr, "Error 15.1: Type not implemented yet. Data type unknown.\n");
             exit(-1);
     }//end of switch
     return buff1;
@@ -1910,6 +1943,18 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                             get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data1));
                     (void)strcat(xml_buff, xml_buff1);
                     break;
+                case MMT_HEADER_LINE:
+
+                	data1 = get_d( data1, data_size, type );
+                	(void)sprintf(buff1, "          %s.%s = %s", get_protocol_name_by_id(temp->protocol_id),
+							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char*) data1);
+					(void)strcat(buff, buff1);
+
+					(void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %s</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
+							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char*) data1);
+					(void)strcat(xml_buff, xml_buff1);
+					break;
+                case MMT_DATA_PATH:
                 case MMT_STRING_LONG_DATA:
                 case MMT_STRING_DATA:
                     (void)sprintf(buff1, "          %s.%s = %s", get_protocol_name_by_id(temp->protocol_id),
@@ -1984,7 +2029,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     // TODO
                     break;
                 default:
-                    (void)fprintf(stderr, "Error 15: Type not implemented yet. Data type unknown.\n");
+                    (void)fprintf(stderr, "Error 15.2: Type not implemented yet. Data type unknown.\n");
                     exit(-1);
             }//end of switch
             (void)sprintf(buff1, "\n");
@@ -2182,7 +2227,7 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
 
 int comp2(compare_value v1, compare_value v2, short ope)
 {
-    int i = 0, ret = 0;
+    int i = 0, j = 0, ret = 0;
     unsigned short s1 = 0, s2 = 0;
     unsigned long l1 = 0, l2 = 0;
     unsigned long long ll1 = 0, ll2 = 0;
@@ -2193,6 +2238,7 @@ int comp2(compare_value v1, compare_value v2, short ope)
     int size = 0;
     char * data1 = NULL;
     char * data2 = NULL;
+
 
     //Special case: ope==XIN with v1 is some type and v2 is MMT_BINARY_VAR_DATA
     if (ope == XIN && v2.type == MMT_BINARY_VAR_DATA) {
@@ -2289,6 +2335,25 @@ int comp2(compare_value v1, compare_value v2, short ope)
             if ((ope == NEQ && c1 != c2) || (ope == EQ && c1 == c2) || (ope == LT && c1 < c2) || (ope == LTE && c1 <= c2) || (ope == GT && c1 > c2) || (ope == GTE && c1 >= c2))
                 return VALID;
             break;
+        case MMT_DATA_PATH:
+            //TODO: need to complete for other cases
+            if (ope == XC || ope == XCE) {
+              j = atoi(data2);
+              if(size>0 && size < 20){
+                for(i=1;i<size;i++){
+                  if(j == *(int*) (data1 + i*sizeof (int))) return VALID;
+                }
+                return NOT_VALID;
+              }
+            }
+            break;
+        case MMT_HEADER_LINE:
+        	//get string of data1 and data2
+        	data1 = get_d(v1.data, v1.size, v1.type );
+        	data2 = get_d(v2.data, v2.size, v2.type );
+        	//printf("\ncompare [%s] %d [%s] = ", data1, ope, data2);
+        	v1.size = strlen(data1);
+        	v2.size = strlen(data2);
         case MMT_DATA_POINTER:
         case MMT_STRING_DATA:
         case MMT_STRING_LONG_DATA:
@@ -2298,7 +2363,13 @@ int comp2(compare_value v1, compare_value v2, short ope)
         case MMT_DATA_MAC_ADDR:
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
-        case MMT_DATA_PATH:
+        	if (ope == EQ && v1.size != v2.size)
+        		return NOT_VALID;
+        	if(ope == NEQ && v1.size != v2.size)
+        		return VALID;
+
+        	size = v1.size > v2.size? v2.size : v1.size;
+
             if (ope == XC || ope == XCE) {
                 if (strstr(data1, data2) != NULL)
                     return VALID;
@@ -2573,6 +2644,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         }
         v2.data = (void *) xcalloc(1, v2.size);
         memcpy(v2.data, data, v2.size);
+        if( v2.type == MMT_HEADER_LINE ){
+        	((mmt_header_line_t *)v2.data)->len = ((mmt_header_line_t *)data)->len;
+        	//printf("\nOK1\n");
+        }
     } else if (r2->t.event_id != 0) {
         if (skip_refs == YES) v1.found = SKIP;
         else {
@@ -2598,6 +2673,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                                             exit(-1);
                                         }
                                         memcpy(v2.data, data, v2.size);
+                                        if( v2.type == MMT_HEADER_LINE ){
+                                        	((mmt_header_line_t *)v2.data)->len = ((mmt_header_line_t *)data)->len;
+                                            //printf("\nOK\n");
+                                        }
                                         break;
                                     }
                 temp_tuple2 = temp_tuple2->next;
@@ -2644,8 +2723,13 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                 tmp_v->size = *(int*) (data);
                 data = data + sizeof (int);
             }
-            tmp_v->data = (void *) xcalloc(1, tmp_v->size);
+
+            tmp_v->data = xcalloc(1, tmp_v->size);
             memcpy(tmp_v->data, data, tmp_v->size);
+
+            if( v1.type == MMT_HEADER_LINE )
+            	((mmt_header_line_t *)tmp_v->data)->len = ((mmt_header_line_t *)data)->len;
+
         }
     }
     if (v2.found == NOT_FOUND) {
@@ -2662,6 +2746,8 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             }
             tmp_v->data = (void *) xcalloc(1, tmp_v->size);
             memcpy(tmp_v->data, data, tmp_v->size);
+            if( v2.type == MMT_HEADER_LINE )
+            	((mmt_header_line_t *)tmp_v->data)->len = ((mmt_header_line_t *)data)->len;
         }
     }
 
@@ -2677,6 +2763,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
     }
     if (action == COMPARE) {
         ret = comp2(v1, v2, operator);
+        //printf(" = %d\n\n", ret);
     } else if (action == COMPUTE) {
         *result_value = compute(v1, v2, operator);
     }
@@ -3951,7 +4038,7 @@ void print_summary()
 {
     rule *temp = top_rule;
     while (temp != NULL) {
-        (void)fprintf(stderr, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --\n");
+        (void)fprintf(stderr, "\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --\n");
         (void)print_message(temp->type_rule, BOTH, NEITHER, temp->property_id, temp->description);
         if (temp->type_rule == ATTACK) {
             (void)fprintf(stderr, "    ATTACKS DETECTED                      : %6ld times,\n", temp->nb_satisfied);
