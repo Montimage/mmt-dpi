@@ -81,11 +81,11 @@
 
 #include "struct_defs.h"
 #include "public_defs.h"
-#include "data_defs.h"
-#include "extraction_lib.h"
-#include "mmt_core.h"
-#include "plugin_defs.h"
-#include "types_defs.h"
+#include "mmt/data_defs.h"
+#include "mmt/extraction_lib.h"
+#include "mmt/mmt_core.h"
+#include "mmt/plugin_defs.h"
+#include "mmt/types_defs.h"
 
 static FILE * OutputFile = NULL;
 static long long packet_count = 0;
@@ -297,6 +297,30 @@ void convert_mac_bytes_to_string(char **pszMACAddress, unsigned char *pbyMacAddr
             cSep, pbyMacAddressInBytes[5]& 0xff);
 }
 
+/**
+ * Convert MMT_HEADER_LINE to string
+ */
+char *parse_mmt_header_line( void *data, int *size ){
+	mmt_header_line_t *tmp = data;
+
+	//???
+	int d = strlen( tmp->ptr );
+	if( tmp->len > d )
+		tmp->len = d;
+	//
+
+	if( tmp->ptr[ tmp->len -1 ] == '\0' )
+		*size = tmp->len;
+	else
+		*size = (tmp->len + 1);
+
+	char *str = xmalloc( *size);
+	memcpy(str, (void *) tmp->ptr, *size );
+	str[ *size - 1 ] = '\0';
+
+	return str;
+}
+
 void *get_data(long type, int size, void *str)
 {
     //Only used when reading values from XML file
@@ -306,7 +330,7 @@ void *get_data(long type, int size, void *str)
     unsigned long long ll = 0L;
     void * data = (void *) xmalloc(size);
     unsigned char *temp_MAC;
-    mmt_header_line_t tmp_header_line;
+    mmt_string_data_t *tmp;
     switch (type) {
         case MMT_DATA_MAC_ADDR:
             temp_MAC = xmalloc(22);
@@ -347,13 +371,17 @@ void *get_data(long type, int size, void *str)
             return (void *) data;
             break;
         case MMT_HEADER_LINE:
+        	xfree (data);
         	//str is an instance of mmt_string_data_t
-        	tmp_header_line.len =  ((mmt_string_data_t *) str)->len;
-        	char *tmp = xcalloc(0, tmp_header_line.len);
-        	memcpy(tmp, ((mmt_string_data_t *) str)->data, tmp_header_line.len);
-        	tmp_header_line.ptr = tmp;
-        	memcpy( data, (void*) (&tmp_header_line), size);
-        	return data;
+        	tmp = str;
+        	mmt_header_line_t *hl = (mmt_header_line_t *) xmalloc( size );
+        	hl->len = tmp->len;
+        	char *str = xmalloc( hl->len);
+        	memcpy(str, (void *)tmp->data, hl->len);
+        	str[ hl->len - 1 ] = '\0';
+        	hl->ptr = str;
+        	return hl;
+
         case MMT_DATA_TIMEVAL:
         case MMT_DATA_IP_ADDR:
         case MMT_DATA_IP6_ADDR:
@@ -378,7 +406,7 @@ char *get_d(void *data1, short size, long type) {
     char *buff0 = xmalloc(10);
     void * data2 = NULL;
     mmt_binary_data_t *db1;
-    mmt_header_line_t *tmp_header_line;
+    //mmt_header_line_t *t;
     int data_size=0, j=0, stop=0;
     buff1[0] = '\0';
     switch (type) {
@@ -441,20 +469,15 @@ char *get_d(void *data1, short size, long type) {
             }
             break;
         case MMT_HEADER_LINE:
-        	tmp_header_line = (mmt_header_line_t *) data1;
-        	xfree(buff1);
-        	buff1 = xmalloc( tmp_header_line->len * sizeof( char ) );
-        	memcpy(buff1, tmp_header_line->ptr, tmp_header_line->len);
-        	buff1[ tmp_header_line->len ] = '\0';
-        	//printf( "\n----\n%s\n%s\n----%d", buff1, tmp_header_line->ptr, tmp_header_line->len );
+        	return parse_mmt_header_line( data1, & data_size );
         	break;
-
         case MMT_STRING_LONG_DATA:
         case MMT_STRING_DATA:
             (void)sprintf(buff1, "%s", (char*) (data1 + sizeof (int)));
             break;
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
+
             // TODO
             db1 = (mmt_binary_data_t *) (data1);
             data_size = db1->len;
@@ -497,6 +520,7 @@ char *get_d(void *data1, short size, long type) {
 
 char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, tuple *list_of_tuples )
 {
+	int d;
     int i = 0;
     char * output = NULL;
     char * temp2 = NULL;
@@ -561,9 +585,13 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                 long type = temp_tuple2->data_type_id;
                 *size = temp_tuple2->data_size;
                 void *data = temp_tuple2->data;
-                if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA || type == MMT_DATA_PATH) {
+                if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA || type == MMT_DATA_PATH ) {
                     *size = *(int*) (data);
                     data = temp_tuple2->data + sizeof (int);
+                }
+                else if( type == MMT_HEADER_LINE ){
+                	data = parse_mmt_header_line( data, &d );
+                	*size = (int) d;
                 }
                 //Copy (data, size, type) to output
                 char * d = NULL;
@@ -586,9 +614,13 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
         if (data != NULL) {
             long type = data_type_id;
             *size = get_data_size_by_proto_and_field_ids(protocol_id, field_id);
-            if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA || type == MMT_DATA_PATH) {
+            if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA || type == MMT_DATA_PATH ) {
                 *size = *(int*) (data);
                 data = data + sizeof (int);
+            }
+            else if( type == MMT_HEADER_LINE ){
+            	data = parse_mmt_header_line( data, &d );
+            	*size = d;
             }
             //Copy (data, size, type) to output
             char * d = NULL;
@@ -1839,6 +1871,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     char *xml_buff=xcalloc(7000,1);
     char *xml_buff1=xcalloc(7000,1);
     char *temp_MAC;
+    //mmt_header_line_t *hl;
 
     tvp.tv_sec=0;
     tvp.tv_usec=0;
@@ -1944,14 +1977,13 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     (void)strcat(xml_buff, xml_buff1);
                     break;
                 case MMT_HEADER_LINE:
-
-                	data1 = get_d( data1, data_size, type );
+                	data1 = parse_mmt_header_line( data1, & data_size );
                 	(void)sprintf(buff1, "          %s.%s = %s", get_protocol_name_by_id(temp->protocol_id),
-							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char*) data1);
+							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char *)data1);
 					(void)strcat(buff, buff1);
 
 					(void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %s</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
-							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char*) data1);
+							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char *)data1);
 					(void)strcat(xml_buff, xml_buff1);
 					break;
                 case MMT_DATA_PATH:
@@ -2069,7 +2101,8 @@ void store_tuples( const ipacket_t *pkt, short context, rule *curr_root, rule *c
         }
         data = get_attribute_extracted_data( pkt, temp_tuple->protocol_id, temp_tuple->field_id );
         if (data == NULL) {
-            (void)fprintf(stderr, "Error 16: in stored reference tuples. Data is not available. protocol_id=%ld, field_id=%ld\n",
+            (void)fprintf(stderr, "Error 16: in stored reference tuples. Data is not available. packet_id=%ju, protocol_id=%ld, field_id=%ld\n",
+            		pkt->packet_id,
                     temp_tuple->protocol_id, temp_tuple->field_id);
             //exit(-1);
         } else {
@@ -2238,7 +2271,7 @@ int comp2(compare_value v1, compare_value v2, short ope)
     int size = 0;
     char * data1 = NULL;
     char * data2 = NULL;
-
+    //mmt_header_line_t *hl;
 
     //Special case: ope==XIN with v1 is some type and v2 is MMT_BINARY_VAR_DATA
     if (ope == XIN && v2.type == MMT_BINARY_VAR_DATA) {
@@ -2348,12 +2381,6 @@ int comp2(compare_value v1, compare_value v2, short ope)
             }
             break;
         case MMT_HEADER_LINE:
-        	//get string of data1 and data2
-        	data1 = get_d(v1.data, v1.size, v1.type );
-        	data2 = get_d(v2.data, v2.size, v2.type );
-        	//printf("\ncompare [%s] %d [%s] = ", data1, ope, data2);
-        	v1.size = strlen(data1);
-        	v2.size = strlen(data2);
         case MMT_DATA_POINTER:
         case MMT_STRING_DATA:
         case MMT_STRING_LONG_DATA:
@@ -2363,6 +2390,11 @@ int comp2(compare_value v1, compare_value v2, short ope)
         case MMT_DATA_MAC_ADDR:
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
+
+#ifdef DEBUG
+        	printf("\n compare[%s] %d [%s], %d, %d\n", data1, ope, data2, v1.size, v2.size);
+#endif
+
         	if (ope == EQ && v1.size != v2.size)
         		return NOT_VALID;
         	if(ope == NEQ && v1.size != v2.size)
@@ -2572,6 +2604,7 @@ void * compute(compare_value v1, compare_value v2, short operator)
     return NULL;
 }
 
+
 int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, void** result_value, tuple *list_of_tuples, short operator, rule *r1, rule *r2)
 {
     int ret = 0;
@@ -2604,6 +2637,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             v1.size = *(int*) (data);
             data = r1->t.data + sizeof (int);
         }
+        else if (v1.type == MMT_HEADER_LINE) {
+            data = parse_mmt_header_line( data, &v1.size );
+        }
+
         v1.data = (void *) xcalloc(1, v1.size);
         memcpy(v1.data, data, v1.size);
     } else if (r1->t.event_id != 0) {
@@ -2621,6 +2658,9 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                         v1.size = *(int*) (data);
                         data = temp_tuple2->data + sizeof (int);
                     }
+                    else if (v1.type == MMT_HEADER_LINE)
+                    	data = parse_mmt_header_line( temp_tuple2->data, & v1.size );
+
                     v1.data = (void *) xcalloc(1, v1.size);
                     if (v1.data == NULL || data == NULL) {
                         (void)fprintf(stderr, "Error 18: Problem in stored reference. Data is not available.\n");
@@ -2642,12 +2682,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             v2.size = *(int*) (data);
             data = r2->t.data + sizeof (int);
         }
+        else if (v2.type == MMT_HEADER_LINE)
+            data = parse_mmt_header_line( r2->t.data, &v2.size );
+
         v2.data = (void *) xcalloc(1, v2.size);
         memcpy(v2.data, data, v2.size);
-        if( v2.type == MMT_HEADER_LINE ){
-        	((mmt_header_line_t *)v2.data)->len = ((mmt_header_line_t *)data)->len;
-        	//printf("\nOK1\n");
-        }
     } else if (r2->t.event_id != 0) {
         if (skip_refs == YES) v1.found = SKIP;
         else {
@@ -2667,16 +2706,15 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                                             v2.size = *(int*) (data);
                                             data = temp_tuple2->data + sizeof (int);
                                         }
+                                        else if (v2.type == MMT_HEADER_LINE)
+                                            data = parse_mmt_header_line( data, &v2.size );
+
                                         v2.data = (void *) xcalloc(1, v2.size);
                                         if (v2.data == NULL || data == NULL) {
                                             (void)fprintf(stderr, "Error 19: Problem in stored reference. Data is not available.\n");
                                             exit(-1);
                                         }
                                         memcpy(v2.data, data, v2.size);
-                                        if( v2.type == MMT_HEADER_LINE ){
-                                        	((mmt_header_line_t *)v2.data)->len = ((mmt_header_line_t *)data)->len;
-                                            //printf("\nOK\n");
-                                        }
                                         break;
                                     }
                 temp_tuple2 = temp_tuple2->next;
@@ -2723,13 +2761,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                 tmp_v->size = *(int*) (data);
                 data = data + sizeof (int);
             }
+            else if (tmp_v->type == MMT_HEADER_LINE)
+                data = parse_mmt_header_line( data, &tmp_v->size );
 
             tmp_v->data = xcalloc(1, tmp_v->size);
             memcpy(tmp_v->data, data, tmp_v->size);
-
-            if( v1.type == MMT_HEADER_LINE )
-            	((mmt_header_line_t *)tmp_v->data)->len = ((mmt_header_line_t *)data)->len;
-
         }
     }
     if (v2.found == NOT_FOUND) {
@@ -2744,10 +2780,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                 tmp_v->size = *(int*) (data);
                 data = data + sizeof (int);
             }
+            else if (tmp_v->type == MMT_HEADER_LINE)
+            	data = parse_mmt_header_line( data, &tmp_v->size );
+
             tmp_v->data = (void *) xcalloc(1, tmp_v->size);
             memcpy(tmp_v->data, data, tmp_v->size);
-            if( v2.type == MMT_HEADER_LINE )
-            	((mmt_header_line_t *)tmp_v->data)->len = ((mmt_header_line_t *)data)->len;
         }
     }
 
