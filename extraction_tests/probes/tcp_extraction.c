@@ -4,14 +4,14 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -o tcp_extraction tcp_extraction.c -lmmt_core -ldl -lpcap
+ * $ gcc -g -o tcp_extraction tcp_extraction.c -lmmt_core -ldl -lpcap -lpthread
  * 
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
  * 
  * Then execute the program:
  * 
- * $ ./tcp_extraction tracefile.pcap > output.xls
+ * $ ./tcp_extraction -t tracefile.pcap > output.xls
  * 
  * The example output result in the file: output.xls
  * 
