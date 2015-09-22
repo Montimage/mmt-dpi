@@ -111,7 +111,7 @@ enum {
  */
 
 static uint8_t search_ftp(ipacket_t * ipacket) {
-    
+    debug("FTP: search_ftp ");
 
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -222,7 +222,7 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
 }
 
 static void search_passive_ftp_mode(ipacket_t * ipacket) {
-    
+    debug("FTP: search_passive_ftp_mode ");
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
@@ -311,7 +311,7 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
 }
 
 static void search_active_ftp_mode(ipacket_t * ipacket) {
-    
+    debug("FTP: search_active_ftp_mode ");
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -340,8 +340,7 @@ static void search_active_ftp_mode(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
-    
-
+    debug("FTP: mmt_classify_me_ftp ");
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -416,6 +415,7 @@ void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
 }
 
 int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
+    debug("FTP: mmt_check_ftp ");
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
@@ -497,6 +497,7 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
 }
 
 void mmt_init_classify_me_ftp() {
+    debug("FTP: mmt_init_classify_me_ftp ");
     selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION;
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FTP);
@@ -506,6 +507,7 @@ void mmt_init_classify_me_ftp() {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_ftp_struct() {
+    debug("FTP: init_proto_ftp_struct ");
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_FTP, PROTO_FTP_ALIAS);
     if (protocol_struct != NULL) {
 
