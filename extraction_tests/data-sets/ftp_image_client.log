@@ -1,0 +1,14 @@
+Connected to 192.168.0.16.
+220 (vsFTPd 3.0.2)
+331 Please specify the password.
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+200 Switching to Binary mode.
+local: san-doc.pdf remote: san-doc.pdf
+229 Entering Extended Passive Mode (|||34076|).
+150 Opening BINARY mode data connection for san-doc.pdf (186767 bytes).
+100% |***********************************|   182 KiB   61.08 MiB/s    00:00 ETA
+226 Transfer complete.
+186767 bytes received in 00:00 (12.33 MiB/s)
+221 Goodbye.

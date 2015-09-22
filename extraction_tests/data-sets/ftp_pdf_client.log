@@ -1,0 +1,15 @@
+Connected to 192.168.0.16.
+220 (vsFTPd 3.0.2)
+331 Please specify the password.
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+200 Switching to Binary mode.
+local: bg.jpg remote: bg.jpg
+229 Entering Extended Passive Mode (|||44897|).
+150 Opening BINARY mode data connection for bg.jpg (194147 bytes).
+100% |***********************************|   189 KiB   42.51 MiB/s    00:00 ETA
+226 Transfer complete.
+194147 bytes received in 00:00 (30.53 MiB/s)
+221 Goodbye.
+
