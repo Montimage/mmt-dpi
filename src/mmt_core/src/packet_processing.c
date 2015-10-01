@@ -2542,8 +2542,8 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
 
         //Post-analysis! Post analysis is only accessible if there is an analysis function
         //and if the pre-analysis returned CONTINUE which means: proceed with the analysis routines.
-        if (configured_protocol->protocol->classify_next.post_classify) {
-            configured_protocol->protocol->classify_next.post_classify(ipacket, index);
+        if (configured_protocol->protocol->data_analyser.post_analysis) {
+            configured_protocol->protocol->data_analyser.post_analysis(ipacket, index);
         }
     }
 
