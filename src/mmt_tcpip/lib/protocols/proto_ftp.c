@@ -10,30 +10,34 @@ static void mmt_int_ftp_add_connection(ipacket_t * ipacket) {
 }
 
 // GET FROM C-easy library
-
 char * str_subend(const uint8_t *str, char* begin){
 	if(str != NULL && begin !=NULL){
+		// if(strstr(begin,(char*)str)==NULL) return NULL;
 		int len;
-		len = sizeof(str);
+		len = strlen(str) - strlen(begin)+1;
 		char *ret;
-		ret = (char * )malloc((len+1)*sizeof(char));
+		ret = (char * )malloc(len*sizeof(char));
 		memcpy(ret,str+strlen(begin),len);
-		ret[len]='\0';
+		// ret[strlen(ret)]='\0';
 		return ret;
 	}
 	return NULL;
 }
 
-char ** str_add_new_string(char **array,char *str){
+char * str_add_new_string(char *array,char *str){
 	if(str == NULL) return 0;
 	int i=0;
-	while(array[i] != NULL){
-		i++;
+	if(array==NULL){
+		array=(char*)malloc(strlen(str)*sizeof(char)+1);
+		strcpy(array,str);
+		array[strlen(array)]='\0';
+	}else{
+		int newLen = strlen(array)+strlen(str)+2;
+		array = realloc(array,newLen*sizeof(char));
+		strcat(array,":");
+		strcat(array,str);
+		array[strlen(array)]='\0';
 	}
-
-	array[i] = (char*)malloc(strlen(str)+1);
-	strcpy(array[i],str);
-	array[i][strlen(array[i])]='\0';
 	return array;
 }
 
@@ -141,20 +145,34 @@ ftp_session_t * ftp_get_session_by_tuple4(ftp_tuple4_t * t){
 * @param  port Server port
 * @return      a FTP session who has the EEPM_229 contains port
 */
-ftp_session_t * ftp_get_session_by_server_port(uint8_t port){
+ftp_session_t * ftp_get_session_by_server_port(uint32_t port){
 	int i=0;
 	char str_port[10];
-	sprintf(str_port,"%d",port);
+	sprintf(str_port,"%d",htons(port));
+	str_port[strlen(str_port)]='\0';
 	while(list_ftp_session[i]){
 		if(list_ftp_session[i]->EEPM_229 != NULL){
 			if(strstr(list_ftp_session[i]->EEPM_229,str_port) != NULL){
 				return list_ftp_session[i];
 			}
 		}
+		i++;
 	}
 	return NULL;
 }
 
+int total_size=0;
+void ftp_write_data(char* filename,char * data,int len){
+	log_info("File data: %s",filename);
+	FILE *writer_ptr;
+	writer_ptr = fopen(filename,"ab");
+	if(writer_ptr!=NULL){
+		fwrite(data,len,1,writer_ptr);
+	}
+	log_info("Number byte written: %d",len);
+	total_size+=len;
+	log_info("TOTAL byte written: %d",total_size);
+} 
 
 /**
 * checks for possible FTP command: 
@@ -258,6 +276,23 @@ static uint8_t search_ftp_client_request(ipacket_t *ipacket, ftp_session_t *ftp_
 		log_info("FTP: Cannot find FTP session");
 	}
 	if(tuple4->conn_type == MMT_FTP_DATA_CONNECTION){
+		// if (packet->payload_packet_len > MMT_STATICSTRING_LEN("RETR ") &&
+		// 	(memcmp(packet->payload, "RETR ", MMT_STATICSTRING_LEN("RETR ")) == 0 ||
+		// 		memcmp(packet->payload, "retr ", MMT_STATICSTRING_LEN("retr ")) == 0)) {
+		// 	if(ftp_session->file == NULL){
+		// 		ftp_file_t *ftp_file;
+		// 		ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
+		// 		ftp_session->file = ftp_file;
+		// 	}
+
+		// 	ftp_session->file->name = str_subend(packet->payload,"RETR ");
+		// 	log_info( "FTP: found RETR command\n");
+  //           // flow->l4.tcp.ftp_codes_seen |= FTP_PASS_CMD;
+  //           // current_ftp_code = FTP_PASS_CMD;
+		// }else{
+			log_info("FTP: data payload len: %d\n",packet->payload_packet_len);
+		// }
+	}else{
 		if (packet->payload_packet_len > MMT_STATICSTRING_LEN("RETR ") &&
 			(memcmp(packet->payload, "RETR ", MMT_STATICSTRING_LEN("RETR ")) == 0 ||
 				memcmp(packet->payload, "retr ", MMT_STATICSTRING_LEN("retr ")) == 0)) {
@@ -271,11 +306,7 @@ static uint8_t search_ftp_client_request(ipacket_t *ipacket, ftp_session_t *ftp_
 			log_info( "FTP: found RETR command\n");
             // flow->l4.tcp.ftp_codes_seen |= FTP_PASS_CMD;
             // current_ftp_code = FTP_PASS_CMD;
-		}else{
-			log_info("FTP: data payload len: %d\n",packet->payload_packet_len);
-		}
-	}else{
-		if (packet->payload_packet_len > MMT_STATICSTRING_LEN("USER ") &&
+		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("USER ") &&
 			(memcmp(packet->payload, "USER ", MMT_STATICSTRING_LEN("USER ")) == 0 ||
 				memcmp(packet->payload, "user ", MMT_STATICSTRING_LEN("user ")) == 0)) {
 
@@ -299,7 +330,7 @@ static uint8_t search_ftp_client_request(ipacket_t *ipacket, ftp_session_t *ftp_
 					ftp_user = (ftp_user_t*)malloc(sizeof(ftp_user_t));
 					ftp_session->user = ftp_user;
 				}
-				ftp_session->user->username = str_subend(packet->payload,"PASS ");
+				ftp_session->user->password = str_subend(packet->payload,"PASS ");
 			}
 			log_info( "FTP: found PASS command\n");
 	            // flow->l4.tcp.ftp_codes_seen |= FTP_PASS_CMD;
@@ -380,6 +411,12 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 	uint8_t current_ftp_code = 0;
 
 	if(tuple4->conn_type == MMT_FTP_DATA_CONNECTION){
+		// {
+			log_info("FTP: Received data from server: %d",packet->payload_packet_len);
+			log_info("FTP: Going to write data to file");
+			ftp_write_data(ftp_session->file->name,packet->payload,packet->payload_packet_len);
+		// }
+	}else {
 		if (packet->payload_packet_len > MMT_STATICSTRING_LEN("150 ") &&
 			(memcmp(packet->payload, "150 ", MMT_STATICSTRING_LEN("150 ")) == 0 ||
 				memcmp(packet->payload, "150-", MMT_STATICSTRING_LEN("150-")) == 0)) {
@@ -388,11 +425,7 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 			log_info("FTP: found 150 reply code: %lu",ipacket->packet_id);
             // flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
             // current_ftp_code = FTP_220_CODE;
-		}else{
-			log_info("FTP: Received data: %d",packet->payload_packet_len);
-		}
-	}else {
-		if (packet->payload_packet_len > MMT_STATICSTRING_LEN("220 ") &&
+		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("220 ") &&
 			(memcmp(packet->payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
 				memcmp(packet->payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
 
@@ -401,7 +434,11 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 			log_info("FTP: Create new ftp session");
 
 			if(ftp_session){
-				ftp_session->version = str_subend(packet->payload,"220 ")||str_subend(packet->payload,"220-");
+				char *ver = str_subend(packet->payload,"220 ");
+				if(ver == NULL){
+					ver = str_subend(packet->payload,"220-");
+				}
+				ftp_session->version = ver;
 				ftp_session->status = MMT_FTP_STATUS_CONTROLING;
 			}
 
@@ -419,7 +456,11 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 			(memcmp(packet->payload, "215 ", MMT_STATICSTRING_LEN("215 ")) == 0 ||
 				memcmp(packet->payload, "215-", MMT_STATICSTRING_LEN("215-")) == 0)) {
 			if(ftp_session != NULL){
-				ftp_session->syst = str_subend(packet->payload,"215 ")||str_subend(packet->payload,"215-");
+				char *s = str_subend(packet->payload,"215 ");
+				if(s == NULL){
+					s = str_subend(packet->payload,"215-");
+				}
+				ftp_session->syst =s;
 			}
 		        // log_info( "FTP: found 215 reply code\n");
 			log_info("FTP: found 215 reply code: %lu - system type",ipacket->packet_id);
@@ -429,7 +470,11 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 			(memcmp(packet->payload, "229 ", MMT_STATICSTRING_LEN("229 ")) == 0 ||
 				memcmp(packet->payload, "229-", MMT_STATICSTRING_LEN("229-")) == 0)) {
 			if(ftp_session != NULL){
-				ftp_session->EEPM_229 = str_subend(packet->payload,"229 ");
+				char *em = str_subend(packet->payload,"229 ");
+				if(em == NULL){
+					em = str_subend(packet->payload,"229-");
+				}
+				ftp_session->EEPM_229 = em;
 			}
 		        // log_info( "FTP: found 229 reply code\n");
 			log_info("FTP: found 229 reply code: %lu - Passive mode information",ipacket->packet_id);
@@ -438,13 +483,27 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("213 ") &&
 			(memcmp(packet->payload, "213 ", MMT_STATICSTRING_LEN("213 ")) == 0 ||
 				memcmp(packet->payload, "213-", MMT_STATICSTRING_LEN("213-")) == 0)) {
-			if(ftp_session->file == NULL){
-				ftp_file_t *ftp_file;
-				ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
-				ftp_session->file = ftp_file;
+			if(ftp_session!=NULL){
+				if(ftp_session->file == NULL){
+					ftp_file_t *ftp_file;
+					ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
+					ftp_session->file = ftp_file;
+				}
+
+				char *em = str_subend(packet->payload,"213 ");
+				if(em == NULL){
+					em = str_subend(packet->payload,"213-");
+				}
+				if(ftp_session->status==MMT_FTP_STATUS_TRANSFER_COMPLETE){
+					ftp_session->file->last_modified = em;
+					log_info("Updated file last_modified");	
+				}else{
+					ftp_session->file->size=atoi(em);
+					log_info("Updated file size");	
+				}
+				
 			}
 
-			ftp_session->file->last_modified = str_subend(packet->payload,"213 ")||str_subend(packet->payload,"213-");
 		        // log_info( "FTP: found 213 reply code\n");
 			log_info("FTP: found 213 reply code: %lu",ipacket->packet_id);
 		        // flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
@@ -452,17 +511,20 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("257 ") &&
 			(memcmp(packet->payload, "257 ", MMT_STATICSTRING_LEN("257 ")) == 0 ||
 				memcmp(packet->payload, "257-", MMT_STATICSTRING_LEN("257-")) == 0)) {
-			if(ftp_session->file == NULL){
-				ftp_file_t *ftp_file;
-				ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
-				ftp_session->file = ftp_file;
+			if(ftp_session !=NULL){
+				if(ftp_session->file == NULL){
+					ftp_file_t *ftp_file;
+					ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
+					ftp_session->file = ftp_file;
+				}
+				char *dir = str_subend(packet->payload,"257 ");
+				if(dir == NULL){
+					dir = str_subend(packet->payload,"257-");
+				}
+				if(ftp_session->file->dir==NULL||strlen(dir) > strlen(ftp_session->file->dir)){
+					ftp_session->file->dir = dir;
+				}
 			}
-			char *dir;
-			dir = str_subend(packet->payload,"213 ")||str_subend(packet->payload,"213-");
-			if(strlen(dir) > strlen(ftp_session->file->dir)){
-				ftp_session->file->dir = dir;
-			}
-
 		        // log_info( "FTP: found 257 reply code\n");
 			log_info("FTP: found 257 reply code: %lu",ipacket->packet_id);
 		        // flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
@@ -516,7 +578,7 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 				return 0;
 			}else{
 				if(ftp_session !=NULL ){
-					str_add_new_string(ftp_session->feats,(char*)packet->payload);
+					ftp_session->feats = str_add_new_string(ftp_session->feats,(char*)packet->payload);
 				}
 			}
 		}

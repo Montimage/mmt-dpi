@@ -19,7 +19,7 @@ pntoh_tcp_session_t get_tcp_session(ipacket_t *ipacket, unsigned index){
 void process_ipacket_next_process(ipacket_t* ipacket)
 {
     debug("process_ipacket_next_process of packet %"PRIu64" is called at index:%d\n",ipacket->packet_id,ipacket->extra.index);
-    // ipacket->extra.status=MMT_CONTINUE;
+    ipacket->extra.status=MMT_CONTINUE;
     ipacket->extra.next_process(ipacket,ipacket->extra.parent_stats,ipacket->extra.index);
 }
 
@@ -27,31 +27,30 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
 {
     debug("ntoh_tcp_callback");
     switch(reason){
-		case NTOH_REASON_SYNC:
-			switch(extra){
-				case NTOH_REASON_MAX_SYN_RETRIES_REACHED:
-				case NTOH_REASON_MAX_SYNACK_RETRIES_REACHED:
-				case NTOH_REASON_HSFAILED:
-				case NTOH_REASON_EXIT:
-				case NTOH_REASON_TIMEDOUT:
-				case NTOH_REASON_CLOSED:
-					if(extra == NTOH_REASON_CLOSED){
-						debug("connection closed by %s (%s)",stream->closedby == NTOH_CLOSEDBY_CLIENT?"Client":"Server",inet_ntoa(*(struct in_addr*)&(stream->client.addr)));
-					}else{
-						debug("%s/%s - %s",ntoh_get_reason(reason),ntoh_get_reason(extra),ntoh_tcp_get_status(stream->status));	
-					}
-					break;
-			}
-			break;
-		case NTOH_REASON_DATA:
-			debug("Segment payload len: %i of packet %lu",seg->payload_len,((ipacket_t *)seg->user_data)->packet_id);
-            if(extra!=0){
-                debug(" Reason: %s of packet %lu",ntoh_get_reason(extra),((ipacket_t *)seg->user_data)->packet_id);
+        case NTOH_REASON_SYNC:
+            switch(extra){
+                case NTOH_REASON_MAX_SYN_RETRIES_REACHED:
+                case NTOH_REASON_MAX_SYNACK_RETRIES_REACHED:
+                case NTOH_REASON_HSFAILED:
+                case NTOH_REASON_EXIT:
+                case NTOH_REASON_TIMEDOUT:
+                case NTOH_REASON_CLOSED:
+                    if(extra == NTOH_REASON_CLOSED){
+                        debug("connection closed by %s (%s)",stream->closedby == NTOH_CLOSEDBY_CLIENT?"Client":"Server",inet_ntoa(*(struct in_addr*)&(stream->client.addr)));
+                    }else{
+                        debug("%s/%s - %s",ntoh_get_reason(reason),ntoh_get_reason(extra),ntoh_tcp_get_status(stream->status)); 
+                    }
+                    break;
             }
-            process_ipacket_next_process((ipacket_t *)seg->user_data);
-		        
-			break;
-	}
+            break;
+        case NTOH_REASON_DATA:
+            debug("Segment payload len: %i",seg->payload_len);
+                    process_ipacket_next_process((ipacket_t *)seg->user_data);
+                if(extra!=0){
+                        debug(" Reason: %s",ntoh_get_reason(extra));
+                    }
+            break;
+    }
     return;
 }
 
@@ -61,7 +60,7 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
  * - Extract struct ip data to put as input of libntoh
  * - 
  */
-int ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
+void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
  {
     pntoh_tcp_session_t tcp_session;
     tcp_session = get_tcp_session(ipacket,index);
@@ -100,31 +99,30 @@ int ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
         if (!(stream = ntoh_tcp_new_stream( tcp_session , &tcpt5, ntoh_tcp_callback , 0 , &error , 0 , 0 )) ){
             fprintf ( stderr , "\n[e] Error %d creating new stream: %s" , error , ntoh_get_errdesc ( error ) );
              ipacket->extra.status = MMT_CONTINUE;
-             ipacket->extra.next_process(ipacket,ipacket->extra.parent_stats,ipacket->extra.index);
-            return MMT_CONTINUE;
+            return;
         }
     }
 
     if ( size_payload > 0 )
-	ret = ntoh_tcp_add_segment( tcp_session , stream, iphdr, total_len, (void*)ipacket);
+    ret = ntoh_tcp_add_segment( tcp_session , stream, iphdr, total_len, (void*)ipacket);
     else
-	ret = ntoh_tcp_add_segment( tcp_session , stream, iphdr, total_len, 0);
+    ret = ntoh_tcp_add_segment( tcp_session , stream, iphdr, total_len, 0);
     switch (ret)
     {
         case NTOH_OK:
             debug("ret=NTOH_OK after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
-            return MMT_SKIP;
+            return;
 
         case NTOH_SYNCHRONIZING:
             debug("ret=NTOH_SYNCHRONIZING after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
             ipacket->extra.status = MMT_CONTINUE;
-            return MMT_CONTINUE;
+            return;
 
         default:
             debug("ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
             fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
             ipacket->extra.status = MMT_CONTINUE;
-            return MMT_CONTINUE;
+            return;
     }
 }
 
@@ -301,13 +299,6 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_ack_flag_extraction},
 };
 
-/**
- * Check packet before classifying packet
- * @param  ipacket packet to classify
- * @param  index   index of protocol
- * @return         0 not going to classify this packet
- *                 1 Going to classify this packet
- */
 int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // printf("TEST: Enter TCP packet of packet %"PRIu64" at index: %d\n",ipacket->packet_id,index);
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
@@ -383,20 +374,19 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION;
     }
 
-    // if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
+    //if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
     //    return 0;
     // }
-
+    // // INJECT LIBNOTH PROCESS //
+    // ipacket->extra.status=MMT_SKIP;
+    // debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    // ntoh_packet_process(ipacket,index);
+    // //write_data(ipacket);
+    // debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    // // END OF INJECTING LIBNTOH PROCESS
     return 1;
 }
 
-/**
- * Do after classify this packet - trying to classify protocol by port numer.....
- * @param  ipacket packet who is classified
- * @param  index   index of protocol
- * @return         a pointer to an instance of classified_proto_t
- *                 
- */
 int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     int a;
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
@@ -437,6 +427,13 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
             }
         }
     }
+     // INJECT LIBNOTH PROCESS //
+    ipacket->extra.status=MMT_SKIP;
+    debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    ntoh_packet_process(ipacket,index);
+    //write_data(ipacket);
+    debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    // END OF INJECTING LIBNTOH PROCESS
     return new_retval;
 }
 
@@ -448,23 +445,6 @@ void * setup_tcp_context(void * proto_context, void * args) {
     unsigned int libntoh_error = 0;
     debug("Creates a new TCP session\n");
     return (void *) ntoh_tcp_new_session(0,0,&libntoh_error);
-}
-
-/**
- * Analysis data of packet
- * @param  ipacket Packet to analyse
- * @param  index   index of protocol
- * @return         MMT_SKIP - always skip processing until ntoh_tcp_packet_handler is called
- */
-int tcp_packet_data_analysis(ipacket_t * ipacket, unsigned index){
-     // INJECT LIBNOTH PROCESS //
-    ipacket->extra.status=MMT_SKIP;
-    debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    return ntoh_packet_process(ipacket,index);
-    //write_data(ipacket);
-    // debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    // END OF INJECTING LIBNTOH PROCESS
-    // return MMT_SKIP;    
 }
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
@@ -487,8 +467,6 @@ int init_proto_tcp_struct() {
         for (; i < TCP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &tcp_attributes_metadata[i]);
         }
-
-        register_session_data_analysis_function(protocol_struct,tcp_packet_data_analysis);
 
         register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
         register_proto_context_init_cleanup_function(protocol_struct, setup_tcp_context, tcp_context_cleanup, NULL);

@@ -5,6 +5,8 @@
 #define MMT_FTP_TIMEOUT                     10
 #define MMT_FTP_PASSIVE_MODE                1
 #define MMT_FTP_ACTIVE_MODE                 0
+
+// TYPE OF CONNECTION 
 #define MMT_FTP_CONTROL_CONNECTION          0
 #define MMT_FTP_DATA_CONNECTION             1
 
@@ -56,7 +58,7 @@ typedef struct ftp_file_struct{
     char * dir;
     char * last_modified;
     uint32_t size;
-    char * data;
+    void * data;
 }ftp_file_t;
 
 typedef struct ftp_user_struct{
@@ -88,7 +90,7 @@ typedef struct ftp_session_struct{
 
     ftp_user_t * user;
 
-    char **feats;
+    char *feats;
 
     int status;// MMT_FTP_STATUS_OPEN - MMT_FTP_STATUS_CONTROLING - MMT_FTP_STATUS_TRANSFERING - MMT_FTP_STATUS_TRANSFER_COMPLETE - MMT_FTP_STATUS_FINISHED
 
