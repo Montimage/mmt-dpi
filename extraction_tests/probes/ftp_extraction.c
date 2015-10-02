@@ -47,9 +47,10 @@
  static int quiet;
 
  void packet_handler(const ipacket_t * ipacket, void * user_args){
-	uint16_t * ip_identification = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_IDENTIFICATION); //Request IP packet identification
-	// uint16_t* tcp_src_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_SRC_PORT);
-	// uint16_t * tcp_dest_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_DEST_PORT);
+	// uint16_t * ip_identification = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_IDENTIFICATION); //Request IP packet identification
+	uint16_t* ip_client_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_CLIENT_PORT);
+	uint16_t * ip_server_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_SERVER_PORT);
+	
 	// uint32_t * tcp_seq_nb = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_SEQ_NB);
 	// uint32_t * tcp_ack_nb = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_ACK_NB);	
 	// uint8_t * tcp_data_offset = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_DATA_OFF); //Request TCP data offset
@@ -69,10 +70,12 @@
 	// uint32_t * tcp_syn_rcv = (uint32_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_SYN_RCV); //Request TCP ACK number
 	// uint32_t * tcp_conn_established = (uint32_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_CONN_ESTABLISHED); //Request TCP ACK number
 
-	// printf("%lu,", ipacket->packet_id);
-	printValue(2,ip_identification);
-	// printValue(2,tcp_src_port);
-	// printValue(2,tcp_dest_port);
+	printf("%lu,", ipacket->packet_id);
+	// printValue(2,ip_identification);
+	// printValue(6,ip_client_addr);
+	printValue(2,ip_client_port);
+	// printValue(6,ip_server_addr);
+	printValue(2,ip_server_port);
 	// printValue(1,tcp_seq_nb);
 	// printValue(1,tcp_ack_nb);
 	// printValue(3,tcp_data_offset);
@@ -185,9 +188,13 @@ int main(int argc, char ** argv){
 		return EXIT_FAILURE;
 	}
 
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_IDENTIFICATION); //Request TCP data offset
-
+	// register_extraction_attribute(mmt_handler,PROTO_IP,IP_CLIENT_ADDR); //Request client address
+	// register_extraction_attribute(mmt_handler,PROTO_IP,IP_SERVER_ADDR); // Request server address
+	register_extraction_attribute(mmt_handler,PROTO_IP,IP_CLIENT_PORT); //Request client port
+	register_extraction_attribute(mmt_handler,PROTO_IP,IP_SERVER_PORT);  // Request server port
+	// {IP_CLIENT_ADDR, IP_CLIENT_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_client_addr_extraction},
 	//Register the protocol attributes we need
+	
 	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_SRC_PORT); //Request TCP source port
 	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_DEST_PORT); //Request TCP destination port 
 	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_SEQ_NB); //Request TCP sequence number

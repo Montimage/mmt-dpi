@@ -457,7 +457,14 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
     }
     mmt_handler->last_expiry_timeout = current_seconds;
 }
-
+/**
+ * Register classificaiton function internal - insert this function into right position: for example: classify FTP after HTTP -> HTTP 10, FTP 50
+ * @param  proto              Protocol ID
+ * @param  classification_fct classify function
+ * @param  weight             weight of this function
+ * @return                    0 failed
+ *                            1 successful
+ */
 int register_classification_function_internal(protocol_t * proto, generic_classification_function classification_fct, int weight) {
     if (weight < 0) weight = 0;
     if (weight > 100) weight = 100;
@@ -505,6 +512,15 @@ int register_classification_function_internal(protocol_t * proto, generic_classi
     return 1;
 }
 
+/**
+ * Register classification function with parent protocol
+ * For examples: register mmt_check_ftp for protocol FTP with parent protocol is TCP
+ * @param  proto_id           protocol id (FTP)
+ * @param  classification_fct classify function
+ * @param  weight             weight of this function
+ * @return                    0 if there is no classification function
+ *                            call to register_classification_function_internal
+ */
 int register_classification_function_with_parent_protocol(uint32_t proto_id, generic_classification_function classification_fct, int weight) {
     if (classification_fct != NULL) {
         protocol_t * proto = get_protocol_struct_by_protocol_id(proto_id);
@@ -517,7 +533,13 @@ int register_classification_function_with_parent_protocol(uint32_t proto_id, gen
     }
     return 0;
 }
-
+/**
+ * Register classification function without parent protocol
+ * @param  proto              protocol
+ * @param  classification_fct classification function
+ * @return                    0 if failed
+ *                            go to #register_classification_function_internal
+ */
 int register_classification_function(protocol_t *proto, generic_classification_function classification_fct) {
     if (classification_fct != NULL) {
         return register_classification_function_internal(proto, classification_fct, 50); //TODO: replace with a definition
@@ -2088,7 +2110,14 @@ void set_ipacket_session_status(ipacket_t * ipacket, uint16_t status) {
         ipacket->session->status = (uint8_t) status;
     }
 }
-
+/**
+ * Manage session of this protocol
+ * @param  ipacket             packet to process
+ * @param  configured_protocol instance of protocol
+ * @param  index               index of protocol
+ * @return                     0 if this packet does not belong to a new session
+ *                             1 if this packet does belong to a new session. New session will be created
+ */
 int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
     int classify_status = ipacket->proto_classif_status->proto_path[index];
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
@@ -2413,7 +2442,12 @@ void reset_proto_stats(protocol_instance_t * proto) {
         proto_stats = proto_stats->next;
     }
 }
-
+/**
+* Update statistic of protocol on packet
+* @ipacket                  packet with new data to update
+* @configured_protocol      touched
+* @parent_stats             Statistic of protocol parent
+*/
 proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset) {
     if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
         return NULL;
@@ -2430,7 +2464,14 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
     }
     return proto_stats;
 }
-
+/**
+ * Increase session_count of protocol
+ * @param  ipacket             packet of new session
+ * @param  configured_protocol instace of protocol
+ * @param  parent_stats        statistic of parent protocol
+ * @param  new_session         new session
+ * @return                     updated protocol statistic
+ */
 proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session) {
     if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
         return NULL;
@@ -2446,7 +2487,12 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
     }
     return proto_stats;
 }
-
+/**
+ * Try to classify encapsulated data
+ * @param ipacket             packet to classify
+ * @param configured_protocol protocol configuration
+ * @param index               index of protocol
+ */
 void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
     //TODO: review the exit codes; this depends on the return values of the sub-classification routines
     //TODO: why don't to enforce here a threshold on the classification?
@@ -2465,7 +2511,13 @@ void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * confi
     if (configured_protocol->protocol->classify_next.classify_protos && classif_status) { // Classify next proto only when such a function exists!
         mmt_classify_me_t * temp = configured_protocol->protocol->classify_next.classify_protos;
         for (; temp != NULL; temp = temp->next) {
-            temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
+            classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
+            // // LN: check if the classify return 1-> do not need to go to check other protocol
+            // if(classif_status){
+            //     log_info("Classified for protocol: %p",temp);
+            //     break;
+            // }
+            // // End of LN
         }
 
         //Post-classification! Post classification is only accessible if there is a classification function
@@ -2504,6 +2556,11 @@ void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * confi
     }
 }
 
+/**
+ * Process attribute handler of protocol: such as source_port of TCP protocol
+ * @param ipacket packet to process the handler on
+ * @param index   index of protocol
+ */
 void proto_process_attribute_handlers(ipacket_t * ipacket, unsigned index) {
     int offset = 0;
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
@@ -2525,7 +2582,15 @@ void proto_process_attribute_handlers(ipacket_t * ipacket, unsigned index) {
         attribute_handler = attribute_handler->next;
     }
 }
-
+/**
+ * Analysis protocol of packet
+ * @param  ipacket             packet to analysis
+ * @param  configured_protocol instance of protocol
+ * @param  index               index of protocol
+ * @return                     MMT_CONTINUE : Continue processing to sub-protocol  
+ *                             MMT_DROP : Stop processing this packet
+ *                             MMT_SKIP : Skip processing this packet but will be come back in future
+ */
 int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
     //TODO: review the exit codes; this depends on the return values of the sub-analysis routines
     int retval = MMT_CONTINUE;
@@ -2546,8 +2611,8 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
 
         //Post-analysis! Post analysis is only accessible if there is an analysis function
         //and if the pre-analysis returned CONTINUE which means: proceed with the analysis routines.
-        if (configured_protocol->protocol->classify_next.post_classify) {
-            configured_protocol->protocol->classify_next.post_classify(ipacket, index);
+        if (configured_protocol->protocol->data_analyser.post_analyse) {
+            configured_protocol->protocol->data_analyser.post_analyse(ipacket, index);
         }
     }
 
@@ -2585,61 +2650,96 @@ mmt_free((void *)ipacket->data);
 mmt_free(ipacket); 
 }
 
+/**
+ * Proccess packet for each protocol
+ * For examples: ETH->IP->TCP->FTP
+ * index:        0  ->1 ->2  ->3    
+ * @param  ipacket      packet to process
+ * @param  parent_stats protocol statistic of parrent protocol (statistic of IP for TCP)
+ * @param  index        Index of protocol which the packet belongs to
+ * @return              MMT_CONTINUE -> continue proccessing the packet
+ *                      MMT_DROP     -> drops the packet
+ *                      MMT_SKIP     -> skips processing the packet - it will returned in the future
+ */
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats, unsigned index) {
     debug("proto_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
-    ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
-    int target = MMT_CONTINUE;
-    int is_new_session = 0;
-    int proto_offset = get_packet_offset_at_index(ipacket, index);
-    //Make sure this protocol has data to analyse
-    if (proto_offset >= ipacket->p_hdr->len || proto_offset >= ipacket->p_hdr->caplen) {
-        //This is not an ubnormal behaviour, this can simply be an ACK packet in an HTTP session
-        process_packet_handler(ipacket);
-        return target;
-    }
+    if(ipacket->extra.status == MMT_SKIP){
+        ipacket->extra.status = MMT_CONTINUE;
+        debug("proto_packet_process - COMEBACK - %"PRIu64" at index %d\n",ipacket->packet_id,index);
+        // Re-continue from MMT_SKIP
+        
+        protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+        ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
 
-    //Update the protocol statistics
-    parent_stats = (proto_statistics_t*)update_proto_stats_on_packet(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, proto_offset);
-    //The protocol is registered: First we check if it requires to maintain a session
-    is_new_session = proto_session_management(ipacket, configured_protocol, index);
-    if (is_new_session == NEW_SESSION) {
-        parent_stats = (proto_statistics_t*)update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
-        fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
-    }
-    //Analyze packet data
-    target = proto_packet_analyze(ipacket, configured_protocol, index);
-    //Proceed with the extraction and the handlers notification for this protocol
-    //if the target action is CONTINUE or SKIP (skip means continue with this proto but no further)
-    if (target != MMT_DROP) {
-        //Attributes extraction
-        proto_process_attribute_handlers(ipacket, index);
-    }
-    //Update next
-    ipacket->extra.parent_stats = parent_stats;
-    ipacket->extra.index = index+1;
-    ipacket->extra.next_process = (next_process_function)proto_packet_process;
-    
-
-    //Proceed with the classification sub-process only if the target action is set to CONTINUE
-    if (target == MMT_CONTINUE) {
         /* Try to classify the encapsulated data */
         proto_packet_classify_next(ipacket, configured_protocol, index);
-        // Need to check if the ipacket is still exist
-    	// send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
-        if(ipacket->extra.status == MMT_SKIP){ // Avoid calling process_packet_handler when the extra.status == MMT_SCKIP
-            return target;
-        }else{
-            if (ipacket->proto_hierarchy->len > (index + 1)) {
-                if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
-                        /* process the packet by the next encapsulated protocol */
-                    return proto_packet_process(ipacket, parent_stats, index + 1);
-                }
+        // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
+        if (ipacket->proto_hierarchy->len > (index + 1)) {
+            if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
+                /* process the packet by the next encapsulated protocol */
+                return proto_packet_process(ipacket, parent_stats, index + 1);
             }
-            process_packet_handler(ipacket);
         }
+        process_packet_handler(ipacket);
+        return MMT_CONTINUE;
+    }else{
+        debug("proto_packet_process - START - %"PRIu64" at index %d\n",ipacket->packet_id,index);
+        protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+        ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+        int target = MMT_CONTINUE;
+        int is_new_session = 0;
+        int proto_offset = get_packet_offset_at_index(ipacket, index);
+        //Make sure this protocol has data to analyse
+        if (proto_offset >= ipacket->p_hdr->len || proto_offset >= ipacket->p_hdr->caplen) {
+            //This is not an ubnormal behaviour, this can simply be an ACK packet in an HTTP session
+            //Should we call the packet handler on this case?????
+            process_packet_handler(ipacket);
+            return target;
+        }
+
+        //Update the protocol statistics:Update statistic of protocol on packetcket_count, payload_len, dava_volume,.... 
+        parent_stats = (proto_statistics_t*)update_proto_stats_on_packet(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, proto_offset);
+        //The protocol is registered: First we check if it requires to maintain a session
+        is_new_session = proto_session_management(ipacket, configured_protocol, index);
+        if (is_new_session == NEW_SESSION) {/***/
+            parent_stats = (proto_statistics_t*)update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
+            // Fire new session event
+            fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
+        }
+        //Update next
+        ipacket->extra.parent_stats = parent_stats;
+        ipacket->extra.index = index;
+        ipacket->extra.next_process = (next_process_function)proto_packet_process;
+        //Analyze packet data - does it classify next protocol? libntoh maybe can be intergrated here
+        // LIBNTOH should be here
+        target = proto_packet_analyze(ipacket, configured_protocol, index);
+        //Proceed with the extraction and the handlers notification for this protocol
+        //if the target action is CONTINUE or SKIP (skip means continue with this proto but no further)
+        debug("Target of packet %lu at index %d is: %d",ipacket->packet_id,index,target);
+        if (target != MMT_DROP) {
+            //Attributes extraction
+            proto_process_attribute_handlers(ipacket, index);
+        }
+         //Proceed with the classification sub-process only if the target action is set to CONTINUE
+        if (target == MMT_CONTINUE) {
+            /* Try to classify the encapsulated data */
+            proto_packet_classify_next(ipacket, configured_protocol, index);
+            // Need to check if the ipacket is still exist
+            // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
+            // if(ipacket->extra.status == MMT_SKIP){ // Avoid calling process_packet_handler when the extra.status == MMT_SCKIP
+                // return target;
+            // }else{
+                if (ipacket->proto_hierarchy->len > (index + 1)) {
+                    if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
+                            /* process the packet by the next encapsulated protocol */
+                        return proto_packet_process(ipacket, parent_stats, index + 1);
+                    }
+                }
+                process_packet_handler(ipacket);
+            // }
+        }
+        return target;
     }
-    return target;
 } 
 
 void copy_ipacket_header(ipacket_t *ipacket,struct pkthdr *header){
