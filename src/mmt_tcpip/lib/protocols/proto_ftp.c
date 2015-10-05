@@ -3,6 +3,7 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 #include "ftp.h"
+#include <fcntl.h>
 
 static void mmt_int_ftp_add_connection(ipacket_t * ipacket) {
 	log_info("mmt_int_ftp_add_connection : %lu",ipacket->packet_id);
@@ -166,17 +167,31 @@ ftp_session_t * ftp_get_session_by_server_port(uint32_t port){
 }
 
 int total_size=0;
-void ftp_write_data(char* filename,char * data,int len){
-	log_info("File data: %s",filename);
-	FILE *writer_ptr;
-	writer_ptr = fopen(filename,"ab");
-	if(writer_ptr!=NULL){
-		fwrite(data,len,1,writer_ptr);
-	}
-	log_info("Number byte written: %d",len);
-	total_size+=len;
-	log_info("TOTAL byte written: %d",total_size);
-} 
+/**
+ * Writes @len bytes from @content to the filename @path.
+ */
+int ftp_write_data (const char * path, const char * content, size_t len) {
+  int fd = 0;
+  if ( (fd = open ( path , O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW , S_IRWXU | S_IRWXG | S_IRWXO )) < 0 )
+  {
+    fprintf ( stderr , "\n[e] Error %d writting data to \"%s\": %s" , errno , path , strerror( errno ) );
+    return;
+  }
+
+  write ( fd , content , len );
+  close ( fd );
+}
+// void ftp_write_data(const char* filename,const char * data,size_t len){
+// 	log_info("File data: %s",filename);
+// 	FILE *writer_ptr;
+// 	writer_ptr = fopen(filename,"a+b");
+// 	if(writer_ptr!=NULL){
+// 		fwrite(data,len,1,writer_ptr);
+// 	}
+// 	log_info("Number byte written: %d",len);
+// 	total_size+=len;
+// 	log_info("TOTAL byte written: %d",total_size);
+// } 
 
 /**
 * checks for possible FTP command: 
@@ -407,7 +422,9 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 		// {
 			log_info("FTP: Received data from server: %d",packet->payload_packet_len);
 			log_info("FTP: Going to write data to file");
-			ftp_write_data(ftp_session->file->name,(char*)packet->payload,packet->payload_packet_len);
+			if(packet->payload_packet_len>0){
+				ftp_write_data(ftp_session->file->name,(char*)packet->payload,packet->payload_packet_len);	
+			}
 		// }
 	}else {
 		if (packet->payload_packet_len > MMT_STATICSTRING_LEN("150 ") &&
