@@ -2663,83 +2663,59 @@ mmt_free(ipacket);
  */
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats, unsigned index) {
     debug("proto_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    if(ipacket->extra.status == MMT_SKIP){
-        ipacket->extra.status = MMT_CONTINUE;
-        debug("proto_packet_process - COMEBACK - %"PRIu64" at index %d\n",ipacket->packet_id,index);
-        // Re-continue from MMT_SKIP
-        
-        protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
-        ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
-
-        /* Try to classify the encapsulated data */
-        proto_packet_classify_next(ipacket, configured_protocol, index);
-        // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
-        if (ipacket->proto_hierarchy->len > (index + 1)) {
-            if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
-                /* process the packet by the next encapsulated protocol */
-                return proto_packet_process(ipacket, parent_stats, index + 1);
-            }
-        }
+    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+    ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+    int target = MMT_CONTINUE;
+    int is_new_session = 0;
+    int proto_offset = get_packet_offset_at_index(ipacket, index);
+    //Make sure this protocol has data to analyse
+    if (proto_offset >= ipacket->p_hdr->len || proto_offset >= ipacket->p_hdr->caplen) {
+        //This is not an ubnormal behaviour, this can simply be an ACK packet in an HTTP session
         process_packet_handler(ipacket);
-        return MMT_CONTINUE;
-    }else{
-        debug("proto_packet_process - START - %"PRIu64" at index %d\n",ipacket->packet_id,index);
-        protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
-        ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
-        int target = MMT_CONTINUE;
-        int is_new_session = 0;
-        int proto_offset = get_packet_offset_at_index(ipacket, index);
-        //Make sure this protocol has data to analyse
-        if (proto_offset >= ipacket->p_hdr->len || proto_offset >= ipacket->p_hdr->caplen) {
-            //This is not an ubnormal behaviour, this can simply be an ACK packet in an HTTP session
-            //Should we call the packet handler on this case?????
-            process_packet_handler(ipacket);
-            return target;
-        }
-
-        //Update the protocol statistics:Update statistic of protocol on packetcket_count, payload_len, dava_volume,.... 
-        parent_stats = (proto_statistics_t*)update_proto_stats_on_packet(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, proto_offset);
-        //The protocol is registered: First we check if it requires to maintain a session
-        is_new_session = proto_session_management(ipacket, configured_protocol, index);
-        if (is_new_session == NEW_SESSION) {/***/
-            parent_stats = (proto_statistics_t*)update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
-            // Fire new session event
-            fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
-        }
-        //Update next
-        ipacket->extra.parent_stats = parent_stats;
-        ipacket->extra.index = index;
-        ipacket->extra.next_process = (next_process_function)proto_packet_process;
-        //Analyze packet data - does it classify next protocol? libntoh maybe can be intergrated here
-        // LIBNTOH should be here
-        target = proto_packet_analyze(ipacket, configured_protocol, index);
-        //Proceed with the extraction and the handlers notification for this protocol
-        //if the target action is CONTINUE or SKIP (skip means continue with this proto but no further)
-        debug("Target of packet %lu at index %d is: %d",ipacket->packet_id,index,target);
-        if (target != MMT_DROP) {
-            //Attributes extraction
-            proto_process_attribute_handlers(ipacket, index);
-        }
-         //Proceed with the classification sub-process only if the target action is set to CONTINUE
-        if (target == MMT_CONTINUE) {
-            /* Try to classify the encapsulated data */
-            proto_packet_classify_next(ipacket, configured_protocol, index);
-            // Need to check if the ipacket is still exist
-            // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
-            // if(ipacket->extra.status == MMT_SKIP){ // Avoid calling process_packet_handler when the extra.status == MMT_SCKIP
-                // return target;
-            // }else{
-                if (ipacket->proto_hierarchy->len > (index + 1)) {
-                    if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
-                            /* process the packet by the next encapsulated protocol */
-                        return proto_packet_process(ipacket, parent_stats, index + 1);
-                    }
-                }
-                process_packet_handler(ipacket);
-            // }
-        }
         return target;
     }
+
+    //Update the protocol statistics
+    parent_stats = (proto_statistics_t*)update_proto_stats_on_packet(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, proto_offset);
+    //The protocol is registered: First we check if it requires to maintain a session
+    is_new_session = proto_session_management(ipacket, configured_protocol, index);
+    if (is_new_session == NEW_SESSION) {
+        parent_stats = (proto_statistics_t*)update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
+        fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
+    }
+    //Analyze packet data
+    target = proto_packet_analyze(ipacket, configured_protocol, index);
+    //Proceed with the extraction and the handlers notification for this protocol
+    //if the target action is CONTINUE or SKIP (skip means continue with this proto but no further)
+    if (target != MMT_DROP) {
+        //Attributes extraction
+        proto_process_attribute_handlers(ipacket, index);
+    }
+    //Update next
+    ipacket->extra.parent_stats = parent_stats;
+    ipacket->extra.index = index+1;
+    ipacket->extra.next_process = (next_process_function)proto_packet_process;
+    
+
+    //Proceed with the classification sub-process only if the target action is set to CONTINUE
+    if (target == MMT_CONTINUE) {
+        /* Try to classify the encapsulated data */
+        proto_packet_classify_next(ipacket, configured_protocol, index);
+        // Need to check if the ipacket is still exist
+        // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
+        if(ipacket->extra.status == MMT_SKIP){ // Avoid calling process_packet_handler when the extra.status == MMT_SCKIP
+            return target;
+        }else{
+            if (ipacket->proto_hierarchy->len > (index + 1)) {
+                if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
+                        /* process the packet by the next encapsulated protocol */
+                    return proto_packet_process(ipacket, parent_stats, index + 1);
+                }
+            }
+            process_packet_handler(ipacket);
+        }
+    }
+    return target;
 } 
 
 void copy_ipacket_header(ipacket_t *ipacket,struct pkthdr *header){

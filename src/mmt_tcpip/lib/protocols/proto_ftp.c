@@ -11,31 +11,33 @@ static void mmt_int_ftp_add_connection(ipacket_t * ipacket) {
 }
 
 // GET FROM C-easy library
-char * str_subend(const uint8_t *str, char* begin){
+char * str_subend(const uint8_t *str, char* begin,int payload_len){
 	if(str != NULL && begin !=NULL){
 		// if(strstr(begin,(char*)str)==NULL) return NULL;
 		int len;
-		len = strlen((char*)str) - strlen(begin)+1;
+		len = payload_len - strlen(begin)-2;
 		char *ret;
-		ret = (char * )malloc(len*sizeof(char));
+		ret = (char * )malloc(len+1);
 		memcpy(ret,str+strlen(begin),len);
-		// ret[strlen(ret)]='\0';
+		ret[len]='\0';
 		return ret;
 	}
 	return NULL;
 }
 
-char * str_add_new_string(char *array,char *str){
+char * str_add_features(char *array,const uint8_t *str,int payload_len){
 	if(str == NULL) return 0;
+	char *new_feature;
+	new_feature = (char*)malloc(payload_len-1);
+	memcpy(new_feature,str,payload_len-2);
+	new_feature[payload_len-2] ='\0';
 	if(array==NULL){
-		array=(char*)malloc(strlen(str)*sizeof(char)+1);
-		strcpy(array,str);
-		array[strlen(array)]='\0';
+		array = new_feature;
 	}else{
-		int newLen = strlen(array)+strlen(str)+2;
-		array = realloc(array,newLen*sizeof(char));
+		int newLen = strlen(array)+strlen(new_feature)+2;
+		array = realloc(array,newLen);
 		strcat(array,":");
-		strcat(array,str);
+		strcat(array,new_feature);
 		array[strlen(array)]='\0';
 	}
 	return array;
@@ -170,7 +172,7 @@ int total_size=0;
 /**
  * Writes @len bytes from @content to the filename @path.
  */
-int ftp_write_data (const char * path, const char * content, size_t len) {
+void ftp_write_data (const char * path, const char * content, size_t len) {
   int fd = 0;
   if ( (fd = open ( path , O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW , S_IRWXU | S_IRWXG | S_IRWXO )) < 0 )
   {
@@ -306,7 +308,7 @@ static uint8_t search_ftp_client_request(ipacket_t *ipacket, ftp_session_t *ftp_
 				ftp_session->file = ftp_file;
 			}
 
-			ftp_session->file->name = str_subend(packet->payload,"RETR ");
+			ftp_session->file->name = str_subend(packet->payload,"RETR ",packet->payload_packet_len);
 			log_info( "FTP: found RETR command\n");
         flow->l4.tcp.ftp_codes_seen |= FTP_RETR_CMD;
         *current_ftp_code = FTP_RETR_CMD;
@@ -321,7 +323,10 @@ static uint8_t search_ftp_client_request(ipacket_t *ipacket, ftp_session_t *ftp_
 					ftp_user = (ftp_user_t*)malloc(sizeof(ftp_user_t));
 					ftp_session->user = ftp_user;
 				}
-				ftp_session->user->username = str_subend(packet->payload,"USER ");
+				char *uname = str_subend(packet->payload,"USER ",packet->payload_packet_len);
+				if(uname!=NULL){
+					ftp_session->user->username =uname;	
+				}
 			}
 			flow->l4.tcp.ftp_codes_seen |= FTP_USER_CMD;
 			*current_ftp_code = FTP_USER_CMD;
@@ -334,7 +339,7 @@ static uint8_t search_ftp_client_request(ipacket_t *ipacket, ftp_session_t *ftp_
 					ftp_user = (ftp_user_t*)malloc(sizeof(ftp_user_t));
 					ftp_session->user = ftp_user;
 				}
-				ftp_session->user->password = str_subend(packet->payload,"PASS ");
+				ftp_session->user->password = str_subend(packet->payload,"PASS ",packet->payload_packet_len);
 			}
 			log_info( "FTP: found PASS command\n");
 	        flow->l4.tcp.ftp_codes_seen |= FTP_PASS_CMD;
@@ -365,7 +370,7 @@ static uint8_t search_ftp_client_request(ipacket_t *ipacket, ftp_session_t *ftp_
 
 			log_info( "FTP: found TYPE command\n");
 			if(ftp_session !=NULL ){
-				ftp_session->data_type= str_subend(packet->payload,"TYPE ");
+				ftp_session->data_type= str_subend(packet->payload,"TYPE ",packet->payload_packet_len);
 			}
 		    flow->l4.tcp.ftp_codes_seen |= FTP_TYPE_CMD;
 		    *current_ftp_code = FTP_TYPE_CMD;
@@ -448,9 +453,9 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 			log_info("FTP: Create new ftp session");
 
 			if(ftp_session){
-				char *ver = str_subend(packet->payload,"220 ");
+				char *ver = str_subend(packet->payload,"220 ",packet->payload_packet_len);
 				if(ver == NULL){
-					ver = str_subend(packet->payload,"220-");
+					ver = str_subend(packet->payload,"220-",packet->payload_packet_len);
 				}
 				ftp_session->version = ver;
 				ftp_session->status = MMT_FTP_STATUS_CONTROLING;
@@ -471,9 +476,9 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 			(memcmp(packet->payload, "215 ", MMT_STATICSTRING_LEN("215 ")) == 0 ||
 				memcmp(packet->payload, "215-", MMT_STATICSTRING_LEN("215-")) == 0)) {
 			if(ftp_session != NULL){
-				char *s = str_subend(packet->payload,"215 ");
+				char *s = str_subend(packet->payload,"215 ",packet->payload_packet_len);
 				if(s == NULL){
-					s = str_subend(packet->payload,"215-");
+					s = str_subend(packet->payload,"215-",packet->payload_packet_len);
 				}
 				ftp_session->syst =s;
 			}
@@ -485,9 +490,9 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 			(memcmp(packet->payload, "229 ", MMT_STATICSTRING_LEN("229 ")) == 0 ||
 				memcmp(packet->payload, "229-", MMT_STATICSTRING_LEN("229-")) == 0)) {
 			if(ftp_session != NULL){
-				char *em = str_subend(packet->payload,"229 ");
+				char *em = str_subend(packet->payload,"229 ",packet->payload_packet_len);
 				if(em == NULL){
-					em = str_subend(packet->payload,"229-");
+					em = str_subend(packet->payload,"229-",packet->payload_packet_len);
 				}
 				ftp_session->EEPM_229 = em;
 			}
@@ -505,9 +510,9 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 					ftp_session->file = ftp_file;
 				}
 
-				char *em = str_subend(packet->payload,"213 ");
+				char *em = str_subend(packet->payload,"213 ",packet->payload_packet_len);
 				if(em == NULL){
-					em = str_subend(packet->payload,"213-");
+					em = str_subend(packet->payload,"213-",packet->payload_packet_len);
 				}
 				if(ftp_session->status==MMT_FTP_STATUS_TRANSFER_COMPLETED){
 					ftp_session->file->last_modified = em;
@@ -532,9 +537,9 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 					ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
 					ftp_session->file = ftp_file;
 				}
-				char *dir = str_subend(packet->payload,"257 ");
+				char *dir = str_subend(packet->payload,"257 ",packet->payload_packet_len);
 				if(dir == NULL){
-					dir = str_subend(packet->payload,"257-");
+					dir = str_subend(packet->payload,"257-",packet->payload_packet_len);
 				}
 				if(ftp_session->file->dir==NULL||strlen(dir) > strlen(ftp_session->file->dir)){
 					ftp_session->file->dir = dir;
@@ -592,12 +597,12 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 			}
 			log_info("FTP: FINISHED...!");
 		} else if (!mmt_int_check_possible_ftp_reply(packet)) {
-			if ((flow->l4.tcp.ftp_codes_seen>99 && flow->l4.tcp.ftp_codes_seen<600) == 0 ||
+			if ((flow->l4.tcp.ftp_codes_seen>0 && flow->l4.tcp.ftp_codes_seen<32) == 0 ||
 				(!mmt_int_check_possible_ftp_continuation_reply(packet))) {
 				return 0;
 			}else{
 				if(ftp_session !=NULL ){
-					ftp_session->feats = str_add_new_string(ftp_session->feats,(char*)packet->payload);
+					ftp_session->feats = str_add_features(ftp_session->feats,packet->payload,packet->payload_packet_len);
 				}
 			}
 		}
@@ -722,13 +727,18 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
 	return 2;
 }
 
+int ftp_session_data_analysis(ipacket_t *ipacket, unsigned index){
+	log_info("This is after TCP");
+	return MMT_CONTINUE;
+}
+
 void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
 
 	log_info("FTP: mmt_classify_me_ftp : %lu",ipacket->packet_id);
 
 	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
-	log_info("FTP: payload: %s\n",packet->payload);
+	log_info("FTP: payload length: %d\n",packet->payload_packet_len);
 
 	search_ftp(ipacket);
 }
@@ -765,7 +775,7 @@ int init_proto_ftp_struct(){
 	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_FTP,PROTO_FTP_ALIAS);
 	if(protocol_struct != NULL){
 		mmt_init_classify_me_ftp();
-
+		register_session_data_analysis_function(protocol_struct,ftp_session_data_analysis);
 		return register_protocol(protocol_struct,PROTO_FTP);
 
 	}else{
