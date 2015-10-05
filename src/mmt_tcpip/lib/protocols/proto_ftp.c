@@ -56,6 +56,7 @@ char * str_add_features(char *array,const uint8_t *str,int payload_len){
 ftp_tuple4_t * ftp_get_tupl4(ipacket_t * ipacket){
 
 	ftp_tuple4_t *t;
+	t = NULL;
 	t = (ftp_tuple4_t*)malloc(sizeof(ftp_tuple4_t));
 	if(ipacket->internal_packet->tcp->source == htons(21)){
 		t->conn_type = 0;
@@ -282,7 +283,7 @@ static uint8_t mmt_int_check_possible_ftp_continuation_reply(const struct mmt_tc
 		if (packet->payload[i] < ' ' || packet->payload[i] > 127)
 			return 0;
 	}
-	log_info("mmt_int_check_possible_ftp_continuation_reply: %s",packet->payload);
+	// log_info("mmt_int_check_possible_ftp_continuation_reply: %s",packet->payload);
 	return 1;
 }
 
@@ -535,6 +536,7 @@ static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ft
 				if(ftp_session->file == NULL){
 					ftp_file_t *ftp_file;
 					ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
+					ftp_file->dir = NULL;
 					ftp_session->file = ftp_file;
 				}
 				char *dir = str_subend(packet->payload,"257 ",packet->payload_packet_len);
@@ -651,8 +653,13 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
 		if(tuple4->conn_type == MMT_FTP_CONTROL_CONNECTION){
         // First packet of control connection
 			ftp_session_t * ftp_new_session;
+			ftp_new_session = NULL;
 			ftp_new_session = (ftp_session_t*)malloc(sizeof(ftp_session_t));
 			ftp_new_session->ctrl_conn = tuple4;
+			ftp_new_session->data_conn = NULL;
+			ftp_new_session->user = NULL;
+			ftp_new_session->file = NULL;
+			ftp_new_session->feats = NULL;
 			ftp_add_new_session(ftp_new_session);
 			ftp_session = ftp_new_session;
 			ftp_session->status = MMT_FTP_STATUS_OPEN;
