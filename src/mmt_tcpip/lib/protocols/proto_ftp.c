@@ -10,6 +10,12 @@ static void mmt_int_ftp_add_connection(ipacket_t * ipacket) {
 	mmt_internal_add_connection(ipacket, PROTO_FTP, MMT_REAL_PROTOCOL);
 }
 
+ftp_session_t ** get_ftp_session(ipacket_t *ipacket, unsigned index){
+    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+            ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+    return (ftp_session_t **)configured_protocol->args;
+}
+
 // GET FROM C-easy library
 char * str_subend(const uint8_t *str, char* begin,int payload_len){
 	if(str != NULL && begin !=NULL){
@@ -113,18 +119,19 @@ int ftp_compare_tuple4(ftp_tuple4_t *t1, ftp_tuple4_t * t2){
 	return 0;
 }
 
-ftp_session_t * list_ftp_session[10];
+// ftp_session_t * list_ftp_session[10];
 
 /**
 * Add a new ftp_session to list_ftp_session
 * @param fs Session to add
 */
-void ftp_add_new_session(ftp_session_t * fs){
+void ftp_add_new_session(ftp_session_t * fs,ftp_session_t **list_ftp_session){
 	int i = 0;
 	while(list_ftp_session[i]){
 		i++;
 	}
 	list_ftp_session[i] = fs;
+	list_ftp_session[i+1]=NULL;
 };
 
 /**
@@ -133,7 +140,7 @@ void ftp_add_new_session(ftp_session_t * fs){
 * @return   a session in @list_ftp_session which has ctrl_conn or data_conn equals tuple4
 *           NULL if list_ftp_session is NULL or there is no session which has tuple4 as a connection tuple
 */
-ftp_session_t * ftp_get_session_by_tuple4(ftp_tuple4_t * t){
+ftp_session_t * ftp_get_session_by_tuple4(ftp_tuple4_t * t,ftp_session_t **list_ftp_session){
 	int i = 0;
 	while(list_ftp_session[i]){
 		if(list_ftp_session[i]->ctrl_conn!=NULL){
@@ -153,7 +160,7 @@ ftp_session_t * ftp_get_session_by_tuple4(ftp_tuple4_t * t){
 * @param  port Server port
 * @return      a FTP session who has the EEPM_229 contains port
 */
-ftp_session_t * ftp_get_session_by_server_port(uint32_t port){
+ftp_session_t * ftp_get_session_by_server_port(uint32_t port,ftp_session_t **list_ftp_session){
 	int i=0;
 	char str_port[10];
 	sprintf(str_port,"%d",htons(port));
@@ -618,7 +625,7 @@ return 1 if a pop packet
 return 2 if 
 */
 
-static uint8_t search_ftp(ipacket_t * ipacket) {
+static uint8_t search_ftp(ipacket_t * ipacket,unsigned index) {
 	log_info("FTP: search_ftp : %lu",ipacket->packet_id);
 
 	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -646,7 +653,9 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
 	ftp_tuple4_t *tuple4;
 	tuple4 = ftp_get_tupl4(ipacket);
 
-	ftp_session_t * ftp_session = ftp_get_session_by_tuple4(tuple4);
+	ftp_session_t** list_ftp_session = get_ftp_session(ipacket,index);
+
+	ftp_session_t * ftp_session = ftp_get_session_by_tuple4(tuple4,list_ftp_session);
 
 
 	if(ftp_session == NULL){
@@ -660,14 +669,14 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
 			ftp_new_session->user = NULL;
 			ftp_new_session->file = NULL;
 			ftp_new_session->feats = NULL;
-			ftp_add_new_session(ftp_new_session);
+			ftp_add_new_session(ftp_new_session,list_ftp_session);
 			ftp_session = ftp_new_session;
 			ftp_session->status = MMT_FTP_STATUS_OPEN;
 		}else{
         // First packet of data connection
-			ftp_session = ftp_get_session_by_server_port(tuple4->server_port);
+			ftp_session = ftp_get_session_by_server_port(tuple4->server_port,list_ftp_session);
 			if(ftp_session == NULL){
-				ftp_session = ftp_get_session_by_server_port(tuple4->client_port);
+				ftp_session = ftp_get_session_by_server_port(tuple4->client_port,list_ftp_session);
 				if(ftp_session != NULL){
 					ftp_tuple4_t * tuple4_2;
                 // revert tuple4
@@ -734,9 +743,13 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
 	return 2;
 }
 
-int ftp_session_data_analysis(ipacket_t *ipacket, unsigned index){
-	log_info("This is after TCP");
-	return MMT_CONTINUE;
+void * setup_ftp_context(void * proto_context, void * args) {
+    // unsigned int libntoh_error = 0;
+    debug("Creates a new array of FTP session\n");
+    ftp_session_t ** list_ftp_session;
+    list_ftp_session = (ftp_session_t**)malloc(MMT_FTP_MAX_SESSION*sizeof(ftp_session_t*));
+    list_ftp_session[0]=NULL;
+    return (void *) list_ftp_session;
 }
 
 void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
@@ -747,7 +760,7 @@ void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
 
 	log_info("FTP: payload length: %d\n",packet->payload_packet_len);
 
-	search_ftp(ipacket);
+	search_ftp(ipacket,index);
 }
 
 int mmt_check_ftp(ipacket_t *ipacket, unsigned index){
@@ -782,7 +795,7 @@ int init_proto_ftp_struct(){
 	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_FTP,PROTO_FTP_ALIAS);
 	if(protocol_struct != NULL){
 		mmt_init_classify_me_ftp();
-		register_session_data_analysis_function(protocol_struct,ftp_session_data_analysis);
+		register_proto_context_init_cleanup_function(protocol_struct, setup_ftp_context, NULL, NULL);
 		return register_protocol(protocol_struct,PROTO_FTP);
 
 	}else{

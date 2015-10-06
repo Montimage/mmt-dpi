@@ -5,6 +5,7 @@
 #define MMT_FTP_TIMEOUT                     10
 #define MMT_FTP_PASSIVE_MODE                1
 #define MMT_FTP_ACTIVE_MODE                 0
+#define MMT_FTP_MAX_SESSION                 1000
 
 // TYPE OF CONNECTION 
 #define MMT_FTP_CONTROL_CONNECTION          0
