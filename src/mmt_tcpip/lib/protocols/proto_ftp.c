@@ -3,802 +3,1030 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 #include "ftp.h"
-#include <fcntl.h>
+
+
+//////////// LUONG NGUYEN - FUNCTION    /////////////////////////
+
+/**
+ * Get FTP packet type by port number
+ * @param  ipacket packet to analyse
+ * @param  index   index of protocol
+ * @return         MMT_FTP_RESPONSE_PACKET if this is the packet of server send to client on server control port 21
+ *                 MMT_FTP_REQUEST_PACKET if this is the packet of client send to server on server control port 21
+ *                 MMT_FTP_DATA_PACKET if this is the packet of server send to client on server data port
+ *                 MMT_FTP_UNKNOWN_TYPE_PACKET don't know what is this
+ */
+int ftp_get_packet_type_by_port_number(ipacket_t *ipacket,unsigned index){
+    if(ipacket->internal_packet->tcp){
+        if(ipacket->internal_packet->tcp->source == htons(21)){
+            return MMT_FTP_RESPONSE_PACKET;
+        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
+            return MMT_FTP_REQUEST_PACKET;
+        }else{
+            ftp_session_data_t *ftp_session_data = (ftp_session_data_t*)ipacket->session->session_data[index];
+            
+            if(ftp_session_data==NULL){
+                // Maybe first data packet
+                ftp_session_data = (ftp_session_data_t*)ipacket->session->next->session_data[index];
+            }
+
+            if(ftp_session_data!=NULL&&ftp_session_data->data_server_port){
+                if(ftp_session_data->data_server_port==ipacket->internal_packet->tcp->source||ftp_session_data->data_server_port==ipacket->internal_packet->tcp->dest){
+                    return MMT_FTP_DATA_PACKET;
+                }
+            }
+        }
+    }
+    return MMT_FTP_UNKNOWN_PACKET;
+}
+/**
+ * Extract value from a string
+ * @param  str         string to get value
+ * @param  begin       begin substring
+ * @param  payload_len payload len
+ * @return             value
+ */
+char * str_subend(char *payload, char* begin,int payload_len){
+    if(payload != NULL && begin !=NULL){
+        // if(strstr(begin,(char*)str)==NULL) return NULL;
+        int len;
+        len = payload_len - strlen(begin)-2;
+        char *ret;
+        ret = (char * )malloc(len+1);
+        memcpy(ret,payload+strlen(begin),len);
+        ret[len]='\0';
+        return ret;
+    }
+    return NULL;
+}
+
+char * str_add_features(char *array,char *payload,int payload_len){
+    if(payload == NULL) return 0;
+    char *new_feature;
+    new_feature = (char*)malloc(payload_len-1);
+    memcpy(new_feature,payload,payload_len-2);
+    new_feature[payload_len-2] ='\0';
+    if(array==NULL){
+        array = new_feature;
+    }else{
+        int newLen = strlen(array)+strlen(new_feature)+2;
+        array = realloc(array,newLen);
+        strcat(array,":");
+        strcat(array,new_feature);
+        array[strlen(array)]='\0';
+    }
+    return array;
+}
+
+char * str_subvalue(char *str, char* begin, char * end){
+    if(str != NULL && begin !=NULL && end != NULL){
+        char *fromBegin;
+        fromBegin = (char*)malloc(sizeof(str));
+
+        fromBegin = strstr(str,begin);
+        fromBegin = fromBegin + strlen(begin);
+
+        if(fromBegin == NULL){
+            return NULL;
+        }else{
+            char * endOfLine;
+            endOfLine = (char*)malloc(sizeof(fromBegin));
+
+            endOfLine = strstr(fromBegin,end);
+
+            if(endOfLine == NULL){
+                return NULL;
+            }else{
+                int len;
+                len = strlen(fromBegin)-strlen(endOfLine);
+                char *ret;
+                ret = (char * )malloc((len+1)*sizeof(char));
+                strncpy(ret,fromBegin,len);
+                ret[len]='\0';
+                return ret;
+            }
+
+        }
+    }
+    return NULL;
+}
+//////////// LUONG NGUYEN - END OF FUNCTION    /////////////////////////
+/////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
 static void mmt_int_ftp_add_connection(ipacket_t * ipacket) {
-	log_info("mmt_int_ftp_add_connection : %lu",ipacket->packet_id);
-	mmt_internal_add_connection(ipacket, PROTO_FTP, MMT_REAL_PROTOCOL);
-}
 
-ftp_session_t ** get_ftp_session(ipacket_t *ipacket, unsigned index){
-    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
-            ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
-    return (ftp_session_t **)configured_protocol->args;
-}
-
-// GET FROM C-easy library
-char * str_subend(const uint8_t *str, char* begin,int payload_len){
-	if(str != NULL && begin !=NULL){
-		// if(strstr(begin,(char*)str)==NULL) return NULL;
-		int len;
-		len = payload_len - strlen(begin)-2;
-		char *ret;
-		ret = (char * )malloc(len+1);
-		memcpy(ret,str+strlen(begin),len);
-		ret[len]='\0';
-		return ret;
-	}
-	return NULL;
-}
-
-char * str_add_features(char *array,const uint8_t *str,int payload_len){
-	if(str == NULL) return 0;
-	char *new_feature;
-	new_feature = (char*)malloc(payload_len-1);
-	memcpy(new_feature,str,payload_len-2);
-	new_feature[payload_len-2] ='\0';
-	if(array==NULL){
-		array = new_feature;
-	}else{
-		int newLen = strlen(array)+strlen(new_feature)+2;
-		array = realloc(array,newLen);
-		strcat(array,":");
-		strcat(array,new_feature);
-		array[strlen(array)]='\0';
-	}
-	return array;
-}
-
-// END OF C-easy library
-
-
-/** PROTOCOL INTERNAL CODE GOES HERE */
-
-/**
-* Get FTP tuple4 from packet
-* @param  ipacket packet to get
-* @return         a tuple 4 of packet
-*/
-ftp_tuple4_t * ftp_get_tupl4(ipacket_t * ipacket){
-
-	ftp_tuple4_t *t;
-	t = NULL;
-	t = (ftp_tuple4_t*)malloc(sizeof(ftp_tuple4_t));
-	if(ipacket->internal_packet->tcp->source == htons(21)){
-		t->conn_type = 0;
-		t->server_port = ipacket->internal_packet->tcp->source;
-		t->server_addr = ipacket->internal_packet->iph->saddr;
-		t->client_port = ipacket->internal_packet->tcp->dest;
-		t->client_addr = ipacket->internal_packet->iph->daddr;
-		return t; 
-	}else if(ipacket->internal_packet->tcp->dest == htons(21)){
-		t->conn_type = 0;
-		t->server_port = ipacket->internal_packet->tcp->dest;
-		t->server_addr = ipacket->internal_packet->iph->daddr;
-		t->client_port = ipacket->internal_packet->tcp->source;
-		t->client_addr = ipacket->internal_packet->iph->saddr; 
-		return t;
-	}else{
-		t->conn_type = 1;
-		t->server_port = ipacket->internal_packet->tcp->dest;
-		t->server_addr = ipacket->internal_packet->iph->daddr;
-		t->client_port = ipacket->internal_packet->tcp->source;
-		t->client_addr = ipacket->internal_packet->iph->saddr; 
-		return t;
-	}
-
-	return NULL;
-};
-
-/**
-* Compare 2 ftp tuple 4
-* @param  t1 the first tuple
-* @param  t2 The second tuple
-* @return    1 if two tuples are equal
-*            0 otherwise
-*/
-int ftp_compare_tuple4(ftp_tuple4_t *t1, ftp_tuple4_t * t2){
-
-	if(t1->conn_type != t2->conn_type) return 0;
-
-	if(t1->conn_type == MMT_FTP_CONTROL_CONNECTION){
-		if(t1->client_addr != t2->client_addr) return 0;
-
-		if(t1->server_addr != t2->server_addr) return 0;
-
-		if(t1->client_port != t2->client_port) return 0;
-
-		if(t1->server_port != t2->server_port) return 0;
-		return 1;
-	}else{
-		if(t1->client_addr == t2->client_addr && t1->client_port == t2->client_port && t1->server_addr == t2->server_addr && t1->server_port== t2->server_port) return 1;
-		if(t1->client_addr == t2->server_addr && t1->client_port == t2->server_port && t1->server_addr == t2->client_addr && t1->server_port== t2->client_port) return 1;
-		return 0;
-	}
-
-	return 0;
-}
-
-// ftp_session_t * list_ftp_session[10];
-
-/**
-* Add a new ftp_session to list_ftp_session
-* @param fs Session to add
-*/
-void ftp_add_new_session(ftp_session_t * fs,ftp_session_t **list_ftp_session){
-	int i = 0;
-	while(list_ftp_session[i]){
-		i++;
-	}
-	list_ftp_session[i] = fs;
-	list_ftp_session[i+1]=NULL;
-};
-
-/**
-* Get a session by a tuple4
-* @param  t Tuple4
-* @return   a session in @list_ftp_session which has ctrl_conn or data_conn equals tuple4
-*           NULL if list_ftp_session is NULL or there is no session which has tuple4 as a connection tuple
-*/
-ftp_session_t * ftp_get_session_by_tuple4(ftp_tuple4_t * t,ftp_session_t **list_ftp_session){
-	int i = 0;
-	while(list_ftp_session[i]){
-		if(list_ftp_session[i]->ctrl_conn!=NULL){
-			if(ftp_compare_tuple4(t,list_ftp_session[i]->ctrl_conn)) return list_ftp_session[i];	
-		}
-		if(list_ftp_session[i]->data_conn!=NULL){
-			if(ftp_compare_tuple4(t,list_ftp_session[i]->data_conn)) return list_ftp_session[i];	
-		}
-		
-		i++;
-	}
-	return NULL;
+    mmt_internal_add_connection(ipacket, PROTO_FTP, MMT_REAL_PROTOCOL);
 }
 
 /**
-* Get FTP session by server port - for data connection
-* @param  port Server port
-* @return      a FTP session who has the EEPM_229 contains port
-*/
-ftp_session_t * ftp_get_session_by_server_port(uint32_t port,ftp_session_t **list_ftp_session){
-	int i=0;
-	char str_port[10];
-	sprintf(str_port,"%d",htons(port));
-	str_port[strlen(str_port)]='\0';
-	while(list_ftp_session[i]){
-		if(list_ftp_session[i]->EEPM_229 != NULL){
-			if(strstr(list_ftp_session[i]->EEPM_229,str_port) != NULL){
-				return list_ftp_session[i];
-			}
-		}
-		i++;
-	}
-	return NULL;
-}
-
-int total_size=0;
-/**
- * Writes @len bytes from @content to the filename @path.
+ * checks for possible FTP command
+ * not all valid commands are tested, it just need to be 3 or 4 characters followed by a space if the
+ * packet is longer
+ *
+ * this functions is not used to accept, just to not reject
  */
-void ftp_write_data (const char * path, const char * content, size_t len) {
-  int fd = 0;
-  if ( (fd = open ( path , O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW , S_IRWXU | S_IRWXG | S_IRWXO )) < 0 )
-  {
-    fprintf ( stderr , "\n[e] Error %d writting data to \"%s\": %s" , errno , path , strerror( errno ) );
-    return;
-  }
+static uint8_t mmt_int_check_possible_ftp_command(char *payload , int payload_len) {
+    if (payload_len < 3)
+        return 0;
 
-  write ( fd , content , len );
-  close ( fd );
-}
-// void ftp_write_data(const char* filename,const char * data,size_t len){
-// 	log_info("File data: %s",filename);
-// 	FILE *writer_ptr;
-// 	writer_ptr = fopen(filename,"a+b");
-// 	if(writer_ptr!=NULL){
-// 		fwrite(data,len,1,writer_ptr);
-// 	}
-// 	log_info("Number byte written: %d",len);
-// 	total_size+=len;
-// 	log_info("TOTAL byte written: %d",total_size);
-// } 
+    if ((payload[0] < 'a' || payload[0] > 'z') &&
+            (payload[0] < 'A' || payload[0] > 'Z'))
+        return 0;
+    if ((payload[1] < 'a' || payload[1] > 'z') &&
+            (payload[1] < 'A' || payload[1] > 'Z'))
+        return 0;
+    if ((payload[2] < 'a' || payload[2] > 'z') &&
+            (payload[2] < 'A' || payload[2] > 'Z'))
+        return 0;
 
-/**
-* checks for possible FTP command: 
-* 
-* 
-* Service commands:  STOU RMD MKD PWD SYST RETR STOR APPE ALLO REST RNFR RNTO ABOR DELE LIST NLST SITE STAT HELP NOOP 
-* 
-* Acess control commands: USER PASS ACCT CWD CDUP SMNT REIN QUIT 
-* 
-*
-* Transfer parameter commands: PORT PASV TYPE(A E I L) STRU MODE
-*
-* RFC2389-> commands: FEAT
-* RFC2428-> commands: EPSV
-* not all valid commands are tested, it just need to be 3 or 4 characters followed by a space if the
-* packet is longer
-*
-* this functions is not used to accept, just to not reject
-*/
-static uint8_t mmt_int_check_possible_ftp_command(const struct mmt_tcpip_internal_packet_struct *packet) {
-	log_info("mmt_int_check_possible_ftp_command ");
-	if (packet->payload_packet_len < 3)
-		return 0;
+    if (payload_len > 3) {
+        if ((payload[3] < 'a' || payload[3] > 'z') &&
+                (payload[3] < 'A' || payload[3] > 'Z') && payload[3] != ' ')
+            return 0;
 
-	if ((packet->payload[0] < 'a' || packet->payload[0] > 'z') &&
-		(packet->payload[0] < 'A' || packet->payload[0] > 'Z'))
-		return 0;
-	if ((packet->payload[1] < 'a' || packet->payload[1] > 'z') &&
-		(packet->payload[1] < 'A' || packet->payload[1] > 'Z'))
-		return 0;
-	if ((packet->payload[2] < 'a' || packet->payload[2] > 'z') &&
-		(packet->payload[2] < 'A' || packet->payload[2] > 'Z'))
-		return 0;
+        if (payload_len > 4) {
+            if (payload[3] != ' ' && payload[4] != ' ')
+                return 0;
+        }
+    }
 
-	if (packet->payload_packet_len > 3) {
-		if ((packet->payload[3] < 'a' || packet->payload[3] > 'z') &&
-			(packet->payload[3] < 'A' || packet->payload[3] > 'Z') && packet->payload[3] != ' ')
-			return 0;
-
-		if (packet->payload_packet_len > 4) {
-			if (packet->payload[3] != ' ' && packet->payload[4] != ' ')
-				return 0;
-		}
-	}
-
-	return 1;
+    return 1;
 }
 
 /**
-* ftp replies are are 3-digit number followed by space or hyphen
-* At least 5 ASCII characters
-* The forth character must be space or -
-* The 3 first character must be number
-*/
-static uint8_t mmt_int_check_possible_ftp_reply(const struct mmt_tcpip_internal_packet_struct *packet) {
-	log_info("mmt_int_check_possible_ftp_reply : ");
-	if (packet->payload_packet_len < 5)
-		return 0;
+ * ftp replies are are 3-digit number followed by space or hyphen
+ */
+static uint8_t mmt_int_check_possible_ftp_reply(char *payload , int payload_len) {
+    if (payload_len < 5)
+        return 0;
 
-	if (packet->payload[3] != ' ' && packet->payload[3] != '-')
-		return 0;
+    if (payload[3] != ' ' && payload[3] != '-')
+        return 0;
 
-	if (packet->payload[0] < '0' || packet->payload[0] > '9')
-		return 0;
-	if (packet->payload[1] < '0' || packet->payload[1] > '9')
-		return 0;
-	if (packet->payload[2] < '0' || packet->payload[2] > '9')
-		return 0;
+    if (payload[0] < '0' || payload[0] > '9')
+        return 0;
+    if (payload[1] < '0' || payload[1] > '9')
+        return 0;
+    if (payload[2] < '0' || payload[2] > '9')
+        return 0;
 
-	return 1;
+    return 1;
 }
 
 /**
-* check for continuation replies
-* there is no real indication whether it is a continuation message, we just
-* require that there are at least 5 ascii characters
-*/
-static uint8_t mmt_int_check_possible_ftp_continuation_reply(const struct mmt_tcpip_internal_packet_struct *packet) {
-	log_info("mmt_int_check_possible_ftp_continuation_reply");
-	uint16_t i;
+ * check for continuation replies
+ * there is no real indication whether it is a continuation message, we just
+ * require that there are at least 5 ascii characters
+ */
+static uint8_t mmt_int_check_possible_ftp_continuation_reply(char *payload , int payload_len) {
+    uint16_t i;
 
-	if (packet->payload_packet_len < 5)
-		return 0;
+    if (payload_len< 5)
+        return 0;
 
-	for (i = 0; i < 5; i++) {
-		if (packet->payload[i] < ' ' || packet->payload[i] > 127)
-			return 0;
-	}
-	// log_info("mmt_int_check_possible_ftp_continuation_reply: %s",packet->payload);
-	return 1;
-}
+    for (i = 0; i < 5; i++) {
+        if (payload[i] < ' ' || payload[i] > 127)
+            return 0;
+    }
 
-static uint8_t search_ftp_client_request(ipacket_t *ipacket, ftp_session_t *ftp_session,ftp_tuple4_t * tuple4,uint8_t *current_ftp_code){
-	log_info("FTP: search_ftp_client_request : %lu",ipacket->packet_id);
-
-	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-	struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-	//uint8_t current_ftp_code = 0;
-
-	if(ftp_session == NULL){
-		log_info("FTP: Cannot find FTP session");
-	}
-	if(tuple4->conn_type == MMT_FTP_DATA_CONNECTION){
-			log_info("FTP: data payload len (client->server): %d\n",packet->payload_packet_len);
-	}else{
-		if (packet->payload_packet_len > MMT_STATICSTRING_LEN("RETR ") &&
-			(memcmp(packet->payload, "RETR ", MMT_STATICSTRING_LEN("RETR ")) == 0 ||
-				memcmp(packet->payload, "retr ", MMT_STATICSTRING_LEN("retr ")) == 0)) {
-			if(ftp_session->file == NULL){
-				ftp_file_t *ftp_file;
-				ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
-				ftp_session->file = ftp_file;
-			}
-
-			ftp_session->file->name = str_subend(packet->payload,"RETR ",packet->payload_packet_len);
-			log_info( "FTP: found RETR command\n");
-        flow->l4.tcp.ftp_codes_seen |= FTP_RETR_CMD;
-        *current_ftp_code = FTP_RETR_CMD;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("USER ") &&
-			(memcmp(packet->payload, "USER ", MMT_STATICSTRING_LEN("USER ")) == 0 ||
-				memcmp(packet->payload, "user ", MMT_STATICSTRING_LEN("user ")) == 0)) {
-
-			log_info( "FTP: found USER command\n");
-			if(ftp_session != NULL){
-				if(ftp_session->user==NULL){
-					ftp_user_t *ftp_user;
-					ftp_user = (ftp_user_t*)malloc(sizeof(ftp_user_t));
-					ftp_session->user = ftp_user;
-				}
-				char *uname = str_subend(packet->payload,"USER ",packet->payload_packet_len);
-				if(uname!=NULL){
-					ftp_session->user->username =uname;	
-				}
-			}
-			flow->l4.tcp.ftp_codes_seen |= FTP_USER_CMD;
-			*current_ftp_code = FTP_USER_CMD;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("PASS ") &&
-			(memcmp(packet->payload, "PASS ", MMT_STATICSTRING_LEN("PASS ")) == 0 ||
-				memcmp(packet->payload, "pass ", MMT_STATICSTRING_LEN("pass ")) == 0)) {
-			if(ftp_session != NULL){
-				if(ftp_session->user==NULL){
-					ftp_user_t *ftp_user;
-					ftp_user = (ftp_user_t*)malloc(sizeof(ftp_user_t));
-					ftp_session->user = ftp_user;
-				}
-				ftp_session->user->password = str_subend(packet->payload,"PASS ",packet->payload_packet_len);
-			}
-			log_info( "FTP: found PASS command\n");
-	        flow->l4.tcp.ftp_codes_seen |= FTP_PASS_CMD;
-	        *current_ftp_code = FTP_PASS_CMD;
-		} else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("SYST ") &&
-			(memcmp(packet->payload, "SYST ", MMT_STATICSTRING_LEN("SYST ")) == 0 ||
-				memcmp(packet->payload, "syst ", MMT_STATICSTRING_LEN("syst ")) == 0)) {
-			log_info( "FTP: found SYST command\n");
-		    flow->l4.tcp.ftp_codes_seen |= FTP_SYST_CMD;
-		    *current_ftp_code = FTP_SYST_CMD;
-		} else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("PWD ") &&
-			(memcmp(packet->payload, "PWD ", MMT_STATICSTRING_LEN("PWD ")) == 0 ||
-				memcmp(packet->payload, "pwd ", MMT_STATICSTRING_LEN("pwd ")) == 0)) {
-			if(ftp_session !=NULL ){
-				if(ftp_session->file == NULL){
-					ftp_file_t *ftp_file;
-					ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
-					ftp_session->file = ftp_file;
-				}
-		                    // ftp_session->syst = str_subend(packet->payload,"SYST ");
-			}
-			log_info( "FTP: found PWD command\n");
-		    flow->l4.tcp.ftp_codes_seen |= FTP_PWD_CMD;
-		    *current_ftp_code = FTP_PWD_CMD;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("TYPE ") &&
-			(memcmp(packet->payload, "TYPE ", MMT_STATICSTRING_LEN("TYPE ")) == 0 ||
-				memcmp(packet->payload, "type ", MMT_STATICSTRING_LEN("type ")) == 0)) {
-
-			log_info( "FTP: found TYPE command\n");
-			if(ftp_session !=NULL ){
-				ftp_session->data_type= str_subend(packet->payload,"TYPE ",packet->payload_packet_len);
-			}
-		    flow->l4.tcp.ftp_codes_seen |= FTP_TYPE_CMD;
-		    *current_ftp_code = FTP_TYPE_CMD;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("CWD ") &&
-			(memcmp(packet->payload, "CWD ", MMT_STATICSTRING_LEN("CWD ")) == 0 ||
-				memcmp(packet->payload, "cwd ", MMT_STATICSTRING_LEN("cwd ")) == 0)) {
-
-			log_info( "FTP: found CWD command\n");
-		    flow->l4.tcp.ftp_codes_seen |= FTP_CWD_CMD;
-		    *current_ftp_code = FTP_CWD_CMD;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("SIZE ") &&
-			(memcmp(packet->payload, "SIZE ", MMT_STATICSTRING_LEN("SIZE ")) == 0 ||
-				memcmp(packet->payload, "size ", MMT_STATICSTRING_LEN("size ")) == 0)) {
-
-			log_info( "FTP: found SIZE command\n");
-		    flow->l4.tcp.ftp_codes_seen |= FTP_SIZE_CMD;
-		    *current_ftp_code = FTP_SIZE_CMD;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("EPSV ") &&
-			(memcmp(packet->payload, "EPSV ", MMT_STATICSTRING_LEN("EPSV ")) == 0 ||
-				memcmp(packet->payload, "epsv ", MMT_STATICSTRING_LEN("epsv ")) == 0)) {
-			if(ftp_session !=NULL ){
-				ftp_session->mode = MMT_FTP_PASSIVE_MODE;
-			}
-			log_info( "FTP: found EPSV command\n");
-		    flow->l4.tcp.ftp_codes_seen |= FTP_EPSV_CMD;
-		    *current_ftp_code = FTP_EPSV_CMD;
-		}else if (packet->payload_packet_len >= MMT_STATICSTRING_LEN("FEAT") &&
-			(memcmp(packet->payload, "FEAT", MMT_STATICSTRING_LEN("FEAT")) == 0 ||
-				memcmp(packet->payload, "feat", MMT_STATICSTRING_LEN("feat")) == 0)) {
-
-			log_info( "FTP: found FEAT command\n");
-			flow->l4.tcp.ftp_codes_seen |= FTP_FEAT_CMD;
-			*current_ftp_code = FTP_FEAT_CMD;
-		}else if (!mmt_int_check_possible_ftp_command(packet)) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
-
-static uint8_t search_ftp_server_response(ipacket_t * ipacket, ftp_session_t *ftp_session,ftp_tuple4_t * tuple4,uint8_t *current_ftp_code){
-	log_info("FTP: search_ftp_server_response : %lu",ipacket->packet_id);
-
-	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-	struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-	//uint8_t current_ftp_code = 0;
-	
-	if(ftp_session == NULL){
-		log_info("FTP: Cannot find FTP session");
-	}
-
-	if(tuple4->conn_type == MMT_FTP_DATA_CONNECTION){
-		// {
-			log_info("FTP: Received data from server: %d",packet->payload_packet_len);
-			log_info("FTP: Going to write data to file");
-			if(packet->payload_packet_len>0){
-				ftp_write_data(ftp_session->file->name,(char*)packet->payload,packet->payload_packet_len);	
-			}
-		// }
-	}else {
-		if (packet->payload_packet_len > MMT_STATICSTRING_LEN("150 ") &&
-			(memcmp(packet->payload, "150 ", MMT_STATICSTRING_LEN("150 ")) == 0 ||
-				memcmp(packet->payload, "150-", MMT_STATICSTRING_LEN("150-")) == 0)) {
-
-            // log_info( "FTP: found 150 reply code\n");
-			log_info("FTP: found 150 reply code: %lu",ipacket->packet_id);
-            flow->l4.tcp.ftp_codes_seen |= FTP_150_CODE;
-            *current_ftp_code = FTP_150_CODE;
-            if(ftp_session){
-            	ftp_session->status = MMT_FTP_STATUS_TRANSFERING;
-            	log_info("FTP: START TRANSFERING DATA....");
-            }
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("220 ") &&
-			(memcmp(packet->payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
-				memcmp(packet->payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
-
-		        // log_info( "FTP: found 220 reply code\n");
-			log_info("FTP: found 220 reply code: %lu - version",ipacket->packet_id);
-			log_info("FTP: Create new ftp session");
-
-			if(ftp_session){
-				char *ver = str_subend(packet->payload,"220 ",packet->payload_packet_len);
-				if(ver == NULL){
-					ver = str_subend(packet->payload,"220-",packet->payload_packet_len);
-				}
-				ftp_session->version = ver;
-				ftp_session->status = MMT_FTP_STATUS_CONTROLING;
-				log_info("FTP: START CONTROL CONNECTION");
-			}
-
-			flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
-			*current_ftp_code = FTP_220_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("230 ") &&
-			(memcmp(packet->payload, "230 ", MMT_STATICSTRING_LEN("230 ")) == 0 ||
-				memcmp(packet->payload, "230-", MMT_STATICSTRING_LEN("230-")) == 0)) {
-
-		        // log_info( "FTP: found 230 reply code\n");
-			log_info("FTP: found 230 reply code: %lu",ipacket->packet_id);
-		        flow->l4.tcp.ftp_codes_seen |= FTP_230_CODE;
-		        *current_ftp_code = FTP_230_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("215 ") &&
-			(memcmp(packet->payload, "215 ", MMT_STATICSTRING_LEN("215 ")) == 0 ||
-				memcmp(packet->payload, "215-", MMT_STATICSTRING_LEN("215-")) == 0)) {
-			if(ftp_session != NULL){
-				char *s = str_subend(packet->payload,"215 ",packet->payload_packet_len);
-				if(s == NULL){
-					s = str_subend(packet->payload,"215-",packet->payload_packet_len);
-				}
-				ftp_session->syst =s;
-			}
-		        // log_info( "FTP: found 215 reply code\n");
-			log_info("FTP: found 215 reply code: %lu - system type",ipacket->packet_id);
-		        flow->l4.tcp.ftp_codes_seen |= FTP_215_CODE;
-		        *current_ftp_code = FTP_215_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("229 ") &&
-			(memcmp(packet->payload, "229 ", MMT_STATICSTRING_LEN("229 ")) == 0 ||
-				memcmp(packet->payload, "229-", MMT_STATICSTRING_LEN("229-")) == 0)) {
-			if(ftp_session != NULL){
-				char *em = str_subend(packet->payload,"229 ",packet->payload_packet_len);
-				if(em == NULL){
-					em = str_subend(packet->payload,"229-",packet->payload_packet_len);
-				}
-				ftp_session->EEPM_229 = em;
-			}
-		        // log_info( "FTP: found 229 reply code\n");
-			log_info("FTP: found 229 reply code: %lu - Passive mode information",ipacket->packet_id);
-		        flow->l4.tcp.ftp_codes_seen |= FTP_229_CODE;
-		        *current_ftp_code = FTP_229_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("213 ") &&
-			(memcmp(packet->payload, "213 ", MMT_STATICSTRING_LEN("213 ")) == 0 ||
-				memcmp(packet->payload, "213-", MMT_STATICSTRING_LEN("213-")) == 0)) {
-			if(ftp_session!=NULL){
-				if(ftp_session->file == NULL){
-					ftp_file_t *ftp_file;
-					ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
-					ftp_session->file = ftp_file;
-				}
-
-				char *em = str_subend(packet->payload,"213 ",packet->payload_packet_len);
-				if(em == NULL){
-					em = str_subend(packet->payload,"213-",packet->payload_packet_len);
-				}
-				if(ftp_session->status==MMT_FTP_STATUS_TRANSFER_COMPLETED){
-					ftp_session->file->last_modified = em;
-					log_info("Updated file last_modified");	
-				}else{
-					ftp_session->file->size=atoi(em);
-					log_info("Updated file size");	
-				}
-				
-			}
-
-		        // log_info( "FTP: found 213 reply code\n");
-			log_info("FTP: found 213 reply code: %lu",ipacket->packet_id);
-		        flow->l4.tcp.ftp_codes_seen |= FTP_213_CODE;
-		        *current_ftp_code = FTP_213_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("257 ") &&
-			(memcmp(packet->payload, "257 ", MMT_STATICSTRING_LEN("257 ")) == 0 ||
-				memcmp(packet->payload, "257-", MMT_STATICSTRING_LEN("257-")) == 0)) {
-			if(ftp_session !=NULL){
-				if(ftp_session->file == NULL){
-					ftp_file_t *ftp_file;
-					ftp_file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
-					ftp_file->dir = NULL;
-					ftp_session->file = ftp_file;
-				}
-				char *dir = str_subend(packet->payload,"257 ",packet->payload_packet_len);
-				if(dir == NULL){
-					dir = str_subend(packet->payload,"257-",packet->payload_packet_len);
-				}
-				if(ftp_session->file->dir==NULL||strlen(dir) > strlen(ftp_session->file->dir)){
-					ftp_session->file->dir = dir;
-				}
-			}
-		        // log_info( "FTP: found 257 reply code\n");
-			log_info("FTP: found 257 reply code: %lu",ipacket->packet_id);
-		        flow->l4.tcp.ftp_codes_seen |= FTP_257_CODE;
-		        *current_ftp_code = FTP_257_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("250 ") &&
-			(memcmp(packet->payload, "250 ", MMT_STATICSTRING_LEN("250 ")) == 0 ||
-				memcmp(packet->payload, "250-", MMT_STATICSTRING_LEN("250-")) == 0)) {
-
-		        // log_info( "FTP: found 250 reply code\n");
-			log_info("FTP: found 250 reply code: %lu",ipacket->packet_id);
-		        flow->l4.tcp.ftp_codes_seen |= FTP_250_CODE;
-		        *current_ftp_code = FTP_250_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("200 ") &&
-			(memcmp(packet->payload, "200 ", MMT_STATICSTRING_LEN("200 ")) == 0 ||
-				memcmp(packet->payload, "200-", MMT_STATICSTRING_LEN("200-")) == 0)) {
-
-		        // log_info( "FTP: found 200 reply code\n");
-			log_info("FTP: found 200 reply code: %lu",ipacket->packet_id);
-		        flow->l4.tcp.ftp_codes_seen |= FTP_200_CODE;
-		        *current_ftp_code = FTP_200_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("331 ") &&
-			(memcmp(packet->payload, "331 ", MMT_STATICSTRING_LEN("331 ")) == 0 ||
-				memcmp(packet->payload, "331-", MMT_STATICSTRING_LEN("331-")) == 0)) {
-
-		        // log_info( "FTP: found 331 reply code\n");
-			log_info("FTP: found 331 reply code: %lu",ipacket->packet_id);
-			flow->l4.tcp.ftp_codes_seen |= FTP_331_CODE;
-			*current_ftp_code = FTP_331_CODE;
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("226 ") &&
-			(memcmp(packet->payload, "226 ", MMT_STATICSTRING_LEN("226 ")) == 0 ||
-				memcmp(packet->payload, "226-", MMT_STATICSTRING_LEN("226-")) == 0)) {
-			if(ftp_session != NULL){
-				ftp_session->status = MMT_FTP_STATUS_TRANSFER_COMPLETED;
-			}
-		        // log_info( "FTP: found 226 reply code\n");
-			log_info("FTP: found 226 reply code: %lu - transfer completed",ipacket->packet_id);
-		        flow->l4.tcp.ftp_codes_seen |= FTP_331_CODE;
-		        *current_ftp_code = FTP_331_CODE;
-		        // 
-		}else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("211 ") &&
-			(memcmp(packet->payload, "211 ", MMT_STATICSTRING_LEN("211 ")) == 0 ||
-				memcmp(packet->payload, "211-", MMT_STATICSTRING_LEN("211-")) == 0)) {
-
-		        // log_info( "FTP: found 211reply code\n");
-			log_info("FTP: found 211 reply code %lu",ipacket->packet_id);
-			flow->l4.tcp.ftp_codes_seen |= FTP_211_CODE;
-			*current_ftp_code = FTP_211_CODE;
-			if(ftp_session!=NULL){
-				ftp_session->status = MMT_FTP_STATUS_FINISHED;
-			}
-			log_info("FTP: FINISHED...!");
-		} else if (!mmt_int_check_possible_ftp_reply(packet)) {
-			if ((flow->l4.tcp.ftp_codes_seen>0 && flow->l4.tcp.ftp_codes_seen<32) == 0 ||
-				(!mmt_int_check_possible_ftp_continuation_reply(packet))) {
-				return 0;
-			}else{
-				if(ftp_session !=NULL ){
-					ftp_session->feats = str_add_features(ftp_session->feats,packet->payload,packet->payload_packet_len);
-				}
-			}
-		}
-	}
-	return 1;
+    return 1;
 }
 
 /*
-return 0 if nothing has been detected
-return 1 if a pop packet
-return 2 if 
-*/
+  return 0 if nothing has been detected
+  return 1 if a pop packet
+ */
 
-static uint8_t search_ftp(ipacket_t * ipacket,unsigned index) {
-	log_info("FTP: search_ftp : %lu",ipacket->packet_id);
-
-	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-	struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-	uint8_t current_ftp_code = 0;
-
-/* initiate client direction flag */
-	if (ipacket->session->data_packet_count == 1) {
-		if (flow->l4.tcp.seen_syn) {
-			flow->l4.tcp.ftp_client_direction = ipacket->session->setup_packet_direction;
-		} else {
-        /* no syn flag seen so guess */
-			if (packet->payload_packet_len > 0) {
-				if (packet->payload[0] >= '0' && packet->payload[0] <= '9') {
-                /* maybe server side */
-					flow->l4.tcp.ftp_client_direction = 1 - ipacket->session->last_packet_direction;
-				} else {
-					flow->l4.tcp.ftp_client_direction = ipacket->session->last_packet_direction;
-				}
-			}
-		}
-	}
+static uint8_t search_ftp(ipacket_t * ipacket) {
+    
 
 
-	ftp_tuple4_t *tuple4;
-	tuple4 = ftp_get_tupl4(ipacket);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
+    uint8_t current_ftp_code = 0;
 
-	ftp_session_t** list_ftp_session = get_ftp_session(ipacket,index);
+    /* initiate client direction flag */
+    if (ipacket->session->data_packet_count == 1) {
+        if (flow->l4.tcp.seen_syn) {
+            flow->l4.tcp.ftp_client_direction = ipacket->session->setup_packet_direction;
+        } else {
+            /* no syn flag seen so guess */
+            if (packet->payload_packet_len > 0) {
+                if (packet->payload[0] >= '0' && packet->payload[0] <= '9') {
+                    /* maybe server side */
+                    flow->l4.tcp.ftp_client_direction = 1 - ipacket->session->last_packet_direction;
+                } else {
+                    flow->l4.tcp.ftp_client_direction = ipacket->session->last_packet_direction;
+                }
+            }
+        }
+    }
 
-	ftp_session_t * ftp_session = ftp_get_session_by_tuple4(tuple4,list_ftp_session);
+    if (ipacket->session->last_packet_direction == flow->l4.tcp.ftp_client_direction) {
+        if (packet->payload_packet_len > MMT_STATICSTRING_LEN("USER ") &&
+                (memcmp(packet->payload, "USER ", MMT_STATICSTRING_LEN("USER ")) == 0 ||
+                memcmp(packet->payload, "user ", MMT_STATICSTRING_LEN("user ")) == 0)) {
 
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found USER command\n");
+            flow->l4.tcp.ftp_codes_seen |= FTP_USER_CMD;
+            current_ftp_code = FTP_USER_CMD;
+        } else if (packet->payload_packet_len >= MMT_STATICSTRING_LEN("FEAT") &&
+                (memcmp(packet->payload, "FEAT", MMT_STATICSTRING_LEN("FEAT")) == 0 ||
+                memcmp(packet->payload, "feat", MMT_STATICSTRING_LEN("feat")) == 0)) {
 
-	if(ftp_session == NULL){
-		if(tuple4->conn_type == MMT_FTP_CONTROL_CONNECTION){
-        // First packet of control connection
-			ftp_session_t * ftp_new_session;
-			ftp_new_session = NULL;
-			ftp_new_session = (ftp_session_t*)malloc(sizeof(ftp_session_t));
-			ftp_new_session->ctrl_conn = tuple4;
-			ftp_new_session->data_conn = NULL;
-			ftp_new_session->user = NULL;
-			ftp_new_session->file = NULL;
-			ftp_new_session->feats = NULL;
-			ftp_add_new_session(ftp_new_session,list_ftp_session);
-			ftp_session = ftp_new_session;
-			ftp_session->status = MMT_FTP_STATUS_OPEN;
-		}else{
-        // First packet of data connection
-			ftp_session = ftp_get_session_by_server_port(tuple4->server_port,list_ftp_session);
-			if(ftp_session == NULL){
-				ftp_session = ftp_get_session_by_server_port(tuple4->client_port,list_ftp_session);
-				if(ftp_session != NULL){
-					ftp_tuple4_t * tuple4_2;
-                // revert tuple4
-					tuple4_2 = (ftp_tuple4_t*)malloc(sizeof(ftp_tuple4_t));
-					tuple4_2->client_addr = tuple4->server_addr;
-					tuple4_2->client_port = tuple4->server_port;
-					tuple4_2->server_addr = tuple4->client_addr;
-					tuple4_2->server_port = tuple4->client_port;
-					ftp_session->data_conn = tuple4_2;
-				}else{
-					log_err("Could not find session of packet: %lu",ipacket->packet_id);
-				}
-			}else{
-				ftp_session->data_conn = tuple4;
-			} 
-		}
-	}
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found FEAT command\n");
+            flow->l4.tcp.ftp_codes_seen |= FTP_FEAT_CMD;
+            current_ftp_code = FTP_FEAT_CMD;
+        } else if (!mmt_int_check_possible_ftp_command((char*)packet->payload,packet->payload_packet_len)) {
+            return 0;
+        }
+    } else {
+        if (packet->payload_packet_len > MMT_STATICSTRING_LEN("220 ") &&
+                (memcmp(packet->payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
+                memcmp(packet->payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
 
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 220 reply code\n");
+            flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
+            current_ftp_code = FTP_220_CODE;
+        } else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("331 ") &&
+                (memcmp(packet->payload, "331 ", MMT_STATICSTRING_LEN("331 ")) == 0 ||
+                memcmp(packet->payload, "331-", MMT_STATICSTRING_LEN("331-")) == 0)) {
 
-	if (ipacket->session->last_packet_direction == flow->l4.tcp.ftp_client_direction) {
-    // Client request
-		search_ftp_client_request(ipacket,ftp_session,tuple4,&current_ftp_code);
-	} else {
-    // Server response
-		search_ftp_server_response(ipacket,ftp_session,tuple4,&current_ftp_code);
-	}
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 331 reply code\n");
+            flow->l4.tcp.ftp_codes_seen |= FTP_331_CODE;
+            current_ftp_code = FTP_331_CODE;
+        } else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("211 ") &&
+                (memcmp(packet->payload, "211 ", MMT_STATICSTRING_LEN("211 ")) == 0 ||
+                memcmp(packet->payload, "211-", MMT_STATICSTRING_LEN("211-")) == 0)) {
 
-	if ((flow->l4.tcp.ftp_codes_seen > 1 && flow->l4.tcp.ftp_codes_seen<13)||(flow->l4.tcp.ftp_codes_seen > 99 && flow->l4.tcp.ftp_codes_seen <600 )) {
-// I think the condition should be 'or' instead of 'and'
-//    if ((flow->l4.tcp.ftp_codes_seen & FTP_COMMANDS) != 0 || (flow->l4.tcp.ftp_codes_seen & FTP_CODES) != 0) {
-		log_info("FTP detected: %lu",ipacket->packet_id);
-		mmt_int_ftp_add_connection(ipacket);
-		return 1;
-	}
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 211reply code\n");
+            flow->l4.tcp.ftp_codes_seen |= FTP_211_CODE;
+            current_ftp_code = FTP_211_CODE;
+        } else if (!mmt_int_check_possible_ftp_reply((char*)packet->payload,packet->payload_packet_len)) {
+            if ((flow->l4.tcp.ftp_codes_seen & FTP_CODES) == 0 ||
+                    (!mmt_int_check_possible_ftp_continuation_reply((char*)packet->payload,packet->payload_packet_len))) {
+                return 0;
+            }
+        }
+    }
 
-/* if no valid code has been seen for the first packets reject */
-	if (flow->l4.tcp.ftp_codes_seen == 0 && ipacket->session->data_packet_count > 3)
-		return 0;
+    if ((flow->l4.tcp.ftp_codes_seen & FTP_COMMANDS) != 0 && (flow->l4.tcp.ftp_codes_seen & FTP_CODES) != 0) {
 
-/* otherwise wait more packets, wait more for traffic on known ftp port */
-	if ((ipacket->session->last_packet_direction == ipacket->session->setup_packet_direction && packet->tcp && packet->tcp->dest == htons(21)) ||
-		(ipacket->session->last_packet_direction != ipacket->session->setup_packet_direction && packet->tcp && packet->tcp->source == htons(21))) {
-    /* flow to known ftp port */
+        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP detected\n");
+        mmt_int_ftp_add_connection(ipacket);
+        return 1;
+    }
 
-    /* wait much longer if this was a 220 code, initial messages might be long */
-		if (current_ftp_code == FTP_220_CODE) {
-			if (ipacket->session->data_packet_count > 40)
-				return 0;
-		} else {
-			if (ipacket->session->data_packet_count > 20)
-				return 0;
-		}
-	} else {
-    /* wait much longer if this was a 220 code, initial messages might be long */
-		if (current_ftp_code == FTP_220_CODE) {
-			if (ipacket->session->data_packet_count > 20)
-				return 0;
-		} else {
-			if (ipacket->session->data_packet_count > 10)
-				return 0;
-		}
-	}
+    /* if no valid code has been seen for the first packets reject */
+    if (flow->l4.tcp.ftp_codes_seen == 0 && ipacket->session->data_packet_count > 3)
+        return 0;
 
-	return 2;
+    /* otherwise wait more packets, wait more for traffic on known ftp port */
+    if ((ipacket->session->last_packet_direction == ipacket->session->setup_packet_direction && packet->tcp && packet->tcp->dest == htons(21)) ||
+            (ipacket->session->last_packet_direction != ipacket->session->setup_packet_direction && packet->tcp && packet->tcp->source == htons(21))) {
+        /* flow to known ftp port */
+
+        /* wait much longer if this was a 220 code, initial messages might be long */
+        if (current_ftp_code == FTP_220_CODE) {
+            if (ipacket->session->data_packet_count > 40)
+                return 0;
+        } else {
+            if (ipacket->session->data_packet_count > 20)
+                return 0;
+        }
+    } else {
+        /* wait much longer if this was a 220 code, initial messages might be long */
+        if (current_ftp_code == FTP_220_CODE) {
+            if (ipacket->session->data_packet_count > 20)
+                return 0;
+        } else {
+            if (ipacket->session->data_packet_count > 10)
+                return 0;
+        }
+    }
+
+    return 2;
 }
 
-void * setup_ftp_context(void * proto_context, void * args) {
-    // unsigned int libntoh_error = 0;
-    debug("Creates a new array of FTP session\n");
-    ftp_session_t ** list_ftp_session;
-    list_ftp_session = (ftp_session_t**)malloc(MMT_FTP_MAX_SESSION*sizeof(ftp_session_t*));
-    list_ftp_session[0]=NULL;
-    return (void *) list_ftp_session;
+static void search_passive_ftp_mode(ipacket_t * ipacket) {
+    
+
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
+    struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
+    uint16_t plen;
+    uint8_t i;
+    uint32_t ftp_ip;
+
+
+    // TODO check if normal passive mode also needs adaption for ipv6
+    if (packet->payload_packet_len > 3 && mmt_mem_cmp(packet->payload, "227 ", 4) == 0) {
+        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP passive mode initial string\n");
+
+        plen = 4; //=4 for "227 "
+        while (1) {
+            if (plen >= packet->payload_packet_len) {
+                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
+                        "plen >= packet->payload_packet_len, return\n");
+                return;
+            }
+            if (packet->payload[plen] == '(') {
+                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "found (. break.\n");
+                break;
+            }
+
+            plen++;
+        }
+        plen++;
+
+        if (plen >= packet->payload_packet_len)
+            return;
+
+
+        ftp_ip = 0;
+        for (i = 0; i < 4; i++) {
+            uint16_t oldplen = plen;
+            ftp_ip =
+                    (ftp_ip << 8) +
+                    mmt_bytestream_to_number(&packet->payload[plen], packet->payload_packet_len - plen, &plen);
+            if (oldplen == plen || plen >= packet->payload_packet_len) {
+                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP passive mode %u value parse failed\n",
+                        i);
+                return;
+            }
+            if (packet->payload[plen] != ',') {
+
+                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
+                        "FTP passive mode %u value parse failed, char ',' is missing\n", i);
+                return;
+            }
+            plen++;
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
+                    "FTP passive mode %u value parsed, ip is now: %u\n", i, ftp_ip);
+
+        }
+        if (dst != NULL) {
+            dst->ftp_ip.ipv4 = htonl(ftp_ip);
+            dst->ftp_timer = packet->tick_timestamp;
+            dst->ftp_timer_set = 1;
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to dst");
+        }
+        if (src != NULL) {
+            src->ftp_ip.ipv4 = packet->iph->daddr;
+            src->ftp_timer = packet->tick_timestamp;
+            src->ftp_timer_set = 1;
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to src");
+        }
+        return;
+    }
+
+    if (packet->payload_packet_len > 34 && mmt_mem_cmp(packet->payload, "229 Entering Extended Passive Mode", 34) == 0) {
+        if (dst != NULL) {
+            mmt_get_source_ip_from_packet(packet, &dst->ftp_ip);
+            dst->ftp_timer = packet->tick_timestamp;
+            dst->ftp_timer_set = 1;
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to dst");
+        }
+        if (src != NULL) {
+            mmt_get_destination_ip_from_packet(packet, &src->ftp_ip);
+            src->ftp_timer = packet->tick_timestamp;
+            src->ftp_timer_set = 1;
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to src");
+        }
+        return;
+    }
+}
+
+static void search_active_ftp_mode(ipacket_t * ipacket) {
+    
+
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
+    struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
+
+    if (packet->payload_packet_len > 5
+            && (mmt_mem_cmp(packet->payload, "PORT ", 5) == 0 || mmt_mem_cmp(packet->payload, "EPRT ", 5) == 0)) {
+
+        //src->local_ftp_data_port = htons(data_port_number);
+        if (src != NULL) {
+            mmt_get_destination_ip_from_packet(packet, &src->ftp_ip);
+            src->ftp_timer = packet->tick_timestamp;
+            src->ftp_timer_set = 1;
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP ACTIVE MODE FOUND, command is %.*s\n", 4,
+                    packet->payload);
+        }
+        if (dst != NULL) {
+            mmt_get_source_ip_from_packet(packet, &dst->ftp_ip);
+            dst->ftp_timer = packet->tick_timestamp;
+            dst->ftp_timer_set = 1;
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP ACTIVE MODE FOUND, command is %.*s\n", 4,
+                    packet->payload);
+        }
+    }
+    return;
 }
 
 void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
+    
 
-	log_info("FTP: mmt_classify_me_ftp : %lu",ipacket->packet_id);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
+    struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
+    struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
-	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    if (src != NULL && mmt_compare_packet_destination_ip_to_given_ip(packet, &src->ftp_ip)
+            && packet->tcp->syn != 0 && packet->tcp->ack == 0
+            && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
+            && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask,
+            PROTO_FTP) != 0 && src->ftp_timer_set != 0) {
+        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "possible ftp data, src!= 0.\n");
 
-	log_info("FTP: payload length: %d\n",packet->payload_packet_len);
+        if (((MMT_INTERNAL_TIMESTAMP_TYPE)
+                (packet->tick_timestamp - src->ftp_timer)) >= ftp_connection_timeout) {
+            src->ftp_timer_set = 0;
+        } else if (ntohs(packet->tcp->dest) > 1024
+                && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
+            mmt_int_ftp_add_connection(ipacket);
+            return;
+        }
+    }
 
-	search_ftp(ipacket,index);
+    if (dst != NULL && mmt_compare_packet_source_ip_to_given_ip(packet, &dst->ftp_ip)
+            && packet->tcp->syn != 0 && packet->tcp->ack == 0
+            && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
+            && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,
+            PROTO_FTP) != 0 && dst->ftp_timer_set != 0) {
+        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "possible ftp data; dst!= 0.\n");
+
+        if (((MMT_INTERNAL_TIMESTAMP_TYPE)
+                (packet->tick_timestamp - dst->ftp_timer)) >= ftp_connection_timeout) {
+            dst->ftp_timer_set = 0;
+
+        } else if (ntohs(packet->tcp->dest) > 1024
+                && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
+            mmt_int_ftp_add_connection(ipacket);
+            return;
+        }
+    }
+    // ftp data asymmetrically
+
+
+    /* skip packets without payload */
+    if (packet->payload_packet_len == 0) {
+        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
+                "FTP test skip because of data connection or zero byte packet_payload.\n");
+        return;
+    }
+    /* skip excluded connections */
+
+    // we test for FTP connection and search for passive mode
+    if (packet->detected_protocol_stack[0] == PROTO_FTP) {
+        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
+                "detected ftp command mode. going to test data mode.\n");
+        search_passive_ftp_mode(ipacket);
+
+        search_active_ftp_mode(ipacket);
+        return;
+    }
+
+
+    if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
+        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");
+
+        return;
+    }
+    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);
+    MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "exclude ftp.\n");
+
 }
 
-int mmt_check_ftp(ipacket_t *ipacket, unsigned index){
+int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
+            && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
+            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-	log_info("FTP: mmt_check_ftp : %lu",ipacket->packet_id);
+        
+        struct mmt_internal_tcpip_session_struct *flow = packet->flow;
+        struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
+        struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
-	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+        if (src != NULL && mmt_compare_packet_destination_ip_to_given_ip(packet, &src->ftp_ip)
+                && packet->tcp->syn != 0 && packet->tcp->ack == 0
+                && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
+                && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask,
+                PROTO_FTP) != 0 && src->ftp_timer_set != 0) {
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "possible ftp data, src!= 0.\n");
 
-	if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
-		&& MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-		&& MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-		mmt_classify_me_ftp(ipacket,index);
-	// return 0;
+            if (((MMT_INTERNAL_TIMESTAMP_TYPE)
+                    (packet->tick_timestamp - src->ftp_timer)) >= ftp_connection_timeout) {
+                src->ftp_timer_set = 0;
+            } else if (ntohs(packet->tcp->dest) > 1024
+                    && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
+                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
+                mmt_int_ftp_add_connection(ipacket);
+                return 1;
+            }
+        }
+
+        if (dst != NULL && mmt_compare_packet_source_ip_to_given_ip(packet, &dst->ftp_ip)
+                && packet->tcp->syn != 0 && packet->tcp->ack == 0
+                && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
+                && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,
+                PROTO_FTP) != 0 && dst->ftp_timer_set != 0) {
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "possible ftp data; dst!= 0.\n");
+
+            if (((MMT_INTERNAL_TIMESTAMP_TYPE)
+                    (packet->tick_timestamp - dst->ftp_timer)) >= ftp_connection_timeout) {
+                dst->ftp_timer_set = 0;
+
+            } else if (ntohs(packet->tcp->dest) > 1024
+                    && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
+                MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
+                mmt_int_ftp_add_connection(ipacket);
+                return 1;
+            }
+        }
+        // ftp data asymmetrically
+
+
+        /* skip packets without payload */
+        if (packet->payload_packet_len == 0) {
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
+                    "FTP test skip because of data connection or zero byte packet_payload.\n");
+            return 1;
+        }
+        /* skip excluded connections */
+
+        // we test for FTP connection and search for passive mode
+        if (packet->detected_protocol_stack[0] == PROTO_FTP) {
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
+                    "detected ftp command mode. going to test data mode.\n");
+            search_passive_ftp_mode(ipacket);
+
+            search_active_ftp_mode(ipacket);
+            return 1;
+        }
+
+
+        if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");
+
+            return 1;
+        }
+        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);
+        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "exclude ftp.\n");
+
+    }
+    return 1;
 }
 
-return 1;
+void ftp_data_packet(ipacket_t *ipacket,unsigned index){
+    log_info("FTP: FTP_DATA PACKET: %lu",ipacket->packet_id);
+    
+    //printf("from http generic session data analysis\n");
+    int offset = get_packet_offset_at_index(ipacket, index);
+
+    char *payload = (char*)&ipacket->data[offset];
+
+    ftp_session_data_t *ftp_session_data = (ftp_session_data_t*)ipacket->session->session_data[index];
+    
+    if(ftp_session_data==NULL){
+        ipacket->session->session_data[index] =  ipacket->session->next->session_data[index];
+    }
+    log_info("FTP: Payload: %s",payload);
+}
+
+/**
+ * extract FTP command
+ * @param  payload     payload contains the command
+ * @param  payload_len payload len
+ * @return             FTP command
+ */
+ ftp_command_t * ftp_get_command(char* payload,int payload_len){
+    ftp_command_t *cmd;
+    cmd = (ftp_command_t*)malloc(sizeof(ftp_command_t));
+    if (payload_len > MMT_STATICSTRING_LEN("RETR ") &&
+        (memcmp(payload, "RETR ", MMT_STATICSTRING_LEN("RETR ")) == 0 ||
+            memcmp(payload, "retr ", MMT_STATICSTRING_LEN("retr ")) == 0)) {
+        cmd->cmd = MMT_FTP_RETR_CMD;
+        cmd->param = str_subend(payload,"RETR ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("USER ") &&
+        (memcmp(payload, "USER ", MMT_STATICSTRING_LEN("USER ")) == 0 ||
+            memcmp(payload, "user ", MMT_STATICSTRING_LEN("user ")) == 0)) {
+        cmd->cmd = MMT_FTP_USER_CMD;
+        cmd->param = str_subend(payload,"USER ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("PASS ") &&
+        (memcmp(payload, "PASS ", MMT_STATICSTRING_LEN("PASS ")) == 0 ||
+            memcmp(payload, "pass ", MMT_STATICSTRING_LEN("pass ")) == 0)) {
+        cmd->cmd = MMT_FTP_PASS_CMD;
+        cmd->param = str_subend(payload,"PASS ",payload_len);
+    } else if (payload_len > MMT_STATICSTRING_LEN("SYST ") &&
+        (memcmp(payload, "SYST ", MMT_STATICSTRING_LEN("SYST ")) == 0 ||
+            memcmp(payload, "syst ", MMT_STATICSTRING_LEN("syst ")) == 0)) {
+        cmd->cmd = MMT_FTP_SYST_CMD;
+        // cmd->param = str_subend(payload,"SYST ",payload_len);
+    } else if (payload_len > MMT_STATICSTRING_LEN("PWD ") &&
+        (memcmp(payload, "PWD ", MMT_STATICSTRING_LEN("PWD ")) == 0 ||
+            memcmp(payload, "pwd ", MMT_STATICSTRING_LEN("pwd ")) == 0)) {
+        cmd->cmd = MMT_FTP_PWD_CMD;
+        // cmd->param = str_subend(payload,"PWD ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("TYPE ") &&
+        (memcmp(payload, "TYPE ", MMT_STATICSTRING_LEN("TYPE ")) == 0 ||
+            memcmp(payload, "type ", MMT_STATICSTRING_LEN("type ")) == 0)) {
+        cmd->cmd = MMT_FTP_TYPE_CMD;
+        cmd->param = str_subend(payload,"TYPE ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("CWD ") &&
+        (memcmp(payload, "CWD ", MMT_STATICSTRING_LEN("CWD ")) == 0 ||
+            memcmp(payload, "cwd ", MMT_STATICSTRING_LEN("cwd ")) == 0)) {
+        cmd->cmd = MMT_FTP_CWD_CMD;
+        // cmd->param = str_subend(payload,"CWD ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("SIZE ") &&
+        (memcmp(payload, "SIZE ", MMT_STATICSTRING_LEN("SIZE ")) == 0 ||
+            memcmp(payload, "size ", MMT_STATICSTRING_LEN("size ")) == 0)) {
+        cmd->cmd = MMT_FTP_SIZE_CMD;
+        // cmd->param = str_subend(payload,"SIZE ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("EPSV ") &&
+        (memcmp(payload, "EPSV ", MMT_STATICSTRING_LEN("EPSV ")) == 0 ||
+            memcmp(payload, "epsv ", MMT_STATICSTRING_LEN("epsv ")) == 0)) {
+        cmd->cmd = MMT_FTP_EPSV_CMD;
+        // cmd->param = str_subend(payload,"EPSV ",payload_len);
+    }else if (payload_len >= MMT_STATICSTRING_LEN("FEAT") &&
+        (memcmp(payload, "FEAT", MMT_STATICSTRING_LEN("FEAT")) == 0 ||
+            memcmp(payload, "feat", MMT_STATICSTRING_LEN("feat")) == 0)) {
+        cmd->cmd = MMT_FTP_FEAT_CMD;
+        // cmd->param = str_subend(payload,"FEAT",payload_len);
+    }else if (payload_len >= MMT_STATICSTRING_LEN("MDTM") &&
+        (memcmp(payload, "MDTM", MMT_STATICSTRING_LEN("MDTM")) == 0 ||
+            memcmp(payload, "mdtm", MMT_STATICSTRING_LEN("mdtm")) == 0)) {
+        cmd->cmd = MMT_FTP_MDTM_CMD;
+        // cmd->param = str_subend(payload,"FEAT",payload_len);
+    }else{
+        cmd->cmd = MMT_FTP_UNKNOWN_CMD;
+        cmd->param = payload;
+    }
+    return cmd;
+}
+
+/**
+ * Extract request packets to get information about this ftp session
+ * - user_name
+ * - user_password
+ * - file_name
+ * - data_type
+ * - session_mode
+ * @param ipacket packet to analyse
+ * @param index   index of protocol
+ */
+void ftp_request_packet(ipacket_t *ipacket,unsigned index){
+    log_info("FTP: FTP_REQUEST PACKET: %lu",ipacket->packet_id);
+    
+    //printf("from http generic session data analysis\n");
+    int offset = get_packet_offset_at_index(ipacket, index);
+
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+
+    log_info("FTP: Payload: %s",payload);
+    ftp_session_data_t *ftp_session_data = (ftp_session_data_t*)ipacket->session->session_data[index];
+    if(ftp_session_data==NULL){
+        log_info("FTP: RE-INITIALING SESSION DATA");
+        ftp_session_data = (ftp_session_data_t *) mmt_malloc(sizeof (ftp_session_data_t));
+        memset(ftp_session_data, 0, sizeof (ftp_session_data_t));
+        ipacket->session->session_data[index] = ftp_session_data;
+    }
+
+    // control_server_port
+    if(ftp_session_data->control_server_port== 0){
+        ftp_session_data->control_server_port=htons(21);
+    }
+        // control_client_port
+    if(ftp_session_data->control_client_port== 0){
+        if(ipacket->internal_packet->tcp->source == htons(21)){
+            ftp_session_data->control_client_port = ipacket->internal_packet->tcp->dest;
+        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
+            ftp_session_data->control_client_port = ipacket->internal_packet->tcp->source;
+        }
+    }else{
+        if(ipacket->internal_packet->tcp->source == htons(21)){
+            if(ftp_session_data->control_client_port != ipacket->internal_packet->tcp->dest){
+                log_err("FTP: control_client_port is not matched!");
+                return;
+            }
+        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
+            if(ftp_session_data->control_client_port != ipacket->internal_packet->tcp->source){
+                log_err("FTP: control_client_port is not matched!");
+                return;
+            }
+        }
+    }
+
+    ftp_command_t * command = ftp_get_command(payload,payload_len);
+
+    if(command->cmd!=MMT_FTP_UNKNOWN_CMD){
+        switch(command->cmd){
+            case MMT_FTP_USER_CMD:
+                ftp_session_data->user_name=command->param;
+                break;
+            case MMT_FTP_PASS_CMD:
+                ftp_session_data->user_password=command->param;
+                break;
+            case MMT_FTP_RETR_CMD:
+                ftp_session_data->file_name=command->param;
+                break;
+            case MMT_FTP_TYPE_CMD:
+                ftp_session_data->data_type=command->param;
+                break;
+            case MMT_FTP_EPSV_CMD:
+                ftp_session_data->session_mode = MMT_FTP_PASSIVE_MODE;
+                break;
+            default:
+                break;
+        }
+    }else{
+        log_err("FTP: Cannot get command");
+    }
+}
+
+/**
+ * Get response code from a reponse packet
+ * @param  payload     payload of packet
+ * @param  payload_len payload len of packet
+ * @return             a ftp response code: code + value
+ */
+ ftp_response_t * ftp_get_response(char* payload,int payload_len){
+    ftp_response_t * res;
+    res = (ftp_response_t*)malloc(sizeof(ftp_response_t));
+    if (payload_len > MMT_STATICSTRING_LEN("150 ") &&
+        (memcmp(payload, "150 ", MMT_STATICSTRING_LEN("150 ")) == 0 ||
+            memcmp(payload, "150-", MMT_STATICSTRING_LEN("150-")) == 0)) {
+        res->code = MMT_FTP_150_CODE;
+    }else if (payload_len > MMT_STATICSTRING_LEN("220 ") &&
+        (memcmp(payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
+            memcmp(payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
+        res->code = MMT_FTP_220_CODE;
+        char *ver = str_subend(payload,"220 ",payload_len);
+        if(ver == NULL){
+            ver = str_subend(payload,"220-",payload_len);
+        }
+        res->value = ver;
+    }else if (payload_len > MMT_STATICSTRING_LEN("230 ") &&
+        (memcmp(payload, "230 ", MMT_STATICSTRING_LEN("230 ")) == 0 ||
+            memcmp(payload, "230-", MMT_STATICSTRING_LEN("230-")) == 0)) {
+        res->code = MMT_FTP_230_CODE;
+    }else if (payload_len > MMT_STATICSTRING_LEN("215 ") &&
+        (memcmp(payload, "215 ", MMT_STATICSTRING_LEN("215 ")) == 0 ||
+            memcmp(payload, "215-", MMT_STATICSTRING_LEN("215-")) == 0)) {
+        res->code = MMT_FTP_215_CODE;
+        char *s = str_subend(payload,"215 ",payload_len);
+        if(s == NULL){
+            s = str_subend(payload,"215-",payload_len);
+        }
+        res->value =s;
+    }else if (payload_len > MMT_STATICSTRING_LEN("229 ") &&
+        (memcmp(payload, "229 ", MMT_STATICSTRING_LEN("229 ")) == 0 ||
+            memcmp(payload, "229-", MMT_STATICSTRING_LEN("229-")) == 0)) {
+        res->code = MMT_FTP_229_CODE;
+
+        char *em = str_subend(payload,"229 ",payload_len);
+        if(em == NULL){
+            em = str_subend(payload,"229-",payload_len);
+        }
+        res->value = em;
+    }else if (payload_len > MMT_STATICSTRING_LEN("213 ") &&
+        (memcmp(payload, "213 ", MMT_STATICSTRING_LEN("213 ")) == 0 ||
+            memcmp(payload, "213-", MMT_STATICSTRING_LEN("213-")) == 0)) {
+        res->code = MMT_FTP_213_CODE;
+        char *em = str_subend(payload,"213 ",payload_len);
+        if(em == NULL){
+            em = str_subend(payload,"213-",payload_len);
+        }
+        res->value = em;
+    }else if (payload_len > MMT_STATICSTRING_LEN("257 ") &&
+        (memcmp(payload, "257 ", MMT_STATICSTRING_LEN("257 ")) == 0 ||
+            memcmp(payload, "257-", MMT_STATICSTRING_LEN("257-")) == 0)) {
+        res->code = MMT_FTP_257_CODE;
+        char *dir = str_subend(payload,"257 ",payload_len);
+        if(dir == NULL){
+            dir = str_subend(payload,"257-",payload_len);
+        }
+        res->value = dir;
+    }else if (payload_len > MMT_STATICSTRING_LEN("250 ") &&
+        (memcmp(payload, "250 ", MMT_STATICSTRING_LEN("250 ")) == 0 ||
+            memcmp(payload, "250-", MMT_STATICSTRING_LEN("250-")) == 0)) {
+        res->code = MMT_FTP_250_CODE;
+    }else if (payload_len > MMT_STATICSTRING_LEN("200 ") &&
+        (memcmp(payload, "200 ", MMT_STATICSTRING_LEN("200 ")) == 0 ||
+            memcmp(payload, "200-", MMT_STATICSTRING_LEN("200-")) == 0)) {
+        res->code = MMT_FTP_200_CODE;
+    }else if (payload_len > MMT_STATICSTRING_LEN("331 ") &&
+        (memcmp(payload, "331 ", MMT_STATICSTRING_LEN("331 ")) == 0 ||
+            memcmp(payload, "331-", MMT_STATICSTRING_LEN("331-")) == 0)) {
+        res->code = MMT_FTP_331_CODE;
+    }else if (payload_len > MMT_STATICSTRING_LEN("226 ") &&
+        (memcmp(payload, "226 ", MMT_STATICSTRING_LEN("226 ")) == 0 ||
+            memcmp(payload, "226-", MMT_STATICSTRING_LEN("226-")) == 0)) {
+        res->code = MMT_FTP_331_CODE;
+    }else if (payload_len > MMT_STATICSTRING_LEN("211 ") &&
+        (memcmp(payload, "211 ", MMT_STATICSTRING_LEN("211 ")) == 0 ||
+            memcmp(payload, "211-", MMT_STATICSTRING_LEN("211-")) == 0)) {
+        res->code = MMT_FTP_211_CODE;
+    }else if (payload_len > MMT_STATICSTRING_LEN("226 ") &&
+        (memcmp(payload, "226 ", MMT_STATICSTRING_LEN("226 ")) == 0 ||
+            memcmp(payload, "226-", MMT_STATICSTRING_LEN("226-")) == 0)) {
+        res->code = MMT_FTP_226_CODE;
+    }else if (!mmt_int_check_possible_ftp_reply(payload, payload_len)) {
+        if (mmt_int_check_possible_ftp_continuation_reply(payload, payload_len)) {
+            res->code = MMT_FTP_CONTINUE_CODE;
+            res->value = payload;
+        }
+    }else{
+        res->code = MMT_FTP_UNKNOWN_CODE;
+        res->value = payload;
+    }
+    return res;
+}
+
+uint16_t ftp_get_data_server_port(char *payload){
+    char *ret = str_subvalue(payload,"(|||","|)");
+    return htons(atoi(ret));
+}
+/**
+ * Analyse response packet to get information of this ftp session
+ * - ftp_server_version
+ * - status
+ * - features
+ * - file_dir
+ * - file_size
+ * - data_server_port
+ * - file_last_modified
+ * @param ipacket [description]
+ * @param index   [description]
+ */
+void ftp_response_packet(ipacket_t *ipacket,unsigned index){
+    log_info("FTP: FTP_RESPONSE PACKET: %lu",ipacket->packet_id);
+    
+    int offset = get_packet_offset_at_index(ipacket, index);
+
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+
+    log_info("FTP: Payload: %s",payload);
+    ftp_session_data_t *ftp_session_data = (ftp_session_data_t*)ipacket->session->session_data[index];
+    if(ftp_session_data==NULL){
+        log_info("FTP: RE-INITIALING SESSION DATA");
+        ftp_session_data = (ftp_session_data_t *) mmt_malloc(sizeof (ftp_session_data_t));
+        memset(ftp_session_data, 0, sizeof (ftp_session_data_t));
+        ipacket->session->session_data[index] = ftp_session_data;
+    }
+
+    // control_server_port
+    if(ftp_session_data->control_server_port== 0){
+        ftp_session_data->control_server_port=htons(21);
+    }
+        // control_client_port
+    if(ftp_session_data->control_client_port== 0){
+        if(ipacket->internal_packet->tcp->source == htons(21)){
+            ftp_session_data->control_client_port = ipacket->internal_packet->tcp->dest;
+        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
+            ftp_session_data->control_client_port = ipacket->internal_packet->tcp->source;
+        }
+    }else{
+        if(ipacket->internal_packet->tcp->source == htons(21)){
+            if(ftp_session_data->control_client_port != ipacket->internal_packet->tcp->dest){
+                log_err("FTP: control_client_port is not matched!");
+                return;
+            }
+        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
+            if(ftp_session_data->control_client_port != ipacket->internal_packet->tcp->source){
+                log_err("FTP: control_client_port is not matched!");
+                return;
+            }
+        }
+    }
+
+    ftp_response_t * response = ftp_get_response(payload,payload_len);
+
+    if(response->code!=MMT_FTP_UNKNOWN_CODE){
+        switch(response->code){
+            case MMT_FTP_220_CODE:
+                ftp_session_data->server_version=response->value;
+                ftp_session_data->session_status = MMT_FTP_STATUS_OPEN;
+                break;
+            case MMT_FTP_230_CODE:
+                ftp_session_data->session_status = MMT_FTP_STATUS_CONTROLING;
+                break;
+            case MMT_FTP_CONTINUE_CODE:
+                ftp_session_data->session_feats = str_add_features(ftp_session_data->session_feats,payload,payload_len);
+                break;
+            case MMT_FTP_257_CODE:
+                if(ftp_session_data->file_dir==NULL){
+                    ftp_session_data->file_dir=response->value;
+                }else{
+                    if(strlen(ftp_session_data->file_dir)<strlen(response->value)){
+                        ftp_session_data->file_dir=response->value;
+                    }
+                }
+                break;
+            case MMT_FTP_213_CODE:
+                if(ftp_session_data->session_status==MMT_FTP_STATUS_CONTROLING){
+                    ftp_session_data->file_size=atoi(response->value);
+                }else if(ftp_session_data->session_status==MMT_FTP_STATUS_TRANSFER_COMPLETED){
+                    ftp_session_data->file_last_modified = response->value;
+                }else{
+                    log_warn("FTP: Code 203 need to update!");
+                }
+                break;
+            case MMT_FTP_229_CODE:
+                ftp_session_data->data_server_port = ftp_get_data_server_port(response->value);
+                break;
+            case MMT_FTP_150_CODE:
+                ftp_session_data->session_status = MMT_FTP_STATUS_TRANSFERING;
+                break;
+            case MMT_FTP_226_CODE:
+                ftp_session_data->session_status = MMT_FTP_STATUS_TRANSFER_COMPLETED;
+                break;
+            case MMT_FTP_221_CODE:
+                ftp_session_data->session_status = MMT_FTP_STATUS_FINISHED;
+                break;
+            default:
+                break;
+        }
+    }else{
+        log_err("FTP: Cannot get response code");
+    }
+}
+
+void ftp_unknown_type_packet(ipacket_t *ipacket,unsigned index){
+    log_info("FTP: FTP_UNKNOWN_TYPE PACKET: %lu",ipacket->packet_id);
+    
+    //printf("from http generic session data analysis\n");
+    int offset = get_packet_offset_at_index(ipacket, index);
+
+    char *payload = (char*)&ipacket->data[offset];
+
+    log_info("FTP: Payload: %s",payload);
+}
+
+int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
+    log_info("FTP: START ANALYSING SESSION DATA OF PACKET: %lu",ipacket->packet_id);
+    
+    //printf("from http generic session data analysis\n");
+    int packet_type = ftp_get_packet_type_by_port_number(ipacket,index);
+
+    switch(packet_type){
+        case MMT_FTP_DATA_PACKET:
+            ftp_data_packet(ipacket,index);
+            break;
+        case MMT_FTP_REQUEST_PACKET:
+            ftp_request_packet(ipacket,index);
+            break;
+        case MMT_FTP_RESPONSE_PACKET:
+            ftp_response_packet(ipacket,index);
+            break;
+        case MMT_FTP_UNKNOWN_PACKET:
+        default:
+            ftp_unknown_type_packet(ipacket,index);
+            break;
+    }
+
+    //First we check if the message starts with leading CRLF --- normally this should never be the case
+    // offset += ignore_starting_crlf((const char*)&ipacket->data[offset], ipacket->p_hdr->len - offset);
+
+    //Parse the first line line of the header (request or response line)
+    return MMT_CONTINUE;
 }
 
 void mmt_init_classify_me_ftp() {
+    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION;
+    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FTP);
+    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_FTP);
+}
+void ftp_session_data_init(ipacket_t * ipacket, unsigned index) {
+    log_info("FTP: INITIALING SESSION DATA");
+    ftp_session_data_t * ftp_session_data = (ftp_session_data_t *) mmt_malloc(sizeof (ftp_session_data_t));
+    memset(ftp_session_data, 0, sizeof (ftp_session_data_t));
+    ipacket->session->session_data[index] = ftp_session_data;
 
-	log_info("FTP: mmt_init_classify_me_ftp ");
-
-	selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION;
-	MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-	MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FTP);
-	MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_FTP);
 }
 
-/** END OF PROTOCOL INTERNAL CODE */
+/////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_ftp_struct(){
-	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_FTP,PROTO_FTP_ALIAS);
-	if(protocol_struct != NULL){
-		mmt_init_classify_me_ftp();
-		register_proto_context_init_cleanup_function(protocol_struct, setup_ftp_context, NULL, NULL);
-		return register_protocol(protocol_struct,PROTO_FTP);
+int init_proto_ftp_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_FTP, PROTO_FTP_ALIAS);
+    if (protocol_struct != NULL) {
 
-	}else{
-		return 0;
-	}
+        register_session_data_initialization_function(protocol_struct, ftp_session_data_init);
+        register_session_data_analysis_function(protocol_struct, ftp_session_data_analysis);
+        mmt_init_classify_me_ftp();
+
+        return register_protocol(protocol_struct, PROTO_FTP);
+    } else {
+        return 0;
+    }
 }
+
+
