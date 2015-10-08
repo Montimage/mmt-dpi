@@ -33,9 +33,9 @@ extern "C" {
 #define MMT_FTP_STATUS_ERROR               -1
 
 /////// PACKET TYPE //////
-#define MMT_FTP_DATA_PACKET                 0
-#define MMT_FTP_REQUEST_PACKET              1
-#define MMT_FTP_RESPONSE_PACKET             2
+#define MMT_FTP_DATA_PACKET                 1
+#define MMT_FTP_REQUEST_PACKET              2
+#define MMT_FTP_RESPONSE_PACKET             3
 #define MMT_FTP_UNKNOWN_PACKET             -1    
 //static uint32_t ftp_connection_timeout = MMT_FTP_TIMEOUT * MMT_MICRO_IN_SEC;
 
@@ -111,6 +111,7 @@ typedef struct ftp_tuple4_struct{
  */
 typedef struct ftp_command_struct{
     int cmd;
+    char *cmd_str;
     char *param;
 }ftp_command_t;
 

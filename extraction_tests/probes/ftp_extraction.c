@@ -47,55 +47,34 @@
  static int quiet;
 
  void packet_handler(const ipacket_t * ipacket, void * user_args){
-	// uint16_t * ip_identification = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_IDENTIFICATION); //Request IP packet identification
-	uint16_t* ip_client_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_CLIENT_PORT);
-	uint16_t * ip_server_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_SERVER_PORT);
-	
-	// uint32_t * tcp_seq_nb = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_SEQ_NB);
-	// uint32_t * tcp_ack_nb = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_ACK_NB);	
-	// uint8_t * tcp_data_offset = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_DATA_OFF); //Request TCP data offset
-	// uint8_t * tcp_flags = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_FLAGS); //Request TCP flags
-	// uint8_t * tcp_fin = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_FIN); //Request TCP fin flag
-	// uint8_t * tcp_syn = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_SYN); //Request TCP syn flag
-	// uint8_t * tcp_rst = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_RST); //Request TCP ACK number
-	// uint8_t * tcp_psh = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_PSH); //Request TCP ACK number
-	// uint8_t * tcp_ack = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_ACK); //Request TCP ACK number
-	// uint8_t * tcp_urg = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_URG); //Request TCP ACK number
-	// uint8_t * tcp_ece = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_ECE); //Request TCP ACK number
-	// uint8_t * tcp_cwr = (uint8_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_CWR); //Request TCP ACK number
-	// uint16_t * tcp_window = (uint16_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_WINDOW); //Request TCP ACK number
-	// uint16_t * tcp_checksum = (uint16_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_CHECKSUM); //Request TCP ACK number
-	// uint16_t * tcp_urg_ptr = (uint16_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_URG_PTR); //Request TCP ACK number
-	// struct timeval * tcp_rtt = (struct timeval *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_RTT); //Request TCP ACK number
-	// uint32_t * tcp_syn_rcv = (uint32_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_SYN_RCV); //Request TCP ACK number
-	// uint32_t * tcp_conn_established = (uint32_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_CONN_ESTABLISHED); //Request TCP ACK number
-
-	printf("%lu,", ipacket->packet_id);
-	// printValue(2,ip_identification);
-	// printValue(6,ip_client_addr);
-	printValue(2,ip_client_port);
-	// printValue(6,ip_server_addr);
-	printValue(2,ip_server_port);
-	// printValue(1,tcp_seq_nb);
-	// printValue(1,tcp_ack_nb);
-	// printValue(3,tcp_data_offset);
-	// printValue(3,tcp_flags);
-	// printValue(3,tcp_urg);
-	// printValue(3,tcp_ack);
-	// printValue(3,tcp_psh);
-	// printValue(3,tcp_rst);
-	// printValue(3,tcp_syn);
-	// printValue(3,tcp_fin);
-	// printValue(3,tcp_ece);
-	// printValue(3,tcp_cwr);
-	// printValue(2,tcp_window);
-	// printValue(2,tcp_checksum);
-	// printValue(2,tcp_urg_ptr);
-
-	// // These attributes bellow are "POSITION_NOT_KNOWN"
-	// printValue(1,tcp_syn_rcv);
-	// printValue(1,tcp_conn_established);
-	// printValue(4,tcp_rtt);
+	uint16_t* packet_type = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_TYPE);
+	char * packet_request = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST);
+	char * packet_request_parameter = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER);
+	uint16_t * packet_response = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_RESPONSE_CODE);
+	char * packet_response_value = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_RESPONSE_VALUE);
+	uint32_t * packet_data_offset = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_OFFSET);
+	uint32_t * packet_data_len = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_LEN);
+	if(packet_type){
+		printf("%lu,%d",ipacket->packet_id,*packet_type);
+		if(packet_request){
+			printf(",%s",packet_request);
+			if(packet_request_parameter){
+				printf(",%s",packet_request_parameter );
+			}
+		}
+		if(packet_response){
+			printf(",%d",*packet_response);
+			if(packet_response_value){
+				printf(",%s",packet_response_value);
+			}
+		}
+		if(packet_data_offset){
+			printf(",%d",*packet_data_offset);
+		}
+		if(packet_data_len){
+			printf(",%d",*packet_data_len);
+		}
+	}
 	printf("\n");
 }
 
@@ -187,38 +166,14 @@ int main(int argc, char ** argv){
 		fprintf(stderr, "MMT handler init failed for the following reason: %s\n",mmt_errbuf );
 		return EXIT_FAILURE;
 	}
-
-	// register_extraction_attribute(mmt_handler,PROTO_IP,IP_CLIENT_ADDR); //Request client address
-	// register_extraction_attribute(mmt_handler,PROTO_IP,IP_SERVER_ADDR); // Request server address
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_CLIENT_PORT); //Request client port
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_SERVER_PORT);  // Request server port
-	// {IP_CLIENT_ADDR, IP_CLIENT_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_client_addr_extraction},
-	//Register the protocol attributes we need
-	
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_SRC_PORT); //Request TCP source port
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_DEST_PORT); //Request TCP destination port 
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_SEQ_NB); //Request TCP sequence number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_ACK_NB); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_DATA_OFF); //Request TCP data offset
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_FLAGS); //Request TCP flags
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_FIN); //Request TCP fin flag
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_SYN); //Request TCP syn flag
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_RST); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_PSH); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_ACK); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_URG); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_ECE); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_CWR); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_WINDOW); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_CHECKSUM); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_URG_PTR); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_RTT); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_SYN_RCV); //Request TCP ACK number
-	// register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_CONN_ESTABLISHED); //Request TCP ACK number
-
-	//Register a packet handler, it will be called for every processed packet
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_TYPE); //Request client port
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST);  // Request server port
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER); 
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_RESPONSE_CODE);  
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_RESPONSE_VALUE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_DATA_OFFSET);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_DATA_LEN);  
 	register_packet_handler(mmt_handler,1,packet_handler, NULL);
-	// printf("packet_id,ip->ip_id,tcp_src_port,tcp_dest_port,tcp_seq_nb,tcp_ack_nb,tcp_data_offset,tcp_flags,tcp_fin,tcp_syn,tcp_rst,tcp_psh,tcp_ack,tcp_urg,tcp_ece,tcp_cwr,tcp_window,tcp_checksum,tcp_urg_ptr,tcp_syn_rcv,tcp_conn_established,tcp_rtt->tv_sec,tcp_rtt->tv_usec\n");
 	if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace
         if (!pcap) { /* pcap error ? */

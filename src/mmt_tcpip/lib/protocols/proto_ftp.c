@@ -112,7 +112,6 @@ char * str_subvalue(char *str, char* begin, char * end){
 }
 //////////// LUONG NGUYEN - END OF FUNCTION    /////////////////////////
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
-
 static void mmt_int_ftp_add_connection(ipacket_t * ipacket) {
 
     mmt_internal_add_connection(ipacket, PROTO_FTP, MMT_REAL_PROTOCOL);
@@ -191,6 +190,225 @@ static uint8_t mmt_int_check_possible_ftp_continuation_reply(char *payload , int
 
     return 1;
 }
+/**
+ * extract FTP command
+ * @param  payload     payload contains the command
+ * @param  payload_len payload len
+ * @return             FTP command
+ */
+ ftp_command_t * ftp_get_command(char* payload,int payload_len){
+    ftp_command_t *cmd;
+    cmd = (ftp_command_t*)malloc(sizeof(ftp_command_t));
+    if (payload_len > MMT_STATICSTRING_LEN("RETR ") &&
+        (memcmp(payload, "RETR ", MMT_STATICSTRING_LEN("RETR ")) == 0 ||
+            memcmp(payload, "retr ", MMT_STATICSTRING_LEN("retr ")) == 0)) {
+        cmd->cmd_str="RETR";
+        cmd->cmd = MMT_FTP_RETR_CMD;
+        cmd->param = str_subend(payload,"RETR ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("USER ") &&
+        (memcmp(payload, "USER ", MMT_STATICSTRING_LEN("USER ")) == 0 ||
+            memcmp(payload, "user ", MMT_STATICSTRING_LEN("user ")) == 0)) {
+        cmd->cmd_str="USER";
+        cmd->cmd = MMT_FTP_USER_CMD;
+        cmd->param = str_subend(payload,"USER ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("PASS ") &&
+        (memcmp(payload, "PASS ", MMT_STATICSTRING_LEN("PASS ")) == 0 ||
+            memcmp(payload, "pass ", MMT_STATICSTRING_LEN("pass ")) == 0)) {
+        cmd->cmd_str="PASS";
+        cmd->cmd = MMT_FTP_PASS_CMD;
+        cmd->param = str_subend(payload,"PASS ",payload_len);
+    } else if (payload_len > MMT_STATICSTRING_LEN("SYST ") &&
+        (memcmp(payload, "SYST ", MMT_STATICSTRING_LEN("SYST ")) == 0 ||
+            memcmp(payload, "syst ", MMT_STATICSTRING_LEN("syst ")) == 0)) {
+        cmd->cmd_str="SYST";
+        cmd->cmd = MMT_FTP_SYST_CMD;
+        cmd->param=NULL;
+        // cmd->param = str_subend(payload,"SYST ",payload_len);
+    } else if (payload_len > MMT_STATICSTRING_LEN("PWD ") &&
+        (memcmp(payload, "PWD ", MMT_STATICSTRING_LEN("PWD ")) == 0 ||
+            memcmp(payload, "pwd ", MMT_STATICSTRING_LEN("pwd ")) == 0)) {
+        cmd->cmd_str="PWD";
+        cmd->cmd = MMT_FTP_PWD_CMD;
+        cmd->param=NULL;
+        // cmd->param = str_subend(payload,"PWD ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("TYPE ") &&
+        (memcmp(payload, "TYPE ", MMT_STATICSTRING_LEN("TYPE ")) == 0 ||
+            memcmp(payload, "type ", MMT_STATICSTRING_LEN("type ")) == 0)) {
+        cmd->cmd_str="TYPE";
+        cmd->cmd = MMT_FTP_TYPE_CMD;
+        cmd->param = str_subend(payload,"TYPE ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("CWD ") &&
+        (memcmp(payload, "CWD ", MMT_STATICSTRING_LEN("CWD ")) == 0 ||
+            memcmp(payload, "cwd ", MMT_STATICSTRING_LEN("cwd ")) == 0)) {
+        cmd->cmd_str="CWD";
+        cmd->cmd = MMT_FTP_CWD_CMD;
+        cmd->param=NULL;
+        // cmd->param = str_subend(payload,"CWD ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("SIZE ") &&
+        (memcmp(payload, "SIZE ", MMT_STATICSTRING_LEN("SIZE ")) == 0 ||
+            memcmp(payload, "size ", MMT_STATICSTRING_LEN("size ")) == 0)) {
+        cmd->cmd_str="SIZE";
+        cmd->cmd = MMT_FTP_SIZE_CMD;
+        cmd->param = str_subend(payload,"SIZE ",payload_len);
+    }else if (payload_len > MMT_STATICSTRING_LEN("EPSV ") &&
+        (memcmp(payload, "EPSV ", MMT_STATICSTRING_LEN("EPSV ")) == 0 ||
+            memcmp(payload, "epsv ", MMT_STATICSTRING_LEN("epsv ")) == 0)) {
+        cmd->cmd_str="EPSV";
+        cmd->cmd = MMT_FTP_EPSV_CMD;
+        cmd->param=NULL;
+        // cmd->param = str_subend(payload,"EPSV ",payload_len);
+    }else if (payload_len >= MMT_STATICSTRING_LEN("FEAT") &&
+        (memcmp(payload, "FEAT", MMT_STATICSTRING_LEN("FEAT")) == 0 ||
+            memcmp(payload, "feat", MMT_STATICSTRING_LEN("feat")) == 0)) {
+        cmd->cmd_str="FEAT";
+        cmd->cmd = MMT_FTP_FEAT_CMD;
+        cmd->param=NULL;
+        // cmd->param = str_subend(payload,"FEAT",payload_len);
+    }else if (payload_len >= MMT_STATICSTRING_LEN("MDTM ") &&
+        (memcmp(payload, "MDTM ", MMT_STATICSTRING_LEN("MDTM ")) == 0 ||
+            memcmp(payload, "mdtm ", MMT_STATICSTRING_LEN("mdtm ")) == 0)) {
+        cmd->cmd_str="MDTM";
+        cmd->cmd = MMT_FTP_MDTM_CMD;
+        cmd->param = str_subend(payload,"MDTM ",payload_len);
+    }else{
+        cmd->cmd_str="UNKNOWN_CMD";
+        cmd->cmd = MMT_FTP_UNKNOWN_CMD;
+        cmd->param = payload;
+    }
+    return cmd;
+}
+
+
+/**
+ * Get response code from a reponse packet
+ * @param  payload     payload of packet
+ * @param  payload_len payload len of packet
+ * @return             a ftp response code: code + value
+ */
+ ftp_response_t * ftp_get_response(char* payload,int payload_len){
+    ftp_response_t * res;
+    res = (ftp_response_t*)malloc(sizeof(ftp_response_t));
+    if (payload_len > MMT_STATICSTRING_LEN("150 ") &&
+        (memcmp(payload, "150 ", MMT_STATICSTRING_LEN("150 ")) == 0 ||
+            memcmp(payload, "150-", MMT_STATICSTRING_LEN("150-")) == 0)) {
+        res->code = MMT_FTP_150_CODE;
+        res->value = NULL;
+    }else if (payload_len > MMT_STATICSTRING_LEN("220 ") &&
+        (memcmp(payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
+            memcmp(payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
+        res->code = MMT_FTP_220_CODE;
+        char *ver = str_subend(payload,"220 ",payload_len);
+        if(ver == NULL){
+            ver = str_subend(payload,"220-",payload_len);
+        }
+        res->value = ver;
+
+    }else if (payload_len > MMT_STATICSTRING_LEN("230 ") &&
+        (memcmp(payload, "230 ", MMT_STATICSTRING_LEN("230 ")) == 0 ||
+            memcmp(payload, "230-", MMT_STATICSTRING_LEN("230-")) == 0)) {
+        res->code = MMT_FTP_230_CODE;
+        char *val = str_subend(payload,"230 ",payload_len);
+        if(val == NULL){
+            val = str_subend(payload,"230-",payload_len);
+        }
+        res->value =val;
+    }else if (payload_len > MMT_STATICSTRING_LEN("215 ") &&
+        (memcmp(payload, "215 ", MMT_STATICSTRING_LEN("215 ")) == 0 ||
+            memcmp(payload, "215-", MMT_STATICSTRING_LEN("215-")) == 0)) {
+        res->code = MMT_FTP_215_CODE;
+        char *s = str_subend(payload,"215 ",payload_len);
+        if(s == NULL){
+            s = str_subend(payload,"215-",payload_len);
+        }
+        res->value =s;
+    }else if (payload_len > MMT_STATICSTRING_LEN("229 ") &&
+        (memcmp(payload, "229 ", MMT_STATICSTRING_LEN("229 ")) == 0 ||
+            memcmp(payload, "229-", MMT_STATICSTRING_LEN("229-")) == 0)) {
+        res->code = MMT_FTP_229_CODE;
+
+        char *em = str_subend(payload,"229 ",payload_len);
+        if(em == NULL){
+            em = str_subend(payload,"229-",payload_len);
+        }
+        res->value = em;
+    }else if (payload_len > MMT_STATICSTRING_LEN("213 ") &&
+        (memcmp(payload, "213 ", MMT_STATICSTRING_LEN("213 ")) == 0 ||
+            memcmp(payload, "213-", MMT_STATICSTRING_LEN("213-")) == 0)) {
+        res->code = MMT_FTP_213_CODE;
+        char *em = str_subend(payload,"213 ",payload_len);
+        if(em == NULL){
+            em = str_subend(payload,"213-",payload_len);
+        }
+        res->value = em;
+    }else if (payload_len > MMT_STATICSTRING_LEN("257 ") &&
+        (memcmp(payload, "257 ", MMT_STATICSTRING_LEN("257 ")) == 0 ||
+            memcmp(payload, "257-", MMT_STATICSTRING_LEN("257-")) == 0)) {
+        res->code = MMT_FTP_257_CODE;
+        char *dir = str_subend(payload,"257 ",payload_len);
+        if(dir == NULL){
+            dir = str_subend(payload,"257-",payload_len);
+        }
+        res->value = dir;
+    }else if (payload_len > MMT_STATICSTRING_LEN("250 ") &&
+        (memcmp(payload, "250 ", MMT_STATICSTRING_LEN("250 ")) == 0 ||
+            memcmp(payload, "250-", MMT_STATICSTRING_LEN("250-")) == 0)) {
+        res->code = MMT_FTP_250_CODE;
+        char *val = str_subend(payload,"250 ",payload_len);
+        if(val == NULL){
+            val = str_subend(payload,"250-",payload_len);
+        }
+        res->value =val;
+    }else if (payload_len > MMT_STATICSTRING_LEN("200 ") &&
+        (memcmp(payload, "200 ", MMT_STATICSTRING_LEN("200 ")) == 0 ||
+            memcmp(payload, "200-", MMT_STATICSTRING_LEN("200-")) == 0)) {
+        res->code = MMT_FTP_200_CODE;
+        char *val = str_subend(payload,"200 ",payload_len);
+        if(val == NULL){
+            val = str_subend(payload,"200-",payload_len);
+        }
+        res->value =val;
+    }else if (payload_len > MMT_STATICSTRING_LEN("331 ") &&
+        (memcmp(payload, "331 ", MMT_STATICSTRING_LEN("331 ")) == 0 ||
+            memcmp(payload, "331-", MMT_STATICSTRING_LEN("331-")) == 0)) {
+        res->code = MMT_FTP_331_CODE;
+        char *val = str_subend(payload,"331 ",payload_len);
+        if(val == NULL){
+            val = str_subend(payload,"331-",payload_len);
+        }
+        res->value =val;
+    }else if (payload_len > MMT_STATICSTRING_LEN("226 ") &&
+        (memcmp(payload, "226 ", MMT_STATICSTRING_LEN("226 ")) == 0 ||
+            memcmp(payload, "226-", MMT_STATICSTRING_LEN("226-")) == 0)) {
+        res->code = MMT_FTP_331_CODE;
+        char *val = str_subend(payload,"226 ",payload_len);
+        if(val == NULL){
+            val = str_subend(payload,"226-",payload_len);
+        }
+        res->value =val;
+    }else if (payload_len > MMT_STATICSTRING_LEN("211 ") &&
+        (memcmp(payload, "211 ", MMT_STATICSTRING_LEN("211 ")) == 0 ||
+            memcmp(payload, "211-", MMT_STATICSTRING_LEN("211-")) == 0)) {
+        res->code = MMT_FTP_211_CODE;
+        char *val = str_subend(payload,"211 ",payload_len);
+        if(val == NULL){
+            val = str_subend(payload,"211-",payload_len);
+        }
+        res->value =val;
+    }else if (!mmt_int_check_possible_ftp_reply(payload, payload_len)) {
+        if (mmt_int_check_possible_ftp_continuation_reply(payload, payload_len)) {
+            res->code = MMT_FTP_CONTINUE_CODE;
+            res->value = payload;
+        }else{
+            res->code = MMT_FTP_UNKNOWN_CODE;
+            res->value = payload;
+        }
+    }else{
+        res->code = MMT_FTP_UNKNOWN_CODE;
+        res->value = payload;
+    }
+    return res;
+}
+
 
 /*
   return 0 if nothing has been detected
@@ -609,37 +827,108 @@ int ftp_version_extraction(const ipacket_t * packet, unsigned proto_index,
 
 int ftp_packet_type_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
+    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+
+    if(packet_type!=MMT_FTP_UNKNOWN_PACKET){
+        extracted_data->data = (short*)&packet_type;
+        printf("FTP: packet_type %d in packet: %lu\n", *(short*)extracted_data->data,packet->packet_id);
+        return 1;
+    }
+    return 0;
+}
+
+int ftp_packet_request_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
     
     int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
-    extracted_data->data = (short*)&packet_type;
-    // switch(packet_type){
-    //     case MMT_FTP_DATA_PACKET:
-    //         extracted_data->data = "3";
-    //         break;
-    //     case MMT_FTP_REQUEST_PACKET:
-    //         extracted_data->data = "1";
-    //         break;
-    //     case MMT_FTP_RESPONSE_PACKET:
-    //         extracted_data->data = "2";
-    //         break;
-    //     case MMT_FTP_UNKNOWN_PACKET:
-    //         extracted_data->data = "-1";
-    //         break;
-    //     default:
-    //         break;
-    // }
+    if(packet_type==MMT_FTP_REQUEST_PACKET){
+        int offset = get_packet_offset_at_index(packet, proto_index);
+        char *payload = (char*)&packet->data[offset];
+        int payload_len = packet->internal_packet->payload_packet_len;
+        ftp_command_t * cmd = ftp_get_command(payload,payload_len);
+        if(cmd->cmd!=MMT_FTP_UNKNOWN_CMD){
+            printf("FTP: packet_request %d in packet: %lu\n", cmd->cmd,packet->packet_id);
+            extracted_data->data = (void*)cmd->cmd_str;
+            return 1;      
+        }
+    }
+    return 0;
+}
 
-    // extracted_data->data =
+int ftp_packet_request_parameter_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    if(packet_type==MMT_FTP_REQUEST_PACKET){
+        int offset = get_packet_offset_at_index(packet, proto_index);
+        char *payload = (char*)&packet->data[offset];
+        int payload_len = packet->internal_packet->payload_packet_len;
+        ftp_command_t * cmd = ftp_get_command(payload,payload_len);
+        if(cmd->cmd!=MMT_FTP_UNKNOWN_CMD && cmd->param!=NULL){
+            printf("FTP: packet_request_param %s in packet: %lu\n", cmd->param,packet->packet_id);
+            extracted_data->data = (void*)cmd->param;
+            return 1;      
+        }
+    }
+    return 0;
+}
 
-    // int header_index = get_header_index_by_header_id(extracted_data->field_id);
+int ftp_packet_response_code_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    if(packet_type==MMT_FTP_RESPONSE_PACKET){
+        int offset = get_packet_offset_at_index(packet, proto_index);
+        char *payload = (char*)&packet->data[offset];
+        int payload_len = packet->internal_packet->payload_packet_len;
+        ftp_response_t * res = ftp_get_response(payload,payload_len);
+        if(res->code!=MMT_FTP_UNKNOWN_CODE){
+            printf("FTP: packet_response %d in packet: %lu\n", res->code,packet->packet_id);
+            extracted_data->data = (int*)&res->code;
+            return 1;      
+        }
+    }
+    return 0;
+}
 
-    // if (((struct http_session_data_struct *) packet->session->session_data[proto_index])->session_field_values[header_index].value != NULL) {
-    //     extracted_data->data = (char *) ((struct http_session_data_struct *) packet->session->session_data[proto_index])->session_field_values[header_index].value;
+int ftp_packet_response_value_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    if(packet_type==MMT_FTP_RESPONSE_PACKET){
+        int offset = get_packet_offset_at_index(packet, proto_index);
+        char *payload = (char*)&packet->data[offset];
+        int payload_len = packet->internal_packet->payload_packet_len;
+        ftp_response_t * res = ftp_get_response(payload,payload_len);
+        if(res->code!=MMT_FTP_UNKNOWN_CODE&&res->value!=NULL){
+            printf("FTP: packet_response_value %s in packet: %lu\n", res->value,packet->packet_id);
+            extracted_data->data = (void*)res->value;
+            return 1;      
+        }
+    }
+    return 0;
+}
 
-    //     //printf("FROM Extract function HOST = %s\n", ((struct http_session_data_struct *) packet->session->session_data[proto_index])->session_field_values[header_index].value);
-    //     return 1;
-    // }
-    return 1;
+int ftp_packet_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    if(packet_type==MMT_FTP_DATA_PACKET){
+        int offset = get_packet_offset_at_index(packet, proto_index);
+        extracted_data->data = (int*)&offset;
+    }
+    return 0;
+}
+
+int ftp_packet_data_len_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    if(packet_type==MMT_FTP_DATA_PACKET){
+        extracted_data->data = (int*)&packet->internal_packet->payload_packet_len;
+        return 1;
+    }
+    return 0;
 }
 
 
@@ -666,12 +955,12 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
 
     // // SCOPE_PACKET
     {FTP_PACKET_TYPE,FTP_PACKET_TYPE_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_type_extraction},
-    // {FTP_PACKET_REQUEST,FTP_PACKET_REQUEST_ALIAS,MMT_STRING_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_request_extraction},
-    // {FTP_PACKET_REQUEST_PARAMETER,FTP_PACKET_REQUEST_PARAMETER_ALIAS,MMT_STRING_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_request_parameter_extraction},
-    // {FTP_PACKET_RESPONSE_CODE,FTP_PACKET_RESPONSE_CODE_ALIAS,MMT_STRING_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_response_code_extraction},
-    // {FTP_PACKET_RESPONSE_VALUE,FTP_PACKET_RESPONSE_VALUE_ALIAS,MMT_STRING_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_response_value_extraction},
-    // {FTP_PACKET_DATA_OFFSET,FTP_PACKET_DATA_OFFSET_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_data_offset_extraction},
-    // {FTP_PACKET_DATA_LEN,FTP_PACKET_DATA_LEN_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_data_len_extraction},
+    {FTP_PACKET_REQUEST,FTP_PACKET_REQUEST_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_request_extraction},
+    {FTP_PACKET_REQUEST_PARAMETER,FTP_PACKET_REQUEST_PARAMETER_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_request_parameter_extraction},
+    {FTP_PACKET_RESPONSE_CODE,FTP_PACKET_RESPONSE_CODE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_response_code_extraction},
+    {FTP_PACKET_RESPONSE_VALUE,FTP_PACKET_RESPONSE_VALUE_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_response_value_extraction},
+    {FTP_PACKET_DATA_OFFSET,FTP_PACKET_DATA_OFFSET_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_data_offset_extraction},
+    {FTP_PACKET_DATA_LEN,FTP_PACKET_DATA_LEN_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_data_len_extraction},
     // {FTP_ATTRIBUTES_NB,FTP_ATTRIBUTES_NB_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_attributes_nb_extraction}
 };
 
@@ -702,77 +991,6 @@ void ftp_data_packet(ipacket_t *ipacket,unsigned index){
         ipacket->session->session_data[index] =  ipacket->session->next->session_data[index];
     }
     log_info("FTP: Payload: %s",payload);
-}
-
-/**
- * extract FTP command
- * @param  payload     payload contains the command
- * @param  payload_len payload len
- * @return             FTP command
- */
- ftp_command_t * ftp_get_command(char* payload,int payload_len){
-    ftp_command_t *cmd;
-    cmd = (ftp_command_t*)malloc(sizeof(ftp_command_t));
-    if (payload_len > MMT_STATICSTRING_LEN("RETR ") &&
-        (memcmp(payload, "RETR ", MMT_STATICSTRING_LEN("RETR ")) == 0 ||
-            memcmp(payload, "retr ", MMT_STATICSTRING_LEN("retr ")) == 0)) {
-        cmd->cmd = MMT_FTP_RETR_CMD;
-        cmd->param = str_subend(payload,"RETR ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("USER ") &&
-        (memcmp(payload, "USER ", MMT_STATICSTRING_LEN("USER ")) == 0 ||
-            memcmp(payload, "user ", MMT_STATICSTRING_LEN("user ")) == 0)) {
-        cmd->cmd = MMT_FTP_USER_CMD;
-        cmd->param = str_subend(payload,"USER ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("PASS ") &&
-        (memcmp(payload, "PASS ", MMT_STATICSTRING_LEN("PASS ")) == 0 ||
-            memcmp(payload, "pass ", MMT_STATICSTRING_LEN("pass ")) == 0)) {
-        cmd->cmd = MMT_FTP_PASS_CMD;
-        cmd->param = str_subend(payload,"PASS ",payload_len);
-    } else if (payload_len > MMT_STATICSTRING_LEN("SYST ") &&
-        (memcmp(payload, "SYST ", MMT_STATICSTRING_LEN("SYST ")) == 0 ||
-            memcmp(payload, "syst ", MMT_STATICSTRING_LEN("syst ")) == 0)) {
-        cmd->cmd = MMT_FTP_SYST_CMD;
-        // cmd->param = str_subend(payload,"SYST ",payload_len);
-    } else if (payload_len > MMT_STATICSTRING_LEN("PWD ") &&
-        (memcmp(payload, "PWD ", MMT_STATICSTRING_LEN("PWD ")) == 0 ||
-            memcmp(payload, "pwd ", MMT_STATICSTRING_LEN("pwd ")) == 0)) {
-        cmd->cmd = MMT_FTP_PWD_CMD;
-        // cmd->param = str_subend(payload,"PWD ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("TYPE ") &&
-        (memcmp(payload, "TYPE ", MMT_STATICSTRING_LEN("TYPE ")) == 0 ||
-            memcmp(payload, "type ", MMT_STATICSTRING_LEN("type ")) == 0)) {
-        cmd->cmd = MMT_FTP_TYPE_CMD;
-        cmd->param = str_subend(payload,"TYPE ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("CWD ") &&
-        (memcmp(payload, "CWD ", MMT_STATICSTRING_LEN("CWD ")) == 0 ||
-            memcmp(payload, "cwd ", MMT_STATICSTRING_LEN("cwd ")) == 0)) {
-        cmd->cmd = MMT_FTP_CWD_CMD;
-        // cmd->param = str_subend(payload,"CWD ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("SIZE ") &&
-        (memcmp(payload, "SIZE ", MMT_STATICSTRING_LEN("SIZE ")) == 0 ||
-            memcmp(payload, "size ", MMT_STATICSTRING_LEN("size ")) == 0)) {
-        cmd->cmd = MMT_FTP_SIZE_CMD;
-        // cmd->param = str_subend(payload,"SIZE ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("EPSV ") &&
-        (memcmp(payload, "EPSV ", MMT_STATICSTRING_LEN("EPSV ")) == 0 ||
-            memcmp(payload, "epsv ", MMT_STATICSTRING_LEN("epsv ")) == 0)) {
-        cmd->cmd = MMT_FTP_EPSV_CMD;
-        // cmd->param = str_subend(payload,"EPSV ",payload_len);
-    }else if (payload_len >= MMT_STATICSTRING_LEN("FEAT") &&
-        (memcmp(payload, "FEAT", MMT_STATICSTRING_LEN("FEAT")) == 0 ||
-            memcmp(payload, "feat", MMT_STATICSTRING_LEN("feat")) == 0)) {
-        cmd->cmd = MMT_FTP_FEAT_CMD;
-        // cmd->param = str_subend(payload,"FEAT",payload_len);
-    }else if (payload_len >= MMT_STATICSTRING_LEN("MDTM") &&
-        (memcmp(payload, "MDTM", MMT_STATICSTRING_LEN("MDTM")) == 0 ||
-            memcmp(payload, "mdtm", MMT_STATICSTRING_LEN("mdtm")) == 0)) {
-        cmd->cmd = MMT_FTP_MDTM_CMD;
-        // cmd->param = str_subend(payload,"FEAT",payload_len);
-    }else{
-        cmd->cmd = MMT_FTP_UNKNOWN_CMD;
-        cmd->param = payload;
-    }
-    return cmd;
 }
 
 /**
@@ -853,105 +1071,6 @@ void ftp_request_packet(ipacket_t *ipacket,unsigned index){
     }else{
         log_err("FTP: Cannot get command");
     }
-}
-
-/**
- * Get response code from a reponse packet
- * @param  payload     payload of packet
- * @param  payload_len payload len of packet
- * @return             a ftp response code: code + value
- */
- ftp_response_t * ftp_get_response(char* payload,int payload_len){
-    ftp_response_t * res;
-    res = (ftp_response_t*)malloc(sizeof(ftp_response_t));
-    if (payload_len > MMT_STATICSTRING_LEN("150 ") &&
-        (memcmp(payload, "150 ", MMT_STATICSTRING_LEN("150 ")) == 0 ||
-            memcmp(payload, "150-", MMT_STATICSTRING_LEN("150-")) == 0)) {
-        res->code = MMT_FTP_150_CODE;
-    }else if (payload_len > MMT_STATICSTRING_LEN("220 ") &&
-        (memcmp(payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
-            memcmp(payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
-        res->code = MMT_FTP_220_CODE;
-        char *ver = str_subend(payload,"220 ",payload_len);
-        if(ver == NULL){
-            ver = str_subend(payload,"220-",payload_len);
-        }
-        res->value = ver;
-    }else if (payload_len > MMT_STATICSTRING_LEN("230 ") &&
-        (memcmp(payload, "230 ", MMT_STATICSTRING_LEN("230 ")) == 0 ||
-            memcmp(payload, "230-", MMT_STATICSTRING_LEN("230-")) == 0)) {
-        res->code = MMT_FTP_230_CODE;
-    }else if (payload_len > MMT_STATICSTRING_LEN("215 ") &&
-        (memcmp(payload, "215 ", MMT_STATICSTRING_LEN("215 ")) == 0 ||
-            memcmp(payload, "215-", MMT_STATICSTRING_LEN("215-")) == 0)) {
-        res->code = MMT_FTP_215_CODE;
-        char *s = str_subend(payload,"215 ",payload_len);
-        if(s == NULL){
-            s = str_subend(payload,"215-",payload_len);
-        }
-        res->value =s;
-    }else if (payload_len > MMT_STATICSTRING_LEN("229 ") &&
-        (memcmp(payload, "229 ", MMT_STATICSTRING_LEN("229 ")) == 0 ||
-            memcmp(payload, "229-", MMT_STATICSTRING_LEN("229-")) == 0)) {
-        res->code = MMT_FTP_229_CODE;
-
-        char *em = str_subend(payload,"229 ",payload_len);
-        if(em == NULL){
-            em = str_subend(payload,"229-",payload_len);
-        }
-        res->value = em;
-    }else if (payload_len > MMT_STATICSTRING_LEN("213 ") &&
-        (memcmp(payload, "213 ", MMT_STATICSTRING_LEN("213 ")) == 0 ||
-            memcmp(payload, "213-", MMT_STATICSTRING_LEN("213-")) == 0)) {
-        res->code = MMT_FTP_213_CODE;
-        char *em = str_subend(payload,"213 ",payload_len);
-        if(em == NULL){
-            em = str_subend(payload,"213-",payload_len);
-        }
-        res->value = em;
-    }else if (payload_len > MMT_STATICSTRING_LEN("257 ") &&
-        (memcmp(payload, "257 ", MMT_STATICSTRING_LEN("257 ")) == 0 ||
-            memcmp(payload, "257-", MMT_STATICSTRING_LEN("257-")) == 0)) {
-        res->code = MMT_FTP_257_CODE;
-        char *dir = str_subend(payload,"257 ",payload_len);
-        if(dir == NULL){
-            dir = str_subend(payload,"257-",payload_len);
-        }
-        res->value = dir;
-    }else if (payload_len > MMT_STATICSTRING_LEN("250 ") &&
-        (memcmp(payload, "250 ", MMT_STATICSTRING_LEN("250 ")) == 0 ||
-            memcmp(payload, "250-", MMT_STATICSTRING_LEN("250-")) == 0)) {
-        res->code = MMT_FTP_250_CODE;
-    }else if (payload_len > MMT_STATICSTRING_LEN("200 ") &&
-        (memcmp(payload, "200 ", MMT_STATICSTRING_LEN("200 ")) == 0 ||
-            memcmp(payload, "200-", MMT_STATICSTRING_LEN("200-")) == 0)) {
-        res->code = MMT_FTP_200_CODE;
-    }else if (payload_len > MMT_STATICSTRING_LEN("331 ") &&
-        (memcmp(payload, "331 ", MMT_STATICSTRING_LEN("331 ")) == 0 ||
-            memcmp(payload, "331-", MMT_STATICSTRING_LEN("331-")) == 0)) {
-        res->code = MMT_FTP_331_CODE;
-    }else if (payload_len > MMT_STATICSTRING_LEN("226 ") &&
-        (memcmp(payload, "226 ", MMT_STATICSTRING_LEN("226 ")) == 0 ||
-            memcmp(payload, "226-", MMT_STATICSTRING_LEN("226-")) == 0)) {
-        res->code = MMT_FTP_331_CODE;
-    }else if (payload_len > MMT_STATICSTRING_LEN("211 ") &&
-        (memcmp(payload, "211 ", MMT_STATICSTRING_LEN("211 ")) == 0 ||
-            memcmp(payload, "211-", MMT_STATICSTRING_LEN("211-")) == 0)) {
-        res->code = MMT_FTP_211_CODE;
-    }else if (payload_len > MMT_STATICSTRING_LEN("226 ") &&
-        (memcmp(payload, "226 ", MMT_STATICSTRING_LEN("226 ")) == 0 ||
-            memcmp(payload, "226-", MMT_STATICSTRING_LEN("226-")) == 0)) {
-        res->code = MMT_FTP_226_CODE;
-    }else if (!mmt_int_check_possible_ftp_reply(payload, payload_len)) {
-        if (mmt_int_check_possible_ftp_continuation_reply(payload, payload_len)) {
-            res->code = MMT_FTP_CONTINUE_CODE;
-            res->value = payload;
-        }
-    }else{
-        res->code = MMT_FTP_UNKNOWN_CODE;
-        res->value = payload;
-    }
-    return res;
 }
 
 uint16_t ftp_get_data_server_port(char *payload){
@@ -1079,6 +1198,15 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     log_info("FTP: START ANALYSING SESSION DATA OF PACKET: %lu",ipacket->packet_id);
     
     //printf("from http generic session data analysis\n");
+    int offset = get_packet_offset_at_index(ipacket, index);
+
+    
+    char *payload = (char*)&ipacket->data[offset];
+    // Make sure there is data to analayse
+    if(strlen(payload)<=0){
+        return MMT_CONTINUE;
+    }
+    
     int packet_type = ftp_get_packet_type_by_port_number(ipacket,index);
 
     switch(packet_type){
