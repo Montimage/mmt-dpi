@@ -47,6 +47,37 @@
  static int quiet;
 
  void packet_handler(const ipacket_t * ipacket, void * user_args){
+	// Session attribute
+ 	char * session_data_type = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_DATA_TYPE);
+ 	uint16_t * session_mode = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SESSION_MODE);
+ 	// uint32_t * file_sizeFTP_FILE_SIZE = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_SIZE);
+ 	char * file_name = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_NAME);
+ 	char * file_dir = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_DIR);
+ 	char * file_last_modified = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_LAST_MODIFIED);
+
+ 	if(session_data_type){
+ 		printf("Session: data_type: %s\n", session_data_type);
+ 	}
+ 	if(session_mode){
+ 		printf("Session: mode: %d\n", *session_mode);	
+ 	}
+
+ 	if(file_name){
+ 		printf("Session: file_name: %s\n", file_name);
+ 	}
+
+ 	if(file_dir){
+ 		printf("Session: file_dir: %s\n", file_dir);
+ 	}
+
+ 	if(file_last_modified){
+ 		printf("Session: file_last_modified: %s\n", file_last_modified);
+ 	}
+
+ 	// if(file_size){
+ 	// 	printf("Session: file_size: %d\n", *file_size);
+ 	// }
+	//Packet attribute
 	uint16_t* packet_type = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_TYPE);
 	char * packet_request = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST);
 	char * packet_request_parameter = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER);
@@ -166,6 +197,15 @@ int main(int argc, char ** argv){
 		fprintf(stderr, "MMT handler init failed for the following reason: %s\n",mmt_errbuf );
 		return EXIT_FAILURE;
 	}
+
+	//SESSION ATTRIBUTE
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_DATA_TYPE); //Request client port
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SESSION_MODE); //Request client port
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_NAME);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_DIR);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_LAST_MODIFIED);
+	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_SIZE);
+	// PACKET ATTRIBUTE
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_TYPE); //Request client port
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST);  // Request server port
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER); 

@@ -815,7 +815,7 @@ extern "C" {
     // FTP protocol attribute
     enum {
         /*--- Session attributes --- */
-        FTP_SERVER_VERSION,
+        // FTP_SERVER_VERSION,
         FTP_DATA_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
         FTP_SYST,//
         FTP_SESSION_MODE,// PASSIVE or ACTIVE
@@ -852,7 +852,7 @@ extern "C" {
         FTP_ATTRIBUTES_NB = FTP_PACKET_TYPE
     };
 
-#define FTP_SERVER_VERSION_ALIAS    "server_version"
+// #define FTP_SERVER_VERSION_ALIAS    "server_version"
 #define FTP_DATA_TYPE_ALIAS         "data_type" //
 #define FTP_SYST_ALIAS              "system"//
 #define FTP_SESSION_MODE_ALIAS      "session_mode"// PASSIVE or ACTIVE

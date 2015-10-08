@@ -170,7 +170,7 @@ typedef struct ftp_session_data_struct{
     // General information
     char * data_type;
     // FTP version
-    char * server_version;
+    // char * server_version;
     char * session_syst;
     uint8_t session_mode;// MMT_FTP_ACTIVE_MODE = 0, MMT_FTP_PASSIVE_MODE = 1
     char *session_feats;
