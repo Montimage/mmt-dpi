@@ -815,7 +815,7 @@ extern "C" {
     // FTP protocol attribute
     enum {
         /*--- Session attributes --- */
-        FTP_SERVER_VERSION = 1,
+        FTP_SERVER_VERSION,
         FTP_DATA_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
         FTP_SYST,//
         FTP_SESSION_MODE,// PASSIVE or ACTIVE
@@ -827,12 +827,12 @@ extern "C" {
         // CONNECTION ATTRIBUTES
         FTP_SERVER_CONT_PORT,
         FTP_SERVER_DATA_PORT,
-        FTP_SERVER_CONT_ADDR,
-        FTP_SERVER_DATA_ADDR,
+        // FTP_SERVER_CONT_ADDR,
+        // FTP_SERVER_DATA_ADDR,
         FTP_CLIENT_CONT_PORT,
         FTP_CLIENT_DATA_PORT,
-        FTP_CLIENT_CONT_ADDR,
-        FTP_CLIENT_DATA_ADDR,
+        // FTP_CLIENT_CONT_ADDR,
+        // FTP_CLIENT_DATA_ADDR,
         // FILE ATTRIBUTE
         FTP_FILE_NAME,
         FTP_FILE_DIR,
@@ -862,12 +862,12 @@ extern "C" {
 // CONNECTION ATTRIBUTES
 #define FTP_SERVER_CONT_PORT_ALIAS  "server_contrl_port"
 #define FTP_SERVER_DATA_PORT_ALIAS  "server_data_port"
-#define FTP_SERVER_CONT_ADDR_ALIAS  "server_contrl_addr"
-#define FTP_SERVER_DATA_ADDR_ALIAS  "server_data_addr"
+// #define FTP_SERVER_CONT_ADDR_ALIAS  "server_contrl_addr"
+// #define FTP_SERVER_DATA_ADDR_ALIAS  "server_data_addr"
 #define FTP_CLIENT_CONT_PORT_ALIAS  "data_contrl_port"
 #define FTP_CLIENT_DATA_PORT_ALIAS  "data_data_port"
-#define FTP_CLIENT_CONT_ADDR_ALIAS  "data_contrl_addr"
-#define FTP_CLIENT_DATA_ADDR_ALIAS  "data_data_addr"
+// #define FTP_CLIENT_CONT_ADDR_ALIAS  "data_contrl_addr"
+// #define FTP_CLIENT_DATA_ADDR_ALIAS  "data_data_addr"
 // FILE ATTRIBUTE
 #define FTP_FILE_NAME_ALIAS         "file_name"
 #define FTP_FILE_DIR_ALIAS          "file_dir"
@@ -880,9 +880,9 @@ extern "C" {
 #define FTP_PACKET_TYPE_ALIAS       "packet_type"  // DATA_ALIAS REQUEST_ALIAS RESPONSE
 #define FTP_PACKET_REQUEST_ALIAS    "packet_request"// ONLY REQUEST PACKET
 #define FTP_PACKET_REQUEST_PARAMETER_ALIAS "packet_request_parameter"// ONLY REQUEST PACKET
-#define FTP_PACKET_RESPONSE_CODE_ALIAS "packet_responsed_code"// ONLY RESPONSE PACKET
-#define FTP_PACKET_RESPONSE_VALUE_ALIAS "packet_reponsed_value"// ONLY RESPONSE PACKET
-#define FTP_PACKET_DATA_OFFSET_ALIAS "packet_payload"// ONLY DATA PACKET
+#define FTP_PACKET_RESPONSE_CODE_ALIAS "packet_response_code"// ONLY RESPONSE PACKET
+#define FTP_PACKET_RESPONSE_VALUE_ALIAS "packet_reponse_value"// ONLY RESPONSE PACKET
+#define FTP_PACKET_DATA_OFFSET_ALIAS "packet_payload_offset"// ONLY DATA PACKET
 #define FTP_PACKET_DATA_LEN_ALIAS "packet_payload_len"// ONLY DATA PACKET 
 
 #ifdef __cplusplus
