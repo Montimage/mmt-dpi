@@ -16,8 +16,8 @@ extern "C" {
 #include "mmt_core.h"
 
 #define MMT_FTP_TIMEOUT                     10
-#define MMT_FTP_PASSIVE_MODE                1
-#define MMT_FTP_ACTIVE_MODE                 0
+#define MMT_FTP_PASSIVE_MODE                2
+#define MMT_FTP_ACTIVE_MODE                 1
 #define MMT_FTP_MAX_SESSION                 1000
 
 // TYPE OF CONNECTION 
@@ -25,11 +25,11 @@ extern "C" {
 #define MMT_FTP_DATA_CONNECTION             1
 
 //////// FTP SESSION STATUS //////
-#define MMT_FTP_STATUS_OPEN                 0
-#define MMT_FTP_STATUS_CONTROLING           1
-#define MMT_FTP_STATUS_TRANSFERING          2
-#define MMT_FTP_STATUS_TRANSFER_COMPLETED   3
-#define MMT_FTP_STATUS_FINISHED             4
+#define MMT_FTP_STATUS_OPEN                 1
+#define MMT_FTP_STATUS_CONTROLING           2
+#define MMT_FTP_STATUS_TRANSFERING          3
+#define MMT_FTP_STATUS_TRANSFER_COMPLETED   4
+#define MMT_FTP_STATUS_FINISHED             5
 #define MMT_FTP_STATUS_ERROR               -1
 
 /////// PACKET TYPE //////
@@ -172,9 +172,9 @@ typedef struct ftp_session_data_struct{
     // FTP version
     // char * server_version;
     char * session_syst;
-    uint8_t session_mode;// MMT_FTP_ACTIVE_MODE = 0, MMT_FTP_PASSIVE_MODE = 1
+    uint16_t session_mode;// MMT_FTP_ACTIVE_MODE = 0, MMT_FTP_PASSIVE_MODE = 1
     char *session_feats;
-    int session_status;// MMT_FTP_STATUS_OPEN - MMT_FTP_STATUS_CONTROLING - MMT_FTP_STATUS_TRANSFERING - MMT_FTP_STATUS_TRANSFER_COMPLETE - MMT_FTP_STATUS_FINISHED
+    uint16_t session_status;// MMT_FTP_STATUS_OPEN - MMT_FTP_STATUS_CONTROLING - MMT_FTP_STATUS_TRANSFERING - MMT_FTP_STATUS_TRANSFER_COMPLETE - MMT_FTP_STATUS_FINISHED
 }ftp_session_data_t;
 
 // struct http_session_data_struct {

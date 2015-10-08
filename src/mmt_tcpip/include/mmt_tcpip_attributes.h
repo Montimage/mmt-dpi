@@ -821,7 +821,7 @@ extern "C" {
         FTP_SESSION_MODE,// PASSIVE or ACTIVE
         FTP_SESSION_STATUS,
         FTP_SESSION_FEATURES,
-        FTP_EEMPM_229,
+        // FTP_EEMPM_229,
         // FTP_LAST_COMMAND,
         // FTP_LAST_RESPONSE,
         // CONNECTION ATTRIBUTES
@@ -849,16 +849,15 @@ extern "C" {
         FTP_PACKET_RESPONSE_VALUE, // ONLY RESPONSE PACKET
         FTP_PACKET_DATA_OFFSET, // ONLY DATA PACKET
         FTP_PACKET_DATA_LEN,// ONLY DATA PACKET 
-        FTP_ATTRIBUTES_NB = FTP_PACKET_TYPE
+        FTP_ATTRIBUTES_NB = FTP_PACKET_DATA_LEN
     };
 
 // #define FTP_SERVER_VERSION_ALIAS    "server_version"
-#define FTP_DATA_TYPE_ALIAS         "data_type" //
-#define FTP_SYST_ALIAS              "system"//
-#define FTP_SESSION_MODE_ALIAS      "session_mode"// PASSIVE or ACTIVE
-#define FTP_SESSION_STATUS_ALIAS    "session_status"
+#define FTP_DATA_TYPE_ALIAS         "ftp_session_data_type" //
+#define FTP_SYST_ALIAS              "ftp_server_system"//
+#define FTP_SESSION_MODE_ALIAS      "ftp_session_mode"// PASSIVE or ACTIVE
+#define FTP_SESSION_STATUS_ALIAS    "ftp_session_status"
 #define FTP_SESSION_FEATURES_ALIAS  "session_features"
-#define FTP_EEMPM_229_ALIAS         "eempm_229"
 // CONNECTION ATTRIBUTES
 #define FTP_SERVER_CONT_PORT_ALIAS  "server_contrl_port"
 #define FTP_SERVER_DATA_PORT_ALIAS  "server_data_port"

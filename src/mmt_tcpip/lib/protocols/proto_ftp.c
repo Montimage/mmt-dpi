@@ -821,8 +821,8 @@ int ftp_data_type_extraction(const ipacket_t * packet, unsigned proto_index,
 int ftp_session_mode_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->data_type!=NULL){
-        extracted_data->data = (short*)&ftp_session_data->session_mode;
+    if(ftp_session_data!=NULL&&ftp_session_data->session_mode!=0){
+        extracted_data->data = (uint16_t*)&ftp_session_data->session_mode;
         log_info("FTP: ftp_session_mode: %d",*(short*)extracted_data->data);
         return 1;
     }
@@ -833,7 +833,7 @@ int ftp_session_mode_extraction(const ipacket_t * packet, unsigned proto_index,
 int ftp_file_name_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->data_type!=NULL){
+    if(ftp_session_data!=NULL&&ftp_session_data->file_name!=NULL){
         extracted_data->data = (void*)ftp_session_data->file_name;
         log_info("FTP: file_name: %s",(char*)extracted_data->data);
         return 1;
@@ -844,7 +844,7 @@ int ftp_file_name_extraction(const ipacket_t * packet, unsigned proto_index,
 int ftp_file_dir_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->data_type!=NULL){
+    if(ftp_session_data!=NULL&&ftp_session_data->file_dir!=NULL){
         extracted_data->data = (void*)ftp_session_data->file_dir;
         log_info("FTP: file_dir: %s",(char*)extracted_data->data);
         return 1;
@@ -855,8 +855,8 @@ int ftp_file_dir_extraction(const ipacket_t * packet, unsigned proto_index,
 int ftp_file_size_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->data_type!=NULL){
-        extracted_data->data = (int*)ftp_session_data->file_size;
+    if(ftp_session_data!=NULL&&ftp_session_data->file_size!=0){
+        extracted_data->data = (uint32_t*)&ftp_session_data->file_size;
         log_info("FTP: file_size: %d",*(int*)extracted_data->data);
         return 1;
     }
@@ -866,7 +866,7 @@ int ftp_file_size_extraction(const ipacket_t * packet, unsigned proto_index,
 int ftp_file_last_modified_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->data_type!=NULL){
+    if(ftp_session_data!=NULL&&ftp_session_data->file_last_modified!=NULL){
         extracted_data->data = (void*)ftp_session_data->file_last_modified;
         log_info("FTP: file_last_modified: %s",(char*)extracted_data->data);
         return 1;
@@ -874,10 +874,53 @@ int ftp_file_last_modified_extraction(const ipacket_t * packet, unsigned proto_i
     return 0;
 }
 
+int ftp_status_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
+    if(ftp_session_data!=NULL&&ftp_session_data->session_status!=0){
+        extracted_data->data = (uint16_t*)&ftp_session_data->session_status;
+        log_info("FTP: session status: %d",*(short*)extracted_data->data);
+        return 1;
+    }
+    return 0;
+}
+
+int ftp_features_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
+    if(ftp_session_data!=NULL&&ftp_session_data->session_feats!=NULL){
+        extracted_data->data = (void*)ftp_session_data->session_feats;
+        log_info("FTP: session features: %s",(char*)extracted_data->data);
+        return 1;
+    }
+    return 0;
+}
+
+int ftp_username_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
+    if(ftp_session_data!=NULL&&ftp_session_data->user_name!=NULL){
+        extracted_data->data = (void*)ftp_session_data->user_name;
+        log_info("FTP: session username: %s",(char*)extracted_data->data);
+        return 1;
+    }
+    return 0;
+}
+
+int ftp_password_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
+    if(ftp_session_data!=NULL&&ftp_session_data->user_password!=NULL){
+        extracted_data->data = (void*)ftp_session_data->user_password;
+        log_info("FTP: session password: %s",(char*)extracted_data->data);
+        return 1;
+    }
+    return 0;
+}
 ////////////////////// PACKET ATTRIBUTE EXTRACTION ///////////////////////
 int ftp_packet_type_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
-    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    int packet_type = ftp_get_packet_type_by_port_number((ipacket_t*)packet,proto_index);
 
     if(packet_type!=MMT_FTP_UNKNOWN_PACKET){
         extracted_data->data = (short*)&packet_type;
@@ -890,7 +933,7 @@ int ftp_packet_type_extraction(const ipacket_t * packet, unsigned proto_index,
 int ftp_packet_request_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     
-    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    int packet_type = ftp_get_packet_type_by_port_number((ipacket_t*)packet,proto_index);
     if(packet_type==MMT_FTP_REQUEST_PACKET){
         int offset = get_packet_offset_at_index(packet, proto_index);
         char *payload = (char*)&packet->data[offset];
@@ -908,7 +951,7 @@ int ftp_packet_request_extraction(const ipacket_t * packet, unsigned proto_index
 int ftp_packet_request_parameter_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     
-    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    int packet_type = ftp_get_packet_type_by_port_number((ipacket_t*)packet,proto_index);
     if(packet_type==MMT_FTP_REQUEST_PACKET){
         int offset = get_packet_offset_at_index(packet, proto_index);
         char *payload = (char*)&packet->data[offset];
@@ -926,7 +969,7 @@ int ftp_packet_request_parameter_extraction(const ipacket_t * packet, unsigned p
 int ftp_packet_response_code_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     
-    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    int packet_type = ftp_get_packet_type_by_port_number((ipacket_t*)packet,proto_index);
     if(packet_type==MMT_FTP_RESPONSE_PACKET){
         int offset = get_packet_offset_at_index(packet, proto_index);
         char *payload = (char*)&packet->data[offset];
@@ -944,7 +987,7 @@ int ftp_packet_response_code_extraction(const ipacket_t * packet, unsigned proto
 int ftp_packet_response_value_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     
-    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    int packet_type = ftp_get_packet_type_by_port_number((ipacket_t*)packet,proto_index);
     if(packet_type==MMT_FTP_RESPONSE_PACKET){
         int offset = get_packet_offset_at_index(packet, proto_index);
         char *payload = (char*)&packet->data[offset];
@@ -962,7 +1005,7 @@ int ftp_packet_response_value_extraction(const ipacket_t * packet, unsigned prot
 int ftp_packet_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     
-    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    int packet_type = ftp_get_packet_type_by_port_number((ipacket_t*)packet,proto_index);
     if(packet_type==MMT_FTP_DATA_PACKET){
         int offset = get_packet_offset_at_index(packet, proto_index);
         extracted_data->data = (int*)&offset;
@@ -973,7 +1016,7 @@ int ftp_packet_data_offset_extraction(const ipacket_t * packet, unsigned proto_i
 int ftp_packet_data_len_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     
-    int packet_type = ftp_get_packet_type_by_port_number(packet,proto_index);
+    int packet_type = ftp_get_packet_type_by_port_number((ipacket_t*)packet,proto_index);
     if(packet_type==MMT_FTP_DATA_PACKET){
         extracted_data->data = (int*)&packet->internal_packet->payload_packet_len;
         return 1;
@@ -987,8 +1030,10 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
     // {FTP_SERVER_VERSION,FTP_SERVER_VERSION_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_version_extraction},
     {FTP_DATA_TYPE,FTP_DATA_TYPE_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_type_extraction},
     {FTP_SESSION_MODE,FTP_SESSION_MODE_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_session_mode_extraction},
-    // {FTP_SESSION_STATUS,FTP_SESSION_STATUS_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_status_extraction},
-    // {FTP_SESSION_FEATURES,FTP_SESSION_FEATURES_ALIAS,MMT_STRING_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_features_extraction},
+    {FTP_SESSION_STATUS,FTP_SESSION_STATUS_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_status_extraction},
+    {FTP_SESSION_FEATURES,FTP_SESSION_FEATURES_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_features_extraction},
+    {FTP_USERNAME,FTP_USERNAME_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_username_extraction},
+    {FTP_PASSWORD,FTP_PASSWORD_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_password_extraction},
     // {FTP_EEMPM_229,FTP_EEMPM_229_ALIAS,MMT_STRING_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_eempm_229_extraction},
     // {FTP_SERVER_CONT_PORT,FTP_SERVER_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_contrl_port_extraction},
     // {FTP_CLIENT_CONT_PORT,FTP_CLIENT_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_port_extraction},
@@ -1000,7 +1045,7 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
     // {FTP_CLIENT_DATA_ADDR,FTP_CLIENT_DATA_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_addr_extraction},
     {FTP_FILE_NAME,FTP_FILE_NAME_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_name_extraction},
     {FTP_FILE_DIR,FTP_FILE_DIR_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_dir_extraction},
-    // {FTP_FILE_SIZE,FTP_FILE_SIZE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_size_extraction},
+    {FTP_FILE_SIZE,FTP_FILE_SIZE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_size_extraction},
     {FTP_FILE_LAST_MODIFIED,FTP_FILE_LAST_MODIFIED_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_last_modified_extraction},
 
     // // SCOPE_PACKET
