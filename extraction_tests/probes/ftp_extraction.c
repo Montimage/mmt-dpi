@@ -38,13 +38,37 @@
  #include "mmt_core.h"
  #include "mmt/tcpip/mmt_tcpip.h"
  #include "mmt_test_utils.h"
-
+ #include <fcntl.h>
  #define MAX_FILENAME_SIZE 256
  #define TRACE_FILE 1
  #define LIVE_INTERFACE 2
  #define MTU_BIG (16 * 1024)
 
  static int quiet;
+
+ /**
+ * Writes @len bytes from @content to the filename @path.
+ */
+void ftp_write_data (const char * path, const char * content, int len) {
+  int fd = 0;
+  if(path[0]=='/'){
+  	path=path+1;	
+  }
+  if ( (fd = open ( path , O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW , S_IRWXU | S_IRWXG | S_IRWXO )) < 0 )
+  {
+    fprintf ( stderr , "\n[e] Error %d writting data to \"%s\": %s" , errno , path , strerror( errno ) );
+    return;
+  }
+
+  if(len>0){
+  	printf("Going to write to file: %s\n",path);
+	  printf("Data: \n%s\n",content);
+	  printf("Data len: %d\n",len);
+	  write ( fd , content , len );
+  }
+  
+  close ( fd );
+}
 
  void packet_handler(const ipacket_t * ipacket, void * user_args){
  	printf("\nPACKET: %lu\n", ipacket->packet_id);
@@ -58,6 +82,7 @@
  	char * file_name = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_NAME);
  	char * file_dir = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_DIR);
  	char * file_last_modified = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_LAST_MODIFIED);
+ 	uint32_t * file_size = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_SIZE);
 
  	if(session_data_type){
  		printf("Session: data_type: %s\n", session_data_type);
@@ -92,18 +117,20 @@
 	if(session_feats){
  		printf("Session: features: %s\n", session_feats);
  	}	
- 	// if(file_size){
- 	// 	printf("Session: file_size: %d\n", *file_size);
- 	// }
+ 	if(file_size){
+ 		printf("Session: file_size: %d\n", *file_size);
+ 	}
 	//Packet attribute
 	uint16_t* packet_type = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_TYPE);
+	char * p_payload = (char*)get_attribute_extracted_data(ipacket,PROTO_FTP,PROTO_PAYLOAD);
 	char * packet_request = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST);
 	char * packet_request_parameter = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER);
 	uint16_t * packet_response = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_RESPONSE_CODE);
 	char * packet_response_value = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_RESPONSE_VALUE);
-	uint32_t * packet_data_offset = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_OFFSET);
-	uint32_t * packet_data_len = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_LEN);
+	// uint32_t * packet_data_offset = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_OFFSET);
+	uint16_t * packet_data_len = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_LEN);
 	if(packet_type){
+		int packet_type_value = *packet_type;
 		printf("Packet: type %d\n",*packet_type);
 		if(packet_request){
 			printf("Packet: request%s\n",packet_request);
@@ -117,11 +144,16 @@
 				printf("Packet: response value%s\n",packet_response_value);
 			}
 		}
-		if(packet_data_offset){
-			printf("Packet: data offset %d\n",*packet_data_offset);
-		}
+		// if(packet_data_offset){
+		// 	printf("Packet: data offset %d\n",*packet_data_offset);
+		// }
+		int data_len =0;
 		if(packet_data_len){
 			printf("Packet: data len %d\n",*packet_data_len);
+			data_len=*packet_data_len;
+		}
+		if(packet_type_value==1&&file_name&&p_payload&&data_len>0){
+			ftp_write_data(file_name,p_payload,data_len);
 		}
 	}
 	printf("\n");
@@ -217,6 +249,7 @@ int main(int argc, char ** argv){
 	}
 
 	//SESSION ATTRIBUTE
+	register_extraction_attribute(mmt_handler,PROTO_FTP,PROTO_PAYLOAD);
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_DATA_TYPE); //Request client port
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SESSION_MODE); //Request client port
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SESSION_STATUS);
@@ -233,7 +266,7 @@ int main(int argc, char ** argv){
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER); 
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_RESPONSE_CODE);  
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_RESPONSE_VALUE);
-	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_DATA_OFFSET);
+	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_DATA_OFFSET);
 	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_DATA_LEN);  
 	register_packet_handler(mmt_handler,1,packet_handler, NULL);
 	if (type == TRACE_FILE) {

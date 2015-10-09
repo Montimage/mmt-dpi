@@ -378,11 +378,11 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     //    return 0;
     // }
     // INJECT LIBNOTH PROCESS //
-    ipacket->extra.status=MMT_SKIP;
-    debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    ntoh_packet_process(ipacket,index);
-    //write_data(ipacket);
-    debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    // ipacket->extra.status=MMT_SKIP;
+    // debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    // ntoh_packet_process(ipacket,index);
+    // //write_data(ipacket);
+    // debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     // END OF INJECTING LIBNTOH PROCESS
     return 1;
 }
