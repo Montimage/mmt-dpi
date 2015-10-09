@@ -47,6 +47,7 @@
  static int quiet;
 
  void packet_handler(const ipacket_t * ipacket, void * user_args){
+ 	printf("\nPACKET: %lu\n", ipacket->packet_id);
 	// Session attribute
  	char * session_data_type = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_DATA_TYPE);
  	uint16_t * session_status = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SESSION_STATUS);
@@ -103,24 +104,24 @@
 	uint32_t * packet_data_offset = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_OFFSET);
 	uint32_t * packet_data_len = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_LEN);
 	if(packet_type){
-		printf("%lu,%d",ipacket->packet_id,*packet_type);
+		printf("Packet: type %d\n",*packet_type);
 		if(packet_request){
-			printf(",%s",packet_request);
+			printf("Packet: request%s\n",packet_request);
 			if(packet_request_parameter){
-				printf(",%s",packet_request_parameter );
+				printf("Packet: request parameter%s\n",packet_request_parameter );
 			}
 		}
 		if(packet_response){
-			printf(",%d",*packet_response);
+			printf("Packet: response%d\n",*packet_response);
 			if(packet_response_value){
-				printf(",%s",packet_response_value);
+				printf("Packet: response value%s\n",packet_response_value);
 			}
 		}
 		if(packet_data_offset){
-			printf(",%d",*packet_data_offset);
+			printf("Packet: data offset %d\n",*packet_data_offset);
 		}
 		if(packet_data_len){
-			printf(",%d",*packet_data_len);
+			printf("Packet: data len %d\n",*packet_data_len);
 		}
 	}
 	printf("\n");
