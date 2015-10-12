@@ -813,75 +813,77 @@ extern "C" {
 #define SLL_ADDR_ALIAS     "addr"
 #define SLL_PROTOCOL_ALIAS "protocol"
     // FTP protocol attribute
-    enum {
-        /*--- Session attributes --- */
-        // FTP_SERVER_VERSION,
-        FTP_DATA_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
-        FTP_SYST,//
-        FTP_SESSION_MODE,// PASSIVE or ACTIVE
-        FTP_SESSION_STATUS,
-        FTP_SESSION_FEATURES,
-        // FTP_EEMPM_229,
-        // FTP_LAST_COMMAND,
-        // FTP_LAST_RESPONSE,
-        // CONNECTION ATTRIBUTES
-        FTP_SERVER_CONT_PORT,
-        FTP_SERVER_DATA_PORT,
-        // FTP_SERVER_CONT_ADDR,
-        // FTP_SERVER_DATA_ADDR,
+    enum ftp_attributes{
+        /*--- SESSION ATTRIBUTES --- */
+        FTP_SESSION_CONN_TYPE,// CONTROL or DATA connection
+        /* CONTROL CONNECTION */
+        FTP_SERVER_CONT_ADDR,
+        FTP_SERVER_CONT_PORT, // Alway 21
+        FTP_CLIENT_CONT_ADDR,
         FTP_CLIENT_CONT_PORT,
+        // ACCOUNT
+        FTP_SESSION_USERNAME,
+        FTP_SESSION_PASSWORD,
+        // OTHER
+        FTP_SESSION_FEATURES,
+        FTP_SYST,//
+        FTP_LAST_COMMAND,
+        FTP_LAST_RESPONSE_CODE,
+        /* DATA CONNECTION */
+        FTP_SERVER_DATA_ADDR,
+        FTP_SERVER_DATA_PORT,
+        FTP_CLIENT_DATA_ADDR,
         FTP_CLIENT_DATA_PORT,
-        // FTP_CLIENT_CONT_ADDR,
-        // FTP_CLIENT_DATA_ADDR,
-        // FILE ATTRIBUTE
+        FTP_DATA_TYPE, // FTP_LIST_DIRECTORY, FTP_FILE_TRANSFER
+        FTP_DATA_TRANSFER_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
+        FTP_DATA_MODE,// PASSIVE or ACTIVE
+        // FILE ATTRIBUTE - ONLY for FTP_FILE_TRANSFER
         FTP_FILE_NAME,
         FTP_FILE_DIR,
         FTP_FILE_SIZE,
         FTP_FILE_LAST_MODIFIED,
-        // USER ATTRIBUTE
-        FTP_USERNAME,
-        FTP_PASSWORD,
         /*--- Packet attributes ---*/
         FTP_PACKET_TYPE, // DATA, REQUEST, RESPONSE - WITH PACKET_TYPE WE CAN KNOW WHO IS THE SERVER AND WHO IS THE CLIENT
         FTP_PACKET_REQUEST, // ONLY REQUEST PACKET
         FTP_PACKET_REQUEST_PARAMETER, // ONLY REQUEST PACKET
         FTP_PACKET_RESPONSE_CODE, // ONLY RESPONSE PACKET
         FTP_PACKET_RESPONSE_VALUE, // ONLY RESPONSE PACKET
-        FTP_PACKET_DATA_OFFSET, // ONLY DATA PACKET
         FTP_PACKET_DATA_LEN,// ONLY DATA PACKET 
         FTP_ATTRIBUTES_NB = FTP_PACKET_DATA_LEN
     };
 
-// #define FTP_SERVER_VERSION_ALIAS    "server_version"
-#define FTP_DATA_TYPE_ALIAS         "ftp_session_data_type" //
-#define FTP_SYST_ALIAS              "ftp_server_system"//
-#define FTP_SESSION_MODE_ALIAS      "ftp_session_mode"// PASSIVE or ACTIVE
-#define FTP_SESSION_STATUS_ALIAS    "ftp_session_status"
+#define FTP_SESSION_CONN_TYPE_ALIAS    "session_connection_type"
+// Control connection
+#define FTP_SERVER_CONT_ADDR_ALIAS  "server_control_addr"
+#define FTP_SERVER_CONT_PORT_ALIAS  "server_control_port"
+#define FTP_CLIENT_CONT_ADDR_ALIAS  "data_control_addr"
+#define FTP_CLIENT_CONT_PORT_ALIAS  "data_control_port"
+// USER ATTRIBUTE
+#define FTP_USERNAME_ALIAS          "user_name"
+#define FTP_PASSWORD_ALIAS          "password"
 #define FTP_SESSION_FEATURES_ALIAS  "session_features"
-// CONNECTION ATTRIBUTES
-#define FTP_SERVER_CONT_PORT_ALIAS  "server_contrl_port"
+#define FTP_SYST_ALIAS              "ftp_server_system"//
+#define FTP_LAST_COMMAND_ALIAS      "last_command"
+#define FTP_LAST_RESPONSE_CODE      "last_response_code"
+// Data connection
+#define FTP_SERVER_DATA_ADDR_ALIAS  "server_data_addr"
 #define FTP_SERVER_DATA_PORT_ALIAS  "server_data_port"
-// #define FTP_SERVER_CONT_ADDR_ALIAS  "server_contrl_addr"
-// #define FTP_SERVER_DATA_ADDR_ALIAS  "server_data_addr"
-#define FTP_CLIENT_CONT_PORT_ALIAS  "data_contrl_port"
-#define FTP_CLIENT_DATA_PORT_ALIAS  "data_data_port"
-// #define FTP_CLIENT_CONT_ADDR_ALIAS  "data_contrl_addr"
-// #define FTP_CLIENT_DATA_ADDR_ALIAS  "data_data_addr"
+#define FTP_CLIENT_DATA_ADDR_ALIAS  "client_data_addr"
+#define FTP_CLIENT_DATA_PORT_ALIAS  "client_data_port"
+#define FTP_DATA_TYPE_ALIAS         "data_type" //
+#define FTP_DATA_TRANSFER_TYPE_ALIAS "transfer_type"
+#define FTP_SESSION_MODE_ALIAS      "ftp_session_mode"// PASSIVE or ACTIVE
 // FILE ATTRIBUTE
 #define FTP_FILE_NAME_ALIAS         "file_name"
 #define FTP_FILE_DIR_ALIAS          "file_dir"
 #define FTP_FILE_SIZE_ALIAS         "file_size"
 #define FTP_FILE_LAST_MODIFIED_ALIAS "file_last_modified"
-// USER ATTRIBUTE
-#define FTP_USERNAME_ALIAS          "user_name"
-#define FTP_PASSWORD_ALIAS          "password"
 /*--- Packet attributes ---*/
 #define FTP_PACKET_TYPE_ALIAS       "packet_type"  // DATA_ALIAS REQUEST_ALIAS RESPONSE
 #define FTP_PACKET_REQUEST_ALIAS    "packet_request"// ONLY REQUEST PACKET
 #define FTP_PACKET_REQUEST_PARAMETER_ALIAS "packet_request_parameter"// ONLY REQUEST PACKET
 #define FTP_PACKET_RESPONSE_CODE_ALIAS "packet_response_code"// ONLY RESPONSE PACKET
 #define FTP_PACKET_RESPONSE_VALUE_ALIAS "packet_reponse_value"// ONLY RESPONSE PACKET
-#define FTP_PACKET_DATA_OFFSET_ALIAS "packet_payload_offset"// ONLY DATA PACKET
 #define FTP_PACKET_DATA_LEN_ALIAS "packet_payload_len"// ONLY DATA PACKET 
 
 #ifdef __cplusplus

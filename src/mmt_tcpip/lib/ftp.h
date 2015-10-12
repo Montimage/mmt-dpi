@@ -16,35 +16,34 @@ extern "C" {
 #include "mmt_core.h"
 
 #define MMT_FTP_TIMEOUT                     10
-#define MMT_FTP_PASSIVE_MODE                2 // Passive mode transfering
-#define MMT_FTP_ACTIVE_MODE                 1 // Active mode transfering
-
-// TYPE OF CONNECTION 
-#define MMT_FTP_CONTROL_CONNECTION          1 // Control connection on ftp server control port 21
-#define MMT_FTP_DATA_CONNECTION             2 // Data connection on ftp server data port
-#define MMT_FTP_NOT_FTP_CONNECTION          3 // Not FTP connection
-
-//////// FTP SESSION STATUS //////
-#define MMT_FTP_STATUS_OPEN                 1 // Detected USER command
-#define MMT_FTP_STATUS_CONTROLING           2 // Detected 203 Login successful
-#define MMT_FTP_STATUS_TRANSFERING          3 // Detected 150 File status ok, about to open data connection
-#define MMT_FTP_STATUS_TRANSFER_COMPLETED   4 // Detected 226 closing data connection - transfer can be completed or fail, abord,...
-#define MMT_FTP_STATUS_FINISHED             5 // Detected 221 Goodbye 
-#define MMT_FTP_STATUS_ERROR                6 // Error
-
-/////// PACKET TYPE //////
-#define MMT_FTP_DATA_PACKET                 1 // FTP-DATA packet, contains only data
-#define MMT_FTP_REQUEST_PACKET              2 // The packet on control connection, be sent from client to server (port 21)
-#define MMT_FTP_RESPONSE_PACKET             3 // The packet on control connection, be sent from server (port 21) to client
-#define MMT_FTP_UNKNOWN_PACKET              4 // It may not from FTP connection
-   
-//static uint32_t ftp_connection_timeout = MMT_FTP_TIMEOUT * MMT_MICRO_IN_SEC;
-
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
 static uint32_t ftp_connection_timeout = MMT_FTP_TIMEOUT * MMT_MICRO_IN_SEC;
+
+// TYPE OF CONNECTION 
+#define MMT_FTP_CONTROL_CONNECTION          1 // Control connection on ftp server control port 21
+#define MMT_FTP_DATA_CONNECTION             2 // Data connection on ftp server data port
+
+//////// DATA TYPE /////
+#define MMT_FTP_DATA_TYPE_FILE              1 // file transfering
+#define MMT_FTP_DATA_TYPE_LIST              2 // Directory listing
+#define MMT_FTP_DATA_TYPE_UNKNOWN           3 // Unknown, not yet classified
+
+// DATA CONNECTION TYPE
+#define MMT_FTP_DATA_PASSIVE_MODE           2 // Passive mode transfering
+#define MMT_FTP_DATA_ACTIVE_MODE            1 // Active mode transfering
+
+/////// PACKET TYPE //////
+#define MMT_FTP_PACKET_DATA                 1 // FTP-DATA packet, contains only data
+#define MMT_FTP_PACKET_COMMAND              2 // The packet on control connection, be sent from client to server (port 21)
+#define MMT_FTP_PACKET_RESPONSE             3 // The packet on control connection, be sent from server (port 21) to client
+
+#define MMT_FTP_PACKET_CLIENT               1 // Packet was sent from client to server
+#define MMT_FTP_PACKET_SERVER               2 // Packet was sent from server to client
+#define MMT_FTP_PACKET_UNKNOWN_DIRECTION    3 // Unknown direction
+
 
 /*
  * these are the commands we tracking and expecting to see to classify as FTP protocol
@@ -154,20 +153,21 @@ enum{
  * A Tuple 4: client_addr:client_port - server_addr:server_port
  */
 
-typedef struct ftp_tuple4_struct{
-    int conn_type; // MMT_FTP_CONTROL_CONNECTION or MMT_FTP_DATA_CONNECTION
+typedef struct ftp_tuple6_struct{
+    uint8_t conn_type; // MMT_FTP_CONTROL_CONNECTION or MMT_FTP_DATA_CONNECTION
+    uint8_t direction;
     uint32_t client_addr;
     uint32_t client_port;
     uint32_t server_addr;
     uint32_t server_port;
-} ftp_tuple4_t;
+} ftp_tuple6_t;
 
 /**
  * FTP command structure: CMD PARAMETER
  */
 typedef struct ftp_command_struct{
     int cmd;
-    char *cmd_str;
+    char *str_cmd;
     char *param;
 }ftp_command_t;
 
@@ -182,66 +182,61 @@ typedef struct ftp_response_struct{
 /**
  * FTP file - the file is going to be transfer
  */
-// typedef struct ftp_file_struct{
-//     char * name;
-//     char * dir;
-//     char * last_modified;
-//     uint32_t size;
-//     void * data;
-// }ftp_file_t;
-
-// typedef struct ftp_user_struct{
-//     char * username;
-//     char * password;
-// }ftp_user_t;
+typedef struct ftp_file_struct{
+    char * name;
+    char * last_modified;
+    uint32_t size;
+}ftp_file_t;
 
 /**
- * A FTP session - for testing
+ * FTP user account to access the data
  */
-typedef struct ftp_session_data_struct{
-    // Tuple 4 for control connection (server_port must be 21)
+typedef struct ftp_user_struct{
+    char * username;
+    char * password;
+}ftp_user_t;
+
+/**
+ * A FTP control session
+ */
+typedef struct ftp_control_session_struct{
     
-    // control connection
-    uint32_t control_client_addr;
-    uint32_t control_server_addr;
-    uint16_t control_client_port;
-    uint16_t control_server_port;
+    ftp_tuple6_t * contl_conn;
 
-    // data connection
-    uint32_t data_client_addr;
-    uint32_t data_server_addr;
-    uint16_t data_client_port;
-    uint16_t data_server_port;
+    ftp_command_t *last_command;
 
-    // file information
-    char *file_dir;
-    char *file_name;
-    char *file_last_modified;
-    uint32_t file_size;
+    ftp_response_t *last_response;
 
-    // user information
-    char *user_name;
-    char *user_password;
+    ftp_user_t *user;
 
-    // General information
-    char * data_type;
-    // FTP version
-    // char * server_version;
     char * session_syst;
-    uint16_t session_mode;// MMT_FTP_ACTIVE_MODE = 0, MMT_FTP_PASSIVE_MODE = 1
-    char *session_feats;
-    uint16_t session_status;// MMT_FTP_STATUS_OPEN - MMT_FTP_STATUS_CONTROLING - MMT_FTP_STATUS_TRANSFERING - MMT_FTP_STATUS_TRANSFER_COMPLETE - MMT_FTP_STATUS_FINISHED
-}ftp_session_data_t;
 
-// struct http_session_data_struct {
-//     int type; /**< indicates if this is a REQUEST or RESPONSE */
-//     char * http_version;
-//     char * requested_uri;
-//     char * http_code_reason;
-//     int http_code;
-//     int http_method;
-//     field_value_t session_field_values[HTTP_HEADERS_NB];
-// };
+    char *session_feats;
+
+    char * current_dir;
+    
+    ftp_data_session_t * current_data_session;
+
+    ftp_control_session_struct *next;
+
+}ftp_control_session_t;
+
+/**
+ * A FTP data session
+ */
+typedef struct ftp_data_session_struct{
+
+    ftp_tuple6_t *data_conn;
+
+    uint8_t data_conn_mode;// MMT_FTP_ACTIVE_MODE = 0, MMT_FTP_PASSIVE_MODE = 1
+
+    char* data_transfer_type; // ASCII, IMAGE, EBCDIC, LOCAL
+
+    uint8_t data_type; // MMT_FTP_DATA_TYPE_FILE, MMT_FTP_DATA_TYPE_LIST, MMT_FTP_DATA_TYPE_UNKNOWN
+
+    ftp_file_t *file;
+}ftp_data_session_t;
+
 
 #ifdef  __cplusplus
 }
