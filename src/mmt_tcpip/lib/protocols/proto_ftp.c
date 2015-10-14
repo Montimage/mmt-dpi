@@ -4,302 +4,6 @@
 #include "../mmt_common_internal_include.h"
 #include "ftp.h"
 
-
-//////////// LUONG NGUYEN - FUNCTION    /////////////////////////
-
-ftp_tuple6_t *ftp_get_tuple6(ipacket_t * ipacket,unsigned int){
-    ftp_tuple6_t *t6;
-    t6 = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
-    if(ipacket->internal_packet->tcp&&ipacket->internal_packet->iph){
-        if(ipacket->internal_packet->tcp->source == htons(21)){
-            t6->conn_type = MMT_FTP_CONTROL_CONNECTION;
-            t6->direction = MMT_FTP_PACKET_SERVER;
-            t6->s_addr = ipacket->internal_packet->iph->saddr;
-            t6->s_port = ipacket->internal_packet->tcp->source;
-            t6->c_addr = ipacket->internal_packet->tcp->daddr;
-            t6->c_port = ipacket->internal_packet->tcp->dest;
-            return t6;
-        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
-            t6->connt_type=MMT_FTP_CONTROL_CONNECTION;
-            t6->direction = MMT_FTP_PACKET_CLIENT;
-            t6->s_addr = ipacket->internal_packet->iph->daddr;
-            t6->s_port = ipacket->internal_packet->tcp->dest;
-            t6->c_addr = ipacket->internal_packet->tcp->saddr;
-            t6->c_port = ipacket->internal_packet->tcp->source;
-            return t6;
-        }else{
-            t6->connt_type=MMT_FTP_DATA_CONNECTION;
-            t6->direction = MMT_FTP_PACKET_UNKNOWN_DIRECTION;
-            t6->s_addr = ipacket->internal_packet->iph->saddr;
-            t6->s_port = ipacket->internal_packet->tcp->source;
-            t6->c_addr = ipacket->internal_packet->tcp->daddr;
-            t6->c_port = ipacket->internal_packet->tcp->dest;
-            return t6;
-        }
-    }
-}
-
-/**
- * New FTP tuple6
- * @return new ftp tuple 6
- */
-ftp_tuple6_t * ftp_new_tuple6(){
-    ftp_tuple6_t * t = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
-    t->conn_type = 0;
-    t->direction = 0;
-    t->s_addr = 0;
-    t->s_port = 0;
-    t->c_addr = 0;
-    t->c_port = 0;
-    return t;
-}
-
-/**
- * New FTP user
- * @return new ftp user
- */
-ftp_user_t *ftp_new_user(){
-    file_user_t *user = (ftp_user_t*)malloc(sizeof(ftp_user_t));
-    user->username = NULL;
-    user->password = NULL;
-    return user;
-}
-
-/**
- * New ftp file transfering
- * @return file
- */
-ftp_file_t * ftp_new_file(){
-    ftp_file_t * file = (ftp_file_t*)malloc(sizeof(ftp_file_t));
-    file->file_name = NULL;
-    file->file_size = 0;
-    file->file_last_modified = NULL;
-    return file;
-}
-
-/**
- * New data connection
- * @return a new data connection 
- */
-ftp_data_session_t * ftp_new_data_connection(){
-    ftp_data_session_t * ftp_data;
-    ftp_data = (ftp_data_session_t*)malloc(sizeof(ftp_data_session_t));
-    ftp_data->data_conn = NULL;
-    ftp_data->data_conn_mode = 0;
-    ftp_data->data_transfer_type = NULL;
-    ftp_data->data_type = 0;
-    ftp_data->file = ftp_new_file();
-    return ftp_data;
-}
-
-/**
- * Create new ftp control session
- * @param  tuple6 control connection tuple6
- * @return        a ftp control connection
- */
-ftp_control_session_t * ftp_new_control_session(ftp_tuple6_t tuple6){
-    ftp_control_session_t * ftp_control; 
-    ftp_control = (ftp_control_session_t*)malloc(sizeof(ftp_control_session_t));
-    ftp_control->contrl_conn = tuple6;
-    ftp_control->last_command = NULL;
-    ftp_control->last_response = NULL;
-    ftp_control->user = NULL;
-    ftp_control->session_feats = NULL;
-    ftp_control->session_syst = NULL;
-    ftp_control->current_dir = NULL;
-    ftp_control->current_data_conn = ftp_new_data_connection();
-    return ftp_control;
-}
-
-
-/**
-* Compare 2 ftp tuple 6
-* @param  t1 the first tuple
-* @param  t2 The second tuple
-* @return    1 if two tuples are MMT_FTP_CONTROL_CONNECTION and equal (do not care about the direction)
-*            2 if two tuples are MMT_FTP_DATA_CONNECTION and equal and same direction
-*            3 if two tuples are MMT_FTP_DATA_CONNECTION and equal and different direction - convert direction of t1
-*            4 if the client_port of data connection is NULL and the other are equal (same direction)
-*            5 if the client_port of data connection is NULL and the other are equal (different direction) - convert direction of t1
-*            0 otherwise
-*/
-int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2){
-
-    if(t1->conn_type != t2->conn_type) return 0;
-
-    if(t1->conn_type == MMT_FTP_CONTROL_CONNECTION){
-        if(t1->client_addr != t2->client_addr) return 0;
-
-        if(t1->server_addr != t2->server_addr) return 0;
-
-        if(t1->client_port != t2->client_port) return 0;
-
-        if(t1->server_port != t2->server_port) return 0;
-        return 1;
-    }else{
-        if(t1->client_addr == t2->client_addr && t1->client_port == t2->client_port && t1->server_addr == t2->server_addr && t1->server_port== t2->server_port) return 2;
-        if(t1->client_addr == t2->server_addr && t1->client_port == t2->server_port && t1->server_addr == t2->client_addr && t1->server_port== t2->client_port) return 3;
-        if(t1->client_addr == t2->client_addr && t2->client_port == NULL && t1->server_addr == t2->server_addr && t1->server_port== t2->server_port) return 4;
-        if(t1->client_addr == t2->server_addr && t2->client_port == NULL && t1->server_addr == t2->client_addr && t1->server_port== t2->client_port) return 5;
-        return 0;
-    }
-
-    return 0;
-}
-
-/**
- * Set direction for a tuple6
- * @param tuple6 tuple6 to set direction
- * @param conn   tuple6 with correct direction
- */
-void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6,ftp_tuple6_t *conn, int compare){
-    switch(compare){
-        case 0:
-        fprintf(stderr, "FTP: Not correct control connection\n", );
-        return MMT_CONTINUE;
-        case 2:
-        tuple6->direction = conn->direction;
-        break;
-        case 3:
-        if(conn->direction == MMT_FTP_PACKET_SERVER){
-            tuple6->direction = MMT_FTP_PACKET_CLIENT;
-        }else if(conn->direction == MMT_FTP_PACKET_CLIENT){
-            tuple6->direction = MMT_FTP_PACKET_SERVER;
-        }
-        break;
-        case 4:
-        tuple6->direction = conn->direction;
-        conn->c_port = tuple6->c_port;
-        break;
-        case 5:
-        conn->c_port = tuple6->s_port;
-        if(conn->direction == MMT_FTP_PACKET_SERVER){
-            tuple6->direction = MMT_FTP_PACKET_CLIENT;
-        }else if(conn->direction == MMT_FTP_PACKET_CLIENT){
-            tuple6->direction = MMT_FTP_PACKET_SERVER;
-        }
-        break;
-    }
-}
-
-/**
- * Check if a packet belongs to a control connection which is identified by server port number 21
- * @param  ipacket packet to check
- * @return         1 if the packet belongs to a control connection
- *                 2 if the packet doesn't belong to a control connection
- */
-int ftp_check_control_packet(ipacket_t *ipacket){
-    if(ipacket->internal_packet->tcp){
-        return (ipacket->internal_packet->tcp->source==htons(21)||ipacket->internal_packet->tcp->dest==htons(21));    
-    }
-    return 0;
-}
-
-/**
- * Get FTP packet type by port number
- * @param  ipacket packet to analyse
- * @param  index   index of protocol
- * @return         MMT_FTP_RESPONSE_PACKET if this is the packet of server send to client on server control port 21
- *                 MMT_FTP_REQUEST_PACKET if this is the packet of client send to server on server control port 21
- *                 MMT_FTP_DATA_PACKET if this is the packet of server send to client on server data port
- *                 MMT_FTP_UNKNOWN_TYPE_PACKET don't know what is this
- */
-int ftp_get_packet_type_by_port_number(ipacket_t *ipacket,unsigned index){
-    if(ipacket->internal_packet->tcp){
-        if(ipacket->internal_packet->tcp->source == htons(21)){
-            return MMT_FTP_RESPONSE_PACKET;
-        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
-            return MMT_FTP_REQUEST_PACKET;
-        }else{
-            ftp_session_data_t *ftp_session_data = (ftp_session_data_t*)ipacket->session->session_data[index];
-            
-            if(ftp_session_data==NULL){
-                // Maybe first data packet
-                if((ftp_session_data_t*)ipacket->session->next){
-                    ftp_session_data = (ftp_session_data_t*)ipacket->session->next->session_data[index];
-                }
-            }
-
-            if(ftp_session_data!=NULL&&ftp_session_data->data_server_port){
-                if(ftp_session_data->data_server_port==ipacket->internal_packet->tcp->source||ftp_session_data->data_server_port==ipacket->internal_packet->tcp->dest){
-                    return MMT_FTP_DATA_PACKET;
-                }
-            }
-        }
-    }
-    return MMT_FTP_UNKNOWN_PACKET;
-}
-/**
- * Extract value from a string
- * @param  str         string to get value
- * @param  begin       begin substring
- * @param  payload_len payload len
- * @return             value
- */
-char * str_subend(char *payload, char* begin,int payload_len){
-    if(payload != NULL && begin !=NULL){
-        // if(strstr(begin,(char*)str)==NULL) return NULL;
-        int len;
-        len = payload_len - strlen(begin)-2;
-        char *ret;
-        ret = (char * )malloc(len+1);
-        memcpy(ret,payload+strlen(begin),len);
-        ret[len]='\0';
-        return ret;
-    }
-    return NULL;
-}
-
-char * str_add_features(char *array,char *payload,int payload_len){
-    if(payload == NULL) return 0;
-    char *new_feature;
-    new_feature = (char*)malloc(payload_len-1);
-    memcpy(new_feature,payload,payload_len-2);
-    new_feature[payload_len-2] ='\0';
-    if(array==NULL){
-        array = new_feature;
-    }else{
-        int newLen = strlen(array)+strlen(new_feature)+2;
-        array = realloc(array,newLen);
-        strcat(array,":");
-        strcat(array,new_feature);
-        array[strlen(array)]='\0';
-    }
-    return array;
-}
-
-char * str_subvalue(char *str, char* begin, char * end){
-    if(str != NULL && begin !=NULL && end != NULL){
-        char *fromBegin;
-        fromBegin = (char*)malloc(sizeof(str));
-
-        fromBegin = strstr(str,begin);
-        fromBegin = fromBegin + strlen(begin);
-
-        if(fromBegin == NULL){
-            return NULL;
-        }else{
-            char * endOfLine;
-            endOfLine = (char*)malloc(sizeof(fromBegin));
-
-            endOfLine = strstr(fromBegin,end);
-
-            if(endOfLine == NULL){
-                return NULL;
-            }else{
-                int len;
-                len = strlen(fromBegin)-strlen(endOfLine);
-                char *ret;
-                ret = (char * )malloc((len+1)*sizeof(char));
-                strncpy(ret,fromBegin,len);
-                ret[len]='\0';
-                return ret;
-            }
-
-        }
-    }
-    return NULL;
-}
 //////////// LUONG NGUYEN - END OF FUNCTION    /////////////////////////
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static void mmt_int_ftp_add_connection(ipacket_t * ipacket) {
@@ -307,308 +11,12 @@ static void mmt_int_ftp_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_FTP, MMT_REAL_PROTOCOL);
 }
 
-/**
- * checks for possible FTP command
- * not all valid commands are tested, it just need to be 3 or 4 characters followed by a space if the
- * packet is longer
- *
- * this functions is not used to accept, just to not reject
- */
-static uint8_t mmt_int_check_possible_ftp_command(char *payload , int payload_len) {
-    if (payload_len < 3)
-        return 0;
-
-    if ((payload[0] < 'a' || payload[0] > 'z') &&
-            (payload[0] < 'A' || payload[0] > 'Z'))
-        return 0;
-    if ((payload[1] < 'a' || payload[1] > 'z') &&
-            (payload[1] < 'A' || payload[1] > 'Z'))
-        return 0;
-    if ((payload[2] < 'a' || payload[2] > 'z') &&
-            (payload[2] < 'A' || payload[2] > 'Z'))
-        return 0;
-
-    if (payload_len > 3) {
-        if ((payload[3] < 'a' || payload[3] > 'z') &&
-                (payload[3] < 'A' || payload[3] > 'Z') && payload[3] != ' ')
-            return 0;
-
-        if (payload_len > 4) {
-            if (payload[3] != ' ' && payload[4] != ' ')
-                return 0;
-        }
-    }
-
-    return 1;
-}
-
-/**
- * ftp replies are are 3-digit number followed by space or hyphen
- */
-static uint8_t mmt_int_check_possible_ftp_reply(char *payload , int payload_len) {
-    if (payload_len < 5)
-        return 0;
-
-    if (payload[3] != ' ' && payload[3] != '-')
-        return 0;
-
-    if (payload[0] < '0' || payload[0] > '9')
-        return 0;
-    if (payload[1] < '0' || payload[1] > '9')
-        return 0;
-    if (payload[2] < '0' || payload[2] > '9')
-        return 0;
-
-    return 1;
-}
-
-/**
- * check for continuation replies
- * there is no real indication whether it is a continuation message, we just
- * require that there are at least 5 ascii characters
- */
-static uint8_t mmt_int_check_possible_ftp_continuation_reply(char *payload , int payload_len) {
-    uint16_t i;
-
-    if (payload_len< 5)
-        return 0;
-
-    for (i = 0; i < 5; i++) {
-        if (payload[i] < ' ' || payload[i] > 127)
-            return 0;
-    }
-
-    return 1;
-}
-/**
- * extract FTP command
- * @param  payload     payload contains the command
- * @param  payload_len payload len
- * @return             FTP command
- */
- ftp_command_t * ftp_get_command(char* payload,int payload_len){
-    ftp_command_t *cmd;
-    cmd = (ftp_command_t*)malloc(sizeof(ftp_command_t));
-    if (payload_len > MMT_STATICSTRING_LEN("RETR ") &&
-        (memcmp(payload, "RETR ", MMT_STATICSTRING_LEN("RETR ")) == 0 ||
-            memcmp(payload, "retr ", MMT_STATICSTRING_LEN("retr ")) == 0)) {
-        cmd->cmd_str="RETR";
-        cmd->cmd = MMT_FTP_RETR_CMD;
-        cmd->param = str_subend(payload,"RETR ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("USER ") &&
-        (memcmp(payload, "USER ", MMT_STATICSTRING_LEN("USER ")) == 0 ||
-            memcmp(payload, "user ", MMT_STATICSTRING_LEN("user ")) == 0)) {
-        cmd->cmd_str="USER";
-        cmd->cmd = MMT_FTP_USER_CMD;
-        cmd->param = str_subend(payload,"USER ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("PASS ") &&
-        (memcmp(payload, "PASS ", MMT_STATICSTRING_LEN("PASS ")) == 0 ||
-            memcmp(payload, "pass ", MMT_STATICSTRING_LEN("pass ")) == 0)) {
-        cmd->cmd_str="PASS";
-        cmd->cmd = MMT_FTP_PASS_CMD;
-        cmd->param = str_subend(payload,"PASS ",payload_len);
-    } else if (payload_len > MMT_STATICSTRING_LEN("SYST ") &&
-        (memcmp(payload, "SYST ", MMT_STATICSTRING_LEN("SYST ")) == 0 ||
-            memcmp(payload, "syst ", MMT_STATICSTRING_LEN("syst ")) == 0)) {
-        cmd->cmd_str="SYST";
-        cmd->cmd = MMT_FTP_SYST_CMD;
-        cmd->param=NULL;
-        // cmd->param = str_subend(payload,"SYST ",payload_len);
-    } else if (payload_len > MMT_STATICSTRING_LEN("PWD ") &&
-        (memcmp(payload, "PWD ", MMT_STATICSTRING_LEN("PWD ")) == 0 ||
-            memcmp(payload, "pwd ", MMT_STATICSTRING_LEN("pwd ")) == 0)) {
-        cmd->cmd_str="PWD";
-        cmd->cmd = MMT_FTP_PWD_CMD;
-        cmd->param=NULL;
-        // cmd->param = str_subend(payload,"PWD ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("TYPE ") &&
-        (memcmp(payload, "TYPE ", MMT_STATICSTRING_LEN("TYPE ")) == 0 ||
-            memcmp(payload, "type ", MMT_STATICSTRING_LEN("type ")) == 0)) {
-        cmd->cmd_str="TYPE";
-        cmd->cmd = MMT_FTP_TYPE_CMD;
-        cmd->param = str_subend(payload,"TYPE ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("CWD ") &&
-        (memcmp(payload, "CWD ", MMT_STATICSTRING_LEN("CWD ")) == 0 ||
-            memcmp(payload, "cwd ", MMT_STATICSTRING_LEN("cwd ")) == 0)) {
-        cmd->cmd_str="CWD";
-        cmd->cmd = MMT_FTP_CWD_CMD;
-        cmd->param=NULL;
-        // cmd->param = str_subend(payload,"CWD ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("SIZE ") &&
-        (memcmp(payload, "SIZE ", MMT_STATICSTRING_LEN("SIZE ")) == 0 ||
-            memcmp(payload, "size ", MMT_STATICSTRING_LEN("size ")) == 0)) {
-        cmd->cmd_str="SIZE";
-        cmd->cmd = MMT_FTP_SIZE_CMD;
-        cmd->param = str_subend(payload,"SIZE ",payload_len);
-    }else if (payload_len > MMT_STATICSTRING_LEN("EPSV ") &&
-        (memcmp(payload, "EPSV ", MMT_STATICSTRING_LEN("EPSV ")) == 0 ||
-            memcmp(payload, "epsv ", MMT_STATICSTRING_LEN("epsv ")) == 0)) {
-        cmd->cmd_str="EPSV";
-        cmd->cmd = MMT_FTP_EPSV_CMD;
-        cmd->param=NULL;
-        // cmd->param = str_subend(payload,"EPSV ",payload_len);
-    }else if (payload_len >= MMT_STATICSTRING_LEN("FEAT") &&
-        (memcmp(payload, "FEAT", MMT_STATICSTRING_LEN("FEAT")) == 0 ||
-            memcmp(payload, "feat", MMT_STATICSTRING_LEN("feat")) == 0)) {
-        cmd->cmd_str="FEAT";
-        cmd->cmd = MMT_FTP_FEAT_CMD;
-        cmd->param=NULL;
-        // cmd->param = str_subend(payload,"FEAT",payload_len);
-    }else if (payload_len >= MMT_STATICSTRING_LEN("MDTM ") &&
-        (memcmp(payload, "MDTM ", MMT_STATICSTRING_LEN("MDTM ")) == 0 ||
-            memcmp(payload, "mdtm ", MMT_STATICSTRING_LEN("mdtm ")) == 0)) {
-        cmd->cmd_str="MDTM";
-        cmd->cmd = MMT_FTP_MDTM_CMD;
-        cmd->param = str_subend(payload,"MDTM ",payload_len);
-    }else{
-        cmd->cmd_str="UNKNOWN_CMD";
-        cmd->cmd = MMT_FTP_UNKNOWN_CMD;
-        cmd->param = payload;
-    }
-    return cmd;
-}
-
-
-/**
- * Get response code from a reponse packet
- * @param  payload     payload of packet
- * @param  payload_len payload len of packet
- * @return             a ftp response code: code + value
- */
- ftp_response_t * ftp_get_response(char* payload,int payload_len){
-    ftp_response_t * res;
-    res = (ftp_response_t*)malloc(sizeof(ftp_response_t));
-    if (payload_len > MMT_STATICSTRING_LEN("150 ") &&
-        (memcmp(payload, "150 ", MMT_STATICSTRING_LEN("150 ")) == 0 ||
-            memcmp(payload, "150-", MMT_STATICSTRING_LEN("150-")) == 0)) {
-        res->code = MMT_FTP_150_CODE;
-        res->value = NULL;
-    }else if (payload_len > MMT_STATICSTRING_LEN("220 ") &&
-        (memcmp(payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
-            memcmp(payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
-        res->code = MMT_FTP_220_CODE;
-        char *ver = str_subend(payload,"220 ",payload_len);
-        if(ver == NULL){
-            ver = str_subend(payload,"220-",payload_len);
-        }
-        res->value = ver;
-
-    }else if (payload_len > MMT_STATICSTRING_LEN("230 ") &&
-        (memcmp(payload, "230 ", MMT_STATICSTRING_LEN("230 ")) == 0 ||
-            memcmp(payload, "230-", MMT_STATICSTRING_LEN("230-")) == 0)) {
-        res->code = MMT_FTP_230_CODE;
-        char *val = str_subend(payload,"230 ",payload_len);
-        if(val == NULL){
-            val = str_subend(payload,"230-",payload_len);
-        }
-        res->value =val;
-    }else if (payload_len > MMT_STATICSTRING_LEN("215 ") &&
-        (memcmp(payload, "215 ", MMT_STATICSTRING_LEN("215 ")) == 0 ||
-            memcmp(payload, "215-", MMT_STATICSTRING_LEN("215-")) == 0)) {
-        res->code = MMT_FTP_215_CODE;
-        char *s = str_subend(payload,"215 ",payload_len);
-        if(s == NULL){
-            s = str_subend(payload,"215-",payload_len);
-        }
-        res->value =s;
-    }else if (payload_len > MMT_STATICSTRING_LEN("229 ") &&
-        (memcmp(payload, "229 ", MMT_STATICSTRING_LEN("229 ")) == 0 ||
-            memcmp(payload, "229-", MMT_STATICSTRING_LEN("229-")) == 0)) {
-        res->code = MMT_FTP_229_CODE;
-
-        char *em = str_subend(payload,"229 ",payload_len);
-        if(em == NULL){
-            em = str_subend(payload,"229-",payload_len);
-        }
-        res->value = em;
-    }else if (payload_len > MMT_STATICSTRING_LEN("213 ") &&
-        (memcmp(payload, "213 ", MMT_STATICSTRING_LEN("213 ")) == 0 ||
-            memcmp(payload, "213-", MMT_STATICSTRING_LEN("213-")) == 0)) {
-        res->code = MMT_FTP_213_CODE;
-        char *em = str_subend(payload,"213 ",payload_len);
-        if(em == NULL){
-            em = str_subend(payload,"213-",payload_len);
-        }
-        res->value = em;
-    }else if (payload_len > MMT_STATICSTRING_LEN("257 ") &&
-        (memcmp(payload, "257 ", MMT_STATICSTRING_LEN("257 ")) == 0 ||
-            memcmp(payload, "257-", MMT_STATICSTRING_LEN("257-")) == 0)) {
-        res->code = MMT_FTP_257_CODE;
-        char *dir = str_subend(payload,"257 ",payload_len);
-        if(dir == NULL){
-            dir = str_subend(payload,"257-",payload_len);
-        }
-        res->value = dir;
-    }else if (payload_len > MMT_STATICSTRING_LEN("250 ") &&
-        (memcmp(payload, "250 ", MMT_STATICSTRING_LEN("250 ")) == 0 ||
-            memcmp(payload, "250-", MMT_STATICSTRING_LEN("250-")) == 0)) {
-        res->code = MMT_FTP_250_CODE;
-        char *val = str_subend(payload,"250 ",payload_len);
-        if(val == NULL){
-            val = str_subend(payload,"250-",payload_len);
-        }
-        res->value =val;
-    }else if (payload_len > MMT_STATICSTRING_LEN("200 ") &&
-        (memcmp(payload, "200 ", MMT_STATICSTRING_LEN("200 ")) == 0 ||
-            memcmp(payload, "200-", MMT_STATICSTRING_LEN("200-")) == 0)) {
-        res->code = MMT_FTP_200_CODE;
-        char *val = str_subend(payload,"200 ",payload_len);
-        if(val == NULL){
-            val = str_subend(payload,"200-",payload_len);
-        }
-        res->value =val;
-    }else if (payload_len > MMT_STATICSTRING_LEN("331 ") &&
-        (memcmp(payload, "331 ", MMT_STATICSTRING_LEN("331 ")) == 0 ||
-            memcmp(payload, "331-", MMT_STATICSTRING_LEN("331-")) == 0)) {
-        res->code = MMT_FTP_331_CODE;
-        char *val = str_subend(payload,"331 ",payload_len);
-        if(val == NULL){
-            val = str_subend(payload,"331-",payload_len);
-        }
-        res->value =val;
-    }else if (payload_len > MMT_STATICSTRING_LEN("226 ") &&
-        (memcmp(payload, "226 ", MMT_STATICSTRING_LEN("226 ")) == 0 ||
-            memcmp(payload, "226-", MMT_STATICSTRING_LEN("226-")) == 0)) {
-        res->code = MMT_FTP_331_CODE;
-        char *val = str_subend(payload,"226 ",payload_len);
-        if(val == NULL){
-            val = str_subend(payload,"226-",payload_len);
-        }
-        res->value =val;
-    }else if (payload_len > MMT_STATICSTRING_LEN("211 ") &&
-        (memcmp(payload, "211 ", MMT_STATICSTRING_LEN("211 ")) == 0 ||
-            memcmp(payload, "211-", MMT_STATICSTRING_LEN("211-")) == 0)) {
-        res->code = MMT_FTP_211_CODE;
-        char *val = str_subend(payload,"211 ",payload_len);
-        if(val == NULL){
-            val = str_subend(payload,"211-",payload_len);
-        }
-        res->value =val;
-    }else if (!mmt_int_check_possible_ftp_reply(payload, payload_len)) {
-        if (mmt_int_check_possible_ftp_continuation_reply(payload, payload_len)) {
-            res->code = MMT_FTP_CONTINUE_CODE;
-            res->value = payload;
-        }else{
-            res->code = MMT_FTP_UNKNOWN_CODE;
-            res->value = payload;
-        }
-    }else{
-        res->code = MMT_FTP_UNKNOWN_CODE;
-        res->value = payload;
-    }
-    return res;
-}
-
-
 /*
   return 0 if nothing has been detected
   return 1 if a pop packet
  */
 
 static uint8_t search_ftp(ipacket_t * ipacket) {
-    
-
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     uint8_t current_ftp_code = 0;
@@ -997,139 +405,154 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
 
 
 ////////////////////// SESSION ATTRIBUTE EXTRACTION ///////////////////////
-int ftp_data_type_extraction(const ipacket_t * packet, unsigned proto_index,
+int ftp_session_conn_type_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->data_type!=NULL){
-        extracted_data->data = (void*)ftp_session_data->data_type;
-        log_info("FTP: ftp_data_type: %s",(char*)extracted_data->data);
-        return 1;
-    }
-    return 0;
-}
+    ftp_tuple6_t *t6;
 
-int ftp_session_mode_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->session_mode!=0){
-        extracted_data->data = (uint16_t*)&ftp_session_data->session_mode;
-        log_info("FTP: ftp_session_mode: %d",*(short*)extracted_data->data);
-        return 1;
+    t6 = ftp_get_tuple6(packet);
+
+    if(t6){
+        extracted_data->data = (void*)t6->conn_type;
+        return 1;   
     }
+    
     return 0;
 }
 
 
-int ftp_file_name_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->file_name!=NULL){
-        extracted_data->data = (void*)ftp_session_data->file_name;
-        log_info("FTP: file_name: %s",(char*)extracted_data->data);
-        return 1;
-    }
+int ftp_server_contrl_addr_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+
     return 0;
 }
 
-int ftp_file_dir_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->file_dir!=NULL){
-        extracted_data->data = (void*)ftp_session_data->file_dir;
-        log_info("FTP: file_dir: %s",(char*)extracted_data->data);
-        return 1;
-    }
+int ftp_server_contrl_port_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
     return 0;
 }
 
-int ftp_file_size_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->file_size!=0){
-        extracted_data->data = (uint32_t*)&ftp_session_data->file_size;
-        log_info("FTP: file_size: %d",*(int*)extracted_data->data);
-        return 1;
-    }
+int ftp_client_contrl_addr_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+
     return 0;
 }
 
-int ftp_file_last_modified_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->file_last_modified!=NULL){
-        extracted_data->data = (void*)ftp_session_data->file_last_modified;
-        log_info("FTP: file_last_modified: %s",(char*)extracted_data->data);
-        return 1;
-    }
-    return 0;
-}
-
-int ftp_status_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->session_status!=0){
-        extracted_data->data = (uint16_t*)&ftp_session_data->session_status;
-        log_info("FTP: session status: %d",*(short*)extracted_data->data);
-        return 1;
-    }
-    return 0;
-}
-
-int ftp_features_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->session_feats!=NULL){
-        extracted_data->data = (void*)ftp_session_data->session_feats;
-        log_info("FTP: session features: %s",(char*)extracted_data->data);
-        return 1;
-    }
+int ftp_client_contrl_port_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
     return 0;
 }
 
 int ftp_username_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->user_name!=NULL){
-        extracted_data->data = (void*)ftp_session_data->user_name;
-        log_info("FTP: session username: %s",(char*)extracted_data->data);
-        return 1;
-    }
+    
     return 0;
 }
 
 int ftp_password_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
-    ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-    if(ftp_session_data!=NULL&&ftp_session_data->user_password!=NULL){
-        extracted_data->data = (void*)ftp_session_data->user_password;
-        log_info("FTP: session password: %s",(char*)extracted_data->data);
-        return 1;
-    }
+    
     return 0;
 }
 
-// int ftp_client_data_port_extraction(const ipacket_t * packet, unsigned proto_index,
-//         attribute_t * extracted_data) {
-//     ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-//     if(ftp_session_data!=NULL&&ftp_session_data->data_client_port!=0){
-//         extracted_data->data = (uint16_t*)&ftp_session_data->data_client_port;
-//         log_info("FTP: Data client port: %d",*(short*)extracted_data->data);
-//         return 1;
-//     }
-//     return 0;
-// }
+int ftp_features_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    return 0;
+}
+
+int ftp_status_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    return 0;
+}
+
+int ftp_syst_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    return 0;
+}
+
+int ftp_last_command_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    return 0;
+}
+
+int ftp_last_response_code_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    return 0;
+}
+
+int ftp_current_dir_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    return 0;
+}
+
+int ftp_server_data_addr_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+
+    return 0;
+}
+
+int ftp_server_data_port_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+    return 0;
+}
+
+int ftp_client_data_addr_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+
+    return 0;
+}
+
+int ftp_client_data_port_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+    return 0;
+}
+
+int ftp_data_type_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+    return 0;
+}
+
+int ftp_data_transfer_type_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+    return 0;
+}
+
+int ftp_data_mode_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+    return 0;
+}
+
+int ftp_data_direction_extraction(onst ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data){
+    return 0;
+}
 
 
-// int ftp_server_data_port_extraction(const ipacket_t * packet, unsigned proto_index,
-//         attribute_t * extracted_data) {
-//     ftp_session_data_t* ftp_session_data = (ftp_session_data_t*)packet->session->session_data[proto_index];
-//     if(ftp_session_data!=NULL&&ftp_session_data->data_server_port!=0){
-//         extracted_data->data = (uint16_t*)&ftp_session_data->data_server_port;
-//         log_info("FTP: Data server port: %d",*(short*)extracted_data->data);
-//         return 1;
-//     }
-//     return 0;
-// }
+
+int ftp_file_name_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    return 0;
+}
+
+
+int ftp_file_size_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    return 0;
+}
+
+int ftp_file_last_modified_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    
+    return 0;
+}
+
+
 ////////////////////// PACKET ATTRIBUTE EXTRACTION ///////////////////////
 int ftp_packet_type_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
@@ -1154,7 +577,7 @@ int ftp_packet_request_extraction(const ipacket_t * packet, unsigned proto_index
         ftp_command_t * cmd = ftp_get_command(payload,payload_len);
         if(cmd->cmd!=MMT_FTP_UNKNOWN_CMD){
             log_info("FTP: packet_request %d in packet: %lu\n", cmd->cmd,packet->packet_id);
-            extracted_data->data = (void*)cmd->cmd_str;
+            extracted_data->data = (void*)cmd->str_cmd;
             return 1;      
         }
     }
@@ -1215,17 +638,6 @@ int ftp_packet_response_value_extraction(const ipacket_t * packet, unsigned prot
     return 0;
 }
 
-// int ftp_packet_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
-//         attribute_t * extracted_data) {
-    
-//     int packet_type = ftp_get_packet_type_by_port_number((ipacket_t*)packet,proto_index);
-//     if(packet_type==MMT_FTP_DATA_PACKET){
-//         int offset = get_packet_offset_at_index(packet, proto_index);
-//         extracted_data->data = (int*)&offset;
-//     }
-//     return 0;
-// }
-
 int ftp_packet_data_len_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
     
@@ -1238,52 +650,45 @@ int ftp_packet_data_len_extraction(const ipacket_t * packet, unsigned proto_inde
     return 0;
 }
 
-
-
-
 static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
-    // SCOPE_SESSION
-    // {FTP_SERVER_VERSION,FTP_SERVER_VERSION_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_version_extraction},
-    {FTP_DATA_TYPE,FTP_DATA_TYPE_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_type_extraction},
-    {FTP_SESSION_MODE,FTP_SESSION_MODE_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_session_mode_extraction},
-    {FTP_SESSION_STATUS,FTP_SESSION_STATUS_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_status_extraction},
+    ////////////// SESSION ATTRIBUTES //////////////////////////////
+    /// FTP CONTROL CONNECTION SESSION ATTRIBUTES ///
+    {FTP_SESSION_CONN_TYPE,FTP_SESSION_CONN_TYPE_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_session_conn_type_extraction},
+    {FTP_SERVER_CONT_ADDR,FTP_SERVER_CONT_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_contrl_addr_extraction},
+    {FTP_SERVER_CONT_PORT,FTP_SERVER_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_contrl_port_extraction},
+    {FTP_CLIENT_CONT_PORT,FTP_CLIENT_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_port_extraction},
+    {FTP_CLIENT_CONT_ADDR,FTP_CLIENT_CONT_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_addr_extraction},
+    {FTP_SESSION_USERNAME,FTP_SESSION_USERNAME_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_username_extraction},
+    {FTP_SESSION_PASSWORD,FTP_SESSION_PASSWORD_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_password_extraction},
     {FTP_SESSION_FEATURES,FTP_SESSION_FEATURES_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_features_extraction},
-    {FTP_USERNAME,FTP_USERNAME_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_username_extraction},
-    {FTP_PASSWORD,FTP_PASSWORD_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_password_extraction},
-    // {FTP_EEMPM_229,FTP_EEMPM_229_ALIAS,MMT_STRING_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_eempm_229_extraction},
-    // {FTP_SERVER_CONT_PORT,FTP_SERVER_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_contrl_port_extraction},
-    // {FTP_CLIENT_CONT_PORT,FTP_CLIENT_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_port_extraction},
-    // {FTP_SERVER_DATA_PORT,FTP_SERVER_DATA_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_data_port_extraction},
-    // {FTP_CLIENT_DATA_PORT,FTP_CLIENT_DATA_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_port_extraction},
-    // {FTP_SERVER_CONT_ADDR,FTP_SERVER_CONT_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_contrl_addr_extraction},
-    // {FTP_CLIENT_CONT_ADDR,FTP_CLIENT_CONT_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_addr_extraction},
-    // {FTP_SERVER_DATA_ADDR,FTP_SERVER_DATA_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_data_addr_extraction},
-    // {FTP_CLIENT_DATA_ADDR,FTP_CLIENT_DATA_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_addr_extraction},
+    {FTP_SYST,FTP_SYST_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_syst_extraction},
+    {FTP_SESSION_STATUS,FTP_SESSION_STATUS_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_status_extraction},
+    {FTP_LAST_COMMAND,FTP_LAST_COMMAND_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_last_command_extraction},
+    {FTP_LAST_RESPONSE_CODE,FTP_LAST_RESPONSE_CODE_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_last_response_code_extraction},
+    {FTP_CURRENT_DIR,FTP_CURRENT_DIR_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_current_dir_extraction},
+    /// CURRENT FTP DATA CONNECTION SESSION ATTRIBUTES ///
+    {FTP_SERVER_DATA_ADDR,FTP_SERVER_DATA_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_data_addr_extraction},
+    {FTP_SERVER_DATA_PORT,FTP_SERVER_DATA_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_data_port_extraction},
+    {FTP_CLIENT_DATA_ADDR,FTP_CLIENT_DATA_PORT_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_addr_extraction},
+    {FTP_CLIENT_DATA_PORT,FTP_CLIENT_DATA_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_port_extraction},
+    {FTP_DATA_TYPE,FTP_DATA_TYPE_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_type_extraction},
+    {FTP_DATA_TRANSFER_TYPE,FTP_DATA_TRANSFER_TYPE_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_transfer_type_extraction},
+    {FTP_DATA_MODE,FTP_DATA_MODE_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_mode_extraction},
+    {FTP_DATA_DIRECTION,FTP_DATA_DIRECTION_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_direction_extraction},
+    /// CURRENT FTP FILE ATTRIBUTES ///
     {FTP_FILE_NAME,FTP_FILE_NAME_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_name_extraction},
-    {FTP_FILE_DIR,FTP_FILE_DIR_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_dir_extraction},
     {FTP_FILE_SIZE,FTP_FILE_SIZE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_size_extraction},
     {FTP_FILE_LAST_MODIFIED,FTP_FILE_LAST_MODIFIED_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_file_last_modified_extraction},
-
-    // // SCOPE_PACKET
+    ////////////// PACKET ATTRIBUTES //////////////////////////////
     {FTP_PACKET_TYPE,FTP_PACKET_TYPE_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_type_extraction},
     {FTP_PACKET_REQUEST,FTP_PACKET_REQUEST_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_request_extraction},
     {FTP_PACKET_REQUEST_PARAMETER,FTP_PACKET_REQUEST_PARAMETER_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_request_parameter_extraction},
     {FTP_PACKET_RESPONSE_CODE,FTP_PACKET_RESPONSE_CODE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_response_code_extraction},
     {FTP_PACKET_RESPONSE_VALUE,FTP_PACKET_RESPONSE_VALUE_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_response_value_extraction},
-    // {FTP_PACKET_DATA_OFFSET,FTP_PACKET_DATA_OFFSET_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_data_offset_extraction},
     {FTP_PACKET_DATA_LEN,FTP_PACKET_DATA_LEN_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_packet_data_len_extraction},
-    // {FTP_ATTRIBUTES_NB,FTP_ATTRIBUTES_NB_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_PACKET,ftp_attributes_nb_extraction}
 };
 
 //////////////////////////// END OF EXTRACTION /////////////////////////////////
-
-
-
-
-
-
-
-
 
 
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
@@ -1296,137 +701,86 @@ void ftp_data_packet(ipacket_t *ipacket,unsigned index){
 
     char *payload = (char*)&ipacket->data[offset];
 
-    ftp_session_data_t *ftp_session_data = (ftp_session_data_t*)ipacket->session->session_data[index];
+    // ftp_data_session_t *ftp_data = (ftp_data_session_t*)ipacket->session->session_data[index];
     
-    if(ftp_session_data==NULL){
-        ipacket->session->session_data[index] =  ipacket->session->next->session_data[index];
-    }
+    // if(ftp_data != NULL){
+    //     ipacket->session->session_data[index] =  ipacket->session->next->session_data[index];
+    // }
     log_info("FTP: Payload: %s",payload);
 }
 
 /**
- * Extract request packets to get information about this ftp session
- * - user_name
- * - user_password
- * - file_name
- * - data_type
- * - session_mode
- * @param ipacket packet to analyse
- * @param index   index of protocol
+ * Analysis a request packet
+ * @param ipacket     packet to analysis
+ * @param index       protocol index
+ * @param ftp_control FTP control connection session
  */
-void ftp_request_packet(ipacket_t *ipacket,unsigned index){
+ void ftp_request_packet(ipacket_t *ipacket,unsigned index, ftp_control_session_t * ftp_control){
     log_info("FTP: FTP_REQUEST PACKET: %lu",ipacket->packet_id);
     
-    //printf("from http generic session data analysis\n");
     int offset = get_packet_offset_at_index(ipacket, index);
 
     char *payload = (char*)&ipacket->data[offset];
     uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
 
-    log_info("FTP: Payload: %s",payload);
-    ftp_session_data_t *ftp_session_data = (ftp_session_data_t*)ipacket->session->session_data[index];
-    if(ftp_session_data==NULL){
-        log_info("FTP: RE-INITIALING SESSION DATA");
-        ftp_session_data = (ftp_session_data_t *) mmt_malloc(sizeof (ftp_session_data_t));
-        memset(ftp_session_data, 0, sizeof (ftp_session_data_t));
-        ipacket->session->session_data[index] = ftp_session_data;
-    }
-
-    // control_server_port
-    if(ftp_session_data->control_server_port== 0){
-        ftp_session_data->control_server_port=htons(21);
-    }
-        // control_client_port
-    if(ftp_session_data->control_client_port== 0){
-        if(ipacket->internal_packet->tcp->source == htons(21)){
-            ftp_session_data->control_client_port = ipacket->internal_packet->tcp->dest;
-        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
-            ftp_session_data->control_client_port = ipacket->internal_packet->tcp->source;
-        }
-    }else{
-        if(ipacket->internal_packet->tcp->source == htons(21)){
-            if(ftp_session_data->control_client_port != ipacket->internal_packet->tcp->dest){
-                log_err("FTP: control_client_port is not matched!");
-                return;
-            }
-        }else if(ipacket->internal_packet->tcp->dest == htons(21)){
-            if(ftp_session_data->control_client_port != ipacket->internal_packet->tcp->source){
-                log_err("FTP: control_client_port is not matched!");
-                return;
-            }
-        }
-    }
-
     ftp_command_t * command = ftp_get_command(payload,payload_len);
-
-    if(command->cmd!=MMT_FTP_UNKNOWN_CMD){
-        switch(command->cmd){
-            case MMT_FTP_USER_CMD:
-                ftp_session_data->user_name=command->param;
-                break;
-            case MMT_FTP_PASS_CMD:
-                ftp_session_data->user_password=command->param;
-                break;
-            case MMT_FTP_RETR_CMD:
-                ftp_session_data->file_name=command->param;
-                break;
-            case MMT_FTP_TYPE_CMD:
-                ftp_session_data->data_type=command->param;
-                break;
-            case MMT_FTP_EPSV_CMD:
-                ftp_session_data->session_mode = MMT_FTP_PASSIVE_MODE;
-                break;
-            default:
-                break;
-        }
-    }else{
-        log_err("FTP: Cannot get command");
+    ftp_data_session_t *current_data_conn = ftp_control->current_data_conn;
+    switch(command->cmd){
+        case MMT_FTP_EPRT_CMD:
+            current_data_conn->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
+            current_data_conn->data_conn->c_addr = ftp_get_data_client_addr_from_EPRT(payload);
+            current_data_conn->data_conn->c_port = ftp_get_data_client_port_from_EPRT(payload);
+            break;
+        case MMT_FTP_PORT_CMD:
+            current_data_conn->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
+            current_data_conn->data_conn->c_addr = ftp_get_addr_from_parameter(payload);
+            current_data_conn->data_conn->c_port = ftp_get_port_from_parameter(payload);
+        case MMT_FTP_USER_CMD:
+            ftp_control->user->username = command->param;
+            ftp_control->status = MMT_FTP_STATUS_OPENED;
+            break;
+        case MMT_FTP_PASS_CMD:
+            ftp_control->user->password = command->param;
+            break;
+        case MMT_FTP_TYPE_CMD:
+            current_data_conn->data_transfer_type=command->param;
+            break;
+        case MMT_FTP_LIST_CMD:
+        case MMT_FTP_MLSD_CMD:
+        case MMT_FTP_NLST_CMD:
+            current_data_conn->data_type = MMT_FTP_DATA_TYPE_LIST;
+            break;
+        case MMT_FTP_MLST_CMD:
+            current_data_conn->data_type = MMT_FTP_DATA_TYPE_UNKNOWN;
+            break;
+        case MMT_FTP_RETR_CMD:
+            current_data_conn->file->file_name = command->param;
+            current_data_conn->data_direction = MMT_FTP_DATA_DOWNLOAD;
+            break;
+        case MMT_FTP_STOR_CMD:
+        case MMT_FTP_STOU_CMD:
+            current_data_conn->file->file_name = command->param;
+            current_data_conn->data_direction = MMT_FTP_DATA_UPLOAD;
+            break;
+        case MMT_FTP_SYST_CMD:
+            ftp_control->session_syst = command->param;
+            break;
+        default:
+            log_info("FTP: Client command: \n");
+            log_info("Command: %s\n",command->str_cmd);
+            if(command->param){
+                log_info("Parameter: %s\n",command->param);
+            }
+            break;
     }
 }
 
-/**
- * Get data server port from response code 229
- * Example: Entering Extended Passive Mode (|||port|)
- * @param  payload payload to extract server port
- * @return         server port
- */
-uint16_t ftp_get_data_server_port_code_229(char *payload){
-    char *ret = str_subvalue(payload,"(|||","|)");
-    return htons(atoi(ret));
-}
 
-/**
- * Extract server port from response code 228
- * Example: Entering Long Passive Mode (long address, port).   
- * @param  payload Payload to extract
- * @return         port number
- */
-uint16_t ftp_get_data_server_port_code_228(char *payload){
-    char *ret = str_subvalue(payload,", ",")");
-    return htons(atoi(ret));
-}
-
-/**
- * Extract serer address from response code 228
- * Example: Entering Long Passive Mode (long address, port).
- * @param  payload payload to extract
- * @return         server address
- */
-uint16_t ftp_get_data_server_addr_code_228(char *payload){
-    char *ret = str_subvalue(payload,"(",",");
-    return htons(atoi(ret));
-}
 /**
  * Analyse response packet to get information of this ftp session
- * - ftp_server_version
- * - status
- * - features
- * - file_dir
- * - file_size
- * - data_server_port
- * - file_last_modified
- * @param ipacket [description]
- * @param index   [description]
+ * @param ipacket     ipacket to extract
+ * @param index       index of protocol
+ * @param ftp_control ftp control session of which this packet belongs to
  */
 void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t *ftp_control){
     log_info("FTP: FTP_RESPONSE PACKET: %lu",ipacket->packet_id);
@@ -1442,8 +796,11 @@ void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t
         log_info("FTP: %s",response->value);
         ftp_control->last_response = response;
         switch(response->code){
+            case MMT_FTP_230_CODE:
+                ftp_control->status = MMT_FTP_STATUS_CONTROLING;
+                break;
             case MMT_FTP_CONTINUE_CODE:
-                ftp_control->session_feats = str_add_features(ftp_control->session_feats,payload,payload_len);
+                ftp_control->session_feats = str_append(ftp_control->session_feats,payload,payload_len);
                 break;
             case MMT_FTP_257_CODE:
                 ftp_control->current_dir=response->value;
@@ -1466,8 +823,10 @@ void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t
                 current_data_conn->data_conn = t6;
                 break;
             case MMT_FTP_227_CODE:
-                current_data_conn->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
+                current_data_conn->data_conn_mode = MMT_FTP_DATA_PASSIVE_MODE;
                 log_warn("FTP: 227 code, enter passive mode - not implemented yet");
+                current_data_conn->data_conn->s_addr = ftp_get_data_server_addr_code_227(payload);
+                current_data_conn->data_conn->s_port = ftp_get_data_server_port_code_227(payload);
                 break;
             case MMT_FTP_228_CODE:
                 current_data_conn->data_conn_mode = MMT_FTP_DATA_PASSIVE_MODE;
@@ -1479,32 +838,26 @@ void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t
                 current_data_conn->data_conn = t6;
                 break;
             case MMT_FTP_150_CODE:
-                ftp_control->session_status = MMT_FTP_STATUS_TRANSFERING;
+                ftp_control->LAST_COMMAND = MMT_FTP_STATUS_DATA_OPENED;
                 break;
             case MMT_FTP_226_CODE:
-                ftp_control->session_status = MMT_FTP_STATUS_TRANSFER_COMPLETED;
+                ftp_control->session_status = MMT_FTP_STATUS_DATA_CLOSED;
                 break;
             case MMT_FTP_221_CODE:
-                ftp_control->session_status = MMT_FTP_STATUS_FINISHED;
+                ftp_control->session_status = MMT_FTP_STATUS_CLOSED;
                 break;
             default:
+                log_info("FTP: code : %d\n",response->code);
+                log_info("FTP: value : %s\n",response->value);
                 break;
         }
     }else{
-        log_err("FTP: Cannot get response code");
+        log_info("FTP: Received a response code:\n");
+        log("Code: %d\n",response->code);
+        log_info("Value : %s\n",response->value);
     }
 }
 
-void ftp_unknown_type_packet(ipacket_t *ipacket,unsigned index){
-    log_info("FTP: FTP_UNKNOWN_TYPE PACKET: %lu",ipacket->packet_id);
-    
-    //printf("from http generic session data analysis\n");
-    int offset = get_packet_offset_at_index(ipacket, index);
-
-    char *payload = (char*)&ipacket->data[offset];
-
-    log_info("FTP: Payload: %s",payload);
-}
 
 int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
@@ -1578,7 +931,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     }else if(tuple6->conn_type == MMT_FTP_CONTROL_CONNECTION && tuple6->direction == MMT_FTP_PACKET_CLIENT && ftp_control){
         ftp_request_packet(ipacket,index,ftp_control);
     }else if(tuple6->conn_type == MMT_FTP_DATA_CONNECTION && ftp_data){
-        ftp_data_packet(ipacket,index);
+        ftp_data_packet(ipacket,index,ftp_data);
     }else{
         fprintf(stderr, "Cannot analysis data of packet: %lu\n",ipacket->packet_id);
         fprintf(stderr, "Connection type: %d\n",tuple6->conn_type);

@@ -827,8 +827,10 @@ extern "C" {
         // OTHER
         FTP_SESSION_FEATURES,
         FTP_SYST,//
+        FTP_STATUS,
         FTP_LAST_COMMAND,
         FTP_LAST_RESPONSE_CODE,
+        FTP_CURRENT_DIR,
         /* DATA CONNECTION */
         FTP_SERVER_DATA_ADDR,
         FTP_SERVER_DATA_PORT,
@@ -837,9 +839,9 @@ extern "C" {
         FTP_DATA_TYPE, // FTP_LIST_DIRECTORY, FTP_FILE_TRANSFER
         FTP_DATA_TRANSFER_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
         FTP_DATA_MODE,// PASSIVE or ACTIVE
+        FTP_DATA_DIRECTION,
         // FILE ATTRIBUTE - ONLY for FTP_FILE_TRANSFER
         FTP_FILE_NAME,
-        FTP_FILE_DIR,
         FTP_FILE_SIZE,
         FTP_FILE_LAST_MODIFIED,
         /*--- Packet attributes ---*/
@@ -863,8 +865,10 @@ extern "C" {
 #define FTP_PASSWORD_ALIAS          "password"
 #define FTP_SESSION_FEATURES_ALIAS  "session_features"
 #define FTP_SYST_ALIAS              "ftp_server_system"//
+#define FTP_STATUS_ALIAS            "ftp_status"
 #define FTP_LAST_COMMAND_ALIAS      "last_command"
 #define FTP_LAST_RESPONSE_CODE      "last_response_code"
+#define FTP_CURRENT_DIR_ALIAS       "current_directory"
 // Data connection
 #define FTP_SERVER_DATA_ADDR_ALIAS  "server_data_addr"
 #define FTP_SERVER_DATA_PORT_ALIAS  "server_data_port"
@@ -873,9 +877,9 @@ extern "C" {
 #define FTP_DATA_TYPE_ALIAS         "data_type" //
 #define FTP_DATA_TRANSFER_TYPE_ALIAS "transfer_type"
 #define FTP_SESSION_MODE_ALIAS      "ftp_session_mode"// PASSIVE or ACTIVE
+#define FTP_DATA_DIRECTION_ALIAS    "data_direction" // Upload, download
 // FILE ATTRIBUTE
 #define FTP_FILE_NAME_ALIAS         "file_name"
-#define FTP_FILE_DIR_ALIAS          "file_dir"
 #define FTP_FILE_SIZE_ALIAS         "file_size"
 #define FTP_FILE_LAST_MODIFIED_ALIAS "file_last_modified"
 /*--- Packet attributes ---*/
