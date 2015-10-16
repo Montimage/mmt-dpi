@@ -51,7 +51,7 @@ void ftp_write_data (const char * path, const char * content, int len) {
 
   if(len>0){
   	printf("Going to write to file: %s\n",path);
-	  printf("Data: \n%s\n",content);
+	  // printf("Data: \n%s\n",content);
 	  printf("Data len: %d\n",len);
 	  write ( fd , content , len );
   }
@@ -61,42 +61,53 @@ void ftp_write_data (const char * path, const char * content, int len) {
 
  void packet_handler(const ipacket_t * ipacket, void * user_args){
  	// printf("\nPACKET: %lu\n", ipacket->packet_id);
- 	
- 	unsigned int * ip_client_addr = (int *)get_attribute_extracted_data(ipacket,PROTO_IP,IP_CLIENT_ADDR); 
-	unsigned int * ip_server_addr = (int *)get_attribute_extracted_data(ipacket,PROTO_IP,IP_SERVER_ADDR); 
-	unsigned short * ip_client_port = (unsigned short *)get_attribute_extracted_data(ipacket,PROTO_IP,IP_CLIENT_PORT); 
-	unsigned short * ip_server_port = (unsigned short *)get_attribute_extracted_data(ipacket,PROTO_IP,IP_SERVER_PORT);
-	uint16_t * ip_tot_len = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_TOT_LEN);	 
-	uint8_t * ip_header_len = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_IP,IP_HEADER_LEN);
-	uint8_t * tcp_data_off = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_DATA_OFF);
-
-	char * ftp_payload = (char*)get_attribute_extracted_data(ipacket,PROTO_FTP,PROTO_PAYLOAD);
-	uint16_t* packet_type = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_TYPE);
-
-	int payload_len = 0;
-	if(tcp_data_off)
-	 	payload_len = *ip_tot_len - *ip_header_len - (*tcp_data_off)*4;
-
-
-	// char * tcp_payload = (char*)get_attribute_extracted_data(ipacket,PROTO_TCP,PROTO_PAYLOAD);
-
-
-	printf("%lu,",ipacket->packet_id);
-	printValue(5,ip_client_addr);
-	printValue(5,ip_server_addr);
-	printValue(2,ip_client_port);
-	printValue(2,ip_server_port);
-	printValue(2,ip_tot_len);
-	printValue(3,ip_header_len);
-	printValue(3,tcp_data_off);
-	printValue(2,packet_type);
-
-	if(ftp_payload && payload_len>0){
-		printf("%d,",payload_len);
-		printf("%s\n",ftp_payload);
+ 	// uint8_t * session_conn_type = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SESSION_CONN_TYPE);
+	// uint32_t * server_cont_addr = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SERVER_CONT_ADDR);
+	// uint16_t * server_cont_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SERVER_CONT_PORT);
+	// uint32_t * client_cont_addr = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_CLIENT_CONT_ADDR);
+	// uint16_t * client_cont_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_CLIENT_CONT_PORT);
+	// char * username = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_USERNAME);
+	// char * password = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PASSWORD);
+	// char * session_feats = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SESSION_FEATURES);
+	// char * syst = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SYST);
+	// uint16_t * status = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_STATUS);
+	// ftp_command_t * last_command = (ftp_command_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_LAST_COMMAND);
+	// ftp_response_t * last_response = (ftp_response_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_LAST_RESPONSE_CODE);
+	// char * current_dir = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_CURRENT_DIR);
+	// DATA CONNECTION ATTRIBUTES
+	// uint32_t * server_data_addr = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SERVER_DATA_ADDR);
+	// uint16_t * server_data_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_SERVER_DATA_PORT);
+	// uint32_t * client_data_addr = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_CLIENT_DATA_ADDR);
+	// uint16_t * client_data_port = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_CLIENT_DATA_PORT);
+	uint8_t * data_type = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_DATA_TYPE);
+	int d_type = -1;
+	if(data_type){
+		d_type = *data_type;
 	}
-	else{
-		printf("\n");
+	// char * data_transfer_type = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_DATA_TRANSFER_TYPE);
+	// uint8_t * data_mode = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_DATA_MODE);
+	// uint8_t * data_direction = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_DATA_DIRECTION);
+	char * file_name = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_NAME);
+	// uint32_t * file_size = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_SIZE);
+	// char * file_last_modified = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_LAST_MODIFIED);
+	// PACKET ATTRIBUTES
+	// uint8_t * packet_type = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_TYPE);
+	// int p_type = -1;
+	// if(packet_type){
+		// p_type = *packet_type;
+	// }
+	// char * request = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST);
+	// char * request_parameter = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER);
+	// uint16_t * response = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_RESPONSE_CODE);
+	// char * response_value = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_RESPONSE_VALUE);
+	uint32_t * data_len = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_LEN);
+	int len = 0;
+	if(data_len){
+		len = *data_len;
+	}
+	char * data_payload = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,PROTO_PAYLOAD);
+	if(len>0 && file_name && data_payload){
+		ftp_write_data(file_name,data_payload,len);
 	}
 }
 
@@ -188,37 +199,41 @@ int main(int argc, char ** argv){
 		fprintf(stderr, "MMT handler init failed for the following reason: %s\n",mmt_errbuf );
 		return EXIT_FAILURE;
 	}
-
-	// Extract server_address and client_address from IP protocol
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_CLIENT_ADDR);
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_SERVER_ADDR);
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_CLIENT_PORT);
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_SERVER_PORT);
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_TOT_LEN);
-	register_extraction_attribute(mmt_handler,PROTO_IP,IP_HEADER_LEN);
-	// Extract from TCP protocol
-	register_extraction_attribute(mmt_handler,PROTO_TCP,TCP_DATA_OFF);
-	// Extract payload data of FTP packet from FTP protocol
 	register_extraction_attribute(mmt_handler,PROTO_FTP,PROTO_PAYLOAD);
-
-	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_DATA_TYPE); //Request client port
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SESSION_MODE); //Request client port
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SESSION_STATUS);
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SESSION_FEATURES);
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_USERNAME);
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PASSWORD);
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_NAME);
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_DIR);
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_LAST_MODIFIED);
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_SIZE);
-	// // PACKET ATTRIBUTE
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_TYPE); //Request client port
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST);  // Request server port
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER); 
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_RESPONSE_CODE);  
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_RESPONSE_VALUE);
-	// // register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_DATA_OFFSET);
-	// register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_DATA_LEN);  
+	// SESSION ATTRIBUTES
+	// CONTROL CONNECTION ATTRIBUTES
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SESSION_CONN_TYPE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SERVER_CONT_ADDR);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SERVER_CONT_PORT);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_CLIENT_CONT_ADDR);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_CLIENT_CONT_PORT);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_USERNAME);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PASSWORD);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SESSION_FEATURES);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SYST);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_STATUS);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_LAST_COMMAND);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_LAST_RESPONSE_CODE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_CURRENT_DIR);
+	// DATA CONNECTION ATTRIBUTES
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SERVER_DATA_ADDR);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_SERVER_DATA_PORT);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_CLIENT_DATA_ADDR);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_CLIENT_DATA_PORT);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_DATA_TYPE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_DATA_TRANSFER_TYPE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_DATA_MODE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_DATA_DIRECTION);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_NAME);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_SIZE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_FILE_LAST_MODIFIED);
+	// PACKET ATTRIBUTES
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_TYPE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_RESPONSE_CODE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_RESPONSE_VALUE);
+	register_extraction_attribute(mmt_handler,PROTO_FTP,FTP_PACKET_DATA_LEN);
 	register_packet_handler(mmt_handler,1,packet_handler, NULL);
 	if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace
