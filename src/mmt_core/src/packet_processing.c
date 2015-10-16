@@ -2661,7 +2661,7 @@ mmt_free(ipacket);
  *                      MMT_DROP     -> drops the packet
  *                      MMT_SKIP     -> skips processing the packet - it will returned in the future
  */
-int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats, unsigned index) {
+int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
     debug("proto_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
     ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
@@ -2675,13 +2675,14 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
         return target;
     }
 
-    //Update the protocol statistics
-    parent_stats = (proto_statistics_t*)update_proto_stats_on_packet(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, proto_offset);
     //The protocol is registered: First we check if it requires to maintain a session
     is_new_session = proto_session_management(ipacket, configured_protocol, index);
     if (is_new_session == NEW_SESSION) {
-        parent_stats = (proto_statistics_t*)update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
+        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
+    }else{
+        //Update the protocol statistics
+        parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
     }
     //Analyze packet data
     target = proto_packet_analyze(ipacket, configured_protocol, index);
@@ -2692,7 +2693,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_t * parent_stats,
         proto_process_attribute_handlers(ipacket, index);
     }
     //Update next
-    ipacket->extra.parent_stats = parent_stats;
+    ipacket->extra.parent_stats = (proto_statistics_t*)parent_stats;
     ipacket->extra.index = index+1;
     ipacket->extra.next_process = (next_process_function)proto_packet_process;
     
