@@ -66,7 +66,7 @@ int load_plugins() {
     for( i = 0 ; i < n ; ++i ) {
         entry = entries[i];
         (void)snprintf( path, 256, "%s/%s",plugins_path==0?PLUGINS_REPOSITORY:PLUGINS_REPOSITORY_OPT,entry->d_name );
-        printf("Loading plugins from: %s \n",path);
+        // printf("Loading plugins from: %s \n",path);
 	(void)load_plugin( path );
         free( entry );
     }
