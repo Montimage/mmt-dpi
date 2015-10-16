@@ -812,18 +812,20 @@ extern "C" {
 #define SLL_HALEN_ALIAS    "halen"
 #define SLL_ADDR_ALIAS     "addr"
 #define SLL_PROTOCOL_ALIAS "protocol"
+
+/////////////////////////////// FTP ATTRIBUTES //////////////////////////////////////////
     // FTP protocol attribute
     enum ftp_attributes{
         /*--- SESSION ATTRIBUTES --- */
-        FTP_SESSION_CONN_TYPE,// CONTROL or DATA connection
+        FTP_SESSION_CONN_TYPE=1,// CONTROL or DATA connection
         /* CONTROL CONNECTION */
         FTP_SERVER_CONT_ADDR,
         FTP_SERVER_CONT_PORT, // Alway 21
         FTP_CLIENT_CONT_ADDR,
         FTP_CLIENT_CONT_PORT,
         // ACCOUNT
-        FTP_SESSION_USERNAME,
-        FTP_SESSION_PASSWORD,
+        FTP_USERNAME,
+        FTP_PASSWORD,
         // OTHER
         FTP_SESSION_FEATURES,
         FTP_SYST,//
@@ -867,7 +869,7 @@ extern "C" {
 #define FTP_SYST_ALIAS              "ftp_server_system"//
 #define FTP_STATUS_ALIAS            "ftp_status"
 #define FTP_LAST_COMMAND_ALIAS      "last_command"
-#define FTP_LAST_RESPONSE_CODE      "last_response_code"
+#define FTP_LAST_RESPONSE_CODE_ALIAS      "last_response_code"
 #define FTP_CURRENT_DIR_ALIAS       "current_directory"
 // Data connection
 #define FTP_SERVER_DATA_ADDR_ALIAS  "server_data_addr"
@@ -876,7 +878,7 @@ extern "C" {
 #define FTP_CLIENT_DATA_PORT_ALIAS  "client_data_port"
 #define FTP_DATA_TYPE_ALIAS         "data_type" //
 #define FTP_DATA_TRANSFER_TYPE_ALIAS "transfer_type"
-#define FTP_SESSION_MODE_ALIAS      "ftp_session_mode"// PASSIVE or ACTIVE
+#define FTP_DATA_MODE_ALIAS      "ftp_session_mode"// PASSIVE or ACTIVE
 #define FTP_DATA_DIRECTION_ALIAS    "data_direction" // Upload, download
 // FILE ATTRIBUTE
 #define FTP_FILE_NAME_ALIAS         "file_name"
@@ -890,6 +892,9 @@ extern "C" {
 #define FTP_PACKET_RESPONSE_VALUE_ALIAS "packet_reponse_value"// ONLY RESPONSE PACKET
 #define FTP_PACKET_DATA_LEN_ALIAS "packet_payload_len"// ONLY DATA PACKET 
 
+/////////////////////////////// END OF FTP ATTRIBUTES ///////////////////////////////////
+
+    
 #ifdef __cplusplus
 }
 #endif
