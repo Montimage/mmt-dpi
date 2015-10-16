@@ -12,51 +12,58 @@
 #include <arpa/inet.h>
 #include "mmt/data_defs.h" 
 /**
+ * FTP command structure: CMD PARAMETER
+ */
+typedef struct ftp_command_struct{
+    int cmd;
+    char *str_cmd;
+    char *param;
+}ftp_command_t;
+
+/**
+ * FTP response structure
+ */
+typedef struct ftp_response_struct{
+    int code;
+    char *value;
+}ftp_response_t;
+
+/**
  * Print value
  */
-void printValue(int dataType,void* data){
+void printValue(void* data,int dataType){
+	if(data==NULL){
+		printf("NULL,");
+		return;
+	}
 	switch(dataType){
+		// char*
+		case 0:
+			printf("%s,",(char*)data);
+			break;
 		// uint32_t
 		case 1:
-			if (data) {
-				printf("%u,", *((uint32_t * )data));
-			}else{
-				printf("NULL,");
-			}
+			printf("%u,", *((uint32_t * )data));
 			break;
 		// uint16_t
 		case 2:
-			if (data) {
-				printf("%u,", *((uint16_t * )data));
-			}else{
-				printf("NULL,");
-			}
+			printf("%u,", *((uint16_t * )data));
 			break;
 		// uint8_t
 		case 3:
-			if (data) {
-				printf("%u,", *((uint8_t * )data));
-			}else{
-				printf("NULL,");
-			}
-			break;
-		// struct timeval *tv
-		case 4:
-			if (data) {
-				struct timeval* tv = (struct timeval*) data;
-				printf("%ld,%ld,",(long)tv->tv_sec,(long)tv->tv_usec);
-			}else{
-				printf("NUL,NULL,");
-			}
+			printf("%u,", *((uint8_t * )data));
 			break;
 		// MMT_DATA_IP_ADDR
 		case 5:
-			if (data){
-				struct in_addr * addr = (struct in_addr *)data;
-				printf("%s,",inet_ntoa(*addr));
-			}else{
-				printf("NULL,");
-			}
+			printf("%s,",inet_ntoa(*(struct in_addr*)data));
+			break;
+		// Last command
+		case 6:
+			printf("%d | %s | %s,", ((ftp_command_t*)data)->cmd, ((ftp_command_t*)data)->str_cmd,(((ftp_command_t*)data)->param==NULL?"NULL":((ftp_command_t*)data)->param));
+			break;
+		// Last response
+		case 7:
+			printf("%d | %s,", ((ftp_response_t*)data)->code, (((ftp_response_t*)data)->value==NULL?"NULL":((ftp_response_t*)data)->value));
 			break;
 		default:
 			printf("unknown,");

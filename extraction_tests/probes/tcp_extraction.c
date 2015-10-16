@@ -70,29 +70,29 @@
 	uint32_t * tcp_conn_established = (uint32_t *)get_attribute_extracted_data(ipacket,PROTO_TCP,TCP_CONN_ESTABLISHED); //Request TCP ACK number
 
 	printf("%lu,", ipacket->packet_id);
-	printValue(2,ip_identification);
-	printValue(2,tcp_src_port);
-	printValue(2,tcp_dest_port);
-	printValue(1,tcp_seq_nb);
-	printValue(1,tcp_ack_nb);
-	printValue(3,tcp_data_offset);
-	printValue(3,tcp_flags);
-	printValue(3,tcp_urg);
-	printValue(3,tcp_ack);
-	printValue(3,tcp_psh);
-	printValue(3,tcp_rst);
-	printValue(3,tcp_syn);
-	printValue(3,tcp_fin);
-	printValue(3,tcp_ece);
-	printValue(3,tcp_cwr);
-	printValue(2,tcp_window);
-	printValue(2,tcp_checksum);
-	printValue(2,tcp_urg_ptr);
+	printValue(ip_identification,2);
+	printValue(tcp_src_port,2);
+	printValue(tcp_dest_port,2);
+	printValue(tcp_seq_nb,1);
+	printValue(tcp_ack_nb,1);
+	printValue(tcp_data_offset,3);
+	printValue(tcp_flags,3);
+	printValue(tcp_urg,3);
+	printValue(tcp_ack,3);
+	printValue(tcp_psh,3);
+	printValue(tcp_rst,3);
+	printValue(tcp_syn,3);
+	printValue(tcp_fin,3);
+	printValue(tcp_ece,3);
+	printValue(tcp_cwr,3);
+	printValue(tcp_window,2);
+	printValue(tcp_checksum,2);
+	printValue(tcp_urg_ptr,2);
 
 	// These attributes bellow are "POSITION_NOT_KNOWN"
-	printValue(1,tcp_syn_rcv);
-	printValue(1,tcp_conn_established);
-	printValue(4,tcp_rtt);
+	printValue(tcp_syn_rcv,1);
+	printValue(tcp_conn_established,1);
+	printValue(tcp_rtt,4);
 	printf("\n");
 }
 
