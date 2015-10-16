@@ -2564,14 +2564,14 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         return target;
     }
 
-    //Update the protocol statistics
-    parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
-
     //The protocol is registered: First we check if it requires to maintain a session
     is_new_session = proto_session_management(ipacket, configured_protocol, index);
     if (is_new_session == NEW_SESSION) {
         parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
+    }else{
+        //Update the protocol statistics
+        parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
     }
 
     //Analyze packet data
