@@ -34,15 +34,26 @@
  #define MTU_BIG (16 * 1024)
 
  static int quiet;
+char * str_replace_all_char(const char *str,int c1, int c2){
+    char *new_str;
+    new_str = (char*)malloc(strlen(str)+1);
+    memcpy(new_str,str,strlen(str));
+    new_str[strlen(str)] = '\0';
+    int i;
+    for(i=0;i<strlen(str);i++){
+        if((int)new_str[i]==c1){
+            new_str[i]=(char)c2;
+        }
+    }
+    return new_str;
+}
 
  /**
  * Writes @len bytes from @content to the filename @path.
  */
 void ftp_write_data (const char * path, const char * content, int len) {
   int fd = 0;
-  if(path[0]=='/'){
-  	path=path+1;	
-  }
+  path = str_replace_all_char(path,'/','_');
   if ( (fd = open ( path , O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW , S_IRWXU | S_IRWXG | S_IRWXO )) < 0 )
   {
     fprintf ( stderr , "\n[e] Error %d writting data to \"%s\": %s" , errno , path , strerror( errno ) );
@@ -107,6 +118,7 @@ void ftp_write_data (const char * path, const char * content, int len) {
 	}
 	char * data_payload = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,PROTO_PAYLOAD);
 	if(len>0 && file_name && data_payload){
+		printf("Going to write data of packet %lu\n",ipacket->packet_id);
 		ftp_write_data(file_name,data_payload,len);
 	}
 }

@@ -56,7 +56,6 @@ static uint32_t ftp_connection_timeout = MMT_FTP_TIMEOUT * MMT_MICRO_IN_SEC;
 #define MMT_FTP_DATA_UPLOAD                 1 // The data connection is uploading data to server
 #define MMT_FTP_DATA_DOWNLOAD               2 // The data connection is downloading data from server
 
-
 /*
  * these are the commands we tracking and expecting to see to classify as FTP protocol
  */
@@ -178,7 +177,7 @@ typedef struct ftp_tuple6_struct{
  * FTP command structure: CMD PARAMETER
  */
 typedef struct ftp_command_struct{
-    int cmd;
+    uint16_t cmd;
     char *str_cmd;
     char *param;
 }ftp_command_t;
@@ -187,7 +186,7 @@ typedef struct ftp_command_struct{
  * FTP response structure
  */
 typedef struct ftp_response_struct{
-    int code;
+    uint16_t code;
     char *value;
 }ftp_response_t;
 

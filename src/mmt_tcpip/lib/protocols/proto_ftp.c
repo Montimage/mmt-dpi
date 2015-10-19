@@ -302,11 +302,13 @@ ftp_file_t * ftp_new_file(){
 ftp_data_session_t * ftp_new_data_connection(){
     ftp_data_session_t * ftp_data;
     ftp_data = (ftp_data_session_t*)malloc(sizeof(ftp_data_session_t));
-    ftp_data->data_conn = NULL;
+    ftp_data->data_conn = ftp_new_tuple6();
+    ftp_data->data_conn->conn_type = MMT_FTP_DATA_CONNECTION;
     ftp_data->data_conn_mode = 0;
     ftp_data->data_transfer_type = NULL;
     ftp_data->data_type = 0;
     ftp_data->file = ftp_new_file();
+    ftp_data->data_direction = MMT_FTP_PACKET_UNKNOWN_DIRECTION;
     return ftp_data;
 }
 
@@ -326,6 +328,7 @@ ftp_control_session_t * ftp_new_control_session(ftp_tuple6_t * tuple6){
     ftp_control->session_syst = NULL;
     ftp_control->current_dir = NULL;
     ftp_control->current_data_session = ftp_new_data_connection();
+    ftp_control->next = NULL;
     return ftp_control;
 }
 
@@ -586,7 +589,7 @@ void ftp_set_command_id(ftp_command_t* cmd){
         cmd->param = NULL;
     }else if(payload_len==5 && payload[2]!=' '){
         // PWD\r\t command
-        command = (char*)malloc(3);
+        command = (char*)malloc(4);
         memcpy(command,payload,3);
         command[3]='\0';
         cmd->str_cmd = command;
@@ -606,7 +609,7 @@ void ftp_set_command_id(ftp_command_t* cmd){
             cmd->str_cmd = command;
 
             if(payload_len-6>0){
-                params = (char*)malloc(payload_len-6);
+                params = (char*)malloc(payload_len-5);
                 memcpy(params,payload+4,payload_len-6);
                 params[payload_len-6]='\0';
                 cmd->param = params;
@@ -619,7 +622,7 @@ void ftp_set_command_id(ftp_command_t* cmd){
             command[4]='\0';
             cmd->str_cmd = command;
             if(payload_len-7>0){
-                params = (char*)malloc(payload_len-7);
+                params = (char*)malloc(payload_len-6);
                 memcpy(params,payload+5,payload_len-7);
                 params[payload_len-7]='\0';
                 cmd->param = params;
@@ -658,7 +661,7 @@ void ftp_set_command_id(ftp_command_t* cmd){
 
         // Get response value
         if(payload_len-6>0){
-            str_value = (char*)malloc(payload_len-6);
+            str_value = (char*)malloc(payload_len-5);
             memcpy(str_value,payload+4,payload_len-6);
             str_value[payload_len-6]='\0';
             res->value = str_value;
@@ -669,13 +672,13 @@ void ftp_set_command_id(ftp_command_t* cmd){
     }else{
         if(mmt_int_check_possible_ftp_continuation_reply(payload,payload_len)){
             code = MMT_FTP_CONTINUE_CODE;
-            str_value = (char*)malloc(payload_len-2);
+            str_value = (char*)malloc(payload_len-1);
             memcpy(str_value,payload,payload_len-2);
             str_value[payload_len-2]='\0';
             res->value = str_value;
         }else{
             code = MMT_FTP_UNKNOWN_CODE;
-            str_value = (char*)malloc(payload_len-2);
+            str_value = (char*)malloc(payload_len-1);
             memcpy(str_value,payload,payload_len-2);
             str_value[payload_len-2]='\0';
             res->value = str_value;
@@ -761,7 +764,7 @@ uint16_t ftp_get_port_from_parameter(char *payload,uint32_t payload_len){
     char * nb2;
     nb2 = str_sub_index(payload,indexes[4],payload_len);
     printf("nb2 string: %s\n", nb2);
-    uint16_t port = atoi(nb1) * 256 + atoi(nb2);
+    uint16_t port = ntohs(atoi(nb1) * 256 + atoi(nb2));
     return port;
 }
 
@@ -1268,7 +1271,7 @@ int ftp_session_conn_type_extraction(const ipacket_t * ipacket, unsigned proto_i
     t6 = ftp_get_tuple6(ipacket);
 
     if(t6){
-        extracted_data->data = (void*)&t6->conn_type;
+        *((uint8_t*)extracted_data->data) = t6->conn_type;
         return 1;   
     }
     
@@ -1282,7 +1285,7 @@ int ftp_server_contrl_addr_extraction(const ipacket_t * ipacket, unsigned proto_
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->contrl_conn && ftp_control->contrl_conn->s_addr){
-                extracted_data->data = (void*)&ftp_control->contrl_conn->s_addr;
+                *((uint32_t*)extracted_data->data) = ftp_control->contrl_conn->s_addr;
                 return 1;
             }
         }    
@@ -1296,7 +1299,7 @@ int ftp_server_contrl_port_extraction(const ipacket_t * ipacket, unsigned proto_
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->contrl_conn && ftp_control->contrl_conn->s_port){
-                extracted_data->data = (void*)&ftp_control->contrl_conn->s_port;
+                *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->s_port;
                 return 1;
             }
         }    
@@ -1310,7 +1313,7 @@ int ftp_client_contrl_addr_extraction(const ipacket_t * ipacket, unsigned proto_
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->contrl_conn && ftp_control->contrl_conn->c_addr){
-                extracted_data->data = (void*)&ftp_control->contrl_conn->c_addr;
+                *((uint32_t*)extracted_data->data) = ftp_control->contrl_conn->c_addr;
                 return 1;
             }
         }    
@@ -1324,7 +1327,7 @@ int ftp_client_contrl_port_extraction(const ipacket_t * ipacket, unsigned proto_
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->contrl_conn && ftp_control->contrl_conn->c_port){
-                extracted_data->data = (void*)&ftp_control->contrl_conn->c_port;
+                *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->c_port;
                 return 1;
             }
         }    
@@ -1380,7 +1383,7 @@ int ftp_status_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->status){
-                extracted_data->data = (void*)&ftp_control->status;
+                *((uint16_t*)extracted_data->data) = ftp_control->status;
                 return 1;
             }
         }    
@@ -1451,7 +1454,7 @@ int ftp_server_data_addr_extraction(const ipacket_t * ipacket, unsigned proto_in
         if(ftp_control){
             if(ftp_control->current_data_session){
                 if(ftp_control->current_data_session->data_conn && ftp_control->current_data_session->data_conn->s_addr){
-                    extracted_data->data = (void*)&ftp_control->current_data_session->data_conn->s_addr;
+                    *((uint32_t*)extracted_data->data) = ftp_control->current_data_session->data_conn->s_addr;
                     return 1;
                 }
             }
@@ -1460,7 +1463,7 @@ int ftp_server_data_addr_extraction(const ipacket_t * ipacket, unsigned proto_in
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data){
             if(ftp_data->data_conn && ftp_data->data_conn->s_addr){
-                extracted_data->data = (void*)&ftp_data->data_conn->s_addr;
+                *((uint32_t*)extracted_data->data) = ftp_data->data_conn->s_addr;
                 return 1;
             }
         } 
@@ -1475,7 +1478,7 @@ int ftp_server_data_port_extraction(const ipacket_t * ipacket, unsigned proto_in
         if(ftp_control){
             if(ftp_control->current_data_session){
                 if(ftp_control->current_data_session->data_conn && ftp_control->current_data_session->data_conn->s_port){
-                    extracted_data->data = (void*)&ftp_control->current_data_session->data_conn->s_port;
+                    *((uint16_t*)extracted_data->data) = ftp_control->current_data_session->data_conn->s_port;
                     return 1;
                 }
             }
@@ -1484,7 +1487,7 @@ int ftp_server_data_port_extraction(const ipacket_t * ipacket, unsigned proto_in
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data){
             if(ftp_data->data_conn && ftp_data->data_conn->s_port){
-                extracted_data->data = (void*)&ftp_data->data_conn->s_port;
+                *((uint16_t*)extracted_data->data) = ftp_data->data_conn->s_port;
                 return 1;
             }
         } 
@@ -1499,7 +1502,7 @@ int ftp_client_data_addr_extraction(const ipacket_t * ipacket, unsigned proto_in
         if(ftp_control){
             if(ftp_control->current_data_session){
                 if(ftp_control->current_data_session->data_conn && ftp_control->current_data_session->data_conn->c_addr){
-                    extracted_data->data = (void*)&ftp_control->current_data_session->data_conn->c_addr;
+                    *((uint32_t*)extracted_data->data) = ftp_control->current_data_session->data_conn->c_addr;
                     return 1;
                 }
             }
@@ -1508,7 +1511,7 @@ int ftp_client_data_addr_extraction(const ipacket_t * ipacket, unsigned proto_in
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data){
             if(ftp_data->data_conn && ftp_data->data_conn->c_addr){
-                extracted_data->data = (void*)&ftp_data->data_conn->c_addr;
+                *((uint32_t*)extracted_data->data) = ftp_data->data_conn->c_addr;
                 return 1;
             }
         } 
@@ -1523,7 +1526,7 @@ int ftp_client_data_port_extraction(const ipacket_t * ipacket, unsigned proto_in
         if(ftp_control){
             if(ftp_control->current_data_session){
                 if(ftp_control->current_data_session->data_conn && ftp_control->current_data_session->data_conn->c_port){
-                    extracted_data->data = (void*)&ftp_control->current_data_session->data_conn->c_port;
+                    *((uint16_t*)extracted_data->data) = ftp_control->current_data_session->data_conn->c_port;
                     return 1;
                 }
             }
@@ -1532,7 +1535,7 @@ int ftp_client_data_port_extraction(const ipacket_t * ipacket, unsigned proto_in
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data){
             if(ftp_data->data_conn && ftp_data->data_conn->c_port){
-                extracted_data->data = (void*)&ftp_data->data_conn->c_port;
+                *((uint16_t*)extracted_data->data) = ftp_data->data_conn->c_port;
                 return 1;
             }
         } 
@@ -1546,14 +1549,14 @@ int ftp_data_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->current_data_session && ftp_control->current_data_session->data_type){
-                extracted_data->data = (void*)&ftp_control->current_data_session->data_type;
+                *((uint8_t*)extracted_data->data) = ftp_control->current_data_session->data_type;
                 return 1;
             }
         }
     }else{
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data && ftp_data->data_type){
-            extracted_data->data = (void*)&ftp_data->data_type;
+            *((uint8_t*)extracted_data->data) = ftp_data->data_type;
             return 1;
         } 
     }
@@ -1586,14 +1589,14 @@ int ftp_data_mode_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->current_data_session && ftp_control->current_data_session->data_conn_mode){
-                extracted_data->data = (void*)&ftp_control->current_data_session->data_conn_mode;
+                *((uint8_t*)extracted_data->data) = ftp_control->current_data_session->data_conn_mode;
                 return 1;
             }
         }
     }else{
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data && ftp_data->data_conn_mode){
-            extracted_data->data = (void*)&ftp_data->data_conn_mode;
+            *((uint8_t*)extracted_data->data) = ftp_data->data_conn_mode;
             return 1;
         } 
     }
@@ -1606,8 +1609,8 @@ int ftp_data_direction_extraction(const ipacket_t * ipacket, unsigned proto_inde
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->current_data_session){
-                if(ftp_control->current_data_session->data_direction){
-                    extracted_data->data = (void*)&ftp_control->current_data_session->data_direction;
+                if(ftp_control->current_data_session){
+                    *((uint8_t*)extracted_data->data) = ftp_control->current_data_session->data_direction;
                     return 1;
                 }
             }
@@ -1615,7 +1618,7 @@ int ftp_data_direction_extraction(const ipacket_t * ipacket, unsigned proto_inde
     }else{
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data && ftp_data->data_direction){
-            extracted_data->data = (void*)&ftp_data->data_direction;
+            *((uint8_t*)extracted_data->data) = ftp_data->data_direction;
             return 1;
         } 
     }
@@ -1657,7 +1660,7 @@ int ftp_file_size_extraction(const ipacket_t * ipacket, unsigned proto_index,
         if(ftp_control){
             if(ftp_control->current_data_session){
                 if(ftp_control->current_data_session->file && ftp_control->current_data_session->file->size){
-                    extracted_data->data = (void*)&ftp_control->current_data_session->file->size;
+                    *((uint32_t*)extracted_data->data) = ftp_control->current_data_session->file->size;
                     return 1;
                 }
             }
@@ -1666,7 +1669,7 @@ int ftp_file_size_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data){
             if(ftp_data->file && ftp_data->file->size){
-                extracted_data->data = (void*)&ftp_data->file->size;
+                *((uint32_t*)extracted_data->data) = ftp_data->file->size;
                 return 1;
             }
         } 
@@ -1754,7 +1757,7 @@ int ftp_packet_response_code_extraction(const ipacket_t * ipacket, unsigned prot
         ftp_response_t * res = ftp_get_response(payload,payload_len);
         if(res && res->code){
             log_info("FTP: packet_response %d in packet: %lu\n", res->code,ipacket->packet_id);
-            extracted_data->data = (int*)&res->code;
+            *((uint16_t*)extracted_data->data) = res->code;
             return 1;      
         }
     }
@@ -1785,7 +1788,7 @@ int ftp_packet_data_len_extraction(const ipacket_t * ipacket, unsigned proto_ind
     int packet_type = ftp_get_packet_type(ipacket,proto_index);
     if(packet_type == MMT_FTP_PACKET_DATA){
         int len = ipacket->internal_packet->payload_packet_len;
-        extracted_data->data = (void*)&len;
+        *((uint32_t*)extracted_data->data) = len;
         // log_info("FTP: extraction payload_packet_len: %d",*(uint32_t*)extracted_data->data);
         return 1;
     }
@@ -1839,16 +1842,16 @@ void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_
     log_info("FTP: FTP_DATA PACKET: %lu",ipacket->packet_id);
     
     //printf("from http generic session data analysis\n");
-    int offset = get_packet_offset_at_index(ipacket, index);
+    // int offset = get_packet_offset_at_index(ipacket, index);
 
-    char *payload = (char*)&ipacket->data[offset];
+    // char *payload = (char*)&ipacket->data[offset];
 
     // ftp_data_session_t *ftp_data = (ftp_data_session_t*)ipacket->session->session_data[index];
     
     // if(ftp_data != NULL){
     //     ipacket->session->session_data[index] =  ipacket->session->next->session_data[index];
     // }
-    log_info("FTP: Payload: %s",payload);
+    // log_info("FTP: Payload: %s",payload);
 }
 
 /**
@@ -1969,9 +1972,9 @@ void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t
                 break;
             case MMT_FTP_227_CODE:
                 current_data_session->data_conn_mode = MMT_FTP_DATA_PASSIVE_MODE;
-                log_warn("FTP: 227 code, enter passive mode - not implemented yet");
                 current_data_session->data_conn->s_addr = ftp_get_data_server_addr_code_227(payload);
                 current_data_session->data_conn->s_port = ftp_get_data_server_port_code_227(payload);
+                current_data_session->data_conn->c_addr = ftp_control->contrl_conn->c_addr;
                 break;
             case MMT_FTP_228_CODE:
                 current_data_session->data_conn_mode = MMT_FTP_DATA_PASSIVE_MODE;
@@ -2020,12 +2023,12 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     log_info("FTP: START ANALYSING SESSION DATA OF PACKET: %lu",ipacket->packet_id);
     
     //printf("from http generic session data analysis\n");
-    int offset = get_packet_offset_at_index(ipacket, index);
+    // int offset = get_packet_offset_at_index(ipacket, index);
     
-    char *payload = (char*)&ipacket->data[offset];
+    // char *payload = (char*)&ipacket->data[offset];
 
     // Make sure there is data to analayse
-    if(strlen(payload)<=0){
+    if(ipacket->internal_packet->payload_packet_len==0){
         log_info("There is no FTP data to analysis: %lu\n",ipacket->packet_id);
         return MMT_CONTINUE;
     }
@@ -2035,7 +2038,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
     ftp_control_session_t *ftp_list_control = ftp_get_list_control_session(ipacket,index);
     ftp_control_session_t *ftp_control;
-    ftp_data_session_t *ftp_data;
+    ftp_data_session_t *ftp_data = NULL;
     if(tuple6->conn_type==MMT_FTP_CONTROL_CONNECTION){
         if(ipacket->session->session_data[index]){
             ftp_control = (ftp_control_session_t*)ipacket->session->session_data[index];
@@ -2051,7 +2054,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
             if(ftp_list_control->next == NULL){
                 ftp_list_control->next = ftp_control;
             }else{
-                ftp_control_session_t * temp = ftp_list_control->next;
+                ftp_control_session_t * temp = ftp_list_control;
                 while(temp->next){
                     temp = temp->next;
                 }
@@ -2071,7 +2074,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
                 return MMT_CONTINUE;
             }else{
                 ftp_control_session_t *temp = ftp_list_control->next;
-                while(temp->next && temp->current_data_session){
+                while(temp && temp->current_data_session){
                     int compare = ftp_compare_tuple6(tuple6,temp->current_data_session->data_conn);
                     if(compare!=0){
                         ftp_set_tuple6_direction(tuple6,temp->current_data_session->data_conn,compare);
