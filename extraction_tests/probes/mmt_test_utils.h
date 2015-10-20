@@ -15,7 +15,7 @@
  * FTP command structure: CMD PARAMETER
  */
 typedef struct ftp_command_struct{
-    int cmd;
+    uint16_t cmd;
     char *str_cmd;
     char *param;
 }ftp_command_t;
@@ -24,7 +24,8 @@ typedef struct ftp_command_struct{
  * FTP response structure
  */
 typedef struct ftp_response_struct{
-    int code;
+	uint16_t code;
+    char *str_code;
     char *value;
 }ftp_response_t;
 
@@ -59,11 +60,11 @@ void printValue(void* data,int dataType){
 			break;
 		// Last command
 		case 6:
-			printf("%d | %s | %s,", ((ftp_command_t*)data)->cmd, ((ftp_command_t*)data)->str_cmd,(((ftp_command_t*)data)->param==NULL?"NULL":((ftp_command_t*)data)->param));
+			printf("%s | %s,", ((ftp_command_t*)data)->str_cmd,(((ftp_command_t*)data)->param==NULL?"NULL":((ftp_command_t*)data)->param));
 			break;
 		// Last response
 		case 7:
-			printf("%d | %s,", ((ftp_response_t*)data)->code, (((ftp_response_t*)data)->value==NULL?"NULL":((ftp_response_t*)data)->value));
+			printf("%s | %s,", ((ftp_response_t*)data)->str_code, (((ftp_response_t*)data)->value==NULL?"NULL":((ftp_response_t*)data)->value));
 			break;
 		default:
 			printf("unknown,");

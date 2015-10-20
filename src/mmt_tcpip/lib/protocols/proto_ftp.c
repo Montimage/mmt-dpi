@@ -70,6 +70,13 @@ char * str_subend(char *payload, char* begin,int payload_len){
     return NULL;
 }
 
+/**
+ * Append a string into a string
+ * @param  array       String to be appended
+ * @param  payload     String to append
+ * @param  payload_len len of added string
+ * @return             new string after appending
+ */
 char * str_append(char *array,char *payload,int payload_len){
     if(payload == NULL) return 0;
     char *new_feature;
@@ -88,6 +95,13 @@ char * str_append(char *array,char *payload,int payload_len){
     return array;
 }
 
+/**
+ * Get sub string between two substrings
+ * @param  str   string to get substring
+ * @param  begin first substring
+ * @param  end   second substring
+ * @return       a string is between @begin and @end in @str
+ */
 char * str_subvalue(char *str, char* begin, char * end){
     if(str != NULL && begin !=NULL && end != NULL){
         char *fromBegin;
@@ -1840,7 +1854,12 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
 
 
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
-
+/**
+ * Analysis FTP data packet
+ * @param ipacket  packet to analysis
+ * @param index    protocol index
+ * @param ftp_data ftp data session which this packet belongs to
+ */
 void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_data){
     log_info("FTP: FTP_DATA PACKET: %lu",ipacket->packet_id);
     
@@ -2108,13 +2127,6 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     return MMT_CONTINUE;
 }
 
-// void ftp_session_data_init(ipacket_t * ipacket, unsigned index) {
-//     log_info("FTP: INITIALING SESSION DATA");
-//     ftp_session_data_t * ftp_session_data = (ftp_session_data_t *) mmt_malloc(sizeof (ftp_session_data_t));
-//     memset(ftp_session_data, 0, sizeof (ftp_session_data_t));
-//     ipacket->session->session_data[index] = ftp_session_data;
-
-// }
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
 
@@ -2142,7 +2154,6 @@ int init_proto_ftp_struct() {
         for (; i < FTP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &ftp_attributes_metadata[i]);
         }
-        // register_session_data_initialization_function(protocol_struct, ftp_session_data_init);
         register_proto_context_init_cleanup_function(protocol_struct, setup_ftp_context, NULL, NULL);
         register_session_data_analysis_function(protocol_struct, ftp_session_data_analysis);
         mmt_init_classify_me_ftp();

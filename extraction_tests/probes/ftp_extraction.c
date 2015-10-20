@@ -1,6 +1,4 @@
 /**
- * This example is intended to show a simple packet handler - show the size of received packets. That is a callback function that will be called after the processing of every packet by the MMT core
- * 
  * 
  * Compile this example with:
  * 
@@ -70,6 +68,11 @@ void ftp_write_data (const char * path, const char * content, int len) {
   close ( fd );
 }
 
+/**
+ * Packet handler
+ * @param ipacket   packet
+ * @param user_args user data
+ */
  void packet_handler(const ipacket_t * ipacket, void * user_args){
 	// SESSION ATTRIBUTES
 	// CONTROL CONNECTION ATTRIBUTES
@@ -100,19 +103,11 @@ void ftp_write_data (const char * path, const char * content, int len) {
 	char * file_last_modified = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_FILE_LAST_MODIFIED);
 	// PACKET ATTRIBUTES
 	uint8_t * packet_type = (uint8_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_TYPE);
-	// int p_type = -1;
-	// if(packet_type){
-	// 	p_type = *packet_type;
-	// }
 	char * request = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST);
 	char * request_parameter = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_REQUEST_PARAMETER);
 	uint16_t * response = (uint16_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_RESPONSE_CODE);
 	char * response_value = (char *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_RESPONSE_VALUE);
 	uint32_t * data_len = (uint32_t *) get_attribute_extracted_data(ipacket,PROTO_FTP,FTP_PACKET_DATA_LEN);
-	// int len = 0;
-	// if(data_len){
-	// 	len = *data_len;
-	// }
 	printf("\n%lu,",ipacket->packet_id);
 	printValue(session_conn_type,3);
 	printValue(server_cont_addr,5);
@@ -139,12 +134,10 @@ void ftp_write_data (const char * path, const char * content, int len) {
 	printValue(file_size,1);
 	printValue(file_last_modified,0);
 	printValue(packet_type,3);
-	// printf("%d,",p_type);
 	printValue(request,0);
 	printValue(request_parameter,0);
 	printValue(response,2);
 	printValue(response_value,0);
-	// printf("%d",len);
 	printValue(data_len,1);
 }
 
