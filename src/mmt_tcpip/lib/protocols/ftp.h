@@ -187,6 +187,7 @@ typedef struct ftp_command_struct{
  */
 typedef struct ftp_response_struct{
     uint16_t code;
+    char *str_code;
     char *value;
 }ftp_response_t;
 

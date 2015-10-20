@@ -364,7 +364,7 @@ int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2){
         if(t1->c_addr == t2->s_addr && t1->c_port == t2->s_port && t1->s_addr == t2->c_addr && t1->s_port== t2->c_port) return 3;
         // Extended passive mode - 229 and 227 code
         if(t1->c_addr == t2->c_addr && t2->c_port == 0 && t1->s_addr == t2->s_addr && t1->s_port== t2->s_port) return 4;
-        if(t1->c_addr == t2->s_addr && t2->c_port == 0 && t1->s_addr == t2->c_addr && t1->s_port== t2->c_port) return 5;
+        if(t1->c_addr == t2->s_addr && t2->c_port == 0 && t1->s_addr == t2->c_addr && t1->c_port== t2->s_port) return 5;
         // Active mode - PORT and EPRT command
         if(t1->c_addr == t2->c_addr && t2->c_port == t2->c_port && t1->s_addr == t2->s_addr && t2->s_port == 0) return 6;
         if(t1->c_addr == t2->s_addr && t1->s_addr == t2->c_addr && t1->s_port == t2->c_port && t2->s_port == 0) return 7;
@@ -657,6 +657,7 @@ void ftp_set_command_id(ftp_command_t* cmd){
         memcpy(str_code,payload,3);
         str_code[3]='\0';
         code = atoi(str_code);
+        res->str_code = str_code;
         res->code = code;
 
         // Get response value
@@ -676,12 +677,14 @@ void ftp_set_command_id(ftp_command_t* cmd){
             memcpy(str_value,payload,payload_len-2);
             str_value[payload_len-2]='\0';
             res->value = str_value;
+            res->str_code = str_value;
         }else{
             code = MMT_FTP_UNKNOWN_CODE;
             str_value = (char*)malloc(payload_len-1);
             memcpy(str_value,payload,payload_len-2);
             str_value[payload_len-2]='\0';
             res->value = str_value;
+            res->str_code = str_value;
         }
         res->code = code;
     }
@@ -1569,14 +1572,14 @@ int ftp_data_transfer_type_extraction(const ipacket_t * ipacket, unsigned proto_
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_control){
             if(ftp_control->current_data_session && ftp_control->current_data_session->data_transfer_type){
-                extracted_data->data = (void*)ftp_control->current_data_session->data_transfer_type;
+                extracted_data->data = ftp_control->current_data_session->data_transfer_type;
                 return 1;
             }
         }
     }else{
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if(ftp_data && ftp_data->data_transfer_type){
-            extracted_data->data = (void*)&ftp_data->data_transfer_type;
+            extracted_data->data = ftp_data->data_transfer_type;
             return 1;
         } 
     }
@@ -1706,7 +1709,7 @@ int ftp_file_last_modified_extraction(const ipacket_t * ipacket, unsigned proto_
 int ftp_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
         attribute_t * extracted_data) {
     uint8_t p_type = ftp_get_packet_type(ipacket,proto_index);
-    extracted_data->data = (void*)&p_type;
+    *((uint8_t*)extracted_data->data) = p_type;
     return 1;
 }
 
@@ -1902,11 +1905,13 @@ void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_
         case MMT_FTP_RETR_CMD:
             current_data_session->file->name = command->param;
             current_data_session->data_direction = MMT_FTP_DATA_DOWNLOAD;
+            current_data_session->data_type  = MMT_FTP_DATA_TYPE_FILE;
             break;
         case MMT_FTP_STOR_CMD:
         case MMT_FTP_STOU_CMD:
             current_data_session->file->name = command->param;
             current_data_session->data_direction = MMT_FTP_DATA_UPLOAD;
+            current_data_session->data_type  = MMT_FTP_DATA_TYPE_FILE;
             break;
         case MMT_FTP_SYST_CMD:
             ftp_control->session_syst = command->param;
