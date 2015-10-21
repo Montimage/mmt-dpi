@@ -115,6 +115,7 @@ extern "C" {
         TCP_URG_PTR,
         TCP_RTT,
         TCP_SYN_RCV,
+        TCP_PAYLOAD_LEN,
         TCP_CONN_ESTABLISHED,
     };
 
@@ -139,6 +140,7 @@ extern "C" {
 #define TCP_URG_PTR_ALIAS     "urg_pointer"
 #define TCP_RTT_ALIAS         "rtt"
 #define TCP_SYN_RCV_ALIAS     "syn_received"
+#define TCP_PAYLOAD_LEN_ALIAS     "payload_len"
 #define TCP_CONN_ESTABLISHED_ALIAS "established"
     //TODO: addition of the tcp options
 
