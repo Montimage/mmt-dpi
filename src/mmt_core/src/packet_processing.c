@@ -1057,8 +1057,13 @@ int init_plugins() {
     return 1;
 }
 
+void mmt_print_info(){
+    printf("%s",MMT_PRINT_INFO);
+}
+
 mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * errbuf )
 {
+    mmt_print_info();
     int i = 0;
     protocol_stack_t * temp_stack = get_protocol_stack_from_map(stacktype);
     if (temp_stack == NULL) {
