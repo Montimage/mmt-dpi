@@ -26,6 +26,11 @@ void process_ipacket_next_process(ipacket_t* ipacket)
 void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pntoh_tcp_peer_t dest , pntoh_tcp_segment_t seg , int reason , int extra )
 {
     debug("ntoh_tcp_callback");
+    debug("\n[%s] %s:%d (%s | Window: %lu) ---> " , ntoh_tcp_get_status ( stream->status ) , inet_ntoa( *(struct in_addr*) &orig->addr ) , ntohs(orig->port) , ntoh_tcp_get_status ( orig->status ) , orig->totalwin );
+    debug("%s:%d (%s | Window: %lu)\n\t" , inet_ntoa( *(struct in_addr*) &dest->addr ) , ntohs(dest->port) , ntoh_tcp_get_status ( dest->status ) , dest->totalwin );
+
+    if ( seg != 0 )
+        debug("SEQ: %lu ACK: %lu Next SEQ: %lu" , seg->seq , seg->ack , orig->next_seq );
     switch(reason){
         case NTOH_REASON_SYNC:
             switch(extra){
@@ -45,10 +50,10 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
             break;
         case NTOH_REASON_DATA:
             debug("Segment payload len: %i",seg->payload_len);
-                    process_ipacket_next_process((ipacket_t *)seg->user_data);
-                if(extra!=0){
-                        debug(" Reason: %s",ntoh_get_reason(extra));
-                    }
+            process_ipacket_next_process((ipacket_t *)seg->user_data);
+            if(extra!=0){
+                debug(" Reason: %s",ntoh_get_reason(extra));
+            }
             break;
     }
     return;
@@ -441,7 +446,8 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
 }
 
 void tcp_context_cleanup(void * proto_context, void * args) {
-    ntoh_tcp_free_session((pntoh_tcp_session_t)((protocol_instance_t *) proto_context)->args);
+    // ntoh_tcp_free_session((pntoh_tcp_session_t)((protocol_instance_t *) proto_context)->args);
+    debug("TCP: protocol context cleanup\n");
 }
 
 void * setup_tcp_context(void * proto_context, void * args) {

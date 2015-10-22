@@ -17,7 +17,7 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-
+#include "libntoh.h"
 bool session_timeout_comp_fn_pt(uint32_t l_timeout, uint32_t r_timeout) {
     return (l_timeout < r_timeout);
 }
@@ -1168,6 +1168,7 @@ void free_handler_protocols_statistics(mmt_handler_t *mmt_handler) {
 }
 
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
+    ntoh_tcp_exit();
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
     // Clear timeout milestones
