@@ -2090,7 +2090,21 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         if(ipacket->session->session_data[index]){
             ftp_data = (ftp_data_session_t*)ipacket->session->session_data[index];
             int compare = ftp_compare_tuple6(tuple6,ftp_data->data_conn);
-            ftp_set_tuple6_direction(tuple6,ftp_data->data_conn,compare);
+            if(compare!=0){
+                ftp_set_tuple6_direction(tuple6,ftp_data->data_conn,compare);    
+            }else{
+                ftp_control_session_t *temp = ftp_list_control->next;
+                while(temp && temp->current_data_session){
+                    int compare = ftp_compare_tuple6(tuple6,temp->current_data_session->data_conn);
+                    if(compare!=0){
+                        ftp_set_tuple6_direction(tuple6,temp->current_data_session->data_conn,compare);
+                        ipacket->session->session_data[index] = temp->current_data_session;
+                        ftp_data = temp->current_data_session;
+                        break;
+                    }
+                    temp = temp->next;
+                } 
+            }
         }else{
             // New not FTP control packet
             if(ftp_list_control->next == NULL){
