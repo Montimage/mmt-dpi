@@ -224,6 +224,8 @@ typedef struct ftp_data_session_struct{
     uint8_t data_direction; // Upload or Download
 
     ftp_file_t *file;
+
+    // struct ftp_data_session_struct * next; // Next ftp data session in the same ftp_control_session
 }ftp_data_session_t;
 
 
