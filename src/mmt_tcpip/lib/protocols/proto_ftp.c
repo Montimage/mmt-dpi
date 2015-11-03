@@ -909,7 +909,7 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         if (packet->payload_packet_len > MMT_STATICSTRING_LEN("220 ") &&
                 (memcmp(packet->payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
                 memcmp(packet->payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
-            log_info("FTP: found 220 reply code\n");
+            debug("FTP: found 220 reply code\n");
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 220 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
             current_ftp_code = FTP_220_CODE;
@@ -953,7 +953,7 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         // return 1;
         /* wait much longer if this was a 220 code, initial messages might be long */
         if (current_ftp_code == FTP_220_CODE) {
-            log_info("FTP: 220 code Waiting....(1/2)");
+            debug("FTP: 220 code Waiting....(1/2)");
             if (ipacket->session->data_packet_count > 40)
                 return 0;
         } else {
@@ -963,7 +963,7 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
     } else {
         /* wait much longer if this was a 220 code, initial messages might be long */
         if (current_ftp_code == FTP_220_CODE) {
-            log_info("FTP: 220 code Waiting....(2/2)");
+            debug("FTP: 220 code Waiting....(2/2)");
             if (ipacket->session->data_packet_count > 20)
                 return 0;
         } else {
@@ -1737,7 +1737,7 @@ int ftp_packet_request_extraction(const ipacket_t * ipacket, unsigned proto_inde
         int payload_len = ipacket->internal_packet->payload_packet_len;
         ftp_command_t * cmd = ftp_get_command(payload,payload_len);
         if(cmd && cmd->str_cmd){
-            log_info("FTP: packet_request %d in packet: %lu\n", cmd->cmd,ipacket->packet_id);
+            debug("FTP: packet_request %d in packet: %lu\n", cmd->cmd,ipacket->packet_id);
             extracted_data->data = (void*)cmd->str_cmd;
             return 1;      
         }
@@ -1755,7 +1755,7 @@ int ftp_packet_request_parameter_extraction(const ipacket_t * ipacket, unsigned 
         int payload_len = ipacket->internal_packet->payload_packet_len;
         ftp_command_t * cmd = ftp_get_command(payload,payload_len);
         if(cmd && cmd->param){
-            log_info("FTP: packet_request_param %s in packet: %lu\n", cmd->param,ipacket->packet_id);
+            debug("FTP: packet_request_param %s in packet: %lu\n", cmd->param,ipacket->packet_id);
             extracted_data->data = (void*)cmd->param;
             return 1;      
         }
@@ -1773,7 +1773,7 @@ int ftp_packet_response_code_extraction(const ipacket_t * ipacket, unsigned prot
         int payload_len = ipacket->internal_packet->payload_packet_len;
         ftp_response_t * res = ftp_get_response(payload,payload_len);
         if(res && res->code){
-            log_info("FTP: packet_response %d in packet: %lu\n", res->code,ipacket->packet_id);
+            debug("FTP: packet_response %d in packet: %lu\n", res->code,ipacket->packet_id);
             *((uint16_t*)extracted_data->data) = res->code;
             return 1;      
         }
@@ -1791,7 +1791,7 @@ int ftp_packet_response_value_extraction(const ipacket_t * ipacket, unsigned pro
         int payload_len = ipacket->internal_packet->payload_packet_len;
         ftp_response_t * res = ftp_get_response(payload,payload_len);
         if(res->code && res->value){
-            log_info("FTP: packet_response_value %s in packet: %lu\n", res->value,ipacket->packet_id);
+            debug("FTP: packet_response_value %s in packet: %lu\n", res->value,ipacket->packet_id);
             extracted_data->data = (void*)res->value;
             return 1;      
         }
@@ -1806,7 +1806,7 @@ int ftp_packet_data_len_extraction(const ipacket_t * ipacket, unsigned proto_ind
     if(packet_type == MMT_FTP_PACKET_DATA){
         int len = ipacket->internal_packet->payload_packet_len;
         *((uint32_t*)extracted_data->data) = len;
-        // log_info("FTP: extraction payload_packet_len: %d",*(uint32_t*)extracted_data->data);
+        // debug("FTP: extraction payload_packet_len: %d",*(uint32_t*)extracted_data->data);
         return 1;
     }
     return 0;
@@ -1861,7 +1861,7 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
  * @param ftp_data ftp data session which this packet belongs to
  */
 void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_data){
-    log_info("FTP: FTP_DATA PACKET: %lu",ipacket->packet_id);
+    debug("FTP: FTP_DATA PACKET: %lu",ipacket->packet_id);
     
     //printf("from http generic session data analysis\n");
     // int offset = get_packet_offset_at_index(ipacket, index);
@@ -1873,7 +1873,7 @@ void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_
     // if(ftp_data != NULL){
     //     ipacket->session->session_data[index] =  ipacket->session->next->session_data[index];
     // }
-    // log_info("FTP: Payload: %s",payload);
+    // debug("FTP: Payload: %s",payload);
 }
 
 /**
@@ -1883,7 +1883,7 @@ void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_
  * @param ftp_control FTP control connection session
  */
  void ftp_request_packet(ipacket_t *ipacket,unsigned index, ftp_control_session_t * ftp_control){
-    log_info("FTP: FTP_REQUEST PACKET: %lu",ipacket->packet_id);
+    debug("FTP: FTP_REQUEST PACKET: %lu",ipacket->packet_id);
     
     int offset = get_packet_offset_at_index(ipacket, index);
 
@@ -1936,10 +1936,10 @@ void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_
             ftp_control->session_syst = command->param;
             break;
         default:
-            log_info("FTP: Client command: \n");
-            log_info("Command: %s\n",command->str_cmd);
+            debug("FTP: Client command: \n");
+            debug("Command: %s\n",command->str_cmd);
             if(command->param){
-                log_info("Parameter: %s\n",command->param);
+                debug("Parameter: %s\n",command->param);
             }
             break;
     }
@@ -1953,7 +1953,7 @@ void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_
  * @param ftp_control ftp control session of which this packet belongs to
  */
 void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t *ftp_control){
-    log_info("FTP: FTP_RESPONSE PACKET: %lu",ipacket->packet_id);
+    debug("FTP: FTP_RESPONSE PACKET: %lu",ipacket->packet_id);
     
     int offset = get_packet_offset_at_index(ipacket, index);
 
@@ -1965,7 +1965,7 @@ void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t
 
     ftp_data_session_t *current_data_session = ftp_control->current_data_session;
     if(response->code!=MMT_FTP_UNKNOWN_CODE){
-        log_info("FTP: %s",response->value);
+        debug("FTP: %s",response->value);
         ftp_control->last_response = response;
         switch(response->code){
             case MMT_FTP_230_CODE:
@@ -2023,14 +2023,14 @@ void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t
                 ftp_control->session_syst = response->value;
                 break;
             default:
-                log_info("FTP: code : %d\n",response->code);
-                log_info("FTP: value : %s\n",response->value);
+                debug("FTP: code : %d\n",response->code);
+                debug("FTP: value : %s\n",response->value);
                 break;
         }
     }else{
-        log_info("FTP: Received a response code:\n");
-        log_info("Code: %d\n",response->code);
-        log_info("Value : %s\n",response->value);
+        debug("FTP: Received a response code:\n");
+        debug("Code: %d\n",response->code);
+        debug("Value : %s\n",response->value);
     }
 }
 
@@ -2044,7 +2044,7 @@ void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t
  */
 int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
-    log_info("FTP: START ANALYSING SESSION DATA OF PACKET: %lu",ipacket->packet_id);
+    debug("FTP: START ANALYSING SESSION DATA OF PACKET: %lu",ipacket->packet_id);
     
     //printf("from http generic session data analysis\n");
     // int offset = get_packet_offset_at_index(ipacket, index);
@@ -2053,7 +2053,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
     // Make sure there is data to analayse
     if(ipacket->internal_packet->payload_packet_len==0){
-        log_info("There is no FTP data to analysis: %lu\n",ipacket->packet_id);
+        debug("There is no FTP data to analysis: %lu\n",ipacket->packet_id);
         return MMT_CONTINUE;
     }
     
