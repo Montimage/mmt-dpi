@@ -178,9 +178,9 @@ struct packet_info_struct {
     uint32_t packet_id; /**< identifier of the packet. */
     unsigned int packet_len; /**< length of the packet. */
     struct timeval time; /**< time of arrival of the packet. */
-    proto_hierarchy_t proto_hierarchy; /**< the protocol layers corresponding to this packet */
-    proto_hierarchy_t proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
-    proto_hierarchy_t proto_classif_status; /**< the classification status of the protocols in the path */
+    // proto_hierarchy_t proto_hierarchy; /**< the protocol layers corresponding to this packet */
+    // proto_hierarchy_t proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
+    // proto_hierarchy_t proto_classif_status; /**< the classification status of the protocols in the path */
 };
 
 /**
@@ -356,7 +356,6 @@ struct mmt_handler_struct {
     uint32_t last_expiry_timeout;
     uint32_t attr_extraction_strategy;
     uint32_t stats_reporting_status;
-
     mmt_hashmap_t *ip_streams;
 };
 

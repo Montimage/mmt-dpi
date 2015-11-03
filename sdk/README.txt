@@ -36,3 +36,22 @@ Then build either a 32-bit version of the SDK:
 
   make -j4 ARCH=win64
 
+BUILDING ON OSX FOR OSX
+
+1. Install tools:
+
+* XCode
+* Install Hombrew
+
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    
+2. Install library
+
+    brew install gcc48
+    #brew install cmake libpth-dev ldconfig 
+    brew install libxml2 hiredis confuse libpcap
+    
+3. Compile SDK and install it
+
+    make -j4 ARCH=osx
+    sudo make ARCH=osx install

@@ -112,6 +112,8 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
       char tmp2[16]; /* max length of ipv4 addr string */
 #ifdef _WIN32
       a4.s_addr = addr->u.Word[3];
+#elif _OSX
+      a4.s_addr = 0;	//TODO need to fix in OSX
 #else
       a4.s_addr = addr->__in6_u.__u6_addr32[3];
 #endif
@@ -132,6 +134,8 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 
 #ifdef _WIN32
       x8 = addr->u.Byte[i];
+#elif _OSX
+
 #else
       x8 = addr->__in6_u.__u6_addr8[i];
 #endif
@@ -152,6 +156,8 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 
 #ifdef _WIN32
       x8 = addr->u.Byte[i + 1];
+#elif _OSX
+
 #else
       x8 = addr->__in6_u.__u6_addr8[i + 1];
 #endif
@@ -175,6 +181,8 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
       zr[i] = j;
 #ifdef _WIN32
       x16 = addr->u.Word[i];
+#elif _OSX
+
 #else
       x16 = addr->__in6_u.__u6_addr16[i];
 #endif

@@ -139,6 +139,9 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     packet->parsed_lines = 0;
 
     packet->empty_line_position_set = 0;
+    packet->empty_line_position = 0;
+
+    packet->empty_line_position = 0;
 
     packet->empty_line_position = 0;
 

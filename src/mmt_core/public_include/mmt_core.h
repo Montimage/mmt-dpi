@@ -16,6 +16,7 @@ extern "C" {
 #include "mmt_exports.h"
 #include "plugin_defs.h"
 #include "proto_meta.h"
+#include "dbg.h"
 
 //TODO: should be moved outside MMT. These definitions belong to the protocols/protocol stacks!
 #ifndef DLT_EN10MB
@@ -67,6 +68,12 @@ extern "C" {
 #define MMT_SKIP        -2 /**< Defines the code for skipping further processing of the packet.
                             This means that processing at the current protocol will continue, but
                             the packet will be skipped afterwards. */
+#define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
+/**
+ * Generic packet handler callback
+ */
+typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+
 /**
  * Generic packet handler callback
  */
@@ -730,7 +737,10 @@ MMTAPI void* MMTCALL mmt_malloc  ( size_t size );
 MMTAPI void* MMTCALL mmt_realloc ( void *x, size_t size );
 MMTAPI void  MMTCALL mmt_free    ( void *x );
 
-
+/**
+ * Print Montimage information
+ */
+void mmt_print_info();
 #ifdef	__cplusplus
 }
 #endif

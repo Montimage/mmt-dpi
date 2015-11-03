@@ -266,7 +266,8 @@ struct mmt_internal_tcp_session_struct {
     uint32_t imesh_stage : 4;
 #endif
 #ifdef PROTO_FTP
-    uint32_t ftp_codes_seen : 5;
+    // WORKING HERE for FTP session
+    uint32_t ftp_codes_seen:5;
     uint32_t ftp_client_direction : 1;
 #endif
 #ifdef PROTO_HTTP

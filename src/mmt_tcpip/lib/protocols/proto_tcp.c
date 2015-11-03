@@ -5,10 +5,144 @@
 
 #include "tcp.h"
 
+////////////// LIBNTOH LIBRARY INTEGRATION CODE /////////////////
+
+#include "libntoh.h"
+
+
+pntoh_tcp_session_t get_tcp_session(ipacket_t *ipacket, unsigned index){
+    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+            ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+    return (pntoh_tcp_session_t)configured_protocol->args;
+}
+
+void process_ipacket_next_process(ipacket_t* ipacket)
+{
+    debug("process_ipacket_next_process of packet %"PRIu64" is called at index:%d\n",ipacket->packet_id,ipacket->extra.index);
+    ipacket->extra.status=MMT_CONTINUE;
+    ipacket->extra.next_process(ipacket,ipacket->extra.parent_stats,ipacket->extra.index);
+}
+
+void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pntoh_tcp_peer_t dest , pntoh_tcp_segment_t seg , int reason , int extra )
+{
+    debug("ntoh_tcp_callback");
+    debug("\n[%s] %s:%d (%s | Window: %lu) ---> " , ntoh_tcp_get_status ( stream->status ) , inet_ntoa( *(struct in_addr*) &orig->addr ) , ntohs(orig->port) , ntoh_tcp_get_status ( orig->status ) , orig->totalwin );
+    debug("%s:%d (%s | Window: %lu)\n\t" , inet_ntoa( *(struct in_addr*) &dest->addr ) , ntohs(dest->port) , ntoh_tcp_get_status ( dest->status ) , dest->totalwin );
+
+    if ( seg != 0 )
+        debug("SEQ: %lu ACK: %lu Next SEQ: %lu" , seg->seq , seg->ack , orig->next_seq );
+    switch(reason){
+        case NTOH_REASON_SYNC:
+            switch(extra){
+                case NTOH_REASON_MAX_SYN_RETRIES_REACHED:
+                case NTOH_REASON_MAX_SYNACK_RETRIES_REACHED:
+                case NTOH_REASON_HSFAILED:
+                case NTOH_REASON_EXIT:
+                case NTOH_REASON_TIMEDOUT:
+                case NTOH_REASON_CLOSED:
+                    if(extra == NTOH_REASON_CLOSED){
+                        debug("connection closed by %s (%s)",stream->closedby == NTOH_CLOSEDBY_CLIENT?"Client":"Server",inet_ntoa(*(struct in_addr*)&(stream->client.addr)));
+                    }else{
+                        debug("%s/%s - %s",ntoh_get_reason(reason),ntoh_get_reason(extra),ntoh_tcp_get_status(stream->status)); 
+                    }
+                    break;
+            }
+            break;
+        case NTOH_REASON_DATA:
+            debug("Segment payload len: %i",seg->payload_len);
+            // Out of order
+            if(extra == NTOH_REASON_OOO){
+                debug("Out of order - Drop the packet");
+                break;
+            }else{
+                process_ipacket_next_process((ipacket_t *)seg->user_data);    
+            }
+            
+            if(extra!=0){
+                debug(" Reason: %s",ntoh_get_reason(extra));
+            }
+            break;
+    }
+    return;
+}
+
+/**
+ * @brief Send a TCP segment to libntoh
+ * - Need to analysis the ipacket to extract tcp header information
+ * - Extract struct ip data to put as input of libntoh
+ * - 
+ */
+void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
+ {
+    pntoh_tcp_session_t tcp_session;
+    tcp_session = get_tcp_session(ipacket,index);
+
+    debug("ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    debug("Number of stored streams: %d\n",ntoh_tcp_count_streams(tcp_session));
+    mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
+    int l3_offset = get_packet_offset_at_index(ipacket,index-1);
+    packet->iph = (struct iphdr*)&ipacket->data[l3_offset];
+
+    ntoh_tcp_tuple5_t   tcpt5;
+    pntoh_tcp_stream_t  stream;
+    struct tcphdr       *tcp;
+    size_t              size_ip;
+    size_t              total_len;
+    size_t              size_tcp;
+    size_t              size_payload;
+    int                 ret;
+    unsigned int        error;
+
+    struct ip* iphdr =(struct ip*)packet->iph;
+    size_ip = iphdr->ip_hl * 4;
+    total_len = ntohs( iphdr->ip_len );
+    
+    tcp = (struct tcphdr*)((unsigned char*)iphdr + size_ip);
+    size_tcp = tcp->th_off * 4;
+    
+    size_payload = total_len - ( size_ip + size_tcp );
+
+    ntoh_tcp_get_tuple5 ( iphdr , tcp , &tcpt5 );
+    // printf("\nTuple5 of packet: %p\n",ipacket);
+    
+    /* Find a stream */
+    if ( !(stream = ntoh_tcp_find_stream( tcp_session , &tcpt5 ))){
+        /*Create a new stream*/
+        if (!(stream = ntoh_tcp_new_stream( tcp_session , &tcpt5, ntoh_tcp_callback , 0 , &error , 1 , 1 )) ){
+            fprintf ( stderr , "\n[e] Error %d creating new stream: %s" , error , ntoh_get_errdesc ( error ) );
+             ipacket->extra.status = MMT_CONTINUE;
+            return;
+        }
+    }
+
+    if ( size_payload > 0 )
+    ret = ntoh_tcp_add_segment( tcp_session , stream, iphdr, total_len, (void*)ipacket);
+    else
+    ret = ntoh_tcp_add_segment( tcp_session , stream, iphdr, total_len, 0);
+    switch (ret)
+    {
+        case NTOH_OK:
+            debug("ret=NTOH_OK after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
+            return;
+
+        case NTOH_SYNCHRONIZING:
+            debug("ret=NTOH_SYNCHRONIZING after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
+            ipacket->extra.status = MMT_CONTINUE;
+            return;
+
+        default:
+            debug("ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
+            fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
+            ipacket->extra.status = MMT_CONTINUE;
+            return;
+    }
+}
+
+// END OF LIBNTOH CODE
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -21,7 +155,7 @@ int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_fin_flag_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -36,7 +170,7 @@ int tcp_fin_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_syn_flag_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -51,7 +185,7 @@ int tcp_syn_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_rst_flag_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -66,7 +200,7 @@ int tcp_rst_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_psh_flag_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -81,7 +215,7 @@ int tcp_psh_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_ack_flag_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -96,7 +230,7 @@ int tcp_ack_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_urg_flag_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -111,7 +245,7 @@ int tcp_urg_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_ece_flag_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
 #ifndef _WIN32
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
@@ -128,7 +262,7 @@ int tcp_ece_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_cwr_flag_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
 #ifndef _WIN32
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
@@ -145,13 +279,22 @@ int tcp_cwr_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int tcp_flags_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+    attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
     *((unsigned char *) extracted_data->data) = *((unsigned char *) & packet->data[proto_offset + attribute_offset]);
     return 1;
+}
+
+int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+    if(ipacket->internal_packet->payload_packet_len){
+        *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
+        return 1;
+    }
+    return 0;
 }
 
 static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
@@ -174,10 +317,12 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_URG_PTR, TCP_URG_PTR_ALIAS, MMT_U16_DATA, sizeof (short), 18, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_RTT, TCP_RTT_ALIAS, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_flag_extraction},//TODO: extract function not correct
     {TCP_SYN_RCV, TCP_SYN_RCV_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_flag_extraction},
+    {TCP_PAYLOAD_LEN, TCP_PAYLOAD_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_payload_len_extraction},
     {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_ack_flag_extraction},
 };
 
 int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
+    // printf("TEST: Enter TCP packet of packet %"PRIu64" at index: %d\n",ipacket->packet_id,index);
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     int l4_offset = get_packet_offset_at_index(ipacket, index);
     if (packet->iphv6) {
@@ -215,11 +360,11 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     /* check for new tcp syn packets, here
      * idea: reset detection state if a connection is unknown
      */
-    if (packet->tcp->syn != 0
-            && packet->tcp->ack == 0
-            && packet->flow != NULL
+     if (packet->tcp->syn != 0
+        && packet->tcp->ack == 0
+        && packet->flow != NULL
             && ipacket->session->packet_count == 0 /*First packet of the flow*/
-            && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN) {
+        && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN) {
 
         memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO: Is this memset needed? the syn should be
         //seen at the start of the flow, this should have been set to zero
@@ -227,7 +372,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_UNKNOWN, packet,
                 MMT_LOG_DEBUG,
                 "%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
-    }
+        }
 
     mmt_connection_tracking(ipacket, index);
 
@@ -251,10 +396,22 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION;
     }
 
-    if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
+    // if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
+    //    return 0;
+    // }
+    // INJECT LIBNOTH PROCESS //
+    ipacket->extra.status = MMT_SKIP;
+    debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    uint64_t ntoh_packet_id = ipacket->packet_id;
+    ntoh_packet_process(ipacket,index);
+    //write_data(ipacket);
+    if(ipacket->packet_id != ntoh_packet_id){
+        debug("LOST PACKET .... ");
+        ipacket->extra.status = MMT_SKIP;
         return 0;
     }
-
+    debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    // END OF INJECTING LIBNTOH PROCESS
     return 1;
 }
 
@@ -300,9 +457,30 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     }
     return new_retval;
 }
+
+void tcp_context_cleanup(void * proto_context, void * args) {
+    // ntoh_tcp_free_session((pntoh_tcp_session_t)((protocol_instance_t *) proto_context)->args);
+    debug("TCP: protocol context cleanup\n");
+}
+
+void * setup_tcp_context(void * proto_context, void * args) {
+    unsigned int libntoh_error = 0;
+    debug("Creates a new TCP session\n");
+    return (void *) ntoh_tcp_new_session(0,0,&libntoh_error);
+}
+
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_tcp_struct() {
+
+    // INITIALIZE LIBNTOH
+
+    ntoh_tcp_init();
+
+    debug("libntoh version: %s\n",ntoh_version());
+    
+    // END OF INITIALIZING LIBNTOH
+
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_TCP, PROTO_TCP_ALIAS);
 
     if (protocol_struct != NULL) {
@@ -313,9 +491,14 @@ int init_proto_tcp_struct() {
         }
 
         register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
+        register_proto_context_init_cleanup_function(protocol_struct, setup_tcp_context, tcp_context_cleanup, NULL);
         return register_protocol(protocol_struct, PROTO_TCP);
     } else {
         return 0;
     }
 }
 
+int cleanup_proto_tcp_struct(){
+    debug("Cleanup tcp protocol");
+    return 1;
+}

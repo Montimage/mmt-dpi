@@ -15,7 +15,7 @@ mkdir $build_dir/usr/
 mkdir $build_dir/usr/local/
 mkdir $build_dir/usr/local/include/
 mkdir $build_dir/usr/local/include/mmt/
-cp $sdk_dir/include/*.* $build_dir/usr/local/include/mmt/
+cp -R $sdk_dir/include/* $build_dir/usr/local/include/mmt/
 echo "#include \"mmt/mmt_core.h\"">>$build_dir/usr/local/include/mmt_core.h
 cp -R $sdk_dir/lib $build_dir/usr/
 
