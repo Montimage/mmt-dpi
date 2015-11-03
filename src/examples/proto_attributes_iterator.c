@@ -1,3 +1,19 @@
+/**
+ * This example is intened to provide the list of available protocols and for each protocol, the list of its attributes
+ * 
+ * Compile this example with:
+ * 
+ * gcc -o proto_attributes_iterator proto_attributes_iterator.c -lmmt_core -ldl
+ * 
+ * Then execute the program:
+ * 
+ * ./proto_attributes_iterator > proto_attr_output.txt
+ * 
+ * The output in the file proto_attr_output.txt
+ * 
+ * 	That is it!
+ * 
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include "mmt_core.h"

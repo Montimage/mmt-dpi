@@ -29,7 +29,7 @@ install: sdk $(MMT_INC) $(OPT_MMT_PLUGINS) $(OPT_MMT_EXAMS)
 	@ echo "# include \"mmt/mmt_core.h\"" >> /usr/include/mmt_core.h
 	@ echo "Installed /usr/include/mmt_core.h"
 	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(OPT_MMT_PLUGINS)/libmmt_tcpip.so
-	@ echo "Installed  "$(SDKLIB)/libmmt_tcpip.so.$(VERSION)" at "$(OPT_MMT_PLUGINS)/libmmt_tcpip.so
+	@ echo "Installed "$(OPT_MMT_PLUGINS)/libmmt_tcpip.so
 
 #  - - - - -
 #  C L E A N

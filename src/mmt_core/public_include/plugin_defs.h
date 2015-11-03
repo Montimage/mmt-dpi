@@ -85,6 +85,11 @@ typedef void (*stack_internal_cleanup)(void * stack_internal_context);
 typedef int (*generic_init_proto) (void);
 
 /**
+* This is the function that the MMT-extraction core will call to cleanup the resource that plugin has used
+*/
+typedef int (*generic_cleanup_proto)(void);
+
+/**
  * Defines a classified protocol including the identifier of the protocol and its offset in the packet.
  */
 typedef struct classified_proto_struct {

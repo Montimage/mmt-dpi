@@ -26,7 +26,7 @@ $(SDKLIB)/$(LIBCORE).dll: $(SDKLIB)/$(LIBCORE).a
 
 # TCP/IP
 
-$(SDKLIB)/$(LIBTCPIP).dll: $(SDKLIB)/$(LIBTCPIP).a
+$(SDKLIB)/$(LIBTCPIP).dll: $(SDKLIB)/$(LIBTCPIP).a  $(PREFIX)/lib/libntoh.a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--output-def,$(SDKLIB)/$(LIBTCPIP).def,--out-implib,$(SDKLIB)/$(LIBTCPIP)_dll.a -Wl,--soname=$(LIBTCPIP).dll $(LDFLAGS) -Wl,-Bstatic -lz -Wl,-Bdynamic -lmmt_core -lws2_32
 

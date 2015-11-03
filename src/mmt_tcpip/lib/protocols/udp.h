@@ -15,7 +15,7 @@ extern "C" {
 #include "plugin_defs.h"
 #include "mmt_core.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_OSX)
     struct udphdr {
         uint16_t source;
         uint16_t dest;

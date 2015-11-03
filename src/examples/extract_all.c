@@ -1,10 +1,54 @@
+/**
+ * This example is intended to extract everything from a pcap file! This means all the attributes of all registered protocols will be registed for extraction. When a packet is processed, the attributes found in the packet will be print out.
+ * 
+ * Compile this example with:
+ * 
+ * $ gcc -g -o extract_all extract_all.c -lmmt_core -ldl -lpcap -lpthread
+ *   
+ * 
+ * And get a data file (.pcap file) by using wireShark application to capture some packet.
+ * 
+ * Then execute the program:
+ * 
+ * -> Extract from a pcap file
+ * $ ./extract_all -t tcp_plugin_image.pcap > exta_output.txt
+ * 
+ * -> Test with valgrind tool:
+ * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./extract_all -t tcp_plugin_image.pcap 2> valgrind_test_.txt
+ * You can see the example result in file: exta_output.txt
+ * 
+ * -> Extract from live streaming
+ * 
+ * $ sudo ./extract_all -i eth0 > extra_live_output.txt
+ * 
+ * You can see the example result in file: exta_live_output.txt
+ * That is it!
+ * 
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <signal.h>
+#include <errno.h>
+
+#ifndef __FAVOR_BSD
+# define __FAVOR_BSD
+#endif
+
+#include <netinet/tcp.h>
+#include <netinet/ip.h>
+#include <netinet/if_ether.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <pcap.h>
 #include <unistd.h>
 #include "mmt_core.h"
-
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
@@ -14,6 +58,50 @@
 #define MTU_BIG (16 * 1024)
 
 static int quiet;
+
+void write_data_ipacket(const ipacket_t *ipacket){
+
+    int l3_offset = 0;
+    int i = 0;
+    for (; i <= 2; i++) {
+        l3_offset += ipacket->proto_headers_offset->proto_path[i];
+    }
+    struct tcphdr       *tcp;
+    size_t              size_ip;
+    size_t              total_len;
+    size_t              size_tcp;
+    size_t              size_payload;
+    unsigned char       *payload;
+
+    struct ip* iphdr =(struct ip*)(struct iphdr*)&ipacket->data[l3_offset];
+    size_ip = iphdr->ip_hl * 4;
+    total_len = ntohs( iphdr->ip_len );
+    
+    tcp = (struct tcphdr*)((unsigned char*)iphdr + size_ip);
+    if ( (size_tcp = tcp->th_off * 4) < sizeof(struct tcphdr))
+        return ;
+    payload =(unsigned char*)iphdr + size_ip + size_tcp;
+    size_payload = total_len - (size_ip + size_tcp);
+    if(size_payload>0){
+        int fd = 0;
+        char path[1024] ={0};
+        int len=0;
+        snprintf ( path , sizeof(path) , "%s:%d-" , inet_ntoa ( *(struct in_addr*)&(iphdr->ip_src.s_addr) ) , ntohs(tcp->th_sport) );
+        len=strlen(path);
+        snprintf ( &path[len] , sizeof(path) - len, "%s:%d" , inet_ntoa ( *(struct in_addr*)&(iphdr->ip_dst.s_addr) ) , ntohs(tcp->th_dport) );
+        char *filename;
+        filename = strndup(path,sizeof(path));
+        if((fd = open(filename, O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW , S_IRWXU | S_IRWXG | S_IRWXO ))<0){
+            fprintf(stderr, "\n[e] Error %d writting data to %s: %s \n",errno,filename,strerror(errno));
+            return;   
+        }
+        write(fd,payload,size_payload);
+        close(fd);
+        free(filename);
+        return;
+    }
+    
+}
 
 void usage(const char * prg_name) {
     fprintf(stderr, "%s [<option>]\n", prg_name);
@@ -127,7 +215,9 @@ void protocols_stats_iterator(uint32_t proto_id, void * args) {
     }
 }
 
-void packet_handler(const ipacket_t * ipacket, u_char * args) {
+void packet_handler(const ipacket_t * ipacket, void * args) {
+    //debug("packet_handler of %"PRIu64" index: %d\n",ipacket->packet_id,ipacket->extra.index);
+    // write_data_ipacket(ipacket);
     static time_t last_report_time = 0;
     if (last_report_time == 0) {
         last_report_time = ipacket->p_hdr->ts.tv_sec;
@@ -153,6 +243,7 @@ void live_capture_callback( u_char *user, const struct pcap_pkthdr *p_pkthdr, co
 }
 
 int main(int argc, char** argv) {
+    printf("**** WELCOME TO EXTRACT ALL ****\n");
     mmt_handler_t *mmt_handler;
     char mmt_errbuf[1024];
 
@@ -183,7 +274,7 @@ int main(int argc, char** argv) {
     register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler /* built in packet handler that will print all of the attributes */, &quiet);
 
     //Register a packet handler to periodically report protocol statistics
-    //register_packet_handler(mmt_handler, 2, packet_handler /* built in packet handler that will print all of the attributes */, mmt_handler);
+    //register_packet_handler(mmt_handler, 1, packet_handler /* built in packet handler that will print all of the attributes */, mmt_handler);
 
     if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace

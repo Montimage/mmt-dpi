@@ -1928,7 +1928,7 @@ void mmt_classify_me_http(ipacket_t * ipacket, unsigned index) {
      */
 
     //First parse the packet to check if it contains any: field: value lines
-    
+    packet->empty_line_position = 0; 
     if(packet->payload_packet_len < 32) {
         return;
     }

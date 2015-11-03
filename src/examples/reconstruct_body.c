@@ -17,15 +17,18 @@
 
 /** Dependencies
  *  HTML parser
- *    get the code from https://code.google.com/p/htmlstreamparser/
- *    ./configure, make & make install
+ *    git clone https://github.com/luongnv89/htmlstreamparser.git
+ *    cd htmlstreamparser/
+ *    ./configure 
+ *    make 
+ *    sudo make install
  *
  *  zlib
  *    sudo apt-get install zlib1g zlib1g-dev
  */
 
 // COMPILE with
-// gcc -g -I/opt/mmt/include -o reconstruct_body reconstruct_body.c html_integration.c -L/opt/mmt/lib -lmmt_core -ldl -lpcap -lhtmlstreamparser -lz
+// gcc -g -o reconstruct_body reconstruct_body.c html_integration.c -lmmt_core -ldl -lpcap -lhtmlstreamparser -lz -lpthread
 
 //TODOs: content reconstruction
 // - add user data at session detection - OK

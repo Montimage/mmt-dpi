@@ -5,8 +5,8 @@ MMT_INC ?= /usr/local/include/mmt
 OPT_MMT_PLUGINS ?= /opt/mmt/plugins
 OPT_MMT_EXAMS ?= /opt/mmt/examples
 
-CFLAGS   := -Wall
-CXXFLAGS := -Wall
+CFLAGS   := -Wall -DNDEBUG
+CXXFLAGS := -Wall -DNDEBUG
 
 CP       := cp -R
 RM       := rm -rf
@@ -70,7 +70,7 @@ CORE_OBJECTS := $(filter-out $(SRCDIR)/mmt_core/src/mmt_tcpip_init.o,$(CORE_OBJE
 
 TCPIP_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/*.c)) \
- $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/protocols/*.c)) 
+ $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/protocols/*.c))
 
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))
@@ -78,7 +78,7 @@ FUZZ_OBJECTS := \
 SECURITY_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_security/*.c))
 
-$(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS   += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+$(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
 # CORE
@@ -89,9 +89,9 @@ $(SDKLIB)/$(LIBCORE).a: $(SDKLIB) $(CORE_OBJECTS)
 
 # TCP/IP
 
-$(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
+$(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS) 
 	@echo "[ARCHIVE] $(notdir $@)"
-	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS)
+	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS) 
 
 # FUZZ
 
@@ -154,7 +154,7 @@ documentation: $(SDKDOC)
 #  E X A M P L E S
 #  - - - - - - - -
 
-MMT_EXAMPLES_SRC = extract_all.c proto_attributes_iterator.c
+MMT_EXAMPLES_SRC = extract_all.c proto_attributes_iterator.c attribute_handler_session_counter.c packet_handler.c simple_traffic_reporting.c tcp_plugin_image.pcap
 SDK_EXAMPLES_SRC = $(addprefix $(SDKXAM)/,$(MMT_EXAMPLES_SRC))
 
 examples: $(SDK_EXAMPLES_SRC)
