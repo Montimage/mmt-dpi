@@ -50,7 +50,14 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
             break;
         case NTOH_REASON_DATA:
             debug("Segment payload len: %i",seg->payload_len);
-            process_ipacket_next_process((ipacket_t *)seg->user_data);
+            // Out of order
+            if(extra == NTOH_REASON_OOO){
+                debug("Out of order - Drop the packet");
+                break;
+            }else{
+                process_ipacket_next_process((ipacket_t *)seg->user_data);    
+            }
+            
             if(extra!=0){
                 debug(" Reason: %s",ntoh_get_reason(extra));
             }
@@ -101,7 +108,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
     /* Find a stream */
     if ( !(stream = ntoh_tcp_find_stream( tcp_session , &tcpt5 ))){
         /*Create a new stream*/
-        if (!(stream = ntoh_tcp_new_stream( tcp_session , &tcpt5, ntoh_tcp_callback , 0 , &error , 0 , 0 )) ){
+        if (!(stream = ntoh_tcp_new_stream( tcp_session , &tcpt5, ntoh_tcp_callback , 0 , &error , 1 , 1 )) ){
             fprintf ( stderr , "\n[e] Error %d creating new stream: %s" , error , ntoh_get_errdesc ( error ) );
              ipacket->extra.status = MMT_CONTINUE;
             return;
@@ -393,10 +400,16 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     //    return 0;
     // }
     // INJECT LIBNOTH PROCESS //
-    ipacket->extra.status=MMT_SKIP;
+    ipacket->extra.status = MMT_SKIP;
     debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    uint64_t ntoh_packet_id = ipacket->packet_id;
     ntoh_packet_process(ipacket,index);
     //write_data(ipacket);
+    if(ipacket->packet_id != ntoh_packet_id){
+        debug("LOST PACKET .... ");
+        ipacket->extra.status = MMT_SKIP;
+        return 0;
+    }
     debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     // END OF INJECTING LIBNTOH PROCESS
     return 1;
