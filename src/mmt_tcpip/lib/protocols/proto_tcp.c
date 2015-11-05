@@ -98,8 +98,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
     total_len = ntohs( iphdr->ip_len );
     
     tcp = (struct tcphdr*)((unsigned char*)iphdr + size_ip);
-    size_tcp = tcp->th_off * 4;
-    
+    size_tcp = tcp->doff * 4;
     size_payload = total_len - ( size_ip + size_tcp );
 
     ntoh_tcp_get_tuple5 ( iphdr , tcp , &tcpt5 );
