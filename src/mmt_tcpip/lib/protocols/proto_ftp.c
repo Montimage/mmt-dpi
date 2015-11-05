@@ -776,11 +776,11 @@ uint16_t ftp_get_port_from_parameter(char *payload,uint32_t payload_len){
     
     char * nb1;
     nb1 = str_sub_index(payload,indexes[3],indexes[4]);
-    printf("nb1 string: %s\n", nb1);
+    // printf("nb1 string: %s\n", nb1);
 
     char * nb2;
     nb2 = str_sub_index(payload,indexes[4],payload_len);
-    printf("nb2 string: %s\n", nb2);
+    // printf("nb2 string: %s\n", nb2);
     uint16_t port = ntohs(atoi(nb1) * 256 + atoi(nb2));
     return port;
 }
@@ -2133,9 +2133,9 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     }else if(tuple6->conn_type == MMT_FTP_DATA_CONNECTION && ftp_data){
         ftp_data_packet(ipacket,index,ftp_data);
     }else{
-        fprintf(stderr, "Cannot analysis data of packet: %lu\n",ipacket->packet_id);
-        fprintf(stderr, "Connection type: %d\n",tuple6->conn_type);
-        fprintf(stderr, "Connection direction: %d\n",tuple6->direction);
+        debug("Cannot analysis data of packet: %lu\n",ipacket->packet_id);
+        debug("Connection type: %d\n",tuple6->conn_type);
+        debug("Connection direction: %d\n",tuple6->direction);
     }
     
     return MMT_CONTINUE;
