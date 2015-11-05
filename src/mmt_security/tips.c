@@ -81,11 +81,11 @@
 
 #include "struct_defs.h"
 #include "public_defs.h"
-#include "mmt/data_defs.h"
-#include "mmt/extraction_lib.h"
-#include "mmt/mmt_core.h"
-#include "mmt/plugin_defs.h"
-#include "mmt/types_defs.h"
+#include "data_defs.h"
+#include "extraction_lib.h"
+#include "mmt_core.h"
+#include "plugin_defs.h"
+#include "types_defs.h"
 
 static FILE * OutputFile = NULL;
 static long long packet_count = 0;
