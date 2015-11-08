@@ -722,6 +722,12 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
+    /////////// INITILIZING PROTO_FTP //////////////////
+    if (!init_proto_ndn_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_ndn\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
     /////////// INITILIZING PROTO_GADUGADU //////////////////
     if (!init_proto_gadugadu_struct()) {
         fprintf(stderr, "Error initializing protocol proto_gadugadu\n Exiting\n");
@@ -3808,6 +3814,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_imap, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_smtp, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp, 50);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_usenet, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dns, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dns, 50);

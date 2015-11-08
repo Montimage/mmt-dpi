@@ -89,6 +89,8 @@ extern "C" {
     void mmt_classify_me_http(ipacket_t * ipacket, unsigned index);
     /* FTP entry */
     void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index);
+    /* NDN entry */
+    void mmt_classify_me_ndn(ipacket_t * ipacket, unsigned index);
     /* USENET entry */
     void mmt_classify_me_usenet(ipacket_t * ipacket, unsigned index);
     /* DNS entry */
@@ -225,6 +227,7 @@ extern "C" {
     int mmt_check_imap(ipacket_t * ipacket, unsigned index);
     int mmt_check_smtp(ipacket_t * ipacket, unsigned index);
     int mmt_check_ftp(ipacket_t * ipacket, unsigned index);
+    int mmt_check_ndn(ipacket_t * ipacket, unsigned index);
     int mmt_check_usenet(ipacket_t * ipacket, unsigned index);
     int mmt_check_dns(ipacket_t * ipacket, unsigned index);
     int mmt_check_filetopia(ipacket_t * ipacket, unsigned index);
