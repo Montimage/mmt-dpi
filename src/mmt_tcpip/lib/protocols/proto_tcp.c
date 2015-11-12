@@ -497,7 +497,8 @@ int init_proto_tcp_struct() {
     }
 }
 
-int cleanup_proto_tcp_struct(){
-    debug("Cleanup tcp protocol");
-    return 1;
-}
+// int cleanup_proto_tcp_struct(){
+//     debug("Cleanup tcp protocol");
+//     return 1;
+// }
+// 
