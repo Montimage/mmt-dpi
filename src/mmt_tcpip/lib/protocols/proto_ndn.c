@@ -6,128 +6,6 @@
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #include "ndn.h"
-
-////////////////////////////////////////////////////////////////////////////
-///
-///
-///                      NDN UTILITIES FUNCTIONS 
-///
-///
-////////////////////////////////////////////////////////////////////////////
-unsigned long hex2dec(char *str){
-    
-    int i;
-    for(i = 0; i < strlen(str); i++ ){
-        int nb = str[i];
-        if (!( (nb >=48 && nb <= 57) || (nb >= 97 && nb<=102) || (nb >= 65 && nb<=70) )){
-            return -1;
-        }
-    }
-
-    unsigned long ul;
-    ul = strtoul (str, NULL, 16);
-    if(ul == 0){
-        int i;
-        for(i = 0; i < strlen(str); i++){
-            if(str[i] != '0') return -1;
-        }
-    }
-    return ul;
-}
-
-
-int char2int(char x){
-    int nb = x ;
-    if(nb >=48 && nb <= 57) return (nb-48);
-    if(nb >= 65 && nb<=70) return ((nb-65) + 10);
-    if(nb >= 97 && nb<=102) return ((nb-97) + 10);
-    return -1;
-}
-
-
-char hex2char(char a, char b){
-    int na = char2int(a);
-    int nb = char2int(b);
-    if(na == -1 || nb == -1) return '\0';
-    char c = na * 16 + nb;
-    return c;
-}
-
-char * hex2str(char *h_str){
-
-    if(h_str==NULL) return NULL;
-
-    int str_len = strlen(h_str);
-    if ((str_len % 2)!=0) return NULL;
-    char *ret;
-    ret = (char*)malloc(str_len/2 + 1);
-    int i = 0 ;
-    int j = 0;
-    for(i = 0; i < str_len/2; i++){
-        char c = hex2char(h_str[2*i],h_str[2*i+1]);
-        int nb_c = c;
-        if(nb_c >32 && nb_c < 127){
-            ret[j] = c;
-            j++;
-            // debug("%s\n",ret);
-        }else{
-            // debug("ooop\n");
-        }
-    }
-    ret[j]='\0';
-    return ret;
-}
-
-
-char * str_sub(char * str, int start_index, int end_index){
-    if(str == NULL) return NULL;
-
-    if(start_index < 0) return NULL;
-
-    if(end_index >= strlen(str)) return NULL;
-
-    if( start_index >= end_index) return NULL;
-
-    int len = end_index - start_index + 1;
-    char * sub;
-    sub = (char *)malloc(len + 1);
-    memcpy(sub,(str + start_index), len);
-    sub[len]='\0';
-    return sub;
- }
-
-char * str_combine(char * str1, char * str2){
-    char * comb;
-    int len = 0;
-    if(str2 == NULL && str1 == NULL) return NULL;
-
-    if(str1 == NULL && str2 != NULL) {
-        len = strlen(str2);
-        comb = (char *)malloc(len + 1);
-        memcpy(comb,str2,len);
-        comb[len]='\0';
-    }else if(str2 == NULL && str1 != NULL){
-        len = strlen(str1);
-        comb = (char *)malloc(len + 1);
-        strcpy(comb,str1);
-    }else {
-        len = strlen(str1) + strlen(str2);
-        comb = (char*)malloc(len + 1);
-        strcpy(comb,str1);
-        strcat(comb,str2);
-    }
-    return comb;
- }
-
-
-////////////////////////////////////////////////////////////////////////////
-///
-///
-///                      NDN FUNCTIONS 
-///
-///
-////////////////////////////////////////////////////////////////////////////
-
 int ndn_TLV_check_type(int type){
 
     // 01 - ImplicitSha256DigestComponent
@@ -161,12 +39,23 @@ ndn_tlv_t * ndn_TLV_init(){
     return ndn_tlv;
 }
 
+void ndn_TLV_free(ndn_tlv_t * ndn){
+    
+    if(ndn == NULL) return;
+
+    if(ndn->value != NULL) free(ndn->value);
+
+    if(ndn->remain_value != NULL) free(ndn->remain_value);
+
+    if(ndn->next) ndn_TLV_free(ndn->next);
+
+    free(ndn);
+    // ndn = NULL;
+}
 
 ndn_tlv_t * ndn_TLV_parser(char *payload, int total_length){
 
     if(payload == NULL) return NULL;
-
-    ndn_tlv_t * ndn_new_node = ndn_TLV_init();
 
     char *str_type = str_sub(payload,0,1);
 
@@ -174,10 +63,11 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int total_length){
 
     if(type == 0) {
         debug("Wrong type : %s\n",str_type);
+        free(str_type);
+        // ndn_TLV_free(ndn_new_node);
         return NULL;
     }
-
-    ndn_new_node->type = type;
+    free(str_type);
 
     char *first_octet = str_sub(payload,2,3);
     unsigned long val = hex2dec(first_octet);
@@ -185,17 +75,27 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int total_length){
     // Check the value of first octets
     if(val == -1 && val > 255 ) {
         debug("First octet : %s\n",first_octet);
+        free(first_octet);
+        // ndn_TLV_free(ndn_new_node);
         return NULL;
     }
-    
+    ndn_tlv_t * ndn_new_node = NULL;
     if(val == 0 ){
         if(total_length == 2){
+            ndn_new_node = ndn_TLV_init();
+            ndn_new_node->type = type;
             return ndn_new_node;
         }else{
             debug("First octet : %s\n",first_octet);
+            free(first_octet);
+            // ndn_TLV_free(ndn_new_node);
             return NULL;
         }
     }
+    free(first_octet);
+    
+    ndn_new_node = ndn_TLV_init();
+    ndn_new_node->type = type;
     // int nb_octets = 0;
     switch(val){
         // fd
@@ -221,6 +121,7 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int total_length){
 
     if(total_length < 2 + ndn_new_node->nb_octets){
         debug("Not correct length value : %lu \n",val);
+        ndn_TLV_free(ndn_new_node);
         return NULL;
     }
     char *str_length;
@@ -230,9 +131,15 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int total_length){
         str_length = str_sub(payload, 2, 2*(2 + ndn_new_node->nb_octets) - 1);
     }
     ndn_new_node->length = hex2dec(str_length);
-    ndn_new_node->value = str_sub(payload + (2 + ndn_new_node->nb_octets) * 2,0,ndn_new_node->length*2-1);
+
+    if(str_length != NULL) free(str_length);
+    
+    ndn_new_node->value = str_sub(payload,(2 + ndn_new_node->nb_octets) * 2,(2 + ndn_new_node->nb_octets) * 2 + ndn_new_node->length*2-1);
     if(2 + ndn_new_node->nb_octets + ndn_new_node->length < total_length){
-        ndn_new_node->remain_value = payload + 2*(2 + ndn_new_node->nb_octets + ndn_new_node->length);
+        char *new_str = payload + 2*(2 + ndn_new_node->nb_octets + ndn_new_node->length);
+        ndn_new_node->remain_value = str_copy(new_str);
+        // if(new_str != NULL) free(new_str);
+        // ndn_new_node->remain_value = payload + 2*(2 + ndn_new_node->nb_octets + ndn_new_node->length);
     }
     return ndn_new_node;
 }
@@ -241,9 +148,14 @@ ndn_tlv_t * ndn_find_node(ndn_tlv_t *root, int node_type){
     
     if(root==NULL) return NULL;
 
-    if(root->value == NULL) return NULL;
-
-    if(ndn_TLV_check_type(node_type)==0) return NULL;
+    if(root->value == NULL) {
+        // ndn_TLV_free(root);
+        return NULL;
+    }
+    if(ndn_TLV_check_type(node_type)==0) {
+        // ndn_TLV_free(root);
+        return NULL;
+    }
     int remain_length = root->length;
     ndn_tlv_t * temp = ndn_TLV_parser(root->value,remain_length);
 
@@ -260,14 +172,18 @@ ndn_tlv_t * ndn_find_node(ndn_tlv_t *root, int node_type){
         // if(temp_deeper != NULL) return temp_deeper;
 
         // Find width
-        temp = ndn_TLV_parser(temp->remain_value,remain_length);
+        char *new_payload = str_copy(temp->remain_value);
+        ndn_TLV_free(temp);
+        temp = ndn_TLV_parser(new_payload,remain_length);
+        if(new_payload != NULL) free(new_payload);
     }
-
+    ndn_TLV_free(temp);
     return NULL;
 }
 
 int mmt_check_ndn_payload(char* payload, int packet_len){
     // Minimum packet: 050007
+    int ret = 0;
     if(packet_len < 3) return 0;
 
     // Check the first condition: 05 - interest packet, 06 - data packet
@@ -278,15 +194,27 @@ int mmt_check_ndn_payload(char* payload, int packet_len){
     
     if(root == NULL)
         return 0;
-    if( packet_len != root->length + 2 + root->nb_octets)
+    if( packet_len != root->length + 2 + root->nb_octets){
+        ndn_TLV_free(root);
         return 0;
+    }
 
     // Check the condition of the common fields: name '07'
-    if(root->value[0]!='0' || root->value[1]!='7')
+    if(root->value[0]!='0' || root->value[1]!='7'){
+        ndn_TLV_free(root);
         return 0;
+    }
 
-    if(root->type == 5) return 1;
-    if(root->type == 6) return 2;
+    if(root->type == 5){
+        ndn_TLV_free(root);
+        return 1;
+    } 
+        
+    if(root->type == 6) {
+        ndn_TLV_free(root);
+        return 2;
+    }
+
     return 0;
 }
 
@@ -296,14 +224,18 @@ ndn_tlv_t * ndn_TLV_parser_name_comp(char* payload, int payload_len){
 
     if(name_com == NULL) return NULL;
 
-    if(name_com->type != NDN_NAME_COMPONENT) return NULL;
-
+    if(name_com->type != NDN_NAME_COMPONENT) {
+        ndn_TLV_free(name_com);
+        return NULL;
+    }
     if(name_com->value != NULL){
         name_com->value = str_sub(name_com->value,0,name_com->length*2-1);
     }
     int remain_length = payload_len - 2 - name_com->nb_octets - name_com->length;
     if(remain_length>0){
+        // char *new_payload = str_copy();
         name_com->next = ndn_TLV_parser_name_comp(name_com->remain_value,remain_length);
+        // if(new_payload != NULL) free(new_payload);
     }
     return name_com;
 }
@@ -325,24 +257,32 @@ uint8_t ndn_packet_type_extraction(char* payload, int packet_len){
     
     ndn_tlv_t *ndn = ndn_TLV_parser(payload,packet_len);
 
+    int ret = NDN_UNKNOWN_PACKET;
     if(ndn!=NULL){
-        if(ndn->type==5) return NDN_INTEREST_PACKET;
-        if(ndn->type==6) return NDN_DATA_PACKET;
+        if(ndn->type == 5 || ndn->type==6) ret = ndn->type;
     }
-    return NDN_UNKNOWN_PACKET;
+
+    ndn_TLV_free(ndn);
+
+    return ret;
 }
 
 
 uint32_t ndn_packet_length_extraction(char* payload, int packet_len){
     
+    int ret = 0;
+
     ndn_tlv_t *ndn = ndn_TLV_parser(payload,packet_len);
 
-    if(ndn == NULL) return 0;
-
-    if(ndn->type == NDN_DATA_PACKET || ndn->type == NDN_INTEREST_PACKET){
-        return ndn->length * 2;
+    if(ndn != NULL) {
+        if(ndn->type == NDN_DATA_PACKET || ndn->type == NDN_INTEREST_PACKET){
+            ret = ndn->length * 2;
+        }
     }
-    return 0;
+
+    ndn_TLV_free(ndn);
+    
+    return ret;
 }
 
 char* ndn_name_components_extraction(char *payload,int payload_len){
@@ -350,41 +290,70 @@ char* ndn_name_components_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root==NULL){
+        ndn_TLV_free(root);
         return NULL;
     }
 
     if(root->type == NDN_UNKNOWN_PACKET){
+        ndn_TLV_free(root);
         return NULL;
     }
 
     if(root->value == NULL){
+        ndn_TLV_free(root);
         return NULL;
     }
 
     ndn_tlv_t * name_node = ndn_TLV_parser(root->value,root->length);
 
-    if(name_node == NULL ) return NULL;
+    char * ret;
 
-    if(name_node->type != NDN_COMMON_NAME) return NULL;
+    if(name_node != NULL ) {
+        if(name_node->type == NDN_COMMON_NAME) {
 
-    if(name_node->value == NULL) return NULL;
+                if(name_node->value != NULL) {
+                    // name_node->value = str_sub(name_node->value,0,name_node->length*2-1);
+                char *new_payload = str_sub(name_node->value,0,name_node->length*2-1);
 
-    // name_node->value = str_sub(name_node->value,0,name_node->length*2-1);
+                ndn_tlv_t * name_com = ndn_TLV_parser_name_comp(new_payload,name_node->length);
 
-    ndn_tlv_t * name_com = ndn_TLV_parser_name_comp(str_sub(name_node->value,0,name_node->length*2-1),name_node->length);
+                if(name_com != NULL) {
+                    
+                    ret = hex2str(name_com->value);
 
-    if(name_com == NULL) return NULL;
+                    ndn_tlv_t *temp = name_com->next;
+                    
+                    while(temp != NULL){
+                        
+                        char *str_temp = str_combine(ret,"/");
+                        if(ret != NULL) free(ret);
+                        ret = str_copy(str_temp);
+                        if(str_temp != NULL) free(str_temp);
+                        
+                        char *str_value = hex2str(temp->value);
+                        
+                        str_temp = str_combine(ret,str_value);
+                        if(ret != NULL) free(ret);
+                        ret = str_copy(str_temp);
+                        if(str_temp != NULL) free(str_temp);
+                        if(str_value != NULL) free(str_value);
 
-    char * ret = hex2str(name_com->value);
+                        temp = temp->next;
+                    }
 
-    ndn_tlv_t *temp = name_com->next;
-    
-    while(temp != NULL){
-        ret = str_combine(ret,"/");
-        char *str_value = hex2str(temp->value);
-        ret = str_combine(ret,str_value);
-        temp = temp->next;
+                    free(new_payload);
+                    
+                    ndn_TLV_free(name_com);
+                }
+            }
+
+        }
+
     }
+
+    ndn_TLV_free(name_node);
+
+    ndn_TLV_free(root);
 
     return ret;
 }
@@ -396,16 +365,25 @@ int ndn_interest_nonce_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
         return -1;
     }
 
     ndn_tlv_t *ndn_nonce = ndn_find_node(root,NDN_INTEREST_NONCE);
 
-    if(ndn_nonce==NULL) return -1;
+    int ret = -1;
 
-    if(ndn_nonce->value==NULL) return -1;
+    if(ndn_nonce != NULL) {
+        if(ndn_nonce->value != NULL) {
+            ret = hex2dec(ndn_nonce->value);
+        }
+    }
 
-    return hex2dec(ndn_nonce->value);
+    ndn_TLV_free(ndn_nonce);
+
+    ndn_TLV_free(root);
+    
+    return ret;
 }
 
 
@@ -414,22 +392,32 @@ int ndn_interest_lifetime_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
         return -1;
     }
 
     ndn_tlv_t *ndn_lifetime = ndn_find_node(root,NDN_INTEREST_LIFETIME);
 
-    if(ndn_lifetime==NULL) return -1;
+    int ret = -1; 
+    if(ndn_lifetime != NULL) {
+        if(ndn_lifetime->value != NULL) {
+            ret = hex2dec(ndn_lifetime->value);
+        }
 
-    if(ndn_lifetime->value==NULL) return -1;
+    }
 
-    return hex2dec(ndn_lifetime->value);
+    ndn_TLV_free(ndn_lifetime);
+
+    ndn_TLV_free(root);
+    
+    return ret;
 }
 
 int ndn_interest_min_suffix_component_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
         return -1;
     }
 
@@ -437,11 +425,20 @@ int ndn_interest_min_suffix_component_extraction(char *payload,int payload_len){
 
     ndn_tlv_t *ndn_min = ndn_find_node(ndn_selectors,NDN_INTEREST_MIN_SUFFIX_COMPONENT);
 
-    if(ndn_min==NULL) return -1;
+    int ret = -1;
 
-    if(ndn_min->value==NULL) return -1;
+    if(ndn_min != NULL) {
+        if(ndn_min->value != NULL){
+            ret = hex2dec(ndn_min->value);
+        }
+    }
+    ndn_TLV_free(ndn_min);
 
-    return hex2dec(ndn_min->value);
+    ndn_TLV_free(ndn_selectors);
+
+    ndn_TLV_free(root);
+
+    return ret;
 }
 
 
@@ -452,6 +449,7 @@ char* ndn_data_content_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_DATA_PACKET){
+        ndn_TLV_free(root);
         return NULL;
     }
 
@@ -461,80 +459,125 @@ char* ndn_data_content_extraction(char *payload,int payload_len){
 
     if(ndn_data_content->value==NULL) return NULL;
 
-    return hex2str(ndn_data_content->value);
+    char *ret = hex2str(ndn_data_content->value);
+
+    ndn_TLV_free(ndn_data_content);
+
+    ndn_TLV_free(root);
+
+    return ret;
 }
 
 int ndn_data_content_type_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_DATA_PACKET){
+        ndn_TLV_free(root);
         return -1;
     }
 
     ndn_tlv_t *ndn_metainfo = ndn_find_node(root,NDN_DATA_METAINFO);
 
+    if(ndn_metainfo == NULL){
+        ndn_TLV_free(root);
+        return -1;
+    }
+
     ndn_tlv_t *ndn_content_type = ndn_find_node(ndn_metainfo,NDN_DATA_CONTENT_TYPE);
     
-    if(ndn_content_type==NULL) return -1;
+    int ret = -1;
+    if(ndn_content_type != NULL) {
+        if(ndn_content_type->value != NULL) {
+            ret = hex2dec(ndn_content_type->value);
+        }
+    }
+    ndn_TLV_free(ndn_content_type);
 
-    if(ndn_content_type->value==NULL) return -1;
+    ndn_TLV_free(ndn_metainfo);
 
-    return hex2dec(ndn_content_type->value);
+    ndn_TLV_free(root);
+
+    return ret;
 }
 
 int ndn_data_freshness_period_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_DATA_PACKET){
+        ndn_TLV_free(root);
         return -1;
     }
 
+    int ret = -1;
     ndn_tlv_t *ndn_metainfo = ndn_find_node(root,NDN_DATA_METAINFO);
 
     ndn_tlv_t *ndn_freshness_period = ndn_find_node(ndn_metainfo,NDN_DATA_FRESHNESS_PERIOD);
     
-    if(ndn_freshness_period==NULL) return -1;
+    if(ndn_freshness_period != NULL) {
 
-    if(ndn_freshness_period->value==NULL) return -1;
+        if(ndn_freshness_period->value != NULL) {
+            ret = hex2dec(ndn_freshness_period->value);
+        }
 
-    return hex2dec(ndn_freshness_period->value);
+    }
+    ndn_TLV_free(ndn_freshness_period);
+
+    ndn_TLV_free(ndn_metainfo);
+
+    ndn_TLV_free(root);
+
+    return ret;
 }
 
 
 
 int ndn_data_signature_type_extraction(char *payload,int payload_len){
-    
+    int ret = -1;
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_DATA_PACKET){
-        return -1;
+        ndn_TLV_free(root);
+        return ret;
     }
 
     ndn_tlv_t *ndn_data_signature_info = ndn_find_node(root,NDN_DATA_SIGNATURE_INFO);
 
     ndn_tlv_t *ndn_data_signature_type = ndn_find_node(ndn_data_signature_info,NDN_DATA_SIGNATURE_TYPE);
 
-    if(ndn_data_signature_type==NULL) return -1;
-
-    if(ndn_data_signature_type->value==NULL) return -1;
-
+    if(ndn_data_signature_type==NULL) {
+        ndn_TLV_free(ndn_data_signature_info);
+        ndn_TLV_free(root);
+        return -1;
+    }
+    if(ndn_data_signature_type->value==NULL) {
+        ndn_TLV_free(ndn_data_signature_type);
+        ndn_TLV_free(ndn_data_signature_info);
+        ndn_TLV_free(root);
+        return -1;
+    }
     unsigned long st = hex2dec(ndn_data_signature_type->value);
     
-    if(st == -1) return -1;
+    if(st == -1) ret = -1;
 
-    if(st == 0) return DigestSha256;
+    if(st == 0) ret = DigestSha256;
 
-    if(st == 1) return SignatureSha256WithRsa;  
+    if(st == 1) ret = SignatureSha256WithRsa;   
 
-    if(st == 2 || (st > 4 && st<=200) ) return ReservedForFutureAssignments;    
+    if(st == 2 || (st > 4 && st<=200) ) ret = ReservedForFutureAssignments; 
 
-    if(st == 3) return SignatureSha256WithEcdsa;    
+    if(st == 3) ret = SignatureSha256WithEcdsa; 
 
-    if(st == 4) return SignatureHmacWithSha256; 
+    if(st == 4) ret = SignatureHmacWithSha256;  
 
-    if(st > 200 ) return Unassigned;        
+    if(st > 200 ) ret = Unassigned;     
     
-    return -1;
+    ndn_TLV_free(ndn_data_signature_type);
+    
+    ndn_TLV_free(ndn_data_signature_info);
+    
+    ndn_TLV_free(root);
+    
+    return ret;
 }
 
 char* ndn_data_key_locator_extraction(char *payload,int payload_len){
@@ -542,6 +585,7 @@ char* ndn_data_key_locator_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_DATA_PACKET){
+        ndn_TLV_free(root);
         return NULL;
     }
 
@@ -549,11 +593,21 @@ char* ndn_data_key_locator_extraction(char *payload,int payload_len){
 
     ndn_tlv_t *ndn_data_key_locator =  ndn_find_node(ndn_data_signature_info,NDN_DATA_KEY_LOCATOR);
 
-    if(ndn_data_key_locator==NULL) return NULL;
+    char *ret = NULL;
 
-    if(ndn_data_key_locator->value==NULL) return NULL;
+    if(ndn_data_key_locator != NULL) {
+        if(ndn_data_key_locator->value != NULL){
+            ret = hex2str(ndn_data_key_locator->value);
+        }
+    }
 
-    return hex2str(ndn_data_key_locator->value);
+    ndn_TLV_free(ndn_data_key_locator);
+
+    ndn_TLV_free(ndn_data_signature_info);
+
+    ndn_TLV_free(root);
+
+    return ret;
 }
 
 
@@ -562,17 +616,27 @@ char* ndn_data_signature_value_extraction(char *payload,int payload_len){
     ndn_tlv_t * root = ndn_TLV_parser(payload,payload_len);
 
     if(root->type != NDN_DATA_PACKET){
+        ndn_TLV_free(root);
         return NULL;
     }
 
     ndn_tlv_t *ndn_data_signature_value = ndn_find_node(root,NDN_DATA_SIGNATURE_VALUE);
+    
+    char *ret = NULL;
 
-    if(ndn_data_signature_value==NULL) return NULL;
+    if(ndn_data_signature_value != NULL) {
+        if(ndn_data_signature_value->value !=NULL) {
+            ret = str_copy(ndn_data_signature_value->value);
+        }
+    }
 
-    if(ndn_data_signature_value->value==NULL) return NULL;
+    ndn_TLV_free(ndn_data_signature_value);
 
-    return ndn_data_signature_value->value;
+    ndn_TLV_free(root);
+    
+    return ret;
 }
+
 
 
 

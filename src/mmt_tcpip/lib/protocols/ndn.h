@@ -116,63 +116,6 @@ typedef struct ndn_tlv_struct{
 
 
 /**
- * Convert a string of a hexa number to decimal number
- * @param  str string
- * @return     -1 if the string is not a hexa number
- *              0 if all the characters of @str is '0'
- *             value of hexa number in decimal system
- */
-unsigned long hex2dec(char* str);
-
-
-/**
- * Convert a hexa character to a number in decimal
- * @param  x character
- * @return   '0'->'9' -> value 0->9
- *           'a'->'f' -> value 10->15        
- *           'A'->'F' -> value 10->15        
- *           -1 otherwise
- */
-int char2int(char x);
-
-/**
- * Convert a hex number to a character in ascii table
- * @param  a first character
- * @param  b second character
- * @return    '\0' if a is not hexa character
- *            '\0' if b is not hexa character
- *             character which has value: a *16 + b
- */
-char hex2char(char a, char b);
-
-
-/**
- * Convert a string of a hexa number to a ascii string
- * @param  h_str  hexa string
- * @param  length length of string
- * @return        	NULL if @h_str is NULL
- * 					NULL if there is an '\0' return
- *                	NULL if length of h_str is a number of: 2*n + 1
- *                 a string in ascii table
- */
-char * hex2str(char *h_str);
-
-/**
-  * Get a substring of a string with the input of start and end index
-  * @param  str         String to get substring from
-  * @param  start_index The starting index to get string (>=0)
-  * @param  end_index   The ending index of string (< length of @str)
-  * @return             NULL: if @str is NULL
-  *                           if @start_index <0
-  *                           if @end_index >= length of @str
-  *                           if @start_index >= @end_index
-  *                     a new string which is the substring of @str from @start_index to @end_index (counts both 2 characters at index @start_index and @end_index)
-  */		
- char * str_sub(char * str, int start_index, int end_index); // Passed
-
-char * str_combine(char * str1, char * str2);
-
-/**
  * Check a type value
  * @param  type type value
  * @return      0 if this is node type of NDN node
@@ -201,6 +144,11 @@ uint16_t ndn_TLV_get_type(char *type);
  *           value = NULL
  */
 ndn_tlv_t * ndn_TLV_init();
+
+/**
+ * Free a ndn TLV node
+ */
+void ndn_TLV_free(ndn_tlv_t *ndn);
 
 /**
  * Parse a payload to a structure of ndn_tlv_t
