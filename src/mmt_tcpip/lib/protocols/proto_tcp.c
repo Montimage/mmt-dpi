@@ -98,8 +98,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
     total_len = ntohs( iphdr->ip_len );
     
     tcp = (struct tcphdr*)((unsigned char*)iphdr + size_ip);
-    size_tcp = tcp->th_off * 4;
-    
+    size_tcp = tcp->doff * 4;
     size_payload = total_len - ( size_ip + size_tcp );
 
     ntoh_tcp_get_tuple5 ( iphdr , tcp , &tcpt5 );
@@ -109,7 +108,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
     if ( !(stream = ntoh_tcp_find_stream( tcp_session , &tcpt5 ))){
         /*Create a new stream*/
         if (!(stream = ntoh_tcp_new_stream( tcp_session , &tcpt5, ntoh_tcp_callback , 0 , &error , 1 , 1 )) ){
-            fprintf ( stderr , "\n[e] Error %d creating new stream: %s" , error , ntoh_get_errdesc ( error ) );
+            // fprintf ( stderr , "\n[e] Error %d creating new stream: %s" , error , ntoh_get_errdesc ( error ) );
              ipacket->extra.status = MMT_CONTINUE;
             return;
         }
@@ -132,7 +131,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
 
         default:
             debug("ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
-            fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
+            // fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
             ipacket->extra.status = MMT_CONTINUE;
             return;
     }
@@ -498,7 +497,8 @@ int init_proto_tcp_struct() {
     }
 }
 
-int cleanup_proto_tcp_struct(){
-    debug("Cleanup tcp protocol");
-    return 1;
-}
+// int cleanup_proto_tcp_struct(){
+//     debug("Cleanup tcp protocol");
+//     return 1;
+// }
+// 

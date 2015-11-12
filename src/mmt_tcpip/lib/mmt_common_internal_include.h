@@ -1411,7 +1411,7 @@ extern "C" {
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_TCP //////////////////
     int init_proto_tcp_struct();
-    int cleanup_proto_tcp_struct();
+    // int cleanup_proto_tcp_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_TDS //////////////////
     int init_proto_tds_struct();
