@@ -722,7 +722,7 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_FTP //////////////////
+    /////////// INITILIZING PROTO_NDN //////////////////
     if (!init_proto_ndn_struct()) {
         fprintf(stderr, "Error initializing protocol proto_ndn\n Exiting\n");
         exit(0);

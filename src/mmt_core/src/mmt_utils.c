@@ -1,5 +1,33 @@
 
 #include "mmt_utils.h"
+// #include "../public_include/mmt_utils.h"
+
+int hex2int(char hc){
+    int ret = hc;
+    if(ret < 0) ret += 256;
+    return ret;
+}
+
+
+int str_hex2int(char *hstr, int start_index, int end_index){
+
+    if(hstr == NULL) return -1;
+
+    if(start_index < 0) return -1;
+
+    if(end_index < start_index ) return -1;
+
+    int length = end_index - start_index + 1;
+    int i = length;
+    int ret = 0;
+
+    while(i >= 1){
+        ret += hex2int(hstr[start_index + length - i])*pow(16,2*(i-1));
+        i--;
+    }
+
+    return ret;
+}
 
 unsigned long hex2dec(char *str){
     
@@ -91,7 +119,7 @@ int str_compare(char * str1, char * str2){
 
     if(start_index < 0) return NULL;
 
-    if(end_index >= strlen(str)) return NULL;
+    // if(str[end_index]end_index >= strlen(str)) return NULL;
 
     if( start_index > end_index) return NULL;
 
