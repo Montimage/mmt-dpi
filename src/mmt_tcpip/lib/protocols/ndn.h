@@ -14,6 +14,12 @@ extern "C" {
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
+
+
+static MMT_PROTOCOL_BITMASK detection_bitmask;
+static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
+static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
+
 enum ndn_content_type
 {
 	NDN_CONTENT_TYPE_BLOB=0,
@@ -43,7 +49,7 @@ enum
 	NDN_INTEREST_PACKET,
 	NDN_DATA_PACKET,
 	NDN_COMMON_NAME,
-	NDN_NAME_COMPONENT,
+	NDN_NAME_COMPONENTS,
 	// Interest packet
 	NDN_INTEREST_SELECTORS,
 	NDN_INTEREST_NONCE,
@@ -69,7 +75,7 @@ enum
 	NDN_DATA_SIGNATURE_TYPE,
 	NDN_DATA_KEY_LOCATOR,
 	NDN_DATA_KEY_DIGEST,
-	NDN_ATTRIBTUES_NB,
+	NDN_ATTRIBUTES_NB,
 };
 
 
@@ -78,7 +84,7 @@ enum
 #define	NDN_PACKET_LENGTH_ALIAS						"packet_length"
 	// Common field
 #define	NDN_COMMON_NAME_ALIAS						"common_name"
-#define	NDN_PACKET_NAME_COMPONENT_ALIAS				"name_components"
+#define	NDN_NAME_COMPONENTS_ALIAS					"name_components"
 	// Interest packet
 #define	NDN_INTEREST_NONCE_ALIAS					"nonce"
 #define	NDN_INTEREST_LIFETIME_ALIAS					"life_time"
@@ -104,14 +110,16 @@ enum
 
 
 // #define 
-
+/**
+ * A NDN TLV node structre
+ */
 typedef struct ndn_tlv_struct{
-	uint16_t type;
-	uint8_t nb_octets;
-	unsigned long length;
-	char *value;
-	char *remain_value;
-	struct ndn_tlv_struct *next;
+	uint16_t type;	// Type of node
+	uint8_t nb_octets; // number of octets to calculate the length of node
+	unsigned long length; // Length of node
+	uint16_t node_offset; // data offset of node in packet payload - count from type octet
+	uint16_t data_offset;
+	struct ndn_tlv_struct *next; // sibling node - same root
 }ndn_tlv_t;
 
 
@@ -124,24 +132,12 @@ typedef struct ndn_tlv_struct{
 int ndn_TLV_check_type(int type);
 
 /**
- * Check type value of a ndn_tlv_struct
- * @param  type 2 character of value
- * @return      0 if the type is not correct:
- *                 type == NULL
- *                 strlen(type)!=2
- *                 smaller than 5 (05)
- *                 bigger than 29 (1d)
- *                 == 0b (there is no 0b)
- *               the value of type 5->29
- */
-uint16_t ndn_TLV_get_type(char *type);
-
-/**
  * Initialize a ndn_tlv_t struct
  * @return a pointer to the new ndn_tlv_t struct
  *           type = 0
  *           length = 0
- *           value = NULL
+ *           nb_octets = 0
+ *           next = NULL
  */
 ndn_tlv_t * ndn_TLV_init();
 
@@ -151,8 +147,33 @@ ndn_tlv_t * ndn_TLV_init();
 void ndn_TLV_free(ndn_tlv_t *ndn);
 
 /**
+ * Get int value of a ndn node
+ * @param  ndn     ndn node
+ * @param  payload packet payload
+ * @param  payload_len payload length of packet
+ * @return         -1 if :
+ *                    @ndn is NULL
+ *                    @payload is NULL
+ *                    @ndn->data_offset + ndn->length > payload_len
+ */
+int ndn_TLV_get_int(ndn_tlv_t *ndn, char *payload, int payload_len);
+
+/**
+ * Get string value of a ndn node
+ * @param  ndn         ndn node
+ * @param  payload     packet payload
+ * @param  payload_len length of payload
+ * @return             NULL if:
+ *                          @ndn is NULL
+ *                          @payload is NULL
+ *                          @ndn->data_offset + ndn->length > payload_len
+ */	
+char *ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len);
+
+/**
  * Parse a payload to a structure of ndn_tlv_t
  * @param  payload      payload
+ * @param 	offset		offset of data of this node
  * @param  total_length total length of node (not of payload)
  * @return              a pointer to a new node of ndn_tlv_t
  *                      NULL if:
@@ -163,11 +184,13 @@ void ndn_TLV_free(ndn_tlv_t *ndn);
  *                      	Total length of the node is smaller than the length is calculated:
  *                      		total_length < 4 + 2*nb_octets + length
  */	
-ndn_tlv_t * ndn_TLV_parser(char *payload, int total_length);
+ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length);
 
 
 /**
  * Find a node with input type from a root
+ * @param 	payload  payload of packet
+ * @param   total_length total length of packet
  * @param  root      root node contain the node to find
  * @param  node_type type of node
  * @return           NULL if:
@@ -177,7 +200,7 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int total_length);
  *                        cannot find a node with @node_type in @root
  *                   a pointer to the node with @node_type in @root
  */
-ndn_tlv_t * ndn_find_node(ndn_tlv_t *root, int node_type);
+ndn_tlv_t * ndn_find_node(char *payload, int total_length, ndn_tlv_t *root, int node_type);
 
 /**
  * Check a payload to classify if this packet is a NDN packet or not
@@ -196,39 +219,37 @@ int mmt_check_ndn_payload(char* payload, int payload_len);
  * Parse all name components to a tree of ndn_tlv_t
  * @param  payload     common field payload
  * @param  payload_len common field payload length
- * @return             NULL if:
- *                          name_com node is NULL
- *                          name_com type is not NDN_PACKET_NAME_COMPONENT
- *                          
+ * @param  offset      offset of name components
+ * @param  nc_length   Total length of name components node
+ * @return             [description]
  */
-ndn_tlv_t * ndn_TLV_parser_name_comp(char* payload, int payload_len);
+ndn_tlv_t * ndn_TLV_parser_name_comp(char* payload, int payload_len, int offset, int nc_length);
 
 ////////// extraction ///////
 
-/**
- * Get type of packet
- * @param  payload     payload of packet
- * @param  payload_len length of payload
- * @return             NDN_INTEREST_PACKET
- *                     NDN_DATA_PACKET
- *                     NDN_UNKNOWN_PACKET;
- */
-uint8_t ndn_packet_type_extraction(char* payload, int payload_len);
-
-
-/**
- * Get type of packet
- * @param  payload     payload of packet
- * @param  payload_len length of payload
- * @return             NDN_INTEREST_PACKET
- *                     NDN_DATA_PACKET
- *                     NDN_UNKNOWN_PACKET;
- */
-uint32_t ndn_packet_length_extraction(char* payload, int payload_len);
-
-
-
 ////////////////////// EXTRACT COMMON FIELD //////////////////////
+///
+/**
+ * Get type of packet
+ * @param  payload     payload of packet
+ * @param  payload_len length of payload
+ * @return             NDN_INTEREST_PACKET
+ *                     NDN_DATA_PACKET
+ *                     NDN_UNKNOWN_PACKET;
+ */
+uint8_t ndn_packet_type_extraction_payload(char* payload, int payload_len);
+
+
+/**
+ * Get type of packet
+ * @param  payload     payload of packet
+ * @param  payload_len length of payload
+ * @return             NDN_INTEREST_PACKET
+ *                     NDN_DATA_PACKET
+ *                     NDN_UNKNOWN_PACKET;
+ */
+uint32_t ndn_packet_length_extraction_payload(char* payload, int payload_len);
+
 
 /**
  * Get all value of name components of packet
@@ -243,82 +264,90 @@ uint32_t ndn_packet_length_extraction(char* payload, int payload_len);
  *                          name_com  node is NULL
  *                     value of name components: name1/name2/name3/name4/.../namex
  */
-char* ndn_name_components_extraction(char *payload,int payload_len);
+char* ndn_name_components_extraction_payload(char *payload,int payload_len);
 
-////////////////////// EXTRACT INTEREST PACKET //////////////////////
-
-
-/**
- * Extract nonce from payload of packet
- * @param  payload     packet payload
- * @param  payload_len payload length
- * @return             -1 if:
- *                        nonce node in the packet is NULL
- *                        nonce node in the packet has value is NULL
- *                        The value of nonce node is cannot convert to hexa
- *                     The value unsigned long 
- *                     The combination of nonce and name uniquely identify an interest packet
- */
-int ndn_interest_nonce_extraction(char *payload,int payload_len);
-
-/**
- * Extract nonce from payload of packet
- * @param  payload     packet payload
- * @param  payload_len payload length
- * @return             -1 if:
- *                        lifetime node in the packet is NULL
- *                        lifetime node in the packet has value is NULL
- *                        The value of lifetime node is cannot convert to hexa
- *                     The value int 
- */
-int ndn_interest_lifetime_extraction(char *payload,int payload_len);
-
-/**
- * [ndn_minSuffixComponents description]
- * @param  payload     [description]
- * @param  payload_len [description]
- * @return             [description]
- */
-int ndn_interest_min_suffix_component_extraction(char *payload,int payload_len);
-
-////////////////////// EXTRACT DATA PACKET //////////////////////
-
-char * ndn_data_content_extraction(char *payload,int payload_len);
-
-int ndn_data_content_type_extraction(char *payload,int payload_len);
-
-int ndn_data_freshness_period_extraction(char *payload,int payload_len);
+// ////////////////////// EXTRACT INTEREST PACKET //////////////////////
 
 
+// /**
+//  * Extract nonce from payload of packet
+//  * @param  payload     packet payload
+//  * @param  payload_len payload length
+//  * @return             -1 if:
+//  *                        nonce node in the packet is NULL
+//  *                        nonce node in the packet has value is NULL
+//  *                        The value of nonce node is cannot convert to hexa
+//  *                     The value unsigned long 
+//  *                     The combination of nonce and name uniquely identify an interest packet
+//  */
+// int ndn_interest_nonce_extraction_payload(char *payload,int payload_len);
 
-/**
- * Extract signature type
- * @param  payload     [description]
- * @param  payload_len [description]
- * @return             0: DigestSha256
- *                     1: SignatureSha256WithRsa
- *                     3: SignatureSha256WithEcdsa
- *                     4: SignatureHmacWithSha256
- *                     2 or 5->200: ReservedForFutureAssignments
- *                     >=200: Unassigned
- */
-int ndn_data_signature_type_extraction(char *payload,int payload_len);
+// /**
+//  * Extract nonce from payload of packet
+//  * @param  payload     packet payload
+//  * @param  payload_len payload length
+//  * @return             -1 if:
+//  *                        lifetime node in the packet is NULL
+//  *                        lifetime node in the packet has value is NULL
+//  *                        The value of lifetime node is cannot convert to hexa
+//  *                     The value int 
+//  */
+// int ndn_interest_lifetime_extraction_payload(char *payload,int payload_len);
 
-/**
- * Extract key locator of a ndn data packet
- * @param  payload     [description]
- * @param  payload_len [description]
- * @return             [description]
- */
-char * ndn_data_key_locator_extraction(char *payload,int payload_len);
+// /**
+//  * [ndn_minSuffixComponents description]
+//  * @param  payload     [description]
+//  * @param  payload_len [description]
+//  * @return             [description]
+//  */
+// int ndn_interest_min_suffix_component_extraction_payload(char *payload,int payload_len);
 
-/**
- * Signature value of a ndn data packet
- * @param  payload     [description]
- * @param  payload_len [description]
- * @return             [description]
- */
-char * ndn_data_signature_value_extraction(char *payload,int payload_len);
+// *
+//  * [ndn_maxSuffixComponents description]
+//  * @param  payload     [description]
+//  * @param  payload_len [description]
+//  * @return             [description]
+ 
+// int ndn_interest_max_suffix_component_extraction_payload(char *payload,int payload_len);
+
+// ////////////////////// EXTRACT DATA PACKET //////////////////////
+
+char * ndn_data_content_extraction_payload(char *payload,int payload_len);
+
+// int ndn_data_content_type_extraction_payload(char *payload,int payload_len);
+
+// int ndn_data_freshness_period_extraction_payload(char *payload,int payload_len);
+
+
+
+// /**
+//  * Extract signature type
+//  * @param  payload     [description]
+//  * @param  payload_len [description]
+//  * @return             0: DigestSha256
+//  *                     1: SignatureSha256WithRsa
+//  *                     3: SignatureSha256WithEcdsa
+//  *                     4: SignatureHmacWithSha256
+//  *                     2 or 5->200: ReservedForFutureAssignments
+//  *                     >=200: Unassigned
+//  */
+// int ndn_data_signature_type_extraction_payload(char *payload,int payload_len);
+
+// /**
+//  * Extract key locator of a ndn data packet
+//  * @param  payload     [description]
+//  * @param  payload_len [description]
+//  * @return             [description]
+//  */
+// char * ndn_data_key_locator_extraction_payload(char *payload,int payload_len);
+
+// /**
+//  * Signature value of a ndn data packet
+//  * @param  payload     [description]
+//  * @param  payload_len [description]
+//  * @return             [description]
+//  */
+// char * ndn_data_signature_value_extraction_payload(char *payload,int payload_len);
 
 #ifdef  __cplusplus
 }
