@@ -308,6 +308,36 @@ int ndn_packet_length_extraction(const ipacket_t * ipacket, unsigned proto_index
     return 0;
 }
 
+char * ndn_TVL_get_name_components(ndn_tlv_t *name_com, char *payload, int total_length){
+    char *ret = NULL;
+
+    if(name_com != NULL) {
+
+        ret = str_sub(payload,name_com->data_offset,name_com->data_offset + name_com->length - 1);
+
+        ndn_tlv_t *temp = name_com->next;
+
+        while(temp != NULL){
+
+            char *str_temp = str_combine(ret,"/");
+            if(ret != NULL) free(ret);
+            ret = str_copy(str_temp);
+            if(str_temp != NULL) free(str_temp);
+
+            char *str_value = ndn_TLV_get_string(temp,payload,total_length);
+
+            str_temp = str_combine(ret,str_value);
+            if(ret != NULL) free(ret);
+            ret = str_copy(str_temp);
+            if(str_temp != NULL) free(str_temp);
+            if(str_value != NULL) free(str_value);
+
+            temp = temp->next;
+        }
+    }
+    return ret;
+}
+
 char* ndn_name_components_extraction_payload(char *payload,int total_length){
     
     ndn_tlv_t * root = ndn_TLV_parser(payload,0,total_length);
@@ -341,31 +371,9 @@ char* ndn_name_components_extraction_payload(char *payload,int total_length){
                 
                     ndn_tlv_t * name_com = ndn_TLV_parser_name_comp(payload,total_length,new_offset,name_node->length);
 
-                    if(name_com != NULL) {
-                        
-                        ret = str_sub(payload,name_com->data_offset,name_com->data_offset + name_com->length - 1);
+                    ret = ndn_TVL_get_name_components(name_com, payload, total_length);
 
-                        ndn_tlv_t *temp = name_com->next;
-                        
-                        while(temp != NULL){
-                            
-                            char *str_temp = str_combine(ret,"/");
-                            if(ret != NULL) free(ret);
-                            ret = str_copy(str_temp);
-                            if(str_temp != NULL) free(str_temp);
-                            
-                            char *str_value = ndn_TLV_get_string(temp,payload,total_length);
-                            
-                            str_temp = str_combine(ret,str_value);
-                            if(ret != NULL) free(ret);
-                            ret = str_copy(str_temp);
-                            if(str_temp != NULL) free(str_temp);
-                            if(str_value != NULL) free(str_value);
-
-                            temp = temp->next;
-                        }
-                        ndn_TLV_free(name_com);
-                    }
+                    ndn_TLV_free(name_com);
             }
 
         }
@@ -507,6 +515,7 @@ int ndn_interest_min_suffix_component_extraction(const ipacket_t * ipacket, unsi
 }
 
 int ndn_interest_max_suffix_component_extraction_payload(char *payload,int payload_len){
+    
     ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
     
     if(root == NULL) return -1;
@@ -545,6 +554,236 @@ int ndn_interest_max_suffix_component_extraction(const ipacket_t * ipacket, unsi
     return 0;
 }
 
+int ndn_interest_publisher_publickey_locator_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+    if(payload_len == 0) return 0;
+
+    ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
+
+    if(root == NULL) return 0;
+    
+    if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
+        return 0;
+    }
+
+    ndn_tlv_t *ndn_selectors = ndn_find_node(payload, payload_len,root,NDN_INTEREST_SELECTORS);
+
+    ndn_tlv_t *ndn_publisher = ndn_find_node(payload, payload_len,ndn_selectors,NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR);
+
+    char * ret_v = ndn_TLV_get_string(ndn_publisher,payload,payload_len);
+
+    ndn_TLV_free(ndn_publisher);
+
+    ndn_TLV_free(ndn_selectors);
+
+    ndn_TLV_free(root);
+
+    if(ret_v != NULL){
+        extracted_data->data = (void*)ret_v;
+        return 1;
+    }
+    return 0;
+}
+
+int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+    if(payload_len == 0) return 0;
+
+    ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
+
+    if(root == NULL) return 0;
+    
+    if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
+        return 0;
+    }
+
+    ndn_tlv_t *ndn_selectors = ndn_find_node(payload, payload_len,root,NDN_INTEREST_SELECTORS);
+
+    ndn_tlv_t *ndn_exclude = ndn_find_node(payload, payload_len,ndn_selectors,NDN_INTEREST_EXCLUDE);
+
+    if(ndn_exclude == NULL) {
+        ndn_TLV_free(ndn_selectors);
+
+        ndn_TLV_free(root);
+
+        return 0;
+    }
+    ndn_tlv_t * name_com = ndn_TLV_parser_name_comp(payload,payload_len,ndn_exclude->data_offset,ndn_exclude->length);
+
+    char * ret_v = ndn_TVL_get_name_components(name_com, payload, payload_len);
+
+    ndn_TLV_free(name_com);
+
+    ndn_TLV_free(ndn_exclude);
+
+    ndn_TLV_free(ndn_selectors);
+
+    ndn_TLV_free(root);
+
+    if(ret_v != NULL){
+        extracted_data->data = (void*)ret_v;
+        return 1;
+    }
+    return 0;
+}
+
+
+int ndn_interest_child_selector_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+    if(payload_len == 0) return 0;
+
+    ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
+
+    if(root == NULL) return 0;
+    
+    if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
+        return 0;
+    }
+
+    ndn_tlv_t *ndn_selectors = ndn_find_node(payload, payload_len,root,NDN_INTEREST_SELECTORS);
+
+    ndn_tlv_t *ndn_child = ndn_find_node(payload, payload_len,ndn_selectors,NDN_INTEREST_CHILD_SELECTOR);
+
+    uint8_t ret_v = ndn_TLV_get_int(ndn_child,payload,payload_len);
+
+    ndn_TLV_free(ndn_child);
+
+    ndn_TLV_free(ndn_selectors);
+
+    ndn_TLV_free(root);
+
+    if(ret_v != -1){
+        *((uint8_t*)extracted_data->data) = ret_v;
+        return 1;
+    }
+    return 0;
+}
+
+
+
+
+int ndn_interest_must_be_fresh_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+    if(payload_len == 0) return 0;
+
+    ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
+
+    if(root == NULL) return 0;
+    
+    if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
+        return 0;
+    }
+
+    ndn_tlv_t *ndn_selectors = ndn_find_node(payload, payload_len,root,NDN_INTEREST_SELECTORS);
+
+    ndn_tlv_t *ndn_mustbe = ndn_find_node(payload, payload_len,ndn_selectors,NDN_INTEREST_MUST_BE_FRESH);
+    int ret = 0;
+    if(ndn_mustbe == NULL){
+        ret = 0;
+    }else{
+        // This selector is encoded with Type and Length but no Value part
+        if(ndn_mustbe->length > 0){
+            ret = 0;
+        }else{
+            ret = 1;    
+        }
+    }
+    
+    *((uint8_t*)extracted_data->data) = ret;
+
+    ndn_TLV_free(ndn_mustbe);
+
+    ndn_TLV_free(ndn_selectors);
+
+    ndn_TLV_free(root);
+
+    return 1;
+}
+
+int ndn_interest_any_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+    if(payload_len == 0) return 0;
+
+    ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
+
+    if(root == NULL) return 0;
+    
+    if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
+        return 0;
+    }
+
+    ndn_tlv_t *ndn_selectors = ndn_find_node(payload, payload_len,root,NDN_INTEREST_SELECTORS);
+
+    ndn_tlv_t *ndn_any = ndn_find_node(payload, payload_len,ndn_selectors,NDN_INTEREST_ANY);
+    int ret = 0;
+    if(ndn_any == NULL){
+        ret = 0;
+    }else{
+        // This selector is encoded with Type and Length but no Value part
+        if(ndn_any->length > 0){
+            ret = 0;
+        }else{
+            ret = 1;    
+        }
+    }
+    
+    *((uint8_t*)extracted_data->data) = ret;
+
+    ndn_TLV_free(ndn_any);
+
+    ndn_TLV_free(ndn_selectors);
+
+    ndn_TLV_free(root);
+
+    return 1;
+}
+// int ndn_implicit_sha256_digest_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
+//         attribute_t * extracted_data){
+//     int offset = get_packet_offset_at_index(ipacket, proto_index);
+//     char *payload = (char*)&ipacket->data[offset];
+//     uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+    
+//     if(payload_len = 0) return 0;
+
+//     ndn_tlv_t * root = ndn_TLV_parser(payload,0,total_length);
+
+//     if(root == NULL) return 0;
+
+//     if(root->type != NDN_INTEREST_PACKET){
+//         ndn_TLV_free(root);
+//         return 0;
+//     }
+
+//     ndn_tlv_t *ndn_data_content = ndn_find_node(payload, total_length, root, NDN_NAME_COMPONENTS);
+    
+//     char *ret = ndn_TLV_get_string(ndn_data_content,payload,total_length);
+
+//     ndn_TLV_free(ndn_data_content);
+
+//     ndn_TLV_free(root);
+
+//     return ret;
+// }
 // /////////////////////// DATA PACKET ////////////////////////
 
 char* ndn_data_content_extraction_payload(char *payload,int total_length){
@@ -662,6 +901,52 @@ int ndn_data_freshness_period_extraction(const ipacket_t * ipacket, unsigned pro
     int ret_v = ndn_data_freshness_period_extraction_payload(payload,payload_len);
     if(ret_v != -1){
         *((int*)extracted_data->data) = ret_v;
+        return 1;
+    }
+    return 0;
+}
+
+int ndn_data_final_block_id_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+    if(payload_len == 0) return 0;
+    
+    ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
+    
+    if(root == NULL) return 0;
+    
+    if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
+        return 0;
+    }
+
+    ndn_tlv_t *ndn_metainfo = ndn_find_node(payload,payload_len,root, NDN_DATA_METAINFO);
+
+    ndn_tlv_t *ndn_final_blockID = ndn_find_node(payload, payload_len, ndn_metainfo,NDN_DATA_FINAL_BLOCK_ID);
+
+    if(ndn_final_blockID == NULL){
+        ndn_TLV_free(ndn_metainfo);
+
+        ndn_TLV_free(root);
+
+        return 0;
+    }
+    ndn_tlv_t * name_com = ndn_TLV_parser_name_comp(payload,payload_len,ndn_final_blockID->data_offset,ndn_final_blockID->length);
+
+    char * ret_v = ndn_TVL_get_name_components(name_com, payload, payload_len);
+
+    ndn_TLV_free(name_com);
+
+    ndn_TLV_free(ndn_final_blockID);
+
+    ndn_TLV_free(ndn_metainfo);
+
+    ndn_TLV_free(root);
+
+    if(ret_v != NULL){
+        extracted_data->data = (void*)ret_v;
         return 1;
     }
     return 0;
@@ -847,16 +1132,16 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
     {NDN_INTEREST_LIFETIME,NDN_INTEREST_LIFETIME_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_lifetime_extraction},
     {NDN_INTEREST_MIN_SUFFIX_COMPONENT,NDN_INTEREST_MIN_SUFFIX_COMPONENT_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_min_suffix_component_extraction},
     {NDN_INTEREST_MAX_SUFFIX_COMPONENT,NDN_INTEREST_MAX_SUFFIX_COMPONENT_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_max_suffix_component_extraction},
-    // {NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR,NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_publisher_publickey_locator_extraction},
-    // {NDN_INTEREST_EXCLUDE,NDN_INTEREST_EXCLUDE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_exclude_extraction},
-    // {NDN_INTEREST_CHILD_SELECTOR,NDN_INTEREST_CHILD_SELECTOR_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_child_selector_extraction},
-    // {NDN_INTEREST_MUST_BE_FRESH,NDN_INTEREST_MUST_BE_FRESH_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_must_be_fresh_extraction},
-    // {NDN_INTEREST_ANY,NDN_INTEREST_ANY_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_any_extraction},
+    {NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR,NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_publisher_publickey_locator_extraction},
+    {NDN_INTEREST_EXCLUDE,NDN_INTEREST_EXCLUDE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_exclude_extraction},
+    {NDN_INTEREST_CHILD_SELECTOR,NDN_INTEREST_CHILD_SELECTOR_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_child_selector_extraction},
+    {NDN_INTEREST_MUST_BE_FRESH,NDN_INTEREST_MUST_BE_FRESH_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_must_be_fresh_extraction},
+    {NDN_INTEREST_ANY,NDN_INTEREST_ANY_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_any_extraction},
     {NDN_DATA_CONTENT,NDN_DATA_CONTENT_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_content_extraction},
     {NDN_DATA_SIGNATURE_VALUE,NDN_DATA_SIGNATURE_VALUE_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_signature_value_extraction},
     {NDN_DATA_CONTENT_TYPE,NDN_DATA_CONTENT_TYPE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_content_type_extraction},
     {NDN_DATA_FRESHNESS_PERIOD,NDN_DATA_FRESHNESS_PERIOD_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_freshness_period_extraction},
-    // {NDN_DATA_FINAL_BLOCK_ID,NDN_DATA_FINAL_BLOCK_ID_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_final_block_id_extraction},
+    {NDN_DATA_FINAL_BLOCK_ID,NDN_DATA_FINAL_BLOCK_ID_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_final_block_id_extraction},
     {NDN_DATA_SIGNATURE_TYPE,NDN_DATA_SIGNATURE_TYPE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_signature_type_extraction},
     {NDN_DATA_KEY_LOCATOR,NDN_DATA_KEY_LOCATOR_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_locator_extraction},
     // {NDN_DATA_KEY_DIGEST,NDN_DATA_KEY_DIGEST_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_digest_extraction},
