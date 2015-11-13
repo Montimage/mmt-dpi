@@ -8,6 +8,35 @@ int hex2int(char hc){
     return ret;
 }
 
+char * str_hex2str(char *hstr, int start_index, int end_index){
+
+    if(hstr == NULL) return NULL;
+
+    if(start_index < 0) return NULL;
+
+    if(end_index < start_index ) return NULL;
+
+    int length = end_index - start_index + 1;
+
+    char *ret;
+    ret = (char*)malloc(length);
+
+    int i = 0;
+    
+    int current_index = 0;
+
+    while(i < length){
+        int c = hstr[i];
+        if(c > 19 && c < 127){
+            ret[current_index] = hstr[i];
+            current_index++;
+        }
+        i++;
+    }
+    ret[current_index]='\0';
+
+    return ret;
+}
 
 int str_hex2int(char *hstr, int start_index, int end_index){
 
