@@ -339,12 +339,15 @@ char * ndn_TVL_get_name_components(ndn_tlv_t *name_com, char *payload, int total
             if(str_temp != NULL) free(str_temp);
 
             char *str_value = ndn_TLV_get_string(temp,payload,total_length);
+            
+            char *str_str = str_hex2str(str_value,0,temp->length-1);
 
-            str_temp = str_combine(ret,str_value);
+            str_temp = str_combine(ret,str_str);
             if(ret != NULL) free(ret);
             ret = str_copy(str_temp);
             if(str_temp != NULL) free(str_temp);
             if(str_value != NULL) free(str_value);
+            if(str_str != NULL) free(str_str);
 
             temp = temp->next;
         }
@@ -632,14 +635,20 @@ int ndn_interest_publisher_publickey_locator_extraction(const ipacket_t * ipacke
 
     char * ret_v = ndn_TLV_get_string(ndn_publisher,payload,payload_len);
 
+    if( ndn_publisher == NULL) return 0;
+
+    char *str_str = str_hex2str(ret_v,0,ndn_publisher->length-1);
+
+    if(ret_v != NULL) free(ret_v);
+
     ndn_TLV_free(ndn_publisher);
 
     ndn_TLV_free(ndn_selectors);
 
     ndn_TLV_free(root);
 
-    if(ret_v != NULL){
-        extracted_data->data = (void*)ret_v;
+    if(str_str != NULL){
+        extracted_data->data = (void*)str_str;
         return 1;
     }
     return 0;
@@ -683,6 +692,12 @@ int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_in
 
     char * ret_v = ndn_TVL_get_name_components(name_com, payload, payload_len);
 
+    if(name_com == NULL ) return 0;
+
+    char *str_str = str_hex2str(ret_v,0,name_com->length-1);
+
+    if(ret_v != NULL) free(ret_v);
+
     ndn_TLV_free(name_com);
 
     ndn_TLV_free(ndn_exclude);
@@ -691,8 +706,8 @@ int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_in
 
     ndn_TLV_free(root);
 
-    if(ret_v != NULL){
-        extracted_data->data = (void*)ret_v;
+    if(str_str != NULL){
+        extracted_data->data = (void*)str_str;
         return 1;
     }
     return 0;
@@ -885,11 +900,17 @@ char* ndn_data_content_extraction_payload(char *payload,int total_length){
     
     char *ret = ndn_TLV_get_string(ndn_data_content,payload,total_length);
 
+    if( ndn_data_content == NULL ) return NULL;
+
+    char * str_str = str_hex2str(ret,0,ndn_data_content->length-1);
+    
+    if(ret!=NULL) free(ret);
+
     ndn_TLV_free(ndn_data_content);
 
     ndn_TLV_free(root);
 
-    return ret;
+    return str_str;
 }
 
 int ndn_data_content_extraction(const ipacket_t * ipacket, unsigned proto_index,
@@ -957,7 +978,7 @@ int ndn_data_content_type_extraction(const ipacket_t * ipacket, unsigned proto_i
 
     int ret_v = ndn_data_content_type_extraction_payload(payload,payload_len);
     if(ret_v != -1){
-        *((int*)extracted_data->data) = ret_v;
+        *((uint8_t*)extracted_data->data) = ret_v;
         return 1;
     }
     return 0;
@@ -1119,7 +1140,7 @@ int ndn_data_signature_type_extraction(const ipacket_t * ipacket, unsigned proto
 
     int ret_v = ndn_data_signature_type_extraction_payload(payload,payload_len);
     if(ret_v != -1){
-        *((int*)extracted_data->data) = ret_v;
+        *((uint8_t*)extracted_data->data) = ret_v;
         return 1;
     }
     return 0;
@@ -1142,13 +1163,19 @@ char* ndn_data_key_locator_extraction_payload(char *payload,int total_length){
 
     char *ret = ndn_TLV_get_string(ndn_data_key_locator,payload,total_length);
 
+    if( ndn_data_key_locator == NULL ) return NULL;
+
+    char *str_str = str_hex2str(ret,0,ndn_data_key_locator->length-1);
+
+    if(ret != NULL) free(ret);
+
     ndn_TLV_free(ndn_data_key_locator);
 
     ndn_TLV_free(ndn_data_signature_info);
 
     ndn_TLV_free(root);
 
-    return ret;
+    return str_str;
 }
 
 int ndn_data_key_locator_extraction(const ipacket_t * ipacket, unsigned proto_index,
@@ -1187,11 +1214,17 @@ char* ndn_data_signature_value_extraction_payload(char *payload,int payload_len)
     
     char *ret = ndn_TLV_get_string(ndn_data_signature_value,payload,payload_len);
 
+    if( ndn_data_signature_value == NULL ) return NULL;
+
+    char *str_str = str_hex2str(ret,0,ndn_data_signature_value->length-1);
+
+    if(ret != NULL) free(ret);
+
     ndn_TLV_free(ndn_data_signature_value);
 
     ndn_TLV_free(root);
     
-    return ret;
+    return str_str;
 }
 
 int ndn_data_signature_value_extraction(const ipacket_t * ipacket, unsigned proto_index,
@@ -1266,16 +1299,16 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
     {NDN_INTEREST_MIN_SUFFIX_COMPONENT,NDN_INTEREST_MIN_SUFFIX_COMPONENT_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_min_suffix_component_extraction},
     {NDN_INTEREST_MAX_SUFFIX_COMPONENT,NDN_INTEREST_MAX_SUFFIX_COMPONENT_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_max_suffix_component_extraction},
     {NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR,NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_publisher_publickey_locator_extraction},
-    {NDN_INTEREST_EXCLUDE,NDN_INTEREST_EXCLUDE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_exclude_extraction},
+    {NDN_INTEREST_EXCLUDE,NDN_INTEREST_EXCLUDE_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_exclude_extraction},
     {NDN_INTEREST_CHILD_SELECTOR,NDN_INTEREST_CHILD_SELECTOR_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_child_selector_extraction},
     {NDN_INTEREST_MUST_BE_FRESH,NDN_INTEREST_MUST_BE_FRESH_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_must_be_fresh_extraction},
     {NDN_INTEREST_ANY,NDN_INTEREST_ANY_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_interest_any_extraction},
     {NDN_DATA_CONTENT,NDN_DATA_CONTENT_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_content_extraction},
     {NDN_DATA_SIGNATURE_VALUE,NDN_DATA_SIGNATURE_VALUE_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_signature_value_extraction},
-    {NDN_DATA_CONTENT_TYPE,NDN_DATA_CONTENT_TYPE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_content_type_extraction},
+    {NDN_DATA_CONTENT_TYPE,NDN_DATA_CONTENT_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_content_type_extraction},
     {NDN_DATA_FRESHNESS_PERIOD,NDN_DATA_FRESHNESS_PERIOD_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_freshness_period_extraction},
-    {NDN_DATA_FINAL_BLOCK_ID,NDN_DATA_FINAL_BLOCK_ID_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_final_block_id_extraction},
-    {NDN_DATA_SIGNATURE_TYPE,NDN_DATA_SIGNATURE_TYPE_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_signature_type_extraction},
+    {NDN_DATA_FINAL_BLOCK_ID,NDN_DATA_FINAL_BLOCK_ID_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_final_block_id_extraction},
+    {NDN_DATA_SIGNATURE_TYPE,NDN_DATA_SIGNATURE_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_signature_type_extraction},
     {NDN_DATA_KEY_LOCATOR,NDN_DATA_KEY_LOCATOR_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_locator_extraction},
     // {NDN_DATA_KEY_DIGEST,NDN_DATA_KEY_DIGEST_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_digest_extraction},
 };
