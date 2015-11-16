@@ -16,6 +16,37 @@ extern "C" {
  #include <stdio.h>
  #include <string.h>
  #include <stdint.h>
+ #include "math.h"
+/**
+ * Convert a hexa character to an integer number
+ * @param  hc hexa character
+ * @return    the value from 0->255;
+ */
+int hex2int(char hc);
+
+/**
+ * Convert a hexa string to an integer number
+ * @param  hstr   hexa string
+ * @param  start_index index to start calculation
+ * @param  end_index index to finish calculation
+ * @return        -1 if:
+ *                   @hstr is NULL
+ *                   @start_index <0
+ *                   @end_index <  start_index
+ */
+int str_hex2int(char *hstr, int start_index, int end_index);
+
+/**
+ * Get printable value of a hexa string
+ * @param  hstr        hexa string
+ * @param  start_index start index
+ * @param  end_index   end index
+ * @return          NULL if:
+ *                   @hstr is NULL
+ *                   @start_index <0
+ *                   @end_index <  start_index      
+ */
+char *str_hex2str(char *hstr, int start_index, int end_index);
 
 /**
  * Convert a string of a hexa number to decimal number

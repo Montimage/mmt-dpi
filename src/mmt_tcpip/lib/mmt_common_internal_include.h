@@ -90,7 +90,7 @@ extern "C" {
     /* FTP entry */
     void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index);
     /* NDN entry */
-    void mmt_classify_me_ndn(ipacket_t * ipacket, unsigned index);
+    // void mmt_classify_me_ndn(ipacket_t * ipacket, unsigned index);
     /* USENET entry */
     void mmt_classify_me_usenet(ipacket_t * ipacket, unsigned index);
     /* DNS entry */
@@ -700,6 +700,8 @@ extern "C" {
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_FTP //////////////////
     int init_proto_ftp_struct();
+    /////////// PLUGIN INIT FOR PROTO_NDN //////////////////
+    int init_proto_ndn_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_GADUGADU //////////////////
     int init_proto_gadugadu_struct();

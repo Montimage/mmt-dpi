@@ -896,7 +896,79 @@ extern "C" {
 
 /////////////////////////////// END OF FTP ATTRIBUTES ///////////////////////////////////
 
-    
+//////////////////////////////// NDN ATTRIBUTES ////////////////////////
+// Type of ndn - do not change the order
+enum 
+{
+    // Packet type
+    NDN_IMPLICIT_SHA256_DIGEST_COMPONENT = 1,
+    NDN_PACKET_TYPE,
+    NDN_PACKET_LENGTH,
+    // Common field
+    NDN_UNKNOWN_PACKET,
+    NDN_INTEREST_PACKET,
+    NDN_DATA_PACKET,
+    NDN_COMMON_NAME,
+    NDN_NAME_COMPONENTS,
+    // Interest packet
+    NDN_INTEREST_SELECTORS,
+    NDN_INTEREST_NONCE,
+    NDN_INTEREST_LIFETIME = 12,
+    // Interest/selectors
+    NDN_INTEREST_MIN_SUFFIX_COMPONENT,
+    NDN_INTEREST_MAX_SUFFIX_COMPONENT,
+    NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR,
+    NDN_INTEREST_EXCLUDE,
+    NDN_INTEREST_CHILD_SELECTOR,
+    NDN_INTEREST_MUST_BE_FRESH,
+    NDN_INTEREST_ANY,
+    // Data packet
+    NDN_DATA_METAINFO,
+    NDN_DATA_CONTENT,
+    NDN_DATA_SIGNATURE_INFO,
+    NDN_DATA_SIGNATURE_VALUE,
+    // data/metainfo
+    NDN_DATA_CONTENT_TYPE,
+    NDN_DATA_FRESHNESS_PERIOD,
+    NDN_DATA_FINAL_BLOCK_ID,
+    // Data/signature
+    NDN_DATA_SIGNATURE_TYPE,
+    NDN_DATA_KEY_LOCATOR,
+    NDN_DATA_KEY_DIGEST,
+    NDN_ATTRIBUTES_NB,
+};
+
+
+#define NDN_IMPLICIT_SHA256_DIGEST_COMPONENT_ALIAS  "implicitSHA256DigestComponent"
+#define NDN_PACKET_TYPE_ALIAS                       "packet_type"
+#define NDN_PACKET_LENGTH_ALIAS                     "packet_length"
+    // Common field
+#define NDN_COMMON_NAME_ALIAS                       "common_name"
+#define NDN_NAME_COMPONENTS_ALIAS                   "name_components"
+    // Interest packet
+#define NDN_INTEREST_NONCE_ALIAS                    "nonce"
+#define NDN_INTEREST_LIFETIME_ALIAS                 "life_time"
+    // Interest/selectors
+#define NDN_INTEREST_MIN_SUFFIX_COMPONENT_ALIAS     "min_suffix"
+#define NDN_INTEREST_MAX_SUFFIX_COMPONENT_ALIAS     "max_suffix"
+#define NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR_ALIAS  "publisher_publickey_locator"
+#define NDN_INTEREST_EXCLUDE_ALIAS                  "exclude"
+#define NDN_INTEREST_CHILD_SELECTOR_ALIAS           "child_selector"
+#define NDN_INTEREST_MUST_BE_FRESH_ALIAS            "must_be_fresh"
+#define NDN_INTEREST_ANY_ALIAS                      "any"
+    // Data packet
+#define NDN_DATA_CONTENT_ALIAS                      "content"
+#define NDN_DATA_SIGNATURE_VALUE_ALIAS              "signature_value"
+    // data/metainfo
+#define NDN_DATA_CONTENT_TYPE_ALIAS                 "content_type"
+#define NDN_DATA_FRESHNESS_PERIOD_ALIAS             "fresh_period"
+#define NDN_DATA_FINAL_BLOCK_ID_ALIAS               "final_block_id"
+    // Data/signature
+#define NDN_DATA_SIGNATURE_TYPE_ALIAS               "signature_type"
+#define NDN_DATA_KEY_LOCATOR_ALIAS                  "key_locator"
+#define NDN_DATA_KEY_DIGEST_ALIAS                   "key_digest"
+////////////////// END OF NDN ATTRIBUTES ////////////////////
+
 #ifdef __cplusplus
 }
 #endif

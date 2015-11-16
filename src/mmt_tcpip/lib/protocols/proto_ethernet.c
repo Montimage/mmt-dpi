@@ -43,6 +43,11 @@ int ethernet_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
             break;
+        case ETH_P_NDN:
+            retval.proto_id = PROTO_NDN;
+            retval.offset = sizeof (struct ethhdr);
+            retval.status = Classified;
+            break;
         case 0x9100:
         case 0x9200:
         case 0x9300:

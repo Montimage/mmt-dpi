@@ -31,9 +31,15 @@ extern "C" {
 #ifndef ETH_P_RARP
 #define ETH_P_RARP      0x8035          /* Reverse Addr Res packet      */
 #endif
+
 #ifndef ETH_P_8021Q
 #define ETH_P_8021Q      0x8100          /* 802.1 Q      */
 #endif
+
+#ifndef ETH_P_NDN
+#define ETH_P_NDN      0x8624          /* NDN-over ETHERNET protocol     */
+#endif
+
 #ifndef ETH_P_PPPoED
 #define ETH_P_PPPoED      0x8863          /* PPPoE Discovery protocol     */
 #endif
