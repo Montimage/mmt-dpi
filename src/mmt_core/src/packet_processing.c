@@ -2646,14 +2646,14 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
         //   . free dynamically allocated ipacket->data
         //   . reset ipacket->data to its original value
         mmt_free((void *) ipacket->data);
-    ipacket->data = ipacket->original_data;
-}
+        ipacket->data = ipacket->original_data;
+    }
 
-if(ipacket->internal_packet){
-    mmt_free(ipacket->internal_packet);
-}
-mmt_free((void *)ipacket->data);
-mmt_free(ipacket); 
+    if(ipacket->internal_packet){
+        mmt_free(ipacket->internal_packet);
+    }
+    mmt_free((void *)ipacket->data);
+    mmt_free(ipacket); 
 }
 
 /**
