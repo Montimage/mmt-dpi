@@ -16,7 +16,7 @@ char * str_hex2str(char *hstr, int start_index, int end_index){
 
     if(end_index < start_index ) return NULL;
 
-    int length = end_index - start_index + 1;
+    int length = end_index - start_index + 2;
 
     char *ret;
     ret = (char*)malloc(length);
@@ -35,7 +35,9 @@ char * str_hex2str(char *hstr, int start_index, int end_index){
     }
     ret[current_index]='\0';
 
-    return ret;
+    char *str_str = str_sub(ret,0,current_index);
+    free(ret);
+    return str_str;
 }
 
 int str_hex2int(char *hstr, int start_index, int end_index){
