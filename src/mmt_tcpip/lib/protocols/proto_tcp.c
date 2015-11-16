@@ -53,6 +53,21 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
             // Out of order
             if(extra == NTOH_REASON_OOO){
                 debug("Out of order - Drop the packet");
+                ipacket_t *ipacket = (ipacket_t *)seg->user_data;
+                if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
+                    && (ipacket->data != ipacket->original_data)) {
+                    // data was dynamically allocated during the reassembly process:
+                    //   . free dynamically allocated ipacket->data
+                    //   . reset ipacket->data to its original value
+                    mmt_free((void *) ipacket->data);
+                    ipacket->data = ipacket->original_data;
+                }
+
+                if(ipacket->internal_packet){
+                    mmt_free(ipacket->internal_packet);
+                }
+                mmt_free((void *)ipacket->data);
+                mmt_free(ipacket); 
                 break;
             }else{
                 process_ipacket_next_process((ipacket_t *)seg->user_data);    
