@@ -636,7 +636,8 @@ extern "C" {
 #define PROTO_FBMSG 622 //Facebook messaging
 #define PROTO_GCM 623 //Google Cloud Messaging
 #define PROTO_SLL 624 //Linux Cooked Socket
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_SLL
+#define PROTO_NDN 625 //Linux Cooked Socket
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_NDN
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -1265,6 +1266,7 @@ extern "C" {
 #define PROTO_FBMSG_ALIAS "fbmsg"
 #define PROTO_GCM_ALIAS "gcm"
 #define PROTO_SLL_ALIAS "sll"
+#define PROTO_NDN_ALIAS "ndn"
 
 #define PROTO_CLASS_UNKOWN         0
 #define PROTO_CLASS_WEB            1
