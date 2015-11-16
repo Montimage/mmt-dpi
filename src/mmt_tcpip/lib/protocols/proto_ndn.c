@@ -248,19 +248,20 @@ ndn_tlv_t * ndn_TLV_parser_name_comp(char* payload, int total_length, int offset
 /////////////////////// COMMON FIELD ////////////////////////
 
 
-uint8_t ndn_packet_type_extraction_payload(char* payload, int total_length){
+// uint8_t ndn_packet_type_extraction_payload(char* payload, int total_length){
     
-    ndn_tlv_t *ndn = ndn_TLV_parser(payload,0,total_length);
 
-    int ret = NDN_UNKNOWN_PACKET;
-    if(ndn!=NULL){
-        if(ndn->type == 5 || ndn->type==6) ret = ndn->type;
-    }
 
-    ndn_TLV_free(ndn);
+    // uint8_t ret = NDN_UNKNOWN_PACKET;
+    // if(ndn!=NULL){
+    //     if(ndn->type == 5) ret = NDN_INTEREST_PACKET;
+    //     if(ndn->type == 6) ret = NDN_DATA_PACKET;
+    // }
 
-    return ret;
-}
+    // ndn_TLV_free(ndn);
+
+    // return ret;
+// }
 
 
 int ndn_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
@@ -276,12 +277,20 @@ int ndn_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
         payload_len = ipacket->internal_packet->payload_packet_len;
     }
 
-    uint8_t ret_v = ndn_packet_type_extraction_payload(payload,payload_len);
-    if(ret_v != NDN_UNKNOWN_PACKET){
-        *((uint8_t*)extracted_data->data) = ret_v;
-        return 1;
+    if(payload_len == 0){
+        return 0;
     }
-    return 0;
+
+    uint8_t ret_v = NDN_UNKNOWN_PACKET;
+    if(payload[0] == 5) ret_v = NDN_INTEREST_PACKET;
+    else if(payload[0] == 6) ret_v = NDN_DATA_PACKET;
+    *((uint8_t*)extracted_data->data) = ret_v;
+    // uint8_t ret_v = ndn_packet_type_extraction_payload(payload,payload_len);
+    // if(ret_v != NDN_UNKNOWN_PACKET){
+        
+        // 
+    // }
+    return 1;
 }
 
 uint32_t ndn_packet_length_extraction_payload(char* payload, int total_length){
@@ -635,7 +644,13 @@ int ndn_interest_publisher_publickey_locator_extraction(const ipacket_t * ipacke
 
     char * ret_v = ndn_TLV_get_string(ndn_publisher,payload,payload_len);
 
-    if( ndn_publisher == NULL) return 0;
+    if( ndn_publisher == NULL) {
+        ndn_TLV_free(ndn_selectors);
+
+        ndn_TLV_free(root);
+
+        return 0;
+    }
 
     char *str_str = str_hex2str(ret_v,0,ndn_publisher->length-1);
 
@@ -1257,9 +1272,9 @@ static void mmt_int_ndn_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_NDN, MMT_REAL_PROTOCOL);
 }
 
-void mmt_classify_me_ndn(ipacket_t * ipacket, unsigned index) {
-    debug("NDN: mmt_classify_me_ndn");
-}
+// void mmt_classify_me_ndn(ipacket_t * ipacket, unsigned index) {
+//     debug("NDN: mmt_classify_me_ndn");
+// }
 
 int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
     debug("NDN: mmt_check_ndn");
@@ -1362,6 +1377,7 @@ int init_proto_ndn_struct() {
         for (; i < NDN_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &ndn_attributes_metadata[i]);
         }
+        // register_pre_post_classification_functions(protocol_struct, NULL, NULL);
         // register_proto_context_init_cleanup_function(protocol_struct, setup_ndn_context, NULL, NULL);
         // register_session_data_analysis_function(protocol_struct, ndn_session_data_analysis);
         mmt_init_classify_me_ndn();
