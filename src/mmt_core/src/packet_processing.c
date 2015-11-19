@@ -1605,6 +1605,7 @@ void close_extraction() {
 
 void print_attributes_list(struct attribute_internal_struct * tmp_attribute) {
     (void) mmt_attr_format(stdout, (attribute_t *) tmp_attribute);
+    // free(tmp_attribute);
 }
 
 int is_registered_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id) {
@@ -2087,10 +2088,11 @@ void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void 
         }
         while (tmp_attribute != NULL) {
             void * data = get_attribute_extracted_data_at_index(ipacket, tmp_attribute->proto_id, tmp_attribute->field_id, i);
-            if (!quiet && data) {
-                print_attributes_list(tmp_attribute);
+            if(data!=NULL){
+                if (!quiet && data) {
+                    print_attributes_list(tmp_attribute);
+                }    
             }
-
             tmp_attribute = tmp_attribute->next;
         }
 
@@ -2668,7 +2670,29 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  *                      MMT_SKIP     -> skips processing the packet - it will returned in the future
  */
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
-    debug("proto_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
+    debug("proto_packet_process of ipacket: %"PRIu64" at index %d and status: %d\n",ipacket->packet_id,index,ipacket->extra.status);
+    if(ipacket->extra.status == MMT_DROP){
+        debug("Going to drop this packet");
+        if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
+                    && (ipacket->data != ipacket->original_data)) {
+                    // data was dynamically allocated during the reassembly process:
+                    //   . free dynamically allocated ipacket->data
+                    //   . reset ipacket->data to its original value
+                    mmt_free((void *) ipacket->data);
+                    ipacket->data = ipacket->original_data;
+                }
+
+                if(ipacket->internal_packet){
+                    mmt_free(ipacket->internal_packet);
+                }
+                mmt_free((void *)ipacket->data);
+                mmt_free(ipacket); 
+        return MMT_DROP;
+    }
+    
+    if(ipacket->extra.status == MMT_SKIP){
+        return MMT_SKIP;
+    }
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
     ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     int target = MMT_CONTINUE;
@@ -3394,8 +3418,10 @@ int mmt_string_format(FILE * f, attribute_internal_t * attr){
         get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (char *) &b->data);
 }
 int mmt_string_pointer_format(FILE * f, attribute_internal_t * attr){
-    return fprintf(f, "Attribute %s.%s = %s\n",
+    int ret = fprintf(f, "Attribute %s.%s = %s\n",
         get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (char *) attr->data);
+    free((char*)attr->data);
+    return ret;
 }
 
 int mmt_header_line_pointer_format(FILE * f, attribute_internal_t * attr){

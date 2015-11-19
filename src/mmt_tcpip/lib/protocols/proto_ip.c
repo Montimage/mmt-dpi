@@ -1158,6 +1158,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     ipacket->internal_packet = mmt_malloc(sizeof(mmt_tcpip_internal_packet_t));
     ipacket->internal_packet->udp = NULL;
     ipacket->internal_packet->tcp = NULL;
+    ipacket->internal_packet->packet_id = ipacket->packet_id;
     ipacket->internal_packet->actual_payload_len = 0;
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
 

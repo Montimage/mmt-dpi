@@ -16,10 +16,10 @@ pntoh_tcp_session_t get_tcp_session(ipacket_t *ipacket, unsigned index){
     return (pntoh_tcp_session_t)configured_protocol->args;
 }
 
-void process_ipacket_next_process(ipacket_t* ipacket)
+void process_ipacket_next_process(ipacket_t* ipacket, int status)
 {
     debug("process_ipacket_next_process of packet %"PRIu64" is called at index:%d\n",ipacket->packet_id,ipacket->extra.index);
-    ipacket->extra.status=MMT_CONTINUE;
+    ipacket->extra.status = status;
     ipacket->extra.next_process(ipacket,ipacket->extra.parent_stats,ipacket->extra.index);
 }
 
@@ -53,24 +53,10 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
             // Out of order
             if(extra == NTOH_REASON_OOO){
                 debug("Out of order - Drop the packet");
-                ipacket_t *ipacket = (ipacket_t *)seg->user_data;
-                if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
-                    && (ipacket->data != ipacket->original_data)) {
-                    // data was dynamically allocated during the reassembly process:
-                    //   . free dynamically allocated ipacket->data
-                    //   . reset ipacket->data to its original value
-                    mmt_free((void *) ipacket->data);
-                    ipacket->data = ipacket->original_data;
-                }
-
-                if(ipacket->internal_packet){
-                    mmt_free(ipacket->internal_packet);
-                }
-                mmt_free((void *)ipacket->data);
-                mmt_free(ipacket); 
+                process_ipacket_next_process((ipacket_t *)seg->user_data, MMT_DROP);    
                 break;
             }else{
-                process_ipacket_next_process((ipacket_t *)seg->user_data);    
+                process_ipacket_next_process((ipacket_t *)seg->user_data, MMT_CONTINUE);    
             }
             
             if(extra!=0){
@@ -123,7 +109,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
     if ( !(stream = ntoh_tcp_find_stream( tcp_session , &tcpt5 ))){
         /*Create a new stream*/
         if (!(stream = ntoh_tcp_new_stream( tcp_session , &tcpt5, ntoh_tcp_callback , 0 , &error , 1 , 1 )) ){
-            // fprintf ( stderr , "\n[e] Error %d creating new stream: %s" , error , ntoh_get_errdesc ( error ) );
+            fprintf ( stderr , "\n[e] Error %d creating new stream: %s" , error , ntoh_get_errdesc ( error ) );
              ipacket->extra.status = MMT_CONTINUE;
             return;
         }
@@ -146,7 +132,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
 
         default:
             debug("ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
-            // fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
+            fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
             ipacket->extra.status = MMT_CONTINUE;
             return;
     }
