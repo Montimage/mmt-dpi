@@ -151,7 +151,7 @@ char * hex2str(char *h_str);
  *                 Array with only 1 element if @spliter does not exists in @str
  *                 Array with only 1 element if @spliter is at the beginning or the end of string
  */
- char ** str_split(char * str, char * spliter); // Passed
+ // char ** str_split(char * str, char * spliter); // Passed
  
  /**
  * Get all indexes of a string in a string
