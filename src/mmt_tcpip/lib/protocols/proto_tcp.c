@@ -73,20 +73,18 @@ void ntoh_tcp_callback ( pntoh_tcp_stream_t stream , pntoh_tcp_peer_t orig , pnt
  * - Extract struct ip data to put as input of libntoh
  * - 
  */
-void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
+int ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
  {
     pntoh_tcp_session_t tcp_session;
     tcp_session = get_tcp_session(ipacket,index);
 
     debug("ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     debug("Number of stored streams: %d\n",ntoh_tcp_count_streams(tcp_session));
-    mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
-    int l3_offset = get_packet_offset_at_index(ipacket,index-1);
-    packet->iph = (struct iphdr*)&ipacket->data[l3_offset];
-
+    
     ntoh_tcp_tuple5_t   tcpt5;
-    pntoh_tcp_stream_t  stream;
-    struct tcphdr       *tcp;
+    pntoh_tcp_stream_t  stream = NULL;
+    struct tcphdr       *tcp = NULL;
+    struct ip           *iphdr = NULL;
     size_t              size_ip;
     size_t              total_len;
     size_t              size_tcp;
@@ -94,14 +92,16 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
     int                 ret;
     unsigned int        error;
 
-    struct ip* iphdr =(struct ip*)packet->iph;
+    int ip_proto_index = get_packet_offset_at_index(ipacket,index-1);
+    iphdr = (struct ip*)&ipacket->data[ip_proto_index];
+
     size_ip = iphdr->ip_hl * 4;
+
     total_len = ntohs( iphdr->ip_len );
     
     tcp = (struct tcphdr*)((unsigned char*)iphdr + size_ip);
     size_tcp = tcp->doff * 4;
     size_payload = total_len - ( size_ip + size_tcp );
-
     ntoh_tcp_get_tuple5 ( iphdr , tcp , &tcpt5 );
     // printf("\nTuple5 of packet: %p\n",ipacket);
     
@@ -111,7 +111,7 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
         if (!(stream = ntoh_tcp_new_stream( tcp_session , &tcpt5, ntoh_tcp_callback , 0 , &error , 1 , 1 )) ){
             fprintf ( stderr , "\n[e] Error %d creating new stream: %s" , error , ntoh_get_errdesc ( error ) );
              ipacket->extra.status = MMT_CONTINUE;
-            return;
+            return 1;
         }
     }
 
@@ -123,18 +123,22 @@ void ntoh_packet_process ( ipacket_t *ipacket, unsigned index)
     {
         case NTOH_OK:
             debug("ret=NTOH_OK after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
-            return;
+            if(ipacket->extra.index - index > 1){
+                debug("Index has changed!");
+                return 0;
+            }
+            return 1;
 
         case NTOH_SYNCHRONIZING:
             debug("ret=NTOH_SYNCHRONIZING after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
             ipacket->extra.status = MMT_CONTINUE;
-            return;
+            return 1;
 
         default:
             debug("ret=ERROR after calling ntoh_tcp_add_segment: %"PRIu64" index: %d/%d, len: %d\n",ipacket->packet_id,ipacket->extra.index,index,ipacket->p_hdr->len);
             fprintf( stderr, "\n[e] Error %d adding segment: %s", ret, ntoh_get_retval_desc( ret ) );
             ipacket->extra.status = MMT_CONTINUE;
-            return;
+            return 1;
     }
 }
 
@@ -402,14 +406,14 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // INJECT LIBNOTH PROCESS //
     ipacket->extra.status = MMT_SKIP;
     debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    uint64_t ntoh_packet_id = ipacket->packet_id;
-    ntoh_packet_process(ipacket,index);
-    //write_data(ipacket);
-    if(ipacket->packet_id != ntoh_packet_id){
-        debug("LOST PACKET .... ");
+    // uint64_t ntoh_packet_id = ipacket->packet_id;
+    int ret = ntoh_packet_process(ipacket,index);
+    
+    if(ret == 0){
+        debug("ret==0");
         ipacket->extra.status = MMT_SKIP;
-        return 0;
     }
+    
     debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
     // END OF INJECTING LIBNTOH PROCESS
     return 1;
@@ -459,7 +463,7 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
 }
 
 void tcp_context_cleanup(void * proto_context, void * args) {
-    // ntoh_tcp_free_session((pntoh_tcp_session_t)((protocol_instance_t *) proto_context)->args);
+    ntoh_tcp_free_session((pntoh_tcp_session_t)((protocol_instance_t *) proto_context)->args);
     debug("TCP: protocol context cleanup\n");
 }
 

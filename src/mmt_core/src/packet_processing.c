@@ -17,7 +17,7 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include "libntoh.h"
+// #include "libntoh.h"
 bool session_timeout_comp_fn_pt(uint32_t l_timeout, uint32_t r_timeout) {
     return (l_timeout < r_timeout);
 }
@@ -1168,7 +1168,7 @@ void free_handler_protocols_statistics(mmt_handler_t *mmt_handler) {
 }
 
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
-    ntoh_tcp_exit();
+    // ntoh_tcp_exit();
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
     // Clear timeout milestones
@@ -2632,6 +2632,7 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  */
  void process_packet_handler(ipacket_t *ipacket){
     debug("process_packet_handler of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,ipacket->extra.index);
+    ipacket->extra.status = MMT_SKIP;
     packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;            
     while (temp_packet_handler != NULL) {
         temp_packet_handler->function(ipacket, temp_packet_handler->args);
@@ -2689,6 +2690,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     }
     
     if(ipacket->extra.status == MMT_SKIP){
+        process_packet_handler(ipacket);
         return MMT_SKIP;
     }
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
@@ -2730,6 +2732,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     if (target == MMT_CONTINUE) {
         /* Try to classify the encapsulated data */
         proto_packet_classify_next(ipacket, configured_protocol, index);
+        debug("proto_packet_process of ipacket (after classify_next): %"PRIu64" at index %d and status: %d\n",ipacket->packet_id,index,ipacket->extra.status);
         // Need to check if the ipacket is still exist
         // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
         if(ipacket->extra.status == MMT_SKIP){ // Avoid calling process_packet_handler when the extra.status == MMT_SCKIP
