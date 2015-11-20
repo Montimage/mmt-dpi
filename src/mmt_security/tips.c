@@ -1874,6 +1874,9 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 
     (void)sprintf(json_buff, "\"timestamp\":%lu.%lu", tvp.tv_sec, (long) tvp.tv_usec);
 
+    int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
+    const char *proto_name, *att_name;
+
     if (*cause != '\0') {
         (void)sprintf(json_buff1, ",\"description\":\"%s\"", cause);
         (void)strcat(json_buff, json_buff1);
@@ -1896,7 +1899,23 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 
             num_attr ++;
 
-            data_size = get_data_size_by_proto_and_field_ids(temp->protocol_id, temp->field_id);
+            data_size  = get_data_size_by_proto_and_field_ids(temp->protocol_id, temp->field_id);
+            proto_name = get_protocol_name_by_id(temp->protocol_id);
+            att_name   = get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id);
+
+            //protocol IP
+            if( temp->protocol_id == 178 ){
+            	if( temp->field_id == 12 )
+            		having_ip_src = 1;
+            	else if( temp->field_id == 13 )
+            		having_ip_dst = 1;
+            }else if( temp->protocol_id == 99 ){ //Ethernet
+            	if( temp->field_id == 3 )
+            		having_mac_src = 1;
+            	else if( temp->field_id == 2 )
+            		having_mac_dst = 1;
+            }
+
             type = temp->data_type_id;
             switch (type) {
                 case MMT_DATA_IP6_ADDR:
@@ -1923,8 +1942,8 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
                     convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), temp_MAC);
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
+                            att_name, temp_MAC);
                     (void)strcat(json_buff, json_buff1);
                     xfree(temp_MAC);
                     break;
@@ -1932,20 +1951,21 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     // TODO
                     break;
                 case MMT_DATA_IP_ADDR:
+
                     (void)sprintf(
-                       json_buff1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},",get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), FORMAT_IP(*(unsigned long*) (data1)));
+                       json_buff1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name,
+                            att_name, FORMAT_IP(*(unsigned long*) (data1)));
                     (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U16_DATA:
-                    (void)sprintf(json_buff1, "{\"%s.%s\":%u},", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned short*) (data1));
+                    (void)sprintf(json_buff1, "{\"%s.%s\":%u},", proto_name,
+                            att_name, *(unsigned short*) (data1));
                     (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U32_DATA:
                     tmp_lu=*(uint32_t*) data1;
-                    (void)sprintf(json_buff1, "{\"%s.%s\":%lu},", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), tmp_lu);
+                    (void)sprintf(json_buff1, "{\"%s.%s\":%lu},", proto_name,
+                            att_name, tmp_lu);
                     (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U64_DATA:
@@ -1953,21 +1973,21 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     break;
                 case MMT_U8_DATA:
                 case MMT_DATA_CHAR:
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%u\"},", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data1));
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%u\"},", proto_name,
+                            att_name, *(unsigned char*) (data1));
                     (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_HEADER_LINE:
                 	data1 = parse_mmt_header_line( data1, & data_size );
-					(void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", get_protocol_name_by_id(temp->protocol_id),
-							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char *)data1);
+					(void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
+							att_name, (char *)data1);
 					(void)strcat(json_buff, json_buff1);
 					break;
                 case MMT_DATA_PATH:
                 case MMT_STRING_LONG_DATA:
                 case MMT_STRING_DATA:
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char*) (data1 + sizeof (int)));
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
+                            att_name, (char*) (data1 + sizeof (int)));
                     (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_BINARY_DATA:
@@ -1977,15 +1997,15 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     data_size = db1->len;
                     data2 = db1->data;
                     if (data_size == 4) {
-                        (void)sprintf(json_buff1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", get_protocol_name_by_id(temp->protocol_id),
-                                get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), FORMAT_IP(*(unsigned long*) (data2)));
+                        (void)sprintf(json_buff1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name,
+                                att_name, FORMAT_IP(*(unsigned long*) (data2)));
                         (void)strcat(json_buff, json_buff1);
                     } else if (data_size == 6) {
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                (void)sprintf(json_buff1, "{\"%s.%s\":%2.2X", get_protocol_name_by_id(temp->protocol_id),
-                                        get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data2 + j));
+                                (void)sprintf(json_buff1, "{\"%s.%s\":%2.2X", proto_name,
+                                        att_name, *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
                                 (void)sprintf(json_buff1, ":%2.2X", *(unsigned char*) (data2 + j));
@@ -1998,8 +2018,8 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                (void)sprintf(json_buff1, "attribute:{\"%s.%s\":%02X", get_protocol_name_by_id(temp->protocol_id),
-                                        get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data2 + j));
+                                (void)sprintf(json_buff1, "attribute:{\"%s.%s\":%02X", proto_name,
+                                        att_name, *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
                                 (void)sprintf(json_buff1, ":%02X", *(unsigned char*) (data2 + j));
@@ -2026,6 +2046,41 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
             }//end of switch
             temp = temp->next;
         }
+        //ensure IP or MAC of src and dst are included in attribute
+        if( having_ip_src == 0){
+        	data1 = get_attribute_extracted_data(pkt, 178, 12);
+        	if( data1 != NULL ){
+        		(void)sprintf(json_buff1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", FORMAT_IP(*(unsigned long*) (data1)));
+        		(void)strcat(json_buff, json_buff1);
+        	}else if( having_mac_src == 0 ){
+        		data1 = get_attribute_extracted_data(pkt, 99, 3);
+        		temp_MAC = xmalloc(22);
+				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
+        		(void)sprintf(json_buff1,"{\"eth.src\":\"%s\"},", temp_MAC );
+        		(void)strcat(json_buff, json_buff1);
+        		xfree( temp_MAC );
+        	}
+
+        	num_attr ++;
+        }
+
+        if( having_ip_dst == 0){
+			data1 = get_attribute_extracted_data(pkt, 178, 13);
+			if( data1 != NULL ){
+				(void)sprintf(json_buff1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", FORMAT_IP(*(unsigned long*) (data1)));
+				(void)strcat(json_buff, json_buff1);
+			}else if( having_mac_dst == 0 ){
+				data1 = get_attribute_extracted_data(pkt, 99, 2);
+				temp_MAC = xmalloc(22);
+				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
+				(void)sprintf(json_buff1,"{\"eth.dst\":\"%s\"},", temp_MAC);
+				(void)strcat(json_buff, json_buff1);
+				xfree( temp_MAC );
+			}
+
+			num_attr ++;
+		}
+
         if( num_attr > 0 ){
         	//remove the last comma in "event: [{...},...,{..},"
         	json_buff[ strlen(json_buff) - 1 ] = '\0';
@@ -3176,11 +3231,11 @@ void get_time_value(char * history, char *a_time, short reverse, short direct)
         char *pt_i = history;
         int len = 0;
         if(direct == NO){
-          pt_i = my_strstr(history, "<attribute_value>- - - - - - timestamp", reverse);
+          pt_i = my_strstr(history, "timestamp", reverse);
           if(pt_i != NULL){
             pt_i = pt_i + 38;
           }else{
-            pt_i = my_strstr(history, "<attribute_value>- - - - - - timeslot", reverse);
+            pt_i = my_strstr(history, "timeslot", reverse);
             if(pt_i != NULL){
               pt_i = pt_i + 37;
             }
@@ -4134,7 +4189,7 @@ void init_sec_lib( mmt_handler_t *mmt, char * property_file,
     op->callback_funct = cont_funct;
     op->RuleFile = open_file(op->RuleFileName, "r");
     if (op->RuleFile == NULL) {
-        (void)fprintf(stderr, "Error 104: Input trace file not found or incorrect file name: %s.\n", op->TraceFileName);
+        (void)fprintf(stderr, "Error 104: Input rule file not found or incorrect file name: %s.\n", op->TraceFileName);
         exit(1);
     }
     init_options( mmt );
