@@ -2088,11 +2088,9 @@ void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void 
         }
         while (tmp_attribute != NULL) {
             void * data = get_attribute_extracted_data_at_index(ipacket, tmp_attribute->proto_id, tmp_attribute->field_id, i);
-            if(data!=NULL){
-                if (!quiet && data) {
-                    print_attributes_list(tmp_attribute);
-                }    
-            }
+            if (!quiet && data) {
+                print_attributes_list(tmp_attribute);
+            }    
             tmp_attribute = tmp_attribute->next;
         }
 
@@ -3420,7 +3418,7 @@ int mmt_string_format(FILE * f, attribute_internal_t * attr){
 int mmt_string_pointer_format(FILE * f, attribute_internal_t * attr){
     int ret = fprintf(f, "Attribute %s.%s = %s\n",
         get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), (char *) attr->data);
-    free((char*)attr->data);
+    // free((char*)attr->data);
     return ret;
 }
 
