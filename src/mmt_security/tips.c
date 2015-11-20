@@ -164,7 +164,7 @@ rule * create_rule()
     a_rule->root = NULL; //Only if non-ROOT and non-ROOT_INSTANCE
     a_rule->type_rule = 0; //Only if ROOT node
     a_rule->property_id = 0; //Only if ROOT
-    a_rule->xml_history = NULL; //Only if ROOT_INSTANCE node
+    a_rule->json_history = NULL; //Only if ROOT_INSTANCE node
     a_rule->valid = NOT_YET; //VALID/NO_VALID/NOT_YET
     a_rule->delay_units = NULL; //Optional
     a_rule->delay_max = 0.0; //Optional
@@ -1716,11 +1716,11 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
   }
 
   if(new_rule != NULL){
-    if(orig_rule->xml_history != NULL){
-      char * xml_history = strdup(orig_rule->xml_history);
-      pt = strstr(xml_history,"<event>");
+    if(orig_rule->json_history != NULL){
+      char * json_history = strdup(orig_rule->json_history);
+      pt = strstr(json_history,"event");
       while (pt != NULL){
-        pt2 = strstr(pt,"<description>EVENT");
+        pt2 = strstr(pt,"description");
         if(pt2 != NULL){
           pt2 = pt2 + 18;
           pt3 = strchr(pt2,':');
@@ -1732,9 +1732,9 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
             }
           }
         }
-        pt = strstr(pt2,"<event>");
+        pt = strstr(pt2,"event");
       }
-      new_rule->xml_history = xml_history;
+      new_rule->json_history = json_history;
     }
     new_rule->timer.tv_sec = orig_rule->timer.tv_sec;
     new_rule->timer.tv_usec = orig_rule->timer.tv_usec;
@@ -1771,9 +1771,9 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
 
 int eliminate_instance(rule **r, rule **i, char *type)
 {
-    if ((*i)->xml_history != NULL) {
-        xfree((*i)->xml_history);
-        (*i)->xml_history = NULL;
+    if ((*i)->json_history != NULL) {
+        xfree((*i)->json_history);
+        (*i)->json_history = NULL;
     }
     if ((*i)->description != NULL) {
         xfree((*i)->description);
@@ -1861,32 +1861,25 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     void * data2 = NULL;
     long type = 0;
     mmt_binary_data_t *db1;
-    int data_size, j, i;
+    int data_size, j;
     struct timeval tvp;
-    char tmbuf[64];
-    for(i=0;i<64;i++)tmbuf[i]='\0';
-    char *ptmbuf=tmbuf;
-    char *buff=xcalloc(5000,1);
-    char *buff1=xcalloc(5000,1);
-    char *xml_buff=xcalloc(7000,1);
-    char *xml_buff1=xcalloc(7000,1);
+    char *json_buff=xcalloc(7000,1);
+    char *json_buff1=xcalloc(7000,1);
     char *temp_MAC;
     //mmt_header_line_t *hl;
 
     tvp.tv_sec=0;
     tvp.tv_usec=0;
     tvp = *(struct timeval *) get_attribute_extracted_data(pkt, PROTO_META, META_UTIME);
-    struct tm *tmp;
-    tmp = localtime(&(tvp.tv_sec));
-    strftime((char*)ptmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", tmp);
-    (void)sprintf(buff, "        timestamp: %s.%06ld\n", (char*)ptmbuf, (long)tvp.tv_usec);
-    (void)sprintf(xml_buff, "<attribute><attribute_value>- - - - - - timestamp=%s.%06ld</attribute_value></attribute>", (char *)ptmbuf, (long) tvp.tv_usec);
-    if (*cause != '\0') {
-        (void)sprintf(buff1, "          %s\n", cause);
-        (void)strcat(buff, buff1);
-        (void)sprintf(xml_buff1, "<description>EVENT %d: %s</description>", event_id, cause);
-        (void)strcat(xml_buff, xml_buff1);
 
+    (void)sprintf(json_buff, "\"timestamp\":%lu.%lu", tvp.tv_sec, (long) tvp.tv_usec);
+
+    if (*cause != '\0') {
+        (void)sprintf(json_buff1, ",\"description\":\"%s\"", cause);
+        (void)strcat(json_buff, json_buff1);
+        (void)strcat(json_buff, ",\"attributes\":[");
+
+        int num_attr = 0;
         unsigned long tmp_lu=0;
         //printout all the attributes
         tuple * temp = curr_root->list_of_tuples_to_print;
@@ -1900,6 +1893,9 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
               temp=temp->next;
               continue;
             }
+
+            num_attr ++;
+
             data_size = get_data_size_by_proto_and_field_ids(temp->protocol_id, temp->field_id);
             type = temp->data_type_id;
             switch (type) {
@@ -1927,74 +1923,52 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
                     convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-                    (void)sprintf(buff1, "          %s.%s = %s", get_protocol_name_by_id(temp->protocol_id),
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", get_protocol_name_by_id(temp->protocol_id),
                             get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), temp_MAC);
-                    (void)strcat(buff, buff1);
-                    (void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %s</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), temp_MAC);
-                    (void)strcat(xml_buff, xml_buff1);
+                    (void)strcat(json_buff, json_buff1);
                     xfree(temp_MAC);
                     break;
                 case MMT_DATA_TIMEVAL:
                     // TODO
                     break;
                 case MMT_DATA_IP_ADDR:
-                    (void)sprintf(buff1, "          %s.%s = %lui.%lu.%lu.%lu", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), FORMAT_IP(*(unsigned long*) (data1)));
-                    (void)strcat(buff, buff1);
                     (void)sprintf(
-                       xml_buff1,"<attribute><attribute_value>- - - - - - %s.%s = %lu.%lu.%lu.%lu</attribute_value></attribute>",get_protocol_name_by_id(temp->protocol_id),
+                       json_buff1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},",get_protocol_name_by_id(temp->protocol_id),
                             get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), FORMAT_IP(*(unsigned long*) (data1)));
-                    (void)strcat(xml_buff, xml_buff1);
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U16_DATA:
-                    (void)sprintf(buff1, "          %s.%s = %d", get_protocol_name_by_id(temp->protocol_id),
+                    (void)sprintf(json_buff1, "{\"%s.%s\":%u},", get_protocol_name_by_id(temp->protocol_id),
                             get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned short*) (data1));
-                    (void)strcat(buff, buff1);
-                    (void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %u</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned short*) (data1));
-                    (void)strcat(xml_buff, xml_buff1);
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U32_DATA:
                     tmp_lu=*(uint32_t*) data1;
-                    (void)sprintf(buff1, "          %s.%s = %lu", get_protocol_name_by_id(temp->protocol_id),
+                    (void)sprintf(json_buff1, "{\"%s.%s\":%lu},", get_protocol_name_by_id(temp->protocol_id),
                             get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), tmp_lu);
-                    (void)strcat(buff, buff1);
-                    (void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %lu</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), tmp_lu);
-                    (void)strcat(xml_buff, xml_buff1);
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U64_DATA:
                     // TODO
                     break;
                 case MMT_U8_DATA:
                 case MMT_DATA_CHAR:
-                    (void)sprintf(buff1, "          %s.%s = %c", get_protocol_name_by_id(temp->protocol_id),
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%u\"},", get_protocol_name_by_id(temp->protocol_id),
                             get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data1));
-                    (void)strcat(buff, buff1);
-                    (void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %u</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data1));
-                    (void)strcat(xml_buff, xml_buff1);
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_HEADER_LINE:
                 	data1 = parse_mmt_header_line( data1, & data_size );
-                	(void)sprintf(buff1, "          %s.%s = %s", get_protocol_name_by_id(temp->protocol_id),
+					(void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", get_protocol_name_by_id(temp->protocol_id),
 							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char *)data1);
-					(void)strcat(buff, buff1);
-
-					(void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %s</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
-							get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char *)data1);
-					(void)strcat(xml_buff, xml_buff1);
+					(void)strcat(json_buff, json_buff1);
 					break;
                 case MMT_DATA_PATH:
                 case MMT_STRING_LONG_DATA:
                 case MMT_STRING_DATA:
-                    (void)sprintf(buff1, "          %s.%s = %s", get_protocol_name_by_id(temp->protocol_id),
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", get_protocol_name_by_id(temp->protocol_id),
                             get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char*) (data1 + sizeof (int)));
-                    (void)strcat(buff, buff1);
-                    (void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %s</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
-                            get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), (char*) (data1 + sizeof (int)));
-                    (void)strcat(xml_buff, xml_buff1);
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_BINARY_DATA:
                 case MMT_BINARY_VAR_DATA:
@@ -2003,52 +1977,38 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     data_size = db1->len;
                     data2 = db1->data;
                     if (data_size == 4) {
-                        //sprintf(buff1, "          %s.%s = %ld.%ld.%ld.%ld", ctl_proto_find_by_id(temp->protocol_id),
-                        //               ctl_proto_attr_find_by_id (temp->protocol_id, temp->field_id), FORMAT_IP(*(unsigned long*)(data2)));
-                        (void)sprintf(buff1, "          %s.%s = %lu.%lu.%lu.%lu", get_protocol_name_by_id(temp->protocol_id),
+                        (void)sprintf(json_buff1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", get_protocol_name_by_id(temp->protocol_id),
                                 get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), FORMAT_IP(*(unsigned long*) (data2)));
-                        (void)strcat(buff, buff1);
-                        (void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %lu.%lu.%lu.%lu</attribute_value></attribute>", get_protocol_name_by_id(temp->protocol_id),
-                                get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), FORMAT_IP(*(unsigned long*) (data2)));
-                        (void)strcat(xml_buff, xml_buff1);
+                        (void)strcat(json_buff, json_buff1);
                     } else if (data_size == 6) {
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                //sprintf(buff1, "          %s.%s = %2.2X", ctl_proto_find_by_id(temp->protocol_id),
-                                //             ctl_proto_attr_find_by_id (temp->protocol_id, temp->field_id), *(unsigned char*)(data2+j));
-                                (void)sprintf(buff1, "          %s.%s = %2.2X", get_protocol_name_by_id(temp->protocol_id),
-                                        get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data2 + j));
-                                (void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %2.2X", get_protocol_name_by_id(temp->protocol_id),
+                                (void)sprintf(json_buff1, "{\"%s.%s\":%2.2X", get_protocol_name_by_id(temp->protocol_id),
                                         get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
-                                (void)sprintf(buff1, ":%2.2X", *(unsigned char*) (data2 + j));
-                                (void)sprintf(xml_buff1, ":%2.2X", *(unsigned char*) (data2 + j));
+                                (void)sprintf(json_buff1, ":%2.2X", *(unsigned char*) (data2 + j));
                             }
-                            (void)strcat(buff, buff1);
-                            (void)strcat(xml_buff, xml_buff1);
+                            (void)strcat(json_buff, json_buff1);
                         }
                         if(close_tag==YES)
-                          (void)strcat(xml_buff, "</attribute_value></attribute>");
+                          (void)strcat(json_buff, "},");
                     } else {
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                (void)sprintf(buff1, "          %s.%s = %02X", get_protocol_name_by_id(temp->protocol_id),
-                                        get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data2 + j));
-                                (void)sprintf(xml_buff1, "<attribute><attribute_value>- - - - - - %s.%s = %02X", get_protocol_name_by_id(temp->protocol_id),
+                                (void)sprintf(json_buff1, "attribute:{\"%s.%s\":%02X", get_protocol_name_by_id(temp->protocol_id),
                                         get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id), *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
-                                (void)sprintf(buff1, ":%02X", *(unsigned char*) (data2 + j));
-                                (void)sprintf(xml_buff1, ":%02X", *(unsigned char*) (data2 + j));
+                                (void)sprintf(json_buff1, ":%02X", *(unsigned char*) (data2 + j));
                             }
-                            (void)strcat(buff, buff1);
-                            (void)strcat(xml_buff, xml_buff1);
+                            (void)strcat(json_buff, json_buff1);
                         }
+                        //end attribute
                         if(close_tag==YES)
-                          (void)strcat(xml_buff, "</attribute_value></attribute>");
+                          (void)strcat(json_buff, "},");
                     }
                     break;
                 case MMT_DATA_LAYERID:
@@ -2064,29 +2024,30 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     (void)fprintf(stderr, "Error 15.2: Type not implemented yet. Data type unknown.\n");
                     exit(-1);
             }//end of switch
-            (void)sprintf(buff1, "\n");
-            (void)strcat(buff, buff1);
             temp = temp->next;
         }
-    }
-    if (*cause != '\0') {
+        if( num_attr > 0 ){
+        	//remove the last comma in "event: [{...},...,{..},"
+        	json_buff[ strlen(json_buff) - 1 ] = '\0';
+        }
+        (void)strcat(json_buff, "]");
+        sprintf( json_buff1, "\"event_%d\":{%s},", event_id, json_buff );
+        strcpy(json_buff, json_buff1);
+
         short c = 0;
         if (context == BEFORE || context == AFTER || context == SAME) c = 1;
-        int xml_buff_size = strlen(xml_buff) + 1 + c + 15;
-        if (curr_rule->xml_history != NULL) {
-            xml_buff_size = xml_buff_size + strlen(curr_rule->xml_history);
-            curr_rule->xml_history = realloc(curr_rule->xml_history, xml_buff_size);
+        int json_buff_size = strlen(json_buff) + 1 + c;
+        if (curr_rule->json_history != NULL) {
+            json_buff_size = json_buff_size + strlen(curr_rule->json_history);
+            curr_rule->json_history = realloc(curr_rule->json_history, json_buff_size);
         } else {
-            curr_rule->xml_history = xcalloc(1, xml_buff_size);
+            curr_rule->json_history = xcalloc(1, json_buff_size);
         }
-        (void)strcat(curr_rule->xml_history, "<event>");
-        (void)strcat(curr_rule->xml_history, xml_buff);
-        (void)strcat(curr_rule->xml_history, "</event>");
+
+        (void)strcat(curr_rule->json_history, json_buff);
     }
-    xfree(buff);
-    xfree(buff1);
-    xfree(xml_buff);
-    xfree(xml_buff1);
+    xfree(json_buff);
+    xfree(json_buff1);
 }
 
 void store_tuples( const ipacket_t *pkt, short context, rule *curr_root, rule *curr_rule, short event_id, char *cause )
@@ -2810,103 +2771,100 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
     return ret;
 }
 
-char * xml_message(int type, int po, int state, int num, char *desc)
-{
-    char *xml_string = xcalloc(10000,1);
-    strcpy(xml_string, "<occurence>\n");
-    char temp[1000];
-    (void)sprintf(temp, "  <pid>%d</pid>\n", num);
-    (void)strcat(xml_string, temp);
-    switch (type) {
-        case TEST:
-        case SECURITY_RULE:
-            if (po == SATISFIED && state == SATISFIED) {
-                (void)strcat(xml_string, "    <verdict>respected</verdict>\n");
-            } else if (po == NOT_SATISFIED && state == SATISFIED) {
-                xfree(xml_string);
-                return NULL;
-            } else if (po == SATISFIED && state == NOT_SATISFIED) {
-                xfree(xml_string);
-                return NULL;
-            } else if (po == NOT_SATISFIED && state == NOT_SATISFIED) {
-                (void)strcat(xml_string, "    <verdict>not_respected</verdict>\n");
-            } else if (po == BOTH && state == SATISFIED) {
-                (void)strcat(xml_string, "    <verdict>respected</verdict>\n");
-            } else if (po == BOTH && state == NOT_SATISFIED) {
-                (void)strcat(xml_string, "    <verdict>not_respected</verdict>\n");
-            } else if (po == BOTH && state == NEITHER) {
-                (void)strcat(xml_string, "    <verdict>unknown</verdict>\n"); // TODO:????
-            }
-            break;
-        case ATTACK:
-            if (po == SATISFIED && state == SATISFIED) {
-                (void)strcat(xml_string, "    <verdict>detected</verdict>\n");
-            } else if (po == NOT_SATISFIED && state == SATISFIED) {
-                xfree(xml_string);
-                return NULL;
-            } else if (po == SATISFIED && state == NOT_SATISFIED) {
-                xfree(xml_string);
-                return NULL;
-            } else if (po == NOT_SATISFIED && state == NOT_SATISFIED) {
-                (void)strcat(xml_string, "    <verdict>not_detected</verdict>\n");
-            } else if (po == BOTH && state == SATISFIED) {
-                (void)strcat(xml_string, "    <verdict>detected</verdict>\n");
-            } else if (po == BOTH && state == NOT_SATISFIED) {
-                (void)strcat(xml_string, "    <verdict>not_detected</verdict>\n");
-            } else if (po == BOTH && state == NEITHER) {
-                (void)strcat(xml_string, "    <verdict>unknown</verdict>\n"); // TODO for inconclusive at begining or at end of input
-            }
-            break;
-        default:
-            (void)fprintf(stderr, "Error 22: Property type should be a security rule or an attack.\n");
-            exit(-1);
-    }//end of switch
-    (void)strcat(xml_string, "  <description>\n");
-    switch (type) {
-        case TEST:
-            (void)sprintf(temp, " %s\n", desc);
-            (void)strcat(xml_string, temp);
-            break;
-        case SECURITY_RULE:
-            (void)sprintf(temp, "  SECURITY_RULE: %s\n", desc);
-            (void)strcat(xml_string, temp);
-            break;
-        case ATTACK:
-            (void)sprintf(temp, "  ATTACK: %s\n", desc);
-            (void)strcat(xml_string, temp);
-            break;
-        default:
-            (void)fprintf(stderr, "Error 22x: Property type should be a security rule or an attack.\n");
-            exit(-1);
-    }//end of switch
-    (void)strcat(xml_string, "  </description>\n");
-    char *ret;
-    ret = xmalloc(strlen(xml_string) + 1);
-    strcpy(ret, xml_string);
-    xfree(xml_string);
-    return ret;
+void get_verdict( int t, int po, int state, char **str_verdict, char **str_type ){
+	char verdict[100];
+	char type[100];
+
+	switch (t) {
+		case TEST:
+		case SECURITY_RULE:
+			if (po == SATISFIED && state == SATISFIED) {
+				(void)strcpy(verdict, "respected");
+			} else if (po == NOT_SATISFIED && state == SATISFIED) {
+				return;
+			} else if (po == SATISFIED && state == NOT_SATISFIED) {
+				return;
+			} else if (po == NOT_SATISFIED && state == NOT_SATISFIED) {
+				(void)strcpy(verdict, "not_respected");
+			} else if (po == BOTH && state == SATISFIED) {
+				(void)strcpy(verdict, "respected");
+			} else if (po == BOTH && state == NOT_SATISFIED) {
+				(void)strcpy(verdict, "not_respected");
+			} else if (po == BOTH && state == NEITHER) {
+				(void)strcpy(verdict, "unknown"); // TODO:????
+			}
+			break;
+		case ATTACK:
+			if (po == SATISFIED && state == SATISFIED) {
+				(void)strcpy(verdict, "detected");
+			} else if (po == NOT_SATISFIED && state == SATISFIED) {
+				return;
+			} else if (po == SATISFIED && state == NOT_SATISFIED) {
+				return;
+			} else if (po == NOT_SATISFIED && state == NOT_SATISFIED) {
+				(void)strcpy(verdict, "not_detected");
+			} else if (po == BOTH && state == SATISFIED) {
+				(void)strcpy(verdict, "detected");
+			} else if (po == BOTH && state == NOT_SATISFIED) {
+				(void)strcpy(verdict, "not_detected");
+			} else if (po == BOTH && state == NEITHER) {
+				(void)strcpy(verdict, "unknown"); // TODO for inconclusive at begining or at end of input
+			}
+			break;
+		default:
+			(void)fprintf(stderr, "Error 22: Property type should be a security rule or an attack.\n");
+			exit(-1);
+	}//end of switch
+
+	switch (t) {
+			case TEST:
+				(void)strcpy(type, "test");
+				break;
+			case SECURITY_RULE:
+				(void)strcpy(type, "security");
+				break;
+			case ATTACK:
+				(void)strcpy(type, "attack");
+				break;
+	}
+	*str_verdict = malloc( sizeof( char ) * strlen(verdict) );
+	strcpy( *str_verdict, verdict );
+
+	*str_type = malloc( sizeof( char ) * strlen(type) );
+	strcpy( *str_type, type );
 }
+
 
 void detected_corrupted_message(short print_option, rule *r, char *cause, short state)
 {
     rule *temp = r;
+    char *history;
 
     if(op->callback_funct != NULL){
-      char * xml_string = xml_message(ATTACK, print_option, state, 0, cause);
-      if (xml_string == NULL) return;
-      int i = strlen(xml_string);
-      if (temp->xml_history == NULL) temp = temp->root;
-      if (temp->xml_history != NULL) {
-        int j = strlen(temp->xml_history);
-        xml_string = realloc(xml_string, (i + j + 1));
-        (void)strcat(xml_string, temp->xml_history);
-      }
-      i=strlen(xml_string);
-      xml_string = realloc(xml_string, (i + 14 + 1));
-      (void)strcat(xml_string, "\n</occurence>\n");
-      corr_mess++;
-      ((op->callback_funct))(xml_string);
-      if(xml_string!=NULL)xfree(xml_string);
+    	char *verdict = NULL, *type = NULL;
+    	get_verdict( ATTACK, print_option, state, &verdict, &type );
+
+        //char * xml_string = xml_message(ATTACK, print_option, state, 0, cause);
+      	if ( verdict == NULL) return;
+
+      	if (temp->json_history == NULL)
+    	  temp = temp->root;
+      	if (temp->json_history != NULL)
+      		history = temp->json_history;
+
+      	corr_mess++;
+
+      	//remove the last comma
+		if( history[ strlen( history ) - 1 ] == ',')
+			history[ strlen( history ) - 1 ] = '\0';
+
+      	char *str = malloc( strlen( history ) + 3 );
+      	sprintf( str, "{%s}", history );
+
+      	((op->callback_funct))( 0, verdict, type, cause, str );
+
+      	if(verdict != NULL) xfree( verdict );
+      	if(type != NULL)    xfree( type );
     }
     return;
 }
@@ -3255,26 +3213,33 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
         //exit(-1);
         r = r->root;
     }
-    void *data = NULL;
-    char * xml_string = NULL;
-      xml_string = xml_message(curr_root->type_rule, print_option, state, curr_root->property_id, r->description);
-    if (xml_string == NULL) return;
-    if (r->xml_history != NULL) {
-        int i = strlen(xml_string);
-        int j = strlen(r->xml_history);
-        xml_string = realloc(xml_string, (i + j + 1));
-        (void)strcat(xml_string, r->xml_history);
-    }
-    int i = strlen(xml_string);
-    xml_string = realloc(xml_string, (i + 13 + 1));
-    (void)strcat(xml_string, "</occurence>\n");
 
     if(op->callback_funct != NULL){
-      ((op->callback_funct))(xml_string);
-      xfree(xml_string);
+		char *verdict = NULL, *type = NULL;
+		char *history;
+		int prop_id = curr_root->property_id;
+		char *des   = r->description;
+
+		get_verdict( curr_root->type_rule, print_option, state, &verdict, &type );
+		if( verdict == NULL) return;
+		if (r->json_history != NULL)
+			history = r->json_history;
+
+		//remove the last comma
+		if( history[ strlen( history ) - 1 ] == ',')
+			history[ strlen( history ) - 1 ] = '\0';
+
+		char *temp = malloc( strlen( history ) + 3 );
+		sprintf( temp, "{%s}", history );
+
+		((op->callback_funct))( prop_id, verdict, type, des, temp );
+
+		if( verdict != NULL ) xfree( verdict );
+		if( type != NULL)     xfree( type );
     }
 
     // TODO: Folder where the scripts are installed is current folder
+    void *data = NULL;
     short do_it = 0;
     char * what_to_do;
     if (state == SATISFIED) {
@@ -3587,9 +3552,9 @@ int verify_left(const ipacket_t *pkt, char *cause, rule *r, rule *root)
             temp_rule = r;
             result = verify_segment( pkt, YES, root->list_of_tuples, temp_rule, root );
             if(result == VALID){
-              if(root->xml_history != NULL){
-                xfree (root->xml_history);
-                root->xml_history = NULL;
+              if(root->json_history != NULL){
+                xfree (root->json_history);
+                root->json_history = NULL;
               }
               store_history(pkt, SAME, root, root, cause, root->list_of_sons->event_id);
             }

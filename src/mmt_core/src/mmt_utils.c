@@ -188,7 +188,9 @@ int str_compare(char * str1, char * str2){
 char ** str_split(char * str, char * spliter){
     if(str != NULL && spliter !=NULL){
         char *str_input = str;
-        char * array_string[strlen(str_input)];
+        //char *array_string[ strlen(str_input) ];
+        //to avoid warning: function returns address of local variable [-Wreturn-local-addr]
+        char **array_string = malloc( sizeof( char) * strlen(str_input) );
         int start_index = 0;
         int s_index;
         s_index = str_index(str_input,spliter);
