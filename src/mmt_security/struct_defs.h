@@ -104,7 +104,7 @@ typedef struct RULE_struct{
   char* if_not_satisfied; //Only used by a ROOT node. Function call done  when a conclusion for the rule is reached.
   int type_rule;        //Only used by a ROOT node. Determines how the rule will be printed.
   //char * history;       //Only used by a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify the causes.
-  char * xml_history;       //Only used by a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify the causes.
+  char * json_history;       //Only used by a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify the causes.
   long nb_satisfied;    //Only used by ROOT to keep statistics per rule
   long nb_not_satisfied;//Only used by ROOT to keep statistics per rule
   short valid;		//VALID/NOT_VALID/NOT_YET
