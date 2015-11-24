@@ -23,7 +23,7 @@ $(SDKLIB)/$(LIBCORE).so: $(SDKLIB)/$(LIBCORE).so.$(VERSION)
 	@echo "[SYMLINK] $(notdir $@)"
 	$(QUIET) ln -sf $(LIBCORE).so.$(VERSION) $@
 
-$(SDKLIB)/$(LIBCORE).so.$(VERSION): $(SDKLIB)/$(LIBCORE).a /usr/local/lib/libntoh.a
+$(SDKLIB)/$(LIBCORE).so.$(VERSION): $(SDKLIB)/$(LIBCORE).a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBCORE).so
 
@@ -33,9 +33,17 @@ $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 	@echo "[SYMLINK] $(notdir $@)"
 	$(QUIET) ln -sf $(LIBTCPIP).so.$(VERSION) $@
 
+ifdef DLIBNTOH
 $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a /usr/local/lib/libntoh.a
+	@echo "[LIBRARY] Use libntoh"
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so
+else
+$(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
+	@echo "[LIBRARY] No libntoh"
+	@echo "[LIBRARY] $(notdir $@)"
+	$(QUIET) $(CXX) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so
+endif
 
 # FUZZ
 
