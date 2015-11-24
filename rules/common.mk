@@ -6,11 +6,11 @@ MMT_INC ?= /usr/local/include/mmt
 OPT_MMT_PLUGINS ?= /opt/mmt/plugins
 OPT_MMT_EXAMS ?= /opt/mmt/examples
 
-CFLAGS   := -g -Wall 
-CXXFLAGS := -g -Wall 
+CFLAGS   := -Wall -DNDEBUG
+CXXFLAGS := -Wall -DNDEBUG
 
 ifdef DLIBNTOH
-CFLAGS   += -D DLIBNTOH=1
+CFLAGS   += -D DLIBNTOH=1 
 CXXFLAGS += -D DLIBNTOH=1
 endif
 
