@@ -17,7 +17,7 @@ extern "C" {
 #include <time.h>
 #include <pcap/pcap.h>
 
-typedef void (*result_callback) (char *xml_string);
+typedef void (*result_callback) (int prop_id, char *verdict, char *type, char *cause, char *history);
 
 //--------------------------------- Command options ----------------------------------------------------
 typedef struct {

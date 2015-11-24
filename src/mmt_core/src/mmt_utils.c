@@ -207,7 +207,6 @@ int str_compare(char * str1, char * str2){
 //             }
 //             s_index = str_index(str_input + start_index,spliter);   
 //         }
-
 //         if(str_input + start_index != NULL){
 //             char *last_string;
 //             last_string = str_sub(str_input, start_index, strlen(str_input)-1);
