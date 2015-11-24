@@ -281,6 +281,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     if(ret == 0){
         debug("ret==0");
         ipacket->extra.status = MMT_SKIP;
+        return 0;
     }
     
     debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
