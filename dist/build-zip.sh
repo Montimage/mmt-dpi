@@ -2,7 +2,7 @@
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt_sdk_`uname -s`_`uname -p`
+build_dir=mmt_sdk_`uname -s`_`uname -p`_`date +%Y-%m-%d`
 
 # Create a directory with the name of package
 mkdir $build_dir
