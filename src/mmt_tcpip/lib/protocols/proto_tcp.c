@@ -4,14 +4,6 @@
 #include "../mmt_common_internal_include.h"
 
 #include "tcp.h"
-// #define DLIBNTOH
-////////////// LIBNTOH LIBRARY INTEGRATION CODE /////////////////
-#ifdef DLIBNTOH
-    #include "libntoh_tcp.h"
-#endif
-
-// END OF LIBNTOH CODE
-/////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
@@ -271,22 +263,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
     //    return 0;
     // }
-#ifdef DLIBNTOH
-    // INJECT LIBNOTH PROCESS //
-    ipacket->extra.status = MMT_SKIP;
-    debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    // uint64_t ntoh_packet_id = ipacket->packet_id;
-    int ret = ntoh_packet_process(ipacket,index);
     
-    if(ret == 0){
-        debug("ret==0");
-        ipacket->extra.status = MMT_SKIP;
-        return 0;
-    }
-    
-    debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    // END OF INJECTING LIBNTOH PROCESS
-#endif
     return 1;
 }
 
@@ -336,14 +313,6 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_tcp_struct() {
-    // debug("DLIBNTOH: %d",DLIBNTOH);
-    // INITIALIZE LIBNTOH
-#ifdef DLIBNTOH
-    ntoh_tcp_init();
-
-    debug("libntoh version: %s\n",ntoh_version());
-#endif    
-    // END OF INITIALIZING LIBNTOH
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_TCP, PROTO_TCP_ALIAS);
 
@@ -355,9 +324,6 @@ int init_proto_tcp_struct() {
         }
 
         register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
-#ifdef DLIBNTOH
-        register_proto_context_init_cleanup_function(protocol_struct, setup_tcp_context, tcp_context_cleanup, NULL);
-#endif    
         return register_protocol(protocol_struct, PROTO_TCP);
     } else {
         return 0;
