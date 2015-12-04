@@ -2,7 +2,7 @@
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt_sdk_`uname -s`_`uname -p`
+build_dir=mmt_sdk_`uname -s`_`uname -p`_`date +%Y-%m-%d`
 
 # Create a directory with the name of package
 mkdir $build_dir
@@ -30,4 +30,4 @@ dpkg-deb --build $build_dir
 rm -rf $build_dir
 
 echo "To install mmt-sdk library"
-echo "sudo dpkg -i $build_dir"
+echo "sudo dpkg -i $build_dir.deb"
