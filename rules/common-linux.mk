@@ -34,7 +34,6 @@ $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 	$(QUIET) ln -sf $(LIBTCPIP).so.$(VERSION) $@
 
 $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
-	@echo "[LIBRARY] No libntoh"
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so
 
