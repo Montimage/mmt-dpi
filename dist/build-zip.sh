@@ -2,7 +2,7 @@
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt_sdk
+build_dir=mmt_sdk_`uname -s`_`uname -p`
 
 # Create a directory with the name of package
 mkdir $build_dir
@@ -16,8 +16,10 @@ cp -R $sdk_dir/lib $build_dir
 cp -R $sdk_dir/examples $build_dir
 
 # Zip file
-zip -r mmt_sdk.zip $build_dir
+sudo apt-get install -y zip
+zip -r $build_dir.zip $build_dir
 
 # Remove temp folder
 
 rm -rf $build_dir
+echo "$build_dir.zip was created successfully!"
