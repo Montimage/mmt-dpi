@@ -1,4 +1,4 @@
-DLIBNTOH := 1
+#DLIBNTOH := 1
 # Uncomment the line before if you want to use LIBNTOH library for TCP reassembling
 VERSION  := 0.100
 USR_LIB ?= /usr/lib
@@ -6,8 +6,8 @@ MMT_INC ?= /usr/local/include/mmt
 OPT_MMT_PLUGINS ?= /opt/mmt/plugins
 OPT_MMT_EXAMS ?= /opt/mmt/examples
 
-CFLAGS   := -Wall -DNDEBUG
-CXXFLAGS := -Wall -DNDEBUG
+CFLAGS   := -Wall -DNDEBUG -g
+CXXFLAGS := -Wall -DNDEBUG -g
 
 ifdef DLIBNTOH
 CFLAGS   += -D DLIBNTOH=1 
