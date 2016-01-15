@@ -288,9 +288,12 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         if(retval.proto_id == PROTO_UNKNOWN) {
             retval.proto_id =  mmt_guess_protocol_by_port_number(ipacket);
         }
-
-        retval.status = Classified;
-        new_retval = set_classified_proto(ipacket, index + 1, retval);
+        if (retval.proto_id != PROTO_UNKNOWN){
+            retval.status = Classified;
+            new_retval = set_classified_proto(ipacket, index + 1, retval);}
+        else{
+            retval.status = NonClassified;
+        }
     } else {
         /* now shift and insert */
         int stack_size = packet->flow->protocol_stack_info.current_stack_size_minus_one;

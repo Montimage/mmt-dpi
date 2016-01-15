@@ -4,8 +4,8 @@ MMT_INC ?= /usr/local/include/mmt
 OPT_MMT_PLUGINS ?= /opt/mmt/plugins
 OPT_MMT_EXAMS ?= /opt/mmt/examples
 
-CFLAGS   := -Wall -DNDEBUG
-CXXFLAGS := -Wall -DNDEBUG
+CFLAGS   := -Wall -DNDEBUG -g
+CXXFLAGS := -Wall -DNDEBUG -g
 
 CP       := cp -R
 RM       := rm -rf
