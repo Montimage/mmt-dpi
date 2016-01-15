@@ -2143,7 +2143,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             if (is_new_session) {
                 is_new_session = NEW_SESSION; //Enforce the use of "NEW_SESSION" value
                 // init session data
-                session->session_id = mmt_handler->sessions_count;
+                session->session_id = mmt_handler->sessions_count+1;
                 session->packet_count = 0;
                 session->data_volume = 0;
                 session->status = NonClassified;
