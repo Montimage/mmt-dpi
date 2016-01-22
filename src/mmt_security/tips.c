@@ -3962,7 +3962,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
     return NOT_VALID;
 }
 
-void analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
+int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
 {
     if (p_meta == 0) {
         p_meta = get_protocol_id_by_name("META");
@@ -4065,6 +4065,7 @@ void analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
         curr_rule = temp;
     }
     xfree(cause);
+    return 0;
 }
 
 void init_options( mmt_handler_t *mmt )

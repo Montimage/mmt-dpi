@@ -73,12 +73,12 @@ extern "C" {
 /**
  * Generic packet handler callback
  */
-typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+// typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
 
 /**
  * Generic packet handler callback
  */
-typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
 
 /**
  * Signature of the session timeout handler.
@@ -179,6 +179,8 @@ MMTAPI int MMTCALL register_packet_handler(
     void *user
 );
 
+
+MMTAPI void MMTCALL process_packet_handler(ipacket_t * ipacket);
 /**
  * Unregisters a packet handler, returns a positive value on success, 0 otherwise.
  * @param mmt_handler pointer to the mmt handler we want to unregister the packet handler from
