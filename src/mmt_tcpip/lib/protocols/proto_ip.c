@@ -151,6 +151,29 @@ int ip_server_addr_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 /*
+ * IP options extraction routines
+ */
+
+int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
+    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
+    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+
+    struct iphdr * ip_hdr = (struct iphdr *) (& packet->data[proto_offset]);
+    int ihl = ip_hdr->ihl;
+    extracted_data->data = NULL;
+    if(ihl > 5){
+        ip_hdr = ip_hdr + 5 * 4;
+        extracted_data->data = (unsigned char *) ip_hdr;
+        return 1;
+    }
+    return 0;
+}
+
+
+/*
  * End of IP data extraction routines
  */
 
@@ -1138,6 +1161,7 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_CHECKSUM, IP_CHECKSUM_ALIAS, MMT_U16_DATA, sizeof (short), 10, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {IP_SRC, IP_SRC_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), 12, SCOPE_PACKET, general_int_extraction},
     {IP_DST, IP_DST_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), 16, SCOPE_PACKET, general_int_extraction},
+    {IP_OPTS, IP_OPTS_ALIAS, MMT_DATA_POINTER,  sizeof (void *), -2, SCOPE_PACKET, ip_options_extraction},
     {IP_CLIENT_ADDR, IP_CLIENT_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_client_addr_extraction},
     {IP_SERVER_ADDR, IP_SERVER_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_server_addr_extraction},
     {IP_CLIENT_PORT, IP_CLIENT_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_client_port_extraction},
