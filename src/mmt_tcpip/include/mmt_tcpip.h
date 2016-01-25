@@ -15,7 +15,7 @@ extern "C" {
 #include "mmt_tcpip_protocols.h"
 #include "mmt_tcpip_attributes.h"
 
-inline int get_content_class_by_content_type(char * str) {
+static inline int get_content_class_by_content_type(char * str) {
     int str_len = strlen(str);
 
     if (str_len > 12 && memcmp(str, "application/", 12) == 0) {
@@ -424,26 +424,26 @@ inline int get_content_class_by_content_type(char * str) {
     return MMT_CONTENT_FAMILY_UNSPECIFIED;
 }
 
-inline char * get_content_class_name_by_content_type(char * str) {
+static inline char * get_content_class_name_by_content_type(char * str) {
     static char *classes[] = {MMT_CONTENT_LONG_LABELS}; //Safe static as this is read only thing!
     int class_id = get_content_class_by_content_type(str);
     return classes[class_id];
 }
 
-inline int get_content_class_by_content_flags(uint32_t content_flags) {
+static inline int get_content_class_by_content_flags(uint32_t content_flags) {
     if (content_flags & MMT_CONTENT_VIDEO) return MMT_CONTENT_FAMILY_VIDEO;
     if (content_flags & MMT_CONTENT_AUDIO) return MMT_CONTENT_FAMILY_AUDIO;
     if (content_flags & MMT_CONTENT_IMAGE) return MMT_CONTENT_FAMILY_IMAGE;
     return MMT_CONTENT_FAMILY_UNSPECIFIED;
 }
 
-inline char * get_content_class_name_by_content_flags(uint32_t content_flags) {
+static inline char * get_content_class_name_by_content_flags(uint32_t content_flags) {
     static char *classes[] = {MMT_CONTENT_LONG_LABELS}; //Safe static as this is read only thing!
     int class_id = get_content_class_by_content_flags(content_flags);
     return classes[class_id];
 }
 
-inline int get_application_class_by_protocol_id(int id) {
+static inline int get_application_class_by_protocol_id(int id) {
     switch (id) {
         case PROTO_BLOOMBERG:
         case PROTO_MSCDN:
@@ -1090,7 +1090,7 @@ inline int get_application_class_by_protocol_id(int id) {
     }
 }
 
-inline char * get_application_class_name_by_protocol_id(int id) {
+static inline char * get_application_class_name_by_protocol_id(int id) {
     static char *classes[] = {PROTO_CLASS_LABELS};
     int class_id = get_application_class_by_protocol_id(id);
     return classes[class_id];
