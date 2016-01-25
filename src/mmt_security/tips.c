@@ -1378,6 +1378,7 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
             a_rule->if_satisfied = strdup((const char*)attribute_value[i]);
         } else if (xmlStrcmp(attribute_name, (const xmlChar*)"type_property") == 0) {
             if (xmlStrncmp(attribute_value[i], (const xmlChar*)"ATTACK", 3) == 0) a_rule->type_rule = ATTACK;
+            else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"EVASION", 3) == 0) a_rule->type_rule = EVASION;
             else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"SECURITY_RULE", 3) == 0) a_rule->type_rule = SECURITY_RULE;
             else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"TEST", 3) == 0) a_rule->type_rule = TEST;
         } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_min") == 0) {
@@ -2850,6 +2851,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 			}
 			break;
 		case ATTACK:
+		case EVASION:
 			if (po == SATISFIED && state == SATISFIED) {
 				(void)strcpy(verdict, "detected");
 			} else if (po == NOT_SATISFIED && state == SATISFIED) {
@@ -2877,6 +2879,9 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 				break;
 			case SECURITY_RULE:
 				(void)strcpy(type, "security");
+				break;
+		    case EVASION:
+				(void)strcpy(type, "evasion");
 				break;
 			case ATTACK:
 				(void)strcpy(type, "attack");
@@ -3097,6 +3102,23 @@ int print_message(int type, int po, int state, int num, char *desc)
                 (void)fprintf(stderr, "OCCURRENCE FREE from attack number %d: \"%s\"\n", num, desc);
             } else if (po == BOTH && state == NEITHER) {
                 (void)fprintf(stderr, "The analysis of attack number %d: \"%s\" resulted in:\n", num, desc);
+            }
+            break;
+        case EVASION:
+            if (po == SATISFIED && state == SATISFIED) {
+                (void)fprintf(stderr, "DETECTED the possible evasion number %d: \"%s\"\n", num, desc);
+            } else if (po == NOT_SATISFIED && state == SATISFIED) {
+                return NOT_OK;
+            } else if (po == SATISFIED && state == NOT_SATISFIED) {
+                return NOT_OK;
+            } else if (po == NOT_SATISFIED && state == NOT_SATISFIED) {
+                (void)fprintf(stderr, "OCCURRENCE FREE from evasion number %d: \"%s\"\n", num, desc);
+            } else if (po == BOTH && state == SATISFIED) {
+                (void)fprintf(stderr, "DETECTED the possible evasion number %d: \"%s\"\n", num, desc);
+            } else if (po == BOTH && state == NOT_SATISFIED) {
+                (void)fprintf(stderr, "OCCURRENCE FREE from evasion number %d: \"%s\"\n", num, desc);
+            } else if (po == BOTH && state == NEITHER) {
+                (void)fprintf(stderr, "The analysis of evasion number %d: \"%s\" resulted in:\n", num, desc);
             }
             break;
         default:
@@ -4100,6 +4122,9 @@ void print_summary()
         if (temp->type_rule == ATTACK) {
             (void)fprintf(stderr, "    ATTACKS DETECTED                      : %6ld times,\n", temp->nb_satisfied);
             (void)fprintf(stderr, "    OCCURRENCES DETECTED FREE from attack : %6ld times.\n", temp->nb_not_satisfied);
+        } else if (temp->type_rule == EVASION) {
+            (void)fprintf(stderr, "    EVASION DETECTED                      : %6ld times,\n", temp->nb_satisfied);
+            (void)fprintf(stderr, "    OCCURRENCES DETECTED FREE from evasion : %6ld times.\n", temp->nb_not_satisfied);
         } else if (temp->type_rule == SECURITY_RULE || temp->type_rule == TEST) {
             (void)fprintf(stderr, "    RESPECTED : %6ld times,\n", temp->nb_satisfied);
             (void)fprintf(stderr, "    VIOLATED  : %6ld times.\n", temp->nb_not_satisfied);
@@ -4122,7 +4147,7 @@ char * xml_summary()
         (void)strcat(xml_string, "  <spb>\n");
         (void)sprintf(tmp, "   <id>0</id>\n");
         (void)strcat(xml_string, tmp);
-        (void)sprintf(tmp, "   <description>ATTACK: Corrupted messages: due to an attack or error.</description>\n");
+        (void)sprintf(tmp, "   <description>ATTACK: Corrupted messages: due to an attack, evasion or error.</description>\n");
         (void)strcat(xml_string, tmp);
         (void)sprintf(tmp, "   <detected>%lld</detected>\n", corr_mess);
         (void)strcat(xml_string, tmp);
@@ -4137,6 +4162,18 @@ char * xml_summary()
             (void)sprintf(tmp, "   <id>%d</id>\n", temp->property_id);
             (void)strcat(xml_string, tmp);
             (void)sprintf(tmp, "   <description>ATTACK: %s</description>\n", temp->description);
+            (void)strcat(xml_string, tmp);
+            (void)sprintf(tmp, "   <detected>%ld</detected>\n", temp->nb_satisfied);
+            (void)strcat(xml_string, tmp);
+            (void)sprintf(tmp, "   <not_detected>%ld</not_detected>\n", temp->nb_not_satisfied);
+            (void)strcat(xml_string, tmp);
+            (void)strcat(xml_string, "  </spb>\n");
+        }else if (temp->type_rule == EVASION) {
+            spb = 1;
+            (void)strcat(xml_string, "  <spb>\n");
+            (void)sprintf(tmp, "   <id>%d</id>\n", temp->property_id);
+            (void)strcat(xml_string, tmp);
+            (void)sprintf(tmp, "   <description>EVASION: %s</description>\n", temp->description);
             (void)strcat(xml_string, tmp);
             (void)sprintf(tmp, "   <detected>%ld</detected>\n", temp->nb_satisfied);
             (void)strcat(xml_string, tmp);
