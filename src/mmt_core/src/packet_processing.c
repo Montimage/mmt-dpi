@@ -2631,44 +2631,33 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  */
  void process_packet_handler(ipacket_t *ipacket){
     debug("process_packet_handler of ipacket: %"PRIu64"\n",ipacket->packet_id);
-    
+    debug("Last packet_handler_id: %d",ipacket->last_callback_fct_id);
     packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;            
-    int reassembly_callback = 0;
     while (temp_packet_handler != NULL) {
         if(ipacket->last_callback_fct_id == 0){
+            ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
             int result = (temp_packet_handler->function(ipacket, temp_packet_handler->args));
-            // LUONG: Check status of the ipacket here
-            // SKIP: Skip process packet handler
-            // CONTINUE: Continue process packet handler
-            // DROP: DROP the packet
             if(result == 1){
                 debug("process_packet_handler result == 1  status of ipacket: %"PRIu64"\n",ipacket->packet_id);
-                ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
                 return;
             }
             temp_packet_handler = temp_packet_handler->next;
         }else{
-            if(reassembly_callback == 0){
-                if(temp_packet_handler->packet_handler_id == ipacket->last_callback_fct_id){
-                    reassembly_callback = 1;
-                    temp_packet_handler = temp_packet_handler->next;
-                    continue;
-                }else{
-                    temp_packet_handler = temp_packet_handler->next;
-                }
-            }else{
+            temp_packet_handler = ipacket->mmt_handler->packet_handlers;
+            while(temp_packet_handler!= NULL && temp_packet_handler->packet_handler_id != ipacket->last_callback_fct_id){
+                temp_packet_handler = temp_packet_handler->next;
+                continue;
+            }
+            temp_packet_handler = temp_packet_handler->next;
+            if(temp_packet_handler != NULL ){
+                ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
                 int result = (temp_packet_handler->function(ipacket, temp_packet_handler->args));
-                // LUONG: Check status of the ipacket here
-                // SKIP: Skip process packet handler
-                // CONTINUE: Continue process packet handler
-                // DROP: DROP the packet
                 if(result == 1){
                     debug("process_packet_handler result == 1  status of ipacket: %"PRIu64"\n",ipacket->packet_id);
-                    ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
                     return;
                 }
                 temp_packet_handler = temp_packet_handler->next;
-            }       
+            }
         } 
     }
     
