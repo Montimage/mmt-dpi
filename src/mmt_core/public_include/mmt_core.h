@@ -179,8 +179,18 @@ MMTAPI int MMTCALL register_packet_handler(
     void *user
 );
 
-
+/**
+ * Process packet handlers of a packet
+ * @param  ipacket packet
+ * @return         
+ */
 MMTAPI void MMTCALL process_packet_handler(ipacket_t * ipacket);
+/**
+ * Drop a packet - stop continueing process the packet
+ * @param  ipacket packet to be dropped
+ * @return         
+ */
+MMTAPI void MMTCALL mmt_drop_packet(ipacket_t * ipacket);
 /**
  * Unregisters a packet handler, returns a positive value on success, 0 otherwise.
  * @param mmt_handler pointer to the mmt handler we want to unregister the packet handler from

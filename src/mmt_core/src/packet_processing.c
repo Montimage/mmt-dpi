@@ -2680,6 +2680,32 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
 }
 
 /**
+ * @brief Process packet_handler function 
+ * 
+ * @param ipacket Packet to process
+ */
+ void mmt_drop_packet(ipacket_t *ipacket){
+    debug("mmt_drop_packet of ipacket: %"PRIu64"\n",ipacket->packet_id);
+    
+    process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
+
+    if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
+        && (ipacket->data != ipacket->original_data)) {
+        // data was dynamically allocated during the reassembly process:
+        //   . free dynamically allocated ipacket->data
+        //   . reset ipacket->data to its original value
+        mmt_free((void *) ipacket->data);
+        ipacket->data = ipacket->original_data;
+    }
+
+    if(ipacket->internal_packet){
+        mmt_free(ipacket->internal_packet);
+    }
+    mmt_free((void *)ipacket->data);
+    mmt_free(ipacket); 
+}
+
+/**
  * Proccess packet for each protocol
  * For examples: ETH->IP->TCP->FTP
  * index:        0  ->1 ->2  ->3    
