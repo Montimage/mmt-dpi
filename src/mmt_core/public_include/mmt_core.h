@@ -411,7 +411,7 @@ MMTAPI int MMTCALL unregister_attribute_handler_by_name(
  * extracted attributes.
  * @param user user argument. It has no impact at all in this function.
  */
-MMTAPI void MMTCALL debug_extracted_attributes_printout_handler(
+MMTAPI int MMTCALL debug_extracted_attributes_printout_handler(
     const ipacket_t *ipacket,
     void *user
 );

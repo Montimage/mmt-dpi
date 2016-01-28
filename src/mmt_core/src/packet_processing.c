@@ -2076,7 +2076,8 @@ void setDataLinkType(mmt_handler_t *mmt_handler, int dltype) {
     }
 }
 
-void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
+int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
+    printf("\nPacket id: %lu\n",ipacket->packet_id);
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     unsigned i = 0;
     int quiet = args ? *((int*)args) : 0;
@@ -2094,6 +2095,7 @@ void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void 
         }
 
     }
+    return 0;
 }
 
 int register_attributes(mmt_handler_t *mmt_handler, struct attribute_description_struct * attributes_list) {
