@@ -265,7 +265,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
                     (ntohl(tcph->seq) -
                     ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction])) >
                     MMT_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE) {
-
+                debug("TCP: set tcp_retransmission = 1 for ipacket: %lu",ipacket->packet_id);
                 packet->tcp_retransmission = 1;
                 ipacket->session->tcp_retransmissions += 1;
                 
