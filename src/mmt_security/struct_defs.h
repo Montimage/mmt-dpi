@@ -44,7 +44,7 @@ enum {
 }enum_operation;
 
 enum {
-  ATTACK, SECURITY_RULE, TEST
+  ATTACK, SECURITY_RULE, EVASION, TEST
 }enum_type_rule_node;
 
 enum {
@@ -187,7 +187,7 @@ static rule *root_rule;
 
     //List of given rules
 
-    typedef struct GIVEN_RULE_struct {
+    typedef struct GIVEN_RULE_struct {/home/edmo/BITBUCKET/mmt-sdk/src/mmt_security
         int rule_id; //1..number of rules
         struct GIVEN_EVENT_struct *list_of_given_events;
         struct GIVEN_RULE_struct *next_rule;
