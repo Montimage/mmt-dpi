@@ -152,6 +152,14 @@ uint32_t get_session_content_flags( const mmt_session_t *session )
 uint32_t get_session_retransmission_count( const mmt_session_t *session )
 { return session->tcp_retransmissions; }
 
+const mmt_session_t * get_session_next( const mmt_session_t *session )
+{   
+    return session->next; }
+
+const mmt_session_t * get_session_previous( const mmt_session_t *session )
+{ return session->previous; }
+
+
 uint32_t get_protocol_id_at_index(const ipacket_t * ipacket, unsigned index) {
     if (index > PROTO_PATH_SIZE)
         return -1;
