@@ -247,6 +247,18 @@ ndn_tlv_t * ndn_TLV_parser_name_comp(char* payload, int total_length, int offset
 
 /////////////////////// COMMON FIELD ////////////////////////
 
+/**
+ * Get list of control session from session context
+ * @param  ipacket packet
+ * @param  index   protocol index
+ * @return         the pointer to the first control_session
+ */
+ndn_session_t * ndn_get_list_all_session(ipacket_t *ipacket, unsigned index){
+    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+            ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+    return (ndn_session_t*)configured_protocol->args;
+}
+
 
 // uint8_t ndn_packet_type_extraction_payload(char* payload, int total_length){
     
@@ -387,7 +399,7 @@ char* ndn_name_components_extraction_payload(char *payload,int total_length){
 
     ndn_tlv_t * name_node = ndn_TLV_parser(payload, offset, total_length);
 
-    char * ret;
+    char * ret = NULL;
 
     if(name_node != NULL ) {
         if(name_node->type == NDN_COMMON_NAME) {
@@ -871,33 +883,37 @@ int ndn_interest_any_extraction(const ipacket_t * ipacket, unsigned proto_index,
 
     return 1;
 }
-// int ndn_implicit_sha256_digest_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
-//         attribute_t * extracted_data){
-//     int offset = get_packet_offset_at_index(ipacket, proto_index);
-//     char *payload = (char*)&ipacket->data[offset];
-//     uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+int ndn_implicit_sha256_digest_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    char *payload = (char*)&ipacket->data[offset];
+    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
     
-//     if(payload_len = 0) return 0;
+    if(payload_len == 0) return 0;
 
-//     ndn_tlv_t * root = ndn_TLV_parser(payload,0,total_length);
+    ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
 
-//     if(root == NULL) return 0;
+    if(root == NULL) return 0;
 
-//     if(root->type != NDN_INTEREST_PACKET){
-//         ndn_TLV_free(root);
-//         return 0;
-//     }
+    if(root->type != NDN_INTEREST_PACKET){
+        ndn_TLV_free(root);
+        return 0;
+    }
 
-//     ndn_tlv_t *ndn_data_content = ndn_find_node(payload, total_length, root, NDN_NAME_COMPONENTS);
+    ndn_tlv_t *ndn_data_content = ndn_find_node(payload, payload_len, root, NDN_NAME_COMPONENTS);
     
-//     char *ret = ndn_TLV_get_string(ndn_data_content,payload,total_length);
+    char *ret = ndn_TLV_get_string(ndn_data_content,payload,payload_len);
 
-//     ndn_TLV_free(ndn_data_content);
+    if(ret != NULL){
+        extracted_data->data = (void*)ret;
+    }
 
-//     ndn_TLV_free(root);
+    ndn_TLV_free(ndn_data_content);
 
-//     return ret;
-// }
+    ndn_TLV_free(root);
+
+    return 1;
+}
 // /////////////////////// DATA PACKET ////////////////////////
 
 char* ndn_data_content_extraction_payload(char *payload,int total_length){
@@ -1264,7 +1280,40 @@ int ndn_data_signature_value_extraction(const ipacket_t * ipacket, unsigned prot
     return 0;
 }
 
+int ndn_list_sessions_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    char *payload = (char*)&ipacket->data[offset];
+    // NDN over Ethernet
+    uint32_t payload_len = 0;
+    if(proto_index == 2){
+        payload_len = ipacket->p_hdr->caplen - offset;
+    }else{
+        // NDN over TCP
+        payload_len = ipacket->internal_packet->payload_packet_len;
+    }
 
+    if(payload_len == 0){
+        return 0;
+    }
+
+    uint8_t ret_v = NDN_UNKNOWN_PACKET;
+    if(payload[0] == 5) ret_v = NDN_INTEREST_PACKET;
+    else if(payload[0] == 6) ret_v = NDN_DATA_PACKET;
+    
+    if(ret_v == NDN_UNKNOWN_PACKET) return 0;
+
+    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)->configured_protocols[ipacket->proto_hierarchy->proto_path[proto_index]];
+
+    ndn_session_t * ret = (ndn_session_t * )configured_protocol->args;
+
+    if(ret == NULL) return 0;
+
+    if(ret->next == NULL) return 0;
+
+    extracted_data->data = (void*)ret->next;
+    return 1;
+}
 
 
 static void mmt_int_ndn_add_connection(ipacket_t * ipacket) {
@@ -1301,11 +1350,124 @@ int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
     }
     return 0;
 }
+
+/// --- NDN SESSION ANALYSIS --- ///
+ndn_tuple3_t * ndn_new_tuple3(){
+    ndn_tuple3_t * t3 = mmt_malloc(sizeof(ndn_tuple3_t));
+    t3->src_MAC = NULL;
+    t3->dst_MAC = NULL;
+    t3->name = NULL;
+    t3->packet_type = 4;
+    return t3;
+}
+
+
+void ndn_free_tuple3(ndn_tuple3_t * t3){
+    if(t3 == NULL) return;
+    if(t3->src_MAC !=NULL ){
+        mmt_free(t3->src_MAC);
+    }
+    if(t3->dst_MAC !=NULL ){
+        mmt_free(t3->dst_MAC);
+    }
+    if(t3->name !=NULL ){
+        free(t3->name);
+    }
+    mmt_free(t3);
+}
+
+
+ndn_session_t * ndn_new_session(){
+    ndn_session_t * ndn_session = mmt_malloc(sizeof(ndn_session_t));
+    ndn_session->tuple3 = NULL;
+    ndn_session->s_init_time = NULL;
+    // ndn_session->s_init_time->tv_usec = 0;
+    ndn_session->s_last_activity_time = NULL;
+    // ndn_session->s_last_activity_time->tv_usec = 0;
+    ndn_session->interest_lifeTime[0] = 0;
+    ndn_session->data_freshnessPeriod[0] = 0;
+    ndn_session->nb_interest_packet[0] = 0;
+    ndn_session->data_volume_interest_packet[0] = 0;
+    ndn_session->ndn_volume_interest_packet[0] = 0;
+    ndn_session->nb_data_packet[0] = 0;
+    ndn_session->data_volume_data_packet[0] = 0;
+    ndn_session->ndn_volume_data_packet[0] = 0;
+
+    ndn_session->interest_lifeTime[1] = 0;
+    ndn_session->data_freshnessPeriod[1] = 0;
+    ndn_session->nb_interest_packet[1] = 0;
+    ndn_session->data_volume_interest_packet[1] = 0;
+    ndn_session->ndn_volume_interest_packet[1] = 0;
+    ndn_session->nb_data_packet[1] = 0;
+    ndn_session->data_volume_data_packet[1] = 0;
+    ndn_session->ndn_volume_data_packet[1] = 0;
+
+    ndn_session->next = NULL;
+    ndn_session->user_arg = NULL;
+    ndn_session->current_direction = 0;
+    return ndn_session;
+}
+
+uint8_t ndn_compare_tupe3(ndn_tuple3_t *t1 , ndn_tuple3_t *t2){
+    
+    if(t1 == NULL && t2 == NULL) return 3;
+
+    if ((t1 == NULL && t2 != NULL)||(t1 != NULL && t2 == NULL)) return 0;
+
+    if( str_compare(t1->name, t2->name) == 0) return 0;
+
+    if( str_compare(t1->src_MAC, t2->src_MAC) == 1 && str_compare(t1->dst_MAC, t2->dst_MAC) == 1) return 1;
+
+    if( str_compare(t1->src_MAC, t2->dst_MAC) == 1 && str_compare(t1->dst_MAC, t2->src_MAC) == 1) return 2; 
+
+    return 0;   
+}
+
+void ndn_free_session(ndn_session_t *ndn_session){
+    if(ndn_session == NULL) return;
+    
+    if(ndn_session->tuple3 != NULL){
+        ndn_free_tuple3(ndn_session->tuple3);
+    }
+
+    if(ndn_session->s_init_time != NULL){
+        mmt_free(ndn_session->s_init_time);
+    }
+
+    if(ndn_session->s_last_activity_time != NULL){
+        mmt_free(ndn_session->s_last_activity_time);
+    }
+    ndn_free_session(ndn_session->next);
+
+    mmt_free(ndn_session);
+
+}
+
+ndn_session_t * ndn_find_session_by_tuple3(ndn_tuple3_t *t3, ndn_session_t * list_sessions){
+
+    if(t3 == NULL) return NULL;
+
+    if(list_sessions == NULL) return NULL;
+
+    ndn_session_t *next_session = list_sessions;
+
+    while(next_session->tuple3 != NULL){
+        int res_com = ndn_compare_tupe3(t3, next_session->tuple3);
+        if(res_com == 1 || res_com == 2 ) return next_session;
+        next_session = next_session->next;
+    }
+
+    return NULL;
+}
+
+/// --- END OF NDN SESSION --- ///
+
 //////////////////////////// EXTRACTION ///////////////////////////////////////
 
 
 static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
-    // {NDN_IMPLICIT_SHA256_DIGEST_COMPONENT,NDN_IMPLICIT_SHA256_DIGEST_COMPONENT_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ndn_implicit_sha256_digest_component_extraction},
+    {NDN_IMPLICIT_SHA256_DIGEST_COMPONENT,NDN_IMPLICIT_SHA256_DIGEST_COMPONENT_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ndn_implicit_sha256_digest_component_extraction},
+    {NDN_LIST_SESSIONS,NDN_LIST_SESSIONS_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ndn_list_sessions_extraction},
     {NDN_PACKET_TYPE,NDN_PACKET_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_packet_type_extraction},
     {NDN_PACKET_LENGTH,NDN_PACKET_LENGTH_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_packet_length_extraction},
     {NDN_NAME_COMPONENTS,NDN_NAME_COMPONENTS_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_name_components_extraction},
@@ -1325,14 +1487,14 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
     {NDN_DATA_FINAL_BLOCK_ID,NDN_DATA_FINAL_BLOCK_ID_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_final_block_id_extraction},
     {NDN_DATA_SIGNATURE_TYPE,NDN_DATA_SIGNATURE_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_signature_type_extraction},
     {NDN_DATA_KEY_LOCATOR,NDN_DATA_KEY_LOCATOR_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_locator_extraction},
-    // {NDN_DATA_KEY_DIGEST,NDN_DATA_KEY_DIGEST_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_digest_extraction},
+    
+    // // {NDN_DATA_KEY_DIGEST,NDN_DATA_KEY_DIGEST_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_digest_extraction},
 };
 
 //////////////////////////// END OF EXTRACTION /////////////////////////////////
 
 
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
-
 
 /**
  * Analysis packet data
@@ -1342,21 +1504,204 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
  *                 MMT_SKIP
  *                 MMT_DROP
  */
-// int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
-//     debug("NDN: ndn_session_data_analysis");
-//     return MMT_CONTINUE;
-// }
+int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
+    debug("NDN: ndn_session_data_analysis");
+    int offset = get_packet_offset_at_index(ipacket, index);
+    char *payload = (char*)&ipacket->data[offset];
+    // NDN over Ethernet
+    uint32_t payload_len = 0;
+    if(index == 2){
+        payload_len = ipacket->p_hdr->caplen - offset;
+    }else{
+        // NDN over TCP
+        payload_len = ipacket->internal_packet->payload_packet_len;
+    }
+
+    if(payload_len == 0) {
+        debug("NDN: payload_len == 0 of ipacket : %lu",ipacket->packet_id);
+        return MMT_CONTINUE;
+    }
+    ndn_tlv_t * root = ndn_TLV_parser(payload, 0, payload_len);
+
+    if (root == NULL) {
+        debug("NDN: ndn root node is NULL of ipacket : %lu",ipacket->packet_id);
+        return MMT_CONTINUE;
+    }
+    if(root->type != NDN_DATA_PACKET && root->type != NDN_INTEREST_PACKET){
+        debug("NDN: Not NDN packet - ipacket : %lu",ipacket->packet_id);
+        ndn_TLV_free(root);
+        return MMT_CONTINUE;
+    }
+
+    // Create tuple3
+    
+    ndn_tuple3_t *t3 = ndn_new_tuple3();
+    
+    // Packet type of tuple3
+    t3->packet_type = root->type;
+    
+
+    // Extract the MAC address
+    t3->src_MAC = mmt_malloc(19);
+    t3->dst_MAC = mmt_malloc(19);
+    
+    unsigned char * src_MAC_addr = mmt_malloc(7);
+    memcpy(src_MAC_addr,&ipacket->data[0],ETH_ALEN);
+    src_MAC_addr[ETH_ALEN] = '\0';
+    unsigned  char * dst_MAC_addr = mmt_malloc(7);
+    memcpy(dst_MAC_addr,&ipacket->data[ETH_ALEN],ETH_ALEN);
+    dst_MAC_addr[ETH_ALEN] = '\0';
+    snprintf(t3->dst_MAC , 18, "%02x:%02x:%02x:%02x:%02x:%02x", src_MAC_addr[0], src_MAC_addr[1], src_MAC_addr[2], src_MAC_addr[3], src_MAC_addr[4], src_MAC_addr[5] );
+    t3->dst_MAC[18] = '\0';
+    snprintf(t3->src_MAC , 18, "%02x:%02x:%02x:%02x:%02x:%02x", dst_MAC_addr[0], dst_MAC_addr[1], dst_MAC_addr[2], dst_MAC_addr[3], dst_MAC_addr[4], dst_MAC_addr[5] );
+    t3->src_MAC[18] = '\0';
+    mmt_free(src_MAC_addr);
+    mmt_free(dst_MAC_addr);
+    // Extract name component
+    int name_offset = 2 + root->nb_octets;
+
+    if(root->data_offset == payload_len){
+        ndn_TLV_free(root);
+        ndn_free_tuple3(t3);
+        debug("NDN: Not NDN packet - ipacket : %lu",ipacket->packet_id);
+        return MMT_CONTINUE;
+    }
+
+    ndn_tlv_t * name_node = ndn_TLV_parser(payload, name_offset, payload_len);
+
+    char * name_component = NULL;
+
+    if(name_node != NULL ) {
+        if(name_node->type == NDN_COMMON_NAME) {
+
+                int new_offset = name_node->data_offset;
+                if( new_offset < payload_len) {
+                
+                    ndn_tlv_t * name_com = ndn_TLV_parser_name_comp(payload,payload_len,new_offset,name_node->length);
+
+                    name_component = ndn_TVL_get_name_components(name_com, payload, payload_len);
+
+                    ndn_TLV_free(name_com);
+            }
+        }
+
+    }
+
+    if(name_component == NULL){
+        ndn_TLV_free(name_node);
+        ndn_TLV_free(root);
+        ndn_free_tuple3(t3);
+        debug("NDN: Cannot parse name component - ipacket : %lu",ipacket->packet_id);
+        return MMT_CONTINUE;
+    }   
+    
+    ndn_TLV_free(name_node);
+
+    t3->name = name_component;
+    // free(name_component);
+    debug("NDN: MAC (source): %s \n",t3->src_MAC);
+    debug("NDN: MAC (destination): %s \n",t3->dst_MAC);
+    debug("NDN: name: %s\n",t3->name);
+    debug("NDN: Type: %d\n",t3->packet_type);
+    // Created tuple3
+    ndn_session_t *list_sessions = ndn_get_list_all_session(ipacket, index);
+
+    ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, list_sessions);
+    
+    if(ndn_session == NULL){
+        ndn_session = ndn_new_session();
+        ndn_session->tuple3 = t3;
+        ndn_session->s_init_time = mmt_malloc(sizeof(struct timeval));
+        ndn_session->s_init_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
+        ndn_session->s_init_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
+        if(list_sessions == NULL){
+            list_sessions = ndn_session;
+        }else{
+            if(list_sessions->next == NULL){
+                list_sessions->next = ndn_session;
+            }else{
+                ndn_session->next = list_sessions->next;    
+                list_sessions->next = ndn_session;
+            }
+        }
+    }else{
+        ndn_free_tuple3(t3);
+    }
+    
+    // Update s_last_activity_time
+    if(ndn_session->s_last_activity_time == NULL ){
+        ndn_session->s_last_activity_time = mmt_malloc(sizeof(struct timeval));
+    }
+
+    ndn_session->s_last_activity_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
+    ndn_session->s_last_activity_time->tv_usec = ipacket->p_hdr->ts.tv_usec;   
+    ///--- UPDATE SESSION DATA --- ///
+    
+    int direction = 0;
+    if(str_compare(t3->src_MAC, ndn_session->tuple3->src_MAC) == 1){
+        direction = 0;
+    }else{
+        direction = 1;
+    }
+    ndn_session->current_direction = direction;
+
+    // Update Interest packet statistic
+    if(root->type == NDN_INTEREST_PACKET){
+        ndn_session->nb_interest_packet[direction]++;
+        ndn_session->data_volume_interest_packet[direction] += ipacket->p_hdr->len;
+        ndn_session->ndn_volume_interest_packet[direction] += root->length;
+
+        ndn_tlv_t *ndn_lifetime = ndn_find_node(payload, payload_len, root,NDN_INTEREST_LIFETIME);
+        if(ndn_lifetime != NULL){
+            ndn_session->interest_lifeTime[direction] = ndn_TLV_get_int(ndn_lifetime, payload, payload_len);
+            ndn_TLV_free(ndn_lifetime);
+        }
+    }
+    // Update Data packet statistic
+    if(root->type == NDN_DATA_PACKET){
+        ndn_session->nb_data_packet[direction]++;
+        ndn_session->data_volume_data_packet[direction] += ipacket->p_hdr->len;
+        ndn_session->ndn_volume_data_packet[direction] += root->length;
+
+        ndn_tlv_t *ndn_metainfo = ndn_find_node(payload,payload_len,root, NDN_DATA_METAINFO);
+
+        ndn_tlv_t *ndn_freshness_period = ndn_find_node(payload, payload_len, ndn_metainfo,NDN_DATA_FRESHNESS_PERIOD);
+        
+        ndn_session->data_freshnessPeriod[direction] = ndn_TLV_get_int(ndn_freshness_period, payload, payload_len);
+
+        ndn_TLV_free(ndn_freshness_period);
+
+        ndn_TLV_free(ndn_metainfo);
+    }   
+    
+    ndn_TLV_free(root);
+
+    debug("NDN: ndn_update_session_for_ipacket: %lu",ipacket->packet_id);
+    // ndn_public_session_report(ndn_session);
+    return MMT_CONTINUE;
+}
 
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
+void cleanup_ndn_context(void * proto_context, void * args){
+    debug("NDN: cleanup_ndn_context");
+    ndn_session_t *list_sessions = (ndn_session_t*)((protocol_instance_t *) proto_context)->args;
+    ndn_free_session(list_sessions);
+}
 
-// void * setup_ndn_context(void * proto_context, void * args) {
-//     ftp_control_session_t * ftp_list_control_conns;
-//     ftp_list_control_conns = (ftp_control_session_t*)malloc(sizeof(ftp_control_session_t));
-//     ftp_list_control_conns->next = NULL;
-//     return (void*)ftp_list_control_conns;
-// }
+/**
+ * Setup ndn protocol context - create ndn_list_session
+ * @param  proto_context 
+ * @param  args          
+ * @return               pointer points to the list_all_ndn_session
+ */
+void * setup_ndn_context(void * proto_context, void * args) {
+    ndn_session_t * ndn_list_all_sessions = ndn_new_session();
+    // ndn_list_all_sessions = (ndn_session_t*)malloc(sizeof(ndn_session_t));
 
+    // ndn_list_all_sessions->next = NULL;
+    return (void*)ndn_list_all_sessions;
+}
 
 void mmt_init_classify_me_ndn() {
     selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION;
@@ -1378,8 +1723,8 @@ int init_proto_ndn_struct() {
             register_attribute_with_protocol(protocol_struct, &ndn_attributes_metadata[i]);
         }
         // register_pre_post_classification_functions(protocol_struct, NULL, NULL);
-        // register_proto_context_init_cleanup_function(protocol_struct, setup_ndn_context, NULL, NULL);
-        // register_session_data_analysis_function(protocol_struct, ndn_session_data_analysis);
+        register_proto_context_init_cleanup_function(protocol_struct, setup_ndn_context, cleanup_ndn_context, NULL);
+        register_session_data_analysis_function(protocol_struct, ndn_session_data_analysis);
         mmt_init_classify_me_ndn();
 
         return register_protocol(protocol_struct, PROTO_NDN);
