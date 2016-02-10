@@ -943,6 +943,7 @@ enum
     NDN_DATA_SIGNATURE_TYPE,
     NDN_DATA_KEY_LOCATOR,
     NDN_DATA_KEY_DIGEST,
+    NDN_LIST_SESSIONS,
     NDN_ATTRIBUTES_NB,
 };
 
@@ -975,6 +976,7 @@ enum
 #define NDN_DATA_SIGNATURE_TYPE_ALIAS               "signature_type"
 #define NDN_DATA_KEY_LOCATOR_ALIAS                  "key_locator"
 #define NDN_DATA_KEY_DIGEST_ALIAS                   "key_digest"
+#define NDN_LIST_SESSIONS_ALIAS                     "list_sessions"
 ////////////////// END OF NDN ATTRIBUTES ////////////////////
 
 #ifdef __cplusplus
