@@ -883,37 +883,37 @@ int ndn_interest_any_extraction(const ipacket_t * ipacket, unsigned proto_index,
 
     return 1;
 }
-int ndn_implicit_sha256_digest_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
-        attribute_t * extracted_data){
-    int offset = get_packet_offset_at_index(ipacket, proto_index);
-    char *payload = (char*)&ipacket->data[offset];
-    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+// int ndn_implicit_sha256_digest_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
+//         attribute_t * extracted_data){
+//     int offset = get_packet_offset_at_index(ipacket, proto_index);
+//     char *payload = (char*)&ipacket->data[offset];
+//     uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
     
-    if(payload_len == 0) return 0;
+//     if(payload_len == 0) return 0;
 
-    ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
+//     ndn_tlv_t * root = ndn_TLV_parser(payload,0,payload_len);
 
-    if(root == NULL) return 0;
+//     if(root == NULL) return 0;
 
-    if(root->type != NDN_INTEREST_PACKET){
-        ndn_TLV_free(root);
-        return 0;
-    }
+//     if(root->type != NDN_INTEREST_PACKET){
+//         ndn_TLV_free(root);
+//         return 0;
+//     }
 
-    ndn_tlv_t *ndn_data_content = ndn_find_node(payload, payload_len, root, NDN_NAME_COMPONENTS);
+//     ndn_tlv_t *ndn_data_content = ndn_find_node(payload, payload_len, root, NDN_NAME_COMPONENTS);
     
-    char *ret = ndn_TLV_get_string(ndn_data_content,payload,payload_len);
+//     char *ret = ndn_TLV_get_string(ndn_data_content,payload,payload_len);
 
-    if(ret != NULL){
-        extracted_data->data = (void*)ret;
-    }
+//     if(ret != NULL){
+//         extracted_data->data = (void*)ret;
+//     }
 
-    ndn_TLV_free(ndn_data_content);
+//     ndn_TLV_free(ndn_data_content);
 
-    ndn_TLV_free(root);
+//     ndn_TLV_free(root);
 
-    return 1;
-}
+//     return 1;
+// }
 // /////////////////////// DATA PACKET ////////////////////////
 
 char* ndn_data_content_extraction_payload(char *payload,int total_length){
@@ -1468,7 +1468,7 @@ ndn_session_t * ndn_find_session_by_tuple3(ndn_tuple3_t *t3, ndn_session_t * lis
 
 
 static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
-    {NDN_IMPLICIT_SHA256_DIGEST_COMPONENT,NDN_IMPLICIT_SHA256_DIGEST_COMPONENT_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ndn_implicit_sha256_digest_component_extraction},
+    // {NDN_IMPLICIT_SHA256_DIGEST_COMPONENT,NDN_IMPLICIT_SHA256_DIGEST_COMPONENT_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ndn_implicit_sha256_digest_component_extraction},
     {NDN_LIST_SESSIONS,NDN_LIST_SESSIONS_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ndn_list_sessions_extraction},
     {NDN_PACKET_TYPE,NDN_PACKET_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_packet_type_extraction},
     {NDN_PACKET_LENGTH,NDN_PACKET_LENGTH_ALIAS,MMT_U32_DATA,sizeof(int),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_packet_length_extraction},
