@@ -573,6 +573,26 @@ MMTAPI uint32_t MMTCALL get_session_retransmission_count(
     const mmt_session_t *session
 );
 
+/**
+ * Get the next session of current session
+ * @param  session session
+ * @return         NULL if there is no next session
+ *                 A pointer points to the next session of current session
+ */
+MMTAPI const mmt_session_t MMTCALL * get_session_next(
+    const mmt_session_t *session
+);
+
+/**
+ * Get the previous session of current session
+ * @param  session current session
+ * @return         NULL if there is no previous session
+ *                 A pointer points to the previous session of current session
+ */
+MMTAPI const mmt_session_t MMTCALL * get_session_previous(
+    const mmt_session_t *session
+);
+
 //  - - - - - - - - - - - - - - - - - -
 //  A T T R I B U T E   A C C E S S O R S
 //  - - - - - - - - - - - - - - - - - -

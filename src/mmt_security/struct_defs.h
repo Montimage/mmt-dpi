@@ -44,7 +44,7 @@ enum {
 }enum_operation;
 
 enum {
-  ATTACK, SECURITY_RULE, TEST
+  ATTACK, SECURITY_RULE, EVASION, TEST
 }enum_type_rule_node;
 
 enum {

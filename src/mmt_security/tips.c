@@ -1,4 +1,4 @@
-/*
+    /*
     MMT_Security Copyright (C) 2013  Montimage
 
     This program is free software: you can redistribute it and/or modify
@@ -137,7 +137,7 @@ void * xmalloc(unsigned long size) {
    return retval;
 }
 void xfree(void *freeable) {
-   free(freeable);
+   if(freeable != NULL) free(freeable);
 }
 
 rule * create_rule()
@@ -297,31 +297,7 @@ void convert_mac_bytes_to_string(char **pszMACAddress, unsigned char *pbyMacAddr
             cSep, pbyMacAddressInBytes[5]& 0xff);
 }
 
-/**
- * Convert MMT_HEADER_LINE to string
- */
-char *parse_mmt_header_line( void *data, int *size ){
-	mmt_header_line_t *tmp = data;
-
-	//???
-	int d = strlen( tmp->ptr );
-	if( tmp->len > d )
-		tmp->len = d;
-	//
-
-	if( tmp->ptr[ tmp->len -1 ] == '\0' )
-		*size = tmp->len;
-	else
-		*size = (tmp->len + 1);
-
-	char *str = xmalloc( *size);
-	memcpy(str, (void *) tmp->ptr, *size );
-	str[ *size - 1 ] = '\0';
-
-	return str;
-}
-
-void *get_data(long type, int size, void *str)
+void *get_xdata(long type, int size, void *str)
 {
     //Only used when reading values from XML file
     unsigned char c = 0;
@@ -329,14 +305,15 @@ void *get_data(long type, int size, void *str)
     unsigned long l = 0;
     unsigned long long ll = 0L;
     void * data = (void *) xmalloc(size);
-    unsigned char *temp_MAC;
-    mmt_string_data_t *tmp;
+    unsigned char *temp_MAC = NULL;
+    mmt_string_data_t *tmp = NULL;
     switch (type) {
         case MMT_DATA_MAC_ADDR:
             temp_MAC = xmalloc(22);
             //str+4 to skip size of mmt_string_data_t structure
             convert_mac_string_to_byte((const char *) (str + 4), &temp_MAC);
             memcpy(data, (void *) temp_MAC, size);
+            if (temp_MAC != NULL) xfree(temp_MAC);
             return (void *) data;
             break;
         case MMT_U16_DATA:
@@ -381,7 +358,7 @@ void *get_data(long type, int size, void *str)
         	str[ hl->len - 1 ] = '\0';
         	hl->ptr = str;
         	return hl;
-
+            break;
         case MMT_DATA_TIMEVAL:
         case MMT_DATA_IP_ADDR:
         case MMT_DATA_IP6_ADDR:
@@ -401,11 +378,12 @@ void *get_data(long type, int size, void *str)
     }//end of switch
 }
 
-char *get_d(void *data1, short size, long type) {
+char *get_my_data(void *data1, short size, long type) {
     char *buff1 = xmalloc(100);
     char *buff0 = xmalloc(10);
     void * data2 = NULL;
-    mmt_binary_data_t *db1;
+    unsigned long L1=0,L2=0,L3=0,L4=0;
+    mmt_binary_data_t *db1 = NULL;
     //mmt_header_line_t *t;
     int data_size=0, j=0, stop=0;
     buff1[0] = '\0';
@@ -469,7 +447,9 @@ char *get_d(void *data1, short size, long type) {
             }
             break;
         case MMT_HEADER_LINE:
-        	return parse_mmt_header_line( data1, & data_size );
+        	//parse_mmt_header_line( &data1, &data_size );
+            strncpy(buff1, ((mmt_header_line_t *)data1)->ptr, ((mmt_header_line_t *)data1)->len);
+            buff1[((mmt_header_line_t *)data1)->len + 1] ='\0';
         	break;
         case MMT_STRING_LONG_DATA:
         case MMT_STRING_DATA:
@@ -483,7 +463,11 @@ char *get_d(void *data1, short size, long type) {
             data_size = db1->len;
             data2 = db1->data;
             if (data_size == 4) {
-                (void)sprintf(buff1, "%lu.%lu.%lu.%lu", FORMAT_IP(*(unsigned long*) (data2)));
+                L1 = (*(unsigned long*)(data2)&0x000000ff);
+                L2 = (*(unsigned long*)(data2)&0x0000ff00)>>8;
+                L3 = (*(unsigned long*)(data2)&0x00ff0000)>>16;
+                L4 = (*(unsigned long*)(data2)&0xff000000)>>24;
+                (void)sprintf(buff1, "%lu.%lu.%lu.%lu", L1, L2, L3, L4);
             } else if (data_size == 6) {
                 for (j = 0; j < data_size; j++) {
                     if (j == 0) {
@@ -515,12 +499,12 @@ char *get_d(void *data1, short size, long type) {
             (void)fprintf(stderr, "Error 15.1: Type not implemented yet. Data type unknown.\n");
             exit(-1);
     }//end of switch
+    xfree(buff0);
     return buff1;
 }
 
 char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, tuple *list_of_tuples )
 {
-	int d;
     int i = 0;
     char * output = NULL;
     char * temp2 = NULL;
@@ -530,7 +514,7 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     long field_id = 0;
     long data_type_id = 0;
     short event_id = 0;
-    tuple *temp_tuple2;
+    tuple *temp_tuple2 = NULL;
 
     token1[0] = '\0';
     token2[0] = '\0';
@@ -575,7 +559,6 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     field_id = get_attribute_id_by_protocol_id_and_attribute_name(protocol_id, token2);
     data_type_id = get_attribute_data_type(protocol_id, field_id);
     if (token3[0] != '\0') event_id = atoi(token3);
-
     if (event_id != 0) {
         //case variable is stored in list_of_tuples
         temp_tuple2 = list_of_tuples;
@@ -590,13 +573,13 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                     data = temp_tuple2->data + sizeof (int);
                 }
                 else if( type == MMT_HEADER_LINE ){
-                	data = parse_mmt_header_line( data, &d );
-                	*size = (int) d;
+                    data  = (void*)(((mmt_header_line_t *)data)->ptr); 
+                    *size = ((mmt_header_line_t *)data)->len;
                 }
                 //Copy (data, size, type) to output
                 char * d = NULL;
                 char * td = NULL;
-                d = get_d(data, *size, type);
+                d = get_my_data(data, *size, type);
                 td = d;
                 while (*td != '\0') {
                     *tempo = *td;
@@ -619,13 +602,13 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                 data = data + sizeof (int);
             }
             else if( type == MMT_HEADER_LINE ){
-            	data = parse_mmt_header_line( data, &d );
-            	*size = d;
+                data  = (void*)(((mmt_header_line_t *)data)->ptr); 
+                *size = ((mmt_header_line_t *)data)->len;
             }
             //Copy (data, size, type) to output
             char * d = NULL;
             char * td = NULL;
-            d = get_d(data, *size, type);
+            d = get_my_data(data, *size, type);
             td = d;
             while (*td != '\0') {
                 *tempo = *td;
@@ -711,7 +694,7 @@ void add_tuple_to_list_of_tuples(tuple *a_tuple)
             if (b_tuple->protocol_id == temp_tuple->protocol_id && b_tuple->field_id == temp_tuple->field_id
                     && b_tuple->data_type_id == temp_tuple->data_type_id && b_tuple->event_id == temp_tuple->event_id) {
                 found = YES;
-                if (b_tuple != NULL) xfree(b_tuple);
+                xfree(b_tuple);
                 break;
             }
             temp_tuple = temp_tuple->next;
@@ -1003,7 +986,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         new_rule->t.event_id = temp_rule->t.event_id;
         new_rule->t.data_size = temp_rule->t.data_size;
         new_rule->t.valid = VALID;
-        new_rule->t.data = (void *) get_data(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s));
+        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s));
         ;
         if (a_rule->list_of_sons == NULL) {
             a_rule->list_of_sons = new_rule;
@@ -1052,7 +1035,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
                 if (a_tuple->protocol_id == temp_tuple->protocol_id && a_tuple->field_id == temp_tuple->field_id
                         && a_tuple->data_type_id == temp_tuple->data_type_id && a_tuple->event_id == temp_tuple->event_id) {
                     found = YES;
-                    if (a_tuple != NULL) xfree(a_tuple);
+                    xfree(a_tuple);
                     break;
                 }
                 temp_tuple = temp_tuple->next;
@@ -1176,7 +1159,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         new_rule->t.event_id = temp_rule->t.event_id;
         new_rule->t.data_size = temp_rule->t.data_size;
         new_rule->t.valid = VALID;
-        new_rule->t.data = (void *) get_data(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token);
+        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token);
         ;
         if (a_rule->list_of_sons == NULL) {
             a_rule->list_of_sons = new_rule;
@@ -1378,6 +1361,7 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
             a_rule->if_satisfied = strdup((const char*)attribute_value[i]);
         } else if (xmlStrcmp(attribute_name, (const xmlChar*)"type_property") == 0) {
             if (xmlStrncmp(attribute_value[i], (const xmlChar*)"ATTACK", 3) == 0) a_rule->type_rule = ATTACK;
+            else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"EVASION", 3) == 0) a_rule->type_rule = EVASION;
             else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"SECURITY_RULE", 3) == 0) a_rule->type_rule = SECURITY_RULE;
             else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"TEST", 3) == 0) a_rule->type_rule = TEST;
         } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_min") == 0) {
@@ -1454,7 +1438,7 @@ void recuperate_attributes(rule* root, rule *r)
             if (a_tuple->protocol_id == temp_tuple->protocol_id && a_tuple->field_id == temp_tuple->field_id
                     && a_tuple->data_type_id == temp_tuple->data_type_id) {
                 found = YES;
-                if (a_tuple != NULL) xfree(a_tuple);
+                xfree(a_tuple);
                 break;
             }
             temp_tuple = temp_tuple->next;
@@ -1743,7 +1727,7 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
     while(temp_lot != NULL){
       if(event_found(buff_ids, temp_lot->event_id) == NO){
         temp_lot->valid = NOT_YET;
-        if(temp_lot->data != NULL) xfree(temp_lot->data);
+        xfree(temp_lot->data);
       }else{
         temp_lot->data_size = temp_lot_orig->data_size;
         temp_lot->valid = temp_lot_orig->valid;
@@ -1765,7 +1749,7 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
     }
     set_events_to_not_yet(buff_ids, temp_rule, temp_orig);
   }
-  if(buff!=NULL)xfree(buff);
+  xfree(buff);
   return new_rule;
 }
 
@@ -1856,10 +1840,12 @@ int eliminate_instance(rule **r, rule **i, char *type)
 
 void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *curr_rule, char *cause, short event_id)
 {
+    unsigned long L1=0,L2=0,L3=0,L4=0;
     //store data on packet so that they can be printed if rule is satisfied
     void * data1 = NULL;
     void * data2 = NULL;
     long type = 0;
+    char * buff =NULL;
     mmt_binary_data_t *db1;
     int data_size, j;
     struct timeval tvp;
@@ -1896,7 +1882,6 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
               temp=temp->next;
               continue;
             }
-
             num_attr ++;
 
             data_size  = get_data_size_by_proto_and_field_ids(temp->protocol_id, temp->field_id);
@@ -1942,8 +1927,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
                     convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
-                            att_name, temp_MAC);
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
                     (void)strcat(json_buff, json_buff1);
                     xfree(temp_MAC);
                     break;
@@ -1951,10 +1935,14 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     // TODO
                     break;
                 case MMT_DATA_IP_ADDR:
-
-                    (void)sprintf(
-                       json_buff1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name,
-                            att_name, FORMAT_IP(*(unsigned long*) (data1)));
+                    if(proto_name!=NULL && att_name!=NULL && data1!=NULL && *((char*)data1)!=0){
+                       L1 = (*(unsigned long*)(data1)&0x000000ff);
+                       L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
+                       L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
+                       L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
+                       (void)sprintf(json_buff1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
+                    }else
+                       (void)sprintf(json_buff1,"{\"x.x\":\"0.0.0.0\"},");
                     (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U16_DATA:
@@ -1978,16 +1966,19 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_HEADER_LINE:
-                	data1 = parse_mmt_header_line( data1, & data_size );
+                	//parse_mmt_header_line( &data1, & data_size );
+                    buff = xmalloc ((((mmt_header_line_t *)data1)->len) + 1);
+                    strncpy(buff, ((mmt_header_line_t *)data1)->ptr, ((mmt_header_line_t *)data1)->len);
+                    buff[((mmt_header_line_t *)data1)->len] ='\0';
 					(void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
-							att_name, (char *)data1);
+							att_name, (char *)buff);
+                    xfree(buff);
 					(void)strcat(json_buff, json_buff1);
 					break;
                 case MMT_DATA_PATH:
                 case MMT_STRING_LONG_DATA:
                 case MMT_STRING_DATA:
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
-                            att_name, (char*) (data1 + sizeof (int)));
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (data1 + sizeof (int)));
                     (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_BINARY_DATA:
@@ -1997,8 +1988,11 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     data_size = db1->len;
                     data2 = db1->data;
                     if (data_size == 4) {
-                        (void)sprintf(json_buff1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name,
-                                att_name, FORMAT_IP(*(unsigned long*) (data2)));
+                        L1 = (*(unsigned long*)(data2)&0x000000ff);
+                        L2 = (*(unsigned long*)(data2)&0x0000ff00)>>8;
+                        L3 = (*(unsigned long*)(data2)&0x00ff0000)>>16;
+                        L4 = (*(unsigned long*)(data2)&0xff000000)>>24;
+                        (void)sprintf(json_buff1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
                         (void)strcat(json_buff, json_buff1);
                     } else if (data_size == 6) {
                         int close_tag=NO;
@@ -2049,10 +2043,14 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         //ensure IP or MAC of src and dst are included in attribute
         if( having_ip_src == 0){
         	data1 = get_attribute_extracted_data(pkt, 178, 12);
-        	if( data1 != NULL ){
-        		(void)sprintf(json_buff1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", FORMAT_IP(*(unsigned long*) (data1)));
-        		(void)strcat(json_buff, json_buff1);
-        	}else if( having_mac_src == 0 ){
+            if(data1!= NULL && *((char*)data1)!=0){
+                L1 = (*(unsigned long*)(data1)&0x000000ff);
+                L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
+                L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
+                L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
+        		(void)sprintf(json_buff1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
+        	    (void)strcat(json_buff, json_buff1);
+       	   }else if( having_mac_src == 0 ){
         		data1 = get_attribute_extracted_data(pkt, 99, 3);
         		temp_MAC = xmalloc(22);
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
@@ -2060,16 +2058,19 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         		(void)strcat(json_buff, json_buff1);
         		xfree( temp_MAC );
         	}
-
         	num_attr ++;
         }
 
         if( having_ip_dst == 0){
-			data1 = get_attribute_extracted_data(pkt, 178, 13);
-			if( data1 != NULL ){
-				(void)sprintf(json_buff1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", FORMAT_IP(*(unsigned long*) (data1)));
-				(void)strcat(json_buff, json_buff1);
-			}else if( having_mac_dst == 0 ){
+            data1 = get_attribute_extracted_data(pkt, 178, 13);
+            if(data1!=NULL && *((char*)data1)!=0){
+                L1 = (*(unsigned long*)(data1)&0x000000ff);
+                L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
+                L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
+                L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
+				(void)sprintf(json_buff1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
+			    (void)strcat(json_buff, json_buff1);
+		    }else if( having_mac_dst == 0 ){
 				data1 = get_attribute_extracted_data(pkt, 99, 2);
 				temp_MAC = xmalloc(22);
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
@@ -2077,7 +2078,6 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 				(void)strcat(json_buff, json_buff1);
 				xfree( temp_MAC );
 			}
-
 			num_attr ++;
 		}
 
@@ -2654,7 +2654,9 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             data = r1->t.data + sizeof (int);
         }
         else if (v1.type == MMT_HEADER_LINE) {
-            data = parse_mmt_header_line( data, &v1.size );
+            //parse_mmt_header_line( &data, &v1.size );
+            v1.size = ((mmt_header_line_t *)data)->len;
+            data = (void*)(((mmt_header_line_t *)data)->ptr);
         }
 
         v1.data = (void *) xcalloc(1, v1.size);
@@ -2674,9 +2676,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                         v1.size = *(int*) (data);
                         data = temp_tuple2->data + sizeof (int);
                     }
-                    else if (v1.type == MMT_HEADER_LINE)
-                    	data = parse_mmt_header_line( temp_tuple2->data, & v1.size );
-
+                    else if (v1.type == MMT_HEADER_LINE){
+                    	//parse_mmt_header_line( &(temp_tuple2->data), & v1.size );
+                        v1.size = ((mmt_header_line_t *)data)->len;
+                        data = (void*)(((mmt_header_line_t *)data)->ptr);
+                    }
                     v1.data = (void *) xcalloc(1, v1.size);
                     if (v1.data == NULL || data == NULL) {
                         (void)fprintf(stderr, "Error 18: Problem in stored reference. Data is not available.\n");
@@ -2698,8 +2702,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             v2.size = *(int*) (data);
             data = r2->t.data + sizeof (int);
         }
-        else if (v2.type == MMT_HEADER_LINE)
-            data = parse_mmt_header_line( r2->t.data, &v2.size );
+        else if (v2.type == MMT_HEADER_LINE){
+            //parse_mmt_header_line( &(r2->t.data), &v2.size );
+                        v2.size = ((mmt_header_line_t *)data)->len;
+                        data = (void*)(((mmt_header_line_t *)data)->ptr);
+        }
 
         v2.data = (void *) xcalloc(1, v2.size);
         memcpy(v2.data, data, v2.size);
@@ -2722,9 +2729,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                                             v2.size = *(int*) (data);
                                             data = temp_tuple2->data + sizeof (int);
                                         }
-                                        else if (v2.type == MMT_HEADER_LINE)
-                                            data = parse_mmt_header_line( data, &v2.size );
-
+                                        else if (v2.type == MMT_HEADER_LINE){
+                                            //parse_mmt_header_line( &data, &v2.size );
+                        v2.size = ((mmt_header_line_t *)data)->len;
+                        data = (void*)(((mmt_header_line_t *)data)->ptr);
+                                        }
                                         v2.data = (void *) xcalloc(1, v2.size);
                                         if (v2.data == NULL || data == NULL) {
                                             (void)fprintf(stderr, "Error 19: Problem in stored reference. Data is not available.\n");
@@ -2762,8 +2771,8 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
               tmp_v->size = tmp_r->t.data_size;
               tmp_v->data = (void *) xcalloc(1, tmp_v->size);
               memcpy(tmp_v->data, data, tmp_v->size);
-              xfree(data);
             }
+            xfree(data);
     }
     if (v1.found == NOT_FOUND) {
         tmp_r = r1;
@@ -2777,9 +2786,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                 tmp_v->size = *(int*) (data);
                 data = data + sizeof (int);
             }
-            else if (tmp_v->type == MMT_HEADER_LINE)
-                data = parse_mmt_header_line( data, &tmp_v->size );
-
+            else if (tmp_v->type == MMT_HEADER_LINE){
+                //parse_mmt_header_line( &data, &tmp_v->size );
+                        tmp_v->size = ((mmt_header_line_t *)data)->len;
+                        data = (void*)(((mmt_header_line_t *)data)->ptr);
+            }
             tmp_v->data = xcalloc(1, tmp_v->size);
             memcpy(tmp_v->data, data, tmp_v->size);
         }
@@ -2796,22 +2807,24 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                 tmp_v->size = *(int*) (data);
                 data = data + sizeof (int);
             }
-            else if (tmp_v->type == MMT_HEADER_LINE)
-            	data = parse_mmt_header_line( data, &tmp_v->size );
-
+            else if (tmp_v->type == MMT_HEADER_LINE){
+            	//parse_mmt_header_line( &data, &tmp_v->size );
+                        tmp_v->size = ((mmt_header_line_t *)data)->len;
+                        data = (void*)(((mmt_header_line_t *)data)->ptr);
+            }
             tmp_v->data = (void *) xcalloc(1, tmp_v->size);
             memcpy(tmp_v->data, data, tmp_v->size);
         }
     }
 
     if ((v1.found == SKIP) || (v2.found == SKIP)){
-        if (v1.data != NULL) xfree(v1.data);
-        if (v2.data != NULL) xfree(v2.data);
+        xfree(v1.data);
+        xfree(v2.data);
         return VALID;
     }
     if ((v1.found == NOT_FOUND) || (v2.found == NOT_FOUND)){
-        if (v1.data != NULL) xfree(v1.data);
-        if (v2.data != NULL) xfree(v2.data);
+        xfree(v1.data);
+        xfree(v2.data);
         return NOT_VALID;
     }
     if (action == COMPARE) {
@@ -2820,8 +2833,8 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
     } else if (action == COMPUTE) {
         *result_value = compute(v1, v2, operator);
     }
-    if (v1.data != NULL) xfree(v1.data);
-    if (v2.data != NULL) xfree(v2.data);
+    xfree(v1.data);
+    xfree(v2.data);
     // returns VALID or NOT_VALID
     return ret;
 }
@@ -2850,6 +2863,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 			}
 			break;
 		case ATTACK:
+		case EVASION:
 			if (po == SATISFIED && state == SATISFIED) {
 				(void)strcpy(verdict, "detected");
 			} else if (po == NOT_SATISFIED && state == SATISFIED) {
@@ -2878,14 +2892,17 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 			case SECURITY_RULE:
 				(void)strcpy(type, "security");
 				break;
+		    case EVASION:
+				(void)strcpy(type, "evasion");
+				break;
 			case ATTACK:
 				(void)strcpy(type, "attack");
 				break;
 	}
-	*str_verdict = malloc( sizeof( char ) * strlen(verdict) );
+	*str_verdict = xmalloc (strlen(verdict) + 1); 
 	strcpy( *str_verdict, verdict );
 
-	*str_type = malloc( sizeof( char ) * strlen(type) );
+	*str_type = xmalloc(strlen(type) +1);
 	strcpy( *str_type, type );
 }
 
@@ -2913,13 +2930,14 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
 		if( history[ strlen( history ) - 1 ] == ',')
 			history[ strlen( history ) - 1 ] = '\0';
 
-      	char *str = malloc( strlen( history ) + 3 );
+      	char *str = xmalloc( strlen( history ) + 3 );
       	sprintf( str, "{%s}", history );
 
       	((op->callback_funct))( 0, verdict, type, cause, str );
 
-      	if(verdict != NULL) xfree( verdict );
-      	if(type != NULL)    xfree( type );
+        xfree( str );
+      	xfree( verdict );
+      	xfree( type );
     }
     return;
 }
@@ -3097,6 +3115,23 @@ int print_message(int type, int po, int state, int num, char *desc)
                 (void)fprintf(stderr, "OCCURRENCE FREE from attack number %d: \"%s\"\n", num, desc);
             } else if (po == BOTH && state == NEITHER) {
                 (void)fprintf(stderr, "The analysis of attack number %d: \"%s\" resulted in:\n", num, desc);
+            }
+            break;
+        case EVASION:
+            if (po == SATISFIED && state == SATISFIED) {
+                (void)fprintf(stderr, "DETECTED the possible evasion number %d: \"%s\"\n", num, desc);
+            } else if (po == NOT_SATISFIED && state == SATISFIED) {
+                return NOT_OK;
+            } else if (po == SATISFIED && state == NOT_SATISFIED) {
+                return NOT_OK;
+            } else if (po == NOT_SATISFIED && state == NOT_SATISFIED) {
+                (void)fprintf(stderr, "OCCURRENCE FREE from evasion number %d: \"%s\"\n", num, desc);
+            } else if (po == BOTH && state == SATISFIED) {
+                (void)fprintf(stderr, "DETECTED the possible evasion number %d: \"%s\"\n", num, desc);
+            } else if (po == BOTH && state == NOT_SATISFIED) {
+                (void)fprintf(stderr, "OCCURRENCE FREE from evasion number %d: \"%s\"\n", num, desc);
+            } else if (po == BOTH && state == NEITHER) {
+                (void)fprintf(stderr, "The analysis of evasion number %d: \"%s\" resulted in:\n", num, desc);
             }
             break;
         default:
@@ -3284,13 +3319,14 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 		if( history[ strlen( history ) - 1 ] == ',')
 			history[ strlen( history ) - 1 ] = '\0';
 
-		char *temp = malloc( strlen( history ) + 3 );
+		char *temp = xmalloc( strlen( history ) + 3 );
 		sprintf( temp, "{%s}", history );
 
 		((op->callback_funct))( prop_id, verdict, type, des, temp );
 
-		if( verdict != NULL ) xfree( verdict );
-		if( type != NULL)     xfree( type );
+        xfree( temp );
+		xfree( verdict );
+		xfree( type );
     }
 
     // TODO: Folder where the scripts are installed is current folder
@@ -3351,15 +3387,15 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                 }
                 short found = NOT_FOUND; //not used in this context
                 data = funct_get_params_and_execute( pkt, NO, LIB_NAME, funct_name, data_size, top_tuple, r->list_of_tuples, &found);
-                if (data) xfree(data);
+                xfree(data);
                 a_tuple = top_tuple;
                 while (a_tuple != NULL) {
                     new_tuple = a_tuple;
                     a_tuple = a_tuple->next;
-                    if (new_tuple->data)xfree(new_tuple->data);
+                    xfree(new_tuple->data);
                     xfree(new_tuple);
                 }
-                if (funct_name) xfree(funct_name);
+                xfree(funct_name);
             }
         }
     }
@@ -4101,6 +4137,9 @@ void print_summary()
         if (temp->type_rule == ATTACK) {
             (void)fprintf(stderr, "    ATTACKS DETECTED                      : %6ld times,\n", temp->nb_satisfied);
             (void)fprintf(stderr, "    OCCURRENCES DETECTED FREE from attack : %6ld times.\n", temp->nb_not_satisfied);
+        } else if (temp->type_rule == EVASION) {
+            (void)fprintf(stderr, "    EVASION DETECTED                      : %6ld times,\n", temp->nb_satisfied);
+            (void)fprintf(stderr, "    OCCURRENCES DETECTED FREE from evasion : %6ld times.\n", temp->nb_not_satisfied);
         } else if (temp->type_rule == SECURITY_RULE || temp->type_rule == TEST) {
             (void)fprintf(stderr, "    RESPECTED : %6ld times,\n", temp->nb_satisfied);
             (void)fprintf(stderr, "    VIOLATED  : %6ld times.\n", temp->nb_not_satisfied);
@@ -4111,6 +4150,7 @@ void print_summary()
 
 char * xml_summary()
 {
+    //if used in the main.c needs to be freed
     int sp = 0;
     int spb = 0;
     rule *temp = top_rule;
@@ -4123,7 +4163,7 @@ char * xml_summary()
         (void)strcat(xml_string, "  <spb>\n");
         (void)sprintf(tmp, "   <id>0</id>\n");
         (void)strcat(xml_string, tmp);
-        (void)sprintf(tmp, "   <description>ATTACK: Corrupted messages: due to an attack or error.</description>\n");
+        (void)sprintf(tmp, "   <description>ATTACK: Corrupted messages: due to an attack, evasion or error.</description>\n");
         (void)strcat(xml_string, tmp);
         (void)sprintf(tmp, "   <detected>%lld</detected>\n", corr_mess);
         (void)strcat(xml_string, tmp);
@@ -4138,6 +4178,18 @@ char * xml_summary()
             (void)sprintf(tmp, "   <id>%d</id>\n", temp->property_id);
             (void)strcat(xml_string, tmp);
             (void)sprintf(tmp, "   <description>ATTACK: %s</description>\n", temp->description);
+            (void)strcat(xml_string, tmp);
+            (void)sprintf(tmp, "   <detected>%ld</detected>\n", temp->nb_satisfied);
+            (void)strcat(xml_string, tmp);
+            (void)sprintf(tmp, "   <not_detected>%ld</not_detected>\n", temp->nb_not_satisfied);
+            (void)strcat(xml_string, tmp);
+            (void)strcat(xml_string, "  </spb>\n");
+        }else if (temp->type_rule == EVASION) {
+            spb = 1;
+            (void)strcat(xml_string, "  <spb>\n");
+            (void)sprintf(tmp, "   <id>%d</id>\n", temp->property_id);
+            (void)strcat(xml_string, tmp);
+            (void)sprintf(tmp, "   <description>EVASION: %s</description>\n", temp->description);
             (void)strcat(xml_string, tmp);
             (void)sprintf(tmp, "   <detected>%ld</detected>\n", temp->nb_satisfied);
             (void)strcat(xml_string, tmp);
