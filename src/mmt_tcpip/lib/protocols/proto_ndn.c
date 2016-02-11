@@ -1379,6 +1379,7 @@ void ndn_free_tuple3(ndn_tuple3_t * t3){
 
 ndn_session_t * ndn_new_session(){
     ndn_session_t * ndn_session = mmt_malloc(sizeof(ndn_session_t));
+    ndn_session->session_id = 0;
     ndn_session->tuple3 = NULL;
     ndn_session->s_init_time = NULL;
     // ndn_session->s_init_time->tv_usec = 0;
@@ -1451,8 +1452,9 @@ ndn_session_t * ndn_find_session_by_tuple3(ndn_tuple3_t *t3, ndn_session_t * lis
 
     ndn_session_t *next_session = list_sessions;
 
-    while(next_session->tuple3 != NULL){
+    while(next_session != NULL){
         int res_com = ndn_compare_tupe3(t3, next_session->tuple3);
+        debug("NDN: Compare tuple3... %d",res_com);
         if(res_com == 1 || res_com == 2 ) return next_session;
         next_session = next_session->next;
     }
@@ -1617,6 +1619,8 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         if(list_sessions == NULL){
             list_sessions = ndn_session;
         }else{
+            ndn_session->session_id = list_sessions->session_id;
+            list_sessions->session_id += 1;
             if(list_sessions->next == NULL){
                 list_sessions->next = ndn_session;
             }else{

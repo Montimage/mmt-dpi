@@ -301,6 +301,7 @@ typedef struct ndn_tuple3_struct{
  * NDN session structure
  */
 typedef struct ndn_session_struct{
+	uint64_t session_id;	// Session ID
 	ndn_tuple3_t * tuple3;				/** tuple 3 which identify a NDN session*/
 	struct timeval * s_init_time;              /**< indicates the time when the session was first detected. */
     struct timeval * s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
