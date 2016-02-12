@@ -27,7 +27,7 @@ int insert_key_value(void * maplist, void * key, void * value) {
 
     ret = m->insert(std::pair<void *, void *>(key, value));
     if (ret.second == false) {
-        printf("FROM InsertSession got a problem\n");
+        printf("FROM InsertSession got a problem: hash_utils.cpp - insert_key_value() \n");
         return 0;
     }
     return 1;
@@ -39,7 +39,7 @@ int insert_int_key_value(void * maplist, uint32_t key, void * value) {
 
     ret = m->insert(std::pair<uint32_t, void *>(key, value));
     if (ret.second == false) {
-        printf("FROM InsertSession got a problem\n");
+        printf("FROM InsertSession got a problem: hash_utils.cpp - insert_int_key_value() \n");
         return 0;
     }
     return 1;
