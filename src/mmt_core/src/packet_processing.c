@@ -291,6 +291,12 @@ int register_session_timeout_handler(mmt_handler_t *mmt_h, generic_session_timeo
     return 1;
 }
 
+int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_handler_function session_timer_handler_fct, void * args) {
+    mmt_h->session_timer_handler.session_timer_handler_fct = session_timer_handler_fct;
+    mmt_h->session_timer_handler.args = args;
+    return 1;
+}
+
 void base_packet_extraction(ipacket_t * ipacket, unsigned protocol_index);
 
 void update_last_received_packet(packet_info_t * last_packet, ipacket_t * ipacket) {
@@ -442,6 +448,16 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
             while (timed_out_session != NULL) {
                 safe_to_delete_session = timed_out_session;
                 timed_out_session = timed_out_session->next;
+                // Update dumy session
+                if(mmt_handler->dummy_session->next->session_id == safe_to_delete_session->session_id){
+                    if(safe_to_delete_session->next != NULL){
+                        mmt_handler->dummy_session->next = safe_to_delete_session->next;
+                    }else if(safe_to_delete_session->previous != NULL){
+                        mmt_handler->dummy_session->next = safe_to_delete_session->previous;
+                    }else{
+                        mmt_handler->dummy_session->next = NULL;
+                    }
+                }    
 
                 //Call user handler for timed out sessions
                 if (mmt_handler->session_expiry_handler.handler_fct) {
@@ -450,8 +466,12 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
 
                 cleanup_timedout_sessions(safe_to_delete_session);
 
+                // if(safe_to_delete_session != NULL){
+                //     safe_to_delete_session = NULL;
+                // }
+
             }
-            //remove the timeout milestone from the hash
+                //remove the timeout milestone from the hash
             delete_timeout_milestone(mmt_handler, counter);
         }
     }
@@ -1126,6 +1146,13 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->session_expiry_handler.handler_fct = NULL;
     new_handler->session_expiry_handler.args = NULL;
 
+    new_handler->dummy_session = mmt_malloc(sizeof(mmt_session_t));
+    new_handler->dummy_session->session_id = 0;
+    new_handler->dummy_session->next = NULL;
+    new_handler->dummy_session->previous = NULL;
+    new_handler->session_timer_handler.session_timer_handler_fct = NULL;
+    new_handler->session_timer_handler.args = NULL;
+
     //Enable protocol statistics (this is default config)
     enable_protocol_statistics((void *) new_handler);
 
@@ -1188,6 +1215,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
 
     //Remove the handler from the registered handlers in the global context
     delete_key_value(mmt_configured_handlers_map, mmt_handler);
+    if(mmt_handler->dummy_session != NULL){
+        mmt_free(mmt_handler->dummy_session);    
+    }
+
     mmt_free(mmt_handler);
 }
 
@@ -2144,6 +2175,13 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 is_new_session = NEW_SESSION; //Enforce the use of "NEW_SESSION" value
                 // init session data
                 session->session_id = mmt_handler->sessions_count+1;
+                printf("\nNew session is created: %lu\n", session->session_id);
+                session->next = NULL;
+                session->previous = NULL;
+                if(mmt_handler->dummy_session->next == NULL){
+                    mmt_handler->dummy_session->next = session;
+                    session->previous = mmt_handler->dummy_session;
+                }
                 session->packet_count = 0;
                 session->data_volume = 0;
                 session->status = NonClassified;
@@ -2193,6 +2231,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 }
                 //Mark this protocol as done with the classification process
                 ipacket->proto_classif_status->proto_path[index] = PROTO_CLASSIFICATION_DONE;
+                
             } else {
                 // session timeout update
                 if (ipacket->p_hdr->ts.tv_sec > session->s_last_activity_time.tv_sec) {// No need to update the timeout if we are still in the same second
@@ -2788,6 +2827,19 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
 
     (void) set_classified_proto(ipacket, 0, classified_proto);
     return ipacket;
+}
+
+
+void process_session_timer_handler(mmt_handler_t *mmt){
+
+    if(mmt->session_timer_handler.session_timer_handler_fct == NULL){
+        fprintf(stderr,"No action event has registered !\n");
+    }else if(mmt->dummy_session->next == NULL){
+        fprintf(stderr,"No session to process!\n");
+    }else{
+        debug("\nHead session pointer in mmt_handler: %p\n",mmt->dummy_session);
+        mmt->session_timer_handler.session_timer_handler_fct(mmt->dummy_session->next,mmt->session_timer_handler.args);
+    }
 }
 
 

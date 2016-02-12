@@ -85,6 +85,8 @@ typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void
  */
 typedef void (*generic_session_timeout_handler_function)(const mmt_session_t * expired_session, void * args);
 
+typedef void (*generic_session_timer_handler_function)(const mmt_session_t * head_session, void * args);
+
 /**
  * Signature of the attribute handler function
  */
@@ -203,6 +205,14 @@ MMTAPI int MMTCALL register_session_timeout_handler(
     generic_session_timeout_handler_function session_expiry_handler_fct,
     void *user
 );
+
+
+MMTAPI int MMTCALL register_session_timer_handler(
+    mmt_handler_t *mmt_handler,
+    generic_session_timer_handler_function session_timer_handler_fct,
+    void *user
+);
+
 
 /**
  * Returns a positive value if the attribute identifier by the given protocol and attribute ids is already registered, 0 otherwise.
@@ -433,6 +443,15 @@ MMTAPI int MMTCALL packet_process(
     mmt_handler_t *mmt_handler,
     struct pkthdr *header,
     const u_char *packet
+);
+
+/**
+ * This will be call from probe when probe want to do something from library
+ * @param  mmt_handler pointer to the mmt_handler we want to do the action
+ * @param  user_data   [description]
+ */
+MMTAPI void MMTCALL process_session_timer_handler(
+    mmt_handler_t *mmt_handler
 );
 
 /**
