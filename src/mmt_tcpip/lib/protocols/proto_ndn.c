@@ -1516,8 +1516,9 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
 void ndn_process_timed_out(ipacket_t *ipacket, unsigned index, ndn_session_t *current_session){
+        
         debug("Removing expired session: %lu",current_session->session_id);
-
+        fire_attribute_event(ipacket, PROT_NDN, NDN_LIST_SESSIONS, index, (void *) current_session);
 }
 
 uint64_t ndn_session_get_delay_time(ndn_session_t * current_session){
@@ -1541,9 +1542,9 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
     while(current_session->next != NULL){
         ndn_session_t *session_to_delete = current_session->next;
         current_session->next = session_to_delete->next; 
-        uint64_t delay_time = ndn_session_get_delay_time(current_session->next);
-        if(current_session->next->s_last_activity_time != NULL){
-            if(packet_seconds - current_session->next->s_last_activity_time->tv_sec > delay_time){
+        uint64_t delay_time = ndn_session_get_delay_time(session_to_delete);
+        if(session_to_delete->s_last_activity_time != NULL){
+            if(packet_seconds - session_to_delete->s_last_activity_time->tv_sec > delay_time){
                 // Remove expired session from list
                 ndn_process_timed_out(ipacket,index,session_to_delete);
             }
@@ -1666,7 +1667,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     // Created tuple3
     ndn_session_t *list_sessions = ndn_get_list_all_session(ipacket, index);
 
-    // ndn_process_timed_out_session(ipacket,index,list_sessions);
+    ndn_process_timed_out_session(ipacket,index,list_sessions);
 
     ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, list_sessions);
     
