@@ -353,8 +353,7 @@ struct mmt_handler_struct {
 
     void * timeout_milestones_map;
     session_expiry_handler_t session_expiry_handler;
-
-    struct mmt_session_struct * dummy_session; // dummy_session is a dummy session which always points to a session
+    
     session_timer_handler_t session_timer_handler;    // This is the function registered by user and will be call from function process_timer_handler()
 
     packet_info_t last_received_packet;
