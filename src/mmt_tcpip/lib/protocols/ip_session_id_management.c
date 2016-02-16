@@ -223,7 +223,7 @@ void free_session_data(void * key, void * value, void * args) {
     //Free the internal structure used by DPI
     //mmt_free(session->internal_data);
     //Free the session data
-    printf("Session is going to be freed: %lu\n",session->session_id);
+    // printf("Session is going to be freed: %lu\n",session->session_id);
     mmt_free(session);
 }
 
