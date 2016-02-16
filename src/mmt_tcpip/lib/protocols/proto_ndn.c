@@ -3,7 +3,7 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 #include "ndn.h"
-
+#include <ctype.h>
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #include "ndn.h"
@@ -69,6 +69,15 @@ char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
     }
 
     char * ret = str_sub(payload,ndn->data_offset, ndn->data_offset + ndn->length -1 );
+
+    int i = 0;
+
+    // Remove non printable characters
+    for(i = 0 ;i < ndn->length-1;i++){
+        if(!isprint(ret[i])){
+            ret[i]='_';
+        }
+    }
 
     return ret;
 }
@@ -1498,6 +1507,45 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
 
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
+void ndn_process_timed_out(ipacket_t *ipacket, unsigned index, ndn_session_t *current_session){
+        debug("Removing expired session: %lu",current_session->session_id);
+
+}
+
+uint64_t ndn_session_get_delay_time(ndn_session_t * current_session){
+    uint64_t delay_time = current_session->interest_lifeTime[0];
+    if(delay_time < current_session->interest_lifeTime[1]) delay_time = current_session->interest_lifeTime[1];
+    if(delay_time < current_session->data_freshnessPeriod[0]) delay_time = current_session->data_freshnessPeriod[0];
+    if(delay_time < current_session->data_freshnessPeriod[1]) delay_time = current_session->data_freshnessPeriod[1];
+    return delay_time;
+}
+
+
+void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_session_t *list_sessions){
+    
+    if(list_sessions == NULL){
+        debug("Cannot get dummy ndn session!");
+        return;
+    }
+    long packet_seconds = ipacket->p_hdr->ts.tv_sec;
+    ndn_session_t * current_session = list_sessions;
+
+    while(current_session->next != NULL){
+        ndn_session_t *session_to_delete = current_session->next;
+        current_session->next = session_to_delete->next; 
+        uint64_t delay_time = ndn_session_get_delay_time(current_session->next);
+        if(current_session->next->s_last_activity_time != NULL){
+            if(packet_seconds - current_session->next->s_last_activity_time->tv_sec > delay_time){
+                // Remove expired session from list
+                ndn_process_timed_out(ipacket,index,session_to_delete);
+            }
+        }
+    }
+    
+
+    
+}
+
 /**
  * Analysis packet data
  * @param  ipacket packet to analysis
@@ -1507,6 +1555,8 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
  *                 MMT_DROP
  */
 int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
+
+
     debug("NDN: ndn_session_data_analysis");
     int offset = get_packet_offset_at_index(ipacket, index);
     char *payload = (char*)&ipacket->data[offset];
@@ -1607,6 +1657,8 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     debug("NDN: Type: %d\n",t3->packet_type);
     // Created tuple3
     ndn_session_t *list_sessions = ndn_get_list_all_session(ipacket, index);
+
+    // ndn_process_timed_out_session(ipacket,index,list_sessions);
 
     ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, list_sessions);
     
