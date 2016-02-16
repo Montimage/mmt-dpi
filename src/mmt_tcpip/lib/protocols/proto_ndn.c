@@ -77,6 +77,14 @@ char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
         if(!isprint(ret[i])){
             ret[i]='_';
         }
+
+        if(ret[i]=='\\'){
+            ret[i]='_';   
+        }
+
+        if(ret[i]=='\"'){
+            ret[i]='_';   
+        }        
     }
 
     return ret;
