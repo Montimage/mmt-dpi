@@ -316,6 +316,7 @@ typedef struct ndn_session_struct{
     struct ndn_session_struct *next; 
     void * user_arg; // User argument pointer
     uint8_t current_direction; // Current direction: 0 - from tuple3->src_MAC to tuple3->dst_MAC ; 1 - otherway
+    uint8_t is_expired; // 1 - session expired, 0 - session is not expired
 }ndn_session_t;
 
 

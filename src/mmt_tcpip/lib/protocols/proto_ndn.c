@@ -1423,6 +1423,7 @@ ndn_session_t * ndn_new_session(){
     ndn_session->next = NULL;
     ndn_session->user_arg = NULL;
     ndn_session->current_direction = 0;
+    ndn_session->is_expired = 0;
     return ndn_session;
 }
 
@@ -1456,6 +1457,26 @@ void ndn_free_session(ndn_session_t *ndn_session){
         mmt_free(ndn_session->s_last_activity_time);
     }
     ndn_free_session(ndn_session->next);
+
+    mmt_free(ndn_session);
+
+}
+
+void ndn_free_one_session(ndn_session_t *ndn_session){
+    if(ndn_session == NULL) return;
+    
+    if(ndn_session->tuple3 != NULL){
+        ndn_free_tuple3(ndn_session->tuple3);
+    }
+
+    if(ndn_session->s_init_time != NULL){
+        mmt_free(ndn_session->s_init_time);
+    }
+
+    if(ndn_session->s_last_activity_time != NULL){
+        mmt_free(ndn_session->s_last_activity_time);
+    }
+    // ndn_free_session(ndn_session->next);
 
     mmt_free(ndn_session);
 
@@ -1517,8 +1538,10 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
 
 void ndn_process_timed_out(ipacket_t *ipacket, unsigned index, ndn_session_t *current_session){
         
-        debug("Removing expired session: %lu",current_session->session_id);
-        fire_attribute_event(ipacket, PROT_NDN, NDN_LIST_SESSIONS, index, (void *) current_session);
+        debug("\nRemoving expired session: %lu",current_session->session_id);
+
+        fire_attribute_event(ipacket, PROTO_NDN, NDN_LIST_SESSIONS, index, (void *) current_session);
+        ndn_free_one_session(current_session);
 }
 
 uint64_t ndn_session_get_delay_time(ndn_session_t * current_session){
@@ -1526,28 +1549,44 @@ uint64_t ndn_session_get_delay_time(ndn_session_t * current_session){
     if(delay_time < current_session->interest_lifeTime[1]) delay_time = current_session->interest_lifeTime[1];
     if(delay_time < current_session->data_freshnessPeriod[0]) delay_time = current_session->data_freshnessPeriod[0];
     if(delay_time < current_session->data_freshnessPeriod[1]) delay_time = current_session->data_freshnessPeriod[1];
+    delay_time = delay_time/1000;
+    debug("\nNDN: Delay time of session %lu is: %lu",current_session->session_id,delay_time);
     return delay_time;
 }
 
 
-void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_session_t *list_sessions){
-    
-    if(list_sessions == NULL){
-        debug("Cannot get dummy ndn session!");
-        return;
-    }
+void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_session_t * first_session, ndn_session_t *list_sessions){
+    debug("\nNDN: ndn_process_timed_out_session ipacket: %lu",ipacket->packet_id);    
     long packet_seconds = ipacket->p_hdr->ts.tv_sec;
-    ndn_session_t * current_session = list_sessions;
+    ndn_session_t * current_session = first_session;
+    ndn_session_t * previous_session = list_sessions;
 
-    while(current_session->next != NULL){
-        ndn_session_t *session_to_delete = current_session->next;
-        current_session->next = session_to_delete->next; 
+    while(current_session != NULL){
+        
+        debug("\nNDN: regarding the session : %lu",current_session->session_id);    
+        
+        ndn_session_t *session_to_delete = current_session;
+        current_session = session_to_delete->next; 
+        
         uint64_t delay_time = ndn_session_get_delay_time(session_to_delete);
+        int expired_session = 0;
         if(session_to_delete->s_last_activity_time != NULL){
+            debug("\nNDN: Packet time: %lu - session_time: %lu = %lu",packet_seconds,session_to_delete->s_last_activity_time->tv_sec,(packet_seconds - session_to_delete->s_last_activity_time->tv_sec));
             if(packet_seconds - session_to_delete->s_last_activity_time->tv_sec > delay_time){
-                // Remove expired session from list
+                expired_session = 1;
+                previous_session->next = current_session;        
+                // debug("\nNDN: Going to remove  : %lu",current_session->session_id);    
+                // // Update dummy session if the session to be deleted is pointed by dummy session
+                // if(list_sessions->next == session_to_delete){
+                //     
+                //     list_sessions->next = current_session;
+                // }
+                session_to_delete->is_expired = 1;
                 ndn_process_timed_out(ipacket,index,session_to_delete);
             }
+        }
+        if(expired_session == 0){
+            previous_session = session_to_delete;
         }
     }
     
@@ -1667,7 +1706,17 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     // Created tuple3
     ndn_session_t *list_sessions = ndn_get_list_all_session(ipacket, index);
 
-    ndn_process_timed_out_session(ipacket,index,list_sessions);
+    if(list_sessions == NULL){
+        debug("\nNDN: Cannot get ndn list_sessions");
+        return MMT_CONTINUE;
+    }
+
+    if(list_sessions->next != NULL){
+        ndn_process_timed_out_session(ipacket,index,list_sessions->next,list_sessions);    
+    }else{
+        debug("\nNDN: No session to process timed out");
+    }
+    
 
     ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, list_sessions);
     
@@ -1677,19 +1726,19 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_session->s_init_time = mmt_malloc(sizeof(struct timeval));
         ndn_session->s_init_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
         ndn_session->s_init_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
-        if(list_sessions == NULL){
-            list_sessions = ndn_session;
+        ndn_session->session_id = list_sessions->session_id;
+        list_sessions->session_id += 1;
+        debug("\nNDN: New session is created: %lu",ndn_session->session_id);
+        if(list_sessions->next == NULL){
+            debug("\nNDN: First session of the list");
+            list_sessions->next = ndn_session;
         }else{
-            ndn_session->session_id = list_sessions->session_id;
-            list_sessions->session_id += 1;
-            if(list_sessions->next == NULL){
-                list_sessions->next = ndn_session;
-            }else{
-                ndn_session->next = list_sessions->next;    
-                list_sessions->next = ndn_session;
-            }
+            debug("\nNDN: Added to the existing session of the list: %lu",list_sessions->next->session_id);
+            ndn_session->next = list_sessions->next;    
+            list_sessions->next = ndn_session;
         }
     }else{
+        debug("\nNDN: Updating the session: %lu",ndn_session->session_id);
         ndn_free_tuple3(t3);
     }
     
