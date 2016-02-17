@@ -264,6 +264,18 @@ ndn_tlv_t * ndn_TLV_parser_name_comp(char* payload, int total_length, int offset
 
 /////////////////////// COMMON FIELD ////////////////////////
 
+ndn_proto_context_t * ndn_get_proto_context(ipacket_t *ipacket, unsigned index){
+    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+            ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+    ndn_proto_context_t * ndn_proto_context = (ndn_proto_context_t*)configured_protocol->args;
+    if(ndn_proto_context == NULL){
+        log_err("Cannot get NDN protocol context");
+        return NULL;
+    }else{
+        return ndn_proto_context;
+    }
+}
+
 /**
  * Get list of control session from session context
  * @param  ipacket packet
@@ -273,7 +285,13 @@ ndn_tlv_t * ndn_TLV_parser_name_comp(char* payload, int total_length, int offset
 ndn_session_t * ndn_get_list_all_session(ipacket_t *ipacket, unsigned index){
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
-    return (ndn_session_t*)configured_protocol->args;
+    ndn_proto_context_t * ndn_proto_context = (ndn_proto_context_t*)configured_protocol->args;
+    if(ndn_proto_context == NULL){
+        log_err("Cannot get NDN protocol context");
+        return NULL;
+    }else{
+        return ndn_proto_context->dummy_session;
+    }
 }
 
 
@@ -1322,13 +1340,15 @@ int ndn_list_sessions_extraction(const ipacket_t * ipacket, unsigned proto_index
 
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)->configured_protocols[ipacket->proto_hierarchy->proto_path[proto_index]];
 
-    ndn_session_t * ret = (ndn_session_t * )configured_protocol->args;
+    ndn_proto_context_t * ret = (ndn_proto_context_t * )configured_protocol->args;
 
     if(ret == NULL) return 0;
 
-    if(ret->next == NULL) return 0;
+    if(ret->dummy_session == NULL) return 0;
 
-    extracted_data->data = (void*)ret->next;
+    if(ret->dummy_session->next == NULL) return 0;
+
+    extracted_data->data = (void*)ret->dummy_session->next;
     return 1;
 }
 
@@ -1456,31 +1476,12 @@ void ndn_free_session(ndn_session_t *ndn_session){
     if(ndn_session->s_last_activity_time != NULL){
         mmt_free(ndn_session->s_last_activity_time);
     }
-    ndn_free_session(ndn_session->next);
-
-    mmt_free(ndn_session);
-
-}
-
-void ndn_free_one_session(ndn_session_t *ndn_session){
-    if(ndn_session == NULL) return;
-    
-    if(ndn_session->tuple3 != NULL){
-        ndn_free_tuple3(ndn_session->tuple3);
-    }
-
-    if(ndn_session->s_init_time != NULL){
-        mmt_free(ndn_session->s_init_time);
-    }
-
-    if(ndn_session->s_last_activity_time != NULL){
-        mmt_free(ndn_session->s_last_activity_time);
-    }
     // ndn_free_session(ndn_session->next);
 
     mmt_free(ndn_session);
 
 }
+
 
 ndn_session_t * ndn_find_session_by_tuple3(ndn_tuple3_t *t3, ndn_session_t * list_sessions){
 
@@ -1541,7 +1542,7 @@ void ndn_process_timed_out(ipacket_t *ipacket, unsigned index, ndn_session_t *cu
         debug("\nRemoving expired session: %lu",current_session->session_id);
 
         fire_attribute_event(ipacket, PROTO_NDN, NDN_LIST_SESSIONS, index, (void *) current_session);
-        ndn_free_one_session(current_session);
+        ndn_free_session(current_session);
 }
 
 uint64_t ndn_session_get_delay_time(ndn_session_t * current_session){
@@ -1555,11 +1556,11 @@ uint64_t ndn_session_get_delay_time(ndn_session_t * current_session){
 }
 
 
-void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_session_t * first_session, ndn_session_t *list_sessions){
+void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_session_t * first_session, ndn_session_t *dummy_session){
     debug("\nNDN: ndn_process_timed_out_session ipacket: %lu",ipacket->packet_id);    
     long packet_seconds = ipacket->p_hdr->ts.tv_sec;
     ndn_session_t * current_session = first_session;
-    ndn_session_t * previous_session = list_sessions;
+    ndn_session_t * previous_session = dummy_session;
 
     while(current_session != NULL){
         
@@ -1704,21 +1705,41 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     debug("NDN: name: %s\n",t3->name);
     debug("NDN: Type: %d\n",t3->packet_type);
     // Created tuple3
-    ndn_session_t *list_sessions = ndn_get_list_all_session(ipacket, index);
-
-    if(list_sessions == NULL){
-        debug("\nNDN: Cannot get ndn list_sessions");
+    ndn_proto_context_t * ndn_proto_context = ndn_get_proto_context(ipacket,index);
+    if(ndn_proto_context == NULL){
+        debug("\nNDN: Cannot get NDN protocol context");
         return MMT_CONTINUE;
     }
 
-    if(list_sessions->next != NULL){
-        ndn_process_timed_out_session(ipacket,index,list_sessions->next,list_sessions);    
+    // Update last ndn packet
+    if(ndn_proto_context->dummy_packet == NULL){
+        ndn_proto_context->dummy_packet = mmt_malloc(sizeof(ipacket_t));
+        ndn_proto_context->dummy_packet->mmt_handler = ipacket->mmt_handler;
+        ndn_proto_context->dummy_packet->data = NULL;
+    }
+    ndn_proto_context->dummy_packet->packet_id = ipacket->packet_id;
+
+    // Update proto_index
+    if(ndn_proto_context->proto_index == 0){
+        ndn_proto_context->proto_index = index;
+    }
+
+    // Update list NDN session
+    ndn_session_t *dummy_session = ndn_proto_context->dummy_session;
+
+    if(dummy_session == NULL){
+        debug("\nNDN: Cannot get ndn dummy_session");
+        return MMT_CONTINUE;
+    }
+
+    if(dummy_session->next != NULL){
+        ndn_process_timed_out_session(ipacket,index,dummy_session->next,dummy_session);    
     }else{
         debug("\nNDN: No session to process timed out");
     }
     
 
-    ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, list_sessions);
+    ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, dummy_session);
     
     if(ndn_session == NULL){
         ndn_session = ndn_new_session();
@@ -1726,16 +1747,16 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_session->s_init_time = mmt_malloc(sizeof(struct timeval));
         ndn_session->s_init_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
         ndn_session->s_init_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
-        ndn_session->session_id = list_sessions->session_id;
-        list_sessions->session_id += 1;
+        ndn_session->session_id = dummy_session->session_id;
+        dummy_session->session_id += 1;
         debug("\nNDN: New session is created: %lu",ndn_session->session_id);
-        if(list_sessions->next == NULL){
+        if(dummy_session->next == NULL){
             debug("\nNDN: First session of the list");
-            list_sessions->next = ndn_session;
+            dummy_session->next = ndn_session;
         }else{
-            debug("\nNDN: Added to the existing session of the list: %lu",list_sessions->next->session_id);
-            ndn_session->next = list_sessions->next;    
-            list_sessions->next = ndn_session;
+            debug("\nNDN: Added to the existing session of the list: %lu",dummy_session->next->session_id);
+            ndn_session->next = dummy_session->next;    
+            dummy_session->next = ndn_session;
         }
     }else{
         debug("\nNDN: Updating the session: %lu",ndn_session->session_id);
@@ -1799,8 +1820,29 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
 void cleanup_ndn_context(void * proto_context, void * args){
     debug("NDN: cleanup_ndn_context");
-    ndn_session_t *list_sessions = (ndn_session_t*)((protocol_instance_t *) proto_context)->args;
-    ndn_free_session(list_sessions);
+    ndn_proto_context_t * ndn_proto_context = (ndn_proto_context_t*)((protocol_instance_t *) proto_context)->args;
+    if(ndn_proto_context == NULL){
+        log_err("\nNDN: Cannot get NDN protocol context");
+        return;
+    }
+    ndn_session_t *dummy_session = ndn_proto_context->dummy_session;
+    ipacket_t * dummy_packet = ndn_proto_context->dummy_packet;
+    unsigned proto_index = ndn_proto_context->proto_index;
+
+    ndn_session_t *current_session = dummy_session->next;
+    
+    while(current_session !=NULL){
+        ndn_session_t *session_to_delete = current_session;
+        current_session = session_to_delete->next;
+        debug("\nNDN: Need to report this session: %lu",session_to_delete->session_id);
+        ndn_process_timed_out(dummy_packet,proto_index,session_to_delete);
+
+        // fire_attribute_event(dummy_packet, PROTO_NDN, NDN_LIST_SESSIONS, proto_index, (void *) session_to_delete);
+        // ndn_free_session(session_to_delete);
+    }
+    ndn_free_session(dummy_session);
+    mmt_free(ndn_proto_context->dummy_packet);
+    mmt_free(ndn_proto_context);
 }
 
 /**
@@ -1810,11 +1852,14 @@ void cleanup_ndn_context(void * proto_context, void * args){
  * @return               pointer points to the list_all_ndn_session
  */
 void * setup_ndn_context(void * proto_context, void * args) {
-    ndn_session_t * ndn_list_all_sessions = ndn_new_session();
+    ndn_proto_context_t * ndn_proto_context;
+    ndn_proto_context = mmt_malloc(sizeof(ndn_proto_context_t));
     // ndn_list_all_sessions = (ndn_session_t*)malloc(sizeof(ndn_session_t));
-
+    ndn_proto_context->dummy_session = ndn_new_session();
+    ndn_proto_context->dummy_packet = NULL;
+    ndn_proto_context->proto_index = 0;
     // ndn_list_all_sessions->next = NULL;
-    return (void*)ndn_list_all_sessions;
+    return (void*)ndn_proto_context;
 }
 
 void mmt_init_classify_me_ndn() {

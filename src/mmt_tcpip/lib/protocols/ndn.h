@@ -321,6 +321,17 @@ typedef struct ndn_session_struct{
 
 
 /**
+ * NDN protocol context arguments - use to fire event when the protocol needs to cleanup the context
+ */
+typedef struct ndn_proto_context_struct{
+	ndn_session_t * dummy_session;
+	ipacket_t * dummy_packet;
+	unsigned proto_index;
+}ndn_proto_context_t;
+
+
+
+/**
  * Create a ndn_tuple3_t structure
  * @return a pointer points to new ndn tuple3 structure
  */
