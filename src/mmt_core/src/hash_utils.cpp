@@ -27,7 +27,7 @@ int insert_key_value(void * maplist, void * key, void * value) {
 
     ret = m->insert(std::pair<void *, void *>(key, value));
     if (ret.second == false) {
-        printf("FROM InsertSession got a problem\n");
+        printf("FROM InsertSession got a problem: hash_utils.cpp - insert_key_value() \n");
         return 0;
     }
     return 1;
@@ -39,7 +39,7 @@ int insert_int_key_value(void * maplist, uint32_t key, void * value) {
 
     ret = m->insert(std::pair<uint32_t, void *>(key, value));
     if (ret.second == false) {
-        printf("FROM InsertSession got a problem\n");
+        printf("FROM InsertSession got a problem: hash_utils.cpp - insert_int_key_value() \n");
         return 0;
     }
     return 1;
@@ -172,6 +172,15 @@ void timeout_iteration_callback(mmt_handler_t *mmt_handler, generic_mapspace_ite
     }
 }
 
+void session_timer_iteration_callback(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct) {
+    map<uint32_t, void *>::iterator it;
+    MMT_IntMap* m = reinterpret_cast<MMT_IntMap*> (mmt_handler->timeout_milestones_map);
+    for (it = m->begin(); it != m->end(); it++) {
+        fct(NULL, (*it).second, mmt_handler);
+    }
+}
+
+
 int update_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t new_timeout, uint32_t old_timeout, mmt_session_t * session) {
     map<uint32_t, void *>::iterator it;
     MMT_IntMap* m = reinterpret_cast<MMT_IntMap*> (mmt_handler->timeout_milestones_map);
@@ -233,7 +242,7 @@ int insert_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t timeou
     MMT_IntMap* m = reinterpret_cast<MMT_IntMap*> (mmt_handler->timeout_milestones_map);
     it = m->find(timeout);
     if (it != m->end()) {
-        //printf("Insert session %i in EXISTING timeout milestone %u \n", session->session_id, timeout);
+        // printf("\nInsert session %i in EXISTING timeout milestone %u \n", session->session_id, timeout);
         session_list = (mmt_session_t *) (*it).second;
         session->previous = NULL;
         session->next = session_list;
@@ -241,13 +250,13 @@ int insert_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t timeou
         (*it).second = (void *) session;
         return 1;
     } else {
-        //printf("Insert session %i in timeout milestone %u \n", session->session_id, timeout);
+        // printf("\nInsert session %i in timeout milestone %u \n", session->session_id, timeout);
         pair<map<uint32_t, void *>::iterator, bool> ret;
         session->next = NULL;
         session->previous = NULL;
         ret = m->insert(pair<uint32_t, void *>(timeout, (void *) session));
         if (ret.second == false) {
-            //printf("Error occurred in insert session timeout milesotne\n");
+            // printf("\nError occurred in insert session timeout milesotne\n");
             return 0;
         }
         return 1;

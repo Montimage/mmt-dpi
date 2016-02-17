@@ -205,11 +205,25 @@ void free_session_data(void * key, void * value, void * args) {
         }
     }
 
+    // Update pointers
+    if(session->next != NULL){
+        if(session->previous != NULL){
+            session->previous->next = session->next;
+            session->next->previous = session->previous;
+        }else{
+            session->next->previous = NULL;
+        }
+    }else{
+        if(session->previous != NULL){
+            session->previous->next = NULL;
+        }
+    }
     //Free the session key
     //mmt_free(session->session_key);
     //Free the internal structure used by DPI
     //mmt_free(session->internal_data);
     //Free the session data
+    // printf("Session is going to be freed: %lu\n",session->session_id);
     mmt_free(session);
 }
 
@@ -226,7 +240,6 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
         /* Initialize the memory for the session */
         retval = (mmt_session_t *) mmt_malloc(sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct));
         memset(retval, 0, sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct));
-
         retval->session_key = (mmt_session_key_t *) &((char *)retval)[sizeof(mmt_session_t)];
         retval->internal_data = (struct mmt_internal_tcpip_session_struct *) &((char *)retval)[sizeof(mmt_session_t) + sizeof (mmt_session_key_t)];
         /*
