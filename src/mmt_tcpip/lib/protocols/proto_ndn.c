@@ -1444,6 +1444,7 @@ ndn_session_t * ndn_new_session(){
     ndn_session->user_arg = NULL;
     ndn_session->current_direction = 0;
     ndn_session->is_expired = 0;
+    ndn_session->last_reported_time = NULL;
     return ndn_session;
 }
 
@@ -1745,8 +1746,11 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_session = ndn_new_session();
         ndn_session->tuple3 = t3;
         ndn_session->s_init_time = mmt_malloc(sizeof(struct timeval));
+        ndn_session->last_reported_time = mmt_malloc(sizeof(struct timeval));
         ndn_session->s_init_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
         ndn_session->s_init_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
+        ndn_session->last_reported_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
+        ndn_session->last_reported_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
         ndn_session->session_id = dummy_session->session_id;
         dummy_session->session_id += 1;
         debug("\nNDN: New session is created: %lu",ndn_session->session_id);
