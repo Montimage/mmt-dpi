@@ -842,18 +842,20 @@ void free_registered_protocols() {
 void free_protocols_contexts(mmt_handler_t *mmt_handler) {
     int i = 0;
     for (; i < PROTO_MAX_IDENTIFIER; i++) {
-        if (mmt_handler->configured_protocols[i].protocol->is_registered) {
-            if (mmt_handler->configured_protocols[i].protocol->has_session && mmt_handler->configured_protocols[i].sessions_map != NULL) {
-                clear_sessions_from_protocol_context(&mmt_handler->configured_protocols[i]);
-                delete_map_space(mmt_handler->configured_protocols[i].sessions_map);
-                mmt_handler->configured_protocols[i].sessions_map = NULL;
-            }
+        if(mmt_handler->configured_protocols[i] != NULL){
+            if (mmt_handler->configured_protocols[i].protocol->is_registered) {
+                if (mmt_handler->configured_protocols[i].protocol->has_session && mmt_handler->configured_protocols[i].sessions_map != NULL) {
+                    clear_sessions_from_protocol_context(&mmt_handler->configured_protocols[i]);
+                    delete_map_space(mmt_handler->configured_protocols[i].sessions_map);
+                    mmt_handler->configured_protocols[i].sessions_map = NULL;
+                }
 
-            //Cleanup the protocol context if such a function is registered
-            if (mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup != NULL) {
-                ((generic_proto_context_cleanup_function) mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup)(&mmt_handler->configured_protocols[i], mmt_handler->configured_protocols[i].protocol->protocol_context_args);
-            }
-        }
+                //Cleanup the protocol context if such a function is registered
+                if (mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup != NULL) {
+                    ((generic_proto_context_cleanup_function) mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup)(&mmt_handler->configured_protocols[i], mmt_handler->configured_protocols[i].protocol->protocol_context_args);
+                }
+            }    
+        }  
     }
 }
 
@@ -1084,7 +1086,7 @@ void mmt_print_info(){
 
 mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * errbuf )
 {
-    mmt_print_info();
+    // mmt_print_info();
     int i = 0;
     protocol_stack_t * temp_stack = get_protocol_stack_from_map(stacktype);
     if (temp_stack == NULL) {
