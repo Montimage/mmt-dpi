@@ -842,7 +842,7 @@ void free_registered_protocols() {
 void free_protocols_contexts(mmt_handler_t *mmt_handler) {
     int i = 0;
     for (; i < PROTO_MAX_IDENTIFIER; i++) {
-        if(mmt_handler->configured_protocols[i] != NULL){
+        if(mmt_handler->configured_protocols[i].protocol != NULL){
             if (mmt_handler->configured_protocols[i].protocol->is_registered) {
                 if (mmt_handler->configured_protocols[i].protocol->has_session && mmt_handler->configured_protocols[i].sessions_map != NULL) {
                     clear_sessions_from_protocol_context(&mmt_handler->configured_protocols[i]);
