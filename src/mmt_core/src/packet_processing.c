@@ -1196,14 +1196,14 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
     // Clear timeout milestones
     clear_timeout_milestones(mmt_handler);
+    // Free the protocol structs
+    free_protocols_contexts(mmt_handler);
     // Free the attribute structs
     free_registered_extraction_attributes(mmt_handler);
     // Free the registered attribute handlers
     free_registered_attribute_handlers(mmt_handler);
     // Free the packet handlers structs
     free_registered_packet_handlers(mmt_handler);
-    // Free the protocol structs
-    free_protocols_contexts(mmt_handler);
     // Free protocol statistics
     free_handler_protocols_statistics(mmt_handler);
     // Free IP streams hashtable
