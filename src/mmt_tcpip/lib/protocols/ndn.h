@@ -20,6 +20,7 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
+#define NDN_MAX_EXPIRED_TIME 360 // 360 seconds : Maximum number of time for interestlifetime and freshnessperiod
 enum ndn_content_type
 {
 	NDN_CONTENT_TYPE_BLOB=0,
