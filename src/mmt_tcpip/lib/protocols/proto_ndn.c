@@ -58,6 +58,12 @@ int ndn_TLV_get_int(ndn_tlv_t *ndn, char *payload, int payload_len){
     return ret;
 }
 
+
+int is_json_special_character(char c2){
+    return (c2=='\"'||c2=='\\'||c2=='\b'||c2=='\f'||c2=='\n'||c2=='\r'||c2=='\t');
+}
+
+
 char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
     
     if(ndn == NULL) return NULL;
@@ -71,20 +77,14 @@ char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
     char * ret = str_sub(payload,ndn->data_offset, ndn->data_offset + ndn->length -1 );
 
     int i = 0;
-
-    // Remove non printable characters
-    for(i = 0 ;i < ndn->length-1;i++){
-        if(!isprint(ret[i])){
+    // Replace all character which is not printable
+    for(i = 0 ;i < ndn->length;i++){
+        if(is_json_special_character(ret[i])){
+            printf("Special character\n");
             ret[i]='_';
+            // ret[i+1]='_';
+            // i +=2;
         }
-
-        if(ret[i]=='\\'){
-            ret[i]='_';   
-        }
-
-        if(ret[i]=='\"'){
-            ret[i]='_';   
-        }        
     }
 
     return ret;
@@ -1719,6 +1719,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_proto_context->dummy_packet->data = NULL;
     }
     ndn_proto_context->dummy_packet->packet_id = ipacket->packet_id;
+    ndn_proto_context->dummy_packet->p_hdr = ipacket->p_hdr;
 
     // Update proto_index
     if(ndn_proto_context->proto_index == 0){
@@ -1794,6 +1795,9 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         if(ndn_lifetime != NULL){
             ndn_session->interest_lifeTime[direction] = ndn_TLV_get_int(ndn_lifetime, payload, payload_len);
             ndn_TLV_free(ndn_lifetime);
+        }
+        if(ndn_session->interest_lifeTime[direction] == 0){
+            ndn_session->interest_lifeTime[direction] = NDN_MAX_EXPIRED_TIME;
         }
     }
     // Update Data packet statistic
