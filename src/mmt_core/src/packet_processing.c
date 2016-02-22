@@ -3553,3 +3553,8 @@ int mmt_attr_format(FILE * f, attribute_t * a) {
         return mmt_stats_format(f, attr);
     }
 }
+
+char * mmt_version(){
+    return MMT_VERSION;
+}
+

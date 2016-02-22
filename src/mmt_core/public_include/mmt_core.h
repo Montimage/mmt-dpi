@@ -70,6 +70,9 @@ extern "C" {
                             This means that processing at the current protocol will continue, but
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
+#define MMT_VERSION "1.4";
+
+
 /**
  * Generic packet handler callback
  */
@@ -749,6 +752,12 @@ MMTAPI void MMTCALL iterate_through_mmt_handlers(
     generic_handler_iteration_callback iterator_fct,
     void *user
 );
+
+/**
+ * Get the current version of mmt-sdk
+ * @return current version of mmt-sdk
+ */
+MMTAPI char* MMTCALL mmt_version();
 
 /**
  * Memory management helpers
