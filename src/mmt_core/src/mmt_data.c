@@ -129,7 +129,7 @@ uint64_t get_session_ul_data_byte_count( const mmt_session_t *session )
 { return session->data_byte_volume_direction[session->setup_packet_direction]; }
 
 uint64_t get_session_dl_data_byte_count( const mmt_session_t *session )
-{ return session->data_byte_volume_direction[session->setup_packet_direction]; }
+{ return session->data_byte_volume_direction[!session->setup_packet_direction]; }
 
 struct timeval get_session_init_time( const mmt_session_t *session )
 { return session->s_init_time; }
