@@ -17,6 +17,8 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <ctype.h>
+#include <string.h>
 // #include "libntoh.h"
 bool session_timeout_comp_fn_pt(uint32_t l_timeout, uint32_t r_timeout) {
     return (l_timeout < r_timeout);
@@ -2121,6 +2123,60 @@ void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void 
             tmp_attribute = tmp_attribute->next;
         }
 
+    }
+}
+
+void print_string_upper(const char *str){
+    int i=0;
+    while(str[i]){
+        printf("%c",toupper(str[i]));
+        i++;
+    }
+}
+
+void mmt_print_proto_info(protocol_t * proto){
+    printf("\nProto ID: %d",proto->proto_id);
+    printf("\nProto Name: PROTO_");
+    print_string_upper(proto->protocol_name);
+    printf("\nAttributes");
+    printf("\nname,scope,value,description\n");
+    int i=0;
+    for(i=0;i<300;i++){
+        const char * attributes_name = get_proto_attribute_name(proto,proto->proto_id,i);
+        if(attributes_name != NULL){
+            print_string_upper(proto->protocol_name);
+            printf("_");
+            print_string_upper(attributes_name);
+            printf(",");
+            int attr_scope = get_proto_attribute_scope(proto,proto->proto_id,i);
+            if(attr_scope ==1){
+                printf("SCOPE_PACKET");
+            }else if(attr_scope == 2){
+                printf("SCOPE_SESSION");
+            }else if(attr_scope == 4){
+                printf("SCOPE_SESSION_CHANGING");
+            }else if(attr_scope == 16){
+                printf("SCOPE_ON_DEMAND");
+            }else if(attr_scope == 0x10){
+                printf("SCOPE_EVENT");
+            }else {
+                printf("UNKNOWN");
+            }
+            printf(", val , desc\n");
+        }
+    }
+    printf("\n");
+}
+
+void mmt_print_all_protocols() {
+    mmt_print_info();
+    printf("\nMMT-SDK version: %s\n", mmt_version());
+    int i = 1;
+    for (; i < PROTO_MAX_IDENTIFIER; i++) {
+        if (is_registered_protocol(i)) {
+            protocol_t * temp = configured_protocols[i];
+            mmt_print_proto_info(temp);
+        }
     }
 }
 
