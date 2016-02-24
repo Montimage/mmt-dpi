@@ -166,6 +166,8 @@ enum proto_stats_attr {
     PROTO_SESSIONS_COUNT,
     PROTO_ACTIVE_SESSIONS_COUNT,
     PROTO_TIMEDOUT_SESSIONS_COUNT,
+    PROTO_FIRST_PACKET_TIME,
+    PROTO_LAST_PACKET_TIME,
     PROTO_STATISTICS,
     PROTO_STATS_ATTRIBUTES_NB = PROTO_STATISTICS - PROTO_HEADER + 1,
 };
@@ -185,6 +187,8 @@ enum proto_common_attributes {
 #define PROTO_SESSIONS_COUNT_LABEL              "session_count"
 #define PROTO_ACTIVE_SESSIONS_COUNT_LABEL       "a_session_count"
 #define PROTO_TIMEDOUT_SESSIONS_COUNT_LABEL     "t_session_count"
+#define PROTO_FIRST_PACKET_TIME_LABEL           "first_packet_time"
+#define PROTO_LAST_PACKET_TIME_LABEL           "last_packet_time"
 #define PROTO_STATISTICS_LABEL                  "stats"
 #define PROTO_SESSION_LABEL                     "session"
 #define PROTO_SESSION_ID_LABEL                  "session_id"

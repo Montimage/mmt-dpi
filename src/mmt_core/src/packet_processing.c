@@ -913,6 +913,30 @@ int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_ind
     return 0;
 }
 
+int proto_first_packet_time_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    if(proto_stats){
+        // extracted_data->data = (void*)proto_stats->first_packet_time
+        memcpy(extracted_data->data,&proto_stats->first_packet_time, sizeof (struct timeval));
+        return 1;
+    }
+    return 0;
+}
+
+int proto_last_packet_time_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    if(proto_stats){
+        memcpy(extracted_data->data, &proto_stats->last_packet_time, sizeof (struct timeval));    
+        return 1;
+    }
+    return 0;
+}
+
+
 int proto_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
@@ -1038,6 +1062,9 @@ static attribute_metadata_t proto_stats_attributes_metadata[PROTO_STATS_ATTRIBUT
     {PROTO_ACTIVE_SESSIONS_COUNT, PROTO_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
     {PROTO_TIMEDOUT_SESSIONS_COUNT, PROTO_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
     {PROTO_STATISTICS, PROTO_STATISTICS_LABEL, MMT_STATS, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_stats_extraction},
+    {PROTO_FIRST_PACKET_TIME, PROTO_FIRST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_first_packet_time_extraction},
+    {PROTO_LAST_PACKET_TIME, PROTO_LAST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_last_packet_time_extraction},
+
 };
 
 static attribute_metadata_t proto_session_attr_metadata[PROTO_SESSION_ATTRIBUTES_NB] = {
@@ -2552,6 +2579,13 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
         proto_stats->data_volume += ipacket->p_hdr->len;
         proto_stats->payload_volume += ipacket->p_hdr->len - proto_offset;
         proto_stats->packets_count += 1;
+        // Update the fist packet
+        if(proto_stats->packets_count == 1){
+            proto_stats->first_packet_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+            proto_stats->first_packet_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+        }
+        proto_stats->last_packet_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+        proto_stats->last_packet_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
     }
     return proto_stats;
 }

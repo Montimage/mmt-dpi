@@ -285,6 +285,8 @@ struct proto_statistics_internal_struct {
     protocol_instance_t * proto; /**< pointer to the protocol */
     void * encap_proto_stats; /**< Map including the statistics of encaprulated children protocols */
     proto_statistics_internal_t * parent_proto_stats; /**< pointer to the parent protocol stats */
+    struct timeval first_packet_time; // The time of the first packet of the protocol
+    struct timeval last_packet_time; // The time of the last packet of the protocol
 };
 
 /**
