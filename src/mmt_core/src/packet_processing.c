@@ -2947,7 +2947,7 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
 
 
 void process_session_timer_handler(mmt_handler_t *mmt){
-    printf("process_session_timer_handler \n");
+    // printf("process_session_timer_handler \n");
     session_timer_iteration_callback(mmt, session_timer_handler_callback);
 }
 
