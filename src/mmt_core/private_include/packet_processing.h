@@ -282,11 +282,11 @@ struct proto_statistics_internal_struct {
     uint64_t sessions_count; /**< Total number of sessions seen by the protocol */
     uint64_t timedout_sessions_count; /**< Total number of timedout sessions (this is the difference between sessions count and ative sessions count) */
     proto_statistics_internal_t* next; /**< next instance of statistics for the same protocol */
+    struct timeval first_packet_time; // The time of the first packet of the protocol
+    struct timeval last_packet_time; // The time of the last packet of the protocol
     protocol_instance_t * proto; /**< pointer to the protocol */
     void * encap_proto_stats; /**< Map including the statistics of encaprulated children protocols */
     proto_statistics_internal_t * parent_proto_stats; /**< pointer to the parent protocol stats */
-    struct timeval first_packet_time; // The time of the first packet of the protocol
-    struct timeval last_packet_time; // The time of the last packet of the protocol
 };
 
 /**

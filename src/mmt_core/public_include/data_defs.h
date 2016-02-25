@@ -154,6 +154,8 @@ struct proto_statistics_struct {
     uint64_t sessions_count;              /**< Total number of sessions seen by the protocol  on a particular protocol path */
     uint64_t timedout_sessions_count;     /**< Total number of timedout sessions (this is the difference between sessions count and active sessions count) on a particular protocol path */
     struct proto_statistics_struct *next; /**< next instance of statistics for the same protocol */
+    struct timeval first_packet_time; // The time of the first packet of the protocol
+    struct timeval last_packet_time; // The time of the last packet of the protocol
 };
 
 enum proto_stats_attr {
