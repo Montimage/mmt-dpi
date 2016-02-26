@@ -1746,7 +1746,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     
 
     ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, dummy_session);
-    
+    int direction = 0;
     if(ndn_session == NULL){
         ndn_session = ndn_new_session();
         ndn_session->tuple3 = t3;
@@ -1769,6 +1769,11 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         }
     }else{
         debug("\nNDN: Updating the session: %lu",ndn_session->session_id);
+        if(str_compare(t3->src_MAC, ndn_session->tuple3->src_MAC) == 1){
+            direction = 0;
+        }else{
+            direction = 1;
+        }
         ndn_free_tuple3(t3);
     }
     
@@ -1781,12 +1786,6 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     ndn_session->s_last_activity_time->tv_usec = ipacket->p_hdr->ts.tv_usec;   
     ///--- UPDATE SESSION DATA --- ///
     
-    int direction = 0;
-    if(str_compare(t3->src_MAC, ndn_session->tuple3->src_MAC) == 1){
-        direction = 0;
-    }else{
-        direction = 1;
-    }
     ndn_session->current_direction = direction;
 
     // Update Interest packet statistic
