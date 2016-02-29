@@ -17,6 +17,8 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <ctype.h>
+#include <string.h>
 // #include "libntoh.h"
 bool session_timeout_comp_fn_pt(uint32_t l_timeout, uint32_t r_timeout) {
     return (l_timeout < r_timeout);
@@ -911,6 +913,30 @@ int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_ind
     return 0;
 }
 
+int proto_first_packet_time_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    if(proto_stats){
+        // extracted_data->data = (void*)proto_stats->first_packet_time
+        memcpy(extracted_data->data,&proto_stats->first_packet_time, sizeof (struct timeval));
+        return 1;
+    }
+    return 0;
+}
+
+int proto_last_packet_time_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    if(proto_stats){
+        memcpy(extracted_data->data, &proto_stats->last_packet_time, sizeof (struct timeval));    
+        return 1;
+    }
+    return 0;
+}
+
+
 int proto_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
@@ -1036,6 +1062,9 @@ static attribute_metadata_t proto_stats_attributes_metadata[PROTO_STATS_ATTRIBUT
     {PROTO_ACTIVE_SESSIONS_COUNT, PROTO_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
     {PROTO_TIMEDOUT_SESSIONS_COUNT, PROTO_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
     {PROTO_STATISTICS, PROTO_STATISTICS_LABEL, MMT_STATS, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_stats_extraction},
+    {PROTO_FIRST_PACKET_TIME, PROTO_FIRST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_first_packet_time_extraction},
+    {PROTO_LAST_PACKET_TIME, PROTO_LAST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_last_packet_time_extraction},
+
 };
 
 static attribute_metadata_t proto_session_attr_metadata[PROTO_SESSION_ATTRIBUTES_NB] = {
@@ -2125,6 +2154,60 @@ int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *
     return 0;
 }
 
+void print_string_upper(const char *str){
+    int i=0;
+    while(str[i]){
+        printf("%c",toupper(str[i]));
+        i++;
+    }
+}
+
+void mmt_print_proto_info(protocol_t * proto){
+    printf("\nProto ID: %d",proto->proto_id);
+    printf("\nProto Name: PROTO_");
+    print_string_upper(proto->protocol_name);
+    printf("\nAttributes");
+    printf("\nname,scope,value,description\n");
+    int i=0;
+    for(i=0;i<300;i++){
+        const char * attributes_name = get_proto_attribute_name(proto,proto->proto_id,i);
+        if(attributes_name != NULL){
+            print_string_upper(proto->protocol_name);
+            printf("_");
+            print_string_upper(attributes_name);
+            printf(",");
+            int attr_scope = get_proto_attribute_scope(proto,proto->proto_id,i);
+            if(attr_scope ==1){
+                printf("SCOPE_PACKET");
+            }else if(attr_scope == 2){
+                printf("SCOPE_SESSION");
+            }else if(attr_scope == 4){
+                printf("SCOPE_SESSION_CHANGING");
+            }else if(attr_scope == 16){
+                printf("SCOPE_ON_DEMAND");
+            }else if(attr_scope == 0x10){
+                printf("SCOPE_EVENT");
+            }else {
+                printf("UNKNOWN");
+            }
+            printf(", val , desc\n");
+        }
+    }
+    printf("\n");
+}
+
+void mmt_print_all_protocols() {
+    mmt_print_info();
+    printf("\nMMT-SDK version: %s\n", mmt_version());
+    int i = 1;
+    for (; i < PROTO_MAX_IDENTIFIER; i++) {
+        if (is_registered_protocol(i)) {
+            protocol_t * temp = configured_protocols[i];
+            mmt_print_proto_info(temp);
+        }
+    }
+}
+
 int register_attributes(mmt_handler_t *mmt_handler, struct attribute_description_struct * attributes_list) {
     int retval = 1;
     struct attribute_description_struct * temp_attr = attributes_list;
@@ -2497,6 +2580,13 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
         proto_stats->data_volume += ipacket->p_hdr->len;
         proto_stats->payload_volume += ipacket->p_hdr->len - proto_offset;
         proto_stats->packets_count += 1;
+        // Update the fist packet
+        if(proto_stats->packets_count == 1){
+            proto_stats->first_packet_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+            proto_stats->first_packet_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+        }
+        proto_stats->last_packet_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+        proto_stats->last_packet_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
     }
     return proto_stats;
 }
@@ -2876,7 +2966,7 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
 
 
 void process_session_timer_handler(mmt_handler_t *mmt){
-    printf("process_session_timer_handler \n");
+    // printf("process_session_timer_handler \n");
     session_timer_iteration_callback(mmt, session_timer_handler_callback);
 }
 

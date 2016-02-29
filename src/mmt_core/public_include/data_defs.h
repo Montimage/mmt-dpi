@@ -152,6 +152,8 @@ struct proto_statistics_struct {
     uint64_t sessions_count;              /**< Total number of sessions seen by the protocol  on a particular protocol path */
     uint64_t timedout_sessions_count;     /**< Total number of timedout sessions (this is the difference between sessions count and active sessions count) on a particular protocol path */
     struct proto_statistics_struct *next; /**< next instance of statistics for the same protocol */
+    struct timeval first_packet_time; // The time of the first packet of the protocol
+    struct timeval last_packet_time; // The time of the last packet of the protocol
 };
 
 enum proto_stats_attr {
@@ -164,6 +166,8 @@ enum proto_stats_attr {
     PROTO_SESSIONS_COUNT,
     PROTO_ACTIVE_SESSIONS_COUNT,
     PROTO_TIMEDOUT_SESSIONS_COUNT,
+    PROTO_FIRST_PACKET_TIME,
+    PROTO_LAST_PACKET_TIME,
     PROTO_STATISTICS,
     PROTO_STATS_ATTRIBUTES_NB = PROTO_STATISTICS - PROTO_HEADER + 1,
 };
@@ -183,6 +187,8 @@ enum proto_common_attributes {
 #define PROTO_SESSIONS_COUNT_LABEL              "session_count"
 #define PROTO_ACTIVE_SESSIONS_COUNT_LABEL       "a_session_count"
 #define PROTO_TIMEDOUT_SESSIONS_COUNT_LABEL     "t_session_count"
+#define PROTO_FIRST_PACKET_TIME_LABEL           "first_packet_time"
+#define PROTO_LAST_PACKET_TIME_LABEL           "last_packet_time"
 #define PROTO_STATISTICS_LABEL                  "stats"
 #define PROTO_SESSION_LABEL                     "session"
 #define PROTO_SESSION_ID_LABEL                  "session_id"

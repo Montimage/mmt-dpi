@@ -461,6 +461,11 @@ MMTAPI int MMTCALL packet_process(
 );
 
 /**
+ * Print out pretty list all attributes of all protocol
+ * @return [description]
+ */
+MMTAPI void MMTCALL mmt_print_all_protocols();
+/**
  * This will be call from probe when probe want to do something from library
  * @param  mmt_handler pointer to the mmt_handler we want to do the action
  * @param  user_data   [description]
