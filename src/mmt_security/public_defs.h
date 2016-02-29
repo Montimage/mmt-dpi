@@ -17,7 +17,7 @@ extern "C" {
 #include <time.h>
 #include <pcap/pcap.h>
 
-typedef void (*result_callback) (int prop_id, char *verdict, char *type, char *cause, char *history);
+typedef void (*result_callback) (int prop_id, char *verdict, char *type, char *cause, char *history, struct timeval packet_timestamp);
 
 //--------------------------------- Command options ----------------------------------------------------
 typedef struct {

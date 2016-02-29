@@ -2983,7 +2983,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 }
 
 
-void detected_corrupted_message(short print_option, rule *r, char *cause, short state)
+void detected_corrupted_message(short print_option, rule *r, char *cause, short state, struct timeval packet_time_stamp)
 {
     rule *temp = r;
     char *history;
@@ -3009,7 +3009,7 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
       	char *str = xmalloc( strlen( history ) + 3 );
       	sprintf( str, "{%s}", history );
 
-      	((op->callback_funct))( 0, verdict, type, cause, str );
+      	((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp);
 
         xfree( str );
       	xfree( verdict );
@@ -3126,7 +3126,7 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
                 //changed so that considered as a violated property (corrupted message):
                 c->valid = NOT_VALID;
                 store_history(pkt, SAME, curr_root, c, NULL, 0);
-                detected_corrupted_message(op->Print, c, "Corrupted message: due to an attack or error.", SATISFIED);
+                detected_corrupted_message(op->Print, c, "Corrupted message: due to an attack or error.", SATISFIED,pkt->p_hdr->ts);
                 return NOT_VALID;
             }
             //Need to use result_value
@@ -3398,7 +3398,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 		char *temp = xmalloc( strlen( history ) + 3 );
 		sprintf( temp, "{%s}", history );
 
-		((op->callback_funct))( prop_id, verdict, type, des, temp );
+		((op->callback_funct))( prop_id, verdict, type, des, temp ,pkt->p_hdr->ts);
 
         xfree( temp );
 		xfree( verdict );
