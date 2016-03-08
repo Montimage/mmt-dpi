@@ -2134,6 +2134,7 @@ void setDataLinkType(mmt_handler_t *mmt_handler, int dltype) {
 }
 
 void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
+    printf("\npacket_id = %lu\n",ipacket->packet_id);
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     unsigned i = 0;
     int quiet = args ? *((int*)args) : 0;
