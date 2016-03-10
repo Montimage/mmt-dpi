@@ -291,6 +291,7 @@ unsigned int mmt_get_protocol_by_port_number(uint8_t proto,
         else if (MMT_PORT_MATCH(sport, dport, 775)) return (PROTO_ACMAINT_TRANSD); // was generated automatically by MMTCrawler - @luongnv89
         else if (MMT_PORT_MATCH(sport, dport, 998)) return (PROTO_PUPARP); // was generated automatically by MMTCrawler - @luongnv89
         else if (MMT_PORT_MATCH(sport, dport, 999)) return (PROTO_APPLIX); // was generated automatically by MMTCrawler - @luongnv89
+        else if (MMT_PORT_MATCH(sport, dport, 514)) return (PROTO_SYSLOG);//-was generated automatically by MMTCrawler - @luongnv89 -
         else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
     } else if (proto == IPPROTO_TCP) {
         if (MMT_PORT_MATCH(sport, dport, 443)) return (PROTO_SSL);
@@ -985,7 +986,27 @@ unsigned int mmt_get_protocol_by_port_number(uint8_t proto,
         else if (MMT_PORT_MATCH(sport, dport, 1021)) return (PROTO_EXP1); // was generated automatically by MMTCrawler - @luongnv89
         else if (MMT_PORT_MATCH(sport, dport, 1022)) return (PROTO_EXP2); // was generated automatically by MMTCrawler - @luongnv89
         else if (MMT_PORT_MATCH(sport, dport, 1025)) return (PROTO_BLACKJACK); // was generated automatically by MMTCrawler - @luongnv89
-
+        else if (MMT_PORT_MATCH(sport, dport, 21)) return (PROTO_FTP);//File Transfer Protocol . FTP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 22)) return (PROTO_SSH);//The Secure Shell (SSH) . SSH -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 23)) return (PROTO_TELNET);//Telnet -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 25)) return (PROTO_SMTP);//Simple Mail Transfer -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 69)) return (PROTO_TFTP);//Trivial File Transfer -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 80)) return (PROTO_HTTP);//World Wide Web HTTP Defined TXT keys: u=<username> p=<password> path=<path to . HTTP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);//Kerberos -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 123)) return (PROTO_NTP);//Network Time Protocol -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 143)) return (PROTO_IMAP);//Internet Message Access -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 147)) return (PROTO_ISO_IP);//ISO-IP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 161)) return (PROTO_SNMP);//SNMP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 177)) return (PROTO_XDMCP);//X Display Manager Control -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 179)) return (PROTO_BGP);//Border Gateway Protocol . BGP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 194)) return (PROTO_IRC);//Internet Relay Chat Protocol -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 269)) return (PROTO_MANET);//MANET Protocols -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 389)) return (PROTO_LDAP);//Lightweight Directory Access -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 398)) return (PROTO_KRYPTOLAN);//Kryptolan -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 554)) return (PROTO_RTSP);//Real Time Streaming Protocol -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 631)) return (PROTO_IPP);//IPP (Internet Printing -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 993)) return (PROTO_IMAPS);//imap4 protocol over TLS/SSL -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 1214)) return (PROTO_KAZAA);//KAZAA -was generated automatically by MMTCrawler - @luongnv89 - 
 
 
     }
@@ -1694,6 +1715,28 @@ unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
         else if (MMT_PORT_MATCH(sport, dport, 1021)) return (PROTO_EXP1); // was generated automatically by MMTCrawler - @luongnv89
         else if (MMT_PORT_MATCH(sport, dport, 1022)) return (PROTO_EXP2); // was generated automatically by MMTCrawler - @luongnv89
         else if (MMT_PORT_MATCH(sport, dport, 1025)) return (PROTO_BLACKJACK); // was generated automatically by MMTCrawler - @luongnv89
+        else if (MMT_PORT_MATCH(sport, dport, 21)) return (PROTO_FTP);//File Transfer Protocol . FTP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 22)) return (PROTO_SSH);//The Secure Shell (SSH) . SSH -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 23)) return (PROTO_TELNET);//Telnet -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 25)) return (PROTO_SMTP);//Simple Mail Transfer -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 69)) return (PROTO_TFTP);//Trivial File Transfer -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 80)) return (PROTO_HTTP);//World Wide Web HTTP Defined TXT keys: u=<username> p=<password> path=<path to . HTTP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);//Kerberos -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 123)) return (PROTO_NTP);//Network Time Protocol -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 143)) return (PROTO_IMAP);//Internet Message Access -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 147)) return (PROTO_ISO_IP);//ISO-IP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 161)) return (PROTO_SNMP);//SNMP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 177)) return (PROTO_XDMCP);//X Display Manager Control -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 179)) return (PROTO_BGP);//Border Gateway Protocol . BGP -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 194)) return (PROTO_IRC);//Internet Relay Chat Protocol -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 269)) return (PROTO_MANET);//MANET Protocols -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 389)) return (PROTO_LDAP);//Lightweight Directory Access -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 398)) return (PROTO_KRYPTOLAN);//Kryptolan -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 554)) return (PROTO_RTSP);//Real Time Streaming Protocol -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 631)) return (PROTO_IPP);//IPP (Internet Printing -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 993)) return (PROTO_IMAPS);//imap4 protocol over TLS/SSL -was generated automatically by MMTCrawler - @luongnv89 - 
+        else if (MMT_PORT_MATCH(sport, dport, 1214)) return (PROTO_KAZAA);//KAZAA -was generated automatically by MMTCrawler - @luongnv89 - 
+
 
     } else if(packet->udp) {
         sport = htons(packet->udp->source);
@@ -1725,6 +1768,7 @@ unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
         else if (MMT_PORT_MATCH(sport, dport, 775)) return (PROTO_ACMAINT_TRANSD); // was generated automatically by MMTCrawler - @luongnv89
         else if (MMT_PORT_MATCH(sport, dport, 998)) return (PROTO_PUPARP); // was generated automatically by MMTCrawler - @luongnv89
         else if (MMT_PORT_MATCH(sport, dport, 999)) return (PROTO_APPLIX); // was generated automatically by MMTCrawler - @luongnv89
+        else if (MMT_PORT_MATCH(sport, dport, 514)) return (PROTO_SYSLOG);//-was generated automatically by MMTCrawler - @luongnv89 -
 
     }
     return (PROTO_UNKNOWN);
