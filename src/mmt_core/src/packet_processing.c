@@ -379,6 +379,8 @@ const char *get_protocol_stack_name(uint32_t s_id) {
 }
 
 void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
+    // printf("Session expired: %lu\n",timed_out_session->session_id );
+    timed_out_session->mmt_handler->active_sessions_count--;
     int i = 0;
 
     // Clean session data for the different protocols in the session's protocol path
@@ -472,7 +474,7 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
                 // if(safe_to_delete_session != NULL){
                 //     safe_to_delete_session = NULL;
                 // }
-                mmt_handler->active_sessions_count --;
+                // mmt_handler->active_sessions_count --;
             }
                 //remove the timeout milestone from the hash
             delete_timeout_milestone(mmt_handler, counter);
