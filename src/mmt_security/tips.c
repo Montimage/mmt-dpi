@@ -371,7 +371,16 @@ void *get_xdata(long type, int size, void *str)
         case MMT_DATA_LAYERID:
         case MMT_DATA_POINT:
         case MMT_DATA_FILTER_STATE:
-
+        case MMT_DATA_POINTER:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+        case MMT_UNDEFINED_TYPE:
+             return NULL;                 //TODO verify if OK
+             break;
         default:
             (void)fprintf(stderr, "Error 2: Type [%ld], size [%d] not implemented yet, data type unknown.\n [%s]\n", type, size, (char *)data);
             exit(-1);
@@ -495,6 +504,17 @@ char *get_my_data(void *data1, short size, long type) {
         case MMT_DATA_FILTER_STATE:
             // TODO
             break;
+        case MMT_UNDEFINED_TYPE:
+        case MMT_DATA_POINTER:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+            // TODO verify if OK
+            break;
+             
         default:
             (void)fprintf(stderr, "Error 15.1: Type not implemented yet. Data type unknown.\n");
             exit(-1);
@@ -2031,9 +2051,22 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_POINT:
                     // TODO
                     break;
+                case MMT_DATA_POINTER:
+                    // TODO
+                    break;
                 case MMT_DATA_FILTER_STATE:
                     // TODO
                     break;
+                case MMT_UNDEFINED_TYPE:
+                case MMT_DATA_BUFFER:
+                case MMT_DATA_STRING_INDEX:
+                case MMT_DATA_PARENT:
+                case MMT_STATS:
+                case MMT_GENERIC_HEADER_LINE:
+                case MMT_STRING_DATA_POINTER:
+                    // TODO verify if OK
+                    break;
+
                 default:
                     (void)fprintf(stderr, "Error 15.2: Type not implemented yet. Data type unknown.\n");
                     exit(-1);
@@ -2267,6 +2300,17 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
         case MMT_DATA_TIMEARG:
         case MMT_DATA_TIMEVAL:
         case MMT_DATA_DATE:
+        case MMT_UNDEFINED_TYPE:
+        //case MMT_DATA_POINTER:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+            return NOT_VALID; //TODO verify if OK
+            break;
         default:
             (void)fprintf(stderr, "Error 36b: Comparing values is not possible. Type not implemented yet.\n");
             exit(-1);
@@ -2479,6 +2523,15 @@ int comp2(compare_value v1, compare_value v2, short ope)
             break;
         case MMT_DATA_FILTER_STATE:
         case MMT_DATA_TIMEARG:
+        case MMT_UNDEFINED_TYPE:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+            return NOT_VALID; //TODO verify if OK
+            break;
         default:
             (void)fprintf(stderr, "Error 36: Comparing values is not possible. Type not implemented yet.\n");
             exit(-1);
@@ -2612,6 +2665,29 @@ void * compute(compare_value v1, compare_value v2, short operator)
                 memcpy(uc0, &uc, sizeof (unsigned char));
             }
             return (void *)uc0;
+            break;
+        case MMT_UNDEFINED_TYPE:
+        case MMT_DATA_POINTER:
+        case MMT_DATA_MAC_ADDR:
+        case MMT_DATA_IP_NET:
+        case MMT_DATA_IP_ADDR:
+        case MMT_DATA_IP6_ADDR:
+        case MMT_DATA_PATH:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_CHAR:
+        case MMT_DATA_TIMEARG:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_FILTER_STATE:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_BINARY_DATA:
+        case MMT_BINARY_VAR_DATA:
+        case MMT_STRING_DATA:
+        case MMT_STRING_LONG_DATA:
+        case MMT_HEADER_LINE:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+            return NULL; //TODO verify if OK
             break;
         default:
             (void)fprintf(stderr, "Error 36a: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
@@ -2907,7 +2983,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 }
 
 
-void detected_corrupted_message(short print_option, rule *r, char *cause, short state)
+void detected_corrupted_message(short print_option, rule *r, char *cause, short state, struct timeval packet_time_stamp)
 {
     rule *temp = r;
     char *history;
@@ -2933,7 +3009,7 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
       	char *str = xmalloc( strlen( history ) + 3 );
       	sprintf( str, "{%s}", history );
 
-      	((op->callback_funct))( 0, verdict, type, cause, str );
+      	((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp);
 
         xfree( str );
       	xfree( verdict );
@@ -3050,7 +3126,7 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
                 //changed so that considered as a violated property (corrupted message):
                 c->valid = NOT_VALID;
                 store_history(pkt, SAME, curr_root, c, NULL, 0);
-                detected_corrupted_message(op->Print, c, "Corrupted message: due to an attack or error.", SATISFIED);
+                detected_corrupted_message(op->Print, c, "Corrupted message: due to an attack or error.", SATISFIED,pkt->p_hdr->ts);
                 return NOT_VALID;
             }
             //Need to use result_value
@@ -3322,7 +3398,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 		char *temp = xmalloc( strlen( history ) + 3 );
 		sprintf( temp, "{%s}", history );
 
-		((op->callback_funct))( prop_id, verdict, type, des, temp );
+		((op->callback_funct))( prop_id, verdict, type, des, temp ,pkt->p_hdr->ts);
 
         xfree( temp );
 		xfree( verdict );
@@ -3998,7 +4074,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
     return NOT_VALID;
 }
 
-void analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
+int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
 {
     if (p_meta == 0) {
         p_meta = get_protocol_id_by_name("META");
@@ -4101,6 +4177,7 @@ void analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
         curr_rule = temp;
     }
     xfree(cause);
+    return 0;
 }
 
 void init_options( mmt_handler_t *mmt )

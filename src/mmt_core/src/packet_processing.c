@@ -1222,20 +1222,28 @@ void free_handler_protocols_statistics(mmt_handler_t *mmt_handler) {
     }
 }
 
+uint64_t get_active_session_count(mmt_handler_t *mmt_handler){
+    if(mmt_handler == NULL){
+        return -1;
+    }else{
+        return mmt_handler->active_sessions_count;
+    }
+}
+
+
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
-    // ntoh_tcp_exit();
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
     // Clear timeout milestones
     clear_timeout_milestones(mmt_handler);
+    // Free the protocol structs
+    free_protocols_contexts(mmt_handler);
     // Free the attribute structs
     free_registered_extraction_attributes(mmt_handler);
     // Free the registered attribute handlers
     free_registered_attribute_handlers(mmt_handler);
     // Free the packet handlers structs
     free_registered_packet_handlers(mmt_handler);
-    // Free the protocol structs
-    free_protocols_contexts(mmt_handler);
     // Free protocol statistics
     free_handler_protocols_statistics(mmt_handler);
     // Free IP streams hashtable
@@ -2133,8 +2141,9 @@ void setDataLinkType(mmt_handler_t *mmt_handler, int dltype) {
     }
 }
 
-void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
-    printf("\npacket_id = %lu\n",ipacket->packet_id);
+
+int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
+    printf("\nPacket id: %lu\n",ipacket->packet_id);
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     unsigned i = 0;
     int quiet = args ? *((int*)args) : 0;
@@ -2152,6 +2161,7 @@ void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void 
         }
 
     }
+    return 0;
 }
 
 void print_string_upper(const char *str){
@@ -2751,13 +2761,62 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  * @param ipacket Packet to process
  */
  void process_packet_handler(ipacket_t *ipacket){
-    debug("process_packet_handler of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,ipacket->extra.index);
-    ipacket->extra.status = MMT_SKIP;
+    debug("process_packet_handler of ipacket: %"PRIu64"\n",ipacket->packet_id);
+    debug("Last packet_handler_id: %d",ipacket->last_callback_fct_id);
     packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;            
     while (temp_packet_handler != NULL) {
-        temp_packet_handler->function(ipacket, temp_packet_handler->args);
-        temp_packet_handler = temp_packet_handler->next;
+        if(ipacket->last_callback_fct_id == 0){
+            ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
+            int result = (temp_packet_handler->function(ipacket, temp_packet_handler->args));
+            if(result == 1){
+                debug("process_packet_handler result == 1  status of ipacket: %"PRIu64"\n",ipacket->packet_id);
+                return;
+            }
+            temp_packet_handler = temp_packet_handler->next;
+        }else{
+            temp_packet_handler = ipacket->mmt_handler->packet_handlers;
+            while(temp_packet_handler!= NULL && temp_packet_handler->packet_handler_id != ipacket->last_callback_fct_id){
+                temp_packet_handler = temp_packet_handler->next;
+                continue;
+            }
+            temp_packet_handler = temp_packet_handler->next;
+            if(temp_packet_handler != NULL ){
+                ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
+                int result = (temp_packet_handler->function(ipacket, temp_packet_handler->args));
+                if(result == 1){
+                    debug("process_packet_handler result == 1  status of ipacket: %"PRIu64"\n",ipacket->packet_id);
+                    return;
+                }
+                temp_packet_handler = temp_packet_handler->next;
+            }
+        } 
     }
+    
+    process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
+
+    if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
+        && (ipacket->data != ipacket->original_data)) {
+        // data was dynamically allocated during the reassembly process:
+        //   . free dynamically allocated ipacket->data
+        //   . reset ipacket->data to its original value
+        mmt_free((void *) ipacket->data);
+        ipacket->data = ipacket->original_data;
+    }
+
+    if(ipacket->internal_packet){
+        mmt_free(ipacket->internal_packet);
+    }
+    mmt_free((void *)ipacket->data);
+    mmt_free(ipacket); 
+}
+
+/**
+ * @brief Process packet_handler function 
+ * 
+ * @param ipacket Packet to process
+ */
+ void mmt_drop_packet(ipacket_t *ipacket){
+    debug("mmt_drop_packet of ipacket: %"PRIu64"\n",ipacket->packet_id);
     
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
@@ -2824,30 +2883,9 @@ void print_session_info(mmt_session_t *session){
  *                      MMT_SKIP     -> skips processing the packet - it will returned in the future
  */
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
-    debug("proto_packet_process of ipacket: %"PRIu64" at index %d and status: %d\n",ipacket->packet_id,index,ipacket->extra.status);
-    if(ipacket->extra.status == MMT_DROP){
-        debug("Going to drop this packet");
-        if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
-                    && (ipacket->data != ipacket->original_data)) {
-                    // data was dynamically allocated during the reassembly process:
-                    //   . free dynamically allocated ipacket->data
-                    //   . reset ipacket->data to its original value
-                    mmt_free((void *) ipacket->data);
-                    ipacket->data = ipacket->original_data;
-                }
-
-                if(ipacket->internal_packet){
-                    mmt_free(ipacket->internal_packet);
-                }
-                mmt_free((void *)ipacket->data);
-                mmt_free(ipacket); 
-        return MMT_DROP;
-    }
     
-    if(ipacket->extra.status == MMT_SKIP){
-        process_packet_handler(ipacket);
-        return MMT_SKIP;
-    }
+    debug("proto_packet_process of %"PRIu64" index: %d\n",ipacket->packet_id,index);
+    
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
     ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     int target = MMT_CONTINUE;
@@ -2878,30 +2916,20 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         //Attributes extraction
         proto_process_attribute_handlers(ipacket, index);
     }
-    //Update next
-    ipacket->extra.parent_stats = (proto_statistics_t*)parent_stats;
-    ipacket->extra.index = index+1;
-    ipacket->extra.next_process = (next_process_function)proto_packet_process;
-    
 
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
     if (target == MMT_CONTINUE) {
         /* Try to classify the encapsulated data */
         proto_packet_classify_next(ipacket, configured_protocol, index);
-        debug("proto_packet_process of ipacket (after classify_next): %"PRIu64" at index %d and status: %d\n",ipacket->packet_id,index,ipacket->extra.status);
         // Need to check if the ipacket is still exist
         // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
-        if(ipacket->extra.status == MMT_SKIP){ // Avoid calling process_packet_handler when the extra.status == MMT_SCKIP
-            return target;
-        }else{
-            if (ipacket->proto_hierarchy->len > (index + 1)) {
-                if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
-                        /* process the packet by the next encapsulated protocol */
-                    return proto_packet_process(ipacket, parent_stats, index + 1);
-                }
+        if (ipacket->proto_hierarchy->len > (index + 1)) {
+            if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
+                /* process the packet by the next encapsulated protocol */
+                return proto_packet_process(ipacket, parent_stats, index + 1);
             }
-            process_packet_handler(ipacket);
         }
+        process_packet_handler(ipacket);
     }
     return target;
 } 
@@ -2931,9 +2959,9 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
     ipacket->proto_classif_status->len = 0;
     ipacket->session = NULL;
     ipacket->mmt_handler = mmt;
-    ipacket->extra.status = MMT_CONTINUE;
     ipacket->internal_packet=NULL;
-
+    ipacket->last_callback_fct_id = 0;
+    // ipacket->extra.next_process = (next_process_function)process_packet_handler;
     update_last_received_packet(&mmt->last_received_packet, ipacket);
 
     //First set the meta protocol
@@ -2976,6 +3004,7 @@ if( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
 unsigned index = 0;
 
 ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
+debug("Packet address (packet_process): %p",ipacket);
 proto_packet_process(ipacket, NULL, index);
 
 return 1;

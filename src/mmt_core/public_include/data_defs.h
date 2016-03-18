@@ -30,16 +30,14 @@ typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
 typedef struct protocol_struct                  protocol_t;
 typedef struct ipacket_struct                   ipacket_t;
 typedef struct proto_statistics_struct          proto_statistics_t;
-typedef struct extra_struct                     extra_t;
-typedef int (*next_process_function) (ipacket_t * ipacket,proto_statistics_t * parent_stats,int index);
-
-typedef struct extra_struct{
-    proto_statistics_t * parent_stats;
-    int index;
-    int status;// MMT_CONTINUE/ MMT_SKIP
-    next_process_function next_process;
-}extra_t;
-
+// typedef struct extra_struct                     extra_t;
+// typedef void (*next_process_function) (ipacket_t * ipacket);
+// typedef struct extra_struct{
+    // proto_statistics_t * parent_stats;
+    // int index;
+    // int status;// MMT_CONTINUE/ MMT_SKIP
+    // next_process_function next_process;
+// }extra_t;
 //BW - TODO: de we really need to override these??
 /** Switches the order of bytes of a short int value */
 #define swab16(x) ((uint16_t)(                         \
@@ -105,7 +103,7 @@ struct ipacket_struct {
     pkthdr_t * p_hdr;                         /**< the meta-data of the packet */
     const u_char * data;                      /**< pointer to the packet data */
     const u_char * original_data;             /**< internal: - never modify it. pointer to the original packet data. It will be different than ipacket->data in case of IP assembled data*/
-    extra_t extra;                           /**< The extra field for tcp packet handler */
+    int last_callback_fct_id;                           /**< The extra field for tcp packet handler */
     proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */
     proto_hierarchy_t internal_proto_headers_offset; /**< internal: - never modify it.  the offsets corresponding to the protocol layers of this packet */
     proto_hierarchy_t internal_proto_classif_status; /**< internal: - never modify it.  the classification status of the protocols in the path */

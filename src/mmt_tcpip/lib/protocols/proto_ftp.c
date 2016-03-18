@@ -2149,7 +2149,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
 
     ftp_control_session_t *ftp_list_control = ftp_get_list_control_session(ipacket,index);
-    ftp_control_session_t *ftp_control;
+    ftp_control_session_t *ftp_control = NULL;
     ftp_data_session_t *ftp_data = NULL;
     if(tuple6->conn_type==MMT_FTP_CONTROL_CONNECTION){
         if(ipacket->session->session_data[index]){
