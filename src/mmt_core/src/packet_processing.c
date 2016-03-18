@@ -1222,6 +1222,15 @@ void free_handler_protocols_statistics(mmt_handler_t *mmt_handler) {
     }
 }
 
+uint64_t get_active_session_count(mmt_handler_t *mmt_handler){
+    if(mmt_handler == NULL){
+        return -1;
+    }else{
+        return mmt_handler->active_sessions_count;
+    }
+}
+
+
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);

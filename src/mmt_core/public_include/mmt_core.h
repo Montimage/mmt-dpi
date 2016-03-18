@@ -148,6 +148,17 @@ MMTAPI void MMTCALL mmt_close_handler(
     mmt_handler_t *mmt_handler
 );
 
+
+/**
+ * Get number of active session 
+ * @param  mmt_handler MMT Handler
+ * @return             number of active session
+ *                     -1 if the mmt_handler is NULL
+ */
+MMTAPI uint64_t MMTCALL get_active_session_count(
+    mmt_handler_t *mmt_handler
+);
+
 /**
  * Returns the protocol stack name given its identifier.
  * @param s_id The protocol stack identifier.
