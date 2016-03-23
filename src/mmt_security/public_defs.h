@@ -17,7 +17,7 @@ extern "C" {
 #include <time.h>
 #include <pcap/pcap.h>
 
-typedef void (*result_callback) (int prop_id, char *verdict, char *type, char *cause, char *history, struct timeval packet_timestamp);
+typedef void (*result_callback) (int prop_id, char *verdict, char *type, char *cause, char *history, struct timeval packet_timestamp,void *user_args);
 
 //--------------------------------- Command options ----------------------------------------------------
 typedef struct {
@@ -40,6 +40,7 @@ typedef struct {
   result_callback callback_funct_db_insert;
   int property_table[100];
   int event_table[1000];
+  void * user_args;
   pcap_t *pcap; //TODO: check if we need this! Normally the library should not depend on pcap! I think this should be deleted
   struct pcap_pkthdr p_pkthdr;  //TODO: same as previous comment, this should be removed, in all cases we should use our own packet
                                 //header structure defined in MMT extract lib
