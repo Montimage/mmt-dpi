@@ -1286,7 +1286,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  */
  void enable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
-        mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 1;
+        // Add this condition checking to reduce conflict in multi-thread
+        if(mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status==0){
+            mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 1;    
+        }
     }
 }
 
@@ -1297,7 +1300,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  */
  void disable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
-        mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 0;
+        // Add this condition checking to reduce conflict in multi-thread
+        if(mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status ==1){
+            mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 0;    
+        }
     }
 }
 
@@ -1308,7 +1314,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  */
  void enable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
-        mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 1;
+        // Add this condition checking to reduce conflict in multi-thread
+        if(mmt_handler->configured_protocols[proto_id].protocol->classify_next.status == 0){
+            mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 1;    
+        }
     }
 }
 
@@ -1319,7 +1328,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  */
  void disable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
-        mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 0;
+        // Add this condition checking to reduce conflict in multi-thread
+        if(mmt_handler->configured_protocols[proto_id].protocol->classify_next.status == 1){
+            mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 0;    
+        }
     }
 }
 
@@ -1338,6 +1350,8 @@ int init_extraction()
         }
         memset(configured_protocols[i], '\0', sizeof (protocol_t));
         configured_protocols[i]->is_registered = PROTO_NOT_REGISTERED;
+        configured_protocols[i]->data_analyser.status = 0;
+        configured_protocols[i]->classify_next.status = 0;
     }
 
     /////////// INITILIZING PROTO_META & PROTO_UNKNOWN //////////////////
