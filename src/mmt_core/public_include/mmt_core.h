@@ -30,7 +30,7 @@ extern "C" {
 #define ECITIZ_PROTO       0x1001  /**< Identifier of ECITIZ_PROTO */
 #endif
 
-#define PROTO_MAX_IDENTIFIER    10000    /**< Maximum number of configured protocols */
+#define PROTO_MAX_IDENTIFIER    1000    /**< Maximum number of configured protocols */
 
 #define PROTO_REGISTERED        1       /**< Registered protocol code */
 #define PROTO_NOT_REGISTERED    0       /**< Not registered protocol code */
