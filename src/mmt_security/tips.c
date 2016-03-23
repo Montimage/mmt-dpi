@@ -3009,7 +3009,7 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
       	char *str = xmalloc( strlen( history ) + 3 );
       	sprintf( str, "{%s}", history );
 
-      	((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp);
+      	((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
 
         xfree( str );
       	xfree( verdict );
@@ -3398,7 +3398,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 		char *temp = xmalloc( strlen( history ) + 3 );
 		sprintf( temp, "{%s}", history );
 
-		((op->callback_funct))( prop_id, verdict, type, des, temp ,pkt->p_hdr->ts);
+		((op->callback_funct))( prop_id, verdict, type, des, temp ,pkt->p_hdr->ts,(void *)op->user_args);
 
         xfree( temp );
 		xfree( verdict );
@@ -4307,16 +4307,18 @@ char * xml_summary()
 
 void init_sec_lib( mmt_handler_t *mmt, char * property_file,
         short option_satisfied, short option_not_satisfied, result_callback cont_funct,
-        result_callback db_create_funct, result_callback db_insert_funct)
+        result_callback db_create_funct, result_callback db_insert_funct, void * user_args)
 {
     op = (OPTIONS_struct *)xcalloc(1, sizeof (OPTIONS_struct));
     op->StartTime = time(NULL);
     op->Print = BOTH;
+    op->user_args = (void *)user_args;
     if (option_satisfied == 1 && option_not_satisfied == 0) op->Print = SATISFIED;
     if (option_satisfied == 0 && option_not_satisfied == 1) op->Print = NOT_SATISFIED;
     op->RuleFileName = strdup(property_file);
     op->callback_funct = cont_funct;
     op->RuleFile = open_file(op->RuleFileName, "r");
+    op->user_args = (void *)user_args;
     if (op->RuleFile == NULL) {
         (void)fprintf(stderr, "Error 104: Input rule file not found or incorrect file name: %s.\n", op->TraceFileName);
         exit(1);
