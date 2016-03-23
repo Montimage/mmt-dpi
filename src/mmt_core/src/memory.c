@@ -6,8 +6,8 @@
 #include "mmt_core.h"
 
 
-static uint64_t allocated = 0;
-static uint64_t freed     = 0;
+// static uint64_t allocated = 0;
+// static uint64_t freed     = 0;
 
 
 //  - - - - - - - - - - - - - -  //
@@ -25,7 +25,7 @@ void *mmt_malloc( size_t size )
    }
 
    *((size_t*)x0) = size;
-   allocated     += size;
+   // allocated     += size;
 
    return (void*)( x0 + sizeof( size_t ));
 }
@@ -63,7 +63,7 @@ void *mmt_realloc( void *x, size_t size )
    }
 
    *((size_t*)x1) = size;
-   allocated     += ( size - psz );
+   // allocated     += ( size - psz );
 
    return (void*)( x1 + sizeof( size_t ));
 }
@@ -74,15 +74,15 @@ void mmt_free( void *x )
    if( x == NULL ) return; // nothing to do
 
    uint8_t *x0 = (uint8_t*)x - sizeof( size_t );
-   freed += *((size_t*)x0);
+   // freed += *((size_t*)x0);
    free( x0 );
 }
 
 
-void mmt_meminfo( mmt_meminfo_t *m )
-{
-   m->allocated = allocated;
-   m->freed     = freed;
-}
+// void mmt_meminfo( mmt_meminfo_t *m )
+// {
+//    m->allocated = allocated;
+//    m->freed     = freed;
+// }
 
 /*EoF*/
