@@ -1874,7 +1874,7 @@ void * setup_ndn_context(void * proto_context, void * args) {
 }
 
 void mmt_init_classify_me_ndn() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION;
+    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NDN);
     MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_NDN);
