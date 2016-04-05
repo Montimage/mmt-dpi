@@ -1179,12 +1179,13 @@ int ip_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 }
 
 int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
-    int s = sizeof(mmt_tcpip_internal_packet_t);
-    ipacket->internal_packet = mmt_malloc (s);
-    memset(ipacket->internal_packet, 0, s);
-    ipacket->internal_packet->udp = NULL;
-    ipacket->internal_packet->tcp = NULL;
-    ipacket->internal_packet->packet_id = ipacket->packet_id;
+    // int s = sizeof(mmt_tcpip_internal_packet_t);
+    // ipacket->internal_packet = mmt_malloc (s);
+    // memset(ipacket->internal_packet, 0, s);
+    // ipacket->internal_packet->udp = NULL;
+    // ipacket->internal_packet->tcp = NULL;
+    // ipacket->internal_packet->packet_id = ipacket->packet_id;
+    ipacket->internal_packet = &((internal_ip_proto_context_t *) ((protocol_instance_t *) ipacket->session->protocol_container_context)->args)->packet;
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
 
     int ip_offset = get_packet_offset_at_index(ipacket, index);

@@ -180,9 +180,9 @@ struct packet_info_struct {
     uint32_t packet_id; /**< identifier of the packet. */
     unsigned int packet_len; /**< length of the packet. */
     struct timeval time; /**< time of arrival of the packet. */
-    // proto_hierarchy_t proto_hierarchy; /**< the protocol layers corresponding to this packet */
-    // proto_hierarchy_t proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
-    // proto_hierarchy_t proto_classif_status; /**< the classification status of the protocols in the path */
+    proto_hierarchy_t proto_hierarchy; /**< the protocol layers corresponding to this packet */
+    proto_hierarchy_t proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
+    proto_hierarchy_t proto_classif_status; /**< the classification status of the protocols in the path */
 };
 
 /**

@@ -2819,11 +2819,9 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
         ipacket->data = ipacket->original_data;
     }
 
-    if(ipacket->internal_packet){
-        mmt_free(ipacket->internal_packet);
-    }
-    mmt_free((void *)ipacket->data);
-    mmt_free(ipacket); 
+    // if(ipacket->internal_packet){
+        // mmt_free(ipacket->internal_packet);
+    // }
 }
 
 /**
@@ -2845,47 +2843,10 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
         ipacket->data = ipacket->original_data;
     }
 
-    if(ipacket->internal_packet){
-        mmt_free(ipacket->internal_packet);
-    }
-    mmt_free((void *)ipacket->data);
-    mmt_free(ipacket); 
+    // if(ipacket->internal_packet){
+        // mmt_free(ipacket->internal_packet);
+    // }
 }
-
-void print_session_info(mmt_session_t *session){
-    printf("[%lu,%u],",session->session_id,session->session_timeout_milestone);
-}
-
-// void print_all_session_id(mmt_session_t *session, long packet_id){
-//     long session_count = 0;
-//     printf("\nPacket Id: %lu", packet_id);
-//     printf("\nCurrent active session: %lu\n",session->mmt_handler->active_sessions_count);
-
-//     if(session == NULL){
-//         return;
-//     }
-//     session_count++;
-//     print_session_info(session);
-//     mmt_session_t * ss_pre = session->previous;
-//     printf("\nPrevious sessions: ");
-//     while(ss_pre != NULL){
-//         session_count++;
-//         print_session_info(ss_pre);
-//         ss_pre = ss_pre->previous;
-//     }
-//     mmt_session_t * ss_next = session->next;
-//     printf("\nNext sessions: ");
-//     while(ss_next != NULL){
-//         session_count++;
-//         print_session_info(ss_next);
-//         ss_next = ss_next->next;
-//     }
-
-//     if(session_count != session->mmt_handler->active_sessions_count){
-//         printf("\nBUG: list of session is not correct. Number of session in list: %lu",session_count);
-//     }
-//     printf("\nEnd of list sessions\n");
-// }   
 
 /**
  * Proccess packet for each protocol
@@ -2950,35 +2911,23 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     return target;
 } 
 
-void copy_ipacket_header(ipacket_t *ipacket,struct pkthdr *header){
-    ipacket->p_hdr = &ipacket->internal_p_hdr;
-    ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
-    ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
-    ipacket->p_hdr->caplen = header->caplen;
-    ipacket->p_hdr->len = header->len;
-    ipacket->p_hdr->user_args = header->user_args;
-}
 
-ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
-    ipacket_t *ipacket;
-    ipacket = mmt_malloc(sizeof(ipacket_t));
+void prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
     // TODO: configuration option whether mmt need to allocate data or just refer it.
-    ipacket->data=mmt_malloc(header->caplen);
-    memcpy((void *)ipacket->data,(void *)packet,header->caplen);
-    ipacket->original_data = ipacket->data;
-    ipacket->proto_hierarchy =&ipacket->internal_proto_hierarchy;
-    ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
-    ipacket->proto_classif_status = &ipacket->internal_proto_classif_status;
-    copy_ipacket_header(ipacket,header);
-    ipacket->proto_hierarchy->len = 0;
-    ipacket->proto_headers_offset->len = 0;
-    ipacket->proto_classif_status->len = 0;
-    ipacket->session = NULL;
-    ipacket->mmt_handler = mmt;
-    ipacket->internal_packet=NULL;
-    ipacket->last_callback_fct_id = 0;
-    // ipacket->extra.next_process = (next_process_function)process_packet_handler;
-    update_last_received_packet(&mmt->last_received_packet, ipacket);
+    mmt->current_ipacket.data=packet;
+    mmt->current_ipacket.original_data = packet;
+    mmt->current_ipacket.proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
+    mmt->current_ipacket.proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
+    mmt->current_ipacket.proto_classif_status = &mmt->last_received_packet.proto_classif_status;
+    mmt->current_ipacket.p_hdr = header;
+    mmt->current_ipacket.proto_hierarchy->len = 0;
+    mmt->current_ipacket.proto_headers_offset->len = 0;
+    mmt->current_ipacket.proto_classif_status->len = 0;
+    mmt->current_ipacket.session = NULL;
+    mmt->current_ipacket.mmt_handler = mmt;
+    mmt->current_ipacket.internal_packet=NULL;
+    mmt->current_ipacket.last_callback_fct_id = 0;
+    update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
 
     //First set the meta protocol
     classified_proto_t classified_proto;
@@ -2986,8 +2935,7 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
     classified_proto.offset = 0;
     classified_proto.status = Classified;
 
-    (void) set_classified_proto(ipacket, 0, classified_proto);
-    return ipacket;
+    (void) set_classified_proto(&mmt->current_ipacket, 0, classified_proto);
 }
 
 
@@ -3019,9 +2967,9 @@ if( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
 
 unsigned index = 0;
 
-ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
+prepare_ipacket(mmt, header, packet);
 debug("Packet address (packet_process): %p",ipacket);
-proto_packet_process(ipacket, NULL, index);
+proto_packet_process(&mmt->current_ipacket, NULL, index);
 
 return 1;
 }
