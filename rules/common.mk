@@ -1,4 +1,4 @@
-VERSION  := 1.4
+VERSION  := 1.5
 USR_LIB ?= /usr/lib
 MMT_INC ?= /usr/local/include/mmt
 OPT_MMT_PLUGINS ?= /opt/mmt/plugins
