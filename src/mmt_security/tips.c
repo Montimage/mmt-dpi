@@ -137,7 +137,7 @@ void * xmalloc(unsigned long size) {
    return retval;
 }
 void xfree(void *freeable) {
-   free(freeable);
+   if(freeable != NULL) free(freeable);
 }
 
 rule * create_rule()
@@ -297,7 +297,7 @@ void convert_mac_bytes_to_string(char **pszMACAddress, unsigned char *pbyMacAddr
             cSep, pbyMacAddressInBytes[5]& 0xff);
 }
 
-void *get_data(long type, int size, void *str)
+void *get_xdata(long type, int size, void *str)
 {
     //Only used when reading values from XML file
     unsigned char c = 0;
@@ -305,14 +305,15 @@ void *get_data(long type, int size, void *str)
     unsigned long l = 0;
     unsigned long long ll = 0L;
     void * data = (void *) xmalloc(size);
-    unsigned char *temp_MAC;
-    mmt_string_data_t *tmp;
+    unsigned char *temp_MAC = NULL;
+    mmt_string_data_t *tmp = NULL;
     switch (type) {
         case MMT_DATA_MAC_ADDR:
             temp_MAC = xmalloc(22);
             //str+4 to skip size of mmt_string_data_t structure
             convert_mac_string_to_byte((const char *) (str + 4), &temp_MAC);
             memcpy(data, (void *) temp_MAC, size);
+            if (temp_MAC != NULL) xfree(temp_MAC);
             return (void *) data;
             break;
         case MMT_U16_DATA:
@@ -357,7 +358,7 @@ void *get_data(long type, int size, void *str)
         	str[ hl->len - 1 ] = '\0';
         	hl->ptr = str;
         	return hl;
-
+            break;
         case MMT_DATA_TIMEVAL:
         case MMT_DATA_IP_ADDR:
         case MMT_DATA_IP6_ADDR:
@@ -370,19 +371,28 @@ void *get_data(long type, int size, void *str)
         case MMT_DATA_LAYERID:
         case MMT_DATA_POINT:
         case MMT_DATA_FILTER_STATE:
-
+        case MMT_DATA_POINTER:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+        case MMT_UNDEFINED_TYPE:
+             return NULL;                 //TODO verify if OK
+             break;
         default:
             (void)fprintf(stderr, "Error 2: Type [%ld], size [%d] not implemented yet, data type unknown.\n [%s]\n", type, size, (char *)data);
             exit(-1);
     }//end of switch
 }
 
-char *get_d(void *data1, short size, long type) {
+char *get_my_data(void *data1, short size, long type) {
     char *buff1 = xmalloc(100);
     char *buff0 = xmalloc(10);
     void * data2 = NULL;
     unsigned long L1=0,L2=0,L3=0,L4=0;
-    mmt_binary_data_t *db1;
+    mmt_binary_data_t *db1 = NULL;
     //mmt_header_line_t *t;
     int data_size=0, j=0, stop=0;
     buff1[0] = '\0';
@@ -494,10 +504,22 @@ char *get_d(void *data1, short size, long type) {
         case MMT_DATA_FILTER_STATE:
             // TODO
             break;
+        case MMT_UNDEFINED_TYPE:
+        case MMT_DATA_POINTER:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+            // TODO verify if OK
+            break;
+             
         default:
             (void)fprintf(stderr, "Error 15.1: Type not implemented yet. Data type unknown.\n");
             exit(-1);
     }//end of switch
+    xfree(buff0);
     return buff1;
 }
 
@@ -512,7 +534,7 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     long field_id = 0;
     long data_type_id = 0;
     short event_id = 0;
-    tuple *temp_tuple2;
+    tuple *temp_tuple2 = NULL;
 
     token1[0] = '\0';
     token2[0] = '\0';
@@ -577,7 +599,7 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                 //Copy (data, size, type) to output
                 char * d = NULL;
                 char * td = NULL;
-                d = get_d(data, *size, type);
+                d = get_my_data(data, *size, type);
                 td = d;
                 while (*td != '\0') {
                     *tempo = *td;
@@ -606,7 +628,7 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
             //Copy (data, size, type) to output
             char * d = NULL;
             char * td = NULL;
-            d = get_d(data, *size, type);
+            d = get_my_data(data, *size, type);
             td = d;
             while (*td != '\0') {
                 *tempo = *td;
@@ -692,7 +714,7 @@ void add_tuple_to_list_of_tuples(tuple *a_tuple)
             if (b_tuple->protocol_id == temp_tuple->protocol_id && b_tuple->field_id == temp_tuple->field_id
                     && b_tuple->data_type_id == temp_tuple->data_type_id && b_tuple->event_id == temp_tuple->event_id) {
                 found = YES;
-                if (b_tuple != NULL) xfree(b_tuple);
+                xfree(b_tuple);
                 break;
             }
             temp_tuple = temp_tuple->next;
@@ -984,7 +1006,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         new_rule->t.event_id = temp_rule->t.event_id;
         new_rule->t.data_size = temp_rule->t.data_size;
         new_rule->t.valid = VALID;
-        new_rule->t.data = (void *) get_data(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s));
+        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s));
         ;
         if (a_rule->list_of_sons == NULL) {
             a_rule->list_of_sons = new_rule;
@@ -1033,7 +1055,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
                 if (a_tuple->protocol_id == temp_tuple->protocol_id && a_tuple->field_id == temp_tuple->field_id
                         && a_tuple->data_type_id == temp_tuple->data_type_id && a_tuple->event_id == temp_tuple->event_id) {
                     found = YES;
-                    if (a_tuple != NULL) xfree(a_tuple);
+                    xfree(a_tuple);
                     break;
                 }
                 temp_tuple = temp_tuple->next;
@@ -1157,7 +1179,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         new_rule->t.event_id = temp_rule->t.event_id;
         new_rule->t.data_size = temp_rule->t.data_size;
         new_rule->t.valid = VALID;
-        new_rule->t.data = (void *) get_data(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token);
+        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token);
         ;
         if (a_rule->list_of_sons == NULL) {
             a_rule->list_of_sons = new_rule;
@@ -1436,7 +1458,7 @@ void recuperate_attributes(rule* root, rule *r)
             if (a_tuple->protocol_id == temp_tuple->protocol_id && a_tuple->field_id == temp_tuple->field_id
                     && a_tuple->data_type_id == temp_tuple->data_type_id) {
                 found = YES;
-                if (a_tuple != NULL) xfree(a_tuple);
+                xfree(a_tuple);
                 break;
             }
             temp_tuple = temp_tuple->next;
@@ -1725,7 +1747,7 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
     while(temp_lot != NULL){
       if(event_found(buff_ids, temp_lot->event_id) == NO){
         temp_lot->valid = NOT_YET;
-        if(temp_lot->data != NULL) xfree(temp_lot->data);
+        xfree(temp_lot->data);
       }else{
         temp_lot->data_size = temp_lot_orig->data_size;
         temp_lot->valid = temp_lot_orig->valid;
@@ -1747,7 +1769,7 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
     }
     set_events_to_not_yet(buff_ids, temp_rule, temp_orig);
   }
-  if(buff!=NULL)xfree(buff);
+  xfree(buff);
   return new_rule;
 }
 
@@ -1965,7 +1987,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     break;
                 case MMT_HEADER_LINE:
                 	//parse_mmt_header_line( &data1, & data_size );
-                    buff = malloc ((((mmt_header_line_t *)data1)->len) + 1);
+                    buff = xmalloc ((((mmt_header_line_t *)data1)->len) + 1);
                     strncpy(buff, ((mmt_header_line_t *)data1)->ptr, ((mmt_header_line_t *)data1)->len);
                     buff[((mmt_header_line_t *)data1)->len] ='\0';
 					(void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
@@ -2029,9 +2051,22 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_POINT:
                     // TODO
                     break;
+                case MMT_DATA_POINTER:
+                    // TODO
+                    break;
                 case MMT_DATA_FILTER_STATE:
                     // TODO
                     break;
+                case MMT_UNDEFINED_TYPE:
+                case MMT_DATA_BUFFER:
+                case MMT_DATA_STRING_INDEX:
+                case MMT_DATA_PARENT:
+                case MMT_STATS:
+                case MMT_GENERIC_HEADER_LINE:
+                case MMT_STRING_DATA_POINTER:
+                    // TODO verify if OK
+                    break;
+
                 default:
                     (void)fprintf(stderr, "Error 15.2: Type not implemented yet. Data type unknown.\n");
                     exit(-1);
@@ -2265,6 +2300,17 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
         case MMT_DATA_TIMEARG:
         case MMT_DATA_TIMEVAL:
         case MMT_DATA_DATE:
+        case MMT_UNDEFINED_TYPE:
+        //case MMT_DATA_POINTER:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+            return NOT_VALID; //TODO verify if OK
+            break;
         default:
             (void)fprintf(stderr, "Error 36b: Comparing values is not possible. Type not implemented yet.\n");
             exit(-1);
@@ -2477,6 +2523,15 @@ int comp2(compare_value v1, compare_value v2, short ope)
             break;
         case MMT_DATA_FILTER_STATE:
         case MMT_DATA_TIMEARG:
+        case MMT_UNDEFINED_TYPE:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+            return NOT_VALID; //TODO verify if OK
+            break;
         default:
             (void)fprintf(stderr, "Error 36: Comparing values is not possible. Type not implemented yet.\n");
             exit(-1);
@@ -2610,6 +2665,29 @@ void * compute(compare_value v1, compare_value v2, short operator)
                 memcpy(uc0, &uc, sizeof (unsigned char));
             }
             return (void *)uc0;
+            break;
+        case MMT_UNDEFINED_TYPE:
+        case MMT_DATA_POINTER:
+        case MMT_DATA_MAC_ADDR:
+        case MMT_DATA_IP_NET:
+        case MMT_DATA_IP_ADDR:
+        case MMT_DATA_IP6_ADDR:
+        case MMT_DATA_PATH:
+        case MMT_DATA_BUFFER:
+        case MMT_DATA_CHAR:
+        case MMT_DATA_TIMEARG:
+        case MMT_DATA_STRING_INDEX:
+        case MMT_DATA_FILTER_STATE:
+        case MMT_DATA_PARENT:
+        case MMT_STATS:
+        case MMT_BINARY_DATA:
+        case MMT_BINARY_VAR_DATA:
+        case MMT_STRING_DATA:
+        case MMT_STRING_LONG_DATA:
+        case MMT_HEADER_LINE:
+        case MMT_GENERIC_HEADER_LINE:
+        case MMT_STRING_DATA_POINTER:
+            return NULL; //TODO verify if OK
             break;
         default:
             (void)fprintf(stderr, "Error 36a: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
@@ -2769,8 +2847,8 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
               tmp_v->size = tmp_r->t.data_size;
               tmp_v->data = (void *) xcalloc(1, tmp_v->size);
               memcpy(tmp_v->data, data, tmp_v->size);
-              xfree(data);
             }
+            xfree(data);
     }
     if (v1.found == NOT_FOUND) {
         tmp_r = r1;
@@ -2816,13 +2894,13 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
     }
 
     if ((v1.found == SKIP) || (v2.found == SKIP)){
-        if (v1.data != NULL) xfree(v1.data);
-        if (v2.data != NULL) xfree(v2.data);
+        xfree(v1.data);
+        xfree(v2.data);
         return VALID;
     }
     if ((v1.found == NOT_FOUND) || (v2.found == NOT_FOUND)){
-        if (v1.data != NULL) xfree(v1.data);
-        if (v2.data != NULL) xfree(v2.data);
+        xfree(v1.data);
+        xfree(v2.data);
         return NOT_VALID;
     }
     if (action == COMPARE) {
@@ -2831,8 +2909,8 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
     } else if (action == COMPUTE) {
         *result_value = compute(v1, v2, operator);
     }
-    if (v1.data != NULL) xfree(v1.data);
-    if (v2.data != NULL) xfree(v2.data);
+    xfree(v1.data);
+    xfree(v2.data);
     // returns VALID or NOT_VALID
     return ret;
 }
@@ -2897,15 +2975,15 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 				(void)strcpy(type, "attack");
 				break;
 	}
-	*str_verdict = malloc (strlen(verdict) + 1); 
+	*str_verdict = xmalloc (strlen(verdict) + 1); 
 	strcpy( *str_verdict, verdict );
 
-	*str_type = malloc(strlen(type) +1);
+	*str_type = xmalloc(strlen(type) +1);
 	strcpy( *str_type, type );
 }
 
 
-void detected_corrupted_message(short print_option, rule *r, char *cause, short state)
+void detected_corrupted_message(short print_option, rule *r, char *cause, short state, struct timeval packet_time_stamp)
 {
     rule *temp = r;
     char *history;
@@ -2928,13 +3006,14 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
 		if( history[ strlen( history ) - 1 ] == ',')
 			history[ strlen( history ) - 1 ] = '\0';
 
-      	char *str = malloc( strlen( history ) + 3 );
+      	char *str = xmalloc( strlen( history ) + 3 );
       	sprintf( str, "{%s}", history );
 
-      	((op->callback_funct))( 0, verdict, type, cause, str );
+      	((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
 
-      	if(verdict != NULL) xfree( verdict );
-      	if(type != NULL)    xfree( type );
+        xfree( str );
+      	xfree( verdict );
+      	xfree( type );
     }
     return;
 }
@@ -3047,7 +3126,7 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
                 //changed so that considered as a violated property (corrupted message):
                 c->valid = NOT_VALID;
                 store_history(pkt, SAME, curr_root, c, NULL, 0);
-                detected_corrupted_message(op->Print, c, "Corrupted message: due to an attack or error.", SATISFIED);
+                detected_corrupted_message(op->Print, c, "Corrupted message: due to an attack or error.", SATISFIED,pkt->p_hdr->ts);
                 return NOT_VALID;
             }
             //Need to use result_value
@@ -3316,13 +3395,14 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 		if( history[ strlen( history ) - 1 ] == ',')
 			history[ strlen( history ) - 1 ] = '\0';
 
-		char *temp = malloc( strlen( history ) + 3 );
+		char *temp = xmalloc( strlen( history ) + 3 );
 		sprintf( temp, "{%s}", history );
 
-		((op->callback_funct))( prop_id, verdict, type, des, temp );
+		((op->callback_funct))( prop_id, verdict, type, des, temp ,pkt->p_hdr->ts,(void *)op->user_args);
 
-		if( verdict != NULL ) xfree( verdict );
-		if( type != NULL)     xfree( type );
+        xfree( temp );
+		xfree( verdict );
+		xfree( type );
     }
 
     // TODO: Folder where the scripts are installed is current folder
@@ -3383,15 +3463,15 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                 }
                 short found = NOT_FOUND; //not used in this context
                 data = funct_get_params_and_execute( pkt, NO, LIB_NAME, funct_name, data_size, top_tuple, r->list_of_tuples, &found);
-                if (data) xfree(data);
+                xfree(data);
                 a_tuple = top_tuple;
                 while (a_tuple != NULL) {
                     new_tuple = a_tuple;
                     a_tuple = a_tuple->next;
-                    if (new_tuple->data)xfree(new_tuple->data);
+                    xfree(new_tuple->data);
                     xfree(new_tuple);
                 }
-                if (funct_name) xfree(funct_name);
+                xfree(funct_name);
             }
         }
     }
@@ -3994,7 +4074,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
     return NOT_VALID;
 }
 
-void analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
+int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
 {
     if (p_meta == 0) {
         p_meta = get_protocol_id_by_name("META");
@@ -4097,6 +4177,7 @@ void analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
         curr_rule = temp;
     }
     xfree(cause);
+    return 0;
 }
 
 void init_options( mmt_handler_t *mmt )
@@ -4145,6 +4226,7 @@ void print_summary()
 
 char * xml_summary()
 {
+    //if used in the main.c needs to be freed
     int sp = 0;
     int spb = 0;
     rule *temp = top_rule;
@@ -4225,16 +4307,18 @@ char * xml_summary()
 
 void init_sec_lib( mmt_handler_t *mmt, char * property_file,
         short option_satisfied, short option_not_satisfied, result_callback cont_funct,
-        result_callback db_create_funct, result_callback db_insert_funct)
+        result_callback db_create_funct, result_callback db_insert_funct, void * user_args)
 {
     op = (OPTIONS_struct *)xcalloc(1, sizeof (OPTIONS_struct));
     op->StartTime = time(NULL);
     op->Print = BOTH;
+    op->user_args = (void *)user_args;
     if (option_satisfied == 1 && option_not_satisfied == 0) op->Print = SATISFIED;
     if (option_satisfied == 0 && option_not_satisfied == 1) op->Print = NOT_SATISFIED;
     op->RuleFileName = strdup(property_file);
     op->callback_funct = cont_funct;
     op->RuleFile = open_file(op->RuleFileName, "r");
+    op->user_args = (void *)user_args;
     if (op->RuleFile == NULL) {
         (void)fprintf(stderr, "Error 104: Input rule file not found or incorrect file name: %s.\n", op->TraceFileName);
         exit(1);

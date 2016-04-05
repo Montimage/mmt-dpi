@@ -70,20 +70,25 @@ extern "C" {
                             This means that processing at the current protocol will continue, but
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
-/**
- * Generic packet handler callback
- */
-typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+#define MMT_VERSION "1.4";
+
 
 /**
  * Generic packet handler callback
  */
-typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+// typedef void (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+
+/**
+ * Generic packet handler callback
+ */
+typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
 
 /**
  * Signature of the session timeout handler.
  */
 typedef void (*generic_session_timeout_handler_function)(const mmt_session_t * expired_session, void * args);
+
+typedef void (*generic_session_timer_handler_function)(const mmt_session_t * head_session, void * args);
 
 /**
  * Signature of the attribute handler function
@@ -143,6 +148,17 @@ MMTAPI void MMTCALL mmt_close_handler(
     mmt_handler_t *mmt_handler
 );
 
+
+/**
+ * Get number of active session 
+ * @param  mmt_handler MMT Handler
+ * @return             number of active session
+ *                     -1 if the mmt_handler is NULL
+ */
+MMTAPI uint64_t MMTCALL get_active_session_count(
+    mmt_handler_t *mmt_handler
+);
+
 /**
  * Returns the protocol stack name given its identifier.
  * @param s_id The protocol stack identifier.
@@ -180,6 +196,18 @@ MMTAPI int MMTCALL register_packet_handler(
 );
 
 /**
+ * Process packet handlers of a packet
+ * @param  ipacket packet
+ * @return         
+ */
+MMTAPI void MMTCALL process_packet_handler(ipacket_t * ipacket);
+/**
+ * Drop a packet - stop continueing process the packet
+ * @param  ipacket packet to be dropped
+ * @return         
+ */
+MMTAPI void MMTCALL mmt_drop_packet(ipacket_t * ipacket);
+/**
  * Unregisters a packet handler, returns a positive value on success, 0 otherwise.
  * @param mmt_handler pointer to the mmt handler we want to unregister the packet handler from
  * @param packet_handler_id the identifier of the packet handler
@@ -203,6 +231,14 @@ MMTAPI int MMTCALL register_session_timeout_handler(
     generic_session_timeout_handler_function session_expiry_handler_fct,
     void *user
 );
+
+
+MMTAPI int MMTCALL register_session_timer_handler(
+    mmt_handler_t *mmt_handler,
+    generic_session_timer_handler_function session_timer_handler_fct,
+    void *user
+);
+
 
 /**
  * Returns a positive value if the attribute identifier by the given protocol and attribute ids is already registered, 0 otherwise.
@@ -399,7 +435,7 @@ MMTAPI int MMTCALL unregister_attribute_handler_by_name(
  * extracted attributes.
  * @param user user argument. It has no impact at all in this function.
  */
-MMTAPI void MMTCALL debug_extracted_attributes_printout_handler(
+MMTAPI int MMTCALL debug_extracted_attributes_printout_handler(
     const ipacket_t *ipacket,
     void *user
 );
@@ -433,6 +469,20 @@ MMTAPI int MMTCALL packet_process(
     mmt_handler_t *mmt_handler,
     struct pkthdr *header,
     const u_char *packet
+);
+
+/**
+ * Print out pretty list all attributes of all protocol
+ * @return [description]
+ */
+MMTAPI void MMTCALL mmt_print_all_protocols();
+/**
+ * This will be call from probe when probe want to do something from library
+ * @param  mmt_handler pointer to the mmt_handler we want to do the action
+ * @param  user_data   [description]
+ */
+MMTAPI void MMTCALL process_session_timer_handler(
+    mmt_handler_t *mmt_handler
 );
 
 /**
@@ -730,6 +780,12 @@ MMTAPI void MMTCALL iterate_through_mmt_handlers(
     generic_handler_iteration_callback iterator_fct,
     void *user
 );
+
+/**
+ * Get the current version of mmt-sdk
+ * @return current version of mmt-sdk
+ */
+MMTAPI char* MMTCALL mmt_version();
 
 /**
  * Memory management helpers

@@ -20,6 +20,7 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
+#define NDN_MAX_EXPIRED_TIME 360 // 360 seconds : Maximum number of time for interestlifetime and freshnessperiod
 enum ndn_content_type
 {
 	NDN_CONTENT_TYPE_BLOB=0,
@@ -114,6 +115,14 @@ char *ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len);
  */	
 ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length);
 
+/**
+ * Get the root node of an NDN packet
+ * @param  payload     ndn payload
+ * @param  payload_len length of ndn payload
+ * @return             NULL if the payload is not NDN payload
+ *                     pointer points to the root of NDN packet
+ */
+ndn_tlv_t * ndn_TLV_get_root(char* payload, int payload_len);
 
 /**
  * Find a node with input type from a root
@@ -276,6 +285,107 @@ char * ndn_data_content_extraction_payload(char *payload,int payload_len);
 //  * @return             [description]
 //  */
 // char * ndn_data_signature_value_extraction_payload(char *payload,int payload_len);
+
+///---- NDN SESSION ---///
+
+/**
+ * The tuple of 3 parameter to identify a NDN session
+ */
+typedef struct ndn_tuple3_struct{
+	char * src_MAC;
+	char * dst_MAC;
+	char * name;
+	uint8_t packet_type; // The type of packet which we get the tuple3 from 
+}ndn_tuple3_t;
+
+/**
+ * NDN session structure
+ */
+typedef struct ndn_session_struct{
+	uint64_t session_id;	// Session ID
+	ndn_tuple3_t * tuple3;				/** tuple 3 which identify a NDN session*/
+	struct timeval * s_init_time;              /**< indicates the time when the session was first detected. */
+    struct timeval * s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
+    uint32_t interest_lifeTime[2];          /**< The lifeTime value of the last Interest packet */
+    uint32_t data_freshnessPeriod[2];      /**< The freshnessPeriod value of the last Data packet*/
+    uint64_t nb_interest_packet[2];      /**< Number of interest packet */
+    uint64_t data_volume_interest_packet[2];      /**< Total data volume of interest packet */
+    uint64_t ndn_volume_interest_packet[2]; /** Total length of ndn data*/
+    uint64_t nb_data_packet[2];       /**< Number of data packet */
+    uint64_t data_volume_data_packet[2];      /**< Total data volume of data packet */
+    uint64_t ndn_volume_data_packet[2];      /**< Total length of ndn packet */
+    struct ndn_session_struct *next; 
+    void * user_arg; // User argument pointer
+    uint8_t current_direction; // Current direction: 0 - from tuple3->src_MAC to tuple3->dst_MAC ; 1 - otherway
+    uint8_t is_expired; // 1 - session expired, 0 - session is not expired
+    struct timeval * last_reported_time;
+}ndn_session_t;
+
+
+/**
+ * NDN protocol context arguments - use to fire event when the protocol needs to cleanup the context
+ */
+typedef struct ndn_proto_context_struct{
+	ndn_session_t * dummy_session;
+	ipacket_t * dummy_packet;
+	unsigned proto_index;
+}ndn_proto_context_t;
+
+
+
+/**
+ * Create a ndn_tuple3_t structure
+ * @return a pointer points to new ndn tuple3 structure
+ */
+ndn_tuple3_t * ndn_new_tuple3();
+
+/**
+ * Free a ndn tuple3 structure
+ * @param t3 ndn tupe3 structure is going to be freed
+ */
+void ndn_free_tuple3(ndn_tuple3_t * t3);
+
+/**
+ * Compare 2 ndn tuple3
+ * @param  t1 first tuple3
+ * @param  t2 second tuple3
+ * @return    0 if they have :
+ *              	different name
+ *               	t1 is NULL but t2 is not NULL
+ *               	t2 is NULL but t1 is not NULL 	
+ *               	same name, same src_MAC but different dst_MAC
+ *               	same name, same dst_MAC but different src_MAC
+ *               	same name, different MAC address
+ *            1 if they have the same name, same src_MAC, same dst_MAC
+ *            2 if they have the same name, 2 MAC addresses are the same but different direction
+ *            3 if t1 and t2 are NULL
+ */
+uint8_t ndn_compare_tupe3(ndn_tuple3_t *t1 , ndn_tuple3_t *t2);
+
+
+/**
+ * Create a ndn session structure
+ * @return a pointer points to new ndn session
+ */
+ndn_session_t * ndn_new_session();
+
+/**
+ * Free a ndn session structure
+ * @param ndn_session the ndn session structure is going to be freed
+ */
+void ndn_free_session(ndn_session_t *ndn_session);
+
+
+/**
+ * Find a ndn session by given tuple3
+ * @param  t3 tuple3
+ * @return    NULL if :
+ *                 tuple3 is NULL
+ *                 list_sessions is NULL
+ *                 list_sessions does not contains any session which have the same tuple3 with given tuple3
+ *            a pointer points to the session which have the same tuple3 with given tuple3
+ */
+ndn_session_t * ndn_find_session_by_tuple3(ndn_tuple3_t *t3, ndn_session_t * list_sessions);
 
 #ifdef  __cplusplus
 }

@@ -30,16 +30,14 @@ typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
 typedef struct protocol_struct                  protocol_t;
 typedef struct ipacket_struct                   ipacket_t;
 typedef struct proto_statistics_struct          proto_statistics_t;
-typedef struct extra_struct                     extra_t;
-typedef int (*next_process_function) (ipacket_t * ipacket,proto_statistics_t * parent_stats,int index);
-
-typedef struct extra_struct{
-    proto_statistics_t * parent_stats;
-    int index;
-    int status;// MMT_CONTINUE/ MMT_SKIP
-    next_process_function next_process;
-}extra_t;
-
+// typedef struct extra_struct                     extra_t;
+// typedef void (*next_process_function) (ipacket_t * ipacket);
+// typedef struct extra_struct{
+    // proto_statistics_t * parent_stats;
+    // int index;
+    // int status;// MMT_CONTINUE/ MMT_SKIP
+    // next_process_function next_process;
+// }extra_t;
 //BW - TODO: de we really need to override these??
 /** Switches the order of bytes of a short int value */
 #define swab16(x) ((uint16_t)(                         \
@@ -105,7 +103,7 @@ struct ipacket_struct {
     pkthdr_t * p_hdr;                         /**< the meta-data of the packet */
     const u_char * data;                      /**< pointer to the packet data */
     const u_char * original_data;             /**< internal: - never modify it. pointer to the original packet data. It will be different than ipacket->data in case of IP assembled data*/
-    extra_t extra;                           /**< The extra field for tcp packet handler */
+    int last_callback_fct_id;                           /**< The extra field for tcp packet handler */
     proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */
     proto_hierarchy_t internal_proto_headers_offset; /**< internal: - never modify it.  the offsets corresponding to the protocol layers of this packet */
     proto_hierarchy_t internal_proto_classif_status; /**< internal: - never modify it.  the classification status of the protocols in the path */
@@ -154,6 +152,8 @@ struct proto_statistics_struct {
     uint64_t sessions_count;              /**< Total number of sessions seen by the protocol  on a particular protocol path */
     uint64_t timedout_sessions_count;     /**< Total number of timedout sessions (this is the difference between sessions count and active sessions count) on a particular protocol path */
     struct proto_statistics_struct *next; /**< next instance of statistics for the same protocol */
+    struct timeval first_packet_time; // The time of the first packet of the protocol
+    struct timeval last_packet_time; // The time of the last packet of the protocol
 };
 
 enum proto_stats_attr {
@@ -166,6 +166,8 @@ enum proto_stats_attr {
     PROTO_SESSIONS_COUNT,
     PROTO_ACTIVE_SESSIONS_COUNT,
     PROTO_TIMEDOUT_SESSIONS_COUNT,
+    PROTO_FIRST_PACKET_TIME,
+    PROTO_LAST_PACKET_TIME,
     PROTO_STATISTICS,
     PROTO_STATS_ATTRIBUTES_NB = PROTO_STATISTICS - PROTO_HEADER + 1,
 };
@@ -185,6 +187,8 @@ enum proto_common_attributes {
 #define PROTO_SESSIONS_COUNT_LABEL              "session_count"
 #define PROTO_ACTIVE_SESSIONS_COUNT_LABEL       "a_session_count"
 #define PROTO_TIMEDOUT_SESSIONS_COUNT_LABEL     "t_session_count"
+#define PROTO_FIRST_PACKET_TIME_LABEL           "first_packet_time"
+#define PROTO_LAST_PACKET_TIME_LABEL           "last_packet_time"
 #define PROTO_STATISTICS_LABEL                  "stats"
 #define PROTO_SESSION_LABEL                     "session"
 #define PROTO_SESSION_ID_LABEL                  "session_id"
@@ -572,6 +576,26 @@ MMTAPI uint32_t MMTCALL get_session_content_flags(
  * @return the number of retransmitted packets seen by the given session.
  */
 MMTAPI uint32_t MMTCALL get_session_retransmission_count(
+    const mmt_session_t *session
+);
+
+/**
+ * Get the next session of current session
+ * @param  session session
+ * @return         NULL if there is no next session
+ *                 A pointer points to the next session of current session
+ */
+MMTAPI const mmt_session_t MMTCALL * get_session_next(
+    const mmt_session_t *session
+);
+
+/**
+ * Get the previous session of current session
+ * @param  session current session
+ * @return         NULL if there is no previous session
+ *                 A pointer points to the previous session of current session
+ */
+MMTAPI const mmt_session_t MMTCALL * get_session_previous(
     const mmt_session_t *session
 );
 

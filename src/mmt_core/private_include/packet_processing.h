@@ -40,6 +40,8 @@ typedef struct attribute_handler_element_struct    attribute_handler_element_t;
 
 typedef struct session_expiry_handler_struct       session_expiry_handler_t;
 
+typedef struct session_timer_handler_struct        session_timer_handler_t;
+
 typedef struct mmt_classify_proto_struct           mmt_classify_me_t;
 typedef struct mmt_classify_next_struct            mmt_classify_next_t;
 typedef struct mmt_proto_data_analysis_proc_struct mmt_analyse_me_t;
@@ -233,6 +235,11 @@ struct session_expiry_handler_struct {
     void * args; /**< pointer to the user defined argument to pass with the handler*/
 };
 
+struct session_timer_handler_struct{
+    generic_session_timer_handler_function session_timer_handler_fct;
+    void *args;
+};
+
 struct mmt_classify_proto_struct {
     uint32_t weight;
     int (*classify_me) (ipacket_t * ipacket, unsigned index);
@@ -275,6 +282,8 @@ struct proto_statistics_internal_struct {
     uint64_t sessions_count; /**< Total number of sessions seen by the protocol */
     uint64_t timedout_sessions_count; /**< Total number of timedout sessions (this is the difference between sessions count and ative sessions count) */
     proto_statistics_internal_t* next; /**< next instance of statistics for the same protocol */
+    struct timeval first_packet_time; // The time of the first packet of the protocol
+    struct timeval last_packet_time; // The time of the last packet of the protocol
     protocol_instance_t * proto; /**< pointer to the protocol */
     void * encap_proto_stats; /**< Map including the statistics of encaprulated children protocols */
     proto_statistics_internal_t * parent_proto_stats; /**< pointer to the parent protocol stats */
@@ -346,6 +355,8 @@ struct mmt_handler_struct {
 
     void * timeout_milestones_map;
     session_expiry_handler_t session_expiry_handler;
+    
+    session_timer_handler_t session_timer_handler;    // This is the function registered by user and will be call from function process_timer_handler()
 
     packet_info_t last_received_packet;
     ipacket_t current_ipacket;

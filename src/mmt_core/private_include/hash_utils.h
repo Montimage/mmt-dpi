@@ -55,7 +55,7 @@ extern "C" {
     void clear_timeout_milestones(mmt_handler_t *mmt_handler);
     int force_session_timeout(mmt_handler_t *mmt_handler, mmt_session_t * session);
     void timeout_iteration_callback(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct);
-
+    void session_timer_iteration_callback(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct);
     int insert_protocol_stack_into_map(uint32_t key, void * value);
     void * get_protocol_stack_from_map(uint32_t key);
     int delete_protocol_stack_from_map(uint32_t key);

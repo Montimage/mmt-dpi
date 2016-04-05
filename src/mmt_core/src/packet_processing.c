@@ -17,6 +17,8 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <ctype.h>
+#include <string.h>
 // #include "libntoh.h"
 bool session_timeout_comp_fn_pt(uint32_t l_timeout, uint32_t r_timeout) {
     return (l_timeout < r_timeout);
@@ -291,6 +293,12 @@ int register_session_timeout_handler(mmt_handler_t *mmt_h, generic_session_timeo
     return 1;
 }
 
+int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_handler_function session_timer_handler_fct, void * args) {
+    mmt_h->session_timer_handler.session_timer_handler_fct = session_timer_handler_fct;
+    mmt_h->session_timer_handler.args = args;
+    return 1;
+}
+
 void base_packet_extraction(ipacket_t * ipacket, unsigned protocol_index);
 
 void update_last_received_packet(packet_info_t * last_packet, ipacket_t * ipacket) {
@@ -371,6 +379,8 @@ const char *get_protocol_stack_name(uint32_t s_id) {
 }
 
 void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
+    // printf("Session expired: %lu\n",timed_out_session->session_id );
+    timed_out_session->mmt_handler->active_sessions_count--;
     int i = 0;
 
     // Clean session data for the different protocols in the session's protocol path
@@ -404,6 +414,17 @@ void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_
         }
 
         cleanup_timedout_sessions(safe_to_delete_session);
+    }
+}
+
+void session_timer_handler_callback(void * timeout_milestone, void * milestone_sessions_list, void * args) {
+    // printf("session_timer_handler_callback \n");
+    mmt_handler_t * mmt_handler = (mmt_handler_t *) args;
+    mmt_session_t * current_session = (mmt_session_t *) milestone_sessions_list;
+    while (current_session != NULL) {
+        // printf("session_timer_handler_callback and session id: %lu\n",current_session->session_id);
+        mmt_handler->session_timer_handler.session_timer_handler_fct(current_session,mmt_handler->session_timer_handler.args);
+        current_session = current_session->next;
     }
 }
 
@@ -450,8 +471,12 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
 
                 cleanup_timedout_sessions(safe_to_delete_session);
 
+                // if(safe_to_delete_session != NULL){
+                //     safe_to_delete_session = NULL;
+                // }
+                // mmt_handler->active_sessions_count --;
             }
-            //remove the timeout milestone from the hash
+                //remove the timeout milestone from the hash
             delete_timeout_milestone(mmt_handler, counter);
         }
     }
@@ -821,18 +846,20 @@ void free_registered_protocols() {
 void free_protocols_contexts(mmt_handler_t *mmt_handler) {
     int i = 0;
     for (; i < PROTO_MAX_IDENTIFIER; i++) {
-        if (mmt_handler->configured_protocols[i].protocol->is_registered) {
-            if (mmt_handler->configured_protocols[i].protocol->has_session && mmt_handler->configured_protocols[i].sessions_map != NULL) {
-                clear_sessions_from_protocol_context(&mmt_handler->configured_protocols[i]);
-                delete_map_space(mmt_handler->configured_protocols[i].sessions_map);
-                mmt_handler->configured_protocols[i].sessions_map = NULL;
-            }
+        if(mmt_handler->configured_protocols[i].protocol != NULL){
+            if (mmt_handler->configured_protocols[i].protocol->is_registered) {
+                if (mmt_handler->configured_protocols[i].protocol->has_session && mmt_handler->configured_protocols[i].sessions_map != NULL) {
+                    clear_sessions_from_protocol_context(&mmt_handler->configured_protocols[i]);
+                    delete_map_space(mmt_handler->configured_protocols[i].sessions_map);
+                    mmt_handler->configured_protocols[i].sessions_map = NULL;
+                }
 
-            //Cleanup the protocol context if such a function is registered
-            if (mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup != NULL) {
-                ((generic_proto_context_cleanup_function) mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup)(&mmt_handler->configured_protocols[i], mmt_handler->configured_protocols[i].protocol->protocol_context_args);
-            }
-        }
+                //Cleanup the protocol context if such a function is registered
+                if (mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup != NULL) {
+                    ((generic_proto_context_cleanup_function) mmt_handler->configured_protocols[i].protocol->protocol_context_cleanup)(&mmt_handler->configured_protocols[i], mmt_handler->configured_protocols[i].protocol->protocol_context_args);
+                }
+            }    
+        }  
     }
 }
 
@@ -887,6 +914,30 @@ int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_ind
     }
     return 0;
 }
+
+int proto_first_packet_time_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    if(proto_stats){
+        // extracted_data->data = (void*)proto_stats->first_packet_time
+        memcpy(extracted_data->data,&proto_stats->first_packet_time, sizeof (struct timeval));
+        return 1;
+    }
+    return 0;
+}
+
+int proto_last_packet_time_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    if(proto_stats){
+        memcpy(extracted_data->data, &proto_stats->last_packet_time, sizeof (struct timeval));    
+        return 1;
+    }
+    return 0;
+}
+
 
 int proto_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
@@ -1013,6 +1064,9 @@ static attribute_metadata_t proto_stats_attributes_metadata[PROTO_STATS_ATTRIBUT
     {PROTO_ACTIVE_SESSIONS_COUNT, PROTO_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
     {PROTO_TIMEDOUT_SESSIONS_COUNT, PROTO_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
     {PROTO_STATISTICS, PROTO_STATISTICS_LABEL, MMT_STATS, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_stats_extraction},
+    {PROTO_FIRST_PACKET_TIME, PROTO_FIRST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_first_packet_time_extraction},
+    {PROTO_LAST_PACKET_TIME, PROTO_LAST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_last_packet_time_extraction},
+
 };
 
 static attribute_metadata_t proto_session_attr_metadata[PROTO_SESSION_ATTRIBUTES_NB] = {
@@ -1063,7 +1117,7 @@ void mmt_print_info(){
 
 mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * errbuf )
 {
-    mmt_print_info();
+    // mmt_print_info();
     int i = 0;
     protocol_stack_t * temp_stack = get_protocol_stack_from_map(stacktype);
     if (temp_stack == NULL) {
@@ -1126,6 +1180,9 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->session_expiry_handler.handler_fct = NULL;
     new_handler->session_expiry_handler.args = NULL;
 
+    new_handler->session_timer_handler.session_timer_handler_fct = NULL;
+    new_handler->session_timer_handler.args = NULL;
+
     //Enable protocol statistics (this is default config)
     enable_protocol_statistics((void *) new_handler);
 
@@ -1167,20 +1224,28 @@ void free_handler_protocols_statistics(mmt_handler_t *mmt_handler) {
     }
 }
 
+uint64_t get_active_session_count(mmt_handler_t *mmt_handler){
+    if(mmt_handler == NULL){
+        return -1;
+    }else{
+        return mmt_handler->active_sessions_count;
+    }
+}
+
+
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
-    // ntoh_tcp_exit();
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
     // Clear timeout milestones
     clear_timeout_milestones(mmt_handler);
+    // Free the protocol structs
+    free_protocols_contexts(mmt_handler);
     // Free the attribute structs
     free_registered_extraction_attributes(mmt_handler);
     // Free the registered attribute handlers
     free_registered_attribute_handlers(mmt_handler);
     // Free the packet handlers structs
     free_registered_packet_handlers(mmt_handler);
-    // Free the protocol structs
-    free_protocols_contexts(mmt_handler);
     // Free protocol statistics
     free_handler_protocols_statistics(mmt_handler);
     // Free IP streams hashtable
@@ -1188,6 +1253,7 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
 
     //Remove the handler from the registered handlers in the global context
     delete_key_value(mmt_configured_handlers_map, mmt_handler);
+
     mmt_free(mmt_handler);
 }
 
@@ -1220,7 +1286,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  */
  void enable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
-        mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 1;
+        // Add this condition checking to reduce conflict in multi-thread
+        if(mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status==0){
+            mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 1;    
+        }
     }
 }
 
@@ -1231,7 +1300,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  */
  void disable_protocol_analysis(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
-        mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 0;
+        // Add this condition checking to reduce conflict in multi-thread
+        if(mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status ==1){
+            mmt_handler->configured_protocols[proto_id].protocol->data_analyser.status = 0;    
+        }
     }
 }
 
@@ -1242,7 +1314,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  */
  void enable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
-        mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 1;
+        // Add this condition checking to reduce conflict in multi-thread
+        if(mmt_handler->configured_protocols[proto_id].protocol->classify_next.status == 0){
+            mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 1;    
+        }
     }
 }
 
@@ -1253,7 +1328,10 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
  */
  void disable_protocol_classification(mmt_handler_t *mmt_handler, uint32_t proto_id) {
     if (mmt_handler && is_valid_protocol_id(proto_id) > 0) {
-        mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 0;
+        // Add this condition checking to reduce conflict in multi-thread
+        if(mmt_handler->configured_protocols[proto_id].protocol->classify_next.status == 1){
+            mmt_handler->configured_protocols[proto_id].protocol->classify_next.status = 0;    
+        }
     }
 }
 
@@ -1272,6 +1350,8 @@ int init_extraction()
         }
         memset(configured_protocols[i], '\0', sizeof (protocol_t));
         configured_protocols[i]->is_registered = PROTO_NOT_REGISTERED;
+        configured_protocols[i]->data_analyser.status = 0;
+        configured_protocols[i]->classify_next.status = 0;
     }
 
     /////////// INITILIZING PROTO_META & PROTO_UNKNOWN //////////////////
@@ -2077,7 +2157,9 @@ void setDataLinkType(mmt_handler_t *mmt_handler, int dltype) {
     }
 }
 
-void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
+
+int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
+    printf("\nPacket id: %lu\n",ipacket->packet_id);
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     unsigned i = 0;
     int quiet = args ? *((int*)args) : 0;
@@ -2094,6 +2176,61 @@ void debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void 
             tmp_attribute = tmp_attribute->next;
         }
 
+    }
+    return 0;
+}
+
+void print_string_upper(const char *str){
+    int i=0;
+    while(str[i]){
+        printf("%c",toupper(str[i]));
+        i++;
+    }
+}
+
+void mmt_print_proto_info(protocol_t * proto){
+    printf("\nProto ID: %d",proto->proto_id);
+    printf("\nProto Name: PROTO_");
+    print_string_upper(proto->protocol_name);
+    printf("\nAttributes");
+    printf("\nname,scope,value,description\n");
+    int i=0;
+    for(i=0;i<300;i++){
+        const char * attributes_name = get_proto_attribute_name(proto,proto->proto_id,i);
+        if(attributes_name != NULL){
+            print_string_upper(proto->protocol_name);
+            printf("_");
+            print_string_upper(attributes_name);
+            printf(",");
+            int attr_scope = get_proto_attribute_scope(proto,proto->proto_id,i);
+            if(attr_scope ==1){
+                printf("SCOPE_PACKET");
+            }else if(attr_scope == 2){
+                printf("SCOPE_SESSION");
+            }else if(attr_scope == 4){
+                printf("SCOPE_SESSION_CHANGING");
+            }else if(attr_scope == 16){
+                printf("SCOPE_ON_DEMAND");
+            }else if(attr_scope == 0x10){
+                printf("SCOPE_EVENT");
+            }else {
+                printf("UNKNOWN");
+            }
+            printf(", val , desc\n");
+        }
+    }
+    printf("\n");
+}
+
+void mmt_print_all_protocols() {
+    mmt_print_info();
+    printf("\nMMT-SDK version: %s\n", mmt_version());
+    int i = 1;
+    for (; i < PROTO_MAX_IDENTIFIER; i++) {
+        if (is_registered_protocol(i)) {
+            protocol_t * temp = configured_protocols[i];
+            mmt_print_proto_info(temp);
+        }
     }
 }
 
@@ -2143,7 +2280,9 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             if (is_new_session) {
                 is_new_session = NEW_SESSION; //Enforce the use of "NEW_SESSION" value
                 // init session data
-                session->session_id = mmt_handler->sessions_count+1;
+                session->session_id = mmt_handler->sessions_count + 1;
+                session->next = NULL;
+                session->previous = NULL;
                 session->packet_count = 0;
                 session->data_volume = 0;
                 session->status = NonClassified;
@@ -2193,57 +2332,57 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 }
                 //Mark this protocol as done with the classification process
                 ipacket->proto_classif_status->proto_path[index] = PROTO_CLASSIFICATION_DONE;
+                
             } else {
                 // session timeout update
                 if (ipacket->p_hdr->ts.tv_sec > session->s_last_activity_time.tv_sec) {// No need to update the timeout if we are still in the same second
                     //if(!session->force_timeout) { //Sessions with force timeout should not be updated! they need to timeout :)
-                    if (update_session_timeout_milestone(mmt_handler, session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec,
-                        session->session_timeout_milestone, session) == 0) {
+                    if (update_session_timeout_milestone(mmt_handler, session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec,session->session_timeout_milestone, session) == 0) {
                         process_outofmemory_force_sessions_timeout(ipacket->mmt_handler, ipacket);
-                    insert_session_timeout_milestone(mmt_handler, session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec, session);
-                }
-                session->session_timeout_milestone = session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec;
+                        insert_session_timeout_milestone(mmt_handler, session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec, session);
+                    }
+                    session->session_timeout_milestone = session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec;
                     //}
+                }
+            }
+
+            //Now update the packet structure to point to the flow and the protocol hierarchy info
+            ipacket->proto_hierarchy = &session->proto_path;
+            ipacket->proto_headers_offset = &session->proto_headers_offset;
+            ipacket->proto_classif_status = &session->proto_classif_status;
+            ipacket->session = session;
+
+                //update the session basic statistics
+            session->packet_count++;
+            session->data_volume += ipacket->p_hdr->len;
+
+            session->s_last_activity_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+            session->s_last_activity_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+
+        } else {
+                //We arrive here if the protocol has session context but the sessionize reported NULL session
+                //This might be an out of memory problem! Check this out
+            if (is_new_session) {
+                process_outofmemory_force_sessions_timeout(ipacket->mmt_handler, ipacket);
+                is_new_session = 0;
             }
         }
 
-            //Now update the packet structure to point to the flow and the protocol hierarchy info
-        ipacket->proto_hierarchy = &session->proto_path;
-        ipacket->proto_headers_offset = &session->proto_headers_offset;
-        ipacket->proto_classif_status = &session->proto_classif_status;
-        ipacket->session = session;
-
-            //update the session basic statistics
-        session->packet_count++;
-        session->data_volume += ipacket->p_hdr->len;
-
-        session->s_last_activity_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
-        session->s_last_activity_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
-
     } else {
-            //We arrive here if the protocol has session context but the sessionize reported NULL session
-            //This might be an out of memory problem! Check this out
-        if (is_new_session) {
-            process_outofmemory_force_sessions_timeout(ipacket->mmt_handler, ipacket);
-            is_new_session = 0;
-        }
-    }
+            //The protocol does not maintain sessions by it own.
+            //Rather, it belongs to a session maintained by a parent protocol
 
-} else {
-        //The protocol does not maintain sessions by it own.
-        //Rather, it belongs to a session maintained by a parent protocol
-
-        //At this point we should check if the current protocol is newly detected or reclassified
-        //If this is the case, initialize its session data if required and copy its registered attributes to the session context
-    if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION))) {
-            //Initialize its session data if such initialization function exists
-        if (configured_protocol->protocol->session_data_init != NULL) {
-            ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
-        }
-            is_new_session = NEW_PROTO_IN_SESSION; //This is not a new session, rather a new protocol in the session
-        }
-        //Mark this protocol as done with the classification process
-        ipacket->proto_classif_status->proto_path[index] = PROTO_CLASSIFICATION_DONE;
+            //At this point we should check if the current protocol is newly detected or reclassified
+            //If this is the case, initialize its session data if required and copy its registered attributes to the session context
+            if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION))) {
+                //Initialize its session data if such initialization function exists
+                if (configured_protocol->protocol->session_data_init != NULL) {
+                    ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
+                }
+                is_new_session = NEW_PROTO_IN_SESSION; //This is not a new session, rather a new protocol in the session
+            }
+            //Mark this protocol as done with the classification process
+            ipacket->proto_classif_status->proto_path[index] = PROTO_CLASSIFICATION_DONE;
     }
     return is_new_session;
 }
@@ -2467,6 +2606,13 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
         proto_stats->data_volume += ipacket->p_hdr->len;
         proto_stats->payload_volume += ipacket->p_hdr->len - proto_offset;
         proto_stats->packets_count += 1;
+        // Update the fist packet
+        if(proto_stats->packets_count == 1){
+            proto_stats->first_packet_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+            proto_stats->first_packet_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+        }
+        proto_stats->last_packet_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+        proto_stats->last_packet_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
     }
     return proto_stats;
 }
@@ -2631,12 +2777,35 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  * @param ipacket Packet to process
  */
  void process_packet_handler(ipacket_t *ipacket){
-    debug("process_packet_handler of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,ipacket->extra.index);
-    ipacket->extra.status = MMT_SKIP;
+    debug("process_packet_handler of ipacket: %"PRIu64"\n",ipacket->packet_id);
+    debug("Last packet_handler_id: %d",ipacket->last_callback_fct_id);
     packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;            
     while (temp_packet_handler != NULL) {
-        temp_packet_handler->function(ipacket, temp_packet_handler->args);
-        temp_packet_handler = temp_packet_handler->next;
+        if(ipacket->last_callback_fct_id == 0){
+            ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
+            int result = (temp_packet_handler->function(ipacket, temp_packet_handler->args));
+            if(result == 1){
+                debug("process_packet_handler result == 1  status of ipacket: %"PRIu64"\n",ipacket->packet_id);
+                return;
+            }
+            temp_packet_handler = temp_packet_handler->next;
+        }else{
+            temp_packet_handler = ipacket->mmt_handler->packet_handlers;
+            while(temp_packet_handler!= NULL && temp_packet_handler->packet_handler_id != ipacket->last_callback_fct_id){
+                temp_packet_handler = temp_packet_handler->next;
+                continue;
+            }
+            temp_packet_handler = temp_packet_handler->next;
+            if(temp_packet_handler != NULL ){
+                ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
+                int result = (temp_packet_handler->function(ipacket, temp_packet_handler->args));
+                if(result == 1){
+                    debug("process_packet_handler result == 1  status of ipacket: %"PRIu64"\n",ipacket->packet_id);
+                    return;
+                }
+                temp_packet_handler = temp_packet_handler->next;
+            }
+        } 
     }
     
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
@@ -2658,6 +2827,67 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
 }
 
 /**
+ * @brief Process packet_handler function 
+ * 
+ * @param ipacket Packet to process
+ */
+ void mmt_drop_packet(ipacket_t *ipacket){
+    debug("mmt_drop_packet of ipacket: %"PRIu64"\n",ipacket->packet_id);
+    
+    process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
+
+    if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
+        && (ipacket->data != ipacket->original_data)) {
+        // data was dynamically allocated during the reassembly process:
+        //   . free dynamically allocated ipacket->data
+        //   . reset ipacket->data to its original value
+        mmt_free((void *) ipacket->data);
+        ipacket->data = ipacket->original_data;
+    }
+
+    if(ipacket->internal_packet){
+        mmt_free(ipacket->internal_packet);
+    }
+    mmt_free((void *)ipacket->data);
+    mmt_free(ipacket); 
+}
+
+void print_session_info(mmt_session_t *session){
+    printf("[%lu,%u],",session->session_id,session->session_timeout_milestone);
+}
+
+// void print_all_session_id(mmt_session_t *session, long packet_id){
+//     long session_count = 0;
+//     printf("\nPacket Id: %lu", packet_id);
+//     printf("\nCurrent active session: %lu\n",session->mmt_handler->active_sessions_count);
+
+//     if(session == NULL){
+//         return;
+//     }
+//     session_count++;
+//     print_session_info(session);
+//     mmt_session_t * ss_pre = session->previous;
+//     printf("\nPrevious sessions: ");
+//     while(ss_pre != NULL){
+//         session_count++;
+//         print_session_info(ss_pre);
+//         ss_pre = ss_pre->previous;
+//     }
+//     mmt_session_t * ss_next = session->next;
+//     printf("\nNext sessions: ");
+//     while(ss_next != NULL){
+//         session_count++;
+//         print_session_info(ss_next);
+//         ss_next = ss_next->next;
+//     }
+
+//     if(session_count != session->mmt_handler->active_sessions_count){
+//         printf("\nBUG: list of session is not correct. Number of session in list: %lu",session_count);
+//     }
+//     printf("\nEnd of list sessions\n");
+// }   
+
+/**
  * Proccess packet for each protocol
  * For examples: ETH->IP->TCP->FTP
  * index:        0  ->1 ->2  ->3    
@@ -2669,30 +2899,9 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  *                      MMT_SKIP     -> skips processing the packet - it will returned in the future
  */
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
-    debug("proto_packet_process of ipacket: %"PRIu64" at index %d and status: %d\n",ipacket->packet_id,index,ipacket->extra.status);
-    if(ipacket->extra.status == MMT_DROP){
-        debug("Going to drop this packet");
-        if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
-                    && (ipacket->data != ipacket->original_data)) {
-                    // data was dynamically allocated during the reassembly process:
-                    //   . free dynamically allocated ipacket->data
-                    //   . reset ipacket->data to its original value
-                    mmt_free((void *) ipacket->data);
-                    ipacket->data = ipacket->original_data;
-                }
-
-                if(ipacket->internal_packet){
-                    mmt_free(ipacket->internal_packet);
-                }
-                mmt_free((void *)ipacket->data);
-                mmt_free(ipacket); 
-        return MMT_DROP;
-    }
     
-    if(ipacket->extra.status == MMT_SKIP){
-        process_packet_handler(ipacket);
-        return MMT_SKIP;
-    }
+    debug("proto_packet_process of %"PRIu64" index: %d\n",ipacket->packet_id,index);
+    
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
     ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     int target = MMT_CONTINUE;
@@ -2714,6 +2923,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         //Update the protocol statistics
         parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
     }
+
     //Analyze packet data
     target = proto_packet_analyze(ipacket, configured_protocol, index);
     //Proceed with the extraction and the handlers notification for this protocol
@@ -2722,30 +2932,20 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         //Attributes extraction
         proto_process_attribute_handlers(ipacket, index);
     }
-    //Update next
-    ipacket->extra.parent_stats = (proto_statistics_t*)parent_stats;
-    ipacket->extra.index = index+1;
-    ipacket->extra.next_process = (next_process_function)proto_packet_process;
-    
 
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
     if (target == MMT_CONTINUE) {
         /* Try to classify the encapsulated data */
         proto_packet_classify_next(ipacket, configured_protocol, index);
-        debug("proto_packet_process of ipacket (after classify_next): %"PRIu64" at index %d and status: %d\n",ipacket->packet_id,index,ipacket->extra.status);
         // Need to check if the ipacket is still exist
         // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
-        if(ipacket->extra.status == MMT_SKIP){ // Avoid calling process_packet_handler when the extra.status == MMT_SCKIP
-            return target;
-        }else{
-            if (ipacket->proto_hierarchy->len > (index + 1)) {
-                if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
-                        /* process the packet by the next encapsulated protocol */
-                    return proto_packet_process(ipacket, parent_stats, index + 1);
-                }
+        if (ipacket->proto_hierarchy->len > (index + 1)) {
+            if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
+                /* process the packet by the next encapsulated protocol */
+                return proto_packet_process(ipacket, parent_stats, index + 1);
             }
-            process_packet_handler(ipacket);
         }
+        process_packet_handler(ipacket);
     }
     return target;
 } 
@@ -2775,9 +2975,9 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
     ipacket->proto_classif_status->len = 0;
     ipacket->session = NULL;
     ipacket->mmt_handler = mmt;
-    ipacket->extra.status = MMT_CONTINUE;
     ipacket->internal_packet=NULL;
-
+    ipacket->last_callback_fct_id = 0;
+    // ipacket->extra.next_process = (next_process_function)process_packet_handler;
     update_last_received_packet(&mmt->last_received_packet, ipacket);
 
     //First set the meta protocol
@@ -2788,6 +2988,12 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
 
     (void) set_classified_proto(ipacket, 0, classified_proto);
     return ipacket;
+}
+
+
+void process_session_timer_handler(mmt_handler_t *mmt){
+    // printf("process_session_timer_handler \n");
+    session_timer_iteration_callback(mmt, session_timer_handler_callback);
 }
 
 
@@ -2814,6 +3020,7 @@ if( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
 unsigned index = 0;
 
 ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
+debug("Packet address (packet_process): %p",ipacket);
 proto_packet_process(ipacket, NULL, index);
 
 return 1;
@@ -3482,3 +3689,8 @@ int mmt_attr_format(FILE * f, attribute_t * a) {
         return mmt_stats_format(f, attr);
     }
 }
+
+char * mmt_version(){
+    return MMT_VERSION;
+}
+

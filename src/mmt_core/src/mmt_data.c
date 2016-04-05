@@ -129,7 +129,7 @@ uint64_t get_session_ul_data_byte_count( const mmt_session_t *session )
 { return session->data_byte_volume_direction[session->setup_packet_direction]; }
 
 uint64_t get_session_dl_data_byte_count( const mmt_session_t *session )
-{ return session->data_byte_volume_direction[session->setup_packet_direction]; }
+{ return session->data_byte_volume_direction[!session->setup_packet_direction]; }
 
 struct timeval get_session_init_time( const mmt_session_t *session )
 { return session->s_init_time; }
@@ -151,6 +151,14 @@ uint32_t get_session_content_flags( const mmt_session_t *session )
 
 uint32_t get_session_retransmission_count( const mmt_session_t *session )
 { return session->tcp_retransmissions; }
+
+const mmt_session_t * get_session_next( const mmt_session_t *session )
+{   
+    return session->next; }
+
+const mmt_session_t * get_session_previous( const mmt_session_t *session )
+{ return session->previous; }
+
 
 uint32_t get_protocol_id_at_index(const ipacket_t * ipacket, unsigned index) {
     if (index > PROTO_PATH_SIZE)

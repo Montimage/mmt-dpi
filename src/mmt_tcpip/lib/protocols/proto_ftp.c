@@ -1742,6 +1742,9 @@ int ftp_packet_request_extraction(const ipacket_t * ipacket, unsigned proto_inde
     if(packet_type==MMT_FTP_PACKET_COMMAND){
         int offset = get_packet_offset_at_index(ipacket, proto_index);
         char *payload = (char*)&ipacket->data[offset];
+        if(payload[0]=='\0'){
+            return 0;
+        }
         int payload_len = ipacket->internal_packet->payload_packet_len;
         ftp_command_t * cmd = ftp_get_command(payload,payload_len);
         if(cmd && cmd->str_cmd){
@@ -1762,6 +1765,9 @@ int ftp_packet_request_parameter_extraction(const ipacket_t * ipacket, unsigned 
     if(packet_type==MMT_FTP_PACKET_COMMAND){
         int offset = get_packet_offset_at_index(ipacket, proto_index);
         char *payload = (char*)&ipacket->data[offset];
+        if(payload[0]=='\0'){
+            return 0;
+        }
         int payload_len = ipacket->internal_packet->payload_packet_len;
         ftp_command_t * cmd = ftp_get_command(payload,payload_len);
         if(cmd && cmd->param){
@@ -1782,6 +1788,9 @@ int ftp_packet_response_code_extraction(const ipacket_t * ipacket, unsigned prot
     if(packet_type==MMT_FTP_PACKET_RESPONSE){
         int offset = get_packet_offset_at_index(ipacket, proto_index);
         char *payload = (char*)&ipacket->data[offset];
+        if(payload[0]=='\0'){
+            return 0;
+        }
         int payload_len = ipacket->internal_packet->payload_packet_len;
         ftp_response_t * res = ftp_get_response(payload,payload_len);
         if(res && res->code){
@@ -1802,6 +1811,9 @@ int ftp_packet_response_value_extraction(const ipacket_t * ipacket, unsigned pro
     if(packet_type==MMT_FTP_PACKET_RESPONSE){
         int offset = get_packet_offset_at_index(ipacket, proto_index);
         char *payload = (char*)&ipacket->data[offset];
+        if(payload[0]=='\0'){
+            return 0;
+        }
         int payload_len = ipacket->internal_packet->payload_packet_len;
         ftp_response_t * res = ftp_get_response(payload,payload_len);
         if(res->code && res->value){
@@ -1883,6 +1895,9 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
     // int offset = get_packet_offset_at_index(ipacket, index);
 
     // char *payload = (char*)&ipacket->data[offset];
+ // if(payload[0]=='\0'){
+    // return 0;
+ // }
 
     // ftp_data_session_t *ftp_data = (ftp_data_session_t*)ipacket->session->session_data[index];
     
@@ -1904,6 +1919,9 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
     int offset = get_packet_offset_at_index(ipacket, index);
 
     char *payload = (char*)&ipacket->data[offset];
+    if(payload[0]=='\0'){
+        return ;
+    }
     uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
 
     ftp_command_t * command = ftp_get_command(payload,payload_len);
@@ -1999,6 +2017,9 @@ void ftp_response_packet(ipacket_t *ipacket,unsigned index,ftp_control_session_t
     int offset = get_packet_offset_at_index(ipacket, index);
 
     char *payload = (char*)&ipacket->data[offset];
+    if(payload[0]=='\0'){
+        return ;
+    }
     uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
 
     ftp_response_t * response = ftp_get_response(payload,payload_len);
@@ -2114,6 +2135,9 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     // int offset = get_packet_offset_at_index(ipacket, index);
     
     // char *payload = (char*)&ipacket->data[offset];
+    // if(payload[0]=='\0'){
+        // return 0;
+    // }
 
     // Make sure there is data to analayse
     if(ipacket->internal_packet->payload_packet_len==0){
@@ -2125,7 +2149,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
 
     ftp_control_session_t *ftp_list_control = ftp_get_list_control_session(ipacket,index);
-    ftp_control_session_t *ftp_control;
+    ftp_control_session_t *ftp_control = NULL;
     ftp_data_session_t *ftp_data = NULL;
     if(tuple6->conn_type==MMT_FTP_CONTROL_CONNECTION){
         if(ipacket->session->session_data[index]){
