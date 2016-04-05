@@ -1,0 +1,12 @@
+RELEASE NOTES
+---
+
+## Release version 1.5
+_05 April 2016_
+
+- No copy packet in sdk
+- Added new protocols: QUIC, NDN
+- Fixed some data race to work with multi-thread
+- Fixed some bugs in SDK
+
+
