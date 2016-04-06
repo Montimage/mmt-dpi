@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+## Release version 1.6
+06 April 2016
+- Added option to use mmt-reassembly with mmt-sdk
+- Has been tested with valgrind for: memory leak and multiple-thread
 
 ## Release version 1.5
 _05 April 2016_
