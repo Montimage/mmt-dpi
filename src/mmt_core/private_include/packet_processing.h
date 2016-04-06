@@ -360,7 +360,7 @@ struct mmt_handler_struct {
 
     packet_info_t last_received_packet;
     ipacket_t current_ipacket;
-
+    uint8_t has_reassembly; /* 0 - no reassembly, 1 - has reassembly*/
     uint64_t packet_count;
     uint64_t sessions_count;
     uint64_t active_sessions_count;
@@ -368,6 +368,7 @@ struct mmt_handler_struct {
     uint32_t attr_extraction_strategy;
     uint32_t stats_reporting_status;
     mmt_hashmap_t *ip_streams;
+    
 };
 
 
