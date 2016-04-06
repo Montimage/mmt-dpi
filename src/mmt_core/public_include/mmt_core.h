@@ -486,6 +486,26 @@ MMTAPI void MMTCALL process_session_timer_handler(
 );
 
 /**
+ * Register mmt_reassembly library
+ * @param  mmt_handler mmt handler
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI int MMTCALL register_mmt_reassembly(
+    mmt_handler_t *mmt_handler
+);
+
+/**
+ * Unregister mmt_reassembly library
+ * @param  mmt_handler mmt handler
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI int MMTCALL unregister_mmt_reassembly(
+    mmt_handler_t *mmt_handler
+);
+
+/**
  * Sets the timeout delay for the given session.
  * @param session pointer to the session to set its timeout delay
  * @param timeout_delay timeout delay value in seconds
