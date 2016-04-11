@@ -3784,6 +3784,18 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
+    /////////// INITILIZING PROTO_ORACLE //////////////////
+    if (!init_proto_redis_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_redis\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
+       /////////// INITILIZING PROTO_ORACLE //////////////////
+    if (!init_proto_vmware_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_vmware\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -3946,6 +3958,8 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_spotify, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_quic, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_oracle, 50);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_redis, 50);
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_vmware, 50);
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////////END OF INTER-PROTOCOL CLASSIFICATIONS ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
