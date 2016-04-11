@@ -70,7 +70,7 @@ extern "C" {
                             This means that processing at the current protocol will continue, but
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
-#define MMT_VERSION "1.6";
+#define MMT_VERSION "1.7";
 
 
 /**

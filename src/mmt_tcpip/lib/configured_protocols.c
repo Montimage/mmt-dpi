@@ -3930,7 +3930,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_guildwars, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_armagetron, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dropbox_udp, 50);
-    // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_skype_tcp, 60);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_skype_tcp, 60);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_skype_udp, 60);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_radius, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_citrix, 50);

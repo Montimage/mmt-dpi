@@ -184,7 +184,6 @@ extern "C" {
     void mmt_classify_me_guildwars(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_armagetron(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_dropbox(ipacket_t * ipacket, unsigned index);
-    void mmt_classify_me_skype(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_citrix(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_dcerpc(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_netflow(ipacket_t * ipacket, unsigned index);
