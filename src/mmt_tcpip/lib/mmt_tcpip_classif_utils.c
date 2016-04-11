@@ -439,6 +439,12 @@ static protocol_match doted_host_names[] = {
     {".siteadvisor.com", PROTO_SITEADVISOR, MMT_STATICSTRING_LEN(".siteadvisor.com")},
     {".sky.com", PROTO_SKY, MMT_STATICSTRING_LEN(".sky.com")},
     {".skype.com", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skype.com")},
+    { ".skype.",PROTO_SKYPE, MMT_STATICSTRING_LEN(".skype.") },
+    { ".skypeassets.",PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeassets.") },
+    { ".skypedata.", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypedata.") },
+    { ".skypeecs-",PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeecs-") },
+    { ".skypeforbusiness.",PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeforbusiness.") },
+    { ".lync.com",PROTO_SKYPE, MMT_STATICSTRING_LEN(".lync.com") },
     {".skyrock.com", PROTO_SKYROCK, MMT_STATICSTRING_LEN(".skyrock.com")},
     {".skysports.com", PROTO_SKYSPORTS, MMT_STATICSTRING_LEN(".skysports.com")},
     {".slate.com", PROTO_SLATE, MMT_STATICSTRING_LEN(".slate.com")},
@@ -955,6 +961,26 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->iph /* IPv4 only */) {
+
+        /**
+         * 
+    Skype (Microsoft CDN)
+    157.56.0.0/14, 157.60.0.0/16, 157.54.0.0/15
+    111.221.64.0 - 111.221.127.255
+    91.190.216.0/21 (AS198015 Skype Communications Sarl)
+    40.126.129.109/32
+    */
+
+        if (    
+                ((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x9D380000 /* 157.56.0.0 */)
+                || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x9D3C0000 /* 157.60.0.0 */)
+                || ((ntohl(packet->iph->daddr) & 0xFFFE0000 /* 255.254.0.0 */) == 0x9D360000 /* 157.54.0.0 */)
+                || ((ntohl(packet->iph->daddr) & 0xFFFFC000 /* 255.255.192.0 */) == 0x6FDD4000 /* 111.221.64.0 */)
+                || ((ntohl(packet->iph->daddr) & 0xFFFFF800 /* 255.255.248.0 */) == 0x5BBED800 /* 91.190.216.0 */)
+                || ((ntohl(packet->iph->daddr) & 0xFFFFFFFF /* 0xFFFFFFFF */) == 0x287F816D /* 40.126.129.109 */)) {
+            return PROTO_SKYPE;
+        }
+
         /*
            Twitter 199.59.148.0/22
          */
