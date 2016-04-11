@@ -191,7 +191,7 @@ int check_viber_udp(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     /* viber runs over tcp port 5243 or 7985 */
-    if (packet->udp->source == htons(5243) || packet->udp->dest == htons(5243) || packet->udp->source == htons(9785) || packet->udp->dest == htons(9785)) {
+    if (packet->udp->source == htons(5243) || packet->udp->dest == htons(5243) || packet->udp->source == htons(7985) || packet->udp->dest == htons(7985)) {
         if (packet->iph /* IPv4 only */) {
             /*
              * Viber is hosted over Amazon cloud
@@ -205,6 +205,25 @@ int check_viber_udp(ipacket_t * ipacket) {
              * 176.34.0.0/16
              * These are not the only ranges but the most consequent ones
              */
+            
+            if (((ntohl(packet->iph->saddr) & 0xFFFFFFE0 /* 255.255.255.224 */) == 0x36A93FA0 /* 54.169.63.160 */)
+                    || ((ntohl(packet->iph->daddr) & 0xFFFFFFE0 /* 255.255.255.224 */) == 0x36A93FA0 /* 54.169.63.160 */)) {
+                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                return 1;
+            }
+
+            if (((ntohl(packet->iph->saddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x3400FC00 /* 52.0.252.0 */)
+                    || ((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x3400FC00 /* 52.0.252.0 */)) {
+                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                return 1;
+            }
+
+            if (((ntohl(packet->iph->saddr) & 0xFFFFFFC0 /* 255.255.255.192 */) == 0x365DFF40 /* 54.93.255.64 */)
+                    || ((ntohl(packet->iph->daddr) & 0xFFFFFFC0 /* 255.255.255.192 */) == 0x365DFF40 /* 54.93.255.64 */)) {
+                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                return 1;
+            }
+
             if (((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x32100000 /* 50.16.0.0/14 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x32100000 /* 50.16.0.0/14 */)) {
                 mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);

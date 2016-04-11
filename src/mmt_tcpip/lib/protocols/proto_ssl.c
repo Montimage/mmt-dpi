@@ -416,6 +416,14 @@ int check_viber_tcp(ipacket_t * ipacket) {
     if (packet->tcp->source == htons(5242) || packet->tcp->dest == htons(5242) || packet->tcp->source == htons(4244) || packet->tcp->dest == htons(4244)) {
         if (packet->iph /* IPv4 only */) {
             /*
+                Viber Media AWS-VIBER-MEDIA (NET-54-169-63-160-1) 54.169.63.160 - 54.169.63.191
+                Viber Media S a r l AWS-VIBER-MEDIA-S-A-R-L (NET-54-93-255-64-1) 54.93.255.64 - 54.93.255.127
+                Crittercism AWS-VIBER-MEDIA (NET-52-0-252-0-1) 52.0.252.0 - 52.0.255.255
+                54.169.63.160/27
+                54.93.255.64/26
+                52.0.252.0/22
+              */
+            /*
              * Viber is hosted over Amazon cloud
              * Check if this is the case
              * 50.16.0.0/14
@@ -427,6 +435,24 @@ int check_viber_tcp(ipacket_t * ipacket) {
              * 176.34.0.0/16
              * These are not the only ranges but the most consequent ones
              */
+            if (((ntohl(packet->iph->saddr) & 0xFFFFFFE0 /* 255.255.255.224 */) == 0x36A93FA0 /* 54.169.63.160 */)
+                    || ((ntohl(packet->iph->daddr) & 0xFFFFFFE0 /* 255.255.255.224 */) == 0x36A93FA0 /* 54.169.63.160 */)) {
+                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                return 1;
+            }
+
+            if (((ntohl(packet->iph->saddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x3400FC00 /* 52.0.252.0 */)
+                    || ((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x3400FC00 /* 52.0.252.0 */)) {
+                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                return 1;
+            }
+
+            if (((ntohl(packet->iph->saddr) & 0xFFFFFFC0 /* 255.255.255.192 */) == 0x365DFF40 /* 54.93.255.64 */)
+                    || ((ntohl(packet->iph->daddr) & 0xFFFFFFC0 /* 255.255.255.192 */) == 0x365DFF40 /* 54.93.255.64 */)) {
+                mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
+                return 1;
+            }
+
             if (((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x32100000 /* 50.16.0.0/14 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x32100000 /* 50.16.0.0/14 */)) {
                 mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);

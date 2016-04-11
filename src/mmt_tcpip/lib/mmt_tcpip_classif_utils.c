@@ -491,6 +491,7 @@ static protocol_match doted_host_names[] = {
     {".veohtv.co", PROTO_HTTP_APPLICATION_VEOHTV, MMT_STATICSTRING_LEN(".veohtv.co")},
     {".viadeo.com", PROTO_VIADEO, MMT_STATICSTRING_LEN(".viadeo.com")},
     {".viber.com", PROTO_VIBER, MMT_STATICSTRING_LEN(".viber.com")},
+    {".cdn.viber.com", PROTO_VIBER, MMT_STATICSTRING_LEN(".viber.com")},
     {".vimeo.com", PROTO_VIMEO, MMT_STATICSTRING_LEN(".vimeo.com")},
     {".vimeocdn.com", PROTO_VIMEO, MMT_STATICSTRING_LEN(".vimeocdn.com")},
     {".vk.com", PROTO_VK, MMT_STATICSTRING_LEN(".vk.com")},
