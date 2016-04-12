@@ -16,10 +16,6 @@ extern "C" {
 #include "mmt_core.h"
 
 
-static MMT_PROTOCOL_BITMASK detection_bitmask;
-static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
-static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
-
 #define NDN_MAX_EXPIRED_TIME 360 // 360 seconds : Maximum number of time for interestlifetime and freshnessperiod
 enum ndn_content_type
 {
@@ -329,6 +325,7 @@ typedef struct ndn_proto_context_struct{
 	ndn_session_t * dummy_session;
 	ipacket_t * dummy_packet;
 	unsigned proto_index;
+	uint32_t proto_id;
 }ndn_proto_context_t;
 
 
@@ -387,6 +384,73 @@ void ndn_free_session(ndn_session_t *ndn_session);
  */
 ndn_session_t * ndn_find_session_by_tuple3(ndn_tuple3_t *t3, ndn_session_t * list_sessions);
 
+/**
+ * Check the payload if it is NDN_HTTP payload
+ * @param  payload     payload
+ * @param  payload_len length of payload
+ * @return             0 if it is not NDN_HTTP payload -> does not detect HTTP request in name component
+ *                       1 otherwise
+ */
+uint8_t mmt_check_payload_ndn_http(char * payload, int payload_len);
+void ndn_process_timed_out(ipacket_t *ipacket, unsigned index, ndn_session_t *current_session, uint32_t proto_id);
+ndn_proto_context_t * ndn_get_proto_context(ipacket_t *ipacket, unsigned index);
+ndn_session_t * ndn_get_list_all_session(ipacket_t *ipacket, unsigned index);
+int ndn_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data);
+uint32_t ndn_packet_length_extraction_payload(char* payload, int total_length);
+int ndn_packet_length_extraction(const ipacket_t * ipacket, unsigned proto_index,attribute_t * extracted_data);
+char * ndn_TVL_get_name_components(ndn_tlv_t *name_com, char *payload, int total_length);
+char* ndn_name_components_extraction_payload(char *payload,int total_length);
+int ndn_name_components_extraction(const ipacket_t * ipacket, unsigned proto_index,attribute_t * extracted_data);
+int ndn_interest_nonce_extraction_payload(char *payload,int payload_len);
+int ndn_interest_nonce_extraction(const ipacket_t * ipacket, unsigned proto_index,attribute_t * extracted_data);
+int ndn_interest_lifetime_extraction_payload(char *payload,int payload_len);
+int ndn_interest_lifetime_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_interest_min_suffix_component_extraction_payload(char *payload,int payload_len);
+int ndn_interest_min_suffix_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_interest_max_suffix_component_extraction_payload(char *payload,int payload_len);
+int ndn_interest_max_suffix_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_interest_publisher_publickey_locator_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_interest_child_selector_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_interest_must_be_fresh_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_interest_any_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+char* ndn_data_content_extraction_payload(char *payload,int total_length);
+int ndn_data_content_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_data_content_type_extraction_payload(char *payload,int payload_len);
+int ndn_data_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_data_freshness_period_extraction_payload(char *payload,int payload_len);
+int ndn_data_freshness_period_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_data_final_block_id_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_data_signature_type_extraction_payload(char *payload,int payload_len);
+int ndn_data_signature_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+char* ndn_data_key_locator_extraction_payload(char *payload,int total_length);
+int ndn_data_key_locator_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+char* ndn_data_signature_value_extraction_payload(char *payload,int payload_len);
+int ndn_data_signature_value_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+int ndn_list_sessions_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data);
+uint64_t ndn_session_get_delay_time(ndn_session_t * current_session);
+void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_session_t * first_session, ndn_session_t *dummy_session, uint32_t proto_id);
+int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) ;
+void cleanup_ndn_context(void * proto_context, void * args);
+void * setup_ndn_context(void * proto_context, void * args);
+uint8_t mmt_check_payload_ndn_http(char * payload, int payload_len);       
+char * ndn_name_components_at_index(char *payload,int total_length , int nc_index);                     
 #ifdef  __cplusplus
 }
 #endif

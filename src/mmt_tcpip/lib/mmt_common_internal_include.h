@@ -227,6 +227,7 @@ extern "C" {
     int mmt_check_smtp(ipacket_t * ipacket, unsigned index);
     int mmt_check_ftp(ipacket_t * ipacket, unsigned index);
     int mmt_check_ndn(ipacket_t * ipacket, unsigned index);
+    int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index);
     int mmt_check_usenet(ipacket_t * ipacket, unsigned index);
     int mmt_check_dns(ipacket_t * ipacket, unsigned index);
     int mmt_check_filetopia(ipacket_t * ipacket, unsigned index);
@@ -704,6 +705,8 @@ extern "C" {
     int init_proto_ftp_struct();
     /////////// PLUGIN INIT FOR PROTO_NDN //////////////////
     int init_proto_ndn_struct();
+    /////////// PLUGIN INIT FOR PROTO_NDN_HTTP //////////////////
+    int init_proto_ndn_http_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_GADUGADU //////////////////
     int init_proto_gadugadu_struct();
