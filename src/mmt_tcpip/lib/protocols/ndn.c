@@ -565,13 +565,12 @@ char * ndn_name_components_at_index(char *payload,int total_length , int nc_inde
 		                    ndn_tlv_t *temp = name_com->next;
 
 					        while(temp != NULL){
-
+					        	current_index++;
 					            if(current_index == nc_index){
 					            	ret = ndn_TLV_get_string(temp,payload,total_length);
 					            	break;
 					            }
 					            temp = temp->next;
-					            current_index++;
 					        }
                     	}
                     		
