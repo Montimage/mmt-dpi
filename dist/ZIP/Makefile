@@ -12,7 +12,7 @@ install:
 	@ cp -R examples /opt/mmt
 	@ echo "Copied examples/ to /opt/mmt/examples"
 	@ mkdir -p "/opt/mmt/plugins"
-	@ cp lib/libmmt_tcpip.so.0.100 /opt/mmt/plugins/libmmt_tcpip.so
+	@ cp lib/libmmt_tcpip.so.* /opt/mmt/plugins/libmmt_tcpip.so
 	@ echo "Installing lib/libmmt_tcpip.so at /opt/mmt/plugins/libmmt_tcpip.so"
 	@ echo "Thanks you for installing mmt-sdk, you can learn more about mmt-sdk at: http://www.montimage.com"
 # - - - - - - - - -  
