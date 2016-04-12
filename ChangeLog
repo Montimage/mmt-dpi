@@ -1,6 +1,21 @@
 RELEASE NOTES
 ---
 
+## Release version 1.6.1.0
+12 April 2016
+- Added and updated some protocols:
+	+ oracle 
+	+ quic 
+	+ redis_net 
+	+ vmware 
+	+ viber 
+	+ twitter 
+	+ skype 
+	+ mail_imap 
+	+ mail_pop 
+	+ mail_smtp 
+- Applied software versioning method to version number of release
+
 ## Release version 1.6
 06 April 2016
 
@@ -8,7 +23,7 @@ RELEASE NOTES
 - Has been tested with valgrind for: memory leak and multiple-thread
 
 ## Release version 1.5
-_05 April 2016_
+05 April 2016
 
 - No copy packet in sdk
 - Added new protocols: QUIC, NDN
