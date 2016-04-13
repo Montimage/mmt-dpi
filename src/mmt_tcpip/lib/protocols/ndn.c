@@ -74,20 +74,20 @@ char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
 
     char * ret = str_sub(payload,ndn->data_offset, ndn->data_offset + ndn->length -1 );
 
-    // int i = 0;
-    // // Replace all character which is not printable
-    // for(i = 0 ;i < ndn->length;i++){
-    //     if(is_json_special_character(ret[i])){
-    //         // printf("Special character\n");
-    //         ret[i]='_';
-    //         // ret[i+1]='_';
-    //         // i +=2;
-    //     }
+    int i = 0;
+    // Replace all character which is not printable
+    for(i = 0 ;i < ndn->length;i++){
+        if(is_json_special_character(ret[i])){
+            // printf("Special character\n");
+            ret[i]='_';
+            // ret[i+1]='_';
+            // i +=2;
+        }
 
-    //     if(ret[i]<32 || ret[i]>126){
-    //         ret[i]='_';
-    //     }
-    // }
+        if(ret[i]<32 || ret[i]>126){
+            ret[i]='_';
+        }
+    }
 
     return ret;
 }
