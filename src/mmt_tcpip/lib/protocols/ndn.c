@@ -74,20 +74,20 @@ char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
 
     char * ret = str_sub(payload,ndn->data_offset, ndn->data_offset + ndn->length -1 );
 
-    int i = 0;
-    // Replace all character which is not printable
-    for(i = 0 ;i < ndn->length;i++){
-        if(is_json_special_character(ret[i])){
-            // printf("Special character\n");
-            ret[i]='_';
-            // ret[i+1]='_';
-            // i +=2;
-        }
+    // int i = 0;
+    // // Replace all character which is not printable
+    // for(i = 0 ;i < ndn->length;i++){
+    //     if(is_json_special_character(ret[i])){
+    //         // printf("Special character\n");
+    //         ret[i]='_';
+    //         // ret[i+1]='_';
+    //         // i +=2;
+    //     }
 
-        if(ret[i]<32 || ret[i]>126){
-            ret[i]='_';
-        }
-    }
+    //     if(ret[i]<32 || ret[i]>126){
+    //         ret[i]='_';
+    //     }
+    // }
 
     return ret;
 }
@@ -1857,22 +1857,47 @@ void * setup_ndn_context(void * proto_context, void * args) {
     return (void*)ndn_proto_context;
 }
 
+/**
+ * Check if an input method name is supported or not
+ * @param  method method name
+ * @return        0 if the method name is not valid HTTP method name
+ *                  1 otherwise
+ */
+uint8_t is_supported_method(char *method){
+	if(strcmp(method,"GET")==0) return 1;
+	if(strcmp(method,"POST")==0) return 1;
+	if(strcmp(method,"PUT")==0) return 1;
+	if(strcmp(method,"HEAD")==0) return 1;
+	if(strcmp(method,"DELETE")==0) return 1;
+	if(strcmp(method,"TRACE")==0) return 1;
+	if(strcmp(method,"CONNECT")==0) return 1;
+	return 0;
+}
+
 uint8_t mmt_check_payload_ndn_http(char * payload, int payload_len){
 	
 	if(payload == NULL) return 0;
 
 	if(payload_len <= 0) return 0;
 
-	char *name_component = ndn_name_components_extraction_payload(payload,payload_len);
-
-	if(name_component == NULL) return 0;
-
-	if(name_component[0]=='i'||name_component[0]=='e'){
-		if(name_component[1]=='G' && name_component[2]=='W'){
-			return 1;
-		}
+	char * name2 = ndn_name_components_at_index(payload,payload_len,1);
+	int method_index = 0;
+	if(strcmp(name2,"req")==0){
+		method_index = 3;
+	}else{
+		method_index = 1;
 	}
-	return 0;
+
+	char *method = ndn_name_components_at_index(payload,payload_len,method_index);
+	if(is_supported_method(method)==0){
+		free(name2);
+		free(method);
+		return 0;
+	}else{
+		free(name2);
+		free(method);
+		return 1;	
+	}
 }
 
 void ndn_process_timed_out(ipacket_t *ipacket, unsigned index, ndn_session_t *current_session,uint32_t proto_id){
