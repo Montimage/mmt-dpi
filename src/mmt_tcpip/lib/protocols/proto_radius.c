@@ -1887,11 +1887,11 @@ int mmt_check_radius(ipacket_t * ipacket, unsigned index) { //BW: TODO: check th
 
         struct radius_header *h = (struct radius_header*) packet->payload;
 
-        h->len = ntohs(h->len);
+        uint32_t h_len = ntohs(h->len);
 
         if ((payload_len > sizeof (struct radius_header))
                 && (h->code <= 5)
-                && (h->len == payload_len)) {
+                && (h_len == payload_len)) {
             MMT_LOG(PROTO_RADIUS, MMT_LOG_DEBUG, "Found radius.\n");
             mmt_internal_add_connection(ipacket, PROTO_RADIUS, MMT_REAL_PROTOCOL);
             return 1;
