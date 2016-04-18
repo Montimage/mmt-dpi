@@ -1535,7 +1535,7 @@ uint64_t ndn_session_get_delay_time(ndn_session_t * current_session){
     if(delay_time < current_session->interest_lifeTime[1]) delay_time = current_session->interest_lifeTime[1];
     if(delay_time < current_session->data_freshnessPeriod[0]) delay_time = current_session->data_freshnessPeriod[0];
     if(delay_time < current_session->data_freshnessPeriod[1]) delay_time = current_session->data_freshnessPeriod[1];
-    delay_time = delay_time/1000;
+    // delay_time = delay_time/1000;
     debug("\nNDN/NDN_HTTP: Delay time of session %lu is: %lu",current_session->session_id,delay_time);
     return delay_time;
 }
@@ -1739,9 +1739,10 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_session->s_init_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
         ndn_session->last_reported_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
         ndn_session->last_reported_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
+        // debug("\nNDN/NDN_HTTP: New session is created at time: %lu",ndn_session->session_id);
         ndn_session->session_id = dummy_session->session_id;
         dummy_session->session_id += 1;
-        debug("\nNDN/NDN_HTTP: New session is created: %lu",ndn_session->session_id);
+        debug("\nNDN/NDN_HTTP: New session is created: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
         if(dummy_session->next == NULL){
             debug("\nNDN/NDN_HTTP: First session of the list");
             dummy_session->next = ndn_session;
@@ -1766,7 +1767,9 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     }
 
     ndn_session->s_last_activity_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
-    ndn_session->s_last_activity_time->tv_usec = ipacket->p_hdr->ts.tv_usec;   
+    ndn_session->s_last_activity_time->tv_usec = ipacket->p_hdr->ts.tv_usec; 
+    debug("\nNDN/NDN_HTTP: Update last activity time: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->s_last_activity_time->tv_sec,ndn_session->s_last_activity_time->tv_usec);
+    debug("\nNDN/NDN_HTTP: Last reported time: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
     ///--- UPDATE SESSION DATA --- ///
     
     ndn_session->current_direction = direction;
@@ -1779,7 +1782,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
         ndn_tlv_t *ndn_lifetime = ndn_find_node(payload, payload_len, root,NDN_INTEREST_LIFETIME);
         if(ndn_lifetime != NULL){
-            ndn_session->interest_lifeTime[direction] = ndn_TLV_get_int(ndn_lifetime, payload, payload_len);
+            ndn_session->interest_lifeTime[direction] = ndn_TLV_get_int(ndn_lifetime, payload, payload_len)/1000;
             ndn_TLV_free(ndn_lifetime);
         }
         if(ndn_session->interest_lifeTime[direction] == 0){
@@ -1796,7 +1799,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
         ndn_tlv_t *ndn_freshness_period = ndn_find_node(payload, payload_len, ndn_metainfo,NDN_DATA_FRESHNESS_PERIOD);
         
-        ndn_session->data_freshnessPeriod[direction] = ndn_TLV_get_int(ndn_freshness_period, payload, payload_len);
+        ndn_session->data_freshnessPeriod[direction] = ndn_TLV_get_int(ndn_freshness_period, payload, payload_len)/1000;
 
         ndn_TLV_free(ndn_freshness_period);
 
