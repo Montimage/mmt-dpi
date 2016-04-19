@@ -153,7 +153,7 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length){
     ndn_new_node->data_offset = offset + 2 + ndn_new_node->nb_octets;
 
     if(total_length < ndn_new_node->data_offset + ndn_new_node->length){
-        debug("Not correct length value : %d \n",total_length);
+        log_err("Not correct length value : %d \n",total_length);
         ndn_TLV_free(ndn_new_node);
         return NULL;
     }
@@ -260,6 +260,11 @@ ndn_tuple3_t * ndn_new_tuple3(){
     t3->dst_MAC = NULL;
     t3->name = NULL;
     t3->packet_type = 4;
+    t3->ip_src = 0;
+    t3->ip_dst = 0;
+    t3->port_src = 0;
+    t3->port_dst = 0;
+    t3->proto_over = PROTO_UNKNOWN;
     return t3;
 }
 
@@ -319,11 +324,11 @@ uint8_t ndn_compare_tupe3(ndn_tuple3_t *t1 , ndn_tuple3_t *t2){
 
     if ((t1 == NULL && t2 != NULL)||(t1 != NULL && t2 == NULL)) return 0;
 
-    if( str_compare(t1->name, t2->name) == 0) return 0;
+    if( strcmp(t1->name, t2->name) != 0) return 0;
 
-    if( str_compare(t1->src_MAC, t2->src_MAC) == 1 && str_compare(t1->dst_MAC, t2->dst_MAC) == 1) return 1;
+    if( strcmp(t1->src_MAC, t2->src_MAC) == 0 && strcmp(t1->dst_MAC, t2->dst_MAC) == 0) return 1;
 
-    if( str_compare(t1->src_MAC, t2->dst_MAC) == 1 && str_compare(t1->dst_MAC, t2->src_MAC) == 1) return 2; 
+    if( strcmp(t1->src_MAC, t2->dst_MAC) == 0 && strcmp(t1->dst_MAC, t2->src_MAC) == 0) return 2; 
 
     return 0;   
 }
@@ -359,7 +364,7 @@ ndn_session_t * ndn_find_session_by_tuple3(ndn_tuple3_t *t3, ndn_session_t * lis
 
     while(next_session != NULL){
         int res_com = ndn_compare_tupe3(t3, next_session->tuple3);
-        debug("NDN/NDN_HTTP: Compare tuple3... %d",res_com);
+        // debug("NDN/NDN_HTTP: Compare tuple3... %d",res_com);
         if(res_com == 1 || res_com == 2 ) return next_session;
         next_session = next_session->next;
     }
@@ -1641,6 +1646,28 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     t3->src_MAC[18] = '\0';
     mmt_free(src_MAC_addr);
     mmt_free(dst_MAC_addr);
+    // Update IP header
+    if(ipacket->internal_packet != NULL){
+        if(ipacket->internal_packet->iph != NULL){
+            t3->ip_src = ipacket->internal_packet->iph->saddr;
+            t3->ip_dst = ipacket->internal_packet->iph->daddr;
+            if(ipacket->internal_packet->tcp != NULL){
+                t3->port_src = ipacket->internal_packet->tcp->source;
+                t3->port_dst = ipacket->internal_packet->tcp->dest;
+                t3->proto_over = PROTO_TCP;
+            }else{
+                if(ipacket->internal_packet->udp != NULL){
+                    t3->port_src = ipacket->internal_packet->udp->source;
+                    t3->port_dst = ipacket->internal_packet->udp->dest;
+                    t3->proto_over = PROTO_UDP;
+                }    
+            }
+        }else{
+            t3->proto_over = PROTO_ETHERNET;
+        }
+        
+    }
+
     // Extract name component
     int name_offset = 2 + root->nb_octets;
 
@@ -1727,7 +1754,6 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         debug("\nNDN/NDN_HTTP: No session to process timed out");
     }
     
-
     ndn_session_t *ndn_session = ndn_find_session_by_tuple3(t3, dummy_session);
     int direction = 0;
     if(ndn_session == NULL){
@@ -1741,8 +1767,10 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_session->last_reported_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
         // debug("\nNDN/NDN_HTTP: New session is created at time: %lu",ndn_session->session_id);
         ndn_session->session_id = dummy_session->session_id;
+        printf("New session packet: %lu %s - %s : %lu\n",ipacket->packet_id, ndn_session->tuple3->src_MAC,ndn_session->tuple3->dst_MAC,ndn_session->session_id);
+        printf("Tuple3: %s - %s : %lu direction: %d\n", t3->src_MAC,t3->dst_MAC,ipacket->packet_id,direction);
         dummy_session->session_id += 1;
-        debug("\nNDN/NDN_HTTP: New session is created: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
+        // debug("\nNDN/NDN_HTTP: New session is created: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
         if(dummy_session->next == NULL){
             debug("\nNDN/NDN_HTTP: First session of the list");
             dummy_session->next = ndn_session;
@@ -1753,14 +1781,15 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         }
     }else{
         debug("\nNDN/NDN_HTTP: Updating the session: %lu",ndn_session->session_id);
-        if(str_compare(t3->src_MAC, ndn_session->tuple3->src_MAC) == 1){
+        if(strcmp(t3->src_MAC, ndn_session->tuple3->src_MAC) == 0){
             direction = 0;
         }else{
             direction = 1;
         }
+        printf("Update session packet: %lu %s - %s : %lu\n",ipacket->packet_id, ndn_session->tuple3->src_MAC,ndn_session->tuple3->dst_MAC,ndn_session->session_id);
+        printf("Tuple3: %s - %s : %lu direction: %d\n", t3->src_MAC,t3->dst_MAC,ipacket->packet_id,direction);
         ndn_free_tuple3(t3);
     }
-    
     // Update s_last_activity_time
     if(ndn_session->s_last_activity_time == NULL ){
         ndn_session->s_last_activity_time = mmt_malloc(sizeof(struct timeval));
@@ -1768,8 +1797,8 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
     ndn_session->s_last_activity_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
     ndn_session->s_last_activity_time->tv_usec = ipacket->p_hdr->ts.tv_usec; 
-    debug("\nNDN/NDN_HTTP: Update last activity time: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->s_last_activity_time->tv_sec,ndn_session->s_last_activity_time->tv_usec);
-    debug("\nNDN/NDN_HTTP: Last reported time: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
+    // debug("\nNDN/NDN_HTTP: Update last activity time: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->s_last_activity_time->tv_sec,ndn_session->s_last_activity_time->tv_usec);
+    // debug("\nNDN/NDN_HTTP: Last reported time: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
     ///--- UPDATE SESSION DATA --- ///
     
     ndn_session->current_direction = direction;

@@ -292,6 +292,11 @@ typedef struct ndn_tuple3_struct{
 	char * dst_MAC;
 	char * name;
 	uint8_t packet_type; // The type of packet which we get the tuple3 from 
+	uint32_t ip_src;
+	uint32_t ip_dst;
+	uint16_t port_src;
+	uint16_t port_dst;
+	uint32_t proto_over;
 }ndn_tuple3_t;
 
 /**
