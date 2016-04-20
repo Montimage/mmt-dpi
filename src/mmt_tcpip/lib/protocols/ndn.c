@@ -1548,7 +1548,7 @@ uint64_t ndn_session_get_delay_time(ndn_session_t * current_session){
     if(delay_time < current_session->data_freshnessPeriod[0]) delay_time = current_session->data_freshnessPeriod[0];
     if(delay_time < current_session->data_freshnessPeriod[1]) delay_time = current_session->data_freshnessPeriod[1];
     // delay_time = delay_time/1000;
-    debug("\nNDN/NDN_HTTP: Delay time of session %lu is: %lu",current_session->session_id,delay_time);
+    // debug("\nNDN/NDN_HTTP: Delay time of session %lu is: %lu",current_session->session_id,delay_time);
     return delay_time;
 }
 
@@ -1561,7 +1561,7 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
 
     while(current_session != NULL){
         
-        debug("\nNDN/NDN_HTTP: regarding the session : %lu",current_session->session_id);    
+        // debug("\nNDN/NDN_HTTP: regarding the session : %lu",current_session->session_id);    
         
         ndn_session_t *session_to_delete = current_session;
         current_session = session_to_delete->next; 
@@ -1569,7 +1569,7 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
         uint64_t delay_time = ndn_session_get_delay_time(session_to_delete);
         int expired_session = 0;
         if(session_to_delete->s_last_activity_time != NULL){
-            debug("\nNDN/NDN_HTTP: Packet time: %lu - session_time: %lu = %lu",packet_seconds,session_to_delete->s_last_activity_time->tv_sec,(packet_seconds - session_to_delete->s_last_activity_time->tv_sec));
+            // debug("\nNDN/NDN_HTTP: Packet time: %lu - session_time: %lu = %lu",packet_seconds,session_to_delete->s_last_activity_time->tv_sec,(packet_seconds - session_to_delete->s_last_activity_time->tv_sec));
             if(packet_seconds - session_to_delete->s_last_activity_time->tv_sec > delay_time){
                 expired_session = 1;
                 previous_session->next = current_session;        
@@ -1709,7 +1709,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_TLV_free(name_node);
         ndn_TLV_free(root);
         ndn_free_tuple3(t3);
-        debug("NDN/NDN_HTTP: Cannot parse name component - ipacket : %lu",ipacket->packet_id);
+        log_err("NDN/NDN_HTTP: Cannot parse name component - ipacket : %lu",ipacket->packet_id);
         return MMT_CONTINUE;
     }   
     
@@ -1717,14 +1717,14 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
     t3->name = name_component;
     // free(name_component);
-    debug("NDN/NDN_HTTP: MAC (source): %s \n",t3->src_MAC);
-    debug("NDN/NDN_HTTP: MAC (destination): %s \n",t3->dst_MAC);
-    debug("NDN/NDN_HTTP: name: %s\n",t3->name);
-    debug("NDN/NDN_HTTP: Type: %d\n",t3->packet_type);
+    // debug("NDN/NDN_HTTP: MAC (source): %s \n",t3->src_MAC);
+    // debug("NDN/NDN_HTTP: MAC (destination): %s \n",t3->dst_MAC);
+    // debug("NDN/NDN_HTTP: name: %s\n",t3->name);
+    // debug("NDN/NDN_HTTP: Type: %d\n",t3->packet_type);
     // Created tuple3
     ndn_proto_context_t * ndn_proto_context = ndn_get_proto_context(ipacket,index);
     if(ndn_proto_context == NULL){
-        debug("\nNDN/NDN_HTTP: Cannot get NDN protocol context");
+        log_err("\nNDN/NDN_HTTP: Cannot get NDN protocol context");
         return MMT_CONTINUE;
     }
 
@@ -1751,7 +1751,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     ndn_session_t *dummy_session = ndn_proto_context->dummy_session;
 
     if(dummy_session == NULL){
-        debug("\nNDN/NDN_HTTP: Cannot get ndn dummy_session");
+        log_err("\nNDN/NDN_HTTP: Cannot get ndn dummy_session");
         return MMT_CONTINUE;
     }
 
@@ -1780,12 +1780,12 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
             debug("\nNDN/NDN_HTTP: First session of the list");
             dummy_session->next = ndn_session;
         }else{
-            debug("\nNDN/NDN_HTTP: Added to the existing session of the list: %lu",dummy_session->next->session_id);
+            // debug("\nNDN/NDN_HTTP: Added to the existing session of the list: %lu",dummy_session->next->session_id);
             ndn_session->next = dummy_session->next;    
             dummy_session->next = ndn_session;
         }
     }else{
-        debug("\nNDN/NDN_HTTP: Updating the session: %lu",ndn_session->session_id);
+        // debug("\nNDN/NDN_HTTP: Updating the session: %lu",ndn_session->session_id);
         if(strcmp(t3->src_MAC, ndn_session->tuple3->src_MAC) == 0){
             direction = 0;
         }else{
@@ -1838,11 +1838,13 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         if(ndn_session->last_interest_packet_time[in_direction] != NULL && ndn_session->last_interest_packet_time[in_direction]->tv_sec !=0 && ndn_session->last_interest_packet_time[in_direction]->tv_usec != 0){
             uint32_t rtt = (ipacket->p_hdr->ts.tv_sec - ndn_session->last_interest_packet_time[in_direction]->tv_sec)*1000 + (ipacket->p_hdr->ts.tv_usec - ndn_session->last_interest_packet_time[in_direction]->tv_usec)/1000;
             ndn_session->max_responsed_time[direction] = ndn_session->max_responsed_time[direction] < rtt?rtt:ndn_session->max_responsed_time[direction];
+            
             if(ndn_session->min_responsed_time[direction]==0){
                 ndn_session->min_responsed_time[direction] = rtt;
             }else{
-                ndn_session->min_responsed_time[direction] = ndn_session->min_responsed_time[direction] > rtt?rtt:ndn_session->min_responsed_time[direction];
+                ndn_session->min_responsed_time[direction] = ndn_session->min_responsed_time[direction] > rtt ? rtt : ndn_session->min_responsed_time[direction];
             }
+            // printf("NDN/NDN_HTTP: MINMAX session: %lu min_responsed_time: %zu max_responsed_time: %zu",ndn_session->session_id,ndn_session->min_responsed_time, ndn_session->max_responsed_time);
             // mmt_free(ndn_session->last_interest_packet_time[in_direction]);
             // ndn_session->last_interest_packet_time[in_direction] = NULL;
             ndn_session->last_interest_packet_time[in_direction]->tv_sec = 0;
@@ -1861,7 +1863,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     
     ndn_TLV_free(root);
 
-    debug("NDN/NDN_HTTP: ndn_update_session_for_ipacket: %lu",ipacket->packet_id);
+    // debug("NDN/NDN_HTTP: ndn_update_session_for_ipacket: %lu",ipacket->packet_id);
     // ndn_public_session_report(ndn_session);
     return MMT_CONTINUE;
 }

@@ -190,19 +190,19 @@ int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
             
-            debug("NDN_HTTP: checking ndn payload %lu",ipacket->packet_id);
+            // debug("NDN_HTTP: checking ndn payload %lu",ipacket->packet_id);
             int offset = get_packet_offset_at_index(ipacket, index + 1);
             char * payload = (char*)&ipacket->data[offset];
             uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
 
             if(payload_len==0){
-                debug("NDN_HTTP: payload_len == 0");
+                // debug("NDN_HTTP: payload_len == 0");
                 MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_NDN_HTTP);
                 return 0;
             }
 
             if(mmt_check_ndn_payload(payload,payload_len)!=0){
-                debug("NDN_HTTP: found ndn packet %lu",ipacket->packet_id);
+                // debug("NDN_HTTP: found ndn packet %lu",ipacket->packet_id);
                 if(mmt_check_payload_ndn_http(payload,payload_len)==1){
                     mmt_int_ndn_http_add_connection(ipacket);
                     return 1;    

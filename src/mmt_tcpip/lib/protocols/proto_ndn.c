@@ -58,13 +58,13 @@ int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
             
-            debug("NDN: checking ndn payload %lu",ipacket->packet_id);
+            // debug("NDN: checking ndn payload %lu",ipacket->packet_id);
             int offset = get_packet_offset_at_index(ipacket, index + 1);
             char * payload = (char*)&ipacket->data[offset];
             uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
 
             if(payload_len==0){
-                debug("NDN: payload_len == 0");
+                // debug("NDN: payload_len == 0");
                 MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_NDN);
                 return 0;
             }
