@@ -300,6 +300,9 @@ ndn_session_t * ndn_new_session(){
     ndn_session->nb_data_packet[0] = 0;
     ndn_session->data_volume_data_packet[0] = 0;
     ndn_session->ndn_volume_data_packet[0] = 0;
+    ndn_session->last_interest_packet_time[0] = NULL;
+    ndn_session->max_responsed_time[0] = 0;
+    ndn_session->min_responsed_time[0] = 0;
 
     ndn_session->interest_lifeTime[1] = 0;
     ndn_session->data_freshnessPeriod[1] = 0;
@@ -309,12 +312,16 @@ ndn_session_t * ndn_new_session(){
     ndn_session->nb_data_packet[1] = 0;
     ndn_session->data_volume_data_packet[1] = 0;
     ndn_session->ndn_volume_data_packet[1] = 0;
+    ndn_session->last_interest_packet_time[1] = NULL;
+    ndn_session->max_responsed_time[1] = 0;
+    ndn_session->min_responsed_time[1] = 0;
 
     ndn_session->next = NULL;
     ndn_session->user_arg = NULL;
     ndn_session->current_direction = 0;
     ndn_session->is_expired = 0;
     ndn_session->last_reported_time = NULL;
+    
     return ndn_session;
 }
 
@@ -1813,13 +1820,34 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         if(ndn_session->interest_lifeTime[direction] == 0){
             ndn_session->interest_lifeTime[direction] = NDN_MAX_EXPIRED_TIME;
         }
+        if(ndn_session->last_interest_packet_time[direction] == NULL){
+            ndn_session->last_interest_packet_time[direction] = mmt_malloc(sizeof(struct timeval));
+            ndn_session->last_interest_packet_time[direction]->tv_sec = ipacket->p_hdr->ts.tv_sec;
+            ndn_session->last_interest_packet_time[direction]->tv_usec = ipacket->p_hdr->ts.tv_usec;
+        }else{
+            ndn_session->last_interest_packet_time[direction]->tv_sec = ipacket->p_hdr->ts.tv_sec;
+            ndn_session->last_interest_packet_time[direction]->tv_usec = ipacket->p_hdr->ts.tv_usec;
+        }
     }
     // Update Data packet statistic
     if(root->type == NDN_DATA_PACKET){
         ndn_session->nb_data_packet[direction]++;
         ndn_session->data_volume_data_packet[direction] += ipacket->p_hdr->len;
         ndn_session->ndn_volume_data_packet[direction] += root->length;
-
+        int in_direction = direction==0?1:0;
+        if(ndn_session->last_interest_packet_time[in_direction] != NULL && ndn_session->last_interest_packet_time[in_direction]->tv_sec !=0 && ndn_session->last_interest_packet_time[in_direction]->tv_usec != 0){
+            uint32_t rtt = (ipacket->p_hdr->ts.tv_sec - ndn_session->last_interest_packet_time[in_direction]->tv_sec)*1000 + (ipacket->p_hdr->ts.tv_usec - ndn_session->last_interest_packet_time[in_direction]->tv_usec)/1000;
+            ndn_session->max_responsed_time[direction] = ndn_session->max_responsed_time[direction] < rtt?rtt:ndn_session->max_responsed_time[direction];
+            if(ndn_session->min_responsed_time[direction]==0){
+                ndn_session->min_responsed_time[direction] = rtt;
+            }else{
+                ndn_session->min_responsed_time[direction] = ndn_session->min_responsed_time[direction] > rtt?rtt:ndn_session->min_responsed_time[direction];
+            }
+            // mmt_free(ndn_session->last_interest_packet_time[in_direction]);
+            // ndn_session->last_interest_packet_time[in_direction] = NULL;
+            ndn_session->last_interest_packet_time[in_direction]->tv_sec = 0;
+            ndn_session->last_interest_packet_time[in_direction]->tv_usec = 0;
+        }    
         ndn_tlv_t *ndn_metainfo = ndn_find_node(payload,payload_len,root, NDN_DATA_METAINFO);
 
         ndn_tlv_t *ndn_freshness_period = ndn_find_node(payload, payload_len, ndn_metainfo,NDN_DATA_FRESHNESS_PERIOD);

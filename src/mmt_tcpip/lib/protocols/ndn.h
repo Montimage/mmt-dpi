@@ -307,6 +307,9 @@ typedef struct ndn_session_struct{
 	ndn_tuple3_t * tuple3;				/** tuple 3 which identify a NDN session*/
 	struct timeval * s_init_time;              /**< indicates the time when the session was first detected. */
     struct timeval * s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
+    struct timeval * last_interest_packet_time[2];
+    uint32_t max_responsed_time[2];
+    uint32_t min_responsed_time[2];
     uint32_t interest_lifeTime[2];          /**< The lifeTime value of the last Interest packet */
     uint32_t data_freshnessPeriod[2];      /**< The freshnessPeriod value of the last Data packet*/
     uint64_t nb_interest_packet[2];      /**< Number of interest packet */
@@ -320,6 +323,7 @@ typedef struct ndn_session_struct{
     uint8_t current_direction; // Current direction: 0 - from tuple3->src_MAC to tuple3->dst_MAC ; 1 - otherway
     uint8_t is_expired; // 1 - session expired, 0 - session is not expired
     struct timeval * last_reported_time;
+    
 }ndn_session_t;
 
 
