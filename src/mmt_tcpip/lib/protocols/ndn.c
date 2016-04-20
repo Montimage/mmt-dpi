@@ -1767,8 +1767,6 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_session->last_reported_time->tv_usec = ipacket->p_hdr->ts.tv_usec;
         // debug("\nNDN/NDN_HTTP: New session is created at time: %lu",ndn_session->session_id);
         ndn_session->session_id = dummy_session->session_id;
-        printf("New session packet: %lu %s - %s : %lu\n",ipacket->packet_id, ndn_session->tuple3->src_MAC,ndn_session->tuple3->dst_MAC,ndn_session->session_id);
-        printf("Tuple3: %s - %s : %lu direction: %d\n", t3->src_MAC,t3->dst_MAC,ipacket->packet_id,direction);
         dummy_session->session_id += 1;
         // debug("\nNDN/NDN_HTTP: New session is created: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
         if(dummy_session->next == NULL){
@@ -1786,8 +1784,6 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         }else{
             direction = 1;
         }
-        printf("Update session packet: %lu %s - %s : %lu\n",ipacket->packet_id, ndn_session->tuple3->src_MAC,ndn_session->tuple3->dst_MAC,ndn_session->session_id);
-        printf("Tuple3: %s - %s : %lu direction: %d\n", t3->src_MAC,t3->dst_MAC,ipacket->packet_id,direction);
         ndn_free_tuple3(t3);
     }
     // Update s_last_activity_time
