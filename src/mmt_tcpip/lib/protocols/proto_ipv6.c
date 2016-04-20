@@ -235,6 +235,18 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
 
     mmt_session_t * session = get_session(protocol_context, &ipv6_session_key, ipacket, is_new_session);
     if(session) {
+        if(session->last_packet_direction != packet_direction && session->packet_count>0){
+            ip_rtt_t ip_rtt;
+            ip_rtt.direction = session->last_packet_direction;
+            ip_rtt.session = session;
+            ip_rtt.rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - session->s_last_activity_time.tv_sec;
+            ip_rtt.rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - session->s_last_activity_time.tv_usec;
+            if((int) ip_rtt.rtt.tv_usec < 0) {
+                ip_rtt.rtt.tv_usec += 1000000;
+                ip_rtt.rtt.tv_sec -= 1;
+            }
+            fire_attribute_event(ipacket, PROTO_IP, IP_RTT, index, (void *) &(ip_rtt));
+        }
         session->last_packet_direction = packet_direction;
     }
 

@@ -178,6 +178,13 @@ enum proto_common_attributes {
     PROTO_SESSION_ATTRIBUTES_NB = PROTO_SESSION_ID - PROTO_SESSION + 1,
 };
 
+
+typedef struct ip_rtt_struct{
+    struct timeval rtt;
+    uint8_t direction;
+    mmt_session_t * session;
+}ip_rtt_t;
+
 #define PROTO_HEADER_LABEL                      "p_hdr"
 #define PROTO_DATA_LABEL                        "p_data"
 #define PROTO_PAYLOAD_LABEL                     "p_payload"
