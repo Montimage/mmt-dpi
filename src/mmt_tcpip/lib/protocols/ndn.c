@@ -303,6 +303,8 @@ ndn_session_t * ndn_new_session(){
     ndn_session->last_interest_packet_time[0] = NULL;
     ndn_session->max_responsed_time[0] = 0;
     ndn_session->min_responsed_time[0] = 0;
+    ndn_session->total_responsed_time[0] = 0;
+    ndn_session->nb_responsed[0] = 0;
 
     ndn_session->interest_lifeTime[1] = 0;
     ndn_session->data_freshnessPeriod[1] = 0;
@@ -315,6 +317,8 @@ ndn_session_t * ndn_new_session(){
     ndn_session->last_interest_packet_time[1] = NULL;
     ndn_session->max_responsed_time[1] = 0;
     ndn_session->min_responsed_time[1] = 0;
+    ndn_session->total_responsed_time[1] = 0;
+    ndn_session->nb_responsed[1] = 0;
 
     ndn_session->next = NULL;
     ndn_session->user_arg = NULL;
@@ -1837,13 +1841,17 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         int in_direction = direction==0?1:0;
         if(ndn_session->last_interest_packet_time[in_direction] != NULL && ndn_session->last_interest_packet_time[in_direction]->tv_sec !=0 && ndn_session->last_interest_packet_time[in_direction]->tv_usec != 0){
             uint32_t rtt = (ipacket->p_hdr->ts.tv_sec - ndn_session->last_interest_packet_time[in_direction]->tv_sec)*1000 + (ipacket->p_hdr->ts.tv_usec - ndn_session->last_interest_packet_time[in_direction]->tv_usec)/1000;
+            // Update Max responsed time
             ndn_session->max_responsed_time[direction] = ndn_session->max_responsed_time[direction] < rtt?rtt:ndn_session->max_responsed_time[direction];
-            
+            // Update Min responsed time
             if(ndn_session->min_responsed_time[direction]==0){
                 ndn_session->min_responsed_time[direction] = rtt;
             }else{
                 ndn_session->min_responsed_time[direction] = ndn_session->min_responsed_time[direction] > rtt ? rtt : ndn_session->min_responsed_time[direction];
             }
+            // Update total responsed time
+            ndn_session->total_responsed_time[direction] += rtt;
+            ndn_session->nb_responsed[direction] += 1;
             // printf("NDN/NDN_HTTP: MINMAX session: %lu min_responsed_time: %zu max_responsed_time: %zu",ndn_session->session_id,ndn_session->min_responsed_time, ndn_session->max_responsed_time);
             // mmt_free(ndn_session->last_interest_packet_time[in_direction]);
             // ndn_session->last_interest_packet_time[in_direction] = NULL;

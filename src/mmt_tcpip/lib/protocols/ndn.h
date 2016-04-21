@@ -310,6 +310,8 @@ typedef struct ndn_session_struct{
     struct timeval * last_interest_packet_time[2];
     uint32_t max_responsed_time[2];
     uint32_t min_responsed_time[2];
+    uint32_t total_responsed_time[2];
+    uint32_t nb_responsed[2];
     uint32_t interest_lifeTime[2];          /**< The lifeTime value of the last Interest packet */
     uint32_t data_freshnessPeriod[2];      /**< The freshnessPeriod value of the last Data packet*/
     uint64_t nb_interest_packet[2];      /**< Number of interest packet */
