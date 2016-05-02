@@ -606,6 +606,16 @@ MMTAPI const mmt_session_t MMTCALL * get_session_previous(
     const mmt_session_t *session
 );
 
+/**
+ * Get session protocol path by direction
+ * @param  session   session
+ * @param  direction direction 0 / 1
+ * @return           protocol path
+ */
+MMTAPI const proto_hierarchy_t MMTCALL * get_session_proto_path_direction(
+    const mmt_session_t *session, int direction
+);
+
 //  - - - - - - - - - - - - - - - - - -
 //  A T T R I B U T E   A C C E S S O R S
 //  - - - - - - - - - - - - - - - - - -
