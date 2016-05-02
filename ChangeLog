@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+## Release version 1.6.2.0
+2 May 2016
+- Added proto_path_direction for session
+- Fixed proto_path if the proto_path different with ipacket->proto_hierachy: ETH.IP/ ETH.802Q.IP
 
 ## Release version 1.6.1.0
 12 April 2016
