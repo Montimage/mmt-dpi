@@ -1197,9 +1197,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
 
             int proto_direction = packet_direction;
 
-
             if (session->proto_path_direction[proto_direction].len == 0) {
-                printf("Updating: %d\n", proto_direction);
                 session->proto_path_direction[proto_direction].len = session->proto_path.len;
                 int i = 0;
                 for (i = 0; i < session->proto_path.len; i++) {
