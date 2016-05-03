@@ -247,14 +247,7 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
             }
             fire_attribute_event(ipacket, PROTO_IP, IP_RTT, index, (void *) &(ip_rtt));
         }
-        if (session->proto_path_direction[packet_direction].len == 0 ) {
-            session->proto_path_direction[packet_direction].len = ipacket->proto_hierarchy->len;
-            int i = 0;
-            for (i = 0; i < ipacket->proto_hierarchy->len; i++) {
-                session->proto_path_direction[packet_direction].proto_path[i] = ipacket->proto_hierarchy->proto_path[i];
-            }
-            debug("[IP] Update protocol path direction: %d", packet_direction);
-        }
+        
         // Fix proto_path , only fix til IP
         if (session->proto_path.proto_path[index] != PROTO_IP) {
             debug("[IP] Fixing proto_path of session: %lu", session->session_id);
@@ -302,6 +295,15 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
                 }
             }
 
+        }
+        // Update proto_path_direction
+        if (session->proto_path_direction[packet_direction].len == 0 && session->last_packet_direction == packet_direction) {
+            session->proto_path_direction[packet_direction].len = session->proto_path.len;
+            int i = 0;
+            for (i = 0; i < session->proto_path.len; i++) {
+                session->proto_path_direction[packet_direction].proto_path[i] = session->proto_path.proto_path[i];
+            }
+            debug("[IP] Update protocol path direction: %d", packet_direction);
         }
         session->last_packet_direction = packet_direction;
     }
