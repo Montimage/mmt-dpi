@@ -1192,21 +1192,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
             }
 
         }
-        // Update proto_path_direction
-        if (session->proto_path.len > 0) {
-
-            int proto_direction = packet_direction;
-
-            if (session->proto_path_direction[proto_direction].len == 0) {
-                session->proto_path_direction[proto_direction].len = session->proto_path.len;
-                int i = 0;
-                for (i = 0; i < session->proto_path.len; i++) {
-                    session->proto_path_direction[proto_direction].proto_path[i] = session->proto_path.proto_path[i];
-                }
-                debug("[IP] Update protocol path direction: %d", proto_direction);
-            }
-        }
-
+        
         session->last_packet_direction = packet_direction;
 
     }
