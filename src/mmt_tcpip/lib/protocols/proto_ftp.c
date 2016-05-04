@@ -1942,6 +1942,7 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
             current_data_session->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
             current_data_session->data_conn->c_addr = ftp_get_addr_from_parameter(payload,payload_len);
             current_data_session->data_conn->c_port = ftp_get_port_from_parameter(payload,payload_len);
+            break;
         case MMT_FTP_USER_CMD:
             if(ftp_control->user->username != NULL){
                 free(ftp_control->user->username);
