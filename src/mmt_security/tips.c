@@ -3229,7 +3229,7 @@ void print_nothing(short print_option, rule *curr_root, rule *r, char *cause, sh
 
 static long counter_detection = 0;
 
-char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * input )
+char *generate_command( const ipacket_t *pkt, rule *r, char * input )
 {
     //input: "name_of_script parameters" where parameters can be constants or variables (e.g., script(1,META.PROTO.3) )
     //output: idem but replacing variables with the value (e.g., script 1 801)
@@ -3237,6 +3237,7 @@ char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * inpu
     char * tempi = NULL;
     char * tempo = NULL;
     int ibuff = 0;
+    tuple *list_of_tuples = r->list_of_tuples;
 
     output = xmalloc(strlen(input) + 1000);
 
@@ -3331,6 +3332,23 @@ char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * inpu
             return NULL;
         }
     }
+    //Put data in file with name: detection_<counter_detection>.data
+    //Will be used by python script
+    FILE * pythonDataFile;
+    char pythonDataFileName[50];
+    snprintf(pythonDataFileName, 50, "detection_%ld.data", counter_detection);
+    pythonDataFile = open_file(pythonDataFileName, "w+");
+    if(r->root->type_rule == ATTACK)             printf(pythonDataFileName,"attack\n"); 
+    else if(r->root->type_rule == EVASION)       printf(pythonDataFileName,"evasion\n");
+    else if(r->root->type_rule == SECURITY_RULE) printf(pythonDataFileName,"security rule\n");
+    else                                         printf(pythonDataFileName,"type\n");
+    if(r->root->description != NULL)             printf(pythonDataFileName,"%s\n", r->root->description);
+    else                                         printf(pythonDataFileName,"description\n");
+    if(r->root->json_history != NULL)            printf(pythonDataFileName,"%s\n", r->json_history);
+    else                                         printf(pythonDataFileName,"history\n");
+    printf(pythonDataFileName,"%d\n", r->root->property_id);
+    printf(pythonDataFileName,"detected");
+    close_file(pythonDataFile);
     return output;
 }
 
@@ -3433,7 +3451,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
     if (do_it == 1) {
         if (what_to_do != NULL) {
             if (strchr(what_to_do, '#') == NULL) {
-                command = generate_command( pkt, r->list_of_tuples, what_to_do );
+                command = generate_command( pkt, r, what_to_do );
                 if (command != NULL) {
                     fprintf(stderr, "EXECUTE FUNCTION:%s\n",command);
                     result = system(command);
