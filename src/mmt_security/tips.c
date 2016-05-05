@@ -391,6 +391,8 @@ char *get_my_data(void *data1, short size, long type) {
     char *buff1 = xmalloc(100);
     char *buff0 = xmalloc(10);
     void * data2 = NULL;
+    struct timeval *t1;
+    unsigned long t2 = 0;
     unsigned long L1=0,L2=0,L3=0,L4=0;
     mmt_binary_data_t *db1 = NULL;
     //mmt_header_line_t *t;
@@ -424,9 +426,13 @@ char *get_my_data(void *data1, short size, long type) {
             break;
         case MMT_DATA_TIMEVAL:
             // TODO
+            t1 = (struct timeval *) (data1);
+            t2 = 1000000 * t1->tv_sec + t1->tv_usec;
+            (void)sprintf(buff1, "%lu", t2);
             break;
         case MMT_DATA_IP_ADDR:
             // TODO
+            (void)sprintf(buff1, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));
             break;
         case MMT_U16_DATA:
             // TODO
@@ -3221,6 +3227,8 @@ void print_nothing(short print_option, rule *curr_root, rule *r, char *cause, sh
     //(void)fprintf(stderr, "nothing\n");
 }
 
+static long counter_detection = 0;
+
 char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * input )
 {
     //input: "name_of_script parameters" where parameters can be constants or variables (e.g., script(1,META.PROTO.3) )
@@ -3228,6 +3236,7 @@ char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * inpu
     char * output = NULL;
     char * tempi = NULL;
     char * tempo = NULL;
+    int ibuff = 0;
 
     output = xmalloc(strlen(input) + 1000);
 
@@ -3265,6 +3274,11 @@ char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * inpu
     *tempo = ' ';
     tempo++;
     //we have: "script_name "
+    counter_detection++;
+    ibuff = snprintf(tempo, 20, "%ld", counter_detection);
+    tempo = tempo + ibuff;
+    *tempo = ' ';
+    tempo++;
 
     while (*tempi == ' ') tempi++;
 
@@ -3421,6 +3435,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
             if (strchr(what_to_do, '#') == NULL) {
                 command = generate_command( pkt, r->list_of_tuples, what_to_do );
                 if (command != NULL) {
+                    fprintf(stderr, "EXECUTE FUNCTION:%s\n",command);
                     result = system(command);
                     xfree(command);
                     if (result == -1) fprintf(stderr, "Error 22a: Reaction \"%s\" failed.\n", what_to_do);
