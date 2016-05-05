@@ -391,8 +391,7 @@ char *get_my_data(void *data1, short size, long type) {
     char *buff1 = xmalloc(100);
     char *buff0 = xmalloc(10);
     void * data2 = NULL;
-    struct timeval *t1;
-    unsigned long t2 = 0;
+    struct timeval t1;
     unsigned long L1=0,L2=0,L3=0,L4=0;
     mmt_binary_data_t *db1 = NULL;
     //mmt_header_line_t *t;
@@ -426,9 +425,8 @@ char *get_my_data(void *data1, short size, long type) {
             break;
         case MMT_DATA_TIMEVAL:
             // TODO
-            t1 = (struct timeval *) (data1);
-            t2 = 1000000 * t1->tv_sec + t1->tv_usec;
-            (void)sprintf(buff1, "%lu", t2);
+            t1 = *(struct timeval *) (data1);
+            (void)sprintf(buff1, "%lu.%lu", t1.tv_sec, (long) t1.tv_usec);
             break;
         case MMT_DATA_IP_ADDR:
             // TODO
@@ -3336,18 +3334,21 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     //Will be used by python script
     FILE * pythonDataFile;
     char pythonDataFileName[50];
+    rule * rr = NULL;
     snprintf(pythonDataFileName, 50, "detection_%ld.data", counter_detection);
     pythonDataFile = open_file(pythonDataFileName, "w+");
-    if(r->root->type_rule == ATTACK)             printf(pythonDataFileName,"attack\n"); 
-    else if(r->root->type_rule == EVASION)       printf(pythonDataFileName,"evasion\n");
-    else if(r->root->type_rule == SECURITY_RULE) printf(pythonDataFileName,"security rule\n");
-    else                                         printf(pythonDataFileName,"type\n");
-    if(r->root->description != NULL)             printf(pythonDataFileName,"%s\n", r->root->description);
-    else                                         printf(pythonDataFileName,"description\n");
-    if(r->root->json_history != NULL)            printf(pythonDataFileName,"%s\n", r->json_history);
-    else                                         printf(pythonDataFileName,"history\n");
-    printf(pythonDataFileName,"%d\n", r->root->property_id);
-    printf(pythonDataFileName,"detected");
+    if(r->root != NULL) rr = r->root;
+    else rr = r;
+    if(rr->type_rule == ATTACK)             fprintf(pythonDataFile,"attack\n"); 
+    else if(rr->type_rule == EVASION)       fprintf(pythonDataFile,"evasion\n");
+    else if(rr->type_rule == SECURITY_RULE) fprintf(pythonDataFile,"security rule\n");
+    else                                    fprintf(pythonDataFile,"type\n");
+    if(rr->description != NULL)             fprintf(pythonDataFile,"%s\n", rr->description);
+    else                                    fprintf(pythonDataFile,"description\n");
+    if(rr->json_history != NULL)            fprintf(pythonDataFile,"%s\n", rr->json_history);
+    else                                    fprintf(pythonDataFile,"history\n");
+    fprintf(pythonDataFile,"%d\n", rr->property_id);
+    fprintf(pythonDataFile,"detected");
     close_file(pythonDataFile);
     return output;
 }
