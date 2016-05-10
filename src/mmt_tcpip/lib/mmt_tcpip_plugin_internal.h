@@ -6,9 +6,9 @@
  */
 
 #ifndef MMT_TCPIP_PLUGIN_INTERNAL_H
-#define	MMT_TCPIP_PLUGIN_INTERNAL_H
+#define MMT_TCPIP_PLUGIN_INTERNAL_H
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -54,8 +54,8 @@ check_local_proto_by_port_nb(uint16_t portnb, mmt_server_local_proto_t * local_p
     index_t i = local_protos->index;
     int count = 0;
     //while(count < 64 && local_protos->port_proto_mapping[i.index].port != 0) {^M
-    while(count < 64) {
-        if(local_protos->port_proto_mapping[i.index].port == portnb) {
+    while (count < 64) {
+        if (local_protos->port_proto_mapping[i.index].port == portnb) {
             return local_protos->port_proto_mapping[i.index].appproto;
         }
         count ++;
@@ -66,7 +66,7 @@ check_local_proto_by_port_nb(uint16_t portnb, mmt_server_local_proto_t * local_p
 
 static inline void
 insert_to_local_protos(uint16_t portnb, uint32_t appproto, uint16_t l4proto, mmt_server_local_proto_t * local_protos) {
-    if(check_local_proto_by_port_nb(portnb, local_protos) == 0) {
+    if (check_local_proto_by_port_nb(portnb, local_protos) == 0) {
         local_protos->port_proto_mapping[local_protos->index.index].port = portnb;
         local_protos->port_proto_mapping[local_protos->index.index].appproto = appproto;
         local_protos->port_proto_mapping[local_protos->index.index].l4proto = l4proto;
@@ -91,14 +91,14 @@ get_local_conv_proto(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *dst = packet->dst;
     uint32_t src_conv_proto = 0;
     uint32_t dest_conv_proto = 0;
-    if((ipacket->p_hdr->ts.tv_sec - src->conv_proto.last_seen.tv_sec) < 20 /* Max time difference is 2 seconds */) src_conv_proto = src->conv_proto.proto;
-    if((ipacket->p_hdr->ts.tv_sec - dst->conv_proto.last_seen.tv_sec) < 20 /* Max time difference is 2 seconds */) dest_conv_proto = dst->conv_proto.proto;
+    if ((ipacket->p_hdr->ts.tv_sec - src->conv_proto.last_seen.tv_sec) < 20 /* Max time difference is 2 seconds */) src_conv_proto = src->conv_proto.proto;
+    if ((ipacket->p_hdr->ts.tv_sec - dst->conv_proto.last_seen.tv_sec) < 20 /* Max time difference is 2 seconds */) dest_conv_proto = dst->conv_proto.proto;
     //We return the proto if:
     //(1) One conv proto is not null while the other is null
     //(2) Both protos are not zero and they are equal
-    if((src_conv_proto | dest_conv_proto) /* Both are not null */ &&
+    if ((src_conv_proto | dest_conv_proto) /* Both are not null */ &&
             (((src_conv_proto ^ dest_conv_proto) == 0 /* they are equal */)
-            || ((src_conv_proto ^ dest_conv_proto) == (src_conv_proto | dest_conv_proto) /* one is zero the other is not */))) {
+             || ((src_conv_proto ^ dest_conv_proto) == (src_conv_proto | dest_conv_proto) /* one is zero the other is not */))) {
         return src_conv_proto | dest_conv_proto; /*If equal Oring them is equal to them, if one is zero Oring them is equal to the non zero */
     }
     return PROTO_UNKNOWN;
@@ -113,15 +113,15 @@ get_local_conv_proto(ipacket_t * ipacket) {
 static inline void
 mmt_change_internal_flow_packet_protocol(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type)
 {
-	mmt_change_internal_flow_protocol(ipacket, detected_protocol, protocol_type);
-	mmt_change_internal_packet_protocol(ipacket, detected_protocol, protocol_type);
+    mmt_change_internal_flow_protocol(ipacket, detected_protocol, protocol_type);
+    mmt_change_internal_packet_protocol(ipacket, detected_protocol, protocol_type);
 }
 
 static inline void
 mmt_set_flow_protocol_to_packet(struct mmt_internal_tcpip_session_struct *flow,
-        struct mmt_tcpip_internal_packet_struct *packet) {
+                                struct mmt_tcpip_internal_packet_struct *packet) {
     memcpy(&packet->detected_protocol_stack[0],
-            &flow->detected_protocol_stack[0], sizeof (packet->detected_protocol_stack));
+           &flow->detected_protocol_stack[0], sizeof (packet->detected_protocol_stack));
 #if PROTOCOL_HISTORY_SIZE > 1
     memcpy(&packet->protocol_stack_info, &flow->protocol_stack_info, sizeof (packet->protocol_stack_info));
 #endif
@@ -131,11 +131,11 @@ mmt_set_flow_protocol_to_packet(struct mmt_internal_tcpip_session_struct *flow,
 static inline void
 mmt_reset_internal_packet_protocol(struct mmt_tcpip_internal_packet_struct *packet)
 {
-	packet->detected_protocol_stack[0] = PROTO_UNKNOWN;
+    packet->detected_protocol_stack[0] = PROTO_UNKNOWN;
 
 #if PROTOCOL_HISTORY_SIZE > 1
-	packet->protocol_stack_info.current_stack_size_minus_one = 0;
-	packet->protocol_stack_info.entry_is_real_protocol = 0;
+    packet->protocol_stack_info.current_stack_size_minus_one = 0;
+    packet->protocol_stack_info.entry_is_real_protocol = 0;
 #endif
 }
 
@@ -157,18 +157,18 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     uint8_t proxy_enabled = 0;
 
     packet->tcp_retransmission = 0;
-/*
-    packet->last_packet_direction = H2L_DIRECTION;
+    /*
+        packet->last_packet_direction = H2L_DIRECTION;
 
 
-    if (iph != NULL && iph->saddr < iph->daddr)
-        packet->last_packet_direction = L2H_DIRECTION;
+        if (iph != NULL && iph->saddr < iph->daddr)
+            packet->last_packet_direction = L2H_DIRECTION;
 
-#ifdef MMT_SUPPORT_IPV6
-    if (iphv6 != NULL && MMT_COMPARE_IPV6_ADDRESS(&iphv6->saddr, &iphv6->daddr) != 0)
-        packet->last_packet_direction = L2H_DIRECTION;
-#endif
-*/
+    #ifdef MMT_SUPPORT_IPV6
+        if (iphv6 != NULL && MMT_COMPARE_IPV6_ADDRESS(&iphv6->saddr, &iphv6->daddr) != 0)
+            packet->last_packet_direction = L2H_DIRECTION;
+    #endif
+    */
 
     packet->packet_lines_parsed_complete = 0;
     packet->packet_unix_lines_parsed_complete = 0;
@@ -179,12 +179,12 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     if (flow == NULL)
         return;
 
-/*
-    if (ipacket->session->init_finished == 0) {
-        ipacket->session->init_finished = 1;
-        ipacket->session->setup_packet_direction = packet->packet_direction;
-    }
-*/
+    /*
+        if (ipacket->session->init_finished == 0) {
+            ipacket->session->init_finished = 1;
+            ipacket->session->setup_packet_direction = packet->packet_direction;
+        }
+    */
 
     if (tcph != NULL) {
         /* reset retried bytes here before setting it */
@@ -205,10 +205,10 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
                 && flow->l4.tcp.seen_ack == 0) {
             flow->l4.tcp.seen_ack = 1;
             fire_attribute_event(ipacket, PROTO_TCP, TCP_CONN_ESTABLISHED, index, (void *) &seen);
-            if(flow->l4.tcp.rtt.tv_sec != 0) {
+            if (flow->l4.tcp.rtt.tv_sec != 0) {
                 ipacket->session->rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - flow->l4.tcp.rtt.tv_sec;
                 ipacket->session->rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - flow->l4.tcp.rtt.tv_usec;
-                if((int) ipacket->session->rtt.tv_usec < 0) {
+                if ((int) ipacket->session->rtt.tv_usec < 0) {
                     ipacket->session->rtt.tv_usec += 1000000;
                     ipacket->session->rtt.tv_sec -= 1;
                 }
@@ -246,10 +246,10 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
              */
             if (tcph->ack != 0) {
                 ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] =
-                        ntohl(tcph->seq) + (tcph->syn ? 1 : packet->payload_packet_len);
+                    ntohl(tcph->seq) + (tcph->syn ? 1 : packet->payload_packet_len);
                 if (!proxy_enabled) {
                     ipacket->session->next_tcp_seq_nr[1 - ipacket->session->last_packet_direction] = ntohl(tcph->ack_seq);
-                    debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)",ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction],ipacket->packet_id,ntohl(tcph->seq));
+                    debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
                 }
             }
             //  ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 == 60  -> padding packet
@@ -257,20 +257,20 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
             /* check tcp sequence counters */
             if (((uint32_t)
                     (ntohl(tcph->seq) -
-                    ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction])) >
+                     ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction])) >
                     0 && (uint32_t) ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] > 0) {
                 packet->tcp_outoforder = 1;
-            }else {
+            } else {
                 packet->tcp_outoforder = 0;
             }
             if (((uint32_t)
                     (ntohl(tcph->seq) -
-                    ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction])) >
+                     ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction])) >
                     MMT_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE) {
-                debug("TCP: set tcp_retransmission = 1 for ipacket: %lu",ipacket->packet_id);
+                debug("TCP: set tcp_retransmission = 1 for ipacket: %lu", ipacket->packet_id);
                 packet->tcp_retransmission = 1;
                 ipacket->session->tcp_retransmissions += 1;
-                
+
                 /*CHECK IF PARTIAL RETRY IS HAPPENENING */
                 if ((ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] - ntohl(tcph->seq) < packet->payload_packet_len)) {
                     /* num_retried_bytes actual_payload_len hold info about the partial retry
@@ -279,39 +279,39 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
                     packet->num_retried_bytes = ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] - ntohl(tcph->seq);
                     packet->actual_payload_len = packet->payload_packet_len - packet->num_retried_bytes;
                     ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
-                    debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)",ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction],ipacket->packet_id,ntohl(tcph->seq));
+                    debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
                 }
             }/*normal path
-	actual_payload_len is initialized to payload_packet_len during tcp header parsing itself.
-	It will be changed only in case of retransmission */
-                else {
+    actual_payload_len is initialized to payload_packet_len during tcp header parsing itself.
+    It will be changed only in case of retransmission */
+            else {
 
 
-                    packet->num_retried_bytes = 0;
-                    ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
-                    debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)",ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction],ipacket->packet_id,ntohl(tcph->seq));
-                }
-
-
+                packet->num_retried_bytes = 0;
+                ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
+                debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
             }
 
-            if (tcph->rst) {
-                ipacket->session->next_tcp_seq_nr[0] = 0;
-                ipacket->session->next_tcp_seq_nr[1] = 0;
-            }
+
         }
 
-        if (packet->payload_packet_len) {
-            ipacket->session->data_packet_count++;
-            ipacket->session->data_byte_volume += packet->payload_packet_len;
-            ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction]++;
-            ipacket->session->data_byte_volume_direction[ipacket->session->last_packet_direction] += packet->payload_packet_len;
+        if (tcph->rst) {
+            ipacket->session->next_tcp_seq_nr[0] = 0;
+            ipacket->session->next_tcp_seq_nr[1] = 0;
         }
     }
 
-#ifdef	__cplusplus
+    if (packet->payload_packet_len) {
+        ipacket->session->data_packet_count++;
+        ipacket->session->data_byte_volume += packet->payload_packet_len;
+        ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction]++;
+        ipacket->session->data_byte_volume_direction[ipacket->session->last_packet_direction] += packet->payload_packet_len;
+    }
+}
+
+#ifdef  __cplusplus
 }
 #endif
 
-#endif	/* MMT_TCPIP_PLUGIN_INTERNAL_H */
+#endif  /* MMT_TCPIP_PLUGIN_INTERNAL_H */
 

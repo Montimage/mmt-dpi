@@ -1278,10 +1278,14 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     struct mmt_internal_tcpip_id_struct * dst = NULL;
 
     // only handle unfragmented packets
-    if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x1FFF) != 0) {
+    // if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x1FFF) != 0) {
+    //     return 0; //TODO
+    // }
+    // Frag_offset: 1111 0000 0000 0000 (0xF000)
+    if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x2000) != 0) {
         return 0; //TODO
     }
-
+    printf("[IP] not fragmented: %lu\n", ipacket->packet_id);
     packet->iph = ip_hdr;
     packet->iphv6 = NULL;
     packet->l3_packet_len = ntohs(ip_hdr->tot_len);
