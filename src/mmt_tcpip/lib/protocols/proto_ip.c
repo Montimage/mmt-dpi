@@ -1285,7 +1285,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x2000) != 0) {
         return 0; //TODO
     }
-    printf("[IP] not fragmented: %lu\n", ipacket->packet_id);
+    // printf("[IP] not fragmented: %lu\n", ipacket->packet_id);
     packet->iph = ip_hdr;
     packet->iphv6 = NULL;
     packet->l3_packet_len = ntohs(ip_hdr->tot_len);
