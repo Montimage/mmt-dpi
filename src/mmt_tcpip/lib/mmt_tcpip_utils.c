@@ -183,25 +183,38 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     packet->line[packet->parsed_lines].len = 0;
     packet->packet_id = ipacket->packet_id;
 
-    // Add condition to check if the tcp payload start with HTTP/1.
-    if(packet->payload[0]!='H'||packet->payload[1]!='T'||packet->payload[2]!='T'||packet->payload[3]!='P'||packet->payload[4]!='/'||packet->payload[5]!='1'||packet->payload[6]!='.')
-        return;
     for (a = 0; a < end && packet->parsed_lines < MMT_MAX_PARSE_LINES_PER_PACKET; a++) {
     //for (a = 0; a < end; a++) {
         if (get_u16(packet->payload, a) == ntohs(0x0d0a)) {
             packet->line[packet->parsed_lines].len =
                 &packet->payload[a] - packet->line[packet->parsed_lines].ptr;
 
+            // Check for response packet
             if (packet->parsed_lines == 0 && packet->line[0].len >= MMT_STATICSTRING_LEN("HTTP/1.1 200 ") &&
                     memcmp(packet->line[0].ptr, "HTTP/1.", MMT_STATICSTRING_LEN("HTTP/1.")) == 0 &&
                     packet->line[0].ptr[MMT_STATICSTRING_LEN("HTTP/1.1 ")] > '0' &&
                     packet->line[0].ptr[MMT_STATICSTRING_LEN("HTTP/1.1 ")] < '6') {
                 packet->http_response.ptr = &packet->line[0].ptr[MMT_STATICSTRING_LEN("HTTP/1.1 ")];
                 packet->http_response.len = packet->line[0].len - MMT_STATICSTRING_LEN("HTTP/1.1 ");
+                printf("[HTTP] HTTP response detected! %lu\n", ipacket->packet_id);
                 MMT_LOG(PROTO_UNKNOWN, MMT_LOG_DEBUG,
                         "mmt_parse_packet_line_info: HTTP response parsed: \"%.*s\"\n",
                         packet->http_response.len, packet->http_response.ptr);
             }
+            // check for request packet
+            
+            // It is not http packet
+            // if(packet->http_response.ptr== NULL && ( 
+            //     memcmp(packet->line[0].ptr, "GET", MMT_STATICSTRING_LEN("GET")) != 0 && 
+            //     memcmp(packet->line[0].ptr, "POST", MMT_STATICSTRING_LEN("POST")) != 0 &&
+            //     memcmp(packet->line[0].ptr, "PUT", MMT_STATICSTRING_LEN("PUT")) != 0 && 
+            //     memcmp(packet->line[0].ptr, "DELETE", MMT_STATICSTRING_LEN("DELETE")) != 0 && 
+            //     memcmp(packet->line[0].ptr, "OPTIONS", MMT_STATICSTRING_LEN("OPTIONS")) != 0 && 
+            //     memcmp(packet->line[0].ptr, "HEAD", MMT_STATICSTRING_LEN("HEAD")) != 0 && 
+            //     memcmp(packet->line[0].ptr, "TRACE", MMT_STATICSTRING_LEN("TRACE")) != 0 && 
+            //     memcmp(packet->line[0].ptr, "CONNECT", MMT_STATICSTRING_LEN("CONNECT")) != 0)){
+            //     return;
+            // }
             if (packet->line[packet->parsed_lines].len > MMT_STATICSTRING_LEN("Server:") + 1
                     && memcmp(packet->line[packet->parsed_lines].ptr, "Server:", MMT_STATICSTRING_LEN("Server:")) == 0) {
                 // some stupid clients omit a space and place the servername directly after the colon
