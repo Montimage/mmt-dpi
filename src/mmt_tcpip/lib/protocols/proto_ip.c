@@ -1281,7 +1281,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     // if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x1FFF) != 0) {
     //     return 0; //TODO
     // }
-    // Frag_offset: 1111 0000 0000 0000 (0xF000)
+    // Frag_offset: (0x2000)
     if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x2000) != 0) {
         return 0; //TODO
     }

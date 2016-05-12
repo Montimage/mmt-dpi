@@ -183,7 +183,9 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     packet->line[packet->parsed_lines].len = 0;
     packet->packet_id = ipacket->packet_id;
 
-
+    // Add condition to check if the tcp payload start with HTTP/1.
+    if(packet->payload[0]!='H'||packet->payload[1]!='T'||packet->payload[2]!='T'||packet->payload[3]!='P'||packet->payload[4]!='/'||packet->payload[5]!='1'||packet->payload[6]!='.')
+        return;
     for (a = 0; a < end && packet->parsed_lines < MMT_MAX_PARSE_LINES_PER_PACKET; a++) {
     //for (a = 0; a < end; a++) {
         if (get_u16(packet->payload, a) == ntohs(0x0d0a)) {
