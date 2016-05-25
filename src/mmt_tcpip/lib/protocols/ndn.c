@@ -153,7 +153,7 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length){
     ndn_new_node->data_offset = offset + 2 + ndn_new_node->nb_octets;
 
     if(total_length < ndn_new_node->data_offset + ndn_new_node->length){
-        log_err("Not correct length value : %d \n",total_length);
+        log_err("Not correct length value : %d #  %lu\n",total_length,(ndn_new_node->data_offset + ndn_new_node->length));
         ndn_TLV_free(ndn_new_node);
         return NULL;
     }
@@ -301,9 +301,9 @@ ndn_session_t * ndn_new_session(){
     ndn_session->data_volume_data_packet[0] = 0;
     ndn_session->ndn_volume_data_packet[0] = 0;
     ndn_session->last_interest_packet_time[0] = NULL;
-    ndn_session->max_responsed_time[0] = 0;
-    ndn_session->min_responsed_time[0] = 0;
-    ndn_session->total_responsed_time[0] = 0;
+    ndn_session->max_responsed_time[0] = -1;
+    ndn_session->min_responsed_time[0] = -1;
+    ndn_session->total_responsed_time[0] = -1;
     ndn_session->nb_responsed[0] = 0;
 
     ndn_session->interest_lifeTime[1] = 0;
@@ -315,9 +315,9 @@ ndn_session_t * ndn_new_session(){
     ndn_session->data_volume_data_packet[1] = 0;
     ndn_session->ndn_volume_data_packet[1] = 0;
     ndn_session->last_interest_packet_time[1] = NULL;
-    ndn_session->max_responsed_time[1] = 0;
-    ndn_session->min_responsed_time[1] = 0;
-    ndn_session->total_responsed_time[1] = 0;
+    ndn_session->max_responsed_time[1] = -1;
+    ndn_session->min_responsed_time[1] = -1;
+    ndn_session->total_responsed_time[1] = -1;
     ndn_session->nb_responsed[1] = 0;
 
     ndn_session->next = NULL;
@@ -1842,15 +1842,24 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         if(ndn_session->last_interest_packet_time[in_direction] != NULL && ndn_session->last_interest_packet_time[in_direction]->tv_sec !=0 && ndn_session->last_interest_packet_time[in_direction]->tv_usec != 0){
             uint32_t rtt = (ipacket->p_hdr->ts.tv_sec - ndn_session->last_interest_packet_time[in_direction]->tv_sec)*1000 + (ipacket->p_hdr->ts.tv_usec - ndn_session->last_interest_packet_time[in_direction]->tv_usec)/1000;
             // Update Max responsed time
-            ndn_session->max_responsed_time[direction] = ndn_session->max_responsed_time[direction] < rtt?rtt:ndn_session->max_responsed_time[direction];
+            if(ndn_session->max_responsed_time[direction] == -1){
+                ndn_session->max_responsed_time[direction] = rtt;
+            }else{
+                ndn_session->max_responsed_time[direction] = ndn_session->max_responsed_time[direction] < rtt?rtt:ndn_session->max_responsed_time[direction];    
+            }
+            
             // Update Min responsed time
-            if(ndn_session->min_responsed_time[direction]==0){
+            if(ndn_session->min_responsed_time[direction]== -1 ){
                 ndn_session->min_responsed_time[direction] = rtt;
             }else{
                 ndn_session->min_responsed_time[direction] = ndn_session->min_responsed_time[direction] > rtt ? rtt : ndn_session->min_responsed_time[direction];
             }
             // Update total responsed time
-            ndn_session->total_responsed_time[direction] += rtt;
+            if(ndn_session->total_responsed_time[direction] == -1){
+                ndn_session->total_responsed_time[direction] = rtt;
+            }else{
+                ndn_session->total_responsed_time[direction] += rtt;    
+            }
             ndn_session->nb_responsed[direction] += 1;
             // printf("NDN/NDN_HTTP: MINMAX session: %lu min_responsed_time: %zu max_responsed_time: %zu",ndn_session->session_id,ndn_session->min_responsed_time, ndn_session->max_responsed_time);
             // mmt_free(ndn_session->last_interest_packet_time[in_direction]);
