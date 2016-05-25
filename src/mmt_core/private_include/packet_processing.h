@@ -160,6 +160,8 @@ struct mmt_session_struct {
     uint8_t family;                          /**< identifier of the application family to which this session belongs. */
     struct mmt_session_struct * next;        /**< pointer to the next session in the expiry list --- for internal use must not be changed */
     struct mmt_session_struct * previous;    /**< pointer to the previous session in the expiry list --- for internal use must not be changed */
+
+    proto_hierarchy_t proto_path_direction[2];
 };
 
 /**

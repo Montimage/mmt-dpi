@@ -40,7 +40,7 @@ bool ip_session_comp(void * key1, void * key2) {
  */
 
 int ip_version_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                          attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -53,7 +53,7 @@ int ip_version_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int ip_ihl_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                      attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
@@ -66,7 +66,7 @@ int ip_ihl_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int ip_df_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                     attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
@@ -81,7 +81,7 @@ int ip_df_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int ip_mf_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                     attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
@@ -96,7 +96,7 @@ int ip_mf_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int ip_frag_offset_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                              attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
@@ -107,44 +107,44 @@ int ip_frag_offset_extraction(const ipacket_t * packet, unsigned proto_index,
 }
 
 int ip_client_port_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                              attribute_t * extracted_data) {
 
-    if(packet->session != NULL) {
+    if (packet->session != NULL) {
         mmt_session_key_t * s_key = (mmt_session_key_t *) packet->session->session_key;
-        *((unsigned short *) extracted_data->data) = (s_key->is_lower_client)?s_key->lower_ip_port:s_key->higher_ip_port;
+        *((unsigned short *) extracted_data->data) = (s_key->is_lower_client) ? s_key->lower_ip_port : s_key->higher_ip_port;
         return 1;
     }
     return 0;
 }
 
 int ip_server_port_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                              attribute_t * extracted_data) {
 
-    if(packet->session != NULL) {
+    if (packet->session != NULL) {
         mmt_session_key_t * s_key = (mmt_session_key_t *) packet->session->session_key;
-        *((unsigned short *) extracted_data->data) = (s_key->is_lower_client)?s_key->higher_ip_port:s_key->lower_ip_port;
+        *((unsigned short *) extracted_data->data) = (s_key->is_lower_client) ? s_key->higher_ip_port : s_key->lower_ip_port;
         return 1;
     }
     return 0;
 }
 
 int ip_client_addr_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                              attribute_t * extracted_data) {
 
-    if(packet->session != NULL) {
+    if (packet->session != NULL) {
         mmt_session_key_t * s_key = (mmt_session_key_t *) packet->session->session_key;
-        *((unsigned int *) extracted_data->data) = (s_key->is_lower_client)?((mmt_ip4_id_t *) s_key->lower_ip)->ip:((mmt_ip4_id_t *) s_key->higher_ip)->ip;
+        *((unsigned int *) extracted_data->data) = (s_key->is_lower_client) ? ((mmt_ip4_id_t *) s_key->lower_ip)->ip : ((mmt_ip4_id_t *) s_key->higher_ip)->ip;
         return 1;
     }
     return 0;
 }
 
 int ip_server_addr_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
+                              attribute_t * extracted_data) {
 
-    if(packet->session != NULL) {
+    if (packet->session != NULL) {
         mmt_session_key_t * s_key = (mmt_session_key_t *) packet->session->session_key;
-        *((unsigned int *) extracted_data->data) = (s_key->is_lower_client)?((mmt_ip4_id_t *) s_key->higher_ip)->ip : ((mmt_ip4_id_t *) s_key->lower_ip)->ip;
+        *((unsigned int *) extracted_data->data) = (s_key->is_lower_client) ? ((mmt_ip4_id_t *) s_key->higher_ip)->ip : ((mmt_ip4_id_t *) s_key->lower_ip)->ip;
         return 1;
     }
     return 0;
@@ -164,7 +164,7 @@ int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attrib
     struct iphdr * ip_hdr = (struct iphdr *) (& packet->data[proto_offset]);
     int ihl = ip_hdr->ihl;
     extracted_data->data = NULL;
-    if(ihl > 5){
+    if (ihl > 5) {
         ip_hdr = ip_hdr + 5 * 4;
         extracted_data->data = (unsigned char *) ip_hdr;
         return 1;
@@ -192,19 +192,19 @@ uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_sess
         const struct udphdr *udph = (struct udphdr *) & ip_packet[iph->ihl * 4];
         sport = ntohs(udph->source);
         dport = ntohs(udph->dest);
-    } 
+    }
 
     if (iph->saddr < iph->daddr) {
         ipv4_session->lower_ip = &iph->saddr;
         ipv4_session->higher_ip = &iph->daddr;
         ipv4_session->lower_ip_port = sport;
         ipv4_session->higher_ip_port = dport;
-        
+
         ipv4_session->is_lower_initiator = L2H_DIRECTION;
         ipv4_session->is_lower_client = L2H_DIRECTION;
         retval = L2H_DIRECTION;
-    } else if(iph->saddr == iph->daddr) {
-        if(sport < dport) {
+    } else if (iph->saddr == iph->daddr) {
+        if (sport < dport) {
             ipv4_session->lower_ip = &iph->saddr;
             ipv4_session->higher_ip = &iph->daddr;
             ipv4_session->lower_ip_port = sport;
@@ -212,7 +212,7 @@ uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_sess
             ipv4_session->is_lower_initiator = L2H_DIRECTION;
             ipv4_session->is_lower_client = L2H_DIRECTION;
             retval = L2H_DIRECTION;
-        }else {
+        } else {
             ipv4_session->lower_ip = &iph->daddr;
             ipv4_session->higher_ip = &iph->saddr;
             ipv4_session->lower_ip_port = dport;
@@ -248,798 +248,798 @@ int ip_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 
     switch (ip_hdr->protocol) // Layer 4 protocol identifier
     {
-            /* ICMPv4 */
-        case 1:
-            retval.proto_id = PROTO_ICMP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* IGMP */
-        case 2:
-            retval.proto_id = PROTO_IGMP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            // IPv4
-        case 4:
-            retval.proto_id = PROTO_IP_IN_IP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* TCP */
-        case 6:
-            retval.proto_id = PROTO_TCP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* EGP */
-        case 8:
-            retval.proto_id = PROTO_EGP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* UDP */
-        case 17:
-            retval.proto_id = PROTO_UDP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            // IPv6
-        case 41:
-            retval.proto_id = PROTO_IPV6;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            // GRE
-        case 47:
-            retval.proto_id = PROTO_GRE;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        case 50:
-            retval.proto_id = PROTO_ESP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        case 51:
-            retval.proto_id = PROTO_AH;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        case 58:
-            retval.proto_id = PROTO_ICMPV6;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        case 89:
-            retval.proto_id = PROTO_OSPF;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        case 94:
-            retval.proto_id = PROTO_IP_IN_IP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        case 115:
-            retval.proto_id = PROTO_L2TP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        case 132:
-            retval.proto_id = PROTO_SCTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        case 136:
-            retval.proto_id = PROTO_UDPLITE;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_GGP */
-        case 0x03:
-            retval.proto_id = PROTO_GGP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ST */
-        case 0x05:
-            retval.proto_id = PROTO_ST;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_CBT */
-        case 0x07:
-            retval.proto_id = PROTO_CBT;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IGP */
-        case 0x09:
-            retval.proto_id = PROTO_IGP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_BBN_RCC_MON */
-        case 0x0A:
-            retval.proto_id = PROTO_BBN_RCC_MON;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_NVP_II */
-        case 0x0B:
-            retval.proto_id = PROTO_NVP_II;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_PUP */
-        case 0x0C:
-            retval.proto_id = PROTO_PUP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ARGUS */
-        case 0x0D:
-            retval.proto_id = PROTO_ARGUS;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_EMCON */
-        case 0x0E:
-            retval.proto_id = PROTO_EMCON;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_XNET */
-        case 0x0F:
-            retval.proto_id = PROTO_XNET;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_CHAOS */
-        case 0x10:
-            retval.proto_id = PROTO_CHAOS;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MUX */
-        case 0x12:
-            retval.proto_id = PROTO_MUX;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_DCN_MEAS */
-        case 0x13:
-            retval.proto_id = PROTO_DCN_MEAS;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_HMP */
-        case 0x14:
-            retval.proto_id = PROTO_HMP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_PRM */
-        case 0x15:
-            retval.proto_id = PROTO_PRM;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_XNS_IDP */
-        case 0x16:
-            retval.proto_id = PROTO_XNS_IDP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_TRUNK_1 */
-        case 0x17:
-            retval.proto_id = PROTO_TRUNK_1;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_TRUNK_2 */
-        case 0x18:
-            retval.proto_id = PROTO_TRUNK_2;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_LEAF_1 */
-        case 0x19:
-            retval.proto_id = PROTO_LEAF_1;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_LEAF_2 */
-        case 0x1A:
-            retval.proto_id = PROTO_LEAF_2;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IRTP */
-        case 0x1C:
-            retval.proto_id = PROTO_IRTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ISO_TP4 */
-        case 0x1D:
-            retval.proto_id = PROTO_ISO_TP4;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_NETBLT */
-        case 0x1E:
-            retval.proto_id = PROTO_NETBLT;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MFE_NSP */
-        case 0x1F:
-            retval.proto_id = PROTO_MFE_NSP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MERIT_INP */
-        case 0x20:
-            retval.proto_id = PROTO_MERIT_INP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_DCCP */
-        case 0x21:
-            retval.proto_id = PROTO_DCCP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_3PC */
-        case 0x22:
-            retval.proto_id = PROTO_3PC;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IDPR */
-        case 0x23:
-            retval.proto_id = PROTO_IDPR;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_XTP */
-        case 0x24:
-            retval.proto_id = PROTO_XTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_DDP */
-        case 0x25:
-            retval.proto_id = PROTO_DDP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IDPR_CMTP */
-        case 0x26:
-            retval.proto_id = PROTO_IDPR_CMTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_TP_PP */
-        case 0x27:
-            retval.proto_id = PROTO_TP_PP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IL */
-        case 0x28:
-            retval.proto_id = PROTO_IL;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SDRP */
-        case 0x2A:
-            retval.proto_id = PROTO_SDRP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IDRP */
-        case 0x2D:
-            retval.proto_id = PROTO_IDRP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_RSVP */
-        case 0x2E:
-            retval.proto_id = PROTO_RSVP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MHRP */
-        case 0x30:
-            retval.proto_id = PROTO_MHRP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_BNA */
-        case 0x31:
-            retval.proto_id = PROTO_BNA;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_I_NLSP */
-        case 0x34:
-            retval.proto_id = PROTO_I_NLSP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SWIPE */
-        case 0x35:
-            retval.proto_id = PROTO_SWIPE;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_NARP */
-        case 0x36:
-            retval.proto_id = PROTO_NARP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MOBILE */
-        case 0x37:
-            retval.proto_id = PROTO_MOBILE;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_TLSP */
-        case 0x38:
-            retval.proto_id = PROTO_TLSP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SKIP */
-        case 0x39:
-            retval.proto_id = PROTO_SKIP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ANY_HIP */
-        case 0x3D:
-            retval.proto_id = PROTO_ANY_HIP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_CFTP */
-        case 0x3E:
-            retval.proto_id = PROTO_CFTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ANY_LOCAL */
-        case 0x3F:
-            retval.proto_id = PROTO_ANY_LOCAL;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SAT_EXPAK */
-        case 0x40:
-            retval.proto_id = PROTO_SAT_EXPAK;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_KRYPTOLAN */
-        case 0x41:
-            retval.proto_id = PROTO_KRYPTOLAN;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_RVD */
-        case 0x42:
-            retval.proto_id = PROTO_RVD;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IPPC */
-        case 0x43:
-            retval.proto_id = PROTO_IPPC;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ANY_DFS */
-        case 0x44:
-            retval.proto_id = PROTO_ANY_DFS;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SAT_MON */
-        case 0x45:
-            retval.proto_id = PROTO_SAT_MON;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_VISA */
-        case 0x46:
-            retval.proto_id = PROTO_VISA;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IPCV */
-        case 0x47:
-            retval.proto_id = PROTO_IPCV;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_CPNX */
-        case 0x48:
-            retval.proto_id = PROTO_CPNX;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_CPHB */
-        case 0x49:
-            retval.proto_id = PROTO_CPHB;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_WSN */
-        case 0x4A:
-            retval.proto_id = PROTO_WSN;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_PVP */
-        case 0x4B:
-            retval.proto_id = PROTO_PVP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_BR_SAT_MON */
-        case 0x4C:
-            retval.proto_id = PROTO_BR_SAT_MON;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SUN_ND */
-        case 0x4D:
-            retval.proto_id = PROTO_SUN_ND;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_WB_MON */
-        case 0x4E:
-            retval.proto_id = PROTO_WB_MON;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_WB_EXPAK */
-        case 0x4F:
-            retval.proto_id = PROTO_WB_EXPAK;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ISO_IP */
-        case 0x50:
-            retval.proto_id = PROTO_ISO_IP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_VMTP */
-        case 0x51:
-            retval.proto_id = PROTO_VMTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SECURE_VMTP */
-        case 0x52:
-            retval.proto_id = PROTO_SECURE_VMTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_VINES */
-        case 0x53:
-            retval.proto_id = PROTO_VINES;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IPTM */
-        case 0x54:
-            retval.proto_id = PROTO_IPTM;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_NSFNET_IGP */
-        case 0x55:
-            retval.proto_id = PROTO_NSFNET_IGP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_DGP */
-        case 0x56:
-            retval.proto_id = PROTO_DGP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_TCF */
-        case 0x57:
-            retval.proto_id = PROTO_TCF;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_EIGRP */
-        case 0x58:
-            retval.proto_id = PROTO_EIGRP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SPRITE_RPC */
-        case 0x5A:
-            retval.proto_id = PROTO_SPRITE_RPC;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_LARP */
-        case 0x5B:
-            retval.proto_id = PROTO_LARP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MTP */
-        case 0x5C:
-            retval.proto_id = PROTO_MTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_AX_25 */
-        case 0x5D:
-            retval.proto_id = PROTO_AX_25;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MICP */
-        case 0x5F:
-            retval.proto_id = PROTO_MICP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SCC_SP */
-        case 0x60:
-            retval.proto_id = PROTO_SCC_SP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ETHERIP */
-        case 0x61:
-            retval.proto_id = PROTO_ETHERIP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ENCAP */
-        case 0x62:
-            retval.proto_id = PROTO_ENCAP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ANY_PES */
-        case 0x63:
-            retval.proto_id = PROTO_ANY_PES;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_GMTP */
-        case 0x64:
-            retval.proto_id = PROTO_GMTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IFMP */
-        case 0x65:
-            retval.proto_id = PROTO_IFMP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_PNNI */
-        case 0x66:
-            retval.proto_id = PROTO_PNNI;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_PIM */
-        case 0x67:
-            retval.proto_id = PROTO_PIM;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ARIS */
-        case 0x68:
-            retval.proto_id = PROTO_ARIS;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SCPS */
-        case 0x69:
-            retval.proto_id = PROTO_SCPS;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_QNX */
-        case 0x6A:
-            retval.proto_id = PROTO_QNX;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IPCOMP */
-        case 0x6C:
-            retval.proto_id = PROTO_IPCOMP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SNP */
-        case 0x6D:
-            retval.proto_id = PROTO_SNP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_COMPAQ_PEER */
-        case 0x6E:
-            retval.proto_id = PROTO_COMPAQ_PEER;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IPX_IN_IP */
-        case 0x6F:
-            retval.proto_id = PROTO_IPX_IN_IP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_VRRP */
-        case 0x70:
-            retval.proto_id = PROTO_VRRP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_PGM */
-        case 0x71:
-            retval.proto_id = PROTO_PGM;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_ANY_0HOP */
-        case 0x72:
-            retval.proto_id = PROTO_ANY_0HOP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_DDX */
-        case 0x74:
-            retval.proto_id = PROTO_DDX;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IATP */
-        case 0x75:
-            retval.proto_id = PROTO_IATP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_STP */
-        case 0x76:
-            retval.proto_id = PROTO_STP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SRP */
-        case 0x77:
-            retval.proto_id = PROTO_SRP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_UTI */
-        case 0x78:
-            retval.proto_id = PROTO_UTI;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SMP */
-        case 0x79:
-            retval.proto_id = PROTO_SMP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SM */
-        case 0x7A:
-            retval.proto_id = PROTO_SM;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_PTP */
-        case 0x7B:
-            retval.proto_id = PROTO_PTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IS_IS */
-        case 0x7C:
-            retval.proto_id = PROTO_IS_IS;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_FIRE */
-        case 0x7D:
-            retval.proto_id = PROTO_FIRE;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_CRTP */
-        case 0x7E:
-            retval.proto_id = PROTO_CRTP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_CRUDP */
-        case 0x7F:
-            retval.proto_id = PROTO_CRUDP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SSCOPMCE */
-        case 0x80:
-            retval.proto_id = PROTO_SSCOPMCE;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_IPLT */
-        case 0x81:
-            retval.proto_id = PROTO_IPLT;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SPS */
-        case 0x82:
-            retval.proto_id = PROTO_SPS;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_PIPE */
-        case 0x83:
-            retval.proto_id = PROTO_PIPE;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_FC */
-        case 0x85:
-            retval.proto_id = PROTO_FC;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_RSVP_E2E_IGNORE */
-        case 0x86:
-            retval.proto_id = PROTO_RSVP_E2E_IGNORE;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MOBILITY_HEADER */
-        case 0x87:
-            retval.proto_id = PROTO_MOBILITY_HEADER;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_MPLS_IN_IP */
-        case 0x89:
-            retval.proto_id = PROTO_MPLS_IN_IP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_HIP */
-        case 0x8B:
-            retval.proto_id = PROTO_HIP;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-            /* PROTO_SHIM6 */
-        case 0x8C:
-            retval.proto_id = PROTO_SHIM6;
-            retval.offset = (ip_hdr->ihl * 4);
-            retval.status = Classified;
-            break;
-        default:
-            return 0;
+    /* ICMPv4 */
+    case 1:
+        retval.proto_id = PROTO_ICMP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* IGMP */
+    case 2:
+        retval.proto_id = PROTO_IGMP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    // IPv4
+    case 4:
+        retval.proto_id = PROTO_IP_IN_IP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* TCP */
+    case 6:
+        retval.proto_id = PROTO_TCP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* EGP */
+    case 8:
+        retval.proto_id = PROTO_EGP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* UDP */
+    case 17:
+        retval.proto_id = PROTO_UDP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    // IPv6
+    case 41:
+        retval.proto_id = PROTO_IPV6;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    // GRE
+    case 47:
+        retval.proto_id = PROTO_GRE;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    case 50:
+        retval.proto_id = PROTO_ESP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    case 51:
+        retval.proto_id = PROTO_AH;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    case 58:
+        retval.proto_id = PROTO_ICMPV6;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    case 89:
+        retval.proto_id = PROTO_OSPF;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    case 94:
+        retval.proto_id = PROTO_IP_IN_IP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    case 115:
+        retval.proto_id = PROTO_L2TP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    case 132:
+        retval.proto_id = PROTO_SCTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    case 136:
+        retval.proto_id = PROTO_UDPLITE;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_GGP */
+    case 0x03:
+        retval.proto_id = PROTO_GGP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ST */
+    case 0x05:
+        retval.proto_id = PROTO_ST;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_CBT */
+    case 0x07:
+        retval.proto_id = PROTO_CBT;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IGP */
+    case 0x09:
+        retval.proto_id = PROTO_IGP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_BBN_RCC_MON */
+    case 0x0A:
+        retval.proto_id = PROTO_BBN_RCC_MON;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_NVP_II */
+    case 0x0B:
+        retval.proto_id = PROTO_NVP_II;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_PUP */
+    case 0x0C:
+        retval.proto_id = PROTO_PUP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ARGUS */
+    case 0x0D:
+        retval.proto_id = PROTO_ARGUS;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_EMCON */
+    case 0x0E:
+        retval.proto_id = PROTO_EMCON;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_XNET */
+    case 0x0F:
+        retval.proto_id = PROTO_XNET;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_CHAOS */
+    case 0x10:
+        retval.proto_id = PROTO_CHAOS;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MUX */
+    case 0x12:
+        retval.proto_id = PROTO_MUX;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_DCN_MEAS */
+    case 0x13:
+        retval.proto_id = PROTO_DCN_MEAS;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_HMP */
+    case 0x14:
+        retval.proto_id = PROTO_HMP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_PRM */
+    case 0x15:
+        retval.proto_id = PROTO_PRM;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_XNS_IDP */
+    case 0x16:
+        retval.proto_id = PROTO_XNS_IDP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_TRUNK_1 */
+    case 0x17:
+        retval.proto_id = PROTO_TRUNK_1;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_TRUNK_2 */
+    case 0x18:
+        retval.proto_id = PROTO_TRUNK_2;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_LEAF_1 */
+    case 0x19:
+        retval.proto_id = PROTO_LEAF_1;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_LEAF_2 */
+    case 0x1A:
+        retval.proto_id = PROTO_LEAF_2;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IRTP */
+    case 0x1C:
+        retval.proto_id = PROTO_IRTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ISO_TP4 */
+    case 0x1D:
+        retval.proto_id = PROTO_ISO_TP4;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_NETBLT */
+    case 0x1E:
+        retval.proto_id = PROTO_NETBLT;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MFE_NSP */
+    case 0x1F:
+        retval.proto_id = PROTO_MFE_NSP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MERIT_INP */
+    case 0x20:
+        retval.proto_id = PROTO_MERIT_INP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_DCCP */
+    case 0x21:
+        retval.proto_id = PROTO_DCCP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_3PC */
+    case 0x22:
+        retval.proto_id = PROTO_3PC;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IDPR */
+    case 0x23:
+        retval.proto_id = PROTO_IDPR;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_XTP */
+    case 0x24:
+        retval.proto_id = PROTO_XTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_DDP */
+    case 0x25:
+        retval.proto_id = PROTO_DDP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IDPR_CMTP */
+    case 0x26:
+        retval.proto_id = PROTO_IDPR_CMTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_TP_PP */
+    case 0x27:
+        retval.proto_id = PROTO_TP_PP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IL */
+    case 0x28:
+        retval.proto_id = PROTO_IL;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SDRP */
+    case 0x2A:
+        retval.proto_id = PROTO_SDRP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IDRP */
+    case 0x2D:
+        retval.proto_id = PROTO_IDRP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_RSVP */
+    case 0x2E:
+        retval.proto_id = PROTO_RSVP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MHRP */
+    case 0x30:
+        retval.proto_id = PROTO_MHRP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_BNA */
+    case 0x31:
+        retval.proto_id = PROTO_BNA;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_I_NLSP */
+    case 0x34:
+        retval.proto_id = PROTO_I_NLSP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SWIPE */
+    case 0x35:
+        retval.proto_id = PROTO_SWIPE;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_NARP */
+    case 0x36:
+        retval.proto_id = PROTO_NARP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MOBILE */
+    case 0x37:
+        retval.proto_id = PROTO_MOBILE;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_TLSP */
+    case 0x38:
+        retval.proto_id = PROTO_TLSP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SKIP */
+    case 0x39:
+        retval.proto_id = PROTO_SKIP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ANY_HIP */
+    case 0x3D:
+        retval.proto_id = PROTO_ANY_HIP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_CFTP */
+    case 0x3E:
+        retval.proto_id = PROTO_CFTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ANY_LOCAL */
+    case 0x3F:
+        retval.proto_id = PROTO_ANY_LOCAL;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SAT_EXPAK */
+    case 0x40:
+        retval.proto_id = PROTO_SAT_EXPAK;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_KRYPTOLAN */
+    case 0x41:
+        retval.proto_id = PROTO_KRYPTOLAN;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_RVD */
+    case 0x42:
+        retval.proto_id = PROTO_RVD;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IPPC */
+    case 0x43:
+        retval.proto_id = PROTO_IPPC;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ANY_DFS */
+    case 0x44:
+        retval.proto_id = PROTO_ANY_DFS;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SAT_MON */
+    case 0x45:
+        retval.proto_id = PROTO_SAT_MON;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_VISA */
+    case 0x46:
+        retval.proto_id = PROTO_VISA;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IPCV */
+    case 0x47:
+        retval.proto_id = PROTO_IPCV;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_CPNX */
+    case 0x48:
+        retval.proto_id = PROTO_CPNX;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_CPHB */
+    case 0x49:
+        retval.proto_id = PROTO_CPHB;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_WSN */
+    case 0x4A:
+        retval.proto_id = PROTO_WSN;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_PVP */
+    case 0x4B:
+        retval.proto_id = PROTO_PVP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_BR_SAT_MON */
+    case 0x4C:
+        retval.proto_id = PROTO_BR_SAT_MON;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SUN_ND */
+    case 0x4D:
+        retval.proto_id = PROTO_SUN_ND;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_WB_MON */
+    case 0x4E:
+        retval.proto_id = PROTO_WB_MON;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_WB_EXPAK */
+    case 0x4F:
+        retval.proto_id = PROTO_WB_EXPAK;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ISO_IP */
+    case 0x50:
+        retval.proto_id = PROTO_ISO_IP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_VMTP */
+    case 0x51:
+        retval.proto_id = PROTO_VMTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SECURE_VMTP */
+    case 0x52:
+        retval.proto_id = PROTO_SECURE_VMTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_VINES */
+    case 0x53:
+        retval.proto_id = PROTO_VINES;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IPTM */
+    case 0x54:
+        retval.proto_id = PROTO_IPTM;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_NSFNET_IGP */
+    case 0x55:
+        retval.proto_id = PROTO_NSFNET_IGP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_DGP */
+    case 0x56:
+        retval.proto_id = PROTO_DGP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_TCF */
+    case 0x57:
+        retval.proto_id = PROTO_TCF;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_EIGRP */
+    case 0x58:
+        retval.proto_id = PROTO_EIGRP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SPRITE_RPC */
+    case 0x5A:
+        retval.proto_id = PROTO_SPRITE_RPC;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_LARP */
+    case 0x5B:
+        retval.proto_id = PROTO_LARP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MTP */
+    case 0x5C:
+        retval.proto_id = PROTO_MTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_AX_25 */
+    case 0x5D:
+        retval.proto_id = PROTO_AX_25;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MICP */
+    case 0x5F:
+        retval.proto_id = PROTO_MICP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SCC_SP */
+    case 0x60:
+        retval.proto_id = PROTO_SCC_SP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ETHERIP */
+    case 0x61:
+        retval.proto_id = PROTO_ETHERIP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ENCAP */
+    case 0x62:
+        retval.proto_id = PROTO_ENCAP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ANY_PES */
+    case 0x63:
+        retval.proto_id = PROTO_ANY_PES;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_GMTP */
+    case 0x64:
+        retval.proto_id = PROTO_GMTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IFMP */
+    case 0x65:
+        retval.proto_id = PROTO_IFMP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_PNNI */
+    case 0x66:
+        retval.proto_id = PROTO_PNNI;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_PIM */
+    case 0x67:
+        retval.proto_id = PROTO_PIM;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ARIS */
+    case 0x68:
+        retval.proto_id = PROTO_ARIS;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SCPS */
+    case 0x69:
+        retval.proto_id = PROTO_SCPS;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_QNX */
+    case 0x6A:
+        retval.proto_id = PROTO_QNX;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IPCOMP */
+    case 0x6C:
+        retval.proto_id = PROTO_IPCOMP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SNP */
+    case 0x6D:
+        retval.proto_id = PROTO_SNP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_COMPAQ_PEER */
+    case 0x6E:
+        retval.proto_id = PROTO_COMPAQ_PEER;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IPX_IN_IP */
+    case 0x6F:
+        retval.proto_id = PROTO_IPX_IN_IP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_VRRP */
+    case 0x70:
+        retval.proto_id = PROTO_VRRP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_PGM */
+    case 0x71:
+        retval.proto_id = PROTO_PGM;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_ANY_0HOP */
+    case 0x72:
+        retval.proto_id = PROTO_ANY_0HOP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_DDX */
+    case 0x74:
+        retval.proto_id = PROTO_DDX;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IATP */
+    case 0x75:
+        retval.proto_id = PROTO_IATP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_STP */
+    case 0x76:
+        retval.proto_id = PROTO_STP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SRP */
+    case 0x77:
+        retval.proto_id = PROTO_SRP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_UTI */
+    case 0x78:
+        retval.proto_id = PROTO_UTI;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SMP */
+    case 0x79:
+        retval.proto_id = PROTO_SMP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SM */
+    case 0x7A:
+        retval.proto_id = PROTO_SM;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_PTP */
+    case 0x7B:
+        retval.proto_id = PROTO_PTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IS_IS */
+    case 0x7C:
+        retval.proto_id = PROTO_IS_IS;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_FIRE */
+    case 0x7D:
+        retval.proto_id = PROTO_FIRE;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_CRTP */
+    case 0x7E:
+        retval.proto_id = PROTO_CRTP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_CRUDP */
+    case 0x7F:
+        retval.proto_id = PROTO_CRUDP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SSCOPMCE */
+    case 0x80:
+        retval.proto_id = PROTO_SSCOPMCE;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_IPLT */
+    case 0x81:
+        retval.proto_id = PROTO_IPLT;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SPS */
+    case 0x82:
+        retval.proto_id = PROTO_SPS;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_PIPE */
+    case 0x83:
+        retval.proto_id = PROTO_PIPE;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_FC */
+    case 0x85:
+        retval.proto_id = PROTO_FC;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_RSVP_E2E_IGNORE */
+    case 0x86:
+        retval.proto_id = PROTO_RSVP_E2E_IGNORE;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MOBILITY_HEADER */
+    case 0x87:
+        retval.proto_id = PROTO_MOBILITY_HEADER;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_MPLS_IN_IP */
+    case 0x89:
+        retval.proto_id = PROTO_MPLS_IN_IP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_HIP */
+    case 0x8B:
+        retval.proto_id = PROTO_HIP;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    /* PROTO_SHIM6 */
+    case 0x8C:
+        retval.proto_id = PROTO_SHIM6;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
+    default:
+        return 0;
     }
     return set_classified_proto(ipacket, index + 1, retval);
     //return retval;
@@ -1066,7 +1066,7 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     unsigned off = get_packet_offset_at_index( ipacket, index );
     unsigned len = ipacket->p_hdr->caplen - off;
 
-    if( len < sizeof( struct iphdr )) {
+    if ( len < sizeof( struct iphdr )) {
         (void)fprintf( stderr, "*** Warning: malformed packet (not enough data)\n" );
         return 0;
     }
@@ -1077,13 +1077,13 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     key <<= 32;
     key  |= ip->daddr;
 
-    if( !hashmap_get( map, key, (void**)&dg )) {
+    if ( !hashmap_get( map, key, (void**)&dg )) {
         dg = ip_dgram_alloc();
         hashmap_insert_kv( map, key, dg );
     }
 
     ip_dgram_update( dg, ip, len );
-    if( !ip_dgram_is_complete( dg )) {
+    if ( !ip_dgram_is_complete( dg )) {
         return 0;
     }
 
@@ -1116,7 +1116,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     uint16_t ip_offset = ntohs(ip_hdr->frag_off);
 
     // handle fragmented datagrams
-    if( ip_offset && !ip_process_fragment( ipacket, index )) {
+    if ( ip_offset && !ip_process_fragment( ipacket, index )) {
         *is_new_session = 0;
         return NULL;
     }
@@ -1130,7 +1130,84 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
 
     mmt_session_t * session = get_session(protocol_context, & ipv4_session_key, ipacket, is_new_session);
     if (session) {
+        if (session->last_packet_direction != packet_direction && session->packet_count > 0) {
+            ip_rtt_t ip_rtt;
+            ip_rtt.direction = session->last_packet_direction;
+            ip_rtt.session = session;
+            ip_rtt.rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - session->s_last_activity_time.tv_sec;
+            ip_rtt.rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - session->s_last_activity_time.tv_usec;
+            if ((int) ip_rtt.rtt.tv_usec < 0) {
+                ip_rtt.rtt.tv_usec += 1000000;
+                ip_rtt.rtt.tv_sec -= 1;
+            }
+            fire_attribute_event(ipacket, PROTO_IP, IP_RTT, index, (void *) & (ip_rtt));
+        }
+
+
+        // Fix proto_path , only fix til IP
+        // TODO: May be need to fix for ipacket->proto_headers_offset = &session->proto_headers_offset and ipacket->proto_classif_status = &session->proto_classif_status;
+        if (session->proto_path.proto_path[index] != PROTO_IP) {
+            debug("[IP] Fixing proto_path of session: %lu", session->session_id);
+            // Get PROTO_IP index in current proto_path
+            int j, ip_index = 0;
+            for (j = 0; j < session->proto_path.len; j++) {
+                if (session->proto_path.proto_path[j] == PROTO_IP) {
+                    ip_index = j;
+                    break;
+                }
+            }
+
+            debug("[IP] Current index of PROTO_IP: %d / (packet)%d", ip_index, index);
+            if (ip_index != 0) {
+                if (ip_index > index) {
+                    debug("[IP] Current protocol_path need to remove some protocol");
+                    int pre_path = 0, post_path = ip_index + 1;
+
+                    for (pre_path = 0; pre_path <= index; pre_path++)
+                    {
+                        session->proto_path.proto_path[pre_path] = ipacket->proto_hierarchy->proto_path[pre_path];
+                        session->proto_headers_offset.proto_path[pre_path] = ipacket->proto_headers_offset->proto_path[pre_path];
+                        session->proto_classif_status.proto_path[pre_path] = ipacket->proto_classif_status->proto_path[pre_path];
+                    }
+                    for (post_path = ip_index + 1; post_path < session->proto_path.len; post_path++, pre_path++) {
+                        session->proto_path.proto_path[pre_path] = session->proto_path.proto_path[post_path];
+                        session->proto_headers_offset.proto_path[pre_path] = session->proto_headers_offset.proto_path[post_path];
+                        session->proto_classif_status.proto_path[pre_path] = session->proto_classif_status.proto_path[post_path];
+                    }
+                    session->proto_path.len = pre_path;
+                    session->proto_headers_offset.len = pre_path;
+                    session->proto_classif_status.len = pre_path;
+                    debug("[IP] New protocol_path len %d", pre_path);
+                } else {
+                    debug("[IP] Current protocol_path need to add some protocol from packet hierarchy");
+                    int delta = index - ip_index;
+                    int new_len = session->proto_path.len + delta;
+                    int pre_path = 0, post_path = new_len - 1;
+
+                    for (post_path = new_len - 1; post_path > ip_index; post_path--) {
+                        session->proto_path.proto_path[post_path] = session->proto_path.proto_path[post_path - delta];
+                        session->proto_headers_offset.proto_path[post_path] = session->proto_headers_offset.proto_path[post_path - delta];
+                        session->proto_classif_status.proto_path[post_path] = session->proto_classif_status.proto_path[post_path - delta];
+                    }
+
+                    for (pre_path = 0; pre_path <= index; pre_path++)
+                    {
+                        session->proto_path.proto_path[pre_path] = ipacket->proto_hierarchy->proto_path[pre_path];
+                        session->proto_headers_offset.proto_path[pre_path] = ipacket->proto_headers_offset->proto_path[pre_path];
+                        session->proto_classif_status.proto_path[pre_path] = ipacket->proto_classif_status->proto_path[pre_path];
+                    }
+
+                    session->proto_path.len = new_len;
+                    session->proto_headers_offset.len = new_len;
+                    session->proto_classif_status.len = new_len;
+                    debug("[IP] New protocol_path len %d", new_len);
+                }
+            }
+
+        }
+        
         session->last_packet_direction = packet_direction;
+
     }
     return (void *) session;
 }
@@ -1179,14 +1256,14 @@ int ip_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 }
 
 int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
-    if(ipacket->mmt_handler->has_reassembly==1){
+    if (ipacket->mmt_handler->has_reassembly == 1) {
         int s = sizeof(mmt_tcpip_internal_packet_t);
         ipacket->internal_packet = mmt_malloc (s);
         memset(ipacket->internal_packet, 0, s);
         ipacket->internal_packet->udp = NULL;
         ipacket->internal_packet->tcp = NULL;
         ipacket->internal_packet->packet_id = ipacket->packet_id;
-    }else{
+    } else {
         ipacket->internal_packet = &((internal_ip_proto_context_t *) ((protocol_instance_t *) ipacket->session->protocol_container_context)->args)->packet;
     }
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
@@ -1201,10 +1278,14 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     struct mmt_internal_tcpip_id_struct * dst = NULL;
 
     // only handle unfragmented packets
-    if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x1FFF) != 0) {
+    // if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x1FFF) != 0) {
+    //     return 0; //TODO
+    // }
+    // Frag_offset: (0x2000)
+    if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x2000) != 0) {
         return 0; //TODO
     }
-
+    // printf("[IP] not fragmented: %lu\n", ipacket->packet_id);
     packet->iph = ip_hdr;
     packet->iphv6 = NULL;
     packet->l3_packet_len = ntohs(ip_hdr->tot_len);

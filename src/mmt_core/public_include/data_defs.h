@@ -178,6 +178,13 @@ enum proto_common_attributes {
     PROTO_SESSION_ATTRIBUTES_NB = PROTO_SESSION_ID - PROTO_SESSION + 1,
 };
 
+
+typedef struct ip_rtt_struct{
+    struct timeval rtt;
+    uint8_t direction;
+    mmt_session_t * session;
+}ip_rtt_t;
+
 #define PROTO_HEADER_LABEL                      "p_hdr"
 #define PROTO_DATA_LABEL                        "p_data"
 #define PROTO_PAYLOAD_LABEL                     "p_payload"
@@ -597,6 +604,16 @@ MMTAPI const mmt_session_t MMTCALL * get_session_next(
  */
 MMTAPI const mmt_session_t MMTCALL * get_session_previous(
     const mmt_session_t *session
+);
+
+/**
+ * Get session protocol path by direction
+ * @param  session   session
+ * @param  direction direction 0 / 1
+ * @return           protocol path
+ */
+MMTAPI const proto_hierarchy_t MMTCALL * get_session_proto_path_direction(
+    const mmt_session_t *session, int direction
 );
 
 //  - - - - - - - - - - - - - - - - - -

@@ -391,6 +391,7 @@ char *get_my_data(void *data1, short size, long type) {
     char *buff1 = xmalloc(100);
     char *buff0 = xmalloc(10);
     void * data2 = NULL;
+    struct timeval t1;
     unsigned long L1=0,L2=0,L3=0,L4=0;
     mmt_binary_data_t *db1 = NULL;
     //mmt_header_line_t *t;
@@ -424,9 +425,12 @@ char *get_my_data(void *data1, short size, long type) {
             break;
         case MMT_DATA_TIMEVAL:
             // TODO
+            t1 = *(struct timeval *) (data1);
+            (void)sprintf(buff1, "%lu.%lu", t1.tv_sec, (long) t1.tv_usec);
             break;
         case MMT_DATA_IP_ADDR:
             // TODO
+            (void)sprintf(buff1, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));
             break;
         case MMT_U16_DATA:
             // TODO
@@ -3221,13 +3225,17 @@ void print_nothing(short print_option, rule *curr_root, rule *r, char *cause, sh
     //(void)fprintf(stderr, "nothing\n");
 }
 
-char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * input )
+static long counter_detection = 0;
+
+char *generate_command( const ipacket_t *pkt, rule *r, char * input )
 {
     //input: "name_of_script parameters" where parameters can be constants or variables (e.g., script(1,META.PROTO.3) )
     //output: idem but replacing variables with the value (e.g., script 1 801)
     char * output = NULL;
     char * tempi = NULL;
     char * tempo = NULL;
+    int ibuff = 0;
+    tuple *list_of_tuples = r->list_of_tuples;
 
     output = xmalloc(strlen(input) + 1000);
 
@@ -3265,6 +3273,11 @@ char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * inpu
     *tempo = ' ';
     tempo++;
     //we have: "script_name "
+    counter_detection++;
+    ibuff = snprintf(tempo, 20, "%ld", counter_detection);
+    tempo = tempo + ibuff;
+    *tempo = ' ';
+    tempo++;
 
     while (*tempi == ' ') tempi++;
 
@@ -3317,6 +3330,26 @@ char *generate_command( const ipacket_t *pkt, tuple *list_of_tuples, char * inpu
             return NULL;
         }
     }
+    //Put data in file with name: detection_<counter_detection>.data
+    //Will be used by python script
+    FILE * pythonDataFile;
+    char pythonDataFileName[50];
+    rule * rr = NULL;
+    snprintf(pythonDataFileName, 50, "detection_%ld.data", counter_detection);
+    pythonDataFile = open_file(pythonDataFileName, "w+");
+    if(r->root != NULL) rr = r->root;
+    else rr = r;
+    if(rr->type_rule == ATTACK)             fprintf(pythonDataFile,"attack\n"); 
+    else if(rr->type_rule == EVASION)       fprintf(pythonDataFile,"evasion\n");
+    else if(rr->type_rule == SECURITY_RULE) fprintf(pythonDataFile,"security rule\n");
+    else                                    fprintf(pythonDataFile,"type\n");
+    if(rr->description != NULL)             fprintf(pythonDataFile,"%s\n", rr->description);
+    else                                    fprintf(pythonDataFile,"description\n");
+    if(rr->json_history != NULL)            fprintf(pythonDataFile,"%s\n", rr->json_history);
+    else                                    fprintf(pythonDataFile,"history\n");
+    fprintf(pythonDataFile,"%d\n", rr->property_id);
+    fprintf(pythonDataFile,"detected");
+    close_file(pythonDataFile);
     return output;
 }
 
@@ -3419,8 +3452,9 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
     if (do_it == 1) {
         if (what_to_do != NULL) {
             if (strchr(what_to_do, '#') == NULL) {
-                command = generate_command( pkt, r->list_of_tuples, what_to_do );
+                command = generate_command( pkt, r, what_to_do );
                 if (command != NULL) {
+                    fprintf(stderr, "EXECUTE FUNCTION:%s\n",command);
                     result = system(command);
                     xfree(command);
                     if (result == -1) fprintf(stderr, "Error 22a: Reaction \"%s\" failed.\n", what_to_do);

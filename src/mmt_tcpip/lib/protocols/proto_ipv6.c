@@ -235,6 +235,79 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
 
     mmt_session_t * session = get_session(protocol_context, &ipv6_session_key, ipacket, is_new_session);
     if(session) {
+        if(session->last_packet_direction != packet_direction && session->packet_count>0){
+            ip_rtt_t ip_rtt;
+            ip_rtt.direction = session->last_packet_direction;
+            ip_rtt.session = session;
+            ip_rtt.rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - session->s_last_activity_time.tv_sec;
+            ip_rtt.rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - session->s_last_activity_time.tv_usec;
+            if((int) ip_rtt.rtt.tv_usec < 0) {
+                ip_rtt.rtt.tv_usec += 1000000;
+                ip_rtt.rtt.tv_sec -= 1;
+            }
+            fire_attribute_event(ipacket, PROTO_IP, IP_RTT, index, (void *) &(ip_rtt));
+        }
+        
+        // Fix proto_path , only fix til IP
+        if (session->proto_path.proto_path[index] != PROTO_IP) {
+            debug("[IP] Fixing proto_path of session: %lu", session->session_id);
+            // Get PROTO_IP index in current proto_path
+            int j, ip_index = 0;
+            for (j = 0; j < session->proto_path.len; j++) {
+                if (session->proto_path.proto_path[j] == PROTO_IP) {
+                    ip_index = j;
+                    break;
+                }
+            }
+
+            debug("[IP] Current index of PROTO_IP: %d / (packet)%d", ip_index, index);
+            if (ip_index != 0) {
+                if (ip_index > index) {
+                    debug("[IP] Current protocol_path need to remove some protocol");
+                    int pre_path = 0, post_path = ip_index + 1;
+
+                    for (pre_path = 0; pre_path <= index; pre_path++)
+                    {
+                        session->proto_path.proto_path[pre_path] = ipacket->proto_hierarchy->proto_path[pre_path];
+                        session->proto_headers_offset.proto_path[pre_path] = ipacket->proto_headers_offset->proto_path[pre_path];
+                        session->proto_classif_status.proto_path[pre_path] = ipacket->proto_classif_status->proto_path[pre_path];
+                    }
+                    for (post_path = ip_index + 1; post_path < session->proto_path.len; post_path++, pre_path++) {
+                        session->proto_path.proto_path[pre_path] = session->proto_path.proto_path[post_path];
+                        session->proto_headers_offset.proto_path[pre_path] = session->proto_headers_offset.proto_path[post_path];
+                        session->proto_classif_status.proto_path[pre_path] = session->proto_classif_status.proto_path[post_path];
+                    }
+                    session->proto_path.len = pre_path;
+                    session->proto_headers_offset.len = pre_path;
+                    session->proto_classif_status.len = pre_path;
+                    debug("[IP] New protocol_path len %d", pre_path);
+                } else {
+                    debug("[IP] Current protocol_path need to add some protocol from packet hierarchy");
+                    int delta = index - ip_index;
+                    int new_len = session->proto_path.len + delta;
+                    int pre_path = 0, post_path = new_len - 1;
+
+                    for (post_path = new_len - 1; post_path > ip_index; post_path--) {
+                        session->proto_path.proto_path[post_path] = session->proto_path.proto_path[post_path - delta];
+                        session->proto_headers_offset.proto_path[post_path] = session->proto_headers_offset.proto_path[post_path - delta];
+                        session->proto_classif_status.proto_path[post_path] = session->proto_classif_status.proto_path[post_path - delta];
+                    }
+
+                    for (pre_path = 0; pre_path <= index; pre_path++)
+                    {
+                        session->proto_path.proto_path[pre_path] = ipacket->proto_hierarchy->proto_path[pre_path];
+                        session->proto_headers_offset.proto_path[pre_path] = ipacket->proto_headers_offset->proto_path[pre_path];
+                        session->proto_classif_status.proto_path[pre_path] = ipacket->proto_classif_status->proto_path[pre_path];
+                    }
+
+                    session->proto_path.len = new_len;
+                    session->proto_headers_offset.len = new_len;
+                    session->proto_classif_status.len = new_len;
+                    debug("[IP] New protocol_path len %d", new_len);
+                }
+            }
+
+        }
         session->last_packet_direction = packet_direction;
     }
 

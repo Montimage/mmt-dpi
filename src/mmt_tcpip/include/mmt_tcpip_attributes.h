@@ -34,6 +34,7 @@ extern "C" {
         IP_SRC,
         IP_DST,
         IP_OPTS,
+        IP_RTT,
         IP_CLIENT_ADDR,
         IP_SERVER_ADDR,
         IP_CLIENT_PORT,
@@ -54,6 +55,7 @@ extern "C" {
 #define IP_HEADER_LEN_ALIAS     "header_len"
 #define IP_VERSION_ALIAS        "version"
 #define IP_OPTS_ALIAS        "options"
+#define IP_RTT_ALIAS        "ip_rtt"
 #define IP_CHECKSUM_ALIAS       "checksum"
 #define IP_CLIENT_ADDR_ALIAS    "client_addr"
 #define IP_SERVER_ADDR_ALIAS    "server_addr"
