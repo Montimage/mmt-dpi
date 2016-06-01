@@ -196,7 +196,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                     packet->line[0].ptr[MMT_STATICSTRING_LEN("HTTP/1.1 ")] < '6') {
                 packet->http_response.ptr = &packet->line[0].ptr[MMT_STATICSTRING_LEN("HTTP/1.1 ")];
                 packet->http_response.len = packet->line[0].len - MMT_STATICSTRING_LEN("HTTP/1.1 ");
-                printf("[HTTP] HTTP response detected! %lu\n", ipacket->packet_id);
+                // printf("[HTTP] HTTP response detected! %lu\n", ipacket->packet_id);
                 MMT_LOG(PROTO_UNKNOWN, MMT_LOG_DEBUG,
                         "mmt_parse_packet_line_info: HTTP response parsed: \"%.*s\"\n",
                         packet->http_response.len, packet->http_response.ptr);
