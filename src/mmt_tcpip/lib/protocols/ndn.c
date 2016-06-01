@@ -1673,10 +1673,9 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
                     t3->proto_over = PROTO_UDP;
                 }    
             }
-        }else{
-            t3->proto_over = PROTO_ETHERNET;
         }
-        
+    }else{
+            t3->proto_over = PROTO_ETHERNET;
     }
 
     // Extract name component
