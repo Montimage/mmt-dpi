@@ -1817,7 +1817,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
         ndn_tlv_t *ndn_lifetime = ndn_find_node(payload, payload_len, root,NDN_INTEREST_LIFETIME);
         if(ndn_lifetime != NULL){
-            ndn_session->interest_lifeTime[direction] = ndn_TLV_get_int(ndn_lifetime, payload, payload_len)/1000;
+            ndn_session->interest_lifeTime[direction] = ndn_TLV_get_int(ndn_lifetime, payload, payload_len);
             ndn_TLV_free(ndn_lifetime);
         }
         if(ndn_session->interest_lifeTime[direction] == 0){
@@ -1870,7 +1870,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
         ndn_tlv_t *ndn_freshness_period = ndn_find_node(payload, payload_len, ndn_metainfo,NDN_DATA_FRESHNESS_PERIOD);
         
-        ndn_session->data_freshnessPeriod[direction] = ndn_TLV_get_int(ndn_freshness_period, payload, payload_len)/1000;
+        ndn_session->data_freshnessPeriod[direction] = ndn_TLV_get_int(ndn_freshness_period, payload, payload_len);
 
         ndn_TLV_free(ndn_freshness_period);
 
