@@ -153,7 +153,7 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length){
     ndn_new_node->data_offset = offset + 2 + ndn_new_node->nb_octets;
 
     if(total_length < ndn_new_node->data_offset + ndn_new_node->length){
-        log_err("Not correct length value : %d #  %lu\n",total_length,(ndn_new_node->data_offset + ndn_new_node->length));
+        // log_err("Not correct length value : %d #  %lu\n",total_length,(ndn_new_node->data_offset + ndn_new_node->length));
         ndn_TLV_free(ndn_new_node);
         return NULL;
     }
@@ -399,7 +399,7 @@ ndn_proto_context_t * ndn_get_proto_context(ipacket_t *ipacket, unsigned index){
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     ndn_proto_context_t * ndn_proto_context = (ndn_proto_context_t*)configured_protocol->args;
     if(ndn_proto_context == NULL){
-        log_err("Cannot get NDN protocol context");
+        // log_err("Cannot get NDN protocol context");
         return NULL;
     }else{
         return ndn_proto_context;
@@ -417,7 +417,7 @@ ndn_session_t * ndn_get_list_all_session(ipacket_t *ipacket, unsigned index){
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
     ndn_proto_context_t * ndn_proto_context = (ndn_proto_context_t*)configured_protocol->args;
     if(ndn_proto_context == NULL){
-        log_err("Cannot get NDN protocol context");
+        // log_err("Cannot get NDN protocol context");
         return NULL;
     }else{
         return ndn_proto_context->dummy_session;
@@ -1712,7 +1712,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ndn_TLV_free(name_node);
         ndn_TLV_free(root);
         ndn_free_tuple3(t3);
-        log_err("NDN/NDN_HTTP: Cannot parse name component - ipacket : %lu",ipacket->packet_id);
+        // log_err("NDN/NDN_HTTP: Cannot parse name component - ipacket : %lu",ipacket->packet_id);
         return MMT_CONTINUE;
     }   
     
@@ -1727,7 +1727,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     // Created tuple3
     ndn_proto_context_t * ndn_proto_context = ndn_get_proto_context(ipacket,index);
     if(ndn_proto_context == NULL){
-        log_err("\nNDN/NDN_HTTP: Cannot get NDN protocol context");
+        // log_err("\nNDN/NDN_HTTP: Cannot get NDN protocol context");
         return MMT_CONTINUE;
     }
 
@@ -1754,7 +1754,7 @@ int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     ndn_session_t *dummy_session = ndn_proto_context->dummy_session;
 
     if(dummy_session == NULL){
-        log_err("\nNDN/NDN_HTTP: Cannot get ndn dummy_session");
+        // log_err("\nNDN/NDN_HTTP: Cannot get ndn dummy_session");
         return MMT_CONTINUE;
     }
 
@@ -1890,7 +1890,7 @@ void cleanup_ndn_context(void * proto_context, void * args){
     debug("NDN/NDN_HTTP: cleanup_ndn_context");
     ndn_proto_context_t * ndn_proto_context = (ndn_proto_context_t*)((protocol_instance_t *) proto_context)->args;
     if(ndn_proto_context == NULL){
-        log_err("\nNDN/NDN_HTTP: Cannot get NDN protocol context");
+        // log_err("\nNDN/NDN_HTTP: Cannot get NDN protocol context");
         return;
     }
     ndn_session_t *dummy_session = ndn_proto_context->dummy_session;
