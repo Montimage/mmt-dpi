@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+## Pre-Release version 1.6.3.0
+- Added IP session ID to each FTP session
+- Fixed extracting control session information for FTP Data packet
+
 ## Release version 1.6.2.1
 04 May 2016
 - Fixed a bug with FTP PORT command
