@@ -116,6 +116,7 @@ static uint8_t mmt_int_check_possible_ftp_continuation_reply(char *payload , int
 ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket){
     ftp_tuple6_t *t6;
     t6 = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
+    t6->ip_session_id = ipacket->session->session_id;
     if(ipacket->internal_packet->tcp&&ipacket->internal_packet->iph){
         if(ipacket->internal_packet->tcp->source == htons(21)){
             t6->conn_type = MMT_FTP_CONTROL_CONNECTION;
@@ -201,6 +202,7 @@ ftp_tuple6_t * ftp_new_tuple6(){
     t->s_port = 0;
     t->c_addr = 0;
     t->c_port = 0;
+    t->ip_session_id = 0;
     return t;
 }
 
@@ -212,6 +214,7 @@ ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6){
     t->s_port = tuple6->s_port;
     t->c_addr = tuple6->c_addr;
     t->c_port = tuple6->c_port;
+    t->ip_session_id = tuple6->ip_session_id;
     return t;   
 }
 
@@ -278,6 +281,7 @@ ftp_data_session_t * ftp_new_data_connection(){
     ftp_data->data_type = 0;
     ftp_data->file = ftp_new_file();
     ftp_data->data_direction = MMT_FTP_PACKET_UNKNOWN_DIRECTION;
+    ftp_data->control_session = NULL;
     return ftp_data;
 }
 
@@ -309,6 +313,7 @@ ftp_control_session_t * ftp_new_control_session(ftp_tuple6_t * tuple6){
     ftp_control->session_syst = NULL;
     ftp_control->current_dir = NULL;
     ftp_control->current_data_session = ftp_new_data_connection();
+    ftp_control->current_data_session->control_session = ftp_control;
     ftp_control->next = NULL;
     return ftp_control;
 }
@@ -1314,6 +1319,17 @@ int ftp_server_contrl_addr_extraction(const ipacket_t * ipacket, unsigned proto_
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->contrl_conn && ftp_control->contrl_conn->s_addr){
+                    *((uint32_t*)extracted_data->data) = ftp_control->contrl_conn->s_addr;
+                    return 1;
+                }
+            } 
+        } 
     }
     return 0;
 }
@@ -1328,6 +1344,17 @@ int ftp_server_contrl_port_extraction(const ipacket_t * ipacket, unsigned proto_
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->contrl_conn && ftp_control->contrl_conn->s_port){
+                    *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->s_port;
+                    return 1;
+                }
+            } 
+        } 
     }
     return 0;
 }
@@ -1342,6 +1369,17 @@ int ftp_client_contrl_addr_extraction(const ipacket_t * ipacket, unsigned proto_
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->contrl_conn && ftp_control->contrl_conn->c_addr){
+                    *((uint32_t*)extracted_data->data) = ftp_control->contrl_conn->c_addr;
+                    return 1;
+                }
+            } 
+        } 
     }
     return 0;
 }
@@ -1356,6 +1394,42 @@ int ftp_client_contrl_port_extraction(const ipacket_t * ipacket, unsigned proto_
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->contrl_conn && ftp_control->contrl_conn->c_port){
+                    *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->c_port;
+                    return 1;
+                }
+            } 
+        } 
+    }
+    return 0;
+}
+
+int ftp_contrl_ip_session_id_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    if(ftp_check_control_packet(ipacket)){
+        ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_control){
+            if(ftp_control->contrl_conn && ftp_control->contrl_conn->ip_session_id){
+                *((uint64_t*)extracted_data->data) = ftp_control->contrl_conn->ip_session_id;
+                return 1;
+            }
+        }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->contrl_conn && ftp_control->contrl_conn->ip_session_id){
+                    *((uint64_t*)extracted_data->data) = ftp_control->contrl_conn->ip_session_id;
+                    return 1;
+                }
+            } 
+        } 
     }
     return 0;
 }
@@ -1370,6 +1444,17 @@ int ftp_username_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->user && ftp_control->user->username){
+                    extracted_data->data = (void*)ftp_control->user->username;
+                    return 1;
+                }
+            } 
+        } 
     }
     return 0;
 }
@@ -1384,6 +1469,17 @@ int ftp_password_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->user && ftp_control->user->password){
+                    extracted_data->data = (void*)ftp_control->user->password;
+                    return 1;
+                }
+            } 
+        } 
     }
     return 0;
 }
@@ -1398,6 +1494,17 @@ int ftp_features_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->session_feats){
+                    extracted_data->data = (void*)ftp_control->session_feats;
+                    return 1;
+                }
+            } 
+        } 
     }
     return 0;
 }
@@ -1412,6 +1519,17 @@ int ftp_status_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->status){
+                    *((uint16_t*)extracted_data->data) = ftp_control->status;
+                    return 1;
+                }
+            }
+        } 
     }
     return 0;
 }
@@ -1426,6 +1544,17 @@ int ftp_syst_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->session_syst){
+                    extracted_data->data = (void*)ftp_control->session_syst;
+                    return 1;
+                }
+            }  
+        } 
     }
     return 0;
 }
@@ -1440,6 +1569,17 @@ int ftp_last_command_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->last_command && ftp_control->last_command){
+                    extracted_data->data = (void*)ftp_control->last_command;
+                    return 1;
+                }
+            }
+        } 
     }
     return 0;
 }
@@ -1454,6 +1594,17 @@ int ftp_last_response_code_extraction(const ipacket_t * ipacket, unsigned proto_
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->last_response && ftp_control->last_response){
+                    extracted_data->data = (void*)ftp_control->last_response;
+                    return 1;
+                }
+            }
+        } 
     }
     return 0;
 }
@@ -1468,6 +1619,17 @@ int ftp_current_dir_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 return 1;
             }
         }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            ftp_control_session_t * ftp_control = ftp_data->control_session;
+            if(ftp_control){
+                if(ftp_control->current_dir){
+                    extracted_data->data = (void*)ftp_control->current_dir;
+                    return 1;
+                }
+            } 
+        } 
     }
     return 0;
 }
@@ -1561,6 +1723,31 @@ int ftp_client_data_port_extraction(const ipacket_t * ipacket, unsigned proto_in
         if(ftp_data){
             if(ftp_data->data_conn && ftp_data->data_conn->c_port){
                 *((uint16_t*)extracted_data->data) = ftp_data->data_conn->c_port;
+                return 1;
+            }
+        } 
+    }
+    return 0;
+}
+
+
+int ftp_data_ip_session_id_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data){
+    if(ftp_check_control_packet(ipacket)){
+        ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_control){
+            if(ftp_control->current_data_session){
+                if(ftp_control->current_data_session->data_conn && ftp_control->current_data_session->data_conn->ip_session_id){
+                    *((uint64_t*)extracted_data->data) = ftp_control->current_data_session->data_conn->ip_session_id;
+                    return 1;
+                }
+            }
+        }    
+    }else{
+        ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
+        if(ftp_data){
+            if(ftp_data->data_conn && ftp_data->data_conn->ip_session_id){
+                *((uint64_t*)extracted_data->data) = ftp_data->data_conn->ip_session_id;
                 return 1;
             }
         } 
@@ -1848,6 +2035,7 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
     {FTP_SERVER_CONT_PORT,FTP_SERVER_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_contrl_port_extraction},
     {FTP_CLIENT_CONT_PORT,FTP_CLIENT_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_port_extraction},    
     {FTP_CLIENT_CONT_ADDR,FTP_CLIENT_CONT_ADDR_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_addr_extraction},
+    {FTP_CONT_IP_SESSION_ID,FTP_CONT_IP_SESSION_ID_ALIAS,MMT_U64_DATA,sizeof(uint64_t),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_contrl_ip_session_id_extraction},
     {FTP_USERNAME,FTP_USERNAME_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_username_extraction},
     {FTP_PASSWORD,FTP_PASSWORD_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_password_extraction},
     {FTP_SESSION_FEATURES,FTP_SESSION_FEATURES_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_features_extraction},
@@ -1861,6 +2049,7 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
     {FTP_SERVER_DATA_PORT,FTP_SERVER_DATA_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_data_port_extraction},
     {FTP_CLIENT_DATA_ADDR,FTP_CLIENT_DATA_ADDR_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_addr_extraction},
     {FTP_CLIENT_DATA_PORT,FTP_CLIENT_DATA_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_port_extraction},
+    {FTP_DATA_IP_SESSION_ID,FTP_DATA_IP_SESSION_ID_ALIAS,MMT_U64_DATA,sizeof(uint64_t),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_ip_session_id_extraction},
     {FTP_DATA_TYPE,FTP_DATA_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_type_extraction},
     {FTP_DATA_TRANSFER_TYPE,FTP_DATA_TRANSFER_TYPE_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_transfer_type_extraction},
     {FTP_DATA_MODE,FTP_DATA_MODE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_mode_extraction},
@@ -2221,6 +2410,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         ftp_request_packet(ipacket,index,ftp_control);
     }else if(tuple6->conn_type == MMT_FTP_DATA_CONNECTION && ftp_data){
         debug("Reconstruct data packet of packet: %lu\n",ipacket->packet_id);
+        ftp_data->data_conn->ip_session_id = tuple6->ip_session_id;
         // ftp_data_packet(ipacket,index,ftp_data);
     }else{
         debug("Cannot analysis data of packet: %lu\n",ipacket->packet_id);
