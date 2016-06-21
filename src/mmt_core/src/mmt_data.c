@@ -161,7 +161,28 @@ const mmt_session_t * get_session_previous( const mmt_session_t *session )
 
 
 const proto_hierarchy_t * get_session_proto_path_direction(const mmt_session_t *session, int direction){
-    return &session->proto_path_direction[direction];
+    debug("[IP] setup_packet_direction: %d",session->setup_packet_direction);
+    debug("[IP] last_packet_direction: %d",session->last_packet_direction);
+    if(direction == 1){
+        // Get uplink path
+        if(session->last_packet_direction == session->setup_packet_direction){
+            // uploading data
+            return &session->proto_path_direction[session->setup_packet_direction];
+        }else{
+            // downloading data
+            return &session->proto_path_direction[!session->setup_packet_direction];        
+        }
+    }else{
+        // Get downlink path
+        if(session->last_packet_direction == session->setup_packet_direction){
+            // downloading data
+            return &session->proto_path_direction[!session->setup_packet_direction];
+        }else{
+            // downloading data
+            return &session->proto_path_direction[session->setup_packet_direction];        
+        }
+    }
+    
 }
 
 uint32_t get_protocol_id_at_index(const ipacket_t * ipacket, unsigned index) {
