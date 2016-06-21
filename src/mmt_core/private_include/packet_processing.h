@@ -102,9 +102,15 @@ struct mmt_session_struct {
     mmt_handler_t *mmt_handler;              /**< opaque pointer to the mmt handler that processed this session */
     uint32_t session_protocol_index;         /**< index of the protocol to which the session belongs */
     uint64_t packet_count;                   /**< tracks the number of packets */
+    uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
+    uint64_t data_cap_volume;                /**< data volume captured  - include fragmented packets*/
     uint64_t data_volume;                    /**< tracks the octet data volume */
+    
     uint64_t packet_count_direction[2];      /**< Session's packet count in both directions: initiator <-> remote */
     uint64_t data_volume_direction[2];       /**< Session's data volume in both directions: initiator <-> remote */
+
+    uint64_t packet_cap_count_direction[2];      /**< Session's packet count ( - include fragmented packets) in both directions: initiator <-> remote */
+    uint64_t data_cap_volume_direction[2];       /**< Session's data volume ( - include fragmented packets) in both directions: initiator <-> remote */
 
     uint64_t data_packet_count;              /**< tracks the number of packets holding effective payload data */
     uint64_t data_byte_volume;               /**< tracks the effective payload data volume */
