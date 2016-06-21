@@ -2298,7 +2298,9 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->next = NULL;
                 session->previous = NULL;
                 session->packet_count = 0;
+                session->packet_cap_count = 0;
                 session->data_volume = 0;
+                session->data_cap_volume = 0;
                 session->status = NonClassified;
                 session->protocol_container_context = configured_protocol;
                 session->session_protocol_index = index;
@@ -2369,6 +2371,8 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             //update the session basic statistics
             session->packet_count++;
             session->data_volume += ipacket->p_hdr->len;
+            session->data_cap_volume += ipacket->total_caplen;
+            session->packet_cap_count += ipacket->nb_reassembled_packets;
 
             session->s_last_activity_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
             session->s_last_activity_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
@@ -2564,6 +2568,10 @@ void reset_statistics(proto_statistics_t * stats) {
     stats->packets_count_direction[1] = 0;
     stats->data_volume_direction[0] = 0;
     stats->data_volume_direction[1] = 0;
+    stats->packets_cap_count_direction[0] = 0;
+    stats->packets_cap_count_direction[1] = 0;
+    stats->data_cap_volume_direction[0] = 0;
+    stats->data_cap_volume_direction[1] = 0;
     stats->payload_volume_direction[0] = 0;
     stats->payload_volume_direction[1] = 0;
     //stats->sessions_count = 0;
@@ -2988,6 +2996,8 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         ipacket->mmt_handler = mmt;
         ipacket->internal_packet = NULL;
         ipacket->last_callback_fct_id = 0;
+        ipacket->nb_reassembled_packets = 1;
+        ipacket->total_caplen = header->caplen;
         update_last_received_packet(&mmt->last_received_packet, ipacket);
         (void) set_classified_proto(ipacket, 0, classified_proto);
         return ipacket;
@@ -3005,6 +3015,8 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         mmt->current_ipacket.mmt_handler = mmt;
         mmt->current_ipacket.internal_packet = NULL;
         mmt->current_ipacket.last_callback_fct_id = 0;
+        mmt->current_ipacket.nb_reassembled_packets = 1;
+        mmt->current_ipacket.total_caplen = header->caplen;
         update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
         //First set the meta protocol
         (void) set_classified_proto(&mmt->current_ipacket, 0, classified_proto);
