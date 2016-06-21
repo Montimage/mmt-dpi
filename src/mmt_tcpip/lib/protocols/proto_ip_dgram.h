@@ -40,6 +40,8 @@
 struct ip_dgram {
    uint8_t    *x;      // reassembly buffer
    unsigned    len;    // buffer length
+   unsigned    nb_packets;
+   unsigned    caplen;
    ip_frags_t  holes;  // list of holes
 };
 
@@ -57,7 +59,7 @@ extern void        ip_dgram_cleanup      ( ip_dgram_t * );
 extern void        ip_dgram_dump         ( ip_dgram_t * );
 extern void        ip_dgram_dump_holes   ( ip_dgram_t * );
 
-extern void        ip_dgram_update       ( ip_dgram_t *, const struct iphdr *, unsigned );
+extern void        ip_dgram_update       ( ip_dgram_t *, const struct iphdr *, unsigned ,unsigned);
 extern void        ip_dgram_update_holes ( ip_dgram_t *, const uint8_t *, unsigned, unsigned, int );
 extern int         ip_dgram_is_complete  ( ip_dgram_t * );
 
