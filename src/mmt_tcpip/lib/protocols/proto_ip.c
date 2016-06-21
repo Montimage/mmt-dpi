@@ -1082,7 +1082,7 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
         hashmap_insert_kv( map, key, dg );
     }
 
-    ip_dgram_update( dg, ip, len );
+    ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
     if ( !ip_dgram_is_complete( dg )) {
         return 0;
     }
@@ -1099,7 +1099,8 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     ipacket->data = x;
     ipacket->p_hdr->len    = ioff + dg->len;
     ipacket->p_hdr->caplen = ioff + dg->len;
-
+    ipacket->total_caplen  = dg->caplen;
+    ipacket->nb_reassembled_packets = dg->nb_packets;
     //hexdump( x, ioff + dg->len );
     hashmap_remove( map, key );
     ip_dgram_free( dg );
@@ -1312,7 +1313,9 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_IP | MMT_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6;
 
     ipacket->session->packet_count_direction[ipacket->session->last_packet_direction]++;
+    ipacket->session->packet_cap_count_direction[ipacket->session->last_packet_direction]+= ipacket->nb_reassembled_packets;
     ipacket->session->data_volume_direction[ipacket->session->last_packet_direction] += ipacket->p_hdr->len;
+    ipacket->session->data_cap_volume_direction[ipacket->session->last_packet_direction] += ipacket->total_caplen;
 
     return 1;
 }

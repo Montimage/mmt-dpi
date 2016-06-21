@@ -1212,8 +1212,9 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_IPV6 | MMT_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6;
 
     ipacket->session->packet_count_direction[ipacket->session->last_packet_direction]++;
+    ipacket->session->packet_cap_count_direction[ipacket->session->last_packet_direction] += ipacket->nb_reassembled_packets;
     ipacket->session->data_volume_direction[ipacket->session->last_packet_direction] += ipacket->p_hdr->len;
-
+    ipacket->session->data_cap_volume_direction[ipacket->session->last_packet_direction] += ipacket->total_caplen;
     return 1;
 }
 

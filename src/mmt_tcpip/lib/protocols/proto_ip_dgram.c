@@ -44,6 +44,8 @@ void ip_dgram_init( ip_dgram_t *dg )
 {
    dg->x   = 0;
    dg->len = 0;
+   dg->nb_packets = 0;
+   dg->caplen = 0;
    LIST_INIT( &dg->holes );
 
    ip_frag_t *hole = ip_frag_alloc( 0, (uint16_t)-1 );
@@ -72,6 +74,8 @@ void ip_dgram_cleanup( ip_dgram_t *dg )
 
    dg->x   = 0;
    dg->len = 0;
+   dg->nb_packets = 0;
+   dg->caplen = 0;
 }
 
 /**
@@ -82,7 +86,7 @@ void ip_dgram_cleanup( ip_dgram_t *dg )
  * @param len payload length
  */
 
-void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len )
+void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsigned caplen)
 {
    unsigned ip_len =  ntohs( ip->tot_len  );
    unsigned ip_off = (ntohs( ip->frag_off ) & IP_OFFSET) << 3;
@@ -100,7 +104,8 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len )
       MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (length mismatch)\n" );
       return;
    }
-
+   dg->nb_packets ++;
+   dg->caplen += caplen;
    ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf );
 }
 
