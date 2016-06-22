@@ -2997,6 +2997,7 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         ipacket->internal_packet = NULL;
         ipacket->last_callback_fct_id = 0;
         ipacket->nb_reassembled_packets = 1;
+        ipacket->is_completed = 0;
         ipacket->total_caplen = header->caplen;
         update_last_received_packet(&mmt->last_received_packet, ipacket);
         (void) set_classified_proto(ipacket, 0, classified_proto);
@@ -3016,6 +3017,7 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         mmt->current_ipacket.internal_packet = NULL;
         mmt->current_ipacket.last_callback_fct_id = 0;
         mmt->current_ipacket.nb_reassembled_packets = 1;
+        mmt->current_ipacket.is_completed = 0;
         mmt->current_ipacket.total_caplen = header->caplen;
         update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
         //First set the meta protocol
