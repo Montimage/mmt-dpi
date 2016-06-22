@@ -3,6 +3,9 @@ RELEASE NOTES
 ## Pre-Release version 1.6.3.0
 - Added IP session ID to each FTP session
 - Fixed extracting control session information for FTP Data packet
+- Added number of capture packet and capture data volume in session
+- Fixed some case of IP fragmentation: out of order, duplicated, lost fragment, ...
+- Strategy for duplicated IP fragmentation: Not overwrite fragment (can be change easily)
 
 ## Release version 1.6.2.1
 04 May 2016
