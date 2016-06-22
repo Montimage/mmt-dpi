@@ -1076,7 +1076,8 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     key   = ip->saddr;
     key <<= 32;
     key  |= ip->daddr;
-
+    key <<= 32;
+    key  |= ip->id;
     if ( !hashmap_get( map, key, (void**)&dg )) {
         dg = ip_dgram_alloc();
         hashmap_insert_kv( map, key, dg );
@@ -1101,6 +1102,7 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     ipacket->p_hdr->caplen = ioff + dg->len;
     ipacket->total_caplen  = dg->caplen;
     ipacket->nb_reassembled_packets = dg->nb_packets;
+
     //hexdump( x, ioff + dg->len );
     hashmap_remove( map, key );
     ip_dgram_free( dg );
@@ -1115,12 +1117,12 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     uint8_t packet_direction;
 
     uint16_t ip_offset = ntohs(ip_hdr->frag_off);
-
     // handle fragmented datagrams
     if ( ip_offset && !ip_process_fragment( ipacket, index )) {
         *is_new_session = 0;
         return NULL;
     }
+    ipacket->is_completed = 1;
 
     // re-point to the reassempled IP header if reassembly took place
     // points to the same pointer if no fragmentation
@@ -1283,7 +1285,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     //     return 0; //TODO
     // }
     // Frag_offset: (0x2000)
-    if (ip_hdr->version == 4 && (ntohs(ip_hdr->frag_off) & 0x2000) != 0) {
+    if (ip_hdr->version == 4 && ((ntohs(ip_hdr->frag_off) & 0x2000) != 0) && !ipacket->is_completed) {
         return 0; //TODO
     }
     // printf("[IP] not fragmented: %lu\n", ipacket->packet_id);
