@@ -46,6 +46,8 @@ void ip_dgram_init( ip_dgram_t *dg )
    dg->len = 0;
    dg->nb_packets = 0;
    dg->caplen = 0;
+   dg->max_packet_size = 0;
+   dg->current_packet_size = 0;
    LIST_INIT( &dg->holes );
 
    ip_frag_t *hole = ip_frag_alloc( 0, (uint16_t)-1 );
@@ -106,6 +108,8 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsi
    }
    dg->nb_packets ++;
    dg->caplen += caplen;
+   dg->max_packet_size = dg->max_packet_size > (ip_off + ip_len - ip_hl)?dg->max_packet_size:(ip_off + ip_len - ip_hl);
+   dg->current_packet_size += ip_len - ip_hl;
    ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf );
 }
 
@@ -118,6 +122,7 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsi
 
 int ip_dgram_is_complete( ip_dgram_t *dg )
 {
+   if(dg->current_packet_size < dg->max_packet_size) return 0;
    ip_frags_t *holes = &dg->holes;
    return( holes->lh_first == 0 );
 }
