@@ -42,6 +42,8 @@ struct ip_dgram {
    unsigned    len;    // buffer length
    unsigned    nb_packets;
    unsigned    caplen;
+   unsigned    max_packet_size;
+   unsigned    current_packet_size;
    ip_frags_t  holes;  // list of holes
 };
 
