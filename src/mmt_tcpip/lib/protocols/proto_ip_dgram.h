@@ -5,7 +5,7 @@
 #include "mmt_core.h"
 #include "mmt_common_internal_include.h"
 #include "proto_ip_frag.h"
-
+#define MMT_MAX_NUMBER_FRAGMENT  20 // Maximum number of fragments packet in an IP packets
 
 /*
           G E N E R A L   I P   D A T A G R A M   L A Y O U T
@@ -44,6 +44,7 @@ struct ip_dgram {
    unsigned    caplen;
    unsigned    max_packet_size;
    unsigned    current_packet_size;
+   unsigned    packet_offsets[MMT_MAX_NUMBER_FRAGMENT];
    ip_frags_t  holes;  // list of holes
 };
 
