@@ -96,6 +96,7 @@ struct ipacket_struct {
     uint64_t packet_id;                       /**< identifier of the packet. */
     unsigned nb_reassembled_packets;          /**< number of packets which are assembled to this packet */
     uint64_t total_caplen;                    /**< Total captured length of all packets which are assembled to this packet*/
+    uint8_t is_completed;                     /**< Indicate if the fragmented packet is completed or not */
     proto_hierarchy_t * proto_hierarchy;      /**< the protocol layers corresponding to this packet */
     proto_hierarchy_t * proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
     proto_hierarchy_t * proto_classif_status; /**< the classification status of the protocols in the path */
