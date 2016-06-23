@@ -1109,6 +1109,17 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     return 1;
 }
 
+int mmt_iph_is_fragmented(const struct iphdr *iph)
+{
+  //#ifdef REQUIRE_FULL_PACKETS
+  unsigned ip_off = (ntohs( iph->frag_off ) & IP_OFFSET) << 3;
+  unsigned ip_mf  =  ntohs( iph->frag_off ) & IP_MF;
+  if(ip_mf != 0) return 1;
+  if(ip_off > 0) return 1;
+  //#endif
+  return 0;
+}
+
 void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned index, int * is_new_session)
 {
     int offset = get_packet_offset_at_index(ipacket, index);
@@ -1118,10 +1129,14 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
 
     uint16_t ip_offset = ntohs(ip_hdr->frag_off);
     // handle fragmented datagrams
-    if ( ip_offset && !ip_process_fragment( ipacket, index )) {
-        *is_new_session = 0;
-        return NULL;
+    // Check if the packet is a fragment or not
+    if (mmt_iph_is_fragmented(ip_hdr)) {
+        if ( !ip_process_fragment( ipacket, index )) {
+            *is_new_session = 0;
+            return NULL;
+        }
     }
+
     ipacket->is_completed = 1;
 
     // re-point to the reassempled IP header if reassembly took place
@@ -1285,7 +1300,10 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     //     return 0; //TODO
     // }
     // Frag_offset: (0x2000)
-    if (ip_hdr->version == 4 && ((ntohs(ip_hdr->frag_off) & 0x2000) != 0) && !ipacket->is_completed) {
+    // if(ipsize < iph->ihl * 4 || ipsize < ntohs(iph->tot_len) || ntohs(iph->tot_len) < iph->ihl * 4 || (iph->frag_off & htons(0x1FFF)) != 0) {
+    //     return 0;
+    // }
+    if (mmt_iph_is_fragmented(ip_hdr) && !ipacket->is_completed) {
         return 0; //TODO
     }
     // printf("[IP] not fragmented: %lu\n", ipacket->packet_id);
