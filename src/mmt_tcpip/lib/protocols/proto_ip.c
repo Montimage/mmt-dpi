@@ -1127,7 +1127,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     mmt_session_key_t ipv4_session_key;
     uint8_t packet_direction;
 
-    uint16_t ip_offset = ntohs(ip_hdr->frag_off);
+    // uint16_t ip_offset = ntohs(ip_hdr->frag_off);
     // handle fragmented datagrams
     // Check if the packet is a fragment or not
     if (mmt_iph_is_fragmented(ip_hdr)) {
