@@ -156,8 +156,6 @@ struct proto_statistics_struct {
     uint64_t payload_volume;              /**< Total payload data volume seen by the protocol  on a particular protocol path */
     uint64_t packets_count_direction[2];  /**< Total number of UL/DL packets seen by the protocol  on a particular protocol path */
     uint64_t data_volume_direction[2];    /**< Total UL/DL data volume seen by the protocol  on a particular protocol path */
-    uint64_t packets_cap_count_direction[2]; /**< Total number of UL/DL packets captured by the protocol */
-    uint64_t data_cap_volume_direction[2]; /**< Total UL/DL data volume captured by the protocol */
     uint64_t payload_volume_direction[2]; /**< Total UL/DL payload data volume seen by the protocol  on a particular protocol path */
     uint64_t sessions_count;              /**< Total number of sessions seen by the protocol  on a particular protocol path */
     uint64_t timedout_sessions_count;     /**< Total number of timedout sessions (this is the difference between sessions count and active sessions count) on a particular protocol path */

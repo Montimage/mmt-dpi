@@ -2658,10 +2658,6 @@ void reset_statistics(proto_statistics_t * stats) {
     stats->packets_count_direction[1] = 0;
     stats->data_volume_direction[0] = 0;
     stats->data_volume_direction[1] = 0;
-    stats->packets_cap_count_direction[0] = 0;
-    stats->packets_cap_count_direction[1] = 0;
-    stats->data_cap_volume_direction[0] = 0;
-    stats->data_cap_volume_direction[1] = 0;
     stats->payload_volume_direction[0] = 0;
     stats->payload_volume_direction[1] = 0;
     //stats->sessions_count = 0;
