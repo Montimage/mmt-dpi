@@ -2650,10 +2650,10 @@ void reset_statistics(proto_statistics_t * stats) {
     stats->data_volume = 0;
     stats->payload_volume = 0;
     stats->packets_count = 0;
-    stats->ip_df_packets_count = 0;
-    stats->ip_frag_packets_count = 0;
-    stats->ip_df_data_volume = 0;
-    stats->ip_frag_data_volume = 0;
+    // stats->ip_df_packets_count = 0;
+    // stats->ip_frag_packets_count = 0;
+    // stats->ip_df_data_volume = 0;
+    // stats->ip_frag_data_volume = 0;
     stats->packets_count_direction[0] = 0;
     stats->packets_count_direction[1] = 0;
     stats->data_volume_direction[0] = 0;
@@ -2738,6 +2738,11 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
                 proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
                 proto_stats->ip_df_data_volume += ipacket->total_caplen;
             }
+        }else{
+            proto_stats->ip_frag_packets_count = 0;    
+            proto_stats->ip_frag_data_volume = 0;
+            proto_stats->ip_df_packets_count = 0;
+            proto_stats->ip_df_data_volume = 0;
         }
     }
     return proto_stats;
