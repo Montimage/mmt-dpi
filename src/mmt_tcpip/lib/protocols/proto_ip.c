@@ -1084,10 +1084,12 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     }
 
     ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
+    // Check timed-out for all data gram
     if ( !ip_dgram_is_complete( dg )) {
+        // debug("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
         return 0;
     }
-
+    // debug("Fragmented packet is completed: %lu\n", ipacket->packet_id);
     // At this point, dg is a fully reassembled datagram.
     // -> reconstruct ipacket from dg, and pass it along
 
@@ -1102,7 +1104,7 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     ipacket->p_hdr->caplen = ioff + dg->len;
     ipacket->total_caplen  = dg->caplen;
     ipacket->nb_reassembled_packets = dg->nb_packets;
-
+    // debug("Total captured packet: %d\n", dg->nb_packets);
     //hexdump( x, ioff + dg->len );
     hashmap_remove( map, key );
     ip_dgram_free( dg );
@@ -1111,13 +1113,13 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
 
 int mmt_iph_is_fragmented(const struct iphdr *iph)
 {
-  //#ifdef REQUIRE_FULL_PACKETS
-  unsigned ip_off = (ntohs( iph->frag_off ) & IP_OFFSET) << 3;
-  unsigned ip_mf  =  ntohs( iph->frag_off ) & IP_MF;
-  if(ip_mf != 0) return 1;
-  if(ip_off > 0) return 1;
-  //#endif
-  return 0;
+    //#ifdef REQUIRE_FULL_PACKETS
+    unsigned ip_off = (ntohs( iph->frag_off ) & IP_OFFSET) << 3;
+    unsigned ip_mf  =  ntohs( iph->frag_off ) & IP_MF;
+    if (ip_mf != 0) return 1;
+    if (ip_off > 0) return 1;
+    //#endif
+    return 0;
 }
 
 void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned index, int * is_new_session)
@@ -1131,6 +1133,8 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     // handle fragmented datagrams
     // Check if the packet is a fragment or not
     if (mmt_iph_is_fragmented(ip_hdr)) {
+        ipacket->is_fragment = 1;
+        // debug("Fragmented packet: %lu\n", ipacket->packet_id);
         if ( !ip_process_fragment( ipacket, index )) {
             *is_new_session = 0;
             return NULL;
@@ -1223,7 +1227,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
             }
 
         }
-        
+
         session->last_packet_direction = packet_direction;
 
     }
@@ -1333,7 +1337,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_IP | MMT_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6;
 
     ipacket->session->packet_count_direction[ipacket->session->last_packet_direction]++;
-    ipacket->session->packet_cap_count_direction[ipacket->session->last_packet_direction]+= ipacket->nb_reassembled_packets;
+    ipacket->session->packet_cap_count_direction[ipacket->session->last_packet_direction] += ipacket->nb_reassembled_packets;
     ipacket->session->data_volume_direction[ipacket->session->last_packet_direction] += ipacket->p_hdr->len;
     ipacket->session->data_cap_volume_direction[ipacket->session->last_packet_direction] += ipacket->total_caplen;
 
