@@ -283,11 +283,11 @@ struct proto_statistics_internal_struct {
     uint32_t touched; /**< Indicates if the statistics have been updated since the last reset */
     uint64_t packets_count; /**< Total number of packets seen by the protocol */
     uint64_t data_volume; /**< Total data volume seen by the protocol */
-    uint64_t payload_volume; /**< Total payload data volume seen by the protocol */
     uint64_t ip_frag_packets_count;         /**< Total number of IP unknown fragmented packets seen by the IP protocol*/
     uint64_t ip_frag_data_volume;           /**< Total data volume of IP unknown fragmented packets seen by the IP protocol*/
     uint64_t ip_df_packets_count;         /**< Total number of defragmented IP packets seen by the IP protocol*/
     uint64_t ip_df_data_volume;           /**< Total data volume of defragmented IP packets seen by the IP protocol*/
+    uint64_t payload_volume; /**< Total payload data volume seen by the protocol */
     uint64_t packets_count_direction[2]; /**< Total number of UL/DL packets seen by the protocol */
     uint64_t data_volume_direction[2]; /**< Total UL/DL data volume seen by the protocol */
     uint64_t payload_volume_direction[2]; /**< Total UL/DL payload data volume seen by the protocol */
