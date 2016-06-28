@@ -79,6 +79,7 @@ typedef struct pkthdr {
     unsigned int caplen; /**< length of portion of the packet that is present */
     unsigned int len;    /**< length of the packet (off wire) */
     unsigned int original_caplen; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
+    unsigned int original_len; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
     void * user_args;    /**< Pointer to a user defined argument. Can be NULL, it will not be used by the library. */
 } pkthdr_t;
 
