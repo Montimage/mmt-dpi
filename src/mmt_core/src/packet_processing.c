@@ -3014,10 +3014,11 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     if (is_new_session == NEW_SESSION) {
         parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
-    } else {
+    } 
+    // else {
         //Update the protocol statistics
         parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
-    }
+    // }
 
     //Analyze packet data
     target = proto_packet_analyze(ipacket, configured_protocol, index);
