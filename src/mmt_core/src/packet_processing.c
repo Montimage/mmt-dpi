@@ -2650,10 +2650,10 @@ void reset_statistics(proto_statistics_t * stats) {
     stats->data_volume = 0;
     stats->payload_volume = 0;
     stats->packets_count = 0;
-    // stats->ip_df_packets_count = 0;
-    // stats->ip_frag_packets_count = 0;
-    // stats->ip_df_data_volume = 0;
-    // stats->ip_frag_data_volume = 0;
+    stats->ip_df_packets_count = 0;
+    stats->ip_frag_packets_count = 0;
+    stats->ip_df_data_volume = 0;
+    stats->ip_frag_data_volume = 0;
     stats->packets_count_direction[0] = 0;
     stats->packets_count_direction[1] = 0;
     stats->data_volume_direction[0] = 0;
