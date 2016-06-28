@@ -2712,8 +2712,8 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
 
     if (proto_stats) {
         proto_stats->touched = 1;
-        proto_stats->data_volume += ipacket->p_hdr->len;
-        proto_stats->payload_volume += ipacket->p_hdr->len - proto_offset;
+        proto_stats->data_volume += ipacket->p_hdr->original_caplen;
+        proto_stats->payload_volume += ipacket->p_hdr->original_caplen - proto_offset;
         proto_stats->packets_count += 1;
         // Update the fist packet
         if (proto_stats->packets_count == 1) {
@@ -2727,12 +2727,13 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
 
             if(ipacket->is_fragment){
                 proto_stats->ip_frag_packets_count ++;    
-                proto_stats->ip_frag_data_volume += ipacket->p_hdr->len;
-            }
-
-            if(ipacket->is_fragment && ipacket->is_completed){
-                proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
-                proto_stats->ip_df_data_volume += ipacket->total_caplen;
+                if(ipacket->is_completed){
+                    proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
+                    proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
+                    proto_stats->ip_df_data_volume += ipacket->total_caplen;    
+                }else{
+                    proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
+                }
             }
         }else{
             proto_stats->ip_frag_packets_count = 0;    
@@ -3072,6 +3073,7 @@ void copy_ipacket_header(ipacket_t *ipacket, struct pkthdr *header) {
     ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
     ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
     ipacket->p_hdr->caplen = header->caplen;
+    ipacket->p_hdr->original_caplen = header->caplen;
     ipacket->p_hdr->len = header->len;
     ipacket->p_hdr->user_args = header->user_args;
 }
@@ -3113,7 +3115,13 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         mmt->current_ipacket.proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
         mmt->current_ipacket.proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
         mmt->current_ipacket.proto_classif_status = &mmt->last_received_packet.proto_classif_status;
-        mmt->current_ipacket.p_hdr = header;
+        mmt->current_ipacket.p_hdr = &mmt->current_ipacket.internal_p_hdr;
+        mmt->current_ipacket.p_hdr->ts.tv_sec = header->ts.tv_sec;
+        mmt->current_ipacket.p_hdr->ts.tv_usec = header->ts.tv_usec;
+        mmt->current_ipacket.p_hdr->caplen = header->caplen;
+        mmt->current_ipacket.p_hdr->original_caplen = header->caplen;
+        mmt->current_ipacket.p_hdr->len = header->len;
+        mmt->current_ipacket.p_hdr->user_args = header->user_args;
         mmt->current_ipacket.original_data = packet;
         mmt->current_ipacket.proto_hierarchy->len = 0;
         mmt->current_ipacket.proto_headers_offset->len = 0;
