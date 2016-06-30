@@ -117,8 +117,8 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
     ftp_tuple6_t *t6;
     t6 = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
     t6->ip_session_id = ipacket->session->session_id;
-    if(ipacket->internal_packet->tcp&&ipacket->internal_packet->iph){
-        if(ipacket->internal_packet->tcp->source == htons(21)){
+    if (ipacket->internal_packet->tcp && ipacket->internal_packet->iph) {
+        if (ipacket->internal_packet->tcp->source == htons(21)) {
             t6->conn_type = MMT_FTP_CONTROL_CONNECTION;
             t6->direction = MMT_FTP_PACKET_SERVER;
             t6->s_addr = ipacket->internal_packet->iph->saddr;
@@ -215,7 +215,7 @@ ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6) {
     t->c_addr = tuple6->c_addr;
     t->c_port = tuple6->c_port;
     t->ip_session_id = tuple6->ip_session_id;
-    return t;   
+    return t;
 }
 
 void free_ftp_tuple6(ftp_tuple6_t *t6) {
@@ -945,7 +945,7 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         }
     }
 
-    if ((flow->l4.tcp.ftp_codes_seen & FTP_COMMANDS) != 0 && (flow->l4.tcp.ftp_codes_seen & FTP_CODES) != 0) {
+    if ((flow->l4.tcp.ftp_codes_seen & FTP_COMMANDS) != 0 || (flow->l4.tcp.ftp_codes_seen & FTP_CODES) != 0) {
 
         MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP detected\n");
         mmt_int_ftp_add_connection(ipacket);
@@ -1320,18 +1320,18 @@ int ftp_server_contrl_addr_extraction(const ipacket_t * ipacket, unsigned proto_
                 *((uint32_t*)extracted_data->data) = ftp_control->contrl_conn->s_addr;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->contrl_conn && ftp_control->contrl_conn->s_addr){
+            if (ftp_control) {
+                if (ftp_control->contrl_conn && ftp_control->contrl_conn->s_addr) {
                     *((uint32_t*)extracted_data->data) = ftp_control->contrl_conn->s_addr;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1345,18 +1345,18 @@ int ftp_server_contrl_port_extraction(const ipacket_t * ipacket, unsigned proto_
                 *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->s_port;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->contrl_conn && ftp_control->contrl_conn->s_port){
+            if (ftp_control) {
+                if (ftp_control->contrl_conn && ftp_control->contrl_conn->s_port) {
                     *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->s_port;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1370,18 +1370,18 @@ int ftp_client_contrl_addr_extraction(const ipacket_t * ipacket, unsigned proto_
                 *((uint32_t*)extracted_data->data) = ftp_control->contrl_conn->c_addr;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->contrl_conn && ftp_control->contrl_conn->c_addr){
+            if (ftp_control) {
+                if (ftp_control->contrl_conn && ftp_control->contrl_conn->c_addr) {
                     *((uint32_t*)extracted_data->data) = ftp_control->contrl_conn->c_addr;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1395,43 +1395,43 @@ int ftp_client_contrl_port_extraction(const ipacket_t * ipacket, unsigned proto_
                 *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->c_port;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->contrl_conn && ftp_control->contrl_conn->c_port){
+            if (ftp_control) {
+                if (ftp_control->contrl_conn && ftp_control->contrl_conn->c_port) {
                     *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->c_port;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
 
 int ftp_contrl_ip_session_id_extraction(const ipacket_t * ipacket, unsigned proto_index,
-        attribute_t * extracted_data){
-    if(ftp_check_control_packet(ipacket)){
+                                        attribute_t * extracted_data) {
+    if (ftp_check_control_packet(ipacket)) {
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_control){
-            if(ftp_control->contrl_conn && ftp_control->contrl_conn->ip_session_id){
+        if (ftp_control) {
+            if (ftp_control->contrl_conn && ftp_control->contrl_conn->ip_session_id) {
                 *((uint64_t*)extracted_data->data) = ftp_control->contrl_conn->ip_session_id;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->contrl_conn && ftp_control->contrl_conn->ip_session_id){
+            if (ftp_control) {
+                if (ftp_control->contrl_conn && ftp_control->contrl_conn->ip_session_id) {
                     *((uint64_t*)extracted_data->data) = ftp_control->contrl_conn->ip_session_id;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1445,18 +1445,18 @@ int ftp_username_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 extracted_data->data = (void*)ftp_control->user->username;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->user && ftp_control->user->username){
+            if (ftp_control) {
+                if (ftp_control->user && ftp_control->user->username) {
                     extracted_data->data = (void*)ftp_control->user->username;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1470,18 +1470,18 @@ int ftp_password_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 extracted_data->data = (void*)ftp_control->user->password;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->user && ftp_control->user->password){
+            if (ftp_control) {
+                if (ftp_control->user && ftp_control->user->password) {
                     extracted_data->data = (void*)ftp_control->user->password;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1495,18 +1495,18 @@ int ftp_features_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 extracted_data->data = (void*)ftp_control->session_feats;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->session_feats){
+            if (ftp_control) {
+                if (ftp_control->session_feats) {
                     extracted_data->data = (void*)ftp_control->session_feats;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1520,18 +1520,18 @@ int ftp_status_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 *((uint16_t*)extracted_data->data) = ftp_control->status;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->status){
+            if (ftp_control) {
+                if (ftp_control->status) {
                     *((uint16_t*)extracted_data->data) = ftp_control->status;
                     return 1;
                 }
             }
-        } 
+        }
     }
     return 0;
 }
@@ -1545,18 +1545,18 @@ int ftp_syst_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 extracted_data->data = (void*)ftp_control->session_syst;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->session_syst){
+            if (ftp_control) {
+                if (ftp_control->session_syst) {
                     extracted_data->data = (void*)ftp_control->session_syst;
                     return 1;
                 }
-            }  
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1570,18 +1570,18 @@ int ftp_last_command_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 extracted_data->data = (void*)ftp_control->last_command;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->last_command && ftp_control->last_command){
+            if (ftp_control) {
+                if (ftp_control->last_command && ftp_control->last_command) {
                     extracted_data->data = (void*)ftp_control->last_command;
                     return 1;
                 }
             }
-        } 
+        }
     }
     return 0;
 }
@@ -1595,18 +1595,18 @@ int ftp_last_response_code_extraction(const ipacket_t * ipacket, unsigned proto_
                 extracted_data->data = (void*)ftp_control->last_response;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->last_response && ftp_control->last_response){
+            if (ftp_control) {
+                if (ftp_control->last_response && ftp_control->last_response) {
                     extracted_data->data = (void*)ftp_control->last_response;
                     return 1;
                 }
             }
-        } 
+        }
     }
     return 0;
 }
@@ -1620,18 +1620,18 @@ int ftp_current_dir_extraction(const ipacket_t * ipacket, unsigned proto_index,
                 extracted_data->data = (void*)ftp_control->current_dir;
                 return 1;
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
+        if (ftp_data) {
             ftp_control_session_t * ftp_control = ftp_data->control_session;
-            if(ftp_control){
-                if(ftp_control->current_dir){
+            if (ftp_control) {
+                if (ftp_control->current_dir) {
                     extracted_data->data = (void*)ftp_control->current_dir;
                     return 1;
                 }
-            } 
-        } 
+            }
+        }
     }
     return 0;
 }
@@ -1734,25 +1734,25 @@ int ftp_client_data_port_extraction(const ipacket_t * ipacket, unsigned proto_in
 
 
 int ftp_data_ip_session_id_extraction(const ipacket_t * ipacket, unsigned proto_index,
-        attribute_t * extracted_data){
-    if(ftp_check_control_packet(ipacket)){
+                                      attribute_t * extracted_data) {
+    if (ftp_check_control_packet(ipacket)) {
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_control){
-            if(ftp_control->current_data_session){
-                if(ftp_control->current_data_session->data_conn && ftp_control->current_data_session->data_conn->ip_session_id){
+        if (ftp_control) {
+            if (ftp_control->current_data_session) {
+                if (ftp_control->current_data_session->data_conn && ftp_control->current_data_session->data_conn->ip_session_id) {
                     *((uint64_t*)extracted_data->data) = ftp_control->current_data_session->data_conn->ip_session_id;
                     return 1;
                 }
             }
-        }    
-    }else{
+        }
+    } else {
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
-        if(ftp_data){
-            if(ftp_data->data_conn && ftp_data->data_conn->ip_session_id){
+        if (ftp_data) {
+            if (ftp_data->data_conn && ftp_data->data_conn->ip_session_id) {
                 *((uint64_t*)extracted_data->data) = ftp_data->data_conn->ip_session_id;
                 return 1;
             }
-        } 
+        }
     }
     return 0;
 }
@@ -2032,30 +2032,30 @@ int ftp_packet_data_len_extraction(const ipacket_t * ipacket, unsigned proto_ind
 static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
     ////////////// SESSION ATTRIBUTES //////////////////////////////
     /// FTP CONTROL CONNECTION SESSION ATTRIBUTES ///
-    {FTP_SESSION_CONN_TYPE,FTP_SESSION_CONN_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_session_conn_type_extraction},
-    {FTP_SERVER_CONT_ADDR,FTP_SERVER_CONT_ADDR_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_contrl_addr_extraction},
-    {FTP_SERVER_CONT_PORT,FTP_SERVER_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_contrl_port_extraction},
-    {FTP_CLIENT_CONT_PORT,FTP_CLIENT_CONT_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_port_extraction},    
-    {FTP_CLIENT_CONT_ADDR,FTP_CLIENT_CONT_ADDR_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_contrl_addr_extraction},
-    {FTP_CONT_IP_SESSION_ID,FTP_CONT_IP_SESSION_ID_ALIAS,MMT_U64_DATA,sizeof(uint64_t),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_contrl_ip_session_id_extraction},
-    {FTP_USERNAME,FTP_USERNAME_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_username_extraction},
-    {FTP_PASSWORD,FTP_PASSWORD_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_password_extraction},
-    {FTP_SESSION_FEATURES,FTP_SESSION_FEATURES_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_features_extraction},
-    {FTP_SYST,FTP_SYST_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_syst_extraction},
-    {FTP_STATUS,FTP_STATUS_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_status_extraction},
-    {FTP_LAST_COMMAND,FTP_LAST_COMMAND_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_last_command_extraction},
-    {FTP_LAST_RESPONSE_CODE,FTP_LAST_RESPONSE_CODE_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_last_response_code_extraction},
-    {FTP_CURRENT_DIR,FTP_CURRENT_DIR_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION_CHANGING,ftp_current_dir_extraction},
+    {FTP_SESSION_CONN_TYPE, FTP_SESSION_CONN_TYPE_ALIAS, MMT_U8_DATA, sizeof(char), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_session_conn_type_extraction},
+    {FTP_SERVER_CONT_ADDR, FTP_SERVER_CONT_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof(int), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_server_contrl_addr_extraction},
+    {FTP_SERVER_CONT_PORT, FTP_SERVER_CONT_PORT_ALIAS, MMT_U16_DATA, sizeof(short), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_server_contrl_port_extraction},
+    {FTP_CLIENT_CONT_PORT, FTP_CLIENT_CONT_PORT_ALIAS, MMT_U16_DATA, sizeof(short), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_client_contrl_port_extraction},
+    {FTP_CLIENT_CONT_ADDR, FTP_CLIENT_CONT_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof(int), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_client_contrl_addr_extraction},
+    {FTP_CONT_IP_SESSION_ID, FTP_CONT_IP_SESSION_ID_ALIAS, MMT_U64_DATA, sizeof(uint64_t), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_contrl_ip_session_id_extraction},
+    {FTP_USERNAME, FTP_USERNAME_ALIAS, MMT_STRING_DATA_POINTER, sizeof(char*), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ftp_username_extraction},
+    {FTP_PASSWORD, FTP_PASSWORD_ALIAS, MMT_STRING_DATA_POINTER, sizeof(char*), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ftp_password_extraction},
+    {FTP_SESSION_FEATURES, FTP_SESSION_FEATURES_ALIAS, MMT_STRING_DATA_POINTER, sizeof(char*), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ftp_features_extraction},
+    {FTP_SYST, FTP_SYST_ALIAS, MMT_STRING_DATA_POINTER, sizeof(char*), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_syst_extraction},
+    {FTP_STATUS, FTP_STATUS_ALIAS, MMT_U16_DATA, sizeof(short), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ftp_status_extraction},
+    {FTP_LAST_COMMAND, FTP_LAST_COMMAND_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ftp_last_command_extraction},
+    {FTP_LAST_RESPONSE_CODE, FTP_LAST_RESPONSE_CODE_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ftp_last_response_code_extraction},
+    {FTP_CURRENT_DIR, FTP_CURRENT_DIR_ALIAS, MMT_STRING_DATA_POINTER, sizeof(char*), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ftp_current_dir_extraction},
     /// CURRENT FTP DATA CONNECTION SESSION ATTRIBUTES ///
-    {FTP_SERVER_DATA_ADDR,FTP_SERVER_DATA_ADDR_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_data_addr_extraction},
-    {FTP_SERVER_DATA_PORT,FTP_SERVER_DATA_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_server_data_port_extraction},
-    {FTP_CLIENT_DATA_ADDR,FTP_CLIENT_DATA_ADDR_ALIAS,MMT_DATA_IP_ADDR,sizeof(int),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_addr_extraction},
-    {FTP_CLIENT_DATA_PORT,FTP_CLIENT_DATA_PORT_ALIAS,MMT_U16_DATA,sizeof(short),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_client_data_port_extraction},
-    {FTP_DATA_IP_SESSION_ID,FTP_DATA_IP_SESSION_ID_ALIAS,MMT_U64_DATA,sizeof(uint64_t),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_ip_session_id_extraction},
-    {FTP_DATA_TYPE,FTP_DATA_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_type_extraction},
-    {FTP_DATA_TRANSFER_TYPE,FTP_DATA_TRANSFER_TYPE_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_transfer_type_extraction},
-    {FTP_DATA_MODE,FTP_DATA_MODE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_mode_extraction},
-    {FTP_DATA_DIRECTION,FTP_DATA_DIRECTION_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_SESSION,ftp_data_direction_extraction},
+    {FTP_SERVER_DATA_ADDR, FTP_SERVER_DATA_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof(int), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_server_data_addr_extraction},
+    {FTP_SERVER_DATA_PORT, FTP_SERVER_DATA_PORT_ALIAS, MMT_U16_DATA, sizeof(short), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_server_data_port_extraction},
+    {FTP_CLIENT_DATA_ADDR, FTP_CLIENT_DATA_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof(int), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_client_data_addr_extraction},
+    {FTP_CLIENT_DATA_PORT, FTP_CLIENT_DATA_PORT_ALIAS, MMT_U16_DATA, sizeof(short), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_client_data_port_extraction},
+    {FTP_DATA_IP_SESSION_ID, FTP_DATA_IP_SESSION_ID_ALIAS, MMT_U64_DATA, sizeof(uint64_t), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_data_ip_session_id_extraction},
+    {FTP_DATA_TYPE, FTP_DATA_TYPE_ALIAS, MMT_U8_DATA, sizeof(char), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_data_type_extraction},
+    {FTP_DATA_TRANSFER_TYPE, FTP_DATA_TRANSFER_TYPE_ALIAS, MMT_STRING_DATA_POINTER, sizeof(char*), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_data_transfer_type_extraction},
+    {FTP_DATA_MODE, FTP_DATA_MODE_ALIAS, MMT_U8_DATA, sizeof(char), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_data_mode_extraction},
+    {FTP_DATA_DIRECTION, FTP_DATA_DIRECTION_ALIAS, MMT_U8_DATA, sizeof(char), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_data_direction_extraction},
     /// CURRENT FTP FILE ATTRIBUTES ///
     {FTP_FILE_NAME, FTP_FILE_NAME_ALIAS, MMT_STRING_DATA_POINTER, sizeof(char*), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_file_name_extraction},
     {FTP_FILE_SIZE, FTP_FILE_SIZE_ALIAS, MMT_U32_DATA, sizeof(int), POSITION_NOT_KNOWN, SCOPE_SESSION, ftp_file_size_extraction},
@@ -2406,12 +2406,12 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         }
     }
 
-    if(tuple6->conn_type == MMT_FTP_CONTROL_CONNECTION && tuple6->direction == MMT_FTP_PACKET_SERVER && ftp_control){
-        ftp_response_packet(ipacket,index,ftp_control);
-    }else if(tuple6->conn_type == MMT_FTP_CONTROL_CONNECTION && tuple6->direction == MMT_FTP_PACKET_CLIENT && ftp_control){
-        ftp_request_packet(ipacket,index,ftp_control);
-    }else if(tuple6->conn_type == MMT_FTP_DATA_CONNECTION && ftp_data){
-        debug("Reconstruct data packet of packet: %lu\n",ipacket->packet_id);
+    if (tuple6->conn_type == MMT_FTP_CONTROL_CONNECTION && tuple6->direction == MMT_FTP_PACKET_SERVER && ftp_control) {
+        ftp_response_packet(ipacket, index, ftp_control);
+    } else if (tuple6->conn_type == MMT_FTP_CONTROL_CONNECTION && tuple6->direction == MMT_FTP_PACKET_CLIENT && ftp_control) {
+        ftp_request_packet(ipacket, index, ftp_control);
+    } else if (tuple6->conn_type == MMT_FTP_DATA_CONNECTION && ftp_data) {
+        debug("Reconstruct data packet of packet: %lu\n", ipacket->packet_id);
         ftp_data->data_conn->ip_session_id = tuple6->ip_session_id;
         // ftp_data_packet(ipacket,index,ftp_data);
     } else {

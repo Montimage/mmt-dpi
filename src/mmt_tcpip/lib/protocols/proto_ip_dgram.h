@@ -5,7 +5,7 @@
 #include "mmt_core.h"
 #include "mmt_common_internal_include.h"
 #include "proto_ip_frag.h"
-
+#define MMT_MAX_NUMBER_FRAGMENT  20 // Maximum number of fragments packet in an IP packets
 
 /*
           G E N E R A L   I P   D A T A G R A M   L A Y O U T
@@ -40,6 +40,11 @@
 struct ip_dgram {
    uint8_t    *x;      // reassembly buffer
    unsigned    len;    // buffer length
+   unsigned    nb_packets;
+   unsigned    caplen;
+   unsigned    max_packet_size;
+   unsigned    current_packet_size;
+   unsigned    packet_offsets[MMT_MAX_NUMBER_FRAGMENT];
    ip_frags_t  holes;  // list of holes
 };
 
@@ -57,7 +62,7 @@ extern void        ip_dgram_cleanup      ( ip_dgram_t * );
 extern void        ip_dgram_dump         ( ip_dgram_t * );
 extern void        ip_dgram_dump_holes   ( ip_dgram_t * );
 
-extern void        ip_dgram_update       ( ip_dgram_t *, const struct iphdr *, unsigned );
+extern void        ip_dgram_update       ( ip_dgram_t *, const struct iphdr *, unsigned ,unsigned);
 extern void        ip_dgram_update_holes ( ip_dgram_t *, const uint8_t *, unsigned, unsigned, int );
 extern int         ip_dgram_is_complete  ( ip_dgram_t * );
 
