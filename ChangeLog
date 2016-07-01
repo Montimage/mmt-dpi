@@ -6,6 +6,9 @@ RELEASE NOTES
 - Added number of capture packet and capture data volume in session
 - Fixed some case of IP fragmentation: out of order, duplicated, lost fragment, ...
 - Strategy for duplicated IP fragmentation: Not overwrite fragment (can be change easily)
+- Added information about IP fragmentation in IP protocol statistic
+- Updated session report - includes packet count and data volume from IP fragment packet (Fixed losing 20% of traffic)
+- Fixed bug #78 -> Updated http_method after parsing header line in proto_http.c
 
 ## Release version 1.6.2.1
 04 May 2016
