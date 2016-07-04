@@ -837,6 +837,7 @@ extern "C" {
         FTP_SERVER_CONT_PORT, // Alway 21
         FTP_CLIENT_CONT_ADDR,
         FTP_CLIENT_CONT_PORT,
+        FTP_CONT_IP_SESSION_ID,
         // ACCOUNT
         FTP_USERNAME,
         FTP_PASSWORD,
@@ -852,6 +853,7 @@ extern "C" {
         FTP_SERVER_DATA_PORT,
         FTP_CLIENT_DATA_ADDR,
         FTP_CLIENT_DATA_PORT,
+        FTP_DATA_IP_SESSION_ID,
         FTP_DATA_TYPE, // FTP_LIST_DIRECTORY, FTP_FILE_TRANSFER
         FTP_DATA_TRANSFER_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
         FTP_DATA_MODE,// PASSIVE or ACTIVE
@@ -874,8 +876,9 @@ extern "C" {
 // Control connection
 #define FTP_SERVER_CONT_ADDR_ALIAS  "server_control_addr"
 #define FTP_SERVER_CONT_PORT_ALIAS  "server_control_port"
-#define FTP_CLIENT_CONT_ADDR_ALIAS  "data_control_addr"
-#define FTP_CLIENT_CONT_PORT_ALIAS  "data_control_port"
+#define FTP_CLIENT_CONT_ADDR_ALIAS  "client_control_addr"
+#define FTP_CLIENT_CONT_PORT_ALIAS  "client_control_port"
+#define FTP_CONT_IP_SESSION_ID_ALIAS  "control_ip_session_id"
 // USER ATTRIBUTE
 #define FTP_USERNAME_ALIAS          "user_name"
 #define FTP_PASSWORD_ALIAS          "password"
@@ -890,6 +893,7 @@ extern "C" {
 #define FTP_SERVER_DATA_PORT_ALIAS  "server_data_port"
 #define FTP_CLIENT_DATA_ADDR_ALIAS  "client_data_addr"
 #define FTP_CLIENT_DATA_PORT_ALIAS  "client_data_port"
+#define FTP_DATA_IP_SESSION_ID_ALIAS  "data_ip_session_id"
 #define FTP_DATA_TYPE_ALIAS         "data_type" //
 #define FTP_DATA_TRANSFER_TYPE_ALIAS "transfer_type"
 #define FTP_DATA_MODE_ALIAS      "ftp_session_mode"// PASSIVE or ACTIVE

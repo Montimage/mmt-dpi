@@ -911,6 +911,88 @@ int proto_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
     return 0;
 }
 
+int proto_ip_frag_packet_count_extraction(const ipacket_t * packet, unsigned proto_index,
+                                  attribute_t * extracted_data) {
+
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->ip_frag_packets_count;
+        proto_stats = proto_stats->next;
+    }
+
+    if (count) {
+        *((uint64_t *) extracted_data->data) = count;
+        return 1;
+    }
+    return 0;
+}
+
+
+int proto_ip_frag_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
+                                 attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    
+    // if(configured_protocol->protocol->proto_id != PROTO_ID){
+    //     return 0;
+    // }
+
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->ip_frag_data_volume;
+        proto_stats = proto_stats->next;
+    }
+
+    if (count) {
+        *((uint64_t *) extracted_data->data) = count;
+        return 1;
+    }
+    return 0;
+}
+
+int proto_ip_df_packet_count_extraction(const ipacket_t * packet, unsigned proto_index,
+                                  attribute_t * extracted_data) {
+
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->ip_df_packets_count;
+        proto_stats = proto_stats->next;
+    }
+
+    if (count) {
+        *((uint64_t *) extracted_data->data) = count;
+        return 1;
+    }
+    return 0;
+}
+
+
+int proto_ip_df_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
+                                 attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    
+    // if(configured_protocol->protocol->proto_id != PROTO_ID){
+    //     return 0;
+    // }
+
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->ip_df_data_volume;
+        proto_stats = proto_stats->next;
+    }
+
+    if (count) {
+        *((uint64_t *) extracted_data->data) = count;
+        return 1;
+    }
+    return 0;
+}
+
 int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_index,
                                     attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
@@ -1072,6 +1154,10 @@ static attribute_metadata_t proto_stats_attributes_metadata[PROTO_STATS_ATTRIBUT
 
     {PROTO_PACKET_COUNT, PROTO_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_packet_count_extraction},
     {PROTO_DATA_VOLUME, PROTO_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_data_volume_extraction},
+    {PROTO_IP_FRAG_PACKET_COUNT, PROTO_IP_FRAG_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_packet_count_extraction},
+    {PROTO_IP_FRAG_DATA_VOLUME, PROTO_IP_FRAG_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_data_volume_extraction},
+    {PROTO_IP_DF_PACKET_COUNT, PROTO_IP_DF_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_packet_count_extraction},
+    {PROTO_IP_DF_DATA_VOLUME, PROTO_IP_DF_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_data_volume_extraction},
     {PROTO_PAYLOAD_VOLUME, PROTO_PAYLOAD_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_payload_volume_extraction},
     {PROTO_SESSIONS_COUNT, PROTO_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_sessions_count_extraction},
     {PROTO_ACTIVE_SESSIONS_COUNT, PROTO_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
@@ -2298,7 +2384,9 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->next = NULL;
                 session->previous = NULL;
                 session->packet_count = 0;
+                session->packet_cap_count = 0;
                 session->data_volume = 0;
+                session->data_cap_volume = 0;
                 session->status = NonClassified;
                 session->protocol_container_context = configured_protocol;
                 session->session_protocol_index = index;
@@ -2369,6 +2457,8 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             //update the session basic statistics
             session->packet_count++;
             session->data_volume += ipacket->p_hdr->len;
+            session->data_cap_volume += ipacket->total_caplen;
+            session->packet_cap_count += ipacket->nb_reassembled_packets;
 
             session->s_last_activity_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
             session->s_last_activity_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
@@ -2560,6 +2650,10 @@ void reset_statistics(proto_statistics_t * stats) {
     stats->data_volume = 0;
     stats->payload_volume = 0;
     stats->packets_count = 0;
+    stats->ip_df_packets_count = 0;
+    stats->ip_frag_packets_count = 0;
+    stats->ip_df_data_volume = 0;
+    stats->ip_frag_data_volume = 0;
     stats->packets_count_direction[0] = 0;
     stats->packets_count_direction[1] = 0;
     stats->data_volume_direction[0] = 0;
@@ -2618,9 +2712,9 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
 
     if (proto_stats) {
         proto_stats->touched = 1;
-        proto_stats->data_volume += ipacket->p_hdr->len;
-        proto_stats->payload_volume += ipacket->p_hdr->len - proto_offset;
         proto_stats->packets_count += 1;
+        proto_stats->data_volume += ipacket->p_hdr->original_len;
+        proto_stats->payload_volume += ipacket->p_hdr->original_len - proto_offset;
         // Update the fist packet
         if (proto_stats->packets_count == 1) {
             proto_stats->first_packet_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
@@ -2628,6 +2722,26 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
         }
         proto_stats->last_packet_time.tv_sec = ipacket->p_hdr->ts.tv_sec;
         proto_stats->last_packet_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+        // Check if this is IP protocol, then update ip_fragment information
+        if(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179){
+
+            if(ipacket->is_fragment){
+
+                proto_stats->ip_frag_packets_count ++;    
+                if(ipacket->is_completed){
+                    proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
+                    proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
+                    proto_stats->ip_df_data_volume += ipacket->total_caplen;    
+                }else{
+                    proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
+                }
+            }
+        }else{
+            proto_stats->ip_frag_packets_count = 0;    
+            proto_stats->ip_frag_data_volume = 0;
+            proto_stats->ip_df_packets_count = 0;
+            proto_stats->ip_df_data_volume = 0;
+        }
     }
     return proto_stats;
 }
@@ -2849,7 +2963,7 @@ void process_packet_handler(ipacket_t *ipacket) {
  * @param ipacket Packet to process
  */
 void mmt_drop_packet(ipacket_t *ipacket) {
-    debug("mmt_drop_packet of ipacket: %"PRIu64"\n", ipacket->packet_id);
+    printf("mmt_drop_packet of ipacket: %"PRIu64"\n", ipacket->packet_id);
 
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
@@ -2902,10 +3016,11 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     if (is_new_session == NEW_SESSION) {
         parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
-    } else {
+    } 
+    // else {
         //Update the protocol statistics
         parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
-    }
+    // }
 
     //Analyze packet data
     target = proto_packet_analyze(ipacket, configured_protocol, index);
@@ -2959,7 +3074,9 @@ void copy_ipacket_header(ipacket_t *ipacket, struct pkthdr *header) {
     ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
     ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
     ipacket->p_hdr->caplen = header->caplen;
+    ipacket->p_hdr->original_caplen = header->caplen;
     ipacket->p_hdr->len = header->len;
+    ipacket->p_hdr->original_len = header->len;
     ipacket->p_hdr->user_args = header->user_args;
 }
 
@@ -2988,6 +3105,10 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         ipacket->mmt_handler = mmt;
         ipacket->internal_packet = NULL;
         ipacket->last_callback_fct_id = 0;
+        ipacket->nb_reassembled_packets = 1;
+        ipacket->is_completed = 0;
+        ipacket->is_fragment = 0;
+        ipacket->total_caplen = header->caplen;
         update_last_received_packet(&mmt->last_received_packet, ipacket);
         (void) set_classified_proto(ipacket, 0, classified_proto);
         return ipacket;
@@ -2996,7 +3117,14 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         mmt->current_ipacket.proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
         mmt->current_ipacket.proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
         mmt->current_ipacket.proto_classif_status = &mmt->last_received_packet.proto_classif_status;
-        mmt->current_ipacket.p_hdr = header;
+        mmt->current_ipacket.p_hdr = &mmt->current_ipacket.internal_p_hdr;
+        mmt->current_ipacket.p_hdr->ts.tv_sec = header->ts.tv_sec;
+        mmt->current_ipacket.p_hdr->ts.tv_usec = header->ts.tv_usec;
+        mmt->current_ipacket.p_hdr->caplen = header->caplen;
+        mmt->current_ipacket.p_hdr->original_caplen = header->caplen;
+        mmt->current_ipacket.p_hdr->original_len = header->len;
+        mmt->current_ipacket.p_hdr->len = header->len;
+        mmt->current_ipacket.p_hdr->user_args = header->user_args;
         mmt->current_ipacket.original_data = packet;
         mmt->current_ipacket.proto_hierarchy->len = 0;
         mmt->current_ipacket.proto_headers_offset->len = 0;
@@ -3005,6 +3133,10 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         mmt->current_ipacket.mmt_handler = mmt;
         mmt->current_ipacket.internal_packet = NULL;
         mmt->current_ipacket.last_callback_fct_id = 0;
+        mmt->current_ipacket.nb_reassembled_packets = 1;
+        mmt->current_ipacket.is_completed = 0;
+        mmt->current_ipacket.is_fragment = 0;
+        mmt->current_ipacket.total_caplen = header->caplen;
         update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
         //First set the meta protocol
         (void) set_classified_proto(&mmt->current_ipacket, 0, classified_proto);

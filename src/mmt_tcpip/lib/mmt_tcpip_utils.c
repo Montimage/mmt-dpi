@@ -184,7 +184,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     packet->packet_id = ipacket->packet_id;
 
     for (a = 0; a < end && packet->parsed_lines < MMT_MAX_PARSE_LINES_PER_PACKET; a++) {
-    //for (a = 0; a < end; a++) {
+    // search for an empty line position: 0x0d0a
         if (get_u16(packet->payload, a) == ntohs(0x0d0a)) {
             packet->line[packet->parsed_lines].len =
                 &packet->payload[a] - packet->line[packet->parsed_lines].ptr;

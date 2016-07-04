@@ -78,6 +78,8 @@ typedef struct pkthdr {
     struct timeval ts;   /**< time stamp that indicates the packet arrival time */
     unsigned int caplen; /**< length of portion of the packet that is present */
     unsigned int len;    /**< length of the packet (off wire) */
+    unsigned int original_caplen; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
+    unsigned int original_len; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
     void * user_args;    /**< Pointer to a user defined argument. Can be NULL, it will not be used by the library. */
 } pkthdr_t;
 
@@ -94,6 +96,10 @@ typedef struct proto_hierarchy_struct {
  */
 struct ipacket_struct {
     uint64_t packet_id;                       /**< identifier of the packet. */
+    unsigned nb_reassembled_packets;          /**< number of packets which are assembled to this packet */
+    uint64_t total_caplen;                    /**< Total captured length of all packets which are assembled to this packet*/
+    uint8_t is_completed;                     /**< 1 - yes, 0 - no: Indicate if the packet is completed to go to parse to next protocol*/
+    uint8_t is_fragment;                      /**< 1 - yes, 0 - no: Indicate if the packet is a fragmented packet */  
     proto_hierarchy_t * proto_hierarchy;      /**< the protocol layers corresponding to this packet */
     proto_hierarchy_t * proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
     proto_hierarchy_t * proto_classif_status; /**< the classification status of the protocols in the path */
@@ -145,6 +151,10 @@ struct proto_statistics_struct {
     uint32_t touched;                     /**< Indicates if the statistics have been updated since the last reset */
     uint64_t packets_count;               /**< Total number of packets seen by the protocol on a particular protocol path */
     uint64_t data_volume;                 /**< Total data volume seen by the protocol  on a particular protocol path */
+    uint64_t ip_frag_packets_count;         /**< Total number of IP unknown fragmented packets seen by the IP protocol*/
+    uint64_t ip_frag_data_volume;           /**< Total data volume of IP unknown fragmented packets seen by the IP protocol*/
+    uint64_t ip_df_packets_count;         /**< Total number of defragmented IP packets seen by the IP protocol*/
+    uint64_t ip_df_data_volume;           /**< Total data volume of defragmented IP packets seen by the IP protocol*/
     uint64_t payload_volume;              /**< Total payload data volume seen by the protocol  on a particular protocol path */
     uint64_t packets_count_direction[2];  /**< Total number of UL/DL packets seen by the protocol  on a particular protocol path */
     uint64_t data_volume_direction[2];    /**< Total UL/DL data volume seen by the protocol  on a particular protocol path */
@@ -163,6 +173,10 @@ enum proto_stats_attr {
     PROTO_PACKET_COUNT,
     PROTO_DATA_VOLUME,
     PROTO_PAYLOAD_VOLUME,
+    PROTO_IP_FRAG_PACKET_COUNT,
+    PROTO_IP_FRAG_DATA_VOLUME,
+    PROTO_IP_DF_PACKET_COUNT, 
+    PROTO_IP_DF_DATA_VOLUME, 
     PROTO_SESSIONS_COUNT,
     PROTO_ACTIVE_SESSIONS_COUNT,
     PROTO_TIMEDOUT_SESSIONS_COUNT,
@@ -190,6 +204,10 @@ typedef struct ip_rtt_struct{
 #define PROTO_PAYLOAD_LABEL                     "p_payload"
 #define PROTO_PACKET_COUNT_LABEL                "packet_count"
 #define PROTO_DATA_VOLUME_LABEL                 "data_count"
+#define PROTO_IP_FRAG_PACKET_COUNT_LABEL        "ip_frag_packets_count"
+#define PROTO_IP_FRAG_DATA_VOLUME_LABEL         "ip_frag_data_volume"
+#define PROTO_IP_DF_PACKET_COUNT_LABEL          "ip_df_packets_count"
+#define PROTO_IP_DF_DATA_VOLUME_LABEL           "ip_df_data_volume"
 #define PROTO_PAYLOAD_VOLUME_LABEL              "payload_count"
 #define PROTO_SESSIONS_COUNT_LABEL              "session_count"
 #define PROTO_ACTIVE_SESSIONS_COUNT_LABEL       "a_session_count"
@@ -413,6 +431,25 @@ MMTAPI uint64_t MMTCALL get_session_packet_count(
 );
 
 /**
+ * Returns the number of packets captured by this session
+ * @param session the session structure
+ * @return the number of packets captured by this session.
+ */
+MMTAPI uint64_t MMTCALL get_session_packet_cap_count(
+    const mmt_session_t *session
+);
+
+
+/**
+ * Returns the volume of data captured by this session
+ * @param session the session structure
+ * @return the volume of data captured by this session.
+ */
+MMTAPI uint64_t MMTCALL get_session_data_cap_volume(
+    const mmt_session_t *session
+);
+
+/**
  * Returns the uplink number of packets seen by this session
  * @param session the session structure
  * @return the uplink number of packets seen by this session.
@@ -422,11 +459,29 @@ MMTAPI uint64_t MMTCALL get_session_ul_packet_count(
 );
 
 /**
+ * Returns the uplink number of packets captured by this session
+ * @param session the session structure
+ * @return the uplink number of packets captured by this session.
+ */
+MMTAPI uint64_t MMTCALL get_session_ul_cap_packet_count(
+    const mmt_session_t *session
+);
+
+/**
  * Returns the downlink number of packets seen by this session
  * @param session the session structure
  * @return the downlink number of packets seen by this session.
  */
 MMTAPI uint64_t MMTCALL get_session_dl_packet_count(
+    const mmt_session_t *session
+);
+
+/**
+ * Returns the downlink number of packets captured by this session
+ * @param session the session structure
+ * @return the downlink number of packets captured by this session.
+ */
+MMTAPI uint64_t MMTCALL get_session_dl_cap_packet_count(
     const mmt_session_t *session
 );
 
@@ -454,6 +509,24 @@ MMTAPI uint64_t MMTCALL get_session_ul_byte_count(
  * @return total downlink volume in bytes seen by this session.
  */
 MMTAPI uint64_t MMTCALL get_session_dl_byte_count(
+    const mmt_session_t *session
+);
+
+/**
+ * Returns total uplink volume in bytes captured by this session
+ * @param session the session structure
+ * @return total uplink volume in bytes captured by this session.
+ */
+MMTAPI uint64_t MMTCALL get_session_ul_cap_byte_count(
+    const mmt_session_t *session
+);
+
+/**
+ * Returns total downlink volume in bytes captured by this session
+ * @param session the session structure
+ * @return total downlink volume in bytes captured by this session.
+ */
+MMTAPI uint64_t MMTCALL get_session_dl_cap_byte_count(
     const mmt_session_t *session
 );
 

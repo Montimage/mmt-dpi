@@ -102,9 +102,15 @@ struct mmt_session_struct {
     mmt_handler_t *mmt_handler;              /**< opaque pointer to the mmt handler that processed this session */
     uint32_t session_protocol_index;         /**< index of the protocol to which the session belongs */
     uint64_t packet_count;                   /**< tracks the number of packets */
+    uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
+    uint64_t data_cap_volume;                /**< data volume captured  - include fragmented packets*/
     uint64_t data_volume;                    /**< tracks the octet data volume */
+    
     uint64_t packet_count_direction[2];      /**< Session's packet count in both directions: initiator <-> remote */
     uint64_t data_volume_direction[2];       /**< Session's data volume in both directions: initiator <-> remote */
+
+    uint64_t packet_cap_count_direction[2];      /**< Session's packet count ( - include fragmented packets) in both directions: initiator <-> remote */
+    uint64_t data_cap_volume_direction[2];       /**< Session's data volume ( - include fragmented packets) in both directions: initiator <-> remote */
 
     uint64_t data_packet_count;              /**< tracks the number of packets holding effective payload data */
     uint64_t data_byte_volume;               /**< tracks the effective payload data volume */
@@ -277,6 +283,10 @@ struct proto_statistics_internal_struct {
     uint32_t touched; /**< Indicates if the statistics have been updated since the last reset */
     uint64_t packets_count; /**< Total number of packets seen by the protocol */
     uint64_t data_volume; /**< Total data volume seen by the protocol */
+    uint64_t ip_frag_packets_count;         /**< Total number of IP unknown fragmented packets seen by the IP protocol*/
+    uint64_t ip_frag_data_volume;           /**< Total data volume of IP unknown fragmented packets seen by the IP protocol*/
+    uint64_t ip_df_packets_count;         /**< Total number of defragmented IP packets seen by the IP protocol*/
+    uint64_t ip_df_data_volume;           /**< Total data volume of defragmented IP packets seen by the IP protocol*/
     uint64_t payload_volume; /**< Total payload data volume seen by the protocol */
     uint64_t packets_count_direction[2]; /**< Total number of UL/DL packets seen by the protocol */
     uint64_t data_volume_direction[2]; /**< Total UL/DL data volume seen by the protocol */
@@ -355,7 +365,7 @@ struct mmt_handler_struct {
     attribute_handler_element_t * proto_registered_attribute_handlers[PROTO_MAX_IDENTIFIER];
     packet_handler_t * packet_handlers;
 
-    void * timeout_milestones_map;
+    void * timeout_milestones_map; // Session timeout milestones map
     session_expiry_handler_t session_expiry_handler;
     
     session_timer_handler_t session_timer_handler;    // This is the function registered by user and will be call from function process_timer_handler()

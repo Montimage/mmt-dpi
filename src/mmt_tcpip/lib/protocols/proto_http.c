@@ -158,6 +158,49 @@ static attribute_metadata_t http_new_attributes_metadata[RFC2822_ATTRIBUTES_NB] 
 };
 
 /**
+ * this functions checks whether the packet begins with a valid http request
+ * @param ipacket
+ * @returnvalue 0 if no valid request has been found
+ * @returnvalue >0 indicates start of filename but not necessarily in packet limit
+ */
+uint16_t http_request_url_offset(ipacket_t * ipacket) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+
+    /* FIRST PAYLOAD PACKET FROM CLIENT */
+    /* check if the packet starts with POST or GET */
+    if (packet->payload_packet_len >= 4 && memcmp(packet->payload, "GET ", 4) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: GET FOUND\n");
+        return 4;
+    } else if (packet->payload_packet_len >= 5 && memcmp(packet->payload, "POST ", 5) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: POST FOUND\n");
+        return 5;
+    } else if (packet->payload_packet_len >= 8 && memcmp(packet->payload, "OPTIONS ", 8) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: OPTIONS FOUND\n");
+        return 8;
+    } else if (packet->payload_packet_len >= 5 && memcmp(packet->payload, "HEAD ", 5) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: HEAD FOUND\n");
+        return 5;
+    } else if (packet->payload_packet_len >= 4 && memcmp(packet->payload, "PUT ", 4) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PUT FOUND\n");
+        return 4;
+    } else if (packet->payload_packet_len >= 7 && memcmp(packet->payload, "DELETE ", 7) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: DELETE FOUND\n");
+        return 7;
+    } else if (packet->payload_packet_len >= 8 && memcmp(packet->payload, "CONNECT ", 8) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: CONNECT FOUND\n");
+        return 8;
+    } else if (packet->payload_packet_len >= 9 && memcmp(packet->payload, "PROPFIND ", 9) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PROFIND FOUND\n");
+        return 9;
+    } else if (packet->payload_packet_len >= 7 && memcmp(packet->payload, "REPORT ", 7) == 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: REPORT FOUND\n");
+        return 7;
+    }
+
+    return 0;
+}
+
+/**
  * HTTP session data analysis function. 
  * Contains compatibility code plus new HTTP parser integration
  **/
@@ -167,7 +210,24 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     // Backward Compatibility code
     if (packet->payload_packet_len > 32) {
         if ((flow->l4.tcp.http_data_direction != ipacket->session->last_packet_direction)) {
+            debug("[PROTO_HTTP-]> Hey man (0)");
             mmt_parse_packet_line_info(ipacket);
+        }
+        if (packet->parsed_lines > 1) {
+            //If the packet contains a response, try to check the payload
+            if (!packet->http_response.ptr) {
+                //The packet is not a response! maybe this is a request
+                uint16_t filename_start;
+                filename_start = http_request_url_offset(ipacket);
+                if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
+                        && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+                    packet->http_url_name.ptr = &packet->payload[filename_start];
+                    packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
+
+                    packet->http_method.ptr = packet->line[0].ptr;
+                    packet->http_method.len = filename_start - 1;
+                }
+            }
         }
         flow->l4.tcp.http_data_direction = ipacket->session->last_packet_direction;
     }
