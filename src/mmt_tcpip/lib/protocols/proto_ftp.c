@@ -314,6 +314,7 @@ ftp_control_session_t * ftp_new_control_session(ftp_tuple6_t * tuple6) {
     ftp_control->current_dir = NULL;
     ftp_control->current_data_session = ftp_new_data_connection();
     ftp_control->current_data_session->control_session = ftp_control;
+    ftp_control->status = 0;
     ftp_control->next = NULL;
     return ftp_control;
 }
