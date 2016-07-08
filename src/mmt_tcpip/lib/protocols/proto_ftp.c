@@ -579,10 +579,10 @@ void ftp_set_command_id(ftp_command_t* cmd) {
  * @return             FTP command
  */
 ftp_command_t * ftp_get_command(char* payload, int payload_len) {
-    ftp_command_t *cmd;
+    ftp_command_t *cmd = NULL;
     cmd = (ftp_command_t*)malloc(sizeof(ftp_command_t));
-    char * command;
-    char * params;
+    char * command = NULL;
+    char * params = NULL;
 
     if (payload_len == 6 && payload[3] != ' ') {
         // FEAT\r\t command
@@ -641,6 +641,70 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
     return cmd;
 }
 
+char * ftp_get_command_param(char* payload, int payload_len) {
+    if (payload_len == 6 && payload[3] != ' ') {
+        return NULL;
+    } else if (payload_len == 5 && payload[2] != ' ') {
+        params = NULL;
+    } else {
+        if (!mmt_int_check_possible_ftp_command(payload, payload_len)) {
+            params = (char*)malloc(payload_len + 1);
+            memcpy(params, payload, payload_len);
+            params[payload_len] = '\0';
+        }else{
+            if (payload[3] == ' ') {
+                if (payload_len - 6 > 0) {
+                    params = (char*)malloc(payload_len - 5);
+                    memcpy(params, payload + 4, payload_len - 6);
+                    params[payload_len - 6] = '\0';
+                } else {
+                    params = NULL;
+                }
+            } else if (payload[4] == ' ') {
+                if (payload_len - 7 > 0) {
+                    params = (char*)malloc(payload_len - 6);
+                    memcpy(params, payload + 5, payload_len - 7);
+                    params[payload_len - 7] = '\0';
+                } else {
+                    params = NULL;
+                }
+            }
+        }
+    }
+
+    return params;
+}
+
+char * ftp_get_command_str(char* payload, int payload_len){
+    char * command = NULL;
+
+    if (payload_len == 6 && payload[3] != ' ') {
+        // FEAT\r\t command
+        command = (char*)malloc(5);
+        memcpy(command, payload, 4);
+        command[4] = '\0';
+    } else if (payload_len == 5 && payload[2] != ' ') {
+        // PWD\r\t command
+        command = (char*)malloc(4);
+        memcpy(command, payload, 3);
+        command[3] = '\0';
+    } else {
+        if (!mmt_int_check_possible_ftp_command(payload, payload_len)) {
+            command = "UNKNOWN_CMD";
+        }else{
+            if (payload[3] == ' ') {
+                command = (char*)malloc(4);
+                memcpy(command, payload, 3);
+                command[3] = '\0';
+            } else if (payload[4] == ' ') {
+                command = (char*)malloc(5);
+                memcpy(command, payload, 4);
+                command[4] = '\0';
+            }    
+        }
+    }
+    return command;
+}
 
 /**
  * Get response code from a reponse packet
@@ -649,9 +713,9 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
  * @return             a ftp response code: code + value
  */
 ftp_response_t * ftp_get_response(char* payload, int payload_len) {
-    ftp_response_t * res;
-    int code;
-    char *str_value;
+    ftp_response_t * res = NULL;
+    int code = MMT_FTP_UNKNOWN_CODE;
+    char *str_value = NULL;
     res = (ftp_response_t*)malloc(sizeof(ftp_response_t));
 
     if (mmt_int_check_possible_ftp_reply(payload, payload_len)) {
@@ -693,6 +757,71 @@ ftp_response_t * ftp_get_response(char* payload, int payload_len) {
         res->code = code;
     }
     return res;
+}
+
+char * ftp_get_response_str_code(char* payload, int payload_len) {
+    char *str_code = NULL;
+    if (mmt_int_check_possible_ftp_reply(payload, payload_len)) {
+        // Get response code
+        str_code = (char*)malloc(4);
+        memcpy(str_code, payload, 3);
+        str_code[3] = '\0';
+    } else {
+        if (mmt_int_check_possible_ftp_continuation_reply(payload, payload_len)) {
+            str_code = (char*)malloc(payload_len - 1);
+            memcpy(str_code, payload, payload_len - 2);
+            str_code[payload_len - 2] = '\0';
+        }
+    }
+    return str_code;
+}
+
+char * ftp_get_response_value(char* payload, int payload_len) {
+    char *str_value = NULL;
+    if (mmt_int_check_possible_ftp_reply(payload, payload_len)) {
+        // Get response value
+        if (payload_len - 6 > 0) {
+            str_value = (char*)malloc(payload_len - 5);
+            memcpy(str_value, payload + 4, payload_len - 6);
+            str_value[payload_len - 6] = '\0';
+        }
+
+    } else {
+        if (mmt_int_check_possible_ftp_continuation_reply(payload, payload_len)) {
+            str_value = (char*)malloc(payload_len - 1);
+            memcpy(str_value, payload, payload_len - 2);
+            str_value[payload_len - 2] = '\0';
+        }
+    }
+    return str_value;
+}
+
+
+
+/**
+ * Get response code from a reponse packet
+ * @param  payload     payload of packet
+ * @param  payload_len payload len of packet
+ * @return             a ftp response code: code + value
+ */
+int ftp_get_response_code(char* payload, int payload_len) {
+    int code;
+    if (mmt_int_check_possible_ftp_reply(payload, payload_len)) {
+        // Get response code
+        char *str_code = NULL;
+        str_code = (char*)malloc(4);
+        memcpy(str_code, payload, 3);
+        str_code[3] = '\0';
+        code = atoi(str_code);
+        free(str_code);
+    } else {
+        if (mmt_int_check_possible_ftp_continuation_reply(payload, payload_len)) {
+            code = MMT_FTP_CONTINUE_CODE;
+        } else {
+            code = MMT_FTP_UNKNOWN_CODE;
+        }
+    }
+    return code;
 }
 
 
@@ -740,25 +869,24 @@ uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
 /**
  * Get an address from a string
  * @param  payload     string
- * Example: PORT 192,168,1,2,7,138 -> addr = inet_addr("192.168.1.2")
+ * Example: 192,168,1,2,7,138 -> addr = inet_addr("192.168.1.2")
  * @return             an address
  */
 uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
-   // Get all the indexes of "|" in payload
-   int * indexes = str_get_indexes(payload, ",");
-   char * str_addr, * str_addr_dot;
-   int len = indexes[3] - 5;
-   str_addr = malloc(len + 1);
-   memcpy(str_addr, payload + 5, len);
-   str_addr[len] = '\0';
-   // printf("String before replacing: %s\n",str_addr);
-   str_addr_dot = str_replace_all_char(str_addr, (int)',', (int)'.');
-   // printf("String after replacing: %s\n",str_addr);
-   uint32_t address = inet_addr(str_addr_dot);
-   free(str_addr);
-   free(str_addr_dot);
-   free(indexes);
-   return address;
+    // Get all the indexes of "|" in payload
+    int * indexes = str_get_indexes(payload, ",");
+    char * str_addr;
+    int len = indexes[3];
+    str_addr = (char*)malloc(len + 1);
+    memcpy(str_addr, payload, len + 1);
+    str_addr[len] = '\0';
+    // printf("String before replacing: %s\n",str_addr);
+    str_addr = str_replace_all_char(str_addr, (int)',', (int)'.');
+    // printf("String after replacing: %s\n",str_addr);
+    uint32_t address = inet_addr(str_addr);
+    free(str_addr);
+    free(indexes);
+    return address;
 }
 
 /**
@@ -772,11 +900,11 @@ uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len) {
     int * indexes = str_get_indexes(payload, ",");
 
     char * nb1;
-    nb1 = str_sub(payload, indexes[3] + 1, indexes[4] - 1 );
+    nb1 = str_sub(payload, indexes[3], indexes[4]);
     // printf("nb1 string: %s\n", nb1);
 
     char * nb2;
-    nb2 = str_sub(payload, indexes[4] + 1, payload_len - 1);
+    nb2 = str_sub(payload, indexes[4], payload_len);
     // printf("nb2 string: %s\n", nb2);
     uint16_t port = ntohs(atoi(nb1) * 256 + atoi(nb2));
     free(nb1);
@@ -1935,14 +2063,19 @@ int ftp_packet_request_extraction(const ipacket_t * ipacket, unsigned proto_inde
             return 0;
         }
         int payload_len = ipacket->internal_packet->payload_packet_len;
-        ftp_command_t * cmd = ftp_get_command(payload, payload_len);
-        if (cmd && cmd->str_cmd) {
-            debug("FTP: packet_request %d in packet: %lu\n", cmd->cmd, ipacket->packet_id);
-            char *ret_v = str_copy(cmd->str_cmd);
-            extracted_data->data = (void*)ret_v;
-            free_ftp_command(cmd);
+        char * ret = ftp_get_command_str(payload,payload_len);
+        if(ret){
+            extracted_data->data = (void*)ret;
             return 1;
         }
+        // ftp_command_t * cmd = ftp_get_command(payload, payload_len);
+        // if (cmd && cmd->str_cmd) {
+        //     debug("FTP: packet_request %d in packet: %lu\n", cmd->cmd, ipacket->packet_id);
+        //     char *ret_v = str_copy(cmd->str_cmd);
+        //     extracted_data->data = (void*)ret_v;
+        //     free_ftp_command(cmd);
+        //     return 1;
+        // }
     }
     return 0;
 }
@@ -1958,12 +2091,9 @@ int ftp_packet_request_parameter_extraction(const ipacket_t * ipacket, unsigned 
             return 0;
         }
         int payload_len = ipacket->internal_packet->payload_packet_len;
-        ftp_command_t * cmd = ftp_get_command(payload, payload_len);
-        if (cmd && cmd->param) {
-            debug("FTP: packet_request_param %s in packet: %lu\n", cmd->param, ipacket->packet_id);
-            char *ret_v = str_copy(cmd->param);
-            extracted_data->data = (void*)ret_v;
-            free_ftp_command(cmd);
+        char * ret = ftp_get_command_param(payload,payload_len);
+        if(ret){
+            extracted_data->data = (void*)ret;
             return 1;
         }
     }
@@ -1981,14 +2111,16 @@ int ftp_packet_response_code_extraction(const ipacket_t * ipacket, unsigned prot
             return 0;
         }
         int payload_len = ipacket->internal_packet->payload_packet_len;
-        ftp_response_t * res = ftp_get_response(payload, payload_len);
-        if (res && res->code) {
-            debug("FTP: packet_response %d in packet: %lu\n", res->code, ipacket->packet_id);
-            uint16_t ret_v = res->code;
-            *((uint16_t*)extracted_data->data) = ret_v;
-            free_ftp_response(res);
-            return 1;
-        }
+        *((uint16_t*)extracted_data->data) = ftp_get_response_code(payload,payload_len);
+        return 1;
+        // ftp_response_t * res = ftp_get_response(payload, payload_len);
+        // if (res && res->code) {
+        //     debug("FTP: packet_response %d in packet: %lu\n", res->code, ipacket->packet_id);
+        //     uint16_t ret_v = res->code;
+        //     *((uint16_t*)extracted_data->data) = ret_v;
+        //     free_ftp_response(res);
+        //     return 1;
+        // }
     }
     return 0;
 }
@@ -2004,14 +2136,19 @@ int ftp_packet_response_value_extraction(const ipacket_t * ipacket, unsigned pro
             return 0;
         }
         int payload_len = ipacket->internal_packet->payload_packet_len;
-        ftp_response_t * res = ftp_get_response(payload, payload_len);
-        if (res->code && res->value) {
-            debug("FTP: packet_response_value %s in packet: %lu\n", res->value, ipacket->packet_id);
-            char * ret_v = str_copy(res->value);
-            extracted_data->data = (void*)ret_v;
-            free_ftp_response(res);
+        char * ret = ftp_get_response_value(payload,payload_len);
+        if(ret){
+            extracted_data->data = (void*)ret;
             return 1;
         }
+        // ftp_response_t * res = ftp_get_response(payload, payload_len);
+        // if (res->code && res->value) {
+        //     debug("FTP: packet_response_value %s in packet: %lu\n", res->value, ipacket->packet_id);
+        //     char * ret_v = str_copy(res->value);
+        //     extracted_data->data = (void*)ret_v;
+        //     free_ftp_response(res);
+        //     return 1;
+        // }
     }
     return 0;
 }
