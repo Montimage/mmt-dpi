@@ -10,6 +10,7 @@ RELEASE NOTES
 - Updated session report - includes packet count and data volume from IP fragment packet (Fixed losing 20% of traffic)
 - Fixed bug #78 -> Updated http_method after parsing header line in proto_http.c
 - Fixed some memory leak in FTP plugin.
+- Merge with ndn_http branch
 
 ## Release version 1.6.2.1
 04 May 2016
