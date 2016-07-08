@@ -149,7 +149,7 @@ int ndn_http_second_gw_extraction(const ipacket_t * ipacket, unsigned proto_inde
 //////////////////////////// EXTRACTION ///////////////////////////////////////
 
 
-static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
+static attribute_metadata_t ndn_attributes_metadata[NDN_HTTP_ATTRIBUTES_NB] = {
     // {NDN_IMPLICIT_SHA256_DIGEST_COMPONENT,NDN_IMPLICIT_SHA256_DIGEST_COMPONENT_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ndn_implicit_sha256_digest_component_extraction},
     {NDN_LIST_SESSIONS,NDN_LIST_SESSIONS_ALIAS,MMT_DATA_POINTER,sizeof(void*),POSITION_NOT_KNOWN,SCOPE_SESSION,ndn_list_sessions_extraction},
     {NDN_PACKET_TYPE,NDN_PACKET_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_packet_type_extraction},
@@ -229,7 +229,7 @@ int init_proto_ndn_http_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_NDN_HTTP, PROTO_NDN_HTTP_ALIAS);
     if (protocol_struct != NULL) {
         int i = 0;
-        for (; i < NDN_ATTRIBUTES_NB; i++) {
+        for (; i < NDN_HTTP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &ndn_attributes_metadata[i]);
         }
         // register_pre_post_classification_functions(protocol_struct, NULL, NULL);
