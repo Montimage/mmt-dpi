@@ -952,7 +952,12 @@ enum
     NDN_DATA_KEY_LOCATOR,
     NDN_DATA_KEY_DIGEST,
     NDN_LIST_SESSIONS,
+    NDN_HTTP_URL,
+    NDN_HTTP_METHOD,
+    NDN_HTTP_FIRST_GW,
+    NDN_HTTP_SECOND_GW,
     NDN_ATTRIBUTES_NB,
+
 };
 
 
@@ -985,6 +990,10 @@ enum
 #define NDN_DATA_KEY_LOCATOR_ALIAS                  "key_locator"
 #define NDN_DATA_KEY_DIGEST_ALIAS                   "key_digest"
 #define NDN_LIST_SESSIONS_ALIAS                     "list_sessions"
+#define NDN_HTTP_URL_ALIAS                          "url"
+#define NDN_HTTP_METHOD_ALIAS                       "method"
+#define NDN_HTTP_FIRST_GW_ALIAS                       "first_gw"
+#define NDN_HTTP_SECOND_GW_ALIAS                       "second_gw"
 ////////////////// END OF NDN ATTRIBUTES ////////////////////
 
 #ifdef __cplusplus

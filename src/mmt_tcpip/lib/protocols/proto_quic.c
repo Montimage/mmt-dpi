@@ -100,7 +100,7 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
     	struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         if(packet->udp != NULL){
         	uint16_t sport = ntohs(packet->udp->source), dport = ntohs(packet->udp->dest);
-        	debug("QUIC: Calculating QUIC over UDP");
+        	// debug("QUIC: Calculating QUIC over UDP");
         	if((((sport == 80) || (dport == 80) || (sport == 443) || (dport == 443))))
 			    {
 			     MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "exclude quic.\n");
@@ -116,7 +116,7 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			       }
 
 			       MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "found quic.\n");
-			       debug("QUIC: Found QUIC");
+			       // debug("QUIC: Found QUIC");
 			       mmt_int_quic_add_connection(ipacket);
 			     }
 
@@ -142,7 +142,7 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			           
 			          {
 			           MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "found quic.\n");
-			           debug("QUIC: Found QUIC");
+			           // debug("QUIC: Found QUIC");
 			       		mmt_int_quic_add_connection(ipacket);
 			           return 1;
 			         }
@@ -173,7 +173,7 @@ void mmt_init_classify_me_quic() {
 
 int init_proto_quic_struct() {
     
-    debug("QUIC: init_proto_quic_struct");
+    // debug("QUIC: init_proto_quic_struct");
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_QUIC, PROTO_QUIC_ALIAS);
     if (protocol_struct != NULL) {
