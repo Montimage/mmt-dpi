@@ -646,34 +646,40 @@ char * ftp_get_command_param(char* payload, int payload_len) {
     if (payload_len == 6 && payload[3] != ' ') {
         return NULL;
     } else if (payload_len == 5 && payload[2] != ' ') {
-        params = NULL;
+        return NULL;
     } else {
         if (!mmt_int_check_possible_ftp_command(payload, payload_len)) {
+            char * params = NULL;
             params = (char*)malloc(payload_len + 1);
             memcpy(params, payload, payload_len);
             params[payload_len] = '\0';
+            return params;
         }else{
             if (payload[3] == ' ') {
                 if (payload_len - 6 > 0) {
+                    char * params = NULL;
                     params = (char*)malloc(payload_len - 5);
                     memcpy(params, payload + 4, payload_len - 6);
                     params[payload_len - 6] = '\0';
+                    return params;
                 } else {
-                    params = NULL;
+                    return NULL;
                 }
             } else if (payload[4] == ' ') {
                 if (payload_len - 7 > 0) {
+                    char * params = NULL;
                     params = (char*)malloc(payload_len - 6);
                     memcpy(params, payload + 5, payload_len - 7);
                     params[payload_len - 7] = '\0';
+                    return params;
                 } else {
-                    params = NULL;
+                    return NULL;
                 }
             }
         }
     }
 
-    return params;
+    return NULL;
 }
 
 char * ftp_get_command_str(char* payload, int payload_len){
