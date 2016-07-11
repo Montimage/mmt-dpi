@@ -1,4 +1,4 @@
-VERSION  := 1.6.2.3
+VERSION  := 1.6.3.0
 MMT_BASE ?=/opt/mmt
 MMT_LIB ?= $(MMT_BASE)/lib
 MMT_INC ?= $(MMT_BASE)/include
