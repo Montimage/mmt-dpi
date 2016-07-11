@@ -1,31 +1,42 @@
+VERSION  := 1.6.3.0
+MMT_BASE ?=/opt/mmt
+MMT_LIB ?= $(MMT_BASE)/lib
+MMT_INC ?= $(MMT_BASE)/include
+OPT_MMT_PLUGINS ?= $(MMT_BASE)/plugins
+OPT_MMT_EXAMS ?= $(MMT_BASE)/examples
+
+SDKINC       := ${shell pwd}/include
+SDKLIB       := ${shell pwd}/lib
+SDKXAM       := ${shell pwd}/examples
+
 #  - - - - - - -
 #  I N S T A L L
 #  - - - - - - -
 install:
-	@ cp lib/libmmt_core.* lib/libmmt_fuzz.* /usr/lib
-	@ echo "Installing lib/libmmt_core.* and lib/libmmt_fuzz.* to /usr/lib"
-	@ mkdir -p /usr/local/include/mmt
-	@ echo "# include \"mmt/mmt_core.h\"">>/usr/local/include/mmt_core.h
-	@ echo "Installing mmt_core.h at /usr/local/include"
-	@ cp -R include/* /usr/local/include/mmt
-	@ echo "Installing include/* at /usr/local/include/mmt"
-	@ cp -R examples /opt/mmt
-	@ echo "Copied examples/ to /opt/mmt/examples"
-	@ mkdir -p "/opt/mmt/plugins"
-	@ cp lib/libmmt_tcpip.so.* /opt/mmt/plugins/libmmt_tcpip.so
-	@ echo "Installing lib/libmmt_tcpip.so at /opt/mmt/plugins/libmmt_tcpip.so"
+	@ echo "Preparing location: "$(MMT_BASE)
+	@ mkdir -p $(MMT_BASE)
+	@ mkdir -p $(MMT_LIB)
+	@ mkdir -p $(MMT_INC)
+	@ mkdir -p $(OPT_MMT_PLUGINS)
+	@ mkdir -p $(OPT_MMT_EXAMS)
+	@ cp $(SDKLIB)/* $(MMT_LIB)
+	@ echo "[MMT-]> Installed  "$(SDKLIB)" at "$(MMT_LIB)
+	@ cp -R $(SDKINC)/* $(MMT_INC)
+	@ echo "[MMT-]> Installed  "$(SDKINC)" at "$(MMT_INC)
+	@ cp -R $(SDKXAM)/* $(OPT_MMT_EXAMS)
+	@ echo "[MMT-]> Installed  "$(SDKXAM)" at "$(OPT_MMT_EXAMS)
+	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(OPT_MMT_PLUGINS)/libmmt_tcpip.so
+	@ echo "[MMT-]> Installed "$(OPT_MMT_PLUGINS)/libmmt_tcpip.so
+	@ echo "/opt/mmt/lib" >> /etc/ld.so.conf.d/mmt.conf
+	@ ldconfig
+	@ echo "[MMT-]> Done! "
 	@ echo "Thanks you for installing mmt-sdk, you can learn more about mmt-sdk at: http://www.montimage.com"
 # - - - - - - - - -  
 # U N I N S T A L L 
 # - - - - - - - - -  
 
 uninstall:
-	@ rm -rf /opt/mmt
-	@ echo "Removed /opt/mmt"
-	@ rm -rf /usr/lib/libmmt_*
-	@ echo "Removed /usr/lib/libmmt_*"
-	@ rm -rf /usr/local/include/mmt
-	@ echo "Removed /usr/local/include/mmt"
-	@ rm -f /usr/local/include/mmt_core.h
-	@ echo "Removed /usr/local/include/mmt_core.h"
-
+	@ echo "[MMT-]> Going to remove MMT"
+	@ rm -rf $(MMT_BASE)
+	@ rm -rf /etc/ld.so.conf.d/mmt.conf
+	@ echo "[MMT-]> Done!"
