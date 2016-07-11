@@ -1,3 +1,4 @@
+version=1.6.3.0
 # Where the sdk/ compiled source code
 sdk_dir=../sdk
 
@@ -11,23 +12,29 @@ mkdir $build_dir
 mkdir $build_dir/DEBIAN/
 cp DEBIAN/* $build_dir/DEBIAN/
 
-mkdir $build_dir/usr/
-mkdir $build_dir/usr/local/
-mkdir $build_dir/usr/local/include/
-mkdir $build_dir/usr/local/include/mmt/
-cp -R $sdk_dir/include/* $build_dir/usr/local/include/mmt/
-echo "#include \"mmt/mmt_core.h\"">>$build_dir/usr/local/include/mmt_core.h
-cp -R $sdk_dir/lib $build_dir/usr/
-
+echo "-]> Preparing temporary location ..."
 mkdir $build_dir/opt/
 mkdir $build_dir/opt/mmt/
+mkdir $build_dir/opt/mmt/lib
+mkdir $build_dir/opt/mmt/include
 mkdir $build_dir/opt/mmt/plugins
-cp $sdk_dir/lib/libmmt_tcpip.so $build_dir/opt/mmt/plugins
-cp -R $sdk_dir/examples/ $build_dir/opt/mmt
+mkdir $build_dir/etc
+mkdir $build_dir/etc/ld.so.conf.d/
 
+echo "-]> Copying resource ..."
+cp -R $sdk_dir/lib $build_dir/lib
+cp -R $sdk_dir/include $build_dir/include
+cp $sdk_dir/lib/libmmt_tcpip.so.$version $build_dir/opt/mmt/plugins/libmmt_tcpip.so
+cp -R $sdk_dir/examples/ $build_dir/opt/mmt
+echo "/opt/mmt/lib" >> $build_dir/etc/ld.so.conf.d/mmt.conf
+
+
+echo "-]> Building .deb file ..."
 dpkg-deb --build $build_dir
 
+echo "-]> Removing temporary location ..."
 rm -rf $build_dir
 
-echo "To install mmt-sdk library"
+echo "-]> $build_dir.deb has been created!"
+echo "-]> Run command to install: "
 echo "sudo dpkg -i $build_dir.deb"
