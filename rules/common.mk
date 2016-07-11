@@ -1,8 +1,9 @@
 VERSION  := 1.6.2.3
-USR_LIB ?= /usr/lib
-MMT_INC ?= /usr/local/include/mmt
-OPT_MMT_PLUGINS ?= /opt/mmt/plugins
-OPT_MMT_EXAMS ?= /opt/mmt/examples
+MMT_BASE ?=/opt/mmt
+MMT_LIB ?= $(MMT_BASE)/lib
+MMT_INC ?= $(MMT_BASE)/include
+OPT_MMT_PLUGINS ?= $(MMT_BASE)/plugins
+OPT_MMT_EXAMS ?= $(MMT_BASE)/examples
 
 # CFLAGS   := -Wall -g
 # CXXFLAGS := -Wall -g
@@ -49,7 +50,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_INC) $(OPT_MMT_PLUGINS) $(OPT_MMT_EXAMS):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_INC) $(OPT_MMT_PLUGINS) $(OPT_MMT_EXAMS) $(MMT_LIB):
 	@mkdir -p $@
 
 
@@ -156,7 +157,7 @@ documentation: $(SDKDOC)
 #  E X A M P L E S
 #  - - - - - - - -
 
-MMT_EXAMPLES_SRC = extract_all.c proto_attributes_iterator.c attribute_handler_session_counter.c packet_handler.c simple_traffic_reporting.c tcp_plugin_image.pcap
+MMT_EXAMPLES_SRC = attribute_handler_session_counter.c extract_all.c google-fr.pcap html_integration.c html_integration.h MAC_extraction.c packet_handler.c proto_attributes_iterator.c reconstruct_body.c simple_traffic_reporting.c 
 SDK_EXAMPLES_SRC = $(addprefix $(SDKXAM)/,$(MMT_EXAMPLES_SRC))
 
 examples: $(SDK_EXAMPLES_SRC)

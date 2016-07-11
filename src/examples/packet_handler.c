@@ -4,7 +4,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -o packet_handler packet_handler.c -lmmt_core -ldl -lpcap
+ * $ gcc -g -o packet_handler packet_handler.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap -lpthread
  * 
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
