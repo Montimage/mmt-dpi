@@ -3844,8 +3844,8 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_imap, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_smtp, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn, 50);
+    // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 50);
+    // register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn_http, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn_http, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_usenet, 50);

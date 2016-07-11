@@ -30,6 +30,11 @@ int ndn_http_url_extraction(const ipacket_t * ipacket, unsigned proto_index,
         payload_len = ipacket->internal_packet->payload_packet_len;
     }
 
+    if(mmt_check_payload_ndn_http(payload,payload_len)==0){
+
+        return 0;
+    }
+
     char *ret_v = ndn_name_components_at_index(payload,payload_len,1);
     if(ret_v == NULL){
         return 0;
@@ -65,6 +70,11 @@ int ndn_http_method_extraction(const ipacket_t * ipacket, unsigned proto_index,
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+    }
+
+    if(mmt_check_payload_ndn_http(payload,payload_len)==0){
+
+        return 0;
     }
 
     char *ret_v = ndn_name_components_at_index(payload,payload_len,1);
@@ -105,6 +115,11 @@ int ndn_http_first_gw_extraction(const ipacket_t * ipacket, unsigned proto_index
         payload_len = ipacket->internal_packet->payload_packet_len;
     }
 
+    if(mmt_check_payload_ndn_http(payload,payload_len)==0){
+
+        return 0;
+    }
+
     char *ret_v = ndn_name_components_at_index(payload,payload_len,0);
     if(ret_v != NULL){
         extracted_data->data = (void*)ret_v;
@@ -125,6 +140,11 @@ int ndn_http_second_gw_extraction(const ipacket_t * ipacket, unsigned proto_inde
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+    }
+
+    if(mmt_check_payload_ndn_http(payload,payload_len)==0){
+
+        return 0;
     }
 
     char *ret_v = ndn_name_components_at_index(payload,payload_len,1);
@@ -203,10 +223,10 @@ int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
 
             if(mmt_check_ndn_payload(payload,payload_len)!=0){
                 // debug("NDN_HTTP: found ndn packet %lu",ipacket->packet_id);
-                if(mmt_check_payload_ndn_http(payload,payload_len)==1){
+                // if(mmt_check_payload_ndn_http(payload,payload_len)==1){
                     mmt_int_ndn_http_add_connection(ipacket);
                     return 1;    
-                }
+                // }
             }
     }
     MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_NDN_HTTP);

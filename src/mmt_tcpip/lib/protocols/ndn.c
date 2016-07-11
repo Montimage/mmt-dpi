@@ -1955,6 +1955,10 @@ uint8_t mmt_check_payload_ndn_http(char * payload, int payload_len){
 	if(payload_len <= 0) return 0;
 
 	char * name2 = ndn_name_components_at_index(payload,payload_len,1);
+
+    if(name2 == NULL){
+        return 0;
+    }
 	int method_index = 0;
 	if(strcmp(name2,"req")==0){
 		method_index = 3;
