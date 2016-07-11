@@ -11,6 +11,7 @@ RELEASE NOTES
 - Fixed bug #78 -> Updated http_method after parsing header line in proto_http.c
 - Fixed some memory leak in FTP plugin.
 - Merge with ndn_http branch
+- Classify all NDN packets as NDN_HTTP packets
 
 ## Release version 1.6.2.1
 04 May 2016
