@@ -10,8 +10,8 @@ else
 	echo "Removing mmt-sdk ... "
 	rm -rf $MMT_BASE
 	echo "Cleaning environment ... "
-	rm /etc/ld.so.conf.d/mmt.conf
-	ldconfig
+	rm -rf /usr/local/include/mmt/
+	rm /usr/lib/libmmt_*
 	echo "[MMT-]> mmt-sdk has been removed from the system! "
 	echo "You can learn more about mmt-sdk at: http://www.montimage.com"
 fi

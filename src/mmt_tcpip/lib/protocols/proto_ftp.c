@@ -602,7 +602,10 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
     } else {
         if (!mmt_int_check_possible_ftp_command(payload, payload_len)) {
             cmd->cmd = MMT_FTP_UNKNOWN_CMD;
-            cmd->str_cmd = "UNKNOWN_CMD";
+            command = (char*)malloc(12);
+            memcpy(command, "UNKNOWN_CMD", 11);
+            command[11]='\0';
+            cmd->str_cmd = command;
             cmd->param = payload;
             return cmd;
         }
