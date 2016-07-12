@@ -13,6 +13,7 @@ RELEASE NOTES
 - Merge with ndn_http branch
 - Classify all NDN packets as NDN_HTTP packets
 - Change the installation location. Moved everything (lib, include, examples) to `/opt/mmt`. Created `/etc/ld.so.conf.d/mmt.conf` to update the environment variable for MMT
+- Update script generates the installation file (.deb, .zip) 
 
 
 ## Release version 1.6.2.1

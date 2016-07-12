@@ -10,11 +10,11 @@ $ sudo apt-get install libxml2-dev libpcap-dev make
 
 Then you can install MMT-Extract by following command:
 
-$ sudo make install
+$ sudo ./install.sh
 
 You also can uninstall MMT-Extract by following command:
 
-$ sudo make uninstall
+$ sudo ./uninstall.sh
 
 # Using MMT-Extract
 
@@ -25,7 +25,7 @@ This example is intended to provide the list of available protocols and for each
 
 Compile:
 
-$ gcc -o proto_attributes_iterator proto_attributes_iterator.c -lmmt_core -ldl
+$ gcc -o proto_attributes_iterator proto_attributes_iterator.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap
 
 Execute:
 $ ./proto_attributes_iterator
@@ -35,7 +35,7 @@ This example is intended to extract everything that means all the attributes of 
 
 Compile:
 
-$ gcc -g -o extract_all extract_all.c -lmmt_core -ldl -lpcap
+$ gcc -g -o extract_all extract_all.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap
 
 Execute:
 Extract from a .pcap file:
