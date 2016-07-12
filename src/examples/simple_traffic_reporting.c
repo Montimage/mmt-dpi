@@ -3,7 +3,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -o simple_traffic_reporting simple_traffic_reporting.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap -lpthread
+ * $ gcc -g -o simple_traffic_reporting simple_traffic_reporting.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap
  *   
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
