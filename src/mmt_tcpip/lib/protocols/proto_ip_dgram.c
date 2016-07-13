@@ -44,6 +44,14 @@ void ip_dgram_init( ip_dgram_t *dg )
 {
    dg->x   = 0;
    dg->len = 0;
+   dg->nb_packets = 0;
+   dg->caplen = 0;
+   dg->max_packet_size = 0;
+   dg->current_packet_size = 0;
+   int i = 0;
+   for(i =0 ;i<MMT_MAX_NUMBER_FRAGMENT;i++){
+      dg->packet_offsets[i] = -1;
+   }
    LIST_INIT( &dg->holes );
 
    ip_frag_t *hole = ip_frag_alloc( 0, (uint16_t)-1 );
@@ -72,6 +80,8 @@ void ip_dgram_cleanup( ip_dgram_t *dg )
 
    dg->x   = 0;
    dg->len = 0;
+   dg->nb_packets = 0;
+   dg->caplen = 0;
 }
 
 /**
@@ -82,7 +92,7 @@ void ip_dgram_cleanup( ip_dgram_t *dg )
  * @param len payload length
  */
 
-void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len )
+void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsigned caplen)
 {
    unsigned ip_len =  ntohs( ip->tot_len  );
    unsigned ip_off = (ntohs( ip->frag_off ) & IP_OFFSET) << 3;
@@ -101,6 +111,27 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len )
       return;
    }
 
+   dg->nb_packets ++;
+   dg->caplen += caplen;
+   dg->max_packet_size = dg->max_packet_size > (ip_off + ip_len - ip_hl)?dg->max_packet_size:(ip_off + ip_len - ip_hl);
+   
+   int i=0;
+   for(i=0;i < MMT_MAX_NUMBER_FRAGMENT;i++){
+      if(dg->packet_offsets[i] == -1) break;
+      if(dg->packet_offsets[0] == ip_off){
+         debug("[IP -]> Duplicated fragment: offset - %d, id - %d",ip_off, ip->id);
+         break;
+      }
+   }
+
+   if(dg->packet_offsets[i]==-1) {
+      dg->packet_offsets[i] = ip_off;
+      dg->current_packet_size += ip_len - ip_hl;
+   }else{
+      // TODO: Can return here to not overwrite the later fragment
+      return;
+   }
+
    ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf );
 }
 
@@ -113,6 +144,7 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len )
 
 int ip_dgram_is_complete( ip_dgram_t *dg )
 {
+   if(dg->current_packet_size < dg->max_packet_size) return 0;
    ip_frags_t *holes = &dg->holes;
    return( holes->lh_first == 0 );
 }

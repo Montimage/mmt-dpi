@@ -35,3 +35,6 @@ src/examples/proto_attributes_iterator
 # ignoring sdk build destination
 
 sdk/*
+.cproject
+.project
+.settings/

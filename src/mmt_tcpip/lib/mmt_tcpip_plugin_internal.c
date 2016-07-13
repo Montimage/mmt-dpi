@@ -270,6 +270,7 @@ unsigned int mmt_get_protocol_by_port_number(uint8_t proto,
         else if (MMT_PORT_MATCH(sport, dport, 161) || MMT_PORT_MATCH(sport, dport, 162)) return (PROTO_SNMP);
         else if (MMT_PORT_MATCH(sport, dport, 5353) || MMT_PORT_MATCH(sport, dport, 5354)) return (PROTO_MDNS);
         else if (MMT_PORT_MATCH(sport, dport, 53)) return (PROTO_DNS);
+        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
     } else if (proto == IPPROTO_TCP) {
         if (MMT_PORT_MATCH(sport, dport, 443)) return (PROTO_SSL);
         else if (MMT_PORT_MATCH(sport, dport, 22)) return (PROTO_SSH);
@@ -285,6 +286,8 @@ unsigned int mmt_get_protocol_by_port_number(uint8_t proto,
         else if (MMT_PORT_MATCH(sport, dport, 135)) return (PROTO_DCERPC);
         else if (MMT_PORT_MATCH(sport, dport, 1494) || MMT_PORT_MATCH(sport, dport, 2598)) return (PROTO_CITRIX); /* http://support.citrix.com/article/CTX104147 */
         else if (MMT_PORT_MATCH(sport, dport, 389)) return (PROTO_LDAP);
+        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
+        else if (MMT_PORT_MATCH(sport, dport, 554)) return (PROTO_RTSP); 
     }
 
     return (PROTO_UNKNOWN);
@@ -313,6 +316,8 @@ unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
         else if (MMT_PORT_MATCH(sport, dport, 23)) return (PROTO_TELNET);
         else if (MMT_PORT_MATCH(sport, dport, 445)) return (PROTO_SMB);
         else if (MMT_PORT_MATCH(sport, dport, 389)) return (PROTO_LDAP);
+        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
+        else if (MMT_PORT_MATCH(sport, dport, 554)) return (PROTO_RTSP); 
     } else if(packet->udp) {
         sport = htons(packet->udp->source);
         dport = htons(packet->udp->dest);
@@ -321,6 +326,7 @@ unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
         else if (MMT_PORT_MATCH(sport, dport, 161) || MMT_PORT_MATCH(sport, dport, 162)) return (PROTO_SNMP);
         else if (MMT_PORT_MATCH(sport, dport, 5353) || MMT_PORT_MATCH(sport, dport, 5354)) return (PROTO_MDNS);
         else if (MMT_PORT_MATCH(sport, dport, 53)) return (PROTO_DNS);
+        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
     }
     return (PROTO_UNKNOWN);
 }

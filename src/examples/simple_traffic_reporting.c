@@ -3,7 +3,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -o simple_traffic_reporting simple_traffic_reporting.c -lmmt_core -ldl -lpcap -pthread
+ * $ gcc -g -o simple_traffic_reporting simple_traffic_reporting.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap
  *   
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
@@ -26,7 +26,7 @@
 #include <dirent.h>
 #include <time.h>
 #include "mmt_core.h"
-#include "mmt/tcpip/mmt_tcpip.h"
+#include "tcpip/mmt_tcpip.h"
 #ifdef WIN32
 #include <ws2tcpip.h>
 #include <windows.h>

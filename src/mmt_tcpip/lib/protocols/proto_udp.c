@@ -88,7 +88,7 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     retval.proto_id = a;
 
     int new_retval = 0;
-    if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count >= (CFG_CLASSIFICATION_THRESHOLD * 2)) {
+    if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count <= (CFG_CLASSIFICATION_THRESHOLD * 2)) {
         //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.  
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         retval.proto_id = get_proto_id_from_address(ipacket);

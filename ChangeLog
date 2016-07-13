@@ -1,3 +1,60 @@
-# Version
+RELEASE NOTES
+---
+## Release version 1.6.3.0
+13 July 2016
+- Added IP session ID to each FTP session
+- Fixed extracting control session information for FTP Data packet
+- Added number of capture packet and capture data volume in session
+- Fixed some case of IP fragmentation: out of order, duplicated, lost fragment, ...
+- Strategy for duplicated IP fragmentation: Not overwrite fragment (can be change easily)
+- Added information about IP fragmentation in IP protocol statistic
+- Updated session report - includes packet count and data volume from IP fragment packet (Fixed losing 20% of traffic)
+- Fixed bug #78 -> Updated http_method after parsing header line in proto_http.c
+- Fixed some memory leak in FTP plugin.
+- Merge with ndn_http branch
+- Classify all NDN packets as NDN_HTTP packets
+- Change the installation location. Moved everything (lib, include, examples) to `/opt/mmt`. Created `/etc/ld.so.conf.d/mmt.conf` to update the environment variable for MMT
+- Update script generates the installation file (.deb, .zip) 
 
-1.4.1 - 24/03/2016 HEAD - #b14b5cb (session\_timer branch)
+
+## Release version 1.6.2.1
+04 May 2016
+- Fixed a bug with FTP PORT command
+- Fixed proto_header_offsets and proto_classif_status for session base on ipacket hierarchy
+
+## Release version 1.6.2.0
+2 May 2016
+- Added proto_path_direction for session
+- Fixed proto_path if the proto_path different with ipacket->proto_hierachy: ETH.IP/ ETH.802Q.IP
+
+## Release version 1.6.1.0
+12 April 2016
+- Added and updated some protocols:
+	+ oracle 
+	+ quic 
+	+ redis_net 
+	+ vmware 
+	+ viber 
+	+ twitter 
+	+ skype 
+	+ mail_imap 
+	+ mail_pop 
+	+ mail_smtp 
+- Applied software versioning method to version number of release
+
+## Release version 1.6
+06 April 2016
+
+- Added option to use mmt-reassembly with mmt-sdk
+- Has been tested with valgrind for: memory leak and multiple-thread
+
+## Release version 1.5
+05 April 2016
+
+- No copy packet in sdk
+- Added new protocols: QUIC, NDN
+- Fixed some data race to work with multi-thread
+- Fixed some bugs in SDK
+
+
+>>>>>>> feature/pre-v1.6.3.0

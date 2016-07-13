@@ -524,6 +524,10 @@ typedef struct mmt_internal_tcpip_session_struct {
 #ifdef PROTO_FLORENSIA
     uint32_t florensia_stage : 1;
 #endif
+#ifdef PROTO_REDIS
+  uint8_t redis_s2d_first_char, redis_d2s_first_char;
+  uint32_t redis_packet_count:3;
+#endif
 } mmt_internal_tcpip_session_t;
 
 typedef struct mmt_classify_me_function_element_struct {

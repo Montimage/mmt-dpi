@@ -14,7 +14,7 @@ static void mmt_int_netbios_add_connection(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_netbios(ipacket_t * ipacket, unsigned index) {
-    
+    // debug("NETBIOS: mmt_classify_me_netbios of ipacket: %lu",ipacket->packet_id);
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -315,6 +315,7 @@ void mmt_classify_me_netbios(ipacket_t * ipacket, unsigned index) {
 }
 
 int mmt_check_netbios_tcp(ipacket_t * ipacket, unsigned index) {
+    // debug("NETBIOS: mmt_check_netbios_tcp of ipacket: %lu",ipacket->packet_id);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
@@ -354,6 +355,7 @@ int mmt_check_netbios_tcp(ipacket_t * ipacket, unsigned index) {
 }
 
 int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
+    // debug("NETBIOS: mmt_check_netbios_udp of ipacket: %lu",ipacket->packet_id);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0

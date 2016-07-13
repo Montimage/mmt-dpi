@@ -19,6 +19,7 @@ extern "C" {
 
     typedef struct internal_ip_proto_context_struct {
         void * ips_map;
+        mmt_tcpip_internal_packet_t packet;
         uint64_t ips_count;
         uint64_t active_ips_count;
 

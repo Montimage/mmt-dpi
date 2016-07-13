@@ -4,14 +4,6 @@
 #include "../mmt_common_internal_include.h"
 
 #include "tcp.h"
-// #define DLIBNTOH
-////////////// LIBNTOH LIBRARY INTEGRATION CODE /////////////////
-#ifdef DLIBNTOH
-    #include "libntoh_tcp.h"
-#endif
-
-// END OF LIBNTOH CODE
-/////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
@@ -169,6 +161,57 @@ int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     return 0;
 }
 
+int tcp_retransmission_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+
+    if(ipacket->internal_packet){
+        *((uint32_t*) extracted_data->data) = ipacket->internal_packet->tcp_retransmission;
+        return 1;
+    }
+    return 0;
+}
+
+int tcp_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+
+    if(ipacket->internal_packet){
+        *((uint32_t*) extracted_data->data) = ipacket->internal_packet->tcp_outoforder;
+        return 1;
+    }
+    return 0;
+}
+
+
+int tcp_session_retransmission_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+
+    if(ipacket->internal_packet->payload_packet_len){
+        *((uint32_t*) extracted_data->data) = ipacket->session->tcp_retransmissions;
+        return 1;
+    }
+    return 0;
+}
+
+// int tcp_session_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
+//     attribute_t * extracted_data){
+
+//     if(ipacket->internal_packet->payload_packet_len){
+//         *((uint32_t*) extracted_data->data) = ipacket->session->tcp_outoforder;
+//         return 1;
+//     }
+//     return 0;
+// }
+
+int tcp_session_rtt_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+
+    if(ipacket->session){
+        memcpy(extracted_data->data, & ipacket->session->rtt, sizeof (struct timeval));
+        // (struct timeval *)extracted_data->data = ;
+        return 1;
+    }
+    return 0;
+}
 static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_SRC_PORT, TCP_SRC_PORT_ALIAS, MMT_U16_DATA, sizeof (short), 0, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_DEST_PORT, TCP_DEST_PORT_ALIAS, MMT_U16_DATA, sizeof (short), 2, SCOPE_PACKET, general_short_extraction_with_ordering_change},
@@ -187,9 +230,13 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_WINDOW, TCP_WINDOW_ALIAS, MMT_U16_DATA, sizeof (short), 14, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_CHECKSUM, TCP_CHECKSUM_ALIAS, MMT_U16_DATA, sizeof (short), 16, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_URG_PTR, TCP_URG_PTR_ALIAS, MMT_U16_DATA, sizeof (short), 18, SCOPE_PACKET, general_short_extraction_with_ordering_change},
-    {TCP_RTT, TCP_RTT_ALIAS, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_flag_extraction},//TODO: extract function not correct
-    {TCP_SYN_RCV, TCP_SYN_RCV_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_flag_extraction},
+    {TCP_RTT, TCP_RTT_ALIAS, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_session_rtt_extraction},
+    {TCP_SYN_RCV, TCP_SYN_RCV_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_flag_extraction},//TODO: extract function not correct
     {TCP_PAYLOAD_LEN, TCP_PAYLOAD_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_payload_len_extraction},
+    {TCP_RETRANSMISSION, TCP_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_retransmission_extraction},
+    {TCP_OUTOFORDER, TCP_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_outoforder_extraction},
+    {TCP_SESSION_RETRANSMISSION, TCP_SESSION_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_retransmission_extraction},
+    // {TCP_SESSION_OUTOFORDER, TCP_SESSION_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_outoforder_extraction},
     {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_ack_flag_extraction},
 };
 
@@ -271,22 +318,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
     //    return 0;
     // }
-#ifdef DLIBNTOH
-    // INJECT LIBNOTH PROCESS //
-    ipacket->extra.status = MMT_SKIP;
-    debug("before going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    // uint64_t ntoh_packet_id = ipacket->packet_id;
-    int ret = ntoh_packet_process(ipacket,index);
     
-    if(ret == 0){
-        debug("ret==0");
-        ipacket->extra.status = MMT_SKIP;
-        return 0;
-    }
-    
-    debug("after going into ntoh_packet_process of ipacket: %"PRIu64" at index %d\n",ipacket->packet_id,index);
-    // END OF INJECTING LIBNTOH PROCESS
-#endif
     return 1;
 }
 
@@ -304,7 +336,8 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     retval.proto_id = a;
 
     int new_retval = 0;
-    if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count >= CFG_CLASSIFICATION_THRESHOLD) {
+    // if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count >= CFG_CLASSIFICATION_THRESHOLD) {
+    if (retval.proto_id == PROTO_UNKNOWN) {
         //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         retval.proto_id = get_proto_id_from_address(ipacket);
@@ -339,14 +372,6 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_tcp_struct() {
-    // debug("DLIBNTOH: %d",DLIBNTOH);
-    // INITIALIZE LIBNTOH
-#ifdef DLIBNTOH
-    ntoh_tcp_init();
-
-    debug("libntoh version: %s\n",ntoh_version());
-#endif    
-    // END OF INITIALIZING LIBNTOH
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_TCP, PROTO_TCP_ALIAS);
 
@@ -358,9 +383,6 @@ int init_proto_tcp_struct() {
         }
 
         register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
-#ifdef DLIBNTOH
-        register_proto_context_init_cleanup_function(protocol_struct, setup_tcp_context, tcp_context_cleanup, NULL);
-#endif    
         return register_protocol(protocol_struct, PROTO_TCP);
     } else {
         return 0;

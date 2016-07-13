@@ -636,8 +636,13 @@ extern "C" {
 #define PROTO_FBMSG 622 //Facebook messaging
 #define PROTO_GCM 623 //Google Cloud Messaging
 #define PROTO_SLL 624 //Linux Cooked Socket
-#define PROTO_NDN 625 //Linux Cooked Socket
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_NDN
+#define PROTO_NDN 625 // NDN protocol
+#define PROTO_NDN_HTTP 626 // NDN_HTTP protocol
+#define PROTO_QUIC 627
+#define PROTO_ORACLE 628
+#define PROTO_REDIS 629	
+#define PROTO_VMWARE 630
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_VMWARE
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -1267,6 +1272,11 @@ extern "C" {
 #define PROTO_GCM_ALIAS "gcm"
 #define PROTO_SLL_ALIAS "sll"
 #define PROTO_NDN_ALIAS "ndn"
+#define PROTO_NDN_HTTP_ALIAS "ndn_http"	
+#define PROTO_QUIC_ALIAS "quic"
+#define PROTO_ORACLE_ALIAS "oracle"
+#define PROTO_REDIS_ALIAS "redis"
+#define PROTO_VMWARE_ALIAS "vmware"
 
 #define PROTO_CLASS_UNKOWN         0
 #define PROTO_CLASS_WEB            1

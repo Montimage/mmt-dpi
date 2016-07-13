@@ -95,7 +95,7 @@ mv mm_sdk.deb mmt_sdk_0.1-0_all.deb
 
 To install .deb file into your system
 ```sh
-dpkg -i ./mmt_sdk_0.1-0_all.deb
+dpkg -i mmt_sdk_0.1-0_all.deb
 ```
 
 ## Make .zip file
@@ -120,13 +120,13 @@ Unzip the downloaded file and install mmt-sdk by following command:
 
 ```sh
 cd mmt-sdk
-sudo make install
+sudo ./install.sh
 ```
 
 To uninstall mmt-sdk:
 
 ```sh
-sudo make uninstall
+sudo ./uninstall.sh
 ```
 
 ## Test mmt-sdk

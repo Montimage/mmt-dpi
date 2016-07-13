@@ -3,7 +3,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -o extract_all extract_all.c -lmmt_core -ldl -lpcap -lpthread
+ * $ gcc -g -o extract_all extract_all.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap
  *   
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.

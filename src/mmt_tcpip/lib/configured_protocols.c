@@ -728,6 +728,12 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
+    /////////// INITILIZING PROTO_NDN_HTTP //////////////////
+    if (!init_proto_ndn_http_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_ndn_http\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
     /////////// INITILIZING PROTO_GADUGADU //////////////////
     if (!init_proto_gadugadu_struct()) {
         fprintf(stderr, "Error initializing protocol proto_gadugadu\n Exiting\n");
@@ -3771,6 +3777,30 @@ int init_tcpip_plugin() {
         fprintf(stderr, "Error initializing protocol PROTO_SLL\n Exiting\n");
         exit(0);
     }
+
+    /////////// INITILIZING PROTO_QUIC //////////////////
+    if (!init_proto_quic_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_quic\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
+    /////////// INITILIZING PROTO_ORACLE //////////////////
+    if (!init_proto_oracle_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_oracle\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
+    /////////// INITILIZING PROTO_ORACLE //////////////////
+    if (!init_proto_redis_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_redis\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
+       /////////// INITILIZING PROTO_ORACLE //////////////////
+    if (!init_proto_vmware_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_vmware\n Exiting\n");
+        exit(0);
+    }
     /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////
@@ -3814,7 +3844,10 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_imap, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_smtp, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 50);
+    // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 50);
+    // register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn, 50);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn_http, 50);
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn_http, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_usenet, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dns, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dns, 50);
@@ -3931,6 +3964,10 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_netflow, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_sflow, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_spotify, 50);
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_quic, 50);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_oracle, 50);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_redis, 50);
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_vmware, 50);
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////////END OF INTER-PROTOCOL CLASSIFICATIONS ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////

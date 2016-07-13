@@ -98,11 +98,23 @@ const proto_hierarchy_t * get_session_protocol_hierarchy( const mmt_session_t *s
 uint64_t get_session_packet_count( const mmt_session_t *session )
 { return session->packet_count; }
 
+uint64_t get_session_packet_cap_count( const mmt_session_t *session )
+{ return session->packet_cap_count; }
+
+uint64_t get_session_data_cap_volume( const mmt_session_t *session )
+{ return session->data_cap_volume; }
+
 uint64_t get_session_ul_packet_count( const mmt_session_t *session )
 { return session->packet_count_direction[session->setup_packet_direction]; }
 
+uint64_t get_session_ul_cap_packet_count( const mmt_session_t *session )
+{ return session->packet_cap_count_direction[session->setup_packet_direction]; }
+
 uint64_t get_session_dl_packet_count( const mmt_session_t *session )
 { return session->packet_count_direction[!session->setup_packet_direction]; }
+
+uint64_t get_session_dl_cap_packet_count( const mmt_session_t *session )
+{ return session->packet_cap_count_direction[!session->setup_packet_direction]; }
 
 uint64_t get_session_byte_count( const mmt_session_t *session )
 { return session->data_volume; }
@@ -110,8 +122,14 @@ uint64_t get_session_byte_count( const mmt_session_t *session )
 uint64_t get_session_ul_byte_count( const mmt_session_t *session )
 { return session->data_volume_direction[session->setup_packet_direction]; }
 
+uint64_t get_session_ul_cap_byte_count( const mmt_session_t *session )
+{ return session->data_cap_volume_direction[session->setup_packet_direction]; }
+
 uint64_t get_session_dl_byte_count( const mmt_session_t *session )
 { return session->data_volume_direction[!session->setup_packet_direction]; }
+
+uint64_t get_session_dl_cap_byte_count( const mmt_session_t *session )
+{ return session->data_cap_volume_direction[!session->setup_packet_direction]; }
 
 uint64_t get_session_data_packet_count( const mmt_session_t *session )
 { return session->data_packet_count; }
@@ -129,7 +147,7 @@ uint64_t get_session_ul_data_byte_count( const mmt_session_t *session )
 { return session->data_byte_volume_direction[session->setup_packet_direction]; }
 
 uint64_t get_session_dl_data_byte_count( const mmt_session_t *session )
-{ return session->data_byte_volume_direction[session->setup_packet_direction]; }
+{ return session->data_byte_volume_direction[!session->setup_packet_direction]; }
 
 struct timeval get_session_init_time( const mmt_session_t *session )
 { return session->s_init_time; }
@@ -159,6 +177,31 @@ const mmt_session_t * get_session_next( const mmt_session_t *session )
 const mmt_session_t * get_session_previous( const mmt_session_t *session )
 { return session->previous; }
 
+
+const proto_hierarchy_t * get_session_proto_path_direction(const mmt_session_t *session, int direction){
+    debug("[IP] setup_packet_direction: %d",session->setup_packet_direction);
+    debug("[IP] last_packet_direction: %d",session->last_packet_direction);
+    if(direction == 1){
+        // Get uplink path
+        if(session->last_packet_direction == session->setup_packet_direction){
+            // uploading data
+            return &session->proto_path_direction[session->setup_packet_direction];
+        }else{
+            // downloading data
+            return &session->proto_path_direction[!session->setup_packet_direction];        
+        }
+    }else{
+        // Get downlink path
+        if(session->last_packet_direction == session->setup_packet_direction){
+            // downloading data
+            return &session->proto_path_direction[!session->setup_packet_direction];
+        }else{
+            // downloading data
+            return &session->proto_path_direction[session->setup_packet_direction];        
+        }
+    }
+    
+}
 
 uint32_t get_protocol_id_at_index(const ipacket_t * ipacket, unsigned index) {
     if (index > PROTO_PATH_SIZE)

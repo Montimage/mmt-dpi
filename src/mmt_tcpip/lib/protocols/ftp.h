@@ -171,6 +171,7 @@ typedef struct ftp_tuple6_struct{
     uint32_t c_port;
     uint32_t s_addr;
     uint32_t s_port;
+    uint64_t ip_session_id; // IP session ID
 } ftp_tuple6_t;
 
 /**
@@ -208,6 +209,8 @@ typedef struct ftp_user_struct{
     char * password;
 }ftp_user_t;
 
+typedef struct ftp_control_session_struct  ftp_control_session_t;
+
 /**
  * A FTP data session
  */
@@ -226,6 +229,8 @@ typedef struct ftp_data_session_struct{
     ftp_file_t *file;
 
     // struct ftp_data_session_struct * next; // Next ftp data session in the same ftp_control_session
+    ftp_control_session_t *control_session;
+    
 }ftp_data_session_t;
 
 
@@ -252,7 +257,7 @@ typedef struct ftp_control_session_struct{
     
     ftp_data_session_t * current_data_session;
 
-    struct ftp_control_session_struct *next;
+    ftp_control_session_t *next;
 
 }ftp_control_session_t;
 

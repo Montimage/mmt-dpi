@@ -102,9 +102,15 @@ struct mmt_session_struct {
     mmt_handler_t *mmt_handler;              /**< opaque pointer to the mmt handler that processed this session */
     uint32_t session_protocol_index;         /**< index of the protocol to which the session belongs */
     uint64_t packet_count;                   /**< tracks the number of packets */
+    uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
+    uint64_t data_cap_volume;                /**< data volume captured  - include fragmented packets*/
     uint64_t data_volume;                    /**< tracks the octet data volume */
+    
     uint64_t packet_count_direction[2];      /**< Session's packet count in both directions: initiator <-> remote */
     uint64_t data_volume_direction[2];       /**< Session's data volume in both directions: initiator <-> remote */
+
+    uint64_t packet_cap_count_direction[2];      /**< Session's packet count ( - include fragmented packets) in both directions: initiator <-> remote */
+    uint64_t data_cap_volume_direction[2];       /**< Session's data volume ( - include fragmented packets) in both directions: initiator <-> remote */
 
     uint64_t data_packet_count;              /**< tracks the number of packets holding effective payload data */
     uint64_t data_byte_volume;               /**< tracks the effective payload data volume */
@@ -160,6 +166,8 @@ struct mmt_session_struct {
     uint8_t family;                          /**< identifier of the application family to which this session belongs. */
     struct mmt_session_struct * next;        /**< pointer to the next session in the expiry list --- for internal use must not be changed */
     struct mmt_session_struct * previous;    /**< pointer to the previous session in the expiry list --- for internal use must not be changed */
+
+    proto_hierarchy_t proto_path_direction[2];
 };
 
 /**
@@ -180,9 +188,9 @@ struct packet_info_struct {
     uint32_t packet_id; /**< identifier of the packet. */
     unsigned int packet_len; /**< length of the packet. */
     struct timeval time; /**< time of arrival of the packet. */
-    // proto_hierarchy_t proto_hierarchy; /**< the protocol layers corresponding to this packet */
-    // proto_hierarchy_t proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
-    // proto_hierarchy_t proto_classif_status; /**< the classification status of the protocols in the path */
+    proto_hierarchy_t proto_hierarchy; /**< the protocol layers corresponding to this packet */
+    proto_hierarchy_t proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
+    proto_hierarchy_t proto_classif_status; /**< the classification status of the protocols in the path */
 };
 
 /**
@@ -275,6 +283,10 @@ struct proto_statistics_internal_struct {
     uint32_t touched; /**< Indicates if the statistics have been updated since the last reset */
     uint64_t packets_count; /**< Total number of packets seen by the protocol */
     uint64_t data_volume; /**< Total data volume seen by the protocol */
+    uint64_t ip_frag_packets_count;         /**< Total number of IP unknown fragmented packets seen by the IP protocol*/
+    uint64_t ip_frag_data_volume;           /**< Total data volume of IP unknown fragmented packets seen by the IP protocol*/
+    uint64_t ip_df_packets_count;         /**< Total number of defragmented IP packets seen by the IP protocol*/
+    uint64_t ip_df_data_volume;           /**< Total data volume of defragmented IP packets seen by the IP protocol*/
     uint64_t payload_volume; /**< Total payload data volume seen by the protocol */
     uint64_t packets_count_direction[2]; /**< Total number of UL/DL packets seen by the protocol */
     uint64_t data_volume_direction[2]; /**< Total UL/DL data volume seen by the protocol */
@@ -282,6 +294,8 @@ struct proto_statistics_internal_struct {
     uint64_t sessions_count; /**< Total number of sessions seen by the protocol */
     uint64_t timedout_sessions_count; /**< Total number of timedout sessions (this is the difference between sessions count and ative sessions count) */
     proto_statistics_internal_t* next; /**< next instance of statistics for the same protocol */
+    struct timeval first_packet_time; // The time of the first packet of the protocol
+    struct timeval last_packet_time; // The time of the last packet of the protocol
     protocol_instance_t * proto; /**< pointer to the protocol */
     void * encap_proto_stats; /**< Map including the statistics of encaprulated children protocols */
     proto_statistics_internal_t * parent_proto_stats; /**< pointer to the parent protocol stats */
@@ -351,14 +365,14 @@ struct mmt_handler_struct {
     attribute_handler_element_t * proto_registered_attribute_handlers[PROTO_MAX_IDENTIFIER];
     packet_handler_t * packet_handlers;
 
-    void * timeout_milestones_map;
+    void * timeout_milestones_map; // Session timeout milestones map
     session_expiry_handler_t session_expiry_handler;
     
     session_timer_handler_t session_timer_handler;    // This is the function registered by user and will be call from function process_timer_handler()
 
     packet_info_t last_received_packet;
     ipacket_t current_ipacket;
-
+    uint8_t has_reassembly; /* 0 - no reassembly, 1 - has reassembly*/
     uint64_t packet_count;
     uint64_t sessions_count;
     uint64_t active_sessions_count;
@@ -366,6 +380,7 @@ struct mmt_handler_struct {
     uint32_t attr_extraction_strategy;
     uint32_t stats_reporting_status;
     mmt_hashmap_t *ip_streams;
+    
 };
 
 

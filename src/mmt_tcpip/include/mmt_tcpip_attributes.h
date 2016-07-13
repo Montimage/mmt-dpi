@@ -34,6 +34,7 @@ extern "C" {
         IP_SRC,
         IP_DST,
         IP_OPTS,
+        IP_RTT,
         IP_CLIENT_ADDR,
         IP_SERVER_ADDR,
         IP_CLIENT_PORT,
@@ -54,6 +55,7 @@ extern "C" {
 #define IP_HEADER_LEN_ALIAS     "header_len"
 #define IP_VERSION_ALIAS        "version"
 #define IP_OPTS_ALIAS        "options"
+#define IP_RTT_ALIAS        "ip_rtt"
 #define IP_CHECKSUM_ALIAS       "checksum"
 #define IP_CLIENT_ADDR_ALIAS    "client_addr"
 #define IP_SERVER_ADDR_ALIAS    "server_addr"
@@ -117,6 +119,10 @@ extern "C" {
         TCP_URG_PTR,
         TCP_RTT,
         TCP_SYN_RCV,
+        TCP_RETRANSMISSION,
+        TCP_OUTOFORDER,
+        TCP_SESSION_RETRANSMISSION,
+        // TCP_SESSION_OUTOFORDER,
         TCP_PAYLOAD_LEN,
         TCP_CONN_ESTABLISHED,
     };
@@ -142,6 +148,10 @@ extern "C" {
 #define TCP_URG_PTR_ALIAS     "urg_pointer"
 #define TCP_RTT_ALIAS         "rtt"
 #define TCP_SYN_RCV_ALIAS     "syn_received"
+#define TCP_RETRANSMISSION_ALIAS     "retransmission"
+#define TCP_OUTOFORDER_ALIAS     "outoforder"
+#define TCP_SESSION_RETRANSMISSION_ALIAS     "session_retransmission"
+// #define TCP_SESSION_OUTOFORDER_ALIAS     "session_outoforder"
 #define TCP_PAYLOAD_LEN_ALIAS     "payload_len"
 #define TCP_CONN_ESTABLISHED_ALIAS "established"
     //TODO: addition of the tcp options
@@ -827,6 +837,7 @@ extern "C" {
         FTP_SERVER_CONT_PORT, // Alway 21
         FTP_CLIENT_CONT_ADDR,
         FTP_CLIENT_CONT_PORT,
+        FTP_CONT_IP_SESSION_ID,
         // ACCOUNT
         FTP_USERNAME,
         FTP_PASSWORD,
@@ -842,6 +853,7 @@ extern "C" {
         FTP_SERVER_DATA_PORT,
         FTP_CLIENT_DATA_ADDR,
         FTP_CLIENT_DATA_PORT,
+        FTP_DATA_IP_SESSION_ID,
         FTP_DATA_TYPE, // FTP_LIST_DIRECTORY, FTP_FILE_TRANSFER
         FTP_DATA_TRANSFER_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
         FTP_DATA_MODE,// PASSIVE or ACTIVE
@@ -864,8 +876,9 @@ extern "C" {
 // Control connection
 #define FTP_SERVER_CONT_ADDR_ALIAS  "server_control_addr"
 #define FTP_SERVER_CONT_PORT_ALIAS  "server_control_port"
-#define FTP_CLIENT_CONT_ADDR_ALIAS  "data_control_addr"
-#define FTP_CLIENT_CONT_PORT_ALIAS  "data_control_port"
+#define FTP_CLIENT_CONT_ADDR_ALIAS  "client_control_addr"
+#define FTP_CLIENT_CONT_PORT_ALIAS  "client_control_port"
+#define FTP_CONT_IP_SESSION_ID_ALIAS  "control_ip_session_id"
 // USER ATTRIBUTE
 #define FTP_USERNAME_ALIAS          "user_name"
 #define FTP_PASSWORD_ALIAS          "password"
@@ -880,6 +893,7 @@ extern "C" {
 #define FTP_SERVER_DATA_PORT_ALIAS  "server_data_port"
 #define FTP_CLIENT_DATA_ADDR_ALIAS  "client_data_addr"
 #define FTP_CLIENT_DATA_PORT_ALIAS  "client_data_port"
+#define FTP_DATA_IP_SESSION_ID_ALIAS  "data_ip_session_id"
 #define FTP_DATA_TYPE_ALIAS         "data_type" //
 #define FTP_DATA_TRANSFER_TYPE_ALIAS "transfer_type"
 #define FTP_DATA_MODE_ALIAS      "ftp_session_mode"// PASSIVE or ACTIVE
@@ -937,7 +951,13 @@ enum
     NDN_DATA_SIGNATURE_TYPE,
     NDN_DATA_KEY_LOCATOR,
     NDN_DATA_KEY_DIGEST,
+    NDN_LIST_SESSIONS,
     NDN_ATTRIBUTES_NB,
+    NDN_HTTP_URL,
+    NDN_HTTP_METHOD,
+    NDN_HTTP_FIRST_GW,
+    NDN_HTTP_SECOND_GW,
+    NDN_HTTP_ATTRIBUTES_NB
 };
 
 
@@ -969,6 +989,11 @@ enum
 #define NDN_DATA_SIGNATURE_TYPE_ALIAS               "signature_type"
 #define NDN_DATA_KEY_LOCATOR_ALIAS                  "key_locator"
 #define NDN_DATA_KEY_DIGEST_ALIAS                   "key_digest"
+#define NDN_LIST_SESSIONS_ALIAS                     "list_sessions"
+#define NDN_HTTP_URL_ALIAS                          "url"
+#define NDN_HTTP_METHOD_ALIAS                       "method"
+#define NDN_HTTP_FIRST_GW_ALIAS                       "first_gw"
+#define NDN_HTTP_SECOND_GW_ALIAS                       "second_gw"
 ////////////////// END OF NDN ATTRIBUTES ////////////////////
 
 #ifdef __cplusplus

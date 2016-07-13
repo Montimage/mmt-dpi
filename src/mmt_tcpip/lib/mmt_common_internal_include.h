@@ -184,7 +184,6 @@ extern "C" {
     void mmt_classify_me_guildwars(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_armagetron(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_dropbox(ipacket_t * ipacket, unsigned index);
-    void mmt_classify_me_skype(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_citrix(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_dcerpc(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_netflow(ipacket_t * ipacket, unsigned index);
@@ -228,6 +227,7 @@ extern "C" {
     int mmt_check_smtp(ipacket_t * ipacket, unsigned index);
     int mmt_check_ftp(ipacket_t * ipacket, unsigned index);
     int mmt_check_ndn(ipacket_t * ipacket, unsigned index);
+    int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index);
     int mmt_check_usenet(ipacket_t * ipacket, unsigned index);
     int mmt_check_dns(ipacket_t * ipacket, unsigned index);
     int mmt_check_filetopia(ipacket_t * ipacket, unsigned index);
@@ -333,7 +333,10 @@ extern "C" {
     int mmt_check_netflow(ipacket_t * ipacket, unsigned index);
     int mmt_check_sflow(ipacket_t * ipacket, unsigned index);
     int mmt_check_spotify(ipacket_t * ipacket, unsigned index);
-
+    int mmt_check_quic(ipacket_t * ipacket, unsigned index);
+    int mmt_check_oracle(ipacket_t * ipacket, unsigned index);
+    int mmt_check_redis(ipacket_t * ipacket, unsigned index);
+    int mmt_check_vmware(ipacket_t * ipacket, unsigned index);
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -702,6 +705,8 @@ extern "C" {
     int init_proto_ftp_struct();
     /////////// PLUGIN INIT FOR PROTO_NDN //////////////////
     int init_proto_ndn_struct();
+    /////////// PLUGIN INIT FOR PROTO_NDN_HTTP //////////////////
+    int init_proto_ndn_http_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_GADUGADU //////////////////
     int init_proto_gadugadu_struct();
@@ -2225,7 +2230,18 @@ extern "C" {
     /////////// PLUGIN INIT FOR PROTO_SLL //////////////////
     int init_proto_sll_struct();
     /////////////////////////////////////////////////
-
+    /////////// PLUGIN INIT FOR PROTO_QUIC //////////////////
+    int init_proto_quic_struct();
+    /////////////////////////////////////////////////
+    /////////// PLUGIN INIT FOR PROTO_ORACLE //////////////////
+    int init_proto_oracle_struct();
+    /////////////////////////////////////////////////
+    /////////// PLUGIN INIT FOR PROTO_REDIS //////////////////
+    int init_proto_redis_struct();
+    /////////////////////////////////////////////////
+    /////////// PLUGIN INIT FOR PROTO_VMWARE//////////////////
+    int init_proto_vmware_struct();
+    /////////////////////////////////////////////////
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus
