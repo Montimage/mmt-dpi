@@ -1,5 +1,10 @@
 RELEASE NOTES
 ---
+## Pre-Release version 1.6.4.0
+Roadmap
+- Extract DNS packets
+- Reconstruct HTTP packets
+
 ## Release version 1.6.3.0
 13 July 2016
 - Added IP session ID to each FTP session
