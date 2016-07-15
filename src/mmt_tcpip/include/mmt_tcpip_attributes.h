@@ -791,7 +791,9 @@ extern "C" {
         DNS_ANCOUNT,
         DNS_NSCOUNT,
         DNS_ARCOUNT,
-        DNS_ATTRIBUTES_NB = DNS_ARCOUNT,
+        DNS_QUERIES,
+        DNS_ANSWERS,
+        DNS_ATTRIBUTES_NB = DNS_ANSWERS,
     };
 
 #define DNS_TID_ALIAS "tid"
@@ -809,6 +811,8 @@ extern "C" {
 #define DNS_ANCOUNT_ALIAS "ancount"
 #define DNS_NSCOUNT_ALIAS "nscount"
 #define DNS_ARCOUNT_ALIAS "arcount"
+#define DNS_QUERIES_ALIAS "queries"
+#define DNS_ANSWERS_ALIAS "answers"
 
     enum sll_attributes {
         SLL_PKTTYPE = 1,
