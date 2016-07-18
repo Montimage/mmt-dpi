@@ -3,7 +3,7 @@
  * 
  * Compile this example with:
  * 
- * gcc -o proto_attributes_iterator proto_attributes_iterator.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap
+ * gcc -o proto_attributes_iterator proto_attributes_iterator.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
  * 
  * Then execute the program:
  * 

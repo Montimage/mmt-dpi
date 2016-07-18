@@ -1,16 +1,16 @@
 VERSION  := 1.6.3.1
 MMT_BASE ?=/opt/mmt
-MMT_DPI ?=$(MMT_PATH)/dpi
+MMT_DPI ?= $(MMT_BASE)/dpi
 MMT_LIB ?= $(MMT_DPI)/lib
 MMT_INC ?= $(MMT_DPI)/include
-MMT_PLUGINS ?= $(MMT_DPI)/plugins
-MMT_EXAMS ?= $(MMT_DPI)/examples
+MMT_PLUGINS ?= $(MMT_BASE)/plugins
+MMT_EXAMS ?= $(MMT_BASE)/examples
 
-CFLAGS   := -Wall -g
-CXXFLAGS := -Wall -g
+# CFLAGS   := -Wall -g
+# CXXFLAGS := -Wall -g
 
-# CFLAGS   := -Wall -DNDEBUG -g
-# CXXFLAGS := -Wall -DNDEBUG -g
+CFLAGS   := -Wall -DNDEBUG -g
+CXXFLAGS := -Wall -DNDEBUG -g
 
 CP       := cp -R
 RM       := rm -rf
@@ -51,7 +51,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
 	@mkdir -p $@
 
 

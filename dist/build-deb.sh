@@ -18,18 +18,17 @@ mkdir $build_dir/opt/mmt/
 mkdir $build_dir/opt/mmt/dpi
 mkdir $build_dir/opt/mmt/dpi/lib
 mkdir $build_dir/opt/mmt/dpi/include
-mkdir $build_dir/opt/mmt/dpi/examples
-mkdir $build_dir/opt/mmt/dpi/plugins
+mkdir $build_dir/opt/mmt/examples
+mkdir $build_dir/opt/mmt/plugins
 mkdir $build_dir/etc
 mkdir $build_dir/etc/ld.so.conf.d/
 
 echo "-]> Copying resource ..."
-cp -R $sdk_dir/lib $build_dir/lib
-cp -R $sdk_dir/include $build_dir/include
-cp -R $sdk_dir/examples $build_dir/examples
+cp -R $sdk_dir/lib $build_dir/opt/mmt/dpi
+cp -R $sdk_dir/include $build_dir/opt/mmt/dpi
+cp -R $sdk_dir/examples $build_dir/opt/mmt
 cp $sdk_dir/lib/libmmt_tcpip.so.$version $build_dir/opt/mmt/plugins/libmmt_tcpip.so
-cp -R $sdk_dir/examples/ $build_dir/opt/mmt
-echo "/opt/mmt/lib" >> $build_dir/etc/ld.so.conf.d/mmt.conf
+echo "/opt/mmt/dpi/lib" >> $build_dir/etc/ld.so.conf.d/mmt.conf
 
 
 echo "-]> Building .deb file ..."

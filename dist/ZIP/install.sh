@@ -9,8 +9,8 @@ else
 	MMT_DPI=$MMT_BASE/dpi
 	MMT_LIB=$MMT_DPI/lib
 	MMT_INC=$MMT_DPI/include
-	MMT_PLUGINS=$MMT_DPI/plugins
-	MMT_EXAMS=$MMT_DPI/examples
+	MMT_PLUGINS=$MMT_BASE/plugins
+	MMT_EXAMS=$MMT_BASE/examples
 
 	SDKINC=`pwd`/include
 	SDKLIB=`pwd`/lib

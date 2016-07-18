@@ -19,7 +19,7 @@ sdk: libraries includes tools documentation examples
 #  I N S T A L L
 #  - - - - - - -
 
-install: sdk $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB)
+install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB)
 	@ cp $(SDKLIB)/* $(MMT_LIB)
 	@ echo "[MMT-]> Installed  "$(SDKLIB)" at "$(MMT_LIB)
 	@ cp -R $(SDKINC)/* $(MMT_INC)
