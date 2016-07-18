@@ -4,6 +4,9 @@ RELEASE NOTES
 Roadmap
 - Extract DNS packets
 - Reconstruct HTTP packets
+
+## Release version 1.6.3.1
+- Hot fixed for ipv6 parsing
 - Relocated mmt-sdk to opt/mmt/dpi
 
 ## Release version 1.6.3.0
