@@ -51,18 +51,19 @@ struct dnshdr {
     uint16_t arcount;
 };
 
-uint32_t bytes_to_int_extraction(const char *payload,int nb_bytes){
-    uint32_t ret = 0,i =0;
+uint16_t bytes_to_int_extraction(const char *payload,int nb_bytes){
+    uint16_t ret = 0,i =0;
     for(i = 0;i < nb_bytes;i++){
         int current_byte = hex2int(payload[i]);
-        ret = ret*16 + current_byte;
+        ret = ret*16*16 + current_byte;
     }
     return ret;
 }
 
 typedef struct dns_name_struct{
-    char *value;
-    uint16_t length;
+    char *value; // Value of the name
+    uint16_t length;// Length of the name
+    uint8_t is_ref; // Is reference name 0 - no, 1 - yes
     struct dns_name_struct *next;
 } dns_name_t;
 
@@ -72,6 +73,7 @@ dns_name_t * dns_new_name(){
     if(dns_name){
         dns_name->value = NULL;
         dns_name->length = 0;
+        dns_name->is_ref = 0;
         dns_name->next = NULL;
     }
     return dns_name;
@@ -84,6 +86,7 @@ void dns_free_name(dns_name_t * dns_name){
             dns_name->value = NULL;
         }
         dns_name->length = 0;
+        dns_name->is_ref = 0;
     }
 }
 
@@ -125,7 +128,7 @@ typedef struct dns_answer_struct{
     char *name;
     uint16_t type;
     uint16_t aclass;
-    uint32_t a_ttl;
+    uint16_t a_ttl;
     uint16_t data_length;
     uint16_t a_length;
     void *data;
@@ -155,10 +158,10 @@ void dns_free_answer(dns_answer_t *da){
             da->name = NULL;
         }
 
-        if(da->data){
-            free(da->data);
-            da->data = NULL;
-        }
+        // if(da->data){
+        //     free(da->data);
+        //     da->data = NULL;
+        // }
         da->type = 0;
         da->aclass = 0;
         da->a_ttl = 0;
@@ -175,11 +178,9 @@ dns_name_t * dns_extract_name(const char* dns_name_payload, const char* dns_payl
         int offset_name = hex2int(dns_name_payload[1]);
         dns_name_t * original_name = dns_extract_name(dns_payload + offset_name,dns_payload);
         if(original_name){
-            dns_name_t * dns_name;
-            dns_name = dns_new_name();    
-            if(dns_name){
-                
-            }
+            original_name->is_ref = 1;
+            // original_name->next = dns_extract_name(dns_payload + offset_name + original_name->length + 1,dns_payload);
+            return original_name;
         }else{
             return NULL;
         }
@@ -191,7 +192,7 @@ dns_name_t * dns_extract_name(const char* dns_name_payload, const char* dns_payl
             memcpy(dns_name->value,dns_name_payload + 1,str_length);
             dns_name->value[str_length]='\0';
             dns_name->length = str_length;
-            dns_name->next = dns_extract_name(dns_name_payload + str_length + 1);
+            dns_name->next = dns_extract_name(dns_name_payload + str_length + 1,dns_payload);
         }   
         return dns_name; 
     }
@@ -204,14 +205,26 @@ dns_name_t * dns_extract_name_value(const char *dns_name_payload,const char* dns
         dns_name_t * ext_name = dns_extract_name(dns_name_payload,dns_payload);
         if(ext_name){
             int q_name_length = 0;
+            char *com_name = NULL;
             dns_name_t * current_name = ext_name;
             while(current_name){
+                char *temp_name;
                 q_name_length += current_name->length + 1;
+                temp_name = malloc((q_name_length + 1) * sizeof(char));   
+                
+                if(com_name){
+                    snprintf(temp_name,q_name_length + 1,"%s.%s",com_name,current_name->value);
+                    // free(com_name);
+                    // com_name = NULL;
+                }else{
+                    snprintf(temp_name,q_name_length + 1,"%s",current_name->value);
+                }
+                com_name = temp_name;
                 current_name = current_name->next;
             }
+            q_name->is_ref = ext_name->is_ref;
             q_name->length = q_name_length;
-            q_name->value = malloc((q_name_length+1) * sizeof(char));
-            memcpy(q_name->value,dns_name_payload,q_name_length);
+            q_name->value = com_name;
             q_name->value[q_name_length] = '\0';
         }
     }
@@ -219,17 +232,24 @@ dns_name_t * dns_extract_name_value(const char *dns_name_payload,const char* dns
 }
 
 
-dns_query_t * dns_extract_queries(const char * dns_queries_payload,int nb_queries){
+dns_query_t * dns_extract_queries(const char * dns_queries_payload,int nb_queries,const char * dns_payload){
     if(nb_queries == 0) return NULL;
-    dns_name_t * current_name = dns_extract_name_value(dns_queries_payload);
+    dns_name_t * current_name = dns_extract_name_value(dns_queries_payload,dns_payload);
     if(current_name){
         dns_query_t * dq = dns_new_query();
         if(dq == NULL) return NULL;
         dq->name = current_name->value;
-        dq->type = bytes_to_int_extraction(dns_queries_payload + current_name->length + 1,2);
-        dq->qclass = bytes_to_int_extraction(dns_queries_payload + current_name->length + 3,2);
-        dq->qlength = current_name->length + 5;
-        dq->next = dns_extract_queries(dns_queries_payload + dq->qlength,nb_queries - 1); 
+        int name_offset = 0;
+        if(current_name->is_ref){
+            name_offset = 1;
+        }else{
+            name_offset = current_name->length;
+        }
+
+        dq->type = bytes_to_int_extraction(dns_queries_payload + name_offset + 1,2);
+        dq->qclass = bytes_to_int_extraction(dns_queries_payload + name_offset + 3,2);
+        dq->qlength = name_offset + 5;
+        dq->next = dns_extract_queries(dns_queries_payload + dq->qlength,nb_queries - 1,dns_payload); 
         return dq;
     }
     return NULL;
@@ -247,7 +267,7 @@ int dns_get_answers_offset(const ipacket_t * ipacket, unsigned proto_index){
     if(qdcount == 0){
         return 0;
     }else{
-        dns_query_t * dq = dns_extract_queries(ipacket->data + proto_offset + answer_payload_offset,qdcount);
+        dns_query_t * dq = dns_extract_queries(ipacket->data + proto_offset + answer_payload_offset,qdcount,ipacket->data + proto_offset);
         if(dq){
             dns_query_t * current_query = dq;
             while(current_query){
@@ -268,12 +288,18 @@ dns_answer_t * dns_extract_answers(const char *dns_answers_payload,int nb_answer
         dns_answer_t * da = dns_new_answer();
         if(da == NULL) return NULL;
         da->name = current_name->value;
-        da->type = bytes_to_int_extraction(dns_answers_payload + current_name->length + 1,2);
-        da->aclass = bytes_to_int_extraction(dns_answers_payload + current_name->length + 3,2);
-        da->a_ttl =  bytes_to_int_extraction(dns_answers_payload + current_name->length + 5,4);
-        da->data_length = bytes_to_int_extraction(dns_answers_payload + current_name->length + 9,2);
-        da->data = dns_answers_payload + current_name->length + 11;
-        da->a_length = dns_answers_payload + current_name->length + 11 + da->data_length;
+        int name_offset = 0;
+        if(current_name->is_ref){
+            name_offset = 1;
+        }else{
+            name_offset = current_name->length;
+        }
+        da->type = bytes_to_int_extraction(dns_answers_payload + name_offset + 1,2);
+        da->aclass = bytes_to_int_extraction(dns_answers_payload + name_offset + 3,2);
+        da->a_ttl =  bytes_to_int_extraction(dns_answers_payload + name_offset + 5,4);
+        da->data_length = bytes_to_int_extraction(dns_answers_payload + name_offset + 9,2);
+        da->data = dns_answers_payload + name_offset + 11;
+        da->a_length = name_offset + 11 + da->data_length;
         da->next = dns_extract_answers(dns_answers_payload + da->a_length,nb_answers - 1,dns_payload); 
         return da;
     }
