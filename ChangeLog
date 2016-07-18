@@ -4,6 +4,7 @@ RELEASE NOTES
 Roadmap
 - Extract DNS packets
 - Reconstruct HTTP packets
+- Relocated mmt-sdk to opt/mmt/dpi
 
 ## Release version 1.6.3.0
 13 July 2016

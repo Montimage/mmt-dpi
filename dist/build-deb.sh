@@ -1,9 +1,9 @@
-version=1.6.3.0
+version=1.6.3.1
 # Where the sdk/ compiled source code
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt_sdk1.6.3.0_`uname -s`_`uname -p`
+build_dir=mmt_sdk1.6.3.1_`uname -s`_`uname -p`
 
 # Create a directory with the name of package
 mkdir $build_dir
@@ -15,10 +15,11 @@ cp DEBIAN/* $build_dir/DEBIAN/
 echo "-]> Preparing temporary location ..."
 mkdir $build_dir/opt/
 mkdir $build_dir/opt/mmt/
-mkdir $build_dir/opt/mmt/lib
-mkdir $build_dir/opt/mmt/include
-mkdir $build_dir/opt/mmt/examples
-mkdir $build_dir/opt/mmt/plugins
+mkdir $build_dir/opt/mmt/dpi
+mkdir $build_dir/opt/mmt/dpi/lib
+mkdir $build_dir/opt/mmt/dpi/include
+mkdir $build_dir/opt/mmt/dpi/examples
+mkdir $build_dir/opt/mmt/dpi/plugins
 mkdir $build_dir/etc
 mkdir $build_dir/etc/ld.so.conf.d/
 
