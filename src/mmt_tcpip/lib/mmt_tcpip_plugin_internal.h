@@ -253,7 +253,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
                 }
             }
             //  ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 == 60  -> padding packet
-        } else if (packet->payload_packet_len > 0 && ( ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 != 60 )) {
+        } else if (packet->payload_packet_len > 0 && ( (packet->iph!=NULL)&&(ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 != 60))) {
             /* check tcp sequence counters */
             if (((uint32_t)
                     (ntohl(tcph->seq) -

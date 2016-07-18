@@ -5,6 +5,10 @@ Roadmap
 - Extract DNS packets
 - Reconstruct HTTP packets
 
+## Release version 1.6.3.1
+- Hot fixed for ipv6 parsing
+- Relocated mmt-sdk to opt/mmt/dpi
+
 ## Release version 1.6.3.0
 13 July 2016
 - Added IP session ID to each FTP session

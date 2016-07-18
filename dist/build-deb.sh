@@ -1,9 +1,9 @@
-version=1.6.3.0
+version=1.6.3.1
 # Where the sdk/ compiled source code
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt_sdk1.6.3.0_`uname -s`_`uname -p`
+build_dir=mmt_sdk1.6.3.1_`uname -s`_`uname -p`
 
 # Create a directory with the name of package
 mkdir $build_dir
@@ -15,20 +15,20 @@ cp DEBIAN/* $build_dir/DEBIAN/
 echo "-]> Preparing temporary location ..."
 mkdir $build_dir/opt/
 mkdir $build_dir/opt/mmt/
-mkdir $build_dir/opt/mmt/lib
-mkdir $build_dir/opt/mmt/include
+mkdir $build_dir/opt/mmt/dpi
+mkdir $build_dir/opt/mmt/dpi/lib
+mkdir $build_dir/opt/mmt/dpi/include
 mkdir $build_dir/opt/mmt/examples
 mkdir $build_dir/opt/mmt/plugins
 mkdir $build_dir/etc
 mkdir $build_dir/etc/ld.so.conf.d/
 
 echo "-]> Copying resource ..."
-cp -R $sdk_dir/lib $build_dir/lib
-cp -R $sdk_dir/include $build_dir/include
-cp -R $sdk_dir/examples $build_dir/examples
+cp -R $sdk_dir/lib $build_dir/opt/mmt/dpi
+cp -R $sdk_dir/include $build_dir/opt/mmt/dpi
+cp -R $sdk_dir/examples $build_dir/opt/mmt
 cp $sdk_dir/lib/libmmt_tcpip.so.$version $build_dir/opt/mmt/plugins/libmmt_tcpip.so
-cp -R $sdk_dir/examples/ $build_dir/opt/mmt
-echo "/opt/mmt/lib" >> $build_dir/etc/ld.so.conf.d/mmt.conf
+echo "/opt/mmt/dpi/lib" >> $build_dir/etc/ld.so.conf.d/mmt.conf
 
 
 echo "-]> Building .deb file ..."

@@ -3,7 +3,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -o attribute_handler_session_counter attribute_handler_session_counter.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core -ldl -lpcap
+ * $ gcc -o attribute_handler_session_counter attribute_handler_session_counter.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
  * 

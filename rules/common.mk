@@ -1,9 +1,10 @@
-VERSION  := 1.6.3.0
+VERSION  := 1.6.3.1
 MMT_BASE ?=/opt/mmt
-MMT_LIB ?= $(MMT_BASE)/lib
-MMT_INC ?= $(MMT_BASE)/include
-OPT_MMT_PLUGINS ?= $(MMT_BASE)/plugins
-OPT_MMT_EXAMS ?= $(MMT_BASE)/examples
+MMT_DPI ?= $(MMT_BASE)/dpi
+MMT_LIB ?= $(MMT_DPI)/lib
+MMT_INC ?= $(MMT_DPI)/include
+MMT_PLUGINS ?= $(MMT_BASE)/plugins
+MMT_EXAMS ?= $(MMT_BASE)/examples
 
 # CFLAGS   := -Wall -g
 # CXXFLAGS := -Wall -g
@@ -50,7 +51,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_INC) $(OPT_MMT_PLUGINS) $(OPT_MMT_EXAMS) $(MMT_LIB):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
 	@mkdir -p $@
 
 

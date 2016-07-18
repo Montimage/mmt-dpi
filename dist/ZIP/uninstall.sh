@@ -4,11 +4,11 @@ if [[ $(id -u) -ne 0 ]]; then
     exit 1
 else
 	echo "Start uninstalling mmt-sdk .... "
-	MMT_BASE=/opt/mmt
+	MMT_DPI=/opt/mmt/dpi
 	echo "Checking location ... "
-	echo "MMT_BASE: "$MMT_BASE
+	echo "MMT_DPI: "$MMT_DPI
 	echo "Removing mmt-sdk ... "
-	rm -rf $MMT_BASE
+	rm -rf $MMT_DPI
 	echo "Cleaning environment ... "
 	rm /etc/ld.so.conf.d/mmt.conf
 	ldconfig

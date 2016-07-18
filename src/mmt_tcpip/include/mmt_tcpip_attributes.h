@@ -72,6 +72,7 @@ extern "C" {
         IP6_HOP_LIMIT,
         IP6_SRC,
         IP6_DST,
+        IP6_RTT,
         IP6_CLIENT_ADDR,
         IP6_SERVER_ADDR,
         IP6_CLIENT_PORT,
@@ -94,6 +95,7 @@ extern "C" {
 #define IP6_HOP_LIMIT_ALIAS "hop_limit"
 #define  IP6_SRC_ALIAS "src"
 #define  IP6_DST_ALIAS "dst"
+#define IP6_RTT_ALIAS        "ip_rtt"     
 #define IP6_CLIENT_ADDR_ALIAS    "client_addr"
 #define IP6_SERVER_ADDR_ALIAS    "server_addr"
 #define IP6_CLIENT_PORT_ALIAS    "client_port"

@@ -2,7 +2,7 @@
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt_sdk1.6.3.0_`uname -s`_`uname -p`
+build_dir=mmt_sdk1.6.3.1_`uname -s`_`uname -p`
 
 echo "-]> Preparing temporary location ..."
 # Create a directory with the name of package
