@@ -51,7 +51,7 @@ struct dnshdr {
     uint16_t arcount;
 };
 
-uint16_t bytes_to_int_extraction(const char *payload,int nb_bytes){
+uint16_t bytes_to_int_extraction(const u_char *payload,int nb_bytes){
     uint16_t ret = 0,i =0;
     for(i = 0;i < nb_bytes;i++){
         int current_byte = hex2int(payload[i]);
@@ -129,9 +129,10 @@ typedef struct dns_answer_struct{
     uint16_t type;
     uint16_t aclass;
     uint16_t a_ttl;
-    uint16_t data_length;
     uint16_t a_length;
-    void *data;
+    uint16_t data_length;
+    uint16_t mx_pref;
+    char *data_value;
     struct dns_answer_struct *next;
 }dns_answer_t;
 
@@ -144,7 +145,8 @@ dns_answer_t * dns_new_answer(){
         da->a_ttl = 0;
         da->data_length = 0;
         da->a_length = 0;
-        da->data = NULL;
+        da->mx_pref = 0;
+        da->data_value = NULL;
         da->next = NULL;
     }
     return da;
@@ -158,19 +160,20 @@ void dns_free_answer(dns_answer_t *da){
             da->name = NULL;
         }
 
-        // if(da->data){
-        //     free(da->data);
-        //     da->data = NULL;
-        // }
+        if(da->data_value){
+            free(da->data_value);
+            da->data_value = NULL;
+        }
         da->type = 0;
         da->aclass = 0;
         da->a_ttl = 0;
         da->data_length = 0;
         da->a_length = 0;
+        da->mx_pref = 0;
     }
 }
 
-dns_name_t * dns_extract_name(const char* dns_name_payload, const char* dns_payload){
+dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_payload){
     uint16_t str_length = hex2int(dns_name_payload[0]);
     if(str_length == 0){
         return NULL;
@@ -198,7 +201,7 @@ dns_name_t * dns_extract_name(const char* dns_name_payload, const char* dns_payl
     }
 }
 
-dns_name_t * dns_extract_name_value(const char *dns_name_payload,const char* dns_payload){
+dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char* dns_payload){
     if(dns_name_payload == NULL) return NULL;
     dns_name_t * q_name = dns_new_name();
     if(q_name){
@@ -232,7 +235,7 @@ dns_name_t * dns_extract_name_value(const char *dns_name_payload,const char* dns
 }
 
 
-dns_query_t * dns_extract_queries(const char * dns_queries_payload,int nb_queries,const char * dns_payload){
+dns_query_t * dns_extract_queries(const u_char * dns_queries_payload,int nb_queries,const u_char * dns_payload){
     if(nb_queries == 0) return NULL;
     dns_name_t * current_name = dns_extract_name_value(dns_queries_payload,dns_payload);
     if(current_name){
@@ -281,7 +284,59 @@ int dns_get_answers_offset(const ipacket_t * ipacket, unsigned proto_index){
     return answer_payload_offset;
 }
 
-dns_answer_t * dns_extract_answers(const char *dns_answers_payload,int nb_answers,const char * dns_payload){
+char * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_char *data_anwser_payload, const u_char* dns_payload){
+    if(data_anwser_payload == NULL || dns_payload == NULL || data_length == 0){
+        return NULL;
+    }
+    uint16_t txtLength = 0;
+    char * txtValue;
+    txtValue = NULL;
+    dns_name_t * name;
+    name = NULL;
+    switch(atype){
+        case 1:
+        // A - IPv4 Address
+        case 28:
+        // AAAA - IPv6 Address
+            txtValue = malloc((data_length+1)*sizeof(char));
+            memcpy(txtValue,data_anwser_payload,data_length);
+            txtValue[data_length]='\0';
+            return txtValue;
+        case 12:
+        // PTR - Domain name pointer
+        case 2:
+        // NS - Name server
+        case 5:
+            // CNAME - CName
+            name = dns_extract_name_value(data_anwser_payload,dns_payload);
+            if(name){
+                return name->value;
+            }else{
+                return NULL;
+            }
+        case 15:
+            // MX - Mail Exchange
+            name = dns_extract_name_value(data_anwser_payload + 2,dns_payload);
+            if(name){
+                return name->value;
+            }else{
+                return NULL;
+            }
+        break;
+        case 16:
+            // TXT - Text string
+            txtLength = bytes_to_int_extraction(data_anwser_payload,1);
+            txtValue = malloc((txtLength+1)*sizeof(char));
+            memcpy(txtValue,data_anwser_payload + 1,txtLength);
+            txtValue[txtLength]='\0';
+            return txtValue;
+        default:
+        // Not process
+        return NULL;
+    }
+}
+
+dns_answer_t * dns_extract_answers(const u_char *dns_answers_payload,int nb_answers,const u_char * dns_payload){
     if(nb_answers == 0) return NULL;
     dns_name_t * current_name = dns_extract_name_value(dns_answers_payload,dns_payload);
     if(current_name){
@@ -298,7 +353,10 @@ dns_answer_t * dns_extract_answers(const char *dns_answers_payload,int nb_answer
         da->aclass = bytes_to_int_extraction(dns_answers_payload + name_offset + 3,2);
         da->a_ttl =  bytes_to_int_extraction(dns_answers_payload + name_offset + 5,4);
         da->data_length = bytes_to_int_extraction(dns_answers_payload + name_offset + 9,2);
-        da->data = dns_answers_payload + name_offset + 11;
+        da->data_value = dns_extract_answer_data(da->type,da->data_length,dns_answers_payload + name_offset + 11,dns_payload);
+        if(da->type==15){
+            da->mx_pref = bytes_to_int_extraction(dns_answers_payload + name_offset + 11,2);
+        }
         da->a_length = name_offset + 11 + da->data_length;
         da->next = dns_extract_answers(dns_answers_payload + da->a_length,nb_answers - 1,dns_payload); 
         return da;
@@ -512,6 +570,50 @@ int dns_answers_extraction(const ipacket_t * ipacket, unsigned proto_index,
     }
 }
 
+int dns_auth_records_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data) {
+    /* Get the protocol offset */
+    int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
+    
+    // Get number of queries
+    int nscount_offset = 8;
+    uint16_t nscount = bytes_to_int_extraction(ipacket->data + proto_offset + nscount_offset,2);
+    if(nscount == 0){
+        return 0;
+    }else{
+        int ns_records_offset = dns_get_answers_offset(ipacket,proto_index);
+        dns_answer_t * da = dns_extract_answers(ipacket->data + proto_offset + answer_payload_offset,nscount,ipacket->data + proto_offset);
+        if(da == NULL){
+            return 0;
+        }else{
+            extracted_data->data = (void*)da;
+            return 1;
+        }
+    }
+}
+
+int dns_add_records_extraction(const ipacket_t * ipacket, unsigned proto_index,
+        attribute_t * extracted_data) {
+    /* Get the protocol offset */
+    int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
+    
+    // Get number of queries
+    int arcount_offset = 10;
+    uint16_t arcount = bytes_to_int_extraction(ipacket->data + proto_offset + arcount_offset,2);
+    if(arcount == 0){
+        return 0;
+    }else{
+        int answer_payload_offset = dns_get_answers_offset(ipacket,proto_index);
+        dns_answer_t * da = dns_extract_answers(ipacket->data + proto_offset + answer_payload_offset,arcount,ipacket->data + proto_offset);
+        if(da == NULL){
+            return 0;
+        }else{
+            extracted_data->data = (void*)da;
+            return 1;
+        }
+    }
+}
+
 
 static attribute_metadata_t dns_attributes_metadata[DNS_ATTRIBUTES_NB] = {
     {DNS_TID, DNS_TID_ALIAS, MMT_U16_DATA, sizeof (uint16_t), 0, SCOPE_PACKET, general_short_extraction_with_ordering_change},
@@ -531,6 +633,8 @@ static attribute_metadata_t dns_attributes_metadata[DNS_ATTRIBUTES_NB] = {
     {DNS_ARCOUNT, DNS_ARCOUNT_ALIAS, MMT_U16_DATA, sizeof (uint16_t), 10, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {DNS_QUERIES, DNS_QUERIES_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_queries_extraction},
     {DNS_ANSWERS, DNS_ANSWERS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_answers_extraction},
+    {DNS_AUTH_RECORDS, DNS_AUTH_RECORDS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_auth_records_extraction},
+    {DNS_ADD_RECORDS, DNS_ADD_RECORDS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_add_records_extraction},
 };
 
 void dns_session_data_init(ipacket_t * ipacket, unsigned index) {
