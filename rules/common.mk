@@ -9,8 +9,8 @@ MMT_EXAMS ?= $(MMT_BASE)/examples
 # CFLAGS   := -Wall -g
 # CXXFLAGS := -Wall -g
 
-CFLAGS   := -Wall -DNDEBUG -g
-CXXFLAGS := -Wall -DNDEBUG -g
+CFLAGS   := -Wall -DNDEBUG
+CXXFLAGS := -Wall -DNDEBUG
 
 CP       := cp -R
 RM       := rm -rf
