@@ -57,7 +57,7 @@ int mmt_check_http_application_activesync(ipacket_t * ipacket, unsigned index) {
 
 
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_http_application_activesync() {

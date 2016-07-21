@@ -124,7 +124,7 @@ int mmt_check_fiesta(ipacket_t * ipacket, unsigned index) {
 
         MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "exclude fiesta.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FIESTA);
-        return 1;
+        return 0;
 
 maybe_fiesta:
         MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "Stage is set to %d.\n", flow->l4.tcp.fiesta_stage);
@@ -135,7 +135,7 @@ add_fiesta:
         mmt_int_fiesta_add_connection(ipacket);
         return 1;
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_fiesta() {

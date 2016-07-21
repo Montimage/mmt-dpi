@@ -798,7 +798,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "exclude pplive.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_PPLIVE);
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_pplive_udp(ipacket_t * ipacket, unsigned index) {
@@ -956,7 +956,7 @@ int mmt_check_pplive_udp(ipacket_t * ipacket, unsigned index) {
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_PPLIVE);
 
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_pplive() {

@@ -51,11 +51,12 @@ int mmt_check_rdp(ipacket_t * ipacket, unsigned index) {
                 && get_u16(packet->payload, 6) == 0 && get_u16(packet->payload, 8) == 0 && get_u8(packet->payload, 10) == 0) {
             MMT_LOG(PROTO_RDP, MMT_LOG_DEBUG, "RDP detected.\n");
             mmt_int_rdp_add_connection(ipacket);
+            return 1;
         } else {
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RDP);
         }
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_rdp() {

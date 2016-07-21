@@ -467,12 +467,12 @@ int mmt_check_directconnect_tcp(ipacket_t * ipacket, unsigned index) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "directconnect: skipping as unknown due to timeout\n");
             }
-            return 1;
+            return 2;
         }
 
         mmt_search_directconnect_tcp(ipacket);
     }
-    return 1;
+    return 2;
 }
 
 int mmt_check_directconnect_udp(ipacket_t * ipacket, unsigned index) {
@@ -502,12 +502,12 @@ int mmt_check_directconnect_udp(ipacket_t * ipacket, unsigned index) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "directconnect: skipping as unknown due to timeout\n");
             }
-            return 1;
+            return 2;
         }
 
         mmt_search_directconnect_udp(ipacket);
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_directconnect() {

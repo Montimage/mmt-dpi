@@ -53,7 +53,7 @@ int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_vnc(ipacket, index);
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_vnc() {

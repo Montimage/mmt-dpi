@@ -40,11 +40,13 @@ int mmt_check_oracle(ipacket_t * ipacket, unsigned index)
                  && (packet->payload[3] == 0x00)))) {
               MMT_LOG(PROTO_ORACLE, MMT_LOG_DEBUG, "found oracle.\n");
               mmt_int_oracle_add_connection(ipacket);
+              return 1;
             } else if (packet->payload_packet_len == 213 && packet->payload[0] == 0x00 &&
                        packet->payload[1] == 0xd5 && packet->payload[2] == 0x00 &&
                        packet->payload[3] == 0x00 ) {
               MMT_LOG(PROTO_ORACLE, MMT_LOG_DEBUG, "found oracle.\n");
               mmt_int_oracle_add_connection(ipacket);
+              return 1;
             }
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ORACLE);

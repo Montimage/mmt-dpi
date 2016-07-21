@@ -114,7 +114,7 @@ int mmt_check_nfs(ipacket_t * ipacket, unsigned index) {
 exclude_nfs:
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_NFS);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_nfs() {

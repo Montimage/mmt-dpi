@@ -258,7 +258,7 @@ maybe_split_pop:
         MMT_LOG(PROTO_POP, MMT_LOG_DEBUG, "exclude mail_pop\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_POP);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_pop() {

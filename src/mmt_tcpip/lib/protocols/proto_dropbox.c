@@ -89,7 +89,7 @@ int mmt_check_dropbox_udp(ipacket_t * ipacket, unsigned index)
             }
         }
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_dropbox()

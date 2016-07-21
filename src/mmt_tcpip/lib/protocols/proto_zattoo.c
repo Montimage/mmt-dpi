@@ -353,7 +353,7 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "exclude zattoo.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ZATTOO);
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_zattoo_udp(ipacket_t * ipacket, unsigned index) {
@@ -403,7 +403,7 @@ int mmt_check_zattoo_udp(ipacket_t * ipacket, unsigned index) {
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ZATTOO);
 
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_zattoo() {

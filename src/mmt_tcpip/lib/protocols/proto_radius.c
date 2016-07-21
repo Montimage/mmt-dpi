@@ -1901,7 +1901,7 @@ int mmt_check_radius(ipacket_t * ipacket, unsigned index) { //BW: TODO: check th
 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RADIUS);
     }
-    return 1;
+    return 0;
 }
 
 void radius_vendor_specific_fields_analysis(ipacket_t * ipacket, uint8_t * v_field, unsigned index) {

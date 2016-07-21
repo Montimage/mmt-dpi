@@ -57,7 +57,7 @@ int mmt_check_world_of_kung_fu(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_WORLD_OF_KUNG_FU, MMT_LOG_DEBUG, "exclude world_of_kung_fu.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_WORLD_OF_KUNG_FU);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_world_of_kung_fu() {

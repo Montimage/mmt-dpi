@@ -144,12 +144,13 @@ int mmt_check_flash(ipacket_t * ipacket, unsigned index) {
         if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
             MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "FLASH: exclude\n");
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FLASH);
+            return 0;
         } else {
             MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "FLASH avoid early exclude from http\n");
         }
 
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_flash() {

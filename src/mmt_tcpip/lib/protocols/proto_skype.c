@@ -113,7 +113,7 @@ int mmt_check_skype_udp(ipacket_t * ipacket, unsigned index) { //BW: TODO: Check
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SKYPE);
 
     }
-    return 1;
+    return 0;
 }
 
 

@@ -82,7 +82,7 @@ int mmt_check_teamviewer_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TEAMVIEWER);
 
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_teamviewer_udp(ipacket_t * ipacket, unsigned index) {
@@ -108,7 +108,7 @@ int mmt_check_teamviewer_udp(ipacket_t * ipacket, unsigned index) {
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TEAMVIEWER);
 
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_teamviewer() {

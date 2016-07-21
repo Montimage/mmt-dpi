@@ -183,7 +183,7 @@ int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "exclude stun.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
     }
-    return 1;
+    return 0;
 }
 
 int check_viber_udp(ipacket_t * ipacket) {
@@ -400,18 +400,18 @@ int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
             MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found UDP stun.\n");
             mmt_int_stun_add_connection(ipacket);
             check_stun_internal(ipacket);
-            return 1;
+            return 2;
         } else {
             if (check_viber_udp(ipacket) || check_tango_udp(ipacket) || check_apple_facetime_signaling_udp(ipacket)) {
                 MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
-                return 1;
+                return 2;
             }
         }
 
         MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "exclude stun.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_stun() {

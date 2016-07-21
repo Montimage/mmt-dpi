@@ -31,6 +31,7 @@ int mmt_check_vmware(ipacket_t * ipacket, unsigned index)
            && ((packet->payload[0] & 0xFF) == 0xA4)) {
             MMT_LOG(PROTO_VMWARE, MMT_LOG_DEBUG,"Found vmware.\n");
             mmt_int_vmware_add_connection(ipacket);
+            return 1;
         } 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VMWARE);
         MMT_LOG(PROTO_VMWARE, MMT_LOG_DEBUG, "exclude vmware.\n");

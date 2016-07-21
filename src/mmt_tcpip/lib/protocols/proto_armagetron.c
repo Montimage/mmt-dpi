@@ -141,7 +141,7 @@ exclude:
         MMT_LOG(PROTO_ARMAGETRON, MMT_LOG_DEBUG, "exclude armagetron.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ARMAGETRON);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_armagetron() {

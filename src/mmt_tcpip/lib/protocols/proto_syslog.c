@@ -171,7 +171,7 @@ int mmt_check_syslog(ipacket_t * ipacket, unsigned index) {
                 MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG,
                         "no month-shortname following: syslog excluded.\n");
                 MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
-                return 1;
+                return 0;
             } else {
                 MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG,
                         "a month-shortname following: syslog detected.\n");
@@ -182,7 +182,7 @@ int mmt_check_syslog(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "no syslog detected.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_syslog() {

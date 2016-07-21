@@ -83,7 +83,7 @@ int mmt_check_tftp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "exclude TFTP.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TFTP);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_tftp() {

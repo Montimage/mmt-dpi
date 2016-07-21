@@ -74,7 +74,7 @@ int mmt_check_ssh(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_SSH, MMT_LOG_DEBUG, "excluding ssh at stage %d\n", flow->l4.tcp.ssh_stage);
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SSH);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_ssh() {

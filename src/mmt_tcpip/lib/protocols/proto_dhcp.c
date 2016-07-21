@@ -62,7 +62,7 @@ int mmt_check_dhcp(ipacket_t * ipacket, unsigned index) {
 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DHCP);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_dhcp() {

@@ -118,6 +118,7 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			       MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "found quic.\n");
 			       // debug("QUIC: Found QUIC");
 			       mmt_int_quic_add_connection(ipacket);
+                   return 1;
 			     }
 
 				// Check if version, than the CID length.

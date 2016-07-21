@@ -132,7 +132,7 @@ int mmt_check_ldap(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_LDAP, MMT_LOG_DEBUG, "ldap excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_LDAP);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_ldap() {

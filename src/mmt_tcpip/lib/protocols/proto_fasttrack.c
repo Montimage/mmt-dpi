@@ -103,7 +103,7 @@ exclude_fasttrack:
         MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "fasttrack/kazaa excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FASTTRACK);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_fasttrack() {

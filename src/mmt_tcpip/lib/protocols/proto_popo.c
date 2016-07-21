@@ -72,7 +72,7 @@ int mmt_check_popo(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_popo(ipacket, index);
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_popo() {

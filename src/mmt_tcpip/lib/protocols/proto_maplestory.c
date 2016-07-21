@@ -110,7 +110,7 @@ int mmt_check_maplestory(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "exclude maplestory.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MAPLESTORY);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_maplestory() {

@@ -145,7 +145,7 @@ int mmt_check_meebo(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_meebo(ipacket, index);
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_meebo() {

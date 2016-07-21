@@ -67,8 +67,9 @@ int mmt_check_netflow(ipacket_t * ipacket, unsigned index) {//BW: TODO: check th
                 return 1;
             }
         }
+        MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_NETFLOW);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_netflow() {

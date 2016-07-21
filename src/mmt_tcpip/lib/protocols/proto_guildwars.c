@@ -81,7 +81,7 @@ int mmt_check_guildwars(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "exclude guildwars.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_GUILDWARS);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_guildwars() {

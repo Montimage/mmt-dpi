@@ -75,13 +75,13 @@ int mmt_check_tvants_tcp(ipacket_t * ipacket, unsigned index) {
 
             MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "found tvants over tcp.  \n");
             mmt_int_tvants_add_connection(ipacket);
-
+            return 1;
         }
         MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "exclude tvants.  \n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TVANTS);
 
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_tvants_udp(ipacket_t * ipacket, unsigned index) {
@@ -106,12 +106,12 @@ int mmt_check_tvants_udp(ipacket_t * ipacket, unsigned index) {
 
             MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "found tvants over udp.  \n");
             mmt_int_tvants_add_connection(ipacket);
-
+            return 1;
         }
         MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "exclude tvants.  \n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TVANTS);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_tvants() {

@@ -91,7 +91,7 @@ int mmt_check_spotify(ipacket_t * ipacket, unsigned index) { //BW: TODO: check t
                 if ((payload_len >= 16) && (packet->payload[0] == 0x01) && (packet->payload[1] == 0x00) && (packet->payload[2] == 0x00)) {
                     flow->l4.tcp.spotify_stage = 1;
                     //Need to check more packets
-                    return 1;
+                    return 0;
                 }
             }
             if ((flow->l4.tcp.spotify_like_packet == 2) && (flow->l4.tcp.spotify_stage == 1)) {
@@ -110,7 +110,7 @@ int mmt_check_spotify(ipacket_t * ipacket, unsigned index) { //BW: TODO: check t
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SPOTIFY);
 
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_spotify() {

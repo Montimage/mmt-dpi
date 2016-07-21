@@ -61,7 +61,7 @@ int mmt_check_smb(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_SMB, MMT_LOG_DEBUG, "exclude SMB.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SMB);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_smb() {

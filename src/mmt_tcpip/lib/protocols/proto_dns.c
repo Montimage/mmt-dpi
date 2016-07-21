@@ -828,7 +828,7 @@ int mmt_check_dns(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_dns(ipacket, index);
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_dns() {

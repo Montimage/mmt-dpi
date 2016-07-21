@@ -92,7 +92,7 @@ int mmt_check_mms(ipacket_t * ipacket, unsigned index) {
             MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS avoid early exclude from http\n");
         }
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_mms() {

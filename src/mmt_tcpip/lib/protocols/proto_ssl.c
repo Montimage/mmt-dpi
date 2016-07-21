@@ -669,7 +669,7 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
         mmt_classify_me_ssl(ipacket, index);
     }
-    return 1;
+    return 2;
 }
 
 //////////////// SSL attributes

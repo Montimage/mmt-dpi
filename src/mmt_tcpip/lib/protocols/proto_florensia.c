@@ -167,7 +167,7 @@ int mmt_check_florensia_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "exclude florensia.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FLORENSIA);
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_florensia_udp(ipacket_t * ipacket, unsigned index) {
@@ -197,7 +197,7 @@ int mmt_check_florensia_udp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "exclude florensia.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FLORENSIA);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_florensia() {

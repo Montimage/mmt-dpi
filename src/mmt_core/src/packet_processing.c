@@ -2794,10 +2794,10 @@ void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * confi
         for (; temp != NULL; temp = temp->next) {
             classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
             // // LN: check if the classify return 1-> do not need to go to check other protocol
-            // if(classif_status){
-            //     log_info("Classified for protocol: %p",temp);
-            //     break;
-            // }
+            if(classif_status==1){
+                log_info("Classified for protocol: %p",temp);
+                break;
+            }
             // // End of LN
         }
 

@@ -432,7 +432,7 @@ int mmt_check_yahoo_tcp(ipacket_t * ipacket, unsigned index) {
             }
         }
     }
-    return 1;
+    return 2;
 }
 
 int mmt_check_yahoo_udp(ipacket_t * ipacket, unsigned index) {
@@ -450,7 +450,7 @@ int mmt_check_yahoo_udp(ipacket_t * ipacket, unsigned index) {
             mmt_search_yahoo_udp(ipacket);
         }
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_yahoo() {

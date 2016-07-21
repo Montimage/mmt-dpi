@@ -351,7 +351,7 @@ int mmt_check_netbios_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_NETBIOS, MMT_LOG_DEBUG, "exclude netbios\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_NETBIOS);
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
@@ -616,7 +616,7 @@ int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_NETBIOS, MMT_LOG_DEBUG, "exclude netbios\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_NETBIOS);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_netbios() {

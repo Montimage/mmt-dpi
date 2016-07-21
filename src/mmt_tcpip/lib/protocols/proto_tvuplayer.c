@@ -165,7 +165,7 @@ int mmt_check_tvuplayer_tcp(ipacket_t * ipacket, unsigned index) {
 
 
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_tvuplayer_udp(ipacket_t * ipacket, unsigned index) {
@@ -255,7 +255,7 @@ int mmt_check_tvuplayer_udp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_TVUPLAYER, MMT_LOG_DEBUG, "exclude tvuplayer.  \n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TVUPLAYER);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_tvuplayer() {

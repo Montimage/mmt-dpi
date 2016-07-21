@@ -81,7 +81,7 @@ int mmt_check_iax(ipacket_t * ipacket, unsigned index) {
             mmt_search_setup_iax(ipacket);
         }
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_iax() {

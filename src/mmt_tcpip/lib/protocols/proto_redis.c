@@ -53,6 +53,7 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
                    && ((flow->redis_s2d_first_char == '+') || (flow->redis_s2d_first_char == ':')))) {
                     MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Found Redis.\n");
                     mmt_int_redis_add_connection(ipacket);
+                    return 1;
               } else {
                 MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Exclude Redis.\n");
                 MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_REDIS);

@@ -863,7 +863,7 @@ int mmt_check_rtp_udp(ipacket_t * ipacket, unsigned index) {
 
         mmt_rtp_search(ipacket, packet->payload, packet->payload_packet_len);
     }
-    return 1;
+    return 2;
 }
 
 int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
@@ -923,7 +923,7 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP);
 #endif
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_rtp() {

@@ -252,7 +252,7 @@ int mmt_check_oscar(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_oscar(ipacket, index); //BW: TODO: the calssification of oscar seems to be for TCP only
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_oscar() {

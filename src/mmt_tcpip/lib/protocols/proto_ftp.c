@@ -1371,7 +1371,7 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len == 0) {
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
                     "FTP test skip because of data connection or zero byte packet_payload.\n");
-            return 1;
+            return 0;
         }
         /* skip excluded connections */
 
@@ -1389,13 +1389,13 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
         if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");
 
-            return 1;
+            return 2;
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);
         MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "exclude ftp.\n");
 
     }
-    return 1;
+    return 0;
 }
 
 //////////////////////////// EXTRACTION ///////////////////////////////////////

@@ -364,7 +364,7 @@ int mmt_check_gnutella(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
         mmt_classify_me_gnutella(ipacket, index); //BW: TODO: this can be improved by splitting the classification into TCP and UDP
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_gnutella() {

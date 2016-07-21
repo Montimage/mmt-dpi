@@ -105,7 +105,7 @@ int mmt_check_telnet(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_TELNET, MMT_LOG_DEBUG, "telnet excluded.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_TELNET);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_telnet() {

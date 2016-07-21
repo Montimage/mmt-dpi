@@ -165,7 +165,7 @@ int mmt_check_smtp(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_smtp(ipacket, index);
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_smtp() {

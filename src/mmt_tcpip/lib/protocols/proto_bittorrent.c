@@ -452,7 +452,7 @@ int mmt_check_bittorrent_tcp(ipacket_t * ipacket, unsigned index) {
             }
         }
     }
-    return 1;
+    return 2;
 }
 
 int mmt_check_bittorrent_udp(ipacket_t * ipacket, unsigned index) {
@@ -521,7 +521,7 @@ bittorrent_found:
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_BITTORRENT);
         }
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_bittorrent() {

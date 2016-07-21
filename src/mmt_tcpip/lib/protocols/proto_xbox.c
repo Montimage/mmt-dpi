@@ -137,11 +137,12 @@ int mmt_check_xbox(ipacket_t * ipacket, unsigned index) {
             if (packet->tcp == NULL || MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
                 MMT_LOG(PROTO_XBOX, MMT_LOG_DEBUG, "xbox udp excluded.\n");
                 MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_XBOX);
+                return 0;
             }
         }
         /* to not exclude tcp traffic here, done by http code... */
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_xbox() {

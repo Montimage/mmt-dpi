@@ -461,7 +461,7 @@ int mmt_check_gadugadu(ipacket_t * ipacket, unsigned index) {
 
         mmt_search_gadugadu_tcp(ipacket); //BW: TODO: this seems to be only tcp, the bitmask is UDP as well, check this out
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_gadugadu() {

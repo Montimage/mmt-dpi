@@ -74,6 +74,7 @@ int mmt_check_socrates_tcp(ipacket_t * ipacket, unsigned index) {
                 if (memcmp(&packet->payload[6], "socrates", 8) == 0) {
                     MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "found socrates tcp.\n");
                     mmt_socrates_add_connection(ipacket);
+                    return 1;
                 }
             }
         }
@@ -81,7 +82,7 @@ int mmt_check_socrates_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "exclude socrates.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SOCRATES);
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_socrates_udp(ipacket_t * ipacket, unsigned index) {
@@ -102,13 +103,14 @@ int mmt_check_socrates_udp(ipacket_t * ipacket, unsigned index) {
             if (memcmp(&packet->payload[2], "socrates", 8) == 0) {
                 MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "found socrates udp.\n");
                 mmt_socrates_add_connection(ipacket);
+                return 1;
             }
         }
 
         MMT_LOG(PROTO_SOCRATES, MMT_LOG_DEBUG, "exclude socrates.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SOCRATES);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_socrates() {

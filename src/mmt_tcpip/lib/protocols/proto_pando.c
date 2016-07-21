@@ -78,7 +78,7 @@ int mmt_check_pando(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_pando(ipacket, index); //BW: TODO: split it into udp and tcp functions
     }
-    return 1;
+    return 2;
 }
 
 void mmt_init_classify_me_pando() {

@@ -124,7 +124,7 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                 if (flow->l4.tcp.veoh_tv_stage == 2) {
                     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
                             PROTO_HTTP_APPLICATION_VEOHTV);
-                    return 1;
+                    return 0;
                 }
                 MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                 mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -132,7 +132,7 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
             } else if (ipacket->session->data_packet_count_direction[(ipacket->session->setup_packet_direction == 1) ? 0 : 1] > 3) {
                 if (flow->l4.tcp.veoh_tv_stage == 2) {
                     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
-                    return 1;
+                    return 0;
                 }
                 MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                 mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -141,7 +141,7 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                 if (ipacket->session->data_packet_count > 10) {
                     if (flow->l4.tcp.veoh_tv_stage == 2) {
                         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
-                        return 1;
+                        return 0;
                     }
                     MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                     mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -152,7 +152,7 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
         } 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_veohtv_udp(ipacket_t * ipacket, unsigned index) {
@@ -184,7 +184,7 @@ int mmt_check_veohtv_udp(ipacket_t * ipacket, unsigned index) {
 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_veohtv() {

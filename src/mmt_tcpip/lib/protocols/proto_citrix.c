@@ -93,9 +93,10 @@ int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
                 if (memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0) {
                     MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix.\n");
                     mmt_internal_add_connection(ipacket, PROTO_CITRIX, MMT_REAL_PROTOCOL);
+                    return 1;
                 }
 
-                return 1;
+                
             } else if (payload_len > 4) {
                 char citrix_header[] = {0x1a, 0x43, 0x47, 0x50, 0x2f, 0x30, 0x31};
 
@@ -103,9 +104,10 @@ int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
                  || (mmt_strncmp((const char*)packet->payload, "Citrix.TcpProxyService", payload_len) == 0)) {
                     MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix.\n");
                     mmt_internal_add_connection(ipacket, PROTO_CITRIX, MMT_REAL_PROTOCOL);
+                    return 1;
                 }
 
-                return 1;
+                
             }
 
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_CITRIX);
@@ -114,7 +116,7 @@ int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
         }
 
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_citrix() {

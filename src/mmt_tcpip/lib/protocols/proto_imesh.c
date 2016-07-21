@@ -454,7 +454,7 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
                 packet->tcp != NULL ? flow->l4.tcp.imesh_stage : 0);
         // XXX return 0 here ?
     }
-    return 1;
+    return 0;
 }
 
 int mmt_check_imesh_udp(ipacket_t * ipacket, unsigned index) {
@@ -534,7 +534,7 @@ int mmt_check_imesh_udp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_IMESH, MMT_LOG_DEBUG, "iMesh excluded at stage %d\n",
                 packet->tcp != NULL ? flow->l4.tcp.imesh_stage : 0);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_imesh() {

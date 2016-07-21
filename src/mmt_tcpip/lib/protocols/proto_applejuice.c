@@ -34,7 +34,7 @@ int mmt_check_applejuice(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_APPLEJUICE, MMT_LOG_DEBUG, "exclude applejuice.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_APPLEJUICE);
     }
-    return 1;
+    return 0;
 }
 
 void mmt_classify_me_applejuice_tcp(ipacket_t * ipacket, unsigned index)

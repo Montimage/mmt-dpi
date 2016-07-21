@@ -130,7 +130,7 @@ icecast_exclude:
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_ICECAST);
         MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "Icecast excluded.\n");
     }
-    return 1;
+    return 0;
 }
 
 void mmt_init_classify_me_icecast() {
