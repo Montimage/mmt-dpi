@@ -64,6 +64,7 @@ uint16_t bytes_to_int_extraction(const u_char *payload,int nb_bytes){
 typedef struct dns_name_struct{
     char *value; // Value of the name
     uint16_t length;// Length of the name
+    uint8_t is_ref; // Is reference name
     uint16_t real_length; // real length of name in packet
     struct dns_name_struct *next;
 } dns_name_t;
@@ -75,6 +76,7 @@ dns_name_t * dns_new_name(){
         dns_name->value = NULL;
         dns_name->length = 0;
         dns_name->real_length = 0;
+        dns_name->is_ref = 0;
         dns_name->next = NULL;
     }
     return dns_name;
@@ -87,6 +89,7 @@ void dns_free_name(dns_name_t * dns_name){
             dns_name->value = NULL;
         }
         dns_name->length = 0;
+        dns_name->is_ref = 0;
         dns_name->real_length = 0;
         free(dns_name);
     }
@@ -188,6 +191,7 @@ dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_
         dns_name_t * original_name = dns_extract_name(dns_payload + offset_name,dns_payload);
         if(original_name){
             original_name->real_length = 2;
+            original_name->is_ref = 1;
             // original_name->next = dns_extract_name(dns_payload + offset_name + original_name->length + 1,dns_payload);
             return original_name;
         }else{
@@ -215,7 +219,7 @@ dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char*
         dns_name_t * ext_name = dns_extract_name(dns_name_payload,dns_payload);
         if(ext_name){
             int name_ref = 0;
-            if(ext_name->real_length == 2){
+            if(ext_name->is_ref){
                 name_ref = 1;
             }
             int q_name_length = 0;
@@ -340,10 +344,15 @@ char * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
             memcpy(txtValue,data_anwser_payload + 1,txtLength);
             txtValue[txtLength]='\0';
             return txtValue;
+        case 6:
+            // SOA -
+            // TODO: 
+            break;
         default:
         // Not process
         return NULL;
     }
+    return txtValue;
 }
 
 dns_answer_t * dns_extract_answers(const u_char *dns_answers_payload,int nb_answers,const u_char * dns_payload){
