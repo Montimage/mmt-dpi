@@ -277,10 +277,10 @@ int mmt_check_edonkey(ipacket_t * ipacket, unsigned index) {
             /* check for retransmission here */
             if (packet->tcp != NULL && packet->tcp_retransmission == 0) {
                 mmt_int_edonkey_tcp(ipacket);
-                return 1;
+                return 4;
             } else if (packet->udp != NULL) {
                 mmt_int_edonkey_udp(ipacket);
-                return 1;
+                return 4;
             }
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_EDONKEY);

@@ -452,7 +452,7 @@ int mmt_check_bittorrent_tcp(ipacket_t * ipacket, unsigned index) {
             }
         }
     }
-    return 2;
+    return 4;
 }
 
 int mmt_check_bittorrent_udp(ipacket_t * ipacket, unsigned index) {

@@ -317,7 +317,7 @@ int mmt_check_jabber(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_jabber_tcp(ipacket, index); //BW: TODO: this seems to be limited to tcp, check this out
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_jabber() {

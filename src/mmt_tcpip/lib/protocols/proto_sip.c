@@ -189,7 +189,7 @@ int mmt_check_sip(ipacket_t * ipacket, unsigned index) {
             }
         }
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_sip() {

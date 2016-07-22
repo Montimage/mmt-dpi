@@ -794,7 +794,7 @@ int mmt_check_irc(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_irc_tcp(ipacket, index);
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_irc() {

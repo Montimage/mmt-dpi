@@ -698,7 +698,7 @@ int mmt_check_direct_download_link(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_ddl(ipacket, index);
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_direct_download_link() {

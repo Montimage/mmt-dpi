@@ -53,7 +53,7 @@ static uint8_t search_pando(ipacket_t * ipacket)
 	return 1;
 
   end_pando_maybe_found:
-	return 2;
+	return 4;
 
   end_pando_nothing_found:
 	return 0;
@@ -78,7 +78,7 @@ int mmt_check_pando(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_pando(ipacket, index); //BW: TODO: split it into udp and tcp functions
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_pando() {

@@ -2167,6 +2167,6 @@ int mmt_check_http(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
             mmt_classify_me_http(ipacket, index);
     }
-    return 2;
+    return 4;
 }
 #endif

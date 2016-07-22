@@ -185,7 +185,7 @@ int mmt_check_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
 
         mmt_classify_me_worldofwarcraft(ipacket, index);
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_worldofwarcraft() {

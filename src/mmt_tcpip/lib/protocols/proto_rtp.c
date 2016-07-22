@@ -863,7 +863,7 @@ int mmt_check_rtp_udp(ipacket_t * ipacket, unsigned index) {
 
         mmt_rtp_search(ipacket, packet->payload, packet->payload_packet_len);
     }
-    return 2;
+    return 4;
 }
 
 int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {

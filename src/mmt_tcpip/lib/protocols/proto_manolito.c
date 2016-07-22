@@ -85,7 +85,7 @@ end_manolito_found:
 
 end_manolito_maybe_hit:
     MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO maybe hit.\n");
-    return 2;
+    return 4;
 
 end_manolito_nothing_found:
     MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO NOTHING FOUND\n");

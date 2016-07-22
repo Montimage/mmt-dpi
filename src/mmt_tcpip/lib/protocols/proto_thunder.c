@@ -179,7 +179,7 @@ int mmt_check_thunder_tcp(ipacket_t * ipacket, unsigned index) {
         mmt_int_search_thunder_http(ipacket); //BW: TODO: avoid this double classification, if Thunder is detected in HTTP avoid checking in tcp
         mmt_int_search_thunder_tcp(ipacket);
     }
-    return 2;
+    return 4;
 }
 
 int mmt_check_thunder_udp(ipacket_t * ipacket, unsigned index) {
@@ -191,7 +191,7 @@ int mmt_check_thunder_udp(ipacket_t * ipacket, unsigned index) {
         mmt_int_search_thunder_udp(ipacket);
 
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_thunder() {

@@ -1120,7 +1120,7 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         }
     }
 
-    return 2;
+    return 4;
 }
 
 static void search_passive_ftp_mode(ipacket_t * ipacket) {
@@ -1389,7 +1389,7 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
         if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");
 
-            return 2;
+            return 4;
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);
         MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "exclude ftp.\n");

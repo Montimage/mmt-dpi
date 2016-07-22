@@ -558,7 +558,7 @@ int mmt_check_msn_tcp(ipacket_t * ipacket, unsigned index) {
             }
         }
     }
-    return 2;
+    return 4;
 }
 
 int mmt_check_msn_udp(ipacket_t * ipacket, unsigned index) {
@@ -573,7 +573,7 @@ int mmt_check_msn_udp(ipacket_t * ipacket, unsigned index) {
             mmt_search_udp_msn_misc(ipacket);
         }
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_msn() {

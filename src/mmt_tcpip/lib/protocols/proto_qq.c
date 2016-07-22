@@ -632,7 +632,7 @@ int mmt_check_qq_tcp(ipacket_t * ipacket, unsigned index) {
         }
 
     }
-    return 2;
+    return 4;
 }
 
 int mmt_check_qq_udp(ipacket_t * ipacket, unsigned index) {
@@ -648,7 +648,7 @@ int mmt_check_qq_udp(ipacket_t * ipacket, unsigned index) {
         }
 
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_qq() {

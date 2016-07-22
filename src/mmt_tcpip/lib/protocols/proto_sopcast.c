@@ -197,7 +197,7 @@ int mmt_check_sopcast_tcp(ipacket_t * ipacket, unsigned index) {
 
         mmt_search_sopcast_tcp(ipacket);
     }
-    return 2;
+    return 4;
 }
 
 int mmt_check_sopcast_udp(ipacket_t * ipacket, unsigned index) {
@@ -208,7 +208,7 @@ int mmt_check_sopcast_udp(ipacket_t * ipacket, unsigned index) {
 
         mmt_search_sopcast_udp(ipacket);
     }
-    return 2;
+    return 4;
 }
 
 void mmt_init_classify_me_sopcast() {
