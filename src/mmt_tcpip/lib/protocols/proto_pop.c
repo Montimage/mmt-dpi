@@ -175,7 +175,7 @@ maybe_split_pop:
         // maybe part of a split pop packet
         MMT_LOG(PROTO_POP, MMT_LOG_DEBUG,
                 "maybe part of split mail_pop packet -> skip\n");
-        return 4;
+        return;
     }
 
     MMT_LOG(PROTO_POP, MMT_LOG_DEBUG, "exclude mail_pop\n");
