@@ -477,6 +477,24 @@ MMTAPI int MMTCALL register_protocol(
 );
 
 /**
+ * Unregisters the protocol defined by the given protocol identifier.
+ * @param proto_id the identifier of the protocol to register
+ * @return PROTO_REGISTERED on success, PROTO_NOT_REGISTERED on failure.
+ */
+MMTAPI int MMTCALL unregister_protocol_by_id(
+    uint32_t proto_id
+);
+
+/**
+ * Unregisters the protocol defined by the given protocol identifier.
+ * @param proto_id the identifier of the protocol to register
+ * @return PROTO_REGISTERED on success, PROTO_NOT_REGISTERED on failure.
+ */
+MMTAPI int MMTCALL unregister_protocol_by_name(
+    char * proto_name
+);
+
+/**
  * Returns the pointer to the protocol structure with the given identifier. This function MUST only be used
  * when we are sure there is a protocol structure associated with the given identifier. If there is no protocol
  * associated with the given identifier, null will be returned. This function is to be used with high precautions.

@@ -1201,6 +1201,28 @@ int register_protocol(protocol_t *proto, uint32_t proto_id) {
     return PROTO_NOT_REGISTERED;
 }
 
+int unregister_protocol_by_id(uint32_t proto_id) {
+    if (!is_free_protocol_id_for_registractionl(proto_id)) {
+        configured_protocols[proto_id]->is_registered = PROTO_NOT_REGISTERED;
+        return 1;
+    }
+    return 0;
+}
+
+int unregister_protocol_by_name(char* proto_name) {
+    int i=0;
+    for (i =0;i<PROTO_MAX_IDENTIFIER;i++){
+        if (!is_free_protocol_id_for_registractionl(i)) {
+            if(mmt_strcasecmp(configured_protocols[i]->protocol_name,proto_name) == 0){
+                configured_protocols[i]->is_registered = PROTO_NOT_REGISTERED;
+                return 1;
+            }
+        }
+        
+    }
+    return 0;
+}
+
 int init_plugins() {
     if (!load_plugins()) {
         fprintf(stderr, "Error while loading plugins, Exiting\n");
