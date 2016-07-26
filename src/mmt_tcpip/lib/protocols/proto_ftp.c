@@ -604,7 +604,7 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
             cmd->cmd = MMT_FTP_UNKNOWN_CMD;
             command = (char*)malloc(12);
             memcpy(command, "UNKNOWN_CMD", 11);
-            command[11] = '\0';
+            command[11]='\0';
             cmd->str_cmd = command;
             cmd->param = payload;
             return cmd;
@@ -657,7 +657,7 @@ char * ftp_get_command_param(char* payload, int payload_len) {
             memcpy(params, payload, payload_len);
             params[payload_len] = '\0';
             return params;
-        } else {
+        }else{
             if (payload[3] == ' ') {
                 if (payload_len - 6 > 0) {
                     char * params = NULL;
@@ -685,7 +685,7 @@ char * ftp_get_command_param(char* payload, int payload_len) {
     return NULL;
 }
 
-char * ftp_get_command_str(char* payload, int payload_len) {
+char * ftp_get_command_str(char* payload, int payload_len){
     char * command = NULL;
 
     if (payload_len == 6 && payload[3] != ' ') {
@@ -701,7 +701,7 @@ char * ftp_get_command_str(char* payload, int payload_len) {
     } else {
         if (!mmt_int_check_possible_ftp_command(payload, payload_len)) {
             command = "UNKNOWN_CMD";
-        } else {
+        }else{
             if (payload[3] == ' ') {
                 command = (char*)malloc(4);
                 memcpy(command, payload, 3);
@@ -710,7 +710,7 @@ char * ftp_get_command_str(char* payload, int payload_len) {
                 command = (char*)malloc(5);
                 memcpy(command, payload, 4);
                 command[4] = '\0';
-            }
+            }    
         }
     }
     return command;
@@ -1580,8 +1580,7 @@ int ftp_username_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if (ftp_control) {
             if (ftp_control->user && ftp_control->user->username) {
-                char *ret_v = str_copy(ftp_control->user->username);
-                extracted_data->data = (void*)ret_v;
+                extracted_data->data = (void*)ftp_control->user->username;
                 return 1;
             }
         }
@@ -1591,8 +1590,7 @@ int ftp_username_extraction(const ipacket_t * ipacket, unsigned proto_index,
             ftp_control_session_t * ftp_control = ftp_data->control_session;
             if (ftp_control) {
                 if (ftp_control->user && ftp_control->user->username) {
-                    char *ret_v = str_copy(ftp_control->user->username);
-                    extracted_data->data = (void*)ret_v;
+                    extracted_data->data = (void*)ftp_control->user->username;
                     return 1;
                 }
             }
@@ -1607,8 +1605,7 @@ int ftp_password_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if (ftp_control) {
             if (ftp_control->user && ftp_control->user->password) {
-                char *ret_v = str_copy(ftp_control->user->password);
-                extracted_data->data = (void*)ret_v;
+                extracted_data->data = (void*)ftp_control->user->password;
                 return 1;
             }
         }
@@ -1618,8 +1615,7 @@ int ftp_password_extraction(const ipacket_t * ipacket, unsigned proto_index,
             ftp_control_session_t * ftp_control = ftp_data->control_session;
             if (ftp_control) {
                 if (ftp_control->user && ftp_control->user->password) {
-                    char *ret_v = str_copy(ftp_control->user->password);
-                    extracted_data->data = (void*)ret_v;
+                    extracted_data->data = (void*)ftp_control->user->password;
                     return 1;
                 }
             }
@@ -1634,8 +1630,7 @@ int ftp_features_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if (ftp_control) {
             if (ftp_control->session_feats) {
-                char *ret_v = str_copy(ftp_control->session_feats);
-                extracted_data->data = (void*)ret_v;
+                extracted_data->data = (void*)ftp_control->session_feats;
                 return 1;
             }
         }
@@ -1645,8 +1640,7 @@ int ftp_features_extraction(const ipacket_t * ipacket, unsigned proto_index,
             ftp_control_session_t * ftp_control = ftp_data->control_session;
             if (ftp_control) {
                 if (ftp_control->session_feats) {
-                    char *ret_v = str_copy(ftp_control->session_feats);
-                    extracted_data->data = (void*)ret_v;
+                    extracted_data->data = (void*)ftp_control->session_feats;
                     return 1;
                 }
             }
@@ -1686,8 +1680,7 @@ int ftp_syst_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if (ftp_control) {
             if (ftp_control->session_syst) {
-                char *ret_v = str_copy(ftp_control->session_syst);
-                extracted_data->data = (void*)ret_v;
+                extracted_data->data = (void*)ftp_control->session_syst;
                 return 1;
             }
         }
@@ -1697,9 +1690,7 @@ int ftp_syst_extraction(const ipacket_t * ipacket, unsigned proto_index,
             ftp_control_session_t * ftp_control = ftp_data->control_session;
             if (ftp_control) {
                 if (ftp_control->session_syst) {
-                    char *ret_v = str_copy(ftp_control->session_syst);
-                    extracted_data->data = (void*)ret_v;
-
+                    extracted_data->data = (void*)ftp_control->session_syst;
                     return 1;
                 }
             }
@@ -1764,8 +1755,7 @@ int ftp_current_dir_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_control_session_t * ftp_control = (ftp_control_session_t*)ipacket->session->session_data[proto_index];
         if (ftp_control) {
             if (ftp_control->current_dir) {
-                char *ret_v = str_copy(ftp_control->current_dir);
-                extracted_data->data = (void*)ret_v;
+                extracted_data->data = (void*)ftp_control->current_dir;
                 return 1;
             }
         }
@@ -1775,8 +1765,7 @@ int ftp_current_dir_extraction(const ipacket_t * ipacket, unsigned proto_index,
             ftp_control_session_t * ftp_control = ftp_data->control_session;
             if (ftp_control) {
                 if (ftp_control->current_dir) {
-                    char *ret_v = str_copy(ftp_control->current_dir);
-                    extracted_data->data = (void*)ret_v;
+                    extracted_data->data = (void*)ftp_control->current_dir;
                     return 1;
                 }
             }
@@ -1997,8 +1986,7 @@ int ftp_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
         if (ftp_control) {
             if (ftp_control->current_data_session) {
                 if (ftp_control->current_data_session->file && ftp_control->current_data_session->file->name) {
-                    char *ret_v = str_copy(ftp_control->current_data_session->file->name);
-                    extracted_data->data = (void*)ret_v;
+                    extracted_data->data = (void*)ftp_control->current_data_session->file->name;
                     return 1;
                 }
             }
@@ -2007,8 +1995,7 @@ int ftp_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if (ftp_data) {
             if (ftp_data->file && ftp_data->file->name) {
-                char *ret_v = str_copy(ftp_data->file->name);
-                extracted_data->data = (void*)ret_v;
+                extracted_data->data = (void*)ftp_data->file->name;
                 return 1;
             }
         }
@@ -2086,8 +2073,8 @@ int ftp_packet_request_extraction(const ipacket_t * ipacket, unsigned proto_inde
             return 0;
         }
         int payload_len = ipacket->internal_packet->payload_packet_len;
-        char * ret = ftp_get_command_str(payload, payload_len);
-        if (ret) {
+        char * ret = ftp_get_command_str(payload,payload_len);
+        if(ret){
             extracted_data->data = (void*)ret;
             return 1;
         }
@@ -2114,8 +2101,8 @@ int ftp_packet_request_parameter_extraction(const ipacket_t * ipacket, unsigned 
             return 0;
         }
         int payload_len = ipacket->internal_packet->payload_packet_len;
-        char * ret = ftp_get_command_param(payload, payload_len);
-        if (ret) {
+        char * ret = ftp_get_command_param(payload,payload_len);
+        if(ret){
             extracted_data->data = (void*)ret;
             return 1;
         }
@@ -2134,7 +2121,7 @@ int ftp_packet_response_code_extraction(const ipacket_t * ipacket, unsigned prot
             return 0;
         }
         int payload_len = ipacket->internal_packet->payload_packet_len;
-        *((uint16_t*)extracted_data->data) = ftp_get_response_code(payload, payload_len);
+        *((uint16_t*)extracted_data->data) = ftp_get_response_code(payload,payload_len);
         return 1;
         // ftp_response_t * res = ftp_get_response(payload, payload_len);
         // if (res && res->code) {
@@ -2159,8 +2146,8 @@ int ftp_packet_response_value_extraction(const ipacket_t * ipacket, unsigned pro
             return 0;
         }
         int payload_len = ipacket->internal_packet->payload_packet_len;
-        char * ret = ftp_get_response_value(payload, payload_len);
-        if (ret) {
+        char * ret = ftp_get_response_value(payload,payload_len);
+        if(ret){
             extracted_data->data = (void*)ret;
             return 1;
         }
