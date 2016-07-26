@@ -5,6 +5,7 @@ Roadmap
 - Add API function to unregister a protocol
 - Extract DNS packets
 - Reconstruct HTTP packets
+- Updated ftp extraction functions - easy for probe to use
 
 ## Release version 1.6.3.1
 - Hot fixed for ipv6 parsing
