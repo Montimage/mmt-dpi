@@ -1120,7 +1120,7 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         }
     }
 
-    return 2;
+    return 4;
 }
 
 static void search_passive_ftp_mode(ipacket_t * ipacket) {
@@ -1371,7 +1371,7 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len == 0) {
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
                     "FTP test skip because of data connection or zero byte packet_payload.\n");
-            return 1;
+            return 0;
         }
         /* skip excluded connections */
 
@@ -1389,13 +1389,13 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
         if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");
 
-            return 1;
+            return 4;
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);
         MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "exclude ftp.\n");
 
     }
-    return 1;
+    return 0;
 }
 
 //////////////////////////// EXTRACTION ///////////////////////////////////////
@@ -1986,7 +1986,8 @@ int ftp_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
         if (ftp_control) {
             if (ftp_control->current_data_session) {
                 if (ftp_control->current_data_session->file && ftp_control->current_data_session->file->name) {
-                    extracted_data->data = (void*)ftp_control->current_data_session->file->name;
+                    char *ret_v = str_copy(ftp_control->current_data_session->file->name);
+                    extracted_data->data = (void*)ret_v;
                     return 1;
                 }
             }
@@ -1995,7 +1996,8 @@ int ftp_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
         ftp_data_session_t * ftp_data = (ftp_data_session_t*)ipacket->session->session_data[proto_index];
         if (ftp_data) {
             if (ftp_data->file && ftp_data->file->name) {
-                extracted_data->data = (void*)ftp_data->file->name;
+                char *ret_v = str_copy(ftp_data->file->name);
+                extracted_data->data = (void*)ret_v;
                 return 1;
             }
         }
