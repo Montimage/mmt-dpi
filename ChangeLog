@@ -2,6 +2,7 @@ RELEASE NOTES
 ---
 ## Pre-Release version 1.6.4.0
 Roadmap
+- Add API function to unregister a protocol
 - Extract DNS packets
 - Reconstruct HTTP packets
 
