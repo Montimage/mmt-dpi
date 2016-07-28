@@ -2436,6 +2436,11 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
             break;
         case MMT_FTP_226_CODE:
             ftp_control->status = MMT_FTP_STATUS_DATA_CLOSED;
+            debug("FTP: Data has transferred completed -> Going to reset data connection");
+            if(ftp_control->current_data_session->data_conn!=NULL){
+                free_ftp_data_session(ftp_control->current_data_session);
+                ftp_control->current_data_session = ftp_new_data_connection();
+            }
             break;
         case MMT_FTP_221_CODE:
             ftp_control->status = MMT_FTP_STATUS_CLOSED;
