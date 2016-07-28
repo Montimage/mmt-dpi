@@ -2440,6 +2440,7 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
             if(ftp_control->current_data_session->data_conn!=NULL){
                 free_ftp_data_session(ftp_control->current_data_session);
                 ftp_control->current_data_session = ftp_new_data_connection();
+                ftp_control->current_data_session->control_session = ftp_control;
             }
             break;
         case MMT_FTP_221_CODE:
