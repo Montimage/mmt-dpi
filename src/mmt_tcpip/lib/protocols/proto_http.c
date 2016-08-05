@@ -201,12 +201,25 @@ uint16_t http_request_url_offset(ipacket_t * ipacket) {
 }
 
 /**
+ * Initializes HTTP parser structure to be associated to the HTTP session data
+ **/
+void http_internal_session_data_init(ipacket_t * ipacket, unsigned index) {
+    debug("[PROTO_HTTP-]> http_internal_session_data_init : %lu",ipacket->packet_id);
+    void * http_session_data = (void *) init_http_parser();
+    ipacket->session->session_data[index] = http_session_data;
+}
+
+
+/**
  * HTTP session data analysis function. 
  * Contains compatibility code plus new HTTP parser integration
  **/
 int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
+    // if(ipacket->session->session_data[index] == NULL){
+    //     http_internal_session_data_init(ipacket,index);
+    // }
     // Backward Compatibility code
     if (packet->payload_packet_len > 32) {
         if ((flow->l4.tcp.http_data_direction != ipacket->session->last_packet_direction)) {
@@ -261,13 +274,6 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     return MMT_CONTINUE;
 }
 
-/**
- * Initializes HTTP parser structure to be associated to the HTTP session data
- **/
-void http_internal_session_data_init(ipacket_t * ipacket, unsigned index) {
-    void * http_session_data = (void *) init_http_parser();
-    ipacket->session->session_data[index] = http_session_data;
-}
 
 /**
  * Cleanup the HTTP parser structure from the HTTP session data.
