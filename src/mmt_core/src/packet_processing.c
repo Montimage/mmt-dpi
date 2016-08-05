@@ -2452,6 +2452,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
                 //Initialize its session data if such initialization function exists
                 if (configured_protocol->protocol->session_data_init != NULL) {
+                    debug("[PACKET_PROCESS-]> session_data_init - 0 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
                     ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
                 }
                 //Mark this protocol as done with the classification process
@@ -2500,9 +2501,10 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
         //At this point we should check if the current protocol is newly detected or reclassified
         //If this is the case, initialize its session data if required and copy its registered attributes to the session context
-        if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION))) {
+        if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION)||(classify_status == PROTO_CLASSIFICATION_UPDATE))) {
             //Initialize its session data if such initialization function exists
             if (configured_protocol->protocol->session_data_init != NULL) {
+                debug("[PACKET_PROCESS-]> session_data_init - 1 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
                 ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
             }
             is_new_session = NEW_PROTO_IN_SESSION; //This is not a new session, rather a new protocol in the session
