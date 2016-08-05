@@ -155,8 +155,11 @@ int tcp_flags_extraction(const ipacket_t * packet, unsigned proto_index,
 int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     if(ipacket->internal_packet->payload_packet_len){
-        *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
-        return 1;
+        // Check padding packet
+        if((ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)){
+            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
+            return 1;
+        }
     }
     return 0;
 }
