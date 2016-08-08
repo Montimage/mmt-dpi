@@ -2412,6 +2412,8 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->status = NonClassified;
                 session->protocol_container_context = configured_protocol;
                 session->session_protocol_index = index;
+                session->tcp_retransmissions = 0;
+                session->tcp_outoforders = 0;
                 mmt_handler->sessions_count += 1;
                 mmt_handler->active_sessions_count += 1;
 

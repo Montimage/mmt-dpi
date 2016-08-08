@@ -615,6 +615,17 @@ MMTAPI struct timeval MMTCALL get_session_last_activity_time(
 );
 
 /**
+ * Gets into \tv the session last data packet time of specific direction
+ * @param session the session structure
+ * @param direction The direction
+ * @param tv pointer to timeval struct where the session last activity time will be copied
+ */
+MMTAPI struct timeval MMTCALL get_session_last_data_packet_time_by_direction(
+    const mmt_session_t *session, uint8_t direction
+);
+
+
+/**
  * Gets into \tv the session establishment round trip time.
  * @param session the session structure.
  * @param tv pointer to timeval struct where the session establishment round trip time will be copied.
@@ -658,6 +669,17 @@ MMTAPI uint32_t MMTCALL get_session_content_flags(
 MMTAPI uint32_t MMTCALL get_session_retransmission_count(
     const mmt_session_t *session
 );
+
+
+/**
+ * Returns the number of out of order packets seen by the given session.
+ * @param session the session structure.
+ * @return the number of out of order packets seen by the given session.
+ */
+MMTAPI uint32_t MMTCALL get_session_outoforder_count(
+    const mmt_session_t *session
+);
+
 
 /**
  * Get the next session of current session

@@ -155,6 +155,9 @@ struct timeval get_session_init_time( const mmt_session_t *session )
 struct timeval get_session_last_activity_time( const mmt_session_t *session )
 { return session->s_last_activity_time; }
 
+struct timeval get_session_last_data_packet_time_by_direction( const mmt_session_t *session ,uint8_t direction)
+{ return session->s_last_data_packet_time[direction]; }
+
 struct timeval get_session_rtt( const mmt_session_t *session )
 { return session->rtt; }
 
@@ -169,6 +172,9 @@ uint32_t get_session_content_flags( const mmt_session_t *session )
 
 uint32_t get_session_retransmission_count( const mmt_session_t *session )
 { return session->tcp_retransmissions; }
+
+uint32_t get_session_outoforder_count( const mmt_session_t *session )
+{ return session->tcp_outoforders; }
 
 const mmt_session_t * get_session_next( const mmt_session_t *session )
 {   
