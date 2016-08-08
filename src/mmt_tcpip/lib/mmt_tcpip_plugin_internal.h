@@ -307,8 +307,10 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         ipacket->session->data_byte_volume += packet->payload_packet_len;
         ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction]++;
         ipacket->session->data_byte_volume_direction[ipacket->session->last_packet_direction] += packet->payload_packet_len;
-        ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_sec = ipacket->p_hdr->ts.tv_sec;
-        ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_usec = ipacket->p_hdr->ts.tv_usec; 
+        if((ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)){
+            ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_sec = ipacket->p_hdr->ts.tv_sec;
+            ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_usec = ipacket->p_hdr->ts.tv_usec; 
+        }
     }
 }
 
