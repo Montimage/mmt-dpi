@@ -311,6 +311,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
             ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_sec = ipacket->p_hdr->ts.tv_sec;
             ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_usec = ipacket->p_hdr->ts.tv_usec; 
         }
+        // debug("[DIRECTION] packet: %lu,%u\n",ipacket->packet_id,ipacket->session->last_packet_direction);
     }
 }
 

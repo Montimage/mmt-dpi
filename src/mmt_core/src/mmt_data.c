@@ -209,6 +209,17 @@ const proto_hierarchy_t * get_session_proto_path_direction(const mmt_session_t *
     
 }
 
+uint8_t get_session_last_packet_direction( const mmt_session_t *session )
+{ 
+    return session->last_packet_direction;
+}
+
+uint8_t get_session_setup_direction( const mmt_session_t *session )
+{ 
+    return session->setup_packet_direction;
+}
+
+
 uint32_t get_protocol_id_at_index(const ipacket_t * ipacket, unsigned index) {
     if (index > PROTO_PATH_SIZE)
         return -1;

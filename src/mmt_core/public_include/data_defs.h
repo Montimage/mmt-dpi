@@ -711,6 +711,27 @@ MMTAPI const proto_hierarchy_t MMTCALL * get_session_proto_path_direction(
     const mmt_session_t *session, int direction
 );
 
+
+/**
+ * Get setup direction of session
+ * @param  session   session
+ * @return           protocol path
+ */
+MMTAPI uint8_t MMTCALL get_session_setup_direction(
+    const mmt_session_t *session
+);
+
+
+/**
+ * Get last packet direction of session
+ * @param  session   session
+ * @return           protocol path
+ */
+MMTAPI uint8_t MMTCALL get_session_last_packet_direction(
+    const mmt_session_t *session
+);
+
+
 //  - - - - - - - - - - - - - - - - - -
 //  A T T R I B U T E   A C C E S S O R S
 //  - - - - - - - - - - - - - - - - - -
