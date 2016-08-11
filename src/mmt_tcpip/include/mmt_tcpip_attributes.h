@@ -126,6 +126,7 @@ extern "C" {
         TCP_SESSION_RETRANSMISSION,
         // TCP_SESSION_OUTOFORDER,
         TCP_PAYLOAD_LEN,
+        TCP_CONN_CLOSED,
         TCP_CONN_ESTABLISHED,
     };
 
@@ -155,6 +156,7 @@ extern "C" {
 #define TCP_SESSION_RETRANSMISSION_ALIAS     "session_retransmission"
 // #define TCP_SESSION_OUTOFORDER_ALIAS     "session_outoforder"
 #define TCP_PAYLOAD_LEN_ALIAS     "payload_len"
+#define TCP_CONN_CLOSED_ALIAS "closed"
 #define TCP_CONN_ESTABLISHED_ALIAS "established"
     //TODO: addition of the tcp options
 

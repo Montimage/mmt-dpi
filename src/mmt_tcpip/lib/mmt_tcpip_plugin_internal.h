@@ -221,6 +221,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         if (tcph->ack != 0 && flow->l4.tcp.seen_fin != 0 && flow->l4.tcp.seen_fin_ack != 0) {
             flow->l4.tcp.seen_close = 1;
             ipacket->session->force_timeout = 1;
+            fire_attribute_event(ipacket, PROTO_TCP, TCP_CONN_CLOSED, index, (void *) &seen);
         }
         if (tcph->fin != 0 && tcph->ack != 0 && flow->l4.tcp.seen_fin != 0) {
             flow->l4.tcp.seen_fin_ack = 1;
