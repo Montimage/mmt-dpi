@@ -120,6 +120,8 @@ struct mmt_session_struct {
     struct timeval s_init_time;              /**< indicates the time when the session was first detected. */
     struct timeval s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
 
+    struct timeval s_last_data_packet_time[2];     /**< indicates the time when the last data packet (packet has payload) on this session was detected in both direction: initiator <-> remote. */
+
     uint32_t session_timeout_delay;          /**< The inactivity delay after which the session can be considered as expired */
     uint32_t session_timeout_milestone;      /**< The time expressed as seconds since Epoch (1st Jan 1970) when the session will be considered as expired */
 
@@ -147,6 +149,7 @@ struct mmt_session_struct {
     /* tcp sequence number connection tracking and retransmissions counting */
     uint32_t next_tcp_seq_nr[2];
     uint32_t tcp_retransmissions;            /**< number of TCP retransmissions */
+    uint32_t tcp_outoforders;                 /**< number of TCP outoforder */
     struct timeval rtt;                      /**< TCP RTT calculated at connection setup */
 
 #if BYTE_ORDER == LITTLE_ENDIAN

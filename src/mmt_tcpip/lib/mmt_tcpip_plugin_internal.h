@@ -221,6 +221,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         if (tcph->ack != 0 && flow->l4.tcp.seen_fin != 0 && flow->l4.tcp.seen_fin_ack != 0) {
             flow->l4.tcp.seen_close = 1;
             ipacket->session->force_timeout = 1;
+            fire_attribute_event(ipacket, PROTO_TCP, TCP_CONN_CLOSED, index, (void *) &seen);
         }
         if (tcph->fin != 0 && tcph->ack != 0 && flow->l4.tcp.seen_fin != 0) {
             flow->l4.tcp.seen_fin_ack = 1;
@@ -260,6 +261,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
                      ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction])) >
                     0 && (uint32_t) ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] > 0) {
                 packet->tcp_outoforder = 1;
+                ipacket->session->tcp_outoforders += 1;
             } else {
                 packet->tcp_outoforder = 0;
             }
@@ -306,6 +308,11 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         ipacket->session->data_byte_volume += packet->payload_packet_len;
         ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction]++;
         ipacket->session->data_byte_volume_direction[ipacket->session->last_packet_direction] += packet->payload_packet_len;
+        if((ipacket->internal_packet->iph==NULL)||(ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)){
+            ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_sec = ipacket->p_hdr->ts.tv_sec;
+            ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_usec = ipacket->p_hdr->ts.tv_usec; 
+        }
+        // debug("[DIRECTION] packet: %lu,%u\n",ipacket->packet_id,ipacket->session->last_packet_direction);
     }
 }
 

@@ -3,6 +3,7 @@ RELEASE NOTES
 ## Pre-Release version 1.6.4.0
 Roadmap
 - Add API function to unregister a protocol
+- Add firing event when TCP session closed
 - Extract DNS packets
 - Updated ftp extraction functions - easy for probe to use
 - Reconstruct HTTP packets
