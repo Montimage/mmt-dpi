@@ -156,6 +156,11 @@ int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     if(ipacket->internal_packet->payload_packet_len){
         // Check padding packet
+        if(ipacket->internal_packet->iph==NULL){
+            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
+            return 1;
+        }
+        
         if((ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)){
             *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
             return 1;
