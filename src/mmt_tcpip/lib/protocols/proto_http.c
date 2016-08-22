@@ -204,7 +204,7 @@ uint16_t http_request_url_offset(ipacket_t * ipacket) {
  * Initializes HTTP parser structure to be associated to the HTTP session data
  **/
 void http_internal_session_data_init(ipacket_t * ipacket, unsigned index) {
-    debug("[PROTO_HTTP-]> http_internal_session_data_init : %lu",ipacket->packet_id);
+    debug("[PROTO_HTTP-]> http_internal_session_data_init : %lu session %lu",ipacket->packet_id,ipacket->session->session_id);
     void * http_session_data = (void *) init_http_parser();
     ipacket->session->session_data[index] = http_session_data;
 }
@@ -267,7 +267,7 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
       } else if (nparsed != packet->payload_packet_len) {
         // Handle error. Usually just close the connection.
         //TODO: LN uncomment the next line please :p
-        //debug(stdout, "Error while parsing this HTTP message -Error %s\n", http_errno_description(HTTP_PARSER_ERRNO(parser)));
+        debug("[PROTO_HTTP-]> Error while parsing this HTTP message -Error %s\n", http_errno_description(HTTP_PARSER_ERRNO(parser)));
         ipacket->session->session_data[index] = close_http_parser(ipacket->session->session_data[index]);
       }
     }
@@ -280,6 +280,7 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
  **/
 void http_internal_session_data_cleanup(mmt_session_t * session, unsigned index) {
     if (session->session_data[index] != NULL) {
+        debug("[PROTO_HTTP-]> http_internal_session_data_cleanup session %lu",session->session_id);
         session->session_data[index] = close_http_parser(session->session_data[index]);
     }
 }

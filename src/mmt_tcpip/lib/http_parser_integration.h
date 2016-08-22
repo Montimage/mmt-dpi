@@ -69,6 +69,7 @@ inline static void * close_stream_processor(stream_processor_t * sp) {
  * Initializes an HTTP stream parser and returns a pointer to the initialized structure.
  **/
 inline static stream_parser_t * init_http_parser() {
+  printf("[HTTP_PARSER] init_http_parser\n");
   stream_parser_t * parser = (stream_parser_t *) mmt_malloc(sizeof(stream_parser_t));
   http_parser_init(& parser->parser[0], HTTP_BOTH);
   http_parser_init(& parser->parser[1], HTTP_BOTH);
@@ -81,6 +82,7 @@ inline static stream_parser_t * init_http_parser() {
  * Frees an HTTP stream parser structure.
  **/
 inline static void * close_http_parser(stream_parser_t * sp) {
+  printf("[HTTP_PARSER] close_http_parser\n");
   if( sp->parser[0].data ) sp->parser[0].data = close_stream_processor(sp->parser[0].data);
   if( sp->parser[1].data ) sp->parser[1].data = close_stream_processor(sp->parser[1].data);
   mmt_free( sp );
