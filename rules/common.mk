@@ -1,4 +1,4 @@
-VERSION  := 1.6.3.1
+VERSION  := 1.6.4.0
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
 MMT_LIB ?= $(MMT_DPI)/lib
