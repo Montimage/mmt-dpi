@@ -1,7 +1,6 @@
 RELEASE NOTES
 ---
-## Pre-Release version 1.6.4.0
-Roadmap
+## Release version 1.6.4.0
 - Add API function to unregister a protocol
 - Add firing event when TCP session closed
 - Extract DNS packets
