@@ -205,8 +205,10 @@ uint16_t http_request_url_offset(ipacket_t * ipacket) {
  **/
 void http_internal_session_data_init(ipacket_t * ipacket, unsigned index) {
     debug("[PROTO_HTTP-]> http_internal_session_data_init : %lu session %lu",ipacket->packet_id,ipacket->session->session_id);
-    void * http_session_data = (void *) init_http_parser();
-    ipacket->session->session_data[index] = http_session_data;
+    if(ipacket->session->session_data[index] == NULL){
+        void * http_session_data = (void *) init_http_parser();
+        ipacket->session->session_data[index] = http_session_data;
+    }
 }
 
 
