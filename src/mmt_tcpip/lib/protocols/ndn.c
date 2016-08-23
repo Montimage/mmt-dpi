@@ -358,6 +358,18 @@ void ndn_free_session(ndn_session_t *ndn_session){
     if(ndn_session->s_last_activity_time != NULL){
         mmt_free(ndn_session->s_last_activity_time);
     }
+
+    if(ndn_session->last_reported_time != NULL){
+        mmt_free(ndn_session->last_reported_time);
+    }
+
+    if(ndn_session->last_interest_packet_time[0] != NULL){
+        mmt_free(ndn_session->last_interest_packet_time[0]);
+    }
+
+    if(ndn_session->last_interest_packet_time[1] != NULL){
+        mmt_free(ndn_session->last_interest_packet_time[1]);
+    }
     // ndn_free_session(ndn_session->next);
 
     mmt_free(ndn_session);
