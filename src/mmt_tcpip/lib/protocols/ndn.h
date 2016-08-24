@@ -288,15 +288,15 @@ char * ndn_data_content_extraction_payload(char *payload,int payload_len);
  * The tuple of 3 parameter to identify a NDN session
  */
 typedef struct ndn_tuple3_struct{
-	char * src_MAC;
-	char * dst_MAC;
-	char * name;
 	uint8_t packet_type; // The type of packet which we get the tuple3 from 
 	uint32_t ip_src;
 	uint32_t ip_dst;
 	uint16_t port_src;
 	uint16_t port_dst;
 	uint32_t proto_over;
+	char * src_MAC;
+	char * dst_MAC;
+	char * name;
 }ndn_tuple3_t;
 
 /**
@@ -304,11 +304,7 @@ typedef struct ndn_tuple3_struct{
  */
 typedef struct ndn_session_struct{
 	uint64_t session_id;	// Session ID
-	ndn_tuple3_t * tuple3;				/** tuple 3 which identify a NDN session*/
-	struct timeval * s_init_time;              /**< indicates the time when the session was first detected. */
-    struct timeval * s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
-    struct timeval * last_interest_packet_time[2];
-    uint32_t max_responsed_time[2];
+	uint32_t max_responsed_time[2];
     uint32_t min_responsed_time[2];
     uint32_t total_responsed_time[2];
     uint32_t nb_responsed[2];
@@ -320,12 +316,16 @@ typedef struct ndn_session_struct{
     uint64_t nb_data_packet[2];       /**< Number of data packet */
     uint64_t data_volume_data_packet[2];      /**< Total data volume of data packet */
     uint64_t ndn_volume_data_packet[2];      /**< Total length of ndn packet */
-    struct ndn_session_struct *next; 
-    void * user_arg; // User argument pointer
     uint8_t current_direction; // Current direction: 0 - from tuple3->src_MAC to tuple3->dst_MAC ; 1 - otherway
     uint8_t is_expired; // 1 - session expired, 0 - session is not expired
+	ndn_tuple3_t * tuple3;				/** tuple 3 which identify a NDN session*/
+	struct timeval * s_init_time;              /**< indicates the time when the session was first detected. */
+    struct timeval * s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
     struct timeval * last_reported_time;
-    
+    struct timeval * last_interest_packet_time_0;
+    struct timeval * last_interest_packet_time_1;
+    struct ndn_session_struct *next; 
+	void * user_arg; // User argument pointer
 }ndn_session_t;
 
 
@@ -333,10 +333,10 @@ typedef struct ndn_session_struct{
  * NDN protocol context arguments - use to fire event when the protocol needs to cleanup the context
  */
 typedef struct ndn_proto_context_struct{
-	ndn_session_t * dummy_session;
-	ipacket_t * dummy_packet;
 	unsigned proto_index;
 	uint32_t proto_id;
+	ndn_session_t * dummy_session;
+	ipacket_t * dummy_packet;
 }ndn_proto_context_t;
 
 
