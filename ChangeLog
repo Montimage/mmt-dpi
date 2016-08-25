@@ -6,6 +6,7 @@ RELEASE NOTES
 - Extract DNS packets
 - Updated ftp extraction functions - easy for probe to use
 - Reconstruct HTTP packets
+- Fixed some bugs and memory leaks in NDN protocol
 
 
 ## Release version 1.6.3.1
