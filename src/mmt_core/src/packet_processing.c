@@ -1304,6 +1304,10 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
 
     new_handler->session_timer_handler.session_timer_handler_fct = NULL;
     new_handler->session_timer_handler.args = NULL;
+    new_handler->default_session_timed_out = CFG_DEFAULT_SESSION_TIMEOUT;
+    new_handler->long_session_timed_out = CFG_LONG_SESSION_TIMEOUT;
+    new_handler->short_session_timed_out = CFG_SHORT_LIFE_SESSION_TIMEOUT;
+    new_handler->live_session_timed_out = CFG_LIVE_SESSION_TIMEOUT;
 
     //Enable protocol statistics (this is default config)
     enable_protocol_statistics((void *) new_handler);
@@ -1984,6 +1988,46 @@ int unregister_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char 
         return 1;
     }
     return unregister_attribute_handler(mmt_handler, proto_id, attribute_id, handler_fct);
+}
+
+int set_default_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
+    if(mmt_handler==NULL) return 0;
+    if(timedout_value < 0) {
+        fprintf(stderr, "set_default_session_timed_out() - timedout_value cannot be negative\n");
+        return 0;
+    }
+    mmt_handler->default_session_timed_out = timedout_value;
+    return 1;
+}
+
+int set_long_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
+    if(mmt_handler==NULL) return 0;
+    if(timedout_value < 0) {
+        fprintf(stderr, "set_default_session_timed_out() - timedout_value cannot be negative\n");
+        return 0;
+    }
+    mmt_handler->long_session_timed_out = timedout_value;
+    return 1;
+}
+
+int set_short_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
+    if(mmt_handler==NULL) return 0;
+    if(timedout_value < 0) {
+        fprintf(stderr, "set_short_session_timed_out() - timedout_value cannot be negative\n");
+        return 0;
+    }
+    mmt_handler->short_session_timed_out = timedout_value;
+    return 1;
+}
+
+int set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
+    if(mmt_handler==NULL) return 0;
+    if(timedout_value < 0) {
+        fprintf(stderr, "set_live_session_timed_out() - timedout_value cannot be negative\n");
+        return 0;
+    }
+    mmt_handler->live_session_timed_out = timedout_value;
+    return 1;
 }
 
 int unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id, attribute_handler_function handler_fct) {

@@ -383,7 +383,13 @@ struct mmt_handler_struct {
     uint32_t attr_extraction_strategy;
     uint32_t stats_reporting_status;
     mmt_hashmap_t *ip_streams;
-    
+    // General session timedout value
+    uint32_t default_session_timed_out;
+    uint32_t long_session_timed_out;
+    uint32_t short_session_timed_out;
+    uint32_t live_session_timed_out;
+    // Specific session timedout value
+    // uint32_t mmt_http_session_timed_out;
 };
 
 

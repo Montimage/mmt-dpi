@@ -431,6 +431,55 @@ MMTAPI int MMTCALL unregister_attribute_handler_by_name(
 );
 
 /**
+ * Set default timedout session - replace for value of CFG_DEFAULT_SESSION_TIMEDOUT
+ * @param  mmt_handler    handler
+ * @param  timedout_value value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_default_session_timed_out(
+    mmt_handler_t *mmt_handler,
+    uint32_t timedout_value
+);
+
+
+/**
+ * Set default timedout session - replace for value of CFG_DEFAULT_SESSION_TIMEDOUT
+ * @param  mmt_handler    handler
+ * @param  timedout_value value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_long_session_timed_out(
+    mmt_handler_t *mmt_handler,
+    uint32_t timedout_value
+);
+
+/**
+ * Set default timedout session - replace for value of CFG_DEFAULT_SESSION_TIMEDOUT
+ * @param  mmt_handler    handler
+ * @param  timedout_value value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_short_session_timed_out(
+    mmt_handler_t *mmt_handler,
+    uint32_t timedout_value
+);
+
+/**
+ * Set default timedout session - replace for value of CFG_DEFAULT_SESSION_TIMEDOUT
+ * @param  mmt_handler    handler
+ * @param  timedout_value value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_live_session_timed_out(
+    mmt_handler_t *mmt_handler,
+    uint32_t timedout_value
+);
+
+/**
  * A debug function that can be used as a packet handler callback. It will print out the
  * extracted attributes.
  * @param user user argument. It has no impact at all in this function.

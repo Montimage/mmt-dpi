@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+## PRe-release version 1.6.5.0
+- API for set SESSION TIMEDOUT
+
+
 ## Release version 1.6.4.0
 - Add API function to unregister a protocol
 - Add firing event when TCP session closed
