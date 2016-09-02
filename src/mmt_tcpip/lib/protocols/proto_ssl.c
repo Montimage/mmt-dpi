@@ -35,7 +35,7 @@ static void mmt_int_ssl_add_connection(ipacket_t * ipacket, uint32_t protocol) {
         mmt_internal_add_connection(ipacket, protocol, MMT_CORRELATED_PROTOCOL);
     } else {
         mmt_internal_add_connection(ipacket, protocol, MMT_REAL_PROTOCOL);
-        set_session_timeout_delay(ipacket->session, CFG_LONG_SESSION_TIMEOUT);
+        set_session_timeout_delay(ipacket->session, ipacket->mmt_handler->long_session_timed_out);
     }
 }
 

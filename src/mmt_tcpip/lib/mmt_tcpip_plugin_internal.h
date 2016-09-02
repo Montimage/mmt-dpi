@@ -228,11 +228,11 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         }
         if (tcph->fin != 0 && flow->l4.tcp.seen_fin == 0) {
             flow->l4.tcp.seen_fin = 1;
-            set_session_timeout_delay(ipacket->session, CFG_DEFAULT_SESSION_TIMEOUT);
+            set_session_timeout_delay(ipacket->session, ipacket->mmt_handler->default_session_timed_out);
         }
 
         if (tcph->rst) {
-            set_session_timeout_delay(ipacket->session, CFG_SHORT_LIFE_SESSION_TIMEOUT);
+            set_session_timeout_delay(ipacket->session, ipacket->mmt_handler->short_session_timed_out);
         }
 
         if ((ipacket->session->next_tcp_seq_nr[0] == 0 && ipacket->session->next_tcp_seq_nr[1] == 0)
