@@ -392,7 +392,6 @@ const char *get_protocol_stack_name(uint32_t s_id) {
 }
 
 void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
-    // printf("Session expired: %lu\n",timed_out_session->session_id );
     timed_out_session->mmt_handler->active_sessions_count--;
     int i = 0;
 
@@ -476,7 +475,6 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
             while (timed_out_session != NULL) {
                 safe_to_delete_session = timed_out_session;
                 timed_out_session = timed_out_session->next;
-
                 //Call user handler for timed out sessions
                 if (mmt_handler->session_expiry_handler.handler_fct) {
                     mmt_handler->session_expiry_handler.handler_fct(safe_to_delete_session, mmt_handler->session_expiry_handler.args);
@@ -2474,7 +2472,8 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->mmt_handler = mmt_handler;
 
                 // session timeout initialization
-                session->session_timeout_delay = configured_protocol->protocol->session_timeout_delay;
+                // session->session_timeout_delay = configured_protocol->protocol->session_timeout_delay;
+                session->session_timeout_delay = mmt_handler->default_session_timed_out;
                 session->session_timeout_milestone = session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec;
                 if (insert_session_timeout_milestone(mmt_handler, session->session_timeout_milestone, session) == 0) {
                     //If we get here, then there is an out of memory problem! we should deal with
