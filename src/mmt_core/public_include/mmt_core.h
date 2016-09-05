@@ -444,7 +444,7 @@ MMTAPI int MMTCALL set_default_session_timed_out(
 
 
 /**
- * Set default timedout session - replace for value of CFG_DEFAULT_SESSION_TIMEDOUT
+ * Set default timedout session - replace for value of CFG_LONG_SESSION_TIMEDOUT
  * @param  mmt_handler    handler
  * @param  timedout_value value
  * @return                1 if successful
@@ -456,7 +456,7 @@ MMTAPI int MMTCALL set_long_session_timed_out(
 );
 
 /**
- * Set default timedout session - replace for value of CFG_DEFAULT_SESSION_TIMEDOUT
+ * Set default timedout session - replace for value of CFG_SHORT_SESSION_TIMEDOUT
  * @param  mmt_handler    handler
  * @param  timedout_value value
  * @return                1 if successful
@@ -468,7 +468,7 @@ MMTAPI int MMTCALL set_short_session_timed_out(
 );
 
 /**
- * Set default timedout session - replace for value of CFG_DEFAULT_SESSION_TIMEDOUT
+ * Set default timedout session - replace for value of CFG_LIVE_SESSION_TIMEDOUT
  * @param  mmt_handler    handler
  * @param  timedout_value value
  * @return                1 if successful
