@@ -2036,7 +2036,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                (void)sprintf(json_buff1, "attribute:{\"%s.%s\":%02X", proto_name,
+                                (void)sprintf(json_buff1, "{\"%s.%s\":\"%02X", proto_name,
                                         att_name, *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
@@ -2046,7 +2046,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                         }
                         //end attribute
                         if(close_tag==YES)
-                          (void)strcat(json_buff, "},");
+                          (void)strcat(json_buff, "\"},");
                     }
                     break;
                 case MMT_DATA_LAYERID:
