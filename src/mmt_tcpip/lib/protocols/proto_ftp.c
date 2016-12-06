@@ -1072,7 +1072,7 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
                    (memcmp(packet->payload, "211 ", MMT_STATICSTRING_LEN("211 ")) == 0 ||
                     memcmp(packet->payload, "211-", MMT_STATICSTRING_LEN("211-")) == 0)) {
 
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 211reply code\n");
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 211 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_211_CODE;
             current_ftp_code = FTP_211_CODE;
         } else if (!mmt_int_check_possible_ftp_reply((char*)packet->payload, packet->payload_packet_len)) {
@@ -1083,9 +1083,12 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         }
     }
 
-    if ((flow->l4.tcp.ftp_codes_seen & FTP_COMMANDS) != 0 || (flow->l4.tcp.ftp_codes_seen & FTP_CODES) != 0) {
+    if (((flow->l4.tcp.ftp_codes_seen & FTP_COMMANDS) != 0 || (flow->l4.tcp.ftp_codes_seen & FTP_CODES) != 0)&&(
+        packet->tcp && (packet->tcp->dest == htons(21)||packet->tcp->source == htons(21))
+        )) {
 
         MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP detected\n");
+        debug("[PROTO_FTP] search_ftp: FTP detected");
         mmt_int_ftp_add_connection(ipacket);
         return 1;
     }
@@ -1341,6 +1344,7 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
             } else if (ntohs(packet->tcp->dest) > 1024
                        && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
                 MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
+                debug("[PROTO_FTP] mmt_check_ftp: detected FTP data stream (0)");
                 mmt_int_ftp_add_connection(ipacket);
                 return 1;
             }
@@ -1360,6 +1364,7 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
             } else if (ntohs(packet->tcp->dest) > 1024
                        && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
                 MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
+                debug("[PROTO_FTP] mmt_check_ftp: detected FTP data stream (1)");
                 mmt_int_ftp_add_connection(ipacket);
                 return 1;
             }
