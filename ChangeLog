@@ -2,6 +2,7 @@ RELEASE NOTES
 ---
 ## PRe-release version 1.6.5.0
 - API for set SESSION TIMEDOUT
+- Fixed classify SMTP protocol
 
 
 ## Release version 1.6.4.0
