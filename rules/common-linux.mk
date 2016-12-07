@@ -20,8 +20,6 @@ libraries: \
 # CORE
 
 $(SDKLIB)/$(LIBCORE).so: $(SDKLIB)/$(LIBCORE).so.$(VERSION)
-	@echo "[SYMLINK] $(notdir $@)"
-	$(QUIET) ln -sf $(LIBCORE).so.$(VERSION) $@
 
 $(SDKLIB)/$(LIBCORE).so.$(VERSION): $(SDKLIB)/$(LIBCORE).a
 	@echo "[LIBRARY] $(notdir $@)"
@@ -30,8 +28,6 @@ $(SDKLIB)/$(LIBCORE).so.$(VERSION): $(SDKLIB)/$(LIBCORE).a
 # TCP/IP
 
 $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
-	@echo "[SYMLINK] $(notdir $@)"
-	$(QUIET) ln -sf $(LIBTCPIP).so.$(VERSION) $@
 
 $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
 	@echo "[LIBRARY] $(notdir $@)"
@@ -40,8 +36,6 @@ $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
 # FUZZ
 
 $(SDKLIB)/$(LIBFUZZ).so: $(SDKLIB)/$(LIBFUZZ).so.$(VERSION)
-	@echo "[SYMLINK] $(notdir $@)"
-	$(QUIET) ln -sf $(LIBFUZZ).so.$(VERSION) $@
 
 $(SDKLIB)/$(LIBFUZZ).so.$(VERSION): $(SDKLIB)/$(LIBFUZZ).a
 	@echo "[LIBRARY] $(notdir $@)"
@@ -50,8 +44,6 @@ $(SDKLIB)/$(LIBFUZZ).so.$(VERSION): $(SDKLIB)/$(LIBFUZZ).a
 # SECURITY
 
 $(SDKLIB)/$(LIBSECURITY).so: $(SDKLIB)/$(LIBSECURITY).so.$(VERSION)
-	@echo "[SYMLINK] $(notdir $@)"
-	$(QUIET) ln -sf $(LIBSECURITY).so.$(VERSION) $@
 
 $(SDKLIB)/$(LIBSECURITY).so.$(VERSION): $(SDKLIB)/$(LIBSECURITY).a
 	@echo "[LIBRARY] $(notdir $@)"
