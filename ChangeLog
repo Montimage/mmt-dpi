@@ -2,7 +2,9 @@ RELEASE NOTES
 ---
 ## PRe-release version 1.6.5.0
 - API for set SESSION TIMEDOUT
-- Fixed classify SMTP protocol
+- Fix classify SMTP protocol - not done
+- Add GIT_VERSION into mmt_version()
+- Fix symbolic link warning when installing mmt-sdk
 
 
 ## Release version 1.6.4.0
