@@ -289,12 +289,15 @@ void convert_mac_string_to_byte(const char *pszMACAddress, unsigned char** pbyAd
 
 void convert_mac_bytes_to_string(char **pszMACAddress, unsigned char *pbyMacAddressInBytes)
 {
-    (void)sprintf(*pszMACAddress, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", pbyMacAddressInBytes[0] & 0xff,
+    if(pbyMacAddressInBytes != NULL)
+        (void)sprintf(*pszMACAddress, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", pbyMacAddressInBytes[0] & 0xff,
             cSep, pbyMacAddressInBytes[1]& 0xff,
             cSep, pbyMacAddressInBytes[2]& 0xff,
             cSep, pbyMacAddressInBytes[3]& 0xff,
             cSep, pbyMacAddressInBytes[4]& 0xff,
             cSep, pbyMacAddressInBytes[5]& 0xff);
+    else
+        (void)sprintf(*pszMACAddress, "00:00:00:00:00");
 }
 
 void *get_xdata(long type, int size, void *str)
@@ -3237,7 +3240,7 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     int ibuff = 0;
     tuple *list_of_tuples = r->list_of_tuples;
 
-    output = xmalloc(strlen(input) + 1000);
+    output = xmalloc(strlen(input) + 2000);
 
     if (output == NULL) {
         (void)fprintf(stderr, "Error 22x: Out of memory\n");
@@ -3247,9 +3250,12 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     //Copy input to output, replacing the variables with the values recovered below
     // use malloc to allocate output
     // if a value is not available then print an error and return NULL!
+    
+
+    strcpy(output, "/opt/mmt/probe/conf/");
 
     tempi = input;
-    tempo = output;
+    tempo = output+strlen(output);
     *tempo='.';
     tempo++;
     *tempo='/';
@@ -3335,7 +3341,7 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     FILE * pythonDataFile;
     char pythonDataFileName[50];
     rule * rr = NULL;
-    snprintf(pythonDataFileName, 50, "detection_%ld.data", counter_detection);
+    snprintf(pythonDataFileName, 50, "/opt/mmt/probe/conf/detection_%ld.data", counter_detection);
     pythonDataFile = open_file(pythonDataFileName, "w+");
     if(r->root != NULL) rr = r->root;
     else rr = r;
