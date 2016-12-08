@@ -1,4 +1,5 @@
-VERSION  := 1.6.4.0
+VERSION  := 1.6.5.0
+GIT_VERSION := $(shell git log --format="%h" -n 1)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
 MMT_LIB ?= $(MMT_DPI)/lib
@@ -6,11 +7,11 @@ MMT_INC ?= $(MMT_DPI)/include
 MMT_PLUGINS ?= $(MMT_BASE)/plugins
 MMT_EXAMS ?= $(MMT_BASE)/examples
 
-# CFLAGS   := -Wall -g
-# CXXFLAGS := -Wall -g
-
-CFLAGS   := -Wall -DNDEBUG
-CXXFLAGS := -Wall -DNDEBUG
+# CFLAGS   := -Wall -g -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
+# CXXFLAGS := -Wall -g -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
+# CXX 	 := $(CXX) -g
+CFLAGS   := -Wall -DNDEBUG -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
+CXXFLAGS := -Wall -DNDEBUG -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
 
 CP       := cp -R
 RM       := rm -rf

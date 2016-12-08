@@ -36,6 +36,16 @@ int gre_s_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     return 1;
 }
 
+int gre_version_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    struct gre_hdr * grehdr = (struct gre_hdr *) & packet->data[proto_offset];
+
+    *((unsigned short *) extracted_data->data) = grehdr->version;
+    return 1;
+}
+
 int gre_csum_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
@@ -137,6 +147,7 @@ static attribute_metadata_t gre_attributes_metadata[GRE_ATTRIBUTES_NB] = {
     {GRE_C_FLAG, GRE_C_FLAG_ALIAS, MMT_U16_DATA, sizeof (short), 0, SCOPE_PACKET, gre_c_flag_extraction},
     {GRE_K_FLAG, GRE_K_FLAG_ALIAS, MMT_U16_DATA, sizeof (short), 0, SCOPE_PACKET, gre_k_flag_extraction},
     {GRE_S_FLAG, GRE_S_FLAG_ALIAS, MMT_U16_DATA, sizeof (short), 0, SCOPE_PACKET, gre_s_flag_extraction},
+    {GRE_VERSION, GRE_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), 0, SCOPE_PACKET, gre_version_extraction},
     {GRE_PROTOCOL, GRE_PROTOCOL_ALIAS, MMT_U16_DATA, sizeof (short), 2, SCOPE_PACKET, general_byte_to_byte_extraction},
 
     {GRE_CHECKSUM, GRE_CHECKSUM_ALIAS, MMT_U16_DATA, sizeof (short), 4, SCOPE_PACKET, gre_csum_extraction},

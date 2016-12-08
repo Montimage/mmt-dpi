@@ -1083,9 +1083,10 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         }
     }
 
-    if (((flow->l4.tcp.ftp_codes_seen & FTP_COMMANDS) != 0 || (flow->l4.tcp.ftp_codes_seen & FTP_CODES) != 0)&&(
-        packet->tcp && (packet->tcp->dest == htons(21)||packet->tcp->source == htons(21))
-        )) {
+    if (((flow->l4.tcp.ftp_codes_seen & FTP_COMMANDS) != 0 || (flow->l4.tcp.ftp_codes_seen & FTP_CODES) != 0)
+        // Excluded SMTP command
+        &&(packet->tcp && (packet->tcp->dest != htons(25) && packet->tcp->source != htons(25)))
+        ) {
 
         MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP detected\n");
         debug("[PROTO_FTP] search_ftp: FTP detected");
@@ -1392,8 +1393,7 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
 
 
         if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");
-
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");       
             return 4;
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);

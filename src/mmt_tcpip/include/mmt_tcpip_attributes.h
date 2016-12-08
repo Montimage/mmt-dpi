@@ -257,6 +257,7 @@ extern "C" {
         GRE_C_FLAG,
         GRE_K_FLAG,
         GRE_S_FLAG,
+        GRE_VERSION,
         GRE_OUT_SEQENCE, //TODO
         GRE_IN_SEQENCE, //TODO
         GRE_SEQENCE_GAP, //TODO
@@ -273,6 +274,7 @@ extern "C" {
 #define GRE_C_FLAG_ALIAS "cflag"
 #define GRE_K_FLAG_ALIAS "kflag"
 #define GRE_S_FLAG_ALIAS "sflag"
+#define GRE_VERSION_ALIAS "version"    
 #define GRE_OUT_SEQENCE_ALIAS "seq_out"
 #define GRE_IN_SEQENCE_ALIAS "seq_in"
 #define GRE_SEQENCE_GAP_ALIAS "seq_gap"
