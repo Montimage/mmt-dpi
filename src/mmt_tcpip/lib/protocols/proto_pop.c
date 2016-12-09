@@ -231,17 +231,17 @@ int mmt_check_pop(ipacket_t * ipacket, unsigned index) {
                     mmt_int_mail_pop_add_connection(ipacket);
                     return 1;
                 } else {
-                    return 1;
+                    return 4;
                 }
             } else {
-                return 1;
+                return 4;
             }
 
         } else {
             // first part of a split packet
             MMT_LOG(PROTO_POP, MMT_LOG_DEBUG,
                     "mail_pop command without line ending -> skip\n");
-            return 1;
+            return 4;
         }
 
 

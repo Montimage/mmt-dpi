@@ -95,11 +95,11 @@ int mmt_check_telnet(ipacket_t * ipacket, unsigned index) {
             }
             flow->l4.tcp.telnet_stage++;
             MMT_LOG(PROTO_TELNET, MMT_LOG_DEBUG, "telnet stage %u.\n", flow->l4.tcp.telnet_stage);
-            return 1;
+            return 4;
         }
 
         if ((ipacket->session->data_packet_count < 12 && flow->l4.tcp.telnet_stage > 0) || ipacket->session->data_packet_count < 6) {
-            return 1;
+            return 4;
         }
 
         MMT_LOG(PROTO_TELNET, MMT_LOG_DEBUG, "telnet excluded.\n");

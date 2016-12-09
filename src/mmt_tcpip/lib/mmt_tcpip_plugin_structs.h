@@ -428,6 +428,9 @@ __attribute__((__packed__))
 ;
 
 typedef struct mmt_internal_tcpip_session_struct {
+    // uint16_t packet_counter;             // can be 0 - 65000
+    // uint16_t packet_direction_counter[2];
+    // uint16_t byte_counter[2];
     uint16_t detected_protocol_stack[PROTOCOL_HISTORY_SIZE];
 #if PROTOCOL_HISTORY_SIZE > 1
 #if PROTOCOL_HISTORY_SIZE > 5
@@ -528,6 +531,9 @@ typedef struct mmt_internal_tcpip_session_struct {
   uint8_t redis_s2d_first_char, redis_d2s_first_char;
   uint32_t redis_packet_count:3;
 #endif
+// #ifdef PROTO_FTP_CONTROL
+//   uint32_t ftp_control_stage:2;
+// #endif
 } mmt_internal_tcpip_session_t;
 
 typedef struct mmt_classify_me_function_element_struct {
@@ -638,7 +644,7 @@ struct mmt_tcpip_internal_packet_struct {
     //TODO: BW temporary solution waiting the TCP segmentation 
     uint32_t tcp_outoforder;
     
-    //uint8_t last_packet_direction:1;
+    // uint8_t packet_direction:1;
     uint64_t packet_id;
 
 };

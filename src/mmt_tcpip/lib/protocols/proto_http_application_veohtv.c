@@ -147,7 +147,7 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
                     mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;
                 }
-                return 1;
+                return 4;
             }
         } 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);

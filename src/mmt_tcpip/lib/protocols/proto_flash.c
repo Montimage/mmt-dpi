@@ -111,7 +111,7 @@ int mmt_check_flash(ipacket_t * ipacket, unsigned index) {
                 MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
                         "FLASH pass 1: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
                         flow->l4.tcp.flash_bytes);
-                return 1;
+                return 4;
             } else if (packet->tcp->psh != 0 && flow->l4.tcp.flash_bytes == 1537) {
                 MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
                         "FLASH hit: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
@@ -133,7 +133,7 @@ int mmt_check_flash(ipacket_t * ipacket, unsigned index) {
                 MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
                         "FLASH pass 2: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
                         flow->l4.tcp.flash_bytes);
-                return 1;
+                return 4;
             }
         }
 

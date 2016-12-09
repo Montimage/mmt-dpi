@@ -59,7 +59,7 @@ int mmt_check_ssh(ipacket_t * ipacket, unsigned index) {
                     && memcmp(packet->payload, "SSH-", 4) == 0) {
                 MMT_LOG(PROTO_SSH, MMT_LOG_DEBUG, "ssh stage 0 passed\n");
                 flow->l4.tcp.ssh_stage = 1 + ipacket->session->last_packet_direction;
-                return 1;
+                return 4;
             }
         } else if (flow->l4.tcp.ssh_stage == (2 - ipacket->session->last_packet_direction)) {
             if (packet->payload_packet_len > 7 && packet->payload_packet_len < 100

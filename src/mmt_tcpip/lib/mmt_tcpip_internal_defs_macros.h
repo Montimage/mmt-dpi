@@ -105,7 +105,7 @@ extern "C" {
 }
 
 #define MMT_BITMASK_COMPARE(a,b) (((a).bitmask[0]) & ((b).bitmask[0]) || ((a).bitmask[1]) & ((b).bitmask[1]) || ((a).bitmask[2]) & ((b).bitmask[2]) || ((a).bitmask[3]) & ((b).bitmask[3]) || ((a).bitmask[4]) & ((b).bitmask[4]) || ((a).bitmask[5]) & ((b).bitmask[5]) || ((a).bitmask[6]) & ((b).bitmask[6]))
-
+#define MMT_COMPARE_IPV6_ADDRESSES(x,y) ((((uint64_t *)(x))[0]) < (((uint64_t *)(y))[0]) || ( (((uint64_t *)(x))[0]) == (((uint64_t *)(y))[0]) && (((uint64_t *)(x))[1]) < (((uint64_t *)(y))[1])) )
 #define MMT_BITMASK_MATCH(a,b) (((a).bitmask[0]) == ((b).bitmask[0]) && ((a).bitmask[1]) == ((b).bitmask[1]) && ((a).bitmask[2]) == ((b).bitmask[2]) && ((a).bitmask[3]) == ((b).bitmask[3]) && ((a).bitmask[4]) == ((b).bitmask[4]) && ((a).bitmask[5]) == ((b).bitmask[5]) && ((a).bitmask[6]) == ((b).bitmask[6]))
 
     // all protocols in b are also in a

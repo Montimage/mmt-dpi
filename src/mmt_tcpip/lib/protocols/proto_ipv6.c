@@ -8,8 +8,6 @@
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 /** macro to compare 2 IPv6 addresses with each other to identify the "smaller" IPv6 address  */
-#define MMT_COMPARE_IPV6_ADDRESSES(x,y)  \
-  ((((uint64_t *)(x))[0]) < (((uint64_t *)(y))[0]) || ( (((uint64_t *)(x))[0]) == (((uint64_t *)(y))[0]) && (((uint64_t *)(x))[1]) < (((uint64_t *)(y))[1])) )
 
 int is_extention_header(uint8_t next_header) {
     switch (next_header) {

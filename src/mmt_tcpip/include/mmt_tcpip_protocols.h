@@ -129,6 +129,7 @@ extern "C" {
 #define PROTO_FOX 115
 #define PROTO_FREE 116
 #define PROTO_FTP 117
+// #define PROTO_FTP_CONTROL 117	
 #define PROTO_GADUGADU 118
 #define PROTO_GAMEFAQS 119
 #define PROTO_GAMESPOT 120
@@ -1277,6 +1278,8 @@ extern "C" {
 #define PROTO_ORACLE_ALIAS "oracle"
 #define PROTO_REDIS_ALIAS "redis"
 #define PROTO_VMWARE_ALIAS "vmware"
+// #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
+// #define PROTO_FTP_DATA_ALIAS "ftp_data"
 
 #define PROTO_CLASS_UNKOWN         0
 #define PROTO_CLASS_WEB            1

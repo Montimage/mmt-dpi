@@ -331,33 +331,33 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
             if (packet->payload_packet_len == 64 && ntohs(get_u16(packet->payload, 0)) == 0x010b) {
                 flow->l4.udp.aimini_stage = 1;
                 MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 1.\n");
-                return 1;
+                return 4;
             }
             if (packet->payload_packet_len == 136
                     && (ntohs(get_u16(packet->payload, 0)) == 0x01c9 || ntohs(get_u16(packet->payload, 0)) == 0x0165)) {
                 flow->l4.udp.aimini_stage = 4;
                 MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 4.\n");
-                return 1;
+                return 4;
             }
             if (packet->payload_packet_len == 88 && ntohs(get_u16(packet->payload, 0)) == 0x0101) {
                 flow->l4.udp.aimini_stage = 7;
                 MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 7.\n");
-                return 1;
+                return 4;
             }
             if (packet->payload_packet_len == 104 && ntohs(get_u16(packet->payload, 0)) == 0x0102) {
                 flow->l4.udp.aimini_stage = 10;
                 MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 10.\n");
-                return 1;
+                return 4;
             }
             if (packet->payload_packet_len == 32 && ntohs(get_u16(packet->payload, 0)) == 0x01ca) {
                 flow->l4.udp.aimini_stage = 13;
                 MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 13.\n");
-                return 1;
+                return 4;
             }
             if (packet->payload_packet_len == 16 && ntohs(get_u16(packet->payload, 0)) == 0x010c) {
                 flow->l4.udp.aimini_stage = 16;
                 MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 16.\n");
-                return 1;
+                return 4;
             }
         }
         /* first packet chronology: (len, value): (64, 0x010b), (>100, 0x0115), (16, 0x010c || 64, 0x010b || 88, 0x0115),
@@ -367,7 +367,7 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
                 && ntohs(get_u16(packet->payload, 0)) == 0x0115) {
             flow->l4.udp.aimini_stage = 2;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 2.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 2 &&
                 ((packet->payload_packet_len == 16 && get_u16(packet->payload, 0) == htons(0x010c)) ||
@@ -375,7 +375,7 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
                 (packet->payload_packet_len == 88 && get_u16(packet->payload, 0) == ntohs(0x0115)))) {
             flow->l4.udp.aimini_stage = 3;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 3.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 3
                 && ((packet->payload_packet_len == 16 && ntohs(get_u16(packet->payload, 0)) == 0x010c)
@@ -400,7 +400,7 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
                 || ntohs(get_u16(packet->payload, 0)) == 0x0165))) {
             flow->l4.udp.aimini_stage = 6;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 6.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 6 && ((packet->payload_packet_len == 136
                 && ((ntohs(get_u16(packet->payload, 0)) == 0x0165)
@@ -419,13 +419,13 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
                 && ntohs(get_u16(packet->payload, 0)) == 0x0101) {
             flow->l4.udp.aimini_stage = 8;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 8.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 8
                 && (packet->payload_packet_len == 88 && ntohs(get_u16(packet->payload, 0)) == 0x0101)) {
             flow->l4.udp.aimini_stage = 9;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 9.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 9
                 && (packet->payload_packet_len == 88 && ntohs(get_u16(packet->payload, 0)) == 0x0101)) {
@@ -441,13 +441,13 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
                 && ntohs(get_u16(packet->payload, 0)) == 0x0102) {
             flow->l4.udp.aimini_stage = 11;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 11.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 11
                 && (packet->payload_packet_len == 104 && ntohs(get_u16(packet->payload, 0)) == 0x0102)) {
             flow->l4.udp.aimini_stage = 12;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 12.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 12
                 && ((packet->payload_packet_len == 104 && ntohs(get_u16(packet->payload, 0)) == 0x0102)
@@ -464,14 +464,14 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
                 && ntohs(get_u16(packet->payload, 0)) == 0x01ca) {
             flow->l4.udp.aimini_stage = 14;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 14.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 14
                 && ((packet->payload_packet_len == 32 && ntohs(get_u16(packet->payload, 0)) == 0x01ca)
                 || (packet->payload_packet_len == 136 && ntohs(get_u16(packet->payload, 0)) == 0x0166))) {
             flow->l4.udp.aimini_stage = 15;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 15.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 15
                 && ((packet->payload_packet_len == 136 && ntohs(get_u16(packet->payload, 0)) == 0x0166)
@@ -488,13 +488,13 @@ int mmt_check_aimini_udp(ipacket_t * ipacket, unsigned index) {
                 && ntohs(get_u16(packet->payload, 0)) == 0x010c) {
             flow->l4.udp.aimini_stage = 17;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 17.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 17
                 && (packet->payload_packet_len == 16 && ntohs(get_u16(packet->payload, 0)) == 0x010c)) {
             flow->l4.udp.aimini_stage = 18;
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "stage = 18.\n");
-            return 1;
+            return 4;
         }
         if (flow->l4.udp.aimini_stage == 18
                 && (packet->payload_packet_len == 16 && ntohs(get_u16(packet->payload, 0)) == 0x010c)) {

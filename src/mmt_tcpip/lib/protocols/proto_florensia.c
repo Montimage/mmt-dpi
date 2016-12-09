@@ -118,19 +118,19 @@ int mmt_check_florensia_tcp(ipacket_t * ipacket, unsigned index) {
             }
             MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
-            return 1;
+            return 4;
         }
         if (packet->payload_packet_len > 8 && get_l16(packet->payload, 0) == packet->payload_packet_len
                 && get_u16(packet->payload, 2) == htons(0x0201) && get_u32(packet->payload, 4) == htonl(0xFFFFFFFF)) {
             MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
-            return 1;
+            return 4;
         }
         if (packet->payload_packet_len == 406 && get_l16(packet->payload, 0) == packet->payload_packet_len
                 && packet->payload[2] == 0x63) {
             MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
-            return 1;
+            return 4;
         }
         if (packet->payload_packet_len == 12 && get_l16(packet->payload, 0) == packet->payload_packet_len
                 && get_u16(packet->payload, 2) == htons(0x0301)) {
@@ -141,7 +141,7 @@ int mmt_check_florensia_tcp(ipacket_t * ipacket, unsigned index) {
             }
             MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
-            return 1;
+            return 4;
         }
 
         if (flow->florensia_stage == 1) {
@@ -160,7 +160,7 @@ int mmt_check_florensia_tcp(ipacket_t * ipacket, unsigned index) {
             }
             if (ipacket->session->data_packet_count < 10 && get_l16(packet->payload, 0) == packet->payload_packet_len) {
                 MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia.\n");
-                return 1;
+                return 4;
             }
         }
 
@@ -185,7 +185,7 @@ int mmt_check_florensia_udp(ipacket_t * ipacket, unsigned index) {
                 && get_u16(packet->payload, 0) == ntohs(0x0503) && get_u32(packet->payload, 2) == htonl(0xFFFF0000)) {
             MMT_LOG(PROTO_FLORENSIA, MMT_LOG_DEBUG, "maybe florensia -> stage is set to 1.\n");
             flow->florensia_stage = 1;
-            return 1;
+            return 4;
         }
         if (flow->florensia_stage == 1 && packet->payload_packet_len == 8
                 && get_u16(packet->payload, 0) == ntohs(0x0500) && get_u16(packet->payload, 4) == htons(0x4191)) {

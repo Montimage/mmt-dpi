@@ -9,7 +9,7 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-static void ntop_int_teamview_add_connection(ipacket_t * ipacket) {
+static void mmt_int_teamview_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_TEAMVIEWER, MMT_REAL_PROTOCOL);
 }
 
@@ -25,7 +25,7 @@ void mmt_classify_me_teamview(ipacket_t * ipacket, unsigned index) {
                 flow->l4.udp.teamviewer_stage++;
                 if (flow->l4.udp.teamviewer_stage == 4 ||
                         packet->udp->dest == ntohs(5938) || packet->udp->source == ntohs(5938)) {
-                    ntop_int_teamview_add_connection(ipacket);
+                    mmt_int_teamview_add_connection(ipacket);
                 }
                 return;
             }
@@ -36,14 +36,14 @@ void mmt_classify_me_teamview(ipacket_t * ipacket, unsigned index) {
                 flow->l4.udp.teamviewer_stage++;
                 if (flow->l4.udp.teamviewer_stage == 4 ||
                         packet->tcp->dest == ntohs(5938) || packet->tcp->source == ntohs(5938)) {
-                    ntop_int_teamview_add_connection(ipacket);
+                    mmt_int_teamview_add_connection(ipacket);
                 }
                 return;
             } else if (flow->l4.udp.teamviewer_stage) {
                 if (packet->payload[0] == 0x11 && packet->payload[1] == 0x30) {
                     flow->l4.udp.teamviewer_stage++;
                     if (flow->l4.udp.teamviewer_stage == 4)
-                        ntop_int_teamview_add_connection(ipacket);
+                        mmt_int_teamview_add_connection(ipacket);
                 }
                 return;
             }
@@ -66,16 +66,18 @@ int mmt_check_teamviewer_tcp(ipacket_t * ipacket, unsigned index) {
                 flow->l4.udp.teamviewer_stage++;
                 if (flow->l4.udp.teamviewer_stage == 4 ||
                         packet->tcp->dest == ntohs(5938) || packet->tcp->source == ntohs(5938)) {
-                    ntop_int_teamview_add_connection(ipacket);
+                    mmt_int_teamview_add_connection(ipacket);
+                    return 1;
                 }
-                return 1;
+                return 4;
             } else if (flow->l4.udp.teamviewer_stage) {
                 if (packet->payload[0] == 0x11 && packet->payload[1] == 0x30) {
                     flow->l4.udp.teamviewer_stage++;
                     if (flow->l4.udp.teamviewer_stage == 4)
-                        ntop_int_teamview_add_connection(ipacket);
+                        mmt_int_teamview_add_connection(ipacket);
+                    return 1;
                 }
-                return 1;
+                return 4;
             }
         }
 
@@ -98,9 +100,10 @@ int mmt_check_teamviewer_udp(ipacket_t * ipacket, unsigned index) {
                 flow->l4.udp.teamviewer_stage++;
                 if (flow->l4.udp.teamviewer_stage == 4 ||
                         packet->udp->dest == ntohs(5938) || packet->udp->source == ntohs(5938)) {
-                    ntop_int_teamview_add_connection(ipacket);
+                    mmt_int_teamview_add_connection(ipacket);
+                    return 1;
                 }
-                return 1;
+                return 4;
             }
         }
 

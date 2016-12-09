@@ -721,6 +721,16 @@ int init_tcpip_plugin() {
         fprintf(stderr, "Error initializing protocol proto_ftp\n Exiting\n");
         exit(0);
     }
+
+    // if (!init_proto_ftp_control_struct()) {
+    //     fprintf(stderr, "Error initializing protocol proto_ftp_control\n Exiting\n");
+    //     exit(0);
+    // }
+
+    // if (!init_proto_ftp_data_struct()) {
+    //     fprintf(stderr, "Error initializing protocol proto_ftp_data\n Exiting\n");
+    //     exit(0);
+    // }
     /////////////////////////////////////////////
     /////////// INITILIZING PROTO_NDN //////////////////
     if (!init_proto_ndn_struct()) {
@@ -3814,6 +3824,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ssl, 20);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_stun_tcp, 30);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_stun_udp, 30);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rtp_tcp, 50); //Check STUN before RTP
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_rtp_udp, 50); //Check STUN before RTP
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rdp, 50);
@@ -3843,7 +3854,6 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_pop, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_imap, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_smtp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp, 50);
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 50);
     // register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn_http, 50);
@@ -3968,6 +3978,8 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_oracle, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_redis, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_vmware, 50);
+    // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp_control, 50);
+    // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp_data, 50);
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////////END OF INTER-PROTOCOL CLASSIFICATIONS ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////

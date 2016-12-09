@@ -56,7 +56,7 @@ int mmt_check_steam(ipacket_t * ipacket, unsigned index) {
                     && ntohs(packet->tcp->dest) >= 27030 && ntohs(packet->tcp->dest) <= 27040) {
                 flow->l4.tcp.steam_stage = 1 + ipacket->session->last_packet_direction;
                 MMT_LOG(PROTO_STEAM, MMT_LOG_DEBUG, "steam stage 1\n");
-                return 1;
+                return 4;
             }
 
         } else if (flow->l4.tcp.steam_stage == 2 - ipacket->session->last_packet_direction) {

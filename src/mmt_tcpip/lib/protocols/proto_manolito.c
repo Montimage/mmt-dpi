@@ -167,7 +167,7 @@ int mmt_check_manolito_tcp(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         if (search_manolito_tcp(ipacket) != 0) {
-            return 1;
+            return 4;
         }
 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MANOLITO);
@@ -231,7 +231,7 @@ int mmt_check_manolito_udp(ipacket_t * ipacket, unsigned index) {
                 mmt_int_manolito_add_connection(ipacket);
                 return 1;
             } else if (ipacket->session->data_packet_count < 7) {
-                return 0;
+                return 4;
             }
         }
 

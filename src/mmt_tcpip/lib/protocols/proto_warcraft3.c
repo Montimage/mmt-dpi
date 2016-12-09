@@ -87,7 +87,7 @@ int mmt_check_warcraft3(ipacket_t * ipacket, unsigned index) {
 
         if (ipacket->session->data_packet_count == 1 && packet->payload_packet_len == 1 && packet->payload[0] == 0x01) {
             MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "maybe warcraft3: packet_len == 1\n");
-            return 1;
+            return 4;
         } else if (packet->payload_packet_len >= 4 && (packet->payload[0] == 0xf7 || packet->payload[0] == 0xff)) {
             MMT_LOG(PROTO_WARCRAFT3, MMT_LOG_DEBUG, "packet_payload begins with 0xf7 or 0xff\n");
             l = packet->payload[2] + (packet->payload[3] << 8); // similar to ntohs
@@ -118,7 +118,7 @@ int mmt_check_warcraft3(ipacket_t * ipacket, unsigned index) {
                     mmt_int_warcraft3_add_connection(ipacket);
                     return 1;
                 }
-                return 1;
+                return 4;
             }
         }
 

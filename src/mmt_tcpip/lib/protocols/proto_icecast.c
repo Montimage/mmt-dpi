@@ -102,7 +102,7 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
 
             if (packet->parsed_unix_lines < 1 && !flow->l4.tcp.icecast_stage) {
                 flow->l4.tcp.icecast_stage = 1;
-                return 1;
+                return 4;
             }
         }
         if (MMT_FLOW_PROTOCOL_EXCLUDED(flow, PROTO_HTTP)) {
@@ -110,7 +110,7 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
         }
 
         if (ipacket->session->last_packet_direction == ipacket->session->setup_packet_direction && ipacket->session->data_packet_count < 10) {
-            return 1;
+            return 4;
         }
 
         if (ipacket->session->last_packet_direction != ipacket->session->setup_packet_direction) {

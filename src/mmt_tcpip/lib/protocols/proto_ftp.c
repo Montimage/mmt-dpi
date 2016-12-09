@@ -31,7 +31,7 @@ char * str_replace_all_char(char *str, int c1, int c2) {
     return new_str;
 }
 
-
+ 
 //////////// FTP - FUNCTION    /////////////////////////
 
 /**
@@ -1324,8 +1324,9 @@ void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
 int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
+            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
-            && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+            ) {
 
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -2596,7 +2597,7 @@ void * setup_ftp_context(void * proto_context, void * args) {
 
 
 void mmt_init_classify_me_ftp() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION;
+    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION  ;
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FTP);
     MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_FTP);

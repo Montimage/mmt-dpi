@@ -128,7 +128,7 @@ int mmt_check_battlefield(ipacket_t * ipacket, unsigned index) {
                         "battlefield : save dst connection packet detected\n");
                 dst->battlefield_ts = packet->tick_timestamp;
             }
-            return 1;
+            return 4;
         }
 
         if (MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_BATTLEFIELD)) {
@@ -136,7 +136,7 @@ int mmt_check_battlefield(ipacket_t * ipacket, unsigned index) {
                 if (packet->payload_packet_len > 8 && get_u16(packet->payload, 0) == htons(0xfefd)) {
                     flow->l4.udp.battlefield_msg_id = get_u32(packet->payload, 2);
                     flow->l4.udp.battlefield_stage = 1 + ipacket->session->last_packet_direction;
-                    return 1;
+                    return 4;
                 }
             } else if (flow->l4.udp.battlefield_stage == 2 - ipacket->session->last_packet_direction) {
                 if (packet->payload_packet_len > 8 && get_u32(packet->payload, 0) == flow->l4.udp.battlefield_msg_id) {
@@ -152,7 +152,7 @@ int mmt_check_battlefield(ipacket_t * ipacket, unsigned index) {
             if (packet->payload_packet_len == 46 && packet->payload[2] == 0 && packet->payload[4] == 0
                     && get_u32(packet->payload, 7) == htonl(0x98001100)) {
                 flow->l4.udp.battlefield_stage = 3 + ipacket->session->last_packet_direction;
-                return 1;
+                return 4;
             }
         } else if (flow->l4.udp.battlefield_stage == 4 - ipacket->session->last_packet_direction) {
             if (packet->payload_packet_len == 7

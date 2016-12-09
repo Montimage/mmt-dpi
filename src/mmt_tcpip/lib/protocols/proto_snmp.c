@@ -154,7 +154,7 @@ int mmt_check_snmp(ipacket_t * ipacket, unsigned index) {
                     flow->l4.udp.snmp_msg_id = ntohs(get_u16(packet->payload, offset + 15));
                 }
                 flow->l4.udp.snmp_stage = 1 + ipacket->session->last_packet_direction;
-                return 1;
+                return 4;
             } else if (flow->l4.udp.snmp_stage == 1 + ipacket->session->last_packet_direction) {
                 if (packet->payload[offset + 2] == 0) {
                     if (flow->l4.udp.snmp_msg_id != get_u8(packet->payload, offset + 15) - 1) {

@@ -161,6 +161,9 @@ struct mmt_session_struct {
     uint8_t setup_packet_direction : 1;      /**< the direction of the first packet of this session (Lower_toHigher or Higher_to_Lower) */
     uint8_t last_packet_direction : 1;       /**< the direction of the current packet Lower_toHigher or Higher_to_Lower.
                                                   This is used as indicator to track direction change in bidirectional sessions */
+//     uint8_t packet_direction:1,init_finished:1;
+// #elif BYTE_ORDER == BIG_ENDIAN
+//     uint8_t last_packet_direction : 1, setup_packet_direction : 1, type : 2, status : 4,packet_direction:1,init_finished:1;
 #elif BYTE_ORDER == BIG_ENDIAN
     uint8_t last_packet_direction : 1, setup_packet_direction : 1, type : 2, status : 4;
 #else
@@ -501,6 +504,28 @@ void print_protocol_stats(FILE * f, protocol_instance_t * proto);
  * @param args pointer to the user argument. It will be passed to the callback function.
  */
 void iterate_through_protocol_stacks(generic_mapspace_iteration_callback fct, void * args);
+
+
+  /** Checks when the @p payload starts with the string literal @p str.
+   * When the string is larger than the payload, check fails.
+   * @return non-zero if check succeeded
+   */
+int mmt_match_prefix(const u_int8_t *payload, size_t payload_len, const char *str, size_t str_len);
+  /* version of mmt_match_prefix with string literal */
+#define mmt_match_strprefix(payload, payload_len, str) mmt_match_prefix((payload), (payload_len), (str), (sizeof(str)-1))
+
+  /**
+   * Search the first occurrence of substring -find- in -s-
+   * The search is limited to the first -slen- characters of the string
+   *
+   * @par    s     = string to parse
+   * @par    find  = string to match with -s-
+   * @par    slen  = max length to match between -s- and -find-
+   * @return a pointer to the beginning of the located substring;
+   *         NULL if the substring is not found
+   *
+   */
+  char* mmt_strnstr(const char *s, const char *find, size_t slen);
 
 #ifdef __cplusplus
 }

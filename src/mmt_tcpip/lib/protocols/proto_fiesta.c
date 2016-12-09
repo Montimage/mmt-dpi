@@ -128,7 +128,7 @@ int mmt_check_fiesta(ipacket_t * ipacket, unsigned index) {
 
 maybe_fiesta:
         MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "Stage is set to %d.\n", flow->l4.tcp.fiesta_stage);
-        return 1;
+        return 4;
 
 add_fiesta:
         MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "detected fiesta.\n");
