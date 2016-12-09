@@ -161,9 +161,11 @@ struct mmt_session_struct {
     uint8_t setup_packet_direction : 1;      /**< the direction of the first packet of this session (Lower_toHigher or Higher_to_Lower) */
     uint8_t last_packet_direction : 1;       /**< the direction of the current packet Lower_toHigher or Higher_to_Lower.
                                                   This is used as indicator to track direction change in bidirectional sessions */
-    uint8_t packet_direction:1,init_finished:1;
+//     uint8_t packet_direction:1,init_finished:1;
+// #elif BYTE_ORDER == BIG_ENDIAN
+//     uint8_t last_packet_direction : 1, setup_packet_direction : 1, type : 2, status : 4,packet_direction:1,init_finished:1;
 #elif BYTE_ORDER == BIG_ENDIAN
-    uint8_t last_packet_direction : 1, setup_packet_direction : 1, type : 2, status : 4,packet_direction:1,init_finished:1;
+    uint8_t last_packet_direction : 1, setup_packet_direction : 1, type : 2, status : 4;
 #else
 #error "BYTE_ORDER must be defined"
 #endif

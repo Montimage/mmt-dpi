@@ -128,7 +128,8 @@ extern "C" {
 #define PROTO_FOURSQUARE 114
 #define PROTO_FOX 115
 #define PROTO_FREE 116
-#define PROTO_FTP_CONTROL 117
+#define PROTO_FTP 117
+// #define PROTO_FTP_CONTROL 117	
 #define PROTO_GADUGADU 118
 #define PROTO_GAMEFAQS 119
 #define PROTO_GAMESPOT 120
@@ -642,9 +643,7 @@ extern "C" {
 #define PROTO_ORACLE 628
 #define PROTO_REDIS 629	
 #define PROTO_VMWARE 630
-// #define PROTO_FTP_CONTROL 631
-#define PROTO_FTP_DATA 631
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_FTP_DATA
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_VMWARE
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -765,7 +764,7 @@ extern "C" {
 #define PROTO_FOURSQUARE_ALIAS "foursquare"
 #define PROTO_FOX_ALIAS "fox"
 #define PROTO_FREE_ALIAS "free"
-// #define PROTO_FTP_ALIAS "ftp"
+#define PROTO_FTP_ALIAS "ftp"
 #define PROTO_GADUGADU_ALIAS "gadugadu"
 #define PROTO_GAMEFAQS_ALIAS "gamefaqs"
 #define PROTO_GAMESPOT_ALIAS "gamespot"
@@ -1279,8 +1278,8 @@ extern "C" {
 #define PROTO_ORACLE_ALIAS "oracle"
 #define PROTO_REDIS_ALIAS "redis"
 #define PROTO_VMWARE_ALIAS "vmware"
-#define PROTO_FTP_CONTROL_ALIAS "ftp_control"
-#define PROTO_FTP_DATA_ALIAS "ftp_data"
+// #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
+// #define PROTO_FTP_DATA_ALIAS "ftp_data"
 
 #define PROTO_CLASS_UNKOWN         0
 #define PROTO_CLASS_WEB            1

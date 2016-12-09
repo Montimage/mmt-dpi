@@ -80,7 +80,7 @@ typedef struct mmt_internal_tcpip_id_struct {
     MMT_PROTOCOL_BITMASK detected_protocol_bitmask;
     mmt_server_local_proto_t local_protos;
     mmt_conv_proto_last_seen_signalling_t conv_proto;
-#ifdef PROTO_FTP_CONTROL
+#ifdef PROTO_FTP
     mmt_ip_addr_t ftp_ip;
 #endif
 #ifdef PROTO_RTSP
@@ -97,7 +97,7 @@ typedef struct mmt_internal_tcpip_id_struct {
 #ifdef PROTO_IRC
     MMT_INTERNAL_TIMESTAMP_TYPE last_time_port_used[16];
 #endif
-#ifdef PROTO_FTP_CONTROL
+#ifdef PROTO_FTP
     MMT_INTERNAL_TIMESTAMP_TYPE ftp_timer;
 #endif
 #ifdef PROTO_IRC
@@ -188,7 +188,7 @@ typedef struct mmt_internal_tcpip_id_struct {
     uint32_t yahoo_conf_logged_in : 1;
     uint32_t yahoo_voice_conf_logged_in : 1;
 #endif
-#ifdef PROTO_FTP_CONTROL
+#ifdef PROTO_FTP
     uint32_t ftp_timer_set : 1;
 #endif
 #ifdef PROTO_GADUGADU
@@ -265,7 +265,7 @@ struct mmt_internal_tcp_session_struct {
 #ifdef PROTO_IMESH
     uint32_t imesh_stage : 4;
 #endif
-#ifdef PROTO_FTP_CONTROL
+#ifdef PROTO_FTP
     // WORKING HERE for FTP session
     uint32_t ftp_codes_seen:5;
     uint32_t ftp_client_direction : 1;
@@ -428,9 +428,9 @@ __attribute__((__packed__))
 ;
 
 typedef struct mmt_internal_tcpip_session_struct {
-    uint16_t packet_counter;             // can be 0 - 65000
-    uint16_t packet_direction_counter[2];
-    uint16_t byte_counter[2];
+    // uint16_t packet_counter;             // can be 0 - 65000
+    // uint16_t packet_direction_counter[2];
+    // uint16_t byte_counter[2];
     uint16_t detected_protocol_stack[PROTOCOL_HISTORY_SIZE];
 #if PROTOCOL_HISTORY_SIZE > 1
 #if PROTOCOL_HISTORY_SIZE > 5
@@ -531,9 +531,9 @@ typedef struct mmt_internal_tcpip_session_struct {
   uint8_t redis_s2d_first_char, redis_d2s_first_char;
   uint32_t redis_packet_count:3;
 #endif
-#ifdef PROTO_FTP_CONTROL
-  uint32_t ftp_control_stage:2;
-#endif
+// #ifdef PROTO_FTP_CONTROL
+//   uint32_t ftp_control_stage:2;
+// #endif
 } mmt_internal_tcpip_session_t;
 
 typedef struct mmt_classify_me_function_element_struct {
@@ -644,7 +644,7 @@ struct mmt_tcpip_internal_packet_struct {
     //TODO: BW temporary solution waiting the TCP segmentation 
     uint32_t tcp_outoforder;
     
-    uint8_t packet_direction:1;
+    // uint8_t packet_direction:1;
     uint64_t packet_id;
 
 };

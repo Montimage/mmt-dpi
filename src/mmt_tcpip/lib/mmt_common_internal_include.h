@@ -337,8 +337,8 @@ extern "C" {
     int mmt_check_oracle(ipacket_t * ipacket, unsigned index);
     int mmt_check_redis(ipacket_t * ipacket, unsigned index);
     int mmt_check_vmware(ipacket_t * ipacket, unsigned index);
-    int mmt_check_ftp_control(ipacket_t * ipacket, unsigned index);
-    int mmt_check_ftp_data(ipacket_t * ipacket, unsigned index);
+    // int mmt_check_ftp_control(ipacket_t * ipacket, unsigned index);
+    // int mmt_check_ftp_data(ipacket_t * ipacket, unsigned index);
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -701,9 +701,9 @@ extern "C" {
     int init_proto_free_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_FTP //////////////////
-    // int init_proto_ftp_struct();
-    int init_proto_ftp_control_struct();
-    int init_proto_ftp_data_struct();
+    int init_proto_ftp_struct();
+    // int init_proto_ftp_control_struct();
+    // int init_proto_ftp_data_struct();
     /////////// PLUGIN INIT FOR PROTO_NDN //////////////////
     int init_proto_ndn_struct();
     /////////// PLUGIN INIT FOR PROTO_NDN_HTTP //////////////////

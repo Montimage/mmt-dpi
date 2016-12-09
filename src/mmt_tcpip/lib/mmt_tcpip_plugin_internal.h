@@ -145,31 +145,31 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = (mmt_tcpip_internal_packet_t *) ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     
-    const struct iphdr *iph = packet->iph;
+    // const struct iphdr *iph = packet->iph;
     
-#ifdef MMT_SUPPORT_IPV6
+// #ifdef MMT_SUPPORT_IPV6
 
-    const struct mmt_ipv6hdr *iphv6 = packet->iphv6;
+//     const struct mmt_ipv6hdr *iphv6 = packet->iphv6;
     
-#endif
+// #endif
     const struct tcphdr *tcph = packet->tcp;
     // const struct udphdr *udph = packet->udp;
 
     uint8_t proxy_enabled = 0;
 
     packet->tcp_retransmission = 0;
-    packet->packet_direction = 0;
+    // packet->packet_direction = 0;
     
-    packet->packet_direction = H2L_DIRECTION;
+    // packet->packet_direction = H2L_DIRECTION;
 
 
-    if (iph != NULL && iph->saddr < iph->daddr)
-            packet->packet_direction = L2H_DIRECTION;
+    // if (iph != NULL && iph->saddr < iph->daddr)
+    //         packet->packet_direction = L2H_DIRECTION;
 
-    #ifdef MMT_SUPPORT_IPV6
-        if (iphv6 != NULL && MMT_COMPARE_IPV6_ADDRESSES(&iphv6->saddr, &iphv6->daddr) != 0)
-            packet->packet_direction = L2H_DIRECTION;
-    #endif
+    // #ifdef MMT_SUPPORT_IPV6
+    //     if (iphv6 != NULL && MMT_COMPARE_IPV6_ADDRESSES(&iphv6->saddr, &iphv6->daddr) != 0)
+    //         packet->packet_direction = L2H_DIRECTION;
+    // #endif
     
 
     packet->packet_lines_parsed_complete = 0;
@@ -182,10 +182,10 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         return;
 
     
-        if (ipacket->session->init_finished == 0) {
-            ipacket->session->init_finished = 1;
-            ipacket->session->setup_packet_direction = packet->packet_direction;
-        }
+        // if (ipacket->session->init_finished == 0) {
+        //     ipacket->session->init_finished = 1;
+        //     ipacket->session->setup_packet_direction = packet->packet_direction;
+        // }
     
 
     if (tcph != NULL) {

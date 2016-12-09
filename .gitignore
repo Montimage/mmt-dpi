@@ -1,4 +1,8 @@
 *.a
+.DS_Store
+sftp-config.json
+src/.DS_Store
+src/c-doxygen.conf
 *.o
 *.lo
 *.la
