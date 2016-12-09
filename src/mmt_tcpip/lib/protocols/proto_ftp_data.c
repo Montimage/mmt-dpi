@@ -150,7 +150,7 @@ static int mmt_match_file_header(ipacket_t * ipacket) {
     return 1;
 
   /* MP3 */
-  if((packet->payload[0] == 'I') && (packet->payload[1] == 'D') && (packet->payload[2] == '3') && (packet->payload[3] == 0x03))
+  if((packet->payload[0] == 'I') && (packet->payload[1] == 'D') && (packet->payload[2] == '3') && (packet->payload[3] == 0x04 || packet->payload[3] == 0x03 ))
     return 1;
   if(mmt_match_strprefix(packet->payload, payload_len, "\xff\xfb\x90\xc0"))
     return 1;
@@ -219,6 +219,9 @@ static int mmt_match_file_header(ipacket_t * ipacket) {
     return 1;
   if(mmt_match_strprefix(packet->payload, payload_len, ".lef"))
     return 1;
+
+  if(packet->payload[0]==0x00 && packet->payload[1]==0x00 && packet->payload[2]==0x00 && packet->payload[3]==0x18 &&mmt_match_strprefix(packet->payload+4, payload_len, "ftypmp4"))
+    return 1;  
 
   return 0;
 }
