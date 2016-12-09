@@ -1830,7 +1830,8 @@ void close_extraction() {
     // unload plugins
     close_plugins();
 
-#ifdef DEBUG
+//#ifdef DEBUG
+#if 0
     mmt_meminfo_t m;
     mmt_meminfo(&m);
     (void)fprintf( stderr, "*** MEMORY USAGE ***\n" );
