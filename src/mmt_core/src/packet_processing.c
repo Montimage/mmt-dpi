@@ -275,6 +275,39 @@ void iterate_through_protocols(generic_protocol_iteration_callback iterator_fct,
     }
 }
 
+
+int mmt_match_prefix(const u_int8_t *payload, size_t payload_len,
+              const char *str, size_t str_len)
+{
+  return str_len <= payload_len
+    ? memcmp(payload, str, str_len) == 0
+    : 0;
+}
+
+
+
+/*
+ * Find the first occurrence of find in s, where the search is limited to the
+ * first slen characters of s.
+ */
+char* mmt_strnstr(const char *s, const char *find, size_t slen) {
+  char c, sc;
+  size_t len;
+
+  if((c = *find++) != '\0') {
+    len = strlen(find);
+    do {
+      do {
+    if(slen-- < 1 || (sc = *s++) == '\0')
+      return (NULL);
+      } while (sc != c);
+      if(len > slen)
+    return (NULL);
+    } while (strncmp(s, find, len) != 0);
+    s--;
+  }
+  return ((char *)s);
+}
 /**
  * Iterates through the registered mmt handlers. The given \iterator_fct will be called for every mmt handler.
  * @param iterator_fct pointer to the user function that will be called for every registered mmt handler.
