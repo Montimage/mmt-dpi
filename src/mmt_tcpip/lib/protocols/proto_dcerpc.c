@@ -9,7 +9,7 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-static void ntop_int_dcerpc_add_connection(ipacket_t * ipacket) {
+static void mmt_int_dcerpc_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_DCERPC, MMT_REAL_PROTOCOL);
 }
 
@@ -26,7 +26,7 @@ void mmt_classify_me_dcerpc(ipacket_t * ipacket, unsigned index) {
             && (packet->payload[2] < 16) /* Packet type */
             ) {
         MMT_LOG(IPOQUE_PROTOCOL_DCERPC, MMT_LOG_DEBUG, "DCERPC match\n");
-        ntop_int_dcerpc_add_connection(ipacket);
+        mmt_int_dcerpc_add_connection(ipacket);
         return;
     }
 
@@ -48,7 +48,7 @@ int mmt_check_dcerpc(ipacket_t * ipacket, unsigned index) {
                 && (packet->payload[2] < 16) /* Packet type */
                 ) {
             MMT_LOG(IPOQUE_PROTOCOL_DCERPC, MMT_LOG_DEBUG, "DCERPC match\n");
-            ntop_int_dcerpc_add_connection(ipacket);
+            mmt_int_dcerpc_add_connection(ipacket);
             return 1;
         }
 

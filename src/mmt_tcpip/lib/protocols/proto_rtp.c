@@ -882,7 +882,7 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
                 flow->l4.tcp.rtp_special_packets_seen = 1;
             MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
                     "skipping STUN-like, special yahoo packets with payload[0] == 0x90.\n");
-            return 1;
+            return 4;
         }
 #ifdef PROTO_STUN
         /* TODO the rtp detection sometimes doesn't exclude rtp
@@ -900,7 +900,7 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
                 /* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
                  * improved by checking only the RTP packet of given length */
                 mmt_rtp_search(ipacket, packet->payload + 2, packet->payload_packet_len - 2);
-                return 1;
+                return 4;
             }
         }
         if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1) {
@@ -908,7 +908,7 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
                 /* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
                  * improved by checking only the RTP packet of given length */
                 mmt_rtp_search(ipacket, packet->payload + 4, packet->payload_packet_len - 4);
-                return 1;
+                return 4;
             }
         }
 

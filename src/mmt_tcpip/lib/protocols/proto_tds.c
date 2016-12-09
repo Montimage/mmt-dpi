@@ -87,14 +87,14 @@ int mmt_check_tds(ipacket_t * ipacket, unsigned index) {
                 } else {
                     flow->l4.tcp.tds_stage = 1 + ipacket->session->last_packet_direction;
                     flow->l4.tcp.tds_login_version = packet->payload[0];
-                    return 1;
+                    return 4;
                 }
             } else if (flow->l4.tcp.tds_stage == 2 - ipacket->session->last_packet_direction) {
                 switch (flow->l4.tcp.tds_login_version) {
                     case 0x12:
                         if (packet->payload[0] == 0x04) {
                             flow->l4.tcp.tds_stage = 3 + ipacket->session->last_packet_direction;
-                            return 1;
+                            return 4;
                         } else {
                             goto exclude_tds;
                         }

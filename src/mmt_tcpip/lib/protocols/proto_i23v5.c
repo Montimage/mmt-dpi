@@ -96,21 +96,21 @@ int mmt_check_i23v5(ipacket_t * ipacket, unsigned index) {
                 if (packet->payload[i] == 0x0d && packet->payload[i + 1] == 0x58) {
                     MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "found first i23v5 key len.\n");
                     flow->i23v5_len1 = get_u32(packet->payload, i + 2);
-                    return 1;
+                    return 4;
                 }
             }
             for (i = 3; i < packet->payload_packet_len - 5; i++) {
                 if (packet->payload[i] == 0x0e && packet->payload[i + 1] == 0x58) {
                     MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "found second i23v5 key len.\n");
                     flow->i23v5_len2 = get_u32(packet->payload, i + 2);
-                    return 1;
+                    return 4;
                 }
             }
             for (i = 3; i < packet->payload_packet_len - 5; i++) {
                 if (packet->payload[i] == 0x0f && packet->payload[i + 1] == 0x58) {
                     MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "found third i23v5 key len.\n");
                     flow->i23v5_len3 = get_u32(packet->payload, i + 2);
-                    return 1;
+                    return 4;
                 }
             }
             if (flow->i23v5_len1 != 0 && flow->i23v5_len2 != 0 && flow->i23v5_len3 != 0) {

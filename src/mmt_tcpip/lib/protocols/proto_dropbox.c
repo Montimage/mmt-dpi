@@ -9,7 +9,7 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-static void ntop_int_dropbox_add_connection(ipacket_t * ipacket, uint8_t due_to_correlation)
+static void mmt_int_dropbox_add_connection(ipacket_t * ipacket, uint8_t due_to_correlation)
 {
     mmt_internal_add_connection(ipacket,
             PROTO_DROPBOX,
@@ -37,7 +37,7 @@ void mmt_classify_me_dropbox(ipacket_t * ipacket, unsigned index)
                     if (payload_len > 2) {
                         if (strncmp((const char*)packet->payload, "{\"", 2) == 0) {
                             MMT_LOG(PROTO_DROPBOX, MMT_LOG_DEBUG, "Found dropbox.\n");
-                            ntop_int_dropbox_add_connection(ipacket, 0);
+                            mmt_int_dropbox_add_connection(ipacket, 0);
                             return;
                         }
                     }
@@ -77,7 +77,7 @@ int mmt_check_dropbox_udp(ipacket_t * ipacket, unsigned index)
                         if (payload_len > 2) {
                             if (strncmp((const char*)packet->payload, "{\"", 2) == 0) {
                                 MMT_LOG(PROTO_DROPBOX, MMT_LOG_DEBUG, "Found dropbox.\n");
-                                ntop_int_dropbox_add_connection(ipacket, 0);
+                                mmt_int_dropbox_add_connection(ipacket, 0);
                                 return 1;
                             }
                         }

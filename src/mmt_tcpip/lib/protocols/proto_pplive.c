@@ -699,7 +699,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
                 flow->pplive_stage = 1 + ipacket->session->last_packet_direction;
                 flow->l4.tcp.pplive_next_packet_size[ipacket->session->last_packet_direction] = packet->payload[0];
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "need next packet i.\n");
-                return 1;
+                return 4;
             }
         } else if (flow->pplive_stage == 2 - ipacket->session->last_packet_direction) {
             if (packet->payload_packet_len == 4 && packet->payload[0] > 0x04
@@ -712,7 +712,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
             }
             flow->pplive_stage = 3;
             MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "need next packet ii.\n");
-            return 1;
+            return 4;
         } else if (flow->pplive_stage == 1 + ipacket->session->last_packet_direction || flow->pplive_stage == 3) {
             if (packet->payload_packet_len > 7 && flow->l4.tcp.pplive_next_packet_size[ipacket->session->last_packet_direction] >= 4) {
                 if (packet->payload_packet_len == flow->l4.tcp.pplive_next_packet_size[ipacket->session->last_packet_direction]) {

@@ -303,7 +303,7 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
                 packet->payload_packet_len);
 
         if (packet->actual_payload_len == 0) {
-            return 1;
+            return 4;
         }
         if ((packet->actual_payload_len == 8 || packet->payload_packet_len == 10) /* PATTERN:: 04 00 00 00 00 00 00 00 [00 00] */
                 && get_u32(packet->payload, 0) == htonl(0x04000000)
@@ -446,7 +446,7 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
         }
 
         if ((ipacket->session->data_packet_count < 5) || packet->actual_payload_len == 0) {
-            return 0;
+            return 4;
         }
         //imesh_not_found_end:
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IMESH);
@@ -527,7 +527,7 @@ int mmt_check_imesh_udp(ipacket_t * ipacket, unsigned index) {
 
         if ((ipacket->session->data_packet_count < 5) || packet->actual_payload_len == 0) {
             //SKIP very short packets
-            return 1;
+            return 4;
         }
         //imesh_not_found_end:
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IMESH);

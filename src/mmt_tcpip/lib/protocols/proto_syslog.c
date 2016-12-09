@@ -132,7 +132,7 @@ int mmt_check_syslog(ipacket_t * ipacket, unsigned index) {
             if (packet->payload[i++] != '>') {
                 MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "there is no > following the number.\n");
                 MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
-                return 1;
+                return 4;
             } else {
                 MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "a > following the number.\n");
             }

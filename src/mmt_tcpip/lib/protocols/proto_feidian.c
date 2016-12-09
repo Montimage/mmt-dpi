@@ -111,7 +111,7 @@ int mmt_check_feidian_udp(ipacket_t * ipacket, unsigned index) {
                     && packet->payload[0] == 0x1c && packet->payload[1] == 0x1c
                     && packet->payload[2] == 0x32 && packet->payload[3] == 0x01) {
                 flow->l4.udp.feidian_stage = 1;
-                return 1;
+                return 4;
             } else if (flow->l4.udp.feidian_stage == 1
                     && (packet->payload_packet_len == 116 || packet->payload_packet_len == 112)
                     && packet->payload[0] == 0x1c

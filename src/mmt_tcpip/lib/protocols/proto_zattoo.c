@@ -308,7 +308,7 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
                 flow->zattoo_stage = 1 + ipacket->session->last_packet_direction;
                 MMT_LOG(PROTO_ZATTOO,
                         MMT_LOG_DEBUG, "need next packet, seen pattern 0x030400040a00\n");
-                return 1;
+                return 4;
             }
             /* the following is is searching for flash, not for zattoo. cust1 wants to do so. */
         } else if (flow->zattoo_stage == 2 - ipacket->session->last_packet_direction
@@ -321,7 +321,7 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
                 flow->zattoo_stage = 3 + ipacket->session->last_packet_direction;
                 MMT_LOG(PROTO_ZATTOO,
                         MMT_LOG_DEBUG, "need next packet, seen pattern 0x0000\n");
-                return 1;
+                return 4;
             }
             if (packet->payload_packet_len > 50
                     && packet->payload[0] == 0x03
@@ -331,7 +331,7 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
             }
             MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG,
                     "need next packet, seen pattern 0x030400040a00\n");
-            return 1;
+            return 4;
         } else if (flow->zattoo_stage == 4 - ipacket->session->last_packet_direction
                 && packet->payload_packet_len > 50 && packet->payload[0] == 0x03 && packet->payload[1] == 0x04) {
             MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "add connection over tcp with 0x0304.\n");
@@ -392,7 +392,7 @@ int mmt_check_zattoo_udp(ipacket_t * ipacket, unsigned index) {
                 return 1;
             }
             MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "need next packet udp.\n");
-            return 1;
+            return 4;
         }
 
         MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG,

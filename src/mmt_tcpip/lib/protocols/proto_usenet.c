@@ -92,7 +92,7 @@ int mmt_check_usenet(ipacket_t * ipacket, unsigned index) {
             flow->l4.tcp.usenet_stage = 1 + ipacket->session->last_packet_direction;
 
             MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: maybe hit.\n");
-            return 1;
+            return 4;
         }
 
         /*

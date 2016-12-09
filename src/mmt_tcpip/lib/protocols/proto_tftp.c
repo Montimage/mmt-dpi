@@ -64,7 +64,7 @@ int mmt_check_tftp(ipacket_t * ipacket, unsigned index) {
                 && ntohl(get_u32(packet->payload, 0)) == 0x00030001) {
             MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "maybe tftp. need next packet.\n");
             flow->l4.udp.tftp_stage = 1;
-            return 1;
+            return 4;
         }
         if (packet->payload_packet_len > 3 && (flow->l4.udp.tftp_stage == 1)
                 && ntohl(get_u32(packet->payload, 0)) == 0x00040001) {
@@ -77,7 +77,7 @@ int mmt_check_tftp(ipacket_t * ipacket, unsigned index) {
                 && ((packet->payload[0] == 0 && packet->payload[packet->payload_packet_len - 1] == 0)
                 || (packet->payload_packet_len == 4 && ntohl(get_u32(packet->payload, 0)) == 0x00040000))) {
             MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "skip initial packet.\n");
-            return 1;
+            return 4;
         }
 
         MMT_LOG(PROTO_TFTP, MMT_LOG_DEBUG, "exclude TFTP.\n");

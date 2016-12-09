@@ -86,7 +86,7 @@ int mmt_check_winmx(ipacket_t * ipacket, unsigned index) {
 
         if (flow->l4.tcp.winmx_stage == 0) {
             if (packet->payload_packet_len == 1 || (packet->payload_packet_len > 1 && packet->payload[0] == 0x31)) {
-                return 1;
+                return 4;
             }
             /* did not see this pattern in any trace that we have */
             if (((packet->payload_packet_len) == 4)
@@ -94,7 +94,7 @@ int mmt_check_winmx(ipacket_t * ipacket, unsigned index) {
 
                 MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "maybe WinMX Send\n");
                 flow->l4.tcp.winmx_stage = 1;
-                return 1;
+                return 4;
             }
 
             if (((packet->payload_packet_len) == 3)

@@ -192,5 +192,4 @@ int init_proto_quic_struct() {
         return 0;
     }
 }
-
 #endif

@@ -130,7 +130,7 @@ int mmt_check_xbox(ipacket_t * ipacket, unsigned index) {
                 }
                 MMT_LOG(PROTO_XBOX, MMT_LOG_DEBUG, "maybe xbox.\n");
                 flow->l4.udp.xbox_stage++;
-                return 1;
+                return 4;
             }
 
             /* exclude here all non matched udp traffic, exclude here tcp only if http has been excluded, because xbox could use http */

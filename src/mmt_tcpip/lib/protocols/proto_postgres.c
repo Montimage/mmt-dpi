@@ -116,7 +116,7 @@ int mmt_check_postgres(ipacket_t * ipacket, unsigned index) {
                     packet->payload[6] == 0x16 &&
                     packet->payload[7] == 0x2f && ntohl(get_u32(packet->payload, 0)) == packet->payload_packet_len) {
                 flow->l4.tcp.postgres_stage = 1 + ipacket->session->last_packet_direction;
-                return 1;
+                return 4;
             }
             //no SSL
             if (packet->payload_packet_len > 7 &&
@@ -124,7 +124,7 @@ int mmt_check_postgres(ipacket_t * ipacket, unsigned index) {
                     ntohl(get_u32(packet->payload, 4)) < 0x00040000 &&
                     ntohl(get_u32(packet->payload, 0)) == packet->payload_packet_len) {
                 flow->l4.tcp.postgres_stage = 3 + ipacket->session->last_packet_direction;
-                return 1;
+                return 4;
             }
         } else {
             if (flow->l4.tcp.postgres_stage == 2 - ipacket->session->last_packet_direction) {

@@ -101,7 +101,7 @@ int mmt_check_shoutcast(ipacket_t * ipacket, unsigned index) {
             if (packet->payload_packet_len >= 6
                     && packet->payload_packet_len < 80 && memcmp(packet->payload, "123456", 6) == 0) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 1, \"123456\".\n");
-                return 1;
+                return 4;
             }
             if (ipacket->session->data_packet_count < 3 && packet->detected_protocol_stack[0] == PROTO_HTTP
                     ) {
@@ -111,7 +111,7 @@ int mmt_check_shoutcast(ipacket_t * ipacket, unsigned index) {
                     MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "segmented packet found.\n");
                     flow->l4.tcp.shoutcast_stage = 1 + ipacket->session->last_packet_direction;
                 }
-                return 1;
+                return 4;
             }
         }
         /* evtl. for asym detection noch User-Agent:Winamp dazunehmen. */
@@ -122,22 +122,22 @@ int mmt_check_shoutcast(ipacket_t * ipacket, unsigned index) {
         }
         if (flow->l4.tcp.shoutcast_stage == 1 + ipacket->session->last_packet_direction
                 && ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction] < 5) {
-            return 1;
+            return 4;
         }
 
         if (ipacket->session->data_packet_count == 2) {
             if (packet->payload_packet_len == 2 && memcmp(packet->payload, "\x0d\x0a", 2) == 0) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 1 continuation.\n");
-                return 1;
+                return 4;
             } else if (packet->payload_packet_len > 3 && mmt_mem_cmp(&packet->payload[0], "OK2", 3) == 0) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 2, OK2 found.\n");
-                return 1;
+                return 4;
             } else
                 goto exclude_shoutcast;
         } else if (ipacket->session->data_packet_count == 3 || ipacket->session->data_packet_count == 4) {
             if (packet->payload_packet_len > 3 && mmt_mem_cmp(&packet->payload[0], "OK2", 3) == 0) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 2, OK2 found.\n");
-                return 1;
+                return 4;
             } else if (packet->payload_packet_len > 4 && mmt_mem_cmp(&packet->payload[0], "icy-", 4) == 0) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast detected.\n");
                 mmt_int_shoutcast_add_connection(ipacket);
