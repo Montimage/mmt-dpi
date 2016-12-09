@@ -220,7 +220,7 @@ static int mmt_match_file_header(ipacket_t * ipacket) {
   if(mmt_match_strprefix(packet->payload, payload_len, ".lef"))
     return 1;
 
-  if(packet->payload[0]==0x00 && packet->payload[1]==0x00 && packet->payload[2]==0x00 && packet->payload[3]==0x18 &&mmt_match_strprefix(packet->payload+4, payload_len, "ftypmp4"))
+  if(packet->payload[0]==0x00 && packet->payload[1]==0x00 && packet->payload[2]==0x00 && mmt_match_strprefix(packet->payload+4, payload_len, "ftyp"))
     return 1;  
 
   return 0;
