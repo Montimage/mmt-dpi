@@ -1558,6 +1558,7 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
         //return a positive value
         return 1;
     }
+    tmp_attr_ref->status = ATTRIBUTE_UNSET;
     return 0;
 }
 
