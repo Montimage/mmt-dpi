@@ -841,7 +841,8 @@ void * funct_get_params_and_execute( const ipacket_t *pkt, short skip_refs, char
 #ifdef WIN32
     lib_pointer = LoadLibrary(lib_name);
 #else
-    lib_pointer = dlopen(lib_name, RTLD_LAZY);
+    lib_pointer = dlopen(lib_name, RTLD_NOW);
+    //lib_pointer = dlopen(lib_name, RTLD_LAZY);
 #endif
     if (lib_pointer != NULL) {
 #ifdef WIN32
@@ -1890,7 +1891,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
     const char *proto_name, *att_name;
 
-    if (*cause != '\0') {
+    if (cause != NULL && *cause != '\0') {
         (void)sprintf(json_buff1, ",\"description\":\"%s\"", cause);
         (void)strcat(json_buff, json_buff1);
         (void)strcat(json_buff, ",\"attributes\":[");
@@ -2993,7 +2994,8 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 void detected_corrupted_message(short print_option, rule *r, char *cause, short state, struct timeval packet_time_stamp)
 {
     rule *temp = r;
-    char *history;
+    char *history = NULL;
+    char *str = NULL;
 
     if(op->callback_funct != NULL){
     	char *verdict = NULL, *type = NULL;
@@ -3002,23 +3004,23 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
         //char * xml_string = xml_message(ATTACK, print_option, state, 0, cause);
       	if ( verdict == NULL) return;
 
-      	if (temp->json_history == NULL)
+      	if (temp != NULL && temp->json_history == NULL)
     	  temp = temp->root;
-      	if (temp->json_history != NULL)
+      	if (temp != NULL && temp->json_history != NULL)
       		history = temp->json_history;
 
       	corr_mess++;
 
-      	//remove the last comma
-		if( history[ strlen( history ) - 1 ] == ',')
+        if(history != NULL){
+      	  //remove the last comma
+		  if( history[ strlen( history ) - 1 ] == ',')
 			history[ strlen( history ) - 1 ] = '\0';
 
-      	char *str = xmalloc( strlen( history ) + 3 );
-      	sprintf( str, "{%s}", history );
-
-      	((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
-
-        xfree( str );
+      	  str = xmalloc( strlen( history ) + 3 );
+      	  sprintf( str, "{%s}", history );
+      	  ((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
+          xfree( str );
+        }
       	xfree( verdict );
       	xfree( type );
     }
