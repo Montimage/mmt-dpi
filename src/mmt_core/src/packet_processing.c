@@ -223,6 +223,7 @@ int register_attribute_with_protocol(protocol_t *proto, attribute_metadata_t *at
                 attr->extraction_function = attribute_meta_data->extraction_function;
                 attr->position_in_packet = attribute_meta_data->position_in_packet;
                 attr->scope = attribute_meta_data->scope;
+
                 strncpy(attr->alias, attribute_meta_data->alias, Max_Alias_Len);
                 attr->alias[Max_Alias_Len] = '\0';
                 insert_int_key_value(proto->attributes_map, (uint32_t) attr->id, (void *) attr);
@@ -1558,7 +1559,7 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
         //return a positive value
         return 1;
     }
-    tmp_attr_ref->status = ATTRIBUTE_UNSET;
+    // tmp_attr_ref->status = ATTRIBUTE_UNSET;
     return 0;
 }
 
@@ -1610,6 +1611,7 @@ void * get_attribute_extracted_data_at_index(const ipacket_t * ipacket, uint32_t
 #ifdef DEBUG
             (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): attribute data is null (1/2)\n" );
 #endif /*DEBUG*/
+            tmp_attr_ref->status = ATTRIBUTE_CONSUMED;
             return tmp_attr_ref->data;
         }
     } else {
@@ -1660,6 +1662,7 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
 #ifdef DEBUG
             (void)fprintf( stderr, "get_extracted_attribute_at_index(): attribute data is null (1/2)\n" );
 #endif /*DEBUG*/
+            tmp_attr_ref->status = ATTRIBUTE_CONSUMED;
             return (attribute_t *) tmp_attr_ref;
         }
     } else {
@@ -2166,6 +2169,7 @@ int register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id,
                 extract_attribute->data_len = get_data_size_by_proto_and_field_ids(proto_id, field_id);
                 extract_attribute->position_in_packet = get_field_position_by_protocol_and_field_ids(proto_id, field_id);
                 extract_attribute->memsize = size;
+                extract_attribute->status = ATTRIBUTE_UNSET;
                 extract_attribute->extraction_function = proto->get_attribute_extraction_function(proto_id, field_id);
 
                 extract_attribute->data = &((char *) extract_attribute)[sizeof (struct attribute_internal_struct) ];
