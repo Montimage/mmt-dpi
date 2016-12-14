@@ -17,7 +17,7 @@ cp -R $sdk_dir/include $build_dir
 cp -R $sdk_dir/lib $build_dir
 cp -R $sdk_dir/examples $build_dir
 
-echo "-]> Building .deb file ..."
+echo "-]> Building .zip file ..."
 # Zip file
 sudo apt-get install -y zip
 zip -r $build_dir.zip $build_dir

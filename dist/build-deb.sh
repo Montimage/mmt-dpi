@@ -25,6 +25,12 @@ mkdir $build_dir/etc/ld.so.conf.d/
 
 echo "-]> Copying resource ..."
 cp -R $sdk_dir/lib $build_dir/opt/mmt/dpi
+cd $build_dir/opt/mmt/dpi/lib/
+ln -s libmmt_core.so.* libmmt_core.so
+ln -s libmmt_fuzz.so.* libmmt_fuzz.so
+ln -s libmmt_security.so.* libmmt_security.so
+ln -s libmmt_tcpip.so.* libmmt_tcpip.so
+cd ../../../../../
 cp -R $sdk_dir/include $build_dir/opt/mmt/dpi
 cp -R $sdk_dir/examples $build_dir/opt/mmt
 cp $sdk_dir/lib/libmmt_tcpip.so.$version $build_dir/opt/mmt/plugins/libmmt_tcpip.so
