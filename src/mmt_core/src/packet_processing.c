@@ -1301,6 +1301,16 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->link_layer_stack = temp_stack;
     new_handler->has_reassembly = 0;
 
+    // Initialize current_ipacket
+    new_handler->current_ipacket.proto_headers_offset = NULL;
+    new_handler->current_ipacket.proto_classif_status = NULL;
+    new_handler->current_ipacket.session = NULL;
+    new_handler->current_ipacket.internal_packet = NULL;
+    new_handler->current_ipacket.mmt_handler = NULL;
+    new_handler->current_ipacket.p_hdr = NULL;
+    new_handler->current_ipacket.data = NULL;
+    new_handler->current_ipacket.original_data = NULL;
+
     new_handler->timeout_milestones_map = init_int_map_space(session_timeout_comp_fn_pt);
     if (new_handler->timeout_milestones_map == NULL) {
         if ( errbuf )
