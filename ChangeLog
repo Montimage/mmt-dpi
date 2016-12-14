@@ -1,10 +1,13 @@
 RELEASE NOTES
 ---
-## PRe-release version 1.6.5.0
+## Release version 1.6.5.0
 - API for set SESSION TIMEDOUT
-- Fix classify SMTP protocol - not done
-- Add GIT_VERSION into mmt_version()
-- Fix symbolic link warning when installing mmt-sdk
+- Fixed classify SMTP protocol - not done
+- Added GIT_VERSION into mmt_version()
+- Fixed symbolic link warning when installing mmt-sdk
+- Fixed attribute status when calling extraction function from mmt_security -> set ATTRIBUTE_CONSUMED flag.
+- Initialize value for mmt_handler->current_ipacket
+- Commented out some unused function in proto_dns.c. (Note: When testing memory leak, we need to test with dns-extraction.c to avoid memory from dns attributes)
 
 
 ## Release version 1.6.4.0
