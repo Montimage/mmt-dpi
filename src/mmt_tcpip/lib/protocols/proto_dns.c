@@ -228,7 +228,7 @@ dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char*
             int has_ref = 0;
             dns_name_t * current_name = ext_name;
             while(current_name){
-                char *temp_name;
+                char *temp_name = NULL;
                 q_name_length += current_name->length + 1;
                 if(!has_ref){
                     if(current_name->is_ref){
@@ -784,7 +784,7 @@ static attribute_metadata_t dns_attributes_metadata[DNS_ATTRIBUTES_NB] = {
     {DNS_QUERIES, DNS_QUERIES_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_queries_extraction},
     {DNS_ANSWERS, DNS_ANSWERS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_answers_extraction},
     {DNS_AUTH_RECORDS, DNS_AUTH_RECORDS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_auth_records_extraction},
-    {DNS_ADD_RECORDS, DNS_ADD_RECORDS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_add_records_extraction},
+    // {DNS_ADD_RECORDS, DNS_ADD_RECORDS_ALIAS, MMT_DATA_POINTER, sizeof(void*), POSITION_NOT_KNOWN, SCOPE_PACKET, dns_add_records_extraction},
 };
 
 void dns_session_data_init(ipacket_t * ipacket, unsigned index) {
@@ -911,9 +911,9 @@ int init_proto_dns_struct() {
         mmt_init_classify_me_dns();
 
         /* Session context specific initializations */
-        register_session_data_initialization_function(protocol_struct, dns_session_data_init);
-        register_session_data_cleanup_function(protocol_struct, dns_session_data_cleanup);
-        register_session_data_analysis_function(protocol_struct, dns_session_data_analysis);
+        // register_session_data_initialization_function(protocol_struct, dns_session_data_init);
+        // register_session_data_cleanup_function(protocol_struct, dns_session_data_cleanup);
+        // register_session_data_analysis_function(protocol_struct, dns_session_data_analysis);
 
         return register_protocol(protocol_struct, PROTO_DNS);
     } else {
