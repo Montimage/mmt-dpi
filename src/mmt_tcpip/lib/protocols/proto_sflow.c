@@ -48,7 +48,7 @@ int mmt_check_sflow(ipacket_t * ipacket, unsigned index) { //BW: TODO: check thi
             return 1;
         }
     }
-    return 1;
+    return 4;
 }
 
 void mmt_init_classify_me_sflow() {

@@ -515,7 +515,7 @@ bittorrent_found:
                         }
                     }
                 }
-                return 1;
+                return 4;
             }
 
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_BITTORRENT);
