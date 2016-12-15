@@ -1,5 +1,8 @@
 RELEASE NOTES
 ---
+## Pre-Release version 1.6.6.0
+- Add timestamp to built .deb and .zip files
+
 ## Release version 1.6.5.0
 - API for set SESSION TIMEDOUT
 - Fixed classify SMTP protocol - not done
