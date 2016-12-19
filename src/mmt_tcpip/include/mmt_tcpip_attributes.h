@@ -1010,6 +1010,39 @@ enum
 #define NDN_HTTP_SECOND_GW_ALIAS                       "second_gw"
 ////////////////// END OF NDN ATTRIBUTES ////////////////////
 
+
+//////////// NFS PROTOCOL ATTRIBUTES ////////////////////
+enum{
+    // -- RPC attribute ////
+    NFS_XID = 1,
+    NFS_MESSAGE_TYPE,
+    // Call message
+    NFS_RPC_VERSION,
+    NFS_PROGRAM,
+    NFS_PROG_VERSION,
+    NFS_PROCEDURE,
+    // Reply message
+    // -- NFS attributes ///
+    NFS_TAG,
+    NFS_MINORVERSION,
+    NFS_FILE_OPCODE,
+    NFS_FILE_NAME,
+    NFS_NB_OPERATIONS,
+    NFS_ATTRIBUTES_NB = NFS_NB_OPERATIONS
+};
+
+#define NFS_XID_ALIAS           "xid"
+#define NFS_MESSAGE_TYPE_ALIAS  "message_type"
+#define NFS_RPC_VERSION_ALIAS   "rpc_version"
+#define NFS_PROGRAM_ALIAS       "program"
+#define NFS_PROG_VERSION_ALIAS  "program_version"
+#define NFS_PROCEDURE_ALIAS     "procedure"
+#define NFS_TAG_ALIAS           "tag"
+#define NFS_MINORVERSION_ALIAS  "minorversion"
+#define NFS_FILE_OPCODE_ALIAS   "file_opcode"
+#define NFS_FILE_NAME_ALIAS   "file_name"
+#define NFS_NB_OPERATIONS_ALIAS "nb_operations"
+
 #ifdef __cplusplus
 }
 #endif
