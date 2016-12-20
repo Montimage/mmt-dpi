@@ -104,18 +104,24 @@ char * nfs_extract_file_name_from_opcode_open(const ipacket_t * ipacket, int dat
     } else if (open_type == 1) {
         // Check create mode
         create_mode = ntohl(*((unsigned int *) &ipacket->data[file_name_offset]));
-        file_name_offset += 4; // create_mode code
+        file_name_offset += 4; // create_mode code        
         if (create_mode == 2) {
             file_name_offset += 8;// verifier
             // Exclusive
             // 4 + 4 + 8
         } else if (create_mode == 0) {
-            // uncheck
             file_name_offset += 4; // status
-            file_name_offset += 8; // attr mask 1;
-            file_name_offset += 8; // attr mask 2;
+            // uncheck            
+            int attr_size = ntohl(*((unsigned int *) &ipacket->data[file_name_offset]));
+            file_name_offset += 4; // mask - 1
+            file_name_offset += 4; // mask - 2 code
+            file_name_offset += 4; // beetwen mask 1 - 2      
+            if(attr_size!=0){
+                file_name_offset += 8; // mask - 1     
+            }
+            file_name_offset += 4; // mask - 2 value
         } else {
-            file_name_offset += 20;
+            file_name_offset += 32;
         }
     }
     file_name_offset += 4;// claim_type
@@ -155,9 +161,9 @@ char * nfs_extract_file_name_from_opcode(const ipacket_t * ipacket, nfs_opcode_t
         memcpy(new_name, &ipacket->data[main_opcode->data_offset + 8 + old_length + 3 + 4], new_length);
         new_name[new_length] = '\0';
 
-        file_name = (char*)malloc((old_length + new_length + 1) * sizeof(char));
+        file_name = (char*)malloc((old_length + new_length + 2) * sizeof(char));
         sprintf(file_name, "%s-%s", old_name, new_name);
-        file_name[old_length + new_length] = '\0';
+        file_name[old_length + new_length + 1] = '\0';
         free(old_name);
         free(new_name);
         return file_name;
@@ -336,7 +342,6 @@ int nfs_file_opcode_extraction(const ipacket_t * ipacket, unsigned proto_index,
         int current_offset = nfs_data_offset + tag_length + 8 + 4;
         int current_opcode_index = 0;
         while (current_opcode_index < nb_opcodes && current_offset < nfs_payload_offset + ipacket->internal_packet->payload_packet_len) {
-            printf("ipacket: %lu - %d - %d\n",ipacket->packet_id,current_opcode_index, current_offset);
             current_opcode_index++;
             nfs_opcode_t * putfh_opcode = nfs_extract_opcode(ipacket, current_offset);
 
