@@ -2,6 +2,7 @@ RELEASE NOTES
 ---
 ## Pre-Release version 1.6.6.0
 - Add timestamp to built .deb and .zip files
+- Extract file name from NFS protocol version 4 - only focus on some operation: OPEN, LOOKUP, REMOVE, RENAME
 
 ## Release version 1.6.5.0
 - API for set SESSION TIMEDOUT
