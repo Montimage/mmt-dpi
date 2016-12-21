@@ -30,7 +30,7 @@ extern "C" {
         IP_FRAG_OFFSET,
         IP_PROTO_TTL,
         IP_PROTO_ID,
-        IP_CHECKSUM,
+        IP_CHECKSUM_MMT,
         IP_SRC,
         IP_DST,
         IP_OPTS,
@@ -56,7 +56,7 @@ extern "C" {
 #define IP_VERSION_ALIAS        "version"
 #define IP_OPTS_ALIAS        "options"
 #define IP_RTT_ALIAS        "ip_rtt"
-#define IP_CHECKSUM_ALIAS       "checksum"
+#define IP_CHECKSUM_MMT_ALIAS       "checksum"
 #define IP_CLIENT_ADDR_ALIAS    "client_addr"
 #define IP_SERVER_ADDR_ALIAS    "server_addr"
 #define IP_CLIENT_PORT_ALIAS    "client_port"

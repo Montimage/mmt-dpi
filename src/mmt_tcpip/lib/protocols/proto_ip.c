@@ -1257,7 +1257,7 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_FRAG_OFFSET, IP_FRAG_OFFSET_ALIAS, MMT_U16_DATA, sizeof (short), 6, SCOPE_PACKET, ip_frag_offset_extraction},
     {IP_PROTO_TTL, IP_PROTO_TTL_ALIAS, MMT_U8_DATA, sizeof (char), 8, SCOPE_PACKET, general_byte_to_byte_extraction},
     {IP_PROTO_ID, IP_PROTO_ID_ALIAS, MMT_U8_DATA, sizeof (char), 9, SCOPE_PACKET, general_byte_to_byte_extraction},
-    {IP_CHECKSUM, IP_CHECKSUM_ALIAS, MMT_U16_DATA, sizeof (short), 10, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+    {IP_CHECKSUM_MMT, IP_CHECKSUM_MMT_ALIAS, MMT_U16_DATA, sizeof (short), 10, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {IP_SRC, IP_SRC_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), 12, SCOPE_PACKET, general_int_extraction},
     {IP_DST, IP_DST_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), 16, SCOPE_PACKET, general_int_extraction},
     {IP_OPTS, IP_OPTS_ALIAS, MMT_DATA_POINTER,  sizeof (void *), -2, SCOPE_PACKET, ip_options_extraction},
