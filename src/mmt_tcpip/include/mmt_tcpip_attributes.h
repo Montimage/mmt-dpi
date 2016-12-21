@@ -30,7 +30,7 @@ extern "C" {
         IP_FRAG_OFFSET,
         IP_PROTO_TTL,
         IP_PROTO_ID,
-        IP_CHECKSUM_MMT,
+        IP_CHECKSUM_MMT, // LN: On Linux ubuntu 4.4.0-53-generic IP_CHECKSUM has been declared in /usr/include/linux/in.h
         IP_SRC,
         IP_DST,
         IP_OPTS,
