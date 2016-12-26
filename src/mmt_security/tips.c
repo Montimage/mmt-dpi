@@ -913,6 +913,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
     //parse expression and create sub-tree, a_rule->value = top operator
     //((ARP.OPCODE == 2)&&(ARP.SRC_PROTO == ARP.SRC_PROTO.1))
     //OR, AND, NEQ, EQ, GT, GTE, LT, LTE, THEN, COMPUTE, XC, XCE, XD, XDE, XE, ADD, SUB, MUL, DIV
+    //DE, DNE
     char *temp = expression;
     char *temp2 = expression;
     char token[30];
@@ -981,6 +982,16 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         //IN+blank
         temp2 = temp + 3;
         a_rule->father->value = XIN;
+        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+    } else if (*temp == 'D' && *(temp + 1) == 'E' && (*(temp + 2) == ' ' || *(temp + 2) == ')')) {
+        // DE (Does Exitst)
+        temp2 = temp + 3;
+        a_rule->father->value = DE;
+        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+    } else if (*temp == 'D' && *(temp + 1) == 'N' && *(temp + 2) == 'E' && (*(temp + 3) == ' ' || *(temp + 3) == ')')) {
+        // DE (Does Not  Exitst)
+        temp2 = temp + 4;
+        a_rule->father->value = DNE;
         create_boolean_expression(mmt, NO, a_rule->father, temp2);
     } else if (*temp == '\'') {
         // 'string'
@@ -2799,6 +2810,12 @@ void * compute(compare_value v1, compare_value v2, short operator)
     return NULL;
 }
 
+int exists_or_not (const ipacket_t *pkt, short operator, rule *r) { 
+    void *data = get_attribute_extracted_data( pkt, r->t.protocol_id, r->t.field_id );
+    if (operator == DE && data != NULL) return VALID; 
+    else if (operator == DNE && data == NULL) return VALID;
+    return NOT_VALID;
+}
 
 int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, void** result_value, tuple *list_of_tuples, short operator, rule *r1, rule *r2)
 {
@@ -3249,6 +3266,17 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
         case XCON:
         case XFUNCT:
         case NOP:
+            return VALID;
+            break;
+        case DNE:
+        case DE:
+            temp1 = c->list_of_sons;
+            result = exists_or_not (pkt, c->value, temp1);
+            if (result != VALID) {
+                c->valid = NOT_VALID;
+                return NOT_VALID;
+            }
+            c->valid = VALID;
             return VALID;
             break;
         default:
