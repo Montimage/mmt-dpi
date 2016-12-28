@@ -1973,6 +1973,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     char *json_buff1=xcalloc(7000,1);
     char *temp_MAC;
     //mmt_header_line_t *hl;
+    void *data_ptr;
 
     tvp.tv_sec=0;
     tvp.tv_usec=0;
@@ -2154,12 +2155,20 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_POINTER:
                     // TODO
                     //(void)fprintf(stderr, "MMT_DATA_POINTER:6\n");
-                    data_pointer_size = *(int *)get_attribute_extracted_data_by_name(pkt, "tcp","payload_len");
-                    data_pointer = get_attribute_extracted_data_by_name(pkt, "tcp","p_payload");
-                    new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
-                    (void)strcat(json_buff, json_buff1);
-                    xfree (new_data_pointer);
+               	 //check only if we are verifying tcp.p_payload
+               	 if( temp->protocol_id == 354  && temp->field_id == 4098 ){
+							  data_ptr = get_attribute_extracted_data_by_name(pkt, "tcp","payload_len");
+							  if( data_ptr != NULL ){
+								  data_pointer_size = *(int *) data_ptr;
+								  data_pointer = get_attribute_extracted_data_by_name(pkt, "tcp","p_payload");
+								  if( data_pointer != NULL ){
+									  new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
+									  (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
+									  (void)strcat(json_buff, json_buff1);
+									  xfree (new_data_pointer);
+								  }
+							  }
+               	  }
                     break;
                 case MMT_DATA_FILTER_STATE:
                     // TODO
