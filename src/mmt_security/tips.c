@@ -1888,7 +1888,9 @@ char * convert_string_to_json_compatible (char * p, int size){
     int pos = 0;
     c = p;
     result = xmalloc (size * 2);
+
     r = result;
+    *r = '\0';
     for (pos=0; pos<size; pos++){
         switch (*c) {
             case  '"': strncpy(r, "\\\"",2); r = r + 2; break;
@@ -1906,6 +1908,8 @@ char * convert_string_to_json_compatible (char * p, int size){
             	}
                 break;
         } //end of switch
+        //end string
+        *r = '\0';
         c++;
     } //end of for
     return result;
