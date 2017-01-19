@@ -9,6 +9,7 @@
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 /** macro to compare 2 IPv6 addresses with each other to identify the "smaller" IPv6 address  */
 
+static inline
 int is_extention_header(uint8_t next_header) {
     switch (next_header) {
         case IPPROTO_HOPOPTS:
@@ -23,6 +24,7 @@ int is_extention_header(uint8_t next_header) {
     }
 }
 
+static inline
 uint32_t get_next_header_offset(uint8_t current_header, const uint8_t * packet, uint8_t * next_hdr) {
     struct ext_hdr_generic * exthdr;
     switch (current_header) {

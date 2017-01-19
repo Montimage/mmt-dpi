@@ -178,7 +178,7 @@ int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attrib
  */
 
 
-uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_session) {
+static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_session) {
     uint8_t retval;
     uint16_t sport = 0, dport = 0;
     struct iphdr * iph = (struct iphdr *) ip_packet;
@@ -1056,7 +1056,7 @@ int ip_session_cleanup_on_timeout(void * protocol_context, mmt_session_t * timed
     return 0;
 }
 
-int ip_process_fragment( ipacket_t *ipacket, unsigned index )
+static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
 {
     mmt_handler_t *mmt = ipacket->mmt_handler;
     mmt_hashmap_t *map = mmt->ip_streams;
@@ -1111,7 +1111,7 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     return 1;
 }
 
-int mmt_iph_is_fragmented(const struct iphdr *iph)
+static inline int mmt_iph_is_fragmented(const struct iphdr *iph)
 {
     //#ifdef REQUIRE_FULL_PACKETS
     unsigned ip_off = (ntohs( iph->frag_off ) & IP_OFFSET) << 3;
@@ -1155,7 +1155,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
         if (session->last_packet_direction != packet_direction && session->packet_count > 0) {
             ip_rtt_t ip_rtt;
             ip_rtt.direction = session->last_packet_direction;
-            ip_rtt.session = session;
+            ip_rtt.session   = session;
             ip_rtt.rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - session->s_last_activity_time.tv_sec;
             ip_rtt.rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - session->s_last_activity_time.tv_usec;
             if ((int) ip_rtt.rtt.tv_usec < 0) {

@@ -8,6 +8,7 @@ using namespace std;
 typedef std::map<void *, void *, bool(*)(void *, void *) > MMT_Map;
 typedef std::map<uint32_t, void *, bool(*)(uint32_t, uint32_t)> MMT_IntMap;
 
+
 void * init_map_space(generic_comparison_fct comp_fct) {
     return reinterpret_cast<void*> (new MMT_Map(comp_fct));
 }

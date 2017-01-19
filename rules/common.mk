@@ -1,4 +1,4 @@
-VERSION  := 1.6.5.0
+VERSION  := 1.6.5.1
 GIT_VERSION := $(shell git log --format="%h" -n 1)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
@@ -25,8 +25,8 @@ ifdef DEBUG
 CFLAGS   += -g -DDEBUG -DHTTP_PARSER_STRICT=1
 CXXFLAGS += -g -DDEBUG -DHTTP_PARSER_STRICT=1
 else
-CFLAGS   += -DHTTP_PARSER_STRICT=0
-CXXFLAGS += -DHTTP_PARSER_STRICT=0
+CFLAGS   += -DHTTP_PARSER_STRICT=0 -O3
+CXXFLAGS += -DHTTP_PARSER_STRICT=0 -O3
 endif
 
 .PHONY: libraries includes tools documentation examples
