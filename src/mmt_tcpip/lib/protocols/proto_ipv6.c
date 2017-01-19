@@ -161,16 +161,21 @@ int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * 
     while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2))) {
         next_offset += get_next_header_offset(next_hdr, & ipacket->data[offset + next_offset], & next_hdr);
     }
-
+    ipv6_session->lower_ip = (void*)mmt_malloc(sizeof(ip6h->saddr));
+    ipv6_session->higher_ip = (void*)mmt_malloc(sizeof(ip6h->daddr));
     if (MMT_COMPARE_IPV6_ADDRESSES(&ip6h->saddr, &ip6h->daddr)) {
-        ipv6_session->lower_ip = &ip6h->saddr;
-        ipv6_session->higher_ip = &ip6h->daddr;
+        memcpy(ipv6_session->lower_ip,&ip6h->saddr,sizeof(ip6h->saddr));
+        memcpy(ipv6_session->higher_ip,&ip6h->daddr,sizeof(ip6h->daddr));
+        // ipv6_session->lower_ip = &ip6h->saddr;
+        // ipv6_session->higher_ip = &ip6h->daddr;
         ipv6_session->is_lower_initiator = L2H_DIRECTION;
         ipv6_session->is_lower_client = L2H_DIRECTION;
         retval = L2H_DIRECTION;
     } else {
-        ipv6_session->lower_ip = &ip6h->daddr;
-        ipv6_session->higher_ip = &ip6h->saddr;
+        memcpy(ipv6_session->lower_ip,&ip6h->daddr,sizeof(ip6h->daddr));
+        memcpy(ipv6_session->higher_ip,&ip6h->saddr,sizeof(ip6h->saddr));
+        // ipv6_session->lower_ip = &ip6h->daddr;
+        // ipv6_session->higher_ip = &ip6h->saddr;
         ipv6_session->is_lower_initiator = H2L_DIRECTION;
         ipv6_session->is_lower_client = H2L_DIRECTION;
         retval = H2L_DIRECTION;

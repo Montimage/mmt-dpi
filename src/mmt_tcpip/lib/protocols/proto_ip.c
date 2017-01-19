@@ -193,10 +193,14 @@ static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key
         sport = ntohs(udph->source);
         dport = ntohs(udph->dest);
     }
-
+    ipv4_session->lower_ip = (void*)mmt_malloc(sizeof(iph->saddr));
+    ipv4_session->higher_ip = (void*)mmt_malloc(sizeof(iph->daddr));
     if (iph->saddr < iph->daddr) {
-        ipv4_session->lower_ip = &iph->saddr;
-        ipv4_session->higher_ip = &iph->daddr;
+        memcpy(ipv4_session->lower_ip,&iph->saddr,sizeof(iph->saddr));
+        memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
+        // ipv4_session->lower_ip = &iph->saddr;
+        // ipv4_session->higher_ip = &iph->daddr;
+        
         ipv4_session->lower_ip_port = sport;
         ipv4_session->higher_ip_port = dport;
 
@@ -205,16 +209,20 @@ static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key
         retval = L2H_DIRECTION;
     } else if (iph->saddr == iph->daddr) {
         if (sport < dport) {
-            ipv4_session->lower_ip = &iph->saddr;
-            ipv4_session->higher_ip = &iph->daddr;
+            memcpy(ipv4_session->lower_ip,&iph->saddr,sizeof(iph->saddr));
+            memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
+            // ipv4_session->lower_ip = &iph->saddr;
+            // ipv4_session->higher_ip = &iph->daddr;
             ipv4_session->lower_ip_port = sport;
             ipv4_session->higher_ip_port = dport;
             ipv4_session->is_lower_initiator = L2H_DIRECTION;
             ipv4_session->is_lower_client = L2H_DIRECTION;
             retval = L2H_DIRECTION;
         } else {
-            ipv4_session->lower_ip = &iph->daddr;
-            ipv4_session->higher_ip = &iph->saddr;
+            memcpy(ipv4_session->lower_ip,&iph->daddr,sizeof(iph->daddr));
+            memcpy(ipv4_session->higher_ip,&iph->saddr,sizeof(iph->saddr));
+            // ipv4_session->lower_ip = &iph->daddr;
+            // ipv4_session->higher_ip = &iph->saddr;
             ipv4_session->lower_ip_port = dport;
             ipv4_session->higher_ip_port = sport;
             ipv4_session->is_lower_initiator = H2L_DIRECTION;
@@ -222,8 +230,10 @@ static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key
             retval = H2L_DIRECTION;
         }
     } else {
-        ipv4_session->lower_ip = &iph->daddr;
-        ipv4_session->higher_ip = &iph->saddr;
+        memcpy(ipv4_session->lower_ip,&iph->daddr,sizeof(iph->daddr));
+        memcpy(ipv4_session->higher_ip,&iph->saddr,sizeof(iph->saddr));
+        // ipv4_session->lower_ip = &iph->daddr;
+        // ipv4_session->higher_ip = &iph->saddr;
         ipv4_session->lower_ip_port = dport;
         ipv4_session->higher_ip_port = sport;
         ipv4_session->is_lower_initiator = H2L_DIRECTION;
@@ -1127,6 +1137,8 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     int offset = get_packet_offset_at_index(ipacket, index);
     const struct iphdr * ip_hdr = (struct iphdr *) & ipacket->data[offset];
     mmt_session_key_t ipv4_session_key;
+    ipv4_session_key.lower_ip = NULL;
+    ipv4_session_key.higher_ip = NULL;
     uint8_t packet_direction;
 
     // uint16_t ip_offset = ntohs(ip_hdr->frag_off);

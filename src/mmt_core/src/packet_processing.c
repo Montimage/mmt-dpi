@@ -245,7 +245,9 @@ int register_attribute_with_protocol(protocol_t *proto, attribute_metadata_t *at
                 strncpy(attr->alias, attribute_meta_data->alias, Max_Alias_Len);
                 attr->alias[Max_Alias_Len] = '\0';
                 insert_int_key_value(proto->attributes_map, (uint32_t) attr->id, (void *) attr);
-                insert_key_value(proto->attributes_names_map, (void *) attr->alias, (void *) attr);
+                if(!insert_key_value(proto->attributes_names_map, (void *) attr->alias, (void *) attr)){
+                    fprintf(stderr, "[error] register_attribute_with_protocol - Failed to execute insert_key_value()\n");
+                };
                 return 1;
             }
         }
@@ -461,7 +463,7 @@ static inline void cleanup_timedout_sessions(mmt_session_t * timed_out_session) 
 
     // Clean the session context
     ((generic_session_context_cleanup_function) ((protocol_instance_t *) timed_out_session->protocol_container_context)->protocol->session_context_cleanup)((protocol_instance_t *) timed_out_session->protocol_container_context,
-            timed_out_session, NULL);
+            timed_out_session, NULL);    
 }
 
 void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args) {
@@ -1858,7 +1860,6 @@ void close_extraction() {
     free_registered_protocols();
     // unload plugins
     close_plugins();
-
 //#ifdef DEBUG
 #if 0
     mmt_meminfo_t m;
@@ -2607,7 +2608,6 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
     } else {
         //The protocol does not maintain sessions by it own.
         //Rather, it belongs to a session maintained by a parent protocol
-
         //At this point we should check if the current protocol is newly detected or reclassified
         //If this is the case, initialize its session data if required and copy its registered attributes to the session context
         if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION)||(classify_status == PROTO_CLASSIFICATION_UPDATE))) {
