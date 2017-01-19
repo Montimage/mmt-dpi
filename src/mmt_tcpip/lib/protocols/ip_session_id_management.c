@@ -12,16 +12,28 @@ bool ipv6_addr_comp(void * l_ip, void * r_ip) {
     return (memcmp(&((struct in6_addr *) l_ip)->s6_addr, &((struct in6_addr *) r_ip)->s6_addr, IPv6_ALEN) < 0);
 }
 
-int insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip4_id_t * ip_id) {
+static inline int _insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip4_id_t * ip_id) {
     return insert_key_value(tcpip_context->ips_map, (void *) &ip_id->ip, (void *) ip_id);
 }
 
-mmt_ip4_id_t * findID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
+int insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip4_id_t * ip_id) {
+	return _insertID4( tcpip_context, ip_id );
+}
+
+static inline mmt_ip4_id_t * _findID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
     return (mmt_ip4_id_t *) find_key_value(tcpip_context->ips_map, (void *) ip);
 }
 
-int deleteID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
+mmt_ip4_id_t * findID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
+	return _findID4( tcpip_context, ip );
+}
+
+static inline int _deleteID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
     return delete_key_value(tcpip_context->ips_map, (void *) ip);
+}
+
+int deleteID4(internal_ip_proto_context_t * tcpip_context, uint32_t * ip) {
+    return _deleteID4(tcpip_context, ip);
 }
 
 int insertID6(internal_ip_proto_context_t * tcpip_context, mmt_ip6_id_t * ip_id) {
@@ -107,9 +119,10 @@ int close_session_id_lists(void * proto_context) { //TODO: change the name of th
     return 1;
 }
 
-mmt_ip4_id_t * get_ip4_id(internal_ip_proto_context_t * tcpip_context, uint32_t * ip, uint32_t * is_new) {
+
+static inline mmt_ip4_id_t * _get_ip4_id(internal_ip_proto_context_t * tcpip_context, uint32_t * ip, uint32_t * is_new) {
     mmt_ip4_id_t * retval = NULL;
-    retval = findID4(tcpip_context, ip);
+    retval = _findID4(tcpip_context, ip);
     if (retval == NULL) {
         /*Initialize the memory for the IPv4 IDs */
         retval = mmt_malloc(sizeof (mmt_ip4_id_t));
@@ -117,7 +130,7 @@ mmt_ip4_id_t * get_ip4_id(internal_ip_proto_context_t * tcpip_context, uint32_t 
 
         retval->count = 0;
         retval->ip = *ip;
-        if(insertID4(tcpip_context, retval) == 0) {
+        if( _insertID4(tcpip_context, retval) == 0) {
             //The insertion of the IP failed. This is really bad.
             //We should free this IP, return NULL, otherwise the workflow will be corrupted
             //as the session is expected to have two ID structs in the map
@@ -129,6 +142,9 @@ mmt_ip4_id_t * get_ip4_id(internal_ip_proto_context_t * tcpip_context, uint32_t 
         *is_new = 1;
     }
     return retval;
+}
+mmt_ip4_id_t * get_ip4_id(internal_ip_proto_context_t * tcpip_context, uint32_t * ip, uint32_t * is_new) {
+	return _get_ip4_id( tcpip_context, ip, is_new );
 }
 
 mmt_ip6_id_t * get_ip6_id(internal_ip_proto_context_t * tcpip_context, struct in6_addr * ip, uint32_t * is_new) {
@@ -178,13 +194,13 @@ void free_session_data(void * key, void * value, void * args) {
 
         id_low->count -= 1;
         if (id_low->count == 0) {
-            deleteID4(tcpip_context, & id_low->ip);
+            _deleteID4(tcpip_context, & id_low->ip);
             mmt_free(id_low);
         }
         id_high->count -= 1;
 
         if (id_high->count == 0) {
-            deleteID4(tcpip_context, & id_high->ip);
+            _deleteID4(tcpip_context, & id_high->ip);
             mmt_free(id_high);
         }
     } else {
@@ -237,26 +253,19 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
         *is_new = 1;
 
         uint32_t isl_new = 0, ish_new = 0;
-        /* Initialize the memory for the session */
-        retval = (mmt_session_t *) mmt_malloc(sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct));
+        /* Initialize the memory for the session: 1024 bytes */
+        retval = (mmt_session_t *) mmt_malloc( sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct) );
         memset(retval, 0, sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct));
-        retval->session_key = (mmt_session_key_t *) &((char *)retval)[sizeof(mmt_session_t)];
+        retval->session_key   = &retval[1]; //(mmt_session_key_t *) &((char *)retval)[sizeof(mmt_session_t)];
         retval->internal_data = (struct mmt_internal_tcpip_session_struct *) &((char *)retval)[sizeof(mmt_session_t) + sizeof (mmt_session_key_t)];
         /*
                 memset(retval->internal_data, 0, sizeof (struct mmt_internal_tcpip_session_struct));
          */
-
-        ((mmt_session_key_t *) retval->session_key)->is_lower_initiator = session_key->is_lower_initiator;
-        ((mmt_session_key_t *) retval->session_key)->is_lower_client = session_key->is_lower_client;
-
-        ((mmt_session_key_t *) retval->session_key)->ip_type = session_key->ip_type;
-        ((mmt_session_key_t *) retval->session_key)->next_proto = session_key->next_proto;
-        ((mmt_session_key_t *) retval->session_key)->lower_ip_port = session_key->lower_ip_port;
-        ((mmt_session_key_t *) retval->session_key)->higher_ip_port = session_key->higher_ip_port;
+        memcpy(retval->session_key, session_key, sizeof( mmt_session_key_t ));
 
         if (session_key->ip_type == 4) {
-            ((mmt_session_key_t *) retval->session_key)->lower_ip = get_ip4_id(tcpip_context, (uint32_t *) session_key->lower_ip, &isl_new);
-            if (((mmt_session_key_t *) retval->session_key)->lower_ip == NULL) {
+            ((mmt_session_key_t *) retval->session_key)->lower_ip = _get_ip4_id(tcpip_context, (uint32_t *) session_key->lower_ip, &isl_new);
+            if ( unlikely( ((mmt_session_key_t *) retval->session_key)->lower_ip == NULL)) {
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL
                 mmt_free(session_key->lower_ip);
@@ -264,8 +273,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 mmt_free(retval);
                 return NULL;
             }
-            ((mmt_session_key_t *) retval->session_key)->higher_ip = get_ip4_id(tcpip_context, (uint32_t *) session_key->higher_ip, &ish_new);
-            if (((mmt_session_key_t *) retval->session_key)->higher_ip == NULL) {
+            ((mmt_session_key_t *) retval->session_key)->higher_ip = _get_ip4_id(tcpip_context, (uint32_t *) session_key->higher_ip, &ish_new);
+            if ( unlikely( ((mmt_session_key_t *) retval->session_key)->higher_ip == NULL )) {
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL AND check if lower_is is new, if yes free it
                 if (isl_new) {
@@ -280,7 +289,7 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             ((mmt_ip4_id_t *) ((mmt_session_key_t *) retval->session_key)->higher_ip)->count++;
         } else {
             ((mmt_session_key_t *) retval->session_key)->lower_ip = get_ip6_id(tcpip_context, (struct in6_addr *) session_key->lower_ip, &isl_new);
-            if (((mmt_session_key_t *) retval->session_key)->lower_ip == NULL) {
+            if ( unlikely( ((mmt_session_key_t *) retval->session_key)->lower_ip == NULL )) {
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL
                 mmt_free(session_key->lower_ip);
@@ -289,7 +298,7 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 return NULL;
             }
             ((mmt_session_key_t *) retval->session_key)->higher_ip = get_ip6_id(tcpip_context, (struct in6_addr *) session_key->higher_ip, &ish_new);
-            if (((mmt_session_key_t *) retval->session_key)->higher_ip == NULL) {
+            if ( unlikely( ((mmt_session_key_t *) retval->session_key)->higher_ip == NULL )) {
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL AND check if lower_is is new, if yes free it
                 if (isl_new) {
@@ -307,7 +316,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
         //TODO: we are not verifying the return value of the insert
         retval->setup_packet_direction = session_key->is_lower_initiator;
         //retval->proto_stack = ipacket->proto_stack;
-        if(insert_session_into_protocol_context(protocol_context, retval->session_key, retval) == 0) {
+
+        if( unlikely( insert_session_into_protocol_context(protocol_context, retval->session_key, retval) == 0 )) {
             fprintf(stderr, "[error] get_session: insert_session_into_protocol_context return 0\n");
             //The session failed to be inserted into the MAP.
             //Cleanup what was created for this
@@ -339,7 +349,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
         //*is_new = 1; //This is done at the beginning of this block
     } else {
         //Nothing else to do, just indicate this is not a new session!
-        is_new = 0;
+        *is_new = 0;
+
         mmt_free(session_key->lower_ip);
         mmt_free(session_key->higher_ip);
     }

@@ -315,10 +315,14 @@ uint32_t short_time_diff(struct timeval *starttime, struct timeval *finishtime) 
     return usec;
 }
 
-char mmt_toupper(char in) {
+static inline char _mmt_toupper(char in) {
     if ((in >= 97) && (in <= 122))
         in = in - 32; 
     return in; 
+}
+
+char mmt_toupper(char in) {
+	return _mmt_toupper( in );
 }
 
 char mmt_tolower(char in) {
@@ -329,17 +333,17 @@ char mmt_tolower(char in) {
 
 
 int mmt_strcasecmp(const char *first, const char *second) {
-    for(; mmt_toupper(*first) == mmt_toupper(*second); first++, second++) {
+    for(; _mmt_toupper(*first) == _mmt_toupper(*second); first++, second++) {
         if(*first == '\0') return 0; //complete match
     }
     //The strings do not match
-    return ((mmt_toupper(*first) > mmt_toupper(*second))? +1 : -1);
+    return ((_mmt_toupper(*first) > _mmt_toupper(*second))? +1 : -1);
 }
 
 int mmt_strncasecmp(const char *first, const char *second, size_t max) {
     while (max) {
-        if (mmt_toupper(*first) != mmt_toupper(*second)) {
-            return ((mmt_toupper(*first) > mmt_toupper(*second))? +1 : -1);
+        if (_mmt_toupper(*first) != _mmt_toupper(*second)) {
+            return ((_mmt_toupper(*first) > _mmt_toupper(*second))? +1 : -1);
         }else if (*first == '\0') {
             return 0;
         }
