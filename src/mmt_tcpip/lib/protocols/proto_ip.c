@@ -17,6 +17,7 @@ bool ip_session_comp(void * key1, void * key2) {
     mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
 
     if (l_session->ip_type != r_session->ip_type) return (l_session->ip_type < r_session->ip_type);
+
     // both flows of the same type
     int comp_val = memcmp(&l_session->next_proto, &r_session->next_proto, 5);
     if (comp_val == 0) {
@@ -35,6 +36,40 @@ bool ip_session_comp(void * key1, void * key2) {
     return comp_val < 0;
 }
 
+
+bool ipv4_session_comp(void * key1, void * key2) {
+    mmt_session_key_t * l_session = (mmt_session_key_t *) key1;
+    mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
+
+    int comp_val;
+    comp_val = l_session->next_proto - r_session->next_proto;
+
+    if( comp_val == 0 )
+   	 comp_val = l_session->lower_ip_port - r_session->lower_ip_port;
+
+    if( comp_val == 0 )
+   	 comp_val = l_session->higher_ip_port - r_session->higher_ip_port;
+
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->higher_ip)[0] - ((char *)r_session->higher_ip)[0];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->higher_ip)[1] - ((char *)r_session->higher_ip)[1];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->higher_ip)[2] - ((char *)r_session->higher_ip)[2];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->higher_ip)[3] - ((char *)r_session->higher_ip)[3];
+
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->lower_ip)[0] - ((char *)r_session->lower_ip)[0];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->lower_ip)[1] - ((char *)r_session->lower_ip)[1];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->lower_ip)[2] - ((char *)r_session->lower_ip)[2];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->lower_ip)[3] - ((char *)r_session->lower_ip)[3];
+
+    return comp_val < 0;
+}
 /*
  * IP data extraction routines
  */
@@ -1062,7 +1097,7 @@ int ip_session_cleanup_on_timeout(void * protocol_context, mmt_session_t * timed
     // free session allocated memory. be careful about multiple free of the same data.
     // In the closup some session data are freed. These should not be the same as here.
     free_session_data(timedout_session->session_key, timedout_session, ((protocol_instance_t *) protocol_context)->args);
-
+//printf("timeout\n");
     return 0;
 }
 
@@ -1371,7 +1406,7 @@ int init_proto_ip_struct() {
         register_classification_function(protocol_struct, ip_classify_next_proto);
         register_pre_post_classification_functions(protocol_struct, ip_pre_classification_function, ip_post_classification_function);
 
-        register_sessionizer_function(protocol_struct, ip_sessionizer, ip_session_cleanup_on_timeout, ip_session_comp);
+        register_sessionizer_function(protocol_struct, ip_sessionizer, ip_session_cleanup_on_timeout, ipv4_session_comp);
 
         register_proto_context_init_cleanup_function(protocol_struct, setup_ip_context, ip_context_cleanup, NULL);
         return register_protocol(protocol_struct, PROTO_IP);
