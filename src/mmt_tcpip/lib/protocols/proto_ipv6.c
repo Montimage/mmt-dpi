@@ -9,6 +9,21 @@
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 /** macro to compare 2 IPv6 addresses with each other to identify the "smaller" IPv6 address  */
 
+bool ipv6_session_comp(void * key1, void * key2) {
+    mmt_session_key_t * l_session = (mmt_session_key_t *) key1;
+    mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
+
+    // both flows of the same type
+    int comp_val = memcmp(&l_session->next_proto, &r_session->next_proto, 5);
+    if (comp_val == 0) {
+   	 comp_val = memcmp(l_session->lower_ip, r_session->lower_ip, IPv6_ALEN);
+   	 if (comp_val == 0) {
+   		 comp_val = memcmp(l_session->higher_ip, r_session->higher_ip, IPv6_ALEN);
+   	 }
+    }
+    return comp_val < 0;
+}
+
 static inline
 int is_extention_header(uint8_t next_header) {
     switch (next_header) {
@@ -1237,7 +1252,7 @@ int init_proto_ipv6_struct() {
         register_classification_function(protocol_struct, ip6_classify_next_proto);
         register_pre_post_classification_functions(protocol_struct, ipv6_pre_classification_function, ipv6_post_classification_function);
 
-        register_sessionizer_function(protocol_struct, ip6_sessionizer, ip6_session_cleanup_on_timeout, ip_session_comp);
+        register_sessionizer_function(protocol_struct, ip6_sessionizer, ip6_session_cleanup_on_timeout, ipv6_session_comp);
 
         register_proto_context_init_cleanup_function(protocol_struct, setup_ipv6_context, ipv6_context_cleanup, NULL);
 
