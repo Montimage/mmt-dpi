@@ -1,5 +1,6 @@
 #include "hash_utils.h"
 #include <map>
+#include <unordered_map>
 
 using namespace std;
 
@@ -7,7 +8,6 @@ using namespace std;
 
 typedef std::map<void *, void *, bool(*)(void *, void *) > MMT_Map;
 typedef std::map<uint32_t, void *, bool(*)(uint32_t, uint32_t)> MMT_IntMap;
-
 
 void * init_map_space(generic_comparison_fct comp_fct) {
     return reinterpret_cast<void*> (new MMT_Map(comp_fct));
@@ -92,7 +92,7 @@ int delete_key_value(void * maplist, void * key) {
     map<void *, void *>::iterator it;
     MMT_Map* m = reinterpret_cast<MMT_Map*> (maplist);
     it = m->find(key);
-    if (it != m->end()) {
+    if (likely( it != m->end())) {
         m->erase(it);
     }
     return 1;

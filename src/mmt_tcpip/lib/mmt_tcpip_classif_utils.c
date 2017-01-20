@@ -1,5 +1,6 @@
 #include "mmt_common_internal_include.h"
 
+
 /*
  */
 static inline int _mmt_case_sensitive_reverse_hostname_matching(const char *hostname, const char *url, size_t hostname_len, size_t url_len) {
@@ -7,14 +8,14 @@ static inline int _mmt_case_sensitive_reverse_hostname_matching(const char *host
         return 0; //No match
     }
 
-    const char * hnr = &hostname[ 0 ];
-    const char * urlr = &url[ 0 ];
+    const char * hnr  = &hostname[hostname_len - 1];
+    const char * urlr = &url[url_len - 1];
 
     while (*hnr && *hnr == *urlr && url_len && hostname_len) {
         url_len--;
         hostname_len--;
-        hnr++;
-        urlr++;
+        hnr--;
+        urlr--;
     }
     if (0 == url_len || hostname_len == 0)
         return 1; /* they are equal this far */
@@ -25,7 +26,6 @@ static inline int _mmt_case_sensitive_reverse_hostname_matching(const char *host
 int mmt_case_sensitive_reverse_hostname_matching(const char *hostname, const char *url, size_t hostname_len, size_t url_len) {
     return _mmt_case_sensitive_reverse_hostname_matching( hostname, url, hostname_len, url_len);
 }
-
 
 static const protocol_match doted_host_names[] = {
     {".gmail.com", PROTO_GMAIL, MMT_STATICSTRING_LEN(".gmail.com")},
@@ -947,7 +947,7 @@ static protocol_match ak_cdn_url_start_with_names[] = {
     { NULL, 0, 0}
 };
 
-uint32_t get_proto_id_from_ak_cdn(ipacket_t * ipacket, char *hostname, u_int hostname_len) {
+static inline uint32_t get_proto_id_from_ak_cdn(ipacket_t * ipacket, char *hostname, u_int hostname_len) {
     int i = 0;
     while (ak_cdn_url_start_with_names[i].string_to_match != NULL) {
         if (hostname_len > ak_cdn_url_start_with_names[i].str_len && strncmp(hostname, ak_cdn_url_start_with_names[i].string_to_match, ak_cdn_url_start_with_names[i].str_len) == 0) {
@@ -1092,7 +1092,7 @@ uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hos
     int i = 0;
     //struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
-    while ( __builtin_expect( doted_host_names[i].string_to_match != NULL, 1 )) {
+    while ( likely( doted_host_names[i].string_to_match != NULL )) {
         if (_mmt_case_sensitive_reverse_hostname_matching(hostname, doted_host_names[i].string_to_match, hostname_len, doted_host_names[i].str_len)) {
             ipacket->session->content_flags = ipacket->session->content_flags | doted_host_names[i].content_flags;
             if (doted_host_names[i].proto_id == PROTO_AKAMAI) {

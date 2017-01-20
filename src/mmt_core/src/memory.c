@@ -18,7 +18,7 @@ void *mmt_malloc( size_t size )
 {
    uint8_t *x0 = (uint8_t*)malloc( size + sizeof( size_t ));
 
-   if( x0 == NULL ) {
+   if( unlikely( x0 == NULL )) {
       // log and abort
       (void)fprintf( stderr, "not enough memory\n" );
       abort();
@@ -71,7 +71,7 @@ void *mmt_realloc( void *x, size_t size )
 
 void mmt_free( void *x )
 {
-   if( x == NULL ) return; // nothing to do
+   if( unlikely( x == NULL )) return; // nothing to do
 
    uint8_t *x0 = (uint8_t*)x - sizeof( size_t );
    // freed += *((size_t*)x0);

@@ -247,15 +247,6 @@ MMTAPI int MMTCALL get_packet_offset_at_index(
     const ipacket_t *ipacket,
     unsigned index
 );
-//
-//static inline int get_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
-//    int retval = 0;
-//    int i = 0;
-//    for (; i <= index; i++) {
-//        retval += ipacket->proto_headers_offset->proto_path[i];
-//    }
-//    return retval;
-//}
 
 /**
  * Returns the identifier of the protocol at the given index
