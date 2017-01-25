@@ -111,8 +111,8 @@ static const protocol_match doted_host_names[] = {
     {".amazon.co.uk", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.co.uk")},
     {".amazon.fr", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.fr")},
     {".amazon.co.jp", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.co.jp")},
-    {".amazon.de", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.de")},
-    {".amazon.co.uk", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.co.uk")},
+    //{".amazon.de", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.de")},
+    //{".amazon.co.uk", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.co.uk")},
 
     {".twitter.com", PROTO_TWITTER, MMT_STATICSTRING_LEN(".twitter.com")},
     {".twttr.com", PROTO_TWITTER, MMT_STATICSTRING_LEN(".twttr.com")},
@@ -889,9 +889,9 @@ static const protocol_match doted_host_names[] = {
     {".torrentprovider.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentprovider.com")},
     {".toorgle.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".toorgle.com")},
     {".extratorrent.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".extratorrent.com")},
-    {".kat.ph", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".kat.ph")},
+    //{".kat.ph", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".kat.ph")},
     {".kickasstorrents.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".kickasstorrents.com")},
-    {".torrentz.eu", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentz.eu")},
+    //{".torrentz.eu", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentz.eu")},
     {".isohunt.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".isohunt.com")},
     {".nutorrent.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".nutorrent.com")},
     {".torrentdownloads.net", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentdownloads.net")},
@@ -899,7 +899,7 @@ static const protocol_match doted_host_names[] = {
     {".eztv.it", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".eztv.it")},
     {".mininova.org", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".mininova.org")},
     {".torlock.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torlock.com")},
-    {".seedpeer.me", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".seedpeer.me")},
+    //{".seedpeer.me", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".seedpeer.me")},
     {".h33t.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".h33t.com")},
     {".bitsnoop.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".bitsnoop.com")},
     {".torrenthound.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrenthound.com")},
@@ -1088,7 +1088,7 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
     return PROTO_UNKNOWN;
 }
 
-uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hostname_len) {
+uint32_t _get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hostname_len) {
     int i = 0;
     //struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
@@ -1105,3 +1105,152 @@ uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hos
 
     return PROTO_UNKNOWN;
 }
+
+#define NO_PROTO 0
+#define LEAVES_COUNT 256
+static struct _host_name_by_tree_struct{
+	//a node contains:
+	//- a set of leaves
+	//- and a pointer pointing to a protocol
+	struct _host_name_by_tree_struct *leaves[LEAVES_COUNT];
+	const protocol_match *protocol;
+}*_host_name_by_tree = NULL;
+
+static inline struct _host_name_by_tree_struct * _create_new_node(){
+	int i;
+	struct _host_name_by_tree_struct *ret = mmt_malloc( sizeof( struct _host_name_by_tree_struct ));
+	ret->protocol = NULL;
+	for( i=0; i<LEAVES_COUNT; i++ )
+		ret->leaves[i] = NULL;
+	return ret;
+}
+
+static void _init_tree(){
+	int i=0, j;
+	const protocol_match *proto_ptr;
+	struct _host_name_by_tree_struct *node_ptr;
+	uint8_t c;
+
+	if( _host_name_by_tree != NULL )
+		return;
+
+	_host_name_by_tree = _create_new_node();
+
+	i = 0;
+	//for each host name
+	while ( doted_host_names[i].string_to_match != NULL ){
+		proto_ptr = &doted_host_names[i];
+		node_ptr  = _host_name_by_tree;
+
+		//for each character in the host name
+		for( j=proto_ptr->str_len-1; j>=0; j-- ){
+			c = proto_ptr->string_to_match[j];
+
+			//if the branch corresponding to the character is not exist => create it
+			if( node_ptr->leaves[ c ] == NULL )
+				node_ptr->leaves[ c ] = _create_new_node();
+
+			//goto branch
+			node_ptr = node_ptr->leaves[ c ];
+
+		}
+
+		//we are now in a leaf
+		if( node_ptr->protocol != NULL )
+			fprintf(stderr, "Error: Double domain name\"%s\"\n", node_ptr->protocol->string_to_match );
+
+		node_ptr->protocol = proto_ptr;
+
+		//goto to the next hostname
+		i++;
+	}
+}
+
+static void _free_tree_node( struct _host_name_by_tree_struct *node_ptr ){
+	int i=0;
+	if( node_ptr == NULL )
+		return;
+
+	for( i=0; i<LEAVES_COUNT; i++ )
+		_free_tree_node( node_ptr->leaves[i] );
+
+	mmt_free( node_ptr );
+}
+
+static void _free_tree(){
+	if( _host_name_by_tree == NULL ) return;
+	_free_tree_node( _host_name_by_tree );
+	_host_name_by_tree = NULL;
+}
+
+
+__attribute__((constructor)) void _constructor () {
+	_init_tree();
+}
+
+__attribute__((destructor)) void _destructor () {
+	_free_tree();
+}
+
+
+uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hostname_len ) {
+	int i;
+	uint8_t c;
+	struct _host_name_by_tree_struct *node_ptr = _host_name_by_tree;
+	const protocol_match *proto = node_ptr->protocol;
+
+	for( i=hostname_len-1; i>=0; i-- ){
+		c = hostname[i];
+		//in a leaf
+		if( node_ptr->leaves[c] == NULL )
+			break;
+		else
+			node_ptr = node_ptr->leaves[c];
+		//we have
+		//  .drivers.google.com
+		//  .google.com
+		//need to match "toolbarqueries.clients.google.com"
+		//=>this matches firstly ".google.com"
+		//
+		if( node_ptr->protocol != NULL ){
+			proto = node_ptr->protocol;
+		}
+	}
+
+
+	//give one more chance
+	//we have .google.com
+	//need to match hostname = "google.com"
+	if( node_ptr->leaves['.'] != NULL && i==-1 )
+		proto = node_ptr->leaves['.']->protocol;
+
+//	*p = proto;
+	if( proto == NULL )
+		return PROTO_UNKNOWN;
+
+	ipacket->session->content_flags = ipacket->session->content_flags | proto->content_flags;
+	if ( likely( proto->proto_id != PROTO_AKAMAI))
+		return proto->proto_id;
+	else
+		return get_proto_id_from_ak_cdn(ipacket, hostname, hostname_len);
+}
+
+//uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hostname_len) {
+//	uint32_t val1, val2;
+//	char str[1000];
+//	strncpy( str, hostname, hostname_len );
+//	str[hostname_len] = '\0';
+//	protocol_match *proto = NULL;
+//
+//	val2 = __get_proto_id_by_hostname( ipacket, hostname, hostname_len, &proto );
+//	val1 = _get_proto_id_by_hostname( ipacket, hostname, hostname_len );
+//
+//	if( val1 != val2 ){
+//		if( proto != NULL )
+//			printf("\"%d - %d: [%d] \"%s\" -- [%d]\"%s\" \n", val1, val2, hostname_len, str, proto->str_len, proto->string_to_match );
+//		else
+//			printf("\"%d - %d: [%d] \"%s\" -- NULL \n", val1, val2, hostname_len, str);
+//
+//	}
+//	return val1;
+//}

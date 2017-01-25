@@ -481,623 +481,796 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
     if (packet->content_line.ptr != NULL && packet->content_line.len != 0) {
         //The packet has content line
 #ifdef MMT_CONTENT_FAMILY_APPLICATION
-        if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "application/flv", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/flv found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_FLV);
-            return;
-        }
-        if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "application/x-fcs", 17) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-fcs found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_FLV);
-            return;
-        }
-        if (packet->content_line.len >= 20 && memcmp(packet->content_line.ptr, "application/atom+xml", 20) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/atom+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_ATOM_XML);
-            return;
-        }
-        if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "application/ecmascript", 22) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/ecmascript found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_ECMASCRIPT);
-            return;
-        }
-        if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "application/javascript", 22) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/javascript found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_JAVASCRIPT);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/EDI-X12", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/EDI-X12 found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_EDI_X12);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/EDIFACT", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/EDIFACT found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_EDIFACT);
-            return;
-        }
-        if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "application/json", 16) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/json found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_JSON);
-            return;
-        }
-        if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "application/octet-stream", 24) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/octet-stream found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_OCTET_STREAM);
-            return;
-        }
-        if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "application/ogg", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/ogg found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_OGG);
-            return;
-        }
-        if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "application/pdf", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/pdf found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_PDF);
-            return;
-        }
-        if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "application/postscript", 22) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/postscript found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_POSTSCRIPT);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/rdf+xml", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/rdf+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_RDF_XML);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/rss+xml", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/rss+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_RSS_XML);
-            return;
-        }
-        if (packet->content_line.len >= 20 && memcmp(packet->content_line.ptr, "application/soap+xml", 20) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/soap+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_SOAP_XML);
-            return;
-        }
-        if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "application/font-woff", 21) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/font-woff found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_FONT_WOFF);
-            return;
-        }
-        if (packet->content_line.len >= 23 && memcmp(packet->content_line.ptr, "application/x-font-woff", 23) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-font-woff found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_FONT_WOFF);
-            return;
-        }
-        if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "application/xhtml+xml", 21) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/xhtml+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_XHTML_XML);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/xml-dtd", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/xml-dtd found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_XML_DTD);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/xop+xml", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/xop+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_XOP_XML);
-            return;
-        }
-        if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "application/zip", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/zip found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_ZIP);
-            return;
-        }
-        if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "application/gzip", 16) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/gzip found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_GZIP);
-            return;
-        }
+   	 switch( packet->content_line.ptr[sizeof("application/")] ){
+        case 'a':
+			  if (packet->content_line.len >= 20 && memcmp(packet->content_line.ptr, "application/atom+xml", 20) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/atom+xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_ATOM_XML);
+					return;
+			  }
+			  break;
+
+        case 'e':
+			  if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "application/ecmascript", 22) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/ecmascript found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_ECMASCRIPT);
+					return;
+			  }
+        	  break;
+
+        case 'j':
+      	  if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "application/javascript", 22) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/javascript found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_JAVASCRIPT);
+      		  return;
+      	  }
+      	  if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "application/json", 16) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/json found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_JSON);
+      		  return;
+      	  }
+      	  break;
+
+        case 'E':
+			  if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/EDI-X12", 19) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/EDI-X12 found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_EDI_X12);
+					return;
+			  }
+			  if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/EDIFACT", 19) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/EDIFACT found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_EDIFACT);
+					return;
+			  }
+			  break;
+
+        case 'o':
+			  if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "application/octet-stream", 24) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/octet-stream found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_OCTET_STREAM);
+					return;
+			  }
+			  if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "application/ogg", 15) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/ogg found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_OGG);
+					return;
+			  }
+			  break;
+
+        case 'p':
+			  if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "application/pdf", 15) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/pdf found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_PDF);
+					return;
+			  }
+			  if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "application/postscript", 22) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/postscript found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_POSTSCRIPT);
+					return;
+			  }
+			  break;
+        case 'r':
+			  if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/rdf+xml", 19) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/rdf+xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_RDF_XML);
+					return;
+			  }
+			  if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/rss+xml", 19) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/rss+xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_RSS_XML);
+					return;
+			  }
+			  break;
+
+        case 's':
+			  if (packet->content_line.len >= 20 && memcmp(packet->content_line.ptr, "application/soap+xml", 20) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/soap+xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_SOAP_XML);
+					return;
+			  }
+			  break;
+
+        case 'f':
+      	  if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "application/flv", 15) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/flv found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_FLV);
+      		  return;
+      	  }
+			  if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "application/font-woff", 21) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/font-woff found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_FONT_WOFF);
+					return;
+			  }
+			  break;
+        case 'z':
+			  if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "application/zip", 15) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/zip found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_ZIP);
+					return;
+			  }
+			  break;
+
+        case 'g':
+      	  if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "application/gzip", 16) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/gzip found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_GZIP);
+      		  return;
+      	  }
+      	  break;
+
         // For vendor-specific files : vnd prefix
-        if (packet->content_line.len >= 28 && memcmp(packet->content_line.ptr, "application/vnd.rn-realmedia", 28) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.rn-realmedia found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_REALMEDIA);
-            return;
-        }
-        if (packet->content_line.len >= 23 && memcmp(packet->content_line.ptr, "application/vnd.ms.wms-", 23) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.ms.wms- found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_MS_WMV);
-            return;
-        }
-        if (packet->content_line.len >= 39 && memcmp(packet->content_line.ptr, "application/vnd.oasis.opendocument.text", 39) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.oasis.opendocument.text found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OASIS_OPENDOCUMENT_TEXT);
-            return;
-        }
-        if (packet->content_line.len >= 46 && memcmp(packet->content_line.ptr, "application/vnd.oasis.opendocument.spreadsheet", 46) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.oasis.opendocument.spreadsheet found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OASIS_OPENDOCUMENT_SPREADSHEET);
-            return;
-        }
-        if (packet->content_line.len >= 47 && memcmp(packet->content_line.ptr, "application/vnd.oasis.opendocument.presentation", 47) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.oasis.opendocument.presentation found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OASIS_OPENDOCUMENT_PRESENTATION);
-            return;
-        }
-        if (packet->content_line.len >= 43 && memcmp(packet->content_line.ptr, "application/vnd.oasis.opendocument.graphics", 43) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.oasis.opendocument.graphics found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OASIS_OPENDOCUMENT_GRAPHICS);
-            return;
-        }
-        if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "application/vnd.ms-excel", 24) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.ms-excel found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_MS_EXCEL);
-            return;
-        }
-        if (packet->content_line.len >= 65 && memcmp(packet->content_line.ptr, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 65) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET);
-            return;
-        }
-        if (packet->content_line.len >= 29 && memcmp(packet->content_line.ptr, "application/vnd.ms-powerpoint", 29) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.ms-powerpoint found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_MS_POWERPOINT);
-            return;
-        }
-        if (packet->content_line.len >= 73 && memcmp(packet->content_line.ptr, "application/vnd.openxmlformats-officedocument.presentationml.presentation", 73) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.openxmlformats-officedocument.presentationml.presentation found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OPENXMLFORMATS_OFFICEDOCUMENT_PRESENTATIONML_PRESENTATION);
-            return;
-        }
-        if (packet->content_line.len >= 71 && memcmp(packet->content_line.ptr, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 71) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OPENXMLFORMATS_OFFICEDOCUMENT_WORDPROCESSINGML_DOCUMENT);
-            return;
-        }
-        if (packet->content_line.len >= 31 && memcmp(packet->content_line.ptr, "application/vnd.mozilla.xul+xml", 31) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.mozilla.xul+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_MOZILLA_XUL_XML);
-            return;
-        }
-        if (packet->content_line.len >= 36 && memcmp(packet->content_line.ptr, "application/vnd.google-earth.kml+xml", 36) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.google-earth.kml+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_GOOGLE_EARTH_KML_XML);
-            return;
-        }
-        // For non-standard files : x prefix
-        if (packet->content_line.len >= 33 && memcmp(packet->content_line.ptr, "application/x-www-form-urlencoded", 33) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-www-form-urlencoded found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_WWW_FORM_URLENCODED);
-            return;
-        }
-        if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "application/x-dvi", 17) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-dvi found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_DVI);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/x-latex", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-latex found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_LATEX);
-            return;
-        }
-        if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "application/x-font-ttf", 22) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-font-ttf found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_FONT_TTF);
-            return;
-        }
-        if (packet->content_line.len >= 29 && memcmp(packet->content_line.ptr, "application/x-shockwave-flash", 29) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-shockwave-flash found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_SHOCKWAVE_FLASH);
-            return;
-        }
-        if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "application/x-stuffit", 21) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-stuffit found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_STUFFIT);
-            return;
-        }
-        if (packet->content_line.len >= 28 && memcmp(packet->content_line.ptr, "application/x-rar-compressed", 28) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-rar-compressed found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_RAR_COMPRESSED);
-            return;
-        }
-        if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "application/x-tar", 17) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-tar found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_TAR);
-            return;
-        }
-        if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "application/x-javascript", 24) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-javascript found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_JAVASCRIPT);
-            return;
-        }
-        if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "application/x-deb", 17) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-deb found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_DEB);
-            return;
-        }
-        if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "application/x-mpegURL", 21) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-mpegURL found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_MPEG_URL);
-            return;
-        }
-        // For PKCS standard files: x-pkcs prefix
-        if (packet->content_line.len >= 20 && memcmp(packet->content_line.ptr, "application/x-pkcs12", 20) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs12 found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS12);
-            return;
-        }
-        if (packet->content_line.len >= 32 && memcmp(packet->content_line.ptr, "application/x-pkcs7-certificates", 32) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs7-certificates found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS7_CERTIFICATES);
-            return;
-        }
-        if (packet->content_line.len >= 31 && memcmp(packet->content_line.ptr, "application/x-pkcs7-certreqresp", 31) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs7-certreqresp found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS7_CERTREQRESP);
-            return;
-        }
-        if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "application/x-pkcs7-mime", 24) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs7-mime found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS7_MIME);
-            return;
-        }
-        if (packet->content_line.len >= 29 && memcmp(packet->content_line.ptr, "application/x-pkcs7-signature", 29) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs7-signature found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS7_SIGNATURE);
-            return;
-        }
+        case 'v':
+			  if (packet->content_line.len >= 28 && memcmp(packet->content_line.ptr, "application/vnd.rn-realmedia", 28) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.rn-realmedia found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_REALMEDIA);
+					return;
+			  }
+			  if (packet->content_line.len >= 23 && memcmp(packet->content_line.ptr, "application/vnd.ms.wms-", 23) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.ms.wms- found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_MS_WMV);
+					return;
+			  }
+			  if (packet->content_line.len >= 39 && memcmp(packet->content_line.ptr, "application/vnd.oasis.opendocument.text", 39) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.oasis.opendocument.text found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OASIS_OPENDOCUMENT_TEXT);
+					return;
+			  }
+			  if (packet->content_line.len >= 46 && memcmp(packet->content_line.ptr, "application/vnd.oasis.opendocument.spreadsheet", 46) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.oasis.opendocument.spreadsheet found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OASIS_OPENDOCUMENT_SPREADSHEET);
+					return;
+			  }
+			  if (packet->content_line.len >= 47 && memcmp(packet->content_line.ptr, "application/vnd.oasis.opendocument.presentation", 47) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.oasis.opendocument.presentation found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OASIS_OPENDOCUMENT_PRESENTATION);
+					return;
+			  }
+			  if (packet->content_line.len >= 43 && memcmp(packet->content_line.ptr, "application/vnd.oasis.opendocument.graphics", 43) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.oasis.opendocument.graphics found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OASIS_OPENDOCUMENT_GRAPHICS);
+					return;
+			  }
+			  if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "application/vnd.ms-excel", 24) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.ms-excel found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_MS_EXCEL);
+					return;
+			  }
+			  if (packet->content_line.len >= 65 && memcmp(packet->content_line.ptr, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 65) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET);
+					return;
+			  }
+			  if (packet->content_line.len >= 29 && memcmp(packet->content_line.ptr, "application/vnd.ms-powerpoint", 29) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.ms-powerpoint found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_MS_POWERPOINT);
+					return;
+			  }
+			  if (packet->content_line.len >= 73 && memcmp(packet->content_line.ptr, "application/vnd.openxmlformats-officedocument.presentationml.presentation", 73) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.openxmlformats-officedocument.presentationml.presentation found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OPENXMLFORMATS_OFFICEDOCUMENT_PRESENTATIONML_PRESENTATION);
+					return;
+			  }
+			  if (packet->content_line.len >= 71 && memcmp(packet->content_line.ptr, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 71) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_OPENXMLFORMATS_OFFICEDOCUMENT_WORDPROCESSINGML_DOCUMENT);
+					return;
+			  }
+			  if (packet->content_line.len >= 31 && memcmp(packet->content_line.ptr, "application/vnd.mozilla.xul+xml", 31) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.mozilla.xul+xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_MOZILLA_XUL_XML);
+					return;
+			  }
+			  if (packet->content_line.len >= 36 && memcmp(packet->content_line.ptr, "application/vnd.google-earth.kml+xml", 36) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/vnd.google-earth.kml+xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_VND_GOOGLE_EARTH_KML_XML);
+					return;
+			  }
+			  break;
+        //x
+        case 'x':
+      	  if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "application/x-fcs", 17) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-fcs found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_FLV);
+      		  return;
+      	  }
+
+      	  if (packet->content_line.len >= 23 && memcmp(packet->content_line.ptr, "application/x-font-woff", 23) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-font-woff found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_FONT_WOFF);
+      		  return;
+      	  }
+      	  if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "application/xhtml+xml", 21) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/xhtml+xml found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_XHTML_XML);
+      		  return;
+      	  }
+      	  if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/xml-dtd", 19) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/xml-dtd found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_XML_DTD);
+      		  return;
+      	  }
+      	  if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/xop+xml", 19) == 0) {
+      		  MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/xop+xml found.\n");
+      		  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_XOP_XML);
+      		  return;
+      	  }
+      	  // For non-standard files : x prefix
+			  if (packet->content_line.len >= 33 && memcmp(packet->content_line.ptr, "application/x-www-form-urlencoded", 33) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-www-form-urlencoded found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_WWW_FORM_URLENCODED);
+					return;
+			  }
+			  if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "application/x-dvi", 17) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-dvi found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_DVI);
+					return;
+			  }
+			  if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "application/x-latex", 19) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-latex found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_LATEX);
+					return;
+			  }
+			  if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "application/x-font-ttf", 22) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-font-ttf found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_FONT_TTF);
+					return;
+			  }
+			  if (packet->content_line.len >= 29 && memcmp(packet->content_line.ptr, "application/x-shockwave-flash", 29) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-shockwave-flash found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_SHOCKWAVE_FLASH);
+					return;
+			  }
+			  if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "application/x-stuffit", 21) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-stuffit found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_STUFFIT);
+					return;
+			  }
+			  if (packet->content_line.len >= 28 && memcmp(packet->content_line.ptr, "application/x-rar-compressed", 28) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-rar-compressed found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_RAR_COMPRESSED);
+					return;
+			  }
+			  if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "application/x-tar", 17) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-tar found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_TAR);
+					return;
+			  }
+			  if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "application/x-javascript", 24) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-javascript found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_JAVASCRIPT);
+					return;
+			  }
+			  if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "application/x-deb", 17) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-deb found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_DEB);
+					return;
+			  }
+			  if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "application/x-mpegURL", 21) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-mpegURL found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_MPEG_URL);
+					return;
+			  }
+			  // For PKCS standard files: x-pkcs prefix
+			  if (packet->content_line.len >= 20 && memcmp(packet->content_line.ptr, "application/x-pkcs12", 20) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs12 found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS12);
+					return;
+			  }
+			  if (packet->content_line.len >= 32 && memcmp(packet->content_line.ptr, "application/x-pkcs7-certificates", 32) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs7-certificates found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS7_CERTIFICATES);
+					return;
+			  }
+			  if (packet->content_line.len >= 31 && memcmp(packet->content_line.ptr, "application/x-pkcs7-certreqresp", 31) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs7-certreqresp found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS7_CERTREQRESP);
+					return;
+			  }
+			  if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "application/x-pkcs7-mime", 24) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs7-mime found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS7_MIME);
+					return;
+			  }
+			  if (packet->content_line.len >= 29 && memcmp(packet->content_line.ptr, "application/x-pkcs7-signature", 29) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_APPLICATION, MMT_LOG_DEBUG, "APPLICATION: Content-Type: application/x-pkcs7-signature found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_APPLICATION, MMT_CONTENT_TYPE_X_PKCS7_SIGNATURE);
+					return;
+			  }
+			  break;
+   	 }
 #endif //MMT_CONTENT_FAMILY_APPLICATION
 
 #ifdef MMT_CONTENT_FAMILY_AUDIO
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/basic", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/basic found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_BASIC);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "audio/L24", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/L24 found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_L24);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "audio/mp4", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/mp4 found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MP4);
-            return;
-        }
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "audio/mpeg", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/mpeg found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MPEG);
-            return;
-        }
-        if (packet->content_line.len >= 12 && memcmp(packet->content_line.ptr, "audio/x-mpeg", 12) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-mpeg found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MPEG);
-            return;
-        }
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/mpeg3", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/mpeg3 found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MPEG);
-            return;
-        }
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/mp4a", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/mp4a found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MPEG);
-            return;
-        }
-        if (packet->content_line.len >= 24 && mmt_mem_cmp(packet->content_line.ptr, "audio/x-wav", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-wav found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_X_MS_WMV);
-            return;
-        }
-        if (packet->content_line.len >= 20 && memcmp(packet->content_line.ptr, "audio/x-pn-realaudio", 20) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-pn-realaudio found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_REALAUDIO);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "audio/ogg", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/ogg found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_OGG);
-            return;
-        }
-        if (packet->content_line.len >= 12 && memcmp(packet->content_line.ptr, "audio/vorbis", 12) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/vorbis found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_VORBIS);
-            return;
-        }
-        if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "audio/vnd.rn-realaudio", 22) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/vnd.rn-realaudio found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_VND_RN_REALAUDIO);
-            return;
-        }
-        if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "audio/vnd.wave", 14) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/vnd.wave found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_VND_WAVE);
-            return;
-        }
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "audio/webm", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/webm found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_WEBM);
-            return;
-        }
-        // For non-standard files : x prefix
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/x-aac", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-aac found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_X_AAC);
-            return;
-        }
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/x-caf", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-caf found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_X_CAF);
-            return;
-        }
+   	 switch( packet->content_line.ptr[ sizeof("audio/") ] ){
+   	 case 'b':
+   		 if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/basic", 11) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/basic found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_BASIC);
+   			 return;
+   		 }
+   		 break;
+
+   	 case 'L':
+   		 if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "audio/L24", 9) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/L24 found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_L24);
+   			 return;
+   		 }
+   		 break;
+
+   	 case 'm':
+   		 if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "audio/mp4", 9) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/mp4 found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MP4);
+   			 return;
+   		 }
+   		 if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "audio/mpeg", 10) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/mpeg found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MPEG);
+   			 return;
+   		 }
+   		 if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/mpeg3", 11) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/mpeg3 found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MPEG);
+   			 return;
+   		 }
+   		 if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/mp4a", 10) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/mp4a found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MPEG);
+   			 return;
+   		 }
+   		 break;
+
+   	 case 'x':
+   		 if (packet->content_line.len >= 12 && memcmp(packet->content_line.ptr, "audio/x-mpeg", 12) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-mpeg found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_MPEG);
+   			 return;
+   		 }
+   		 if (packet->content_line.len >= 24 && mmt_mem_cmp(packet->content_line.ptr, "audio/x-wav", 11) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-wav found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_X_MS_WMV);
+   			 return;
+   		 }
+   		 if (packet->content_line.len >= 20 && memcmp(packet->content_line.ptr, "audio/x-pn-realaudio", 20) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-pn-realaudio found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_REALAUDIO);
+   			 return;
+   		 }
+   		 // For non-standard files : x prefix
+   		 if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/x-aac", 11) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-aac found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_X_AAC);
+   			 return;
+   		 }
+   		 if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "audio/x-caf", 11) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/x-caf found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_X_CAF);
+   			 return;
+   		 }
+   		 break;
+
+   	 case 'o':
+   		 if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "audio/ogg", 9) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/ogg found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_OGG);
+   			 return;
+   		 }
+   		 break;
+
+   	 case 'v':
+   		 if (packet->content_line.len >= 12 && memcmp(packet->content_line.ptr, "audio/vorbis", 12) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/vorbis found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_VORBIS);
+   			 return;
+   		 }
+   		 if (packet->content_line.len >= 22 && memcmp(packet->content_line.ptr, "audio/vnd.rn-realaudio", 22) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/vnd.rn-realaudio found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_VND_RN_REALAUDIO);
+   			 return;
+   		 }
+   		 if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "audio/vnd.wave", 14) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/vnd.wave found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_VND_WAVE);
+   			 return;
+   		 }
+   		 break;
+
+   	 case 'w':
+   		 if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "audio/webm", 10) == 0) {
+   			 MMT_LOG(MMT_CONTENT_FAMILY_AUDIO, MMT_LOG_DEBUG, "AUDIO: Content-Type: audio/webm found.\n");
+   			 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_AUDIO, MMT_CONTENT_TYPE_WEBM);
+   			 return;
+   		 }
+   		 break;
+   	 }
 #endif //MMT_CONTENT_FAMILY_AUDIO
 
 #ifdef MMT_CONTENT_FAMILY_IMAGE
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "image/gif", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/gif found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_GIF);
-            return;
-        }
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "image/jpeg", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/jpeg found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_JPEG);
-            return;
-        }
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "image/pjpeg", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/pjpeg found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_PJPEG);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "image/png", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/png found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_PNG);
-            return;
-        }
-        if (packet->content_line.len >= 13 && memcmp(packet->content_line.ptr, "image/svg+xml", 13) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/svg+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_SVG_XML);
-            return;
-        }
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "image/tiff", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/tiff found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_TIFF);
-            return;
-        }
-        if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "image/vnd.microsoft.icon", 24) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/vnd.microsoft.icon found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_VND_MICROSOFT_ICON);
-            return;
-        }
-        // For non-standard files : x prefix
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "image/x-xcf", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/x-xcf found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_X_XCF);
-            return;
-        }
+   	 switch( packet->content_line.ptr[ sizeof("image/") ]){
+   	 case 'g':
+			 if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "image/gif", 9) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/gif found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_GIF);
+				 return;
+			 }
+			 break;
+
+   	 case 'j':
+			 if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "image/jpeg", 10) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/jpeg found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_JPEG);
+				 return;
+			 }
+			 break;
+
+   	 case 'p':
+			 if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "image/pjpeg", 11) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/pjpeg found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_PJPEG);
+				 return;
+			 }
+			 if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "image/png", 9) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/png found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_PNG);
+				 return;
+			 }
+			 break;
+
+   	 case 's':
+			 if (packet->content_line.len >= 13 && memcmp(packet->content_line.ptr, "image/svg+xml", 13) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/svg+xml found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_SVG_XML);
+				 return;
+			 }
+			 break;
+
+   	 case 't':
+			 if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "image/tiff", 10) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/tiff found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_TIFF);
+				 return;
+			 }
+			 break;
+
+   	 case 'v':
+			 if (packet->content_line.len >= 24 && memcmp(packet->content_line.ptr, "image/vnd.microsoft.icon", 24) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/vnd.microsoft.icon found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_VND_MICROSOFT_ICON);
+				 return;
+			 }
+			 break;
+
+   	 case 'x':
+			 // For non-standard files : x prefix
+			 if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "image/x-xcf", 11) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_IMAGE, MMT_LOG_DEBUG, "IMAGE: Content-Type: image/x-xcf found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_IMAGE, MMT_CONTENT_TYPE_X_XCF);
+				 return;
+			 }
+			 break;
+   	 }
 #endif //MMT_CONTENT_FAMILY_IMAGE
 
 #ifdef MMT_CONTENT_FAMILY_MESSAGE
-        if (packet->content_line.len >= 12 && memcmp(packet->content_line.ptr, "message/http", 12) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MESSAGE, MMT_LOG_DEBUG, "MESSAGE: Content-Type: message/http found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MESSAGE, MMT_CONTENT_TYPE_HTTP);
-            return;
-        }
-        if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "message/imdn+xml", 16) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MESSAGE, MMT_LOG_DEBUG, "MESSAGE: Content-Type: message/imdn+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MESSAGE, MMT_CONTENT_TYPE_IMDN_XML);
-            return;
-        }
-        if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "message/partial", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MESSAGE, MMT_LOG_DEBUG, "MESSAGE: Content-Type: message/partial found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MESSAGE, MMT_CONTENT_TYPE_PARTIAL);
-            return;
-        }
-        if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "message/rfc822", 14) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MESSAGE, MMT_LOG_DEBUG, "MESSAGE: Content-Type: message/rfc822 found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MESSAGE, MMT_CONTENT_TYPE_RFC822);
-            return;
-        }
+   	 switch (packet->content_line.ptr[ sizeof("message/")] ){
+   	 case 'h':
+			  if (packet->content_line.len >= 12 && memcmp(packet->content_line.ptr, "message/http", 12) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MESSAGE, MMT_LOG_DEBUG, "MESSAGE: Content-Type: message/http found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MESSAGE, MMT_CONTENT_TYPE_HTTP);
+					return;
+			  }
+			  break;
+
+   	 case 'i':
+			  if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "message/imdn+xml", 16) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MESSAGE, MMT_LOG_DEBUG, "MESSAGE: Content-Type: message/imdn+xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MESSAGE, MMT_CONTENT_TYPE_IMDN_XML);
+					return;
+			  }
+			  break;
+
+   	 case 'p':
+			  if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "message/partial", 15) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MESSAGE, MMT_LOG_DEBUG, "MESSAGE: Content-Type: message/partial found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MESSAGE, MMT_CONTENT_TYPE_PARTIAL);
+					return;
+			  }
+			  break;
+
+   	 case 'r':
+			  if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "message/rfc822", 14) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MESSAGE, MMT_LOG_DEBUG, "MESSAGE: Content-Type: message/rfc822 found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MESSAGE, MMT_CONTENT_TYPE_RFC822);
+					return;
+			  }
+			  break;
+   	 }
 #endif //MMT_CONTENT_FAMILY_MESSAGE
 
 #ifdef MMT_CONTENT_FAMILY_MODEL
-        if (packet->content_line.len >= 13 && memcmp(packet->content_line.ptr, "model/example", 13) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/example found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_EXAMPLE);
-            return;
-        }
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "model/iges", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/iges found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_IGES);
-            return;
-        }
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "model/mesh", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/mesh found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_MESH);
-            return;
-        }
-        if (packet->content_line.len >= 13 && memcmp(packet->content_line.ptr, "model/vrml", 13) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/vrml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_VRML);
-            return;
-        }
-        if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "model/x3d+binary", 16) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/x3d+binary found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_X3D_BINARY);
-            return;
-        }
-        if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "model/x3d+vrml", 14) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/x3d+vrml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_X3D_VRML);
-            return;
-        }
-        if (packet->content_line.len >= 13 && memcmp(packet->content_line.ptr, "model/x3d+xml", 13) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/x3d+xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_X3D_XML);
-            return;
-        }
+   	 switch (packet->content_line.ptr[ sizeof("model/")] ){
+   	 case 'e':
+			  if (packet->content_line.len >= 13 && memcmp(packet->content_line.ptr, "model/example", 13) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/example found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_EXAMPLE);
+					return;
+			  }
+			  break;
+
+   	 case 'i':
+			  if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "model/iges", 10) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/iges found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_IGES);
+					return;
+			  }
+			  break;
+
+   	 case 'm':
+			  if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "model/mesh", 10) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/mesh found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_MESH);
+					return;
+			  }
+			  break;
+
+   	 case 'v':
+			  if (packet->content_line.len >= 13 && memcmp(packet->content_line.ptr, "model/vrml", 13) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/vrml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_VRML);
+					return;
+			  }
+			  break;
+
+   	 case 'x':
+			  if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "model/x3d+binary", 16) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/x3d+binary found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_X3D_BINARY);
+					return;
+			  }
+
+			  if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "model/x3d+vrml", 14) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/x3d+vrml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_X3D_VRML);
+					return;
+			  }
+			  if (packet->content_line.len >= 13 && memcmp(packet->content_line.ptr, "model/x3d+xml", 13) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/x3d+xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_X3D_XML);
+					return;
+			  }
+			  break;
+   	 }
 #endif //MMT_CONTENT_FAMILY_MODEL
 
 #ifdef MMT_CONTENT_FAMILY_MULTIPART
-        if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "multipart/mixed", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/mixed found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_MIXED);
-            return;
-        }
-        if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "multipart/alternative", 21) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/alternative found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_ALTERNATIVE);
-            return;
-        }
-        if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "multipart/related", 17) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/related found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_RELATED);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "multipart/form-data", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/form-data found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_FORM_DATA);
-            return;
-        }
-        if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "multipart/signed", 16) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/signed found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_SIGNED);
-            return;
-        }
-        if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "multipart/encrypted", 19) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/encrypted found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_ENCRYPTED);
-            return;
-        }
+   	 switch (packet->content_line.ptr[ sizeof("multipart/")] ){
+   	 case 'm':
+			 if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "multipart/mixed", 15) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/mixed found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_MIXED);
+				 return;
+			 }
+			 break;
+
+   	 case 'a':
+			 if (packet->content_line.len >= 21 && memcmp(packet->content_line.ptr, "multipart/alternative", 21) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/alternative found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_ALTERNATIVE);
+				 return;
+			 }
+			 break;
+
+   	 case 'r':
+			 if (packet->content_line.len >= 17 && memcmp(packet->content_line.ptr, "multipart/related", 17) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/related found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_RELATED);
+				 return;
+			 }
+			 break;
+
+   	 case 'f':
+			 if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "multipart/form-data", 19) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/form-data found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_FORM_DATA);
+				 return;
+			 }
+			 break;
+
+   	 case 's':
+			 if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "multipart/signed", 16) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/signed found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_SIGNED);
+				 return;
+			 }
+			 break;
+
+   	 case 'e':
+			 if (packet->content_line.len >= 19 && memcmp(packet->content_line.ptr, "multipart/encrypted", 19) == 0) {
+				 MMT_LOG(MMT_CONTENT_FAMILY_MULTIPART, MMT_LOG_DEBUG, "MULTIPART: Content-Type: multipart/encrypted found.\n");
+				 mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MULTIPART, MMT_CONTENT_TYPE_ENCRYPTED);
+				 return;
+			 }
+			 break;
+   	 }
 #endif //MMT_CONTENT_FAMILY_MULTIPART
 
 #ifdef MMT_CONTENT_FAMILY_TEXT
-        if (packet->content_line.len >= 8 && memcmp(packet->content_line.ptr, "text/cmd", 8) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/cmd found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_CMD);
-            return;
-        }
-        if (packet->content_line.len >= 8 && memcmp(packet->content_line.ptr, "text/css", 8) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/css found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_CSS);
-            return;
-        }
-        if (packet->content_line.len >= 8 && memcmp(packet->content_line.ptr, "text/csv", 8) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/csv found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_CSV);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "text/html", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/html found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_HTML);
-            return;
-        }
-        if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "text/javascript", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/javascript found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_JAVASCRIPT);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "text/plain", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/plain found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_PLAIN);
-            return;
-        }
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "text/vcard", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/vcard found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_VCARD);
-            return;
-        }
-        if (packet->content_line.len >= 8 && memcmp(packet->content_line.ptr, "text/xml", 8) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/xml found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_XML);
-            return;
-        }
-        // For non-standard files : x prefix
-        if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "text/x-gwt-rpc", 14) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/x-gwt-rpc found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_X_GWT_RPC);
-            return;
-        }
-        if (packet->content_line.len >= 18 && memcmp(packet->content_line.ptr, "text/x-jquery-tmpl", 18) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/x-jquery-tmpl found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_X_JQUERY_TMPL);
-            return;
-        }
+   	 switch (packet->content_line.ptr[ sizeof("text/")] ){
+   	 case 'c':
+			  if (packet->content_line.len >= 8 && memcmp(packet->content_line.ptr, "text/cmd", 8) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/cmd found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_CMD);
+					return;
+			  }
+			  if (packet->content_line.len >= 8 && memcmp(packet->content_line.ptr, "text/css", 8) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/css found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_CSS);
+					return;
+			  }
+			  if (packet->content_line.len >= 8 && memcmp(packet->content_line.ptr, "text/csv", 8) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/csv found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_CSV);
+					return;
+			  }
+			  break;
+
+   	 case 'h':
+			  if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "text/html", 9) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/html found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_HTML);
+					return;
+			  }
+			  break;
+
+   	 case 'j':
+			  if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "text/javascript", 15) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/javascript found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_JAVASCRIPT);
+					return;
+			  }
+			  break;
+
+   	 case 'p':
+			  if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "text/plain", 9) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/plain found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_PLAIN);
+					return;
+			  }
+			  break;
+
+   	 case 'v':
+			  if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "text/vcard", 10) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/vcard found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_VCARD);
+					return;
+			  }
+			  break;
+
+   	 case 'x':
+			  if (packet->content_line.len >= 8 && memcmp(packet->content_line.ptr, "text/xml", 8) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/xml found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_XML);
+					return;
+			  }
+			  // For non-standard files : x prefix
+			  if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "text/x-gwt-rpc", 14) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/x-gwt-rpc found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_X_GWT_RPC);
+					return;
+			  }
+			  if (packet->content_line.len >= 18 && memcmp(packet->content_line.ptr, "text/x-jquery-tmpl", 18) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/x-jquery-tmpl found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_X_JQUERY_TMPL);
+					return;
+			  }
+			  break;
+   	 }
 #endif //MMT_CONTENT_FAMILY_TEXT
 
 #ifdef MMT_CONTENT_FAMILY_VIDEO
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "video/mpeg", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/mpeg found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_MPEG);
-            return;
-        }
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "video/flash", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/flash found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_FLV);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/nsv", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/nsv found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_MPEG);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/mp4", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/mp4 found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_MP4);
-            return;
-        }
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "video/x-m4v", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-m4v found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_M4V);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/m4v", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/m4v found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_M4V);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/ogg", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/ogg found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_OGG);
-            return;
-        }
-        if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "video/quicktime", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/quicktime found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_QUICKTIME);
-            return;
-        }
-        if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "video/webm", 10) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/webm found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_WEBM);
-            return;
-        }
-        if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "video/x-matroska", 16) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-matroska found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MATROSKA);
-            return;
-        }
-        if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "video/x-ms-wmv", 14) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-ms-wmv found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MS_WMV);
-            return;
-        }
-        if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "video/x-ms-asf", 14) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-ms-asf found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MS_WMV);
-            return;
-        }
-        if (packet->content_line.len >= 24 && mmt_mem_cmp(packet->content_line.ptr, "video/x-msvideo", 15) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-msvideo found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MS_WMV);
-            return;
-        }
-        if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "video/x-ms-asx", 14) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-ms-asx found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MS_WMV);
-            return;
-        }
-        if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/flv", 9) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/flv found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_FLV);
-            return;
-        }
-        if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "video/x-flv", 11) == 0) {
-            MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-flv found.\n");
-            mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_FLV);
-            return;
-        }
+   	 switch (packet->content_line.ptr[ sizeof("video/")] ){
+   	 case 'm':
+			  if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "video/mpeg", 10) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/mpeg found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_MPEG);
+					return;
+			  }
+			  if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/mp4", 9) == 0) {
+				  MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/mp4 found.\n");
+				  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_MP4);
+				  return;
+			  }
+			  if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/m4v", 9) == 0) {
+				  MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/m4v found.\n");
+				  mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_M4V);
+				  return;
+			  }
+			  break;
+
+   	 case 'f':
+			  if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "video/flash", 11) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/flash found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_FLV);
+					return;
+			  }
+			  if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/flv", 9) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/flv found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_FLV);
+					return;
+			  }
+			  break;
+
+   	 case 'n':
+			  if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/nsv", 9) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/nsv found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_MPEG);
+					return;
+			  }
+			  break;
+
+   	 case 'o':
+			  if (packet->content_line.len >= 9 && memcmp(packet->content_line.ptr, "video/ogg", 9) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/ogg found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_OGG);
+					return;
+			  }
+			  break;
+
+   	 case 'q':
+			  if (packet->content_line.len >= 15 && memcmp(packet->content_line.ptr, "video/quicktime", 15) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/quicktime found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_QUICKTIME);
+					return;
+			  }
+			  break;
+
+   	 case 'w':
+			  if (packet->content_line.len >= 10 && memcmp(packet->content_line.ptr, "video/webm", 10) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/webm found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_WEBM);
+					return;
+			  }
+			  break;
+
+   	 case 'x':
+			  if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "video/x-m4v", 11) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-m4v found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_M4V);
+					return;
+			  }
+			  if (packet->content_line.len >= 16 && memcmp(packet->content_line.ptr, "video/x-matroska", 16) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-matroska found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MATROSKA);
+					return;
+			  }
+			  if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "video/x-ms-wmv", 14) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-ms-wmv found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MS_WMV);
+					return;
+			  }
+			  if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "video/x-ms-asf", 14) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-ms-asf found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MS_WMV);
+					return;
+			  }
+			  if (packet->content_line.len >= 24 && mmt_mem_cmp(packet->content_line.ptr, "video/x-msvideo", 15) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-msvideo found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MS_WMV);
+					return;
+			  }
+			  if (packet->content_line.len >= 14 && memcmp(packet->content_line.ptr, "video/x-ms-asx", 14) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-ms-asx found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_MS_WMV);
+					return;
+			  }
+			  if (packet->content_line.len >= 11 && memcmp(packet->content_line.ptr, "video/x-flv", 11) == 0) {
+					MMT_LOG(MMT_CONTENT_FAMILY_VIDEO, MMT_LOG_DEBUG, "VIDEO: Content-Type: video/x-flv found.\n");
+					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_FLV);
+					return;
+			  }
+			  break;
+   	 }
 #endif //MMT_CONTENT_FAMILY_VIDEO
 
 #ifdef MMT_CONTENT_FAMILY_MISC

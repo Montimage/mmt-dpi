@@ -368,6 +368,7 @@ int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_h
 
 void base_packet_extraction(ipacket_t * ipacket, unsigned protocol_index);
 
+static inline
 void update_last_received_packet(packet_info_t * last_packet, ipacket_t * ipacket) {
     last_packet->packet_id += 1;
     last_packet->packet_len = ipacket->p_hdr->len;
@@ -445,7 +446,8 @@ const char *get_protocol_stack_name(uint32_t s_id) {
     return NULL;
 }
 
-static inline void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
+static inline
+void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
     timed_out_session->mmt_handler->active_sessions_count--;
     int i = 0;
 
@@ -520,7 +522,8 @@ void process_outofmemory_force_sessions_timeout(mmt_handler_t * mmt_handler, ipa
     mmt_handler->last_expiry_timeout = timeout_slot_to_free;
 }
 
-static inline void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_seconds) {
+static inline
+void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_seconds) {
     if (current_seconds > mmt_handler->last_expiry_timeout && mmt_handler->last_expiry_timeout != 0) {
         uint32_t counter;
         for (counter = mmt_handler->last_expiry_timeout; counter < current_seconds; counter++) {
@@ -1896,6 +1899,7 @@ int is_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint3
     return retval;
 }
 
+static inline
 struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
     if (_is_registered_protocol(proto_id) > 0) {
         struct attribute_internal_struct * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
@@ -2842,6 +2846,7 @@ void reset_proto_stats(protocol_instance_t * proto) {
 * @configured_protocol      touched
 * @parent_stats             Statistic of protocol parent
 */
+static inline
 proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset) {
     if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
         return NULL;
@@ -2892,6 +2897,7 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
  * @param  new_session         new session
  * @return                     updated protocol statistic
  */
+static inline
 proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session) {
     if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
         return NULL;
@@ -3208,6 +3214,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
  * @param ipacket ipacket
  * @param header  header
  */
+static inline
 void copy_ipacket_header(ipacket_t *ipacket, struct pkthdr *header) {
     ipacket->p_hdr = &ipacket->internal_p_hdr;
     ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
@@ -3220,6 +3227,7 @@ void copy_ipacket_header(ipacket_t *ipacket, struct pkthdr *header) {
 }
 
 
+static inline
 ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
     // TODO: configuration option whether mmt need to allocate data or just refer it.
     classified_proto_t classified_proto;
