@@ -1630,31 +1630,31 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
 
     /* FIRST PAYLOAD PACKET FROM CLIENT */
     /* check if the packet starts with POST or GET */
-    if (packet->payload_packet_len >= 4 && memcmp(packet->payload, "GET ", 4) == 0) {
+    if (packet->payload_packet_len >= 4 && mmt_memcmp(packet->payload, "GET ", 4) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: GET FOUND\n");
         return 4;
-    } else if (packet->payload_packet_len >= 5 && memcmp(packet->payload, "POST ", 5) == 0) {
+    } else if (packet->payload_packet_len >= 5 && mmt_memcmp(packet->payload, "POST ", 5) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: POST FOUND\n");
         return 5;
-    } else if (packet->payload_packet_len >= 8 && memcmp(packet->payload, "OPTIONS ", 8) == 0) {
+    } else if (packet->payload_packet_len >= 8 && mmt_memcmp(packet->payload, "OPTIONS ", 8) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: OPTIONS FOUND\n");
         return 8;
-    } else if (packet->payload_packet_len >= 5 && memcmp(packet->payload, "HEAD ", 5) == 0) {
+    } else if (packet->payload_packet_len >= 5 && mmt_memcmp(packet->payload, "HEAD ", 5) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: HEAD FOUND\n");
         return 5;
-    } else if (packet->payload_packet_len >= 4 && memcmp(packet->payload, "PUT ", 4) == 0) {
+    } else if (packet->payload_packet_len >= 4 && mmt_memcmp(packet->payload, "PUT ", 4) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PUT FOUND\n");
         return 4;
-    } else if (packet->payload_packet_len >= 7 && memcmp(packet->payload, "DELETE ", 7) == 0) {
+    } else if (packet->payload_packet_len >= 7 && mmt_memcmp(packet->payload, "DELETE ", 7) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: DELETE FOUND\n");
         return 7;
-    } else if (packet->payload_packet_len >= 8 && memcmp(packet->payload, "CONNECT ", 8) == 0) {
+    } else if (packet->payload_packet_len >= 8 && mmt_memcmp(packet->payload, "CONNECT ", 8) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: CONNECT FOUND\n");
         return 8;
-    } else if (packet->payload_packet_len >= 9 && memcmp(packet->payload, "PROPFIND ", 9) == 0) {
+    } else if (packet->payload_packet_len >= 9 && mmt_memcmp(packet->payload, "PROPFIND ", 9) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PROFIND FOUND\n");
         return 9;
-    } else if (packet->payload_packet_len >= 7 && memcmp(packet->payload, "REPORT ", 7) == 0) {
+    } else if (packet->payload_packet_len >= 7 && mmt_memcmp(packet->payload, "REPORT ", 7) == 0) {
         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: REPORT FOUND\n");
         return 7;
     }
@@ -2122,7 +2122,7 @@ void mmt_classify_me_http(ipacket_t * ipacket, unsigned index) {
             //The packet is not a response! maybe this is a request
             filename_start = http_request_url_offset(ipacket);
             if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
-                    && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+                    && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
                 packet->http_url_name.ptr = &packet->payload[filename_start];
                 packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
 

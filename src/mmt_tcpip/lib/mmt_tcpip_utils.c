@@ -127,11 +127,13 @@ uint32_t mmt_bytestream_to_ipv4(const uint8_t * str, uint16_t max_chars_to_read,
     return htonl(val);
 }
 
+static const uint16_t NEW_LINE = ntohs(0x0d0a);
+
 /* internal function for every detection to parse one packet and to increase the info buffer */
 void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     uint32_t a;
-    uint16_t end = packet->payload_packet_len - 1;
+    uint16_t end;
     if (packet->packet_lines_parsed_complete != 0)
         return;
 
@@ -173,29 +175,31 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 
     packet->has_x_cdn_hdr = 0;
 
-    if (packet->payload_packet_len == 0)
+    if( unlikely( packet->payload_packet_len == 0 ))
         return;
 
     packet->line[packet->parsed_lines].ptr = packet->payload;
     packet->line[packet->parsed_lines].len = 0;
     packet->packet_id = ipacket->packet_id;
 
-    const uint16_t new_line   = ntohs(0x0d0a);
-//    const uint8_t lower_byte  = new_line;
-//    const uint8_t higher_byte = new_line >> 8;
+//    const uint8_t lower_byte  = NEW_LINE;
+//    const uint8_t higher_byte = NEW_LINE >> 8;
     uint16_t line_length;
     const uint8_t *str;
 
+    end = packet->payload_packet_len - 1;
+
     //for each byte in packet payload
     for (a = 0; likely( a < end ); a++){
-    // search for an empty line position: 0x0d0a
-       if ( get_u16(packet->payload, a) == new_line ){
+//    // search for an empty line position: 0x0d0a
+       if ( get_u16(packet->payload, a) == NEW_LINE ){
 //   	 if( packet->payload[ a ] == higher_byte && packet->payload[ a+1 ] == lower_byte ){
 
       	   line_length =  &packet->payload[a] - packet->line[packet->parsed_lines].ptr;
             packet->line[packet->parsed_lines].len = line_length;
+
             //empty line => end of HTTP header
-            if (line_length == 0) {
+            if ( unlikely( line_length == 0 )) {
             	packet->empty_line_position     = a;
             	packet->empty_line_position_set = 1;
             }else{
@@ -223,7 +227,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 									&& packet->line[0].len >= MMT_STATICSTRING_LEN("HTTP/1.1 200 ") &&
 									str[MMT_STATICSTRING_LEN("HTTP/1.1 ")] > '0' &&
 									str[MMT_STATICSTRING_LEN("HTTP/1.1 ")] < '6' &&
-									memcmp( str, "HTTP/1.", MMT_STATICSTRING_LEN("HTTP/1.")) == 0
+									mmt_memcmp( str, "HTTP/1.", MMT_STATICSTRING_LEN("HTTP/1.")) == 0
 							) {
 								packet->http_response.ptr = &str[MMT_STATICSTRING_LEN("HTTP/1.1 ")];
 								packet->http_response.len = packet->line[0].len - MMT_STATICSTRING_LEN("HTTP/1.1 ");
@@ -236,7 +240,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 							break;
             		case 'o':
 							if ( //line_length > 6 &&
-									memcmp(str, "Host:", 5) == 0)
+									mmt_memcmp(str, "Host:", 5) == 0)
 							{
 								// some stupid clients omit a space and place the hostname directly after the colon
 								if (str[5] == ' ') {
@@ -253,7 +257,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             		break;
             	case 'S':
             		if ( //line_length > 8 &&
-            				memcmp(str, "Server:", 7) == 0)
+            				mmt_memcmp(str, "Server:", 7) == 0)
             		{
             			// some stupid clients omit a space and place the servername directly after the colon
             			if (str[7] == ' ') {
@@ -268,7 +272,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 
             	case 'c':
             		if ( //line_length > 13 &&
-            				memcmp(str, "content-type:", 13) == 0)
+            				mmt_memcmp(str, "content-type:", 13) == 0)
             		{
             			packet->content_line.ptr = &str[13];
             			packet->content_line.len = line_length - 13;
@@ -277,7 +281,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 
             	case 'A':
             		if ( //line_length > 8 &&
-            				memcmp(str, "Accept: ", 8) == 0)
+            				mmt_memcmp(str, "Accept: ", 8) == 0)
             		{
             			packet->accept_line.ptr = &str[8];
             			packet->accept_line.len = line_length - 8;
@@ -286,7 +290,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 
             	case 'R':
             		if ( //line_length > 9 &&
-            				memcmp(str, "Referer: ", 9) == 0)
+            				mmt_memcmp(str, "Referer: ", 9) == 0)
             		{
             			packet->referer_line.ptr = &str[9];
             			packet->referer_line.len = line_length - 9;
@@ -295,8 +299,8 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 
             	case 'U':
             		if ( //line_length > 12 &&
-            				(memcmp(str, "User-Agent: ", 12) == 0 ||
-            				 memcmp(str, "User-agent: ", 12) == 0))
+            				(mmt_memcmp(str, "User-Agent: ", 12) == 0 ||
+            				 mmt_memcmp(str, "User-agent: ", 12) == 0))
             		{
             			packet->user_agent_line.ptr = &str[12];
             			packet->user_agent_line.len = line_length - 12;
@@ -307,42 +311,42 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             		switch( str[8] ){
             		case 'T':
 							if ( //line_length > 14 &&
-									memcmp (str, "Content-Type: ", 14) == 0) {
+									mmt_memcmp (str, "Content-Type: ", 14) == 0) {
 								packet->content_line.ptr = &str[14];
 								packet->content_line.len = line_length - 14;
 							}
 							break;
             		case 't':
             			if ( //line_length > 14 &&
-            					memcmp(str, "Content-type: ", 14) == 0) {
+            					mmt_memcmp(str, "Content-type: ", 14) == 0) {
             				packet->content_line.ptr = &str[14];
             				packet->content_line.len = line_length - 14;
             			}
             			break;
             		case 'E':
 							if ( //line_length > 18 &&
-									memcmp(str, "Content-Encoding: ", 18) == 0) {
+									mmt_memcmp(str, "Content-Encoding: ", 18) == 0) {
 								packet->http_encoding.ptr = &str[18];
 								packet->http_encoding.len = line_length - 18;
 							}
 							break;
             		case 'L':
 							if ( //line_length > 16 &&
-									(memcmp(str, "Content-Length: ", 16) == 0) ) {
+									(mmt_memcmp(str, "Content-Length: ", 16) == 0) ) {
 								packet->http_contentlen.ptr = &str[16];
 								packet->http_contentlen.len = line_length - 16;
 							}
 							break;
             		case 'l':
             			if ( //line_length > 16 &&
-            					(memcmp(str, "content-length: ", 16) == 0)) {
+            					(mmt_memcmp(str, "content-length: ", 16) == 0)) {
             				packet->http_contentlen.ptr = &str[16];
             				packet->http_contentlen.len = line_length - 16;
             			}
             			break;
             		default:
 							if ( //line_length > 8 &&
-									memcmp(str, "Cookie: ", 8) == 0) {
+									mmt_memcmp(str, "Cookie: ", 8) == 0) {
 								packet->http_cookie.ptr = &str[8];
 								packet->http_cookie.len = line_length - 8;
 							}
@@ -351,7 +355,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 
             	case 'T':
             		if ( //line_length > 19 &&
-								memcmp(str, "Transfer-Encoding: ", 19) == 0) {
+								mmt_memcmp(str, "Transfer-Encoding: ", 19) == 0) {
             			packet->http_transfer_encoding.ptr = &str[19];
             			packet->http_transfer_encoding.len = line_length - 19;
             		}
@@ -359,7 +363,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             		break;
             	case 'X':
             		if ( //line_length > 16 &&
-            				memcmp(str, "X-Session-Type: ", 16) == 0) {
+            				mmt_memcmp(str, "X-Session-Type: ", 16) == 0) {
             			packet->http_x_session_type.ptr = &str[16];
             			packet->http_x_session_type.len = line_length - 16;
             		}
@@ -399,6 +403,13 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
         packet->parsed_lines++;
     }
 }
+
+//void mmt_parse_packet_line_info(ipacket_t * ipacket) {
+//    if (ipacket->internal_packet->packet_lines_parsed_complete != 0)
+//        return;
+//
+//    _mmt_parse_packet_line_info( ipacket );
+//}
 
 void mmt_parse_packet_line_info_unix(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
