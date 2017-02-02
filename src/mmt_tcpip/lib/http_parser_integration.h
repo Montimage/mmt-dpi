@@ -35,8 +35,10 @@ typedef struct
  **/
 typedef struct 
 {
-  char hfield[1024]; /**> temporary store for header field **/
-  char hvalue[16 * 1024]; /**> temporary store for header value **/
+  // char hfield[1024]; /**> temporary store for header field **/
+  // char hvalue[16 * 1024]; /**> temporary store for header value **/
+  char *hfield; /**> temporary store for header field **/
+  char *hvalue; /**> temporary store for header value **/
   int index; /**> index of the current protocol in the protocol path **/
   ipacket_t * ipacket; /**> pointer to the ipacket under processing **/ 
 } stream_processor_t;

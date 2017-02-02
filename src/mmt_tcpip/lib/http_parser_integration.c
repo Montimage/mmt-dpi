@@ -25,6 +25,12 @@ int message_begin_cb (http_parser *p)
 int header_field_cb (http_parser *p, const char *buf, size_t len)
 {
   stream_processor_t * sp = (stream_processor_t *) p->data; 
+  
+  // if(len>=1024){
+  //   fprintf(stderr, "[error] Header field length is too big: %zu - %s\n", len,buf);
+  //   return 0;
+  // }
+  sp->hfield = malloc((len+1)*sizeof(char));
   strncpy(sp->hfield, buf, len);
   sp->hfield[len] = '\0';
   //fprintf(stdout, "Header: %s : ", sp->hfield);
@@ -39,6 +45,7 @@ int header_field_cb (http_parser *p, const char *buf, size_t len)
 int header_value_cb (http_parser *p, const char *buf, size_t len)
 {
   stream_processor_t * sp = (stream_processor_t *) p->data;
+  sp->hvalue = malloc((len+1)*sizeof(char));
   strncpy(sp->hvalue, buf, len);
   sp->hvalue[len] = '\0';
 
@@ -56,16 +63,20 @@ int header_value_cb (http_parser *p, const char *buf, size_t len)
  **/
 int request_url_cb (http_parser *p, const char *buf, size_t len)
 {
-  char temp[20408 + 1];
+  // char temp[20408 + 1];
+  char *temp;
+  temp = malloc((len+1)*sizeof(char));
   strncpy(temp, buf, len);
   temp[len] = '\0';
   //fprintf(stdout, "URL: %s\n", temp);
+  // fire_attribute_event(sp->ipacket, PROTO_HTTP, HTTP_HEADER, sp->index, (void *) &temp);
   return 0;
 }
 
 int response_status_cb (http_parser *p, const char *buf, size_t len)
 {
-  char temp[20480 + 1];
+  char *temp;
+  temp = malloc((len+1)*sizeof(char));
   strncpy(temp, buf, len);
   temp[len] = '\0';
   //fprintf(stdout, "Status: %s\n", temp);
