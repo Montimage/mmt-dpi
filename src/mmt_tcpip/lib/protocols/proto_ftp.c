@@ -2547,7 +2547,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         } else {
             // New not FTP control packet
             if (ftp_list_control->next == NULL) {
-                fprintf(stderr, "FTP: Cannot find any control connection\n");
+                // fprintf(stderr, "FTP: Cannot find any control connection\n");
                 return MMT_CONTINUE;
             } else {
                 ftp_control_session_t *temp = ftp_list_control->next;
