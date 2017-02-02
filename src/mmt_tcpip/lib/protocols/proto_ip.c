@@ -1112,7 +1112,7 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     unsigned len = ipacket->p_hdr->caplen - off;
 
     if ( len < sizeof( struct iphdr )) {
-        (void)fprintf( stderr, "*** Warning: malformed packet (not enough data)\n" );
+        (void)fprintf( stderr, "*** Warning: malformed packet (not enough data): %lu\n",ipacket->packet_id );
         return 0;
     }
 
