@@ -2498,6 +2498,9 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
     ftp_tuple6_t *tuple6 = ftp_get_tuple6(ipacket);
 
+    if(tuple6 == NULL){
+        return MMT_CONTINUE;
+    }
 
     ftp_control_session_t *ftp_list_control = ftp_get_list_control_session(ipacket, index);
     ftp_control_session_t *ftp_control = NULL;
@@ -2507,7 +2510,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
             ftp_control = (ftp_control_session_t*)ipacket->session->session_data[index];
             int compare = ftp_compare_tuple6(tuple6, ftp_control->contrl_conn);
             if (compare == 0) {
-                fprintf(stderr, "FTP: Not correct control connection\n");
+                // fprintf(stderr, "FTP: Not correct control connection\n");
                 return MMT_CONTINUE;
             } else {
                 ftp_control->contrl_conn->direction = tuple6->direction;
