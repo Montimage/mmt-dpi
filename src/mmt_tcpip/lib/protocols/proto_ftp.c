@@ -16,7 +16,7 @@
  * @param  c2  ascii code number of replacing character
  * @return     new string after replacing
  */
-char * str_replace_all_char(char *str, int c1, int c2) {
+inline char * str_replace_all_char(char *str, int c1, int c2) {
     char *new_str;
     new_str = (char*)malloc(strlen(str) + 1);
     memcpy(new_str, str, strlen(str));
@@ -41,7 +41,7 @@ char * str_replace_all_char(char *str, int c1, int c2) {
  *
  * this functions is not used to accept, just to not reject
  */
-static uint8_t mmt_int_check_possible_ftp_command(char *payload , int payload_len) {
+inline static uint8_t mmt_int_check_possible_ftp_command(char *payload , int payload_len) {
     if (payload_len < 3)
         return 0;
 
@@ -72,7 +72,7 @@ static uint8_t mmt_int_check_possible_ftp_command(char *payload , int payload_le
 /**
  * ftp replies are are 3-digit number followed by space or hyphen
  */
-static uint8_t mmt_int_check_possible_ftp_reply(char *payload , int payload_len) {
+inline static uint8_t mmt_int_check_possible_ftp_reply(char *payload , int payload_len) {
     if (payload_len < 5)
         return 0;
 
@@ -94,7 +94,7 @@ static uint8_t mmt_int_check_possible_ftp_reply(char *payload , int payload_len)
  * there is no real indication whether it is a continuation message, we just
  * require that there are at least 5 ascii characters
  */
-static uint8_t mmt_int_check_possible_ftp_continuation_reply(char *payload , int payload_len) {
+inline static uint8_t mmt_int_check_possible_ftp_continuation_reply(char *payload , int payload_len) {
     uint16_t i;
 
     if (payload_len < 5)
@@ -108,13 +108,46 @@ static uint8_t mmt_int_check_possible_ftp_continuation_reply(char *payload , int
     return 1;
 }
 
+
+/**
+ * New FTP tuple6
+ * @return new ftp tuple 6
+ */
+ftp_tuple6_t * ftp_new_tuple6() {
+    ftp_tuple6_t * t = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
+    t->conn_type = 0;
+    t->direction = 0;
+    t->s_addr = 0;
+    t->s_port = 0;
+    t->c_addr = 0;
+    t->c_port = 0;
+    t->ip_session_id = 0;
+    return t;
+}
+
+ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6) {
+    ftp_tuple6_t * t = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
+    t->conn_type = tuple6->conn_type;
+    t->direction = tuple6->direction;
+    t->s_addr = tuple6->s_addr;
+    t->s_port = tuple6->s_port;
+    t->c_addr = tuple6->c_addr;
+    t->c_port = tuple6->c_port;
+    t->ip_session_id = tuple6->ip_session_id;
+    return t;
+}
+
+void free_ftp_tuple6(ftp_tuple6_t *t6) {
+    if (t6 != NULL) free(t6);
+}
+
 /**
  * Get tuple 6 of packet: server_address: server_port - client_address: client_port, type of connection and direction of packet (send from server to client or other)
  * @param  ipacket packet
  * @return         a tuple6
  */
 ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
-    ftp_tuple6_t *t6;
+    ftp_tuple6_t *t6 = NULL;
     t6 = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
     t6->ip_session_id = ipacket->session->session_id;
     if (ipacket->internal_packet->tcp && ipacket->internal_packet->iph) {
@@ -144,6 +177,7 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
             return t6;
         }
     }
+    free_ftp_tuple6(t6);
     return NULL;
 }
 
@@ -190,37 +224,6 @@ void free_ftp_command(ftp_command_t *cmd) {
     free(cmd);
 }
 
-/**
- * New FTP tuple6
- * @return new ftp tuple 6
- */
-ftp_tuple6_t * ftp_new_tuple6() {
-    ftp_tuple6_t * t = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
-    t->conn_type = 0;
-    t->direction = 0;
-    t->s_addr = 0;
-    t->s_port = 0;
-    t->c_addr = 0;
-    t->c_port = 0;
-    t->ip_session_id = 0;
-    return t;
-}
-
-ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6) {
-    ftp_tuple6_t * t = (ftp_tuple6_t*)malloc(sizeof(ftp_tuple6_t));
-    t->conn_type = tuple6->conn_type;
-    t->direction = tuple6->direction;
-    t->s_addr = tuple6->s_addr;
-    t->s_port = tuple6->s_port;
-    t->c_addr = tuple6->c_addr;
-    t->c_port = tuple6->c_port;
-    t->ip_session_id = tuple6->ip_session_id;
-    return t;
-}
-
-void free_ftp_tuple6(ftp_tuple6_t *t6) {
-    if (t6 != NULL) free(t6);
-}
 
 /**
  * New FTP user
@@ -353,6 +356,8 @@ void free_ftp_control_session(ftp_control_session_t *ftp_control) {
 */
 int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2) {
 
+    if(t1 == NULL || t2==NULL) return 0;
+
     if (t1->conn_type != t2->conn_type) return 0;
 
     if (t1->conn_type == MMT_FTP_CONTROL_CONNECTION) {
@@ -432,7 +437,7 @@ void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6, ftp_tuple6_t *conn, int comp
  * @return         1 if the packet belongs to a control connection
  *                 2 if the packet doesn't belong to a control connection
  */
-int ftp_check_control_packet(const ipacket_t *ipacket) {
+inline int ftp_check_control_packet(const ipacket_t *ipacket) {
     if (ipacket->internal_packet->tcp) {
         return (ipacket->internal_packet->tcp->source == htons(21) || ipacket->internal_packet->tcp->dest == htons(21));
     }
@@ -443,7 +448,7 @@ int ftp_check_control_packet(const ipacket_t *ipacket) {
  * Set command ID for a command
  * @param cmd command to set id
  */
-void ftp_set_command_id(ftp_command_t* cmd) {
+inline void ftp_set_command_id(ftp_command_t* cmd) {
     if (strlen(cmd->str_cmd) == 3) {
         if (strcmp(cmd->str_cmd, "PWD") == 0 || strcmp(cmd->str_cmd, "pwd") == 0) {
             cmd->cmd = MMT_FTP_PWD_CMD;
@@ -841,7 +846,7 @@ int ftp_get_response_code(char* payload, int payload_len) {
  * Example: EPRT |1|132.235.1.2|6275|
  * @return             Client IP address
  */
-uint32_t ftp_get_data_client_addr_from_EPRT(char * payload) {
+inline uint32_t ftp_get_data_client_addr_from_EPRT(char * payload) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, "|");
     char * str_addr;
@@ -862,7 +867,7 @@ uint32_t ftp_get_data_client_addr_from_EPRT(char * payload) {
  * Example: EPRT |1|132.235.1.2|6275|
  * @return             Client port number
  */
-uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
+inline uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, "|");
     char * str_addr;
@@ -882,19 +887,21 @@ uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
  * Example: 192,168,1,2,7,138 -> addr = inet_addr("192.168.1.2")
  * @return             an address
  */
-uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
+inline uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, ",");
-    char * str_addr;
+    char * str_addr = NULL;
     int len = indexes[3];
     str_addr = (char*)malloc(len + 1);
     memcpy(str_addr, payload, len + 1);
     str_addr[len] = '\0';
     // printf("String before replacing: %s\n",str_addr);
-    str_addr = str_replace_all_char(str_addr, (int)',', (int)'.');
+    char *new_str_addr = NULL;
+    new_str_addr = str_replace_all_char(str_addr, (int)',', (int)'.');
     // printf("String after replacing: %s\n",str_addr);
-    uint32_t address = inet_addr(str_addr);
+    uint32_t address = inet_addr(new_str_addr);
     free(str_addr);
+    free(new_str_addr);
     free(indexes);
     return address;
 }
@@ -905,7 +912,7 @@ uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
  * Example: 192,168,1,2,7,138 -> port_nb = 7*256 + 138
  * @return             port number
  */
-uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len) {
+inline uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, ",");
 
@@ -929,7 +936,7 @@ uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len) {
  * @param  payload payload to extract server port
  * @return         server port
  */
-uint16_t ftp_get_data_server_port_code_229(char *payload) {
+inline uint16_t ftp_get_data_server_port_code_229(char *payload) {
     char *ret = str_subvalue(payload, "(|||", "|)");
     uint16_t s_port = htons(atoi(ret));
     free(ret);
@@ -942,7 +949,7 @@ uint16_t ftp_get_data_server_port_code_229(char *payload) {
  * @param  payload payload
  * @return         server address
  */
-uint32_t ftp_get_data_server_addr_code_227(char * payload) {
+inline uint32_t ftp_get_data_server_addr_code_227(char * payload) {
     char * str = str_subvalue(payload, "(", ")");
     uint32_t len = strlen(str);
     uint32_t address = ftp_get_addr_from_parameter(str, len);
@@ -954,7 +961,7 @@ uint32_t ftp_get_data_server_addr_code_227(char * payload) {
  * @param  payload payload
  * @return         server address
  */
-uint16_t ftp_get_data_server_port_code_227(char * payload) {
+inline uint16_t ftp_get_data_server_port_code_227(char * payload) {
     char * str = str_subvalue(payload, "(", ")");
     uint32_t len = strlen(str);
     uint16_t port = ftp_get_port_from_parameter(str, len);
@@ -968,7 +975,7 @@ uint16_t ftp_get_data_server_port_code_227(char * payload) {
  * @param  payload Payload to extract
  * @return         port number
  */
-uint16_t ftp_get_data_server_port_code_228(char *payload) {
+inline uint16_t ftp_get_data_server_port_code_228(char *payload) {
     char *ret = str_subvalue(payload, ", ", ")");
     uint16_t s_addr = htons(atoi(ret));
     free(ret);
@@ -981,7 +988,7 @@ uint16_t ftp_get_data_server_port_code_228(char *payload) {
  * @param  payload payload to extract
  * @return         server address
  */
-uint32_t ftp_get_data_server_addr_code_228(char *payload) {
+inline uint32_t ftp_get_data_server_addr_code_228(char *payload) {
     char *ret = str_subvalue(payload, "(", ",");
     uint32_t s_addr = htons(atoi(ret));
     free(ret);
