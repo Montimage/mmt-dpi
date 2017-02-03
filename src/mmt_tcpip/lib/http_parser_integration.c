@@ -30,6 +30,9 @@ int header_field_cb (http_parser *p, const char *buf, size_t len)
   //   fprintf(stderr, "[error] Header field length is too big: %zu - %s\n", len,buf);
   //   return 0;
   // }
+  if(sp->hfield!=NULL){
+    free(sp->hfield);
+  }
   sp->hfield = malloc((len+1)*sizeof(char));
   strncpy(sp->hfield, buf, len);
   sp->hfield[len] = '\0';
@@ -45,6 +48,9 @@ int header_field_cb (http_parser *p, const char *buf, size_t len)
 int header_value_cb (http_parser *p, const char *buf, size_t len)
 {
   stream_processor_t * sp = (stream_processor_t *) p->data;
+  if(sp->hvalue!=NULL){
+    free(sp->hvalue);
+  }
   sp->hvalue = malloc((len+1)*sizeof(char));
   strncpy(sp->hvalue, buf, len);
   sp->hvalue[len] = '\0';
@@ -53,7 +59,6 @@ int header_value_cb (http_parser *p, const char *buf, size_t len)
   hdr.hfield = sp->hfield;
   hdr.hvalue = sp->hvalue;
   fire_attribute_event(sp->ipacket, PROTO_HTTP, HTTP_HEADER, sp->index, (void *) &hdr);
-
   return 0;
 }
 
@@ -64,10 +69,10 @@ int header_value_cb (http_parser *p, const char *buf, size_t len)
 int request_url_cb (http_parser *p, const char *buf, size_t len)
 {
   // char temp[20408 + 1];
-  char *temp;
-  temp = malloc((len+1)*sizeof(char));
-  strncpy(temp, buf, len);
-  temp[len] = '\0';
+  // char *temp;
+  // temp = malloc((len+1)*sizeof(char));
+  // strncpy(temp, buf, len);
+  // temp[len] = '\0';
   //fprintf(stdout, "URL: %s\n", temp);
   // fire_attribute_event(sp->ipacket, PROTO_HTTP, HTTP_HEADER, sp->index, (void *) &temp);
   return 0;
@@ -75,10 +80,10 @@ int request_url_cb (http_parser *p, const char *buf, size_t len)
 
 int response_status_cb (http_parser *p, const char *buf, size_t len)
 {
-  char *temp;
-  temp = malloc((len+1)*sizeof(char));
-  strncpy(temp, buf, len);
-  temp[len] = '\0';
+  // char *temp;
+  // temp = malloc((len+1)*sizeof(char));
+  // strncpy(temp, buf, len);
+  // temp[len] = '\0';
   //fprintf(stdout, "Status: %s\n", temp);
   return 0;
 }
