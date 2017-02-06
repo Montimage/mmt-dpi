@@ -66,6 +66,13 @@ void ip_dgram_init( ip_dgram_t *dg )
 
 void ip_dgram_cleanup( ip_dgram_t *dg )
 {
+   if(dg==NULL) return;
+
+   int i = 0;
+   for(i =0 ;i<MMT_MAX_NUMBER_FRAGMENT;i++){
+      dg->packet_offsets[i] = -1;
+   }
+
    ip_frags_t *holes = &dg->holes;
    ip_frag_t  *hole  = holes->lh_first;
    ip_frag_t  *safe_to_delete;
@@ -116,10 +123,11 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsi
    dg->max_packet_size = dg->max_packet_size > (ip_off + ip_len - ip_hl)?dg->max_packet_size:(ip_off + ip_len - ip_hl);
    
    int i=0;
-   for(i=0;i < MMT_MAX_NUMBER_FRAGMENT;i++){
+   for(i=0;i < MMT_MAX_NUMBER_FRAGMENT-1;i++){
       if(dg->packet_offsets[i] == -1) break;
-      if(dg->packet_offsets[0] == ip_off){
-         debug("[IP -]> Duplicated fragment: offset - %d, id - %d",ip_off, ip->id);
+      if(dg->packet_offsets[i] == ip_off){
+         debug("[IP -]> Duplicated fragment: offset - %d|%d, id - %d",i,ip_off, ip->id);
+         // printf("[IP -]> Duplicated fragment: offset - %d|%d, id - %d\n",i,ip_off, ip->id);
          break;
       }
    }
@@ -131,8 +139,7 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsi
       // TODO: Can return here to not overwrite the later fragment
       return;
    }
-
-   ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf );
+   ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf);
 }
 
 /**
@@ -262,16 +269,15 @@ void ip_dgram_dump_holes( ip_dgram_t *dg )
  * @param mf  true if more fragments are expected
  */
 
-void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsigned len, int mf )
+void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsigned len, int mf)
 {
    ip_frags_t *holes = &dg->holes;
    ip_frag_t  *hole  = holes->lh_first;
 
    unsigned loff = off;
    unsigned roff = off+len;
-   int do_delete = 0;
-
    while( hole ) {
+      int do_delete = 0;
       //if(( hole->roff < loff ) || ( hole->loff > roff )) {
       if( hole->roff < loff ) {
          // payload doesn't interact with this hole, skip it
@@ -325,7 +331,7 @@ void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsi
       if( do_delete ) {
          ip_frag_t  * to_delete = hole;
          hole = hole->frags.le_next;
-         ip_frag_free( to_delete );      
+         ip_frag_free( to_delete );
       } else {
          hole = hole->frags.le_next;
       }
