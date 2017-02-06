@@ -2392,13 +2392,14 @@ int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     unsigned i = 0;
     int quiet = args ? *((int*)args) : 0;
-    struct attribute_internal_struct * tmp_attribute;
+    struct attribute_internal_struct * tmp_attribute = NULL;
     for (; i < ipacket->proto_hierarchy->len; i++) {
         if (_is_registered_protocol(ipacket->proto_hierarchy->proto_path[i])) {
             tmp_attribute = mmt_handler->proto_registered_attributes[ipacket->proto_hierarchy->proto_path[i]];
         }
         while (tmp_attribute != NULL) {
-            void * data = _get_attribute_extracted_data_at_index(ipacket, tmp_attribute->proto_id, tmp_attribute->field_id, i);
+            void * data = NULL;
+            data = _get_attribute_extracted_data_at_index(ipacket, tmp_attribute->proto_id, tmp_attribute->field_id, i);
             if (!quiet && data) {
                 print_attributes_list(tmp_attribute);
             }
@@ -3910,11 +3911,11 @@ int mmt_timeval_format(FILE * f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s  = %lu.%lu\n",
                    get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
 }
+
 int mmt_binary_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_BINARYVAR_STRLEN];
     if (mmt_binary_sprintf(buff, MMT_BINARY_STRLEN, attr)) {
-        return fprintf(f, "Attribute %s.%s = %s\n",
-                       get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+        return fprintf(f, "Attribute %s.%s = %s\n",get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
 }
