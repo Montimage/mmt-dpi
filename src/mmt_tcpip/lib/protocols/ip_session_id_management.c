@@ -268,8 +268,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             if ( unlikely( ((mmt_session_key_t *) retval->session_key)->lower_ip == NULL)) {
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL
-                mmt_free(session_key->lower_ip);
-                mmt_free(session_key->higher_ip);
+                // mmt_free(session_key->lower_ip);
+                // mmt_free(session_key->higher_ip);
                 mmt_free(retval);
                 return NULL;
             }
@@ -280,8 +280,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 if (isl_new) {
                     mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
                 }
-                mmt_free(session_key->lower_ip);
-                mmt_free(session_key->higher_ip);
+                // mmt_free(session_key->lower_ip);
+                // mmt_free(session_key->higher_ip);
                 mmt_free(retval);
                 return NULL;
             }
@@ -292,8 +292,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             if ( unlikely( ((mmt_session_key_t *) retval->session_key)->lower_ip == NULL )) {
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL
-                mmt_free(session_key->lower_ip);
-                mmt_free(session_key->higher_ip);
+                // mmt_free(session_key->lower_ip);
+                // mmt_free(session_key->higher_ip);
                 mmt_free(retval);
                 return NULL;
             }
@@ -304,8 +304,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 if (isl_new) {
                     mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
                 }
-                mmt_free(session_key->lower_ip);
-                mmt_free(session_key->higher_ip);
+                // mmt_free(session_key->lower_ip);
+                // mmt_free(session_key->higher_ip);
                 mmt_free(retval);
                 return NULL;
             }
@@ -337,22 +337,22 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                     mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
                 }
             }
-            mmt_free(session_key->lower_ip);
-            mmt_free(session_key->higher_ip);
+            // mmt_free(session_key->lower_ip);
+            // mmt_free(session_key->higher_ip);
             mmt_free(retval);
             return NULL;
         }
         tcpip_context->sessions_count += 1;
         tcpip_context->active_sessions_count += 1;
-        mmt_free(session_key->lower_ip);
-        mmt_free(session_key->higher_ip);
+        // mmt_free(session_key->lower_ip);
+        // mmt_free(session_key->higher_ip);
         //*is_new = 1; //This is done at the beginning of this block
     } else {
         //Nothing else to do, just indicate this is not a new session!
         *is_new = 0;
 
-        mmt_free(session_key->lower_ip);
-        mmt_free(session_key->higher_ip);
+        // mmt_free(session_key->lower_ip);
+        // mmt_free(session_key->higher_ip);
     }
 
     return retval;
