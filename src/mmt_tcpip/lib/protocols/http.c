@@ -1908,7 +1908,7 @@ void mmt_init_classify_me_http() {
     //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_RTSP);
     //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_XBOX);
     MMT_BITMASK_RESET(excluded_protocol_bitmask);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL); //Exclude processing when ssl is detected! Obvious no?
+    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP); //Exclude processing when ssl is detected! Obvious no?
 }
 
 void mmt_classify_me_http(ipacket_t * ipacket, unsigned index) {
