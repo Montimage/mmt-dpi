@@ -1127,14 +1127,12 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
         dg = ip_dgram_alloc();
         hashmap_insert_kv( map, key, dg );
     }
-
     ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
     // Check timed-out for all data gram
     if ( !ip_dgram_is_complete( dg )) {
         // debug("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
         return 0;
     }
-    // debug("Fragmented packet is completed: %lu\n", ipacket->packet_id);
     // At this point, dg is a fully reassembled datagram.
     // -> reconstruct ipacket from dg, and pass it along
 
@@ -1365,8 +1363,12 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->l3_captured_packet_len = (ipacket->p_hdr->caplen - ip_offset);
     /* TODO: Check the padding -> allow only certain type of padding and inform other : if packet->l3_captured_packet_len != packet->l3_packet_len -> padding */
     //packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
-    packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
-    // packet->l4_packet_len = packet->l3_captured_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    // packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    if(ipacket->nb_reassembled_packets > 1){
+        packet->l4_packet_len = packet->l3_captured_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    }else{
+        packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp   
+    }
 
     if (memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
         src = &((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->id_internal_context;
