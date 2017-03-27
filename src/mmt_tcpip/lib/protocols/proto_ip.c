@@ -137,7 +137,7 @@ int ip_frag_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 
-    *((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff;
+    *((unsigned short *) extracted_data->data) = (ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff)<<3;
     return 1;
 }
 
