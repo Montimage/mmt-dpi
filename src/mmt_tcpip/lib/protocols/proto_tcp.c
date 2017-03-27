@@ -334,8 +334,8 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     int a;
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     classified_proto_t retval;
-    retval.offset = -1;
-    retval.proto_id = -1;
+    retval.offset = 0;
+    retval.proto_id = 0;
     retval.status = NonClassified;
     retval.offset = packet->tcp->doff * 4; //TCP header length
 
@@ -360,7 +360,9 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
             retval.status = Classified;
             new_retval = set_classified_proto(ipacket, index + 1, retval);}
         else{
-            retval.status = NonClassified;
+            retval.status = Classified;
+            //LN: Add protocol unknown after TCP
+            return set_classified_proto(ipacket, index + 1, retval);
         }
     } else {
         /* now shift and insert */
