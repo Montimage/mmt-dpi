@@ -139,7 +139,9 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsi
       // TODO: Can return here to not overwrite the later fragment
       return;
    }
-   ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf);
+   // ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf);
+   // LN: Using ip_len to remove the padding from IP payload
+   ip_dgram_update_holes( dg, payload, ip_off, ip_len - ip_hl, ip_mf);
 }
 
 /**
