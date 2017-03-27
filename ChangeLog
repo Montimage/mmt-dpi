@@ -6,6 +6,7 @@ RELEASE NOTES
 - 1.6.6.1 - Fixed problem with IP fragmentation
 - 1.6.6.2 - Revert to not copy IP address when building session key
 - Fixed in HTTP protocol and SSL protocol: Change excluded_protocol_bitmask
+- Fixed problem with IP Defragmentation and Packet padding
 
 ## Release version 1.6.6.0
 - Add timestamp to built .deb and .zip files
