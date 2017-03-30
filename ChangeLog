@@ -1,6 +1,6 @@
 RELEASE NOTES
 ---
-## Pre-Release version 1.6.7.0
+## Version 1.6.7.0
 - Fixed buffer overflow when working with HTTP header field
 - Fixed in FTP protocol: check tuple6==NULL and memory leak
 - 1.6.6.1 - Fixed problem with IP fragmentation
