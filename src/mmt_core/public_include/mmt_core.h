@@ -74,11 +74,17 @@ extern "C" {
     #define VERSION "1.6.6.3"
 #endif
 
+#ifdef LIGHTSDK
+    #define T_VERSION VERSION "-light"
+#else
+    #define T_VERSION VERSION
+#endif
+
 #ifdef GIT_VERSION
     //GIT_VERSION is given by Makefile
-    #define MMT_VERSION VERSION " (" GIT_VERSION ")"
+    #define MMT_VERSION T_VERSION " (" GIT_VERSION ")"
 #else
-    #define MMT_VERSION VERSION
+    #define MMT_VERSION T_VERSION
 #endif
 
 /**
