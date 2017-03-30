@@ -30,7 +30,7 @@ extern "C" {
         IP_FRAG_OFFSET,
         IP_PROTO_TTL,
         IP_PROTO_ID,
-        IP_CHECKSUM,
+        IP_CHECKSUM_MMT, // LN: On Linux ubuntu 4.4.0-53-generic IP_CHECKSUM has been declared in /usr/include/linux/in.h
         IP_SRC,
         IP_DST,
         IP_OPTS,
@@ -56,7 +56,7 @@ extern "C" {
 #define IP_VERSION_ALIAS        "version"
 #define IP_OPTS_ALIAS        "options"
 #define IP_RTT_ALIAS        "ip_rtt"
-#define IP_CHECKSUM_ALIAS       "checksum"
+#define IP_CHECKSUM_MMT_ALIAS       "checksum"
 #define IP_CLIENT_ADDR_ALIAS    "client_addr"
 #define IP_SERVER_ADDR_ALIAS    "server_addr"
 #define IP_CLIENT_PORT_ALIAS    "client_port"
@@ -1009,6 +1009,39 @@ enum
 #define NDN_HTTP_FIRST_GW_ALIAS                       "first_gw"
 #define NDN_HTTP_SECOND_GW_ALIAS                       "second_gw"
 ////////////////// END OF NDN ATTRIBUTES ////////////////////
+
+
+//////////// NFS PROTOCOL ATTRIBUTES ////////////////////
+enum{
+    // -- RPC attribute ////
+    NFS_XID = 1,
+    NFS_MESSAGE_TYPE,
+    // Call message
+    NFS_RPC_VERSION,
+    NFS_PROGRAM,
+    NFS_PROG_VERSION,
+    NFS_PROCEDURE,
+    // Reply message
+    // -- NFS attributes ///
+    NFS_TAG,
+    NFS_MINORVERSION,
+    NFS_FILE_OPCODE,
+    NFS_FILE_NAME,
+    NFS_NB_OPERATIONS,
+    NFS_ATTRIBUTES_NB = NFS_NB_OPERATIONS
+};
+
+#define NFS_XID_ALIAS           "xid"
+#define NFS_MESSAGE_TYPE_ALIAS  "message_type"
+#define NFS_RPC_VERSION_ALIAS   "rpc_version"
+#define NFS_PROGRAM_ALIAS       "program"
+#define NFS_PROG_VERSION_ALIAS  "program_version"
+#define NFS_PROCEDURE_ALIAS     "procedure"
+#define NFS_TAG_ALIAS           "tag"
+#define NFS_MINORVERSION_ALIAS  "minorversion"
+#define NFS_FILE_OPCODE_ALIAS   "file_opcode"
+#define NFS_FILE_NAME_ALIAS   "file_name"
+#define NFS_NB_OPERATIONS_ALIAS "nb_operations"
 
 #ifdef __cplusplus
 }

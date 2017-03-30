@@ -914,12 +914,12 @@ int mmt_check_pplive_udp(ipacket_t * ipacket, unsigned index) {
             }
 
             MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "need next packet I.\n");
-            return 1;
+            return 4;
         }
         if (flow->pplive_stage == 3 + ipacket->session->last_packet_direction) {
             /* Because we are expecting packet in reverese direction.. */
             MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "need next packet II.\n");
-            return 1;
+            return 4;
         }
         if (flow->pplive_stage == (4 - ipacket->session->last_packet_direction)
                 && packet->payload_packet_len > 67
@@ -948,7 +948,7 @@ int mmt_check_pplive_udp(ipacket_t * ipacket, unsigned index) {
             }
             if (ipacket->session->data_packet_count < 45) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "need next packet III.\n");
-                return 1;
+                return 4;
             }
         }
 

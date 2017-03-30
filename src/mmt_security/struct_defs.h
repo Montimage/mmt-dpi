@@ -28,7 +28,7 @@ enum {
 enum {
   OR, AND, NOT, REPEAT, NEQ, EQ, GT, GTE, LT, LTE,
   THEN, COMPUTE, COMPARE, XC, XCE, XD, XDE, XE, ADD, SUB,
-  MUL, DIV, XVAR, XCON, NOP, XAND, XOR, XIN, XFUNCT
+  MUL, DIV, XVAR, XCON, NOP, XAND, XOR, XIN, XFUNCT, DE, DNE
 //NEQ =  not equal to
 //GT  =  grater than
 //E   =  ... or equal to
@@ -41,6 +41,8 @@ enum {
 //MUL =  multiply (numeric operator)
 //DIV =  divide (numeric operator)
 //XIN =  in the table (numeric operator)
+//DE  =  does exist
+//DNE =  does not exist
 }enum_operation;
 
 enum {

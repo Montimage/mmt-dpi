@@ -89,6 +89,10 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
 
     int new_retval = 0;
     if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count <= (CFG_CLASSIFICATION_THRESHOLD * 2)) {
+        // LN: Check if the protocol id in the last index of protocol hierarchy is not PROTO_UDP -> do not try to classify more - external classification
+        if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_UDP){
+            return new_retval;
+        }
         //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.  
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         retval.proto_id = get_proto_id_from_address(ipacket);
@@ -133,9 +137,9 @@ int init_proto_udp_struct() {
         for (; i < UDP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &udp_attributes_metadata[i]);
         }
-
+#ifndef LIGHTSDK
         register_pre_post_classification_functions(protocol_struct, udp_pre_classification_function, udp_post_classification_function);
-
+#endif
         return register_protocol(protocol_struct, PROTO_UDP);
     } else {
         return 0;

@@ -1,10 +1,38 @@
 RELEASE NOTES
 ---
-## PRe-release version 1.6.5.0
+
+## Pre-Version 1.6.8.0
+- Verify number of TCP packet out of order
+
+
+## Version 1.6.7.0
+- Fixed buffer overflow when working with HTTP header field
+- Fixed in FTP protocol: check tuple6==NULL and memory leak
+- 1.6.6.1 - Fixed problem with IP fragmentation
+- 1.6.6.2 - Revert to not copy IP address when building session key
+- Fixed in HTTP protocol and SSL protocol: Change excluded_protocol_bitmask
+- Fixed problem with IP Defragmentation and Packet padding
+- Add PROTO_UNKNOWN after TCP if cannot classify TCP payload
+- Refactory Makefile with some compiling options: 
+	+ NDEBUG = 1 : show all messages in debug(...), 
+	+ DEBUG = 1 : enable debug mode, 
+	+ SHOWLOG = 1 : show all messages in MMT_LOG(...), 
+	+ LIGHTSDK = 1 : compile the light version of SDK 
+
+## Release version 1.6.6.0
+- Add timestamp to built .deb and .zip files
+- Extract file name from NFS protocol version 4 - only focus on some operation: OPEN, LOOKUP, REMOVE, RENAME
+- Version 1.6.5.1: Fixed insert_key_value() - use memcpy to build session_key instead of using reference address
+- Use inline function to optimize performance - Done by @Huu Nghia
+
+## Release version 1.6.5.0
 - API for set SESSION TIMEDOUT
-- Fix classify SMTP protocol - not done
-- Add GIT_VERSION into mmt_version()
-- Fix symbolic link warning when installing mmt-sdk
+- Fixed classify SMTP protocol - not done
+- Added GIT_VERSION into mmt_version()
+- Fixed symbolic link warning when installing mmt-sdk
+- Fixed attribute status when calling extraction function from mmt_security -> set ATTRIBUTE_CONSUMED flag.
+- Initialize value for mmt_handler->current_ipacket
+- Commented out some unused function in proto_dns.c. (Note: When testing memory leak, we need to test with dns-extraction.c to avoid memory from dns attributes)
 
 
 ## Release version 1.6.4.0

@@ -9,6 +9,22 @@
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 /** macro to compare 2 IPv6 addresses with each other to identify the "smaller" IPv6 address  */
 
+bool ipv6_session_comp(void * key1, void * key2) {
+    mmt_session_key_t * l_session = (mmt_session_key_t *) key1;
+    mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
+
+    // both flows of the same type
+    int comp_val = memcmp(&l_session->next_proto, &r_session->next_proto, 5);
+    if (comp_val == 0) {
+   	 comp_val = memcmp(l_session->lower_ip, r_session->lower_ip, IPv6_ALEN);
+   	 if (comp_val == 0) {
+   		 comp_val = memcmp(l_session->higher_ip, r_session->higher_ip, IPv6_ALEN);
+   	 }
+    }
+    return comp_val < 0;
+}
+
+static inline
 int is_extention_header(uint8_t next_header) {
     switch (next_header) {
         case IPPROTO_HOPOPTS:
@@ -23,6 +39,7 @@ int is_extention_header(uint8_t next_header) {
     }
 }
 
+static inline
 uint32_t get_next_header_offset(uint8_t current_header, const uint8_t * packet, uint8_t * next_hdr) {
     struct ext_hdr_generic * exthdr;
     switch (current_header) {
@@ -159,14 +176,19 @@ int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * 
     while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2))) {
         next_offset += get_next_header_offset(next_hdr, & ipacket->data[offset + next_offset], & next_hdr);
     }
-
+    // ipv6_session->lower_ip = (void*)mmt_malloc(sizeof(ip6h->saddr));
+    // ipv6_session->higher_ip = (void*)mmt_malloc(sizeof(ip6h->daddr));
     if (MMT_COMPARE_IPV6_ADDRESSES(&ip6h->saddr, &ip6h->daddr)) {
+        // memcpy(ipv6_session->lower_ip,&ip6h->saddr,sizeof(ip6h->saddr));
+        // memcpy(ipv6_session->higher_ip,&ip6h->daddr,sizeof(ip6h->daddr));
         ipv6_session->lower_ip = &ip6h->saddr;
         ipv6_session->higher_ip = &ip6h->daddr;
         ipv6_session->is_lower_initiator = L2H_DIRECTION;
         ipv6_session->is_lower_client = L2H_DIRECTION;
         retval = L2H_DIRECTION;
     } else {
+        // memcpy(ipv6_session->lower_ip,&ip6h->daddr,sizeof(ip6h->daddr));
+        // memcpy(ipv6_session->higher_ip,&ip6h->saddr,sizeof(ip6h->saddr));
         ipv6_session->lower_ip = &ip6h->daddr;
         ipv6_session->higher_ip = &ip6h->saddr;
         ipv6_session->is_lower_initiator = H2L_DIRECTION;
@@ -1230,7 +1252,7 @@ int init_proto_ipv6_struct() {
         register_classification_function(protocol_struct, ip6_classify_next_proto);
         register_pre_post_classification_functions(protocol_struct, ipv6_pre_classification_function, ipv6_post_classification_function);
 
-        register_sessionizer_function(protocol_struct, ip6_sessionizer, ip6_session_cleanup_on_timeout, ip_session_comp);
+        register_sessionizer_function(protocol_struct, ip6_sessionizer, ip6_session_cleanup_on_timeout, ipv6_session_comp);
 
         register_proto_context_init_cleanup_function(protocol_struct, setup_ipv6_context, ipv6_context_cleanup, NULL);
 

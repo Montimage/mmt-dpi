@@ -1,4 +1,4 @@
-VERSION  := 1.6.5.0
+VERSION  := 1.6.7.0
 GIT_VERSION := $(shell git log --format="%h" -n 1)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
@@ -7,26 +7,60 @@ MMT_INC ?= $(MMT_DPI)/include
 MMT_PLUGINS ?= $(MMT_BASE)/plugins
 MMT_EXAMS ?= $(MMT_BASE)/examples
 
-# CFLAGS   := -Wall -g -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
-# CXXFLAGS := -Wall -g -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
-# CXX 	 := $(CXX) -g
-CFLAGS   := -Wall -DNDEBUG -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
-CXXFLAGS := -Wall -DNDEBUG -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
+#  - - - - -
+# DEFINE SOME COMMANDS
+#  - - - - -
 
 CP       := cp -R
 RM       := rm -rf
+
+#  - - - - -
+# DEFINE VERBOSE MODE
+#  - - - - -
 
 ifndef VERBOSE
  QUIET := @
  export QUIET
 endif
 
+#  - - - - -
+# DEFINE FLAG FOR COMPILE COMMAND
+#  - - - - -
+
+CFLAGS   := -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
+CXXFLAGS := -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
+
+# NDEBUG = 1 to show all message come from debug(), ...
+ifdef NDEBUG
+CFLAGS   += $(CFLAGS)
+CXXFLAGS += $(CXXFLAGS)
+else
+CFLAGS   += -DNDEBUG
+CXXFLAGS += -DNDEBUG
+endif
+
+# DEBUG = 1 to enable debug mode
 ifdef DEBUG
-CFLAGS   += -g -DDEBUG -DHTTP_PARSER_STRICT=1
-CXXFLAGS += -g -DDEBUG -DHTTP_PARSER_STRICT=1
+CFLAGS   += -g 
+CXXFLAGS += -g 
+else
+CFLAGS   += -O3
+CXXFLAGS += -O3
+endif
+
+# SHOWLOG = 1 to show all the log from MMT_LOG() ...
+ifdef SHOWLOG
+CFLAGS   += -DDEBUG -DHTTP_PARSER_STRICT=1
+CXXFLAGS += -DDEBUG -DHTTP_PARSER_STRICT=1
 else
 CFLAGS   += -DHTTP_PARSER_STRICT=0
 CXXFLAGS += -DHTTP_PARSER_STRICT=0
+endif
+
+# LIGHTSDK = 1 to compile the light version of SDK (which aims to split the network to HTTP packets and nonHTTP packets)
+ifdef LIGHTSDK
+CFLAGS   += -DLIGHTSDK
+CXXFLAGS += -DLIGHTSDK
 endif
 
 .PHONY: libraries includes tools documentation examples

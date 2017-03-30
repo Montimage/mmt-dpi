@@ -252,9 +252,11 @@ int init_proto_ndn_http_struct() {
         for (; i < NDN_HTTP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &ndn_attributes_metadata[i]);
         }
+#ifndef LIGHTSDK
         // register_pre_post_classification_functions(protocol_struct, NULL, NULL);
         register_proto_context_init_cleanup_function(protocol_struct, setup_ndn_context, cleanup_ndn_context, NULL);
         register_session_data_analysis_function(protocol_struct, ndn_session_data_analysis);
+#endif
         mmt_init_classify_me_ndn_http();
 
         return register_protocol(protocol_struct, PROTO_NDN_HTTP);

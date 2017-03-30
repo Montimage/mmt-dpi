@@ -334,8 +334,8 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     int a;
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     classified_proto_t retval;
-    retval.offset = -1;
-    retval.proto_id = -1;
+    retval.offset = 0;
+    retval.proto_id = 0;
     retval.status = NonClassified;
     retval.offset = packet->tcp->doff * 4; //TCP header length
 
@@ -346,6 +346,10 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     int new_retval = 0;
     // if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count >= CFG_CLASSIFICATION_THRESHOLD) {
     if (retval.proto_id == PROTO_UNKNOWN) {
+        // LN: Check if the protocol id in the last index of protocol hierarchy is not PROTO_UDP -> do not try to classify more - external classification
+        if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_TCP){
+            return new_retval;
+        }
         //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         retval.proto_id = get_proto_id_from_address(ipacket);
@@ -356,7 +360,9 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
             retval.status = Classified;
             new_retval = set_classified_proto(ipacket, index + 1, retval);}
         else{
-            retval.status = NonClassified;
+            retval.status = Classified;
+            //LN: Add protocol unknown after TCP
+            return set_classified_proto(ipacket, index + 1, retval);
         }
     } else {
         /* now shift and insert */

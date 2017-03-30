@@ -382,6 +382,7 @@ void *get_xdata(long type, int size, void *str)
         case MMT_GENERIC_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
         case MMT_UNDEFINED_TYPE:
+             //if(type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:4\n");
              return NULL;                 //TODO verify if OK
              break;
         default:
@@ -520,6 +521,7 @@ char *get_my_data(void *data1, short size, long type) {
         case MMT_GENERIC_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
             // TODO verify if OK
+            //if(type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:5\n");
             break;
              
         default:
@@ -841,7 +843,8 @@ void * funct_get_params_and_execute( const ipacket_t *pkt, short skip_refs, char
 #ifdef WIN32
     lib_pointer = LoadLibrary(lib_name);
 #else
-    lib_pointer = dlopen(lib_name, RTLD_LAZY);
+    lib_pointer = dlopen(lib_name, RTLD_NOW);
+    //lib_pointer = dlopen(lib_name, RTLD_LAZY);
 #endif
     if (lib_pointer != NULL) {
 #ifdef WIN32
@@ -910,6 +913,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
     //parse expression and create sub-tree, a_rule->value = top operator
     //((ARP.OPCODE == 2)&&(ARP.SRC_PROTO == ARP.SRC_PROTO.1))
     //OR, AND, NEQ, EQ, GT, GTE, LT, LTE, THEN, COMPUTE, XC, XCE, XD, XDE, XE, ADD, SUB, MUL, DIV
+    //DE, DNE
     char *temp = expression;
     char *temp2 = expression;
     char token[30];
@@ -978,6 +982,16 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         //IN+blank
         temp2 = temp + 3;
         a_rule->father->value = XIN;
+        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+    } else if (*temp == 'D' && *(temp + 1) == 'E' && (*(temp + 2) == ' ' || *(temp + 2) == ')')) {
+        // DE (Does Exitst)
+        temp2 = temp + 3;
+        a_rule->father->value = DE;
+        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+    } else if (*temp == 'D' && *(temp + 1) == 'N' && *(temp + 2) == 'E' && (*(temp + 3) == ' ' || *(temp + 3) == ')')) {
+        // DE (Does Not  Exitst)
+        temp2 = temp + 4;
+        a_rule->father->value = DNE;
         create_boolean_expression(mmt, NO, a_rule->father, temp2);
     } else if (*temp == '\'') {
         // 'string'
@@ -1865,6 +1879,87 @@ int eliminate_instance(rule **r, rule **i, char *type)
     return OK;
 }
 
+
+char * convert_string_to_json_compatible (char * p, int size){
+//*************
+    char * result = NULL;
+    char *c = NULL;
+    char *r = NULL;
+    int pos = 0;
+    c = p;
+    result = xmalloc (size * 2);
+
+    r = result;
+    *r = '\0';
+    for (pos=0; pos<size; pos++){
+        switch (*c) {
+            case  '"': strncpy(r, "\\\"",2); r = r + 2; break;
+            case '\\': strncpy(r, "\\\\",2); r = r + 2; break;
+            case '\b': strncpy(r, "\\b", 2); r = r + 2; break;
+            case '\f': strncpy(r, "\\f", 2); r = r + 2; break;
+            case '\n': strncpy(r, "\\n", 2); r = r + 2; break;
+            case '\r': strncpy(r, "\\r", 2); r = r + 2; break;
+            case '\t': strncpy(r, "\\t", 2); r = r + 2; break;
+            default:
+                if ('\x00' <= *c && *c <= '\x1f') {
+                    sprintf(&r[0], "\\u%04x", (int)(*c)); r = r + 6;
+            	} else {
+                    *r = *c; r++;
+            	}
+                break;
+        } //end of switch
+        //end string
+        *r = '\0';
+        c++;
+    } //end of for
+    return result;
+}
+//*************/
+/*************
+    char * result = NULL;
+    char *c = NULL;
+    int pos = 0;
+    int i = 0;
+    c = p;
+    result = xmalloc (size * 2);
+    for (i=0; i<size; i++){
+        switch (*c) {
+            // quotation mark (0x22)
+            case '"': { result[pos + 1] = '"'; pos += 2; break; }
+            // reverse solidus (0x5c): nothing to change
+            case '\\': { pos += 2; break; }
+            // backspace (0x08)
+            case '\b': { result[pos + 1] = 'b'; pos += 2; break; }
+            // formfeed (0x0c)
+            case '\f': { result[pos + 1] = 'f'; pos += 2; break; }
+            // newline (0x0a)
+            case '\n': { result[pos + 1] = 'n'; pos += 2; break; }
+            // carriage return (0x0d)
+            case '\r': { result[pos + 1] = 'r'; pos += 2; break; }
+            // horizontal tab (0x09)
+            case '\t': { result[pos + 1] = 't'; pos += 2; break; }
+            default: {
+                if (*c >= 0x00 && *c <= 0x1f) {
+                    // print character *c as \uxxxx
+                    sprintf(&result[pos + 1], "u%04x", (int)(*c));
+                    pos += 6;
+                    // overwrite trailing null character
+                    result[pos] = '\\';
+                } else {
+                    // all other characters are added as-is
+                    result[pos++] = *c;
+                }
+                break;
+            }
+        } //end of switch
+        c++;
+    } //end of for
+    return result;
+}
+*************/
+
+
+
 void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *curr_rule, char *cause, short event_id)
 {
     unsigned long L1=0,L2=0,L3=0,L4=0;
@@ -1874,12 +1969,15 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     long type = 0;
     char * buff =NULL;
     mmt_binary_data_t *db1;
-    int data_size, j;
+    int data_size = 0, j = 0, data_pointer_size = 0;
+    char * data_pointer = NULL;
+    char * new_data_pointer = NULL;
     struct timeval tvp;
     char *json_buff=xcalloc(7000,1);
     char *json_buff1=xcalloc(7000,1);
     char *temp_MAC;
     //mmt_header_line_t *hl;
+    void *data_ptr;
 
     tvp.tv_sec=0;
     tvp.tv_usec=0;
@@ -1890,7 +1988,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
     const char *proto_name, *att_name;
 
-    if (*cause != '\0') {
+    if (cause != NULL && *cause != '\0') {
         (void)sprintf(json_buff1, ",\"description\":\"%s\"", cause);
         (void)strcat(json_buff, json_buff1);
         (void)strcat(json_buff, ",\"attributes\":[");
@@ -1910,7 +2008,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
               continue;
             }
             num_attr ++;
-
+            
             data_size  = get_data_size_by_proto_and_field_ids(temp->protocol_id, temp->field_id);
             proto_name = get_protocol_name_by_id(temp->protocol_id);
             att_name   = get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id);
@@ -2060,6 +2158,21 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     break;
                 case MMT_DATA_POINTER:
                     // TODO
+                    //(void)fprintf(stderr, "MMT_DATA_POINTER:6\n");
+               	 //check only if we are verifying tcp.p_payload
+               	 if( temp->protocol_id == 354  && temp->field_id == 4098 ){
+							  data_ptr = get_attribute_extracted_data_by_name(pkt, "tcp","payload_len");
+							  if( data_ptr != NULL ){
+								  data_pointer_size = *(int *) data_ptr;
+								  data_pointer = get_attribute_extracted_data_by_name(pkt, "tcp","p_payload");
+								  if( data_pointer != NULL ){
+									  new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
+									  (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
+									  (void)strcat(json_buff, json_buff1);
+									  xfree (new_data_pointer);
+								  }
+							  }
+               	  }
                     break;
                 case MMT_DATA_FILTER_STATE:
                     // TODO
@@ -2079,9 +2192,11 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     exit(-1);
             }//end of switch
             temp = temp->next;
+            data1 = NULL;
         }
         //ensure IP or MAC of src and dst are included in attribute
         if( having_ip_src == 0){
+            data1 = NULL;
         	data1 = get_attribute_extracted_data(pkt, 178, 12);
             if(data1!= NULL && *((char*)data1)!=0){
                 L1 = (*(unsigned long*)(data1)&0x000000ff);
@@ -2099,9 +2214,11 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         		xfree( temp_MAC );
         	}
         	num_attr ++;
+            data1 = NULL;
         }
 
         if( having_ip_dst == 0){
+            data1 = NULL;
             data1 = get_attribute_extracted_data(pkt, 178, 13);
             if(data1!=NULL && *((char*)data1)!=0){
                 L1 = (*(unsigned long*)(data1)&0x000000ff);
@@ -2119,6 +2236,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 				xfree( temp_MAC );
 			}
 			num_attr ++;
+            data1 = NULL;
 		}
 
         if( num_attr > 0 ){
@@ -2293,7 +2411,6 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
         case MMT_DATA_PORT:
         case MMT_DATA_POINT:
         case MMT_DATA_PORT_RANGE:
-        case MMT_DATA_POINTER:
         case MMT_STRING_DATA:
         case MMT_STRING_LONG_DATA:
         case MMT_DATA_IP6_ADDR:
@@ -2308,7 +2425,6 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
         case MMT_DATA_TIMEVAL:
         case MMT_DATA_DATE:
         case MMT_UNDEFINED_TYPE:
-        //case MMT_DATA_POINTER:
         case MMT_DATA_BUFFER:
         case MMT_DATA_STRING_INDEX:
         case MMT_DATA_PARENT:
@@ -2316,6 +2432,10 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
         case MMT_GENERIC_HEADER_LINE:
         case MMT_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
+            return NOT_VALID; //TODO verify if OK
+            break;
+        case MMT_DATA_POINTER:
+            //(void)fprintf(stderr, "MMT_DATA_POINTER:1\n");
             return NOT_VALID; //TODO verify if OK
             break;
         default:
@@ -2457,11 +2577,10 @@ int comp2(compare_value v1, compare_value v2, short ope)
         case MMT_DATA_MAC_ADDR:
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
-
+            //if(v1.type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:2\n");
 #ifdef DEBUG
         	printf("\n compare[%s] %d [%s], %d, %d\n", data1, ope, data2, v1.size, v2.size);
 #endif
-
         	if (ope == EQ && v1.size != v2.size)
         		return NOT_VALID;
         	if(ope == NEQ && v1.size != v2.size)
@@ -2694,6 +2813,7 @@ void * compute(compare_value v1, compare_value v2, short operator)
         case MMT_HEADER_LINE:
         case MMT_GENERIC_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
+            //if(v1.type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:3\n");
             return NULL; //TODO verify if OK
             break;
         default:
@@ -2703,6 +2823,12 @@ void * compute(compare_value v1, compare_value v2, short operator)
     return NULL;
 }
 
+int exists_or_not (const ipacket_t *pkt, short operator, rule *r) { 
+    void *data = get_attribute_extracted_data( pkt, r->t.protocol_id, r->t.field_id );
+    if (operator == DE && data != NULL) return VALID; 
+    else if (operator == DNE && data == NULL) return VALID;
+    return NOT_VALID;
+}
 
 int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, void** result_value, tuple *list_of_tuples, short operator, rule *r1, rule *r2)
 {
@@ -2993,7 +3119,8 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 void detected_corrupted_message(short print_option, rule *r, char *cause, short state, struct timeval packet_time_stamp)
 {
     rule *temp = r;
-    char *history;
+    char *history = NULL;
+    char *str = NULL;
 
     if(op->callback_funct != NULL){
     	char *verdict = NULL, *type = NULL;
@@ -3002,23 +3129,23 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
         //char * xml_string = xml_message(ATTACK, print_option, state, 0, cause);
       	if ( verdict == NULL) return;
 
-      	if (temp->json_history == NULL)
+      	if (temp != NULL && temp->json_history == NULL)
     	  temp = temp->root;
-      	if (temp->json_history != NULL)
+      	if (temp != NULL && temp->json_history != NULL)
       		history = temp->json_history;
 
       	corr_mess++;
 
-      	//remove the last comma
-		if( history[ strlen( history ) - 1 ] == ',')
+        if(history != NULL){
+      	  //remove the last comma
+		  if( history[ strlen( history ) - 1 ] == ',')
 			history[ strlen( history ) - 1 ] = '\0';
 
-      	char *str = xmalloc( strlen( history ) + 3 );
-      	sprintf( str, "{%s}", history );
-
-      	((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
-
-        xfree( str );
+      	  str = xmalloc( strlen( history ) + 3 );
+      	  sprintf( str, "{%s}", history );
+      	  ((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
+          xfree( str );
+        }
       	xfree( verdict );
       	xfree( type );
     }
@@ -3152,6 +3279,17 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
         case XCON:
         case XFUNCT:
         case NOP:
+            return VALID;
+            break;
+        case DNE:
+        case DE:
+            temp1 = c->list_of_sons;
+            result = exists_or_not (pkt, c->value, temp1);
+            if (result != VALID) {
+                c->valid = NOT_VALID;
+                return NOT_VALID;
+            }
+            c->valid = VALID;
             return VALID;
             break;
         default:

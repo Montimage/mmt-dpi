@@ -71,14 +71,20 @@ extern "C" {
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
 #ifndef VERSION
-    #define VERSION "1.6.4.0"
+    #define VERSION "1.6.7.0"
+#endif
+
+#ifdef LIGHTSDK
+    #define T_VERSION VERSION "-light"
+#else
+    #define T_VERSION VERSION
 #endif
 
 #ifdef GIT_VERSION
     //GIT_VERSION is given by Makefile
-    #define MMT_VERSION VERSION " (" GIT_VERSION ")"
+    #define MMT_VERSION T_VERSION " (" GIT_VERSION ")"
 #else
-    #define MMT_VERSION VERSION
+    #define MMT_VERSION T_VERSION
 #endif
 
 /**

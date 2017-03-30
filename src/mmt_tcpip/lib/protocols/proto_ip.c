@@ -17,6 +17,7 @@ bool ip_session_comp(void * key1, void * key2) {
     mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
 
     if (l_session->ip_type != r_session->ip_type) return (l_session->ip_type < r_session->ip_type);
+
     // both flows of the same type
     int comp_val = memcmp(&l_session->next_proto, &r_session->next_proto, 5);
     if (comp_val == 0) {
@@ -35,6 +36,40 @@ bool ip_session_comp(void * key1, void * key2) {
     return comp_val < 0;
 }
 
+
+bool ipv4_session_comp(void * key1, void * key2) {
+    mmt_session_key_t * l_session = (mmt_session_key_t *) key1;
+    mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
+
+    int comp_val;
+    comp_val = l_session->next_proto - r_session->next_proto;
+
+    if( comp_val == 0 )
+   	 comp_val = l_session->lower_ip_port - r_session->lower_ip_port;
+
+    if( comp_val == 0 )
+   	 comp_val = l_session->higher_ip_port - r_session->higher_ip_port;
+
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->higher_ip)[0] - ((char *)r_session->higher_ip)[0];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->higher_ip)[1] - ((char *)r_session->higher_ip)[1];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->higher_ip)[2] - ((char *)r_session->higher_ip)[2];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->higher_ip)[3] - ((char *)r_session->higher_ip)[3];
+
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->lower_ip)[0] - ((char *)r_session->lower_ip)[0];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->lower_ip)[1] - ((char *)r_session->lower_ip)[1];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->lower_ip)[2] - ((char *)r_session->lower_ip)[2];
+    if( comp_val == 0 )
+   	 comp_val = ((char *)l_session->lower_ip)[3] - ((char *)r_session->lower_ip)[3];
+
+    return comp_val < 0;
+}
 /*
  * IP data extraction routines
  */
@@ -102,7 +137,7 @@ int ip_frag_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 
-    *((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff;
+    *((unsigned short *) extracted_data->data) = (ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff)<<3;
     return 1;
 }
 
@@ -178,7 +213,7 @@ int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attrib
  */
 
 
-uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_session) {
+static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_session) {
     uint8_t retval;
     uint16_t sport = 0, dport = 0;
     struct iphdr * iph = (struct iphdr *) ip_packet;
@@ -193,10 +228,14 @@ uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_sess
         sport = ntohs(udph->source);
         dport = ntohs(udph->dest);
     }
-
+    // ipv4_session->lower_ip = (void*)mmt_malloc(sizeof(iph->saddr));
+    // ipv4_session->higher_ip = (void*)mmt_malloc(sizeof(iph->daddr));
     if (iph->saddr < iph->daddr) {
+        // memcpy(ipv4_session->lower_ip,&iph->saddr,sizeof(iph->saddr));
+        // memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
         ipv4_session->lower_ip = &iph->saddr;
         ipv4_session->higher_ip = &iph->daddr;
+        
         ipv4_session->lower_ip_port = sport;
         ipv4_session->higher_ip_port = dport;
 
@@ -205,6 +244,8 @@ uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_sess
         retval = L2H_DIRECTION;
     } else if (iph->saddr == iph->daddr) {
         if (sport < dport) {
+            // memcpy(ipv4_session->lower_ip,&iph->saddr,sizeof(iph->saddr));
+            // memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
             ipv4_session->lower_ip = &iph->saddr;
             ipv4_session->higher_ip = &iph->daddr;
             ipv4_session->lower_ip_port = sport;
@@ -213,6 +254,8 @@ uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_sess
             ipv4_session->is_lower_client = L2H_DIRECTION;
             retval = L2H_DIRECTION;
         } else {
+            // memcpy(ipv4_session->lower_ip,&iph->daddr,sizeof(iph->daddr));
+            // memcpy(ipv4_session->higher_ip,&iph->saddr,sizeof(iph->saddr));
             ipv4_session->lower_ip = &iph->daddr;
             ipv4_session->higher_ip = &iph->saddr;
             ipv4_session->lower_ip_port = dport;
@@ -222,6 +265,8 @@ uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key_t * ipv4_sess
             retval = H2L_DIRECTION;
         }
     } else {
+        // memcpy(ipv4_session->lower_ip,&iph->daddr,sizeof(iph->daddr));
+        // memcpy(ipv4_session->higher_ip,&iph->saddr,sizeof(iph->saddr));
         ipv4_session->lower_ip = &iph->daddr;
         ipv4_session->higher_ip = &iph->saddr;
         ipv4_session->lower_ip_port = dport;
@@ -1052,11 +1097,11 @@ int ip_session_cleanup_on_timeout(void * protocol_context, mmt_session_t * timed
     // free session allocated memory. be careful about multiple free of the same data.
     // In the closup some session data are freed. These should not be the same as here.
     free_session_data(timedout_session->session_key, timedout_session, ((protocol_instance_t *) protocol_context)->args);
-
+//printf("timeout\n");
     return 0;
 }
 
-int ip_process_fragment( ipacket_t *ipacket, unsigned index )
+static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
 {
     mmt_handler_t *mmt = ipacket->mmt_handler;
     mmt_hashmap_t *map = mmt->ip_streams;
@@ -1067,7 +1112,7 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     unsigned len = ipacket->p_hdr->caplen - off;
 
     if ( len < sizeof( struct iphdr )) {
-        (void)fprintf( stderr, "*** Warning: malformed packet (not enough data)\n" );
+        (void)fprintf( stderr, "*** Warning: malformed packet (not enough data): %lu\n",ipacket->packet_id );
         return 0;
     }
 
@@ -1082,14 +1127,12 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
         dg = ip_dgram_alloc();
         hashmap_insert_kv( map, key, dg );
     }
-
     ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
     // Check timed-out for all data gram
     if ( !ip_dgram_is_complete( dg )) {
         // debug("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
         return 0;
     }
-    // debug("Fragmented packet is completed: %lu\n", ipacket->packet_id);
     // At this point, dg is a fully reassembled datagram.
     // -> reconstruct ipacket from dg, and pass it along
 
@@ -1111,7 +1154,7 @@ int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     return 1;
 }
 
-int mmt_iph_is_fragmented(const struct iphdr *iph)
+static inline int mmt_iph_is_fragmented(const struct iphdr *iph)
 {
     //#ifdef REQUIRE_FULL_PACKETS
     unsigned ip_off = (ntohs( iph->frag_off ) & IP_OFFSET) << 3;
@@ -1127,6 +1170,8 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     int offset = get_packet_offset_at_index(ipacket, index);
     const struct iphdr * ip_hdr = (struct iphdr *) & ipacket->data[offset];
     mmt_session_key_t ipv4_session_key;
+    // ipv4_session_key.lower_ip = NULL;
+    // ipv4_session_key.higher_ip = NULL;
     uint8_t packet_direction;
 
     // uint16_t ip_offset = ntohs(ip_hdr->frag_off);
@@ -1155,7 +1200,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
         if (session->last_packet_direction != packet_direction && session->packet_count > 0) {
             ip_rtt_t ip_rtt;
             ip_rtt.direction = session->last_packet_direction;
-            ip_rtt.session = session;
+            ip_rtt.session   = session;
             ip_rtt.rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - session->s_last_activity_time.tv_sec;
             ip_rtt.rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - session->s_last_activity_time.tv_usec;
             if ((int) ip_rtt.rtt.tv_usec < 0) {
@@ -1257,7 +1302,7 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_FRAG_OFFSET, IP_FRAG_OFFSET_ALIAS, MMT_U16_DATA, sizeof (short), 6, SCOPE_PACKET, ip_frag_offset_extraction},
     {IP_PROTO_TTL, IP_PROTO_TTL_ALIAS, MMT_U8_DATA, sizeof (char), 8, SCOPE_PACKET, general_byte_to_byte_extraction},
     {IP_PROTO_ID, IP_PROTO_ID_ALIAS, MMT_U8_DATA, sizeof (char), 9, SCOPE_PACKET, general_byte_to_byte_extraction},
-    {IP_CHECKSUM, IP_CHECKSUM_ALIAS, MMT_U16_DATA, sizeof (short), 10, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+    {IP_CHECKSUM_MMT, IP_CHECKSUM_MMT_ALIAS, MMT_U16_DATA, sizeof (short), 10, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {IP_SRC, IP_SRC_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), 12, SCOPE_PACKET, general_int_extraction},
     {IP_DST, IP_DST_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), 16, SCOPE_PACKET, general_int_extraction},
     {IP_OPTS, IP_OPTS_ALIAS, MMT_DATA_POINTER,  sizeof (void *), -2, SCOPE_PACKET, ip_options_extraction},
@@ -1318,8 +1363,12 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->l3_captured_packet_len = (ipacket->p_hdr->caplen - ip_offset);
     /* TODO: Check the padding -> allow only certain type of padding and inform other : if packet->l3_captured_packet_len != packet->l3_packet_len -> padding */
     //packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
-    packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
-    // packet->l4_packet_len = packet->l3_captured_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    // packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    if(ipacket->nb_reassembled_packets > 1){
+        packet->l4_packet_len = packet->l3_captured_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    }else{
+        packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp   
+    }
 
     if (memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
         src = &((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->id_internal_context;
@@ -1359,7 +1408,7 @@ int init_proto_ip_struct() {
         register_classification_function(protocol_struct, ip_classify_next_proto);
         register_pre_post_classification_functions(protocol_struct, ip_pre_classification_function, ip_post_classification_function);
 
-        register_sessionizer_function(protocol_struct, ip_sessionizer, ip_session_cleanup_on_timeout, ip_session_comp);
+        register_sessionizer_function(protocol_struct, ip_sessionizer, ip_session_cleanup_on_timeout, ipv4_session_comp);
 
         register_proto_context_init_cleanup_function(protocol_struct, setup_ip_context, ip_context_cleanup, NULL);
         return register_protocol(protocol_struct, PROTO_IP);

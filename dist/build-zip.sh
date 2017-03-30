@@ -2,7 +2,7 @@
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt_sdk1.6.4.0_`uname -s`_`uname -p`
+build_dir=mmt_sdk1.6.7.0_`uname -s`_`uname -p`_`date +%s`
 
 echo "-]> Preparing temporary location ..."
 # Create a directory with the name of package
@@ -17,7 +17,7 @@ cp -R $sdk_dir/include $build_dir
 cp -R $sdk_dir/lib $build_dir
 cp -R $sdk_dir/examples $build_dir
 
-echo "-]> Building .deb file ..."
+echo "-]> Building .zip file ..."
 # Zip file
 sudo apt-get install -y zip
 zip -r $build_dir.zip $build_dir

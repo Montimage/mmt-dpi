@@ -44,7 +44,7 @@ struct ip_dgram {
    unsigned    caplen;
    unsigned    max_packet_size;
    unsigned    current_packet_size;
-   unsigned    packet_offsets[MMT_MAX_NUMBER_FRAGMENT];
+   int    packet_offsets[MMT_MAX_NUMBER_FRAGMENT];
    ip_frags_t  holes;  // list of holes
 };
 
@@ -63,7 +63,7 @@ extern void        ip_dgram_dump         ( ip_dgram_t * );
 extern void        ip_dgram_dump_holes   ( ip_dgram_t * );
 
 extern void        ip_dgram_update       ( ip_dgram_t *, const struct iphdr *, unsigned ,unsigned);
-extern void        ip_dgram_update_holes ( ip_dgram_t *, const uint8_t *, unsigned, unsigned, int );
+extern void        ip_dgram_update_holes ( ip_dgram_t *, const uint8_t *, unsigned, unsigned, int);
 extern int         ip_dgram_is_complete  ( ip_dgram_t * );
 
 

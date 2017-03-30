@@ -1,9 +1,9 @@
-version=1.6.4.0
+version=1.6.7.0
 # Where the sdk/ compiled source code
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt_sdk1.6.4.0_`uname -s`_`uname -p`
+build_dir=mmt_sdk1.6.7.0_`uname -s`_`uname -p`_`date +%s`
 
 # Create a directory with the name of package
 mkdir $build_dir
@@ -25,6 +25,12 @@ mkdir $build_dir/etc/ld.so.conf.d/
 
 echo "-]> Copying resource ..."
 cp -R $sdk_dir/lib $build_dir/opt/mmt/dpi
+cd $build_dir/opt/mmt/dpi/lib/
+ln -s libmmt_core.so.* libmmt_core.so
+ln -s libmmt_fuzz.so.* libmmt_fuzz.so
+ln -s libmmt_security.so.* libmmt_security.so
+ln -s libmmt_tcpip.so.* libmmt_tcpip.so
+cd ../../../../../
 cp -R $sdk_dir/include $build_dir/opt/mmt/dpi
 cp -R $sdk_dir/examples $build_dir/opt/mmt
 cp $sdk_dir/lib/libmmt_tcpip.so.$version $build_dir/opt/mmt/plugins/libmmt_tcpip.so

@@ -73,11 +73,11 @@ static char *http_methods[] = {
     MMT_HTTP_CONNECT, MMT_HTTP_PROPFIND, MMT_HTTP_REPORT
 };
 
-static int get_header_index_by_header_id(int header_id) {
+static inline int get_header_index_by_header_id(int header_id) {
     return header_id - 1;
 }
 
-static int get_header_id_by_field_name(const char * header_field, int max) {
+static inline int get_header_id_by_field_name(const char * header_field, int max) {
     int count = 0;
     for (; count < HTTP_HEADERS_NB; count++) {
         if (mmt_strncasecmp(header_field, http_header_fields[count], max) == 0) { //TODO: this is consuming (calculating len every time)
@@ -281,7 +281,7 @@ void http_session_data_init(ipacket_t * ipacket, unsigned index) {
  * @param method pointer to the method code to be set by this function
  * @return the offset of the uri if positive value, zero means the message is not a valid request
  */
-static int get_request_method_uri_offset(const char *msg, int msg_len, int * method) {
+static inline int get_request_method_uri_offset(const char *msg, int msg_len, int * method) {
     int uri_offset = 0;
     *method = 0;
     /* check if the packet starts with POST or GET or any other HTTP request method */
@@ -326,7 +326,7 @@ static int get_request_method_uri_offset(const char *msg, int msg_len, int * met
  * @param msg_len length of the message request line in octets
  * @return the offset of the response code if positive, zero incates this is not a valid response
  */
-static int get_response_code_offset(const char *msg, int msg_len, char ** version) {
+static inline int get_response_code_offset(const char *msg, int msg_len, char ** version) {
     int code_offset = 0;
     /* check if the packet starts with HTTP/1.1 or HTTP/1.0 */
     if (msg_len >= 9 && mmt_strncasecmp(msg, MHD_HTTP_VERSION_1_1, 9) == 0) {
@@ -350,7 +350,7 @@ static int get_response_code_offset(const char *msg, int msg_len, char ** versio
 /**
  * Parse the HTTP HEADER.
  */
-static int
+static inline int
 parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //TODO: optimization work required here! VERY IMPORTANT
     int code, hlen;
 
@@ -457,7 +457,7 @@ int init_http_proto_struct() {
     }
 }
 
-static void mmt_int_http_add_connection(ipacket_t * ipacket, uint32_t protocol) {
+static inline void mmt_int_http_add_connection(ipacket_t * ipacket, uint32_t protocol) {
     struct mmt_internal_tcpip_session_struct *flow = ipacket->internal_packet->flow;
 
     if (protocol != PROTO_HTTP) {
@@ -473,7 +473,7 @@ static void mmt_int_http_add_connection(ipacket_t * ipacket, uint32_t protocol) 
  * Beginning of functions to manage different MIME types
  */
 
-static void check_packet_contents(ipacket_t * ipacket) {
+static inline void check_packet_contents(ipacket_t * ipacket) {
 
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -1121,7 +1121,7 @@ static void check_packet_contents(ipacket_t * ipacket) {
 
 #ifdef PROTO_QQ
 
-static void qq_parse_packet_URL_and_hostname(ipacket_t * ipacket) {
+static inline void qq_parse_packet_URL_and_hostname(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     uint32_t a;
 
@@ -1147,7 +1147,7 @@ static void qq_parse_packet_URL_and_hostname(ipacket_t * ipacket) {
 
 #ifdef PROTO_WINDOWSMEDIA
 
-static void winmedia_parse_packet_useragentline(ipacket_t * ipacket) {
+static inline void winmedia_parse_packet_useragentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if (packet->user_agent_line.len >= 9 && memcmp(packet->user_agent_line.ptr, "NSPlayer/", 9) == 0) {
         MMT_LOG(PROTO_WINDOWSMEDIA, MMT_LOG_DEBUG, "username NSPlayer found\n");
@@ -1158,7 +1158,7 @@ static void winmedia_parse_packet_useragentline(ipacket_t * ipacket) {
 
 #ifdef PROTO_SPOTIFY
 
-static void spotify_parse_packet_useragentline(ipacket_t * ipacket) {
+static inline void spotify_parse_packet_useragentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if (packet->user_agent_line.len >= 8 && memcmp(packet->user_agent_line.ptr, "Spotify-", 8) == 0) {
         MMT_LOG(PROTO_SPOTIFY, MMT_LOG_DEBUG, "useragent Spotify found\n");
@@ -1171,7 +1171,7 @@ static void spotify_parse_packet_useragentline(ipacket_t * ipacket) {
 //BW: Microsoft abandoned MMS in 2008! this should never be detected! However we continue to support it as Microsoft released
 // the protocol specification and therefore many other 3rd party tools are being using it
 
-static void mms_parse_packet_contentline(ipacket_t * ipacket) {
+static inline void mms_parse_packet_contentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->content_line.len >= 24 && mmt_mem_cmp(packet->content_line.ptr, "application/x-mms-framed", 24) == 0) {
@@ -1185,7 +1185,7 @@ static void mms_parse_packet_contentline(ipacket_t * ipacket) {
 
 #ifdef PROTO_XBOX
 
-static void xbox_parse_packet_useragentline(ipacket_t * ipacket) {
+static inline void xbox_parse_packet_useragentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->user_agent_line.len >= 17 && memcmp(packet->user_agent_line.ptr, "Xbox Live Client/", 17) == 0) {
@@ -1197,7 +1197,7 @@ static void xbox_parse_packet_useragentline(ipacket_t * ipacket) {
 
 #ifdef PROTO_WINDOWS_UPDATE
 
-static void windows_update_packet_useragentline(ipacket_t * ipacket) {
+static inline void windows_update_packet_useragentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->user_agent_line.len >= 20 && memcmp(packet->user_agent_line.ptr, "Windows-Update-Agent", 20) == 0) {
@@ -1209,7 +1209,7 @@ static void windows_update_packet_useragentline(ipacket_t * ipacket) {
 
 #ifdef PROTO_FLASH
 
-static void flash_check_http_payload(ipacket_t * ipacket) {
+static inline void flash_check_http_payload(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     const uint8_t *pos;
 
@@ -1230,7 +1230,7 @@ static void flash_check_http_payload(ipacket_t * ipacket) {
 
 #ifdef PROTO_AVI
 
-static void avi_check_http_payload(ipacket_t * ipacket) {
+static inline void avi_check_http_payload(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -1274,7 +1274,7 @@ static void avi_check_http_payload(ipacket_t * ipacket) {
 
 #ifdef PROTO_TEAMVIEWER
 
-static void teamviewer_check_http_payload(ipacket_t * ipacket) {
+static inline void teamviewer_check_http_payload(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     //struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     const uint8_t *pos;
@@ -1296,7 +1296,7 @@ static void teamviewer_check_http_payload(ipacket_t * ipacket) {
 
 #ifdef PROTO_OFF
 
-static void off_parse_packet_contentline(ipacket_t * ipacket) {
+static inline void off_parse_packet_contentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->content_line.len >= 4 && memcmp(packet->content_line.ptr, "off/", 4) == 0) {
@@ -1308,7 +1308,7 @@ static void off_parse_packet_contentline(ipacket_t * ipacket) {
 
 #ifdef PROTO_MOVE
 
-static void move_parse_packet_contentline(ipacket_t * ipacket) {
+static inline void move_parse_packet_contentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->content_line.len == 15
@@ -1322,7 +1322,7 @@ static void move_parse_packet_contentline(ipacket_t * ipacket) {
 
 #ifdef PROTO_RTSP
 
-static void rtsp_parse_packet_acceptline(ipacket_t * ipacket) {
+static inline void rtsp_parse_packet_acceptline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->accept_line.len >= 28 && memcmp(packet->accept_line.ptr, "application/x-rtsp-tunnelled", 28) == 0) {
@@ -1332,7 +1332,7 @@ static void rtsp_parse_packet_acceptline(ipacket_t * ipacket) {
 }
 #endif
 
-static void parseHttpSubprotocol(ipacket_t * ipacket) {
+static inline void parseHttpSubprotocol(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     uint32_t proto;
     if (packet->detected_protocol_stack[0] != PROTO_HTTP)
@@ -1353,7 +1353,7 @@ static void parseHttpSubprotocol(ipacket_t * ipacket) {
     }
 }
 
-static void check_content_type_and_change_protocol(ipacket_t * ipacket) {
+static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
@@ -1431,7 +1431,7 @@ static void check_content_type_and_change_protocol(ipacket_t * ipacket) {
 
 }
 
-static void check_http_payload(ipacket_t * ipacket) {
+static inline void check_http_payload(ipacket_t * ipacket) {
 
     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "called check_http_payload.\n");
 
@@ -1452,7 +1452,7 @@ static void check_http_payload(ipacket_t * ipacket) {
  * @returnvalue 0 if no valid request has been found
  * @returnvalue >0 indicates start of filename but not necessarily in packet limit
  */
-static uint16_t http_request_url_offset(ipacket_t * ipacket) {
+static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     /* FIRST PAYLOAD PACKET FROM CLIENT */
@@ -1489,7 +1489,7 @@ static uint16_t http_request_url_offset(ipacket_t * ipacket) {
     return 0;
 }
 
-static void http_bitmask_exclude(struct mmt_internal_tcpip_session_struct *flow) {
+static inline void http_bitmask_exclude(struct mmt_internal_tcpip_session_struct *flow) {
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP);
 #ifdef PROTO_WINDOWS_UPDATE
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_WINDOWS_UPDATE);
@@ -1908,7 +1908,7 @@ void mmt_init_classify_me_http() {
     //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_RTSP);
     //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_XBOX);
     MMT_BITMASK_RESET(excluded_protocol_bitmask);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL); //Exclude processing when ssl is detected! Obvious no?
+    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP); //Exclude processing when ssl is detected! Obvious no?
 }
 
 void mmt_classify_me_http(ipacket_t * ipacket, unsigned index) {

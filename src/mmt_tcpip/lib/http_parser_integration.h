@@ -35,8 +35,10 @@ typedef struct
  **/
 typedef struct 
 {
-  char hfield[1024]; /**> temporary store for header field **/
-  char hvalue[16 * 1024]; /**> temporary store for header value **/
+  // char hfield[1024]; /**> temporary store for header field **/
+  // char hvalue[16 * 1024]; /**> temporary store for header value **/
+  char *hfield; /**> temporary store for header field **/
+  char *hvalue; /**> temporary store for header value **/
   int index; /**> index of the current protocol in the protocol path **/
   ipacket_t * ipacket; /**> pointer to the ipacket under processing **/ 
 } stream_processor_t;
@@ -54,6 +56,10 @@ http_parser_settings * get_settings();
 inline static void * init_stream_processor()
 {
   stream_processor_t * sp = (stream_processor_t *) mmt_malloc( sizeof( stream_processor_t ) );
+  if(sp!=NULL){
+    sp->hvalue = NULL;
+    sp->hfield = NULL;
+  }
   return (void *) sp;
 }
 
@@ -61,6 +67,8 @@ inline static void * init_stream_processor()
  * Frees an internal HTTP parsing processor store.
  **/
 inline static void * close_stream_processor(stream_processor_t * sp) {
+  if(sp->hfield!=NULL) free(sp->hfield);
+  if(sp->hvalue!=NULL) free(sp->hvalue);
   mmt_free( sp );
   return NULL;
 }
