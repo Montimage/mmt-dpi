@@ -1,5 +1,10 @@
 RELEASE NOTES
 ---
+
+## Pre-Version 1.6.8.0
+- Verify number of TCP packet out of order
+
+
 ## Version 1.6.7.0
 - Fixed buffer overflow when working with HTTP header field
 - Fixed in FTP protocol: check tuple6==NULL and memory leak
