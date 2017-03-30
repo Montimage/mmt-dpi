@@ -302,10 +302,11 @@ int init_proto_http_struct() {
 
         //BW: Add session data initialization, cleanup and analysis routines.
         //    This is mainly used for HTTP data parsing.
+#ifndef LIGHTSDK        
         register_session_data_initialization_function(protocol_struct, http_internal_session_data_init);
         register_session_data_cleanup_function(protocol_struct, http_internal_session_data_cleanup);
         register_session_data_analysis_function(protocol_struct, http_internal_session_data_analysis);
-
+#endif
         return register_protocol(protocol_struct, PROTO_HTTP);
     } else {
         return 0;

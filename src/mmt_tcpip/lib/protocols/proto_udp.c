@@ -137,9 +137,9 @@ int init_proto_udp_struct() {
         for (; i < UDP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &udp_attributes_metadata[i]);
         }
-
+#ifndef LIGHTSDK
         register_pre_post_classification_functions(protocol_struct, udp_pre_classification_function, udp_post_classification_function);
-
+#endif
         return register_protocol(protocol_struct, PROTO_UDP);
     } else {
         return 0;

@@ -950,9 +950,11 @@ int init_proto_rtp_struct() {
         mmt_init_classify_me_rtp();
 
 #ifdef _MMT_BUILD_SDK
+#ifndef LIGHTSDK        
         register_session_data_initialization_function(protocol_struct, rtp_session_data_init);
         register_session_data_cleanup_function(protocol_struct, rtp_session_data_cleanup);
         register_session_data_analysis_function(protocol_struct, rtp_session_data_analysis);
+#endif        
 #endif /* _MMT_BUILD_SDK */
 
         return register_protocol(protocol_struct, PROTO_RTP);
