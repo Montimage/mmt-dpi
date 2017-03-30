@@ -8,6 +8,11 @@ RELEASE NOTES
 - Fixed in HTTP protocol and SSL protocol: Change excluded_protocol_bitmask
 - Fixed problem with IP Defragmentation and Packet padding
 - Add PROTO_UNKNOWN after TCP if cannot classify TCP payload
+- Refactory Makefile with some compiling options: 
+	+ NDEBUG = 1 : show all messages in debug(...), 
+	+ DEBUG = 1 : enable debug mode, 
+	+ SHOWLOG = 1 : show all messages in MMT_LOG(...), 
+	+ LIGHTSDK = 1 : compile the light version of SDK 
 
 ## Release version 1.6.6.0
 - Add timestamp to built .deb and .zip files
