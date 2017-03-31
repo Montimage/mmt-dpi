@@ -1029,9 +1029,9 @@ inline uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len
  * Example: LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7 -> 
  * address family: 6
  * host address length: 16
- * host address of host address length: 32,2 ,81,131, 67,131, 0,0, 0,0 ,0,0 ,81,131 ,67,131
+ * host address of host address length: 32 (=2x16->20),2(02) ,81(51),131(83), 67(43),131(83), 0,0, 0,0 ,0,0 ,81,131 ,67,131
  * port address length: 2
- * port addres of port address length: 4,7 -> port = 4*256+7 = 1031
+ * port addres of port address length: 4,7 -> port = 4*16^2 + 7*16^0 = 1031
  * @return             an address
  */
 char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
@@ -1057,33 +1057,54 @@ char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
         }
 
         if(found_address == 1){
-            
-        }
-        if(index<2){
-            // Skip 2 first elements
+            int temp_nb = atoi(temp);
+            if(temp_nb!=0){
+                char * hvalue;
+                if(host_address_length%2==1 && host_address_length!=1){
+                    hvalue = (char*) malloc(4);
+                    if(temp_nb < 16){
+                        sprintf(hvalue,"0%X:",temp_nb);
+                        hvalue[3]='\0';
+                    }else{
+                        sprintf(hvalue,"%X:",temp_nb);
+                        hvalue[3]='\0';    
+                    }
+                    
+                }else{
+                    hvalue = (char*) malloc(3);
+                    if(temp_nb<16){
+                        sprintf(hvalue,"0%X",temp_nb);
+                        hvalue[2]='\0';    
+                    }else{
+                        sprintf(hvalue,"%X",temp_nb);
+                        hvalue[2]='\0';    
+                    }
+                }
+
+                if(index==2){
+                    strcpy(str_addr,hvalue);
+                }else{
+                    strcat(str_addr,hvalue);
+                }
+                free(hvalue);    
+            }else{
+                if(strstr(str_addr,"::")==0){
+                    strcat(str_addr,":");
+                }
+            }
+
+            host_address_length--;
+            debug("[PROTO_FTP] host_address_length: %d",host_address_length);
+            if(host_address_length==0){
+                str_addr[32]='\0';
+                return str_addr;
+            }
             temp = strtok(NULL,",");
             index++;
-            continue;
-        }
-        char * hvalue;
-        
-        if(index==17){
-            hvalue = (char*) malloc(3);
-            sprintf(hvalue,"%X",atoi(temp));
-            hvalue[2]='\0';
         }else{
-            hvalue = (char*) malloc(4);
-            sprintf(hvalue,"%X:",atoi(temp));
-            hvalue[3]='\0';
+            temp = strtok(NULL,",");
+            index++;
         }
-        if(index==2){
-            strcpy(str_addr,hvalue);
-        }else{
-            strcat(str_addr,hvalue);
-        }
-        free(hvalue);
-        temp = strtok(NULL,",");
-        index++;
     }
     str_addr[32] = '\0';
     return str_addr;
@@ -1133,8 +1154,8 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
             continue;
         }
         if(found_port){
-            port_nb += power_16(atoi(temp),port_length);
             port_length--;
+            port_nb += power_16(atoi(temp),(port_length*2));
             if(port_length == 0){
                 return port_nb;
             }
@@ -2566,6 +2587,7 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
         current_data_session->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
         if(current_data_session->data_conn->is_ipv6==1){
             char *ipv6_address_from_LPRT = ftp_get_data_client_addr_v6_from_LPRT(payload);
+            debug("[PROTO_FTP] %lu ipv6_address_from_LPRT: %s",ipacket->packet_id,ipv6_address_from_LPRT);
             current_data_session->data_conn->c_addr_v6 = (char*)malloc(33*sizeof(char));
             strcpy(current_data_session->data_conn->c_addr_v6,ipv6_address_from_LPRT);
             free(ipv6_address_from_LPRT);
@@ -2573,6 +2595,7 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
             fprintf(stderr, "[PROTO_FTP] ftp_request_packet: MMT_FTP_LPRT_CMD for IPv4 is not implemented yet! %lu\n",ipacket->packet_id);
         }
         current_data_session->data_conn->c_port = ftp_get_data_client_port_from_LPRT(payload, payload_len);
+        debug("[PROTO_FTP] %lu current_data_session->data_conn->c_port: %d",ipacket->packet_id,current_data_session->data_conn->c_port);
         break;
     case MMT_FTP_USER_CMD:
         if (ftp_control->user->username != NULL) {
