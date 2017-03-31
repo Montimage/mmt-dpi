@@ -2,8 +2,8 @@ RELEASE NOTES
 ---
 
 ## Pre-Version 1.6.8.0
+- Fixed FTP/TCP/IPv6 segmentation fault and some memory leaks in proto_ftp.c
 - Verify number of TCP packet out of order
-
 
 ## Version 1.6.7.0
 - Fixed buffer overflow when working with HTTP header field

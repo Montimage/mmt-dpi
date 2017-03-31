@@ -172,6 +172,9 @@ typedef struct ftp_tuple6_struct{
     uint32_t s_addr;
     uint32_t s_port;
     uint64_t ip_session_id; // IP session ID
+    uint8_t is_ipv6; // 0 - IPv4, 1 - IPv6
+    char * c_addr_v6; // IPv6 client address
+    char * s_addr_v6; // IPv6 server address
 } ftp_tuple6_t;
 
 /**
