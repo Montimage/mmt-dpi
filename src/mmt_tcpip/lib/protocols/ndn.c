@@ -1920,7 +1920,7 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
 void cleanup_ndn_context(void * proto_context, void * args){
-    debug("NDN/NDN_HTTP: cleanup_ndn_context");
+    // debug("NDN/NDN_HTTP: cleanup_ndn_context");
     ndn_proto_context_t * ndn_proto_context = (ndn_proto_context_t*)((protocol_instance_t *) proto_context)->args;
     if(ndn_proto_context == NULL){
         // log_err("\nNDN/NDN_HTTP: Cannot get NDN protocol context");
@@ -1935,7 +1935,7 @@ void cleanup_ndn_context(void * proto_context, void * args){
     while(current_session !=NULL){
         ndn_session_t *session_to_delete = current_session;
         current_session = session_to_delete->next;
-        debug("\nNDN/NDN_HTTP: Need to report this session: %lu",session_to_delete->session_id);
+        // debug("\nNDN/NDN_HTTP: Need to report this session: %lu",session_to_delete->session_id);
         ndn_process_timed_out(dummy_packet,proto_index,session_to_delete,ndn_proto_context->proto_id);
 
         // fire_attribute_event(dummy_packet, PROTO_NDN, NDN_LIST_SESSIONS, proto_index, (void *) session_to_delete);

@@ -1214,7 +1214,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
         // Fix proto_path , only fix til IP
         // TODO: May be need to fix for ipacket->proto_headers_offset = &session->proto_headers_offset and ipacket->proto_classif_status = &session->proto_classif_status;
         if (session->proto_path.proto_path[index] != PROTO_IP) {
-            debug("[IP] Fixing proto_path of session: %lu", session->session_id);
+            // debug("[IP] Fixing proto_path of session: %lu", session->session_id);
             // Get PROTO_IP index in current proto_path
             int j, ip_index = 0;
             for (j = 0; j < session->proto_path.len; j++) {
@@ -1224,10 +1224,10 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
                 }
             }
 
-            debug("[IP] Current index of PROTO_IP: %d / (packet)%d", ip_index, index);
+            // debug("[IP] Current index of PROTO_IP: %d / (packet)%d", ip_index, index);
             if (ip_index != 0) {
                 if (ip_index > index) {
-                    debug("[IP] Current protocol_path need to remove some protocol");
+                    // debug("[IP] Current protocol_path need to remove some protocol");
                     int pre_path = 0, post_path = ip_index + 1;
 
                     for (pre_path = 0; pre_path <= index; pre_path++)
@@ -1244,9 +1244,9 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
                     session->proto_path.len = pre_path;
                     session->proto_headers_offset.len = pre_path;
                     session->proto_classif_status.len = pre_path;
-                    debug("[IP] New protocol_path len %d", pre_path);
+                    // debug("[IP] New protocol_path len %d", pre_path);
                 } else {
-                    debug("[IP] Current protocol_path need to add some protocol from packet hierarchy");
+                    // debug("[IP] Current protocol_path need to add some protocol from packet hierarchy");
                     int delta = index - ip_index;
                     int new_len = session->proto_path.len + delta;
                     int pre_path = 0, post_path = new_len - 1;
@@ -1267,7 +1267,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
                     session->proto_path.len = new_len;
                     session->proto_headers_offset.len = new_len;
                     session->proto_classif_status.len = new_len;
-                    debug("[IP] New protocol_path len %d", new_len);
+                    // debug("[IP] New protocol_path len %d", new_len);
                 }
             }
 

@@ -1604,7 +1604,7 @@ void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
 }
 
 int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
-    debug("[PROTO_FTP] packet: %lu, index: %d",ipacket->packet_id,index);
+    // debug("[PROTO_FTP] mmt_check_ftp on packet: %lu, index: %d",ipacket->packet_id,index);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0

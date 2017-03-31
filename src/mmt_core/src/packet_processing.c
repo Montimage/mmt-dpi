@@ -2563,7 +2563,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
                 //Initialize its session data if such initialization function exists
                 if (configured_protocol->protocol->session_data_init != NULL) {
-                    debug("[PACKET_PROCESS-]> session_data_init - 0 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
+                    // debug("[PACKET_PROCESS-]> session_data_init - 0 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
                     ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
                 }
                 //Mark this protocol as done with the classification process
@@ -2614,7 +2614,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
         if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION)||(classify_status == PROTO_CLASSIFICATION_UPDATE))) {
             //Initialize its session data if such initialization function exists
             if (configured_protocol->protocol->session_data_init != NULL) {
-                debug("[PACKET_PROCESS-]> session_data_init - 1 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
+                // debug("[PACKET_PROCESS-]> session_data_init - 1 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
                 ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
             }
             is_new_session = NEW_PROTO_IN_SESSION; //This is not a new session, rather a new protocol in the session
@@ -3137,7 +3137,7 @@ void mmt_drop_packet(ipacket_t *ipacket) {
  */
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
 
-    debug("proto_packet_process of %"PRIu64" index: %d\n", ipacket->packet_id, index);
+    debug("proto_packet_process of %"PRIu64" index: %d", ipacket->packet_id, index);
 
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
@@ -3187,7 +3187,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
                     for (i = 0; i < ipacket->session->proto_path.len; i++) {
                         ipacket->session->proto_path_direction[proto_direction].proto_path[i] = ipacket->session->proto_path.proto_path[i];
                     }
-                    debug("[IP] Update protocol path direction: %d", proto_direction);
+                    // debug("[IP] Update protocol path direction: %d", proto_direction);
                 }
             }
         }
@@ -3315,11 +3315,11 @@ int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
 
     if (mmt->has_reassembly == 1) {
         ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
-        debug("Packet address (packet_process - copied packet): %p", ipacket);
+        // debug("Packet address (packet_process - copied packet): %p", ipacket);
         proto_packet_process(ipacket, NULL, index);
     } else {
         prepare_ipacket(mmt, header, packet);
-        debug("Packet address (packet_process) - no copied packet: %p", &mmt->current_ipacket);
+        // debug("Packet address (packet_process) - no copied packet: %p", &mmt->current_ipacket);
         proto_packet_process(&mmt->current_ipacket, NULL, index);
     }
     return 1;

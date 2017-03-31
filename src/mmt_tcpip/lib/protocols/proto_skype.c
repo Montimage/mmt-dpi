@@ -89,7 +89,7 @@ int mmt_check_skype_udp(ipacket_t * ipacket, unsigned index) { //BW: TODO: Check
                     && (packet->payload[0] != 0x30) /* Avoid invalid SNMP detection */
                     && (packet->payload[2] == 0x02))) {
                     MMT_LOG(PROTO_SKYPE, MMT_LOG_DEBUG, "Found skype.\n");
-                    debug("[UDP.SKYPE]");
+                    // debug("[UDP.SKYPE]");
                     mmt_internal_add_connection(ipacket, PROTO_SKYPE, MMT_REAL_PROTOCOL);
                     // flow->l4.udp.skype_like_packet++;
                     return 1;

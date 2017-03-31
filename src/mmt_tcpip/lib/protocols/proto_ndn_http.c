@@ -204,7 +204,7 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_HTTP_ATTRIBUTES_NB] = {
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
 int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
-    debug("NDN_HTTP: mmt_check_ndn_http");
+    // debug("[NDN_HTTP] mmt_check_ndn_http on packet: %lu index: %d",ipacket->packet_id,index);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
