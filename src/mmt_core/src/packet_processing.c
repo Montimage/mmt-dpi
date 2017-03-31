@@ -3047,7 +3047,7 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  */
 void process_packet_handler(ipacket_t *ipacket) {
     debug("process_packet_handler of ipacket: %"PRIu64"\n", ipacket->packet_id);
-    debug("Last packet_handler_id: %d", ipacket->last_callback_fct_id);
+    // debug("Last packet_handler_id: %d", ipacket->last_callback_fct_id);
     packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;
     while (temp_packet_handler != NULL) {
         if (ipacket->last_callback_fct_id == 0) {
