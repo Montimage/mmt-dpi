@@ -2,8 +2,14 @@ RELEASE NOTES
 ---
 
 ## Pre-Version 1.6.8.0
+- Extract more HTTP header fields: Connection, Upgrade
+- Cover also the header fields name is lowercase, uppercase, ...
 - Fixed FTP/TCP/IPv6 segmentation fault and some memory leaks in proto_ftp.c
+- Move some IP statistics to IP protocol: active_session, timedout_session, defragmentation, ....
 - Verify number of TCP packet out of order
+- Add new protocol: HTTP2
+
+
 
 ## Version 1.6.7.0
 - Fixed buffer overflow when working with HTTP header field

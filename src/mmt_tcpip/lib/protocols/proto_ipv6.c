@@ -1173,6 +1173,13 @@ static attribute_metadata_t ip6_attributes_metadata[IP6_ATTRIBUTES_NB] = {
     {IP6_SERVER_ADDR, IP6_SERVER_ADDR_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_server_addr_extraction},
     {IP6_CLIENT_PORT, IP6_CLIENT_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_client_port_extraction},
     {IP6_SERVER_PORT, IP6_SERVER_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_server_port_extraction},
+    {IP6_FRAG_PACKET_COUNT, IP6_FRAG_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_packet_count_extraction},
+    {IP6_FRAG_DATA_VOLUME, IP_FRAG_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_data_volume_extraction},
+    {IP6_DF_PACKET_COUNT, IP6_DF_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_packet_count_extraction},
+    {IP6_DF_DATA_VOLUME, IP_DF_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_data_volume_extraction},
+    {IP6_SESSIONS_COUNT, IP6_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_sessions_count_extraction},
+    {IP6_ACTIVE_SESSIONS_COUNT, IP6_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
+    {IP6_TIMEDOUT_SESSIONS_COUNT, IP6_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
 };
 
 int ipv6_pre_classification_function(ipacket_t * ipacket, unsigned index) {

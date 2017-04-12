@@ -1310,6 +1310,15 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_SERVER_ADDR, IP_SERVER_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_server_addr_extraction},
     {IP_CLIENT_PORT, IP_CLIENT_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_client_port_extraction},
     {IP_SERVER_PORT, IP_SERVER_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_server_port_extraction},
+    // LN: Those are IP protocol attributes, they should go to IP protocol
+    {IP_FRAG_PACKET_COUNT, IP_FRAG_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_packet_count_extraction},
+    {IP_FRAG_DATA_VOLUME, IP_FRAG_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_data_volume_extraction},
+    {IP_DF_PACKET_COUNT, IP_DF_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_packet_count_extraction},
+    {IP_DF_DATA_VOLUME, IP_DF_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_data_volume_extraction},
+    {IP_SESSIONS_COUNT, IP_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_sessions_count_extraction},
+    {IP_ACTIVE_SESSIONS_COUNT, IP_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
+    {IP_TIMEDOUT_SESSIONS_COUNT, IP_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
+    // End of LN
 };
 
 int ip_pre_classification_function(ipacket_t * ipacket, unsigned index) {
