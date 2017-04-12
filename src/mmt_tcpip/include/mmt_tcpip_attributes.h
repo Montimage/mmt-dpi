@@ -39,7 +39,16 @@ extern "C" {
         IP_SERVER_ADDR,
         IP_CLIENT_PORT,
         IP_SERVER_PORT,
-        IP_ATTRIBUTES_NB = IP_SERVER_PORT,
+        // LN: Move from packet_processing.c
+        IP_FRAG_PACKET_COUNT,
+        IP_FRAG_DATA_VOLUME,
+        IP_DF_PACKET_COUNT, 
+        IP_DF_DATA_VOLUME, 
+        IP_SESSIONS_COUNT,
+        IP_ACTIVE_SESSIONS_COUNT,
+        IP_TIMEDOUT_SESSIONS_COUNT,
+        // End of LN
+        IP_ATTRIBUTES_NB = IP_TIMEDOUT_SESSIONS_COUNT,
     };
 
 #define IP_SRC_ALIAS            "src"
@@ -61,7 +70,15 @@ extern "C" {
 #define IP_SERVER_ADDR_ALIAS    "server_addr"
 #define IP_CLIENT_PORT_ALIAS    "client_port"
 #define IP_SERVER_PORT_ALIAS    "server_port"
-
+// LN Move from packet_processing.c
+#define IP_FRAG_PACKET_COUNT_LABEL        "ip_frag_packets_count"
+#define IP_FRAG_DATA_VOLUME_LABEL         "ip_frag_data_volume"
+#define IP_DF_PACKET_COUNT_LABEL          "ip_df_packets_count"
+#define IP_DF_DATA_VOLUME_LABEL           "ip_df_data_volume"
+#define IP_SESSIONS_COUNT_LABEL              "ip_session_count"
+#define IP_ACTIVE_SESSIONS_COUNT_LABEL       "ip_active_session_count"
+#define IP_TIMEDOUT_SESSIONS_COUNT_LABEL     "ip_timedout_session_count"    
+// End of LN
     enum ip6_attributes {
         IP6_VERSION = 1,
         IP6_TRAFFIC_CLASS,
@@ -77,7 +94,16 @@ extern "C" {
         IP6_SERVER_ADDR,
         IP6_CLIENT_PORT,
         IP6_SERVER_PORT,
-        IP6_ATTRIBUTES_NB = IP6_SERVER_PORT,
+        // LN: Move from packet_processing.c
+        IP6_FRAG_PACKET_COUNT,
+        IP6_FRAG_DATA_VOLUME,
+        IP6_DF_PACKET_COUNT, 
+        IP6_DF_DATA_VOLUME, 
+        IP6_SESSIONS_COUNT,
+        IP6_ACTIVE_SESSIONS_COUNT,
+        IP6_TIMEDOUT_SESSIONS_COUNT,
+        // End of LN
+        IP6_ATTRIBUTES_NB = IP6_TIMEDOUT_SESSIONS_COUNT,
     };
     /*
      * Hop by hop attribute
@@ -93,14 +119,22 @@ extern "C" {
 #define IP6_NEXT_HEADER_ALIAS "next_hdr"
 #define IP6_NEXT_PROTO_ALIAS "next_proto"
 #define IP6_HOP_LIMIT_ALIAS "hop_limit"
-#define  IP6_SRC_ALIAS "src"
-#define  IP6_DST_ALIAS "dst"
+#define IP6_SRC_ALIAS "src"
+#define IP6_DST_ALIAS "dst"
 #define IP6_RTT_ALIAS        "ip_rtt"     
 #define IP6_CLIENT_ADDR_ALIAS    "client_addr"
 #define IP6_SERVER_ADDR_ALIAS    "server_addr"
 #define IP6_CLIENT_PORT_ALIAS    "client_port"
 #define IP6_SERVER_PORT_ALIAS    "server_port"
-
+// LN Move from packet_processing.c
+#define IP6_FRAG_PACKET_COUNT_LABEL        "ip6_frag_packets_count"
+#define IP6_FRAG_DATA_VOLUME_LABEL         "ip6_frag_data_volume"
+#define IP6_DF_PACKET_COUNT_LABEL          "ip6_df_packets_count"
+#define IP6_DF_DATA_VOLUME_LABEL           "ip6_df_data_volume"
+#define IP6_SESSIONS_COUNT_LABEL              "ip6_session_count"
+#define IP6_ACTIVE_SESSIONS_COUNT_LABEL       "ip6_active_session_count"
+#define IP6_TIMEDOUT_SESSIONS_COUNT_LABEL     "ip6_timedout_session_count"    
+// End of LN
     enum {
         TCP_SRC_PORT = 1,
         TCP_DEST_PORT,
@@ -182,6 +216,15 @@ extern "C" {
         RFC2822_REFERER,
         RFC2822_CONTENT_TYPE,
         RFC2822_USER_AGENT,
+        // LN
+        RFC2822_UPGRADE,
+        RFC2822_CONNECTION,
+        RFC2822_ACCEPT,
+        RFC2822_TRANSFER_ENCODING,
+        RFC2822_CONTENT_ENCODING,
+        RFC2822_COOKIE,
+        RFC2822_X_SESSION_TYPE,
+        // End of LN
         RFC2822_CONTENT_LEN,
         RFC2822_SERVER,
         RFC2822_XCDN_SEEN,
@@ -201,6 +244,15 @@ extern "C" {
 #define RFC2822_REFERER_ALIAS "referer"
 #define RFC2822_CONTENT_TYPE_ALIAS "content_type"
 #define RFC2822_USER_AGENT_ALIAS "user_agent"
+// LN
+#define RFC2822_UPGRADE_ALIAS "upgrade"
+#define RFC2822_CONNECTION_ALIAS "connection"    
+#define RFC2822_ACCEPT_ALIAS "accept"
+#define RFC2822_TRANSFER_ENCODING_ALIAS "transfer_encoding"
+#define RFC2822_CONTENT_ENCODING_ALIAS "content_encoding"
+#define RFC2822_COOKIE_ALIAS "cookie"
+#define RFC2822_X_SESSION_TYPE_ALIAS "x_session_type"
+// End of LN
 #define RFC2822_CONTENT_LEN_ALIAS "content_len"
 #define RFC2822_SERVER_ALIAS "server"
 #define RFC2822_XCDN_SEEN_ALIAS "xcdn_seen"
