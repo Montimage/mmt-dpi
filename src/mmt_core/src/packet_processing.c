@@ -1496,9 +1496,9 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
     if (tmp_attr_ref->scope & SCOPE_ON_DEMAND) {
         if (internal_extract_attribute(ipacket, tmp_attr_ref, index)) {
             //return the attribute's data
-#ifdef DEBUG
-            (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : attribute data is null (1/2)\n",ipacket->packet_id, proto_id, attribute_id, index );
-#endif /*DEBUG*/
+// #ifdef DEBUG
+//             (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : attribute data is null (1/2)\n",ipacket->packet_id, proto_id, attribute_id, index );
+// #endif /*DEBUG*/
             tmp_attr_ref->status = ATTRIBUTE_CONSUMED;
             return tmp_attr_ref->data;
         }
@@ -1558,9 +1558,9 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
     if (tmp_attr_ref->scope & SCOPE_ON_DEMAND) {
         if (internal_extract_attribute(ipacket, tmp_attr_ref, index)) {
             //return the attribute's data
-#ifdef DEBUG
-            (void)fprintf( stderr,"[error] get_extracted_attribute_at_index: attribute data is null (1/2): packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
-#endif /*DEBUG*/
+// #ifdef DEBUG
+//             (void)fprintf( stderr,"get_extracted_attribute_at_index: attribute data is not null (1/2): packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
+// #endif /*DEBUG*/
             tmp_attr_ref->status = ATTRIBUTE_CONSUMED;
             return (attribute_t *) tmp_attr_ref;
         }
