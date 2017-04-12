@@ -26,11 +26,11 @@ int tcp_fin_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
     //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
     struct tcphdr * tcp_hdr = (struct tcphdr *) & packet->data[proto_offset];
-    if (tcp_hdr->fin) {
+    // if (tcp_hdr->fin) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->fin; //Already aligned to the correct bit ordering
         return 1;
-    }
-    return 0;
+    // }
+    // return 0;
 }
 
 int tcp_syn_flag_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -41,11 +41,11 @@ int tcp_syn_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
     //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
     struct tcphdr * tcp_hdr = (struct tcphdr *) & packet->data[proto_offset];
-    if (tcp_hdr->syn) {
+    // if (tcp_hdr->syn) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->syn; //Already aligned to the correct bit ordering
         return 1;
-    }
-    return 0;
+    // }
+    // return 0;
 }
 
 int tcp_rst_flag_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -56,11 +56,11 @@ int tcp_rst_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
     //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
     struct tcphdr * tcp_hdr = (struct tcphdr *) & packet->data[proto_offset];
-    if (tcp_hdr->rst) {
+    // if (tcp_hdr->rst) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->rst; //Already aligned to the correct bit ordering
         return 1;
-    }
-    return 0;
+    // }
+    // return 0;
 }
 
 int tcp_psh_flag_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -71,11 +71,11 @@ int tcp_psh_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
     //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
     struct tcphdr * tcp_hdr = (struct tcphdr *) & packet->data[proto_offset];
-    if (tcp_hdr->psh) {
+    // if (tcp_hdr->psh) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->psh; //Already aligned to the correct bit ordering
         return 1;
-    }
-    return 0;
+    // }
+    // return 0;
 }
 
 int tcp_ack_flag_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -86,11 +86,11 @@ int tcp_ack_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
     //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
     struct tcphdr * tcp_hdr = (struct tcphdr *) & packet->data[proto_offset];
-    if (tcp_hdr->ack) {
+    // if (tcp_hdr->ack) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->ack; //Already aligned to the correct bit ordering
         return 1;
-    }
-    return 0;
+    // }
+    // return 0;
 }
 
 int tcp_urg_flag_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -101,11 +101,11 @@ int tcp_urg_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
     //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
     struct tcphdr * tcp_hdr = (struct tcphdr *) & packet->data[proto_offset];
-    if (tcp_hdr->urg) {
+    // if (tcp_hdr->urg) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->urg; //Already aligned to the correct bit ordering
         return 1;
-    }
-    return 0;
+    // }
+    // return 0;
 }
 
 int tcp_ece_flag_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -154,7 +154,7 @@ int tcp_flags_extraction(const ipacket_t * packet, unsigned proto_index,
 
 int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
-    if(ipacket->internal_packet->payload_packet_len){
+    // if(ipacket->internal_packet->payload_packet_len){
         // Check padding packet
         if(ipacket->internal_packet->iph==NULL){
             *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
@@ -165,7 +165,7 @@ int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
             *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
             return 1;
         }
-    }
+    // }
     return 0;
 }
 
@@ -193,11 +193,8 @@ int tcp_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
 int tcp_session_retransmission_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
-    if(ipacket->internal_packet->payload_packet_len){
-        *((uint32_t*) extracted_data->data) = ipacket->session->tcp_retransmissions;
-        return 1;
-    }
-    return 0;
+    *((uint32_t*) extracted_data->data) = ipacket->session->tcp_retransmissions;
+    return 1;
 }
 
 // int tcp_session_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
