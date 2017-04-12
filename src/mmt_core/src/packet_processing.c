@@ -3217,6 +3217,8 @@ void copy_ipacket_header(ipacket_t *ipacket, struct pkthdr *header) {
     ipacket->p_hdr->original_caplen = header->caplen;
     ipacket->p_hdr->len = header->len;
     ipacket->p_hdr->original_len = header->len;
+    ipacket->p_hdr->probe_id = header->probe_id;
+    ipacket->p_hdr->source_id = header->source_id;
     ipacket->p_hdr->user_args = header->user_args;
 }
 
@@ -3264,6 +3266,8 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         mmt->current_ipacket.p_hdr->original_caplen = header->caplen;
         mmt->current_ipacket.p_hdr->original_len = header->len;
         mmt->current_ipacket.p_hdr->len = header->len;
+        mmt->current_ipacket.p_hdr->probe_id = header->probe_id;
+        mmt->current_ipacket.p_hdr->source_id = header->source_id;
         mmt->current_ipacket.p_hdr->user_args = header->user_args;
         mmt->current_ipacket.original_data = packet;
         mmt->current_ipacket.proto_hierarchy->len = 0;
