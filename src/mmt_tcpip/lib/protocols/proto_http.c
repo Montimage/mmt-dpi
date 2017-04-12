@@ -100,6 +100,99 @@ int http_new_user_agent_extraction(const ipacket_t * ipacket, unsigned proto_ind
     return 0;
 }
 
+// LN
+int http_new_upgrade_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if ((ipacket->internal_packet)) {
+        if ((ipacket->internal_packet->packet_lines_parsed_complete != 0)
+            && (ipacket->internal_packet->packet_id == ipacket->packet_id)) {
+            if (ipacket->internal_packet->upgrade_line.ptr != NULL) {
+                extracted_data->data = (void *) &ipacket->internal_packet->upgrade_line;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int http_new_connection_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if ((ipacket->internal_packet)) {
+        if ((ipacket->internal_packet->packet_lines_parsed_complete != 0)
+            && (ipacket->internal_packet->packet_id == ipacket->packet_id)) {
+            if (ipacket->internal_packet->connection_line.ptr != NULL) {
+                extracted_data->data = (void *) &ipacket->internal_packet->connection_line;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int http_new_accept_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if ((ipacket->internal_packet)) {
+        if ((ipacket->internal_packet->packet_lines_parsed_complete != 0)
+            && (ipacket->internal_packet->packet_id == ipacket->packet_id)) {
+            if (ipacket->internal_packet->accept_line.ptr != NULL) {
+                extracted_data->data = (void *) &ipacket->internal_packet->accept_line;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int http_new_transfer_encoding_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if ((ipacket->internal_packet)) {
+        if ((ipacket->internal_packet->packet_lines_parsed_complete != 0)
+            && (ipacket->internal_packet->packet_id == ipacket->packet_id)) {
+            if (ipacket->internal_packet->http_transfer_encoding.ptr != NULL) {
+                extracted_data->data = (void *) &ipacket->internal_packet->http_transfer_encoding;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int http_new_http_encoding_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if ((ipacket->internal_packet)) {
+        if ((ipacket->internal_packet->packet_lines_parsed_complete != 0)
+            && (ipacket->internal_packet->packet_id == ipacket->packet_id)) {
+            if (ipacket->internal_packet->http_encoding.ptr != NULL) {
+                extracted_data->data = (void *) &ipacket->internal_packet->http_encoding;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int http_new_http_cookie_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if ((ipacket->internal_packet)) {
+        if ((ipacket->internal_packet->packet_lines_parsed_complete != 0)
+            && (ipacket->internal_packet->packet_id == ipacket->packet_id)) {
+            if (ipacket->internal_packet->http_cookie.ptr != NULL) {
+                extracted_data->data = (void *) &ipacket->internal_packet->http_cookie;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int http_new_x_session_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if ((ipacket->internal_packet)) {
+        if ((ipacket->internal_packet->packet_lines_parsed_complete != 0)
+            && (ipacket->internal_packet->packet_id == ipacket->packet_id)) {
+            if (ipacket->internal_packet->http_x_session_type.ptr != NULL) {
+                extracted_data->data = (void *) &ipacket->internal_packet->http_x_session_type;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+// End of LN
 int http_new_content_len_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
     if ((ipacket->internal_packet)) {
         if (ipacket->internal_packet->packet_lines_parsed_complete != 0) {
@@ -146,6 +239,15 @@ static attribute_metadata_t http_new_attributes_metadata[RFC2822_ATTRIBUTES_NB] 
     {RFC2822_REFERER, RFC2822_REFERER_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_referer_extraction},
     {RFC2822_CONTENT_TYPE, RFC2822_CONTENT_TYPE_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_content_type_extraction},
     {RFC2822_USER_AGENT, RFC2822_USER_AGENT_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_user_agent_extraction},
+    // LN
+    {RFC2822_UPGRADE, RFC2822_UPGRADE_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_upgrade_extraction},
+    {RFC2822_CONNECTION, RFC2822_CONNECTION_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_connection_extraction},
+    {RFC2822_ACCEPT, RFC2822_ACCEPT_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_accept_extraction},
+    {RFC2822_TRANSFER_ENCODING, RFC2822_TRANSFER_ENCODING_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_transfer_encoding_extraction},
+    {RFC2822_CONTENT_ENCODING, RFC2822_CONTENT_ENCODING_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_http_encoding_extraction},
+    {RFC2822_COOKIE, RFC2822_COOKIE_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_http_cookie_extraction},
+    {RFC2822_X_SESSION_TYPE, RFC2822_X_SESSION_TYPE_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_x_session_type_extraction},
+    // End of LN
     {RFC2822_CONTENT_LEN, RFC2822_CONTENT_LEN_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_content_len_extraction},
     {RFC2822_SERVER, RFC2822_SERVER_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_server_extraction},
     {RFC2822_XCDN_SEEN, RFC2822_XCDN_SEEN_ALIAS, MMT_U8_DATA, sizeof (uint8_t), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, http_new_xcdn_seen_extraction},
