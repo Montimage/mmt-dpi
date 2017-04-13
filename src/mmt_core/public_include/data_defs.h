@@ -80,6 +80,8 @@ typedef struct pkthdr {
     unsigned int len;    /**< length of the packet (off wire) */
     unsigned int original_caplen; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
     unsigned int original_len; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
+    unsigned int probe_id; /** The ID of the probe which are processing current packet*/
+    unsigned int source_id; /** The ID of the interface/source which are processing current packet*/
     void * user_args;    /**< Pointer to a user defined argument. Can be NULL, it will not be used by the library. */
 } pkthdr_t;
 

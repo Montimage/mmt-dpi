@@ -22,6 +22,20 @@ int uargs_extraction(const ipacket_t * packet, unsigned proto_index,
     return 1;
 }
 
+int probe_id_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+
+    *((unsigned int *) extracted_data->data) = packet->p_hdr->probe_id;
+    return 1;
+}
+
+int source_id_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+
+    *((unsigned int *) extracted_data->data) = packet->p_hdr->source_id;
+    return 1;
+}
+
 int packet_direction_extraction (const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
@@ -106,6 +120,8 @@ static attribute_metadata_t meta_attributes_metadata[META_ATTRIBUTES_NB] = {
     {META_PROTO_H, META_PROTO_H_ALIAS, MMT_DATA_PATH, sizeof (proto_hierarchy_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_hierarchy_extraction},
     {META_SESSION, META_SESSION_ALIAS, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION, session_extraction},
     {META_CLASSIFIED, META_CLASSIFIED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_SESSION, classified_extraction},
+    {META_PROBE_ID, META_PROBE_ID_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION, probe_id_extraction},
+    {META_SOURCE_ID, META_SOURCE_ID_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION, source_id_extraction},
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////

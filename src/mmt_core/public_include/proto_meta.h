@@ -23,9 +23,12 @@ enum {
     META_PROTO_H,
     META_SESSION,
     META_CLASSIFIED,
+    META_PROBE_ID,
+    META_SOURCE_ID,
+    META_ATTRIBUTES_NB = META_SOURCE_ID
 };
 
-#define META_ATTRIBUTES_NB 7 /* To be updated with whenever necessary */
+// #define META_ATTRIBUTES_NB 7 /* To be updated with whenever necessary */
 
 #define PROTO_META_ALIAS        "meta"
 #define PROTO_UNKNOWN_ALIAS     "unknown"
@@ -36,6 +39,8 @@ enum {
 #define META_PROTO_H_ALIAS      "proto_hierarchy"
 #define META_SESSION_ALIAS      "session"
 #define META_CLASSIFIED_ALIAS   "classified"
+#define META_PROBE_ID_ALIAS   "probe_id"
+#define META_SOURCE_ID_ALIAS   "source_id"
 #define META_PACKET_DIRECTION_ALIAS "direction"
 
 #ifdef	__cplusplus
