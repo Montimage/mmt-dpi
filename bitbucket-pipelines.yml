@@ -13,3 +13,4 @@ pipelines:
           - apt-get install -y libxml2-dev libpcap-dev
           - cd sdk/ make
           - make install
+          - make test
