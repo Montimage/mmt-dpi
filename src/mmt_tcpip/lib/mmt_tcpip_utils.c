@@ -151,6 +151,12 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     packet->accept_line.len = 0;
     packet->user_agent_line.ptr = NULL;
     packet->user_agent_line.len = 0;
+    // LN
+    packet->upgrade_line.ptr = NULL;
+    packet->upgrade_line.len = 0;
+    packet->connection_line.ptr = NULL;
+    packet->connection_line.len = 0;
+    // End of LN
     packet->http_url_name.ptr = NULL;
     packet->http_url_name.len = 0;
     packet->http_encoding.ptr = NULL;
@@ -182,9 +188,9 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     uint16_t new_line = ntohs(0x0d0a);
 
     for (a = 0; a < end && packet->parsed_lines < MMT_MAX_PARSE_LINES_PER_PACKET; a++) {
-    // search for an empty line position: 0x0d0a
+        // search for an empty line position: 0x0d0a
         if ( get_u16(packet->payload, a) != new_line )
-      	  continue;
+            continue;
         else {
             packet->line[packet->parsed_lines].len =
                 &packet->payload[a] - packet->line[packet->parsed_lines].ptr;
@@ -193,8 +199,8 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             if ( packet->parsed_lines == 0 && packet->line[0].len >= MMT_STATICSTRING_LEN("HTTP/1.1 200 ") &&
                     packet->line[0].ptr[MMT_STATICSTRING_LEN("HTTP/1.1 ")] > '0' &&
                     packet->line[0].ptr[MMT_STATICSTRING_LEN("HTTP/1.1 ")] < '6' &&
-						  memcmp(packet->line[0].ptr, "HTTP/1.", MMT_STATICSTRING_LEN("HTTP/1.")) == 0
-						  ) {
+                    memcmp(packet->line[0].ptr, "HTTP/1.", MMT_STATICSTRING_LEN("HTTP/1.")) == 0
+               ) {
                 packet->http_response.ptr = &packet->line[0].ptr[MMT_STATICSTRING_LEN("HTTP/1.1 ")];
                 packet->http_response.len = packet->line[0].len - MMT_STATICSTRING_LEN("HTTP/1.1 ");
 
@@ -206,28 +212,28 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             }
 
             // check for request packet
-            
+
             // It is not http packet
-            // if(packet->http_response.ptr== NULL && ( 
-            //     memcmp(packet->line[0].ptr, "GET", MMT_STATICSTRING_LEN("GET")) != 0 && 
+            // if(packet->http_response.ptr== NULL && (
+            //     memcmp(packet->line[0].ptr, "GET", MMT_STATICSTRING_LEN("GET")) != 0 &&
             //     memcmp(packet->line[0].ptr, "POST", MMT_STATICSTRING_LEN("POST")) != 0 &&
-            //     memcmp(packet->line[0].ptr, "PUT", MMT_STATICSTRING_LEN("PUT")) != 0 && 
-            //     memcmp(packet->line[0].ptr, "DELETE", MMT_STATICSTRING_LEN("DELETE")) != 0 && 
-            //     memcmp(packet->line[0].ptr, "OPTIONS", MMT_STATICSTRING_LEN("OPTIONS")) != 0 && 
-            //     memcmp(packet->line[0].ptr, "HEAD", MMT_STATICSTRING_LEN("HEAD")) != 0 && 
-            //     memcmp(packet->line[0].ptr, "TRACE", MMT_STATICSTRING_LEN("TRACE")) != 0 && 
+            //     memcmp(packet->line[0].ptr, "PUT", MMT_STATICSTRING_LEN("PUT")) != 0 &&
+            //     memcmp(packet->line[0].ptr, "DELETE", MMT_STATICSTRING_LEN("DELETE")) != 0 &&
+            //     memcmp(packet->line[0].ptr, "OPTIONS", MMT_STATICSTRING_LEN("OPTIONS")) != 0 &&
+            //     memcmp(packet->line[0].ptr, "HEAD", MMT_STATICSTRING_LEN("HEAD")) != 0 &&
+            //     memcmp(packet->line[0].ptr, "TRACE", MMT_STATICSTRING_LEN("TRACE")) != 0 &&
             //     memcmp(packet->line[0].ptr, "CONNECT", MMT_STATICSTRING_LEN("CONNECT")) != 0)){
             //     return;
             // }
             if (packet->server_line.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > MMT_STATICSTRING_LEN("Server:") + 1
+                    && packet->line[packet->parsed_lines].len > MMT_STATICSTRING_LEN("Server:") + 1
                     && memcmp(packet->line[packet->parsed_lines].ptr, "Server:", MMT_STATICSTRING_LEN("Server:")) == 0) {
                 // some stupid clients omit a space and place the servername directly after the colon
                 if (packet->line[packet->parsed_lines].ptr[MMT_STATICSTRING_LEN("Server:")] == ' ') {
                     packet->server_line.ptr =
-                            &packet->line[packet->parsed_lines].ptr[MMT_STATICSTRING_LEN("Server:") + 1];
+                        &packet->line[packet->parsed_lines].ptr[MMT_STATICSTRING_LEN("Server:") + 1];
                     packet->server_line.len =
-                            packet->line[packet->parsed_lines].len - (MMT_STATICSTRING_LEN("Server:") + 1);
+                        packet->line[packet->parsed_lines].len - (MMT_STATICSTRING_LEN("Server:") + 1);
                     goto jump_over_others;
                 } else {
                     packet->server_line.ptr = &packet->line[packet->parsed_lines].ptr[MMT_STATICSTRING_LEN("Server:")];
@@ -237,8 +243,9 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             }
 
             if (packet->host_line.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 6
-                    && memcmp(packet->line[packet->parsed_lines].ptr, "Host:", 5) == 0) {
+                    && packet->line[packet->parsed_lines].len > 6
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Host:", 5) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "host:", 5) == 0)) {
                 // some stupid clients omit a space and place the hostname directly after the colon
                 if (packet->line[packet->parsed_lines].ptr[5] == ' ') {
                     packet->host_line.ptr = &packet->line[packet->parsed_lines].ptr[6];
@@ -252,86 +259,118 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             }
 
             if (packet->content_line.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 14
+                    && packet->line[packet->parsed_lines].len > 14
                     && (memcmp (packet->line[packet->parsed_lines].ptr, "Content-Type: ", 14) == 0
-                  		  || memcmp(packet->line[packet->parsed_lines].ptr, "Content-type: ", 14) == 0)) {
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "Content-type: ", 14) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "content-type: ", 14) == 0)) {
                 packet->content_line.ptr = &packet->line[packet->parsed_lines].ptr[14];
                 packet->content_line.len = packet->line[packet->parsed_lines].len - 14;
                 goto jump_over_others;
             }
 
             if (packet->content_line.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 13
-                    && memcmp(packet->line[packet->parsed_lines].ptr, "content-type:", 13) == 0) {
+                    && packet->line[packet->parsed_lines].len > 13
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Content-Type:", 13) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "Content-type:", 13) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "content-type:", 13) == 0)) {
                 packet->content_line.ptr = &packet->line[packet->parsed_lines].ptr[13];
                 packet->content_line.len = packet->line[packet->parsed_lines].len - 13;
                 goto jump_over_others;
             }
 
             if (packet->accept_line.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 8
-                    && memcmp(packet->line[packet->parsed_lines].ptr, "Accept: ", 8) == 0) {
+                    && packet->line[packet->parsed_lines].len > 8
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Accept: ", 8) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "accept: ", 8) == 0)) {
                 packet->accept_line.ptr = &packet->line[packet->parsed_lines].ptr[8];
                 packet->accept_line.len = packet->line[packet->parsed_lines].len - 8;
                 goto jump_over_others;
             }
 
             if (packet->referer_line.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 9
-                    && memcmp(packet->line[packet->parsed_lines].ptr, "Referer: ", 9) == 0) {
+                    && packet->line[packet->parsed_lines].len > 9
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Referer: ", 9) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "referer: ", 9) == 0)) {
                 packet->referer_line.ptr = &packet->line[packet->parsed_lines].ptr[9];
                 packet->referer_line.len = packet->line[packet->parsed_lines].len - 9;
                 goto jump_over_others;
             }
 
             if (packet->user_agent_line.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 12
-                    && (memcmp(packet->line[packet->parsed_lines].ptr, "User-Agent: ", 12) == 0 ||
-                        memcmp(packet->line[packet->parsed_lines].ptr, "User-agent: ", 12) == 0)) {
+                    && packet->line[packet->parsed_lines].len > 12
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "User-Agent: ", 12) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "User-agent: ", 12) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "user-agent: ", 12) == 0)) {
                 packet->user_agent_line.ptr = &packet->line[packet->parsed_lines].ptr[12];
                 packet->user_agent_line.len = packet->line[packet->parsed_lines].len - 12;
                 goto jump_over_others;
             }
+            // LN: Extract Upgrade header field
+            if (packet->upgrade_line.ptr == NULL
+                    && packet->line[packet->parsed_lines].len > 12
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Upgrade: ", 9) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "upgrade: ", 9) == 0)) {
+                packet->upgrade_line.ptr = &packet->line[packet->parsed_lines].ptr[9];
+                packet->upgrade_line.len = packet->line[packet->parsed_lines].len - 9;
+                goto jump_over_others;
+            }
 
+            if (packet->connection_line.ptr == NULL
+                    && packet->line[packet->parsed_lines].len > 12
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Connection: ", 12) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "connection: ", 12) == 0)) {
+                packet->connection_line.ptr = &packet->line[packet->parsed_lines].ptr[12];
+                packet->connection_line.len = packet->line[packet->parsed_lines].len - 12;
+                goto jump_over_others;
+            }
+            // End of LN
             if (packet->http_encoding.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 18
-                    && memcmp(packet->line[packet->parsed_lines].ptr, "Content-Encoding: ", 18) == 0) {
+                    && packet->line[packet->parsed_lines].len > 18
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Content-Encoding: ", 18) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "Content-encoding: ", 18) == 0)) {
                 packet->http_encoding.ptr = &packet->line[packet->parsed_lines].ptr[18];
                 packet->http_encoding.len = packet->line[packet->parsed_lines].len - 18;
                 goto jump_over_others;
             }
 
             if (packet->http_transfer_encoding.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 19
-                    && memcmp(packet->line[packet->parsed_lines].ptr, "Transfer-Encoding: ", 19) == 0) {
+                    && packet->line[packet->parsed_lines].len > 19
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Transfer-Encoding: ", 19) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "Transfer-encoding: ", 19) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "transfer-encoding: ", 19) == 0)) {
                 packet->http_transfer_encoding.ptr = &packet->line[packet->parsed_lines].ptr[19];
                 packet->http_transfer_encoding.len = packet->line[packet->parsed_lines].len - 19;
                 goto jump_over_others;
             }
             if (packet->http_contentlen.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 16
-                    && ((memcmp(packet->line[packet->parsed_lines].ptr, "Content-Length: ", 16) == 0)
-                    ||  (memcmp(packet->line[packet->parsed_lines].ptr, "content-length: ", 16) == 0))) {
+                    && packet->line[packet->parsed_lines].len > 16
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Content-Length: ", 16) == 0
+                        ||  memcmp(packet->line[packet->parsed_lines].ptr, "Content-length: ", 16) == 0
+                        ||  memcmp(packet->line[packet->parsed_lines].ptr, "content-length: ", 16) == 0)) {
                 packet->http_contentlen.ptr = &packet->line[packet->parsed_lines].ptr[16];
                 packet->http_contentlen.len = packet->line[packet->parsed_lines].len - 16;
                 goto jump_over_others;
             }
             if (packet->http_cookie.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 8
-                    && memcmp(packet->line[packet->parsed_lines].ptr, "Cookie: ", 8) == 0) {
-                packet->http_cookie.ptr = &packet->line[packet->parsed_lines].ptr[8];
-                packet->http_cookie.len = packet->line[packet->parsed_lines].len - 8;
+                    && packet->line[packet->parsed_lines].len > 8
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "Set-Cookie: ", 12) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "Set-cookie: ", 12) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "set-cookie: ", 12) == 0)) {
+                packet->http_cookie.ptr = &packet->line[packet->parsed_lines].ptr[12];
+                packet->http_cookie.len = packet->line[packet->parsed_lines].len - 12;
                 goto jump_over_others;
             }
             if (packet->has_x_cdn_hdr == 0
-            		  && packet->line[packet->parsed_lines].len > 5
+                    && packet->line[packet->parsed_lines].len > 5
                     && mmt_strncasecmp((const char *)packet->line[packet->parsed_lines].ptr, "X-CDN", 5) == 0) {
                 packet->has_x_cdn_hdr = 1;
                 goto jump_over_others;
             }
             if (packet->http_x_session_type.ptr == NULL
-            		  && packet->line[packet->parsed_lines].len > 16
-                    && memcmp(packet->line[packet->parsed_lines].ptr, "X-Session-Type: ", 16) == 0) {
+                    && packet->line[packet->parsed_lines].len > 16
+                    && (memcmp(packet->line[packet->parsed_lines].ptr, "X-Session-Type: ", 16) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "x-session-type: ", 16) == 0
+                        || memcmp(packet->line[packet->parsed_lines].ptr, "X-session-type: ", 16) == 0)) {
                 packet->http_x_session_type.ptr = &packet->line[packet->parsed_lines].ptr[16];
                 packet->http_x_session_type.len = packet->line[packet->parsed_lines].len - 16;
                 goto jump_over_others;
@@ -348,7 +387,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                 return;
             }
 
-            jump_over_others:
+jump_over_others:
 
             packet->parsed_lines++;
             packet->line[packet->parsed_lines].ptr = &packet->payload[a + 2];
@@ -420,10 +459,10 @@ uint16_t mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
         counter++;
         while (packet->payload_packet_len > counter
                 && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-                || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
-                || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
-                || packet->payload[counter] == '-' || packet->payload[counter] == '_'
-                || packet->payload[counter] == '.')) {
+                    || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
+                    || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
+                    || packet->payload[counter] == '-' || packet->payload[counter] == '_'
+                    || packet->payload[counter] == '.')) {
             MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "further letter\n");
             counter++;
             if (packet->payload_packet_len > counter && packet->payload[counter] == '@') {
@@ -431,9 +470,9 @@ uint16_t mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                 counter++;
                 while (packet->payload_packet_len > counter
                         && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-                        || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
-                        || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
-                        || packet->payload[counter] == '-' || packet->payload[counter] == '_')) {
+                            || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
+                            || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
+                            || packet->payload[counter] == '-' || packet->payload[counter] == '_')) {
                     MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "letter\n");
                     counter++;
                     if (packet->payload_packet_len > counter && packet->payload[counter] == '.') {
@@ -441,7 +480,7 @@ uint16_t mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                         counter++;
                         if (packet->payload_packet_len > counter + 1
                                 && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-                                && (packet->payload[counter + 1] >= 'a' && packet->payload[counter + 1] <= 'z'))) {
+                                    && (packet->payload[counter + 1] >= 'a' && packet->payload[counter + 1] <= 'z'))) {
                             MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "two letters\n");
                             counter += 2;
                             if (packet->payload_packet_len > counter
@@ -449,7 +488,7 @@ uint16_t mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                                 MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "whitespace1\n");
                                 return counter;
                             } else if (packet->payload_packet_len > counter && packet->payload[counter] >= 'a'
-                                    && packet->payload[counter] <= 'z') {
+                                       && packet->payload[counter] <= 'z') {
                                 MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "one letter\n");
                                 counter++;
                                 if (packet->payload_packet_len > counter
@@ -457,7 +496,7 @@ uint16_t mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                                     MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "whitespace2\n");
                                     return counter;
                                 } else if (packet->payload_packet_len > counter && packet->payload[counter] >= 'a'
-                                        && packet->payload[counter] <= 'z') {
+                                           && packet->payload[counter] <= 'z') {
                                     counter++;
                                     if (packet->payload_packet_len > counter
                                             && (packet->payload[counter] == ' ' || packet->payload[counter] == ';')) {

@@ -139,6 +139,24 @@ extern "C" {
     mmt_ip6_id_t * findID6(internal_ip_proto_context_t * tcpip_context, struct in6_addr * ip);
     int deleteID6(internal_ip_proto_context_t * tcpip_context, struct in6_addr * ip);
 
+// LN: Move from packet_process
+
+int proto_ip_frag_packet_count_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
+
+int proto_ip_frag_data_volume_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
+
+int proto_ip_df_packet_count_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
+
+int proto_ip_df_data_volume_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
+
+int proto_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
+
+int proto_active_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
+
+int proto_timedout_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
+
+// End of LN
+
 #ifdef	__cplusplus
 }
 #endif

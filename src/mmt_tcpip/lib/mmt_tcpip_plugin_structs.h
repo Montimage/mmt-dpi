@@ -611,6 +611,8 @@ struct mmt_tcpip_internal_packet_struct {
     struct mmt_int_one_line_struct content_line;
     struct mmt_int_one_line_struct accept_line;
     struct mmt_int_one_line_struct user_agent_line;
+    struct mmt_int_one_line_struct upgrade_line; // LN: To extract upgrade line
+    struct mmt_int_one_line_struct connection_line; // LN: To extract Connection line
     struct mmt_int_one_line_struct http_url_name;
     struct mmt_int_one_line_struct http_encoding;
     struct mmt_int_one_line_struct http_transfer_encoding;
