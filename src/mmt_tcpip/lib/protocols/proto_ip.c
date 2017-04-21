@@ -200,8 +200,7 @@ int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attrib
     int ihl = ip_hdr->ihl;
     extracted_data->data = NULL;
     if (ihl > 5) {
-        ip_hdr = ip_hdr + 5 * 4;
-        extracted_data->data = (unsigned char *) ip_hdr;
+        extracted_data->data = (unsigned char *) (& packet->data[proto_offset + 5 * 4]);
         return 1;
     }
     return 0;
