@@ -7,7 +7,7 @@ Version 1.6.7.1
 - Cover also the header fields name is lowercase, uppercase, ...
 - Fixed FTP/TCP/IPv6 segmentation fault and some memory leaks in proto_ftp.c
 - Move some IP statistics to IP protocol: active_session, timedout_session, defragmentation, ....
-
+- Fixed IP options pointer
 - Verify number of TCP packet out of order
 - Add new protocol: HTTP2
 
