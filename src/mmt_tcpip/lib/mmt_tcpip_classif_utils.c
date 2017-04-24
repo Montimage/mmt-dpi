@@ -8,7 +8,7 @@ static inline int _mmt_case_sensitive_reverse_hostname_matching(const char *host
     }
 
     const char * hnr = &hostname[ 0 ];
-    const char * urlr = &url[ 0 ];
+    const char * urlr = &url[ 1 ];
 
     while (*hnr && *hnr == *urlr && url_len && hostname_len) {
         url_len--;
@@ -177,6 +177,7 @@ static const protocol_match doted_host_names[] = {
     {".answers.com", PROTO_ANSWERS, MMT_STATICSTRING_LEN(".answers.com")},
     {".aol.com", PROTO_AOL, MMT_STATICSTRING_LEN(".aol.com")},
     {".ask.com", PROTO_ASK, MMT_STATICSTRING_LEN(".ask.com")},
+    {".ask.fm", PROTO_ASK, MMT_STATICSTRING_LEN(".ask.fm")},
     {".avg.com", PROTO_AVG, MMT_STATICSTRING_LEN(".avg.com")},
     {".aweber.com", PROTO_AWEBER, MMT_STATICSTRING_LEN(".aweber.com")},
     {".babylon.com", PROTO_BABYLON, MMT_STATICSTRING_LEN(".babylon.com")},
