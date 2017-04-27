@@ -1668,7 +1668,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOMEDEPOT);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOOTSUITE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOTMAIL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HUFFINGTON_POST);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HUFFINGTONPOST);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HURRIYET);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ICECAST);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_APPLE_ICLOUD);

@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_huffington_post_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_HUFFINGTON_POST, PROTO_HUFFINGTON_POST_ALIAS);
+int init_proto_huffingtonpost_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_HUFFINGTONPOST, PROTO_HUFFINGTONPOST_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_HUFFINGTON_POST);
+        return register_protocol(protocol_struct, PROTO_HUFFINGTONPOST);
     } else {
         return 0;
     }

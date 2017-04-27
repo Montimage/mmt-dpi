@@ -169,7 +169,7 @@ extern "C" {
 #define PROTO_HTTP_CONNECT 154
 #define PROTO_HTTP_PROXY 155
 #define PROTO_HTTP_APPLICATION_ACTIVESYNC 156
-#define PROTO_HUFFINGTON_POST 157
+#define PROTO_HUFFINGTONPOST 157
 #define PROTO_HURRIYET 158
 #define PROTO_I23V5 159
 #define PROTO_IAX 160
@@ -804,7 +804,7 @@ extern "C" {
 #define PROTO_HTTP_CONNECT_ALIAS "http_connect"
 #define PROTO_HTTP_PROXY_ALIAS "http_proxy"
 #define PROTO_HTTP_APPLICATION_ACTIVESYNC_ALIAS "http_activesync"
-#define PROTO_HUFFINGTON_POST_ALIAS "huffingtonpost"
+#define PROTO_HUFFINGTONPOST_ALIAS "huffingtonpost"
 #define PROTO_HURRIYET_ALIAS "hurriyet"
 #define PROTO_I23V5_ALIAS "i23v5"
 #define PROTO_IAX_ALIAS "iax"

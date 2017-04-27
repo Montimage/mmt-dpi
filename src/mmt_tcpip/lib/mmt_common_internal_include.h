@@ -828,7 +828,7 @@ extern "C" {
     int init_proto_http_application_activesync_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_HUFFINGTONPOST //////////////////
-    int init_proto_huffington_post_struct();
+    int init_proto_huffingtonpost_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_HURRIYET //////////////////
     int init_proto_hurriyet_struct();

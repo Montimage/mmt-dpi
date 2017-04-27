@@ -979,7 +979,7 @@ int init_tcpip_plugin() {
     }
     /////////////////////////////////////////////
     /////////// INITILIZING PROTO_HUFFINGTONPOST //////////////////
-    if (!init_proto_huffington_post_struct()) {
+    if (!init_proto_huffingtonpost_struct()) {
         fprintf(stderr, "Error initializing protocol proto_huffingtonpost\n Exiting\n");
         exit(0);
     }
