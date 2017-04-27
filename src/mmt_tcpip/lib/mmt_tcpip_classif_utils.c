@@ -567,6 +567,7 @@ static const protocol_match doted_host_names[] = {
     {".sf-cdn.com", PROTO_SNAPFISH, MMT_STATICSTRING_LEN(".sf-cdn.com")},
     {".webshots.com", PROTO_WEBSHOTS, MMT_STATICSTRING_LEN(".webshots.com")},
     {".mega.co.nz", PROTO_MEGA, MMT_STATICSTRING_LEN(".mega.co.nz")},
+    {".mega.cl", PROTO_MEGA, MMT_STATICSTRING_LEN(".mega.cl")},
     {".vidoosh.tv", PROTO_VIDOOSH, MMT_STATICSTRING_LEN(".vidoosh.tv")},
     {".afreeca.com", PROTO_AFREECA, MMT_STATICSTRING_LEN(".afreeca.com")},
     {".afreecatv.com", PROTO_AFREECA, MMT_STATICSTRING_LEN(".afreecatv.com")},
@@ -733,6 +734,9 @@ static const protocol_match doted_host_names[] = {
     {".tango.me", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.me")},
     {".tango.me:8080", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.me:8080")},
     {".line.naver.jp", PROTO_LINE, MMT_STATICSTRING_LEN(".line.naver.jp")},
+    {".line.me", PROTO_LINE, MMT_STATICSTRING_LEN(".line.me")},
+
+    // PROTO_DIRECT_DOWNLOAD_LINK
     {".mediafire.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".mediafire.com")},
     {".4shared.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".4shared.com")},
     {".depositfiles.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".depositfiles.com")},
@@ -885,6 +889,7 @@ static const protocol_match doted_host_names[] = {
     {".putlocker.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".putlocker.com")},
     {".sharerepo.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".sharerepo.com")},
 
+    // PROTO_BITTORRENT
     {".vuze.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".vuze.com")},
     {".firstclasstorrents.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".firstclasstorrents.com")},
     {".torrentprovider.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentprovider.com")},
