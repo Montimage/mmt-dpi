@@ -1062,9 +1062,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_INTERNET_MOVIE_DATABASE //////////////////
-    if (!init_proto_internet_movie_database_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_internet_movie_database\n Exiting\n");
+    /////////// INITILIZING PROTO_IMDB //////////////////
+    if (!init_proto_imdb_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_imdb\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

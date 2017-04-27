@@ -183,7 +183,7 @@ extern "C" {
 #define PROTO_IKEA 168
 #define PROTO_IMAP 169
 #define PROTO_IMAPS 170
-#define PROTO_INTERNET_MOVIE_DATABASE 171
+#define PROTO_IMDB 171
 #define PROTO_IMESH 172
 #define PROTO_IMESSAGE 173
 #define PROTO_IMGUR 174
@@ -818,7 +818,7 @@ extern "C" {
 #define PROTO_IKEA_ALIAS "ikea"
 #define PROTO_IMAP_ALIAS "imap"
 #define PROTO_IMAPS_ALIAS "imaps"
-#define PROTO_INTERNET_MOVIE_DATABASE_ALIAS "imdb"
+#define PROTO_IMDB_ALIAS "imdb"
 #define PROTO_IMESH_ALIAS "imesh"
 #define PROTO_IMESSAGE_ALIAS "imessage"
 #define PROTO_IMGUR_ALIAS "imgur"

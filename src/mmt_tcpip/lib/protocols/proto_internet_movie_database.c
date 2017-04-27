@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_internet_movie_database_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_INTERNET_MOVIE_DATABASE, PROTO_INTERNET_MOVIE_DATABASE_ALIAS);
+int init_proto_imdb_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_IMDB, PROTO_IMDB_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_INTERNET_MOVIE_DATABASE);
+        return register_protocol(protocol_struct, PROTO_IMDB);
     } else {
         return 0;
     }

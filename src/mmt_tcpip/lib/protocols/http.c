@@ -1675,7 +1675,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IFENG);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IGN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IKEA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INTERNET_MOVIE_DATABASE);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMDB);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMESH);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMGUR);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INCREDIBAR);

@@ -870,7 +870,7 @@ extern "C" {
     int init_proto_imaps_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_INTERNET_MOVIE_DATABASE //////////////////
-    int init_proto_internet_movie_database_struct();
+    int init_proto_imdb_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_IMESH //////////////////
     int init_proto_imesh_struct();
