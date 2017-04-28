@@ -407,6 +407,7 @@ static const protocol_match doted_host_names[] = {
     {".sabah.com.tr", PROTO_SABAHTR, MMT_STATICSTRING_LEN(".sabah.com.tr")},
     {".sahibinden.com", PROTO_SAHIBINDEN, MMT_STATICSTRING_LEN(".sahibinden.com")},
     {".salesforce.com", PROTO_SALESFORCE, MMT_STATICSTRING_LEN(".salesforce.com")},
+    {".omtr1.partners.salesforce.com", PROTO_SALESFORCE, MMT_STATICSTRING_LEN(".omtr1.partners.salesforce.com")},
     {".salon.com", PROTO_SALON, MMT_STATICSTRING_LEN(".salon.com")},
     {".searchnu.com", PROTO_SEARCHNU, MMT_STATICSTRING_LEN(".searchnu.com")},
     {".search-results.com", PROTO_SEARCH_RESULTS, MMT_STATICSTRING_LEN(".search-results.com")},
@@ -1404,6 +1405,8 @@ static const protocol_match doted_host_names[] = {
     {".www.gamefaqs.com", PROTO_GAMEFAQS, MMT_STATICSTRING_LEN(".www.gamefaqs.com")},
     {".www.xbox.com", PROTO_XBOX, MMT_STATICSTRING_LEN(".www.xbox.com")},
     {".www.kongregate.com", PROTO_KONGREGATE, MMT_STATICSTRING_LEN(".www.kongregate.com")},
+    {".network.realmedia.com", PROTO_REALMEDIA, MMT_STATICSTRING_LEN(".network.realmedia.com")},
+    {".ad.Doubleclick.net", PROTO_DOUBLECLICK, MMT_STATICSTRING_LEN(".ad.Doubleclick.net")},
     { NULL, 0, 0}
 };
 
