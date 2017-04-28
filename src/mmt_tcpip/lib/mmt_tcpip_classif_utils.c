@@ -26,7 +26,6 @@ int mmt_case_sensitive_reverse_hostname_matching(const char *hostname, const cha
     return _mmt_case_sensitive_reverse_hostname_matching( hostname, url, hostname_len, url_len);
 }
 
-
 static const protocol_match doted_host_names[] = {
     {".gmail.com", PROTO_GMAIL, MMT_STATICSTRING_LEN(".gmail.com")},
     {".talk.google.com", PROTO_GTALK, MMT_STATICSTRING_LEN(".talk.google.com")},
@@ -69,17 +68,14 @@ static const protocol_match doted_host_names[] = {
     {".googleadservices.com", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".googleadservices.com")},
     {".googleusercontent.com", PROTO_GOOGLE_USER_CONTENT, MMT_STATICSTRING_LEN(".googleusercontent.com")},
     {".2mdn.net", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".2mdn.net")},
-
     {".facebook.com", PROTO_FACEBOOK, MMT_STATICSTRING_LEN(".facebook.com")},
     {".facebook.net", PROTO_FACEBOOK, MMT_STATICSTRING_LEN(".facebook.net")},
     {".fbcdn.net", PROTO_FACEBOOK, MMT_STATICSTRING_LEN(".fbcdn.net")},
     {".fbcdn-video-a.akamaihd.net", PROTO_FACEBOOK, MMT_STATICSTRING_LEN(".fbcdn-video-a.akamaihd.net"), MMT_CONTENT_CDN},
     {".fbcdn-profile-a.akamaihd.net", PROTO_FACEBOOK, MMT_STATICSTRING_LEN(".fbcdn-profile-a.akamaihd.net"), MMT_CONTENT_CDN},
     {".fbsbx.com", PROTO_FACEBOOK, MMT_STATICSTRING_LEN(".fbsbx.com")},
-
     {".youtube.com", PROTO_YOUTUBE, MMT_STATICSTRING_LEN(".youtube.com")},
     {".ytimg.com", PROTO_YOUTUBE, MMT_STATICSTRING_LEN(".ytimg.com")},
-
     {".storage.msn.com", PROTO_SKYDRIVE, MMT_STATICSTRING_LEN(".storage.msn.com")},
     {".livefilestore.com", PROTO_SKYDRIVE, MMT_STATICSTRING_LEN(".livefilestore.com")},
     {".storage.live.com", PROTO_SKYDRIVE, MMT_STATICSTRING_LEN(".storage.live.com")},
@@ -93,15 +89,12 @@ static const protocol_match doted_host_names[] = {
     {".msn.com", PROTO_MSN, MMT_STATICSTRING_LEN(".msn.com")},
     {".msn.ca", PROTO_MSN, MMT_STATICSTRING_LEN(".msn.ca")},
     {".msn.co.jp", PROTO_MSN, MMT_STATICSTRING_LEN(".msn.co.jp")},
-
     {".msg.yahoo.com", PROTO_YAHOOMSG, MMT_STATICSTRING_LEN(".msg.yahoo.com")},
     {".mail.yahoo.com", PROTO_YAHOOMAIL, MMT_STATICSTRING_LEN(".mail.yahoo.com")},
     {".yahoo.com", PROTO_YAHOO, MMT_STATICSTRING_LEN(".yahoo.com")},
     {".yahoo.co.jp", PROTO_YAHOO, MMT_STATICSTRING_LEN(".yahoo.co.jp")},
     {".yimg.com", PROTO_YAHOO, MMT_STATICSTRING_LEN(".yimg.com")},
-
     {".wikipedia.org", PROTO_WIKIPEDIA, MMT_STATICSTRING_LEN(".wikipedia.org")},
-
     {".aws.amazon.com", PROTO_AWS, MMT_STATICSTRING_LEN(".aws.amazon.com")},
     {".amazonaws.com", PROTO_AWS, MMT_STATICSTRING_LEN(".amazonaws.com")},
     {".amazon.com", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.com")},
@@ -111,31 +104,21 @@ static const protocol_match doted_host_names[] = {
     {".amazon.co.uk", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.co.uk")},
     {".amazon.fr", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.fr")},
     {".amazon.co.jp", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.co.jp")},
-    {".amazon.de", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.de")},
-    {".amazon.co.uk", PROTO_AMAZON, MMT_STATICSTRING_LEN(".amazon.co.uk")},
-
     {".twitter.com", PROTO_TWITTER, MMT_STATICSTRING_LEN(".twitter.com")},
     {".twttr.com", PROTO_TWITTER, MMT_STATICSTRING_LEN(".twttr.com")},
     {".twimg.com", PROTO_TWITTER, MMT_STATICSTRING_LEN(".twimg.com"), MMT_CONTENT_IMAGE},
-
     {".blogspot.com", PROTO_BLOGSPOT, MMT_STATICSTRING_LEN(".blogspot.com")},
     {".blogspot.in", PROTO_BLOGSPOT, MMT_STATICSTRING_LEN(".blogspot.in")},
     {".bp.blogspot.com", PROTO_BLOGSPOT, MMT_STATICSTRING_LEN(".bp.blogspot.com")},
     {".blogspot.com.br", PROTO_BLOGSPOT, MMT_STATICSTRING_LEN(".blogspot.com.br")},
-
     {".linkedin.com", PROTO_LINKEDIN, MMT_STATICSTRING_LEN(".linkedin.com")},
-
     {".bing.com", PROTO_BING, MMT_STATICSTRING_LEN(".bing.com")},
-
     {".itunes.apple.com", PROTO_APPLE_ITUNES, MMT_STATICSTRING_LEN(".itunes.apple.com")},
     {".apple.com", PROTO_APPLE, MMT_STATICSTRING_LEN(".apple.com")},
     {".mzstatic.com", PROTO_APPLE, MMT_STATICSTRING_LEN(".mzstatic.com")},
-
     {".dailymotion.com", PROTO_DAILYMOTION, MMT_STATICSTRING_LEN(".dailymotion.com")},
     {".dmcdn.net", PROTO_DAILYMOTION, MMT_STATICSTRING_LEN(".dmcdn.net")},
-
     {".dropbox.com", PROTO_DROPBOX, MMT_STATICSTRING_LEN(".dropbox.com")},
-
     {".cloudfront.net", PROTO_CLOUDFRONT, MMT_STATICSTRING_LEN(".cloudfront.net"), MMT_CONTENT_CDN},
     {".msecnd.net", PROTO_MSCDN, MMT_STATICSTRING_LEN(".msecnd.net")},
     {".akamai.com", PROTO_AKAMAI, MMT_STATICSTRING_LEN(".akamai.com"), MMT_CONTENT_CDN},
@@ -153,7 +136,6 @@ static const protocol_match doted_host_names[] = {
     {".rackcdn.com", PROTO_RACKSPACE, MMT_STATICSTRING_LEN(".rackcdn.com"), MMT_CONTENT_CDN},
     {".netdna-cdn.com", PROTO_NETDNA, MMT_STATICSTRING_LEN(".netdna-cdn.com"), MMT_CONTENT_CDN},
     {".netdna.com", PROTO_NETDNA, MMT_STATICSTRING_LEN(".netdna.com"), MMT_CONTENT_CDN},
-
     {".163.com", PROTO_163, MMT_STATICSTRING_LEN(".163.com")},
     {".360.cn", PROTO_360, MMT_STATICSTRING_LEN(".360.cn")},
     {".360buy.com", PROTO_360BUY, MMT_STATICSTRING_LEN(".360buy.com")},
@@ -205,7 +187,6 @@ static const protocol_match doted_host_names[] = {
     {".betfair.it", PROTO_BETFAIR, MMT_STATICSTRING_LEN(".betfair.it")},
     {".biblegateway.com", PROTO_BIBLEGATEWAY, MMT_STATICSTRING_LEN(".biblegateway.com")},
     {".bild.de", PROTO_BILD, MMT_STATICSTRING_LEN(".bild.de")},
-
     {".bleacherreport.com", PROTO_BLEACHERREPORT, MMT_STATICSTRING_LEN(".bleacherreport.com")},
     {".blogfa.com", PROTO_BLOGFA, MMT_STATICSTRING_LEN(".blogfa.com")},
     {".blogger.com", PROTO_BLOGGER, MMT_STATICSTRING_LEN(".blogger.com")},
@@ -229,7 +210,6 @@ static const protocol_match doted_host_names[] = {
     {".craigslist.org", PROTO_CRAIGSLIST, MMT_STATICSTRING_LEN(".craigslist.org")},
     {".crossfire1.ru", PROTO_CROSSFIRE, MMT_STATICSTRING_LEN(".crossfire1.ru")},
     {".dailymail.co.uk", PROTO_DAILYMAIL, MMT_STATICSTRING_LEN(".dailymail.co.uk")},
-
     {".deviantart.com", PROTO_DEVIANTART, MMT_STATICSTRING_LEN(".deviantart.com")},
     {".digg.com", PROTO_DIGG, MMT_STATICSTRING_LEN(".digg.com")},
     {".directconnectauto.com", PROTO_DIRECTCONNECT, MMT_STATICSTRING_LEN(".directconnectauto.com")},
@@ -433,21 +413,19 @@ static const protocol_match doted_host_names[] = {
     {".secondlife.com", PROTO_SECONDLIFE, MMT_STATICSTRING_LEN(".secondlife.com")},
     {".secureserver.net", PROTO_SECURESERVER, MMT_STATICSTRING_LEN(".secureserver.net")},
     {".shoutcast.com", PROTO_SHOUTCAST, MMT_STATICSTRING_LEN(".shoutcast.com")},
-
     {".shazamid.com", PROTO_SHAZAM, MMT_STATICSTRING_LEN(".shazamid.com")},
     {".shazam.com", PROTO_SHAZAM, MMT_STATICSTRING_LEN(".shazam.com")},
-
     {".video.sina.com.cn", PROTO_SINA, MMT_STATICSTRING_LEN(".video.sina.com.cn")},
     {".sina.com.cn", PROTO_SINA, MMT_STATICSTRING_LEN(".sina.com.cn")},
     {".siteadvisor.com", PROTO_SITEADVISOR, MMT_STATICSTRING_LEN(".siteadvisor.com")},
     {".sky.com", PROTO_SKY, MMT_STATICSTRING_LEN(".sky.com")},
     {".skype.com", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skype.com")},
-    { ".skype.",PROTO_SKYPE, MMT_STATICSTRING_LEN(".skype.") },
-    { ".skypeassets.",PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeassets.") },
-    { ".skypedata.", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypedata.") },
-    { ".skypeecs-",PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeecs-") },
-    { ".skypeforbusiness.",PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeforbusiness.") },
-    { ".lync.com",PROTO_SKYPE, MMT_STATICSTRING_LEN(".lync.com") },
+    {".skype.", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skype.") },
+    {".skypeassets.", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeassets.") },
+    {".skypedata.", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypedata.") },
+    {".skypeecs-", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeecs-") },
+    {".skypeforbusiness.", PROTO_SKYPE, MMT_STATICSTRING_LEN(".skypeforbusiness.") },
+    {".lync.com", PROTO_SKYPE, MMT_STATICSTRING_LEN(".lync.com") },
     {".skyrock.com", PROTO_SKYROCK, MMT_STATICSTRING_LEN(".skyrock.com")},
     {".skysports.com", PROTO_SKYSPORTS, MMT_STATICSTRING_LEN(".skysports.com")},
     {".slate.com", PROTO_SLATE, MMT_STATICSTRING_LEN(".slate.com")},
@@ -601,7 +579,6 @@ static const protocol_match doted_host_names[] = {
     {".box.com", PROTO_BOX, MMT_STATICSTRING_LEN(".box.com")},
     {".7static.com", PROTO_7DIGITAL, MMT_STATICSTRING_LEN(".7static.com")},
     {".7digital.com", PROTO_7DIGITAL, MMT_STATICSTRING_LEN(".7digital.com")},
-
     {".watchfreeinhd.com", PROTO_VIDEO_HOSTING, MMT_STATICSTRING_LEN(".watchfreeinhd.com")},
     {".played.to", PROTO_VIDEO_HOSTING, MMT_STATICSTRING_LEN(".played.to")},
     {".vureel.com", PROTO_VIDEO_HOSTING, MMT_STATICSTRING_LEN(".vureel.com")},
@@ -633,7 +610,6 @@ static const protocol_match doted_host_names[] = {
     {".fleon.me", PROTO_VIDEO_HOSTING, MMT_STATICSTRING_LEN(".fleon.me")},
     {".potlocker.net", PROTO_VIDEO_HOSTING, MMT_STATICSTRING_LEN(".potlocker.net")},
     {".myvideo.de", PROTO_VIDEO_HOSTING, MMT_STATICSTRING_LEN(".myvideo.de")},
-
     {".gameforge.com", PROTO_GAMEFORGE, MMT_STATICSTRING_LEN(".gameforge.com")},
     {".gameforge.de", PROTO_GAMEFORGE, MMT_STATICSTRING_LEN(".gameforge.de")},
     {".gameforgeads.de", PROTO_GAMEFORGE, MMT_STATICSTRING_LEN(".gameforgeads.de")},
@@ -730,13 +706,10 @@ static const protocol_match doted_host_names[] = {
     {".4story.pt", PROTO_4STORY, MMT_STATICSTRING_LEN(".4story.pt")},
     {".4story.ro", PROTO_4STORY, MMT_STATICSTRING_LEN(".4story.ro")},
     {".4story.web.tr", PROTO_4STORY, MMT_STATICSTRING_LEN(".4story.web.tr")},
-
     {".tango.me", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.me")},
     {".tango.me:8080", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.me:8080")},
     {".line.naver.jp", PROTO_LINE, MMT_STATICSTRING_LEN(".line.naver.jp")},
     {".line.me", PROTO_LINE, MMT_STATICSTRING_LEN(".line.me")},
-
-    // PROTO_DIRECT_DOWNLOAD_LINK
     {".mediafire.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".mediafire.com")},
     {".4shared.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".4shared.com")},
     {".depositfiles.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".depositfiles.com")},
@@ -888,16 +861,12 @@ static const protocol_match doted_host_names[] = {
     {".wupfile.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".wupfile.com")},
     {".putlocker.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".putlocker.com")},
     {".sharerepo.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".sharerepo.com")},
-
-    // PROTO_BITTORRENT
     {".vuze.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".vuze.com")},
     {".firstclasstorrents.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".firstclasstorrents.com")},
     {".torrentprovider.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentprovider.com")},
     {".toorgle.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".toorgle.com")},
     {".extratorrent.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".extratorrent.com")},
-    {".kat.ph", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".kat.ph")},
     {".kickasstorrents.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".kickasstorrents.com")},
-    {".torrentz.eu", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentz.eu")},
     {".isohunt.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".isohunt.com")},
     {".nutorrent.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".nutorrent.com")},
     {".torrentdownloads.net", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentdownloads.net")},
@@ -912,7 +881,6 @@ static const protocol_match doted_host_names[] = {
     {".1337x.org", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".1337x.org")},
     {".vcdq.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".vcdq.com")},
     {".vertor.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".vertor.com")},
-    {".seedpeer.me", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".seedpeer.me")},
     {".torrentfunk.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torrentfunk.com")},
     {".take.fm", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".take.fm")},
     {".monova.org", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".monova.org")},
@@ -938,7 +906,6 @@ static const protocol_match doted_host_names[] = {
     {".btjunkie.org", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".btjunkie.org")},
     {".torcache.com", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".torcache.com")},
     {".bitlet.org", PROTO_BITTORRENT, MMT_STATICSTRING_LEN(".bitlet.org")},
-	// Generated by Scylla
     {".www.google.nl", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".www.google.nl")},
     {".google.com.pa", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".google.com.pa")},
     {".www.google.com.pa", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".www.google.com.pa")},
@@ -1176,7 +1143,6 @@ static const protocol_match doted_host_names[] = {
     {".www.ebay.fr", PROTO_EBAY, MMT_STATICSTRING_LEN(".www.ebay.fr")},
     {".google.gp", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".google.gp")},
     {".www.google.gp", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".www.google.gp")},
-    {".mediafire.com", PROTO_MEDIAFIRE, MMT_STATICSTRING_LEN(".mediafire.com")},
     {".google.ge", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".google.ge")},
     {".www.google.ge", PROTO_GOOGLE, MMT_STATICSTRING_LEN(".www.google.ge")},
     {".www.spiegel.de", PROTO_SPIEGEL, MMT_STATICSTRING_LEN(".www.spiegel.de")},
@@ -1441,7 +1407,6 @@ static const protocol_match doted_host_names[] = {
     {".www.gamefaqs.com", PROTO_GAMEFAQS, MMT_STATICSTRING_LEN(".www.gamefaqs.com")},
     {".www.xbox.com", PROTO_XBOX, MMT_STATICSTRING_LEN(".www.xbox.com")},
     {".www.kongregate.com", PROTO_KONGREGATE, MMT_STATICSTRING_LEN(".www.kongregate.com")},
-
     { NULL, 0, 0}
 };
 
@@ -1475,21 +1440,21 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
     if (packet->iph /* IPv4 only */) {
 
         /**
-         * 
-    Skype (Microsoft CDN)
-    157.56.0.0/14, 157.60.0.0/16, 157.54.0.0/15
-    111.221.64.0 - 111.221.127.255
-    91.190.216.0/21 (AS198015 Skype Communications Sarl)
-    40.126.129.109/32
-    */
+         *
+        Skype (Microsoft CDN)
+        157.56.0.0/14, 157.60.0.0/16, 157.54.0.0/15
+        111.221.64.0 - 111.221.127.255
+        91.190.216.0/21 (AS198015 Skype Communications Sarl)
+        40.126.129.109/32
+        */
 
-        if (    
-                ((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x9D380000 /* 157.56.0.0 */)
-                || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x9D3C0000 /* 157.60.0.0 */)
-                || ((ntohl(packet->iph->daddr) & 0xFFFE0000 /* 255.254.0.0 */) == 0x9D360000 /* 157.54.0.0 */)
-                || ((ntohl(packet->iph->daddr) & 0xFFFFC000 /* 255.255.192.0 */) == 0x6FDD4000 /* 111.221.64.0 */)
-                || ((ntohl(packet->iph->daddr) & 0xFFFFF800 /* 255.255.248.0 */) == 0x5BBED800 /* 91.190.216.0 */)
-                || ((ntohl(packet->iph->daddr) & 0xFFFFFFFF /* 0xFFFFFFFF */) == 0x287F816D /* 40.126.129.109 */)) {
+        if (
+            ((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x9D380000 /* 157.56.0.0 */)
+            || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x9D3C0000 /* 157.60.0.0 */)
+            || ((ntohl(packet->iph->daddr) & 0xFFFE0000 /* 255.254.0.0 */) == 0x9D360000 /* 157.54.0.0 */)
+            || ((ntohl(packet->iph->daddr) & 0xFFFFC000 /* 255.255.192.0 */) == 0x6FDD4000 /* 111.221.64.0 */)
+            || ((ntohl(packet->iph->daddr) & 0xFFFFF800 /* 255.255.248.0 */) == 0x5BBED800 /* 91.190.216.0 */)
+            || ((ntohl(packet->iph->daddr) & 0xFFFFFFFF /* 0xFFFFFFFF */) == 0x287F816D /* 40.126.129.109 */)) {
             return PROTO_SKYPE;
         }
 
@@ -1532,7 +1497,7 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
                 || ((ntohl(packet->iph->daddr) & 0xFFFFF000 /* 255.255.240.0 */) == 0xD873D000 /* 216.115.208.0 */)
                 || ((ntohl(packet->iph->saddr) & 0xFFFFF000 /* 255.255.240.0 */) == 0xD8DB7000 /* 216.219.112.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFFF000 /* 255.255.240.0 */) == 0xD8DB7000 /* 216.219.112.0 */)
-                ) {
+           ) {
             return PROTO_CITRIXONLINE;
         }
 
@@ -1558,11 +1523,11 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
         if ((((ntohl(packet->iph->saddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0xADC20000 /* 173.194.0.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0xADC20000 /* 173.194.0.0 */)) ||
                 (((ntohl(packet->iph->saddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x4A7D0000 /* 74.125.0.0 */)
-                || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x4A7D0000 /* 74.125.0.0 */))
-                ) {
+                 || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.255.0.0 */) == 0x4A7D0000 /* 74.125.0.0 */))
+           ) {
             if (packet->tcp != NULL && ((packet->tcp->source == htons(5228) || packet->tcp->dest == htons(5228)) ||
-                    (packet->tcp->source == htons(5229) || packet->tcp->dest == htons(5229)) ||
-                    (packet->tcp->source == htons(5230) || packet->tcp->dest == htons(5230)))) {
+                                        (packet->tcp->source == htons(5229) || packet->tcp->dest == htons(5229)) ||
+                                        (packet->tcp->source == htons(5230) || packet->tcp->dest == htons(5230)))) {
                 return PROTO_GCM;
             }
             return PROTO_GOOGLE;
@@ -1573,7 +1538,7 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
          */
         if ((((ntohl(packet->iph->saddr) & 0xFFFC0000 /* 255.252.0.0 */) == 0x62880000 /* 98.136.0.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFF0000 /* 255.252.0.0 */) == 0x62880000 /* 98.136.0.0 */))
-                ) {
+           ) {
             return PROTO_YAHOO;
         }
         /*
@@ -1581,7 +1546,7 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
          */
         if ((((ntohl(packet->iph->saddr) & 0xFFFFE000 /* 255.255.224.0 */) == 0xCFABA000 /* 207.171.160.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFFE000 /* 255.255.224.0 */) == 0xCFABA000 /* 207.171.160.0 */))
-                ) {
+           ) {
             return PROTO_AMAZON;
         }
 
@@ -1590,7 +1555,7 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
          */
         if ((((ntohl(packet->iph->saddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x6E4C8C00 /* 110.76.140.0 */)
                 || ((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */) == 0x6E4C8C00 /* 110.76.140.0 */))
-                ) {
+           ) {
             return PROTO_KAKAO;
         }
     }
