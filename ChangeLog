@@ -1,9 +1,36 @@
 RELEASE NOTES
 ---
-## Pre-Release version 1.6.6.0
+
+## Pre-Version 1.6.8.0
+Version 1.6.7.2
+- Add patch to fix the classification of Application protocol base on hostname
+
+Version 1.6.7.1
+- Extract more HTTP header fields: Connection, Upgrade
+- Cover also the header fields name is lowercase, uppercase, ...
+- Fixed FTP/TCP/IPv6 segmentation fault and some memory leaks in proto_ftp.c
+- Move some IP statistics to IP protocol: active_session, timedout_session, defragmentation, ....
+- Fixed IP options pointer
+
+## Version 1.6.7.0
+- Fixed buffer overflow when working with HTTP header field
+- Fixed in FTP protocol: check tuple6==NULL and memory leak
+- 1.6.6.1 - Fixed problem with IP fragmentation
+- 1.6.6.2 - Revert to not copy IP address when building session key
+- Fixed in HTTP protocol and SSL protocol: Change excluded_protocol_bitmask
+- Fixed problem with IP Defragmentation and Packet padding
+- Add PROTO_UNKNOWN after TCP if cannot classify TCP payload
+- Refactory Makefile with some compiling options: 
+	+ NDEBUG = 1 : show all messages in debug(...), 
+	+ DEBUG = 1 : enable debug mode, 
+	+ SHOWLOG = 1 : show all messages in MMT_LOG(...), 
+	+ LIGHTSDK = 1 : compile the light version of SDK 
+
+## Release version 1.6.6.0
 - Add timestamp to built .deb and .zip files
 - Extract file name from NFS protocol version 4 - only focus on some operation: OPEN, LOOKUP, REMOVE, RENAME
 - Version 1.6.5.1: Fixed insert_key_value() - use memcpy to build session_key instead of using reference address
+- Use inline function to optimize performance - Done by @Huu Nghia
 
 ## Release version 1.6.5.0
 - API for set SESSION TIMEDOUT

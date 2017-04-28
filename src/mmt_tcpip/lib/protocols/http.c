@@ -1841,14 +1841,14 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOMEDEPOT);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOOTSUITE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOTMAIL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HUFFINGTON_POST);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HUFFINGTONPOST);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HURRIYET);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ICECAST);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_APPLE_ICLOUD);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IFENG);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IGN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IKEA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INTERNET_MOVIE_DATABASE);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMDB);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMESH);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMGUR);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INCREDIBAR);
@@ -2081,7 +2081,7 @@ void mmt_init_classify_me_http() {
     //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_RTSP);
     //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_XBOX);
     MMT_BITMASK_RESET(excluded_protocol_bitmask);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL); //Exclude processing when ssl is detected! Obvious no?
+    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP); //Exclude processing when ssl is detected! Obvious no?
 }
 
 void mmt_classify_me_http(ipacket_t * ipacket, unsigned index) {

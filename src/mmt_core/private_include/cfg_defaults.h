@@ -25,7 +25,7 @@
 #endif
 
 
-/** The value in seconds of the session expiry */
+/** The value in seconds of the session expiry - https://tools.ietf.org/html/rfc2988*/
 
 #ifndef CFG_DEFAULT_SESSION_TIMEOUT
 #define CFG_DEFAULT_SESSION_TIMEOUT      60

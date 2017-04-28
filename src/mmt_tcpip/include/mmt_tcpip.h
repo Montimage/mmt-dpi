@@ -548,7 +548,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_HTTP:
         case PROTO_HTTP_CONNECT:
         case PROTO_HTTP_PROXY:
-        case PROTO_HUFFINGTON_POST:
+        case PROTO_HUFFINGTONPOST:
         case PROTO_I23V5:
         case PROTO_IKEA:
         case PROTO_IMGUR:
@@ -564,7 +564,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_LIVEDOOR:
         case PROTO_IFENG:
         case PROTO_INSTAGRAM:
-        case PROTO_INTERNET_MOVIE_DATABASE:
+        case PROTO_IMDB:
         case PROTO_LINKEDIN:
         case PROTO_LIVEINTERNET:
         case PROTO_LIVEJOURNAL:

@@ -923,7 +923,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     int init_proto_http_application_activesync_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_HUFFINGTONPOST //////////////////
-    int init_proto_huffington_post_struct();
+    int init_proto_huffingtonpost_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_HURRIYET //////////////////
     int init_proto_hurriyet_struct();
@@ -965,7 +965,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     int init_proto_imaps_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_INTERNET_MOVIE_DATABASE //////////////////
-    int init_proto_internet_movie_database_struct();
+    int init_proto_imdb_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_IMESH //////////////////
     int init_proto_imesh_struct();

@@ -268,8 +268,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             if ( unlikely( ((mmt_session_key_t *) retval->session_key)->lower_ip == NULL)) {
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL
-                mmt_free(session_key->lower_ip);
-                mmt_free(session_key->higher_ip);
+                // mmt_free(session_key->lower_ip);
+                // mmt_free(session_key->higher_ip);
                 mmt_free(retval);
                 return NULL;
             }
@@ -280,8 +280,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 if (isl_new) {
                     mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
                 }
-                mmt_free(session_key->lower_ip);
-                mmt_free(session_key->higher_ip);
+                // mmt_free(session_key->lower_ip);
+                // mmt_free(session_key->higher_ip);
                 mmt_free(retval);
                 return NULL;
             }
@@ -292,8 +292,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             if ( unlikely( ((mmt_session_key_t *) retval->session_key)->lower_ip == NULL )) {
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL
-                mmt_free(session_key->lower_ip);
-                mmt_free(session_key->higher_ip);
+                // mmt_free(session_key->lower_ip);
+                // mmt_free(session_key->higher_ip);
                 mmt_free(retval);
                 return NULL;
             }
@@ -304,8 +304,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 if (isl_new) {
                     mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
                 }
-                mmt_free(session_key->lower_ip);
-                mmt_free(session_key->higher_ip);
+                // mmt_free(session_key->lower_ip);
+                // mmt_free(session_key->higher_ip);
                 mmt_free(retval);
                 return NULL;
             }
@@ -337,25 +337,140 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                     mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
                 }
             }
-            mmt_free(session_key->lower_ip);
-            mmt_free(session_key->higher_ip);
+            // mmt_free(session_key->lower_ip);
+            // mmt_free(session_key->higher_ip);
             mmt_free(retval);
             return NULL;
         }
         tcpip_context->sessions_count += 1;
         tcpip_context->active_sessions_count += 1;
-        mmt_free(session_key->lower_ip);
-        mmt_free(session_key->higher_ip);
+        // mmt_free(session_key->lower_ip);
+        // mmt_free(session_key->higher_ip);
         //*is_new = 1; //This is done at the beginning of this block
     } else {
         //Nothing else to do, just indicate this is not a new session!
         *is_new = 0;
 
-        mmt_free(session_key->lower_ip);
-        mmt_free(session_key->higher_ip);
+        // mmt_free(session_key->lower_ip);
+        // mmt_free(session_key->higher_ip);
     }
 
     return retval;
 }
 
+// LN: Move from packet_process
 
+int proto_ip_frag_packet_count_extraction(const ipacket_t * packet, unsigned proto_index,
+                                  attribute_t * extracted_data) {
+
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->ip_frag_packets_count;
+        proto_stats = proto_stats->next;
+    }
+
+    *((uint64_t *) extracted_data->data) = count;
+    return 1;
+}
+
+
+int proto_ip_frag_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
+                                 attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    
+    // if(configured_protocol->protocol->proto_id != PROTO_ID){
+    //     return 0;
+    // }
+
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->ip_frag_data_volume;
+        proto_stats = proto_stats->next;
+    }
+
+    *((uint64_t *) extracted_data->data) = count;
+    return 1;
+}
+
+int proto_ip_df_packet_count_extraction(const ipacket_t * packet, unsigned proto_index,
+                                  attribute_t * extracted_data) {
+
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->ip_df_packets_count;
+        proto_stats = proto_stats->next;
+    }
+
+    *((uint64_t *) extracted_data->data) = count;
+    return 1;
+}
+
+
+int proto_ip_df_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
+                                 attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    
+    // if(configured_protocol->protocol->proto_id != PROTO_ID){
+    //     return 0;
+    // }
+
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->ip_df_data_volume;
+        proto_stats = proto_stats->next;
+    }
+
+    *((uint64_t *) extracted_data->data) = count;
+    return 1;
+}
+
+
+int proto_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
+                                    attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->sessions_count;
+        proto_stats = proto_stats->next;
+    }
+
+    *((uint64_t *) extracted_data->data) = count;
+    return 1;
+}
+
+int proto_active_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += (proto_stats->sessions_count - proto_stats->timedout_sessions_count);
+        proto_stats = proto_stats->next;
+    }
+
+    *((uint64_t *) extracted_data->data) = count;
+    return 1;
+}
+
+int proto_timedout_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
+    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
+    uint64_t count = 0;
+    while (proto_stats) {
+        count += proto_stats->timedout_sessions_count;
+        proto_stats = proto_stats->next;
+    }
+
+    *((uint64_t *) extracted_data->data) = count;
+    return 1;
+}
+
+// End of LN

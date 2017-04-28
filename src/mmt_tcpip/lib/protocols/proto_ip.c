@@ -137,7 +137,7 @@ int ip_frag_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 
-    *((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff;
+    *((unsigned short *) extracted_data->data) = (ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff)<<3;
     return 1;
 }
 
@@ -200,8 +200,7 @@ int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attrib
     int ihl = ip_hdr->ihl;
     extracted_data->data = NULL;
     if (ihl > 5) {
-        ip_hdr = ip_hdr + 5 * 4;
-        extracted_data->data = (unsigned char *) ip_hdr;
+        extracted_data->data = (unsigned char *) (& packet->data[proto_offset + 5 * 4]);
         return 1;
     }
     return 0;
@@ -228,13 +227,13 @@ static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key
         sport = ntohs(udph->source);
         dport = ntohs(udph->dest);
     }
-    ipv4_session->lower_ip = (void*)mmt_malloc(sizeof(iph->saddr));
-    ipv4_session->higher_ip = (void*)mmt_malloc(sizeof(iph->daddr));
+    // ipv4_session->lower_ip = (void*)mmt_malloc(sizeof(iph->saddr));
+    // ipv4_session->higher_ip = (void*)mmt_malloc(sizeof(iph->daddr));
     if (iph->saddr < iph->daddr) {
-        memcpy(ipv4_session->lower_ip,&iph->saddr,sizeof(iph->saddr));
-        memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
-        // ipv4_session->lower_ip = &iph->saddr;
-        // ipv4_session->higher_ip = &iph->daddr;
+        // memcpy(ipv4_session->lower_ip,&iph->saddr,sizeof(iph->saddr));
+        // memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
+        ipv4_session->lower_ip = &iph->saddr;
+        ipv4_session->higher_ip = &iph->daddr;
         
         ipv4_session->lower_ip_port = sport;
         ipv4_session->higher_ip_port = dport;
@@ -244,20 +243,20 @@ static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key
         retval = L2H_DIRECTION;
     } else if (iph->saddr == iph->daddr) {
         if (sport < dport) {
-            memcpy(ipv4_session->lower_ip,&iph->saddr,sizeof(iph->saddr));
-            memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
-            // ipv4_session->lower_ip = &iph->saddr;
-            // ipv4_session->higher_ip = &iph->daddr;
+            // memcpy(ipv4_session->lower_ip,&iph->saddr,sizeof(iph->saddr));
+            // memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
+            ipv4_session->lower_ip = &iph->saddr;
+            ipv4_session->higher_ip = &iph->daddr;
             ipv4_session->lower_ip_port = sport;
             ipv4_session->higher_ip_port = dport;
             ipv4_session->is_lower_initiator = L2H_DIRECTION;
             ipv4_session->is_lower_client = L2H_DIRECTION;
             retval = L2H_DIRECTION;
         } else {
-            memcpy(ipv4_session->lower_ip,&iph->daddr,sizeof(iph->daddr));
-            memcpy(ipv4_session->higher_ip,&iph->saddr,sizeof(iph->saddr));
-            // ipv4_session->lower_ip = &iph->daddr;
-            // ipv4_session->higher_ip = &iph->saddr;
+            // memcpy(ipv4_session->lower_ip,&iph->daddr,sizeof(iph->daddr));
+            // memcpy(ipv4_session->higher_ip,&iph->saddr,sizeof(iph->saddr));
+            ipv4_session->lower_ip = &iph->daddr;
+            ipv4_session->higher_ip = &iph->saddr;
             ipv4_session->lower_ip_port = dport;
             ipv4_session->higher_ip_port = sport;
             ipv4_session->is_lower_initiator = H2L_DIRECTION;
@@ -265,10 +264,10 @@ static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key
             retval = H2L_DIRECTION;
         }
     } else {
-        memcpy(ipv4_session->lower_ip,&iph->daddr,sizeof(iph->daddr));
-        memcpy(ipv4_session->higher_ip,&iph->saddr,sizeof(iph->saddr));
-        // ipv4_session->lower_ip = &iph->daddr;
-        // ipv4_session->higher_ip = &iph->saddr;
+        // memcpy(ipv4_session->lower_ip,&iph->daddr,sizeof(iph->daddr));
+        // memcpy(ipv4_session->higher_ip,&iph->saddr,sizeof(iph->saddr));
+        ipv4_session->lower_ip = &iph->daddr;
+        ipv4_session->higher_ip = &iph->saddr;
         ipv4_session->lower_ip_port = dport;
         ipv4_session->higher_ip_port = sport;
         ipv4_session->is_lower_initiator = H2L_DIRECTION;
@@ -1112,7 +1111,7 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     unsigned len = ipacket->p_hdr->caplen - off;
 
     if ( len < sizeof( struct iphdr )) {
-        (void)fprintf( stderr, "*** Warning: malformed packet (not enough data)\n" );
+        (void)fprintf( stderr, "*** Warning: malformed packet (not enough data): %lu\n",ipacket->packet_id );
         return 0;
     }
 
@@ -1127,14 +1126,12 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
         dg = ip_dgram_alloc();
         hashmap_insert_kv( map, key, dg );
     }
-
     ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
     // Check timed-out for all data gram
     if ( !ip_dgram_is_complete( dg )) {
         // debug("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
         return 0;
     }
-    // debug("Fragmented packet is completed: %lu\n", ipacket->packet_id);
     // At this point, dg is a fully reassembled datagram.
     // -> reconstruct ipacket from dg, and pass it along
 
@@ -1172,8 +1169,8 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     int offset = get_packet_offset_at_index(ipacket, index);
     const struct iphdr * ip_hdr = (struct iphdr *) & ipacket->data[offset];
     mmt_session_key_t ipv4_session_key;
-    ipv4_session_key.lower_ip = NULL;
-    ipv4_session_key.higher_ip = NULL;
+    // ipv4_session_key.lower_ip = NULL;
+    // ipv4_session_key.higher_ip = NULL;
     uint8_t packet_direction;
 
     // uint16_t ip_offset = ntohs(ip_hdr->frag_off);
@@ -1216,7 +1213,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
         // Fix proto_path , only fix til IP
         // TODO: May be need to fix for ipacket->proto_headers_offset = &session->proto_headers_offset and ipacket->proto_classif_status = &session->proto_classif_status;
         if (session->proto_path.proto_path[index] != PROTO_IP) {
-            debug("[IP] Fixing proto_path of session: %lu", session->session_id);
+            // debug("[IP] Fixing proto_path of session: %lu", session->session_id);
             // Get PROTO_IP index in current proto_path
             int j, ip_index = 0;
             for (j = 0; j < session->proto_path.len; j++) {
@@ -1226,10 +1223,10 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
                 }
             }
 
-            debug("[IP] Current index of PROTO_IP: %d / (packet)%d", ip_index, index);
+            // debug("[IP] Current index of PROTO_IP: %d / (packet)%d", ip_index, index);
             if (ip_index != 0) {
                 if (ip_index > index) {
-                    debug("[IP] Current protocol_path need to remove some protocol");
+                    // debug("[IP] Current protocol_path need to remove some protocol");
                     int pre_path = 0, post_path = ip_index + 1;
 
                     for (pre_path = 0; pre_path <= index; pre_path++)
@@ -1246,9 +1243,9 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
                     session->proto_path.len = pre_path;
                     session->proto_headers_offset.len = pre_path;
                     session->proto_classif_status.len = pre_path;
-                    debug("[IP] New protocol_path len %d", pre_path);
+                    // debug("[IP] New protocol_path len %d", pre_path);
                 } else {
-                    debug("[IP] Current protocol_path need to add some protocol from packet hierarchy");
+                    // debug("[IP] Current protocol_path need to add some protocol from packet hierarchy");
                     int delta = index - ip_index;
                     int new_len = session->proto_path.len + delta;
                     int pre_path = 0, post_path = new_len - 1;
@@ -1269,7 +1266,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
                     session->proto_path.len = new_len;
                     session->proto_headers_offset.len = new_len;
                     session->proto_classif_status.len = new_len;
-                    debug("[IP] New protocol_path len %d", new_len);
+                    // debug("[IP] New protocol_path len %d", new_len);
                 }
             }
 
@@ -1312,6 +1309,15 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_SERVER_ADDR, IP_SERVER_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_server_addr_extraction},
     {IP_CLIENT_PORT, IP_CLIENT_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_client_port_extraction},
     {IP_SERVER_PORT, IP_SERVER_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_server_port_extraction},
+    // LN: Those are IP protocol attributes, they should go to IP protocol
+    {IP_FRAG_PACKET_COUNT, IP_FRAG_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_packet_count_extraction},
+    {IP_FRAG_DATA_VOLUME, IP_FRAG_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_data_volume_extraction},
+    {IP_DF_PACKET_COUNT, IP_DF_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_packet_count_extraction},
+    {IP_DF_DATA_VOLUME, IP_DF_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_data_volume_extraction},
+    {IP_SESSIONS_COUNT, IP_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_sessions_count_extraction},
+    {IP_ACTIVE_SESSIONS_COUNT, IP_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
+    {IP_TIMEDOUT_SESSIONS_COUNT, IP_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
+    // End of LN
 };
 
 int ip_pre_classification_function(ipacket_t * ipacket, unsigned index) {
@@ -1365,8 +1371,12 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->l3_captured_packet_len = (ipacket->p_hdr->caplen - ip_offset);
     /* TODO: Check the padding -> allow only certain type of padding and inform other : if packet->l3_captured_packet_len != packet->l3_packet_len -> padding */
     //packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
-    packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
-    // packet->l4_packet_len = packet->l3_captured_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    // packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    if(ipacket->nb_reassembled_packets > 1){
+        packet->l4_packet_len = packet->l3_captured_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
+    }else{
+        packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp   
+    }
 
     if (memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
         src = &((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->id_internal_context;

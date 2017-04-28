@@ -36,8 +36,12 @@ ip_frag_t *ip_frag_alloc( unsigned loff, unsigned roff )
 
 void ip_frag_free( ip_frag_t *frag )
 {
+   if(frag == NULL) return;
+   frag->frags.le_next = NULL;
+   frag->frags.le_prev = NULL;
    ip_frag_cleanup( frag );
    mmt_free( frag );
+   frag=NULL;
 }
 
 /**
@@ -52,7 +56,8 @@ int ip_frag_init( ip_frag_t *frag, unsigned loff, unsigned roff )
       (void)fprintf( stderr, "*** Warning: inconsistent offsets in ip_frag_init()\n" );
       return 0;
    }
-
+   frag->frags.le_next = NULL;
+   frag->frags.le_prev = NULL;
    frag->loff = loff;
    frag->roff = roff;
 

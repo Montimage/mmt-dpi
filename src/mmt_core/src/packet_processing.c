@@ -956,88 +956,6 @@ int proto_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
     return 0;
 }
 
-int proto_ip_frag_packet_count_extraction(const ipacket_t * packet, unsigned proto_index,
-                                  attribute_t * extracted_data) {
-
-    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
-    uint64_t count = 0;
-    while (proto_stats) {
-        count += proto_stats->ip_frag_packets_count;
-        proto_stats = proto_stats->next;
-    }
-
-    if (count) {
-        *((uint64_t *) extracted_data->data) = count;
-        return 1;
-    }
-    return 0;
-}
-
-
-int proto_ip_frag_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
-                                 attribute_t * extracted_data) {
-    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    
-    // if(configured_protocol->protocol->proto_id != PROTO_ID){
-    //     return 0;
-    // }
-
-    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
-    uint64_t count = 0;
-    while (proto_stats) {
-        count += proto_stats->ip_frag_data_volume;
-        proto_stats = proto_stats->next;
-    }
-
-    if (count) {
-        *((uint64_t *) extracted_data->data) = count;
-        return 1;
-    }
-    return 0;
-}
-
-int proto_ip_df_packet_count_extraction(const ipacket_t * packet, unsigned proto_index,
-                                  attribute_t * extracted_data) {
-
-    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
-    uint64_t count = 0;
-    while (proto_stats) {
-        count += proto_stats->ip_df_packets_count;
-        proto_stats = proto_stats->next;
-    }
-
-    if (count) {
-        *((uint64_t *) extracted_data->data) = count;
-        return 1;
-    }
-    return 0;
-}
-
-
-int proto_ip_df_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
-                                 attribute_t * extracted_data) {
-    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    
-    // if(configured_protocol->protocol->proto_id != PROTO_ID){
-    //     return 0;
-    // }
-
-    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
-    uint64_t count = 0;
-    while (proto_stats) {
-        count += proto_stats->ip_df_data_volume;
-        proto_stats = proto_stats->next;
-    }
-
-    if (count) {
-        *((uint64_t *) extracted_data->data) = count;
-        return 1;
-    }
-    return 0;
-}
-
 int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_index,
                                     attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
@@ -1079,57 +997,6 @@ int proto_last_packet_time_extraction(const ipacket_t * packet, unsigned proto_i
 }
 
 
-int proto_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
-                                    attribute_t * extracted_data) {
-    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
-    uint64_t count = 0;
-    while (proto_stats) {
-        count += proto_stats->sessions_count;
-        proto_stats = proto_stats->next;
-    }
-
-    if (count) {
-        *((uint64_t *) extracted_data->data) = count;
-        return 1;
-    }
-    return 0;
-}
-
-int proto_active_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
-    uint64_t count = 0;
-    while (proto_stats) {
-        count += (proto_stats->sessions_count - proto_stats->timedout_sessions_count);
-        proto_stats = proto_stats->next;
-    }
-
-    if (count) {
-        *((uint64_t *) extracted_data->data) = count;
-        return 1;
-    }
-    return 0;
-}
-
-int proto_timedout_sessions_count_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-    protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
-    uint64_t count = 0;
-    while (proto_stats) {
-        count += proto_stats->timedout_sessions_count;
-        proto_stats = proto_stats->next;
-    }
-
-    if (count) {
-        *((uint64_t *) extracted_data->data) = count;
-        return 1;
-    }
-    return 0;
-}
-
 int proto_header_extraction(const ipacket_t * packet, unsigned proto_index,
                             attribute_t * extracted_data) {
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
@@ -1165,7 +1032,7 @@ int proto_session_extraction(const ipacket_t * packet, unsigned proto_index,
         return 0;
     }
     if (packet->session->packet_count == 1) {
-        extracted_data->data = packet->session;
+        extracted_data->data = (void*) packet->session;
         return 1;
     }
     return 0;
@@ -1196,17 +1063,9 @@ static attribute_metadata_t proto_stats_attributes_metadata[PROTO_STATS_ATTRIBUT
     {PROTO_HEADER, PROTO_HEADER_LABEL, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_header_extraction},
     {PROTO_DATA, PROTO_DATA_LABEL, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_data_extraction},
     {PROTO_PAYLOAD, PROTO_PAYLOAD_LABEL, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_payload_extraction},
-
     {PROTO_PACKET_COUNT, PROTO_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_packet_count_extraction},
-    {PROTO_DATA_VOLUME, PROTO_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_data_volume_extraction},
-    {PROTO_IP_FRAG_PACKET_COUNT, PROTO_IP_FRAG_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_packet_count_extraction},
-    {PROTO_IP_FRAG_DATA_VOLUME, PROTO_IP_FRAG_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_data_volume_extraction},
-    {PROTO_IP_DF_PACKET_COUNT, PROTO_IP_DF_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_packet_count_extraction},
-    {PROTO_IP_DF_DATA_VOLUME, PROTO_IP_DF_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_data_volume_extraction},
+    {PROTO_DATA_VOLUME, PROTO_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_data_volume_extraction},    
     {PROTO_PAYLOAD_VOLUME, PROTO_PAYLOAD_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_payload_volume_extraction},
-    {PROTO_SESSIONS_COUNT, PROTO_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_sessions_count_extraction},
-    {PROTO_ACTIVE_SESSIONS_COUNT, PROTO_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
-    {PROTO_TIMEDOUT_SESSIONS_COUNT, PROTO_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
     {PROTO_STATISTICS, PROTO_STATISTICS_LABEL, MMT_STATS, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_stats_extraction},
     {PROTO_FIRST_PACKET_TIME, PROTO_FIRST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_first_packet_time_extraction},
     {PROTO_LAST_PACKET_TIME, PROTO_LAST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_last_packet_time_extraction},
@@ -1585,6 +1444,9 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
         //return a positive value
         return 1;
     }
+#ifdef DEBUG
+    (void)fprintf( stderr,"[debug] internal_extract_attribute (%p) : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u\n",tmp_attr_ref->extraction_function,ipacket->packet_id, tmp_attr_ref->proto_id, tmp_attr_ref->field_id, index);
+#endif /*DEBUG*/    
     // tmp_attr_ref->status = ATTRIBUTE_UNSET;
     return 0;
 }
@@ -1599,10 +1461,13 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
  * @return a pointer to the extracted data if it exists, NULL otherwise.
  */
 static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
+#ifdef DEBUG
+    (void)fprintf( stderr,"[debug] _get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u\n",ipacket->packet_id, proto_id, attribute_id, index);
+#endif /*DEBUG*/
     if ((int) index < 0 || index >= ipacket->proto_hierarchy->len) {
         //the given index is not valid
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): invalid index (%u)\n", index );
+        (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : invalid index (%u)\n",ipacket->packet_id, proto_id, attribute_id, index, index );
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1610,7 +1475,7 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
     if (proto_id != ipacket->proto_hierarchy->proto_path[index]) {
         //the given protocol id does not match the protocol id at the given index
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): unexpected protocol_id (%u)\n", proto_id );
+        (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : unexpected protocol_id (%u)\n",ipacket->packet_id, proto_id, attribute_id, index, proto_id );
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1618,7 +1483,7 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
     if (!_is_registered_protocol(proto_id)) {
         //the given protocol id is not registered
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): unregistered protocol_id (%u)\n", proto_id );
+        (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : unregistered protocol_id (%u)\n",ipacket->packet_id, proto_id, attribute_id, index, proto_id );
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1626,7 +1491,7 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
     struct attribute_internal_struct * tmp_attr_ref = get_registered_attribute_internal_struct(ipacket, proto_id, attribute_id, index);
     if (tmp_attr_ref == NULL) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): can't retrieve attribute internal structure\n" );
+        (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : can't retrieve attribute internal structure\n",ipacket->packet_id, proto_id, attribute_id, index );
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1634,30 +1499,37 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
     if (tmp_attr_ref->scope & SCOPE_ON_DEMAND) {
         if (internal_extract_attribute(ipacket, tmp_attr_ref, index)) {
             //return the attribute's data
-#ifdef DEBUG
-            (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): attribute data is null (1/2)\n" );
-#endif /*DEBUG*/
+// #ifdef DEBUG
+//             (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : attribute data is null (1/2)\n",ipacket->packet_id, proto_id, attribute_id, index );
+// #endif /*DEBUG*/
             tmp_attr_ref->status = ATTRIBUTE_CONSUMED;
             return tmp_attr_ref->data;
         }
     } else {
-        /* THIS IS SCOPE_EVENT  should do nothing*/
+        /* THIS IS SCOPE_EVENT  should do nothing
+        LN: But we shoud return something not NULL ???? 
+        */
     }
 #ifdef DEBUG
-    (void)fprintf( stderr, "get_attribute_extracted_data_at_index(): unexpected failure\n" );
+    if(!(tmp_attr_ref->scope & SCOPE_EVENT)){
+        (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : unexpected failure\n",ipacket->packet_id, proto_id, attribute_id, index );    
+    }
 #endif /*DEBUG*/
     return NULL;
 }
 
 void * get_attribute_extracted_data_at_index(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
-	return _get_attribute_extracted_data_at_index( ipacket, proto_id, attribute_id, index);
+#ifdef DEBUG
+        (void)fprintf( stderr,"[debug] get_attribute_extracted_data_at_index: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
+#endif /*DEBUG*/ 
+    return _get_attribute_extracted_data_at_index( ipacket, proto_id, attribute_id, index);
 }
 
 attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
     if ((int) index < 0 || index >= ipacket->proto_hierarchy->len) {
         //the given index is not valid
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_at_index(): invalid index (%u)\n", index );
+        (void)fprintf( stderr,"[error] get_extracted_attribute_at_index: invalid index : packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1665,7 +1537,7 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
     if (proto_id != ipacket->proto_hierarchy->proto_path[index]) {
         //the given protocol id does not match the protocol id at the given index
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_at_index(): unexpected protocol_id (%u)\n", proto_id );
+        (void)fprintf( stderr,"[error] get_extracted_attribute_at_index: unexpected protocol_id : packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1673,7 +1545,7 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
     if (!_is_registered_protocol(proto_id)) {
         //the given protocol id is not registered
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_at_index(): unregistered protocol_id (%u)\n", proto_id );
+        (void)fprintf( stderr,"[error] get_extracted_attribute_at_index: unregistered protocol_id : packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1681,7 +1553,7 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
     struct attribute_internal_struct * tmp_attr_ref = get_registered_attribute_internal_struct(ipacket, proto_id, attribute_id, index);
     if (tmp_attr_ref == NULL) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_at_index(): can't retrieve attribute internal structure\n" );
+        (void)fprintf( stderr,"[error] get_extracted_attribute_at_index: can't retrieve attribute internal structure: packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1689,22 +1561,22 @@ attribute_t * get_extracted_attribute_at_index(const ipacket_t * ipacket, uint32
     if (tmp_attr_ref->scope & SCOPE_ON_DEMAND) {
         if (internal_extract_attribute(ipacket, tmp_attr_ref, index)) {
             //return the attribute's data
-#ifdef DEBUG
-            (void)fprintf( stderr, "get_extracted_attribute_at_index(): attribute data is null (1/2)\n" );
-#endif /*DEBUG*/
+// #ifdef DEBUG
+//             (void)fprintf( stderr,"get_extracted_attribute_at_index: attribute data is not null (1/2): packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
+// #endif /*DEBUG*/
             tmp_attr_ref->status = ATTRIBUTE_CONSUMED;
             return (attribute_t *) tmp_attr_ref;
         }
     } else {
         if (tmp_attr_ref->packet_id == (ipacket->mmt_handler)->last_received_packet.packet_id) {
 #ifdef DEBUG
-            (void)fprintf( stderr, "get_extracted_attribute_at_index(): attribute data is null (2/2)\n" );
+            (void)fprintf( stderr,"[error] get_extracted_attribute_at_index: attribute data is null (2/2): packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
 #endif /*DEBUG*/
             return (attribute_t *) tmp_attr_ref;
         }
     }
 #ifdef DEBUG
-    (void)fprintf( stderr, "get_extracted_attribute_at_index(): unexpected failure\n" );
+    (void)fprintf( stderr,"[error] get_extracted_attribute_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : unexpected failure\n",ipacket->packet_id, proto_id, attribute_id, index );
 #endif /*DEBUG*/
     return NULL;
 }
@@ -1722,7 +1594,7 @@ void * _get_attribute_extracted_data_at_index_by_name(const ipacket_t * ipacket,
     if ((int) index < 0 || index >= ipacket->proto_hierarchy->len) {
         //the given index is not valid
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_at_index_by_name(): invalid index (%u)\n", index );
+        (void)fprintf( stderr, "[debug] get_attribute_extracted_data_at_index_by_name(): invalid index - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1731,7 +1603,7 @@ void * _get_attribute_extracted_data_at_index_by_name(const ipacket_t * ipacket,
     proto_id = get_protocol_id_by_name(protocol_name);
     if (!proto_id) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_at_index_by_name(): unknown protocol name (\"%s\")\n", protocol_name );
+        (void)fprintf( stderr, "[debug] get_attribute_extracted_data_at_index_by_name(): unknown protocol name - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1739,10 +1611,13 @@ void * _get_attribute_extracted_data_at_index_by_name(const ipacket_t * ipacket,
     attribute_id = get_attribute_id_by_protocol_id_and_attribute_name(proto_id, attribute_name);
     if (!attribute_id) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_at_index_by_name(): unknown attribute name (\"%s\")\n", attribute_name );
+        (void)fprintf( stderr, "[debug] get_attribute_extracted_data_at_index_by_name(): unknown attribute name - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
 #endif /*DEBUG*/
         return NULL;
     }
+#ifdef DEBUG
+        (void)fprintf( stderr, "[debug] _get_attribute_extracted_data_at_index_by_name: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
+#endif /*DEBUG*/    
     return _get_attribute_extracted_data_at_index(ipacket, proto_id, attribute_id, index);
 }
 
@@ -1750,7 +1625,7 @@ attribute_t * get_extracted_attribute_at_index_by_name(const ipacket_t * ipacket
     if ((int) index < 0 || index >= ipacket->proto_hierarchy->len) {
         //the given index is not valid
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_at_index_by_name(): invalid index (%u)\n", index );
+        (void)fprintf( stderr, "[debug] get_extracted_attribute_at_index_by_name(): invalid index - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1759,7 +1634,7 @@ attribute_t * get_extracted_attribute_at_index_by_name(const ipacket_t * ipacket
     proto_id = get_protocol_id_by_name(protocol_name);
     if (!proto_id) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_at_index_by_name(): unknown protocol name (\"%s\")\n", protocol_name );
+        (void)fprintf( stderr, "[debug] get_extracted_attribute_at_index_by_name(): unknown protocol name - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1767,7 +1642,7 @@ attribute_t * get_extracted_attribute_at_index_by_name(const ipacket_t * ipacket
     attribute_id = get_attribute_id_by_protocol_id_and_attribute_name(proto_id, attribute_name);
     if (!attribute_id) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_at_index_by_name(): unknown attribute name (\"%s\")\n", attribute_name );
+        (void)fprintf( stderr, "[debug] get_extracted_attribute_at_index_by_name(): unknown attribute name - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1779,14 +1654,14 @@ void * get_attribute_extracted_data_by_name(const ipacket_t *ipacket, const char
     proto_id = get_protocol_id_by_name(protocol_name);
     if (!proto_id) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_by_name(): unknown protocol name (\"%s\")\n", protocol_name );
+        (void)fprintf( stderr, "[debug] get_attribute_extracted_data_by_name(): unknown protocol name - %"PRIu64", protocol_name - %s , attribute_name - %s\n", ipacket->packet_id,protocol_name,attribute_name);
 #endif /*DEBUG*/
         return NULL;
     }
     attribute_id = get_attribute_id_by_protocol_id_and_attribute_name(proto_id, attribute_name);
     if (!attribute_id) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_attribute_extracted_data_by_name(): unknown attribute name (\"%s\")\n", attribute_name );
+        (void)fprintf( stderr, "[debug] get_attribute_extracted_data_by_name(): unknown attribute name - %"PRIu64", protocol_name - %s , attribute_name - %s\n", ipacket->packet_id,protocol_name,attribute_name);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1798,14 +1673,14 @@ attribute_t * get_extracted_attribute_by_name(const ipacket_t *ipacket, const ch
     proto_id = get_protocol_id_by_name(protocol_name);
     if (!proto_id) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_by_name(): unknown protocol name (\"%s\")\n", protocol_name );
+        (void)fprintf( stderr, "get_extracted_attribute_by_name(): unknown protocol name - %"PRIu64", protocol_name - %s , attribute_name - %s\n", ipacket->packet_id,protocol_name,attribute_name);
 #endif /*DEBUG*/
         return NULL;
     }
     attribute_id = get_attribute_id_by_protocol_id_and_attribute_name(proto_id, attribute_name);
     if (!attribute_id) {
 #ifdef DEBUG
-        (void)fprintf( stderr, "get_extracted_attribute_by_name(): unknown attribute name (\"%s\")\n", attribute_name );
+        (void)fprintf( stderr, "get_extracted_attribute_by_name(): unknown attribute name - %"PRIu64", protocol_name - %s , attribute_name - %s\n", ipacket->packet_id,protocol_name,attribute_name);
 #endif /*DEBUG*/
         return NULL;
     }
@@ -1819,12 +1694,15 @@ void * get_attribute_extracted_data(const ipacket_t * ipacket, uint32_t proto_id
     unsigned index = 0;
     for (; index < ipacket->proto_hierarchy->len; index++) {
         if (proto_id == ipacket->proto_hierarchy->proto_path[index]) {
+#ifdef DEBUG
+        (void)fprintf( stderr, "[debug] get_attribute_extracted_data: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %"PRIu32" , field_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,field_id, index);
+#endif /*DEBUG*/
             return _get_attribute_extracted_data_at_index(ipacket, proto_id, field_id, index);
         }
     }
 
 #ifdef DEBUG
-    (void)fprintf( stderr, "get_attribute_extracted_data(): proto_id #%u not found in path\n", proto_id );
+    (void)fprintf( stderr, "[debug] get_attribute_extracted_data(): proto_id not found in pathpacket - %"PRIu64", proto_id - %"PRIu32" , field_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,field_id, index);
 #endif /*DEBUG*/
 
     return NULL;
@@ -2392,18 +2270,23 @@ void setDataLinkType(mmt_handler_t *mmt_handler, int dltype) {
 
 
 int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
-    printf("\nPacket id: %lu\n", ipacket->packet_id);
+    printf("\nPacket id: %lu - protocol hierarchy len: %d\n", ipacket->packet_id,ipacket->proto_hierarchy->len);
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
-    unsigned i = 0;
+    unsigned proto_index = 0;
     int quiet = args ? *((int*)args) : 0;
-    struct attribute_internal_struct * tmp_attribute;
-    for (; i < ipacket->proto_hierarchy->len; i++) {
-        if (_is_registered_protocol(ipacket->proto_hierarchy->proto_path[i])) {
-            tmp_attribute = mmt_handler->proto_registered_attributes[ipacket->proto_hierarchy->proto_path[i]];
+    struct attribute_internal_struct * tmp_attribute = NULL;
+    for (proto_index = 0 ; proto_index < ipacket->proto_hierarchy->len; proto_index++) {
+        if (_is_registered_protocol(ipacket->proto_hierarchy->proto_path[proto_index])) {
+            tmp_attribute = mmt_handler->proto_registered_attributes[ipacket->proto_hierarchy->proto_path[proto_index]];
         }
         while (tmp_attribute != NULL) {
-            void * data = _get_attribute_extracted_data_at_index(ipacket, tmp_attribute->proto_id, tmp_attribute->field_id, i);
-            if (!quiet && data) {
+            void * data = NULL;
+#ifdef DEBUG
+        (void)fprintf( stderr, "[debug] debug_extracted_attributes_printout_handler: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %"PRIu32" , field_id - %"PRIu32", index - %u \n", ipacket->packet_id,tmp_attribute->proto_id,tmp_attribute->field_id, proto_index);
+        (void)fprintf( stderr, "[debug] debug_extracted_attributes_printout_handler: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %s , field_id - %s, index - %u \n", ipacket->packet_id,get_protocol_name_by_id(tmp_attribute->proto_id),get_attribute_name_by_protocol_and_attribute_ids(tmp_attribute->proto_id,tmp_attribute->field_id), proto_index);
+#endif /*DEBUG*/
+            data = _get_attribute_extracted_data_at_index(ipacket, tmp_attribute->proto_id, tmp_attribute->field_id, proto_index);
+            if (!quiet && data != NULL) {
                 print_attributes_list(tmp_attribute);
             }
             tmp_attribute = tmp_attribute->next;
@@ -2566,7 +2449,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
                 //Initialize its session data if such initialization function exists
                 if (configured_protocol->protocol->session_data_init != NULL) {
-                    debug("[PACKET_PROCESS-]> session_data_init - 0 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
+                    // debug("[PACKET_PROCESS-]> session_data_init - 0 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
                     ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
                 }
                 //Mark this protocol as done with the classification process
@@ -2617,7 +2500,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
         if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION)||(classify_status == PROTO_CLASSIFICATION_UPDATE))) {
             //Initialize its session data if such initialization function exists
             if (configured_protocol->protocol->session_data_init != NULL) {
-                debug("[PACKET_PROCESS-]> session_data_init - 1 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
+                // debug("[PACKET_PROCESS-]> session_data_init - 1 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
                 ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
             }
             is_new_session = NEW_PROTO_IN_SESSION; //This is not a new session, rather a new protocol in the session
@@ -3052,7 +2935,7 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
  */
 void process_packet_handler(ipacket_t *ipacket) {
     debug("process_packet_handler of ipacket: %"PRIu64"\n", ipacket->packet_id);
-    debug("Last packet_handler_id: %d", ipacket->last_callback_fct_id);
+    // debug("Last packet_handler_id: %d", ipacket->last_callback_fct_id);
     packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;
     while (temp_packet_handler != NULL) {
         if (ipacket->last_callback_fct_id == 0) {
@@ -3142,7 +3025,7 @@ void mmt_drop_packet(ipacket_t *ipacket) {
  */
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
 
-    debug("proto_packet_process of %"PRIu64" index: %d\n", ipacket->packet_id, index);
+    debug("proto_packet_process of %"PRIu64" index: %d", ipacket->packet_id, index);
 
     protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
             ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
@@ -3192,7 +3075,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
                     for (i = 0; i < ipacket->session->proto_path.len; i++) {
                         ipacket->session->proto_path_direction[proto_direction].proto_path[i] = ipacket->session->proto_path.proto_path[i];
                     }
-                    debug("[IP] Update protocol path direction: %d", proto_direction);
+                    // debug("[IP] Update protocol path direction: %d", proto_direction);
                 }
             }
         }
@@ -3223,6 +3106,8 @@ void copy_ipacket_header(ipacket_t *ipacket, struct pkthdr *header) {
     ipacket->p_hdr->original_caplen = header->caplen;
     ipacket->p_hdr->len = header->len;
     ipacket->p_hdr->original_len = header->len;
+    ipacket->p_hdr->probe_id = header->probe_id;
+    ipacket->p_hdr->source_id = header->source_id;
     ipacket->p_hdr->user_args = header->user_args;
 }
 
@@ -3271,6 +3156,8 @@ ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_c
         mmt->current_ipacket.p_hdr->original_caplen = header->caplen;
         mmt->current_ipacket.p_hdr->original_len = header->len;
         mmt->current_ipacket.p_hdr->len = header->len;
+        mmt->current_ipacket.p_hdr->probe_id = header->probe_id;
+        mmt->current_ipacket.p_hdr->source_id = header->source_id;
         mmt->current_ipacket.p_hdr->user_args = header->user_args;
         mmt->current_ipacket.original_data = packet;
         mmt->current_ipacket.proto_hierarchy->len = 0;
@@ -3322,11 +3209,11 @@ int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
 
     if (mmt->has_reassembly == 1) {
         ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
-        debug("Packet address (packet_process - copied packet): %p", ipacket);
+        // debug("Packet address (packet_process - copied packet): %p", ipacket);
         proto_packet_process(ipacket, NULL, index);
     } else {
         prepare_ipacket(mmt, header, packet);
-        debug("Packet address (packet_process) - no copied packet: %p", &mmt->current_ipacket);
+        // debug("Packet address (packet_process) - no copied packet: %p", &mmt->current_ipacket);
         proto_packet_process(&mmt->current_ipacket, NULL, index);
     }
     return 1;
@@ -3918,11 +3805,11 @@ int mmt_timeval_format(FILE * f, attribute_internal_t * attr) {
     return fprintf(f, "Attribute %s.%s  = %lu.%lu\n",
                    get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
 }
+
 int mmt_binary_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_BINARYVAR_STRLEN];
     if (mmt_binary_sprintf(buff, MMT_BINARY_STRLEN, attr)) {
-        return fprintf(f, "Attribute %s.%s = %s\n",
-                       get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+        return fprintf(f, "Attribute %s.%s = %s\n",get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
 }

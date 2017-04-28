@@ -169,7 +169,7 @@ extern "C" {
 #define PROTO_HTTP_CONNECT 154
 #define PROTO_HTTP_PROXY 155
 #define PROTO_HTTP_APPLICATION_ACTIVESYNC 156
-#define PROTO_HUFFINGTON_POST 157
+#define PROTO_HUFFINGTONPOST 157
 #define PROTO_HURRIYET 158
 #define PROTO_I23V5 159
 #define PROTO_IAX 160
@@ -183,7 +183,7 @@ extern "C" {
 #define PROTO_IKEA 168
 #define PROTO_IMAP 169
 #define PROTO_IMAPS 170
-#define PROTO_INTERNET_MOVIE_DATABASE 171
+#define PROTO_IMDB 171
 #define PROTO_IMESH 172
 #define PROTO_IMESSAGE 173
 #define PROTO_IMGUR 174
@@ -804,7 +804,7 @@ extern "C" {
 #define PROTO_HTTP_CONNECT_ALIAS "http_connect"
 #define PROTO_HTTP_PROXY_ALIAS "http_proxy"
 #define PROTO_HTTP_APPLICATION_ACTIVESYNC_ALIAS "http_activesync"
-#define PROTO_HUFFINGTON_POST_ALIAS "huffingtonpost"
+#define PROTO_HUFFINGTONPOST_ALIAS "huffingtonpost"
 #define PROTO_HURRIYET_ALIAS "hurriyet"
 #define PROTO_I23V5_ALIAS "i23v5"
 #define PROTO_IAX_ALIAS "iax"
@@ -818,7 +818,7 @@ extern "C" {
 #define PROTO_IKEA_ALIAS "ikea"
 #define PROTO_IMAP_ALIAS "imap"
 #define PROTO_IMAPS_ALIAS "imaps"
-#define PROTO_INTERNET_MOVIE_DATABASE_ALIAS "imdb"
+#define PROTO_IMDB_ALIAS "imdb"
 #define PROTO_IMESH_ALIAS "imesh"
 #define PROTO_IMESSAGE_ALIAS "imessage"
 #define PROTO_IMGUR_ALIAS "imgur"

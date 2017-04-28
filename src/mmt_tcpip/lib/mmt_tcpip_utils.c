@@ -143,7 +143,6 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     packet->empty_line_position_set = 0;
     packet->empty_line_position = 0;
 
-//    memset( &packet->host_line, 0, sizeof( struct mmt_int_one_line_struct ) * 14 );
     packet->host_line.ptr = NULL;
     packet->host_line.len = 0;
     packet->referer_line.ptr = NULL;
@@ -154,6 +153,12 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     packet->accept_line.len = 0;
     packet->user_agent_line.ptr = NULL;
     packet->user_agent_line.len = 0;
+    // LN
+    packet->upgrade_line.ptr = NULL;
+    packet->upgrade_line.len = 0;
+    packet->connection_line.ptr = NULL;
+    packet->connection_line.len = 0;
+    // End of LN
     packet->http_url_name.ptr = NULL;
     packet->http_url_name.len = 0;
     packet->http_encoding.ptr = NULL;
@@ -383,7 +388,6 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                 return;
             }
 
-
             packet->parsed_lines++;
             packet->line[packet->parsed_lines].ptr = &packet->payload[a + 2];
             packet->line[packet->parsed_lines].len = 0;
@@ -539,10 +543,10 @@ uint16_t _mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
         counter++;
         while (packet->payload_packet_len > counter
                 && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-                || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
-                || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
-                || packet->payload[counter] == '-' || packet->payload[counter] == '_'
-                || packet->payload[counter] == '.')) {
+                    || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
+                    || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
+                    || packet->payload[counter] == '-' || packet->payload[counter] == '_'
+                    || packet->payload[counter] == '.')) {
             MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "further letter\n");
             counter++;
             if (packet->payload_packet_len > counter && packet->payload[counter] == '@') {
@@ -550,9 +554,9 @@ uint16_t _mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                 counter++;
                 while (packet->payload_packet_len > counter
                         && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-                        || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
-                        || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
-                        || packet->payload[counter] == '-' || packet->payload[counter] == '_')) {
+                            || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
+                            || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
+                            || packet->payload[counter] == '-' || packet->payload[counter] == '_')) {
                     MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "letter\n");
                     counter++;
                     if (packet->payload_packet_len > counter && packet->payload[counter] == '.') {
@@ -560,7 +564,7 @@ uint16_t _mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                         counter++;
                         if (packet->payload_packet_len > counter + 1
                                 && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-                                && (packet->payload[counter + 1] >= 'a' && packet->payload[counter + 1] <= 'z'))) {
+                                    && (packet->payload[counter + 1] >= 'a' && packet->payload[counter + 1] <= 'z'))) {
                             MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "two letters\n");
                             counter += 2;
                             if (packet->payload_packet_len > counter
@@ -568,7 +572,7 @@ uint16_t _mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                                 MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "whitespace1\n");
                                 return counter;
                             } else if (packet->payload_packet_len > counter && packet->payload[counter] >= 'a'
-                                    && packet->payload[counter] <= 'z') {
+                                       && packet->payload[counter] <= 'z') {
                                 MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "one letter\n");
                                 counter++;
                                 if (packet->payload_packet_len > counter
@@ -576,7 +580,7 @@ uint16_t _mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
                                     MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "whitespace2\n");
                                     return counter;
                                 } else if (packet->payload_packet_len > counter && packet->payload[counter] >= 'a'
-                                        && packet->payload[counter] <= 'z') {
+                                           && packet->payload[counter] <= 'z') {
                                     counter++;
                                     if (packet->payload_packet_len > counter
                                             && (packet->payload[counter] == ' ' || packet->payload[counter] == ';')) {

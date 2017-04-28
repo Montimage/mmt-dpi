@@ -49,3 +49,12 @@ dist-clean:
 	$(QUIET) $(RM) $(MMT_DPI)
 	$(QUIET) $(RM) /etc/ld.so.conf.d/mmt.conf
 	@ echo "[MMT-]> Done!"
+
+# - - - - - - - - - - 
+# T E S T
+# - - - - - - - - - -
+
+test:
+	@ echo "Start testing..."
+	gcc -o proto_attributes_iterator /opt/mmt/examples/proto_attributes_iterator.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl
+	./proto_attributes_iterator

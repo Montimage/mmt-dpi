@@ -19,6 +19,7 @@ static void mmt_int_oracle_add_connection(ipacket_t * ipacket) {
 
 int mmt_check_oracle(ipacket_t * ipacket, unsigned index)
 {
+  // debug("[PROTO_ORACLE] mmt_check_oracle on packet: %lu at index: %d",ipacket->packet_id,index);
 	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 	struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -27,9 +28,7 @@ int mmt_check_oracle(ipacket_t * ipacket, unsigned index)
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
     	
         if(packet->tcp != NULL){
-        	uint16_t sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);
-        	
-            debug("ORACLE: Calculating ORACLE over TCP");
+        	uint16_t sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);                  
 
         	/* Oracle Database 9g,10g,11g */
             if ((dport == 1521 || sport == 1521)

@@ -658,7 +658,7 @@ void mmt_init_classify_me_ssl() {
     selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD;
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SSL);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP); //Exclude processing when http is detected! Obvious no?
+    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL); //Exclude processing when http is detected! Obvious no?
     //IPOQUE_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL);
 }
 

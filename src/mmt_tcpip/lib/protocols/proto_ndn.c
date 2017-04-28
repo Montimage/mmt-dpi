@@ -52,7 +52,7 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
 int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
-    debug("NDN: mmt_check_ndn");
+    // debug("[PROTO_NDN] mmt_check_ndn on packet: %lu at index: %d",ipacket->packet_id,index);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
@@ -70,7 +70,7 @@ int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
             }
 
             if(mmt_check_ndn_payload(payload,payload_len)!=0){
-                debug("NDN: found ndn packet %lu",ipacket->packet_id);
+                // debug("NDN: found ndn packet %lu",ipacket->packet_id);
                 if(mmt_check_payload_ndn_http(payload,payload_len)==0){
                     mmt_int_ndn_add_connection(ipacket);
                     return 1;    
@@ -92,7 +92,7 @@ void mmt_init_classify_me_ndn() {
 
 int init_proto_ndn_struct() {
     
-    debug("NDN: init_proto_ndn_struct");
+    debug("[PROTO_NDN] init_proto_ndn_struct");
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_NDN, PROTO_NDN_ALIAS);
     if (protocol_struct != NULL) {

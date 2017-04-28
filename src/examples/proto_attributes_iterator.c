@@ -19,22 +19,28 @@
 #include "mmt_core.h"
 
 void attributes_iterator(attribute_metadata_t * attribute, uint32_t proto_id, void * args) {
-  printf("\tAttribute id %i --- Name %s \n", attribute->id, attribute->alias);
+	printf("\tAttribute id %i --- Name %s \n", attribute->id, attribute->alias);
 }
 
 void protocols_iterator(uint32_t proto_id, void * args) {
-  printf("Protocol id %i --- Name %s\n", proto_id, get_protocol_name_by_id(proto_id));
-  iterate_through_protocol_attributes(proto_id, attributes_iterator, NULL);
+	printf("Protocol id %i --- Name %s\n", proto_id, get_protocol_name_by_id(proto_id));
+	iterate_through_protocol_attributes(proto_id, attributes_iterator, NULL);
 }
 
 int main(int argc, char** argv) {
+	printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  
+	printf("|\t\t MONTIMAGE\n");
+	printf("|\t MMT-SDK version: %s\n",mmt_version());
+	printf("|\t %s: built %s %s\n", argv[0], __DATE__, __TIME__);
+	printf("|\t http://montimage.com\n");
+	printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  	
+	
+	init_extraction();
 
-  init_extraction();
+	iterate_through_protocols(protocols_iterator, NULL);
 
-  iterate_through_protocols(protocols_iterator, NULL);
+	close_extraction();
 
-  close_extraction();
-
-  return (EXIT_SUCCESS);
+	return (EXIT_SUCCESS);
 }
 

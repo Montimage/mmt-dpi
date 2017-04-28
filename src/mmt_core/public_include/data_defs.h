@@ -80,6 +80,8 @@ typedef struct pkthdr {
     unsigned int len;    /**< length of the packet (off wire) */
     unsigned int original_caplen; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
     unsigned int original_len; /**< Original capture len of the packet when it was captured by interface - not count with reassembly data*/
+    unsigned int probe_id; /** The ID of the probe which are processing current packet*/
+    unsigned int source_id; /** The ID of the interface/source which are processing current packet*/
     void * user_args;    /**< Pointer to a user defined argument. Can be NULL, it will not be used by the library. */
 } pkthdr_t;
 
@@ -172,14 +174,7 @@ enum proto_stats_attr {
     PROTO_PAYLOAD,
     PROTO_PACKET_COUNT,
     PROTO_DATA_VOLUME,
-    PROTO_PAYLOAD_VOLUME,
-    PROTO_IP_FRAG_PACKET_COUNT,
-    PROTO_IP_FRAG_DATA_VOLUME,
-    PROTO_IP_DF_PACKET_COUNT, 
-    PROTO_IP_DF_DATA_VOLUME, 
-    PROTO_SESSIONS_COUNT,
-    PROTO_ACTIVE_SESSIONS_COUNT,
-    PROTO_TIMEDOUT_SESSIONS_COUNT,
+    PROTO_PAYLOAD_VOLUME,    
     PROTO_FIRST_PACKET_TIME,
     PROTO_LAST_PACKET_TIME,
     PROTO_STATISTICS,
@@ -204,14 +199,7 @@ typedef struct ip_rtt_struct{
 #define PROTO_PAYLOAD_LABEL                     "p_payload"
 #define PROTO_PACKET_COUNT_LABEL                "packet_count"
 #define PROTO_DATA_VOLUME_LABEL                 "data_count"
-#define PROTO_IP_FRAG_PACKET_COUNT_LABEL        "ip_frag_packets_count"
-#define PROTO_IP_FRAG_DATA_VOLUME_LABEL         "ip_frag_data_volume"
-#define PROTO_IP_DF_PACKET_COUNT_LABEL          "ip_df_packets_count"
-#define PROTO_IP_DF_DATA_VOLUME_LABEL           "ip_df_data_volume"
 #define PROTO_PAYLOAD_VOLUME_LABEL              "payload_count"
-#define PROTO_SESSIONS_COUNT_LABEL              "session_count"
-#define PROTO_ACTIVE_SESSIONS_COUNT_LABEL       "a_session_count"
-#define PROTO_TIMEDOUT_SESSIONS_COUNT_LABEL     "t_session_count"
 #define PROTO_FIRST_PACKET_TIME_LABEL           "first_packet_time"
 #define PROTO_LAST_PACKET_TIME_LABEL           "last_packet_time"
 #define PROTO_STATISTICS_LABEL                  "stats"

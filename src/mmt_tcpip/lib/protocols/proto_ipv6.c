@@ -176,21 +176,21 @@ int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * 
     while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2))) {
         next_offset += get_next_header_offset(next_hdr, & ipacket->data[offset + next_offset], & next_hdr);
     }
-    ipv6_session->lower_ip = (void*)mmt_malloc(sizeof(ip6h->saddr));
-    ipv6_session->higher_ip = (void*)mmt_malloc(sizeof(ip6h->daddr));
+    // ipv6_session->lower_ip = (void*)mmt_malloc(sizeof(ip6h->saddr));
+    // ipv6_session->higher_ip = (void*)mmt_malloc(sizeof(ip6h->daddr));
     if (MMT_COMPARE_IPV6_ADDRESSES(&ip6h->saddr, &ip6h->daddr)) {
-        memcpy(ipv6_session->lower_ip,&ip6h->saddr,sizeof(ip6h->saddr));
-        memcpy(ipv6_session->higher_ip,&ip6h->daddr,sizeof(ip6h->daddr));
-        // ipv6_session->lower_ip = &ip6h->saddr;
-        // ipv6_session->higher_ip = &ip6h->daddr;
+        // memcpy(ipv6_session->lower_ip,&ip6h->saddr,sizeof(ip6h->saddr));
+        // memcpy(ipv6_session->higher_ip,&ip6h->daddr,sizeof(ip6h->daddr));
+        ipv6_session->lower_ip = &ip6h->saddr;
+        ipv6_session->higher_ip = &ip6h->daddr;
         ipv6_session->is_lower_initiator = L2H_DIRECTION;
         ipv6_session->is_lower_client = L2H_DIRECTION;
         retval = L2H_DIRECTION;
     } else {
-        memcpy(ipv6_session->lower_ip,&ip6h->daddr,sizeof(ip6h->daddr));
-        memcpy(ipv6_session->higher_ip,&ip6h->saddr,sizeof(ip6h->saddr));
-        // ipv6_session->lower_ip = &ip6h->daddr;
-        // ipv6_session->higher_ip = &ip6h->saddr;
+        // memcpy(ipv6_session->lower_ip,&ip6h->daddr,sizeof(ip6h->daddr));
+        // memcpy(ipv6_session->higher_ip,&ip6h->saddr,sizeof(ip6h->saddr));
+        ipv6_session->lower_ip = &ip6h->daddr;
+        ipv6_session->higher_ip = &ip6h->saddr;
         ipv6_session->is_lower_initiator = H2L_DIRECTION;
         ipv6_session->is_lower_client = H2L_DIRECTION;
         retval = H2L_DIRECTION;
@@ -270,7 +270,7 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
         
         // Fix proto_path , only fix til IP
         if (session->proto_path.proto_path[index] != PROTO_IPV6) {
-            debug("[IP6] Fixing proto_path of session: %lu", session->session_id);
+            // debug("[IP6] Fixing proto_path of session: %lu", session->session_id);
             // Get PROTO_IPV6 index in current proto_path
             int j, ip_index = 0;
             for (j = 0; j < session->proto_path.len; j++) {
@@ -280,10 +280,10 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
                 }
             }
 
-            debug("[IP6] Current index of PROTO_IPV6: %d / (packet)%d", ip_index, index);
+            // debug("[IP6] Current index of PROTO_IPV6: %d / (packet)%d", ip_index, index);
             if (ip_index != 0) {
                 if (ip_index > index) {
-                    debug("[IP6] Current protocol_path need to remove some protocol");
+                    // debug("[IP6] Current protocol_path need to remove some protocol");
                     int pre_path = 0, post_path = ip_index + 1;
 
                     for (pre_path = 0; pre_path <= index; pre_path++)
@@ -300,9 +300,9 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
                     session->proto_path.len = pre_path;
                     session->proto_headers_offset.len = pre_path;
                     session->proto_classif_status.len = pre_path;
-                    debug("[IP6] New protocol_path len %d", pre_path);
+                    // debug("[IP6] New protocol_path len %d", pre_path);
                 } else {
-                    debug("[IP6] Current protocol_path need to add some protocol from packet hierarchy");
+                    // debug("[IP6] Current protocol_path need to add some protocol from packet hierarchy");
                     int delta = index - ip_index;
                     int new_len = session->proto_path.len + delta;
                     int pre_path = 0, post_path = new_len - 1;
@@ -323,7 +323,7 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
                     session->proto_path.len = new_len;
                     session->proto_headers_offset.len = new_len;
                     session->proto_classif_status.len = new_len;
-                    debug("[IP6] New protocol_path len %d", new_len);
+                    // debug("[IP6] New protocol_path len %d", new_len);
                 }
             }
 
@@ -1173,6 +1173,13 @@ static attribute_metadata_t ip6_attributes_metadata[IP6_ATTRIBUTES_NB] = {
     {IP6_SERVER_ADDR, IP6_SERVER_ADDR_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_server_addr_extraction},
     {IP6_CLIENT_PORT, IP6_CLIENT_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_client_port_extraction},
     {IP6_SERVER_PORT, IP6_SERVER_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_server_port_extraction},
+    {IP6_FRAG_PACKET_COUNT, IP6_FRAG_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_packet_count_extraction},
+    {IP6_FRAG_DATA_VOLUME, IP_FRAG_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_data_volume_extraction},
+    {IP6_DF_PACKET_COUNT, IP6_DF_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_packet_count_extraction},
+    {IP6_DF_DATA_VOLUME, IP_DF_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_data_volume_extraction},
+    {IP6_SESSIONS_COUNT, IP6_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_sessions_count_extraction},
+    {IP6_ACTIVE_SESSIONS_COUNT, IP6_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
+    {IP6_TIMEDOUT_SESSIONS_COUNT, IP6_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
 };
 
 int ipv6_pre_classification_function(ipacket_t * ipacket, unsigned index) {
