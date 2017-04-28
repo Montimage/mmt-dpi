@@ -2,6 +2,9 @@ RELEASE NOTES
 ---
 
 ## Pre-Version 1.6.8.0
+Version 1.6.7.3
+- Update with some optimisations in classifying protocol based on hostname and parsing HTTP header value
+
 Version 1.6.7.2
 - Add patch to fix the classification of Application protocol base on hostname
 
