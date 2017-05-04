@@ -210,18 +210,6 @@ MMTAPI int MMTCALL register_packet_handler(
 );
 
 /**
- * Process packet handlers of a packet
- * @param  ipacket packet
- * @return         
- */
-MMTAPI void MMTCALL process_packet_handler(ipacket_t * ipacket);
-/**
- * Drop a packet - stop continueing process the packet
- * @param  ipacket packet to be dropped
- * @return         
- */
-MMTAPI void MMTCALL mmt_drop_packet(ipacket_t * ipacket);
-/**
  * Unregisters a packet handler, returns a positive value on success, 0 otherwise.
  * @param mmt_handler pointer to the mmt handler we want to unregister the packet handler from
  * @param packet_handler_id the identifier of the packet handler
@@ -246,7 +234,14 @@ MMTAPI int MMTCALL register_session_timeout_handler(
     void *user
 );
 
-
+/**
+ * Registers a session timer handler. The registered function will override any previously registered function.
+ * This function will be called whenever the user want to process the session like after a prediod of time
+ * @param mmt_handler pointer to the mmt handler we want to register the session timeout handler with
+ * @param session_timer_handler_fct the session timer callback function to register
+ * @param user pointer to a user defined argument to be passed to the callback function
+ * @return This function will always succeed; a positive value will be returned.
+ */
 MMTAPI int MMTCALL register_session_timer_handler(
     mmt_handler_t *mmt_handler,
     generic_session_timer_handler_function session_timer_handler_fct,
@@ -291,33 +286,6 @@ MMTAPI int MMTCALL register_extraction_attribute_by_name(
     mmt_handler_t *mmt_handler,
     const char *protocol_name,
     const char *attribute_name
-);
-
-//TODO: to be deleted
-/**
- * Copies the user registered attributes to the session structure
- * where the protocol is identified by the given proto_id and whose index is protocol_index.
- * @param ipacket pointer to the actual packet data.
- * @param proto_id the identifier of the protocol to copy its registered attributes
- * @param protocol_index the index of the protocol
- */
-MMTAPI void MMTCALL copy_registered_attributes(
-    ipacket_t *ipacket,
-    uint32_t proto_id,
-    unsigned protocol_index
-);
-
-//TODO: to be deleted
-/**
- * This is an encapsulation for registering multiple attributes provided as a linked list.
- * @param mmt_handler pointer to the mmt handler we want to register the extraction attributes with
- * @param attributes_list a pointer to a linked list of attributes to register.
- * @return a positive value upon success, a zero value otherwise.
- * @obsolete: this function should never be used! it is maintained for backward compatibility reasons.
- */
-MMTAPI int MMTCALL register_attributes(
-    mmt_handler_t *mmt_handler,
-    struct attribute_description_struct *attributes_list
 );
 
 /**

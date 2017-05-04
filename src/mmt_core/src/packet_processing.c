@@ -2350,16 +2350,6 @@ void mmt_print_all_protocols() {
     }
 }
 
-int register_attributes(mmt_handler_t *mmt_handler, struct attribute_description_struct * attributes_list) {
-    int retval = 1;
-    struct attribute_description_struct * temp_attr = attributes_list;
-    while (temp_attr != NULL) {
-        retval = retval * register_extraction_attribute(mmt_handler, temp_attr->proto_id, temp_attr->field_id);
-        temp_attr = temp_attr->next;
-    }
-    return retval;
-}
-
 void set_session_timeout_delay(mmt_session_t * session, uint32_t timeout_delay) {
     session->session_timeout_delay = timeout_delay;
 }
