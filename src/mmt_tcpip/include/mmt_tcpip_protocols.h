@@ -19,7 +19,7 @@ extern "C" {
 #define PROTO_JD 5
 #define PROTO_56 6
 #define PROTO_8021Q 7
-#define PROTO_888 8
+#define PROTO_888POKER 8
 #define PROTO_ABOUT 9
 #define PROTO_ADCASH 10
 #define PROTO_ADDTHIS 11
@@ -655,7 +655,7 @@ extern "C" {
 #define PROTO_JD_ALIAS "jd"
 #define PROTO_56_ALIAS "56"
 #define PROTO_8021Q_ALIAS "8021q"
-#define PROTO_888_ALIAS "888"
+#define PROTO_888POKER_ALIAS "888poker"
 #define PROTO_ABOUT_ALIAS "about"
 #define PROTO_ADCASH_ALIAS "adcash"
 #define PROTO_ADDTHIS_ALIAS "addthis"

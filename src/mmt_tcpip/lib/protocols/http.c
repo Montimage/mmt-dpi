@@ -1727,7 +1727,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_360);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_JD);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_56);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_888);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_888POKER);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ABOUT);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ADCASH);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ADDTHIS);

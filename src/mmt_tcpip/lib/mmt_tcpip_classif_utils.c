@@ -141,7 +141,7 @@ static const protocol_match doted_host_names[] = {
     {".360.cn", PROTO_360, MMT_STATICSTRING_LEN(".360.cn")},
     {".jd.com", PROTO_JD, MMT_STATICSTRING_LEN(".jd.com")},
     {".56.com", PROTO_56, MMT_STATICSTRING_LEN(".56.com")},
-    {".888.com", PROTO_888, MMT_STATICSTRING_LEN(".888.com")},
+    {".888poker.fr", PROTO_888POKER, MMT_STATICSTRING_LEN(".888poker.fr")},
     {".about.com", PROTO_ABOUT, MMT_STATICSTRING_LEN(".about.com")},
     {".adcash.com", PROTO_ADCASH, MMT_STATICSTRING_LEN(".adcash.com")},
     {".addthisedge.com", PROTO_ADDTHIS, MMT_STATICSTRING_LEN(".addthisedge.com")},

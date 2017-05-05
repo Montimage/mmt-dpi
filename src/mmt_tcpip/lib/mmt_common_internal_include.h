@@ -469,8 +469,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_8021Q //////////////////
     int init_proto_8021q_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_888 //////////////////
-    int init_proto_888_struct();
+    /////////// PLUGIN INIT FOR PROTO_888poker //////////////////
+    int init_proto_888poker_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_ABOUT //////////////////
     int init_proto_about_struct();

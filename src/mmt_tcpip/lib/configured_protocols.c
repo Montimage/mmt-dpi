@@ -62,9 +62,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_888 //////////////////
-    if (!init_proto_888_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_888\n Exiting\n");
+    /////////// INITILIZING PROTO_888poker //////////////////
+    if (!init_proto_888poker_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_888poker\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
