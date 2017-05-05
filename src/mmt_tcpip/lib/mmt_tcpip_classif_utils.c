@@ -264,6 +264,7 @@ static const protocol_match doted_host_names[] = {
     {".gamespot.com.cn", PROTO_GAMESPOT, MMT_STATICSTRING_LEN(".gamespot.com.cn")},
     {".gap.com", PROTO_GAP, MMT_STATICSTRING_LEN(".gap.com")},
     {".garanti.com.tr", PROTO_GARANTI, MMT_STATICSTRING_LEN(".garanti.com.tr")},
+    {".garanti.com", PROTO_GARANTI, MMT_STATICSTRING_LEN(".garanti.com")},
     {".gazetevatanemek.com", PROTO_GAZETEVATAN, MMT_STATICSTRING_LEN(".gazetevatanemek.com")},
     {".vatanim.com.tr", PROTO_GAZETEVATAN, MMT_STATICSTRING_LEN(".vatanim.com.tr")},
     {".gigapeta.com", PROTO_GIGAPETA, MMT_STATICSTRING_LEN(".gigapeta.com")},
