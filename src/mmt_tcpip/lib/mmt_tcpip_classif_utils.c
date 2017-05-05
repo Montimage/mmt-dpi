@@ -404,7 +404,7 @@ static const protocol_match doted_host_names[] = {
     {".renren.com", PROTO_RENREN, MMT_STATICSTRING_LEN(".renren.com")},
     {".roblox.com", PROTO_ROBLOX, MMT_STATICSTRING_LEN(".roblox.com")},
     {".rovio.com", PROTO_ROVIO, MMT_STATICSTRING_LEN(".rovio.com")},
-    {".sabah.com.tr", PROTO_SABAHTR, MMT_STATICSTRING_LEN(".sabah.com.tr")},
+    {".sabah.com.tr", PROTO_SABAH, MMT_STATICSTRING_LEN(".sabah.com.tr")},
     {".sahibinden.com", PROTO_SAHIBINDEN, MMT_STATICSTRING_LEN(".sahibinden.com")},
     {".salesforce.com", PROTO_SALESFORCE, MMT_STATICSTRING_LEN(".salesforce.com")},
     {".omtr1.partners.salesforce.com", PROTO_SALESFORCE, MMT_STATICSTRING_LEN(".omtr1.partners.salesforce.com")},

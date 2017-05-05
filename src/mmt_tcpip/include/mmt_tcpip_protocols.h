@@ -312,7 +312,7 @@ extern "C" {
 #define PROTO_ROVIO 297
 #define PROTO_RTP 298
 #define PROTO_RTSP 299
-#define PROTO_SABAHTR 300
+#define PROTO_SABAH 300
 #define PROTO_SAHIBINDEN 301
 #define PROTO_SALESFORCE 302
 #define PROTO_SALON 303
@@ -947,7 +947,7 @@ extern "C" {
 #define PROTO_ROVIO_ALIAS "rovio"
 #define PROTO_RTP_ALIAS "rtp"
 #define PROTO_RTSP_ALIAS "rtsp"
-#define PROTO_SABAHTR_ALIAS "sabahtr"
+#define PROTO_SABAH_ALIAS "sabah"
 #define PROTO_SAHIBINDEN_ALIAS "sahibinden"
 #define PROTO_SALESFORCE_ALIAS "salesforce"
 #define PROTO_SALON_ALIAS "salon"

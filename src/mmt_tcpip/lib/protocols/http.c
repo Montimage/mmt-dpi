@@ -1933,7 +1933,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_RENREN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ROBLOX);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ROVIO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SABAHTR);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SABAH);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SAHIBINDEN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SALESFORCE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SALON);

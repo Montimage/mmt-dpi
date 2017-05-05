@@ -1351,8 +1351,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_RTSP //////////////////
     int init_proto_rtsp_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_SABAHTR //////////////////
-    int init_proto_sabahtr_struct();
+    /////////// PLUGIN INIT FOR PROTO_SABAH //////////////////
+    int init_proto_sabah_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_SAHIBINDEN //////////////////
     int init_proto_sahibinden_struct();

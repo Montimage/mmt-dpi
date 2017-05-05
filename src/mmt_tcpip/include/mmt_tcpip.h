@@ -605,7 +605,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_REDDIT:
         case PROTO_REFERENCE:
         case PROTO_RENREN:
-        case PROTO_SABAHTR:
+        case PROTO_SABAH:
         case PROTO_SAHIBINDEN:
         case PROTO_SALESFORCE:
         case PROTO_SALON:
