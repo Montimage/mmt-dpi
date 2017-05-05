@@ -417,6 +417,7 @@ static const protocol_match doted_host_names[] = {
     {".sears.com", PROTO_SEARS, MMT_STATICSTRING_LEN(".sears.com")},
     {".secondlife.com", PROTO_SECONDLIFE, MMT_STATICSTRING_LEN(".secondlife.com")},
     {".secureserver.net", PROTO_SECURESERVER, MMT_STATICSTRING_LEN(".secureserver.net")},
+    {".secureserver.com", PROTO_SECURESERVER, MMT_STATICSTRING_LEN(".secureserver.com")},
     {".shoutcast.com", PROTO_SHOUTCAST, MMT_STATICSTRING_LEN(".shoutcast.com")},
     {".shazamid.com", PROTO_SHAZAM, MMT_STATICSTRING_LEN(".shazamid.com")},
     {".shazam.com", PROTO_SHAZAM, MMT_STATICSTRING_LEN(".shazam.com")},
