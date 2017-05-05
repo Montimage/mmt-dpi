@@ -272,6 +272,7 @@ static const protocol_match doted_host_names[] = {
     {".globo.com", PROTO_GLOBO, MMT_STATICSTRING_LEN(".globo.com")},
     {".gnutellaforums.com", PROTO_GNUTELLA, MMT_STATICSTRING_LEN(".gnutellaforums.com")},
     {".go.com", PROTO_GO, MMT_STATICSTRING_LEN(".go.com")},
+    {".sports-ak.espn.go.com", PROTO_GO, MMT_STATICSTRING_LEN(".sports-ak.espn.go.com")},
     {".godaddy.com", PROTO_GODADDY, MMT_STATICSTRING_LEN(".godaddy.com")},
     {".goo.ne.jp", PROTO_GOO, MMT_STATICSTRING_LEN(".goo.ne.jp")},
     {".grooveshark.com", PROTO_GROOVESHARK, MMT_STATICSTRING_LEN(".grooveshark.com")},
