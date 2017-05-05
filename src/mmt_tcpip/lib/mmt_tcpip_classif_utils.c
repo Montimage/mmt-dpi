@@ -712,7 +712,7 @@ static const protocol_match doted_host_names[] = {
     {".tango.me:8080", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.me:8080")},
     {".line.naver.jp", PROTO_LINE, MMT_STATICSTRING_LEN(".line.naver.jp")},
     {".line.me", PROTO_LINE, MMT_STATICSTRING_LEN(".line.me")},
-    {".mediafire.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".mediafire.com")},
+    {".mediafire.com", PROTO_MEDIAFIRE, MMT_STATICSTRING_LEN(".mediafire.com")},
     {".4shared.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".4shared.com")},
     {".depositfiles.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".depositfiles.com")},
     {".scribd.com", PROTO_DIRECT_DOWNLOAD_LINK, MMT_STATICSTRING_LEN(".scribd.com")},
