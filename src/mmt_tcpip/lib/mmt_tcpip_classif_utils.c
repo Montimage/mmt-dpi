@@ -713,6 +713,8 @@ static const protocol_match doted_host_names[] = {
     {".4story.ro", PROTO_4STORY, MMT_STATICSTRING_LEN(".4story.ro")},
     {".4story.web.tr", PROTO_4STORY, MMT_STATICSTRING_LEN(".4story.web.tr")},
     {".tango.me", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.me")},
+    {".tango.me", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.me")},
+    {".tango.com", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.com")},
     {".tango.me:8080", PROTO_TANGO, MMT_STATICSTRING_LEN(".tango.me:8080")},
     {".line.naver.jp", PROTO_LINE, MMT_STATICSTRING_LEN(".line.naver.jp")},
     {".line.me", PROTO_LINE, MMT_STATICSTRING_LEN(".line.me")},
