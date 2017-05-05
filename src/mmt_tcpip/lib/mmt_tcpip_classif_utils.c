@@ -290,6 +290,7 @@ static const protocol_match doted_host_names[] = {
     {".groupon.co.za", PROTO_GROUPON, MMT_STATICSTRING_LEN(".groupon.co.za")},
     {".groupon.my", PROTO_GROUPON, MMT_STATICSTRING_LEN(".groupon.my")},
     {".guardian.co.uk", PROTO_GUARDIAN, MMT_STATICSTRING_LEN(".guardian.co.uk")},
+    {".guardian.co.tt", PROTO_GUARDIAN, MMT_STATICSTRING_LEN(".guardian.co.tt")},
     {".guildwars2.com", PROTO_GUILDWARS, MMT_STATICSTRING_LEN(".guildwars2.com")},
     {".haberturk.com", PROTO_HABERTURK, MMT_STATICSTRING_LEN(".haberturk.com")},
     {".hao123.com", PROTO_HAO123, MMT_STATICSTRING_LEN(".hao123.com")},
