@@ -676,6 +676,7 @@ static const protocol_match doted_host_names[] = {
     {".ogame.se", PROTO_OGAME, MMT_STATICSTRING_LEN(".ogame.se")},
     {".ogame.si", PROTO_OGAME, MMT_STATICSTRING_LEN(".ogame.si")},
     {".ogame.sk", PROTO_OGAME, MMT_STATICSTRING_LEN(".ogame.sk")},
+    {".ogame.com", PROTO_OGAME, MMT_STATICSTRING_LEN(".ogame.com")},
     {".battle-knight.com", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battle-knight.com")},
     {".battle-knight.net", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battle-knight.net")},
     {".battle-knight.org", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battle-knight.org")},
