@@ -139,7 +139,7 @@ static const protocol_match doted_host_names[] = {
     {".netdna.com", PROTO_NETDNA, MMT_STATICSTRING_LEN(".netdna.com"), MMT_CONTENT_CDN},
     {".163.com", PROTO_163, MMT_STATICSTRING_LEN(".163.com")},
     {".360.cn", PROTO_360, MMT_STATICSTRING_LEN(".360.cn")},
-    {".360buy.com", PROTO_360BUY, MMT_STATICSTRING_LEN(".360buy.com")},
+    {".jd.com", PROTO_JD, MMT_STATICSTRING_LEN(".jd.com")},
     {".56.com", PROTO_56, MMT_STATICSTRING_LEN(".56.com")},
     {".888.com", PROTO_888, MMT_STATICSTRING_LEN(".888.com")},
     {".about.com", PROTO_ABOUT, MMT_STATICSTRING_LEN(".about.com")},

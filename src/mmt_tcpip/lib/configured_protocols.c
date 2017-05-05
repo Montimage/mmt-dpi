@@ -44,9 +44,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_360BUY //////////////////
-    if (!init_proto_360buy_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_360buy\n Exiting\n");
+    /////////// INITILIZING PROTO_jd //////////////////
+    if (!init_proto_jd_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_jd\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

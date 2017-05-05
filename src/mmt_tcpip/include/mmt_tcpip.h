@@ -451,7 +451,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_163:
         case PROTO_302_FOUND:
         case PROTO_360:
-        case PROTO_360BUY:
+        case PROTO_JD:
         case PROTO_56:
         case PROTO_ADCASH:
         case PROTO_ADDTHIS:

@@ -1725,7 +1725,7 @@ void mmt_init_classify_me_http() {
     /////// Needs to be updated when new protocols are added ///////
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_163);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_360);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_360BUY);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_JD);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_56);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_888);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ABOUT);

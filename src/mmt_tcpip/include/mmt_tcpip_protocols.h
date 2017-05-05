@@ -16,7 +16,7 @@ extern "C" {
 #define PROTO_163 2
 #define PROTO_360 3
 #define PROTO_302_FOUND 4
-#define PROTO_360BUY 5
+#define PROTO_JD 5
 #define PROTO_56 6
 #define PROTO_8021Q 7
 #define PROTO_888 8
@@ -652,7 +652,7 @@ extern "C" {
 #define PROTO_163_ALIAS "163"
 #define PROTO_360_ALIAS "360"
 #define PROTO_302_FOUND_ALIAS "302_found"
-#define PROTO_360BUY_ALIAS "360buy"
+#define PROTO_JD_ALIAS "jd"
 #define PROTO_56_ALIAS "56"
 #define PROTO_8021Q_ALIAS "8021q"
 #define PROTO_888_ALIAS "888"

@@ -460,8 +460,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_302_FOUND //////////////////
     int init_proto_302_found_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_360BUY //////////////////
-    int init_proto_360buy_struct();
+    /////////// PLUGIN INIT FOR PROTO_jd //////////////////
+    int init_proto_jd_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_56 //////////////////
     int init_proto_56_struct();
