@@ -148,7 +148,7 @@ static const protocol_match doted_host_names[] = {
     {".addthis.com", PROTO_ADDTHIS, MMT_STATICSTRING_LEN(".addthis.com")},
     {".adf.ly", PROTO_ADF, MMT_STATICSTRING_LEN(".adf.ly")},
     {".adobe.com", PROTO_ADOBE, MMT_STATICSTRING_LEN(".adobe.com")},
-    {".afp.com", PROTO_AFP, MMT_STATICSTRING_LEN(".afp.com")},
+    {".afp.net", PROTO_AFP, MMT_STATICSTRING_LEN(".afp.net")},
     {".aim.com", PROTO_AIM, MMT_STATICSTRING_LEN(".aim.com")},
     {".aimini.net", PROTO_AIMINI, MMT_STATICSTRING_LEN(".aimini.net")},
     {".alibaba.com", PROTO_ALIBABA, MMT_STATICSTRING_LEN(".alibaba.com")},
