@@ -377,6 +377,7 @@ static const protocol_match doted_host_names[] = {
     {".nordstrom.com", PROTO_NORDSTROM, MMT_STATICSTRING_LEN(".nordstrom.com")},
     {".nytimes.com", PROTO_NYTIMES, MMT_STATICSTRING_LEN(".nytimes.com")},
     {".odnoklassniki.ru", PROTO_ODNOKLASSNIKI, MMT_STATICSTRING_LEN(".odnoklassniki.ru")},
+    {".ok.ru", PROTO_ODNOKLASSNIKI, MMT_STATICSTRING_LEN(".ok.ru")},
     {".onet.pl", PROTO_ONET, MMT_STATICSTRING_LEN(".onet.pl")},
     {".orangedonkey.net", PROTO_ORANGEDONKEY, MMT_STATICSTRING_LEN(".orangedonkey.net")},
     {".outbrain.com", PROTO_OUTBRAIN, MMT_STATICSTRING_LEN(".outbrain.com")},
