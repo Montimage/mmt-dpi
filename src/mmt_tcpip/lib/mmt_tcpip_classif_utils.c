@@ -691,6 +691,7 @@ static const protocol_match doted_host_names[] = {
     {".battleknight.com.mx", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battleknight.com.mx")},
     {".battleknight.com.pt", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battleknight.com.pt")},
     {".battleknight.com.ve", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battleknight.com.ve")},
+    {".battleknight.com", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battleknight.com")},
     {".battleknight.cz", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battleknight.cz")},
     {".battleknight.de", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battleknight.de")},
     {".battleknight.dk", PROTO_BATTLEKNIGHT, MMT_STATICSTRING_LEN(".battleknight.dk")},
