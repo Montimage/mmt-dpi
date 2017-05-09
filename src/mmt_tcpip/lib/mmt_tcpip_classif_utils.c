@@ -542,6 +542,7 @@ static const protocol_match doted_host_names[] = {
     {".oneworldgroup.org", PROTO_ONEWORLD, MMT_STATICSTRING_LEN(".oneworldgroup.org")},
     {".oneworld.net", PROTO_ONEWORLD, MMT_STATICSTRING_LEN(".oneworld.net")},
     {".oneworld.org", PROTO_ONEWORLD, MMT_STATICSTRING_LEN(".oneworld.org")},
+    {".oneworld.com", PROTO_ONEWORLD, MMT_STATICSTRING_LEN(".oneworld.com")},
     {".disqus.com", PROTO_DISQUS, MMT_STATICSTRING_LEN(".disqus.com")},
     {".blogcu.com", PROTO_BLOGCU, MMT_STATICSTRING_LEN(".blogcu.com")},
     {".ekolay.net", PROTO_EKOLEY, MMT_STATICSTRING_LEN(".ekolay.net")},
