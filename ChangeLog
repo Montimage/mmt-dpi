@@ -2,6 +2,9 @@ RELEASE NOTES
 ---
 
 ## Pre-Version 1.6.8.0
+Version 1.6.7.5
+- Updated all application protocols which based on IP ranges
+
 Version 1.6.7.4
 - Updated all application protocols which based on hostname
 
