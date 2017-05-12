@@ -2,6 +2,7 @@
 #define __MMT_TCPIP_PLUGIN_STRUCTS__
 
 #include "mmt_tcpip_internal_defs_macros.h"
+#define NETMASK_MAX_NB 31
 
 #ifdef MMT_SUPPORT_IPV6
 
@@ -11,6 +12,13 @@ typedef struct {
     int str_len;
     uint32_t content_flags;
 } protocol_match;
+
+typedef struct proto_based_ip_struct {
+    int netmask_nb;
+    uint32_t netmask_address;
+    uint32_t ip_address;
+    int proto_id;
+} proto_based_ip_t;
 
 struct mmt_ip6_addr {
 
