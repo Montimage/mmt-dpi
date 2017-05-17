@@ -46,7 +46,6 @@ void mmt_classify_me_mssql(ipacket_t * ipacket, unsigned index) {
 }
 
 int mmt_check_mssql(ipacket_t * ipacket, unsigned index) {
-    printf("[debug] mmt_check_mssql: %lu, %d\n", ipacket->packet_id, index);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
