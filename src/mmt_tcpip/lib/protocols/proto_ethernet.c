@@ -73,6 +73,13 @@ int ethernet_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
             break;            
+        // IEEE1588           
+        case ETH_P_PPP_IPCP:
+        case ETH_P_PPP_LCP:
+            retval.proto_id = PROTO_PPP;
+            retval.offset = sizeof (struct ethhdr);
+            retval.status = Classified;
+            break; 
             /* Batman */
         case ETH_P_BATMAN:
             retval.proto_id = PROTO_BATMAN;

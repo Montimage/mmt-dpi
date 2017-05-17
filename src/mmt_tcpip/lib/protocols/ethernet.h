@@ -52,6 +52,15 @@ extern "C" {
 #define ETH_P_PTP		0x88F7	/* PTP protocol - IEEE1588*/
 #endif
 
+#ifndef ETH_P_PPP_LCP
+#define ETH_P_PPP_LCP		0xc021	/* PPP LCP*/
+#endif
+
+#ifndef ETH_P_PPP_IPCP
+#define ETH_P_PPP_IPCP		0x8021	/* PPP IPCP*/
+#endif
+
+
     struct ethhdr {
         unsigned char h_dest[ETH_ALEN];
         unsigned char h_source[ETH_ALEN];
