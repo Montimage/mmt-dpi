@@ -43,8 +43,13 @@ extern "C" {
 #ifndef ETH_P_PPPoED
 #define ETH_P_PPPoED      0x8863          /* PPPoE Discovery protocol     */
 #endif
+
 #ifndef ETH_P_PPPoES
 #define ETH_P_PPPoES      0x8864          /* PPPoE Session protocol      */
+#endif
+
+#ifndef ETH_P_PTP
+#define ETH_P_PTP		0x88F7	/* PTP protocol - IEEE1588*/
 #endif
 
     struct ethhdr {
