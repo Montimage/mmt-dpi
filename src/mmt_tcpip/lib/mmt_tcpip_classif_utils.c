@@ -1422,6 +1422,7 @@ static const protocol_match doted_host_names[] = {
     {".www.kongregate.com", PROTO_KONGREGATE, MMT_STATICSTRING_LEN(".www.kongregate.com")},
     {".network.realmedia.com", PROTO_REALMEDIA, MMT_STATICSTRING_LEN(".network.realmedia.com")},
     {".ad.Doubleclick.net", PROTO_DOUBLECLICK, MMT_STATICSTRING_LEN(".ad.Doubleclick.net")},
+    {".foursquare.com", PROTO_FOURSQUARE, MMT_STATICSTRING_LEN(".foursquare.com")},
     { NULL, 0, 0}
 };
 

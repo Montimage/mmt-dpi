@@ -3938,6 +3938,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_oscar, 50); //BW: TODO: the calssification of oscar seems to be for TCP only
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_jabber, 50); //BW: TODO: the calssification of jabber seems to be for TCP only
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn, 50);
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_gtp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn_http, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dns, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_manolito_udp, 50);
