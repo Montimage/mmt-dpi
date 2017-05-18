@@ -60,6 +60,9 @@ extern "C" {
 #define ETH_P_PPP_IPCP		0x8021	/* PPP IPCP*/
 #endif
 
+#ifndef ETH_P_FC
+#define ETH_P_FC		0x8914	/* PROTOCOL FCoE*/
+#endif
 
     struct ethhdr {
         unsigned char h_dest[ETH_ALEN];

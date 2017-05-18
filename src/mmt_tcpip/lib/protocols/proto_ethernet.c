@@ -80,6 +80,12 @@ int ethernet_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
             break; 
+        // FC           
+        case ETH_P_FC:
+            retval.proto_id = PROTO_FC;
+            retval.offset = sizeof (struct ethhdr);
+            retval.status = Classified;
+            break; 
             /* Batman */
         case ETH_P_BATMAN:
             retval.proto_id = PROTO_BATMAN;
