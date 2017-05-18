@@ -4,7 +4,7 @@
 #include "../mmt_common_internal_include.h"
 
 #include "gre.h"
-
+#define GRE_P_PPP  0x880b
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 int gre_c_flag_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
@@ -134,6 +134,12 @@ int gre_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             //ipacket->session->tcp_udp_index = index + 1;
             retval.status = Classified;
             break;
+        // IEEE1588           
+        case GRE_P_PPP:
+            retval.proto_id = PROTO_PPP;
+            retval.offset = 4 + nb_lignes * 4;
+            retval.status = Classified;
+            break; 
         default:
             break;
     }
