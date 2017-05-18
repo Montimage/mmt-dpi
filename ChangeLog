@@ -1,29 +1,19 @@
 RELEASE NOTES
 ---
 
-## Pre-Version 1.6.8.0
-Version 1.6.7.6
+## Version 1.6.8.0
+- Change package name (of .deb file) from mmt-sdk to mmt-dpi
 - Fixed classification of PROTO_MSSQL
 - Added classification of PROTO_PTP over ETHERNET (Need to do for PROTO_PTP Over UDP)
 - Added classification of PROTO_PPP over ETHERNET
 - Added classification of PROTO_FC over ETHERNET
 - Added classification of PROTO_GTP
 - Added classification of PPP over GRE
-
-Version 1.6.7.5
 - Updated all application protocols which based on IP ranges
-
-Version 1.6.7.4
 - Updated all application protocols which based on hostname
-
-Version 1.6.7.3
 - Update with some optimisations in classifying protocol based on hostname and parsing HTTP header value
 - Remove some APIs: unused (register_attribute), need to private (mmt_drop_packet,..)
-
-Version 1.6.7.2
 - Add patch to fix the classification of Application protocol base on hostname
-
-Version 1.6.7.1
 - Extract more HTTP header fields: Connection, Upgrade
 - Cover also the header fields name is lowercase, uppercase, ...
 - Fixed FTP/TCP/IPv6 segmentation fault and some memory leaks in proto_ftp.c
