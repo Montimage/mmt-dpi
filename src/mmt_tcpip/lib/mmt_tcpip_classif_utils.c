@@ -213,7 +213,6 @@ static const protocol_match doted_host_names[] = {
     {".dailymail.co.uk", PROTO_DAILYMAIL, MMT_STATICSTRING_LEN(".dailymail.co.uk")},
     {".deviantart.com", PROTO_DEVIANTART, MMT_STATICSTRING_LEN(".deviantart.com")},
     {".digg.com", PROTO_DIGG, MMT_STATICSTRING_LEN(".digg.com")},
-    {".directconnectauto.com", PROTO_DIRECTCONNECT, MMT_STATICSTRING_LEN(".directconnectauto.com")},
     {".dofus.com", PROTO_DOFUS, MMT_STATICSTRING_LEN(".dofus.com")},
     {".donanimhaber.com", PROTO_DONANIMHABER, MMT_STATICSTRING_LEN(".donanimhaber.com")},
     {".douban.com", PROTO_DOUBAN, MMT_STATICSTRING_LEN(".douban.com")},
