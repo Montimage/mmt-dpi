@@ -479,7 +479,6 @@ static const protocol_match doted_host_names[] = {
     {".ucoz.ru", PROTO_UCOZ, MMT_STATICSTRING_LEN(".ucoz.ru")},
     {".uol.com.br", PROTO_UOL, MMT_STATICSTRING_LEN(".uol.com.br")},
     {".state.gov", PROTO_USDEPARTMENTOFSTATE, MMT_STATICSTRING_LEN(".state.gov")},
-    {".veohtv.co", PROTO_HTTP_APPLICATION_VEOHTV, MMT_STATICSTRING_LEN(".veohtv.co")},
     {".viadeo.com", PROTO_VIADEO, MMT_STATICSTRING_LEN(".viadeo.com")},
     {".viber.com", PROTO_VIBER, MMT_STATICSTRING_LEN(".viber.com")},
     {".cdn.viber.com", PROTO_VIBER, MMT_STATICSTRING_LEN(".viber.com")},
