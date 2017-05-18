@@ -484,7 +484,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_BODYBUILDING:
         case PROTO_BOOKING:
         case PROTO_CBSSPORTS:
-        case PROTO_CENT:
+        case PROTO_CNET:
         case PROTO_CHANGE:
         case PROTO_CHASE:
         case PROTO_BABYLON:

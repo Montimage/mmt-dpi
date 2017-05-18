@@ -195,7 +195,7 @@ static const protocol_match doted_host_names[] = {
     {".booking.com", PROTO_BOOKING, MMT_STATICSTRING_LEN(".booking.com")},
     {".cbssports.com", PROTO_CBSSPORTS, MMT_STATICSTRING_LEN(".cbssports.com")},
     {".cbssportsnetwork.com", PROTO_CBSSPORTS, MMT_STATICSTRING_LEN(".cbssportsnetwork.com")},
-    {".cnet.com", PROTO_CENT, MMT_STATICSTRING_LEN(".cnet.com")},
+    {".cnet.com", PROTO_CNET, MMT_STATICSTRING_LEN(".cnet.com")},
     {".change.org", PROTO_CHANGE, MMT_STATICSTRING_LEN(".change.org")},
     {".chase.com", PROTO_CHASE, MMT_STATICSTRING_LEN(".chase.com")},
     {".chess.com", PROTO_CHESS, MMT_STATICSTRING_LEN(".chess.com")},

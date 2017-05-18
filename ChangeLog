@@ -1,6 +1,11 @@
 RELEASE NOTES
 ---
 
+## Pre-Version 1.6.9.0
+
+Version 1.6.8.1
+- Corrected protocol name PROTO_CENT to PROTO_CNET - classified by hostname cnet.com
+
 ## Version 1.6.8.0
 - Change package name (of .deb file) from mmt-sdk to mmt-dpi
 - Fixed classification of PROTO_MSSQL

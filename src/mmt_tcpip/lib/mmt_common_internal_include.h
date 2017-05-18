@@ -626,8 +626,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_CBSSPORTS //////////////////
     int init_proto_cbssports_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_CENT //////////////////
-    int init_proto_cent_struct();
+    /////////// PLUGIN INIT FOR PROTO_CNET //////////////////
+    int init_proto_cnet_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_CHANGE //////////////////
     int init_proto_change_struct();

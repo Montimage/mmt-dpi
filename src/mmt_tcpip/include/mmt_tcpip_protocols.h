@@ -71,7 +71,7 @@ extern "C" {
 #define PROTO_BODYBUILDING 57
 #define PROTO_BOOKING 58
 #define PROTO_CBSSPORTS 59
-#define PROTO_CENT 60
+#define PROTO_CNET 60
 #define PROTO_CHANGE 61
 #define PROTO_CHASE 62
 #define PROTO_CHESS 63
@@ -707,7 +707,7 @@ extern "C" {
 #define PROTO_BODYBUILDING_ALIAS "bodybuilding"
 #define PROTO_BOOKING_ALIAS "booking"
 #define PROTO_CBSSPORTS_ALIAS "cbssports"
-#define PROTO_CENT_ALIAS "cent"
+#define PROTO_CNET_ALIAS "cent"
 #define PROTO_CHANGE_ALIAS "change"
 #define PROTO_CHASE_ALIAS "chase"
 #define PROTO_CHESS_ALIAS "chess"

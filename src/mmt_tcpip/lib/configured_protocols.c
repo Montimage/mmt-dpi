@@ -374,9 +374,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_CENT //////////////////
-    if (!init_proto_cent_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_cent\n Exiting\n");
+    /////////// INITILIZING PROTO_CNET //////////////////
+    if (!init_proto_cnet_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_cnet\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

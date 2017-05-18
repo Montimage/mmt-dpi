@@ -1771,7 +1771,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BODYBUILDING);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BOOKING);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CBSSPORTS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CENT);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CNET);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CHANGE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CHASE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CHESS);
