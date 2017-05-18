@@ -6,7 +6,9 @@ Version 1.6.7.6
 - Fixed classification of PROTO_MSSQL
 - Added classification of PROTO_PTP over ETHERNET (Need to do for PROTO_PTP Over UDP)
 - Added classification of PROTO_PPP over ETHERNET
+- Added classification of PROTO_FC over ETHERNET
 - Added classification of PROTO_GTP
+- Added classification of PPP over GRE
 
 Version 1.6.7.5
 - Updated all application protocols which based on IP ranges
