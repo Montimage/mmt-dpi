@@ -446,7 +446,7 @@ static const protocol_match doted_host_names[] = {
     {".soso.com", PROTO_SOSO, MMT_STATICSTRING_LEN(".soso.com")},
     {".soulseekqt.net", PROTO_SOULSEEK, MMT_STATICSTRING_LEN(".soulseekqt.net")},
     {".soundcloud.com", PROTO_SOUNDCLOUD, MMT_STATICSTRING_LEN(".soundcloud.com")},
-    {".sourceforge.net", PROTO_SOUCGEFORGE, MMT_STATICSTRING_LEN(".sourceforge.net")},
+    {".sourceforge.net", PROTO_SOURCEFORGE, MMT_STATICSTRING_LEN(".sourceforge.net")},
     {".spiegel.de", PROTO_SPIEGEL, MMT_STATICSTRING_LEN(".spiegel.de")},
     {".sporx.com", PROTO_SPORX, MMT_STATICSTRING_LEN(".sporx.com")},
     {".spotify.com", PROTO_SPOTIFY, MMT_STATICSTRING_LEN(".spotify.com")},
