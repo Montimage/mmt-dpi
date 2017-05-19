@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_sourgeforge_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_SOURGEFORGE, PROTO_SOURGEFORGE_ALIAS);
+int init_proto_sourceforge_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_SOURCEFORGE, PROTO_SOURCEFORGE_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_SOURGEFORGE);
+        return register_protocol(protocol_struct, PROTO_SOURCEFORGE);
     } else {
         return 0;
     }

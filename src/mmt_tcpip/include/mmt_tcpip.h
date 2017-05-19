@@ -628,7 +628,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_SLIDESHARE:
         case PROTO_SOFTONIC:
         case PROTO_SOUNDCLOUD:
-        case PROTO_SOURGEFORGE:
+        case PROTO_SOURCEFORGE:
         case PROTO_SPIEGEL:
         case PROTO_SPORX:
         case PROTO_SQUIDOO:

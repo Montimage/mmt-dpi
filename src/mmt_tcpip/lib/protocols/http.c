@@ -1958,7 +1958,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOSO);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOULSEEK);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOUNDCLOUD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOURGEFORGE);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOURCEFORGE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SPIEGEL);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SPORX);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SPOTIFY);

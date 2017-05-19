@@ -346,7 +346,7 @@ extern "C" {
 #define PROTO_SOSO 331
 #define PROTO_SOULSEEK 332
 #define PROTO_SOUNDCLOUD 333
-#define PROTO_SOURGEFORGE 334
+#define PROTO_SOURGCFORGE 334
 #define PROTO_SPIEGEL 335
 #define PROTO_SPORX 336
 #define PROTO_SPOTIFY 337
@@ -981,7 +981,7 @@ extern "C" {
 #define PROTO_SOSO_ALIAS "soso"
 #define PROTO_SOULSEEK_ALIAS "soulseek"
 #define PROTO_SOUNDCLOUD_ALIAS "soundcloud"
-#define PROTO_SOURGEFORGE_ALIAS "sourgeforge"
+#define PROTO_SOURGCFORGE_ALIAS "sourgeforge"
 #define PROTO_SPIEGEL_ALIAS "spiegel"
 #define PROTO_SPORX_ALIAS "sporx"
 #define PROTO_SPOTIFY_ALIAS "spotify"

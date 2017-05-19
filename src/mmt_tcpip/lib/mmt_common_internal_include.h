@@ -1454,8 +1454,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_SOUNDCLOUD //////////////////
     int init_proto_soundcloud_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_SOURGEFORGE //////////////////
-    int init_proto_sourgeforge_struct();
+    /////////// PLUGIN INIT FOR PROTO_SOURCEFORGE //////////////////
+    int init_proto_sourceforge_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_SPIEGEL //////////////////
     int init_proto_spiegel_struct();

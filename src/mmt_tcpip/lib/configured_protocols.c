@@ -2040,9 +2040,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_SOURGEFORGE //////////////////
-    if (!init_proto_sourgeforge_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_sourgeforge\n Exiting\n");
+    /////////// INITILIZING PROTO_SOURCEFORGE //////////////////
+    if (!init_proto_sourceforge_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_sourceforge\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
