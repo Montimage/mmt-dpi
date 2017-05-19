@@ -473,7 +473,6 @@ static const protocol_match doted_host_names[] = {
     {".tudou.com", PROTO_TUDOU, MMT_STATICSTRING_LEN(".tudou.com")},
     {".tuenti.com", PROTO_TUENTI, MMT_STATICSTRING_LEN(".tuenti.com")},
     {".tumblr.com", PROTO_TUMBLR, MMT_STATICSTRING_LEN(".tumblr.com")},
-    {".tvants.fr", PROTO_TVANTS, MMT_STATICSTRING_LEN(".tvants.fr")},
     {".ustream.tv", PROTO_USTREAM, MMT_STATICSTRING_LEN(".ustream.tv")},
     {".ubi.com", PROTO_UBI, MMT_STATICSTRING_LEN(".ubi.com")},
     {".ucoz.ru", PROTO_UCOZ, MMT_STATICSTRING_LEN(".ucoz.ru")},
