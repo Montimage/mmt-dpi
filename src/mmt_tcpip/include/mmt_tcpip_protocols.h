@@ -572,7 +572,7 @@ extern "C" {
 #define PROTO_ONEWORLD 557
 #define PROTO_DISQUS 558
 #define PROTO_BLOGCU 559
-#define PROTO_EKOLEY 560
+#define PROTO_EKOLAY 560
 #define PROTO_500PX 561
 #define PROTO_FOTKI 562
 #define PROTO_FOTOLOG 563
@@ -1207,7 +1207,7 @@ extern "C" {
 #define PROTO_ONEWORLD_ALIAS "oneworld"
 #define PROTO_DISQUS_ALIAS "disqus"
 #define PROTO_BLOGCU_ALIAS "blogcu"
-#define PROTO_EKOLEY_ALIAS "ekoley"
+#define PROTO_EKOLAY_ALIAS "ekolay"
 #define PROTO_500PX_ALIAS "500px"
 #define PROTO_FOTKI_ALIAS "fotki"
 #define PROTO_FOTOLOG_ALIAS "fotolog"

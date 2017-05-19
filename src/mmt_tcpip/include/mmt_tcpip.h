@@ -700,7 +700,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_ONEWORLD:
         case PROTO_DISQUS:
         case PROTO_BLOGCU:
-        case PROTO_EKOLEY:
+        case PROTO_EKOLAY:
         case PROTO_500PX:
         case PROTO_FOTKI:
         case PROTO_FOTOLOG:

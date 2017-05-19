@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_ekoley_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_EKOLEY, PROTO_EKOLEY_ALIAS);
+int init_proto_ekolay_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_EKOLAY, PROTO_EKOLAY_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_EKOLEY);
+        return register_protocol(protocol_struct, PROTO_EKOLAY);
     } else {
         return 0;
     }

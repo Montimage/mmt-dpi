@@ -2133,8 +2133,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_BLOGCU //////////////////
     int init_proto_blogcu_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_EKOLEY //////////////////
-    int init_proto_ekoley_struct();
+    /////////// PLUGIN INIT FOR PROTO_EKOLaY //////////////////
+    int init_proto_ekolay_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_500PX //////////////////
     int init_proto_500px_struct();

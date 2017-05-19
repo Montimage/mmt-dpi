@@ -3396,9 +3396,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_EKOLEY //////////////////
-    if (!init_proto_ekoley_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_ekoley\n Exiting\n");
+    /////////// INITILIZING PROTO_EKOLaY //////////////////
+    if (!init_proto_ekolay_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_ekolay\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

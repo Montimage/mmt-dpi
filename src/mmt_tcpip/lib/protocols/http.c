@@ -2043,7 +2043,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ONEWORLD);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DISQUS);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BLOGCU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EKOLEY);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EKOLAY);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_500PX);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FOTKI);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FOTOLOG);
