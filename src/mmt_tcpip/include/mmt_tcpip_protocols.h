@@ -758,7 +758,7 @@ extern "C" {
 #define PROTO_FIESTA_ALIAS "fiesta"
 #define PROTO_FILETOPIA_ALIAS "filetopia"
 #define PROTO_FIVERR_ALIAS "fiverr"
-#define PROTO_FLASH_ALIAS "rtmp"
+#define PROTO_FLASH_ALIAS "flash"
 #define PROTO_FLICKR_ALIAS "flickr"
 #define PROTO_FLORENSIA_ALIAS "florensia"
 #define PROTO_FOURSQUARE_ALIAS "foursquare"
