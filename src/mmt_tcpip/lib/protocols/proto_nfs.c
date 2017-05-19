@@ -396,7 +396,10 @@ int nfs_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
 
             if (putfh_opcode == NULL) return 0;
 
-            if (putfh_opcode->opcode != NFS_OPCODE_PUTFH) return 0; // Only focus on call relates to file operations
+            if (putfh_opcode->opcode != NFS_OPCODE_PUTFH) {
+                nfs_opcode_free(putfh_opcode);
+                return 0; // Only focus on call relates to file operations
+            }
             nfs_opcode_free(putfh_opcode);
             int putfh_opcode_length = ntohl(*((unsigned int *) & ipacket->data[current_offset + 4]));
 
