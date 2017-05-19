@@ -22011,7 +22011,7 @@ static avltree_t * proto_avltrees[NETMASK_MAX_NB];
  * Initialize protocol AVL Trees
  */
 void _init_proto_avltrees() {
-    printf("[debug] _init_proto_avltrees ... \n");
+    // printf("[debug] _init_proto_avltrees ... \n");
     int i = 0;
     for (i = 0; i < NETMASK_MAX_NB; i ++) {
         proto_avltrees[i] = 0x0;
@@ -22058,7 +22058,7 @@ int _find_proto_id_by_address(uint32_t ip_address){
 }
 
 void _free_proto_avltrees(){
-    printf("[debug] _free_proto_avltrees ... \n");
+    // printf("[debug] _free_proto_avltrees ... \n");
     int i = 0;
     for (i = 0; i < NETMASK_MAX_NB; i ++) {
         avltree_free_tree(proto_avltrees[i]);
