@@ -707,7 +707,7 @@ extern "C" {
 #define PROTO_BODYBUILDING_ALIAS "bodybuilding"
 #define PROTO_BOOKING_ALIAS "booking"
 #define PROTO_CBSSPORTS_ALIAS "cbssports"
-#define PROTO_CNET_ALIAS "cent"
+#define PROTO_CNET_ALIAS "cnet"
 #define PROTO_CHANGE_ALIAS "change"
 #define PROTO_CHASE_ALIAS "chase"
 #define PROTO_CHESS_ALIAS "chess"
