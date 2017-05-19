@@ -5,6 +5,7 @@ RELEASE NOTES
 
 Version 1.6.8.1
 - Fixed some protocols based on hostname -> there are 8 protocol based on the hostname that does not exist anymore
+- Fixed memory leaks in PROTO_NFS
 
 ## Version 1.6.8.0
 - Change package name (of .deb file) from mmt-sdk to mmt-dpi
