@@ -1079,6 +1079,7 @@ enum{
     NFS_MINORVERSION,
     NFS_FILE_OPCODE,
     NFS_FILE_NAME,
+    NFS_FILE_NEW_NAME,
     NFS_NB_OPERATIONS,
     NFS_ATTRIBUTES_NB = NFS_NB_OPERATIONS
 };
@@ -1093,6 +1094,7 @@ enum{
 #define NFS_MINORVERSION_ALIAS  "minorversion"
 #define NFS_FILE_OPCODE_ALIAS   "file_opcode"
 #define NFS_FILE_NAME_ALIAS   "file_name"
+#define NFS_FILE_NEW_NAME_ALIAS   "file_new_name"
 #define NFS_NB_OPERATIONS_ALIAS "nb_operations"
 
 #ifdef __cplusplus
