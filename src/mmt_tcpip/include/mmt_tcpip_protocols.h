@@ -981,7 +981,7 @@ extern "C" {
 #define PROTO_SOSO_ALIAS "soso"
 #define PROTO_SOULSEEK_ALIAS "soulseek"
 #define PROTO_SOUNDCLOUD_ALIAS "soundcloud"
-#define PROTO_SOURGCFORGE_ALIAS "sourfeforge"
+#define PROTO_SOURCEFORGE_ALIAS "sourceforge"
 #define PROTO_SPIEGEL_ALIAS "spiegel"
 #define PROTO_SPORX_ALIAS "sporx"
 #define PROTO_SPOTIFY_ALIAS "spotify"
