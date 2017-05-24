@@ -3792,7 +3792,7 @@ int mmt_path_format(FILE * f, attribute_internal_t * attr) {
     return -1;
 }
 int mmt_timeval_format(FILE * f, attribute_internal_t * attr) {
-    return fprintf(f, "Attribute %s.%s  = %lu.%lu\n",
+    return fprintf(f, "Attribute %s.%s  = %lu.%06lu\n",
                    get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
 }
 
