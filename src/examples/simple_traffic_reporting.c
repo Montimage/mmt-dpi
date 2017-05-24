@@ -231,7 +231,7 @@ int main(int argc, const char **argv) {
             "RTT, TCP retransmissions, Application Class, Proto Path, Application\n");
     struct timeval tval;
     gettimeofday(&tval, NULL);
-    fprintf(stderr, "Time %lu.%lu\n", tval.tv_sec, tval.tv_usec);
+    fprintf(stderr, "Time %lu.%06lu\n", tval.tv_sec, tval.tv_usec);
     while ((data = pcap_next(pcap, &pkthdr))) {
         header.ts = pkthdr.ts;
         header.caplen = pkthdr.caplen;
@@ -245,7 +245,7 @@ int main(int argc, const char **argv) {
     }
     mmt_close_handler(mmt_handler);
     gettimeofday(&tval, NULL);
-    fprintf(stderr, "Time %lu.%lu\n", tval.tv_sec, tval.tv_usec);
+    fprintf(stderr, "Time %lu.%06lu\n", tval.tv_sec, tval.tv_usec);
     close_extraction();
     pcap_close(pcap);
     printf("Process Terimated successfully\n");

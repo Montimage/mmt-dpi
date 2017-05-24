@@ -3519,7 +3519,7 @@ int mmt_timeval_sprintf(char * buff, int len, attribute_internal_t * attr) {
     //Print as much as it can into buff. If the len is less than the expected strlen, then the
     //return value will be higher than the given length and the user would be able to detect
     //the truncation.
-    return snprintf(buff, len, "%lu.%lu", ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
+    return snprintf(buff, len, "%lu.%06lu", ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
 }
 
 int mmt_binary_sprintf(char * buff, int len, attribute_internal_t * attr) {
@@ -3653,7 +3653,7 @@ int mmt_path_fprintf(FILE * f, attribute_internal_t * attr) {
     return -1;
 }
 int mmt_timeval_fprintf(FILE * f, attribute_internal_t * attr) {
-    return fprintf(f, "%lu.%lu", ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
+    return fprintf(f, "%lu.%06lu", ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
 }
 int mmt_binary_fprintf(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_BINARYVAR_STRLEN];
