@@ -7,7 +7,7 @@
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MMT_MANOLITO_TIMEOUT                120
 
-static uint32_t manolito_subscriber_timeout = MMT_MANOLITO_TIMEOUT; //Is this right or should this be multiplied by Micros in a sec???
+static uint32_t manolito_subscriber_timeout = MMT_MANOLITO_TIMEOUT*1000000; //Is this right or should this be multiplied by Micros in a sec???
 
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -124,7 +124,7 @@ void mmt_classify_me_manolito(ipacket_t * ipacket, unsigned index) {
             } else if (src != NULL
                     && (packet->tick_timestamp - src->manolito_last_pkt_arrival_time) >=
                     manolito_subscriber_timeout) {
-                src->manolito_last_pkt_arrival_time = 0;
+                src->manolito_last_pkt_arrival_time = packet->tick_timestamp;
             }
 
             if (dst != NULL && dst->manolito_last_pkt_arrival_time != 0
@@ -136,7 +136,7 @@ void mmt_classify_me_manolito(ipacket_t * ipacket, unsigned index) {
             } else if (dst != NULL
                     && (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time) >=
                     manolito_subscriber_timeout) {
-                dst->manolito_last_pkt_arrival_time = 0;
+                dst->manolito_last_pkt_arrival_time = packet->tick_timestamp;
             }
 
             if ((packet->payload_packet_len == 20 && htons(0x3d4b) == get_u16(packet->payload, 0)
@@ -205,7 +205,7 @@ int mmt_check_manolito_udp(ipacket_t * ipacket, unsigned index) {
             } else if (src != NULL
                     && (packet->tick_timestamp - src->manolito_last_pkt_arrival_time) >=
                     manolito_subscriber_timeout) {
-                src->manolito_last_pkt_arrival_time = 0;
+                src->manolito_last_pkt_arrival_time = packet->tick_timestamp;
             }
 
             if (dst != NULL && dst->manolito_last_pkt_arrival_time != 0
@@ -217,7 +217,7 @@ int mmt_check_manolito_udp(ipacket_t * ipacket, unsigned index) {
             } else if (dst != NULL
                     && (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time) >=
                     manolito_subscriber_timeout) {
-                dst->manolito_last_pkt_arrival_time = 0;
+                dst->manolito_last_pkt_arrival_time = packet->tick_timestamp;
             }
 
             if ((packet->payload_packet_len == 20 && htons(0x3d4b) == get_u16(packet->payload, 0)
