@@ -11,49 +11,49 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
 static void mmt_int_vnc_add_connection(ipacket_t * ipacket)
 {
-	mmt_internal_add_connection(ipacket, PROTO_VNC, MMT_REAL_PROTOCOL);
-}
-
-/*
-  return 0 if nothing has been detected
-  return 1 if it is a http packet
-*/
-
-void mmt_classify_me_vnc(ipacket_t * ipacket, unsigned index) {
-    
-
-  struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-  struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-
-	if (flow->l4.tcp.vnc_stage == 0) {
-		if (packet->payload_packet_len == 12
-			&& memcmp(packet->payload, "RFB 003.00", 10) == 0 && packet->payload[11] == 0x0a) {
-			MMT_LOG(PROTO_POPO, MMT_LOG_DEBUG, "reached vnc stage one\n");
-			flow->l4.tcp.vnc_stage = 1 + ipacket->session->last_packet_direction;
-			return;
-		}
-	} else if (flow->l4.tcp.vnc_stage == 2 - ipacket->session->last_packet_direction) {
-		if (packet->payload_packet_len == 12
-			&& memcmp(packet->payload, "RFB 003.00", 10) == 0 && packet->payload[11] == 0x0a) {
-			MMT_LOG(PROTO_VNC, MMT_LOG_DEBUG, "found vnc\n");
-			mmt_int_vnc_add_connection(ipacket);
-			return;
-		}
-	}
-	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VNC);
-
+    mmt_internal_add_connection(ipacket, PROTO_VNC, MMT_REAL_PROTOCOL);
 }
 
 int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
+        /* search over TCP */
+        if (packet->tcp) {
 
-        mmt_classify_me_vnc(ipacket, index);
+            if (flow->l4.tcp.vnc_stage == 0) {
+
+                if ((packet->payload_packet_len == 12) &&
+                        ((memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
+                    MMT_LOG(PROTO_VNC, ndpi_struct, NDPI_LOG_DEBUG, "reached vnc stage one\n");
+                    flow->l4.tcp.vnc_stage = 1 + ipacket->session->last_packet_direction;
+                    return 4;
+                }
+            } else if (flow->l4.tcp.vnc_stage == 2 - ipacket->session->last_packet_direction) {
+
+                if ((packet->payload_packet_len == 12) &&
+                        ((memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
+
+                    MMT_LOG(PROTO_VNC, MMT_LOG_DEBUG, "found vnc\n");
+                    mmt_int_vnc_add_connection(ipacket);
+                    return 1;
+                }
+            }
+        }
+        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VNC);
+        // mmt_classify_me_vnc(ipacket, index);
+        return 0;
     }
-    return 4;
+    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VNC);
+    return 0;
 }
 
 void mmt_init_classify_me_vnc() {
@@ -69,7 +69,7 @@ int init_proto_vnc_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_vnc();
-        
+
         return register_protocol(protocol_struct, PROTO_VNC);
     } else {
         return 0;

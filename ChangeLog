@@ -6,6 +6,8 @@ RELEASE NOTES
 Version 1.6.8.1
 - Fixed some protocols based on hostname -> there are 8 protocol based on the hostname that does not exist anymore
 - Fixed memory leaks in PROTO_NFS
+- Fixed classification of PROTO_MANOLITO
+- Fixed classification of PROTO_VNC: classified by port number - 5900, 5901, 5800 - nDPI
 
 ## Version 1.6.8.0
 - Change package name (of .deb file) from mmt-sdk to mmt-dpi
