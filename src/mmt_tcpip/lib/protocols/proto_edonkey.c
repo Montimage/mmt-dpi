@@ -19,6 +19,128 @@ static uint32_t edonkey_upper_ports_only = MMT_EDONKEY_UPPER_PORTS_ONLY;
 static uint32_t edonkey_safe_mode = MMT_PROTOCOL_PLAIN_DETECTION; //BW TODO: Check this out
 */
 
+static int mmt_edonkey_payload_check(const u_int8_t *data, u_int32_t len) {
+  
+  if ((len >= 4) && (data[0] == 0xe3) && (data[2] == 0x00) && (data[3] == 0x00))
+    return 1;
+  
+  if ((len >= 4) && (data[0] == 0xc5) && (data[2] == 0x00) && (data[3] == 0x00))
+    return 1;  
+  
+  if ((len >= 2) && (data[0] == 0xe5) && (data[1] == 0x43))
+    return 1;
+  
+  if ((len >= 4) && (data[0] == 0xe5) && (data[1] == 0x08) && (data[2] == 0x78) && (data[3] == 0xda))
+    return 1;
+
+  if ((len >= 4) && (data[0] == 0xe5) && (data[1] == 0x28) && (data[2] == 0x78) && (data[3] == 0xda))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xc5) && (data[1] == 0x90))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xc5) && (data[1] == 0x91))
+    return 1;
+
+  if ((len == 2) && (data[0] == 0xc5) && (data[1] == 0x92))
+    return 1;
+
+  if ((len == 2) && (data[0] == 0xc5) && (data[1] == 0x93))
+    return 1;
+
+  if ((len >= 38 && len <= 70) && (data[0] == 0xc5) && (data[1] == 0x94))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xe3) && (data[1] == 0x9a))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xe3) && (data[1] == 0x9b))
+    return 1;
+
+  if ((len == 6) && (data[0] == 0xe3) && (data[1] == 0x96))
+    return 1;
+
+  if ((len <= 34 && ((len - 2) % 4 == 0)) && (data[0] == 0xe3) && (data[1] == 0x97))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xe3) && (data[1] == 0x92))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xe3) && (data[1] == 0x94))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xe3) && (data[1] == 0x98))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xe3) && (data[1] == 0x99))
+    return 1;
+
+  if ((len == 6) && (data[0] == 0xe3) && (data[1] == 0xa2))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xe3) && (data[1] == 0xa3))
+    return 1;
+
+  if ((len == 27) && (data[0] == 0xe4) && (data[1] == 0x00))
+    return 1;
+
+  if ((len == 529) && (data[0] == 0xe4) && (data[1] == 0x08))
+    return 1;
+
+  if ((len == 18) && (data[0] == 0xe4) && (data[1] == 0x01) && (data[2] == 0x00) && (data[3] == 0x00))
+    return 1;
+
+  if ((len == 523) && (data[0] == 0xe4) && (data[1] == 0x09))
+    return 1;
+
+  if ((len == 35) && (data[0] == 0xe4) && (data[1] == 0x21))
+    return 1;
+
+  if ((len == 19) && (data[0] == 0xe4) && (data[1] == 0x4b))
+    return 1;
+
+  if ((len >= 2) && (data[0] == 0xe4) && (data[1] == 0x11))
+    return 1;
+
+  if ((len == 22 || len == 38 || len == 28) && (data[0] == 0xe4) && (data[1] == 0x19))
+    return 1;
+
+  if ((len == 35) && (data[0] == 0xe4) && (data[1] == 0x20))
+    return 1;
+
+  if ((len == 27) && (data[0] == 0xe4) && (data[1] == 0x18))
+    return 1;
+
+  if ((len == 27) && (data[0] == 0xe4) && (data[1] == 0x10))
+    return 1;
+
+  if ((len == 6) && (data[0] == 0xe4) && (data[1] == 0x58))
+    return 1;
+
+  if ((len == 4) && (data[0] == 0xe4) && (data[1] == 0x50))
+    return 1;
+
+  if ((len == 36) && (data[0] == 0xe4) && (data[1] == 0x52))
+    return 1;
+
+  if ((len == 48) && (data[0] == 0xe4) && (data[1] == 0x40))
+    return 1;
+
+  if ((len == 225) && (data[0] == 0xe4) && (data[1] == 0x43))
+    return 1;
+
+  if ((len == 19) && (data[0] == 0xe4) && (data[1] == 0x48))
+    return 1;
+
+  if ((len == 119 || len == 69 || len == 294) && (data[0] == 0xe4) && (data[1] == 0x29))
+    return 1;
+
+  if ((len == 119 || len == 69 || len == 294 || len == 44 || len == 269) && (data[0] == 0xe4) && (data[1] == 0x28))
+    return 1;
+
+  return 0;
+}
+
 static void mmt_add_connection_as_edonkey(ipacket_t * ipacket, const uint8_t save_detection, const uint8_t encrypted_connection) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -65,7 +187,7 @@ static uint8_t check_edk_len(const uint8_t * payload, uint16_t payload_packet_le
     return 0;
 }
 
-static void mmt_int_edonkey_tcp(ipacket_t * ipacket) {
+int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
 
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -87,7 +209,7 @@ static void mmt_int_edonkey_tcp(ipacket_t * ipacket) {
 
     /* skip excluded connections */
     if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY) != 0)
-        return;
+        return 0;
 
     /* source and dst port must be 80 443 or > 1024 */
     if (edonkey_upper_ports_only != 0) {
@@ -104,11 +226,11 @@ static void mmt_int_edonkey_tcp(ipacket_t * ipacket) {
 
     /* return here for empty packets, we needed them only for bt port detection */
     if (packet->payload_packet_len == 0)
-        return;
+        return 4;
 
     /* skip marked packets */
     if (flow->edk_stage == 0 && packet->detected_protocol_stack[0] != PROTO_UNKNOWN)
-        return;
+        return 4;
 
     //Check with local protos
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -118,12 +240,12 @@ static void mmt_int_edonkey_tcp(ipacket_t * ipacket) {
     app = check_local_proto_by_port_nb(packet->tcp->dest, &dst->local_protos);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
-        return;
+        return 1; 
     }
     app = check_local_proto_by_port_nb(packet->tcp->source, &src->local_protos);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
-        return;
+        return 1;
     }
 
     /* first: check for unencrypted traffic */
@@ -138,7 +260,7 @@ static void mmt_int_edonkey_tcp(ipacket_t * ipacket) {
                 MMT_LOG_EDONKEY(PROTO_EDONKEY, MMT_LOG_DEBUG,
                         "edk hello meta tag recognized\n");
                 flow->edk_stage = 16 + ipacket->session->last_packet_direction;
-                return;
+                return 4;
             }
         }
     }
@@ -163,7 +285,7 @@ static void mmt_int_edonkey_tcp(ipacket_t * ipacket) {
                     MMT_LOG_DEBUG, "edk 17: detected plain detection\n");
             mmt_add_connection_as_edonkey(ipacket,
                     MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
-            return;
+            return 1;
         }
 
         MMT_LOG_EDONKEY(PROTO_EDONKEY, MMT_LOG_DEBUG,
@@ -174,16 +296,16 @@ exclude_edk_tcp:
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY);
 
-    return;
+    return 0;
 }
 
-static void mmt_int_edonkey_udp(ipacket_t * ipacket) {
+int mmt_int_edonkey_udp(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
     /* skip excluded connections */
     if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY) != 0)
-        return;
+        return 0;
 
     /* source and dst port must be 80 443 or > 1024 */
     if (edonkey_upper_ports_only != 0) {
@@ -200,11 +322,11 @@ static void mmt_int_edonkey_udp(ipacket_t * ipacket) {
 
     /* return here for empty packets, we needed them only for bt port detection */
     if (packet->payload_packet_len == 0)
-        return;
+        return 4;
 
     /* skip marked packets */
     if (flow->edk_stage == 0 && packet->detected_protocol_stack[0] != PROTO_UNKNOWN)
-        return;
+        return 4;
 
     //Check with local protos
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -214,12 +336,12 @@ static void mmt_int_edonkey_udp(ipacket_t * ipacket) {
     app = check_local_proto_by_port_nb(packet->udp->dest, &dst->local_protos);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
-        return;
+        return 1;
     }
     app = check_local_proto_by_port_nb(packet->udp->source, &src->local_protos);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
-        return;
+        return 1;
     }
 
     if ((packet->payload_packet_len >= 19) && (packet->payload[0] == 0xe4)) {
@@ -240,22 +362,27 @@ static void mmt_int_edonkey_udp(ipacket_t * ipacket) {
         }
     }
 
+    if(packet->payload_packet_len == 6 && mmt_edonkey_payload_check(packet->payload,packet->payload_packet_len)){
+        mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
+        return 1;
+    }
+
     if (flow->edk_stage >= 6) { //This is edonkey flow
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
-        return;
+        return 1;
     }
 
     if (ipacket->session->data_packet_count > 10) {
         goto exclude_edk_udp;
     } else {
-        return; //Wait next packet
+        return 4; //Wait next packet
     }
 
 exclude_edk_udp:
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY);
 
-    return;
+    return 0;
 }
 
 void mmt_classify_me_edonkey(ipacket_t * ipacket, unsigned index) {
@@ -276,11 +403,9 @@ int mmt_check_edonkey(ipacket_t * ipacket, unsigned index) {
         if (packet->detected_protocol_stack[0] != PROTO_EDONKEY) {
             /* check for retransmission here */
             if (packet->tcp != NULL && packet->tcp_retransmission == 0) {
-                mmt_int_edonkey_tcp(ipacket);
-                return 4;
+                return mmt_int_edonkey_tcp(ipacket);
             } else if (packet->udp != NULL) {
-                mmt_int_edonkey_udp(ipacket);
-                return 4;
+                return mmt_int_edonkey_udp(ipacket);
             }
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_EDONKEY);
