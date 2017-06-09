@@ -130,7 +130,7 @@ int mmt_check_usenet(ipacket_t * ipacket, unsigned index) {
 void mmt_init_classify_me_usenet() {
     selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_RDP);
+    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_USENET);
 }
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
