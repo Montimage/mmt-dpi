@@ -93,7 +93,7 @@ static void mmt_int_directconnect_add_connection(ipacket_t * ipacket, const uint
     }
 }
 
-static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
+int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
     
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -131,7 +131,7 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
 
 
         }
-        return;
+        return 4;
 
     }
     if (src != NULL) {
@@ -143,12 +143,12 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 src->directconnect_last_safe_access_time = packet->tick_timestamp;
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "marking using dc port\n %d", ntohs(src->detected_directconnect_port));
-                return;
+                return 4;
             } else {
                 src->detected_directconnect_port = 0;
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "resetting src port due to timeout");
-                return;
+                return 4;
             }
         }
         if (src->detected_directconnect_ssl_port == packet->tcp->dest) {
@@ -159,12 +159,12 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 src->directconnect_last_safe_access_time = packet->tick_timestamp;
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "marking using dc port\n %d", ntohs(src->detected_directconnect_ssl_port));
-                return;
+                return 4;
             } else {
                 src->detected_directconnect_ssl_port = 0;
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "resetting src port due to timeout");
-                return;
+                return 4;
             }
         }
 
@@ -179,12 +179,12 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 dst->directconnect_last_safe_access_time = packet->tick_timestamp;
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "marking using dc port\n %d", ntohs(dst->detected_directconnect_port));
-                return;
+                return 4;
             } else {
                 dst->detected_directconnect_port = 0;
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "resetting dst port due to timeout");
-                return;
+                return 4;
             }
         }
         if (dst->detected_directconnect_ssl_port == packet->tcp->dest) {
@@ -196,12 +196,12 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "marking using dc port\n %d", ntohs(dst->detected_directconnect_ssl_port));
 
-                return;
+                return 4;
             } else {
                 dst->detected_directconnect_ssl_port = 0;
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "resetting dst port due to timeout");
-                return;
+                return 4;
             }
         }
 
@@ -216,7 +216,7 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "maybe first dc connect to hub  detected\n");
                 flow->directconnect_stage = 1;
-                return;
+                return 4;
             }
             if (packet->payload_packet_len > 7
                     && packet->payload[0] == '$'
@@ -225,7 +225,7 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "maybe first dc connect between peers  detected\n");
                 flow->directconnect_stage = 2;
-                return;
+                return 4;
             }
 
         }
@@ -236,14 +236,14 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS0 E\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_HUB);
-                return;
+                return 1;
                 /* did not see this pattern in any trace */
             } else if (memcmp(&packet->payload[0], "CSUP ADBAS0", 11) == 0 ||
                     memcmp(&packet->payload[0], "CSUP ADBASE", 11) == 0) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "found directconnect CSUP ADBAS0 E\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_ADC_PEER);
-                return;
+                return 1;
 
             }
 
@@ -258,7 +258,7 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS E in second packet\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_HUB);
 
-                return;
+                return 1;
                 /* did not see this pattern in any trace */
             } else if (memcmp(&packet->payload[0], "CSUP ADBAS0", 11) == 0 ||
                     memcmp(&packet->payload[0], "CSUP ADBASE", 11) == 0) {
@@ -267,7 +267,7 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_ADC_PEER);
 
 
-                return;
+                return 1;
 
             }
         }
@@ -278,7 +278,7 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 MMT_LOG(PROTO_DIRECTCONNECT, MMT_LOG_DEBUG, "second dc detected\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_HUB);
 
-                return;
+                return 1;
             } else {
                 MMT_LOG(PROTO_DIRECTCONNECT, MMT_LOG_DEBUG, "second dc not detected\n");
             }
@@ -294,7 +294,7 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
 
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_PEER);
 
-                return;
+                return 1;
             } else {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "second dc between peers not detected\n");
@@ -305,10 +305,10 @@ static void mmt_search_directconnect_tcp(ipacket_t * ipacket) {
 
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DIRECTCONNECT);
-
+    return 0;
 }
 
-static void mmt_search_directconnect_udp(ipacket_t * ipacket) {
+int mmt_search_directconnect_udp(ipacket_t * ipacket) {
     
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -326,18 +326,18 @@ static void mmt_search_directconnect_udp(ipacket_t * ipacket) {
             dst->directconnect_last_safe_access_time = packet->tick_timestamp;
             MMT_LOG(PROTO_DIRECTCONNECT, 
                     MMT_LOG_DEBUG, "marking using dc udp port\n %d", ntohs(dst->detected_directconnect_udp_port));
-            return;
+            return 4;
         } else {
             dst->detected_directconnect_udp_port = 0;
             MMT_LOG(PROTO_DIRECTCONNECT, 
                     MMT_LOG_DEBUG, "resetting dst udp  port due to timeout");
-            return;
+            return 4;
         }
     }
 
     if (packet->payload_packet_len > 58) {
         if (src != NULL
-                && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_DIRECTCONNECT)) {
+                && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_DIRECTCONNECT)==0) {
             if (packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
                     && memcmp(&packet->payload[1], "SR ", 3) == 0) {
@@ -352,7 +352,7 @@ static void mmt_search_directconnect_udp(ipacket_t * ipacket) {
                         if (pos > 2 && memcmp(&packet->payload[pos], "TTH:", 4) == 0) {
                             MMT_LOG(PROTO_DIRECTCONNECT, MMT_LOG_DEBUG, "dc udp detected\n");
                             mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_PEER);
-                            return;
+                            return 1;
                         }
                     }
                 }
@@ -361,14 +361,14 @@ static void mmt_search_directconnect_udp(ipacket_t * ipacket) {
                 if (flow->directconnect_stage < 3) {
 
 
-                    return;
+                    return 4;
                 }
 
             }
 
         }
         if (dst != NULL
-                && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_DIRECTCONNECT)) {
+                && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_DIRECTCONNECT)==0) {
             if (packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
                     && memcmp(&packet->payload[1], "SR ", 3) == 0) {
@@ -383,13 +383,13 @@ static void mmt_search_directconnect_udp(ipacket_t * ipacket) {
                         if (pos > 2 && memcmp(&packet->payload[pos], "TTH:", 4) == 0) {
                             MMT_LOG(PROTO_DIRECTCONNECT, MMT_LOG_DEBUG, "dc udp detected\n");
                             mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_PEER);
-                            return;
+                            return 1;
                         }
                     }
                 }
                 flow->directconnect_stage++;
                 if (flow->directconnect_stage < 3)
-                    return;
+                    return 4;
 
             }
         }
@@ -398,11 +398,9 @@ static void mmt_search_directconnect_udp(ipacket_t * ipacket) {
     MMT_LOG(PROTO_DIRECTCONNECT, MMT_LOG_DEBUG,
             "excluded at stage %d \n", flow->directconnect_stage);
 
-
-
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DIRECTCONNECT);
 
-
+    return 0;
 }
 
 void mmt_classify_me_directconnect(ipacket_t * ipacket, unsigned index) {
@@ -470,7 +468,7 @@ int mmt_check_directconnect_tcp(ipacket_t * ipacket, unsigned index) {
             return 4;
         }
 
-        mmt_search_directconnect_tcp(ipacket);
+        return mmt_search_directconnect_tcp(ipacket);
     }
     return 4;
 }
@@ -505,15 +503,15 @@ int mmt_check_directconnect_udp(ipacket_t * ipacket, unsigned index) {
             return 4;
         }
 
-        mmt_search_directconnect_udp(ipacket);
+        return mmt_search_directconnect_udp(ipacket);
     }
     return 4;
 }
 
 void mmt_init_classify_me_directconnect() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
+    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_RDP);
+    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_DIRECTCONNECT);
 }
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
