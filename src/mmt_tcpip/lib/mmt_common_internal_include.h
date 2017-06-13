@@ -160,7 +160,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     void mmt_classify_me_i23v5(ipacket_t * ipacket, unsigned index);
     void mmt_classify_me_socrates(ipacket_t * ipacket, unsigned index);
     /* soulseek entry function*/
-    void mmt_classify_me_soulseek_tcp(ipacket_t * ipacket, unsigned index);
+    // void mmt_classify_me_soulseek_tcp(ipacket_t * ipacket, unsigned index);
     /* msn entry function*/
     void mmt_classify_me_msn(ipacket_t * ipacket, unsigned index);
     /* yahoo entry function*/
