@@ -323,7 +323,9 @@ unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
         else if (MMT_PORT_MATCH(sport, dport, 554)) return (PROTO_RTSP);
         else if (MMT_PORT_MATCH(sport, dport, 5900)) return (PROTO_VNC);
         else if (MMT_PORT_MATCH(sport, dport, 5901)) return (PROTO_VNC);
-        else if (MMT_PORT_MATCH(sport, dport, 5800)) return (PROTO_VNC);  
+        else if (MMT_PORT_MATCH(sport, dport, 5800)) return (PROTO_VNC);
+        else if (MMT_PORT_MATCH(sport, dport, 8080) || MMT_PORT_MATCH(sport, dport, 3128)) return (PROTO_HTTP_PROXY);
+        else if (MMT_PORT_MATCH(sport, dport, 1494) || MMT_PORT_MATCH(sport, dport, 2598)) return (PROTO_CITRIX); /* http://support.citrix.com/article/CTX104147 */
     } else if(packet->udp) {
         sport = htons(packet->udp->source);
         dport = htons(packet->udp->dest);
