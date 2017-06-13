@@ -30,7 +30,7 @@ static void mmt_int_thunder_add_connection(ipacket_t * ipacket, mmt_protocol_typ
 
 
 
-static void mmt_int_search_thunder_udp(ipacket_t * ipacket)
+int mmt_int_search_thunder_udp(ipacket_t * ipacket)
 {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -40,23 +40,24 @@ static void mmt_int_search_thunder_udp(ipacket_t * ipacket)
         if (flow->thunder_stage == 3) {
             MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG, "THUNDER udp detected\n");
             mmt_int_thunder_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            return;
+            return 1;
         }
 
         flow->thunder_stage++;
         MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
                 "maybe thunder udp packet detected, stage increased to %u\n", flow->thunder_stage);
-        return;
+        return 4;
     }
 
     MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
             "excluding thunder udp at stage %u\n", flow->thunder_stage);
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_THUNDER);
+    return 0;
 }
 
 
-static void mmt_int_search_thunder_tcp(ipacket_t * ipacket)
+int mmt_int_search_thunder_tcp(ipacket_t * ipacket)
 {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -66,13 +67,13 @@ static void mmt_int_search_thunder_tcp(ipacket_t * ipacket)
         if (flow->thunder_stage == 3) {
             MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG, "THUNDER tcp detected\n");
             mmt_int_thunder_add_connection(ipacket, MMT_REAL_PROTOCOL);
-            return;
+            return 1;
         }
 
         flow->thunder_stage++;
         MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
                 "maybe thunder tcp packet detected, stage increased to %u\n", flow->thunder_stage);
-        return;
+        return 4;
     }
 
     if (flow->thunder_stage == 0 && packet->payload_packet_len > 17
@@ -96,17 +97,19 @@ static void mmt_int_search_thunder_tcp(ipacket_t * ipacket)
             MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
                     "maybe thunder http POST packet application does match\n");
             mmt_int_thunder_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
-            return;
+            return 1;
         }
+        return 4;
     }
     MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
             "excluding thunder tcp at stage %u\n", flow->thunder_stage);
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_THUNDER);
+    return 0;
 }
 
 
-static void mmt_int_search_thunder_http(ipacket_t * ipacket)
+int mmt_int_search_thunder_http(ipacket_t * ipacket)
 {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     /* unused
@@ -128,7 +131,7 @@ static void mmt_int_search_thunder_http(ipacket_t * ipacket)
                     "thunder : save dst connection packet detected\n");
             dst->thunder_ts = packet->tick_timestamp;
         }
-        return;
+        return 4;
     }
 
     if (packet->payload_packet_len > 5
@@ -155,8 +158,10 @@ static void mmt_int_search_thunder_http(ipacket_t * ipacket)
             MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG,
                     "Thunder HTTP download detected, adding flow.\n");
             mmt_int_thunder_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
+            return 1;
         }
     }
+    return 4;
 }
 
 void mmt_classify_me_thunder(ipacket_t * ipacket, unsigned index) {
@@ -175,9 +180,12 @@ int mmt_check_thunder_tcp(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
-        mmt_int_search_thunder_http(ipacket); //BW: TODO: avoid this double classification, if Thunder is detected in HTTP avoid checking in tcp
-        mmt_int_search_thunder_tcp(ipacket);
+        int over_http = mmt_int_search_thunder_http(ipacket);
+        if(over_http == 1){
+            return over_http;
+            
+        }; //BW: TODO: avoid this double classification, if Thunder is detected in HTTP avoid checking in tcp
+        return mmt_int_search_thunder_tcp(ipacket);
     }
     return 4;
 }
@@ -188,7 +196,7 @@ int mmt_check_thunder_udp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_int_search_thunder_udp(ipacket);
+        return mmt_int_search_thunder_udp(ipacket);
 
     }
     return 4;
