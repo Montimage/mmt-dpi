@@ -114,9 +114,10 @@ int mmt_check_i23v5(ipacket_t * ipacket, unsigned index) {
                 }
             }
             if (flow->i23v5_len1 != 0 && flow->i23v5_len2 != 0 && flow->i23v5_len3 != 0) {
+                sum = flow->i23v5_len1 + flow->i23v5_len2 + flow->i23v5_len3;
                 for (i = 3; i < packet->payload_packet_len - 5; i++) {
-                    sum = flow->i23v5_len1 + flow->i23v5_len2 + flow->i23v5_len3;
-                    if (get_u32(packet->payload, i) == sum) {
+                    uint32_t ret = get_u32(packet->payload, i);
+                    if (ret == sum) {
                         MMT_LOG(PROTO_I23V5, MMT_LOG_DEBUG, "key sum matches.\n");
                         mmt_i23v5_add_connection(ipacket);
                         return 1;
