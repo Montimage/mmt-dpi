@@ -14,6 +14,7 @@ Version 1.6.8.1
 - Fixed the classification of PROTO_I23V5
 - Fixed the classification of PROTO_DIRECTCONNECT
 - Fixed the classification of some protocols based on port number
+- Fixed the classification of PROTO_SOULSEEK
 
 
 ## Version 1.6.8.0
