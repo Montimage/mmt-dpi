@@ -549,7 +549,7 @@ static const protocol_match doted_host_names[] = {
     {".fotki.com", PROTO_FOTKI, MMT_STATICSTRING_LEN(".fotki.com")},
     {".fotolog.com", PROTO_FOTOLOG, MMT_STATICSTRING_LEN(".fotolog.com")},
     {".jalbum.net", PROTO_JALBUM, MMT_STATICSTRING_LEN(".jalbum.net")},
-    {".lockerz.com", PROTO_LOCKERZ, MMT_STATICSTRING_LEN(".lockerz.com")},
+    {".lemonde.fr", PROTO_LEMONDE, MMT_STATICSTRING_LEN(".lemonde.fr")},
     {".panoramio.com", PROTO_PANORAMIO, MMT_STATICSTRING_LEN(".panoramio.com")},
     {".snapfish.fr", PROTO_SNAPFISH, MMT_STATICSTRING_LEN(".snapfish.fr")},
     {".snapfish.com", PROTO_SNAPFISH, MMT_STATICSTRING_LEN(".snapfish.com")},

@@ -705,7 +705,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_FOTKI:
         case PROTO_FOTOLOG:
         case PROTO_JALBUM:
-        case PROTO_LOCKERZ:
+        case PROTO_LEMONDE:
         case PROTO_PANORAMIO:
         case PROTO_SNAPFISH:
         case PROTO_WEBSHOTS:

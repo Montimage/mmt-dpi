@@ -577,7 +577,7 @@ extern "C" {
 #define PROTO_FOTKI 562
 #define PROTO_FOTOLOG 563
 #define PROTO_JALBUM 564
-#define PROTO_LOCKERZ 565
+#define PROTO_LEMONDE 565
 #define PROTO_PANORAMIO 566
 #define PROTO_SNAPFISH 567
 #define PROTO_WEBSHOTS 568
@@ -1212,7 +1212,7 @@ extern "C" {
 #define PROTO_FOTKI_ALIAS "fotki"
 #define PROTO_FOTOLOG_ALIAS "fotolog"
 #define PROTO_JALBUM_ALIAS "jalbum"
-#define PROTO_LOCKERZ_ALIAS "lockerz"
+#define PROTO_LEMONDE_ALIAS "lemonde"
 #define PROTO_PANORAMIO_ALIAS "panoramio"
 #define PROTO_SNAPFISH_ALIAS "snapfish"
 #define PROTO_WEBSHOTS_ALIAS "webshots"

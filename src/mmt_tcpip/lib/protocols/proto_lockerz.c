@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_lockerz_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_LOCKERZ, PROTO_LOCKERZ_ALIAS);
+int init_proto_lemonde_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_LEMONDE, PROTO_LEMONDE_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_LOCKERZ);
+        return register_protocol(protocol_struct, PROTO_LEMONDE);
     } else {
         return 0;
     }

@@ -3426,9 +3426,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_LOCKERZ //////////////////
-    if (!init_proto_lockerz_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_lockerz\n Exiting\n");
+    /////////// INITILIZING PROTO_LEMONDE //////////////////
+    if (!init_proto_lemonde_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_LEMONDE\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

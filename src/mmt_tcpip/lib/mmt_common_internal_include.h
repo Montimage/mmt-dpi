@@ -2148,8 +2148,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_JALBUM //////////////////
     int init_proto_jalbum_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_LOCKERZ //////////////////
-    int init_proto_lockerz_struct();
+    /////////// PLUGIN INIT FOR PROTO_LEMONDE //////////////////
+    int init_proto_lemonde_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_PANORAMIO //////////////////
     int init_proto_panoramio_struct();

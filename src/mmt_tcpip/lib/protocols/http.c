@@ -2048,7 +2048,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FOTKI);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FOTOLOG);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_JALBUM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LOCKERZ);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LEMONDE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PANORAMIO);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SNAPFISH);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WEBSHOTS);
