@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+## Pre-Version 1.6.10.0
+- Replace the 8 dead hostname protocols by new protocols from top 50 in France
+- Add classification function to 25 unknown protocols
+
 
 ## Version 1.6.9.0
 - Fixed some protocols based on hostname -> there are 8 protocol based on the hostname that does not exist anymore
