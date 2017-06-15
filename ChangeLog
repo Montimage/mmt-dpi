@@ -1,9 +1,7 @@
 RELEASE NOTES
 ---
 
-## Pre-Version 1.6.9.0
-
-Version 1.6.8.1
+## Version 1.6.9.0
 - Fixed some protocols based on hostname -> there are 8 protocol based on the hostname that does not exist anymore
 - Fixed memory leaks in PROTO_NFS
 - Fixed classification of PROTO_MANOLITO
