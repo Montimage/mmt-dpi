@@ -1817,8 +1817,8 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
 
     ndn_session->s_last_activity_time->tv_sec = ipacket->p_hdr->ts.tv_sec;
     ndn_session->s_last_activity_time->tv_usec = ipacket->p_hdr->ts.tv_usec; 
-    // debug("\nNDN/NDN_HTTP: Update last activity time: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->s_last_activity_time->tv_sec,ndn_session->s_last_activity_time->tv_usec);
-    // debug("\nNDN/NDN_HTTP: Last reported time: %lu Time: %lu.%lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
+    // debug("\nNDN/NDN_HTTP: Update last activity time: %lu Time: %lu.%06lu",ndn_session->session_id,ndn_session->s_last_activity_time->tv_sec,ndn_session->s_last_activity_time->tv_usec);
+    // debug("\nNDN/NDN_HTTP: Last reported time: %lu Time: %lu.%06lu",ndn_session->session_id,ndn_session->last_reported_time->tv_sec,ndn_session->last_reported_time->tv_usec);
     ///--- UPDATE SESSION DATA --- ///
     
     ndn_session->current_direction = direction;

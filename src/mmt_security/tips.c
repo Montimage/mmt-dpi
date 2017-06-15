@@ -430,7 +430,7 @@ char *get_my_data(void *data1, short size, long type) {
         case MMT_DATA_TIMEVAL:
             // TODO
             t1 = *(struct timeval *) (data1);
-            (void)sprintf(buff1, "%lu.%lu", t1.tv_sec, (long) t1.tv_usec);
+            (void)sprintf(buff1, "%lu.%06lu", t1.tv_sec, (long) t1.tv_usec);
             break;
         case MMT_DATA_IP_ADDR:
             // TODO
@@ -1983,7 +1983,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     tvp.tv_usec=0;
     tvp = *(struct timeval *) get_attribute_extracted_data(pkt, PROTO_META, META_UTIME);
 
-    (void)sprintf(json_buff, "\"timestamp\":%lu.%lu", tvp.tv_sec, (long) tvp.tv_usec);
+    (void)sprintf(json_buff, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (long) tvp.tv_usec);
 
     int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
     const char *proto_name, *att_name;
