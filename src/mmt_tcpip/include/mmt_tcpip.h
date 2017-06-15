@@ -552,7 +552,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_I23V5:
         case PROTO_IKEA:
         case PROTO_IMGUR:
-        case PROTO_INCREDIBAR:
+        case PROTO_LEBONCOIN:
         case PROTO_INDIATIMES:
         case PROTO_IRS:
         case PROTO_JAPANPOST:

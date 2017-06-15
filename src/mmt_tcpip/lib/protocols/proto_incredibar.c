@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_incredibar_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_INCREDIBAR, PROTO_INCREDIBAR_ALIAS);
+int init_proto_leboncoin_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_LEBONCOIN, PROTO_LEBONCOIN_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_INCREDIBAR);
+        return register_protocol(protocol_struct, PROTO_LEBONCOIN);
     } else {
         return 0;
     }

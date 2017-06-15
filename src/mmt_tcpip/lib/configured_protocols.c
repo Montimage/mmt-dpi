@@ -1086,9 +1086,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_INCREDIBAR //////////////////
-    if (!init_proto_incredibar_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_incredibar\n Exiting\n");
+    /////////// INITILIZING PROTO_LEBONCOIN //////////////////
+    if (!init_proto_leboncoin_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_leboncoin\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

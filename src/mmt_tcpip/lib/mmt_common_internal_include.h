@@ -977,8 +977,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_IMGUR //////////////////
     int init_proto_imgur_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_INCREDIBAR //////////////////
-    int init_proto_incredibar_struct();
+    /////////// PLUGIN INIT FOR PROTO_LEBONCOIN //////////////////
+    int init_proto_leboncoin_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_INDIATIMES //////////////////
     int init_proto_indiatimes_struct();
