@@ -785,7 +785,7 @@ extern "C" {
 #define PROTO_GOOGLE_USER_CONTENT_ALIAS "google_user_content"
 #define PROTO_GOSMS_ALIAS "gosms"
 #define PROTO_GRE_ALIAS "gre"
-#define PROTO_GROOVESHARK_ALIAS "grooveshark"
+#define PROTO_GROOVESHARK_ALIAS "groovesharks"
 #define PROTO_GROUPON_ALIAS "groupon"
 #define PROTO_GTALK_ALIAS "gtalk"
 #define PROTO_GTP_ALIAS "gtp"

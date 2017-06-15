@@ -275,7 +275,7 @@ static const protocol_match doted_host_names[] = {
     {".sports-ak.espn.go.com", PROTO_GO, MMT_STATICSTRING_LEN(".sports-ak.espn.go.com")},
     {".godaddy.com", PROTO_GODADDY, MMT_STATICSTRING_LEN(".godaddy.com")},
     {".goo.ne.jp", PROTO_GOO, MMT_STATICSTRING_LEN(".goo.ne.jp")},
-    {".grooveshark.com", PROTO_GROOVESHARK, MMT_STATICSTRING_LEN(".grooveshark.com")},
+    {".groovesharks.org", PROTO_GROOVESHARK, MMT_STATICSTRING_LEN(".groovesharks.org")},
     {".groupon.com", PROTO_GROUPON, MMT_STATICSTRING_LEN(".groupon.com")},
     {".groupon.it", PROTO_GROUPON, MMT_STATICSTRING_LEN(".groupon.it")},
     {".groupon.de", PROTO_GROUPON, MMT_STATICSTRING_LEN(".groupon.de")},
