@@ -1022,8 +1022,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_KAT //////////////////
     int init_proto_kat_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_KAZAA //////////////////
-    int init_proto_kazaa_struct();
+    /////////// PLUGIN INIT FOR PROTO_ORANGEFR //////////////////
+    int init_proto_orangefr_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_KERBEROS //////////////////
     int init_proto_kerberos_struct();

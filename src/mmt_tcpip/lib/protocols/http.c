@@ -1859,7 +1859,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_UNENCRYPED_JABBER);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_JAPANPOST);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KAT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KAZAA);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ORANGEFR);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KING);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KOHLS);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KONGREGATE);

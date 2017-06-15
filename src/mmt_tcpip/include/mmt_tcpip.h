@@ -768,7 +768,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_FILETOPIA:
         case PROTO_GNUTELLA:
         case PROTO_IMESH:
-        case PROTO_KAZAA:
+        case PROTO_ORANGEFR:
         case PROTO_MANOLITO:
         case PROTO_OPENFT:
         case PROTO_PANDO:

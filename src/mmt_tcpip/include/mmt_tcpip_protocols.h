@@ -202,7 +202,7 @@ extern "C" {
 #define PROTO_JAPANPOST 187
 #define PROTO_KAKAO 188
 #define PROTO_KAT 189
-#define PROTO_KAZAA 190
+#define PROTO_ORANGEFR 190
 #define PROTO_KERBEROS 191
 #define PROTO_KING 192
 #define PROTO_KOHLS 193
@@ -837,7 +837,7 @@ extern "C" {
 #define PROTO_JAPANPOST_ALIAS "japanpost"
 #define PROTO_KAKAO_ALIAS "kakao"
 #define PROTO_KAT_ALIAS "kat"
-#define PROTO_KAZAA_ALIAS "kazaa"
+#define PROTO_ORANGEFR_ALIAS "orangefr"
 #define PROTO_KERBEROS_ALIAS "kerberos"
 #define PROTO_KING_ALIAS "king"
 #define PROTO_KOHLS_ALIAS "kohls"

@@ -322,7 +322,7 @@ static const protocol_match doted_host_names[] = {
     {".japanpost.jp", PROTO_JAPANPOST, MMT_STATICSTRING_LEN(".japanpost.jp")},
     {".kakao.com", PROTO_KAKAO, MMT_STATICSTRING_LEN(".kakao.com")},
     {".kat.ph", PROTO_KAT, MMT_STATICSTRING_LEN(".kat.ph")},
-    {".kazaa.com", PROTO_KAZAA, MMT_STATICSTRING_LEN(".kazaa.com")},
+    {".orange.fr", PROTO_ORANGEFR, MMT_STATICSTRING_LEN(".orange.fr")},
     {".midasplayer.com", PROTO_KING, MMT_STATICSTRING_LEN(".midasplayer.com")},
     {".king.com", PROTO_KING, MMT_STATICSTRING_LEN(".king.com")},
     {".kohls.com", PROTO_KOHLS, MMT_STATICSTRING_LEN(".kohls.com")},

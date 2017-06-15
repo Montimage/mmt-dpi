@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_kazaa_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_KAZAA, PROTO_KAZAA_ALIAS);
+int init_proto_orangefr_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ORANGEFR, PROTO_ORANGEFR_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_KAZAA);
+        return register_protocol(protocol_struct, PROTO_ORANGEFR);
     } else {
         return 0;
     }
