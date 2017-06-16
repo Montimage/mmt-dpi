@@ -13,7 +13,8 @@ Version 1.6.9.1
 - Change PROTO_INCREDIBAR by PROTO_LEBONCOIN
 - Replace PROTO_KAZAA by PROTO_ORANGEFR
 - Replace PROTO_LOKERZ by PROTO_LEMONDE
-
+- Replace PROTO_MSCDN by PROTO_LEFIGARO
+- Update hostname for PROTO_LIMELIGHT: add new hostnames: limelight.com, llnw.net
 
 
 
