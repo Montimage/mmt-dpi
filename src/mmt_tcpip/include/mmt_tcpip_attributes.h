@@ -1097,6 +1097,39 @@ enum{
 #define NFS_FILE_NEW_NAME_ALIAS   "file_new_name"
 #define NFS_NB_OPERATIONS_ALIAS "nb_operations"
 
+
+//////////// END OF NFS PROTOCOL ATTRIBUTES ////////////////////
+
+
+//////////// GTP PROTOCOL ATTRIBUTES ////////////////////
+enum{
+    // Flags
+    GTP_VERSION = 1,
+    GTP_PROTOCOL_TYPE,
+    GTP_RESERVED,
+    GTP_EXTENSION_HEADER,
+    GTP_SEQUENCE_NUMBER,
+    GTP_NPDU_NUMBER,
+    // Message
+    GTP_MESSAGE_TYPE,
+    GTP_LENGTH,
+    GTP_TEID,
+    GTP_ATTRIBUTES_NB = GTP_TEID
+};
+
+#define GTP_VERSION_ALIAS               "version"
+#define GTP_PROTOCOL_TYPE_ALIAS         "proto_type"
+#define GTP_RESERVED_ALIAS              "reserved"
+#define GTP_EXTENSION_HEADER_ALIAS      "extension_header"
+#define GTP_SEQUENCE_NUMBER_ALIAS       "sequence_number"
+#define GTP_NPDU_NUMBER_ALIAS           "ndpu_number"
+// Message
+#define GTP_MESSAGE_TYPE_ALIAS          "message_type"
+#define GTP_LENGTH_ALIAS                "length"
+#define GTP_TEID_ALIAS                  "teid"
+
+//////////// END OF GTP PROTOCOL ATTRIBUTES ////////////////////
+
 #ifdef __cplusplus
 }
 #endif
