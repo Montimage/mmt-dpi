@@ -15,7 +15,7 @@ Version 1.6.9.1
 - Replace PROTO_LOKERZ by PROTO_LEMONDE
 - Replace PROTO_MSCDN by PROTO_LEFIGARO
 - Update hostname for PROTO_LIMELIGHT: add new hostnames: limelight.com, llnw.net
-
+- Update PROTO_SCTP: add next protocols: PROTO_SCTP_INT, PROTO_SCTP_SACK, PROTO_SCTP_DATA
 
 
 ## Version 1.6.9.0
