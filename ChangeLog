@@ -1,8 +1,17 @@
 RELEASE NOTES
 ---
 ## Pre-Version 1.6.10.0
+- Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...
 - Replace the 8 dead hostname protocols by new protocols from top 50 in France
+	- Replace protocol grooveshark by groovesharks - hostname has changed
+	- Update PROTO_GAZETEVATAN with new hostname
+	- Change PROTO_INCREDIBAR by PROTO_LEBONCOIN
+	- Replace PROTO_KAZAA by PROTO_ORANGEFR
+	- Replace PROTO_LOKERZ by PROTO_LEMONDE
+
 - Add classification function to 25 unknown protocols
+- Update PROTO_SCTP: Extract more information
+
 
 
 ## Version 1.6.9.0
