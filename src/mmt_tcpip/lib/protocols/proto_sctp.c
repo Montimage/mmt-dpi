@@ -104,7 +104,7 @@ int init_sctp_proto_struct() {
         for (; i < SCTP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &sctp_attributes_metadata[i]);
         }
-        //register_classification_function(protocol_struct, sctp_classify_next_proto); //BW TODO: check this out
+        register_classification_function(protocol_struct, sctp_classify_next_proto); //BW TODO: check this out
         return register_protocol(protocol_struct, PROTO_SCTP);
     } else {
         return 0;
@@ -161,11 +161,11 @@ int init_proto_sctp_struct()
 {
 //int init_sctp_data_proto_struct();
  init_sctp_proto_struct();
-/*
+
  init_sctp_data_proto_struct();
  init_sctp_sack_proto_struct();
  init_sctp_init_proto_struct();
-*/
+
 return 1;
 }
 

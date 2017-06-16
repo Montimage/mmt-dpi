@@ -643,7 +643,11 @@ extern "C" {
 #define PROTO_ORACLE 628
 #define PROTO_REDIS 629	
 #define PROTO_VMWARE 630
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_VMWARE
+#define PROTO_SCTP_DATA 631
+#define PROTO_SCTP_SACK 632
+#define PROTO_SCTP_INIT 633
+
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_SCTP_INIT
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -1278,6 +1282,9 @@ extern "C" {
 #define PROTO_ORACLE_ALIAS "oracle"
 #define PROTO_REDIS_ALIAS "redis"
 #define PROTO_VMWARE_ALIAS "vmware"
+#define PROTO_SCTP_DATA_ALIAS "sctp_data"
+#define PROTO_SCTP_SACK_ALIAS "sctp_sack"
+#define PROTO_SCTP_INIT_ALIAS "sctp_init"
 // #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
 // #define PROTO_FTP_DATA_ALIAS "ftp_data"
 

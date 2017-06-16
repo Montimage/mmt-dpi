@@ -14,16 +14,7 @@ extern "C" {
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
-
-#define PROTO_SCTP_DATA 207
-#define PROTO_SCTP_DATA_ALIAS "sctp_data"
-
-#define PROTO_SCTP_SACK 208
-#define PROTO_SCTP_SACK_ALIAS "sctp_sack"
-
-#define PROTO_SCTP_INIT 209
-#define PROTO_SCTP_INIT_ALIAS "sctp_init"
-
+    
     enum {
         SCTP_SCR_PORT = 1,
         SCTP_DEST_PORT,
