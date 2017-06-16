@@ -121,7 +121,7 @@ static const protocol_match doted_host_names[] = {
     {".dmcdn.net", PROTO_DAILYMOTION, MMT_STATICSTRING_LEN(".dmcdn.net")},
     {".dropbox.com", PROTO_DROPBOX, MMT_STATICSTRING_LEN(".dropbox.com")},
     {".cloudfront.net", PROTO_CLOUDFRONT, MMT_STATICSTRING_LEN(".cloudfront.net"), MMT_CONTENT_CDN},
-    {".msecnd.net", PROTO_MSCDN, MMT_STATICSTRING_LEN(".msecnd.net")},
+    {".lefigaro.fr", PROTO_LEFIGARO, MMT_STATICSTRING_LEN(".lefigaro.fr")},
     {".akamai.com", PROTO_AKAMAI, MMT_STATICSTRING_LEN(".akamai.com"), MMT_CONTENT_CDN},
     {".akamai.net", PROTO_AKAMAI, MMT_STATICSTRING_LEN(".akamai.net"), MMT_CONTENT_CDN},
     {".akamaiedge.net", PROTO_AKAMAI, MMT_STATICSTRING_LEN(".akamaiedge.net"), MMT_CONTENT_CDN},

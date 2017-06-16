@@ -3624,9 +3624,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_MSCDN //////////////////
-    if (!init_proto_mscdn_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_mscdn\n Exiting\n");
+    /////////// INITILIZING PROTO_LEFIGARO //////////////////
+    if (!init_proto_lefigaro_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_LEFIGARO\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

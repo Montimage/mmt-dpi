@@ -2247,8 +2247,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_BLOOMBERG //////////////////
     int init_proto_bloomberg_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_MSCDN //////////////////
-    int init_proto_mscdn_struct();
+    /////////// PLUGIN INIT FOR PROTO_LEFIGARO //////////////////
+    int init_proto_lefigaro_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_AKAMAI //////////////////
     int init_proto_akamai_struct();

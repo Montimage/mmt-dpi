@@ -446,7 +446,7 @@ static inline char * get_content_class_name_by_content_flags(uint32_t content_fl
 static inline int get_application_class_by_protocol_id(int id) {
     switch (id) {
         case PROTO_BLOOMBERG:
-        case PROTO_MSCDN:
+        case PROTO_LEFIGARO:
         case PROTO_META:
         case PROTO_163:
         case PROTO_302_FOUND:

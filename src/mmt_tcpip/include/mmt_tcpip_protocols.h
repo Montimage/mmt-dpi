@@ -610,7 +610,7 @@ extern "C" {
 #define PROTO_WECHAT 595
 #define PROTO_LINE 596
 #define PROTO_BLOOMBERG 597
-#define PROTO_MSCDN 598
+#define PROTO_LEFIGARO 598
 #define PROTO_AKAMAI 599
 #define PROTO_YAHOOMSG 600
 #define PROTO_BITGRAVITY 601
@@ -1245,7 +1245,7 @@ extern "C" {
 #define PROTO_WECHAT_ALIAS "wechat"
 #define PROTO_LINE_ALIAS "line"
 #define PROTO_BLOOMBERG_ALIAS "bloomberg"
-#define PROTO_MSCDN_ALIAS "mscdn"
+#define PROTO_LEFIGARO_ALIAS "lefigaro"
 #define PROTO_AKAMAI_ALIAS "akamai"
 #define PROTO_YAHOOMSG_ALIAS "yahoomsg"
 #define PROTO_BITGRAVITY_ALIAS "bitgravity"
