@@ -133,6 +133,8 @@ static const protocol_match doted_host_names[] = {
     {".akadns.net", PROTO_AKAMAI, MMT_STATICSTRING_LEN(".akadns.net"), MMT_CONTENT_CDN},
     {".akam.net", PROTO_AKAMAI, MMT_STATICSTRING_LEN(".akam.net"), MMT_CONTENT_CDN},
     {".edgecastcdn.net", PROTO_EDGECAST, MMT_STATICSTRING_LEN(".edgecastcdn.net"), MMT_CONTENT_CDN},
+    {".limelight.com", PROTO_LIMELIGHT, MMT_STATICSTRING_LEN(".limelight.com"), MMT_CONTENT_CDN},
+    {".llnw.net", PROTO_LIMELIGHT, MMT_STATICSTRING_LEN(".llnw.net"), MMT_CONTENT_CDN},
     {".llnwd.net", PROTO_LIMELIGHT, MMT_STATICSTRING_LEN(".llnwd.net"), MMT_CONTENT_CDN},
     {".rackcdn.com", PROTO_RACKSPACE, MMT_STATICSTRING_LEN(".rackcdn.com"), MMT_CONTENT_CDN},
     {".netdna-cdn.com", PROTO_NETDNA, MMT_STATICSTRING_LEN(".netdna-cdn.com"), MMT_CONTENT_CDN},
