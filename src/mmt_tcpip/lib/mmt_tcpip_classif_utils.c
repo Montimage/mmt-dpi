@@ -1432,6 +1432,7 @@ static const protocol_match doted_host_names[] = {
     {".wx.", PROTO_WECHAT, MMT_STATICSTRING_LEN(".wx.")},
     {".weixin.", PROTO_WECHAT, MMT_STATICSTRING_LEN(".weixin.")},
     {".mmsns.qpic.cn", PROTO_WECHAT, MMT_STATICSTRING_LEN(".mmsns.qpic.cn")},
+    {".bitgravity.com", PROTO_BITGRAVITY, MMT_STATICSTRING_LEN(".bitgravity.com")},
     { NULL, 0, 0}
 };
 
