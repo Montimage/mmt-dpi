@@ -25,6 +25,7 @@ Version 1.6.9.1
 	- Replace PROTO_GOSMS by PROTO_JEUXVIDEO
 	- Add classification for PROTO_IPSEC by port number: 500 (Ref: nDPI)
 	- Add classification for PROTO_OGG by content type after HTTP
+	- Add classification for PROTO_WECHAT by hostnames
 
 
 ## Version 1.6.9.0

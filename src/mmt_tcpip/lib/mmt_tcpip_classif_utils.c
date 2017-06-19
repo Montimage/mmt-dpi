@@ -1424,7 +1424,14 @@ static const protocol_match doted_host_names[] = {
     {".foursquare.com", PROTO_FOURSQUARE, MMT_STATICSTRING_LEN(".foursquare.com")},
     {".www.zone-telechargement.ws", PROTO_ZONE_TELECHARGEMENT, MMT_STATICSTRING_LEN(".www.zone-telechargement.ws")},
     {".jeuxvideo.com", PROTO_JEUXVIDEO, MMT_STATICSTRING_LEN(".jeuxvideo.com")},    
-    {".jvc.gg", PROTO_JEUXVIDEO, MMT_STATICSTRING_LEN(".jvc.gg")},    
+    {".jvc.gg", PROTO_JEUXVIDEO, MMT_STATICSTRING_LEN(".jvc.gg")},
+    {".wechat.com", PROTO_WECHAT, MMT_STATICSTRING_LEN(".wechat.com")},
+    {".wechat.org", PROTO_WECHAT, MMT_STATICSTRING_LEN(".wechat.org")},
+    {".wechatapp.com", PROTO_WECHAT, MMT_STATICSTRING_LEN(".wechatapp.com")},
+    {".we.chat", PROTO_WECHAT, MMT_STATICSTRING_LEN(".we.chat")},
+    {".wx.", PROTO_WECHAT, MMT_STATICSTRING_LEN(".wx.")},
+    {".weixin.", PROTO_WECHAT, MMT_STATICSTRING_LEN(".weixin.")},
+    {".mmsns.qpic.cn", PROTO_WECHAT, MMT_STATICSTRING_LEN(".mmsns.qpic.cn")},
     { NULL, 0, 0}
 };
 
