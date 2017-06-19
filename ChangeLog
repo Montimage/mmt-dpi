@@ -8,17 +8,23 @@ RELEASE NOTES
 
 Version 1.6.9.1
 - Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...
-- Replace protocol grooveshark by groovesharks - hostname has changed
-- Update PROTO_GAZETEVATAN with new hostname
-- Change PROTO_INCREDIBAR by PROTO_LEBONCOIN
-- Replace PROTO_KAZAA by PROTO_ORANGEFR
-- Replace PROTO_LOKERZ by PROTO_LEMONDE
-- Replace PROTO_MSCDN by PROTO_LEFIGARO
-- Update hostname for PROTO_LIMELIGHT: add new hostnames: limelight.com, llnw.net
 - Update PROTO_SCTP: add next protocols: PROTO_SCTP_INT, PROTO_SCTP_SACK, PROTO_SCTP_DATA
-- Replace PROTO_302_FOUND by PROTO_ZONE_TELECHARGEMENT
-- Replace PROTO_GOSMS by PROTO_JEUXVIDEO
-- Add classification for PROTO_IPSEC by port number: 500 (Ref: nDPI)
+
+- Replace the 8 dead hostname protocols by new protocols from top 50 in France
+	- Replace protocol grooveshark by groovesharks - hostname has changed
+	- Update PROTO_GAZETEVATAN with new hostname
+	- Change PROTO_INCREDIBAR by PROTO_LEBONCOIN
+	- Replace PROTO_KAZAA by PROTO_ORANGEFR
+	- Replace PROTO_LOKERZ by PROTO_LEMONDE
+	- Replace PROTO_MSCDN by PROTO_LEFIGARO
+	- Update hostname for PROTO_LIMELIGHT: add new hostnames: limelight.com, llnw.net
+
+
+- Add classification function to 25 unknown protocols
+	- Replace PROTO_302_FOUND by PROTO_ZONE_TELECHARGEMENT
+	- Replace PROTO_GOSMS by PROTO_JEUXVIDEO
+	- Add classification for PROTO_IPSEC by port number: 500 (Ref: nDPI)
+	- Add classification for PROTO_OGG by content type after HTTP
 
 
 ## Version 1.6.9.0

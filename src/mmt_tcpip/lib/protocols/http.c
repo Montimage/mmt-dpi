@@ -1493,6 +1493,21 @@ static inline void move_parse_packet_contentline(ipacket_t * ipacket) {
 }
 #endif
 
+#ifdef PROTO_OGG
+
+static inline void ogg_parse_packet_contentline(ipacket_t * ipacket) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+
+    if ((packet->content_line.len == 15 || packet->content_line.len == 9)
+            && (memcmp(packet->content_line.ptr, "application/ogg", 15) == 0
+            || memcmp(packet->content_line.ptr, "video/ogg", 9) == 0
+            || memcmp(packet->content_line.ptr, "audio/ogg", 9) == 0)) {
+        MMT_LOG(PROTO_OGG, MMT_LOG_DEBUG, "OGG application detected\n");
+        mmt_int_http_add_connection(ipacket, PROTO_OGG);
+    }
+}
+#endif
+
 #ifdef PROTO_RTSP
 
 static inline void rtsp_parse_packet_acceptline(ipacket_t * ipacket) {
@@ -1551,6 +1566,9 @@ static inline void check_content_type_and_change_protocol(ipacket_t * ipacket) {
 #ifdef PROTO_MOVE
         move_parse_packet_contentline(ipacket);
 #endif
+#ifdef PROTO_OGG
+        ogg_parse_packet_contentline(ipacket);
+#endif        
     }
     /* check user agent here too */
     if (packet->user_agent_line.ptr != NULL && packet->user_agent_line.len != 0) {
