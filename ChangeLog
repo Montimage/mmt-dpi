@@ -18,6 +18,7 @@ Version 1.6.9.1
 - Update PROTO_SCTP: add next protocols: PROTO_SCTP_INT, PROTO_SCTP_SACK, PROTO_SCTP_DATA
 - Replace PROTO_302_FOUND by PROTO_ZONE_TELECHARGEMENT
 - Replace PROTO_GOSMS by PROTO_JEUXVIDEO
+- Add classification for PROTO_IPSEC by port number: 500 (Ref: nDPI)
 
 
 ## Version 1.6.9.0
