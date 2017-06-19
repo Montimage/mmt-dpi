@@ -38,9 +38,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_302_FOUND //////////////////
-    if (!init_proto_302_found_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_302_found\n Exiting\n");
+    /////////// INITILIZING PROTO_ZONE_TELECHARGEMENT //////////////////
+    if (!init_proto_zone_telechargement_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_ZONE_TELECHARGEMENT\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

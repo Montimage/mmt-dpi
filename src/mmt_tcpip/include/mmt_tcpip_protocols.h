@@ -15,7 +15,7 @@ extern "C" {
 //#define PROTO_META    1 //Already defined in the core
 #define PROTO_163 2
 #define PROTO_360 3
-#define PROTO_302_FOUND 4
+#define PROTO_ZONE_TELECHARGEMENT 4
 #define PROTO_JD 5
 #define PROTO_56 6
 #define PROTO_8021Q 7
@@ -655,7 +655,7 @@ extern "C" {
 //#define PROTO_META_ALIAS "META" //Already defined in the core
 #define PROTO_163_ALIAS "163"
 #define PROTO_360_ALIAS "360"
-#define PROTO_302_FOUND_ALIAS "302_found"
+#define PROTO_ZONE_TELECHARGEMENT_ALIAS "zone_telechargement"
 #define PROTO_JD_ALIAS "jd"
 #define PROTO_56_ALIAS "56"
 #define PROTO_8021Q_ALIAS "8021q"

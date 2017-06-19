@@ -449,7 +449,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_LEFIGARO:
         case PROTO_META:
         case PROTO_163:
-        case PROTO_302_FOUND:
+        case PROTO_ZONE_TELECHARGEMENT:
         case PROTO_360:
         case PROTO_JD:
         case PROTO_56:

@@ -1422,6 +1422,7 @@ static const protocol_match doted_host_names[] = {
     {".network.realmedia.com", PROTO_REALMEDIA, MMT_STATICSTRING_LEN(".network.realmedia.com")},
     {".ad.Doubleclick.net", PROTO_DOUBLECLICK, MMT_STATICSTRING_LEN(".ad.Doubleclick.net")},
     {".foursquare.com", PROTO_FOURSQUARE, MMT_STATICSTRING_LEN(".foursquare.com")},
+    {".www.zone-telechargement.ws", PROTO_ZONE_TELECHARGEMENT, MMT_STATICSTRING_LEN(".www.zone-telechargement.ws")},
     { NULL, 0, 0}
 };
 
