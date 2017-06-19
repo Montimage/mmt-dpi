@@ -831,7 +831,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_AIM:
         case PROTO_BADOO:
         case PROTO_FACETIME:
-        case PROTO_GOSMS:
+        case PROTO_JEUXVIDEO:
         case PROTO_GTALK:
         case PROTO_OSCAR:
         case PROTO_IRC:

@@ -860,8 +860,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_GOOGLE_USER_CONTENT //////////////////
     int init_proto_google_user_content_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_GOSMS //////////////////
-    int init_proto_gosms_struct();
+    /////////// PLUGIN INIT FOR PROTO_JEUXVIDEO //////////////////
+    int init_proto_jeuxvideo_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_GRE //////////////////
     int init_proto_gre_struct();

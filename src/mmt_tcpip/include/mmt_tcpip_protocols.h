@@ -148,7 +148,7 @@ extern "C" {
 #define PROTO_GOO 133
 #define PROTO_GOOGLE 134
 #define PROTO_GOOGLE_USER_CONTENT 135
-#define PROTO_GOSMS 136
+#define PROTO_JEUXVIDEO 136
 #define PROTO_GRE 137
 #define PROTO_GROOVESHARK 138
 #define PROTO_GROUPON 139
@@ -787,7 +787,7 @@ extern "C" {
 #define PROTO_GOO_ALIAS "goo"
 #define PROTO_GOOGLE_ALIAS "google"
 #define PROTO_GOOGLE_USER_CONTENT_ALIAS "google_user_content"
-#define PROTO_GOSMS_ALIAS "gosms"
+#define PROTO_JEUXVIDEO_ALIAS "jeuxvideo"
 #define PROTO_GRE_ALIAS "gre"
 #define PROTO_GROOVESHARK_ALIAS "groovesharks"
 #define PROTO_GROUPON_ALIAS "groupon"

@@ -1423,6 +1423,8 @@ static const protocol_match doted_host_names[] = {
     {".ad.Doubleclick.net", PROTO_DOUBLECLICK, MMT_STATICSTRING_LEN(".ad.Doubleclick.net")},
     {".foursquare.com", PROTO_FOURSQUARE, MMT_STATICSTRING_LEN(".foursquare.com")},
     {".www.zone-telechargement.ws", PROTO_ZONE_TELECHARGEMENT, MMT_STATICSTRING_LEN(".www.zone-telechargement.ws")},
+    {".jeuxvideo.com", PROTO_JEUXVIDEO, MMT_STATICSTRING_LEN(".jeuxvideo.com")},    
+    {".jvc.gg", PROTO_JEUXVIDEO, MMT_STATICSTRING_LEN(".jvc.gg")},    
     { NULL, 0, 0}
 };
 

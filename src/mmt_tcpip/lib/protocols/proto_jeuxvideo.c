@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_gosms_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_GOSMS, PROTO_GOSMS_ALIAS);
+int init_proto_jeuxvideo_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_JEUXVIDEO, PROTO_JEUXVIDEO_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_GOSMS);
+        return register_protocol(protocol_struct, PROTO_JEUXVIDEO);
     } else {
         return 0;
     }
