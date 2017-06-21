@@ -1219,7 +1219,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
             for (j = 0; j < session->proto_path.len; j++) {
                 if (session->proto_path.proto_path[j] == PROTO_IP) {
                     ip_index = j;
-                    break;
+                    // break; - to make sure it go for the last one - in case of IP - TCP - GRE - IP - TCP - GRE - IP - TCP - HTTP
                 }
             }
 
