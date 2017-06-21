@@ -2340,6 +2340,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_VMWARE//////////////////
     int init_proto_vmware_struct();
     /////////////////////////////////////////////////
+    /////////// PLUGIN INIT FOR PROTO_zone_telechargement //////////////////
+    int init_proto_zone_telechargement_struct();
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus
