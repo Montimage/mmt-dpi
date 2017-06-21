@@ -403,6 +403,8 @@ void free_ftp_control_session(ftp_control_session_t *ftp_control) {
 *            5 if the client_port of data connection is NULL and the other are equal (different direction) - convert direction of t1
 *            6 if the server_port of data connection is NULL and the other are equal (same direction)
 *            7 if the server_port of data connection is NULL and the other are equal (different direction) - convert direction of t1
+*            8 if the server_port and server address of data connection is NULL and the other are equal (same direction)
+*            7 if the client_port and client address of data connection is NULL and the other are equal (different direction) - convert direction of t1
 *            0 otherwise
 */
 int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2) {
@@ -448,6 +450,8 @@ int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2) {
         // Active mode - PORT and EPRT command
         if (t1->c_addr == t2->c_addr && t2->c_port == t2->c_port && t1->s_addr == t2->s_addr && t2->s_port == 0) return 6;
         if (t1->c_addr == t2->s_addr && t1->s_addr == t2->c_addr && t1->s_port == t2->c_port && t2->s_port == 0) return 7;
+        if (t1->c_addr == t2->c_addr && t1->c_port == t2->c_port && t2->s_addr == 0 && t2->s_port == 0) return 8;
+        if (t1->c_addr == t2->s_addr && t1->c_port == t2->s_port && t2->c_addr == 0 && t2->c_port == 0) return 9;
         return 0;
     }
 
@@ -498,6 +502,21 @@ void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6, ftp_tuple6_t *conn, int comp
             tuple6->direction = MMT_FTP_PACKET_SERVER;
         }
         break;
+    case 8:
+        tuple6->direction = conn->direction;
+        conn->s_port = tuple6->s_port;
+        conn->s_addr = tuple6->s_addr;
+        break;
+    case 9:
+        conn->c_port = tuple6->s_port;
+        if (conn->direction == MMT_FTP_PACKET_SERVER) {
+            tuple6->direction = MMT_FTP_PACKET_CLIENT;
+        } else if (conn->direction == MMT_FTP_PACKET_CLIENT) {
+            tuple6->direction = MMT_FTP_PACKET_SERVER;
+        }
+        conn->s_port = tuple6->c_port;
+        conn->s_addr = tuple6->c_addr;
+        break;        
     }
 }
 
@@ -1181,11 +1200,17 @@ inline uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len)
     int * indexes = str_get_indexes(payload, ",");
 
     char * nb1;
-    nb1 = str_sub(payload, indexes[3], indexes[4]);
+    nb1 = str_sub(payload, indexes[3]+1, indexes[4]-1);
     // printf("nb1 string: %s\n", nb1);
 
     char * nb2;
-    nb2 = str_sub(payload, indexes[4], payload_len);
+    int last_c_number = indexes[4]+1;
+    // Remove special character at the end of the commands
+    while(payload[last_c_number]>='0' && payload[last_c_number]<='9'){
+        last_c_number++;
+    }
+
+    nb2 = str_sub(payload, indexes[4]+1, last_c_number-1);
     // printf("nb2 string: %s\n", nb2);
     uint16_t port = ntohs(atoi(nb1) * 256 + atoi(nb2));
     free(nb1);
@@ -2579,7 +2604,7 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
             fprintf(stderr, "[PROTO_FTP] ftp_request_packet: MMT_FTP_PORT_CMD for IPv6 is not implemented yet! %lu\n",ipacket->packet_id);
             // strcpy(&current_data_session->data_conn->c_addr_v6,ftp_get_addr_v6_from_parameter(payload,payload_len));
         }else{
-            current_data_session->data_conn->c_addr = ftp_get_addr_from_parameter(payload, payload_len);    
+            current_data_session->data_conn->c_addr = ftp_get_addr_from_parameter(payload + 5, payload_len);
         }
         current_data_session->data_conn->c_port = ftp_get_port_from_parameter(payload, payload_len);
         break;
