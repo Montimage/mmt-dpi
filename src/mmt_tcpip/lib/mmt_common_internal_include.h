@@ -2271,8 +2271,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_CHINACACHE //////////////////
     int init_proto_chinacache_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_COTENDO //////////////////
-    int init_proto_cotendo_struct();
+    /////////// PLUGIN INIT FOR PROTO_FRANCETVINFO //////////////////
+    int init_proto_francetvinfo_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_EDGECAST //////////////////
     int init_proto_edgecast_struct();

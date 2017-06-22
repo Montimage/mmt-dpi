@@ -618,7 +618,7 @@ extern "C" {
 #define PROTO_CDN77 603
 #define PROTO_CDNETWORKS 604
 #define PROTO_CHINACACHE 605
-#define PROTO_COTENDO 606
+#define PROTO_FRANCETVINFO 606
 #define PROTO_EDGECAST 607
 #define PROTO_FASTLY 608
 #define PROTO_HIGHWINDS 609
@@ -1257,7 +1257,7 @@ extern "C" {
 #define PROTO_CDN77_ALIAS "cdn77"
 #define PROTO_CDNETWORKS_ALIAS "cdnetworks"
 #define PROTO_CHINACACHE_ALIAS "chinacache"
-#define PROTO_COTENDO_ALIAS "cotendo"
+#define PROTO_FRANCETVINFO_ALIAS "francetvinfo"
 #define PROTO_EDGECAST_ALIAS "edgecast"
 #define PROTO_FASTLY_ALIAS "fastly"
 #define PROTO_HIGHWINDS_ALIAS "highwinds"

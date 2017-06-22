@@ -1440,6 +1440,7 @@ static const protocol_match doted_host_names[] = {
     {".allocine.fr", PROTO_ALLOCINE, MMT_STATICSTRING_LEN(".allocine.fr")},
     {".cdnetworks.com", PROTO_CDNETWORKS, MMT_STATICSTRING_LEN(".cdnetworks.com")},
     {".chinacache.com", PROTO_CHINACACHE, MMT_STATICSTRING_LEN(".chinacache.com")},
+    {".francetvinfo.fr", PROTO_FRANCETVINFO, MMT_STATICSTRING_LEN(".francetvinfo.fr")},
     { NULL, 0, 0}
 };
 

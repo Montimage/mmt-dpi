@@ -1072,7 +1072,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_CDN77:
         case PROTO_CDNETWORKS:
         case PROTO_CHINACACHE:
-        case PROTO_COTENDO:
+        case PROTO_FRANCETVINFO:
         case PROTO_EDGECAST:
         case PROTO_FASTLY:
         case PROTO_HIGHWINDS:

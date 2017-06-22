@@ -3672,9 +3672,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_COTENDO //////////////////
-    if (!init_proto_cotendo_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_cotendo\n Exiting\n");
+    /////////// INITILIZING PROTO_FRANCETVINFO //////////////////
+    if (!init_proto_francetvinfo_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_FRANCETVINFO\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
