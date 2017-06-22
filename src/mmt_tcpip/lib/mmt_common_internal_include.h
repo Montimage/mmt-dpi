@@ -1542,8 +1542,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_TIANYA //////////////////
     int init_proto_tianya_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_TLS //////////////////
-    int init_proto_tls_struct();
+    /////////// PLUGIN INIT FOR PROTO_CDISCOUNT //////////////////
+    int init_proto_cdiscount_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_TMALL //////////////////
     int init_proto_tmall_struct();

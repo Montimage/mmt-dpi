@@ -1424,7 +1424,7 @@ static const protocol_match doted_host_names[] = {
     {".foursquare.com", PROTO_FOURSQUARE, MMT_STATICSTRING_LEN(".foursquare.com")},
     {".www.zone-telechargement.ws", PROTO_ZONE_TELECHARGEMENT, MMT_STATICSTRING_LEN(".www.zone-telechargement.ws")},
     {".jeuxvideo.com", PROTO_JEUXVIDEO, MMT_STATICSTRING_LEN(".jeuxvideo.com")},    
-    {".jvc.gg", PROTO_JEUXVIDEO, MMT_STATICSTRING_LEN(".jvc.gg")},
+    {".jvc.gg", PROTO_JEUXVIDEO, MMT_STATICSTRING_LEN(".jvc.gg"), MMT_CONTENT_CDN},
     {".wechat.com", PROTO_WECHAT, MMT_STATICSTRING_LEN(".wechat.com")},
     {".wechat.org", PROTO_WECHAT, MMT_STATICSTRING_LEN(".wechat.org")},
     {".wechatapp.com", PROTO_WECHAT, MMT_STATICSTRING_LEN(".wechatapp.com")},
@@ -1435,6 +1435,8 @@ static const protocol_match doted_host_names[] = {
     {".bitgravity.com", PROTO_BITGRAVITY, MMT_STATICSTRING_LEN(".bitgravity.com")},
     {".cachefly.com", PROTO_CACHEFLY, MMT_STATICSTRING_LEN(".cachefly.com")},
     {".cdn77.com", PROTO_CDN77, MMT_STATICSTRING_LEN(".cdn77.com")},
+    {".cdiscount.com", PROTO_CDISCOUNT, MMT_STATICSTRING_LEN(".cdiscount.com")},
+    {".cdscdn.com", PROTO_CDISCOUNT, MMT_STATICSTRING_LEN(".cdscdn.com"), MMT_CONTENT_CDN},
     { NULL, 0, 0}
 };
 

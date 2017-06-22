@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_tls_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_TLS, PROTO_TLS_ALIAS);
+int init_proto_cdiscount_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_CDISCOUNT, PROTO_CDISCOUNT_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_TLS);
+        return register_protocol(protocol_struct, PROTO_CDISCOUNT);
     } else {
         return 0;
     }

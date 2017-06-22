@@ -2214,9 +2214,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_TLS //////////////////
-    if (!init_proto_tls_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_tls\n Exiting\n");
+    /////////// INITILIZING PROTO_CDISCOUNT //////////////////
+    if (!init_proto_cdiscount_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_CDISCOUNT\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

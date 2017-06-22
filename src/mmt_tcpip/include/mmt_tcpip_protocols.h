@@ -375,7 +375,7 @@ extern "C" {
 #define PROTO_THE_PIRATE_BAY 360
 #define PROTO_THUNDER 361
 #define PROTO_TIANYA 362
-#define PROTO_TLS 363
+#define PROTO_CDISCOUNT 363
 #define PROTO_TMALL 364
 #define PROTO_TORRENTZ 365
 #define PROTO_TRUPHONE 366
@@ -1014,7 +1014,7 @@ extern "C" {
 #define PROTO_THE_PIRATE_BAY_ALIAS "the_pirate_bay"
 #define PROTO_THUNDER_ALIAS "thunder"
 #define PROTO_TIANYA_ALIAS "tianya"
-#define PROTO_TLS_ALIAS "tls"
+#define PROTO_CDISCOUNT_ALIAS "cdiscount"
 #define PROTO_TMALL_ALIAS "tmall"
 #define PROTO_TORRENTZ_ALIAS "torrentz"
 #define PROTO_TRUPHONE_ALIAS "truphone"

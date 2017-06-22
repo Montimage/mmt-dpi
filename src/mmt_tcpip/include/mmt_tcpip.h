@@ -932,7 +932,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_STUN:
         case PROTO_SYSLOG:
         case PROTO_TCP:
-        case PROTO_TLS:
+        case PROTO_CDISCOUNT:
         case PROTO_UDP:
         case PROTO_UDPLITE:
         case PROTO_3PC:
