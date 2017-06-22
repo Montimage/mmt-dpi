@@ -1441,6 +1441,7 @@ static const protocol_match doted_host_names[] = {
     {".cdnetworks.com", PROTO_CDNETWORKS, MMT_STATICSTRING_LEN(".cdnetworks.com")},
     {".chinacache.com", PROTO_CHINACACHE, MMT_STATICSTRING_LEN(".chinacache.com")},
     {".francetvinfo.fr", PROTO_FRANCETVINFO, MMT_STATICSTRING_LEN(".francetvinfo.fr")},
+    {".fastly.com", PROTO_FASTLY, MMT_STATICSTRING_LEN(".fastly.com")},
     { NULL, 0, 0}
 };
 
