@@ -1444,6 +1444,7 @@ static const protocol_match doted_host_names[] = {
     {".fastly.com", PROTO_FASTLY, MMT_STATICSTRING_LEN(".fastly.com")},
     {".highwinds.com", PROTO_HIGHWINDS, MMT_STATICSTRING_LEN(".highwinds.com")},
     {".internap.com", PROTO_INTERNAP, MMT_STATICSTRING_LEN(".internap.com")},
+    {".level3.com", PROTO_LEVEL3, MMT_STATICSTRING_LEN(".level3.com")},
     { NULL, 0, 0}
 };
 
