@@ -1443,6 +1443,7 @@ static const protocol_match doted_host_names[] = {
     {".francetvinfo.fr", PROTO_FRANCETVINFO, MMT_STATICSTRING_LEN(".francetvinfo.fr")},
     {".fastly.com", PROTO_FASTLY, MMT_STATICSTRING_LEN(".fastly.com")},
     {".highwinds.com", PROTO_HIGHWINDS, MMT_STATICSTRING_LEN(".highwinds.com")},
+    {".internap.com", PROTO_INTERNAP, MMT_STATICSTRING_LEN(".internap.com")},
     { NULL, 0, 0}
 };
 
