@@ -2039,7 +2039,7 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_XNXX);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_XVIDEOS);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YAHOO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YAHOOGAMES);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ALLOCINE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YAHOOMAIL);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YANDEX);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YELP);

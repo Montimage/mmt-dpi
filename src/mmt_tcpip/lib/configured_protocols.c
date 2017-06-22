@@ -2562,9 +2562,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_YAHOOGAMES //////////////////
-    if (!init_proto_yahoogames_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_yahoogames\n Exiting\n");
+    /////////// INITILIZING PROTO_ALLOCINE //////////////////
+    if (!init_proto_allocine_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_ALLOCINE\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

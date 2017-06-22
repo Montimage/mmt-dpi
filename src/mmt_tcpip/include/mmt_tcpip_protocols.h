@@ -433,7 +433,7 @@ extern "C" {
 #define PROTO_XNXX 418
 #define PROTO_XVIDEOS 419
 #define PROTO_YAHOO 420
-#define PROTO_YAHOOGAMES 421
+#define PROTO_ALLOCINE 421
 #define PROTO_YAHOOMAIL 422
 #define PROTO_YANDEX 423
 #define PROTO_YELP 424
@@ -1072,7 +1072,7 @@ extern "C" {
 #define PROTO_XNXX_ALIAS "xnxx"
 #define PROTO_XVIDEOS_ALIAS "xvideos"
 #define PROTO_YAHOO_ALIAS "yahoo"
-#define PROTO_YAHOOGAMES_ALIAS "yahoogames"
+#define PROTO_ALLOCINE_ALIAS "allocine"
 #define PROTO_YAHOOMAIL_ALIAS "yahoomail"
 #define PROTO_YANDEX_ALIAS "yandex"
 #define PROTO_YELP_ALIAS "yelp"

@@ -1716,8 +1716,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_YAHOO //////////////////
     int init_proto_yahoo_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_YAHOOGAMES //////////////////
-    int init_proto_yahoogames_struct();
+    /////////// PLUGIN INIT FOR PROTO_ALLOCINE //////////////////
+    int init_proto_allocine_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_YAHOOMAIL //////////////////
     int init_proto_yahoomail_struct();

@@ -1437,6 +1437,7 @@ static const protocol_match doted_host_names[] = {
     {".cdn77.com", PROTO_CDN77, MMT_STATICSTRING_LEN(".cdn77.com")},
     {".cdiscount.com", PROTO_CDISCOUNT, MMT_STATICSTRING_LEN(".cdiscount.com")},
     {".cdscdn.com", PROTO_CDISCOUNT, MMT_STATICSTRING_LEN(".cdscdn.com"), MMT_CONTENT_CDN},
+    {".allocine.fr", PROTO_ALLOCINE, MMT_STATICSTRING_LEN(".allocine.fr")},
     { NULL, 0, 0}
 };
 
