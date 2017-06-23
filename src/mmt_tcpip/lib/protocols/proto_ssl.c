@@ -8,6 +8,42 @@
 
 #include <ctype.h>
 
+/*
+Content types
+Hex Dec Type
+0x14    20  ChangeCipherSpec
+0x15    21  Alert
+0x16    22  Handshake
+0x17    23  Application
+0x18    24  Heartbeat
+
+
+Versions
+Major
+version Minor
+version Version type
+3   0   SSL 3.0
+3   1   TLS 1.0
+3   2   TLS 1.1
+3   3   TLS 1.2
+
+
+Message types
+Code    Description
+0   HelloRequest
+1   ClientHello
+2   ServerHello
+4   NewSessionTicket
+11  Certificate
+12  ServerKeyExchange
+13  CertificateRequest
+14  ServerHelloDone
+15  CertificateVerify
+16  ClientKeyExchange
+20  Finished
+
+ */
+
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define IPOQUE_MAX_SSL_REQUEST_SIZE 10000
 
@@ -25,6 +61,17 @@ int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, 
                 return 1;
             }
         }
+    }
+    return 0;
+}
+
+int ssl_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
+    if (flow->l4.tcp.ssl_stage <=3 ){
+        *((uint8_t *) extracted_data->data) = get_u16(packet->payload, offset);
+        return 1;
     }
     return 0;
 }
@@ -675,6 +722,13 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
 //////////////// SSL attributes
 static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
     {SSL_SERVER_NAME, SSL_SERVER_NAME_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ssl_server_name_extraction},
+    {SSL_CONTENT_TYPE, SSL_CONTENT_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_content_type_extraction},
+    // {SSL_VERSION, SSL_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_version_extraction},
+    // {SSL_LENGTH, SSL_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_length_extraction},
+    // {SSL_HS_TYPE, SSL_HS_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_type_extraction},
+    // {SSL_HS_LENGTH, SSL_HS_LENGTH_ALIAS, MMT_U16_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_length_extraction},
+    // {SSL_HS_VERSION, SSL_HS_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_version_extraction},
+
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////

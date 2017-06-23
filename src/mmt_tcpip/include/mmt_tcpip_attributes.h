@@ -449,11 +449,22 @@ extern "C" {
 
     enum ssl_attributes {
         SSL_SERVER_NAME = 1,
-        SSL_ATTRIBUTES_NB = SSL_SERVER_NAME,
+        SSL_CONTENT_TYPE,
+        SSL_VERSION,
+        SSL_LENGTH,
+        SSL_HS_TYPE,
+        SSL_HS_LENGTH,
+        SSL_HS_VERSION,
+        SSL_ATTRIBUTES_NB = SSL_HS_VERSION,
     };
 
 #define SSL_SERVER_NAME_ALIAS "server_name"
-
+#define SSL_CONTENT_TYPE_ALIAS "content_type"
+#define SSL_VERSION_ALIAS "version"
+#define SSL_LENGTH_ALIAS "length"    
+#define SSL_HS_TYPE_ALIAS "hs_type"
+#define SSL_HS_VERSION_ALIAS "hs_version"
+#define SSL_HS_LENGTH_ALIAS "hs_length"    
     enum radius_attributes {
         RADIUS_CODE = 1,
         RADIUS_RID,
