@@ -6,6 +6,9 @@ RELEASE NOTES
 - Update PROTO_SCTP: Extract more information
 - Replace the 8 dead hostname protocols by new protocols from top 50 in France
 
+Version 1.6.9.2
+- Deliver to THALES
+
 Version 1.6.9.1
 - Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...
 - Update PROTO_SCTP: add next protocols: PROTO_SCTP_INT, PROTO_SCTP_SACK, PROTO_SCTP_DATA
