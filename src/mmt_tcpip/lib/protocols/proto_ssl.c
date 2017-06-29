@@ -51,6 +51,26 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
+struct ssl_extension_struct {
+    uint16_t type;
+    uint16_t len;
+    uint8_t val;
+};
+
+int ssl_header_packet(const ipacket_t * ipacket){
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    if(packet->payload[0] < 20 || packet->payload[0] > 24){
+        return 0;
+    }else if (packet->payload[1]!=3){
+        return 0;
+    }else if (packet->payload[2]!=1 && packet->payload[2]!=2 && packet->payload[2]!=3 && packet->payload[2]!= 0){
+        return 0;
+    }else if (packet->payload_packet_len < packet->payload[4] + 5 ){
+        return 0;
+    }
+    return 1;
+}
+
 //////////////// SSL attributes extraction routines.
 
 int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
@@ -66,14 +86,25 @@ int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, 
 }
 
 int ssl_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
-    int offset = get_packet_offset_at_index(ipacket, proto_index);
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    if (flow->l4.tcp.ssl_stage <=3 ){
-        *((uint8_t *) extracted_data->data) = get_u16(packet->payload, offset);
-        return 1;
+    if(ssl_header_packet(ipacket)!=1){
+        return 0;
     }
-    return 0;
+    return general_char_extraction(ipacket,proto_index,extracted_data);
+}
+
+int ssl_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if(ssl_header_packet(ipacket)!=1){
+        return 0;
+    }
+    return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+}
+
+
+int ssl_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    if(ssl_header_packet(ipacket)!=1){
+        return 0;
+    }
+    return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
 }
 //////////////// End of SSL attributes extraction routines
 
@@ -89,12 +120,6 @@ static void mmt_int_ssl_add_connection(ipacket_t * ipacket, uint32_t protocol) {
 static inline int mmt_ssl_min(uint32_t a, uint32_t b) {
     return (a < b ? a : b);
 }
-
-struct ssl_extension_struct {
-    uint16_t type;
-    uint16_t len;
-    uint8_t val;
-};
 
 static void stripCertificateTrailer(char *buffer, int buffer_len) {
     int i;
@@ -722,9 +747,9 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
 //////////////// SSL attributes
 static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
     {SSL_SERVER_NAME, SSL_SERVER_NAME_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ssl_server_name_extraction},
-    {SSL_CONTENT_TYPE, SSL_CONTENT_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_content_type_extraction},
-    // {SSL_VERSION, SSL_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_version_extraction},
-    // {SSL_LENGTH, SSL_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_length_extraction},
+    {SSL_CONTENT_TYPE, SSL_CONTENT_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, ssl_content_type_extraction},
+    {SSL_VERSION, SSL_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), 1, SCOPE_PACKET, ssl_version_extraction},
+    {SSL_LENGTH, SSL_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), 3, SCOPE_PACKET, ssl_length_extraction},
     // {SSL_HS_TYPE, SSL_HS_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_type_extraction},
     // {SSL_HS_LENGTH, SSL_HS_LENGTH_ALIAS, MMT_U16_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_length_extraction},
     // {SSL_HS_VERSION, SSL_HS_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_version_extraction},
