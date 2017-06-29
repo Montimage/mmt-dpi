@@ -106,6 +106,49 @@ int ssl_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attri
     }
     return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
 }
+
+///////// Extract Handshake protocol
+// Message types
+// Code    Description
+// 0   HelloRequest
+// 1   ClientHello
+// 2   ServerHello
+// 4   NewSessionTicket
+// 11  Certificate
+// 12  ServerKeyExchange
+// 13  CertificateRequest
+// 14  ServerHelloDone
+// 15  CertificateVerify
+// 16  ClientKeyExchange
+// 20  Finished
+
+int ssl_hs_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    if(ssl_header_packet(ipacket)!=1 || packet->payload[0]!=22){
+        return 0;
+    }
+    return general_char_extraction(ipacket,proto_index,extracted_data);
+}
+
+int ssl_hs_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    if(ssl_header_packet(ipacket)!=1 || packet->payload[0]!=22){
+        return 0;
+    }
+    return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+}
+
+// Extract Client Hello and Server Hello packets
+int ssl_hs_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    if(ssl_header_packet(ipacket)!=1 || packet->payload[0]!=22 || (packet->payload[5]!=1 && packet->payload[5]!=2) ){ // Only in Client Hello and Server Hello packet
+        return 0;
+    }
+    return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+}
+
+
+
 //////////////// End of SSL attributes extraction routines
 
 static void mmt_int_ssl_add_connection(ipacket_t * ipacket, uint32_t protocol) {
@@ -750,10 +793,9 @@ static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
     {SSL_CONTENT_TYPE, SSL_CONTENT_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, ssl_content_type_extraction},
     {SSL_VERSION, SSL_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), 1, SCOPE_PACKET, ssl_version_extraction},
     {SSL_LENGTH, SSL_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), 3, SCOPE_PACKET, ssl_length_extraction},
-    // {SSL_HS_TYPE, SSL_HS_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_type_extraction},
-    // {SSL_HS_LENGTH, SSL_HS_LENGTH_ALIAS, MMT_U16_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_length_extraction},
-    // {SSL_HS_VERSION, SSL_HS_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ssl_hs_version_extraction},
-
+    {SSL_HS_TYPE, SSL_HS_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 5, SCOPE_PACKET, ssl_hs_type_extraction},
+    {SSL_HS_LENGTH, SSL_HS_LENGTH_ALIAS, MMT_U16_DATA, sizeof (int), 7, SCOPE_PACKET, ssl_hs_length_extraction},
+    {SSL_HS_VERSION, SSL_HS_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), 9, SCOPE_PACKET, ssl_hs_version_extraction},
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
