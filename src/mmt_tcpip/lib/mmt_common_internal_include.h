@@ -200,7 +200,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /* imesh entry */
     void mmt_classify_me_imesh(ipacket_t * ipacket, unsigned index);
     /* SSL entry */
-    void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index);
+    // void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index);
     /* flash entry */
     void mmt_classify_me_flash(ipacket_t * ipacket, unsigned index);
     /* mms entry */

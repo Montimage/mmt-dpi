@@ -628,7 +628,7 @@ int check_gameforge_tcp(ipacket_t * ipacket) {
     return 0;
 }
 
-void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
+int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -636,11 +636,11 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
     packet->https_server_name.len = 0;
 
 	if (check_whatsapp(ipacket) || check_viber_tcp(ipacket) || check_gameforge_tcp(ipacket)) {
-		return;
+		return 0;
 	}
 
     if (packet->payload_packet_len <= 12) {
-        return;
+        return 0;
     }
 
 	/*
@@ -653,7 +653,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 		if (proto != PROTO_UNKNOWN) {
 			mmt_int_ssl_add_connection(ipacket, proto);
 		}
-		return;
+		return 1;
 	}
 
     if (packet->payload[0] == 0x16 && packet->payload[1] == 0x03
@@ -669,6 +669,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
         } else if ((ntohs(get_u16(packet->payload, 3)) - ntohs(get_u16(packet->payload, 7)) == 4) /* Server Hello may contain different
 																									TLS records. compare the record length
 																									with the handshake protocol message len */
@@ -681,6 +682,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
         } else if ( /* Multiple handshake messages. We have seen the Client Hello the Server sends multiple handshake messages */
 				(packet->detected_protocol_stack[0] == PROTO_SSL)
                 && (packet->payload[5] == 2 /* Server Hello */) && (packet->payload[9] == 0x03)
@@ -692,6 +694,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
         } else if ((ntohs(get_u16(packet->payload, 3)) - ntohs(get_u16(packet->payload, 7)) == 4) /* Certificate may contain different
 																									TLS records. compare the record length
 																									with the handshake protocol message len */
@@ -705,12 +708,12 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
         } else {
             // SSLv3 Record
             MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
             flow->l4.tcp.ssl_stage += 1;
         }
-        return;
     }
 
 	// SSLv2 Record
@@ -720,7 +723,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 		&& (packet->payload_packet_len - packet->payload[1] == 2)) {
 	  MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv2 len match\n");
 	  flow->l4.tcp.ssl_stage += 1;
-	  return;
+	  return 4;
 	}
 
 	/* BW: Who the hell is still using SSL2.0 !!!!! */
@@ -731,7 +734,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 
 		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv2 server len match\n");
    	    flow->l4.tcp.ssl_stage += 1;
-	  return;
+	  return 4;
 	}
 
 	/* BW: I saw TLS packets less than 40 bytes!
@@ -742,7 +745,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 		// SSLv3 Record
 		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
 		flow->l4.tcp.ssl_stage += 1;
-		return;
+		return 4;
 	}
 
 	/* BW:
@@ -756,17 +759,17 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 		// SSLv3 Record
 		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
 		flow->l4.tcp.ssl_stage += 1;
-		return;
+		return 4;
 	}
 
     if (ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction] < 8) {
 		//Wait for more packets before deciding this is not SSL
-        return;
+        return 4;
     }
 
     MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "exclude ssl\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SSL);
-    return;
+    return 0;
 }
 
 void mmt_init_classify_me_ssl() {
@@ -782,10 +785,33 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-        mmt_classify_me_ssl(ipacket, index);
+        return mmt_classify_me_ssl(ipacket, index);
     }
     return 4;
 }
+
+// int ssl_classify_next_proto(ipacket_t * ipacket, unsigned index) {
+//     classified_proto_t retval;
+//     retval.offset = -1;
+//     retval.proto_id = -1;
+//     retval.status = NonClassified;
+    
+//     int offset = get_packet_offset_at_index(ipacket, index);
+
+//     if(ipacket->data[offset + 0] < 20 || ipacket->data[offset + 0] > 24){
+//         return retval;
+//     }else if (ipacket->data[offset + 1]!=3){
+//         return retval;
+//     }else if (ipacket->data[offset + 2]!=1 && ipacket->data[offset + 2]!=2 && ipacket->data[offset + 2]!=3 && ipacket->data[offset + 2]!= 0){
+//         return retval;
+//     }
+
+//     retval.proto_id = PROTO_SSL;
+//     retval.offset = sizeof (struct mmt_vlan_struct);
+//     retval.status = Classified;
+//     return set_classified_proto(ipacket, index + 1, retval);
+//     //return retval;
+// }
 
 //////////////// SSL attributes
 static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
@@ -810,6 +836,8 @@ int init_proto_ssl_struct() {
         }
 
         mmt_init_classify_me_ssl();
+
+        // register_classification_function(protocol_struct, ssl_classify_next_proto);
 
         return register_protocol(protocol_struct, PROTO_SSL);
     } else {
