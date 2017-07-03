@@ -790,29 +790,6 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-// int ssl_classify_next_proto(ipacket_t * ipacket, unsigned index) {
-//     classified_proto_t retval;
-//     retval.offset = -1;
-//     retval.proto_id = -1;
-//     retval.status = NonClassified;
-    
-//     int offset = get_packet_offset_at_index(ipacket, index);
-
-//     if(ipacket->data[offset + 0] < 20 || ipacket->data[offset + 0] > 24){
-//         return retval;
-//     }else if (ipacket->data[offset + 1]!=3){
-//         return retval;
-//     }else if (ipacket->data[offset + 2]!=1 && ipacket->data[offset + 2]!=2 && ipacket->data[offset + 2]!=3 && ipacket->data[offset + 2]!= 0){
-//         return retval;
-//     }
-
-//     retval.proto_id = PROTO_SSL;
-//     retval.offset = sizeof (struct mmt_vlan_struct);
-//     retval.status = Classified;
-//     return set_classified_proto(ipacket, index + 1, retval);
-//     //return retval;
-// }
-
 //////////////// SSL attributes
 static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
     {SSL_SERVER_NAME, SSL_SERVER_NAME_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ssl_server_name_extraction},
@@ -836,8 +813,6 @@ int init_proto_ssl_struct() {
         }
 
         mmt_init_classify_me_ssl();
-
-        // register_classification_function(protocol_struct, ssl_classify_next_proto);
 
         return register_protocol(protocol_struct, PROTO_SSL);
     } else {
