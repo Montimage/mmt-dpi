@@ -26,22 +26,6 @@ version Version type
 3   1   TLS 1.0
 3   2   TLS 1.1
 3   3   TLS 1.2
-
-
-Message types
-Code    Description
-0   HelloRequest
-1   ClientHello
-2   ServerHello
-4   NewSessionTicket
-11  Certificate
-12  ServerKeyExchange
-13  CertificateRequest
-14  ServerHelloDone
-15  CertificateVerify
-16  ClientKeyExchange
-20  Finished
-
  */
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
@@ -57,20 +41,52 @@ struct ssl_extension_struct {
     uint8_t val;
 };
 
-int ssl_header_packet(const ipacket_t * ipacket){
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if(packet->payload[0] < 20 || packet->payload[0] > 24){
+int ssl_is_tls_record_header(const uint8_t * payload, int payload_len){
+    if(payload_len == 0) return 0;
+    uint8_t content_type = payload[0];
+    if(content_type <20 || content_type > 24){
+        // Incorrect content type
         return 0;
-    }else if (packet->payload[1]!=3){
+    }
+    uint16_t version = ntohs(get_u16(payload, 1));
+    if(version < 768 || version > 771){
+        // Incorrect version: 3.0 (768), 1.0 (769), 1.1 (770), 1.2 (771)
         return 0;
-    }else if (packet->payload[2]!=1 && packet->payload[2]!=2 && packet->payload[2]!=3 && packet->payload[2]!= 0){
-        return 0;
-    }else if (packet->payload_packet_len < packet->payload[4] + 5 ){
+    }
+    
+    uint16_t length = ntohs(get_u16(payload, 3));
+    if(payload_len < length){
+        // Invalid payload length
         return 0;
     }
     return 1;
 }
 
+/**
+ * Check if a message_type value is a valid one
+ * 
+    Message types
+    Code    Description
+    0   HelloRequest
+    1   ClientHello
+    2   ServerHello
+    4   NewSessionTicket
+    11  Certificate
+    12  ServerKeyExchange
+    13  CertificateRequest
+    14  ServerHelloDone
+    15  CertificateVerify
+    16  ClientKeyExchange
+    20  Finished
+ * @param  message_type [description]
+ * @return              [description]
+ */
+int ssl_is_tls_message_type(int message_type){
+    return !(message_type < 0 
+        || message_type > 20 
+        || (message_type > 4 && message_type < 11)
+        || (message_type > 16 && message_type < 20));
+}
 //////////////// SSL attributes extraction routines.
 
 int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
@@ -86,14 +102,24 @@ int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, 
 }
 
 int ssl_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
-    if(ssl_header_packet(ipacket)!=1){
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
         return 0;
     }
     return general_char_extraction(ipacket,proto_index,extracted_data);
 }
 
 int ssl_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
-    if(ssl_header_packet(ipacket)!=1){
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
         return 0;
     }
     return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
@@ -101,7 +127,12 @@ int ssl_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attr
 
 
 int ssl_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
-    if(ssl_header_packet(ipacket)!=1){
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
         return 0;
     }
     return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
@@ -123,16 +154,28 @@ int ssl_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attri
 // 20  Finished
 
 int ssl_hs_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if(ssl_header_packet(ipacket)!=1 || packet->payload[0]!=22){
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1 
+        || !ssl_is_tls_message_type(ipacket->data[ssl_offset + 5]) 
+        || ipacket->data[ssl_offset + 0]!=22 ){
         return 0;
     }
     return general_char_extraction(ipacket,proto_index,extracted_data);
 }
 
 int ssl_hs_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if(ssl_header_packet(ipacket)!=1 || packet->payload[0]!=22){
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1 
+        || !ssl_is_tls_message_type(ipacket->data[ssl_offset + 5]) 
+        || ipacket->data[ssl_offset]!=22 ){
         return 0;
     }
     return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
@@ -140,8 +183,14 @@ int ssl_hs_length_extraction(const ipacket_t * ipacket, unsigned proto_index, at
 
 // Extract Client Hello and Server Hello packets
 int ssl_hs_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if(ssl_header_packet(ipacket)!=1 || packet->payload[0]!=22 || (packet->payload[5]!=1 && packet->payload[5]!=2) ){ // Only in Client Hello and Server Hello packet
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1 
+        || ipacket->data[ssl_offset]!=22 
+        || (ipacket->data[ssl_offset + 5]!=1 && ipacket->data[ssl_offset + 5]!=2) ){ // Only in Client Hello and Server Hello packet
         return 0;
     }
     return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
@@ -790,6 +839,34 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
+int ssl_classify_next_proto(ipacket_t * ipacket, unsigned index) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int ssl_index = tcp_index + 1;
+    int payload_len = packet->payload_packet_len;
+    if(payload_len <= 0) return 0;
+    int new_offset = 0;
+    while(ssl_index <= index){        
+        int offset = packet->payload_packet_len - payload_len;        
+        uint16_t length = ntohs(get_u16(packet->payload + offset, 3));
+        new_offset = length + 5;
+        payload_len -= (length + 5);
+        ssl_index++;
+    } 
+
+    if(payload_len <= 0) return 0;
+
+    int offset = packet->payload_packet_len - payload_len;
+    if (ssl_is_tls_record_header(packet->payload + offset,payload_len)){
+        classified_proto_t retval;
+        retval.proto_id = PROTO_SSL;
+        retval.offset = new_offset;
+        retval.status = Classified;
+        return set_classified_proto(ipacket, index + 1, retval);
+    }
+    return 0;
+}
+
 //////////////// SSL attributes
 static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
     {SSL_SERVER_NAME, SSL_SERVER_NAME_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ssl_server_name_extraction},
@@ -813,6 +890,8 @@ int init_proto_ssl_struct() {
         }
 
         mmt_init_classify_me_ssl();
+
+        register_classification_function(protocol_struct, ssl_classify_next_proto);
 
         return register_protocol(protocol_struct, PROTO_SSL);
     } else {
