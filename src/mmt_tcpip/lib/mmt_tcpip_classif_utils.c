@@ -22086,6 +22086,7 @@ void _free_proto_avltrees(){
     int i = 0;
     for (i = 0; i < NETMASK_MAX_NB; i ++) {
         avltree_free_tree(proto_avltrees[i]);
+        proto_avltrees[i] = NULL;
     }
 }
 
