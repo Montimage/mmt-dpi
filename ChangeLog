@@ -8,6 +8,7 @@ RELEASE NOTES
 
 Version 1.6.9.2
 - Deliver to THALES
+- Fixed double free AVL tree on Centos environment
 
 Version 1.6.9.1
 - Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...
