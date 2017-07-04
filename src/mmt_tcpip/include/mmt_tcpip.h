@@ -751,7 +751,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_WORLDOFWARCRAFT:
         case PROTO_WOWHEAD:
         case PROTO_XBOX:
-        case PROTO_YAHOOGAMES:
+        case PROTO_ALLOCINE:
         case PROTO_ZYNGA:
         case PROTO_GAMEFORGE:
         case PROTO_METIN2:
