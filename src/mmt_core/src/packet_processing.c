@@ -924,6 +924,9 @@ void free_protocols_contexts(mmt_handler_t *mmt_handler) {
 int proto_packet_count_extraction(const ipacket_t * packet, unsigned proto_index,
                                   attribute_t * extracted_data) {
 
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
+
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     uint64_t count = 0;
@@ -941,6 +944,8 @@ int proto_packet_count_extraction(const ipacket_t * packet, unsigned proto_index
 
 int proto_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
                                  attribute_t * extracted_data) {
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     uint64_t count = 0;
@@ -958,6 +963,8 @@ int proto_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
 
 int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_index,
                                     attribute_t * extracted_data) {
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     uint64_t count = 0;
@@ -975,6 +982,8 @@ int proto_payload_volume_extraction(const ipacket_t * packet, unsigned proto_ind
 
 int proto_first_packet_time_extraction(const ipacket_t * packet, unsigned proto_index,
                                        attribute_t * extracted_data) {
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     if (proto_stats) {
@@ -987,6 +996,8 @@ int proto_first_packet_time_extraction(const ipacket_t * packet, unsigned proto_
 
 int proto_last_packet_time_extraction(const ipacket_t * packet, unsigned proto_index,
                                       attribute_t * extracted_data) {
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     proto_statistics_internal_t * proto_stats = configured_protocol->proto_stats;
     if (proto_stats) {
@@ -1000,6 +1011,7 @@ int proto_last_packet_time_extraction(const ipacket_t * packet, unsigned proto_i
 int proto_header_extraction(const ipacket_t * packet, unsigned proto_index,
                             attribute_t * extracted_data) {
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
     extracted_data->data = (void *) &packet->data[proto_offset];
     return 1;
 }
@@ -1007,6 +1019,7 @@ int proto_header_extraction(const ipacket_t * packet, unsigned proto_index,
 int proto_data_extraction(const ipacket_t * packet, unsigned proto_index,
                           attribute_t * extracted_data) {
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
     extracted_data->data = (void *) &packet->data[proto_offset];
     return 1;
 }
@@ -1019,7 +1032,7 @@ int proto_payload_extraction(const ipacket_t * packet, unsigned proto_index,
     } else {
         proto_offset = get_packet_offset_at_index(packet, proto_index + 1);
     }
-
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
     extracted_data->data = (void *) &packet->data[proto_offset];
     return 1;
 }
@@ -1053,6 +1066,8 @@ int proto_session_id_extraction(const ipacket_t * packet, unsigned proto_index,
 
 int proto_stats_extraction(const ipacket_t * packet, unsigned proto_index,
                            attribute_t * extracted_data) {
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if(proto_offset >= packet->p_hdr->caplen) return 0;
     mmt_handler_t *mmt_handler = packet->mmt_handler;
     protocol_instance_t proto = mmt_handler->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
     extracted_data->data = (void *) proto.proto_stats;
