@@ -8,6 +8,26 @@
 
 #include <ctype.h>
 
+/*
+Content types
+Hex Dec Type
+0x14    20  ChangeCipherSpec
+0x15    21  Alert
+0x16    22  Handshake
+0x17    23  Application
+0x18    24  Heartbeat
+
+
+Versions
+Major
+version Minor
+version Version type
+3   0   SSL 3.0
+3   1   TLS 1.0
+3   2   TLS 1.1
+3   3   TLS 1.2
+ */
+
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define IPOQUE_MAX_SSL_REQUEST_SIZE 10000
 
@@ -15,6 +35,79 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
+struct ssl_extension_struct {
+    uint16_t type;
+    uint16_t len;
+    uint8_t val;
+};
+
+int ssl_is_tls_record_header(const uint8_t * payload, int payload_len){
+    if(payload_len == 0) return 0;
+    uint8_t content_type = payload[0];
+    if(content_type <20 || content_type > 24){
+        // Incorrect content type
+        return 0;
+    }
+    uint16_t version = ntohs(get_u16(payload, 1));
+    if(version < 768 || version > 771){
+        // Incorrect version: 3.0 (768), 1.0 (769), 1.1 (770), 1.2 (771)
+        return 0;
+    }
+    
+    uint16_t length = ntohs(get_u16(payload, 3));
+    if(payload_len < length){
+        // Invalid payload length
+        return 0;
+    }
+    return 1;
+}
+
+int tls_get_number_records(const ipacket_t * ipacket){
+    int nb_record = 0;
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int payload_len = packet->payload_packet_len;
+    if(payload_len <= 0) return 0;
+    int offset = packet->payload_packet_len - payload_len;
+    if(ssl_is_tls_record_header(packet->payload + offset,payload_len)){
+        // SSL packet
+        while(payload_len > 0){
+            nb_record++;
+            int tls_total_length = ntohs(get_u16(packet->payload + offset, 3)) + 5;
+            offset += tls_total_length;
+            payload_len -= tls_total_length;
+            if(ssl_is_tls_record_header(packet->payload + offset,payload_len)!=1){
+                break;
+            }
+        }
+    }
+    return nb_record;
+}
+
+/**
+ * Check if a message_type value is a valid one
+ * 
+    Message types
+    Code    Description
+    0   HelloRequest
+    1   ClientHello
+    2   ServerHello
+    4   NewSessionTicket
+    11  Certificate
+    12  ServerKeyExchange
+    13  CertificateRequest
+    14  ServerHelloDone
+    15  CertificateVerify
+    16  ClientKeyExchange
+    20  Finished
+ * @param  message_type [description]
+ * @return              [description]
+ */
+int ssl_is_tls_message_type(int message_type){
+    return !(message_type < 0 
+        || message_type > 20 
+        || (message_type > 4 && message_type < 11)
+        || (message_type > 16 && message_type < 20));
+}
 //////////////// SSL attributes extraction routines.
 
 int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
@@ -28,6 +121,69 @@ int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, 
     }
     return 0;
 }
+
+int tls_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
+        return 0;
+    }
+    return general_char_extraction(ipacket,proto_index,extracted_data);
+}
+
+int tls_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
+        return 0;
+    }
+    return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+}
+
+
+int tls_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
+        return 0;
+    }
+    return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+}
+
+int tls_number_record_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
+    int nb_record = tls_get_number_records(ipacket);
+    if(nb_record){
+        *((uint16_t *) extracted_data->data) = nb_record;
+        return 1;
+    }
+    return 0;
+}
+
+
+///////// Extract Handshake protocol
+// Message types
+// Code    Description
+// 0   HelloRequest
+// 1   ClientHello
+// 2   ServerHello
+// 4   NewSessionTicket
+// 11  Certificate
+// 12  ServerKeyExchange
+// 13  CertificateRequest
+// 14  ServerHelloDone
+// 15  CertificateVerify
+// 16  ClientKeyExchange
+// 20  Finished
+
 //////////////// End of SSL attributes extraction routines
 
 static void mmt_int_ssl_add_connection(ipacket_t * ipacket, uint32_t protocol) {
@@ -42,12 +198,6 @@ static void mmt_int_ssl_add_connection(ipacket_t * ipacket, uint32_t protocol) {
 static inline int mmt_ssl_min(uint32_t a, uint32_t b) {
     return (a < b ? a : b);
 }
-
-struct ssl_extension_struct {
-    uint16_t type;
-    uint16_t len;
-    uint8_t val;
-};
 
 static void stripCertificateTrailer(char *buffer, int buffer_len) {
     int i;
@@ -513,7 +663,7 @@ int check_gameforge_tcp(ipacket_t * ipacket) {
     return 0;
 }
 
-void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
+int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -521,11 +671,11 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
     packet->https_server_name.len = 0;
 
 	if (check_whatsapp(ipacket) || check_viber_tcp(ipacket) || check_gameforge_tcp(ipacket)) {
-		return;
+		return 0;
 	}
 
     if (packet->payload_packet_len <= 12) {
-        return;
+        return 0;
     }
 
 	/*
@@ -538,7 +688,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 		if (proto != PROTO_UNKNOWN) {
 			mmt_int_ssl_add_connection(ipacket, proto);
 		}
-		return;
+		return 1;
 	}
 
     if (packet->payload[0] == 0x16 && packet->payload[1] == 0x03
@@ -554,6 +704,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
         } else if ((ntohs(get_u16(packet->payload, 3)) - ntohs(get_u16(packet->payload, 7)) == 4) /* Server Hello may contain different
 																									TLS records. compare the record length
 																									with the handshake protocol message len */
@@ -566,6 +717,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
         } else if ( /* Multiple handshake messages. We have seen the Client Hello the Server sends multiple handshake messages */
 				(packet->detected_protocol_stack[0] == PROTO_SSL)
                 && (packet->payload[5] == 2 /* Server Hello */) && (packet->payload[9] == 0x03)
@@ -577,6 +729,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
         } else if ((ntohs(get_u16(packet->payload, 3)) - ntohs(get_u16(packet->payload, 7)) == 4) /* Certificate may contain different
 																									TLS records. compare the record length
 																									with the handshake protocol message len */
@@ -590,12 +743,12 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
             if (emb_proto != PROTO_UNKNOWN) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
+            return 1;
         } else {
             // SSLv3 Record
             MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
             flow->l4.tcp.ssl_stage += 1;
         }
-        return;
     }
 
 	// SSLv2 Record
@@ -605,7 +758,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 		&& (packet->payload_packet_len - packet->payload[1] == 2)) {
 	  MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv2 len match\n");
 	  flow->l4.tcp.ssl_stage += 1;
-	  return;
+	  return 4;
 	}
 
 	/* BW: Who the hell is still using SSL2.0 !!!!! */
@@ -616,7 +769,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 
 		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv2 server len match\n");
    	    flow->l4.tcp.ssl_stage += 1;
-	  return;
+	  return 4;
 	}
 
 	/* BW: I saw TLS packets less than 40 bytes!
@@ -627,7 +780,7 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 		// SSLv3 Record
 		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
 		flow->l4.tcp.ssl_stage += 1;
-		return;
+		return 4;
 	}
 
 	/* BW:
@@ -641,17 +794,17 @@ void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 		// SSLv3 Record
 		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
 		flow->l4.tcp.ssl_stage += 1;
-		return;
+		return 4;
 	}
 
     if (ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction] < 8) {
 		//Wait for more packets before deciding this is not SSL
-        return;
+        return 4;
     }
 
     MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "exclude ssl\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SSL);
-    return;
+    return 0;
 }
 
 void mmt_init_classify_me_ssl() {
@@ -667,7 +820,7 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-        mmt_classify_me_ssl(ipacket, index);
+        return mmt_classify_me_ssl(ipacket, index);
     }
     return 4;
 }
@@ -675,6 +828,10 @@ int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
 //////////////// SSL attributes
 static attribute_metadata_t ssl_attributes_metadata[SSL_ATTRIBUTES_NB] = {
     {SSL_SERVER_NAME, SSL_SERVER_NAME_ALIAS, MMT_HEADER_LINE, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, ssl_server_name_extraction},
+    {TLS_NUMBER_RECORD, TLS_NUMBER_RECORD_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, tls_number_record_extraction},
+    {TLS_CONTENT_TYPE, TLS_CONTENT_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, tls_content_type_extraction},
+    {TLS_VERSION, TLS_VERSION_ALIAS, MMT_U16_DATA, sizeof (short), 1, SCOPE_PACKET, tls_version_extraction},
+    {TLS_LENGTH, TLS_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), 3, SCOPE_PACKET, tls_length_extraction},
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
