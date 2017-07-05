@@ -62,6 +62,27 @@ int ssl_is_tls_record_header(const uint8_t * payload, int payload_len){
     return 1;
 }
 
+int tls_get_number_records(const ipacket_t * ipacket){
+    int nb_record = 0;
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    int payload_len = packet->payload_packet_len;
+    if(payload_len <= 0) return 0;
+    int offset = packet->payload_packet_len - payload_len;
+    if(ssl_is_tls_record_header(packet->payload + offset,payload_len)){
+        // SSL packet
+        while(payload_len > 0){
+            nb_record++;
+            int tls_total_length = ntohs(get_u16(packet->payload + offset, 3)) + 5;
+            offset += tls_total_length;
+            payload_len -= tls_total_length;
+            if(ssl_is_tls_record_header(packet->payload + offset,payload_len)!=1){
+                break;
+            }
+        }
+    }
+    return nb_record;
+}
+
 /**
  * Check if a message_type value is a valid one
  * 
@@ -139,28 +160,12 @@ int tls_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attri
 }
 
 int tls_number_record_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    int payload_len = packet->payload_packet_len;
-    if(payload_len <= 0) return 0;
-
-    int offset = packet->payload_packet_len - payload_len;
-    if(ssl_is_tls_record_header(packet->payload + offset,payload_len)){
-        // SSL packet
-        int nb_record = 0;
-        while(payload_len > 0){
-            nb_record++;
-            int tls_total_length = ntohs(get_u16(packet->payload + offset, 3)) + 5;
-            offset += tls_total_length;
-            payload_len -= tls_total_length;
-            if(ssl_is_tls_record_header(packet->payload + offset,payload_len)!=1){
-                break;
-            }
-        }
+    int nb_record = tls_get_number_records(ipacket);
+    if(nb_record){
         *((uint16_t *) extracted_data->data) = nb_record;
         return 1;
-    }else{
-        return 0;
     }
+    return 0;
 }
 
 
