@@ -449,6 +449,7 @@ extern "C" {
 
     enum ssl_attributes {
         SSL_SERVER_NAME = 1,
+        TLS_NUMBER_RECORD,
         TLS_CONTENT_TYPE,
         TLS_VERSION,
         TLS_LENGTH,
@@ -459,6 +460,7 @@ extern "C" {
     };
 
 #define SSL_SERVER_NAME_ALIAS "server_name"
+#define TLS_NUMBER_RECORD_ALIAS "tls_number_record"
 #define TLS_CONTENT_TYPE_ALIAS "tls_content_type"
 #define TLS_VERSION_ALIAS "tls_version"
 #define TLS_LENGTH_ALIAS "tls_length"
