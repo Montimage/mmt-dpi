@@ -2298,8 +2298,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_NETDNA //////////////////
     int init_proto_netdna_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_VOXEL //////////////////
-    int init_proto_voxel_struct();
+    /////////// PLUGIN INIT FOR PROTO_STACKPATH //////////////////
+    int init_proto_stackpath_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_RACKSPACE //////////////////
     int init_proto_rackspace_struct();

@@ -1081,7 +1081,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_LIMELIGHT:
         case PROTO_MAXCDN:
         case PROTO_NETDNA:
-        case PROTO_VOXEL:
+        case PROTO_STACKPATH:
         case PROTO_RACKSPACE:
             return PROTO_CLASS_CDN;
         case PROTO_UNKNOWN:

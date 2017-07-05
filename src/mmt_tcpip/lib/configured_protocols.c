@@ -3726,9 +3726,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_VOXEL //////////////////
-    if (!init_proto_voxel_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_voxel\n Exiting\n");
+    /////////// INITILIZING PROTO_STACKPATH //////////////////
+    if (!init_proto_stackpath_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_STACKPATH\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

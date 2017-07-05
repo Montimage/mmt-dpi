@@ -627,7 +627,7 @@ extern "C" {
 #define PROTO_LIMELIGHT 612
 #define PROTO_MAXCDN 613
 #define PROTO_NETDNA 614
-#define PROTO_VOXEL 615
+#define PROTO_STACKPATH 615
 #define PROTO_RACKSPACE 616
 #define PROTO_GAMEFORGE 617
 #define PROTO_METIN2 618
@@ -1266,7 +1266,7 @@ extern "C" {
 #define PROTO_LIMELIGHT_ALIAS "limelight"
 #define PROTO_MAXCDN_ALIAS "maxcdn"
 #define PROTO_NETDNA_ALIAS "netdna"
-#define PROTO_VOXEL_ALIAS "voxel"
+#define PROTO_STACKPATH_ALIAS "stackpath"
 #define PROTO_RACKSPACE_ALIAS "rackspace"
 #define PROTO_GAMEFORGE_ALIAS "gameforge"
 #define PROTO_METIN2_ALIAS "metin2"
