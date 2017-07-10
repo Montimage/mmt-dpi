@@ -1448,6 +1448,8 @@ static const protocol_match doted_host_names[] = {
     {".maxcdn.com", PROTO_MAXCDN, MMT_STATICSTRING_LEN(".maxcdn.com")},
     {".stackpath.com", PROTO_STACKPATH, MMT_STATICSTRING_LEN(".stackpath.com")},
     {".messenger.com", PROTO_FBMSG, MMT_STATICSTRING_LEN(".messenger.com")},
+    {".twitch.tv", PROTO_TWITCH, MMT_STATICSTRING_LEN(".twitch.tv")},
+    {".ttvnw.com", PROTO_TWITCH, MMT_STATICSTRING_LEN(".ttvnw.com")},
     { NULL, 0, 0}
 };
 

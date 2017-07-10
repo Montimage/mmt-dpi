@@ -2322,8 +2322,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_FBMSG //////////////////
     int init_proto_fbmsg_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_GCM //////////////////
-    int init_proto_gcm_struct();
+    /////////// PLUGIN INIT FOR PROTO_TWITCH //////////////////
+    int init_proto_twitch_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_SLL //////////////////
     int init_proto_sll_struct();

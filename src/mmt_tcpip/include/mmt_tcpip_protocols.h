@@ -635,7 +635,7 @@ extern "C" {
 #define PROTO_BATTLEKNIGHT 620
 #define PROTO_4STORY 621
 #define PROTO_FBMSG 622 //Facebook messaging
-#define PROTO_GCM 623 //Google Cloud Messaging
+#define PROTO_TWITCH 623 //Google Cloud Messaging
 #define PROTO_SLL 624 //Linux Cooked Socket
 #define PROTO_NDN 625 // NDN protocol
 #define PROTO_NDN_HTTP 626 // NDN_HTTP protocol
@@ -1274,7 +1274,7 @@ extern "C" {
 #define PROTO_BATTLEKNIGHT_ALIAS "battleknight"
 #define PROTO_4STORY_ALIAS "4story"
 #define PROTO_FBMSG_ALIAS "fbmsg"
-#define PROTO_GCM_ALIAS "gcm"
+#define PROTO_TWITCH_ALIAS "twitch"
 #define PROTO_SLL_ALIAS "sll"
 #define PROTO_NDN_ALIAS "ndn"
 #define PROTO_NDN_HTTP_ALIAS "ndn_http"	

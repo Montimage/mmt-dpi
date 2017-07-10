@@ -3774,9 +3774,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_GCM //////////////////
-    if (!init_proto_gcm_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_gcm\n Exiting\n");
+    /////////// INITILIZING PROTO_TWITCH //////////////////
+    if (!init_proto_twitch_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_TWITCH\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

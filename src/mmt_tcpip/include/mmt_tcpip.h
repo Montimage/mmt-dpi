@@ -711,7 +711,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_WEBSHOTS:
         case PROTO_BREAK:
         case PROTO_ENGAGEMEDIA:
-        case PROTO_GCM:
+        case PROTO_TWITCH:
             return PROTO_CLASS_WEB;
         case PROTO_888POKER:
         case PROTO_ANGRYBIRDS:
