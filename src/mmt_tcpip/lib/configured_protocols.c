@@ -1752,9 +1752,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_QUICKTIME //////////////////
-    if (!init_proto_quicktime_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_quicktime\n Exiting\n");
+    /////////// INITILIZING PROTO_FORBES //////////////////
+    if (!init_proto_forbes_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_FORBES\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

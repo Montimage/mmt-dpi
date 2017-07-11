@@ -298,7 +298,7 @@ extern "C" {
 #define PROTO_QQ 283
 #define PROTO_QQLIVE 284
 #define PROTO_QUAKE 285
-#define PROTO_QUICKTIME 286
+#define PROTO_FORBES 286
 #define PROTO_R10 287
 #define PROTO_RADIUS 288
 #define PROTO_RAKUTEN 289
@@ -937,7 +937,7 @@ extern "C" {
 #define PROTO_QQ_ALIAS "qq"
 #define PROTO_QQLIVE_ALIAS "qqlive"
 #define PROTO_QUAKE_ALIAS "quake"
-#define PROTO_QUICKTIME_ALIAS "quicktime"
+#define PROTO_FORBES_ALIAS "forbes"
 #define PROTO_R10_ALIAS "r10"
 #define PROTO_RADIUS_ALIAS "radius"
 #define PROTO_RAKUTEN_ALIAS "rakuten"

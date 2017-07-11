@@ -138,7 +138,6 @@ void mmt_init_classify_me_icecast() {
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MPEG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_QUICKTIME);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REALMEDIA);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WINDOWSMEDIA);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AVI);

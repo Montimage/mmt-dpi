@@ -616,7 +616,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_POPO:
         case PROTO_PORNHUB:
         case PROTO_QQ:
-        case PROTO_QUICKTIME:
+        case PROTO_FORBES:
         case PROTO_RAKUTEN:
         case PROTO_REDTUBE:
         case PROTO_SINA:

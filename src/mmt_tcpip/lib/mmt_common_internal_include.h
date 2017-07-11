@@ -1310,8 +1310,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_QUAKE //////////////////
     int init_proto_quake_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_QUICKTIME //////////////////
-    int init_proto_quicktime_struct();
+    /////////// PLUGIN INIT FOR PROTO_FORBES //////////////////
+    int init_proto_forbes_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_R10 //////////////////
     int init_proto_r10_struct();
