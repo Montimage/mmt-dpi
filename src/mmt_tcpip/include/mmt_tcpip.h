@@ -712,6 +712,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_BREAK:
         case PROTO_ENGAGEMEDIA:
         case PROTO_TWITCH:
+        case PROTO_ALIEXPRESS:
         case PROTO_20MINUTES:
             return PROTO_CLASS_WEB;
         case PROTO_888POKER:
@@ -836,8 +837,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_GTALK:
         case PROTO_OSCAR:
         case PROTO_IRC:
-        case PROTO_UNENCRYPED_JABBER:
-        case PROTO_IMESSAGE:
+        case PROTO_UNENCRYPED_JABBER:        
         case PROTO_KAKAO:
         case PROTO_MEEBO:
         case PROTO_WHATSAPP:

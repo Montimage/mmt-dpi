@@ -971,8 +971,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_IMESH //////////////////
     int init_proto_imesh_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_IMESSAGE //////////////////
-    int init_proto_imessage_struct();
+    /////////// PLUGIN INIT FOR PROTO_ALIEXPRESS //////////////////
+    int init_proto_aliexpress_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_IMGUR //////////////////
     int init_proto_imgur_struct();

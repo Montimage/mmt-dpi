@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_imessage_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_IMESSAGE, PROTO_IMESSAGE_ALIAS);
+int init_proto_aliexpress_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ALIEXPRESS, PROTO_ALIEXPRESS_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_IMESSAGE);
+        return register_protocol(protocol_struct, PROTO_ALIEXPRESS);
     } else {
         return 0;
     }

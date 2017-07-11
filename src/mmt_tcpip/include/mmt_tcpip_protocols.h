@@ -185,7 +185,7 @@ extern "C" {
 #define PROTO_IMAPS 170
 #define PROTO_IMDB 171
 #define PROTO_IMESH 172
-#define PROTO_IMESSAGE 173
+#define PROTO_ALIEXPRESS 173
 #define PROTO_IMGUR 174
 #define PROTO_LEBONCOIN 175
 #define PROTO_INDIATIMES 176
@@ -824,7 +824,7 @@ extern "C" {
 #define PROTO_IMAPS_ALIAS "imaps"
 #define PROTO_IMDB_ALIAS "imdb"
 #define PROTO_IMESH_ALIAS "imesh"
-#define PROTO_IMESSAGE_ALIAS "imessage"
+#define PROTO_ALIEXPRESS_ALIAS "aliexpress"
 #define PROTO_IMGUR_ALIAS "imgur"
 #define PROTO_LEBONCOIN_ALIAS "leboncoin"
 #define PROTO_INDIATIMES_ALIAS "indiatimes"
