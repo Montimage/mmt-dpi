@@ -714,6 +714,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_TWITCH:
         case PROTO_ALIEXPRESS:
         case PROTO_20MINUTES:
+        case PROTO_FNAC:
             return PROTO_CLASS_WEB;
         case PROTO_888POKER:
         case PROTO_ANGRYBIRDS:
@@ -917,8 +918,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_IPSEC:
         case PROTO_KERBEROS:
         case PROTO_LDAP:
-        case PROTO_MDNS:
-        case PROTO_MANET:
+        case PROTO_MDNS:        
         case PROTO_NETBIOS:
         case PROTO_NETFLOW:
         case PROTO_NTP:

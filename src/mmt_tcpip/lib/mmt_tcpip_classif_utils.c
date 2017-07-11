@@ -1453,6 +1453,8 @@ static const protocol_match doted_host_names[] = {
     {".20minutes.fr", PROTO_20MINUTES, MMT_STATICSTRING_LEN(".20minutes.fr")},
     {".aliexpress.com", PROTO_ALIEXPRESS, MMT_STATICSTRING_LEN(".aliexpress.com")},
     {".alicdn.com", PROTO_ALIEXPRESS, MMT_STATICSTRING_LEN(".alicdn.com"), MMT_CONTENT_CDN},
+    {".fnac.com", PROTO_FNAC, MMT_STATICSTRING_LEN(".fnac.com")},
+    {".fnac.fr", PROTO_FNAC, MMT_STATICSTRING_LEN(".fnac.fr")},
     { NULL, 0, 0}
 };
 

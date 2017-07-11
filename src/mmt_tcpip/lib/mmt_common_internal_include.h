@@ -1094,8 +1094,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_MAIL_RU //////////////////
     int init_proto_mail_ru_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_MANET //////////////////
-    int init_proto_manet_struct();
+    /////////// PLUGIN INIT FOR PROTO_FNAC //////////////////
+    int init_proto_fnac_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_MANOLITO //////////////////
     int init_proto_manolito_struct();

@@ -226,7 +226,7 @@ extern "C" {
 #define PROTO_LOWES 211
 #define PROTO_MACYS 212
 #define PROTO_MAIL_RU 213
-#define PROTO_MANET 214
+#define PROTO_FNAC 214
 #define PROTO_MANOLITO 215
 #define PROTO_MAPLESTORY 216
 #define PROTO_MATCH 217
@@ -865,7 +865,7 @@ extern "C" {
 #define PROTO_LOWES_ALIAS "lowes"
 #define PROTO_MACYS_ALIAS "macys"
 #define PROTO_MAIL_RU_ALIAS "mail_ru"
-#define PROTO_MANET_ALIAS "manet"
+#define PROTO_FNAC_ALIAS "fnac"
 #define PROTO_MANOLITO_ALIAS "manolito"
 #define PROTO_MAPLESTORY_ALIAS "maplestory"
 #define PROTO_MATCH_ALIAS "match"

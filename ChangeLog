@@ -12,6 +12,7 @@ Version 1.6.9.2
 - Replace PROTO_GCM by PROTO_TWITCH
 - Replace PROTO_GTP2 by PROTO_20MINUTES
 - Replace PROTO_IMESSAGE by PROTO_ALIEXPRESS
+- Replace PROTO_MANET by PROTO_FNAC
 
 Version 1.6.9.1
 - Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...
