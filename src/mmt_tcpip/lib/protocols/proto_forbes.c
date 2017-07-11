@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_voxel_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_VOXEL, PROTO_VOXEL_ALIAS);
+int init_proto_forbes_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_FORBES, PROTO_FORBES_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_VOXEL);
+        return register_protocol(protocol_struct, PROTO_FORBES);
     } else {
         return 0;
     }

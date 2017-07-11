@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_manet_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_MANET, PROTO_MANET_ALIAS);
+int init_proto_fnac_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_FNAC, PROTO_FNAC_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_MANET);
+        return register_protocol(protocol_struct, PROTO_FNAC);
     } else {
         return 0;
     }

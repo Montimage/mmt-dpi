@@ -154,7 +154,7 @@ extern "C" {
 #define PROTO_GROUPON 139
 #define PROTO_GTALK 140
 #define PROTO_GTP 141
-#define PROTO_GTP2 142
+#define PROTO_20MINUTES 142
 #define PROTO_GUARDIAN 143
 #define PROTO_GUILDWARS 144
 #define PROTO_HABERTURK 145
@@ -166,7 +166,7 @@ extern "C" {
 #define PROTO_HOOTSUITE 151
 #define PROTO_HOTMAIL 152
 #define PROTO_HTTP 153
-#define PROTO_HTTP_CONNECT 154
+#define PROTO_REUTERS 154
 #define PROTO_HTTP_PROXY 155
 #define PROTO_HTTP_APPLICATION_ACTIVESYNC 156
 #define PROTO_HUFFINGTONPOST 157
@@ -185,7 +185,7 @@ extern "C" {
 #define PROTO_IMAPS 170
 #define PROTO_IMDB 171
 #define PROTO_IMESH 172
-#define PROTO_IMESSAGE 173
+#define PROTO_ALIEXPRESS 173
 #define PROTO_IMGUR 174
 #define PROTO_LEBONCOIN 175
 #define PROTO_INDIATIMES 176
@@ -226,7 +226,7 @@ extern "C" {
 #define PROTO_LOWES 211
 #define PROTO_MACYS 212
 #define PROTO_MAIL_RU 213
-#define PROTO_MANET 214
+#define PROTO_FNAC 214
 #define PROTO_MANOLITO 215
 #define PROTO_MAPLESTORY 216
 #define PROTO_MATCH 217
@@ -298,7 +298,7 @@ extern "C" {
 #define PROTO_QQ 283
 #define PROTO_QQLIVE 284
 #define PROTO_QUAKE 285
-#define PROTO_QUICKTIME 286
+#define PROTO_FORBES 286
 #define PROTO_R10 287
 #define PROTO_RADIUS 288
 #define PROTO_RAKUTEN 289
@@ -627,7 +627,7 @@ extern "C" {
 #define PROTO_LIMELIGHT 612
 #define PROTO_MAXCDN 613
 #define PROTO_NETDNA 614
-#define PROTO_VOXEL 615
+#define PROTO_STACKPATH 615
 #define PROTO_RACKSPACE 616
 #define PROTO_GAMEFORGE 617
 #define PROTO_METIN2 618
@@ -635,7 +635,7 @@ extern "C" {
 #define PROTO_BATTLEKNIGHT 620
 #define PROTO_4STORY 621
 #define PROTO_FBMSG 622 //Facebook messaging
-#define PROTO_GCM 623 //Google Cloud Messaging
+#define PROTO_TWITCH 623 //Google Cloud Messaging
 #define PROTO_SLL 624 //Linux Cooked Socket
 #define PROTO_NDN 625 // NDN protocol
 #define PROTO_NDN_HTTP 626 // NDN_HTTP protocol
@@ -793,7 +793,7 @@ extern "C" {
 #define PROTO_GROUPON_ALIAS "groupon"
 #define PROTO_GTALK_ALIAS "gtalk"
 #define PROTO_GTP_ALIAS "gtp"
-#define PROTO_GTP2_ALIAS "gtp2"
+#define PROTO_20MINUTES_ALIAS "20minutes"
 #define PROTO_GUARDIAN_ALIAS "guardian"
 #define PROTO_GUILDWARS_ALIAS "guildwars"
 #define PROTO_HABERTURK_ALIAS "haberturk"
@@ -805,7 +805,7 @@ extern "C" {
 #define PROTO_HOOTSUITE_ALIAS "hootsuite"
 #define PROTO_HOTMAIL_ALIAS "hotmail"
 #define PROTO_HTTP_ALIAS "http"
-#define PROTO_HTTP_CONNECT_ALIAS "http_connect"
+#define PROTO_REUTERS_ALIAS "reuters"
 #define PROTO_HTTP_PROXY_ALIAS "http_proxy"
 #define PROTO_HTTP_APPLICATION_ACTIVESYNC_ALIAS "http_activesync"
 #define PROTO_HUFFINGTONPOST_ALIAS "huffingtonpost"
@@ -824,7 +824,7 @@ extern "C" {
 #define PROTO_IMAPS_ALIAS "imaps"
 #define PROTO_IMDB_ALIAS "imdb"
 #define PROTO_IMESH_ALIAS "imesh"
-#define PROTO_IMESSAGE_ALIAS "imessage"
+#define PROTO_ALIEXPRESS_ALIAS "aliexpress"
 #define PROTO_IMGUR_ALIAS "imgur"
 #define PROTO_LEBONCOIN_ALIAS "leboncoin"
 #define PROTO_INDIATIMES_ALIAS "indiatimes"
@@ -865,7 +865,7 @@ extern "C" {
 #define PROTO_LOWES_ALIAS "lowes"
 #define PROTO_MACYS_ALIAS "macys"
 #define PROTO_MAIL_RU_ALIAS "mail_ru"
-#define PROTO_MANET_ALIAS "manet"
+#define PROTO_FNAC_ALIAS "fnac"
 #define PROTO_MANOLITO_ALIAS "manolito"
 #define PROTO_MAPLESTORY_ALIAS "maplestory"
 #define PROTO_MATCH_ALIAS "match"
@@ -937,7 +937,7 @@ extern "C" {
 #define PROTO_QQ_ALIAS "qq"
 #define PROTO_QQLIVE_ALIAS "qqlive"
 #define PROTO_QUAKE_ALIAS "quake"
-#define PROTO_QUICKTIME_ALIAS "quicktime"
+#define PROTO_FORBES_ALIAS "forbes"
 #define PROTO_R10_ALIAS "r10"
 #define PROTO_RADIUS_ALIAS "radius"
 #define PROTO_RAKUTEN_ALIAS "rakuten"
@@ -1266,7 +1266,7 @@ extern "C" {
 #define PROTO_LIMELIGHT_ALIAS "limelight"
 #define PROTO_MAXCDN_ALIAS "maxcdn"
 #define PROTO_NETDNA_ALIAS "netdna"
-#define PROTO_VOXEL_ALIAS "voxel"
+#define PROTO_STACKPATH_ALIAS "stackpath"
 #define PROTO_RACKSPACE_ALIAS "rackspace"
 #define PROTO_GAMEFORGE_ALIAS "gameforge"
 #define PROTO_METIN2_ALIAS "metin2"
@@ -1274,7 +1274,7 @@ extern "C" {
 #define PROTO_BATTLEKNIGHT_ALIAS "battleknight"
 #define PROTO_4STORY_ALIAS "4story"
 #define PROTO_FBMSG_ALIAS "fbmsg"
-#define PROTO_GCM_ALIAS "gcm"
+#define PROTO_TWITCH_ALIAS "twitch"
 #define PROTO_SLL_ALIAS "sll"
 #define PROTO_NDN_ALIAS "ndn"
 #define PROTO_NDN_HTTP_ALIAS "ndn_http"	

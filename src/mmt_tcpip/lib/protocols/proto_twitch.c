@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_imessage_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_IMESSAGE, PROTO_IMESSAGE_ALIAS);
+int init_proto_twitch_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_TWITCH, PROTO_TWITCH_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_IMESSAGE);
+        return register_protocol(protocol_struct, PROTO_TWITCH);
     } else {
         return 0;
     }

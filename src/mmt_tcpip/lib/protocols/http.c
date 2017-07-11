@@ -1688,9 +1688,6 @@ static inline void http_bitmask_exclude(struct mmt_internal_tcpip_session_struct
 #ifdef PROTO_MPEG
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MPEG);
 #endif
-#ifdef PROTO_QUICKTIME
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUICKTIME);
-#endif
 #ifdef PROTO_WINDOWSMEDIA
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_WINDOWSMEDIA);
 #endif
@@ -1720,7 +1717,7 @@ void mmt_init_classify_me_http() {
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     // This list should not be updated 
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP_CONNECT);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REUTERS);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP_PROXY);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_I23V5);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_POPO);
@@ -1731,7 +1728,6 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WORLD_OF_KUNG_FU);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MPEG);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FLASH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_QUICKTIME);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WINDOWSMEDIA);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_OFF);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AVI);

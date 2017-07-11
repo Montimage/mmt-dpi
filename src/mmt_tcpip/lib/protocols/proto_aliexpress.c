@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_gtp2_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_GTP2, PROTO_GTP2_ALIAS);
+int init_proto_aliexpress_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ALIEXPRESS, PROTO_ALIEXPRESS_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_GTP2);
+        return register_protocol(protocol_struct, PROTO_ALIEXPRESS);
     } else {
         return 0;
     }

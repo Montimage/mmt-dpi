@@ -2,7 +2,7 @@
 sdk_dir=../sdk
 
 # Set name of package with given version
-build_dir=mmt-dpi_1.6.9.2_`uname -s`_`uname -p`_`date +%s`
+build_dir=mmt_dpi1.6.10.0_`uname -s`_`uname -p`_`date +%s`
 
 echo "-]> Preparing temporary location ..."
 # Create a directory with the name of package

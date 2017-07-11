@@ -8,10 +8,10 @@
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-int init_proto_gcm_struct() {
-    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_GCM, PROTO_GCM_ALIAS);
+int init_proto_stackpath_struct() {
+    protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_STACKPATH, PROTO_STACKPATH_ALIAS);
     if (protocol_struct != NULL) { 
-        return register_protocol(protocol_struct, PROTO_GCM);
+        return register_protocol(protocol_struct, PROTO_STACKPATH);
     } else {
         return 0;
     }

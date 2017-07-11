@@ -546,7 +546,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_GOOGLE_USER_CONTENT:
         case PROTO_HAO123:
         case PROTO_HTTP:
-        case PROTO_HTTP_CONNECT:
+        case PROTO_REUTERS:
         case PROTO_HTTP_PROXY:
         case PROTO_HUFFINGTONPOST:
         case PROTO_I23V5:
@@ -616,7 +616,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_POPO:
         case PROTO_PORNHUB:
         case PROTO_QQ:
-        case PROTO_QUICKTIME:
+        case PROTO_FORBES:
         case PROTO_RAKUTEN:
         case PROTO_REDTUBE:
         case PROTO_SINA:
@@ -711,7 +711,10 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_WEBSHOTS:
         case PROTO_BREAK:
         case PROTO_ENGAGEMEDIA:
-        case PROTO_GCM:
+        case PROTO_TWITCH:
+        case PROTO_ALIEXPRESS:
+        case PROTO_20MINUTES:
+        case PROTO_FNAC:
             return PROTO_CLASS_WEB;
         case PROTO_888POKER:
         case PROTO_ANGRYBIRDS:
@@ -835,8 +838,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_GTALK:
         case PROTO_OSCAR:
         case PROTO_IRC:
-        case PROTO_UNENCRYPED_JABBER:
-        case PROTO_IMESSAGE:
+        case PROTO_UNENCRYPED_JABBER:        
         case PROTO_KAKAO:
         case PROTO_MEEBO:
         case PROTO_WHATSAPP:
@@ -893,8 +895,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_ETHERIP:
         case PROTO_IPX_IN_IP:
         case PROTO_MPLS_IN_IP:
-        case PROTO_GTP:
-        case PROTO_GTP2:
+        case PROTO_GTP:        
         case PROTO_L2TP:
             return PROTO_CLASS_TUNNEL;
         case PROTO_ESP:
@@ -917,8 +918,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_IPSEC:
         case PROTO_KERBEROS:
         case PROTO_LDAP:
-        case PROTO_MDNS:
-        case PROTO_MANET:
+        case PROTO_MDNS:        
         case PROTO_NETBIOS:
         case PROTO_NETFLOW:
         case PROTO_NTP:
@@ -1081,7 +1081,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_LIMELIGHT:
         case PROTO_MAXCDN:
         case PROTO_NETDNA:
-        case PROTO_VOXEL:
+        case PROTO_STACKPATH:
         case PROTO_RACKSPACE:
             return PROTO_CLASS_CDN;
         case PROTO_UNKNOWN:

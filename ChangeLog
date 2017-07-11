@@ -1,20 +1,26 @@
 RELEASE NOTES
 ---
-## Pre-Version 1.6.10.0
-
+## Version 1.6.10.0
 - Add classification function to 25 unknown protocols
 - Update PROTO_SCTP: Extract more information
 - Replace the 8 dead hostname protocols by new protocols from top 50 in France
 
 Version 1.6.9.2
 - Deliver to THALES
+- Fixed double free AVL tree on Centos environment
+- Replace PROTO_GCM by PROTO_TWITCH
+- Replace PROTO_GTP2 by PROTO_20MINUTES
+- Replace PROTO_IMESSAGE by PROTO_ALIEXPRESS
+- Replace PROTO_MANET by PROTO_FNAC
+- Replace PROTO_QUICKTIME by PROTO_FORBES
+- Replace PROTO_HTTP_CONNECT by PROTO_FOXNEWS
+- Replace PROTO_FOXNEWS by PROTO_REUTERS
 
 Version 1.6.9.1
 - Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...
 - Update PROTO_SCTP: add next protocols: PROTO_SCTP_INT, PROTO_SCTP_SACK, PROTO_SCTP_DATA
 - Fixed FTP reconstruction in ACTIVE MODE - remove some unexpected value in the command
 - Fixed problem with protocol loop: IP - GRE - IP - GRE - IP - TCP - HTTP
-
 - Replace the 8 dead hostname protocols by new protocols from top 50 in France
 	- Replace protocol grooveshark by groovesharks - hostname has changed
 	- Update PROTO_GAZETEVATAN with new hostname
@@ -23,18 +29,16 @@ Version 1.6.9.1
 	- Replace PROTO_LOKERZ by PROTO_LEMONDE
 	- Replace PROTO_MSCDN by PROTO_LEFIGARO
 	- Update hostname for PROTO_LIMELIGHT: add new hostnames: limelight.com, llnw.net
-
-
 - Add classification function to 25 unknown protocols
 	- Replace PROTO_302_FOUND by PROTO_ZONE_TELECHARGEMENT
 	- Replace PROTO_GOSMS by PROTO_JEUXVIDEO
 	- Add classification for PROTO_IPSEC by port number: 500 (Ref: nDPI)
 	- Add classification for PROTO_OGG by content type after HTTP
-	- Add classification for protocols by hostnames: PROTO_WECHAT, PROTO_BITGRAVITY, PROTO_CACHEFLY, PROTO_CDN77, PROTO_CDNETWORKS, PROTO_CHINACACHE, PROTO_FASTLY, PROTO_HIGHWINDS, PROTO_INTERNAP, PROTO_LEVEL3
+	- Add classification for protocols by hostnames: PROTO_WECHAT, PROTO_BITGRAVITY, PROTO_CACHEFLY, PROTO_CDN77, PROTO_CDNETWORKS, PROTO_CHINACACHE, PROTO_FASTLY, PROTO_HIGHWINDS, PROTO_INTERNAP, PROTO_LEVEL3, PROTO_MAXCDN, PROTO_FBMSG
 	- Replace PROTO_TLS by PROTO_CDISCOUNT
 	- Replace PROTO_YAHOOGAMES by PROTO_ALLOCINE
 	- Replace PROTO_COTENDO by PROTO_FRANCETVINFO
-
+	- Replace PROTO_VOXTEL by PROTO_STACKPATH	
 
 ## Version 1.6.9.0
 - Fixed some protocols based on hostname -> there are 8 protocol based on the hostname that does not exist anymore

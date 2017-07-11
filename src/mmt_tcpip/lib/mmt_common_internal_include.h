@@ -200,7 +200,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /* imesh entry */
     void mmt_classify_me_imesh(ipacket_t * ipacket, unsigned index);
     /* SSL entry */
-    void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index);
+    // void mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index);
     /* flash entry */
     void mmt_classify_me_flash(ipacket_t * ipacket, unsigned index);
     /* mms entry */
@@ -878,8 +878,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_GTP //////////////////
     int init_proto_gtp_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_GTP2 //////////////////
-    int init_proto_gtp2_struct();
+    /////////// PLUGIN INIT FOR PROTO_20MINUTES //////////////////
+    int init_proto_20minutes_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_GUARDIAN //////////////////
     int init_proto_guardian_struct();
@@ -914,8 +914,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_HTTP //////////////////
     int init_proto_http_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_HTTP_CONNECT //////////////////
-    int init_proto_http_connect_struct();
+    /////////// PLUGIN INIT FOR PROTO_REUTERS //////////////////
+    int init_proto_reuters_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_HTTP_PROXY //////////////////
     int init_proto_http_proxy_struct();
@@ -971,8 +971,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_IMESH //////////////////
     int init_proto_imesh_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_IMESSAGE //////////////////
-    int init_proto_imessage_struct();
+    /////////// PLUGIN INIT FOR PROTO_ALIEXPRESS //////////////////
+    int init_proto_aliexpress_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_IMGUR //////////////////
     int init_proto_imgur_struct();
@@ -1094,8 +1094,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_MAIL_RU //////////////////
     int init_proto_mail_ru_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_MANET //////////////////
-    int init_proto_manet_struct();
+    /////////// PLUGIN INIT FOR PROTO_FNAC //////////////////
+    int init_proto_fnac_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_MANOLITO //////////////////
     int init_proto_manolito_struct();
@@ -1310,8 +1310,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_QUAKE //////////////////
     int init_proto_quake_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_QUICKTIME //////////////////
-    int init_proto_quicktime_struct();
+    /////////// PLUGIN INIT FOR PROTO_FORBES //////////////////
+    int init_proto_forbes_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_R10 //////////////////
     int init_proto_r10_struct();
@@ -2298,8 +2298,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_NETDNA //////////////////
     int init_proto_netdna_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_VOXEL //////////////////
-    int init_proto_voxel_struct();
+    /////////// PLUGIN INIT FOR PROTO_STACKPATH //////////////////
+    int init_proto_stackpath_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_RACKSPACE //////////////////
     int init_proto_rackspace_struct();
@@ -2322,8 +2322,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_FBMSG //////////////////
     int init_proto_fbmsg_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_GCM //////////////////
-    int init_proto_gcm_struct();
+    /////////// PLUGIN INIT FOR PROTO_TWITCH //////////////////
+    int init_proto_twitch_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_SLL //////////////////
     int init_proto_sll_struct();

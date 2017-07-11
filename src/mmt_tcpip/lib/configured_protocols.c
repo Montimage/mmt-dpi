@@ -888,9 +888,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_GTP2 //////////////////
-    if (!init_proto_gtp2_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_gtp2\n Exiting\n");
+    /////////// INITILIZING PROTO_20MINUTES //////////////////
+    if (!init_proto_20minutes_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_20MINUTES\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
@@ -960,9 +960,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_HTTP_CONNECT //////////////////
-    if (!init_proto_http_connect_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_http_connect\n Exiting\n");
+    /////////// INITILIZING PROTO_REUTERS //////////////////
+    if (!init_proto_reuters_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_REUTERS\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
@@ -1074,9 +1074,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_IMESSAGE //////////////////
-    if (!init_proto_imessage_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_imessage\n Exiting\n");
+    /////////// INITILIZING PROTO_ALIEXPRESS //////////////////
+    if (!init_proto_aliexpress_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_ALIEXPRESS\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
@@ -1320,9 +1320,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_MANET //////////////////
-    if (!init_proto_manet_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_manet\n Exiting\n");
+    /////////// INITILIZING PROTO_FNAC //////////////////
+    if (!init_proto_fnac_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_FNAC\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
@@ -1752,9 +1752,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_QUICKTIME //////////////////
-    if (!init_proto_quicktime_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_quicktime\n Exiting\n");
+    /////////// INITILIZING PROTO_FORBES //////////////////
+    if (!init_proto_forbes_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_FORBES\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
@@ -3726,9 +3726,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_VOXEL //////////////////
-    if (!init_proto_voxel_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_voxel\n Exiting\n");
+    /////////// INITILIZING PROTO_STACKPATH //////////////////
+    if (!init_proto_stackpath_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_STACKPATH\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
@@ -3774,9 +3774,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_GCM //////////////////
-    if (!init_proto_gcm_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_gcm\n Exiting\n");
+    /////////// INITILIZING PROTO_TWITCH //////////////////
+    if (!init_proto_twitch_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_TWITCH\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
