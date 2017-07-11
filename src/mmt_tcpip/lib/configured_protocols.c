@@ -888,9 +888,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_GTP2 //////////////////
-    if (!init_proto_gtp2_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_gtp2\n Exiting\n");
+    /////////// INITILIZING PROTO_20MINUTES //////////////////
+    if (!init_proto_20minutes_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_20MINUTES\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////

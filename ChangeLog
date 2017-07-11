@@ -9,6 +9,8 @@ RELEASE NOTES
 Version 1.6.9.2
 - Deliver to THALES
 - Fixed double free AVL tree on Centos environment
+- Replace PROTO_GCM by PROTO_TWITCH
+- Replace PROTO_GTP2 by PROTO_20MINUTES
 
 Version 1.6.9.1
 - Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...
@@ -35,9 +37,7 @@ Version 1.6.9.1
 	- Replace PROTO_TLS by PROTO_CDISCOUNT
 	- Replace PROTO_YAHOOGAMES by PROTO_ALLOCINE
 	- Replace PROTO_COTENDO by PROTO_FRANCETVINFO
-	- Replace PROTO_VOXTEL by PROTO_STACKPATH
-	- Replace PROTO_GCM by PROTO_TWITCH
-
+	- Replace PROTO_VOXTEL by PROTO_STACKPATH	
 
 ## Version 1.6.9.0
 - Fixed some protocols based on hostname -> there are 8 protocol based on the hostname that does not exist anymore

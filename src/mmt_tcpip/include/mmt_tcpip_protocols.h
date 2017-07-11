@@ -154,7 +154,7 @@ extern "C" {
 #define PROTO_GROUPON 139
 #define PROTO_GTALK 140
 #define PROTO_GTP 141
-#define PROTO_GTP2 142
+#define PROTO_20MINUTES 142
 #define PROTO_GUARDIAN 143
 #define PROTO_GUILDWARS 144
 #define PROTO_HABERTURK 145
@@ -793,7 +793,7 @@ extern "C" {
 #define PROTO_GROUPON_ALIAS "groupon"
 #define PROTO_GTALK_ALIAS "gtalk"
 #define PROTO_GTP_ALIAS "gtp"
-#define PROTO_GTP2_ALIAS "gtp2"
+#define PROTO_20MINUTES_ALIAS "20minutes"
 #define PROTO_GUARDIAN_ALIAS "guardian"
 #define PROTO_GUILDWARS_ALIAS "guildwars"
 #define PROTO_HABERTURK_ALIAS "haberturk"

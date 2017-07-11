@@ -878,8 +878,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_GTP //////////////////
     int init_proto_gtp_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_GTP2 //////////////////
-    int init_proto_gtp2_struct();
+    /////////// PLUGIN INIT FOR PROTO_20MINUTES //////////////////
+    int init_proto_20minutes_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_GUARDIAN //////////////////
     int init_proto_guardian_struct();

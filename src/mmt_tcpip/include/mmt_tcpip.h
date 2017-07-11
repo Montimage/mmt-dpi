@@ -712,6 +712,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_BREAK:
         case PROTO_ENGAGEMEDIA:
         case PROTO_TWITCH:
+        case PROTO_20MINUTES:
             return PROTO_CLASS_WEB;
         case PROTO_888POKER:
         case PROTO_ANGRYBIRDS:
@@ -893,8 +894,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_ETHERIP:
         case PROTO_IPX_IN_IP:
         case PROTO_MPLS_IN_IP:
-        case PROTO_GTP:
-        case PROTO_GTP2:
+        case PROTO_GTP:        
         case PROTO_L2TP:
             return PROTO_CLASS_TUNNEL;
         case PROTO_ESP:
