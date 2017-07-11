@@ -166,7 +166,7 @@ extern "C" {
 #define PROTO_HOOTSUITE 151
 #define PROTO_HOTMAIL 152
 #define PROTO_HTTP 153
-#define PROTO_FOXNEWS 154
+#define PROTO_REUTERS 154
 #define PROTO_HTTP_PROXY 155
 #define PROTO_HTTP_APPLICATION_ACTIVESYNC 156
 #define PROTO_HUFFINGTONPOST 157
@@ -805,7 +805,7 @@ extern "C" {
 #define PROTO_HOOTSUITE_ALIAS "hootsuite"
 #define PROTO_HOTMAIL_ALIAS "hotmail"
 #define PROTO_HTTP_ALIAS "http"
-#define PROTO_FOXNEWS_ALIAS "foxnews"
+#define PROTO_REUTERS_ALIAS "reuters"
 #define PROTO_HTTP_PROXY_ALIAS "http_proxy"
 #define PROTO_HTTP_APPLICATION_ACTIVESYNC_ALIAS "http_activesync"
 #define PROTO_HUFFINGTONPOST_ALIAS "huffingtonpost"

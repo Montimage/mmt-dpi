@@ -960,9 +960,9 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
-    /////////// INITILIZING PROTO_FOXNEWS //////////////////
-    if (!init_proto_foxnews_struct()) {
-        fprintf(stderr, "Error initializing protocol PROTO_FOXNEWS\n Exiting\n");
+    /////////// INITILIZING PROTO_REUTERS //////////////////
+    if (!init_proto_reuters_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_REUTERS\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
