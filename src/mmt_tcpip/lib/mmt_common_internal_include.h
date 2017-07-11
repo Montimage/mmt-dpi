@@ -914,8 +914,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     /////////// PLUGIN INIT FOR PROTO_HTTP //////////////////
     int init_proto_http_struct();
     /////////////////////////////////////////////////
-    /////////// PLUGIN INIT FOR PROTO_HTTP_CONNECT //////////////////
-    int init_proto_http_connect_struct();
+    /////////// PLUGIN INIT FOR PROTO_FOXNEWS //////////////////
+    int init_proto_foxnews_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_HTTP_PROXY //////////////////
     int init_proto_http_proxy_struct();

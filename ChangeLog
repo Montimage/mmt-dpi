@@ -14,6 +14,7 @@ Version 1.6.9.2
 - Replace PROTO_IMESSAGE by PROTO_ALIEXPRESS
 - Replace PROTO_MANET by PROTO_FNAC
 - Replace PROTO_QUICKTIME by PROTO_FORBES
+- Replace PROTO_HTTP_CONNECT by PROTO_FOXNEWS
 
 Version 1.6.9.1
 - Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...

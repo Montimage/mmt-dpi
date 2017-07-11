@@ -1456,6 +1456,7 @@ static const protocol_match doted_host_names[] = {
     {".fnac.com", PROTO_FNAC, MMT_STATICSTRING_LEN(".fnac.com")},
     {".fnac.fr", PROTO_FNAC, MMT_STATICSTRING_LEN(".fnac.fr")},
     {".forbes.com", PROTO_FORBES, MMT_STATICSTRING_LEN(".forbes.com")},
+    {".foxnews.com", PROTO_FOXNEWS, MMT_STATICSTRING_LEN(".foxnews.com")},
     { NULL, 0, 0}
 };
 

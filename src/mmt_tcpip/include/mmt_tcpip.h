@@ -546,7 +546,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_GOOGLE_USER_CONTENT:
         case PROTO_HAO123:
         case PROTO_HTTP:
-        case PROTO_HTTP_CONNECT:
+        case PROTO_FOXNEWS:
         case PROTO_HTTP_PROXY:
         case PROTO_HUFFINGTONPOST:
         case PROTO_I23V5:

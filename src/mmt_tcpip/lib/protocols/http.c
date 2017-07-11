@@ -1717,7 +1717,7 @@ void mmt_init_classify_me_http() {
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     // This list should not be updated 
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP_CONNECT);
+    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FOXNEWS);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP_PROXY);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_I23V5);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_POPO);
