@@ -1,5 +1,10 @@
 RELEASE NOTES
 ---
+## Pre-version 1.6.11.0
+
+Version 1.6.10.1
+- Fixed GTP offset
+
 ## Version 1.6.10.0
 - Add classification function to 25 unknown protocols
 - Update PROTO_SCTP: Extract more information
