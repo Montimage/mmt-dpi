@@ -4,6 +4,7 @@ RELEASE NOTES
 
 Version 1.6.10.1
 - Fixed GTP offset
+- Fixed FTP memory corruption when freeing command which contains special character
 
 ## Version 1.6.10.0
 - Add classification function to 25 unknown protocols

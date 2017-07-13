@@ -71,7 +71,7 @@ extern "C" {
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
 #ifndef VERSION
-    #define VERSION "1.6.10.0"
+    #define VERSION "1.6.10.1"
 #endif
 
 #ifdef LIGHTSDK
