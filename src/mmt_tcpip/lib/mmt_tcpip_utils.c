@@ -276,14 +276,57 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             		break;
 
             	case 'c':
-            		if ( //line_length > 13 &&
-            				mmt_memcmp(str, "content-type:", 13) == 0)
-            		{
-            			packet->content_line.ptr = &str[13];
-            			packet->content_line.len = line_length - 13;
-            		}
-            		break;
-
+            		switch( str[8] ){
+                    case 'T':
+                            if ( //line_length > 14 &&
+                                    mmt_memcmp (str, "content-Type: ", 14) == 0) {
+                                packet->content_line.ptr = &str[14];
+                                packet->content_line.len = line_length - 14;
+                            }
+                            break;
+                    case 't':
+                        if ( //line_length > 14 &&
+                                mmt_memcmp(str, "content-type: ", 14) == 0) {
+                            packet->content_line.ptr = &str[14];
+                            packet->content_line.len = line_length - 14;
+                        }
+                        break;
+                    case 'E':
+                            if ( //line_length > 18 &&
+                                    mmt_memcmp(str, "content-Encoding: ", 18) == 0) {
+                                packet->http_encoding.ptr = &str[18];
+                                packet->http_encoding.len = line_length - 18;
+                            }
+                            break;
+                    case 'L':
+                            if ( //line_length > 16 &&
+                                    (mmt_memcmp(str, "content-Length: ", 16) == 0) ) {
+                                packet->http_contentlen.ptr = &str[16];
+                                packet->http_contentlen.len = line_length - 16;
+                            }
+                            break;
+                    case 'l':
+                        if ( //line_length > 16 &&
+                                (mmt_memcmp(str, "content-length: ", 16) == 0)) {
+                            packet->http_contentlen.ptr = &str[16];
+                            packet->http_contentlen.len = line_length - 16;
+                        }
+                        break;
+                    case 'o':
+                        if ( //line_length > 16 &&
+                                (mmt_memcmp(str, "connection: ", 12) == 0)) {
+                            packet->connection_line.ptr = &str[12];
+                            packet->connection_line.len = line_length - 12;
+                        }
+                        break;    
+                    default:
+                            if ( //line_length > 8 &&
+                                    mmt_memcmp(str, "cookie: ", 8) == 0) {
+                                packet->http_cookie.ptr = &str[8];
+                                packet->http_cookie.len = line_length - 8;
+                            }
+                    }//end of switch of 'C'
+                    break;
             	case 'A':
             		if ( //line_length > 8 &&
             				mmt_memcmp(str, "Accept: ", 8) == 0)
@@ -292,6 +335,14 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             			packet->accept_line.len = line_length - 8;
             		}
             		break;
+                case 'a':
+                    if ( //line_length > 8 &&
+                            mmt_memcmp(str, "accept: ", 8) == 0)
+                    {
+                        packet->accept_line.ptr = &str[8];
+                        packet->accept_line.len = line_length - 8;
+                    }
+                    break;    
 
             	case 'R':
             		if ( //line_length > 9 &&
@@ -303,15 +354,41 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             		break;
 
             	case 'U':
-            		if ( //line_length > 12 &&
-            				(mmt_memcmp(str, "User-Agent: ", 12) == 0 ||
-            				 mmt_memcmp(str, "User-agent: ", 12) == 0))
-            		{
-            			packet->user_agent_line.ptr = &str[12];
-            			packet->user_agent_line.len = line_length - 12;
-            		}
+                    if(str[1]=='s'){
+                        if ( //line_length > 12 &&
+                            (mmt_memcmp(str, "User-Agent: ", 12) == 0 ||
+                             mmt_memcmp(str, "User-agent: ", 12) == 0))
+                        {
+                            packet->user_agent_line.ptr = &str[12];
+                            packet->user_agent_line.len = line_length - 12;
+                        }    
+                    }else if(str[1]=='p'){
+                        if ( //line_length > 12 &&
+                            (mmt_memcmp(str, "Upgrade: ", 9) == 0))
+                        {
+                            packet->upgrade_line.ptr = &str[9];
+                            packet->upgrade_line.len = line_length - 9;
+                        }    
+                    }
             		break;
-
+                case 'u':
+                    if(str[1]=='s'){
+                        if ( //line_length > 12 &&
+                            (mmt_memcmp(str, "user-Agent: ", 12) == 0 ||
+                             mmt_memcmp(str, "user-agent: ", 12) == 0))
+                        {
+                            packet->user_agent_line.ptr = &str[12];
+                            packet->user_agent_line.len = line_length - 12;
+                        }    
+                    }else if(str[1]=='p'){
+                        if ( //line_length > 12 &&
+                            (mmt_memcmp(str, "upgrade: ", 9) == 0))
+                        {
+                            packet->upgrade_line.ptr = &str[9];
+                            packet->upgrade_line.len = line_length - 9;
+                        }    
+                    }
+                    break;    
             	case 'C':
             		switch( str[8] ){
             		case 'T':
@@ -344,11 +421,18 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 							break;
             		case 'l':
             			if ( //line_length > 16 &&
-            					(mmt_memcmp(str, "content-length: ", 16) == 0)) {
+            					(mmt_memcmp(str, "Content-length: ", 16) == 0)) {
             				packet->http_contentlen.ptr = &str[16];
             				packet->http_contentlen.len = line_length - 16;
             			}
             			break;
+                    case 'o':
+                        if ( //line_length > 16 &&
+                                (mmt_memcmp(str, "Connection: ", 12) == 0)) {
+                            packet->connection_line.ptr = &str[12];
+                            packet->connection_line.len = line_length - 12;
+                        }
+                        break;    
             		default:
 							if ( //line_length > 8 &&
 									mmt_memcmp(str, "Cookie: ", 8) == 0) {
