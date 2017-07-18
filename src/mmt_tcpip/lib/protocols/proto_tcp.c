@@ -357,8 +357,8 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
             retval.status = Classified;
             new_retval = set_classified_proto(ipacket, index + 1, retval);}
         else{
-            retval.status = Classified;
             //LN: Add protocol unknown after TCP
+            retval.status = Classified;
             return set_classified_proto(ipacket, index + 1, retval);
         }
     } else {
