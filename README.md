@@ -6,4 +6,5 @@ A software C library desinged to extract data attributes from network packets, s
 
 ---
 Website: [http://www.montimage.com](http://www.montimage.com)
-Contact: [contact@montimage.com](contact@montimage.com)
+
+Contact: [contact@montimage.com](mailto:contact@montimage.com)
