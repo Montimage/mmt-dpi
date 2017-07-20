@@ -104,7 +104,10 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
             retval.status = Classified;
             new_retval = set_classified_proto(ipacket, index + 1, retval);}
         else{
-            retval.status = NonClassified;
+            // retval.status = NonClassified;
+            // //LN: Add protocol unknown after UDP
+            retval.status = Classified;
+            return set_classified_proto(ipacket, index + 1, retval);
         }
 
     } else {

@@ -31,11 +31,9 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
         if (packet->detected_protocol_stack[0] != PROTO_REDIS) {
           if (packet->tcp_retransmission == 0) {
             uint32_t payload_len = packet->payload_packet_len;
-  
             if(payload_len == 0) return 0; /* Shouldn't happen */
-            flow->redis_packet_count++;
             /* Break after 20 packets. */
-            if(flow->redis_packet_count > 20) {
+            if(ipacket->session->packet_count > 20) {
               MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Exclude Redis.\n");
               MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_REDIS);
               return 0;

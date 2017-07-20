@@ -73,11 +73,20 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 
 	int offset = get_packet_offset_at_index(ipacket, index);
 	struct gtp_header_generic *gtp = (struct gtp_header_generic*)& ipacket->data[offset];
-
+	int gtp_offset = sizeof (struct gtp_header_generic);
+	if(gtp->sequence_number == 1){
+		gtp_offset += 4;
+	}
+	if(gtp->ndpu_number == 1){
+		gtp_offset += 2;
+	}
+	if(gtp->extension_header == 1){
+		gtp_offset += 2;	
+	}
 	if (gtp->message_type == 0xff) {
 		classified_proto_t retval;
 		retval.proto_id = PROTO_IP;
-		retval.offset = sizeof (struct gtp_header_generic);
+		retval.offset = gtp_offset;
 		retval.status = Classified;
 		return set_classified_proto(ipacket, index + 1, retval);
 	}

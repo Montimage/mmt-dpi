@@ -22041,6 +22041,7 @@ static const proto_based_ip_t proto_ip_address[] = {
     {0, 0, 0}
 };
 
+// ~10.000 IP ranges
 static avltree_t * proto_avltrees[NETMASK_MAX_NB];
 
 /**

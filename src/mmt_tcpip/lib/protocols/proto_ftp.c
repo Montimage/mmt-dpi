@@ -700,7 +700,7 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
             memcpy(command, "UNKNOWN_CMD", 11);
             command[11]='\0';
             cmd->str_cmd = command;
-            cmd->param = payload;
+            cmd->param = NULL;
             return cmd;
         }
 
