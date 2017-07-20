@@ -138,6 +138,9 @@ int nfs_extract_file_name_from_opcode(const ipacket_t * ipacket, nfs_opcode_t * 
 //     NFS_OPCODE_REMOVE = 28, // 4 + (length 4) + 2 --> PUTFH -> REMOVE
     case NFS_OPCODE_REMOVE:
         length = ntohl(*((unsigned int *) &ipacket->data[main_opcode->data_offset + 4]));
+        if(length > ipacket->p_hdr->caplen){
+            return 0;
+        }
         extracted_data->data_len = length;
         extracted_data->data = (void*)&ipacket->data[main_opcode->data_offset + 8];
         return 1;
@@ -146,6 +149,9 @@ int nfs_extract_file_name_from_opcode(const ipacket_t * ipacket, nfs_opcode_t * 
         return nfs_extract_file_name_from_opcode_open(ipacket, main_opcode->data_offset,extracted_data);
     case NFS_OPCODE_RENAME:
         old_length = ntohl(*((unsigned int *) &ipacket->data[main_opcode->data_offset + 4]));
+        if(old_length > ipacket->p_hdr->caplen){
+            return 0;
+        }
         extracted_data->data_len = old_length;
         extracted_data->data = (void*)&ipacket->data[main_opcode->data_offset + 8];
         return 1;
@@ -158,6 +164,9 @@ int nfs_extract_file_new_name_from_opcode(const ipacket_t * ipacket, nfs_opcode_
     int old_length, new_length;
     old_length = ntohl(*((unsigned int *) &ipacket->data[main_opcode->data_offset + 4]));
     new_length = ntohl(*((unsigned int *) &ipacket->data[main_opcode->data_offset + 8 + old_length + 3]));
+    if(new_length > ipacket->p_hdr->caplen){
+        return 0;
+    }
     extracted_data->data_len = new_length;
     extracted_data->data = (void*)&ipacket->data[main_opcode->data_offset + 8 + old_length + 3 + 4];
     return 1;
@@ -168,18 +177,49 @@ static void mmt_int_nfs_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_NFS, MMT_REAL_PROTOCOL);
 }
 
+// EXTRACTION FUNCTIONS
+int nfs_xid_extraction(const ipacket_t * ipacket, unsigned proto_index,
+                               attribute_t * extracted_data) {
+    if (ipacket->internal_packet->payload_packet_len <= 0) {
+        return 0;
+    }
+    
+    int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        general_int_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+        return 1;
+    }
+    return 0; 
+}
+
+int nfs_message_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
+                               attribute_t * extracted_data) {
+    if (ipacket->internal_packet->payload_packet_len <= 0) {
+        return 0;
+    }
+    
+    int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        general_int_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+        return 1;
+    }
+    return 0; 
+}
+
+
 int nfs_rpc_version_extraction(const ipacket_t * ipacket, unsigned proto_index,
                                attribute_t * extracted_data) {
     if (ipacket->internal_packet->payload_packet_len <= 0) {
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
-
-    int message_type = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 8]));
-    if (message_type == 0) {
-        // Call message
-        *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 12]));
-        return 1;
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 8]));
+        if (message_type == 0) {
+            // Call message
+            *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 12]));
+            return 1;
+        }    
     }
     return 0;
 }
@@ -190,13 +230,14 @@ int nfs_program_extraction(const ipacket_t * ipacket, unsigned proto_index,
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 8]));
 
-    int message_type = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 8]));
-
-    if (message_type == 0) {
-        // Call message
-        *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 16]));
-        return 1;
+        if (message_type == 0) {
+            // Call message
+            *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 16]));
+            return 1;
+        }
     }
     return 0;
 }
@@ -208,13 +249,14 @@ int nfs_prog_version_extraction(const ipacket_t * ipacket, unsigned proto_index,
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 8]));
 
-    int message_type = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 8]));
-
-    if (message_type == 0) {
-        // Call message
-        *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 20]));
-        return 1;
+        if (message_type == 0) {
+            // Call message
+            *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 20]));
+            return 1;
+        }
     }
     return 0;
 }
@@ -226,13 +268,14 @@ int nfs_procedure_extraction(const ipacket_t * ipacket, unsigned proto_index,
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
 
-    int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
-
-    if (message_type == 0) {
-        // Call message
-        *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 24]));
-        return 1;
+        if (message_type == 0) {
+            // Call message
+            *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 24]));
+            return 1;
+        }
     }
     return 0;
 }
@@ -254,16 +297,29 @@ int nfs_tag_extraction(const ipacket_t * ipacket, unsigned proto_index,
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
 
-    int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
-
-    if (message_type == 0) {
-        // Call message
-        int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
-        int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
-        extracted_data->data_len = tag_length;
-        extracted_data->data = (void*)&ipacket->data[nfs_payload_offset + 4];
-        return 1;
+        if (message_type == 0) {
+            // Call message
+            int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
+            if(nfs_data_offset >= ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid nfs data offset",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
+            if(tag_length + nfs_data_offset > ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid tag length",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            extracted_data->data_len = tag_length;
+            if(tag_length == 0){
+                extracted_data->data = NULL;    
+            }else{
+                extracted_data->data = (void*)&ipacket->data[nfs_payload_offset + 4];
+            }
+            return 1;
+        }
     }
     return 0;
 }
@@ -274,15 +330,24 @@ int nfs_minorversion_extraction(const ipacket_t * ipacket, unsigned proto_index,
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
 
-    int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
-
-    if (message_type == 0) {
-        // Call message
-        int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
-        int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
-        *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 4]));
-        return 1;
+        if (message_type == 0) {
+            // Call message
+            int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
+            if(nfs_data_offset >= ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid nfs data offset",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
+            if(tag_length + nfs_data_offset > ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid tag length",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 4]));
+            return 1;
+        }
     }
     return 0;
 }
@@ -293,15 +358,24 @@ int nfs_nb_operations_extraction(const ipacket_t * ipacket, unsigned proto_index
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
 
-    int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
-
-    if (message_type == 0) {
-        // Call message
-        int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
-        int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
-        *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 8]));
-        return 1;
+        if (message_type == 0) {
+            // Call message
+            int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
+            if(nfs_data_offset >= ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid nfs data offset",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
+            if(tag_length + nfs_data_offset > ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid tag length",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 8]));
+            return 1;
+        }
     }
     return 0;
 }
@@ -319,48 +393,57 @@ int nfs_file_opcode_extraction(const ipacket_t * ipacket, unsigned proto_index,
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
 
-    int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
-
-    if (message_type == 0) {
-        // Call message
-        int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
-        int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
-        int nb_opcodes = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 8]));
-        int current_offset = nfs_data_offset + tag_length + 8 + 4;
-        int current_opcode_index = 0;
-        while (current_opcode_index < nb_opcodes && current_offset < nfs_payload_offset + ipacket->internal_packet->payload_packet_len) {
-            current_opcode_index++;
-            nfs_opcode_t * putfh_opcode = nfs_extract_opcode(ipacket, current_offset);
-
-            if (putfh_opcode == NULL) return 0;
-
-            if (putfh_opcode->opcode != NFS_OPCODE_PUTFH) {
-                nfs_opcode_free(putfh_opcode);
-                return 0; // Only focus on call relates to file operations
-            }
-            nfs_opcode_free(putfh_opcode);
-            int putfh_opcode_length = ntohl(*((unsigned int *) & ipacket->data[current_offset + 4]));
-
-            current_offset += 8 + putfh_opcode_length;
-
-            nfs_opcode_t *main_opcode = nfs_extract_opcode(ipacket, current_offset);
-
-            if (main_opcode->opcode == NFS_OPCODE_SAVEFH) {
-                // Main OPCODE in next operation - RENAME operation
-                current_offset += 4;
-                continue;
-            } else {
-                if (nfs_is_file_operation(main_opcode->opcode)) {
-                    *((unsigned int *) extracted_data->data) = main_opcode->opcode;
-                    nfs_opcode_free(main_opcode);
-                    return 1;
-                }
-                nfs_opcode_free(main_opcode);
+        if (message_type == 0) {
+            // Call message
+            int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
+            if(nfs_data_offset >= ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid nfs data offset",ipacket->packet_id, proto_index);
                 return 0;
             }
+            int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
+            if(tag_length + nfs_data_offset > ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid tag length",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            int nb_opcodes = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 8]));
+            int current_offset = nfs_data_offset + tag_length + 8 + 4;
+            int current_opcode_index = 0;
+            while (current_opcode_index < nb_opcodes && current_offset < nfs_payload_offset + ipacket->internal_packet->payload_packet_len) {
+                current_opcode_index++;
+                nfs_opcode_t * putfh_opcode = nfs_extract_opcode(ipacket, current_offset);
+
+                if (putfh_opcode == NULL) return 0;
+
+                if (putfh_opcode->opcode != NFS_OPCODE_PUTFH) {
+                    nfs_opcode_free(putfh_opcode);
+                    return 0; // Only focus on call relates to file operations
+                }
+                nfs_opcode_free(putfh_opcode);
+                int putfh_opcode_length = ntohl(*((unsigned int *) & ipacket->data[current_offset + 4]));
+
+                current_offset += 8 + putfh_opcode_length;
+
+                nfs_opcode_t *main_opcode = nfs_extract_opcode(ipacket, current_offset);
+
+                if (main_opcode->opcode == NFS_OPCODE_SAVEFH) {
+                    // Main OPCODE in next operation - RENAME operation
+                    current_offset += 4;
+                    continue;
+                } else {
+                    if (nfs_is_file_operation(main_opcode->opcode)) {
+                        *((unsigned int *) extracted_data->data) = main_opcode->opcode;
+                        nfs_opcode_free(main_opcode);
+                        return 1;
+                    }
+                    nfs_opcode_free(main_opcode);
+                    return 0;
+                }
+            }
+            return 0;
         }
-        return 0;
     }
     return 0;
 }
@@ -373,47 +456,56 @@ int nfs_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
 
     int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
-
-    if (message_type == 0) {
-        // Call message
-        int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
-        int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
-        int nb_opcodes = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 8]));
-        int current_offset = nfs_data_offset + tag_length + 8 + 4;
-        int current_opcode_index = 0;
-        while (current_opcode_index < nb_opcodes && current_offset < nfs_payload_offset + ipacket->internal_packet->payload_packet_len) {
-            current_opcode_index++;
-            nfs_opcode_t * putfh_opcode = nfs_extract_opcode(ipacket, current_offset);
-
-            if (putfh_opcode == NULL) return 0;
-
-            if (putfh_opcode->opcode != NFS_OPCODE_PUTFH) {
-                nfs_opcode_free(putfh_opcode);
-                return 0; // Only focus on call relates to file operations
-            }
-            nfs_opcode_free(putfh_opcode);
-            int putfh_opcode_length = ntohl(*((unsigned int *) & ipacket->data[current_offset + 4]));
-
-            current_offset += 8 + putfh_opcode_length;
-
-            nfs_opcode_t *main_opcode = nfs_extract_opcode(ipacket, current_offset);
-
-            if (main_opcode->opcode == NFS_OPCODE_SAVEFH) {
-                // Main OPCODE in next operation - RENAME operation
-                current_offset += 4;
-                nfs_opcode_free(main_opcode);
-                continue;
-            } else {
-                if (nfs_is_file_operation(main_opcode->opcode)) {
-                    int ret = nfs_extract_file_name_from_opcode(ipacket, main_opcode,extracted_data);
-                    nfs_opcode_free(main_opcode);
-                    return ret;
-                }
-                nfs_opcode_free(main_opcode);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        if (message_type == 0) {
+            // Call message
+            int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
+            if(nfs_data_offset >= ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid nfs data offset",ipacket->packet_id, proto_index);
                 return 0;
             }
+            int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
+            if(tag_length + nfs_data_offset > ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid tag length",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            int nb_opcodes = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 8]));
+            int current_offset = nfs_data_offset + tag_length + 8 + 4;
+            int current_opcode_index = 0;
+            while (current_opcode_index < nb_opcodes && current_offset < nfs_payload_offset + ipacket->internal_packet->payload_packet_len) {
+                current_opcode_index++;
+                nfs_opcode_t * putfh_opcode = nfs_extract_opcode(ipacket, current_offset);
+
+                if (putfh_opcode == NULL) return 0;
+
+                if (putfh_opcode->opcode != NFS_OPCODE_PUTFH) {
+                    nfs_opcode_free(putfh_opcode);
+                    return 0; // Only focus on call relates to file operations
+                }
+                nfs_opcode_free(putfh_opcode);
+                int putfh_opcode_length = ntohl(*((unsigned int *) & ipacket->data[current_offset + 4]));
+
+                current_offset += 8 + putfh_opcode_length;
+
+                nfs_opcode_t *main_opcode = nfs_extract_opcode(ipacket, current_offset);
+
+                if (main_opcode->opcode == NFS_OPCODE_SAVEFH) {
+                    // Main OPCODE in next operation - RENAME operation
+                    current_offset += 4;
+                    nfs_opcode_free(main_opcode);
+                    continue;
+                } else {
+                    if (nfs_is_file_operation(main_opcode->opcode)) {
+                        int ret = nfs_extract_file_name_from_opcode(ipacket, main_opcode,extracted_data);
+                        nfs_opcode_free(main_opcode);
+                        return ret;
+                    }
+                    nfs_opcode_free(main_opcode);
+                    return 0;
+                }
+            }
+            return 0;
         }
-        return 0;
     }
     return 0;
 }
@@ -424,48 +516,61 @@ int nfs_file_new_name_extraction(const ipacket_t * ipacket, unsigned proto_index
         return 0;
     }
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if(ipacket->data[nfs_payload_offset] >= 0x80 ){
+        int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
 
-    int message_type = ntohl(*((unsigned int *) & ipacket->data[nfs_payload_offset + 8]));
+        if (message_type == 0) {
+            // Call message
+            int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
+            if(nfs_data_offset >= ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid nfs data offset",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
+            if(tag_length + nfs_data_offset > ipacket->p_hdr->caplen){
+                debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid tag length",ipacket->packet_id, proto_index);
+                return 0;
+            }
+            int nb_opcodes = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 8]));
+            int current_offset = nfs_data_offset + tag_length + 8 + 4;
+            int current_opcode_index = 0;
+            while (current_opcode_index < nb_opcodes && current_offset < nfs_payload_offset + ipacket->internal_packet->payload_packet_len) {
+                current_opcode_index++;
+                nfs_opcode_t * putfh_opcode = nfs_extract_opcode(ipacket, current_offset);
 
-    if (message_type == 0) {
-        // Call message
-        int nfs_data_offset = get_nfs_data_offset(ipacket, nfs_payload_offset, 1);
-        int tag_length = ntohl(*((unsigned int *) & ipacket->data[nfs_data_offset]));
-        int nb_opcodes = ntohl(*((unsigned int *) &ipacket->data[nfs_data_offset + tag_length + 8]));
-        int current_offset = nfs_data_offset + tag_length + 8 + 4;
-        int current_opcode_index = 0;
-        while (current_opcode_index < nb_opcodes && current_offset < nfs_payload_offset + ipacket->internal_packet->payload_packet_len) {
-            current_opcode_index++;
-            nfs_opcode_t * putfh_opcode = nfs_extract_opcode(ipacket, current_offset);
+                if (putfh_opcode == NULL) return 0;
 
-            if (putfh_opcode == NULL) return 0;
-
-            if (putfh_opcode->opcode != NFS_OPCODE_PUTFH) {
+                if (putfh_opcode->opcode != NFS_OPCODE_PUTFH) {
+                    nfs_opcode_free(putfh_opcode);
+                    return 0; // Only focus on call relates to file operations
+                }
                 nfs_opcode_free(putfh_opcode);
-                return 0; // Only focus on call relates to file operations
-            }
-            nfs_opcode_free(putfh_opcode);
-            int putfh_opcode_length = ntohl(*((unsigned int *) & ipacket->data[current_offset + 4]));
+                int putfh_opcode_length = ntohl(*((unsigned int *) & ipacket->data[current_offset + 4]));
 
-            current_offset += 8 + putfh_opcode_length;
+                current_offset += 8 + putfh_opcode_length;
 
-            nfs_opcode_t *main_opcode = nfs_extract_opcode(ipacket, current_offset);
-            if (main_opcode->opcode == NFS_OPCODE_RENAME){
-                int ret = nfs_extract_file_new_name_from_opcode(ipacket, main_opcode,extracted_data);
+                nfs_opcode_t *main_opcode = nfs_extract_opcode(ipacket, current_offset);
+                if (main_opcode->opcode == NFS_OPCODE_RENAME){
+                    int ret = nfs_extract_file_new_name_from_opcode(ipacket, main_opcode,extracted_data);
+                    nfs_opcode_free(main_opcode);
+                    return ret;
+                }
                 nfs_opcode_free(main_opcode);
-                return ret;
+                return 0;
             }
-            nfs_opcode_free(main_opcode);
             return 0;
         }
-        return 0;
     }
     return 0;
 }
 
+// END OF EXTRACTION FUNCTIONS
+
 static attribute_metadata_t nfs_attributes_metadata[NFS_ATTRIBUTES_NB] = {
-    {NFS_XID, NFS_XID_ALIAS, MMT_U32_DATA, sizeof (int), 4, SCOPE_PACKET, general_int_extraction_with_ordering_change},
-    {NFS_MESSAGE_TYPE, NFS_MESSAGE_TYPE_ALIAS, MMT_U32_DATA, sizeof (int), 8, SCOPE_PACKET, general_int_extraction_with_ordering_change},
+    // {NFS_XID, NFS_XID_ALIAS, MMT_U32_DATA, sizeof (int), 4, SCOPE_PACKET, general_int_extraction_with_ordering_change},
+    // {NFS_MESSAGE_TYPE, NFS_MESSAGE_TYPE_ALIAS, MMT_U32_DATA, sizeof (int), 8, SCOPE_PACKET, general_int_extraction_with_ordering_change},
+    {NFS_XID, NFS_XID_ALIAS, MMT_U32_DATA, sizeof (int), 4, SCOPE_PACKET, nfs_xid_extraction},
+    {NFS_MESSAGE_TYPE, NFS_MESSAGE_TYPE_ALIAS, MMT_U32_DATA, sizeof (int), 8, SCOPE_PACKET, nfs_message_type_extraction},
     // Call packet attributes
     {NFS_RPC_VERSION, NFS_RPC_VERSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, nfs_rpc_version_extraction},
     {NFS_PROGRAM, NFS_PROGRAM_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, nfs_program_extraction},
