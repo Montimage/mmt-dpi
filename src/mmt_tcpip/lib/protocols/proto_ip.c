@@ -1083,7 +1083,10 @@ int ip_classify_next_proto(ipacket_t * ipacket, unsigned index) {
         retval.status = Classified;
         break;
     default:
-        return 0;
+        retval.proto_id = PROTO_UNKNOWN;
+        retval.offset = (ip_hdr->ihl * 4);
+        retval.status = Classified;
+        break;
     }
     return set_classified_proto(ipacket, index + 1, retval);
     //return retval;

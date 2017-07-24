@@ -141,6 +141,9 @@ int gre_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.status = Classified;
             break; 
         default:
+            retval.proto_id = PROTO_UNKNOWN;
+            retval.offset = 4 + nb_lignes * 4;
+            retval.status = Classified;
             break;
     }
     

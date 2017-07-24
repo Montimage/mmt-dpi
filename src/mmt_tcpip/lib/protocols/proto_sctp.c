@@ -80,6 +80,9 @@ int sctp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             break;
 
         default:
+            retval.proto_id = PROTO_UNKNOWN;
+            retval.offset = 12; //TODO replace with defination
+            retval.status = Classified;
             break;
     }
     return set_classified_proto(ipacket, index + 1, retval);

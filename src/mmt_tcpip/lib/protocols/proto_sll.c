@@ -99,9 +99,10 @@ int sll_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.offset = sizeof (struct sll_header);
             retval.status = Classified;
             break;
-            break;
-            break;
         default:
+            retval.proto_id = PROTO_UNKNOWN;
+            retval.offset = sizeof (struct sll_header);
+            retval.status = Classified;
             break;
     }
     return set_classified_proto(ipacket, index + 1, retval);
