@@ -80,6 +80,9 @@ classified_proto_t icmp_classify_next_proto(ipacket_t * ipacket, unsigned index,
             retval.status = Classified;
             break;
         default:
+            retval.proto_id = PROTO_UNKNOWN;
+            retval.offset = 8;
+            retval.status = Classified;
             break;
     }
 

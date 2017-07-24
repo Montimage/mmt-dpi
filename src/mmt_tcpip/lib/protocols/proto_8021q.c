@@ -53,6 +53,9 @@ int vlan_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.status = Classified;
             break;
         default:
+            retval.proto_id = PROTO_UNKNOWN;
+            retval.offset = sizeof (struct mmt_vlan_struct);
+            retval.status = Classified;
             break;
     }
     return set_classified_proto(ipacket, index + 1, retval);
