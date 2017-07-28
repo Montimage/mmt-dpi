@@ -6,7 +6,7 @@ Version 1.6.10.2
 - Fixed NFS extraction
 - Add PROTO_UNKNOWN if cannot find the protocol of some protocol which has classify_next_proto function base on a header value such as: PROTO_ETHERNET, PROTO_IP, PROTO_IPV6, PROTO_GTE, PROTO_GTP,...
 - Change the minimum payload length of SSDP from 100 -> 50: there is the case that the SSDP packet payload length is 91 bytes. 50 is used as temporary value
-- Add new protocol: PROTO_LLMNR
+- Add new protocol: PROTO_LLMNR, PROTO_ECLIPSE_TCF
 
 Version 1.6.10.1
 - Fixed GTP offset

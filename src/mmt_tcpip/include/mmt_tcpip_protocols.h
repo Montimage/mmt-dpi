@@ -647,8 +647,9 @@ extern "C" {
 #define PROTO_SCTP_SACK 632
 #define PROTO_SCTP_INIT 633
 #define PROTO_LLMNR 634
+#define PROTO_ECLIPSE_TCF 635	
 
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_LLMNR
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_ECLIPSE_TCF
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -1286,7 +1287,8 @@ extern "C" {
 #define PROTO_SCTP_DATA_ALIAS "sctp_data"
 #define PROTO_SCTP_SACK_ALIAS "sctp_sack"
 #define PROTO_SCTP_INIT_ALIAS "sctp_init"
-#define PROTO_LLMNR_ALIAS "llmnr"	
+#define PROTO_LLMNR_ALIAS "llmnr"
+#define PROTO_ECLIPSE_TCF_ALIAS "eclipse_tcf"
 // #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
 // #define PROTO_FTP_DATA_ALIAS "ftp_data"
 
