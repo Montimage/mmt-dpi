@@ -184,6 +184,3 @@ Version 1.6.9.1
 - Added new protocols: QUIC, NDN
 - Fixed some data race to work with multi-thread
 - Fixed some bugs in SDK
-
-
->>>>>>> feature/pre-v1.6.3.0
