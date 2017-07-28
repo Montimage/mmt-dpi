@@ -57,7 +57,9 @@ int mmt_check_ssdp(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         MMT_LOG(PROTO_SSDP, MMT_LOG_DEBUG, "search ssdp.\n");
-        if (packet->payload_packet_len > 100) {
+        // LN: Not sure about the length > 100 - there is a case that the SSDP packet have the payload len less than 100.
+        // -> Use 50 as a temporary value -> can be changed after if there is another case
+        if (packet->payload_packet_len > 50) {
             if ((memcmp(packet->payload, "M-SEARCH * HTTP/1.1", 19) == 0)
                     || memcmp(packet->payload, "NOTIFY * HTTP/1.1", 17) == 0) {
                 MMT_LOG(PROTO_SSDP, MMT_LOG_DEBUG, "found ssdp.\n");
