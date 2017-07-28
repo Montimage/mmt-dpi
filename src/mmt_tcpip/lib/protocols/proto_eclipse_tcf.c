@@ -25,9 +25,7 @@ int mmt_check_eclipse_tcf(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         MMT_LOG(PROTO_ECLIPSE_TCF, MMT_LOG_DEBUG, "search eclipse_tcf.\n");
-        // LN: Not sure about the length > 100 - there is a case that the eclipse_tcf packet have the payload len less than 100.
-        // -> Use 50 as a temporary value -> can be changed after if there is another case
-        if (packet->payload_packet_len >= 8) {
+        if (packet->payload_packet_len >= 8 && (ntohs(packet->udp->source) == 1534 || ntohs(packet->udp->dest) == 1534 )) {
             if (memcmp(packet->payload, ECLIPSE_TCF_START, strlen(ECLIPSE_TCF_START)) == 0) {
                 MMT_LOG(PROTO_ECLIPSE_TCF, MMT_LOG_DEBUG, "found eclipse_tcf.\n");
                 mmt_int_eclipse_tcf_add_connection(ipacket);
