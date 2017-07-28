@@ -434,6 +434,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     int mmt_check_oracle(ipacket_t * ipacket, unsigned index);
     int mmt_check_redis(ipacket_t * ipacket, unsigned index);
     int mmt_check_vmware(ipacket_t * ipacket, unsigned index);
+    int mmt_check_eclipse_tcf(ipacket_t * ipacket, unsigned index);
     // int mmt_check_ftp_control(ipacket_t * ipacket, unsigned index);
     // int mmt_check_ftp_data(ipacket_t * ipacket, unsigned index);
     ////////////////////////////////////////////////////////////////////////////
@@ -2344,6 +2345,8 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     int init_proto_zone_telechargement_struct();
     /////////// PLUGIN INIT FOR PROTO_llmnr //////////////////
     int init_proto_llmnr_struct();
+    /////////// PLUGIN INIT FOR PROTO_eclipse_tcf //////////////////
+    int init_proto_eclipse_tcf_struct();
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus

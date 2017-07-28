@@ -3817,6 +3817,13 @@ int init_tcpip_plugin() {
         fprintf(stderr, "Error initializing protocol proto_llmnr\n Exiting\n");
         exit(0);
     }
+
+    /////////////////////////////////////////////
+       /////////// INITILIZING PROTO_ECLIPSE_TCF //////////////////
+    if (!init_proto_eclipse_tcf_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_ECLIPSE_TCF\n Exiting\n");
+        exit(0);
+    }
     /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////
@@ -3998,6 +4005,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_sflow, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_quic, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_vmware, 50);
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_eclipse_tcf, 50);
 #endif    
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////////END OF INTER-PROTOCOL CLASSIFICATIONS ////////////////////////////
