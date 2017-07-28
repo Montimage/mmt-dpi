@@ -271,6 +271,7 @@ unsigned int mmt_get_protocol_by_port_number(uint8_t proto,
         else if (MMT_PORT_MATCH(sport, dport, 5353) || MMT_PORT_MATCH(sport, dport, 5354)) return (PROTO_MDNS);
         else if (MMT_PORT_MATCH(sport, dport, 53)) return (PROTO_DNS);
         else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
+        else if (MMT_PORT_MATCH(sport, dport, 5355)) return (PROTO_LLMNR);
     } else if (proto == IPPROTO_TCP) {
         if (MMT_PORT_MATCH(sport, dport, 443)) return (PROTO_SSL);
         else if (MMT_PORT_MATCH(sport, dport, 22)) return (PROTO_SSH);
@@ -337,6 +338,7 @@ unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
         else if (MMT_PORT_MATCH(sport, dport, 53)) return (PROTO_DNS);
         else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
         else if (MMT_PORT_MATCH(sport, dport, 500)) return (PROTO_IPSEC);
+        else if (MMT_PORT_MATCH(sport, dport, 5355)) return (PROTO_LLMNR);
     }
     return (PROTO_UNKNOWN);
 }
