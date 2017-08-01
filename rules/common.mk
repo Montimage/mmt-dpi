@@ -57,12 +57,6 @@ CFLAGS   += -DHTTP_PARSER_STRICT=0
 CXXFLAGS += -DHTTP_PARSER_STRICT=0
 endif
 
-# LIGHTSDK = 1 to compile the light version of SDK (which aims to split the network to HTTP packets and nonHTTP packets)
-ifdef LIGHTSDK
-CFLAGS   += -DLIGHTSDK
-CXXFLAGS += -DLIGHTSDK
-endif
-
 .PHONY: libraries includes tools documentation examples
 
 

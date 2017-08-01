@@ -2956,10 +2956,8 @@ int init_proto_ftp_struct() {
         for (; i < FTP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &ftp_attributes_metadata[i]);
         }
-#ifndef LIGHTSDK
         register_proto_context_init_cleanup_function(protocol_struct, setup_ftp_context, NULL, NULL);
         register_session_data_analysis_function(protocol_struct, ftp_session_data_analysis);
-#endif        
         mmt_init_classify_me_ftp();
 
         return register_protocol(protocol_struct, PROTO_FTP);

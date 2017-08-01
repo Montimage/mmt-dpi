@@ -2182,11 +2182,9 @@ int init_proto_radius_struct() {
         }
 
         mmt_init_classify_me_radius();
-#ifndef LIGHTSDK
         register_session_data_initialization_function(protocol_struct, radius_session_data_init);
         register_session_data_cleanup_function(protocol_struct, radius_session_data_cleanup);
         register_session_data_analysis_function(protocol_struct, radius_session_data_analysis);
-#endif
         return register_protocol(protocol_struct, PROTO_RADIUS);
     } else {
         return 0;
