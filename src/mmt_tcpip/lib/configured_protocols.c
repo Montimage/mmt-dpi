@@ -3938,7 +3938,6 @@ int init_tcpip_plugin() {
         CLASSIFY PROTOCOL OVER UDP PROTOCOL
 
     ***/
-#ifndef LIGHTSDK
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_stun_udp, 30);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_rtp_udp, 50); //Check STUN before RTP
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_sip, 50);
@@ -4006,7 +4005,6 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_quic, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_vmware, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_eclipse_tcf, 50);
-#endif    
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////////END OF INTER-PROTOCOL CLASSIFICATIONS ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
