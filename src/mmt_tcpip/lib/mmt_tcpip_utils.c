@@ -193,7 +193,6 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     const uint8_t *str;
 
     end = packet->payload_packet_len - 1;
-    int http_extract = 0;
     //for each byte in packet payload
     for (a = 0; likely( a < end ); a++) {
 //    // search for an empty line position: 0x0d0a
@@ -234,21 +233,17 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                     // LN: End of classify HTTP packets
                 } else {
                     // LN: To extract HTTP header informations
-                    
-                    if (http_extract) {
+                    if (mmt_memcmp(str, "Host:", 5) == 0) {
+                        if (str[5] == ' ') {
+                            packet->host_line.ptr = &str[6];
+                            packet->host_line.len = line_length - 6;
+                        } else {
+                            packet->host_line.ptr = &str[5];
+                            packet->host_line.len = line_length - 5;
+                        }
+                    }
+                    if (ipacket->mmt_handler->configured_protocols[PROTO_HTTP].protocol->data_analyser.status == 1) {
                         switch ( str[0] ) {
-                        case 'H':
-                            if ( mmt_memcmp(str, "Host:", 5) == 0) {
-                                // some stupid clients omit a space and place the hostname directly after the colon
-                                if (str[5] == ' ') {
-                                    packet->host_line.ptr = &str[6];
-                                    packet->host_line.len = line_length - 6;
-                                } else {
-                                    packet->host_line.ptr = &str[5];
-                                    packet->host_line.len = line_length - 5;
-                                }
-                            }
-                            break;
                         case 'S':
                             if ( //line_length > 8 &&
                                 mmt_memcmp(str, "Server:", 7) == 0)
