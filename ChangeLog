@@ -2,6 +2,9 @@ RELEASE NOTES
 ---
 ## Pre-version 1.6.11.0
 
+Version 1.6.10.3
+- Skip extracting HTTP header information if there is no data_analyser require for HTTP protocols: Improve the performance
+
 Version 1.6.10.2
 - Fixed NFS extraction
 - Add PROTO_UNKNOWN if cannot find the protocol of some protocol which has classify_next_proto function base on a header value such as: PROTO_ETHERNET, PROTO_IP, PROTO_IPV6, PROTO_GTE, PROTO_GTP,...
