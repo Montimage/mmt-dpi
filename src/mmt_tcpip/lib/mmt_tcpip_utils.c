@@ -194,6 +194,8 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 
     end = packet->payload_packet_len - 1;
     //for each byte in packet payload
+    int http_data_analyser = ipacket->mmt_handler->configured_protocols[PROTO_HTTP].protocol->data_analyser.status ;
+    int skip_parsing = 0;
     for (a = 0; likely( a < end ); a++) {
 //    // search for an empty line position: 0x0d0a
         if ( get_u16(packet->payload, a) == NEW_LINE ) {
@@ -231,6 +233,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                             packet->http_response.len, packet->http_response.ptr);
                     // Detect HTTP packets
                     // LN: End of classify HTTP packets
+                    skip_parsing = 1;
                 } else {
                     // LN: To extract HTTP header informations
                     if (mmt_memcmp(str, "Host:", 5) == 0) {
@@ -241,8 +244,9 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                             packet->host_line.ptr = &str[5];
                             packet->host_line.len = line_length - 5;
                         }
+                        skip_parsing = 1;
                     }
-                    if (ipacket->mmt_handler->configured_protocols[PROTO_HTTP].protocol->data_analyser.status == 1) {
+                    if (http_data_analyser == 1) {
                         switch ( str[0] ) {
                         case 'S':
                             if ( //line_length > 8 &&
@@ -467,10 +471,14 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                 //printf("%lld  parsed lines: %3d\n", packet->packet_id, packet->parsed_lines );
                 return;
             }
+            // Skip parsing 
+            if (http_data_analyser == 0 && skip_parsing == 1) {
+                break;
+            }
             //jump over new_line
 //            a ++;
-        }
-    }
+        }        
+    }// end of for loop
 
     if (packet->parsed_lines >= 1) {
         packet->line[packet->parsed_lines].len =
