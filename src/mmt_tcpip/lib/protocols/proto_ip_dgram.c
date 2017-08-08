@@ -123,7 +123,7 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsi
    dg->max_packet_size = dg->max_packet_size > (ip_off + ip_len - ip_hl)?dg->max_packet_size:(ip_off + ip_len - ip_hl);
    
    int i=0;
-   for(i=0;i < MMT_MAX_NUMBER_FRAGMENT-1;i++){
+   for(i=0;i < MMT_MAX_NUMBER_FRAGMENT - 1;i++){
       if(dg->packet_offsets[i] == -1) break;
       if(dg->packet_offsets[i] == ip_off){
          debug("[IP -]> Duplicated fragment: offset - %d|%d, id - %d",i,ip_off, ip->id);
