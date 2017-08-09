@@ -378,7 +378,9 @@ struct mmt_handler_struct {
 
     packet_info_t last_received_packet;
     ipacket_t current_ipacket;
-    uint8_t has_reassembly; /* 0 - no reassembly, 1 - has reassembly*/
+    generic_process_packet_fct process_packet;
+    generic_clean_packet_fct clean_packet;
+    uint8_t has_reassembly; // 0 - no, 1 - yes
     uint64_t packet_count;
     uint64_t sessions_count;
     uint64_t active_sessions_count;
@@ -525,7 +527,12 @@ int mmt_match_prefix(const u_int8_t *payload, size_t payload_len, const char *st
    *         NULL if the substring is not found
    *
    */
-  char* mmt_strnstr(const char *s, const char *find, size_t slen);
+char* mmt_strnstr(const char *s, const char *find, size_t slen);
+
+int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet);
+int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet);
+void clean_packet(ipacket_t * ipacket);
+void clean_packet_with_reassembly(ipacket_t * ipacket);
 
 #ifdef __cplusplus
 }
