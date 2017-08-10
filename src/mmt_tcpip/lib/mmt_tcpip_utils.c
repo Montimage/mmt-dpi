@@ -132,10 +132,19 @@ static const uint16_t NEW_LINE = ntohs(0x0d0a);
 /* internal function for every detection to parse one packet and to increase the info buffer */
 void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    uint32_t a;
-    uint16_t end;
+
+    if ( unlikely( packet->payload_packet_len == 0 ))
+        return;
+
     if (packet->packet_lines_parsed_complete != 0)
         return;
+
+    uint32_t a;
+    uint16_t line_length;
+    const uint8_t *str;
+    int http_data_analyser = ipacket->mmt_handler->configured_protocols[PROTO_HTTP].protocol->data_analyser.status ;
+    int skip_parsing = 0;
+    uint16_t end = packet->payload_packet_len - 1;
 
     packet->packet_lines_parsed_complete = 1;
     packet->parsed_lines = 0;
@@ -177,22 +186,11 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     packet->http_method.len = 0;
     packet->http_response.ptr = NULL;
     packet->http_response.len = 0;
-
     packet->has_x_cdn_hdr = 0;
-
-    if ( unlikely( packet->payload_packet_len == 0 ))
-        return;
-
     packet->line[packet->parsed_lines].ptr = packet->payload;
     packet->line[packet->parsed_lines].len = 0;
     packet->packet_id = ipacket->packet_id;
 
-    uint16_t line_length;
-    const uint8_t *str;
-
-    end = packet->payload_packet_len - 1;
-    int http_data_analyser = ipacket->mmt_handler->configured_protocols[PROTO_HTTP].protocol->data_analyser.status ;
-    int skip_parsing = 0;
     for (a = 0; likely( a < end ); a++) {
         if ( get_u16(packet->payload, a) == NEW_LINE ) {
 
