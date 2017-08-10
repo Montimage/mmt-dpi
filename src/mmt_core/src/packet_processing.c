@@ -111,7 +111,7 @@ int is_valid_protocol_id(uint32_t proto_id) {
 }
 
 static inline int _is_registered_protocol(uint32_t proto_id) {
-    if (_is_valid_protocol_id(proto_id) > 0)
+    if (likely(_is_valid_protocol_id(proto_id) > 0))
         if (configured_protocols[proto_id]->is_registered && configured_protocols[proto_id]->proto_id == proto_id)
             return PROTO_REGISTERED;
     return PROTO_NOT_REGISTERED;
@@ -3310,8 +3310,8 @@ uint32_t get_protocol_id_by_name(const char * protocolalias) {
 #ifdef DEBUG
     (void)fprintf( stderr, "Entering tips_proto_find_by_name proto %s\n", protocolalias );
 #endif
-    int i = 0;
-    for (; i < PROTO_MAX_IDENTIFIER; i++) {
+    int i = PROTO_MAX_IDENTIFIER - 1;
+    for (; i >=0 ; i--) {
         if (_is_registered_protocol(i)) {
             protocol_t * temp = configured_protocols[i];
             if (mmt_strcasecmp(temp->protocol_name, protocolalias) == 0)
