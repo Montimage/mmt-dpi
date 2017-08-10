@@ -135,7 +135,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
 	return memcmp( s1 + 20, s2 + 20, size - 20 );
 }
 
-    unsigned int mmt_get_protocol_by_port_number(uint8_t proto, uint32_t shost, uint16_t sport, uint32_t dhost, uint16_t dport);
+    unsigned int mmt_get_protocol_by_port_number(uint8_t proto, uint16_t sport, uint16_t dport);
 
     unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket);
 

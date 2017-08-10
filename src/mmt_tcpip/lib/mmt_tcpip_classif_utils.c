@@ -21756,7 +21756,7 @@ static avltree_t * proto_avltrees[NETMASK_MAX_NB];
 void _init_proto_avltrees() {
     // printf("[debug] _init_proto_avltrees ... \n");
     int i = 0 , nb_nodes = 0;
-    for (i = 0; i < NETMASK_MAX_NB; i ++) {
+    for (i = NETMASK_MAX_NB - 1 ; i >= 0; i--) {
         proto_avltrees[i] = 0x0;
     }
 
@@ -21787,8 +21787,8 @@ void _init_proto_avltrees() {
 }
 
 int _find_proto_id_by_address(uint32_t ip_src,uint32_t ip_dest){
-    int i = 0;
-    for (i = 0; i < NETMASK_MAX_NB; i ++) {
+    int i;
+    for (i = NETMASK_MAX_NB - 1 ; i >= 0; i--) {
         if (proto_avltrees[i] != NULL) {
             proto_based_ip_t * proto = (proto_based_ip_t * ) avltree_get_data(proto_avltrees[i]);
             // Check the source address
@@ -21813,7 +21813,7 @@ int _find_proto_id_by_address(uint32_t ip_src,uint32_t ip_dest){
 void _free_proto_avltrees(){
     // printf("[debug] _free_proto_avltrees ... \n");
     int i = 0;
-    for (i = 0; i < NETMASK_MAX_NB; i ++) {
+    for (i = NETMASK_MAX_NB - 1 ; i >= 0; i--) {
         avltree_free_tree(proto_avltrees[i]);
         proto_avltrees[i] = NULL;
     }
@@ -21825,9 +21825,7 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
     if (packet->iph /* IPv4 only */) {
         int proto_id = _find_proto_id_by_address(ntohl(packet->iph->saddr),ntohl(packet->iph->daddr));
 
-        if(proto_id == -1){
-            return PROTO_UNKNOWN;
-        }else{
+        if( likely(proto_id != -1)){
             return proto_id;
         }
     }

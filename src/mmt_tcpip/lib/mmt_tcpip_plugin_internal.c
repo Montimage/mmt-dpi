@@ -261,85 +261,147 @@ void mmt_change_internal_packet_protocol(ipacket_t * ipacket, uint16_t detected_
 #endif
 }
 
-unsigned int mmt_get_protocol_by_port_number(uint8_t proto,
-        uint32_t shost, uint16_t sport,
-        uint32_t dhost, uint16_t dport) {
+inline static uint64_t _get_proto_by_tcp_port_numer(uint16_t port_number){
+    switch(port_number){
+        case 443:
+        return PROTO_SSL;
+
+        case 80:
+        case 8080:
+        return PROTO_SSL;
+
+        case 22:
+        return PROTO_SSH;
+
+        case 23:
+        return PROTO_TELNET;
+
+        case 25:
+        return PROTO_SMTP;
+
+        case 465:
+        return PROTO_SMTPS;
+
+        case 110:
+        return PROTO_POP;
+
+        case 995:
+        return PROTO_POPS;
+
+        case 143:
+        return PROTO_IMAP;
+
+        case 993:
+        return PROTO_IMAPS;
+
+        case 445:
+        return PROTO_SMB;
+
+        case 88:
+        return PROTO_KERBEROS;
+
+        case 135:
+        return PROTO_DCERPC;
+
+        case 389:
+        return PROTO_LDAP;
+
+        case 554:
+        return PROTO_RTSP;
+
+        case 500:
+        return PROTO_IPSEC;
+
+        case 5800:
+        case 5900:
+        case 5901:
+        return PROTO_VNC;
+
+        case 5222:
+        return PROTO_UNENCRYPED_JABBER;
+
+        case 1935:
+        return PROTO_FLASH;
+
+        case 3128:
+        return PROTO_HTTP_PROXY;
+
+        case 2598:
+        case 1494:
+        return PROTO_CITRIX;/* http://support.citrix.com/article/CTX104147 */
+
+    }
+    return PROTO_UNKNOWN;
+}
+
+inline static uint64_t _get_proto_by_udp_port_numer(uint16_t port_number){
+    switch(port_number){
+        case 67:
+        case 68:
+        return PROTO_DHCP;
+
+        case 137:
+        case 138:
+        return PROTO_NETBIOS;
+
+        case 161:
+        case 162:
+        return PROTO_SNMP;
+
+        case 5353:
+        case 5354:
+        return PROTO_MDNS;
+
+        case 53:
+        return PROTO_DNS;
+
+        case 88:
+        return PROTO_KERBEROS;
+
+        case 500:
+        return PROTO_IPSEC;
+
+        case 5355:
+        return PROTO_LLMNR;
+    }
+    return PROTO_UNKNOWN;
+}
+unsigned int mmt_get_protocol_by_port_number(uint8_t proto, uint16_t sport, uint16_t dport) {
+    uint64_t proto_id = PROTO_UNKNOWN;
     if (proto == IPPROTO_UDP) {
-        if (MMT_PORT_MATCH(sport, dport, 67) || MMT_PORT_MATCH(sport, dport, 68)) return (PROTO_DHCP);
-        else if (MMT_PORT_MATCH(sport, dport, 137) || MMT_PORT_MATCH(sport, dport, 138)) return (PROTO_NETBIOS);
-        else if (MMT_PORT_MATCH(sport, dport, 161) || MMT_PORT_MATCH(sport, dport, 162)) return (PROTO_SNMP);
-        else if (MMT_PORT_MATCH(sport, dport, 5353) || MMT_PORT_MATCH(sport, dport, 5354)) return (PROTO_MDNS);
-        else if (MMT_PORT_MATCH(sport, dport, 53)) return (PROTO_DNS);
-        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
-        else if (MMT_PORT_MATCH(sport, dport, 5355)) return (PROTO_LLMNR);
+        proto_id = _get_proto_by_udp_port_numer(sport);
+        if(proto_id == PROTO_UNKNOWN){
+             proto_id = _get_proto_by_udp_port_numer(dport);
+        }
     } else if (proto == IPPROTO_TCP) {
-        if (MMT_PORT_MATCH(sport, dport, 443)) return (PROTO_SSL);
-        else if (MMT_PORT_MATCH(sport, dport, 22)) return (PROTO_SSH);
-        else if (MMT_PORT_MATCH(sport, dport, 23)) return (PROTO_TELNET);
-        else if (MMT_PORT_MATCH(sport, dport, 445)) return (PROTO_SMB);
-        else if (MMT_PORT_MATCH(sport, dport, 80)) return (PROTO_HTTP);
-        else if (MMT_PORT_MATCH(sport, dport, 3000)) return (PROTO_HTTP);
-        else if (MMT_PORT_MATCH(sport, dport, 3001)) return (PROTO_SSL);
-        else if (MMT_PORT_MATCH(sport, dport, 8080) || MMT_PORT_MATCH(sport, dport, 3128)) return (PROTO_HTTP_PROXY);
-        else if (MMT_PORT_MATCH(sport, dport, 389)) return (PROTO_LDAP);
-        else if (MMT_PORT_MATCH(sport, dport, 143) || MMT_PORT_MATCH(sport, dport, 993)) return (PROTO_IMAP);
-        else if (MMT_PORT_MATCH(sport, dport, 25) || MMT_PORT_MATCH(sport, dport, 465)) return (PROTO_SMTP);
-        else if (MMT_PORT_MATCH(sport, dport, 135)) return (PROTO_DCERPC);
-        else if (MMT_PORT_MATCH(sport, dport, 1494) || MMT_PORT_MATCH(sport, dport, 2598)) return (PROTO_CITRIX); /* http://support.citrix.com/article/CTX104147 */
-        else if (MMT_PORT_MATCH(sport, dport, 389)) return (PROTO_LDAP);
-        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
-        else if (MMT_PORT_MATCH(sport, dport, 554)) return (PROTO_RTSP);
-        else if (MMT_PORT_MATCH(sport, dport, 5900)) return (PROTO_VNC);
-        else if (MMT_PORT_MATCH(sport, dport, 5901)) return (PROTO_VNC);
-        else if (MMT_PORT_MATCH(sport, dport, 5800)) return (PROTO_VNC); 
+        proto_id = _get_proto_by_tcp_port_numer(sport);
+        if(proto_id == PROTO_UNKNOWN){
+             proto_id = _get_proto_by_tcp_port_numer(dport);
+        }
     }
 
-    return (PROTO_UNKNOWN);
+    return (proto_id);
 }
 
 unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+    uint64_t proto_id = PROTO_UNKNOWN;
     uint16_t sport, dport;
     if (packet->tcp) {
         sport = htons(packet->tcp->source);
         dport = htons(packet->tcp->dest);
-        if (MMT_PORT_MATCH(sport, dport, 443)) return (PROTO_SSL);
-        else if (MMT_PORT_MATCH(sport, dport, 80)) return (PROTO_HTTP);
-        else if (MMT_PORT_MATCH(sport, dport, 8080)) return (PROTO_HTTP);
-        else if (MMT_PORT_MATCH(sport, dport, 5222)) return (PROTO_UNENCRYPED_JABBER);
-        else if (MMT_PORT_MATCH(sport, dport, 1935)) return (PROTO_FLASH);
-        else if (MMT_PORT_MATCH(sport, dport, 143)) return (PROTO_IMAP);
-        else if (MMT_PORT_MATCH(sport, dport, 993)) return (PROTO_IMAPS);
-        else if (MMT_PORT_MATCH(sport, dport, 25)) return (PROTO_SMTP);
-        else if (MMT_PORT_MATCH(sport, dport, 465)) return (PROTO_SMTPS);
-        else if (MMT_PORT_MATCH(sport, dport, 110)) return (PROTO_POP);
-        else if (MMT_PORT_MATCH(sport, dport, 995)) return (PROTO_POPS);
-        else if (MMT_PORT_MATCH(sport, dport, 135)) return (PROTO_DCERPC);
-        else if (MMT_PORT_MATCH(sport, dport, 389)) return (PROTO_LDAP);
-        else if (MMT_PORT_MATCH(sport, dport, 22)) return (PROTO_SSH);
-        else if (MMT_PORT_MATCH(sport, dport, 23)) return (PROTO_TELNET);
-        else if (MMT_PORT_MATCH(sport, dport, 445)) return (PROTO_SMB);
-        else if (MMT_PORT_MATCH(sport, dport, 389)) return (PROTO_LDAP);
-        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
-        else if (MMT_PORT_MATCH(sport, dport, 554)) return (PROTO_RTSP);
-        else if (MMT_PORT_MATCH(sport, dport, 5900)) return (PROTO_VNC);
-        else if (MMT_PORT_MATCH(sport, dport, 5901)) return (PROTO_VNC);
-        else if (MMT_PORT_MATCH(sport, dport, 5800)) return (PROTO_VNC);
-        else if (MMT_PORT_MATCH(sport, dport, 8080) || MMT_PORT_MATCH(sport, dport, 3128)) return (PROTO_HTTP_PROXY);
-        else if (MMT_PORT_MATCH(sport, dport, 1494) || MMT_PORT_MATCH(sport, dport, 2598)) return (PROTO_CITRIX); /* http://support.citrix.com/article/CTX104147 */
-        else if (MMT_PORT_MATCH(sport, dport, 500)) return (PROTO_IPSEC);
+        proto_id = _get_proto_by_tcp_port_numer(sport);
+        if(proto_id == PROTO_UNKNOWN){
+             proto_id = _get_proto_by_tcp_port_numer(dport);
+        }
     } else if(packet->udp) {
         sport = htons(packet->udp->source);
         dport = htons(packet->udp->dest);
-        if (MMT_PORT_MATCH(sport, dport, 67) || MMT_PORT_MATCH(sport, dport, 68)) return (PROTO_DHCP);
-        else if (MMT_PORT_MATCH(sport, dport, 137) || MMT_PORT_MATCH(sport, dport, 138)) return (PROTO_NETBIOS);
-        else if (MMT_PORT_MATCH(sport, dport, 161) || MMT_PORT_MATCH(sport, dport, 162)) return (PROTO_SNMP);
-        else if (MMT_PORT_MATCH(sport, dport, 5353) || MMT_PORT_MATCH(sport, dport, 5354)) return (PROTO_MDNS);
-        else if (MMT_PORT_MATCH(sport, dport, 53)) return (PROTO_DNS);
-        else if (MMT_PORT_MATCH(sport, dport, 88)) return (PROTO_KERBEROS);
-        else if (MMT_PORT_MATCH(sport, dport, 500)) return (PROTO_IPSEC);
-        else if (MMT_PORT_MATCH(sport, dport, 5355)) return (PROTO_LLMNR);
+        proto_id = _get_proto_by_udp_port_numer(sport);
+        if(proto_id == PROTO_UNKNOWN){
+             proto_id = _get_proto_by_udp_port_numer(dport);
+        }
     }
-    return (PROTO_UNKNOWN);
+    return (proto_id);
 }
 
