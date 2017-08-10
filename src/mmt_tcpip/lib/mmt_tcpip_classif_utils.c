@@ -21775,7 +21775,15 @@ void _init_proto_avltrees() {
         }
         i++;
     }
-    printf("AVLTrees - number of node: %d\n",nb_nodes);
+#ifdef DEBUG
+    printf("AVLTrees - total number of nodes: %d\n",nb_nodes);
+    printf("Index\t Height \t Size\n");
+    for (i = 0; i < NETMASK_MAX_NB; i ++) {
+        if(proto_avltrees[i] != NULL){
+            printf("%d\t %d \t %d\n",i,avltree_get_height(proto_avltrees[i],1),avltree_size(proto_avltrees[i]));
+        }
+    }
+#endif    
 }
 
 int _find_proto_id_by_address(uint32_t ip_address){

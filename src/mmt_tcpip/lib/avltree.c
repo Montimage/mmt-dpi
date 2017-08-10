@@ -103,7 +103,7 @@ void * avltree_get_data(avltree_t * node) {
  */
 int avltree_get_height(avltree_t * node, int current_level) {
     if (node == NULL) return current_level - 1;
-    if (node->parent == NULL) return 1;
+    // if (node->parent == NULL) return 1;
     int left_height = avltree_get_height(node->left_child, current_level + 1);
     int right_height = avltree_get_height(node->right_child, current_level + 1);
     return left_height > right_height ? left_height : right_height;
