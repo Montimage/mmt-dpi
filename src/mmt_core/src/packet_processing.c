@@ -3066,14 +3066,13 @@ void process_session_timer_handler(mmt_handler_t *mmt) {
 }
 
 
-static inline
-void update_last_received_packet(packet_info_t * last_packet, ipacket_t * ipacket) {
-    last_packet->packet_id += 1;
-    last_packet->packet_len = ipacket->p_hdr->len;
-    last_packet->time.tv_sec = ipacket->p_hdr->ts.tv_sec;
-    last_packet->time.tv_usec = ipacket->p_hdr->ts.tv_usec;
-    ipacket->packet_id = last_packet->packet_id;
-}
+// static inline void update_last_received_packet(packet_info_t * last_packet, ipacket_t * ipacket) {
+//     last_packet->packet_id += 1;
+//     last_packet->packet_len = ipacket->p_hdr->len;
+//     last_packet->time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+//     last_packet->time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+//     ipacket->packet_id = last_packet->packet_id;
+// }
 
 int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
     classified_proto_t classified_proto;
@@ -3106,7 +3105,12 @@ int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     mmt->current_ipacket.is_completed = 0;
     mmt->current_ipacket.is_fragment = 0;
     mmt->current_ipacket.total_caplen = header->caplen;
-    update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
+    // update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
+    mmt->last_received_packet.packet_id += 1;
+    mmt->last_received_packet.packet_len = mmt->current_ipacket.p_hdr->len;
+    mmt->last_received_packet.time.tv_sec = mmt->current_ipacket.p_hdr->ts.tv_sec;
+    mmt->last_received_packet.time.tv_usec = mmt->current_ipacket.p_hdr->ts.tv_usec;
+    mmt->current_ipacket.packet_id = mmt->last_received_packet.packet_id;
     //First set the meta protocol
     (void) set_classified_proto(&mmt->current_ipacket, 0, classified_proto);
     // debug("Packet address (packet_process) - no copied packet: %p", &mmt->current_ipacket);
@@ -3153,7 +3157,12 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     ipacket->is_completed = 0;
     ipacket->is_fragment = 0;
     ipacket->total_caplen = header->caplen;
-    update_last_received_packet(&mmt->last_received_packet, ipacket);
+    // update_last_received_packet(&mmt->last_received_packet, ipacket);
+    mmt->last_received_packet.packet_id += 1;
+    mmt->last_received_packet.packet_len = ipacket->p_hdr->len;
+    mmt->last_received_packet.time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+    mmt->last_received_packet.time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+    ipacket->packet_id = mmt->last_received_packet.packet_id;
     (void) set_classified_proto(ipacket, 0, classified_proto);
     // debug("Packet address (packet_process - copied packet): %p", ipacket);
     return proto_packet_process(ipacket, NULL, 0);
