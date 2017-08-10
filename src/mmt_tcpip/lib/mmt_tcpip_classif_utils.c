@@ -21786,15 +21786,23 @@ void _init_proto_avltrees() {
 #endif    
 }
 
-int _find_proto_id_by_address(uint32_t ip_address){
+int _find_proto_id_by_address(uint32_t ip_src,uint32_t ip_dest){
     int i = 0;
     for (i = 0; i < NETMASK_MAX_NB; i ++) {
         if (proto_avltrees[i] != NULL) {
             proto_based_ip_t * proto = (proto_based_ip_t * ) avltree_get_data(proto_avltrees[i]);
-            uint32_t key = ip_address & proto->netmask_address;
-            avltree_t * node = avltree_find(proto_avltrees[i],key);
-            if(node != NULL){
-                proto_based_ip_t * found_proto = (proto_based_ip_t * ) avltree_get_data(node);
+            // Check the source address
+            uint32_t key_src = ip_src & proto->netmask_address;            
+            avltree_t * node_src = avltree_find(proto_avltrees[i],key_src);
+            if(node_src != NULL){
+                proto_based_ip_t * found_proto = (proto_based_ip_t * ) avltree_get_data(node_src);
+                return found_proto->proto_id;
+            }
+            // Check the destination address
+            uint32_t key_dest = ip_dest & proto->netmask_address;
+            avltree_t * node_dest = avltree_find(proto_avltrees[i],key_dest);
+            if(node_dest != NULL){
+                proto_based_ip_t * found_proto = (proto_based_ip_t * ) avltree_get_data(node_dest);
                 return found_proto->proto_id;
             }
         }
@@ -21815,11 +21823,7 @@ uint32_t get_proto_id_from_address(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     if (packet->iph /* IPv4 only */) {
-        int proto_id = -1;
-        proto_id = _find_proto_id_by_address(ntohl(packet->iph->saddr));
-        if(proto_id == -1){
-            proto_id = _find_proto_id_by_address(ntohl(packet->iph->daddr));
-        }
+        int proto_id = _find_proto_id_by_address(ntohl(packet->iph->saddr),ntohl(packet->iph->daddr));
 
         if(proto_id == -1){
             return PROTO_UNKNOWN;
