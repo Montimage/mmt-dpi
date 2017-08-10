@@ -21755,7 +21755,7 @@ static avltree_t * proto_avltrees[NETMASK_MAX_NB];
  */
 void _init_proto_avltrees() {
     // printf("[debug] _init_proto_avltrees ... \n");
-    int i = 0;
+    int i = 0 , nb_nodes = 0;
     for (i = 0; i < NETMASK_MAX_NB; i ++) {
         proto_avltrees[i] = 0x0;
     }
@@ -21769,19 +21769,13 @@ void _init_proto_avltrees() {
         avltree_t * node = avltree_create(key, (void*)&proto_ip_address[i]);
         if (node != NULL) {
             proto_avltrees[tree_index] = avltree_insert(proto_avltrees[tree_index], node);
+            nb_nodes++;
             // printf("[debug] new node has been added into tree: %d\n", tree_index);
             // avltree_show_node(node);
         }
         i++;
     }
-
-    // i = 0 ;
-    // for (i = 0; i < NETMASK_MAX_NB; i ++) {
-    //     if (proto_avltrees[i] != NULL) {
-    //         printf("\n\n-->Tree: %d\n", i);
-    //         avltree_show_tree(proto_avltrees[i]);
-    //     }
-    // }
+    printf("AVLTrees - number of node: %d\n",nb_nodes);
 }
 
 int _find_proto_id_by_address(uint32_t ip_address){

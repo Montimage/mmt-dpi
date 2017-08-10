@@ -91,51 +91,46 @@ typedef struct field_value_attribute_information_struct {
     int relative_header_id; /**< the header id relative to this attribute. */
     generic_attribute_extraction_function extraction_function; /**< the extraction function for this attribute. */
 } field_value_attribute_information_t;
-
 /**
  * Defines the structure of a session.
  */
 struct mmt_session_struct {
-    uint64_t session_id;                     /**< session identifier */
-    struct mmt_session_struct *parent_session; /**< pointer to the parent session */
-    void * protocol_container_context;       /**< pointer to the protocol to which the session belongs */
-    mmt_handler_t *mmt_handler;              /**< opaque pointer to the mmt handler that processed this session */
+    uint8_t family;                          /**< identifier of the application family to which this session belongs. */
+    
     uint32_t session_protocol_index;         /**< index of the protocol to which the session belongs */
+    uint32_t session_timeout_delay;          /**< The inactivity delay after which the session can be considered as expired */
+    uint32_t session_timeout_milestone;      /**< The time expressed as seconds since Epoch (1st Jan 1970) when the session will be considered as expired */
+    /* Content Flags: Plugin specific */
+    uint32_t content_flags;
+    uint32_t tcp_retransmissions;            /**< number of TCP retransmissions */
+    uint32_t tcp_outoforders;                 /**< number of TCP outoforder */
+    /* tcp sequence number connection tracking and retransmissions counting */
+    uint32_t next_tcp_seq_nr[2];
+    
+    uint64_t session_id;                     /**< session identifier */
     uint64_t packet_count;                   /**< tracks the number of packets */
     uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
     uint64_t data_cap_volume;                /**< data volume captured  - include fragmented packets*/
     uint64_t data_volume;                    /**< tracks the octet data volume */
+    uint64_t data_packet_count;              /**< tracks the number of packets holding effective payload data */
+    uint64_t data_byte_volume;               /**< tracks the effective payload data volume */
     
     uint64_t packet_count_direction[2];      /**< Session's packet count in both directions: initiator <-> remote */
     uint64_t data_volume_direction[2];       /**< Session's data volume in both directions: initiator <-> remote */
-
     uint64_t packet_cap_count_direction[2];      /**< Session's packet count ( - include fragmented packets) in both directions: initiator <-> remote */
     uint64_t data_cap_volume_direction[2];       /**< Session's data volume ( - include fragmented packets) in both directions: initiator <-> remote */
-
-    uint64_t data_packet_count;              /**< tracks the number of packets holding effective payload data */
-    uint64_t data_byte_volume;               /**< tracks the effective payload data volume */
     uint64_t data_packet_count_direction[2]; /**< Session's effective payload packet count in both directions: initiator <-> remote */
     uint64_t data_byte_volume_direction[2];  /**< Session's effective payload data volume in both directions: initiator <-> remote */
 
     struct timeval s_init_time;              /**< indicates the time when the session was first detected. */
     struct timeval s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
-
+    struct timeval rtt;                      /**< TCP RTT calculated at connection setup */
     struct timeval s_last_data_packet_time[2];     /**< indicates the time when the last data packet (packet has payload) on this session was detected in both direction: initiator <-> remote. */
-
-    uint32_t session_timeout_delay;          /**< The inactivity delay after which the session can be considered as expired */
-    uint32_t session_timeout_milestone;      /**< The time expressed as seconds since Epoch (1st Jan 1970) when the session will be considered as expired */
-
+    
     proto_hierarchy_t proto_path;            /**< The session detected protocol hierarchy */
     proto_hierarchy_t proto_headers_offset;  /**< The protocol offsets of the detected protocols */
     proto_hierarchy_t proto_classif_status;  /**< the classification status of the protocols in the path */
-
-    void * session_data[PROTO_PATH_SIZE];    /**< Table of protocol specific session data. This is a repository where each
-                                                  detected protocol of this session will maintain its session specific data. */
-
-    void * session_key;                      /**< pointer ot the session key structure */
-    void * internal_data;                    /**< interval data (Used by openDPI) */
-
-    void * user_data;                        /**< user data associated with the structure */
+    proto_hierarchy_t proto_path_direction[2];
 
     /* BW: MMT content type */
     struct {
@@ -143,15 +138,18 @@ struct mmt_session_struct {
         uint16_t content_type;
     } content_info;
 
-    /* Content Flags: Plugin specific */
-    uint32_t content_flags;
+    mmt_handler_t *mmt_handler;              /**< opaque pointer to the mmt handler that processed this session */
 
-    /* tcp sequence number connection tracking and retransmissions counting */
-    uint32_t next_tcp_seq_nr[2];
-    uint32_t tcp_retransmissions;            /**< number of TCP retransmissions */
-    uint32_t tcp_outoforders;                 /**< number of TCP outoforder */
-    struct timeval rtt;                      /**< TCP RTT calculated at connection setup */
+    struct mmt_session_struct *parent_session; /**< pointer to the parent session */
+    struct mmt_session_struct * next;        /**< pointer to the next session in the expiry list --- for internal use must not be changed */
+    struct mmt_session_struct * previous;    /**< pointer to the previous session in the expiry list --- for internal use must not be changed */
 
+    void * protocol_container_context;       /**< pointer to the protocol to which the session belongs */
+    void * session_data[PROTO_PATH_SIZE];    /**< Table of protocol specific session data. This is a repository where each
+                                                  detected protocol of this session will maintain its session specific data. */
+    void * session_key;                      /**< pointer ot the session key structure */
+    void * internal_data;                    /**< interval data (Used by openDPI) */
+    void * user_data;                        /**< user data associated with the structure */
 #if BYTE_ORDER == LITTLE_ENDIAN
     uint8_t status : 3;                      /**< indicate the status of the session */
     uint8_t force_timeout : 1;               /**< indicate if the session timed out (according to the protocol workflow)
@@ -169,11 +167,7 @@ struct mmt_session_struct {
 #else
 #error "BYTE_ORDER must be defined"
 #endif
-    uint8_t family;                          /**< identifier of the application family to which this session belongs. */
-    struct mmt_session_struct * next;        /**< pointer to the next session in the expiry list --- for internal use must not be changed */
-    struct mmt_session_struct * previous;    /**< pointer to the previous session in the expiry list --- for internal use must not be changed */
 
-    proto_hierarchy_t proto_path_direction[2];
 };
 
 /**
@@ -215,15 +209,16 @@ struct attribute_handler_struct {
 };
 
 struct attribute_internal_struct {
-    uint32_t proto_id; /**< identifier of the protocol */
-    uint32_t field_id; /**< identifier of the attribute */
-    int protocol_index; /**< index of the protocol */
-    int status; /**< status of the attribute. Indicates if it is unset, set or consumed. */
-    int data_type; /**< the data type of the attribute */
-    int data_len; /**< the data length of the attribute */
-    int position_in_packet; /**< the position in the packet of the attribute. */
-    int scope; /**< the scope of the attribute (packet, session, ...). */
-    void *data; /**< pointer to the attribute data */
+    unsigned protocol_index; /**< index of the protocol */
+    int status;              /**< status of the attribute. Indicates if it is unset, set or consumed. */
+    int data_type;           /**< the data type of the attribute */
+    int data_len;            /**< the data length of the attribute */
+    int position_in_packet;  /**< the position in the packet of the attribute. */
+    int scope;               /**< the scope of the attribute (packet, session, ...). */
+    uint32_t proto_id;    /**< identifier of the protocol */
+    uint32_t field_id;       /**< identifier of the attribute */
+    void *data;              /**< pointer to the attribute data */
+    
     int memsize; /**< indicates the memory size of the attribute including the memory pointed to by data */
     int registration_count; /**< Number of times this attributes has been registered */
     int handlers_count; /**< Number of times this attributes has been registered with an attribute handler */
@@ -287,6 +282,7 @@ struct mmt_proto_data_analysis_struct {
  */
 struct proto_statistics_internal_struct {
     uint32_t touched; /**< Indicates if the statistics have been updated since the last reset */
+    
     uint64_t packets_count; /**< Total number of packets seen by the protocol */
     uint64_t data_volume; /**< Total data volume seen by the protocol */
     uint64_t ip_frag_packets_count;         /**< Total number of IP unknown fragmented packets seen by the IP protocol*/
@@ -299,12 +295,15 @@ struct proto_statistics_internal_struct {
     uint64_t payload_volume_direction[2]; /**< Total UL/DL payload data volume seen by the protocol */
     uint64_t sessions_count; /**< Total number of sessions seen by the protocol */
     uint64_t timedout_sessions_count; /**< Total number of timedout sessions (this is the difference between sessions count and ative sessions count) */
-    proto_statistics_internal_t* next; /**< next instance of statistics for the same protocol */
+    
     struct timeval first_packet_time; // The time of the first packet of the protocol
     struct timeval last_packet_time; // The time of the last packet of the protocol
+    
     protocol_instance_t * proto; /**< pointer to the protocol */
+    
     void * encap_proto_stats; /**< Map including the statistics of encaprulated children protocols */
     proto_statistics_internal_t * parent_proto_stats; /**< pointer to the parent protocol stats */
+    proto_statistics_internal_t* next; /**< next instance of statistics for the same protocol */
 };
 
 /**
@@ -324,11 +323,13 @@ struct protocol_stack_struct {
  */
 struct protocol_struct {
     int is_registered; /**< indicates if this protocol is registered or not */
-    uint32_t proto_id; /**< unique identifier of the protocol. */
     int protocol_code; /**< Code of the protocol. Usually the same as the identifier. */
-    const char * protocol_name; /**< The name of the protocol. Must be unique. */
     int has_session; /**< indicates if the protocol has a session context or not. */
     int session_timeout_delay; /**< indicates if the protocol has a session context or not. */
+    
+    uint32_t proto_id; /**< unique identifier of the protocol. */
+    const char * protocol_name; /**< The name of the protocol. Must be unique. */
+    
     generic_get_attribute_id_by_name get_attribute_id_by_name; /**< funtion pointer that returns the protocol's attribute id by name */
     generic_get_attribute_name_by_id get_attribute_name_by_id; /**< function pointer that returns the protocol's attribute name by id */
     generic_get_attribute_data_type_by_id get_attribute_data_type_by_id; /**< function pointer that returns the data type of an attribute */
@@ -337,18 +338,19 @@ struct protocol_struct {
     generic_is_valid_attribute is_valid_attribute; /**< function pointer that indicates if an attribute is valid for this protocol or not */
     generic_get_attribute_scope get_attribute_scope; /**< function pointer that indicates the scope of an attribute */
     generic_get_attribute_extraction_function get_attribute_extraction_function; /**< function pointer that indicates the extraction function to use for a given attribute of this protocol */
+    generic_comparison_fct session_key_compare; /**< Pointer to the session keys comparison function. Will exist if the proto has a session context. */
 
+    mmt_classify_next_t classify_next; /**< For internal use. MUST not be changed. */
+    mmt_analyser_t data_analyser; /**< For internal use. Must not be chagned.*/
+    
     void * attributes_map; /**< For internal use. MUST not be changed. */
     void * attributes_names_map; /**< For internal use. MUST not be changed. */
     //void * sessions_map; /**< For internal use. MUST not be changed. */
     //void * classify_next; /**< For internal use. MUST not be changed. */
-    mmt_classify_next_t classify_next; /**< For internal use. MUST not be changed. */
     void * sessionize; /**< For internal use. MUST not be changed. */
     void * session_data_init; /**< For internal use. Must not be chagned.*/
-    //void * session_data_analysis; /**< For internal use. Must not be chagned.*/
-    mmt_analyser_t data_analyser; /**< For internal use. Must not be chagned.*/
     void * session_data_cleanup; /**< For internal use. Must not be changed. */
-    generic_comparison_fct session_key_compare; /**< Pointer to the session keys comparison function. Will exist if the proto has a session context. */
+    //void * session_data_analysis; /**< For internal use. Must not be chagned.*/
     void * session_context_cleanup; /**< For internal use. Must not be changed. */
     void * protocol_context_init; /**< For internal use. Must not be changed. */
     void * protocol_context_cleanup; /**< For internal use. Must not be changed. */
@@ -365,36 +367,37 @@ struct protocol_instance_struct {
 };
 
 struct mmt_handler_struct {
-    protocol_stack_t * link_layer_stack;
-    protocol_instance_t configured_protocols[PROTO_MAX_IDENTIFIER];
-    attribute_internal_t * proto_registered_attributes[PROTO_MAX_IDENTIFIER];
-    attribute_handler_element_t * proto_registered_attribute_handlers[PROTO_MAX_IDENTIFIER];
-    packet_handler_t * packet_handlers;
-
-    void * timeout_milestones_map; // Session timeout milestones map
-    session_expiry_handler_t session_expiry_handler;
+    uint8_t has_reassembly; // 0 - no, 1 - yes
     
+    uint32_t last_expiry_timeout;
+    uint32_t attr_extraction_strategy;
+    uint32_t stats_reporting_status;
+    // General session timedout value
+    uint32_t default_session_timed_out;
+    uint32_t long_session_timed_out;
+    uint32_t short_session_timed_out;
+    uint32_t live_session_timed_out;
+    uint64_t packet_count;
+    uint64_t sessions_count;
+    uint64_t active_sessions_count;
+
+    session_expiry_handler_t session_expiry_handler;
     session_timer_handler_t session_timer_handler;    // This is the function registered by user and will be call from function process_timer_handler()
 
     packet_info_t last_received_packet;
     ipacket_t current_ipacket;
     generic_process_packet_fct process_packet;
     generic_clean_packet_fct clean_packet;
-    uint8_t has_reassembly; // 0 - no, 1 - yes
-    uint64_t packet_count;
-    uint64_t sessions_count;
-    uint64_t active_sessions_count;
-    uint32_t last_expiry_timeout;
-    uint32_t attr_extraction_strategy;
-    uint32_t stats_reporting_status;
-    mmt_hashmap_t *ip_streams;
-    // General session timedout value
-    uint32_t default_session_timed_out;
-    uint32_t long_session_timed_out;
-    uint32_t short_session_timed_out;
-    uint32_t live_session_timed_out;
+
+    protocol_stack_t * link_layer_stack;
+    protocol_instance_t configured_protocols[PROTO_MAX_IDENTIFIER];
+    attribute_internal_t * proto_registered_attributes[PROTO_MAX_IDENTIFIER];
+    attribute_handler_element_t * proto_registered_attribute_handlers[PROTO_MAX_IDENTIFIER];
+    packet_handler_t * packet_handlers;
     // Specific session timedout value
     // uint32_t mmt_http_session_timed_out;
+    mmt_hashmap_t *ip_streams;
+    void * timeout_milestones_map; // Session timeout milestones map
 };
 
 

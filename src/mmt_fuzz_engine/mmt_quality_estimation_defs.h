@@ -58,9 +58,9 @@ extern "C" {
     typedef struct metric_grade_membership_function_struct {
         int grade_index;
         int grade_value;
-        char * grade_name;
         int membership_function_type;
         int nb_membership_function_parameters;
+        char * grade_name;
         double * membership_function_parameters;
         struct metric_grade_membership_function_struct * next;
 
@@ -76,12 +76,10 @@ extern "C" {
     typedef struct metric_struct {
         int metric_index;
         int metric_id;
-        char * metric_name;
         int nb_grades;
-
         double metric_range_low;
         double metric_range_high;
-
+        char * metric_name;
         metric_grade_membership_function_t * metric_grades;
         struct application_quality_estimation_rules_struct * quality_estimation_rules;
         struct metric_struct * next;
@@ -133,10 +131,10 @@ extern "C" {
     } application_quality_estimation_t;
 
     typedef struct application_quality_estimation_internal_struct {
-        application_quality_estimation_t * application_quality_estimation;
         double ** metric_values;
         double ** metrics_membership_function_values_matrix;
         double * quality_metrics_estimated_values;
+        application_quality_estimation_t * application_quality_estimation;
     } application_quality_estimation_internal_t;
 
     typedef double (* generic_membership_function_by_kpi_and_grade)(double kpi_value, metric_grade_membership_function_t * mfp_parameters);

@@ -3180,13 +3180,13 @@ int disable_mmt_reassembly(mmt_handler_t *mmt) {
 
 int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
     
-    #ifdef CFG_OS_MAX_PACKET
+#ifdef CFG_OS_MAX_PACKET
     if ( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
         (void)fprintf( stderr, "This demo version of MMT is limited to %lu packets.\n", (unsigned long)CFG_OS_MAX_PACKET );
         return 0;
     }
     ++mmt->packet_count;
-    #endif /*CFG_OS_MAX_PACKET*/
+#endif /*CFG_OS_MAX_PACKET*/
 
     //Testing packet header and data integrity
     if (likely(header && packet)){

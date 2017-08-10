@@ -204,29 +204,29 @@ enum http_errno {
 
 
 struct http_parser {
-  /** PRIVATE **/
-  unsigned int type : 2;         /* enum http_parser_type */
-  unsigned int flags : 7;        /* F_* values from 'flags' enum; semi-public */
-  unsigned int state : 7;        /* enum state from http_parser.c */
-  unsigned int header_state : 8; /* enum header_state from http_parser.c */
-  unsigned int index : 8;        /* index into current matcher */
-
-  uint32_t nread;          /* # bytes read in various scenarios */
-  uint64_t content_length; /* # bytes in body (0 if no Content-Length header) */
-
-  /** READ-ONLY **/
-  unsigned short http_major;
-  unsigned short http_minor;
-  unsigned int status_code : 16; /* responses only */
-  unsigned int method : 8;       /* requests only */
-  unsigned int http_errno : 7;
-
+  
   /* 1 = Upgrade header was present and the parser has exited because of that.
    * 0 = No upgrade header present.
    * Should be checked when http_parser_execute() returns in addition to
    * error checking.
    */
   unsigned int upgrade : 1;
+  /** PRIVATE **/
+  unsigned int type : 2;         /* enum http_parser_type */
+  unsigned int flags : 7;        /* F_* values from 'flags' enum; semi-public */
+  unsigned int state : 7;        /* enum state from http_parser.c */
+  unsigned int http_errno : 7;
+  unsigned int header_state : 8; /* enum header_state from http_parser.c */
+  unsigned int index : 8;        /* index into current matcher */
+  unsigned int method : 8;       /* requests only */
+  unsigned int status_code : 16; /* responses only */
+
+  /** READ-ONLY **/
+  unsigned short http_major;
+  unsigned short http_minor;
+
+  uint32_t nread;          /* # bytes read in various scenarios */
+  uint64_t content_length; /* # bytes in body (0 if no Content-Length header) */
 
   /** PUBLIC **/
   void *data; /* A pointer to get hook to the "connection" or "socket" object */
@@ -235,18 +235,18 @@ struct http_parser {
 
 struct http_parser_settings {
   http_cb      on_message_begin;
-  http_data_cb on_url;
-  http_data_cb on_status;
-  http_data_cb on_header_field;
-  http_data_cb on_header_value;
   http_cb      on_headers_complete;
-  http_data_cb on_body;
   http_cb      on_message_complete;
   /* When on_chunk_header is called, the current chunk length is stored
    * in parser->content_length.
    */
   http_cb      on_chunk_header;
   http_cb      on_chunk_complete;
+  http_data_cb on_url;
+  http_data_cb on_status;
+  http_data_cb on_header_field;
+  http_data_cb on_header_value;
+  http_data_cb on_body;
 };
 
 
