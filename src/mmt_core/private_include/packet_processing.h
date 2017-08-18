@@ -282,7 +282,6 @@ struct mmt_proto_data_analysis_struct {
  */
 struct proto_statistics_internal_struct {
     uint32_t touched; /**< Indicates if the statistics have been updated since the last reset */
-    
     uint64_t packets_count; /**< Total number of packets seen by the protocol */
     uint64_t data_volume; /**< Total data volume seen by the protocol */
     uint64_t ip_frag_packets_count;         /**< Total number of IP unknown fragmented packets seen by the IP protocol*/
@@ -295,15 +294,12 @@ struct proto_statistics_internal_struct {
     uint64_t payload_volume_direction[2]; /**< Total UL/DL payload data volume seen by the protocol */
     uint64_t sessions_count; /**< Total number of sessions seen by the protocol */
     uint64_t timedout_sessions_count; /**< Total number of timedout sessions (this is the difference between sessions count and ative sessions count) */
-    
+    proto_statistics_internal_t* next; /**< next instance of statistics for the same protocol */
     struct timeval first_packet_time; // The time of the first packet of the protocol
     struct timeval last_packet_time; // The time of the last packet of the protocol
-    
     protocol_instance_t * proto; /**< pointer to the protocol */
-    
     void * encap_proto_stats; /**< Map including the statistics of encaprulated children protocols */
     proto_statistics_internal_t * parent_proto_stats; /**< pointer to the parent protocol stats */
-    proto_statistics_internal_t* next; /**< next instance of statistics for the same protocol */
 };
 
 /**
