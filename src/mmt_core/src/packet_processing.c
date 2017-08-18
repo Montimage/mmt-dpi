@@ -3034,15 +3034,20 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
             if (ipacket->session->proto_path.len > 0) {
 
                 int proto_direction = ipacket->session->last_packet_direction;
-
-                if (ipacket->session->proto_path_direction[proto_direction].len != ipacket->session->proto_path.len) {
-                    ipacket->session->proto_path_direction[proto_direction].len = ipacket->session->proto_path.len;
+                int proto_path_len = ipacket->session->proto_path.len;
+                if (ipacket->session->proto_path_direction[proto_direction].len != proto_path_len) {
+                    ipacket->session->proto_path_direction[proto_direction].len = proto_path_len;
                     int i = 0;
-                    for (i = 0; i < ipacket->session->proto_path.len; i++) {
+                    for (i = 0; i < proto_path_len; i++) {
                         ipacket->session->proto_path_direction[proto_direction].proto_path[i] = ipacket->session->proto_path.proto_path[i];
                     }
                     // debug("[IP] Update protocol path direction: %d", proto_direction);
+                }else{
+                    if(ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] != ipacket->session->proto_path.proto_path[proto_path_len - 1]){
+                        ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] = ipacket->session->proto_path.proto_path[proto_path_len - 1];
+                    }    
                 }
+                
             }
         }
         // Need to check if the ipacket is still exist
