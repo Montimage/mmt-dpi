@@ -93,9 +93,9 @@ typedef int (*generic_cleanup_proto)(void);
  * Defines a classified protocol including the identifier of the protocol and its offset in the packet.
  */
 typedef struct classified_proto_struct {
-    uint32_t proto_id; /**< identifier of the protocol */
     uint16_t offset; /**< offset of the protocol in the packet */
     uint16_t status; /**< the status of the classified protocol (classified, non-classified, ...) */
+    uint32_t proto_id; /**< identifier of the protocol */
 } classified_proto_t;
 
 /**

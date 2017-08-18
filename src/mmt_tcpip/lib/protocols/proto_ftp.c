@@ -16,7 +16,7 @@
  * @param  c2  ascii code number of replacing character
  * @return     new string after replacing
  */
-inline char * str_replace_all_char(char *str, int c1, int c2) {
+inline static char * str_replace_all_char(char *str, int c1, int c2) {
     char *new_str;
     new_str = (char*)malloc(strlen(str) + 1);
     memcpy(new_str, str, strlen(str));
@@ -526,7 +526,7 @@ void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6, ftp_tuple6_t *conn, int comp
  * @return         1 if the packet belongs to a control connection
  *                 2 if the packet doesn't belong to a control connection
  */
-inline int ftp_check_control_packet(const ipacket_t *ipacket) {
+inline static int ftp_check_control_packet(const ipacket_t *ipacket) {
     if (ipacket->internal_packet->tcp) {
         return (ipacket->internal_packet->tcp->source == htons(21) || ipacket->internal_packet->tcp->dest == htons(21));
     }
@@ -537,7 +537,7 @@ inline int ftp_check_control_packet(const ipacket_t *ipacket) {
  * Set command ID for a command
  * @param cmd command to set id
  */
-inline void ftp_set_command_id(ftp_command_t* cmd) {
+inline static void ftp_set_command_id(ftp_command_t* cmd) {
     if (strlen(cmd->str_cmd) == 3) {
         if (strcmp(cmd->str_cmd, "PWD") == 0 || strcmp(cmd->str_cmd, "pwd") == 0) {
             cmd->cmd = MMT_FTP_PWD_CMD;
@@ -935,7 +935,7 @@ int ftp_get_response_code(char* payload, int payload_len) {
  * Example: EPRT |1|132.235.1.2|6275|
  * @return             Client IP address
  */
-inline uint32_t ftp_get_data_client_addr_from_EPRT(char * payload) {
+inline static uint32_t ftp_get_data_client_addr_from_EPRT(char * payload) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, "|");
     char * str_addr;
@@ -957,7 +957,7 @@ inline uint32_t ftp_get_data_client_addr_from_EPRT(char * payload) {
  * Example: EPRT |2|2002:5183:4383::5183:4383|1031
  * @return             Client IP address
  */
-char * ftp_get_data_client_addr_v6_from_EPRT(char * payload) {
+inline static char * ftp_get_data_client_addr_v6_from_EPRT(char * payload) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, "|");
     char * str_addr;
@@ -976,7 +976,7 @@ char * ftp_get_data_client_addr_v6_from_EPRT(char * payload) {
  * "EPRT |2|2002:5183:4383::5183:4383|1031\r\n"
  * @return             Client port number
  */
-inline uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
+inline static uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, "|");
     char * str_addr = NULL;
@@ -1005,7 +1005,7 @@ inline uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
  * Example: 192,168,1,2,7,138 -> addr = inet_addr("192.168.1.2")
  * @return             an address
  */
-inline uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
+inline static uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, ",");
     char * str_addr = NULL;
@@ -1053,7 +1053,7 @@ inline uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len
  * port addres of port address length: 4,7 -> port = 4*16^2 + 7*16^0 = 1031
  * @return             an address
  */
-char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
+inline static char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
     // Get all the indexes of "|" in payload
     char * str_addr;
 
@@ -1195,7 +1195,7 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
  * Example: 192,168,1,2,7,138 -> port_nb = 7*256 + 138
  * @return             port number
  */
-inline uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len) {
+inline static uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len) {
     // Get all the indexes of "|" in payload
     int * indexes = str_get_indexes(payload, ",");
 
@@ -1225,7 +1225,7 @@ inline uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len)
  * @param  payload payload to extract server port
  * @return         server port
  */
-inline uint16_t ftp_get_data_server_port_code_229(char *payload) {
+inline static uint16_t ftp_get_data_server_port_code_229(char *payload) {
     char *ret = str_subvalue(payload, "(|||", "|)");
     uint16_t s_port = htons(atoi(ret));
     free(ret);
@@ -1238,7 +1238,7 @@ inline uint16_t ftp_get_data_server_port_code_229(char *payload) {
  * @param  payload payload
  * @return         server address
  */
-inline uint32_t ftp_get_data_server_addr_code_227(char * payload) {
+inline static uint32_t ftp_get_data_server_addr_code_227(char * payload) {
     char * str = str_subvalue(payload, "(", ")");
     uint32_t len = strlen(str);
     uint32_t address = ftp_get_addr_from_parameter(str, len);
@@ -1250,7 +1250,7 @@ inline uint32_t ftp_get_data_server_addr_code_227(char * payload) {
  * @param  payload payload
  * @return         server address
  */
-inline uint16_t ftp_get_data_server_port_code_227(char * payload) {
+inline static uint16_t ftp_get_data_server_port_code_227(char * payload) {
     char * str = str_subvalue(payload, "(", ")");
     uint32_t len = strlen(str);
     uint16_t port = ftp_get_port_from_parameter(str, len);
@@ -1264,7 +1264,7 @@ inline uint16_t ftp_get_data_server_port_code_227(char * payload) {
  * @param  payload Payload to extract
  * @return         port number
  */
-inline uint16_t ftp_get_data_server_port_code_228(char *payload) {
+inline static uint16_t ftp_get_data_server_port_code_228(char *payload) {
     char *ret = str_subvalue(payload, ", ", ")");
     uint16_t s_addr = htons(atoi(ret));
     free(ret);
@@ -1277,7 +1277,7 @@ inline uint16_t ftp_get_data_server_port_code_228(char *payload) {
  * @param  payload payload to extract
  * @return         server address
  */
-inline uint32_t ftp_get_data_server_addr_code_228(char *payload) {
+inline static uint32_t ftp_get_data_server_addr_code_228(char *payload) {
     char *ret = str_subvalue(payload, "(", ",");
     uint32_t s_addr = htons(atoi(ret));
     free(ret);

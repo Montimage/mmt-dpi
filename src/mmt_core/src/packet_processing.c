@@ -111,7 +111,7 @@ int is_valid_protocol_id(uint32_t proto_id) {
 }
 
 static inline int _is_registered_protocol(uint32_t proto_id) {
-    if (_is_valid_protocol_id(proto_id) > 0)
+    if (likely(_is_valid_protocol_id(proto_id) > 0))
         if (configured_protocols[proto_id]->is_registered && configured_protocols[proto_id]->proto_id == proto_id)
             return PROTO_REGISTERED;
     return PROTO_NOT_REGISTERED;
@@ -347,19 +347,6 @@ int register_session_timeout_handler(mmt_handler_t *mmt_h, generic_session_timeo
     return 1;
 }
 
-int register_mmt_reassembly(mmt_handler_t *mmt) {
-    if (mmt == NULL) return 0;
-    mmt->has_reassembly = 1;
-    return 1;
-}
-
-int unregister_mmt_reassembly(mmt_handler_t *mmt) {
-    if (mmt == NULL) return 0;
-    mmt->has_reassembly = 0;
-    return 1;
-}
-
-
 int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_handler_function session_timer_handler_fct, void * args) {
     mmt_h->session_timer_handler.session_timer_handler_fct = session_timer_handler_fct;
     mmt_h->session_timer_handler.args = args;
@@ -367,15 +354,6 @@ int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_h
 }
 
 void base_packet_extraction(ipacket_t * ipacket, unsigned protocol_index);
-
-static inline
-void update_last_received_packet(packet_info_t * last_packet, ipacket_t * ipacket) {
-    last_packet->packet_id += 1;
-    last_packet->packet_len = ipacket->p_hdr->len;
-    last_packet->time.tv_sec = ipacket->p_hdr->ts.tv_sec;
-    last_packet->time.tv_usec = ipacket->p_hdr->ts.tv_usec;
-    ipacket->packet_id = last_packet->packet_id;
-}
 
 int register_protocol_stack(uint32_t s_id, char * s_name, generic_stack_classification_function fct) {
     if (get_protocol_stack_from_map(s_id) == NULL) {
@@ -1169,7 +1147,11 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->last_received_packet.time.tv_usec = 0;
 
     new_handler->link_layer_stack = temp_stack;
+    new_handler->process_packet = process_packet;
+
     new_handler->has_reassembly = 0;
+    new_handler->clean_packet = clean_packet;
+    new_handler->process_packet = process_packet;
 
     // Initialize current_ipacket
     new_handler->current_ipacket.proto_headers_offset = NULL;
@@ -2581,13 +2563,13 @@ proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal
  */
 static inline proto_statistics_internal_t * _get_protocol_stats_from_parent(protocol_instance_t * proto, proto_statistics_internal_t * parent_proto_stats) {
     proto_statistics_internal_t * proto_stats;
-    if (parent_proto_stats == NULL /* Always the case for META protocol */) {
-        proto_stats = proto->proto_stats;
+    if (parent_proto_stats != NULL /* Always the case for META protocol */) {
+        proto_stats = _get_child_protocol_stats(parent_proto_stats, proto->protocol->proto_id);
         if (proto_stats == NULL) {
             proto_stats = _create_protocol_stats_instance(proto, parent_proto_stats);
         }
     } else {
-        proto_stats = _get_child_protocol_stats(parent_proto_stats, proto->protocol->proto_id);
+        proto_stats = proto->proto_stats;
         if (proto_stats == NULL) {
             proto_stats = _create_protocol_stats_instance(proto, parent_proto_stats);
         }
@@ -2719,46 +2701,43 @@ void reset_proto_stats(protocol_instance_t * proto) {
 */
 static inline
 proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset) {
-    if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
-        return NULL;
-    }
+    if (likely(isProtocolStatisticsEnabled(ipacket->mmt_handler))) {
+        /* TODO: Throughout metrics should be replaced by periodic handlers! */
+        proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
 
-    /* TODO: Throughout metrics should be replaced by periodic handlers! */
-    proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
+        if (likely(proto_stats)) {
+            proto_stats->touched         = 1;
+            proto_stats->packets_count  += 1;
+            proto_stats->data_volume    += ipacket->p_hdr->original_len;
+            proto_stats->payload_volume += ipacket->p_hdr->original_len - proto_offset;
+            // Update the fist packet
+            if (proto_stats->packets_count == 1) {
+                proto_stats->first_packet_time = ipacket->p_hdr->ts;
+                proto_stats->ip_frag_packets_count = 0;    
+                proto_stats->ip_frag_data_volume = 0;
+                proto_stats->ip_df_packets_count = 0;
+                proto_stats->ip_df_data_volume = 0;
+            }
+            proto_stats->last_packet_time = ipacket->p_hdr->ts;
 
-    if (proto_stats) {
-        proto_stats->touched         = 1;
-        proto_stats->packets_count  += 1;
-        proto_stats->data_volume    += ipacket->p_hdr->original_len;
-        proto_stats->payload_volume += ipacket->p_hdr->original_len - proto_offset;
-        // Update the fist packet
-        if (proto_stats->packets_count == 1) {
-            proto_stats->first_packet_time = ipacket->p_hdr->ts;
-        }
-        proto_stats->last_packet_time = ipacket->p_hdr->ts;
-
-        // Check if this is IP protocol, then update ip_fragment information
-        if(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179){
-
-            if(ipacket->is_fragment){
-
-                proto_stats->ip_frag_packets_count ++;    
-                if(ipacket->is_completed){
-                    proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
-                    proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
-                    proto_stats->ip_df_data_volume += ipacket->total_caplen;    
-                }else{
-                    proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
+            // Check if this is IP protocol, then update ip_fragment information
+            if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179)){
+                if(ipacket->is_fragment){
+                    proto_stats->ip_frag_packets_count ++;    
+                    if(ipacket->is_completed){
+                        proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
+                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
+                        proto_stats->ip_df_data_volume += ipacket->total_caplen;    
+                    }else{
+                        proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
+                    }
                 }
             }
-        }else{
-            proto_stats->ip_frag_packets_count = 0;    
-            proto_stats->ip_frag_data_volume = 0;
-            proto_stats->ip_df_packets_count = 0;
-            proto_stats->ip_df_data_volume = 0;
         }
+        return proto_stats;
+    }else{
+        return NULL;
     }
-    return proto_stats;
 }
 /**
  * Increase session_count of protocol
@@ -2777,7 +2756,7 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
     /* TODO: Throughout metrics should be replaced by periodic handlers! */
     proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
 
-    if (proto_stats) {
+    if (likely(proto_stats)) {
         if (new_session) {
             proto_stats->sessions_count += 1;
         }
@@ -2916,6 +2895,33 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
     return retval;
 }
 
+void clean_packet(ipacket_t *ipacket){
+    if ( (ipacket->data != ipacket->original_data) &&
+       (ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB) ) {
+        // data was dynamically allocated during the reassembly process:
+        //   . free dynamically allocated ipacket->data
+        //   . reset ipacket->data to its original value
+        mmt_free((void *) ipacket->data);
+        ipacket->data = ipacket->original_data;
+    }
+}
+
+void clean_packet_with_reassembly(ipacket_t *ipacket){
+    if ( (ipacket->data != ipacket->original_data) &&
+       (ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB) ) {
+        // data was dynamically allocated during the reassembly process:
+        //   . free dynamically allocated ipacket->data
+        //   . reset ipacket->data to its original value
+        mmt_free((void *) ipacket->data);
+        ipacket->data = ipacket->original_data;
+    }
+    // mmt_free(ipacket->proto_hierarchy);
+    // mmt_free(ipacket->proto_headers_offset);
+    // mmt_free(ipacket->proto_classif_status);
+    mmt_free((void *) ipacket->data);
+    mmt_free(ipacket);
+}
+
 /**
  * @brief Process packet_handler function
  *
@@ -2955,22 +2961,7 @@ void process_packet_handler(ipacket_t *ipacket) {
 
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
-    if ( (ipacket->data != ipacket->original_data) &&
-   		 (ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB) ) {
-        // data was dynamically allocated during the reassembly process:
-        //   . free dynamically allocated ipacket->data
-        //   . reset ipacket->data to its original value
-        mmt_free((void *) ipacket->data);
-        ipacket->data = ipacket->original_data;
-    }
-
-    else if (ipacket->mmt_handler->has_reassembly == 1) {
-        if (ipacket->internal_packet) {
-            mmt_free(ipacket->internal_packet);
-        }
-        mmt_free((void *)ipacket->data);
-        mmt_free(ipacket);
-    }
+    ipacket->mmt_handler->clean_packet(ipacket);    
 }
 
 /**
@@ -2983,21 +2974,7 @@ void mmt_drop_packet(ipacket_t *ipacket) {
 
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
-    if ((ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB)
-            && (ipacket->data != ipacket->original_data)) {
-        // data was dynamically allocated during the reassembly process:
-        //   . free dynamically allocated ipacket->data
-        //   . reset ipacket->data to its original value
-        mmt_free((void *) ipacket->data);
-        ipacket->data = ipacket->original_data;
-    }
-    else if (ipacket->mmt_handler->has_reassembly == 1) {
-        if (ipacket->internal_packet) {
-            mmt_free(ipacket->internal_packet);
-        }
-        mmt_free((void *)ipacket->data);
-        mmt_free(ipacket);
-    }
+    ipacket->mmt_handler->clean_packet(ipacket);
 }
 
 /**
@@ -3014,9 +2991,7 @@ void mmt_drop_packet(ipacket_t *ipacket) {
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
 
     debug("proto_packet_process of %"PRIu64" index: %d", ipacket->packet_id, index);
-
-    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
-            ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+    
     int target = MMT_CONTINUE;
     int is_new_session = 0;
     int proto_offset = get_packet_offset_at_index(ipacket, index);
@@ -3026,6 +3001,9 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         process_packet_handler(ipacket);
         return target;
     }
+
+    protocol_instance_t * configured_protocol = &(ipacket->mmt_handler)
+            ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
 
     //The protocol is registered: First we check if it requires to maintain a session
     is_new_session = proto_session_management(ipacket, configured_protocol, index);
@@ -3080,13 +3058,81 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     return target;
 }
 
-/**
- * Copy ipacket header
- * @param ipacket ipacket
- * @param header  header
- */
-static inline
-void copy_ipacket_header(ipacket_t *ipacket, struct pkthdr *header) {
+void process_session_timer_handler(mmt_handler_t *mmt) {
+    // printf("process_session_timer_handler \n");
+    session_timer_iteration_callback(mmt, session_timer_handler_callback);
+}
+
+
+// static inline void update_last_received_packet(packet_info_t * last_packet, ipacket_t * ipacket) {
+//     last_packet->packet_id += 1;
+//     last_packet->packet_len = ipacket->p_hdr->len;
+//     last_packet->time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+//     last_packet->time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+//     ipacket->packet_id = last_packet->packet_id;
+// }
+
+int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
+    classified_proto_t classified_proto;
+    classified_proto.proto_id = PROTO_META;
+    classified_proto.offset = 0;
+    classified_proto.status = Classified;
+    mmt->current_ipacket.data = packet;
+    mmt->current_ipacket.proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
+    mmt->current_ipacket.proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
+    mmt->current_ipacket.proto_classif_status = &mmt->last_received_packet.proto_classif_status;
+    mmt->current_ipacket.p_hdr = &mmt->current_ipacket.internal_p_hdr;
+    mmt->current_ipacket.p_hdr->ts.tv_sec = header->ts.tv_sec;
+    mmt->current_ipacket.p_hdr->ts.tv_usec = header->ts.tv_usec;
+    mmt->current_ipacket.p_hdr->caplen = header->caplen;
+    mmt->current_ipacket.p_hdr->original_caplen = header->caplen;
+    mmt->current_ipacket.p_hdr->original_len = header->len;
+    mmt->current_ipacket.p_hdr->len = header->len;
+    mmt->current_ipacket.p_hdr->probe_id = header->probe_id;
+    mmt->current_ipacket.p_hdr->source_id = header->source_id;
+    mmt->current_ipacket.p_hdr->user_args = header->user_args;
+    mmt->current_ipacket.original_data = packet;
+    mmt->current_ipacket.proto_hierarchy->len = 0;
+    mmt->current_ipacket.proto_headers_offset->len = 0;
+    mmt->current_ipacket.proto_classif_status->len = 0;
+    mmt->current_ipacket.session = NULL;
+    mmt->current_ipacket.mmt_handler = mmt;
+    mmt->current_ipacket.internal_packet = NULL;
+    mmt->current_ipacket.last_callback_fct_id = 0;
+    mmt->current_ipacket.nb_reassembled_packets = 1;
+    mmt->current_ipacket.is_completed = 0;
+    mmt->current_ipacket.is_fragment = 0;
+    mmt->current_ipacket.total_caplen = header->caplen;
+    // update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
+    mmt->last_received_packet.packet_id += 1;
+    mmt->last_received_packet.packet_len = mmt->current_ipacket.p_hdr->len;
+    mmt->last_received_packet.time.tv_sec = mmt->current_ipacket.p_hdr->ts.tv_sec;
+    mmt->last_received_packet.time.tv_usec = mmt->current_ipacket.p_hdr->ts.tv_usec;
+    mmt->current_ipacket.packet_id = mmt->last_received_packet.packet_id;
+    //First set the meta protocol
+    (void) set_classified_proto(&mmt->current_ipacket, 0, classified_proto);
+    // debug("Packet address (packet_process) - no copied packet: %p", &mmt->current_ipacket);
+    return proto_packet_process(&mmt->current_ipacket, NULL, 0);
+}
+
+int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
+    classified_proto_t classified_proto;
+    classified_proto.proto_id = PROTO_META;
+    classified_proto.offset = 0;
+    classified_proto.status = Classified;
+    ipacket_t *ipacket;
+    ipacket = mmt_malloc(sizeof(ipacket_t));
+    ipacket->data = mmt_malloc(header->caplen);
+    memcpy((void *)ipacket->data, (void *)packet, header->caplen);
+    ipacket->original_data = ipacket->data;
+    // ipacket->proto_hierarchy = (proto_hierarchy_t*)malloc(sizeof(proto_hierarchy_t));
+    // ipacket->proto_headers_offset = (proto_hierarchy_t*)malloc(sizeof(proto_hierarchy_t));
+    // ipacket->proto_classif_status = (proto_hierarchy_t*)malloc(sizeof(proto_hierarchy_t));
+    ipacket->proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
+    ipacket->proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
+    ipacket->proto_classif_status = &mmt->last_received_packet.proto_classif_status;
+    // copy_ipacket_header(ipacket, header);
+    // Start copy header
     ipacket->p_hdr = &ipacket->internal_p_hdr;
     ipacket->p_hdr->ts.tv_sec = header->ts.tv_sec;
     ipacket->p_hdr->ts.tv_usec = header->ts.tv_usec;
@@ -3097,114 +3143,66 @@ void copy_ipacket_header(ipacket_t *ipacket, struct pkthdr *header) {
     ipacket->p_hdr->probe_id = header->probe_id;
     ipacket->p_hdr->source_id = header->source_id;
     ipacket->p_hdr->user_args = header->user_args;
+    //End of Copy header
+    ipacket->proto_hierarchy->len = 0;
+    ipacket->proto_headers_offset->len = 0;
+    ipacket->proto_classif_status->len = 0;
+    ipacket->session = NULL;
+    ipacket->mmt_handler = mmt;
+    ipacket->internal_packet = NULL;
+    ipacket->last_callback_fct_id = 0;
+    ipacket->nb_reassembled_packets = 1;
+    ipacket->is_completed = 0;
+    ipacket->is_fragment = 0;
+    ipacket->total_caplen = header->caplen;
+    // update_last_received_packet(&mmt->last_received_packet, ipacket);
+    mmt->last_received_packet.packet_id += 1;
+    mmt->last_received_packet.packet_len = ipacket->p_hdr->len;
+    mmt->last_received_packet.time.tv_sec = ipacket->p_hdr->ts.tv_sec;
+    mmt->last_received_packet.time.tv_usec = ipacket->p_hdr->ts.tv_usec;
+    ipacket->packet_id = mmt->last_received_packet.packet_id;
+    (void) set_classified_proto(ipacket, 0, classified_proto);
+    // debug("Packet address (packet_process - copied packet): %p", ipacket);
+    return proto_packet_process(ipacket, NULL, 0);
 }
 
-
-static inline
-ipacket_t * prepare_ipacket(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
-    // TODO: configuration option whether mmt need to allocate data or just refer it.
-    classified_proto_t classified_proto;
-    classified_proto.proto_id = PROTO_META;
-    classified_proto.offset = 0;
-    classified_proto.status = Classified;
-
-    if (mmt->has_reassembly == 1) {
-        ipacket_t *ipacket;
-        ipacket = mmt_malloc(sizeof(ipacket_t));
-        ipacket->data = mmt_malloc(header->caplen);
-        memcpy((void *)ipacket->data, (void *)packet, header->caplen);
-        ipacket->original_data = ipacket->data;
-        ipacket->proto_hierarchy = &ipacket->internal_proto_hierarchy;
-        ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
-        ipacket->proto_classif_status = &ipacket->internal_proto_classif_status;
-        copy_ipacket_header(ipacket, header);
-        ipacket->proto_hierarchy->len = 0;
-        ipacket->proto_headers_offset->len = 0;
-        ipacket->proto_classif_status->len = 0;
-        ipacket->session = NULL;
-        ipacket->mmt_handler = mmt;
-        ipacket->internal_packet = NULL;
-        ipacket->last_callback_fct_id = 0;
-        ipacket->nb_reassembled_packets = 1;
-        ipacket->is_completed = 0;
-        ipacket->is_fragment = 0;
-        ipacket->total_caplen = header->caplen;
-        update_last_received_packet(&mmt->last_received_packet, ipacket);
-        (void) set_classified_proto(ipacket, 0, classified_proto);
-        return ipacket;
-    } else {
-        mmt->current_ipacket.data = packet;
-        mmt->current_ipacket.proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
-        mmt->current_ipacket.proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
-        mmt->current_ipacket.proto_classif_status = &mmt->last_received_packet.proto_classif_status;
-        mmt->current_ipacket.p_hdr = &mmt->current_ipacket.internal_p_hdr;
-        mmt->current_ipacket.p_hdr->ts.tv_sec = header->ts.tv_sec;
-        mmt->current_ipacket.p_hdr->ts.tv_usec = header->ts.tv_usec;
-        mmt->current_ipacket.p_hdr->caplen = header->caplen;
-        mmt->current_ipacket.p_hdr->original_caplen = header->caplen;
-        mmt->current_ipacket.p_hdr->original_len = header->len;
-        mmt->current_ipacket.p_hdr->len = header->len;
-        mmt->current_ipacket.p_hdr->probe_id = header->probe_id;
-        mmt->current_ipacket.p_hdr->source_id = header->source_id;
-        mmt->current_ipacket.p_hdr->user_args = header->user_args;
-        mmt->current_ipacket.original_data = packet;
-        mmt->current_ipacket.proto_hierarchy->len = 0;
-        mmt->current_ipacket.proto_headers_offset->len = 0;
-        mmt->current_ipacket.proto_classif_status->len = 0;
-        mmt->current_ipacket.session = NULL;
-        mmt->current_ipacket.mmt_handler = mmt;
-        mmt->current_ipacket.internal_packet = NULL;
-        mmt->current_ipacket.last_callback_fct_id = 0;
-        mmt->current_ipacket.nb_reassembled_packets = 1;
-        mmt->current_ipacket.is_completed = 0;
-        mmt->current_ipacket.is_fragment = 0;
-        mmt->current_ipacket.total_caplen = header->caplen;
-        update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
-        //First set the meta protocol
-        (void) set_classified_proto(&mmt->current_ipacket, 0, classified_proto);
-        return &mmt->current_ipacket;
+int enable_mmt_reassembly(mmt_handler_t *mmt) {
+    if (likely(mmt != NULL)) {
+        mmt->process_packet = process_packet_with_reassembly;
+        mmt->clean_packet = clean_packet_with_reassembly;
+        return 1;
     }
+    return 0;
 }
 
-
-void process_session_timer_handler(mmt_handler_t *mmt) {
-    // printf("process_session_timer_handler \n");
-    session_timer_iteration_callback(mmt, session_timer_handler_callback);
+int disable_mmt_reassembly(mmt_handler_t *mmt) {
+    if (likely(mmt != NULL)) {
+        mmt->process_packet = process_packet;
+        mmt->clean_packet = clean_packet;
+        return 1;
+    }
+    return 0;
 }
 
 
 int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
-
-    //Testing packet header and data integrity
-    if (!header || !packet /* The header and packet must be not null */
-            || !(header->caplen > 0) || !(header->len > 0) || !(header->len >= header->caplen) /* Packet data len must not be zero.
-                                                                                               * Real data size MUST be greater or equal
-                                                                                               * to the captured data len */
-       ) {
-        return 0;
-    }
-
+    
 #ifdef CFG_OS_MAX_PACKET
     if ( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
         (void)fprintf( stderr, "This demo version of MMT is limited to %lu packets.\n", (unsigned long)CFG_OS_MAX_PACKET );
         return 0;
     }
-
     ++mmt->packet_count;
 #endif /*CFG_OS_MAX_PACKET*/
 
-    unsigned index = 0;
-
-    if (mmt->has_reassembly == 1) {
-        ipacket_t *ipacket = prepare_ipacket(mmt, header, packet);
-        // debug("Packet address (packet_process - copied packet): %p", ipacket);
-        proto_packet_process(ipacket, NULL, index);
-    } else {
-        prepare_ipacket(mmt, header, packet);
-        // debug("Packet address (packet_process) - no copied packet: %p", &mmt->current_ipacket);
-        proto_packet_process(&mmt->current_ipacket, NULL, index);
+    //Testing packet header and data integrity
+    if (likely(header && packet)){
+        if (likely(header->caplen > 0  && header->len > 0 && header->len >= header->caplen)){
+            mmt->process_packet(mmt,header,packet);
+            return 1;
+        }
     }
-    return 1;
+    return 0;
 }
 
 
@@ -3310,8 +3308,8 @@ uint32_t get_protocol_id_by_name(const char * protocolalias) {
 #ifdef DEBUG
     (void)fprintf( stderr, "Entering tips_proto_find_by_name proto %s\n", protocolalias );
 #endif
-    int i = 0;
-    for (; i < PROTO_MAX_IDENTIFIER; i++) {
+    int i = PROTO_MAX_IDENTIFIER - 1;
+    for (; i >=0 ; i--) {
         if (_is_registered_protocol(i)) {
             protocol_t * temp = configured_protocols[i];
             if (mmt_strcasecmp(temp->protocol_name, protocolalias) == 0)

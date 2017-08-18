@@ -83,12 +83,14 @@ typedef struct ATTRIBUTE_struct{
 //END_OF_PUBLIC
 
 typedef struct TUPLE_struct{ //used by list_of_tuples to store values in a rule
+  short event_id;
+
+  int data_size;
+  int valid; //VALID/NOT_YET indicates if the values are valid or not yet set
+
   long protocol_id;
   long field_id;
   long data_type_id;
-  int data_size;
-  short event_id;
-  int valid; //VALID/NOT_YET indicates if the values are valid or not yet set
   void *data;                //binary that needs to be casted using data_type
   struct TUPLE_struct *next; //next tuple used only in ROOT_INSTANCE to store a list of values
 }tuple;
@@ -97,44 +99,48 @@ typedef struct RULE_struct{
   short type;		//ROOT/SON/LEAF/ROOT_INSTANCE/EVENT
   short value;		//THEN/OR/AND/NOT/REPEAT/COMPUTE/event_number
   short already_satisfied; //indicates that the rule has already been satisfied so that a timeout will not be treated as a violation
-  tuple t;              //Only used by a LEAF in a EVENT or (t.valid, t.data) to store result from compute
-  char * description;   //Only used by a ROOT or a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify it.
-  char * funct_name;    //Used by XFUNCT nodes to hold function_name
-  struct RULE_struct *root; //Only used by non-ROOT and non-ROOT_INSTANCE
-  int property_id;      //Only used by a ROOT node. Printed when a conclusion for the rule is reached so that the user can identify it.
-  char* if_satisfied; //Only used by a ROOT node. Function call done  when a conclusion for the rule is reached.
-  char* if_not_satisfied; //Only used by a ROOT node. Function call done  when a conclusion for the rule is reached.
-  int type_rule;        //Only used by a ROOT node. Determines how the rule will be printed.
-  //char * history;       //Only used by a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify the causes.
-  char * json_history;       //Only used by a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify the causes.
-  long nb_satisfied;    //Only used by ROOT to keep statistics per rule
-  long nb_not_satisfied;//Only used by ROOT to keep statistics per rule
-  short valid;		//VALID/NOT_VALID/NOT_YET
-  char *delay_units;	//default is seconds; other possible values: "Y","M","D","H","m","s","ms","mms"
-  double delay_max;	//default is 0, if value is < 0 then event needs to be satisfied before, if = 0 then in same packet, if > 0 then after
-  double delay_min;	//idem
+  short valid;    //VALID/NOT_VALID/NOT_YET
   short not_equal_max;  //default is NO (delay <= delay_max), if YES (delay < delay_max)
   short not_equal_min;  //default is NO (delay >= delay_min), if YES (delay > delay_min)
-  int counter_max;	//idem, note that either delay or counter needs to be used not both
-  int counter_min;	//idem
   short always_create_new;//YES/NO default is YES (optional), can be used at root level (use packet that satisfied a rule to create a new instance or not),
                           //                        and can be used at the event level (use packet that satisfied event to create a new instance or not)
-  int repeat_times;	        //used only for REPEAT node (optional)
-  int repeat_times_found;	//couter of times detected
-  struct timeval timer; //receives current packet time when need to start calculating for a timeout
-  int counter;          //set to 1 when need to start calculating number of packets
-
-  char * boolean_expression; //Only used in an event node for writing it to the db
   short event_id;         //Only used when it is an operator node in a event
+
+  int property_id;      //Only used by a ROOT node. Printed when a conclusion for the rule is reached so that the user can identify it.
+  int type_rule;        //Only used by a ROOT node. Determines how the rule will be printed.
+  int counter_max;  //idem, note that either delay or counter needs to be used not both
+  int counter_min;  //idem
+  int repeat_times;         //used only for REPEAT node (optional)
+  int counter;          //set to 1 when need to start calculating number of packets
+  int repeat_times_found; //couter of times detected
+
+  long nb_satisfied;    //Only used by ROOT to keep statistics per rule
+  long nb_not_satisfied;//Only used by ROOT to keep statistics per rule  
+
+  double delay_max; //default is 0, if value is < 0 then event needs to be satisfied before, if = 0 then in same packet, if > 0 then after
+  double delay_min; //idem
+
+  tuple t;              //Only used by a LEAF in a EVENT or (t.valid, t.data) to store result from compute
+  struct timeval timer; //receives current packet time when need to start calculating for a timeout
+
+  char * description;   //Only used by a ROOT or a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify it.
+  char * funct_name;    //Used by XFUNCT nodes to hold function_name
+  char * if_satisfied; //Only used by a ROOT node. Function call done  when a conclusion for the rule is reached.
+  char * if_not_satisfied; //Only used by a ROOT node. Function call done  when a conclusion for the rule is reached.
+  //char * history;       //Only used by a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify the causes.
+  char * json_history;       //Only used by a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify the causes.
+  char * delay_units;	//default is seconds; other possible values: "Y","M","D","H","m","s","ms","mms"
+  char * boolean_expression; //Only used in an event node for writing it to the db
   char * keep_state;       //used at ROOT_INSTANCE node to indicate that the rule should be kept and that the state of the listed event ids should be
                           //preserved or eliminated. This is so that, for instance, a rule with T(E1, E2) will give two SATISFIED if we get E1,E2,E2
                           //(until the timeout for the rule)
 
   struct TUPLE_struct *list_of_tuples_to_print;  //Only used by a ROOT to list <protocol_id, field_id, data_type_id>
                                                  //to printout when the rule is satisfied or not.
-
   struct TUPLE_struct *list_of_tuples;           //Used by a ROOT_INSTANCE to store all the values with a reference attribute in a EVENT.
                                                  //and by FUNCT to store information on return value and parameters
+  
+  struct RULE_struct *root; //Only used by non-ROOT and non-ROOT_INSTANCE
   struct RULE_struct  *list_of_sons;             //For all, creates hierarchy
   struct RULE_struct  *list_of_instances;        //Only if ROOT node
   //struct RULE_struct  *attached_rule;            //Only used in BEFORE nodes
@@ -152,16 +158,17 @@ typedef struct FATHER_struct{
 }father;
 
 typedef struct REFERENCE_NAME_struct{
-  char * name;
   short  value;
+  char * name;
   struct REFERENCE_NAME_struct *next;
 }reference_name;
 
 static rule *top_rule = NULL;
 static rule *bot_rule = NULL;
+static rule *root_rule;
+
 static father *top_father = NULL;
 static father *bot_father = NULL;
-static rule *root_rule;
 
 #define MTU_BIG               (16*1024)
 

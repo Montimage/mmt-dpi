@@ -4,8 +4,8 @@
 
 int get_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
     int retval = 0;
-    int i = 0;
-    for (; i <= index; i++) {
+    int i = index;
+    for (i = index ; i >=0 ; i--) {
         retval += ipacket->proto_headers_offset->proto_path[i];
     }
     return retval;
@@ -14,7 +14,7 @@ int get_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
 unsigned get_protocol_index_by_id(const ipacket_t * ipacket, uint32_t proto_id) {
     int retval = -1, i;
     int nb_proto = ipacket->proto_hierarchy->len;
-    for (i = 0; i < nb_proto; i++) {
+    for (i = nb_proto ; i >= 0; i--) {
         if (ipacket->proto_hierarchy->proto_path[i] == proto_id) {
             retval = i;
             break;
@@ -28,7 +28,7 @@ unsigned get_protocol_index_by_name(const ipacket_t * ipacket, const char *proto
     int retval = -1, i;
     if (proto_id) {
         int nb_proto = ipacket->proto_hierarchy->len;
-        for (i = 0; i < nb_proto; i++) {
+        for (i = nb_proto - 1; i >= 0; i--) {
             if (ipacket->proto_hierarchy->proto_path[i] == proto_id) {
                 retval = i;
                 break;

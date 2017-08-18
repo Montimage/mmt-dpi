@@ -72,7 +72,7 @@ typedef bool (*generic_comparison_fct) (void * key_1, void * key_2); //public fu
 typedef bool (*generic_int_comparison_fct) (uint32_t key_1, uint32_t key_2); //public function
 
 /**
- * Defines the meta-data of a packet.
+ * Defines the meta-data of a packet. - DO NOT CHANGE THE ORDER OF THE FIELDS
  */
 typedef struct pkthdr {
     struct timeval ts;   /**< time stamp that indicates the packet arrival time */
@@ -98,24 +98,24 @@ typedef struct proto_hierarchy_struct {
  */
 struct ipacket_struct {
     uint64_t packet_id;                       /**< identifier of the packet. */
-    unsigned nb_reassembled_packets;          /**< number of packets which are assembled to this packet */
     uint64_t total_caplen;                    /**< Total captured length of all packets which are assembled to this packet*/
     uint8_t is_completed;                     /**< 1 - yes, 0 - no: Indicate if the packet is completed to go to parse to next protocol*/
     uint8_t is_fragment;                      /**< 1 - yes, 0 - no: Indicate if the packet is a fragmented packet */  
+    int last_callback_fct_id;                           /**< The extra field for tcp packet handler */
+    unsigned nb_reassembled_packets;          /**< number of packets which are assembled to this packet */
+    proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */
+    proto_hierarchy_t internal_proto_headers_offset; /**< internal: - never modify it.  the offsets corresponding to the protocol layers of this packet */
+    proto_hierarchy_t internal_proto_classif_status; /**< internal: - never modify it.  the classification status of the protocols in the path */
     proto_hierarchy_t * proto_hierarchy;      /**< the protocol layers corresponding to this packet */
     proto_hierarchy_t * proto_headers_offset; /**< the offsets corresponding to the protocol layers of this packet */
     proto_hierarchy_t * proto_classif_status; /**< the classification status of the protocols in the path */
     mmt_session_t * session;                  /**< pointer to the session structure to which the packet belongs*/
     mmt_tcpip_internal_packet_t * internal_packet;  /**< pointer to opaque packet structure. for internal use only. Must never be changed */
     mmt_handler_t * mmt_handler;              /**< pointer to the mmt handler that processed this packet */
+    pkthdr_t internal_p_hdr;                         /**< internal: - never modify it. the meta-data of the packet */
     pkthdr_t * p_hdr;                         /**< the meta-data of the packet */
     const u_char * data;                      /**< pointer to the packet data */
     const u_char * original_data;             /**< internal: - never modify it. pointer to the original packet data. It will be different than ipacket->data in case of IP assembled data*/
-    int last_callback_fct_id;                           /**< The extra field for tcp packet handler */
-    proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */
-    proto_hierarchy_t internal_proto_headers_offset; /**< internal: - never modify it.  the offsets corresponding to the protocol layers of this packet */
-    proto_hierarchy_t internal_proto_classif_status; /**< internal: - never modify it.  the classification status of the protocols in the path */
-    pkthdr_t internal_p_hdr;                         /**< internal: - never modify it. the meta-data of the packet */
 };
 
 /**
@@ -133,14 +133,14 @@ struct attribute_description_struct {
  */
 //This structure is a subset of "attribute_internal_t" defined in private include file "packet_processing.h" be careful when modifying this.
 typedef struct attribute_struct {
-    uint32_t proto_id;    /**< identifier of the protocol */
-    uint32_t field_id;       /**< identifier of the attribute */
     unsigned protocol_index; /**< index of the protocol */
     int status;              /**< status of the attribute. Indicates if it is unset, set or consumed. */
     int data_type;           /**< the data type of the attribute */
     int data_len;            /**< the data length of the attribute */
     int position_in_packet;  /**< the position in the packet of the attribute. */
     int scope;               /**< the scope of the attribute (packet, session, ...). */
+    uint32_t proto_id;    /**< identifier of the protocol */
+    uint32_t field_id;       /**< identifier of the attribute */
     void *data;              /**< pointer to the attribute data */
 } attribute_t;
 
@@ -189,8 +189,8 @@ enum proto_common_attributes {
 
 
 typedef struct ip_rtt_struct{
-    struct timeval rtt;
     uint8_t direction;
+    struct timeval rtt;
     mmt_session_t * session;
 }ip_rtt_t;
 

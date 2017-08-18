@@ -71,7 +71,7 @@ extern "C" {
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
 #ifndef VERSION
-    #define VERSION "1.6.10.3"
+    #define VERSION "1.6.10.4"
 #endif
 
 #ifdef GIT_VERSION
@@ -92,10 +92,22 @@ extern "C" {
 typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
 
 /**
+ * Generic process_packet
+ */
+typedef int (*generic_process_packet_fct) (mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet);
+
+/**
+ * Generic clean_packet
+ */
+typedef void (*generic_clean_packet_fct) (ipacket_t *ipacket);
+
+/**
  * Signature of the session timeout handler.
  */
 typedef void (*generic_session_timeout_handler_function)(const mmt_session_t * expired_session, void * args);
-
+/**
+ * Signature of the session timer handler - call preodically.
+ */
 typedef void (*generic_session_timer_handler_function)(const mmt_session_t * head_session, void * args);
 
 /**
@@ -516,7 +528,7 @@ MMTAPI void MMTCALL process_session_timer_handler(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL register_mmt_reassembly(
+MMTAPI int MMTCALL enable_mmt_reassembly(
     mmt_handler_t *mmt_handler
 );
 
@@ -526,7 +538,7 @@ MMTAPI int MMTCALL register_mmt_reassembly(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL unregister_mmt_reassembly(
+MMTAPI int MMTCALL disable_mmt_reassembly(
     mmt_handler_t *mmt_handler
 );
 
