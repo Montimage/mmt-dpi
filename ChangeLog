@@ -2,6 +2,11 @@ RELEASE NOTES
 ---
 ## Pre-version 1.6.11.0
 
+Version 1.6.10.4
+- Implemented some optimization techniques to improve the performance
+- Update classification of PROTO_MSSQL (to ignore port 102 - port for PROTO_S7COMM)
+- Fixed some inline functions for compatible with newer version of gcc compiler (> 4.9)
+
 Version 1.6.10.3
 - Skip extracting HTTP header information if there is no data_analyser require for HTTP protocols: Improve the performance
 
