@@ -598,7 +598,7 @@ int register_classification_function_with_parent_protocol(uint32_t proto_id, gen
         if (proto) {
             if (weight < 0) weight = 0;
             if (weight > 100) weight = 100;
-            if ((weight > 10) && (weight < 90)) weight = 90;
+            // if ((weight > 10) && (weight < 90)) weight = 90;// LN: Dont know why we do that????
             return register_classification_function_internal(proto, classification_fct, weight);
         }
     }
