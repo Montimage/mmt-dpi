@@ -51,10 +51,6 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
 	if( size == 2 || ret != 0 )
 		return ret;
 
-	ret = s1[1] - s2[1];
-	if( size == 2 || ret != 0 )
-		return ret;
-
 	ret = s1[2] - s2[2];
 	if( size == 3 || ret != 0 )
 		return ret;
@@ -90,10 +86,6 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
 //10-20
 	ret = s1[10] - s2[10];
 	if( size == 11 || ret != 0 )
-		return ret;
-
-	ret = s1[11] - s2[11];
-	if( size == 12 || ret != 0 )
 		return ret;
 
 	ret = s1[11] - s2[11];
