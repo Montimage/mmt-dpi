@@ -32,30 +32,28 @@ void mmt_classify_me_secondlife(ipacket_t * ipacket, unsigned index) {
     //  }
 
     if (packet->tcp != NULL) {
-        if (packet->payload_packet_len > MMT_STATICSTRING_LEN("GET /")
-                && memcmp(packet->payload, "GET /", MMT_STATICSTRING_LEN("GET /")) == 0) {
+        if (packet->payload_packet_len > 5
+                && memcmp(packet->payload, "GET /", 5) == 0) {
             MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life HTTP 'GET /'' found.\n");
             mmt_parse_packet_line_info(ipacket);
             if (packet->user_agent_line.ptr != NULL
                     && packet->user_agent_line.len >
-                    MMT_STATICSTRING_LEN
-                    ("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) SecondLife/")
-                    && memcmp(&packet->user_agent_line.ptr[MMT_STATICSTRING_LEN
-                    ("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) ")],
-                    "SecondLife/", MMT_STATICSTRING_LEN("SecondLife/")) == 0) {
+                    97
+                    && memcmp(&packet->user_agent_line.ptr[86],
+                    "SecondLife/", 11) == 0) {
                 MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG,
                         "Second Life TCP HTTP User Agent detected.\n");
                 mmt_int_secondlife_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
-            if (packet->host_line.ptr != NULL && packet->host_line.len > MMT_STATICSTRING_LEN(".agni.lindenlab.com:")) {
+            if (packet->host_line.ptr != NULL && packet->host_line.len > 20) {
                 uint8_t x;
                 for (x = 2; x < 6; x++) {
                     if (packet->host_line.ptr[packet->host_line.len - (1 + x)] == ':') {
-                        if ((1 + x + MMT_STATICSTRING_LEN(".agni.lindenlab.com")) < packet->host_line.len
+                        if ((1 + x + 19) < packet->host_line.len
                                 && memcmp(&packet->host_line.ptr[packet->host_line.len -
-                                (1 + x + MMT_STATICSTRING_LEN(".agni.lindenlab.com"))],
-                                ".agni.lindenlab.com", MMT_STATICSTRING_LEN(".agni.lindenlab.com")) == 0) {
+                                (1 + x + 19)],
+                                ".agni.lindenlab.com", 19) == 0) {
                             MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG,
                                     "Second Life TCP HTTP Host detected.\n");
                             mmt_int_secondlife_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -108,30 +106,28 @@ int mmt_check_secondlife_tcp(ipacket_t * ipacket, unsigned index) {
         
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-        if (packet->payload_packet_len > MMT_STATICSTRING_LEN("GET /")
-                && memcmp(packet->payload, "GET /", MMT_STATICSTRING_LEN("GET /")) == 0) {
+        if (packet->payload_packet_len > 5
+                && memcmp(packet->payload, "GET /", 5) == 0) {
             MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG, "Second Life HTTP 'GET /'' found.\n");
             mmt_parse_packet_line_info(ipacket);
             if (packet->user_agent_line.ptr != NULL
                     && packet->user_agent_line.len >
-                    MMT_STATICSTRING_LEN
-                    ("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) SecondLife/")
-                    && memcmp(&packet->user_agent_line.ptr[MMT_STATICSTRING_LEN
-                    ("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) ")],
-                    "SecondLife/", MMT_STATICSTRING_LEN("SecondLife/")) == 0) {
+                    97
+                    && memcmp(&packet->user_agent_line.ptr[86],
+                    "SecondLife/", 11) == 0) {
                 MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG,
                         "Second Life TCP HTTP User Agent detected.\n");
                 mmt_int_secondlife_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             }
-            if (packet->host_line.ptr != NULL && packet->host_line.len > MMT_STATICSTRING_LEN(".agni.lindenlab.com:")) {
+            if (packet->host_line.ptr != NULL && packet->host_line.len > 20) {
                 uint8_t x;
                 for (x = 2; x < 6; x++) {
                     if (packet->host_line.ptr[packet->host_line.len - (1 + x)] == ':') {
-                        if ((1 + x + MMT_STATICSTRING_LEN(".agni.lindenlab.com")) < packet->host_line.len
+                        if ((1 + x + 19) < packet->host_line.len
                                 && memcmp(&packet->host_line.ptr[packet->host_line.len -
-                                (1 + x + MMT_STATICSTRING_LEN(".agni.lindenlab.com"))],
-                                ".agni.lindenlab.com", MMT_STATICSTRING_LEN(".agni.lindenlab.com")) == 0) {
+                                (1 + x + 19)],
+                                ".agni.lindenlab.com", 19) == 0) {
                             MMT_LOG(PROTO_SECONDLIFE, MMT_LOG_DEBUG,
                                     "Second Life TCP HTTP Host detected.\n");
                             mmt_int_secondlife_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);

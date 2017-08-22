@@ -105,7 +105,7 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
                             ((memcmp(packet->user_agent_line.ptr, "mobileAIM/", 10) == 0) ||
                             (memcmp(packet->user_agent_line.ptr, "ICQ/", 4) == 0) ||
                             (memcmp(packet->user_agent_line.ptr, "mobileICQ/", 10) == 0) ||
-                            (memcmp(packet->user_agent_line.ptr, "AIM%20Free/", MMT_STATICSTRING_LEN("AIM%20Free/")) == 0) ||
+                            (memcmp(packet->user_agent_line.ptr, "AIM%20Free/", 11) == 0) ||
                             (memcmp(packet->user_agent_line.ptr, "AIM/", 4) == 0))) {
                         MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR over HTTP found\n");
                         mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -115,8 +115,8 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
                 MMT_PARSE_PACKET_LINE_INFO(ipacket, packet);
                 if (packet->referer_line.ptr != NULL && packet->referer_line.len >= 22) {
 
-                    if (memcmp(&packet->referer_line.ptr[packet->referer_line.len - MMT_STATICSTRING_LEN("WidgetMain.swf")],
-                            "WidgetMain.swf", MMT_STATICSTRING_LEN("WidgetMain.swf")) == 0) {
+                    if (memcmp(&packet->referer_line.ptr[packet->referer_line.len - 14],
+                            "WidgetMain.swf", 14) == 0) {
                         uint16_t i;
                         for (i = 0; i < (packet->referer_line.len - 22); i++) {
                             if (packet->referer_line.ptr[i] == 'a') {

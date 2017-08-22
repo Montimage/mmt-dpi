@@ -34,8 +34,8 @@ void mmt_classify_me_meebo(ipacket_t * ipacket, unsigned index) {
         /* TODO: once we have an amf decoder we can more directly access the rtmp fields
          *       if so, we may also exclude earlier */
         if (packet->payload_packet_len > 900) {
-            if (memcmp(packet->payload + 116, "tokbox/", MMT_STATICSTRING_LEN("tokbox/")) == 0 ||
-                    memcmp(packet->payload + 316, "tokbox/", MMT_STATICSTRING_LEN("tokbox/")) == 0) {
+            if (memcmp(packet->payload + 116, "tokbox/", 7) == 0 ||
+                    memcmp(packet->payload + 316, "tokbox/", 7) == 0) {
                 MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "found meebo/tokbox flash flow.\n");
                 mmt_int_meebo_add_connection(ipacket);
                 return;
@@ -75,30 +75,30 @@ void mmt_classify_me_meebo(ipacket_t * ipacket, unsigned index) {
             MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found tokbox host\n");
             /* set it to 2 to avoid having plain tokbox traffic detected as meebo */
             host_or_referer_match = 2;
-        } else if (packet->host_line.ptr != NULL && packet->host_line.len >= MMT_STATICSTRING_LEN("74.114.28.110")
-                && memcmp(&packet->host_line.ptr[packet->host_line.len - MMT_STATICSTRING_LEN("74.114.28.110")],
-                "74.114.28.110", MMT_STATICSTRING_LEN("74.114.28.110")) == 0) {
+        } else if (packet->host_line.ptr != NULL && packet->host_line.len >= 13
+                && memcmp(&packet->host_line.ptr[packet->host_line.len - 13],
+                "74.114.28.110", 13) == 0) {
 
             MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found meebo IP\n");
             host_or_referer_match = 1;
         } else if (packet->referer_line.ptr != NULL &&
-                packet->referer_line.len >= MMT_STATICSTRING_LEN("http://www.meebo.com/") &&
+                packet->referer_line.len >= 21 &&
                 memcmp(packet->referer_line.ptr, "http://www.meebo.com/",
-                MMT_STATICSTRING_LEN("http://www.meebo.com/")) == 0) {
+                21) == 0) {
 
             MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found meebo referer\n");
             host_or_referer_match = 1;
         } else if (packet->referer_line.ptr != NULL &&
-                packet->referer_line.len >= MMT_STATICSTRING_LEN("http://mee.tokbox.com/") &&
+                packet->referer_line.len >= 22 &&
                 memcmp(packet->referer_line.ptr, "http://mee.tokbox.com/",
-                MMT_STATICSTRING_LEN("http://mee.tokbox.com/")) == 0) {
+                22) == 0) {
 
             MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found tokbox referer\n");
             host_or_referer_match = 1;
         } else if (packet->referer_line.ptr != NULL &&
-                packet->referer_line.len >= MMT_STATICSTRING_LEN("http://74.114.28.110/") &&
+                packet->referer_line.len >= 21 &&
                 memcmp(packet->referer_line.ptr, "http://74.114.28.110/",
-                MMT_STATICSTRING_LEN("http://74.114.28.110/")) == 0) {
+                21) == 0) {
 
             MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "Found meebo IP referer\n");
             host_or_referer_match = 1;

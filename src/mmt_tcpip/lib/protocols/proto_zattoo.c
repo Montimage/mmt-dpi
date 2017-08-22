@@ -91,7 +91,7 @@ void mmt_classify_me_zattoo(ipacket_t * ipacket, unsigned index) {
             }
         } else if (packet->payload_packet_len > 50
                 && (memcmp(packet->payload, "GET /", 5) == 0
-                || memcmp(packet->payload, "POST /", MMT_STATICSTRING_LEN("POST /")) == 0)) {
+                || memcmp(packet->payload, "POST /", 6) == 0)) {
             /* TODO to avoid searching currently only a specific length and offset is used
              * that might be changed later */
             mmt_parse_packet_line_info(ipacket);
@@ -261,7 +261,7 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
             }
         } else if (packet->payload_packet_len > 50
                 && (memcmp(packet->payload, "GET /", 5) == 0
-                || memcmp(packet->payload, "POST /", MMT_STATICSTRING_LEN("POST /")) == 0)) {
+                || memcmp(packet->payload, "POST /", 6) == 0)) {
             /* TODO to avoid searching currently only a specific length and offset is used
              * that might be changed later */
             mmt_parse_packet_line_info(ipacket);

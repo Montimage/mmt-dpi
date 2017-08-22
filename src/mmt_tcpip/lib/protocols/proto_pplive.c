@@ -234,15 +234,15 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found HTTP request.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
-            } else if (packet->host_line.ptr != NULL && packet->host_line.len >= MMT_STATICSTRING_LEN("player.pplive")
-                    && memcmp(packet->host_line.ptr, "player.pplive", MMT_STATICSTRING_LEN("player.pplive")) == 0) {
+            } else if (packet->host_line.ptr != NULL && packet->host_line.len >= 13
+                    && memcmp(packet->host_line.ptr, "player.pplive", 13) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found via Host header.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             } else if (packet->referer_line.ptr != NULL
-                    && packet->referer_line.len >= MMT_STATICSTRING_LEN("http://player.pplive")
+                    && packet->referer_line.len >= 20
                     && memcmp(packet->referer_line.ptr, "http://player.pplive",
-                    MMT_STATICSTRING_LEN("http://player.pplive")) == 0) {
+                    20) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found via Referer header.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
@@ -253,14 +253,14 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
                 uint8_t i, flag = 0;
 
                 for (i = 0; i < packet->parsed_lines && i < 10 && flag < 2; i++) {
-                    if (packet->line[i].ptr != NULL && packet->line[i].len >= MMT_STATICSTRING_LEN("x-flash-version:")
+                    if (packet->line[i].ptr != NULL && packet->line[i].len >= 16
                             && memcmp(packet->line[i].ptr, "x-flash-version:",
-                            MMT_STATICSTRING_LEN("x-flash-version:")) == 0) {
+                            16) == 0) {
                         flag++;
                     } else if (packet->line[i].ptr != NULL
-                            && packet->line[i].len >= MMT_STATICSTRING_LEN("Pragma: Client=PPLive")
+                            && packet->line[i].len >= 21
                             && memcmp(packet->line[i].ptr, "Pragma: Client=PPLive",
-                            MMT_STATICSTRING_LEN("Pragma: Client=PPLive")) == 0) {
+                            21) == 0) {
                         flag++;
                     }
                 }
@@ -558,15 +558,15 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found HTTP request.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
-            } else if (packet->host_line.ptr != NULL && packet->host_line.len >= MMT_STATICSTRING_LEN("player.pplive")
-                    && memcmp(packet->host_line.ptr, "player.pplive", MMT_STATICSTRING_LEN("player.pplive")) == 0) {
+            } else if (packet->host_line.ptr != NULL && packet->host_line.len >= 13
+                    && memcmp(packet->host_line.ptr, "player.pplive", 13) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found via Host header.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             } else if (packet->referer_line.ptr != NULL
-                    && packet->referer_line.len >= MMT_STATICSTRING_LEN("http://player.pplive")
+                    && packet->referer_line.len >= 20
                     && memcmp(packet->referer_line.ptr, "http://player.pplive",
-                    MMT_STATICSTRING_LEN("http://player.pplive")) == 0) {
+                    20) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found via Referer header.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
@@ -577,14 +577,14 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
                 uint8_t i, flag = 0;
 
                 for (i = 0; i < packet->parsed_lines && i < 10 && flag < 2; i++) {
-                    if (packet->line[i].ptr != NULL && packet->line[i].len >= MMT_STATICSTRING_LEN("x-flash-version:")
+                    if (packet->line[i].ptr != NULL && packet->line[i].len >= 16
                             && memcmp(packet->line[i].ptr, "x-flash-version:",
-                            MMT_STATICSTRING_LEN("x-flash-version:")) == 0) {
+                            16) == 0) {
                         flag++;
                     } else if (packet->line[i].ptr != NULL
-                            && packet->line[i].len >= MMT_STATICSTRING_LEN("Pragma: Client=PPLive")
+                            && packet->line[i].len >= 21
                             && memcmp(packet->line[i].ptr, "Pragma: Client=PPLive",
-                            MMT_STATICSTRING_LEN("Pragma: Client=PPLive")) == 0) {
+                            21) == 0) {
                         flag++;
                     }
                 }

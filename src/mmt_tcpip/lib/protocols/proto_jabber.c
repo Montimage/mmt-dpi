@@ -266,8 +266,8 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
     /* search for jabber here */
     /* this part is working asymmetrically */
     if ((packet->payload_packet_len > 13 && memcmp(packet->payload, "<?xml version=", 14) == 0)
-            || (packet->payload_packet_len >= MMT_STATICSTRING_LEN("<stream:stream ")
-            && memcmp(packet->payload, "<stream:stream ", MMT_STATICSTRING_LEN("<stream:stream ")) == 0)) {
+            || (packet->payload_packet_len >= 15
+            && memcmp(packet->payload, "<stream:stream ", 15) == 0)) {
 
         if (packet->payload_packet_len > 47) {
             const uint16_t lastlen = packet->payload_packet_len - 47;

@@ -21,8 +21,8 @@ static uint8_t mmt_int_find_xmsn(ipacket_t * ipacket) {
     if (packet->parsed_lines > 3) {
         uint16_t i;
         for (i = 2; i < packet->parsed_lines; i++) {
-            if (packet->line[i].ptr != NULL && packet->line[i].len > MMT_STATICSTRING_LEN("X-MSN") &&
-                    memcmp(packet->line[i].ptr, "X-MSN", MMT_STATICSTRING_LEN("X-MSN")) == 0) {
+            if (packet->line[i].ptr != NULL && packet->line[i].len > 5 &&
+                    memcmp(packet->line[i].ptr, "X-MSN", 5) == 0) {
                 return 1;
             }
         }
@@ -134,12 +134,12 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
 #ifdef PROTO_HTTP
                 packet->detected_protocol_stack[0] == PROTO_HTTP ||
 #endif
-                memcmp(packet->payload, "GET ", MMT_STATICSTRING_LEN("GET ")) == 0 ||
-                memcmp(packet->payload, "POST ", MMT_STATICSTRING_LEN("POST ")) == 0)) {
+                memcmp(packet->payload, "GET ", 4) == 0 ||
+                memcmp(packet->payload, "POST ", 5) == 0)) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->user_agent_line.ptr != NULL &&
-                    packet->user_agent_line.len > MMT_STATICSTRING_LEN("Messenger/") &&
-                    memcmp(packet->user_agent_line.ptr, "Messenger/", MMT_STATICSTRING_LEN("Messenger/")) == 0) {
+                    packet->user_agent_line.len > 10 &&
+                    memcmp(packet->user_agent_line.ptr, "Messenger/", 10) == 0) {
                 mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
@@ -161,12 +161,12 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                 mmt_parse_packet_line_info(ipacket);
 
                 if (packet->content_line.ptr != NULL &&
-                        ((packet->content_line.len == MMT_STATICSTRING_LEN("application/x-msn-messenger") &&
+                        ((packet->content_line.len == 27 &&
                         memcmp(packet->content_line.ptr, "application/x-msn-messenger",
-                        MMT_STATICSTRING_LEN("application/x-msn-messenger")) == 0) ||
-                        (packet->content_line.len >= MMT_STATICSTRING_LEN("text/x-msnmsgr") &&
+                        27) == 0) ||
+                        (packet->content_line.len >= 14 &&
                         memcmp(packet->content_line.ptr, "text/x-msnmsgr",
-                        MMT_STATICSTRING_LEN("text/x-msnmsgr")) == 0))) {
+                        14) == 0))) {
                     MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
                             "found MSN by pattern POST http:// .... application/x-msn-messenger.\n");
                     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -265,12 +265,12 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                 mmt_parse_packet_line_info(ipacket);
 
                 if (packet->content_line.ptr != NULL &&
-                        ((packet->content_line.len == MMT_STATICSTRING_LEN("application/x-msn-messenger") &&
+                        ((packet->content_line.len == 27 &&
                         memcmp(packet->content_line.ptr, "application/x-msn-messenger",
-                        MMT_STATICSTRING_LEN("application/x-msn-messenger")) == 0) ||
-                        (packet->content_line.len >= MMT_STATICSTRING_LEN("text/x-msnmsgr") &&
+                        27) == 0) ||
+                        (packet->content_line.len >= 14 &&
                         memcmp(packet->content_line.ptr, "text/x-msnmsgr",
-                        MMT_STATICSTRING_LEN("text/x-msnmsgr")) == 0))) {
+                        14) == 0))) {
                     MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
                             "HTTP/1.0 200 OK .... application/x-msn-messenger.\n");
                     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -357,11 +357,11 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
             mmt_parse_packet_line_info(ipacket);
 
             if (packet->content_line.ptr != NULL &&
-                    ((packet->content_line.len == MMT_STATICSTRING_LEN("application/x-msn-messenger") &&
+                    ((packet->content_line.len == 27 &&
                     memcmp(packet->content_line.ptr, "application/x-msn-messenger",
-                    MMT_STATICSTRING_LEN("application/x-msn-messenger")) == 0) ||
-                    (packet->content_line.len >= MMT_STATICSTRING_LEN("text/x-msnmsgr") &&
-                    memcmp(packet->content_line.ptr, "text/x-msnmsgr", MMT_STATICSTRING_LEN("text/x-msnmsgr")) == 0))) {
+                    27) == 0) ||
+                    (packet->content_line.len >= 14 &&
+                    memcmp(packet->content_line.ptr, "text/x-msnmsgr", 14) == 0))) {
                 MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
                         "HTTP/1.0 200 OK .... application/x-msn-messenger.\n");
                 mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);

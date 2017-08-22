@@ -31,31 +31,31 @@ void mmt_classify_me_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
     MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG, "Search World of Warcraft.\n");
 
     if (packet->tcp != NULL) {
-        if ((packet->payload_packet_len > MMT_STATICSTRING_LEN("POST /") &&
-                memcmp(packet->payload, "POST /", MMT_STATICSTRING_LEN("POST /")) == 0) ||
-                (packet->payload_packet_len > MMT_STATICSTRING_LEN("GET /") &&
-                memcmp(packet->payload, "GET /", MMT_STATICSTRING_LEN("GET /")) == 0)) {
+        if ((packet->payload_packet_len > 6 &&
+                memcmp(packet->payload, "POST /", 6) == 0) ||
+                (packet->payload_packet_len > 5 &&
+                memcmp(packet->payload, "GET /", 5) == 0)) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->user_agent_line.ptr != NULL &&
-                    packet->user_agent_line.len == MMT_STATICSTRING_LEN("Blizzard Web Client") &&
+                    packet->user_agent_line.len == 19 &&
                     memcmp(packet->user_agent_line.ptr, "Blizzard Web Client",
-                    MMT_STATICSTRING_LEN("Blizzard Web Client")) == 0) {
+                    19) == 0) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG,
                         "World of Warcraft: Web Client found\n");
                 return;
             }
         }
-        if (packet->payload_packet_len > MMT_STATICSTRING_LEN("GET /")
-                && memcmp(packet->payload, "GET /", MMT_STATICSTRING_LEN("GET /")) == 0) {
+        if (packet->payload_packet_len > 5
+                && memcmp(packet->payload, "GET /", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->user_agent_line.ptr != NULL && packet->host_line.ptr != NULL
-                    && packet->user_agent_line.len > MMT_STATICSTRING_LEN("Blizzard Downloader")
-                    && packet->host_line.len > MMT_STATICSTRING_LEN("worldofwarcraft.com")
+                    && packet->user_agent_line.len > 19
+                    && packet->host_line.len > 19
                     && memcmp(packet->user_agent_line.ptr, "Blizzard Downloader",
-                    MMT_STATICSTRING_LEN("Blizzard Downloader")) == 0
-                    && memcmp(&packet->host_line.ptr[packet->host_line.len - MMT_STATICSTRING_LEN("worldofwarcraft.com")],
-                    "worldofwarcraft.com", MMT_STATICSTRING_LEN("worldofwarcraft.com")) == 0) {
+                    19) == 0
+                    && memcmp(&packet->host_line.ptr[packet->host_line.len - 19],
+                    "worldofwarcraft.com", 19) == 0) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG,
                         "World of Warcraft: Web Client found\n");
@@ -63,7 +63,7 @@ void mmt_classify_me_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
             }
         }
         if (packet->payload_packet_len == 50 && memcmp(&packet->payload[2], "WORLD OF WARCRAFT CONNECTION",
-                MMT_STATICSTRING_LEN("WORLD OF WARCRAFT CONNECTION")) == 0) {
+                28) == 0) {
             mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
             MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG, "World of Warcraft: Login found\n");
             return;

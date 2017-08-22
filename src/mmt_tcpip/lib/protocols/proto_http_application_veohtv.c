@@ -24,18 +24,18 @@ void mmt_classify_me_veohtv(ipacket_t * ipacket, unsigned index) {
 
     if (flow->l4.tcp.veoh_tv_stage == 1 || flow->l4.tcp.veoh_tv_stage == 2) {
         if (ipacket->session->last_packet_direction != ipacket->session->setup_packet_direction &&
-                packet->payload_packet_len > MMT_STATICSTRING_LEN("HTTP/1.1 20")
-                && memcmp(packet->payload, "HTTP/1.1 ", MMT_STATICSTRING_LEN("HTTP/1.1 ")) == 0 &&
-                (packet->payload[MMT_STATICSTRING_LEN("HTTP/1.1 ")] == '2' ||
-                packet->payload[MMT_STATICSTRING_LEN("HTTP/1.1 ")] == '3' ||
-                packet->payload[MMT_STATICSTRING_LEN("HTTP/1.1 ")] == '4' ||
-                packet->payload[MMT_STATICSTRING_LEN("HTTP/1.1 ")] == '5')) {
+                packet->payload_packet_len > 11
+                && memcmp(packet->payload, "HTTP/1.1 ", 9) == 0 &&
+                (packet->payload[9] == '2' ||
+                packet->payload[9] == '3' ||
+                packet->payload[9] == '4' ||
+                packet->payload[9] == '5')) {
 #ifdef PROTO_FLASH
             mmt_parse_packet_line_info(ipacket);
             if (packet->detected_protocol_stack[0] == PROTO_FLASH &&
                     packet->server_line.ptr != NULL &&
-                    packet->server_line.len > MMT_STATICSTRING_LEN("Veoh-") &&
-                    memcmp(packet->server_line.ptr, "Veoh-", MMT_STATICSTRING_LEN("Veoh-")) == 0) {
+                    packet->server_line.len > 5 &&
+                    memcmp(packet->server_line.ptr, "Veoh-", 5) == 0) {
                 MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                 mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
@@ -106,17 +106,17 @@ int mmt_check_veohtv_tcp(ipacket_t * ipacket, unsigned index) {
 
         if (flow->l4.tcp.veoh_tv_stage == 1 || flow->l4.tcp.veoh_tv_stage == 2) {
             if (ipacket->session->last_packet_direction != ipacket->session->setup_packet_direction &&
-                    packet->payload_packet_len > MMT_STATICSTRING_LEN("HTTP/1.1 20")
-                    && memcmp(packet->payload, "HTTP/1.1 ", MMT_STATICSTRING_LEN("HTTP/1.1 ")) == 0 &&
-                    (packet->payload[MMT_STATICSTRING_LEN("HTTP/1.1 ")] == '2' ||
-                    packet->payload[MMT_STATICSTRING_LEN("HTTP/1.1 ")] == '3' ||
-                    packet->payload[MMT_STATICSTRING_LEN("HTTP/1.1 ")] == '4' ||
-                    packet->payload[MMT_STATICSTRING_LEN("HTTP/1.1 ")] == '5')) {
+                    packet->payload_packet_len > 11
+                    && memcmp(packet->payload, "HTTP/1.1 ", 9) == 0 &&
+                    (packet->payload[9] == '2' ||
+                    packet->payload[9] == '3' ||
+                    packet->payload[9] == '4' ||
+                    packet->payload[9] == '5')) {
                 mmt_parse_packet_line_info(ipacket);
                 if (packet->detected_protocol_stack[0] == PROTO_FLASH &&
                         packet->server_line.ptr != NULL &&
-                        packet->server_line.len > MMT_STATICSTRING_LEN("Veoh-") &&
-                        memcmp(packet->server_line.ptr, "Veoh-", MMT_STATICSTRING_LEN("Veoh-")) == 0) {
+                        packet->server_line.len > 5 &&
+                        memcmp(packet->server_line.ptr, "Veoh-", 5) == 0) {
                     MMT_LOG(PROTO_HTTP_APPLICATION_VEOHTV, MMT_LOG_DEBUG, "VeohTV detected.\n");
                     mmt_int_veohtv_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;

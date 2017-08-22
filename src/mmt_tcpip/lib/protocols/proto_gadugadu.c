@@ -157,15 +157,15 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
-    } else if ((memcmp(packet->payload, "GET /nowosci.xml", MMT_STATICSTRING_LEN("GET /nowosci.xml")) == 0) ||
-            (memcmp(packet->payload, "GET /gadu-gadu.xml", MMT_STATICSTRING_LEN("GET /gadu-gadu.xml")) == 0) ||
-            (memcmp(packet->payload, "POST /access_token", MMT_STATICSTRING_LEN("POST /access_token")) == 0)) {
+    } else if ((memcmp(packet->payload, "GET /nowosci.xml", 16) == 0) ||
+            (memcmp(packet->payload, "GET /gadu-gadu.xml", 18) == 0) ||
+            (memcmp(packet->payload, "POST /access_token", 18) == 0)) {
         mmt_parse_packet_line_info(ipacket);
         if (packet->user_agent_line.ptr == NULL) {
             return 0;
         }
-        if (!(packet->user_agent_line.len >= MMT_STATICSTRING_LEN("Gadu-Gadu Client") &&
-                memcmp(packet->user_agent_line.ptr, "Gadu-Gadu Client", MMT_STATICSTRING_LEN("Gadu-Gadu Client")) == 0)) {
+        if (!(packet->user_agent_line.len >= 16 &&
+                memcmp(packet->user_agent_line.ptr, "Gadu-Gadu Client", 16) == 0)) {
             return 0;
         }
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,

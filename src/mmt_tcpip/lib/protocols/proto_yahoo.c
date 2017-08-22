@@ -208,18 +208,18 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
         if ((memcmp(packet->payload, "GET /", 5) == 0)) {
             mmt_parse_packet_line_info(ipacket);
             if ((packet->user_agent_line.ptr != NULL
-                    && packet->user_agent_line.len >= MMT_STATICSTRING_LEN("YahooMobileMessenger/")
+                    && packet->user_agent_line.len >= 21
                     && memcmp(packet->user_agent_line.ptr, "YahooMobileMessenger/",
-                    MMT_STATICSTRING_LEN("YahooMobileMessenger/")) == 0)
+                    21) == 0)
                     || (packet->user_agent_line.len >= 15
                     && (memcmp(packet->user_agent_line.ptr, "Y!%20Messenger/", 15) == 0))) {
                 MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "found YAHOO(Mobile)");
                 mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
-            if (packet->host_line.ptr != NULL && packet->host_line.len >= MMT_STATICSTRING_LEN("msg.yahoo.com") &&
-                    memcmp(&packet->host_line.ptr[packet->host_line.len - MMT_STATICSTRING_LEN("msg.yahoo.com")],
-                    "msg.yahoo.com", MMT_STATICSTRING_LEN("msg.yahoo.com")) == 0) {
+            if (packet->host_line.ptr != NULL && packet->host_line.len >= 13 &&
+                    memcmp(&packet->host_line.ptr[packet->host_line.len - 13],
+                    "msg.yahoo.com", 13) == 0) {
                 MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "found YAHOO");
                 mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;

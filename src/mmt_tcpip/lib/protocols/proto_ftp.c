@@ -1332,16 +1332,16 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
     }
 
     if (ipacket->session->last_packet_direction == flow->l4.tcp.ftp_client_direction) {
-        if (packet->payload_packet_len > MMT_STATICSTRING_LEN("USER ") &&
-                (memcmp(packet->payload, "USER ", MMT_STATICSTRING_LEN("USER ")) == 0 ||
-                 memcmp(packet->payload, "user ", MMT_STATICSTRING_LEN("user ")) == 0)) {
+        if (packet->payload_packet_len > 5 &&
+                (memcmp(packet->payload, "USER ", 5) == 0 ||
+                 memcmp(packet->payload, "user ", 5) == 0)) {
 
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found USER command\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_USER_CMD;
             current_ftp_code = FTP_USER_CMD;
-        } else if (packet->payload_packet_len >= MMT_STATICSTRING_LEN("FEAT") &&
-                   (memcmp(packet->payload, "FEAT", MMT_STATICSTRING_LEN("FEAT")) == 0 ||
-                    memcmp(packet->payload, "feat", MMT_STATICSTRING_LEN("feat")) == 0)) {
+        } else if (packet->payload_packet_len >= 4 &&
+                   (memcmp(packet->payload, "FEAT", 4) == 0 ||
+                    memcmp(packet->payload, "feat", 4) == 0)) {
 
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found FEAT command\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_FEAT_CMD;
@@ -1361,23 +1361,23 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
             }  
         } 
     } else {
-        if (packet->payload_packet_len > MMT_STATICSTRING_LEN("220 ") &&
-                (memcmp(packet->payload, "220 ", MMT_STATICSTRING_LEN("220 ")) == 0 ||
-                 memcmp(packet->payload, "220-", MMT_STATICSTRING_LEN("220-")) == 0)) {
+        if (packet->payload_packet_len > 4 &&
+                (memcmp(packet->payload, "220 ", 4) == 0 ||
+                 memcmp(packet->payload, "220-", 4) == 0)) {
             debug("FTP: found 220 reply code\n");
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 220 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
             current_ftp_code = FTP_220_CODE;
-        } else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("331 ") &&
-                   (memcmp(packet->payload, "331 ", MMT_STATICSTRING_LEN("331 ")) == 0 ||
-                    memcmp(packet->payload, "331-", MMT_STATICSTRING_LEN("331-")) == 0)) {
+        } else if (packet->payload_packet_len > 4 &&
+                   (memcmp(packet->payload, "331 ", 4) == 0 ||
+                    memcmp(packet->payload, "331-", 4) == 0)) {
 
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 331 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_331_CODE;
             current_ftp_code = FTP_331_CODE;
-        } else if (packet->payload_packet_len > MMT_STATICSTRING_LEN("211 ") &&
-                   (memcmp(packet->payload, "211 ", MMT_STATICSTRING_LEN("211 ")) == 0 ||
-                    memcmp(packet->payload, "211-", MMT_STATICSTRING_LEN("211-")) == 0)) {
+        } else if (packet->payload_packet_len > 4 &&
+                   (memcmp(packet->payload, "211 ", 4) == 0 ||
+                    memcmp(packet->payload, "211-", 4) == 0)) {
 
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 211 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_211_CODE;
