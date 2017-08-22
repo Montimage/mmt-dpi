@@ -206,16 +206,16 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                 // printf("%lu: %s\n",ipacket->packet_id,str);
                 if (str[0] == 'H') {
                     if (str[1] == 'T') {
-                        if (packet->parsed_lines == 0 && mmt_memcmp(str, "HTTP/1.", MMT_STATICSTRING_LEN("HTTP/1.")) == 0) {
-                            packet->http_response.ptr = &str[MMT_STATICSTRING_LEN("HTTP/1.1 ")];
-                            packet->http_response.len = packet->line[0].len - MMT_STATICSTRING_LEN("HTTP/1.1 ");
+                        if (packet->parsed_lines == 0 && str[2] == 'T' && str[3] == 'P' && str[4] == '/' && str[5] == '1' && str[6] == '.') {
+                            packet->http_response.ptr = &str[9];
+                            packet->http_response.len = packet->line[0].len - 9;
                             MMT_LOG(PROTO_UNKNOWN, MMT_LOG_DEBUG,
                                     "mmt_parse_packet_line_info: HTTP response parsed: \"%.*s\"\n",
                                     packet->http_response.len, packet->http_response.ptr);
                             skip_parsing = 1;
                         }
                     } else if (str[1] == 'o') {
-                        if (mmt_memcmp(str, "Host:", 5) == 0) {
+                        if (str[2] == 's' && str[3] == 't' && str[4] == ':') {
                             if (str[5] == ' ') {
                                 packet->host_line.ptr = &str[6];
                                 packet->host_line.len = line_length - 6;
