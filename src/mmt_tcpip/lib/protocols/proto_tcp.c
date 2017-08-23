@@ -251,15 +251,13 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     int l4_offset = get_packet_offset_at_index(ipacket, index);
     if (packet->iphv6) {
         packet->l4_packet_len = (ipacket->p_hdr->caplen - l4_offset);
-    } else {
-        //Do nothing! this is done in ip.c
     }
 
     ////////////////////////////////////////////////
     packet->tcp = (struct tcphdr *) & ipacket->data[l4_offset];
     packet->udp = NULL;
 
-    if (packet->flow) {
+    if (likely(packet->flow)) {
         mmt_set_flow_protocol_to_packet(packet->flow, packet);
     } else {
         mmt_reset_internal_packet_protocol(packet);
@@ -287,7 +285,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
      if (packet->tcp->syn != 0
         && packet->tcp->ack == 0
         && packet->flow != NULL
-            && ipacket->session->packet_count == 0 /*First packet of the flow*/
+        && ipacket->session->packet_count == 0 /*First packet of the flow*/
         && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN) {
 
         memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO: Is this memset needed? the syn should be
