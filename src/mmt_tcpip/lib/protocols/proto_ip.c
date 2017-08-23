@@ -1334,6 +1334,7 @@ int ip_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 }
 
 int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
+    mmt_session_t * session = ipacket->session;
     if (ipacket->mmt_handler->has_reassembly == 1) {
         int s = sizeof(mmt_tcpip_internal_packet_t);
         ipacket->internal_packet = mmt_malloc (s);
@@ -1342,7 +1343,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
         ipacket->internal_packet->tcp = NULL;
         ipacket->internal_packet->packet_id = ipacket->packet_id;
     } else {
-        ipacket->internal_packet = &((internal_ip_proto_context_t *) ((protocol_instance_t *) ipacket->session->protocol_container_context)->args)->packet;
+        ipacket->internal_packet = &((internal_ip_proto_context_t *) ((protocol_instance_t *) session->protocol_container_context)->args)->packet;
     }
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
 
@@ -1381,15 +1382,15 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
         packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp   
     }
 
-    if (memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
-        src = &((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->id_internal_context;
-        dst = &((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->lower_ip)->id_internal_context;
+    if (memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
+        src = &((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->id_internal_context;
+        dst = &((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->lower_ip)->id_internal_context;
     } else {
-        dst = &((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->id_internal_context;
-        src = &((mmt_ip4_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->lower_ip)->id_internal_context;
+        dst = &((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->id_internal_context;
+        src = &((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->lower_ip)->id_internal_context;
     }
 
-    packet->flow = ipacket->session->internal_data;
+    packet->flow = session->internal_data;
     packet->src = src;
     packet->dst = dst;
 
@@ -1397,10 +1398,10 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->mmt_selection_packet = MMT_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC;
     packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_IP | MMT_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6;
 
-    ipacket->session->packet_count_direction[ipacket->session->last_packet_direction]++;
-    ipacket->session->packet_cap_count_direction[ipacket->session->last_packet_direction] += ipacket->nb_reassembled_packets;
-    ipacket->session->data_volume_direction[ipacket->session->last_packet_direction] += ipacket->p_hdr->len;
-    ipacket->session->data_cap_volume_direction[ipacket->session->last_packet_direction] += ipacket->total_caplen;
+    session->packet_count_direction[session->last_packet_direction]++;
+    session->packet_cap_count_direction[session->last_packet_direction] += ipacket->nb_reassembled_packets;
+    session->data_volume_direction[session->last_packet_direction] += ipacket->p_hdr->len;
+    session->data_cap_volume_direction[session->last_packet_direction] += ipacket->total_caplen;
 
     return 1;
 }
