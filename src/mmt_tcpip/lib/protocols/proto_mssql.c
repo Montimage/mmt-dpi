@@ -54,7 +54,7 @@ int mmt_check_mssql(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         MMT_LOG(PROTO_MSSQL, MMT_LOG_DEBUG, "search mssql.\n");
-        if(ntohs(packet->tcp->th_dport)!=102 && ntohs(packet->tcp->th_sport)!=102){ // port 102: for TPKT protocol (COTP protocols)
+        if(ntohs(packet->tcp->dest)!=102 && ntohs(packet->tcp->source)!=102){ // port 102: for TPKT protocol (COTP protocols)
             // LN: Detect PROTO_MSSQL
             if(packet->payload_packet_len > sizeof(struct tds_packet_header)){
             
