@@ -2772,34 +2772,31 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
 void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
     //TODO: review the exit codes; this depends on the return values of the sub-classification routines
     //TODO: why don't to enforce here a threshold on the classification?
-    int classif_status = 1; //TODO: replace with a definition: CONTINUE, SKIP
-
     //Verify that classification is not disabled for this protocol
-    if (!configured_protocol->protocol->classify_next.status) {
-        return;
-    }
-
-    //Pre-classification
-    if (configured_protocol->protocol->classify_next.pre_classify) {
-        classif_status = configured_protocol->protocol->classify_next.pre_classify(ipacket, index);
-    }
-    //Classify next protocol
-    if (configured_protocol->protocol->classify_next.classify_protos && classif_status) { // Classify next proto only when such a function exists!
-        mmt_classify_me_t * temp = configured_protocol->protocol->classify_next.classify_protos;
-        for (; temp != NULL; temp = temp->next) {
-            classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
-            // // LN: check if the classify return 1-> do not need to go to check other protocol
-            if(classif_status==1||classif_status==2||classif_status==3){
-                // printf("\n-]> Classified for protocol %d: %lu - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
-                break;
-            }
-            // // End of LN
+    if (configured_protocol->protocol->classify_next.status) {
+        int classif_status = 1; //TODO: replace with a definition: CONTINUE, SKIP
+        //Pre-classification
+        if (configured_protocol->protocol->classify_next.pre_classify) {
+            classif_status = configured_protocol->protocol->classify_next.pre_classify(ipacket, index);
         }
+        //Classify next protocol
+        if (configured_protocol->protocol->classify_next.classify_protos && classif_status) { // Classify next proto only when such a function exists!
+            mmt_classify_me_t * temp = configured_protocol->protocol->classify_next.classify_protos;
+            for (; temp != NULL; temp = temp->next) {
+                classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
+                // // LN: check if the classify return 1-> do not need to go to check other protocol
+                if(classif_status & 3){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
+                    // printf("\n-]> Classified for protocol %d: %lu - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
+                    break;
+                }
+                // // End of LN
+            }
 
-        //Post-classification! Post classification is only accessible if there is a classification function
-        //And if the preclassification returned non zero which means: proceed with the classification routines.
-        if (configured_protocol->protocol->classify_next.post_classify) {
-            configured_protocol->protocol->classify_next.post_classify(ipacket, index);
+            //Post-classification! Post classification is only accessible if there is a classification function
+            //And if the preclassification returned non zero which means: proceed with the classification routines.
+            if (configured_protocol->protocol->classify_next.post_classify) {
+                configured_protocol->protocol->classify_next.post_classify(ipacket, index);
+            }
         }
     }
 }
