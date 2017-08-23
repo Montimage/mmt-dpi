@@ -144,22 +144,24 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     /* const for gcc code optimisation and cleaner code */
     struct mmt_tcpip_internal_packet_struct *packet = (mmt_tcpip_internal_packet_t *) ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    
+    if (flow == NULL)
+        return;
+
     // const struct iphdr *iph = packet->iph;
-    
+
 // #ifdef MMT_SUPPORT_IPV6
 
 //     const struct mmt_ipv6hdr *iphv6 = packet->iphv6;
-    
+
 // #endif
     const struct tcphdr *tcph = packet->tcp;
     // const struct udphdr *udph = packet->udp;
 
-    uint8_t proxy_enabled = 0;
+    // uint8_t proxy_enabled = 0;
 
     packet->tcp_retransmission = 0;
     // packet->packet_direction = 0;
-    
+
     // packet->packet_direction = H2L_DIRECTION;
 
 
@@ -170,7 +172,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     //     if (iphv6 != NULL && MMT_COMPARE_IPV6_ADDRESSES(&iphv6->saddr, &iphv6->daddr) != 0)
     //         packet->packet_direction = L2H_DIRECTION;
     // #endif
-    
+
 
     packet->packet_lines_parsed_complete = 0;
     packet->packet_unix_lines_parsed_complete = 0;
@@ -178,67 +180,80 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     packet->https_server_name.ptr = NULL;
     packet->https_server_name.len = 0;
 
-    if (flow == NULL)
-        return;
+    // if (flow == NULL)
+    //     return;
 
-    
-        // if (ipacket->session->init_finished == 0) {
-        //     ipacket->session->init_finished = 1;
-        //     ipacket->session->setup_packet_direction = packet->packet_direction;
-        // }
-    
+
+    // if (ipacket->session->init_finished == 0) {
+    //     ipacket->session->init_finished = 1;
+    //     ipacket->session->setup_packet_direction = packet->packet_direction;
+    // }
+
 
     if (tcph != NULL) {
         /* reset retried bytes here before setting it */
         packet->num_retried_bytes = 0;
-
-        if (tcph->syn != 0 && tcph->ack == 0 && flow->l4.tcp.seen_syn == 0 && flow->l4.tcp.seen_syn_ack == 0
-                && flow->l4.tcp.seen_ack == 0) {
-            flow->l4.tcp.seen_syn = 1;
-            flow->l4.tcp.rtt.tv_sec = ipacket->p_hdr->ts.tv_sec;
-            flow->l4.tcp.rtt.tv_usec = ipacket->p_hdr->ts.tv_usec;
-            fire_attribute_event(ipacket, PROTO_TCP, TCP_SYN_RCV, index, (void *) &seen);
-        }
-        if (tcph->syn != 0 && tcph->ack != 0 && flow->l4.tcp.seen_syn == 1 && flow->l4.tcp.seen_syn_ack == 0
-                && flow->l4.tcp.seen_ack == 0) {
-            flow->l4.tcp.seen_syn_ack = 1;
-        }
-        if (tcph->syn == 0 && tcph->ack == 1 && flow->l4.tcp.seen_syn == 1 && flow->l4.tcp.seen_syn_ack == 1
-                && flow->l4.tcp.seen_ack == 0) {
-            flow->l4.tcp.seen_ack = 1;
-            fire_attribute_event(ipacket, PROTO_TCP, TCP_CONN_ESTABLISHED, index, (void *) &seen);
-            if (flow->l4.tcp.rtt.tv_sec != 0) {
-                ipacket->session->rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - flow->l4.tcp.rtt.tv_sec;
-                ipacket->session->rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - flow->l4.tcp.rtt.tv_usec;
-                if ((int) ipacket->session->rtt.tv_usec < 0) {
-                    ipacket->session->rtt.tv_usec += 1000000;
-                    ipacket->session->rtt.tv_sec -= 1;
+       struct mmt_internal_tcp_session_struct * flow_l4_tcp = &flow->l4.tcp;
+        if(flow_l4_tcp->seen_ack == 0){
+            if(tcph->syn != 0 && flow_l4_tcp->seen_syn_ack == 0){
+                if(tcph->ack == 0 && flow_l4_tcp->seen_syn == 0){
+                    flow_l4_tcp->seen_syn = 1;
+                    flow_l4_tcp->rtt.tv_sec = ipacket->p_hdr->ts.tv_sec;
+                    flow_l4_tcp->rtt.tv_usec = ipacket->p_hdr->ts.tv_usec;
+                    
+                    fire_attribute_event(ipacket, PROTO_TCP, TCP_SYN_RCV, index, (void *) &seen);    
                 }
-                fire_attribute_event(ipacket, PROTO_TCP, TCP_RTT, index, (void *) &ipacket->session->rtt);
+
+                if(tcph->ack != 0 && flow_l4_tcp->seen_syn == 1){
+                    flow_l4_tcp->seen_syn_ack = 1;    
+                }
             }
-        }
+
+            if (tcph->syn == 0 && tcph->ack == 1 && flow_l4_tcp->seen_syn == 1 && flow_l4_tcp->seen_syn_ack == 1) {
+                flow_l4_tcp->seen_ack = 1;
+                
+                fire_attribute_event(ipacket, PROTO_TCP, TCP_CONN_ESTABLISHED, index, (void *) &seen);
+                
+                if (flow_l4_tcp->rtt.tv_sec != 0) {
+                    ipacket->session->rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - flow_l4_tcp->rtt.tv_sec;
+                    ipacket->session->rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - flow_l4_tcp->rtt.tv_usec;
+                    
+                    if ((int) ipacket->session->rtt.tv_usec < 0) {
+                        ipacket->session->rtt.tv_usec += 1000000;
+                        ipacket->session->rtt.tv_sec -= 1;
+                    }
+                    
+                    fire_attribute_event(ipacket, PROTO_TCP, TCP_RTT, index, (void *) &ipacket->session->rtt);
+                }
+            }
+        }        
 
         // TCP connection closing flags.
         // The order is important
-        if (tcph->ack != 0 && flow->l4.tcp.seen_fin != 0 && flow->l4.tcp.seen_fin_ack != 0) {
-            flow->l4.tcp.seen_close = 1;
+        if (tcph->ack != 0 && flow_l4_tcp->seen_fin != 0 && flow_l4_tcp->seen_fin_ack != 0) {
+            flow_l4_tcp->seen_close = 1;
             ipacket->session->force_timeout = 1;
+            
             fire_attribute_event(ipacket, PROTO_TCP, TCP_CONN_CLOSED, index, (void *) &seen);
+        
         }
-        if (tcph->fin != 0 && tcph->ack != 0 && flow->l4.tcp.seen_fin != 0) {
-            flow->l4.tcp.seen_fin_ack = 1;
-        }
-        if (tcph->fin != 0 && flow->l4.tcp.seen_fin == 0) {
-            flow->l4.tcp.seen_fin = 1;
-            set_session_timeout_delay(ipacket->session, ipacket->mmt_handler->default_session_timed_out);
+        if(tcph->fin != 0){
+            if (tcph->ack != 0 && flow_l4_tcp->seen_fin != 0) {
+                flow_l4_tcp->seen_fin_ack = 1;
+            }
+            if (flow_l4_tcp->seen_fin == 0) {
+                flow_l4_tcp->seen_fin = 1;
+                
+                set_session_timeout_delay(ipacket->session, ipacket->mmt_handler->default_session_timed_out);
+
+            }    
         }
 
         if (tcph->rst) {
             set_session_timeout_delay(ipacket->session, ipacket->mmt_handler->short_session_timed_out);
         }
 
-        if ((ipacket->session->next_tcp_seq_nr[0] == 0 && ipacket->session->next_tcp_seq_nr[1] == 0)
-                || (proxy_enabled && (ipacket->session->next_tcp_seq_nr[0] == 0 || ipacket->session->next_tcp_seq_nr[1] == 0))) {
+        if ((ipacket->session->next_tcp_seq_nr[0] == 0 && ipacket->session->next_tcp_seq_nr[1] == 0)) {
             /* initalize tcp sequence counters */
             /* the ack flag needs to be set to get valid sequence numbers from the other
              * direction. Usually it will catch the second packet syn+ack but it works
@@ -248,55 +263,43 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
              * otherwise use the payload length.
              */
             if (tcph->ack != 0) {
-                ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] =
-                    ntohl(tcph->seq) + (tcph->syn ? 1 : packet->payload_packet_len);
-                if (!proxy_enabled) {
-                    ipacket->session->next_tcp_seq_nr[1 - ipacket->session->last_packet_direction] = ntohl(tcph->ack_seq);
+                ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + (tcph->syn ? 1 : packet->payload_packet_len);
+                ipacket->session->next_tcp_seq_nr[1 - ipacket->session->last_packet_direction] = ntohl(tcph->ack_seq);
                     // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
-                }
             }
             //  ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 == 60  -> padding packet
-        } else if (packet->payload_packet_len > 0 && ( (packet->iph!=NULL)&&(ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 != 60))) {
+        } else if (packet->payload_packet_len > 0 && ( (packet->iph != NULL) && (ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 != 60))) {
             /* check tcp sequence counters */
-            if (((uint32_t)
-                    (ntohl(tcph->seq) -
-                     ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction])) >
-                    0 && (uint32_t) ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] > 0) {
+            uint32_t next_seq_nb = ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction];
+            uint32_t temp_seq_number = ((uint32_t) (ntohl(tcph->seq) - next_seq_nb));
+
+            if ( temp_seq_number > 0 && next_seq_nb > 0) {
                 packet->tcp_outoforder = 1;
                 ipacket->session->tcp_outoforders += 1;
             } else {
                 packet->tcp_outoforder = 0;
             }
-            if (((uint32_t)
-                    (ntohl(tcph->seq) -
-                     ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction])) >
-                    MMT_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE) {
+            if (temp_seq_number > MMT_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE) {
                 // debug("TCP: set tcp_retransmission = 1 for ipacket: %lu", ipacket->packet_id);
                 packet->tcp_retransmission = 1;
                 ipacket->session->tcp_retransmissions += 1;
 
                 /*CHECK IF PARTIAL RETRY IS HAPPENENING */
-                if ((ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] - ntohl(tcph->seq) < packet->payload_packet_len)) {
+                if ((next_seq_nb - ntohl(tcph->seq) < packet->payload_packet_len)) {
                     /* num_retried_bytes actual_payload_len hold info about the partial retry
                        analyzer which require this info can make use of this info
                        Other analyzer can use packet->payload_packet_len */
-                    packet->num_retried_bytes = ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] - ntohl(tcph->seq);
+                    packet->num_retried_bytes = next_seq_nb - ntohl(tcph->seq);
                     packet->actual_payload_len = packet->payload_packet_len - packet->num_retried_bytes;
                     ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
                     // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
                 }
-            }/*normal path
-    actual_payload_len is initialized to payload_packet_len during tcp header parsing itself.
-    It will be changed only in case of retransmission */
+            }/*normal path actual_payload_len is initialized to payload_packet_len during tcp header parsing itself. It will be changed only in case of retransmission */
             else {
-
-
                 packet->num_retried_bytes = 0;
                 ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
                 // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
             }
-
-
         }
 
         if (tcph->rst) {
@@ -310,9 +313,9 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         ipacket->session->data_byte_volume += packet->payload_packet_len;
         ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction]++;
         ipacket->session->data_byte_volume_direction[ipacket->session->last_packet_direction] += packet->payload_packet_len;
-        if((ipacket->internal_packet->iph==NULL)||(ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)){
+        if ((ipacket->internal_packet->iph == NULL) || (ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)) {
             ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_sec = ipacket->p_hdr->ts.tv_sec;
-            ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_usec = ipacket->p_hdr->ts.tv_usec; 
+            ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_usec = ipacket->p_hdr->ts.tv_usec;
         }
         // debug("[DIRECTION] packet: %lu,%u\n",ipacket->packet_id,ipacket->session->last_packet_direction);
     }
