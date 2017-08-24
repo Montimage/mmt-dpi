@@ -293,6 +293,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                                     packet->http_cookie.ptr = &str[8];
                                     packet->http_cookie.len = line_length - 8;
                                 }
+                                break;
                             }
                             break;
                         case 'A':
@@ -313,7 +314,6 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                                 packet->referer_line.len = line_length - 9;
                             }
                             break;
-
                         case 'U':
                         case 'u':
                             if (str[1] == 's') {
@@ -349,16 +349,17 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                             }
                         case 'x':
                             if (
-                                mmt_strncasecmp((const char *)str, "X-CDN", 5) == 0) {
+                                mmt_strncasecmp((const char *)(str + 1), "-CDN", 4) == 0) {
                                 packet->has_x_cdn_hdr = 1;
                             }
                             break;
                         default:
                             break;
                         }// End of switch
-                    } else {
-                        debug("PROTO_HTTP: Do not parse HTTP header");
-                    }// End of http_data_analyser == 1
+                    }
+                    //  else {
+                    //     debug("PROTO_HTTP: Do not parse HTTP header");
+                    // }// End of http_data_analyser == 1
                 }// End of str[0] == 'H'
             }// End of unlikely( line_length == 0 )
             if ( unlikely( packet->parsed_lines >= (MMT_MAX_PARSE_LINES_PER_PACKET - 1))) {
@@ -375,10 +376,10 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             if (http_data_analyser == 0 && skip_parsing == 1) {
                 break;
             }
-        } // End of get_u16(packet->payload, a) == NEW_LINE 
+        } // End of get_u16(packet->payload, a) == NEW_LINE
     }// End of for loop
 
-    if (packet->parsed_lines >= 1) {
+    if (packet->parsed_lines > 0) {
         packet->line[packet->parsed_lines].len =
             &packet->payload[packet->payload_packet_len] - packet->line[packet->parsed_lines].ptr;
         packet->parsed_lines++;
