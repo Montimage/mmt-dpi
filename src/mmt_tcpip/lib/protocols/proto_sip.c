@@ -75,50 +75,121 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
         {
             mmt_parse_packet_line_info(ipacket);
 
-            if ((memcmp(packet_payload, "NOTIFY ", 7) == 0 || memcmp(packet_payload, "notify ", 7) == 0)
+            switch(packet_payload[0]){
+                case 'N':
+                    if ((memcmp(packet_payload + 1, "OTIFY ", 6) == 0)
+                        && (memcmp(&packet_payload[7], "SIP:", 4) == 0 || memcmp(&packet_payload[7], "sip:", 4) == 0)) {
+                        
+                        MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip NOTIFY.\n");
+                        mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                        check_sip_internal(ipacket);
+                        return;
+                    }
+                    break;
+                case 'n':
+                if ((memcmp(packet_payload + 1, "otify ", 6) == 0)
                     && (memcmp(&packet_payload[7], "SIP:", 4) == 0 || memcmp(&packet_payload[7], "sip:", 4) == 0)) {
 
-                MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip NOTIFY.\n");
-                mmt_int_sip_add_connection(ipacket, PROTO_SIP);
-                check_sip_internal(ipacket);
-                return;
-            }
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip NOTIFY.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
 
-            if ((memcmp(packet_payload, "REGISTER ", 9) == 0 || memcmp(packet_payload, "register ", 9) == 0)
+                case 'R':
+                if ((memcmp(packet_payload + 1, "EGISTER ", 8) == 0)
                     && (memcmp(&packet_payload[9], "SIP:", 4) == 0 || memcmp(&packet_payload[9], "sip:", 4) == 0)) {
 
-                MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip REGISTER.\n");
-                mmt_int_sip_add_connection(ipacket, PROTO_SIP);
-                check_sip_internal(ipacket);
-                return;
-            }
-            if ((memcmp(packet_payload, "INVITE ", 7) == 0 || memcmp(packet_payload, "invite ", 7) == 0)
-                    && (memcmp(&packet_payload[7], "SIP:", 4) == 0 || memcmp(&packet_payload[7], "sip:", 4) == 0)) {
-                MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip INVITE.\n");
-                mmt_int_sip_add_connection(ipacket, PROTO_SIP);
-                check_sip_internal(ipacket);
-                return;
-            }
-            /* seen this in second direction on the third position,
-             * maybe it could be deleted, if somebody sees it in the first direction,
-             * please delete this comment.
-             */
-            if (memcmp(packet_payload, "SIP/2.0 200 OK", 14) == 0 || memcmp(packet_payload, "sip/2.0 200 OK", 14) == 0) {
-                MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip SIP/2.0 0K.\n");
-                mmt_int_sip_add_connection(ipacket, PROTO_SIP);
-                check_sip_internal(ipacket);
-                return;
-            }
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip REGISTER.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
 
-            /* Courtesy of Miguel Quesada <mquesadab@gmail.com> */
-            if ((memcmp(packet_payload, "OPTIONS ", 8) == 0
-                    || memcmp(packet_payload, "options ", 8) == 0)
-                    && (memcmp(&packet_payload[8], "SIP:", 4) == 0
-                    || memcmp(&packet_payload[8], "sip:", 4) == 0)) {
-                MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip OPTIONS.\n");
-                mmt_int_sip_add_connection(ipacket, PROTO_SIP);
-                check_sip_internal(ipacket);
-                return;
+                case 'r':
+                if ((memcmp(packet_payload + 1, "egister ", 8) == 0)
+                    && (memcmp(&packet_payload[9], "SIP:", 4) == 0 || memcmp(&packet_payload[9], "sip:", 4) == 0)) {
+
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip REGISTER.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
+
+                case 'I':
+                if ((memcmp(packet_payload + 1, "NVITE ", 6) == 0)
+                    && (memcmp(&packet_payload[7], "SIP:", 4) == 0 || memcmp(&packet_payload[7], "sip:", 4) == 0)) {
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip INVITE.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
+
+                case 'i':
+                if ((memcmp(packet_payload + 1, "invite ", 6) == 0)
+                    && (memcmp(&packet_payload[7], "SIP:", 4) == 0 || memcmp(&packet_payload[7], "sip:", 4) == 0)) {
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip INVITE.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
+
+                case 'S':
+                /* seen this in second direction on the third position,
+                 * maybe it could be deleted, if somebody sees it in the first direction,
+                 * please delete this comment.
+                 */
+                if (memcmp(packet_payload + 1, "IP/2.0 200 OK", 13) == 0) {
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip SIP/2.0 0K.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
+
+                case 's':
+                /* seen this in second direction on the third position,
+                 * maybe it could be deleted, if somebody sees it in the first direction,
+                 * please delete this comment.
+                 */
+                if (memcmp(packet_payload + 1, "sip/2.0 200 OK", 13) == 0) {
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip SIP/2.0 0K.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
+
+                case 'O':
+                /* Courtesy of Miguel Quesada <mquesadab@gmail.com> */
+                if ((memcmp(packet_payload + 1, "PTIONS ", 7) == 0)
+                        && (memcmp(&packet_payload[8], "SIP:", 4) == 0
+                        || memcmp(&packet_payload[8], "sip:", 4) == 0)) {
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip OPTIONS.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
+
+                case 'o':
+                /* Courtesy of Miguel Quesada <mquesadab@gmail.com> */
+                if ((memcmp(packet_payload + 1, "ptions ", 7) == 0)
+                        && (memcmp(&packet_payload[8], "SIP:", 4) == 0
+                        || memcmp(&packet_payload[8], "sip:", 4) == 0)) {
+                    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip OPTIONS.\n");
+                    mmt_int_sip_add_connection(ipacket, PROTO_SIP);
+                    check_sip_internal(ipacket);
+                    return;
+                }
+                break;
+                default:
+                break;
             }
         }
 
