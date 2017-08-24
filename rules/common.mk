@@ -41,11 +41,16 @@ endif
 
 # DEBUG = 1 to enable debug mode
 ifdef DEBUG
-CFLAGS   += -g 
-CXXFLAGS += -g 
+CFLAGS   += -g
+CXXFLAGS += -g
 else
 CFLAGS   += -O3
 CXXFLAGS += -O3
+endif
+# VALGRIND = 1 to compile for Valgrind test
+ifdef VALGRIND
+CFLAGS += -g -Wa,--gstabs -save-temps -O3
+CXXFLAGS += -g -Wa,--gstabs -save-temps -O3
 endif
 
 # SHOWLOG = 1 to show all the log from MMT_LOG() ...
