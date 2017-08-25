@@ -142,51 +142,53 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     uint32_t a;
     uint16_t line_length;
     const uint8_t *str;
+    
     int http_data_analyser = ipacket->mmt_handler->configured_protocols[PROTO_HTTP].protocol->data_analyser.status ;
     int skip_parsing = 0;
+    
     uint16_t end = packet->payload_packet_len - 1;
 
     packet->packet_lines_parsed_complete = 1;
-    packet->parsed_lines = 0;
+    // packet->parsed_lines = 0;
 
-    packet->empty_line_position_set = 0;
-    packet->empty_line_position = 0;
+    // packet->empty_line_position_set = 0;
+    // packet->empty_line_position = 0;
 
-    packet->host_line.ptr = NULL;
-    packet->host_line.len = 0;
-    packet->referer_line.ptr = NULL;
-    packet->referer_line.len = 0;
-    packet->content_line.ptr = NULL;
-    packet->content_line.len = 0;
-    packet->accept_line.ptr = NULL;
-    packet->accept_line.len = 0;
-    packet->user_agent_line.ptr = NULL;
-    packet->user_agent_line.len = 0;
-    // LN
-    packet->upgrade_line.ptr = NULL;
-    packet->upgrade_line.len = 0;
-    packet->connection_line.ptr = NULL;
-    packet->connection_line.len = 0;
-    // End of LN
-    packet->http_url_name.ptr = NULL;
-    packet->http_url_name.len = 0;
-    packet->http_encoding.ptr = NULL;
-    packet->http_encoding.len = 0;
-    packet->http_transfer_encoding.ptr = NULL;
-    packet->http_transfer_encoding.len = 0;
-    packet->http_contentlen.ptr = NULL;
-    packet->http_contentlen.len = 0;
-    packet->http_cookie.ptr = NULL;
-    packet->http_cookie.len = 0;
-    packet->http_x_session_type.ptr = NULL;
-    packet->http_x_session_type.len = 0;
-    packet->server_line.ptr = NULL;
-    packet->server_line.len = 0;
-    packet->http_method.ptr = NULL;
-    packet->http_method.len = 0;
-    packet->http_response.ptr = NULL;
-    packet->http_response.len = 0;
-    packet->has_x_cdn_hdr = 0;
+    // packet->host_line.ptr = NULL;
+    // packet->host_line.len = 0;
+    // packet->referer_line.ptr = NULL;
+    // packet->referer_line.len = 0;
+    // packet->content_line.ptr = NULL;
+    // packet->content_line.len = 0;
+    // packet->accept_line.ptr = NULL;
+    // packet->accept_line.len = 0;
+    // packet->user_agent_line.ptr = NULL;
+    // packet->user_agent_line.len = 0;
+    // // LN
+    // packet->upgrade_line.ptr = NULL;
+    // packet->upgrade_line.len = 0;
+    // packet->connection_line.ptr = NULL;
+    // packet->connection_line.len = 0;
+    // // End of LN
+    // packet->http_url_name.ptr = NULL;
+    // packet->http_url_name.len = 0;
+    // packet->http_encoding.ptr = NULL;
+    // packet->http_encoding.len = 0;
+    // packet->http_transfer_encoding.ptr = NULL;
+    // packet->http_transfer_encoding.len = 0;
+    // packet->http_contentlen.ptr = NULL;
+    // packet->http_contentlen.len = 0;
+    // packet->http_cookie.ptr = NULL;
+    // packet->http_cookie.len = 0;
+    // packet->http_x_session_type.ptr = NULL;
+    // packet->http_x_session_type.len = 0;
+    // packet->server_line.ptr = NULL;
+    // packet->server_line.len = 0;
+    // packet->http_method.ptr = NULL;
+    // packet->http_method.len = 0;
+    // packet->http_response.ptr = NULL;
+    // packet->http_response.len = 0;
+    // packet->has_x_cdn_hdr = 0;
     packet->line[packet->parsed_lines].ptr = packet->payload;
     packet->line[packet->parsed_lines].len = 0;
     packet->packet_id = ipacket->packet_id;
@@ -209,9 +211,9 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                         if (packet->parsed_lines == 0 && str[2] == 'T' && str[3] == 'P' && str[4] == '/' && str[5] == '1' && str[6] == '.') {
                             packet->http_response.ptr = &str[9];
                             packet->http_response.len = packet->line[0].len - 9;
-                            MMT_LOG(PROTO_UNKNOWN, MMT_LOG_DEBUG,
-                                    "mmt_parse_packet_line_info: HTTP response parsed: \"%.*s\"\n",
-                                    packet->http_response.len, packet->http_response.ptr);
+                            // MMT_LOG(PROTO_UNKNOWN, MMT_LOG_DEBUG,
+                            //         "mmt_parse_packet_line_info: HTTP response parsed: \"%.*s\"\n",
+                            //         packet->http_response.len, packet->http_response.ptr);
                             skip_parsing = 1;
                         }
                     } else if (str[1] == 'o') {
