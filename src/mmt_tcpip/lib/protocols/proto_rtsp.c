@@ -56,7 +56,7 @@ void mmt_classify_me_rtsp(ipacket_t * ipacket, unsigned index) {
 	if (packet->payload_packet_len > 20 && flow->rtsprdt_stage == 2 - ipacket->session->last_packet_direction) {
 
 		// RTSP Server Message
-		if (memcmp(packet->payload, "RTSP/1.0 ", 9) == 0) {
+		if (mmt_memcmp(packet->payload, "RTSP/1.0 ", 9) == 0) {
 
 
 			MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG, "found RTSP/1.0 .\n");

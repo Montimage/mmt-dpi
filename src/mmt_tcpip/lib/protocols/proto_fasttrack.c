@@ -22,7 +22,7 @@ void mmt_classify_me_fasttrack_tcp(ipacket_t * ipacket, unsigned index) {
     if (packet->payload_packet_len > 6 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
         MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "detected 0d0a at the end of the packet.\n");
 
-        if (memcmp(packet->payload, "GIVE ", 5) == 0 && packet->payload_packet_len >= 8) {
+        if (mmt_memcmp(packet->payload, "GIVE ", 5) == 0 && packet->payload_packet_len >= 8) {
             uint16_t i;
             for (i = 5; i < (packet->payload_packet_len - 2); i++) {
                 // make shure that the argument to GIVE is numeric
@@ -36,13 +36,13 @@ void mmt_classify_me_fasttrack_tcp(ipacket_t * ipacket, unsigned index) {
             return;
         }
 
-        if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /", 5) == 0) {
+        if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
             uint8_t a = 0;
             MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "detected GET /. \n");
             mmt_parse_packet_line_info(ipacket);
             for (a = 0; a < packet->parsed_lines; a++) {
-                if ((packet->line[a].len > 17 && memcmp(packet->line[a].ptr, "X-Kazaa-Username: ", 18) == 0)
-                        || (packet->line[a].len > 23 && memcmp(packet->line[a].ptr, "User-Agent: PeerEnabler/", 24) == 0)) {
+                if ((packet->line[a].len > 17 && mmt_memcmp(packet->line[a].ptr, "X-Kazaa-Username: ", 18) == 0)
+                        || (packet->line[a].len > 23 && mmt_memcmp(packet->line[a].ptr, "User-Agent: PeerEnabler/", 24) == 0)) {
                     MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE,
                             "detected X-Kazaa-Username: || User-Agent: PeerEnabler/\n");
                     mmt_int_fasttrack_add_connection(ipacket);
@@ -69,7 +69,7 @@ int mmt_check_fasttrack(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len > 6 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
             MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "detected 0d0a at the end of the packet.\n");
 
-            if (memcmp(packet->payload, "GIVE ", 5) == 0 && packet->payload_packet_len >= 8) {
+            if (mmt_memcmp(packet->payload, "GIVE ", 5) == 0 && packet->payload_packet_len >= 8) {
                 uint16_t i;
                 for (i = 5; i < (packet->payload_packet_len - 2); i++) {
                     // make shure that the argument to GIVE is numeric
@@ -83,13 +83,13 @@ int mmt_check_fasttrack(ipacket_t * ipacket, unsigned index) {
                 return 1;
             }
 
-            if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /", 5) == 0) {
+            if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
                 uint8_t a = 0;
                 MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE, "detected GET /. \n");
                 mmt_parse_packet_line_info(ipacket);
                 for (a = 0; a < packet->parsed_lines; a++) {
-                    if ((packet->line[a].len > 17 && memcmp(packet->line[a].ptr, "X-Kazaa-Username: ", 18) == 0)
-                            || (packet->line[a].len > 23 && memcmp(packet->line[a].ptr, "User-Agent: PeerEnabler/", 24) == 0)) {
+                    if ((packet->line[a].len > 17 && mmt_memcmp(packet->line[a].ptr, "X-Kazaa-Username: ", 18) == 0)
+                            || (packet->line[a].len > 23 && mmt_memcmp(packet->line[a].ptr, "User-Agent: PeerEnabler/", 24) == 0)) {
                         MMT_LOG(PROTO_FASTTRACK, MMT_LOG_TRACE,
                                 "detected X-Kazaa-Username: || User-Agent: PeerEnabler/\n");
                         mmt_int_fasttrack_add_connection(ipacket);

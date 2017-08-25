@@ -22,7 +22,7 @@ void mmt_classify_me_guildwars(ipacket_t * ipacket, unsigned index) {
     MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "search guildwars.\n");
 
     if (packet->payload_packet_len == 64 && get_u16(packet->payload, 1) == ntohs(0x050c)
-            && memcmp(&packet->payload[50], "@2&P", 4) == 0) {
+            && mmt_memcmp(&packet->payload[50], "@2&P", 4) == 0) {
         MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "GuildWars version 29.350: found.\n");
         mmt_int_guildwars_add_connection(ipacket);
         return;
@@ -58,7 +58,7 @@ int mmt_check_guildwars(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "search guildwars.\n");
 
         if (packet->payload_packet_len == 64 && get_u16(packet->payload, 1) == ntohs(0x050c)
-                && memcmp(&packet->payload[50], "@2&P", 4) == 0) {
+                && mmt_memcmp(&packet->payload[50], "@2&P", 4) == 0) {
             MMT_LOG(PROTO_GUILDWARS, MMT_LOG_DEBUG, "GuildWars version 29.350: found.\n");
             mmt_int_guildwars_add_connection(ipacket);
             return 1;

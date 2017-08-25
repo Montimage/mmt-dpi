@@ -49,7 +49,7 @@ static inline void
 
 static inline int
 mmt_is_ip_set(const mmt_ip_addr_t * ip) {
-    return memcmp(ip, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof (mmt_ip_addr_t)) != 0;
+    return mmt_memcmp(ip, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof (mmt_ip_addr_t)) != 0;
 }
 
 /* check if the source ip address in packet and ip are equal */

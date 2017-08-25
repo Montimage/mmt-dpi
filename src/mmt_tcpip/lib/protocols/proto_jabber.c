@@ -108,11 +108,11 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
         return;
     }
 
-    if (((packet->payload_packet_len > 22 && memcmp(packet->payload, "<message id=", 12) == 0)
-                        || (packet->payload_packet_len > 12 && memcmp(packet->payload, "<iq id=", 7) == 0)
-                        || (packet->payload_packet_len > 14 && memcmp(packet->payload, "<iq type=", 9) == 0))
-                        && ((memcmp(&packet->payload[packet->payload_packet_len - 10], "</message>", 10) == 0)
-                        || (memcmp(&packet->payload[packet->payload_packet_len - 5], "</iq>", 5) == 0))) {
+    if (((packet->payload_packet_len > 22 && mmt_memcmp(packet->payload, "<message id=", 12) == 0)
+                        || (packet->payload_packet_len > 12 && mmt_memcmp(packet->payload, "<iq id=", 7) == 0)
+                        || (packet->payload_packet_len > 14 && mmt_memcmp(packet->payload, "<iq type=", 9) == 0))
+                        && ((mmt_memcmp(&packet->payload[packet->payload_packet_len - 10], "</message>", 10) == 0)
+                        || (mmt_memcmp(&packet->payload[packet->payload_packet_len - 5], "</iq>", 5) == 0))) {
 
         mmt_int_jabber_add_connection(ipacket,
                             PROTO_UNENCRYPED_JABBER, MMT_REAL_PROTOCOL);
@@ -131,7 +131,7 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
             return;
         }
         /* need message to or type for file-transfer */
-        if (memcmp(packet->payload, "<iq from=\"", 8) == 0 || memcmp(packet->payload, "<iq from=\'", 8) == 0) {
+        if (mmt_memcmp(packet->payload, "<iq from=\"", 8) == 0 || mmt_memcmp(packet->payload, "<iq from=\'", 8) == 0) {
             MMT_LOG(PROTO_UNENCRYPED_JABBER, MMT_LOG_DEBUG, "JABBER <iq from=\".\n");
             lastlen = packet->payload_packet_len - 11;
             for (x = 10; x < lastlen; x++) {
@@ -181,8 +181,8 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
                 }
             }
 
-        } else if (memcmp(packet->payload, "<iq to=\"", 8) == 0 || memcmp(packet->payload, "<iq to=\'", 8) == 0
-                || memcmp(packet->payload, "<iq type=", 9) == 0) {
+        } else if (mmt_memcmp(packet->payload, "<iq to=\"", 8) == 0 || mmt_memcmp(packet->payload, "<iq to=\'", 8) == 0
+                || mmt_memcmp(packet->payload, "<iq type=", 9) == 0) {
             MMT_LOG(PROTO_UNENCRYPED_JABBER, MMT_LOG_DEBUG, "JABBER <iq to=\"/type=\"\n");
             lastlen = packet->payload_packet_len - 21;
             for (x = 8; x < lastlen; x++) {
@@ -265,9 +265,9 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
 
     /* search for jabber here */
     /* this part is working asymmetrically */
-    if ((packet->payload_packet_len > 13 && memcmp(packet->payload, "<?xml version=", 14) == 0)
+    if ((packet->payload_packet_len > 13 && mmt_memcmp(packet->payload, "<?xml version=", 14) == 0)
             || (packet->payload_packet_len >= 15
-            && memcmp(packet->payload, "<stream:stream ", 15) == 0)) {
+            && mmt_memcmp(packet->payload, "<stream:stream ", 15) == 0)) {
 
         if (packet->payload_packet_len > 47) {
             const uint16_t lastlen = packet->payload_packet_len - 47;

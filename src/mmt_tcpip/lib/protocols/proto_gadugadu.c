@@ -39,7 +39,7 @@ static void parse_gg_foneno(ipacket_t * ipacket) {
     if (pos + 16 < packet->payload_packet_len) {
         char fmnumber[8];
         int i = 0;
-        if (memcmp(&packet->payload[pos], "fmnumber=", 9) == 0) {
+        if (mmt_memcmp(&packet->payload[pos], "fmnumber=", 9) == 0) {
             MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: fmnumber found .\n");
         } else
             return;
@@ -100,7 +100,7 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
     if (packet->payload_packet_len < 50) {
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: Packet too small.\n");
         return 0;
-    } else if (memcmp(packet->payload, "GET /appsvc/appmsg", 18) == 0) {
+    } else if (mmt_memcmp(packet->payload, "GET /appsvc/appmsg", 18) == 0) {
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
         parse_gg_foneno(ipacket);
         // parse packet
@@ -111,7 +111,7 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
         if (packet->host_line.ptr == NULL) {
             return 0;
         }
-        if (!(packet->host_line.len >= 19 && memcmp(packet->host_line.ptr, "appmsg.gadu-gadu.pl", 19) == 0)) {
+        if (!(packet->host_line.len >= 19 && mmt_memcmp(packet->host_line.ptr, "appmsg.gadu-gadu.pl", 19) == 0)) {
             return 0;
         }
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
@@ -119,7 +119,7 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
-    } else if (memcmp(packet->payload, "POST /send/message/", 15) == 0) {
+    } else if (mmt_memcmp(packet->payload, "POST /send/message/", 15) == 0) {
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
 
         // parse packet
@@ -130,7 +130,7 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
         if (packet->host_line.ptr == NULL) {
             return 0;
         }
-        if (!(packet->host_line.len >= 17 && memcmp(packet->host_line.ptr, "life.gadu-gadu.pl", 17) == 0)) {
+        if (!(packet->host_line.len >= 17 && mmt_memcmp(packet->host_line.ptr, "life.gadu-gadu.pl", 17) == 0)) {
             return 0;
         }
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
@@ -138,7 +138,7 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
-    } else if (memcmp(packet->payload, "GET /rotate_token", 17) == 0) {
+    } else if (mmt_memcmp(packet->payload, "GET /rotate_token", 17) == 0) {
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
 
         // parse packet
@@ -149,7 +149,7 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
         if (packet->host_line.ptr == NULL) {
             return 0;
         }
-        if (!(packet->host_line.len >= 13 && memcmp(packet->host_line.ptr, "sms.orange.pl", 13) == 0)) {
+        if (!(packet->host_line.len >= 13 && mmt_memcmp(packet->host_line.ptr, "sms.orange.pl", 13) == 0)) {
             return 0;
         }
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
@@ -157,15 +157,15 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
-    } else if ((memcmp(packet->payload, "GET /nowosci.xml", 16) == 0) ||
-            (memcmp(packet->payload, "GET /gadu-gadu.xml", 18) == 0) ||
-            (memcmp(packet->payload, "POST /access_token", 18) == 0)) {
+    } else if ((mmt_memcmp(packet->payload, "GET /nowosci.xml", 16) == 0) ||
+            (mmt_memcmp(packet->payload, "GET /gadu-gadu.xml", 18) == 0) ||
+            (mmt_memcmp(packet->payload, "POST /access_token", 18) == 0)) {
         mmt_parse_packet_line_info(ipacket);
         if (packet->user_agent_line.ptr == NULL) {
             return 0;
         }
         if (!(packet->user_agent_line.len >= 16 &&
-                memcmp(packet->user_agent_line.ptr, "Gadu-Gadu Client", 16) == 0)) {
+                mmt_memcmp(packet->user_agent_line.ptr, "Gadu-Gadu Client", 16) == 0)) {
             return 0;
         }
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG,
@@ -340,9 +340,9 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                 (src->detected_protocol_bitmask, PROTO_GADUGADU) != 0 && (packet->tcp->dest == htons(80)
                 || packet->tcp->source ==
                 htons(80))
-                && packet->payload_packet_len == 12 && (memcmp(src->gg_call_id[0], &packet->payload[5], 4) == 0
+                && packet->payload_packet_len == 12 && (mmt_memcmp(src->gg_call_id[0], &packet->payload[5], 4) == 0
                 || (src->gg_call_id[1][0]
-                && (memcmp(src->gg_call_id[1], &packet->payload[5], 4)
+                && (mmt_memcmp(src->gg_call_id[1], &packet->payload[5], 4)
                 == 0)))) {
             if ((packet->tick_timestamp - src->gg_timeout) < gadugadu_peer_connection_timeout) {
 
@@ -360,9 +360,9 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                 (src->detected_protocol_bitmask,
                 PROTO_GADUGADU) != 0
                 && packet->payload_packet_len == 8 &&
-                (memcmp(src->gg_call_id[0], &packet->payload[0], 4) == 0 || (src->gg_call_id[1][0]
+                (mmt_memcmp(src->gg_call_id[0], &packet->payload[0], 4) == 0 || (src->gg_call_id[1][0]
                 &&
-                (memcmp
+                (mmt_memcmp
                 (src->gg_call_id[1],
                 &packet->payload[0], 4)
                 == 0)))) {
@@ -399,9 +399,9 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                 (dst->detected_protocol_bitmask, PROTO_GADUGADU) != 0 && (packet->tcp->dest == htons(80)
                 || packet->tcp->source ==
                 htons(80))
-                && packet->payload_packet_len == 12 && (memcmp(dst->gg_call_id[0], &packet->payload[0], 4) == 0
+                && packet->payload_packet_len == 12 && (mmt_memcmp(dst->gg_call_id[0], &packet->payload[0], 4) == 0
                 || (dst->gg_call_id[1][0]
-                && (memcmp(dst->gg_call_id[1], &packet->payload[0], 4)
+                && (mmt_memcmp(dst->gg_call_id[1], &packet->payload[0], 4)
                 == 0)))) {
             if ((packet->tick_timestamp - dst->gg_timeout) < gadugadu_peer_connection_timeout) {
 
@@ -419,9 +419,9 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                 (dst->detected_protocol_bitmask,
                 PROTO_GADUGADU) != 0
                 && packet->payload_packet_len == 8 &&
-                (memcmp(dst->gg_call_id[0], &packet->payload[0], 4) == 0 || (dst->gg_call_id[1][0]
+                (mmt_memcmp(dst->gg_call_id[0], &packet->payload[0], 4) == 0 || (dst->gg_call_id[1][0]
                 &&
-                (memcmp
+                (mmt_memcmp
                 (dst->gg_call_id[1],
                 &packet->payload[0], 4)
                 == 0)))) {

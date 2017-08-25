@@ -19,17 +19,17 @@ bool ip_session_comp(void * key1, void * key2) {
     if (l_session->ip_type != r_session->ip_type) return (l_session->ip_type < r_session->ip_type);
 
     // both flows of the same type
-    int comp_val = memcmp(&l_session->next_proto, &r_session->next_proto, 5);
+    int comp_val = mmt_memcmp(&l_session->next_proto, &r_session->next_proto, 5);
     if (comp_val == 0) {
         if (l_session->ip_type == 4) {
-            comp_val = memcmp(l_session->lower_ip, r_session->lower_ip, IPv4_ALEN);
+            comp_val = mmt_memcmp(l_session->lower_ip, r_session->lower_ip, IPv4_ALEN);
             if (comp_val == 0) {
-                comp_val = memcmp(l_session->higher_ip, r_session->higher_ip, IPv4_ALEN);
+                comp_val = mmt_memcmp(l_session->higher_ip, r_session->higher_ip, IPv4_ALEN);
             }
         } else {
-            comp_val = memcmp(l_session->lower_ip, r_session->lower_ip, IPv6_ALEN);
+            comp_val = mmt_memcmp(l_session->lower_ip, r_session->lower_ip, IPv6_ALEN);
             if (comp_val == 0) {
-                comp_val = memcmp(l_session->higher_ip, r_session->higher_ip, IPv6_ALEN);
+                comp_val = mmt_memcmp(l_session->higher_ip, r_session->higher_ip, IPv6_ALEN);
             }
         }
     }
@@ -1382,7 +1382,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
         packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp   
     }
 
-    if (memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
+    if (mmt_memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
         src = &((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->id_internal_context;
         dst = &((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->lower_ip)->id_internal_context;
     } else {

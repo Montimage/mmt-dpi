@@ -851,6 +851,93 @@ MMTAPI void* MMTCALL mmt_malloc  ( size_t size );
 MMTAPI void* MMTCALL mmt_realloc ( void *x, size_t size );
 MMTAPI void  MMTCALL mmt_free    ( void *x );
 
+static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
+    const char *s1 = (char*)x, *s2 = (char*)y;
+    int ret;
+    ret = s1[0] - s2[0];
+    if( size == 1 || ret != 0 )
+        return ret;
+
+    ret = s1[1] - s2[1];
+    if( size == 2 || ret != 0 )
+        return ret;
+
+    ret = s1[2] - s2[2];
+    if( size == 3 || ret != 0 )
+        return ret;
+
+    ret = s1[3] - s2[3];
+    if( size == 4 || ret != 0 )
+        return ret;
+
+    ret = s1[4] - s2[4];
+    if( size == 5 || ret != 0 )
+        return ret;
+
+    ret = s1[5] - s2[5];
+    if( size == 6 || ret != 0 )
+        return ret;
+
+    ret = s1[6] - s2[6];
+    if( size == 7 || ret != 0 )
+        return ret;
+
+    ret = s1[7] - s2[7];
+    if( size == 8 || ret != 0 )
+        return ret;
+
+    ret = s1[8] - s2[8];
+    if( size == 9 || ret != 0 )
+        return ret;
+
+    ret = s1[9] - s2[9];
+    if( size == 10 || ret != 0 )
+        return ret;
+
+//10-20
+    ret = s1[10] - s2[10];
+    if( size == 11 || ret != 0 )
+        return ret;
+
+    ret = s1[11] - s2[11];
+    if( size == 12 || ret != 0 )
+        return ret;
+
+    ret = s1[12] - s2[12];
+    if( size == 13 || ret != 0 )
+        return ret;
+
+    ret = s1[13] - s2[13];
+    if( size == 14 || ret != 0 )
+        return ret;
+
+    ret = s1[14] - s2[14];
+    if( size == 15 || ret != 0 )
+        return ret;
+
+    ret = s1[15] - s2[15];
+    if( size == 16 || ret != 0 )
+        return ret;
+
+    ret = s1[16] - s2[16];
+    if( size == 17 || ret != 0 )
+        return ret;
+
+    ret = s1[17] - s2[17];
+    if( size == 18 || ret != 0 )
+        return ret;
+
+    ret = s1[18] - s2[18];
+    if( size == 19 || ret != 0 )
+        return ret;
+
+    ret = s1[19] - s2[19];
+    if( size == 20 || ret != 0 )
+        return ret;
+
+    return memcmp( s1 + 20, s2 + 20, size - 20 );
+}
+
 /**
  * Print Montimage information
  */

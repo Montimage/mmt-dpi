@@ -26,7 +26,7 @@ int mmt_check_eclipse_tcf(ipacket_t * ipacket, unsigned index) {
 
         MMT_LOG(PROTO_ECLIPSE_TCF, MMT_LOG_DEBUG, "search eclipse_tcf.\n");
         if (packet->payload_packet_len >= 8 && (ntohs(packet->udp->source) == 1534 || ntohs(packet->udp->dest) == 1534 )) {
-            if (memcmp(packet->payload, ECLIPSE_TCF_START, strlen(ECLIPSE_TCF_START)) == 0) {
+            if (mmt_memcmp(packet->payload, ECLIPSE_TCF_START, strlen(ECLIPSE_TCF_START)) == 0) {
                 MMT_LOG(PROTO_ECLIPSE_TCF, MMT_LOG_DEBUG, "found eclipse_tcf.\n");
                 mmt_int_eclipse_tcf_add_connection(ipacket);
                 return 1;

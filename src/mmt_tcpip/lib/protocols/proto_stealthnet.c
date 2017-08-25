@@ -21,7 +21,7 @@ void mmt_classify_me_stealthnet(ipacket_t * ipacket, unsigned index) {
 
 
     if (packet->payload_packet_len > 40
-            && memcmp(packet->payload, "LARS REGENSBURGER'S FILE SHARING PROTOCOL", 41) == 0) {
+            && mmt_memcmp(packet->payload, "LARS REGENSBURGER'S FILE SHARING PROTOCOL", 41) == 0) {
         MMT_LOG(PROTO_STEALTHNET, MMT_LOG_DEBUG, "found stealthnet\n");
         mmt_int_stealthnet_add_connection(ipacket);
         return;
@@ -42,7 +42,7 @@ int mmt_check_stealthnet(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         if (packet->payload_packet_len > 40
-                && memcmp(packet->payload, "LARS REGENSBURGER'S FILE SHARING PROTOCOL", 41) == 0) {
+                && mmt_memcmp(packet->payload, "LARS REGENSBURGER'S FILE SHARING PROTOCOL", 41) == 0) {
             MMT_LOG(PROTO_STEALTHNET, MMT_LOG_DEBUG, "found stealthnet\n");
             mmt_int_stealthnet_add_connection(ipacket);
             return 1;

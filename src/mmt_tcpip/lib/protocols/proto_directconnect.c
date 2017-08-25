@@ -33,8 +33,8 @@ static uint16_t parse_binf_message(const uint8_t * payload, int payload_len) {
     while (i < payload_len) {
         i = skip_unknown_headers(payload, payload_len, i);
         if ((i + 30) < payload_len) {
-            if (memcmp(&payload[i], "DCTM", 4) == 0) {
-                if (memcmp(&payload[i + 15], "ADCS", 4) == 0) {
+            if (mmt_memcmp(&payload[i], "DCTM", 4) == 0) {
+                if (mmt_memcmp(&payload[i + 15], "ADCS", 4) == 0) {
                     ssl_port = ntohs_mmt_bytestream_to_number(&payload[i + 25], 5, &bytes_read);
                     MMT_LOG(PROTO_DIRECTCONNECT, 
                             MMT_LOG_DEBUG, "directconnect ssl port parsed %d", ssl_port);
@@ -101,7 +101,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *dst = packet->dst;
 
     if (flow->detected_protocol_stack[0] == PROTO_DIRECTCONNECT) {
-        if (packet->payload_packet_len >= 40 && memcmp(&packet->payload[0], "BINF", 4) == 0) {
+        if (packet->payload_packet_len >= 40 && mmt_memcmp(&packet->payload[0], "BINF", 4) == 0) {
             uint16_t ssl_port = 0;
             ssl_port = parse_binf_message(&packet->payload[4], packet->payload_packet_len - 4);
             if (dst != NULL && ssl_port) {
@@ -114,7 +114,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
 
         }
         if ((packet->payload_packet_len >= 38 && packet->payload_packet_len <= 42)
-                && memcmp(&packet->payload[0], "DCTM", 4) == 0 && memcmp(&packet->payload[15], "ADCS", 4) == 0) {
+                && mmt_memcmp(&packet->payload[0], "DCTM", 4) == 0 && mmt_memcmp(&packet->payload[15], "ADCS", 4) == 0) {
             uint16_t bytes_read = 0;
             if (dst != NULL) {
                 dst->detected_directconnect_ssl_port =
@@ -212,7 +212,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
         if (packet->payload_packet_len > 6) {
             if (packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
-                    && (memcmp(&packet->payload[1], "Lock ", 5) == 0)) {
+                    && (mmt_memcmp(&packet->payload[1], "Lock ", 5) == 0)) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "maybe first dc connect to hub  detected\n");
                 flow->directconnect_stage = 1;
@@ -221,7 +221,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
             if (packet->payload_packet_len > 7
                     && packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
-                    && (memcmp(&packet->payload[1], "MyNick ", 7) == 0)) {
+                    && (mmt_memcmp(&packet->payload[1], "MyNick ", 7) == 0)) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "maybe first dc connect between peers  detected\n");
                 flow->directconnect_stage = 2;
@@ -231,15 +231,15 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
         }
         if (packet->payload_packet_len >= 11) {
             /* did not see this pattern in any trace */
-            if (memcmp(&packet->payload[0], "HSUP ADBAS0", 11) == 0
-                    || memcmp(&packet->payload[0], "HSUP ADBASE", 11) == 0) {
+            if (mmt_memcmp(&packet->payload[0], "HSUP ADBAS0", 11) == 0
+                    || mmt_memcmp(&packet->payload[0], "HSUP ADBASE", 11) == 0) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS0 E\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_HUB);
                 return 1;
                 /* did not see this pattern in any trace */
-            } else if (memcmp(&packet->payload[0], "CSUP ADBAS0", 11) == 0 ||
-                    memcmp(&packet->payload[0], "CSUP ADBASE", 11) == 0) {
+            } else if (mmt_memcmp(&packet->payload[0], "CSUP ADBAS0", 11) == 0 ||
+                    mmt_memcmp(&packet->payload[0], "CSUP ADBASE", 11) == 0) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "found directconnect CSUP ADBAS0 E\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_ADC_PEER);
@@ -252,16 +252,16 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
     } else if (flow->directconnect_stage == 1) {
         if (packet->payload_packet_len >= 11) {
             /* did not see this pattern in any trace */
-            if (memcmp(&packet->payload[0], "HSUP ADBAS0", 11) == 0
-                    || memcmp(&packet->payload[0], "HSUP ADBASE", 11) == 0) {
+            if (mmt_memcmp(&packet->payload[0], "HSUP ADBAS0", 11) == 0
+                    || mmt_memcmp(&packet->payload[0], "HSUP ADBASE", 11) == 0) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS E in second packet\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_HUB);
 
                 return 1;
                 /* did not see this pattern in any trace */
-            } else if (memcmp(&packet->payload[0], "CSUP ADBAS0", 11) == 0 ||
-                    memcmp(&packet->payload[0], "CSUP ADBASE", 11) == 0) {
+            } else if (mmt_memcmp(&packet->payload[0], "CSUP ADBAS0", 11) == 0 ||
+                    mmt_memcmp(&packet->payload[0], "CSUP ADBASE", 11) == 0) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS0 E in second packet\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_ADC_PEER);
@@ -340,7 +340,7 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
                 && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_DIRECTCONNECT)==0) {
             if (packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
-                    && memcmp(&packet->payload[1], "SR ", 3) == 0) {
+                    && mmt_memcmp(&packet->payload[1], "SR ", 3) == 0) {
                 pos = packet->payload_packet_len - 2;
                 if (packet->payload[pos] == ')') {
                     while (pos > 0 && packet->payload[pos] != '(' && count < 21) {
@@ -349,7 +349,7 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
                     }
                     if (packet->payload[pos] == '(') {
                         pos = pos - 44;
-                        if (pos > 2 && memcmp(&packet->payload[pos], "TTH:", 4) == 0) {
+                        if (pos > 2 && mmt_memcmp(&packet->payload[pos], "TTH:", 4) == 0) {
                             MMT_LOG(PROTO_DIRECTCONNECT, MMT_LOG_DEBUG, "dc udp detected\n");
                             mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_PEER);
                             return 1;
@@ -371,7 +371,7 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
                 && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_DIRECTCONNECT)==0) {
             if (packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
-                    && memcmp(&packet->payload[1], "SR ", 3) == 0) {
+                    && mmt_memcmp(&packet->payload[1], "SR ", 3) == 0) {
                 pos = packet->payload_packet_len - 2;
                 if (packet->payload[pos] == ')') {
                     while (pos > 0 && packet->payload[pos] != '(' && count < 21) {
@@ -380,7 +380,7 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
                     }
                     if (packet->payload[pos] == '(') {
                         pos = pos - 44;
-                        if (pos > 2 && memcmp(&packet->payload[pos], "TTH:", 4) == 0) {
+                        if (pos > 2 && mmt_memcmp(&packet->payload[pos], "TTH:", 4) == 0) {
                             MMT_LOG(PROTO_DIRECTCONNECT, MMT_LOG_DEBUG, "dc udp detected\n");
                             mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_PEER);
                             return 1;

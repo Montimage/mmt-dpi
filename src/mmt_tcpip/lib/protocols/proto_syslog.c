@@ -52,7 +52,7 @@ void mmt_classify_me_syslog(ipacket_t * ipacket, unsigned index) {
 
         /* check for "last message repeated" */
         if (i + sizeof ("last message") - 1 <= packet->payload_packet_len &&
-                memcmp(packet->payload + i, "last message", sizeof ("last message") - 1) == 0) {
+                mmt_memcmp(packet->payload + i, "last message", sizeof ("last message") - 1) == 0) {
 
             MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by 'last message' string.\n");
 
@@ -60,7 +60,7 @@ void mmt_classify_me_syslog(ipacket_t * ipacket, unsigned index) {
 
             return;
         } else if (i + sizeof ("snort: ") - 1 <= packet->payload_packet_len &&
-                memcmp(packet->payload + i, "snort: ", sizeof ("snort: ") - 1) == 0) {
+                mmt_memcmp(packet->payload + i, "snort: ", sizeof ("snort: ") - 1) == 0) {
 
             /* snort events */
 
@@ -146,12 +146,12 @@ int mmt_check_syslog(ipacket_t * ipacket, unsigned index) {
 
             /* check for "last message repeated" */
             if (i + sizeof ("last message") - 1 <= packet->payload_packet_len &&
-                    memcmp(packet->payload + i, "last message", sizeof ("last message") - 1) == 0) {
+                    mmt_memcmp(packet->payload + i, "last message", sizeof ("last message") - 1) == 0) {
                 MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by 'last message' string.\n");
                 mmt_int_syslog_add_connection(ipacket);
                 return 1;
             } else if (i + sizeof ("snort: ") - 1 <= packet->payload_packet_len &&
-                    memcmp(packet->payload + i, "snort: ", sizeof ("snort: ") - 1) == 0) {
+                    mmt_memcmp(packet->payload + i, "snort: ", sizeof ("snort: ") - 1) == 0) {
                 /* snort events */
                 MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by 'snort: ' string.\n");
                 mmt_int_syslog_add_connection(ipacket);

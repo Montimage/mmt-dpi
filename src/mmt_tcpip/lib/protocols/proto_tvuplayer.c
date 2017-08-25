@@ -35,10 +35,10 @@ void mmt_classify_me_tvuplayer(ipacket_t * ipacket, unsigned index) {
 
         if (packet->payload_packet_len >= 50) {
 
-            if (memcmp(packet->payload, "POST", 4) || memcmp(packet->payload, "GET", 3)) {
+            if (mmt_memcmp(packet->payload, "POST", 4) || mmt_memcmp(packet->payload, "GET", 3)) {
                 MMT_PARSE_PACKET_LINE_INFO(ipacket, packet);
                 if (packet->user_agent_line.ptr != NULL &&
-                        packet->user_agent_line.len >= 8 && (memcmp(packet->user_agent_line.ptr, "MacTVUP", 7) == 0)) {
+                        packet->user_agent_line.len >= 8 && (mmt_memcmp(packet->user_agent_line.ptr, "MacTVUP", 7) == 0)) {
                     MMT_LOG(PROTO_TVUPLAYER, MMT_LOG_DEBUG, "Found user agent as MacTVUP.\n");
                     mmt_int_tvuplayer_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return;
@@ -149,10 +149,10 @@ int mmt_check_tvuplayer_tcp(ipacket_t * ipacket, unsigned index) {
         }
 
         if (packet->payload_packet_len >= 50) {
-            if (memcmp(packet->payload, "POST", 4) || memcmp(packet->payload, "GET", 3)) {
+            if (mmt_memcmp(packet->payload, "POST", 4) || mmt_memcmp(packet->payload, "GET", 3)) {
                 MMT_PARSE_PACKET_LINE_INFO(ipacket, packet);
                 if (packet->user_agent_line.ptr != NULL &&
-                        packet->user_agent_line.len >= 8 && (memcmp(packet->user_agent_line.ptr, "MacTVUP", 7) == 0)) {
+                        packet->user_agent_line.len >= 8 && (mmt_memcmp(packet->user_agent_line.ptr, "MacTVUP", 7) == 0)) {
                     MMT_LOG(PROTO_TVUPLAYER, MMT_LOG_DEBUG, "Found user agent as MacTVUP.\n");
                     mmt_int_tvuplayer_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;

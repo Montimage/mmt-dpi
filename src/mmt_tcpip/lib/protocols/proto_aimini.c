@@ -17,7 +17,7 @@ static uint8_t is_special_aimini_host(struct mmt_int_one_line_struct host_line) 
     if (host_line.ptr != NULL && host_line.len >= 18) {
         if ((get_u32(host_line.ptr, 0) & htonl(0x00ff00ff)) == htonl(0x002e002e) &&
                 (get_u32(host_line.ptr, 4) & htonl(0x00ff00ff)) == htonl(0x002e002e) &&
-                memcmp(&host_line.ptr[8], "aimini.net", 10) == 0) {
+                mmt_memcmp(&host_line.ptr[8], "aimini.net", 10) == 0) {
             return 1;
         }
     }
@@ -212,23 +212,23 @@ void mmt_classify_me_aimini(ipacket_t * ipacket, unsigned index) {
         }
     } else if (packet->tcp != NULL) {
         if ((packet->payload_packet_len > 12 &&
-                (memcmp(packet->payload, "GET /player/", 12) == 0)) ||
+                (mmt_memcmp(packet->payload, "GET /player/", 12) == 0)) ||
                 (packet->payload_packet_len > 15 &&
-                (memcmp(packet->payload, "GET /play/?fid=", 15) == 0))) {
+                (mmt_memcmp(packet->payload, "GET /play/?fid=", 15) == 0))) {
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "HTTP packet detected.\n");
             mmt_parse_packet_line_info(ipacket);
             if (packet->host_line.ptr != NULL && packet->host_line.len > 11
-                    && (memcmp(&packet->host_line.ptr[packet->host_line.len - 11], ".aimini.net", 11) == 0)) {
+                    && (mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 11], ".aimini.net", 11) == 0)) {
                 MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "AIMINI HTTP traffic detected.\n");
                 mmt_int_aimini_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
         }
         if (packet->payload_packet_len > 100) {
-            if (memcmp(packet->payload, "GET /", 5) == 0) {
-                if (memcmp(&packet->payload[5], "play/",
+            if (mmt_memcmp(packet->payload, "GET /", 5) == 0) {
+                if (mmt_memcmp(&packet->payload[5], "play/",
                         5) == 0 ||
-                        memcmp(&packet->payload[5], "download/",
+                        mmt_memcmp(&packet->payload[5], "download/",
                         9) == 0) {
                     mmt_parse_packet_line_info(ipacket);
                     if (is_special_aimini_host(packet->host_line) == 1) {
@@ -238,8 +238,8 @@ void mmt_classify_me_aimini(ipacket_t * ipacket, unsigned index) {
                         return;
                     }
                 }
-            } else if (memcmp(packet->payload, "POST /", 6) == 0) {
-                if (memcmp(&packet->payload[6], "upload/",
+            } else if (mmt_memcmp(packet->payload, "POST /", 6) == 0) {
+                if (mmt_memcmp(&packet->payload[6], "upload/",
                         7) == 0) {
                     mmt_parse_packet_line_info(ipacket);
                     if (is_special_aimini_host(packet->host_line) == 1) {
@@ -270,23 +270,23 @@ int mmt_check_aimini_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "search aimini.\n");
 
         if ((packet->payload_packet_len > 12 &&
-                (memcmp(packet->payload, "GET /player/", 12) == 0)) ||
+                (mmt_memcmp(packet->payload, "GET /player/", 12) == 0)) ||
                 (packet->payload_packet_len > 15 &&
-                (memcmp(packet->payload, "GET /play/?fid=", 15) == 0))) {
+                (mmt_memcmp(packet->payload, "GET /play/?fid=", 15) == 0))) {
             MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "HTTP packet detected.\n");
             mmt_parse_packet_line_info(ipacket);
             if (packet->host_line.ptr != NULL && packet->host_line.len > 11
-                    && (memcmp(&packet->host_line.ptr[packet->host_line.len - 11], ".aimini.net", 11) == 0)) {
+                    && (mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 11], ".aimini.net", 11) == 0)) {
                 MMT_LOG(PROTO_AIMINI, MMT_LOG_DEBUG, "AIMINI HTTP traffic detected.\n");
                 mmt_int_aimini_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             }
         }
         if (packet->payload_packet_len > 100) {
-            if (memcmp(packet->payload, "GET /", 5) == 0) {
-                if (memcmp(&packet->payload[5], "play/",
+            if (mmt_memcmp(packet->payload, "GET /", 5) == 0) {
+                if (mmt_memcmp(&packet->payload[5], "play/",
                         5) == 0 ||
-                        memcmp(&packet->payload[5], "download/",
+                        mmt_memcmp(&packet->payload[5], "download/",
                         9) == 0) {
                     mmt_parse_packet_line_info(ipacket);
                     if (is_special_aimini_host(packet->host_line) == 1) {
@@ -296,8 +296,8 @@ int mmt_check_aimini_tcp(ipacket_t * ipacket, unsigned index) {
                         return 1;
                     }
                 }
-            } else if (memcmp(packet->payload, "POST /", 6) == 0) {
-                if (memcmp(&packet->payload[6], "upload/",
+            } else if (mmt_memcmp(packet->payload, "POST /", 6) == 0) {
+                if (mmt_memcmp(&packet->payload[6], "upload/",
                         7) == 0) {
                     mmt_parse_packet_line_info(ipacket);
                     if (is_special_aimini_host(packet->host_line) == 1) {

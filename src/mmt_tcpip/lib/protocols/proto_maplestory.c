@@ -31,7 +31,7 @@ void mmt_classify_me_maplestory(ipacket_t * ipacket, unsigned index) {
     }
 
     if (packet->payload_packet_len > 10
-            && memcmp(packet->payload, "GET /maple", 10) == 0) {
+            && mmt_memcmp(packet->payload, "GET /maple", 10) == 0) {
         mmt_parse_packet_line_info(ipacket);
         /* Maplestory update */
         if (packet->payload_packet_len > 16
@@ -39,18 +39,18 @@ void mmt_classify_me_maplestory(ipacket_t * ipacket, unsigned index) {
             if (packet->user_agent_line.ptr != NULL && packet->host_line.ptr != NULL
                     && packet->user_agent_line.len == 7
                     && packet->host_line.len > 6
-                    && memcmp(&packet->payload[11], "patch",
+                    && mmt_memcmp(&packet->payload[11], "patch",
                     5) == 0
-                    && memcmp(packet->user_agent_line.ptr, "Patcher", 7) == 0
-                    && memcmp(packet->host_line.ptr, "patch.", 6) == 0) {
+                    && mmt_memcmp(packet->user_agent_line.ptr, "Patcher", 7) == 0
+                    && mmt_memcmp(packet->host_line.ptr, "patch.", 6) == 0) {
                 MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "found maplestory update.\n");
                 mmt_int_maplestory_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
         } else if (packet->user_agent_line.ptr != NULL && packet->user_agent_line.len == 7
-                && memcmp(&packet->payload[10], "story/",
+                && mmt_memcmp(&packet->payload[10], "story/",
                 6) == 0
-                && memcmp(packet->user_agent_line.ptr, "AspINet", 7) == 0) {
+                && mmt_memcmp(packet->user_agent_line.ptr, "AspINet", 7) == 0) {
             MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "found maplestory update.\n");
             mmt_int_maplestory_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
@@ -81,7 +81,7 @@ int mmt_check_maplestory(ipacket_t * ipacket, unsigned index) {
         }
 
         if (packet->payload_packet_len > 10
-                && memcmp(packet->payload, "GET /maple", 10) == 0) {
+                && mmt_memcmp(packet->payload, "GET /maple", 10) == 0) {
             mmt_parse_packet_line_info(ipacket);
             /* Maplestory update */
             if (packet->payload_packet_len > 16
@@ -89,18 +89,18 @@ int mmt_check_maplestory(ipacket_t * ipacket, unsigned index) {
                 if (packet->user_agent_line.ptr != NULL && packet->host_line.ptr != NULL
                         && packet->user_agent_line.len == 7
                         && packet->host_line.len > 6
-                        && memcmp(&packet->payload[11], "patch",
+                        && mmt_memcmp(&packet->payload[11], "patch",
                         5) == 0
-                        && memcmp(packet->user_agent_line.ptr, "Patcher", 7) == 0
-                        && memcmp(packet->host_line.ptr, "patch.", 6) == 0) {
+                        && mmt_memcmp(packet->user_agent_line.ptr, "Patcher", 7) == 0
+                        && mmt_memcmp(packet->host_line.ptr, "patch.", 6) == 0) {
                     MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "found maplestory update.\n");
                     mmt_int_maplestory_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return 1;
                 }
             } else if (packet->user_agent_line.ptr != NULL && packet->user_agent_line.len == 7
-                    && memcmp(&packet->payload[10], "story/",
+                    && mmt_memcmp(&packet->payload[10], "story/",
                     6) == 0
-                    && memcmp(packet->user_agent_line.ptr, "AspINet", 7) == 0) {
+                    && mmt_memcmp(packet->user_agent_line.ptr, "AspINet", 7) == 0) {
                 MMT_LOG(PROTO_MAPLESTORY, MMT_LOG_DEBUG, "found maplestory update.\n");
                 mmt_int_maplestory_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;

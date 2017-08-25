@@ -26,8 +26,8 @@ void mmt_classify_me_ssdp(ipacket_t * ipacket, unsigned index) {
     if (packet->udp != NULL) {
 
         if (packet->payload_packet_len > 100) {
-            if ((memcmp(packet->payload, "M-SEARCH * HTTP/1.1", 19) == 0)
-                    || memcmp(packet->payload, "NOTIFY * HTTP/1.1", 17) == 0) {
+            if ((mmt_memcmp(packet->payload, "M-SEARCH * HTTP/1.1", 19) == 0)
+                    || mmt_memcmp(packet->payload, "NOTIFY * HTTP/1.1", 17) == 0) {
 
 
                 MMT_LOG(PROTO_SSDP, MMT_LOG_DEBUG, "found ssdp.\n");
@@ -35,7 +35,7 @@ void mmt_classify_me_ssdp(ipacket_t * ipacket, unsigned index) {
                 return;
             }
 
-            if (memcmp(packet->payload, SSDP_HTTP, strlen(SSDP_HTTP)) == 0) {
+            if (mmt_memcmp(packet->payload, SSDP_HTTP, strlen(SSDP_HTTP)) == 0) {
                 MMT_LOG(PROTO_SSDP, MMT_LOG_DEBUG, "found ssdp.\n");
                 mmt_int_ssdp_add_connection(ipacket);
                 return;
@@ -60,14 +60,14 @@ int mmt_check_ssdp(ipacket_t * ipacket, unsigned index) {
         // LN: Not sure about the length > 100 - there is a case that the SSDP packet have the payload len less than 100.
         // -> Use 50 as a temporary value -> can be changed after if there is another case
         if (packet->payload_packet_len > 50) {
-            if ((memcmp(packet->payload, "M-SEARCH * HTTP/1.1", 19) == 0)
-                    || memcmp(packet->payload, "NOTIFY * HTTP/1.1", 17) == 0) {
+            if ((mmt_memcmp(packet->payload, "M-SEARCH * HTTP/1.1", 19) == 0)
+                    || mmt_memcmp(packet->payload, "NOTIFY * HTTP/1.1", 17) == 0) {
                 MMT_LOG(PROTO_SSDP, MMT_LOG_DEBUG, "found ssdp.\n");
                 mmt_int_ssdp_add_connection(ipacket);
                 return 1;
             }
 
-            if (memcmp(packet->payload, SSDP_HTTP, strlen(SSDP_HTTP)) == 0) {
+            if (mmt_memcmp(packet->payload, SSDP_HTTP, strlen(SSDP_HTTP)) == 0) {
                 MMT_LOG(PROTO_SSDP, MMT_LOG_DEBUG, "found ssdp.\n");
                 mmt_int_ssdp_add_connection(ipacket);
                 return 1;

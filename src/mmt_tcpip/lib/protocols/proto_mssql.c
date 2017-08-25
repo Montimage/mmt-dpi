@@ -34,7 +34,7 @@ void mmt_classify_me_mssql(ipacket_t * ipacket, unsigned index) {
 
     if (packet->payload_packet_len > 51 && ntohs(get_u32(packet->payload, 0)) == 0x1201
             && ntohs(get_u16(packet->payload, 2)) == packet->payload_packet_len
-            && ntohl(get_u32(packet->payload, 4)) == 0x00000100 && memcmp(&packet->payload[41], "sqlexpress", 10) == 0) {
+            && ntohl(get_u32(packet->payload, 4)) == 0x00000100 && mmt_memcmp(&packet->payload[41], "sqlexpress", 10) == 0) {
         MMT_LOG(PROTO_MSSQL, MMT_LOG_DEBUG, "found mssql.\n");
         mmt_int_mssql_add_connection(ipacket);
         return;
@@ -72,7 +72,7 @@ int mmt_check_mssql(ipacket_t * ipacket, unsigned index) {
             // end of LN: Detect PROTO_MSSQL            
             // if (packet->payload_packet_len > 51 && ntohs(get_u32(packet->payload, 0)) == 0x1201
             //         && ntohs(get_u16(packet->payload, 2)) == packet->payload_packet_len
-            //         && ntohl(get_u32(packet->payload, 4)) == 0x00000100 && memcmp(&packet->payload[41], "sqlexpress", 10) == 0) {
+            //         && ntohl(get_u32(packet->payload, 4)) == 0x00000100 && mmt_memcmp(&packet->payload[41], "sqlexpress", 10) == 0) {
             //     MMT_LOG(PROTO_MSSQL, MMT_LOG_DEBUG, "found mssql.\n");
             //     mmt_int_mssql_add_connection(ipacket);
             //     return 1;

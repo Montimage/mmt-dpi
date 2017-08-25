@@ -44,16 +44,16 @@ void mmt_classify_me_mgcp(ipacket_t * ipacket, unsigned index) {
             packet->payload[0] != 'R') {
         goto mgcp_excluded;
     }
-    if (memcmp(packet->payload, "AUEP ", 5) != 0 && memcmp(packet->payload, "AUCX ", 5) != 0 &&
-            memcmp(packet->payload, "CRCX ", 5) != 0 && memcmp(packet->payload, "DLCX ", 5) != 0 &&
-            memcmp(packet->payload, "EPCF ", 5) != 0 && memcmp(packet->payload, "MDCX ", 5) != 0 &&
-            memcmp(packet->payload, "NTFY ", 5) != 0 && memcmp(packet->payload, "RQNT ", 5) != 0 &&
-            memcmp(packet->payload, "RSIP ", 5) != 0) {
+    if (mmt_memcmp(packet->payload, "AUEP ", 5) != 0 && mmt_memcmp(packet->payload, "AUCX ", 5) != 0 &&
+            mmt_memcmp(packet->payload, "CRCX ", 5) != 0 && mmt_memcmp(packet->payload, "DLCX ", 5) != 0 &&
+            mmt_memcmp(packet->payload, "EPCF ", 5) != 0 && mmt_memcmp(packet->payload, "MDCX ", 5) != 0 &&
+            mmt_memcmp(packet->payload, "NTFY ", 5) != 0 && mmt_memcmp(packet->payload, "RQNT ", 5) != 0 &&
+            mmt_memcmp(packet->payload, "RSIP ", 5) != 0) {
         goto mgcp_excluded;
     }
     // now search for string "MGCP " in the rest of the message
     while ((pos + 5) < packet->payload_packet_len) {
-        if (memcmp(&packet->payload[pos], "MGCP ", 5) == 0) {
+        if (mmt_memcmp(&packet->payload[pos], "MGCP ", 5) == 0) {
             MMT_LOG(PROTO_MGCP, MMT_LOG_DEBUG, "MGCP match.\n");
             mmt_int_mgcp_add_connection(ipacket);
             return;
@@ -97,16 +97,16 @@ int mmt_check_mgcp(ipacket_t * ipacket, unsigned index) {
                 packet->payload[0] != 'R') {
             goto mgcp_excluded;
         }
-        if (memcmp(packet->payload, "AUEP ", 5) != 0 && memcmp(packet->payload, "AUCX ", 5) != 0 &&
-                memcmp(packet->payload, "CRCX ", 5) != 0 && memcmp(packet->payload, "DLCX ", 5) != 0 &&
-                memcmp(packet->payload, "EPCF ", 5) != 0 && memcmp(packet->payload, "MDCX ", 5) != 0 &&
-                memcmp(packet->payload, "NTFY ", 5) != 0 && memcmp(packet->payload, "RQNT ", 5) != 0 &&
-                memcmp(packet->payload, "RSIP ", 5) != 0) {
+        if (mmt_memcmp(packet->payload, "AUEP ", 5) != 0 && mmt_memcmp(packet->payload, "AUCX ", 5) != 0 &&
+                mmt_memcmp(packet->payload, "CRCX ", 5) != 0 && mmt_memcmp(packet->payload, "DLCX ", 5) != 0 &&
+                mmt_memcmp(packet->payload, "EPCF ", 5) != 0 && mmt_memcmp(packet->payload, "MDCX ", 5) != 0 &&
+                mmt_memcmp(packet->payload, "NTFY ", 5) != 0 && mmt_memcmp(packet->payload, "RQNT ", 5) != 0 &&
+                mmt_memcmp(packet->payload, "RSIP ", 5) != 0) {
             goto mgcp_excluded;
         }
         // now search for string "MGCP " in the rest of the message
         while ((pos + 5) < packet->payload_packet_len) {
-            if (memcmp(&packet->payload[pos], "MGCP ", 5) == 0) {
+            if (mmt_memcmp(&packet->payload[pos], "MGCP ", 5) == 0) {
                 MMT_LOG(PROTO_MGCP, MMT_LOG_DEBUG, "MGCP match.\n");
                 mmt_int_mgcp_add_connection(ipacket);
                 return 1;

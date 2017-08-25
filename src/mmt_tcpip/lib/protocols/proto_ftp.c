@@ -425,22 +425,22 @@ int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2) {
         if (t1->s_port != t2->s_port) return 0;
 
         if(t1->is_ipv6==1){
-            if(memcmp(t1->c_addr_v6,t2->c_addr_v6,32)!=0) return 0;
-            if(memcmp(t1->s_addr_v6,t2->s_addr_v6,32)!=0) return 0;
+            if(mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)!=0) return 0;
+            if(mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)!=0) return 0;
         }
 
         return 1;
     } else {
         if(t1->is_ipv6==1){
-            if (memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t1->c_port == t2->c_port && memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t1->s_port == t2->s_port) return 2;
-            if (memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && t1->c_port == t2->s_port && memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->s_port == t2->c_port) return 3; 
+            if (mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t1->c_port == t2->c_port && mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t1->s_port == t2->s_port) return 2;
+            if (mmt_memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && t1->c_port == t2->s_port && mmt_memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->s_port == t2->c_port) return 3; 
 
             // Extended passive mode - 229 and 227 code
-            if (memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t2->c_port == 0 && memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t1->s_port == t2->s_port) return 4;
-            if (memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && t2->c_port == 0 && memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->c_port == t2->s_port) return 5;
+            if (mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t2->c_port == 0 && mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t1->s_port == t2->s_port) return 4;
+            if (mmt_memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && t2->c_port == 0 && mmt_memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->c_port == t2->s_port) return 5;
             // Active mode - PORT and EPRT command
-            if (memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t2->c_port == t2->c_port && memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t2->s_port == 0) return 6;
-            if (memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->s_port == t2->c_port && t2->s_port == 0) return 7;
+            if (mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t2->c_port == t2->c_port && mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t2->s_port == 0) return 6;
+            if (mmt_memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && mmt_memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->s_port == t2->c_port && t2->s_port == 0) return 7;
         }
         if (t1->c_addr == t2->c_addr && t1->c_port == t2->c_port && t1->s_addr == t2->s_addr && t1->s_port == t2->s_port) return 2;
         if (t1->c_addr == t2->s_addr && t1->c_port == t2->s_port && t1->s_addr == t2->c_addr && t1->s_port == t2->c_port) return 3;
@@ -1333,15 +1333,15 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
 
     if (ipacket->session->last_packet_direction == flow->l4.tcp.ftp_client_direction) {
         if (packet->payload_packet_len > 5 &&
-                (memcmp(packet->payload, "USER ", 5) == 0 ||
-                 memcmp(packet->payload, "user ", 5) == 0)) {
+                (mmt_memcmp(packet->payload, "USER ", 5) == 0 ||
+                 mmt_memcmp(packet->payload, "user ", 5) == 0)) {
 
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found USER command\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_USER_CMD;
             current_ftp_code = FTP_USER_CMD;
         } else if (packet->payload_packet_len >= 4 &&
-                   (memcmp(packet->payload, "FEAT", 4) == 0 ||
-                    memcmp(packet->payload, "feat", 4) == 0)) {
+                   (mmt_memcmp(packet->payload, "FEAT", 4) == 0 ||
+                    mmt_memcmp(packet->payload, "feat", 4) == 0)) {
 
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found FEAT command\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_FEAT_CMD;
@@ -1362,22 +1362,22 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
         } 
     } else {
         if (packet->payload_packet_len > 4 &&
-                (memcmp(packet->payload, "220 ", 4) == 0 ||
-                 memcmp(packet->payload, "220-", 4) == 0)) {
+                (mmt_memcmp(packet->payload, "220 ", 4) == 0 ||
+                 mmt_memcmp(packet->payload, "220-", 4) == 0)) {
             debug("FTP: found 220 reply code\n");
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 220 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_220_CODE;
             current_ftp_code = FTP_220_CODE;
         } else if (packet->payload_packet_len > 4 &&
-                   (memcmp(packet->payload, "331 ", 4) == 0 ||
-                    memcmp(packet->payload, "331-", 4) == 0)) {
+                   (mmt_memcmp(packet->payload, "331 ", 4) == 0 ||
+                    mmt_memcmp(packet->payload, "331-", 4) == 0)) {
 
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 331 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_331_CODE;
             current_ftp_code = FTP_331_CODE;
         } else if (packet->payload_packet_len > 4 &&
-                   (memcmp(packet->payload, "211 ", 4) == 0 ||
-                    memcmp(packet->payload, "211-", 4) == 0)) {
+                   (mmt_memcmp(packet->payload, "211 ", 4) == 0 ||
+                    mmt_memcmp(packet->payload, "211-", 4) == 0)) {
 
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP: found 211 reply code\n");
             flow->l4.tcp.ftp_codes_seen |= FTP_211_CODE;

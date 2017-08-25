@@ -27,7 +27,7 @@ void mmt_classify_me_ppstream(ipacket_t * ipacket, unsigned index) {
     /* check TCP Connections -> Videodata */
     if (packet->tcp != NULL) {
         if (packet->payload_packet_len >= 60 && get_u32(packet->payload, 52) == 0
-                && memcmp(packet->payload, "PSProtocol\x0", 11) == 0) {
+                && mmt_memcmp(packet->payload, "PSProtocol\x0", 11) == 0) {
             MMT_LOG(PROTO_PPSTREAM, MMT_LOG_DEBUG, "found ppstream over tcp.\n");
             mmt_int_ppstream_add_connection(ipacket);
             return;
@@ -95,7 +95,7 @@ int mmt_check_ppstream_tcp(ipacket_t * ipacket, unsigned index) {
 
         /* check TCP Connections -> Videodata */
         if (packet->payload_packet_len >= 60 && get_u32(packet->payload, 52) == 0
-                && memcmp(packet->payload, "PSProtocol\x0", 11) == 0) {
+                && mmt_memcmp(packet->payload, "PSProtocol\x0", 11) == 0) {
             MMT_LOG(PROTO_PPSTREAM, MMT_LOG_DEBUG, "found ppstream over tcp.\n");
             mmt_int_ppstream_add_connection(ipacket);
             return 1;

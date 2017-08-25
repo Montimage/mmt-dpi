@@ -301,7 +301,7 @@ int mmt_match_prefix(const u_int8_t *payload, size_t payload_len,
               const char *str, size_t str_len)
 {
   return str_len <= payload_len
-    ? memcmp(payload, str, str_len) == 0
+    ? mmt_memcmp(payload, str, str_len) == 0
     : 0;
 }
 

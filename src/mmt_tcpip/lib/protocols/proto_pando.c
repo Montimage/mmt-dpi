@@ -20,7 +20,7 @@ static uint8_t search_pando(ipacket_t * ipacket)
 
 	if (packet->tcp != NULL) {
 
-		if (packet->payload_packet_len == 63 && memcmp(&packet->payload[1], "Pando protocol", 14) == 0) {
+		if (packet->payload_packet_len == 63 && mmt_memcmp(&packet->payload[1], "Pando protocol", 14) == 0) {
 			MMT_LOG(PROTO_PANDO, MMT_LOG_DEBUG, "Pando download detected\n");
 			goto end_pando_found;
 		}
@@ -33,11 +33,11 @@ static uint8_t search_pando(ipacket_t * ipacket)
 			&& packet->payload[2] == 0x00
 			&& packet->payload[3] == 0x09 && packet->payload[4] == 0x00 && packet->payload[5] == 0x00) {
 			// bypass the detection because one packet has at a specific place the word Pando in it
-			if (packet->payload_packet_len == 87 && memcmp(&packet->payload[25], "Pando protocol", 14) == 0) {
+			if (packet->payload_packet_len == 87 && mmt_memcmp(&packet->payload[25], "Pando protocol", 14) == 0) {
 				MMT_LOG(PROTO_PANDO, MMT_LOG_DEBUG,
 						"Pando UDP packet detected --> Pando in payload\n");
 				goto end_pando_found;
-			} else if (packet->payload_packet_len == 92 && memcmp(&packet->payload[72], "Pando", 5) == 0) {
+			} else if (packet->payload_packet_len == 92 && mmt_memcmp(&packet->payload[72], "Pando", 5) == 0) {
 				MMT_LOG(PROTO_PANDO, MMT_LOG_DEBUG,
 						"Pando UDP packet detected --> Pando in payload\n");
 				goto end_pando_found;

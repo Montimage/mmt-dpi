@@ -43,7 +43,7 @@ static uint8_t mmt_check_for_NOTICE_or_PRIVMSG(ipacket_t * ipacket) {
     uint8_t number_of_lines_to_be_searched_for = 0;
     for (i = 0; i < packet->payload_packet_len - 7; i++) {
         if (packet->payload[i] == 'N' || packet->payload[i] == 'P') {
-            if (memcmp(&packet->payload[i + 1], "OTICE ", 6) == 0 || memcmp(&packet->payload[i + 1], "RIVMSG ", 7) == 0) {
+            if (mmt_memcmp(&packet->payload[i + 1], "OTICE ", 6) == 0 || mmt_memcmp(&packet->payload[i + 1], "RIVMSG ", 7) == 0) {
                 MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "found NOTICE or PRIVMSG\n");
                 return 1;
             }
@@ -69,9 +69,9 @@ static uint8_t mmt_check_for_Nickname(ipacket_t * ipacket) {
 
     for (i = 0; i < (packetl - 4); i++) {
         if (packet->payload[i] == 'N' || packet->payload[i] == 'n') {
-            if ((((packetl - (i + 1)) >= 4) && memcmp(&packet->payload[i + 1], "ick=", 4) == 0)
-                    || (((packetl - (i + 1)) >= 8) && (memcmp(&packet->payload[i + 1], "ickname=", 8) == 0))
-                    || (((packetl - (i + 1)) >= 8) && (memcmp(&packet->payload[i + 1], "ickName=", 8) == 0))) {
+            if ((((packetl - (i + 1)) >= 4) && mmt_memcmp(&packet->payload[i + 1], "ick=", 4) == 0)
+                    || (((packetl - (i + 1)) >= 8) && (mmt_memcmp(&packet->payload[i + 1], "ickname=", 8) == 0))
+                    || (((packetl - (i + 1)) >= 8) && (mmt_memcmp(&packet->payload[i + 1], "ickName=", 8) == 0))) {
                 MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "found HTTP IRC Nickname pattern\n");
                 return 1;
             }
@@ -90,7 +90,7 @@ static uint8_t mmt_check_for_cmd(ipacket_t * ipacket) {
 
     for (i = 0; i < packet->payload_packet_len - 4; i++) {
         if (packet->payload[i] == 'c') {
-            if (memcmp(&packet->payload[i + 1], "md=", 3) == 0) {
+            if (mmt_memcmp(&packet->payload[i + 1], "md=", 3) == 0) {
                 MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "found HTTP IRC cmd pattern  \n");
                 return 1;
             }
@@ -108,7 +108,7 @@ static uint8_t mmt_check_for_IRC_traces(const uint8_t * ptr, uint16_t len) {
 
     for (i = 0; i < len - 4; i++) {
         if (ptr[i] == 'i') {
-            if (memcmp(&ptr[i + 1], "rc.", 3) == 0) {
+            if (mmt_memcmp(&ptr[i + 1], "rc.", 3) == 0) {
                 return 1;
             }
         }
@@ -424,22 +424,22 @@ void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
             && ipacket->session->data_packet_count == 2 && (packet->payload_packet_len > 400 && packet->payload_packet_len < 1381)) {
         for (c1 = 50; c1 < packet->payload_packet_len - 23; c1++) {
             if (packet->payload[c1] == 'i' || packet->payload[c1] == 'd') {
-                if ((memcmp(&packet->payload[c1], "irc.hackthissite.org0", 21)
+                if ((mmt_memcmp(&packet->payload[c1], "irc.hackthissite.org0", 21)
                         == 0)
-                        || (memcmp(&packet->payload[c1], "irc.gamepad.ca1", 15) == 0)
-                        || (memcmp(&packet->payload[c1], "dungeon.axenet.org0", 19)
+                        || (mmt_memcmp(&packet->payload[c1], "irc.gamepad.ca1", 15) == 0)
+                        || (mmt_memcmp(&packet->payload[c1], "dungeon.axenet.org0", 19)
                         == 0)
-                        || (memcmp(&packet->payload[c1], "dazed.nuggethaus.net", 20)
+                        || (mmt_memcmp(&packet->payload[c1], "dazed.nuggethaus.net", 20)
                         == 0)
-                        || (memcmp(&packet->payload[c1], "irc.indymedia.org", 17)
+                        || (mmt_memcmp(&packet->payload[c1], "irc.indymedia.org", 17)
                         == 0)
-                        || (memcmp(&packet->payload[c1], "irc.cccp-project.net", 20)
+                        || (mmt_memcmp(&packet->payload[c1], "irc.cccp-project.net", 20)
                         == 0)
-                        || (memcmp(&packet->payload[c1], "dirc.followell.net0", 19)
+                        || (mmt_memcmp(&packet->payload[c1], "dirc.followell.net0", 19)
                         == 0)
-                        || (memcmp(&packet->payload[c1], "irc.discostars.de1", 18)
+                        || (mmt_memcmp(&packet->payload[c1], "irc.discostars.de1", 18)
                         == 0)
-                        || (memcmp(&packet->payload[c1], "irc.rizon.net", 13) == 0)) {
+                        || (mmt_memcmp(&packet->payload[c1], "irc.rizon.net", 13) == 0)) {
                     MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
                             "IRC SSL detected with :- irc.hackthissite.org0 | irc.gamepad.ca1 | dungeon.axenet.org0 "
                             "| dazed.nuggethaus.net | irc.indymedia.org | irc.discostars.de1 ");
@@ -458,7 +458,7 @@ void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
             && packet->payload_packet_len >= 8) {
         if (get_u8(packet->payload, packet->payload_packet_len - 1) == 0x0a
                 || (ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0a00)) {
-            if (memcmp(packet->payload, ":", 1) == 0) {
+            if (mmt_memcmp(packet->payload, ":", 1) == 0) {
                 if (packet->payload[packet->payload_packet_len - 2] != 0x0d
                         && packet->payload[packet->payload_packet_len - 1] == 0x0a) {
                     mmt_parse_packet_line_info_unix(ipacket);
@@ -489,16 +489,16 @@ void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
                     goto detected_irc;
                 }
             }
-            if ((memcmp(packet->payload, "USER ", 5) == 0)
-                    || (memcmp(packet->payload, "NICK ", 5) == 0)
-                    || (memcmp(packet->payload, "PASS ", 5) == 0)
-                    || (memcmp(packet->payload, ":", 1) == 0 && mmt_check_for_NOTICE_or_PRIVMSG(ipacket) != 0)
-                    || (memcmp(packet->payload, "PONG ", 5) == 0)
-                    || (memcmp(packet->payload, "PING ", 5) == 0)
-                    || (memcmp(packet->payload, "JOIN ", 5) == 0)
-                    || (memcmp(packet->payload, "NOTICE ", 7) == 0)
-                    || (memcmp(packet->payload, "PRIVMSG ", 8) == 0)
-                    || (memcmp(packet->payload, "VERSION ", 8) == 0)) {
+            if ((mmt_memcmp(packet->payload, "USER ", 5) == 0)
+                    || (mmt_memcmp(packet->payload, "NICK ", 5) == 0)
+                    || (mmt_memcmp(packet->payload, "PASS ", 5) == 0)
+                    || (mmt_memcmp(packet->payload, ":", 1) == 0 && mmt_check_for_NOTICE_or_PRIVMSG(ipacket) != 0)
+                    || (mmt_memcmp(packet->payload, "PONG ", 5) == 0)
+                    || (mmt_memcmp(packet->payload, "PING ", 5) == 0)
+                    || (mmt_memcmp(packet->payload, "JOIN ", 5) == 0)
+                    || (mmt_memcmp(packet->payload, "NOTICE ", 7) == 0)
+                    || (mmt_memcmp(packet->payload, "PRIVMSG ", 8) == 0)
+                    || (mmt_memcmp(packet->payload, "VERSION ", 8) == 0)) {
                 MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
                         "USER, NICK, PASS, NOTICE, PRIVMSG one time");
                 if (flow->l4.tcp.irc_stage == 2) {
@@ -522,8 +522,8 @@ void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
                         MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
                                 "packet contains more than one line");
                         for (c = 1; c < packet->parsed_lines; c++) {
-                            if (packet->line[c].len > 4 && (memcmp(packet->line[c].ptr, "NICK ", 5) == 0
-                                    || memcmp(packet->line[c].ptr, "USER ", 5) == 0)) {
+                            if (packet->line[c].len > 4 && (mmt_memcmp(packet->line[c].ptr, "NICK ", 5) == 0
+                                    || mmt_memcmp(packet->line[c].ptr, "USER ", 5) == 0)) {
                                 MMT_LOG(PROTO_IRC, 
                                         MMT_LOG_TRACE, "two icq signal words in the same packet");
                                 mmt_int_irc_add_connection(ipacket);
@@ -539,8 +539,8 @@ void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
                         MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
                                 "packet contains more than one line");
                         for (c = 1; c < packet->parsed_unix_lines; c++) {
-                            if (packet->unix_line[c].len > 4 && (memcmp(packet->unix_line[c].ptr, "NICK ", 5) == 0
-                                    || memcmp(packet->unix_line[c].ptr, "USER ",
+                            if (packet->unix_line[c].len > 4 && (mmt_memcmp(packet->unix_line[c].ptr, "NICK ", 5) == 0
+                                    || mmt_memcmp(packet->unix_line[c].ptr, "USER ",
                                     5) == 0)) {
                                 MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
                                         "two icq signal words in the same packet");
@@ -563,7 +563,7 @@ void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
     if ((flow->detected_protocol_stack[0] != PROTO_IRC) && (flow->l4.tcp.irc_stage == 0)
             && (packet->payload_packet_len > 5)) {
         //HTTP POST Method being employed
-        if (memcmp(packet->payload, "POST ", 5) == 0) {
+        if (mmt_memcmp(packet->payload, "POST ", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->parsed_lines) {
                 uint16_t http_header_len = (packet->line[packet->parsed_lines - 1].ptr - packet->payload) + 2;
@@ -589,10 +589,10 @@ void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
 
     if ((flow->detected_protocol_stack[0] != PROTO_IRC) && (flow->l4.tcp.irc_stage == 1)) {
         if ((((packet->payload_packet_len - http_content_ptr_len) > 10)
-                && (memcmp(packet->payload + http_content_ptr_len, "interface=", 10) == 0)
+                && (mmt_memcmp(packet->payload + http_content_ptr_len, "interface=", 10) == 0)
                 && (mmt_check_for_Nickname(ipacket) != 0))
                 || (((packet->payload_packet_len - http_content_ptr_len) > 5)
-                && (memcmp(packet->payload + http_content_ptr_len, "item=", 5) == 0)
+                && (mmt_memcmp(packet->payload + http_content_ptr_len, "item=", 5) == 0)
                 && (mmt_check_for_cmd(ipacket) != 0))) {
             MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "IRC Nickname, cmd,  one time");
             mmt_int_irc_add_connection(ipacket);
@@ -621,12 +621,12 @@ detected_irc:
             return;
         }
         for (i = 0; i < packet->parsed_lines; i++) {
-            if (packet->line[i].len > 6 && memcmp(packet->line[i].ptr, "NOTICE ", 7) == 0) {
+            if (packet->line[i].len > 6 && mmt_memcmp(packet->line[i].ptr, "NOTICE ", 7) == 0) {
                 MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "NOTICE");
                 for (j = 7; j < packet->line[i].len - 8; j++) {
                     if (packet->line[i].ptr[j] == ':') {
-                        if (memcmp(&packet->line[i].ptr[j + 1], "DCC SEND ", 9) == 0
-                                || memcmp(&packet->line[i].ptr[j + 1], "DCC CHAT ", 9) == 0) {
+                        if (mmt_memcmp(&packet->line[i].ptr[j + 1], "DCC SEND ", 9) == 0
+                                || mmt_memcmp(&packet->line[i].ptr[j + 1], "DCC CHAT ", 9) == 0) {
                             MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
                                     "found NOTICE and DCC CHAT or DCC SEND.");
                         }
@@ -641,7 +641,7 @@ detected_irc:
                         if (packet->line[i].ptr[j] == 'P') {
                             MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "P");
                             j++;
-                            if (memcmp(&packet->line[i].ptr[j], "RIVMSG ", 7) == 0)
+                            if (mmt_memcmp(&packet->line[i].ptr[j], "RIVMSG ", 7) == 0)
                                 MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "RIVMSG");
                             h = j + 7;
                             goto read_privmsg;
@@ -649,24 +649,24 @@ detected_irc:
                     }
                 }
             }
-            if (packet->line[i].len > 7 && (memcmp(packet->line[i].ptr, "PRIVMSG ", 8) == 0)) {
+            if (packet->line[i].len > 7 && (mmt_memcmp(packet->line[i].ptr, "PRIVMSG ", 8) == 0)) {
                 MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG, "PRIVMSG	");
                 h = 7;
 read_privmsg:
                 for (j = h; j < packet->line[i].len - 9; j++) {
                     if (packet->line[i].ptr[j] == ':') {
-                        if (memcmp(&packet->line[i].ptr[j + 1], "xdcc ", 5) == 0) {
+                        if (mmt_memcmp(&packet->line[i].ptr[j + 1], "xdcc ", 5) == 0) {
                             MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "xdcc should match.");
                         }
                         j += 2;
-                        if (memcmp(&packet->line[i].ptr[j], "DCC ", 4) == 0) {
+                        if (mmt_memcmp(&packet->line[i].ptr[j], "DCC ", 4) == 0) {
                             j += 4;
                             MMT_LOG(PROTO_IRC, MMT_LOG_TRACE, "found DCC.");
-                            if (memcmp(&packet->line[i].ptr[j], "SEND ", 5) == 0
-                                    || (memcmp(&packet->line[i].ptr[j], "CHAT", 4) == 0)
-                                    || (memcmp(&packet->line[i].ptr[j], "chat", 4) == 0)
-                                    || (memcmp(&packet->line[i].ptr[j], "sslchat", 7) == 0)
-                                    || (memcmp(&packet->line[i].ptr[j], "TSEND", 5) == 0)) {
+                            if (mmt_memcmp(&packet->line[i].ptr[j], "SEND ", 5) == 0
+                                    || (mmt_memcmp(&packet->line[i].ptr[j], "CHAT", 4) == 0)
+                                    || (mmt_memcmp(&packet->line[i].ptr[j], "chat", 4) == 0)
+                                    || (mmt_memcmp(&packet->line[i].ptr[j], "sslchat", 7) == 0)
+                                    || (mmt_memcmp(&packet->line[i].ptr[j], "TSEND", 5) == 0)) {
                                 MMT_LOG(PROTO_IRC, MMT_LOG_TRACE,
                                         "found CHAT,chat,sslchat,TSEND.");
                                 j += 4;

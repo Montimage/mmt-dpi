@@ -33,20 +33,20 @@ void mmt_classify_me_quake(ipacket_t * ipacket, unsigned index) {
 
     /* Quake III/Quake Live */
     if (packet->payload_packet_len == 15 && get_u32(packet->payload, 0) == 0xffffffff
-            && memcmp(&packet->payload[4], "getinfo", 7) == 0) {
+            && mmt_memcmp(&packet->payload[4], "getinfo", 7) == 0) {
         MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
         mmt_int_quake_add_connection(ipacket);
         return;
     }
     if (packet->payload_packet_len == 16 && get_u32(packet->payload, 0) == 0xffffffff
-            && memcmp(&packet->payload[4], "getchallenge", 12) == 0) {
+            && mmt_memcmp(&packet->payload[4], "getchallenge", 12) == 0) {
         MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
         mmt_int_quake_add_connection(ipacket);
         return;
     }
     if (packet->payload_packet_len > 20 && packet->payload_packet_len < 30
             && get_u32(packet->payload, 0) == 0xffffffff
-            && memcmp(&packet->payload[4], "getservers", 10) == 0) {
+            && mmt_memcmp(&packet->payload[4], "getservers", 10) == 0) {
         MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
         mmt_int_quake_add_connection(ipacket);
         return;
@@ -90,20 +90,20 @@ int mmt_check_quake(ipacket_t * ipacket, unsigned index) {
 
         /* Quake III/Quake Live */
         if (packet->payload_packet_len == 15 && get_u32(packet->payload, 0) == 0xffffffff
-                && memcmp(&packet->payload[4], "getinfo", 7) == 0) {
+                && mmt_memcmp(&packet->payload[4], "getinfo", 7) == 0) {
             MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
             mmt_int_quake_add_connection(ipacket);
             return 1;
         }
         if (packet->payload_packet_len == 16 && get_u32(packet->payload, 0) == 0xffffffff
-                && memcmp(&packet->payload[4], "getchallenge", 12) == 0) {
+                && mmt_memcmp(&packet->payload[4], "getchallenge", 12) == 0) {
             MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
             mmt_int_quake_add_connection(ipacket);
             return 1;
         }
         if (packet->payload_packet_len > 20 && packet->payload_packet_len < 30
                 && get_u32(packet->payload, 0) == 0xffffffff
-                && memcmp(&packet->payload[4], "getservers", 10) == 0) {
+                && mmt_memcmp(&packet->payload[4], "getservers", 10) == 0) {
             MMT_LOG(PROTO_QUAKE, MMT_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
             mmt_int_quake_add_connection(ipacket);
             return 1;

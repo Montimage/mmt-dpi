@@ -33,8 +33,8 @@ void mmt_classify_me_tvants(ipacket_t * ipacket, unsigned index) {
             || packet->payload[2] == 0x07) && packet->payload[3] == 0x00
             && packet->payload_packet_len == (packet->payload[5] << 8) + packet->payload[4]
             && packet->payload[6] == 0x00 && packet->payload[7] == 0x00
-            && (memcmp(&packet->payload[48], "TVANTS", 6) == 0
-            || memcmp(&packet->payload[49], "TVANTS", 6) == 0 || memcmp(&packet->payload[51], "TVANTS", 6) == 0)) {
+            && (mmt_memcmp(&packet->payload[48], "TVANTS", 6) == 0
+            || mmt_memcmp(&packet->payload[49], "TVANTS", 6) == 0 || mmt_memcmp(&packet->payload[51], "TVANTS", 6) == 0)) {
 
         MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "found tvants over udp.  \n");
         mmt_int_tvants_add_connection(ipacket);
@@ -44,7 +44,7 @@ void mmt_classify_me_tvants(ipacket_t * ipacket, unsigned index) {
             && packet->payload[2] == 0x07 && packet->payload[3] == 0x00
             && packet->payload_packet_len == (packet->payload[5] << 8) + packet->payload[4]
             && packet->payload[6] == 0x00 && packet->payload[7] == 0x00
-            && memcmp(&packet->payload[8], "TVANTS", 6) == 0) {
+            && mmt_memcmp(&packet->payload[8], "TVANTS", 6) == 0) {
 
         MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "found tvants over tcp.  \n");
         mmt_int_tvants_add_connection(ipacket);
@@ -71,7 +71,7 @@ int mmt_check_tvants_tcp(ipacket_t * ipacket, unsigned index) {
                 && packet->payload[2] == 0x07 && packet->payload[3] == 0x00
                 && packet->payload_packet_len == (packet->payload[5] << 8) + packet->payload[4]
                 && packet->payload[6] == 0x00 && packet->payload[7] == 0x00
-                && memcmp(&packet->payload[8], "TVANTS", 6) == 0) {
+                && mmt_memcmp(&packet->payload[8], "TVANTS", 6) == 0) {
 
             MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "found tvants over tcp.  \n");
             mmt_int_tvants_add_connection(ipacket);
@@ -101,8 +101,8 @@ int mmt_check_tvants_udp(ipacket_t * ipacket, unsigned index) {
                 || packet->payload[2] == 0x07) && packet->payload[3] == 0x00
                 && packet->payload_packet_len == (packet->payload[5] << 8) + packet->payload[4]
                 && packet->payload[6] == 0x00 && packet->payload[7] == 0x00
-                && (memcmp(&packet->payload[48], "TVANTS", 6) == 0
-                || memcmp(&packet->payload[49], "TVANTS", 6) == 0 || memcmp(&packet->payload[51], "TVANTS", 6) == 0)) {
+                && (mmt_memcmp(&packet->payload[48], "TVANTS", 6) == 0
+                || mmt_memcmp(&packet->payload[49], "TVANTS", 6) == 0 || mmt_memcmp(&packet->payload[51], "TVANTS", 6) == 0)) {
 
             MMT_LOG(PROTO_TVANTS, MMT_LOG_DEBUG, "found tvants over udp.  \n");
             mmt_int_tvants_add_connection(ipacket);

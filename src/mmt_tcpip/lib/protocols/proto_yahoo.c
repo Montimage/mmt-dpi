@@ -32,7 +32,7 @@ static uint8_t ipq_check_for_YmsgCommand(uint16_t len, const uint8_t * ptr) {
 
     for (i = 0; i < len - 12; i++) {
         if (ptr[i] == 'Y') {
-            if (memcmp(&ptr[i + 1], "msg Command=", 12) == 0) {
+            if (mmt_memcmp(&ptr[i + 1], "msg Command=", 12) == 0) {
                 return 1;
             }
         }
@@ -60,7 +60,7 @@ static uint8_t check_ymsg(const uint8_t * payload, uint16_t payload_packet_len) 
             break;
 
         yahoo = (struct mmt_yahoo_header *) (payload + yahoo_len_parsed);
-    } while (memcmp(yahoo->YMSG_str, "YMSG", 4) == 0);
+    } while (mmt_memcmp(yahoo->YMSG_str, "YMSG", 4) == 0);
 
     if (yahoo_len_parsed == payload_packet_len)
         return 1;
@@ -82,7 +82,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
 
     /* packet must be at least 20 bytes long */
     if (packet->payload_packet_len >= 20
-            && memcmp(yahoo->YMSG_str, "YMSG", 4) == 0 && ((packet->payload_packet_len - 20) == ntohs(yahoo->len)
+            && mmt_memcmp(yahoo->YMSG_str, "YMSG", 4) == 0 && ((packet->payload_packet_len - 20) == ntohs(yahoo->len)
             || check_ymsg(packet->payload, packet->payload_packet_len))) {
         MMT_LOG(PROTO_YAHOO, MMT_LOG_TRACE, "YAHOO FOUND\n");
         flow->yahoo_detection_finished = 2;
@@ -107,7 +107,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
         return;
     } else if (flow->yahoo_detection_finished == 2 && packet->detected_protocol_stack[0] == PROTO_YAHOO) {
         return;
-    } else if (packet->payload_packet_len == 4 && memcmp(yahoo->YMSG_str, "YMSG", 4) == 0) {
+    } else if (packet->payload_packet_len == 4 && mmt_memcmp(yahoo->YMSG_str, "YMSG", 4) == 0) {
         flow->l4.tcp.yahoo_sip_comm = 1;
         return;
     } else if (flow->l4.tcp.yahoo_sip_comm && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
@@ -117,10 +117,10 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
 
     /* now test for http login, at least 100 a bytes packet */
     if (yahoo_detect_http_connections != 0 && packet->payload_packet_len > 100) {
-        if (memcmp(packet->payload, "POST /relay?token=", 18) == 0
-                || memcmp(packet->payload, "GET /relay?token=", 17) == 0
-                || memcmp(packet->payload, "GET /?token=", 12) == 0
-                || memcmp(packet->payload, "HEAD /relay?token=", 18) == 0) {
+        if (mmt_memcmp(packet->payload, "POST /relay?token=", 18) == 0
+                || mmt_memcmp(packet->payload, "GET /relay?token=", 17) == 0
+                || mmt_memcmp(packet->payload, "GET /?token=", 12) == 0
+                || mmt_memcmp(packet->payload, "HEAD /relay?token=", 18) == 0) {
             if ((src != NULL
                     && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_YAHOO)
                     != 0) || (dst != NULL
@@ -132,12 +132,12 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
                 return;
             }
         }
-        if (memcmp(packet->payload, "POST ", 5) == 0) {
+        if (mmt_memcmp(packet->payload, "POST ", 5) == 0) {
             uint16_t a;
             mmt_parse_packet_line_info(ipacket);
 
             if ((packet->user_agent_line.len >= 21)
-                    && (memcmp(packet->user_agent_line.ptr, "YahooMobileMessenger/", 21) == 0)) {
+                    && (mmt_memcmp(packet->user_agent_line.ptr, "YahooMobileMessenger/", 21) == 0)) {
                 MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "found YAHOO(Mobile)");
                 mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
@@ -145,7 +145,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
 
             if (MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_YAHOO)
                     && packet->parsed_lines > 5
-                    && memcmp(&packet->payload[5], "/Messenger.", 11) == 0
+                    && mmt_memcmp(&packet->payload[5], "/Messenger.", 11) == 0
                     && packet->line[1].len >= 17
                     && mmt_mem_cmp(packet->line[1].ptr, "Connection: Close",
                     17) == 0 && packet->line[2].len >= 6
@@ -182,7 +182,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
                 }
             }
             if (packet->parsed_lines > 8 && packet->line[8].len > 250 && packet->line[8].ptr != NULL) {
-                if (memcmp(packet->line[8].ptr, "<Session ", 9) == 0) {
+                if (mmt_memcmp(packet->line[8].ptr, "<Session ", 9) == 0) {
                     if (ipq_check_for_YmsgCommand(packet->line[8].len, packet->line[8].ptr)) {
                         MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG,
                                 "found HTTP Proxy Yahoo Chat <Ymsg Command= pattern  \n");
@@ -192,7 +192,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
                 }
             }
         }
-        if (memcmp(packet->payload, "GET /Messenger.", 15) == 0) {
+        if (mmt_memcmp(packet->payload, "GET /Messenger.", 15) == 0) {
             if ((src != NULL
                     && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_YAHOO)
                     != 0) || (dst != NULL
@@ -205,20 +205,20 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
             }
         }
 
-        if ((memcmp(packet->payload, "GET /", 5) == 0)) {
+        if ((mmt_memcmp(packet->payload, "GET /", 5) == 0)) {
             mmt_parse_packet_line_info(ipacket);
             if ((packet->user_agent_line.ptr != NULL
                     && packet->user_agent_line.len >= 21
-                    && memcmp(packet->user_agent_line.ptr, "YahooMobileMessenger/",
+                    && mmt_memcmp(packet->user_agent_line.ptr, "YahooMobileMessenger/",
                     21) == 0)
                     || (packet->user_agent_line.len >= 15
-                    && (memcmp(packet->user_agent_line.ptr, "Y!%20Messenger/", 15) == 0))) {
+                    && (mmt_memcmp(packet->user_agent_line.ptr, "Y!%20Messenger/", 15) == 0))) {
                 MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "found YAHOO(Mobile)");
                 mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
             if (packet->host_line.ptr != NULL && packet->host_line.len >= 13 &&
-                    memcmp(&packet->host_line.ptr[packet->host_line.len - 13],
+                    mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 13],
                     "msg.yahoo.com", 13) == 0) {
                 MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "found YAHOO");
                 mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -231,11 +231,11 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
     /* found another http login command for yahoo, it is like OSCAR */
     /* detect http connections */
 
-    if (packet->payload_packet_len > 50 && (memcmp(packet->payload, "content-length: ", 16) == 0)) {
+    if (packet->payload_packet_len > 50 && (mmt_memcmp(packet->payload, "content-length: ", 16) == 0)) {
         mmt_parse_packet_line_info(ipacket);
         if (packet->parsed_lines > 2 && packet->line[1].len == 0) {
             MMT_LOG(PROTO_YAHOO, MMT_LOG_TRACE, "first line is empty.\n");
-            if (packet->line[2].len > 13 && memcmp(packet->line[2].ptr, "<Ymsg Command=", 14) == 0) {
+            if (packet->line[2].len > 13 && mmt_memcmp(packet->line[2].ptr, "<Ymsg Command=", 14) == 0) {
                 MMT_LOG(PROTO_YAHOO, MMT_LOG_TRACE, "YAHOO web chat found\n");
                 mmt_int_yahoo_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
@@ -243,7 +243,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
         }
     }
 
-    if (packet->payload_packet_len > 38 && memcmp(packet->payload, "CONNECT scs.msg.yahoo.com:5050 HTTP/1.", 38) == 0) {
+    if (packet->payload_packet_len > 38 && mmt_memcmp(packet->payload, "CONNECT scs.msg.yahoo.com:5050 HTTP/1.", 38) == 0) {
         MMT_LOG(PROTO_YAHOO, MMT_LOG_TRACE, "YAHOO-HTTP FOUND\n");
         MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "found YAHOO");
         mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -253,7 +253,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
     if ((src != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_YAHOO) != 0)
             || (dst != NULL
             && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, PROTO_YAHOO) != 0)) {
-        if (packet->payload_packet_len == 6 && memcmp(packet->payload, "YAHOO!", 6) == 0) {
+        if (packet->payload_packet_len == 6 && mmt_memcmp(packet->payload, "YAHOO!", 6) == 0) {
             MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "found YAHOO");
             mmt_int_yahoo_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
@@ -263,12 +263,12 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
 
 
         if (packet->payload_packet_len == 8
-                && (memcmp(packet->payload, "<SNDIMG>", 8) == 0 || memcmp(packet->payload, "<REQIMG>", 8) == 0
-                || memcmp(packet->payload, "<RVWCFG>", 8) == 0 || memcmp(packet->payload, "<RUPCFG>", 8) == 0)) {
+                && (mmt_memcmp(packet->payload, "<SNDIMG>", 8) == 0 || mmt_memcmp(packet->payload, "<REQIMG>", 8) == 0
+                || mmt_memcmp(packet->payload, "<RVWCFG>", 8) == 0 || mmt_memcmp(packet->payload, "<RUPCFG>", 8) == 0)) {
             MMT_LOG(PROTO_YAHOO, MMT_LOG_TRACE,
                     "YAHOO SNDIMG or REQIMG or RVWCFG or RUPCFG FOUND\n");
             if (src != NULL) {
-                if (memcmp(packet->payload, "<SNDIMG>", 8) == 0) {
+                if (mmt_memcmp(packet->payload, "<SNDIMG>", 8) == 0) {
                     src->yahoo_video_lan_dir = 0;
                 } else {
                     src->yahoo_video_lan_dir = 1;
@@ -276,7 +276,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
                 src->yahoo_video_lan_timer = packet->tick_timestamp;
             }
             if (dst != NULL) {
-                if (memcmp(packet->payload, "<SNDIMG>", 8) == 0) {
+                if (mmt_memcmp(packet->payload, "<SNDIMG>", 8) == 0) {
                     dst->yahoo_video_lan_dir = 0;
                 } else {
                     dst->yahoo_video_lan_dir = 1;
@@ -325,7 +325,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
             return;
         }
         if (flow->l4.tcp.yahoo_http_proxy_stage == 1 + ipacket->session->last_packet_direction) {
-            if ((packet->payload_packet_len > 250) && (memcmp(packet->payload, "<Session ", 9) == 0)) {
+            if ((packet->payload_packet_len > 250) && (mmt_memcmp(packet->payload, "<Session ", 9) == 0)) {
                 if (ipq_check_for_YmsgCommand(packet->payload_packet_len, packet->payload)) {
                     MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG,
                             "found HTTP Proxy Yahoo Chat <Ymsg Command= pattern  \n");
@@ -345,8 +345,8 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
 
                 if (packet->unix_line[4].ptr != NULL && packet->unix_line[4].len >= 9 &&
                         packet->unix_line[8].ptr != NULL && packet->unix_line[8].len >= 6 &&
-                        memcmp(packet->unix_line[4].ptr, "<Session ", 9) == 0 &&
-                        memcmp(packet->unix_line[8].ptr, "<Ymsg ", 6) == 0) {
+                        mmt_memcmp(packet->unix_line[4].ptr, "<Session ", 9) == 0 &&
+                        mmt_memcmp(packet->unix_line[8].ptr, "<Ymsg ", 6) == 0) {
 
                     MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "found YAHOO over HTTP proxy");
                     mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);

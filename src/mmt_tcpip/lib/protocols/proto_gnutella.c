@@ -85,27 +85,27 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
     }
     if (packet->tcp != NULL) {
         /* this case works asymmetrically */
-        if (packet->payload_packet_len > 10 && memcmp(packet->payload, "GNUTELLA/", 9) == 0) {
+        if (packet->payload_packet_len > 10 && mmt_memcmp(packet->payload, "GNUTELLA/", 9) == 0) {
             MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_TRACE, "GNUTELLA DETECTED\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
         /* this case works asymmetrically */
-        if (packet->payload_packet_len > 17 && memcmp(packet->payload, "GNUTELLA CONNECT/", 17) == 0) {
+        if (packet->payload_packet_len > 17 && mmt_memcmp(packet->payload, "GNUTELLA CONNECT/", 17) == 0) {
             MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_TRACE, "GNUTELLA DETECTED\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
 
-        if (packet->payload_packet_len > 50 && ((memcmp(packet->payload, "GET /get/", 9) == 0)
-                || (memcmp(packet->payload, "GET /uri-res/", 13) == 0)
+        if (packet->payload_packet_len > 50 && ((mmt_memcmp(packet->payload, "GET /get/", 9) == 0)
+                || (mmt_memcmp(packet->payload, "GET /uri-res/", 13) == 0)
                 )) {
             mmt_parse_packet_line_info(ipacket);
             for (c = 0; c < packet->parsed_lines; c++) {
-                if ((packet->line[c].len > 19 && memcmp(packet->line[c].ptr, "User-Agent: Gnutella", 20) == 0)
-                        || (packet->line[c].len > 10 && memcmp(packet->line[c].ptr, "X-Gnutella-", 11) == 0)
-                        || (packet->line[c].len > 7 && memcmp(packet->line[c].ptr, "X-Queue:", 8) == 0)
-                        || (packet->line[c].len > 36 && memcmp(packet->line[c].ptr,
+                if ((packet->line[c].len > 19 && mmt_memcmp(packet->line[c].ptr, "User-Agent: Gnutella", 20) == 0)
+                        || (packet->line[c].len > 10 && mmt_memcmp(packet->line[c].ptr, "X-Gnutella-", 11) == 0)
+                        || (packet->line[c].len > 7 && mmt_memcmp(packet->line[c].ptr, "X-Queue:", 8) == 0)
+                        || (packet->line[c].len > 36 && mmt_memcmp(packet->line[c].ptr,
                         "Content-Type: application/x-gnutella-", 37) == 0)) {
                     MMT_LOG(PROTO_GNUTELLA, MMT_LOG_DEBUG, "DETECTED GNUTELLA GET.\n");
                     mmt_int_gnutella_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -113,20 +113,20 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
                 }
             }
         }
-        if (packet->payload_packet_len > 50 && ((memcmp(packet->payload, "GET / HTTP", 9) == 0))) {
+        if (packet->payload_packet_len > 50 && ((mmt_memcmp(packet->payload, "GET / HTTP", 9) == 0))) {
             mmt_parse_packet_line_info(ipacket);
             if ((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > 15
-                    && memcmp(packet->user_agent_line.ptr, "BearShare Lite ", 15) == 0)
+                    && mmt_memcmp(packet->user_agent_line.ptr, "BearShare Lite ", 15) == 0)
                     || (packet->accept_line.ptr != NULL && packet->accept_line.len > 24
-                    && memcmp(packet->accept_line.ptr, "application n/x-gnutella", 24) == 0)) {
+                    && mmt_memcmp(packet->accept_line.ptr, "application n/x-gnutella", 24) == 0)) {
                 MMT_LOG(PROTO_GNUTELLA, MMT_LOG_DEBUG, "DETECTED GNUTELLA GET.\n");
                 mmt_int_gnutella_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             }
 
         }
         /* haven't found this pattern in any trace. */
-        if (packet->payload_packet_len > 50 && ((memcmp(packet->payload, "GET /get/", 9) == 0)
-                || (memcmp(packet->payload, "GET /uri-res/", 13) == 0))) {
+        if (packet->payload_packet_len > 50 && ((mmt_memcmp(packet->payload, "GET /get/", 9) == 0)
+                || (mmt_memcmp(packet->payload, "GET /uri-res/", 13) == 0))) {
             c = 8;
             while (c < (packet->payload_packet_len - 9)) {
                 if (packet->payload[c] == '?')
@@ -134,7 +134,7 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
                 c++;
             }
 
-            if (c < (packet->payload_packet_len - 9) && memcmp(&packet->payload[c], "urn:sha1:", 9) == 0) {
+            if (c < (packet->payload_packet_len - 9) && mmt_memcmp(&packet->payload[c], "urn:sha1:", 9) == 0) {
                 MMT_LOG(PROTO_GNUTELLA, MMT_LOG_TRACE,
                         "detected GET /get/ or GET /uri-res/.\n");
                 mmt_int_gnutella_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -144,34 +144,34 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
 
         /* answer to this packet is HTTP/1.1 ..... Content-Type: application/x-gnutella-packets,
          * it is searched in the upper paragraph. */
-        if (packet->payload_packet_len > 30 && memcmp(packet->payload, "HEAD /gnutella/push-proxy?", 26) == 0) {
+        if (packet->payload_packet_len > 30 && mmt_memcmp(packet->payload, "HEAD /gnutella/push-proxy?", 26) == 0) {
             MMT_LOG(PROTO_GNUTELLA, MMT_LOG_TRACE, "detected HEAD /gnutella/push-proxy?\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
         }
         /* haven't found any trace with this pattern */
         if (packet->payload_packet_len == 46
-                && memcmp(packet->payload, "\x50\x55\x53\x48\x20\x67\x75\x69\x64\x3a", 10) == 0) {
+                && mmt_memcmp(packet->payload, "\x50\x55\x53\x48\x20\x67\x75\x69\x64\x3a", 10) == 0) {
             MMT_LOG(PROTO_GNUTELLA, MMT_LOG_TRACE,
                     "detected \x50\x55\x53\x48\x20\x67\x75\x69\x64\x3a\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
         /* haven't found any trace with this pattern */
-        if (packet->payload_packet_len > 250 && memcmp(packet->payload, "GET /gnutella/", 14) == 0)
+        if (packet->payload_packet_len > 250 && mmt_memcmp(packet->payload, "GET /gnutella/", 14) == 0)
             //PATTERN IS :: GET /gnutella/tigertree/v3?urn:tree:tiger/:
         {
             const uint16_t end = packet->payload_packet_len - 3;
 
             c = 13;
             while (c < end) {
-                if ((memcmp(&packet->payload[14], "tigertree/", 10) == 0)
-                        || (end - c > 18 && memcmp(&packet->payload[c], "\r\nUser-Agent: Foxy", 18) == 0)
+                if ((mmt_memcmp(&packet->payload[14], "tigertree/", 10) == 0)
+                        || (end - c > 18 && mmt_memcmp(&packet->payload[c], "\r\nUser-Agent: Foxy", 18) == 0)
                         || (end - c > 44
-                        && memcmp(&packet->payload[c],
+                        && mmt_memcmp(&packet->payload[c],
                         "\r\nAccept: application/tigertree-breadthfirst",
-                        44) == 0) || (end - c > 10 && memcmp(&packet->payload[c], "\r\nX-Queue:", 10) == 0)
-                        || (end - c > 13 && memcmp(&packet->payload[c], "\r\nX-Features:", 13) == 0)) {
+                        44) == 0) || (end - c > 10 && mmt_memcmp(&packet->payload[c], "\r\nX-Queue:", 10) == 0)
+                        || (end - c > 13 && mmt_memcmp(&packet->payload[c], "\r\nX-Features:", 13) == 0)) {
 
                     MMT_LOG_GNUTELLA(PROTO_GNUTELLA,
                             MMT_LOG_TRACE, "FOXY :: GNUTELLA GET 2 DETECTED\n");
@@ -185,7 +185,7 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
         /* haven't found any trace with this pattern */
         if (packet->payload_packet_len > 1 && packet->payload[packet->payload_packet_len - 1] == 0x0a
                 && packet->payload[packet->payload_packet_len - 2] == 0x0a) {
-            if (packet->payload_packet_len > 3 && memcmp(packet->payload, "GIV", 3) == 0) {
+            if (packet->payload_packet_len > 3 && mmt_memcmp(packet->payload, "GIV", 3) == 0) {
                 MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_TRACE, "MORPHEUS GIV DETECTED\n");
                 /* Not Excludeing the flow now.. We shall Check the next Packet too for Gnutella Patterns */
                 return;
@@ -200,15 +200,15 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
             return;
         }
         if (packet->payload_packet_len == 49 &&
-                memcmp(packet->payload, "\x80\x2f\x01\x03\x01\x00\x06\x00\x00\x00\x20\x00\x00\x34\x00\x00\xff\x4d\x6c",
+                mmt_memcmp(packet->payload, "\x80\x2f\x01\x03\x01\x00\x06\x00\x00\x00\x20\x00\x00\x34\x00\x00\xff\x4d\x6c",
                 19) == 0) {
             MMT_LOG(PROTO_GNUTELLA, MMT_LOG_TRACE, "detected gnutella len == 49.\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
-        if (packet->payload_packet_len == 89 && memcmp(&packet->payload[43], "\x20\x4d\x6c", 3) == 0 &&
-                memcmp(packet->payload, "\x16\x03\x01\x00\x54\x01\x00\x00\x50\x03\x01\x4d\x6c", 13) == 0 &&
-                memcmp(&packet->payload[76], "\x00\x02\x00\x34\x01\x00\x00\x05", 8) == 0) {
+        if (packet->payload_packet_len == 89 && mmt_memcmp(&packet->payload[43], "\x20\x4d\x6c", 3) == 0 &&
+                mmt_memcmp(packet->payload, "\x16\x03\x01\x00\x54\x01\x00\x00\x50\x03\x01\x4d\x6c", 13) == 0 &&
+                mmt_memcmp(&packet->payload[76], "\x00\x02\x00\x34\x01\x00\x00\x05", 8) == 0) {
             MMT_LOG(PROTO_GNUTELLA, MMT_LOG_TRACE,
                     "detected gnutella asymmetrically len == 388.\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
@@ -257,39 +257,39 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
             return;
         }
         if (packet->payload_packet_len == 32
-                && (memcmp(&packet->payload[16], "\x31\x01\x00\x09\x00\x00\x00\x4c\x49\x4d\x45", 11) == 0)) {
+                && (mmt_memcmp(&packet->payload[16], "\x31\x01\x00\x09\x00\x00\x00\x4c\x49\x4d\x45", 11) == 0)) {
             MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_DEBUG,
                     "detected gnutella udp, len = 32.\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
-        if (packet->payload_packet_len == 34 && (memcmp(&packet->payload[25], "SCP@", 4) == 0)
-                && (memcmp(&packet->payload[30], "DNA@", 4) == 0)) {
+        if (packet->payload_packet_len == 34 && (mmt_memcmp(&packet->payload[25], "SCP@", 4) == 0)
+                && (mmt_memcmp(&packet->payload[30], "DNA@", 4) == 0)) {
             MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_DEBUG,
                     "detected gnutella udp, len = 34.\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
         if ((packet->payload_packet_len == 73 || packet->payload_packet_len == 96)
-                && memcmp(&packet->payload[32], "urn:sha1:", 9) == 0) {
+                && mmt_memcmp(&packet->payload[32], "urn:sha1:", 9) == 0) {
             MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_DEBUG,
                     "detected gnutella udp, len = 73,96.\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
 
-        if (memcmp(packet->payload, "GND", 3) == 0) {
-            if ((packet->payload_packet_len == 8 && (memcmp(&packet->payload[6], "\x01\x00", 2) == 0))
-                    || (packet->payload_packet_len == 11 && (memcmp(&packet->payload[6], "\x01\x01\x08\x50\x49", 5)
+        if (mmt_memcmp(packet->payload, "GND", 3) == 0) {
+            if ((packet->payload_packet_len == 8 && (mmt_memcmp(&packet->payload[6], "\x01\x00", 2) == 0))
+                    || (packet->payload_packet_len == 11 && (mmt_memcmp(&packet->payload[6], "\x01\x01\x08\x50\x49", 5)
                     == 0)) || (packet->payload_packet_len == 17
                     &&
-                    (memcmp
+                    (mmt_memcmp
                     (&packet->payload[6], "\x01\x01\x4c\x05\x50",
                     5) == 0))
                     || (packet->payload_packet_len == 28
-                    && (memcmp(&packet->payload[6], "\x01\x01\x54\x0f\x51\x4b\x52\x50\x06\x52", 10) == 0))
+                    && (mmt_memcmp(&packet->payload[6], "\x01\x01\x54\x0f\x51\x4b\x52\x50\x06\x52", 10) == 0))
                     || (packet->payload_packet_len == 41
-                    && (memcmp(&packet->payload[6], "\x01\x01\x5c\x1b\x50\x55\x53\x48\x48\x10", 10) == 0))
+                    && (mmt_memcmp(&packet->payload[6], "\x01\x01\x5c\x1b\x50\x55\x53\x48\x48\x10", 10) == 0))
                     || (packet->payload_packet_len > 200 && packet->payload_packet_len < 300 && packet->payload[3] == 0x03)
                     || (packet->payload_packet_len > 300 && (packet->payload[3] == 0x01 || packet->payload[3] == 0x03))) {
                 MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_DEBUG,
@@ -300,14 +300,14 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
         }
 
         if ((packet->payload_packet_len == 32)
-                && memcmp(&packet->payload[16], "\x31\x01\x00\x09\x00\x00\x00", 7) == 0) {
+                && mmt_memcmp(&packet->payload[16], "\x31\x01\x00\x09\x00\x00\x00", 7) == 0) {
             MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_DEBUG,
                     "detected gnutella udp, len = 32 ii.\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
         }
         if ((packet->payload_packet_len == 23)
-                && memcmp(&packet->payload[16], "\x00\x01\x00\x00\x00\x00\x00", 7) == 0) {
+                && mmt_memcmp(&packet->payload[16], "\x00\x01\x00\x00\x00\x00\x00", 7) == 0) {
             MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_DEBUG,
                     "detected gnutella udp, len = 23 ii.\n");
             mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);

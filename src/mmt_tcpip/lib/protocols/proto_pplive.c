@@ -210,56 +210,56 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
             }
         }
 
-        if (packet->payload_packet_len > 4 && memcmp(packet->payload, "GET /", 5) == 0) {
+        if (packet->payload_packet_len > 4 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if ((packet->parsed_lines == 8 || packet->parsed_lines == 9)
                     && packet->line[0].ptr != NULL && packet->line[0].len >= 8
-                    && memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0
+                    && mmt_memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0
                     && packet->line[2].ptr != NULL && packet->line[2].len >= 16
-                    && memcmp(packet->line[2].ptr, "x-flash-version:", 16) == 0
+                    && mmt_memcmp(packet->line[2].ptr, "x-flash-version:", 16) == 0
                     && packet->user_agent_line.ptr != NULL && packet->user_agent_line.len >= 11
-                    && memcmp(packet->user_agent_line.ptr, "Mozilla/4.0", 11) == 0
+                    && mmt_memcmp(packet->user_agent_line.ptr, "Mozilla/4.0", 11) == 0
                     && packet->line[6].ptr != NULL && packet->line[6].len >= 21
-                    && memcmp(packet->line[6].ptr, "Pragma: Client=PPLive", 21) == 0) {
+                    && mmt_memcmp(packet->line[6].ptr, "Pragma: Client=PPLive", 21) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found HTTP request.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             } else if ((packet->parsed_lines >= 6 && packet->parsed_lines <= 8)
                     && packet->line[0].ptr != NULL && packet->line[0].len >= 8
-                    && memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0
+                    && mmt_memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0
                     && (((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len >= 10)
-                    && (memcmp(packet->user_agent_line.ptr, "PPLive DAC", 10) == 0))
+                    && (mmt_memcmp(packet->user_agent_line.ptr, "PPLive DAC", 10) == 0))
                     || ((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len >= 19)
-                    && (memcmp(packet->user_agent_line.ptr, "PPLive-Media-Player", 19) == 0)))) {
+                    && (mmt_memcmp(packet->user_agent_line.ptr, "PPLive-Media-Player", 19) == 0)))) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found HTTP request.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             } else if (packet->host_line.ptr != NULL && packet->host_line.len >= 13
-                    && memcmp(packet->host_line.ptr, "player.pplive", 13) == 0) {
+                    && mmt_memcmp(packet->host_line.ptr, "player.pplive", 13) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found via Host header.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             } else if (packet->referer_line.ptr != NULL
                     && packet->referer_line.len >= 20
-                    && memcmp(packet->referer_line.ptr, "http://player.pplive",
+                    && mmt_memcmp(packet->referer_line.ptr, "http://player.pplive",
                     20) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found via Referer header.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             } else if (packet->parsed_lines >= 8 &&
                     packet->line[0].ptr != NULL && packet->line[0].len >= 8 &&
-                    memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0) {
+                    mmt_memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0) {
 
                 uint8_t i, flag = 0;
 
                 for (i = 0; i < packet->parsed_lines && i < 10 && flag < 2; i++) {
                     if (packet->line[i].ptr != NULL && packet->line[i].len >= 16
-                            && memcmp(packet->line[i].ptr, "x-flash-version:",
+                            && mmt_memcmp(packet->line[i].ptr, "x-flash-version:",
                             16) == 0) {
                         flag++;
                     } else if (packet->line[i].ptr != NULL
                             && packet->line[i].len >= 21
-                            && memcmp(packet->line[i].ptr, "Pragma: Client=PPLive",
+                            && mmt_memcmp(packet->line[i].ptr, "Pragma: Client=PPLive",
                             21) == 0) {
                         flag++;
                     }
@@ -534,56 +534,56 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
             }
         }
 
-        if (packet->payload_packet_len > 4 && memcmp(packet->payload, "GET /", 5) == 0) {
+        if (packet->payload_packet_len > 4 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if ((packet->parsed_lines == 8 || packet->parsed_lines == 9)
                     && packet->line[0].ptr != NULL && packet->line[0].len >= 8
-                    && memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0
+                    && mmt_memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0
                     && packet->line[2].ptr != NULL && packet->line[2].len >= 16
-                    && memcmp(packet->line[2].ptr, "x-flash-version:", 16) == 0
+                    && mmt_memcmp(packet->line[2].ptr, "x-flash-version:", 16) == 0
                     && packet->user_agent_line.ptr != NULL && packet->user_agent_line.len >= 11
-                    && memcmp(packet->user_agent_line.ptr, "Mozilla/4.0", 11) == 0
+                    && mmt_memcmp(packet->user_agent_line.ptr, "Mozilla/4.0", 11) == 0
                     && packet->line[6].ptr != NULL && packet->line[6].len >= 21
-                    && memcmp(packet->line[6].ptr, "Pragma: Client=PPLive", 21) == 0) {
+                    && mmt_memcmp(packet->line[6].ptr, "Pragma: Client=PPLive", 21) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found HTTP request.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             } else if ((packet->parsed_lines >= 6 && packet->parsed_lines <= 8)
                     && packet->line[0].ptr != NULL && packet->line[0].len >= 8
-                    && memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0
+                    && mmt_memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0
                     && (((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len >= 10)
-                    && (memcmp(packet->user_agent_line.ptr, "PPLive DAC", 10) == 0))
+                    && (mmt_memcmp(packet->user_agent_line.ptr, "PPLive DAC", 10) == 0))
                     || ((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len >= 19)
-                    && (memcmp(packet->user_agent_line.ptr, "PPLive-Media-Player", 19) == 0)))) {
+                    && (mmt_memcmp(packet->user_agent_line.ptr, "PPLive-Media-Player", 19) == 0)))) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found HTTP request.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             } else if (packet->host_line.ptr != NULL && packet->host_line.len >= 13
-                    && memcmp(packet->host_line.ptr, "player.pplive", 13) == 0) {
+                    && mmt_memcmp(packet->host_line.ptr, "player.pplive", 13) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found via Host header.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             } else if (packet->referer_line.ptr != NULL
                     && packet->referer_line.len >= 20
-                    && memcmp(packet->referer_line.ptr, "http://player.pplive",
+                    && mmt_memcmp(packet->referer_line.ptr, "http://player.pplive",
                     20) == 0) {
                 MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG, "PPLIVE: found via Referer header.\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             } else if (packet->parsed_lines >= 8 &&
                     packet->line[0].ptr != NULL && packet->line[0].len >= 8 &&
-                    memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0) {
+                    mmt_memcmp(&packet->payload[packet->line[0].len - 8], "HTTP/1.", 7) == 0) {
 
                 uint8_t i, flag = 0;
 
                 for (i = 0; i < packet->parsed_lines && i < 10 && flag < 2; i++) {
                     if (packet->line[i].ptr != NULL && packet->line[i].len >= 16
-                            && memcmp(packet->line[i].ptr, "x-flash-version:",
+                            && mmt_memcmp(packet->line[i].ptr, "x-flash-version:",
                             16) == 0) {
                         flag++;
                     } else if (packet->line[i].ptr != NULL
                             && packet->line[i].len >= 21
-                            && memcmp(packet->line[i].ptr, "Pragma: Client=PPLive",
+                            && mmt_memcmp(packet->line[i].ptr, "Pragma: Client=PPLive",
                             21) == 0) {
                         flag++;
                     }

@@ -273,7 +273,7 @@ int check_tango_udp(ipacket_t * ipacket) {
     const char tango_pattern[] = {0x09, 0x54, 0x41, 0x4e, 0x47, 0x4f};
 
     if (packet->payload_packet_len > 32 && packet->payload[0] == 0x03 &&
-            (memcmp(&packet->payload[6], tango_pattern, sizeof (tango_pattern)) == 0)) {
+            (mmt_memcmp(&packet->payload[6], tango_pattern, sizeof (tango_pattern)) == 0)) {
         flow->l4.udp.tango_like_packet++;
     }
     if (flow->l4.udp.tango_like_packet >= 1) {

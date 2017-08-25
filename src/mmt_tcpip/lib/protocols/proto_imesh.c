@@ -228,7 +228,7 @@ void mmt_classify_me_imesh(ipacket_t * ipacket, unsigned index)
 
         /* http login */
         if (packet->payload_packet_len > 18 &&
-                memcmp(packet->payload, "POST /registration", 18) == 0) {
+                mmt_memcmp(packet->payload, "POST /registration", 18) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->parsed_lines > 6 &&
                     packet->host_line.ptr != NULL &&
@@ -237,11 +237,11 @@ void mmt_classify_me_imesh(ipacket_t * ipacket, unsigned index)
                     packet->line[1].len == 25 &&
                     packet->line[4].ptr != NULL &&
                     packet->line[4].len == 25 &&
-                    memcmp(packet->line[1].ptr, "Authorization: Basic Og==",
+                    mmt_memcmp(packet->line[1].ptr, "Authorization: Basic Og==",
                     25) == 0 &&
-                    memcmp(packet->host_line.ptr, "login.bearshare.com",
+                    mmt_memcmp(packet->host_line.ptr, "login.bearshare.com",
                     19) == 0 &&
-                    memcmp(packet->line[4].ptr, "Accept-Encoding: identity",
+                    mmt_memcmp(packet->line[4].ptr, "Accept-Encoding: identity",
                     25 == 0)) {
                 MMT_LOG(PROTO_IMESH, MMT_LOG_DEBUG, "iMesh Login detected\n");
                 mmt_int_imesh_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -418,7 +418,7 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
 
         /* http login */
         if (packet->payload_packet_len > 18 &&
-                memcmp(packet->payload, "POST /registration", 18) == 0) {
+                mmt_memcmp(packet->payload, "POST /registration", 18) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->parsed_lines > 6 &&
                     packet->host_line.ptr != NULL &&
@@ -427,11 +427,11 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
                     packet->line[1].len == 25 &&
                     packet->line[4].ptr != NULL &&
                     packet->line[4].len == 25 &&
-                    memcmp(packet->line[1].ptr, "Authorization: Basic Og==",
+                    mmt_memcmp(packet->line[1].ptr, "Authorization: Basic Og==",
                     25) == 0 &&
-                    memcmp(packet->host_line.ptr, "login.bearshare.com",
+                    mmt_memcmp(packet->host_line.ptr, "login.bearshare.com",
                     19) == 0 &&
-                    memcmp(packet->line[4].ptr, "Accept-Encoding: identity",
+                    mmt_memcmp(packet->line[4].ptr, "Accept-Encoding: identity",
                     25 == 0)) {
                 MMT_LOG(PROTO_IMESH, MMT_LOG_DEBUG, "iMesh Login detected\n");
                 mmt_int_imesh_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);

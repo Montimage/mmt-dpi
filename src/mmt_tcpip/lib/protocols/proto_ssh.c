@@ -23,14 +23,14 @@ void mmt_classify_me_ssh(ipacket_t * ipacket, unsigned index) {
 
     if (flow->l4.tcp.ssh_stage == 0) {
         if (packet->payload_packet_len > 7 && packet->payload_packet_len < 100
-                && memcmp(packet->payload, "SSH-", 4) == 0) {
+                && mmt_memcmp(packet->payload, "SSH-", 4) == 0) {
             MMT_LOG(PROTO_SSH, MMT_LOG_DEBUG, "ssh stage 0 passed\n");
             flow->l4.tcp.ssh_stage = 1 + ipacket->session->last_packet_direction;
             return;
         }
     } else if (flow->l4.tcp.ssh_stage == (2 - ipacket->session->last_packet_direction)) {
         if (packet->payload_packet_len > 7 && packet->payload_packet_len < 100
-                && memcmp(packet->payload, "SSH-", 4) == 0) {
+                && mmt_memcmp(packet->payload, "SSH-", 4) == 0) {
             MMT_LOG(PROTO_SSH, MMT_LOG_DEBUG, "found ssh\n");
             mmt_int_ssh_add_connection(ipacket);
             return;
@@ -56,14 +56,14 @@ int mmt_check_ssh(ipacket_t * ipacket, unsigned index) {
 
         if (flow->l4.tcp.ssh_stage == 0) {
             if (packet->payload_packet_len > 7 && packet->payload_packet_len < 100
-                    && memcmp(packet->payload, "SSH-", 4) == 0) {
+                    && mmt_memcmp(packet->payload, "SSH-", 4) == 0) {
                 MMT_LOG(PROTO_SSH, MMT_LOG_DEBUG, "ssh stage 0 passed\n");
                 flow->l4.tcp.ssh_stage = 1 + ipacket->session->last_packet_direction;
                 return 4;
             }
         } else if (flow->l4.tcp.ssh_stage == (2 - ipacket->session->last_packet_direction)) {
             if (packet->payload_packet_len > 7 && packet->payload_packet_len < 100
-                    && memcmp(packet->payload, "SSH-", 4) == 0) {
+                    && mmt_memcmp(packet->payload, "SSH-", 4) == 0) {
                 MMT_LOG(PROTO_SSH, MMT_LOG_DEBUG, "found ssh\n");
                 mmt_int_ssh_add_connection(ipacket);
                 return 1;

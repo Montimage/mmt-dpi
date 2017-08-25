@@ -32,13 +32,13 @@ void mmt_classify_me_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
 
     if (packet->tcp != NULL) {
         if ((packet->payload_packet_len > 6 &&
-                memcmp(packet->payload, "POST /", 6) == 0) ||
+                mmt_memcmp(packet->payload, "POST /", 6) == 0) ||
                 (packet->payload_packet_len > 5 &&
-                memcmp(packet->payload, "GET /", 5) == 0)) {
+                mmt_memcmp(packet->payload, "GET /", 5) == 0)) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->user_agent_line.ptr != NULL &&
                     packet->user_agent_line.len == 19 &&
-                    memcmp(packet->user_agent_line.ptr, "Blizzard Web Client",
+                    mmt_memcmp(packet->user_agent_line.ptr, "Blizzard Web Client",
                     19) == 0) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG,
@@ -47,14 +47,14 @@ void mmt_classify_me_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
             }
         }
         if (packet->payload_packet_len > 5
-                && memcmp(packet->payload, "GET /", 5) == 0) {
+                && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->user_agent_line.ptr != NULL && packet->host_line.ptr != NULL
                     && packet->user_agent_line.len > 19
                     && packet->host_line.len > 19
-                    && memcmp(packet->user_agent_line.ptr, "Blizzard Downloader",
+                    && mmt_memcmp(packet->user_agent_line.ptr, "Blizzard Downloader",
                     19) == 0
-                    && memcmp(&packet->host_line.ptr[packet->host_line.len - 19],
+                    && mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 19],
                     "worldofwarcraft.com", 19) == 0) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG,
@@ -62,15 +62,15 @@ void mmt_classify_me_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
                 return;
             }
         }
-        if (packet->payload_packet_len == 50 && memcmp(&packet->payload[2], "WORLD OF WARCRAFT CONNECTION",
+        if (packet->payload_packet_len == 50 && mmt_memcmp(&packet->payload[2], "WORLD OF WARCRAFT CONNECTION",
                 28) == 0) {
             mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
             MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG, "World of Warcraft: Login found\n");
             return;
         }
         if (packet->tcp->dest == htons(3724) && packet->payload_packet_len < 70
-                && packet->payload_packet_len > 40 && (memcmp(&packet->payload[4], "WoW", 3) == 0
-                || memcmp(&packet->payload[5], "WoW", 3) == 0)) {
+                && packet->payload_packet_len > 40 && (mmt_memcmp(&packet->payload[4], "WoW", 3) == 0
+                || mmt_memcmp(&packet->payload[5], "WoW", 3) == 0)) {
             mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
             MMT_LOG(PROTO_WORLDOFWARCRAFT, MMT_LOG_DEBUG, "World of Warcraft: Login found\n");
             return;
@@ -117,10 +117,10 @@ void mmt_classify_me_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
                     get_u16(packet->payload, 4) == 0 &&
                     (get_u16(packet->payload, packet->payload_packet_len - 3) == htons(0x2331) ||
                     get_u16(packet->payload, 67) == htons(0x2331)) &&
-                    (memcmp
+                    (mmt_memcmp
                     (&packet->payload[packet->payload_packet_len - 18],
                     "\x94\xec\xff\xfd\x67\x62\xd4\x67\xfb\xf9\xdd\xbd\xfd\x01\xc0\x8f\xf9\x81", 18) == 0
-                    || memcmp(&packet->payload[packet->payload_packet_len - 30],
+                    || mmt_memcmp(&packet->payload[packet->payload_packet_len - 30],
                     "\x94\xec\xff\xfd\x67\x62\xd4\x67\xfb\xf9\xdd\xbd\xfd\x01\xc0\x8f\xf9\x81", 18) == 0)) {
                 mmt_int_worldofwarcraft_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 MMT_LOG(PROTO_WORLDOFWARCRAFT,

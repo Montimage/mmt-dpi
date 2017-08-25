@@ -77,10 +77,10 @@ void mmt_classify_me_ipp(ipacket_t * ipacket, unsigned index) {
 
 search_for_next_pattern:
 
-    if (packet->payload_packet_len > 3 && memcmp(packet->payload, "POST", 4) == 0) {
+    if (packet->payload_packet_len > 3 && mmt_memcmp(packet->payload, "POST", 4) == 0) {
         mmt_parse_packet_line_info(ipacket);
         if (packet->content_line.ptr != NULL && packet->content_line.len > 14
-                && memcmp(packet->content_line.ptr, "application/ipp", 15) == 0) {
+                && mmt_memcmp(packet->content_line.ptr, "application/ipp", 15) == 0) {
             MMT_LOG(PROTO_IPP, MMT_LOG_DEBUG, "found ipp via POST ... application/ipp.\n");
             mmt_int_ipp_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
@@ -156,10 +156,10 @@ int mmt_check_ipp(ipacket_t * ipacket, unsigned index) {
         }
 
 search_for_next_pattern:
-        if (packet->payload_packet_len > 3 && memcmp(packet->payload, "POST", 4) == 0) {
+        if (packet->payload_packet_len > 3 && mmt_memcmp(packet->payload, "POST", 4) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->content_line.ptr != NULL && packet->content_line.len > 14
-                    && memcmp(packet->content_line.ptr, "application/ipp", 15) == 0) {
+                    && mmt_memcmp(packet->content_line.ptr, "application/ipp", 15) == 0) {
                 MMT_LOG(PROTO_IPP, MMT_LOG_DEBUG, "found ipp via POST ... application/ipp.\n");
                 mmt_int_ipp_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;

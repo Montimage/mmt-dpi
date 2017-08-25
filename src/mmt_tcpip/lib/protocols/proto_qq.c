@@ -531,7 +531,7 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
     if (packet->payload_packet_len > 100
             && ((mmt_mem_cmp(packet->payload, "GET", 3) == 0) || (mmt_mem_cmp(packet->payload, "POST", 4) == 0))) {
         MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found GET or POST.\n");
-        if (memcmp(packet->payload, "GET /qqfile/qq", 14) == 0) {
+        if (mmt_memcmp(packet->payload, "GET /qqfile/qq", 14) == 0) {
             MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp GET /qqfile/qq.\n");
             mmt_int_qq_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
@@ -539,13 +539,13 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
         mmt_parse_packet_line_info(ipacket);
 
         if (packet->user_agent_line.ptr != NULL
-                && (packet->user_agent_line.len > 7 && memcmp(packet->user_agent_line.ptr, "QQClient", 8) == 0)) {
+                && (packet->user_agent_line.len > 7 && mmt_memcmp(packet->user_agent_line.ptr, "QQClient", 8) == 0)) {
             MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp GET...QQClient\n");
             mmt_int_qq_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
         }
         for (i = 0; i < packet->parsed_lines; i++) {
-            if (packet->line[i].len > 3 && memcmp(packet->line[i].ptr, "QQ: ", 4) == 0) {
+            if (packet->line[i].len > 3 && mmt_memcmp(packet->line[i].ptr, "QQ: ", 4) == 0) {
                 MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp GET...QQ: \n");
                 mmt_int_qq_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
@@ -553,7 +553,7 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
         }
         if (packet->host_line.ptr != NULL) {
             MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "host line ptr\n");
-            if (packet->host_line.len > 11 && memcmp(&packet->host_line.ptr[0], "www.qq.co.za", 12) == 0) {
+            if (packet->host_line.len > 11 && mmt_memcmp(&packet->host_line.ptr[0], "www.qq.co.za", 12) == 0) {
                 MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq over tcp Host: www.qq.co.za\n");
                 mmt_int_qq_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;

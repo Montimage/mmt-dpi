@@ -56,7 +56,7 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
     }
     if (ipacket->session->data_packet_count == 2 && packet->payload_packet_len > 20) {
 
-        if (memcmp(&packet->payload[0], "BitTorrent protocol", 19) == 0) {
+        if (mmt_memcmp(&packet->payload[0], "BitTorrent protocol", 19) == 0) {
             MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
                     MMT_LOG_TRACE, "BT: plain BitTorrent protocol detected\n");
             mmt_add_connection_as_bittorrent(ipacket,
@@ -70,7 +70,7 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
     if (packet->payload_packet_len > 20) {
         /* test for match 0x13+"BitTorrent protocol" */
         if (packet->payload[0] == 0x13) {
-            if (memcmp(&packet->payload[1], "BitTorrent protocol", 19) == 0) {
+            if (mmt_memcmp(&packet->payload[1], "BitTorrent protocol", 19) == 0) {
                 MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
                         MMT_LOG_TRACE, "BT: plain BitTorrent protocol detected\n");
                 mmt_add_connection_as_bittorrent(ipacket,
@@ -81,7 +81,7 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
         }
     }
 
-    if (packet->payload_packet_len > 23 && memcmp(packet->payload, "GET /webseed?info_hash=", 23) == 0) {
+    if (packet->payload_packet_len > 23 && mmt_memcmp(packet->payload, "GET /webseed?info_hash=", 23) == 0) {
         MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
                 MMT_LOG_TRACE, "BT: plain webseed BitTorrent protocol detected\n");
         mmt_add_connection_as_bittorrent(ipacket,
@@ -93,7 +93,7 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
     /* is Server: hypertracker Bittorrent? */
     /* no asymmetric detection possible for answer of pattern "GET /data?fid=". */
     if (packet->payload_packet_len > 60
-            && memcmp(packet->payload, "GET /data?fid=", 14) == 0 && memcmp(&packet->payload[54], "&size=", 6) == 0) {
+            && mmt_memcmp(packet->payload, "GET /data?fid=", 14) == 0 && mmt_memcmp(&packet->payload[54], "&size=", 6) == 0) {
         MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
                 MMT_LOG_TRACE, "BT: plain Bitcomet persistent seed protocol detected\n");
         mmt_add_connection_as_bittorrent(ipacket,
@@ -103,8 +103,8 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
     }
 
 
-    if (packet->payload_packet_len > 90 && (memcmp(packet->payload, "GET ", 4) == 0
-            || memcmp(packet->payload, "POST ", 5) == 0)) {
+    if (packet->payload_packet_len > 90 && (mmt_memcmp(packet->payload, "GET ", 4) == 0
+            || mmt_memcmp(packet->payload, "POST ", 5) == 0)) {
         const uint8_t *ptr = &packet->payload[4];
         uint16_t len = packet->payload_packet_len - 4;
         a = 0;
@@ -114,9 +114,9 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
         mmt_parse_packet_line_info(ipacket);
         /* answer to this pattern is HTTP....Server: hypertracker */
         if (packet->user_agent_line.ptr != NULL
-                && ((packet->user_agent_line.len > 8 && memcmp(packet->user_agent_line.ptr, "Azureus ", 8) == 0)
-                || (packet->user_agent_line.len >= 10 && memcmp(packet->user_agent_line.ptr, "BitTorrent", 10) == 0)
-                || (packet->user_agent_line.len >= 11 && memcmp(packet->user_agent_line.ptr, "BTWebClient", 11) == 0))) {
+                && ((packet->user_agent_line.len > 8 && mmt_memcmp(packet->user_agent_line.ptr, "Azureus ", 8) == 0)
+                || (packet->user_agent_line.len >= 10 && mmt_memcmp(packet->user_agent_line.ptr, "BitTorrent", 10) == 0)
+                || (packet->user_agent_line.len >= 11 && mmt_memcmp(packet->user_agent_line.ptr, "BTWebClient", 11) == 0))) {
             MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
                     MMT_LOG_TRACE, "Azureus /Bittorrent user agent line detected\n");
             mmt_add_connection_as_bittorrent(ipacket,
@@ -126,9 +126,9 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
         }
 
         if (packet->user_agent_line.ptr != NULL
-                && (packet->user_agent_line.len >= 9 && memcmp(packet->user_agent_line.ptr, "Shareaza ", 9) == 0)
+                && (packet->user_agent_line.len >= 9 && mmt_memcmp(packet->user_agent_line.ptr, "Shareaza ", 9) == 0)
                 && (packet->parsed_lines > 8 && packet->line[8].ptr != 0
-                && packet->line[8].len >= 9 && memcmp(packet->line[8].ptr, "X-Queue: ", 9) == 0)) {
+                && packet->line[8].len >= 9 && mmt_memcmp(packet->line[8].ptr, "X-Queue: ", 9) == 0)) {
             MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
                     MMT_LOG_TRACE, "Bittorrent Shareaza detected.\n");
             mmt_add_connection_as_bittorrent(ipacket,
@@ -177,13 +177,13 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
         if (packet->parsed_lines == 8
                 && packet->user_agent_line.ptr != NULL
                 && packet->user_agent_line.len > (sizeof ("Mozilla/4.0 (compatible; MSIE 6.0;") - 1)
-                && memcmp(packet->user_agent_line.ptr, "Mozilla/4.0 (compatible; MSIE 6.0;",
+                && mmt_memcmp(packet->user_agent_line.ptr, "Mozilla/4.0 (compatible; MSIE 6.0;",
                 sizeof ("Mozilla/4.0 (compatible; MSIE 6.0;") - 1) == 0
                 && packet->host_line.ptr != NULL
                 && packet->host_line.len >= 7
                 && packet->line[2].ptr != NULL
                 && packet->line[2].len == 11
-                && memcmp(packet->line[2].ptr, "Accept: */*", 11) == 0
+                && mmt_memcmp(packet->line[2].ptr, "Accept: */*", 11) == 0
                 && packet->line[3].ptr != NULL && packet->line[3].len >= (sizeof ("Referer: ") - 1)
                 && mmt_mem_cmp(packet->line[3].ptr, "Referer: ", sizeof ("Referer: ") - 1) == 0
                 && packet->line[5].ptr != NULL
@@ -202,13 +202,13 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
         if (packet->parsed_lines == 7
                 && packet->user_agent_line.ptr != NULL
                 && packet->user_agent_line.len > (sizeof ("Mozilla/4.0 (compatible; MSIE 6.0;") - 1)
-                && memcmp(packet->user_agent_line.ptr, "Mozilla/4.0 (compatible; MSIE 6.0;",
+                && mmt_memcmp(packet->user_agent_line.ptr, "Mozilla/4.0 (compatible; MSIE 6.0;",
                 sizeof ("Mozilla/4.0 (compatible; MSIE 6.0;") - 1) == 0
                 && packet->host_line.ptr != NULL
                 && packet->host_line.len >= 7
                 && packet->line[2].ptr != NULL
                 && packet->line[2].len == 11
-                && memcmp(packet->line[2].ptr, "Accept: */*", 11) == 0
+                && mmt_memcmp(packet->line[2].ptr, "Accept: */*", 11) == 0
                 && packet->line[3].ptr != NULL && packet->line[3].len >= (sizeof ("Referer: ") - 1)
                 && mmt_mem_cmp(packet->line[3].ptr, "Referer: ", sizeof ("Referer: ") - 1) == 0
                 && packet->line[5].ptr != NULL
@@ -227,7 +227,7 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
             if (len < 50 || ptr[0] == 0x0d) {
                 goto mmt_end_bt_tracker_check;
             }
-            if (memcmp(ptr, "info_hash=", 10) == 0) {
+            if (mmt_memcmp(ptr, "info_hash=", 10) == 0) {
                 break;
             }
             len--;
@@ -310,8 +310,8 @@ mmt_end_bt_tracker_check:
             0x00, 0x00};
 
         /* did not see this pattern anywhere */
-        if ((memcmp(&packet->payload[0], pattern_20_bytes, 20) == 0)
-                && (memcmp(&packet->payload[52], pattern_12_bytes, 12) == 0)) {
+        if ((mmt_memcmp(&packet->payload[0], pattern_20_bytes, 20) == 0)
+                && (mmt_memcmp(&packet->payload[52], pattern_12_bytes, 12) == 0)) {
             MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
                     MMT_LOG_TRACE, "BT: Warez - Plain BitTorrent protocol detected\n");
             mmt_add_connection_as_bittorrent(ipacket,
@@ -320,12 +320,12 @@ mmt_end_bt_tracker_check:
             return 1;
         }
     } else if (packet->payload_packet_len > 50) {
-        if (memcmp(packet->payload, "GET", 3) == 0) {
+        if (mmt_memcmp(packet->payload, "GET", 3) == 0) {
 
             mmt_parse_packet_line_info(ipacket);
             /* haven't fount this pattern anywhere */
             if (packet->host_line.ptr != NULL
-                    && packet->host_line.len >= 9 && memcmp(packet->host_line.ptr, "ip2p.com:", 9) == 0) {
+                    && packet->host_line.len >= 9 && mmt_memcmp(packet->host_line.ptr, "ip2p.com:", 9) == 0) {
                 MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
                         MMT_LOG_TRACE,
                         "BT: Warez - Plain BitTorrent protocol detected due to Host: ip2p.com: pattern\n");
@@ -397,7 +397,7 @@ bittorrent_found:
                         u_long offset = (const unsigned char*)begin - packet->payload;
 
                         if ((packet->payload_packet_len - 19) > offset) {
-                            if (memcmp(begin, "BitTorrent protocol", 19) == 0) {
+                            if (mmt_memcmp(begin, "BitTorrent protocol", 19) == 0) {
                                 goto bittorrent_found;
                             }
                         }
@@ -509,7 +509,7 @@ bittorrent_found:
                         u_long offset = (const unsigned char*)begin - packet->payload;
 
                         if ((packet->payload_packet_len - 19) > offset) {
-                            if (memcmp(begin, "BitTorrent protocol", 19) == 0) {
+                            if (mmt_memcmp(begin, "BitTorrent protocol", 19) == 0) {
                                 goto bittorrent_found;
                             }
                         }

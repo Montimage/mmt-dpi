@@ -59,7 +59,7 @@ void mmt_classify_me_icecast(ipacket_t * ipacket, unsigned index) {
         mmt_parse_packet_line_info(ipacket);
 
         if (packet->server_line.ptr != NULL && packet->server_line.len > 7 &&
-                memcmp(packet->server_line.ptr, "Icecast", 7) == 0) {
+                mmt_memcmp(packet->server_line.ptr, "Icecast", 7) == 0) {
             MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "Icecast detected.\n");
             /* TODO maybe store the previous protocol type as subtype?
              *      e.g. ogg or mpeg
@@ -117,7 +117,7 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
             /* server answer, now test Server for Icecast */
             mmt_parse_packet_line_info(ipacket);
             if (packet->server_line.ptr != NULL && packet->server_line.len > 7 &&
-                    memcmp(packet->server_line.ptr, "Icecast", 7) == 0) {
+                    mmt_memcmp(packet->server_line.ptr, "Icecast", 7) == 0) {
                 MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "Icecast detected.\n");
                 /* TODO maybe store the previous protocol type as subtype?
                  *      e.g. ogg or mpeg

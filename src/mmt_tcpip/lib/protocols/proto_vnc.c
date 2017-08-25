@@ -26,10 +26,10 @@ int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
             if (flow->l4.tcp.vnc_stage == 0) {
 
                 if ((packet->payload_packet_len == 12) &&
-                        ((memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
-                         (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
-                         (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
-                         (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
+                        ((mmt_memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (mmt_memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (mmt_memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (mmt_memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
                     MMT_LOG(PROTO_VNC, ndpi_struct, NDPI_LOG_DEBUG, "reached vnc stage one\n");
                     flow->l4.tcp.vnc_stage = 1 + ipacket->session->last_packet_direction;
                     return 4;
@@ -37,10 +37,10 @@ int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
             } else if (flow->l4.tcp.vnc_stage == 2 - ipacket->session->last_packet_direction) {
 
                 if ((packet->payload_packet_len == 12) &&
-                        ((memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
-                         (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
-                         (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
-                         (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
+                        ((mmt_memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (mmt_memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (mmt_memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
+                         (mmt_memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
 
                     MMT_LOG(PROTO_VNC, MMT_LOG_DEBUG, "found vnc\n");
                     mmt_int_vnc_add_connection(ipacket);

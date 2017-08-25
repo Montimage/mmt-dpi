@@ -75,10 +75,10 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
 
         /* detect http connections */
         if (packet->payload_packet_len >= 18) {
-            if ((packet->payload[0] == 'P') && (memcmp(packet->payload, "POST /photo/upload", 18) == 0)) {
+            if ((packet->payload[0] == 'P') && (mmt_memcmp(packet->payload, "POST /photo/upload", 18) == 0)) {
                 MMT_PARSE_PACKET_LINE_INFO(ipacket, packet);
                 if (packet->host_line.len >= 18 && packet->host_line.ptr != NULL) {
-                    if (memcmp(packet->host_line.ptr, "lifestream.aol.com", 18) == 0) {
+                    if (mmt_memcmp(packet->host_line.ptr, "lifestream.aol.com", 18) == 0) {
                         MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG,
                                 "OSCAR over HTTP found, POST method\n");
                         mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -88,25 +88,25 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
             }
         }
         if (packet->payload_packet_len > 40) {
-            if ((packet->payload[0] == 'G') && (memcmp(packet->payload, "GET /", 5) == 0)) {
-                if ((memcmp(&packet->payload[5], "aim/fetchEvents?aimsid=", 23) == 0) ||
-                        (memcmp(&packet->payload[5], "aim/startSession?", 17) == 0) ||
-                        (memcmp(&packet->payload[5], "aim/gromit/aim_express", 22) == 0) ||
-                        (memcmp(&packet->payload[5], "b/ss/aolwpaim", 13) == 0) ||
-                        (memcmp(&packet->payload[5], "hss/storage/aimtmpshare", 23) == 0)) {
+            if ((packet->payload[0] == 'G') && (mmt_memcmp(packet->payload, "GET /", 5) == 0)) {
+                if ((mmt_memcmp(&packet->payload[5], "aim/fetchEvents?aimsid=", 23) == 0) ||
+                        (mmt_memcmp(&packet->payload[5], "aim/startSession?", 17) == 0) ||
+                        (mmt_memcmp(&packet->payload[5], "aim/gromit/aim_express", 22) == 0) ||
+                        (mmt_memcmp(&packet->payload[5], "b/ss/aolwpaim", 13) == 0) ||
+                        (mmt_memcmp(&packet->payload[5], "hss/storage/aimtmpshare", 23) == 0)) {
                     MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR over HTTP found, GET /aim/\n");
                     mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return;
                 }
 
-                if ((memcmp(&packet->payload[5], "aim", 3) == 0) || (memcmp(&packet->payload[5], "im", 2) == 0)) {
+                if ((mmt_memcmp(&packet->payload[5], "aim", 3) == 0) || (mmt_memcmp(&packet->payload[5], "im", 2) == 0)) {
                     MMT_PARSE_PACKET_LINE_INFO(ipacket, packet);
                     if (packet->user_agent_line.len > 15 && packet->user_agent_line.ptr != NULL &&
-                            ((memcmp(packet->user_agent_line.ptr, "mobileAIM/", 10) == 0) ||
-                            (memcmp(packet->user_agent_line.ptr, "ICQ/", 4) == 0) ||
-                            (memcmp(packet->user_agent_line.ptr, "mobileICQ/", 10) == 0) ||
-                            (memcmp(packet->user_agent_line.ptr, "AIM%20Free/", 11) == 0) ||
-                            (memcmp(packet->user_agent_line.ptr, "AIM/", 4) == 0))) {
+                            ((mmt_memcmp(packet->user_agent_line.ptr, "mobileAIM/", 10) == 0) ||
+                            (mmt_memcmp(packet->user_agent_line.ptr, "ICQ/", 4) == 0) ||
+                            (mmt_memcmp(packet->user_agent_line.ptr, "mobileICQ/", 10) == 0) ||
+                            (mmt_memcmp(packet->user_agent_line.ptr, "AIM%20Free/", 11) == 0) ||
+                            (mmt_memcmp(packet->user_agent_line.ptr, "AIM/", 4) == 0))) {
                         MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR over HTTP found\n");
                         mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                         return;
@@ -115,12 +115,12 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
                 MMT_PARSE_PACKET_LINE_INFO(ipacket, packet);
                 if (packet->referer_line.ptr != NULL && packet->referer_line.len >= 22) {
 
-                    if (memcmp(&packet->referer_line.ptr[packet->referer_line.len - 14],
+                    if (mmt_memcmp(&packet->referer_line.ptr[packet->referer_line.len - 14],
                             "WidgetMain.swf", 14) == 0) {
                         uint16_t i;
                         for (i = 0; i < (packet->referer_line.len - 22); i++) {
                             if (packet->referer_line.ptr[i] == 'a') {
-                                if (memcmp(&packet->referer_line.ptr[i + 1], "im/gromit/aim_express", 21) == 0) {
+                                if (mmt_memcmp(&packet->referer_line.ptr[i + 1], "im/gromit/aim_express", 21) == 0) {
                                     MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG,
                                             "OSCAR over HTTP found : aim/gromit/aim_express\n");
                                     mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -131,13 +131,13 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
                     }
                 }
             }
-            if (memcmp(packet->payload, "CONNECT ", 8) == 0) {
-                if (memcmp(packet->payload, "CONNECT login.icq.com:443 HTTP/1.", 33) == 0) {
+            if (mmt_memcmp(packet->payload, "CONNECT ", 8) == 0) {
+                if (mmt_memcmp(packet->payload, "CONNECT login.icq.com:443 HTTP/1.", 33) == 0) {
                     MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR ICQ-HTTP FOUND\n");
                     mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return;
                 }
-                if (memcmp(packet->payload, "CONNECT login.oscar.aol.com:5190 HTTP/1.", 40) == 0) {
+                if (mmt_memcmp(packet->payload, "CONNECT login.oscar.aol.com:5190 HTTP/1.", 40) == 0) {
                     MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR AIM-HTTP FOUND\n");
                     mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                     return;
@@ -147,14 +147,14 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
         }
 
         if (packet->payload_packet_len > 43
-                && memcmp(packet->payload, "GET http://http.proxy.icq.com/hello HTTP/1.", 43) == 0) {
+                && mmt_memcmp(packet->payload, "GET http://http.proxy.icq.com/hello HTTP/1.", 43) == 0) {
             MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR ICQ-HTTP PROXY FOUND\n");
             mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
         }
 
         if (packet->payload_packet_len > 46
-                && memcmp(packet->payload, "GET http://aimhttp.oscar.aol.com/hello HTTP/1.", 46) == 0) {
+                && mmt_memcmp(packet->payload, "GET http://aimhttp.oscar.aol.com/hello HTTP/1.", 46) == 0) {
             MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR AIM-HTTP PROXY FOUND\n");
             mmt_int_oscar_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
@@ -172,7 +172,7 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
         }
 
         if (packet->payload_packet_len >= 70 &&
-                memcmp(&packet->payload[packet->payload_packet_len - 26],
+                mmt_memcmp(&packet->payload[packet->payload_packet_len - 26],
                 "\x67\x00\x65\x00\x74\x00\x43\x00\x61\x00\x74\x00\x61\x00\x6c\x00\x6f\x00\x67", 19) == 0) {
             MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR PICTURE TRANSFER\n");
             mmt_int_oscar_add_connection(ipacket, MMT_REAL_PROTOCOL);
@@ -184,10 +184,10 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
             if (ipacket->session->data_packet_count == 1
                     &&
                     ((packet->payload_packet_len == 9
-                    && memcmp(packet->payload, "\x00\x09\x00\x00\x83\x01\xc0\x00\x00", 9) == 0)
+                    && mmt_memcmp(packet->payload, "\x00\x09\x00\x00\x83\x01\xc0\x00\x00", 9) == 0)
                     || (packet->payload_packet_len == 13
-                    && (memcmp(packet->payload, "\x00\x0d\x00\x87\x01\xc0", 6) == 0
-                    || memcmp(packet->payload, "\x00\x0d\x00\x87\x01\xc1", 6) == 0)))) {
+                    && (mmt_memcmp(packet->payload, "\x00\x0d\x00\x87\x01\xc0", 6) == 0
+                    || mmt_memcmp(packet->payload, "\x00\x0d\x00\x87\x01\xc1", 6) == 0)))) {
                 flow->oscar_video_voice = 1;
             }
             if (flow->oscar_video_voice && ntohs(get_u16(packet->payload, 0)) == packet->payload_packet_len
@@ -195,10 +195,10 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
             }
 
             if (packet->payload_packet_len >= 70 && ntohs(get_u16(packet->payload, 4)) == packet->payload_packet_len) {
-                if (memcmp(packet->payload, "OFT", 3) == 0 &&
-                        ((packet->payload[3] == '3' && ((memcmp(&packet->payload[4], "\x01\x00\x01\x01", 4) == 0)
-                        || (memcmp(&packet->payload[6], "\x01\x01\x00", 3) == 0)))
-                        || (packet->payload[3] == '2' && ((memcmp(&packet->payload[6], "\x01\x01", 2)
+                if (mmt_memcmp(packet->payload, "OFT", 3) == 0 &&
+                        ((packet->payload[3] == '3' && ((mmt_memcmp(&packet->payload[4], "\x01\x00\x01\x01", 4) == 0)
+                        || (mmt_memcmp(&packet->payload[6], "\x01\x01\x00", 3) == 0)))
+                        || (packet->payload[3] == '2' && ((mmt_memcmp(&packet->payload[6], "\x01\x01", 2)
                         == 0)
                         )))) {
                     // FILE TRANSFER PATTERN:: OFT3 or OFT2
@@ -207,7 +207,7 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
                     return;
                 }
 
-                if (memcmp(packet->payload, "ODC2", 4) == 0 && memcmp(&packet->payload[6], "\x00\x01\x00\x06", 4) == 0) {
+                if (mmt_memcmp(packet->payload, "ODC2", 4) == 0 && mmt_memcmp(&packet->payload[6], "\x00\x01\x00\x06", 4) == 0) {
                     //PICTURE TRANSFER PATTERN EXMAPLE::
                     //4f 44 43 32 00 4c 00 01 00 06 00 00 00 00 00 00  ODC2.L..........
                     MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR PICTURE TRANSFER\n");
@@ -215,12 +215,12 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
                     return;
                 }
             }
-            if (packet->payload_packet_len > 40 && (memcmp(&packet->payload[2], "\x04\x4a\x00", 3) == 0)
-                    && (memcmp(&packet->payload[6], "\x00\x00", 2) == 0)
+            if (packet->payload_packet_len > 40 && (mmt_memcmp(&packet->payload[2], "\x04\x4a\x00", 3) == 0)
+                    && (mmt_memcmp(&packet->payload[6], "\x00\x00", 2) == 0)
                     && packet->payload[packet->payload_packet_len - 15] == 'F'
                     && packet->payload[packet->payload_packet_len - 12] == 'L'
-                    && (memcmp(&packet->payload[packet->payload_packet_len - 6], "DEST", 4) == 0)
-                    && (memcmp(&packet->payload[packet->payload_packet_len - 2], "\x00\x00", 2) == 0)) {
+                    && (mmt_memcmp(&packet->payload[packet->payload_packet_len - 6], "DEST", 4) == 0)
+                    && (mmt_memcmp(&packet->payload[packet->payload_packet_len - 2], "\x00\x00", 2) == 0)) {
                 MMT_LOG(PROTO_OSCAR, MMT_LOG_DEBUG, "OSCAR PICTURE TRANSFER\n");
                 mmt_int_oscar_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 if (ntohs(packet->tcp->dest) == 443 || ntohs(packet->tcp->source) == 443) {
@@ -230,8 +230,8 @@ void mmt_classify_me_oscar(ipacket_t * ipacket, unsigned index) {
 
             }
         }
-        if (ipacket->session->data_packet_count < 3 && packet->payload_packet_len > 11 && (memcmp(packet->payload, "\x00\x37\x04\x4a", 4)
-                || memcmp(packet->payload, "\x00\x0a\x04\x4a",
+        if (ipacket->session->data_packet_count < 3 && packet->payload_packet_len > 11 && (mmt_memcmp(packet->payload, "\x00\x37\x04\x4a", 4)
+                || mmt_memcmp(packet->payload, "\x00\x0a\x04\x4a",
                 4))) {
             return;
         }

@@ -676,7 +676,7 @@ static void mmt_rtp_search(ipacket_t * ipacket, const uint8_t * payload, const u
         return;
     }
 
-    if (payload_len == 5 && memcmp(payload, "hello", 5) == 0) {
+    if (payload_len == 5 && mmt_memcmp(payload, "hello", 5) == 0) {
         MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
                 "need next packet, initial hello packet of SIP out calls.\n");
         return;
@@ -688,7 +688,7 @@ static void mmt_rtp_search(ipacket_t * ipacket, const uint8_t * payload, const u
         return;
     }
 
-    if (payload_len == 3 && memcmp(payload, "png", 3) == 0) {
+    if (payload_len == 3 && mmt_memcmp(payload, "png", 3) == 0) {
         /* weird packet found in Ninja GlobalIP trace */
         MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "skipping packet with len = 3 and png payload.\n");
         return;

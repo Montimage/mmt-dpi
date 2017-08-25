@@ -231,7 +231,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                         switch ( str[0] ) {
                         case 'S':
                             if (
-                                memcmp(str+1, "erver:", 6) == 0)
+                                mmt_memcmp(str+1, "erver:", 6) == 0)
                             {
                                 if (str[7] == ' ') {
                                     packet->server_line.ptr = &str[8];
@@ -247,49 +247,49 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                             switch ( str[8] ) {
                             case 'T':
                                 if (
-                                    memcmp (str+1, "ontent-Type: ", 13) == 0) {
+                                    mmt_memcmp (str+1, "ontent-Type: ", 13) == 0) {
                                     packet->content_line.ptr = &str[14];
                                     packet->content_line.len = line_length - 14;
                                 }
                                 break;
                             case 't':
                                 if (
-                                    memcmp(str + 1, "ontent-type: ", 13) == 0) {
+                                    mmt_memcmp(str + 1, "ontent-type: ", 13) == 0) {
                                     packet->content_line.ptr = &str[14];
                                     packet->content_line.len = line_length - 14;
                                 }
                                 break;
                             case 'E':
                                 if (
-                                    memcmp(str + 1, "ontent-Encoding: ", 17) == 0) {
+                                    mmt_memcmp(str + 1, "ontent-Encoding: ", 17) == 0) {
                                     packet->http_encoding.ptr = &str[18];
                                     packet->http_encoding.len = line_length - 18;
                                 }
                                 break;
                             case 'L':
                                 if (
-                                    (memcmp(str + 1, "ontent-Length: ", 15) == 0) ) {
+                                    (mmt_memcmp(str + 1, "ontent-Length: ", 15) == 0) ) {
                                     packet->http_contentlen.ptr = &str[16];
                                     packet->http_contentlen.len = line_length - 16;
                                 }
                                 break;
                             case 'l':
                                 if (
-                                    (memcmp(str + 1, "ontent-length: ", 15) == 0)) {
+                                    (mmt_memcmp(str + 1, "ontent-length: ", 15) == 0)) {
                                     packet->http_contentlen.ptr = &str[16];
                                     packet->http_contentlen.len = line_length - 16;
                                 }
                                 break;
                             case 'o':
                                 if (
-                                    (memcmp(str + 1, "onnection: ", 11) == 0)) {
+                                    (mmt_memcmp(str + 1, "onnection: ", 11) == 0)) {
                                     packet->connection_line.ptr = &str[12];
                                     packet->connection_line.len = line_length - 12;
                                 }
                                 break;
                             default:
                                 if (
-                                    memcmp(str + 1, "ookie: ", 7) == 0) {
+                                    mmt_memcmp(str + 1, "ookie: ", 7) == 0) {
                                     packet->http_cookie.ptr = &str[8];
                                     packet->http_cookie.len = line_length - 8;
                                 }
@@ -299,7 +299,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                         case 'A':
                         case 'a':
                             if (
-                                memcmp(str + 1, "ccept: ", 7) == 0)
+                                mmt_memcmp(str + 1, "ccept: ", 7) == 0)
                             {
                                 packet->accept_line.ptr = &str[8];
                                 packet->accept_line.len = line_length - 8;
@@ -308,7 +308,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
 
                         case 'R':
                             if (
-                                memcmp(str + 1, "eferer: ", 8) == 0)
+                                mmt_memcmp(str + 1, "eferer: ", 8) == 0)
                             {
                                 packet->referer_line.ptr = &str[9];
                                 packet->referer_line.len = line_length - 9;
@@ -318,15 +318,15 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                         case 'u':
                             if (str[1] == 's') {
                                 if (
-                                    (memcmp(str + 2, "er-Agent: ", 10) == 0 ||
-                                     memcmp(str + 2, "er-agent: ", 10) == 0))
+                                    (mmt_memcmp(str + 2, "er-Agent: ", 10) == 0 ||
+                                     mmt_memcmp(str + 2, "er-agent: ", 10) == 0))
                                 {
                                     packet->user_agent_line.ptr = &str[12];
                                     packet->user_agent_line.len = line_length - 12;
                                 }
                             } else if (str[1] == 'p') {
                                 if (
-                                    (memcmp(str + 2, "grade: ", 7) == 0))
+                                    (mmt_memcmp(str + 2, "grade: ", 7) == 0))
                                 {
                                     packet->upgrade_line.ptr = &str[9];
                                     packet->upgrade_line.len = line_length - 9;
@@ -335,7 +335,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                             break;
                         case 'T':
                             if (
-                                memcmp(str + 1, "ransfer-Encoding: ", 18) == 0) {
+                                mmt_memcmp(str + 1, "ransfer-Encoding: ", 18) == 0) {
                                 packet->http_transfer_encoding.ptr = &str[19];
                                 packet->http_transfer_encoding.len = line_length - 19;
                             }
@@ -343,7 +343,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
                             break;
                         case 'X':
                             if (
-                                memcmp(str + 1, "-Session-Type: ", 15) == 0) {
+                                mmt_memcmp(str + 1, "-Session-Type: ", 15) == 0) {
                                 packet->http_x_session_type.ptr = &str[16];
                                 packet->http_x_session_type.len = line_length - 16;
                             }

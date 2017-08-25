@@ -36,7 +36,7 @@ static void ntop_check_citrix(ipacket_t * ipacket) {
             if (payload_len == 6) {
                 char citrix_header[] = {0x07, 0x07, 0x49, 0x43, 0x41, 0x00};
 
-                if (memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0) {
+                if (mmt_memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0) {
                     MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix.\n");
                     mmt_internal_add_connection(ipacket, PROTO_CITRIX, MMT_REAL_PROTOCOL);
                 }
@@ -45,7 +45,7 @@ static void ntop_check_citrix(ipacket_t * ipacket) {
             } else if (payload_len > 4) {
                 char citrix_header[] = {0x1a, 0x43, 0x47, 0x50, 0x2f, 0x30, 0x31};
 
-                if ((memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0)
+                if ((mmt_memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0)
                  || (mmt_strncmp((const char*)packet->payload, "Citrix.TcpProxyService", payload_len) == 0)) {
                     MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix.\n");
                     mmt_internal_add_connection(ipacket, PROTO_CITRIX, MMT_REAL_PROTOCOL);
@@ -90,7 +90,7 @@ int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
             if (payload_len == 6) {
                 char citrix_header[] = {0x07, 0x07, 0x49, 0x43, 0x41, 0x00};
 
-                if (memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0) {
+                if (mmt_memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0) {
                     MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix.\n");
                     mmt_internal_add_connection(ipacket, PROTO_CITRIX, MMT_REAL_PROTOCOL);
                     return 1;
@@ -100,7 +100,7 @@ int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
             } else if (payload_len > 4) {
                 char citrix_header[] = {0x1a, 0x43, 0x47, 0x50, 0x2f, 0x30, 0x31};
 
-                if ((memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0)
+                if ((mmt_memcmp(packet->payload, citrix_header, sizeof (citrix_header)) == 0)
                  || (mmt_strncmp((const char*)packet->payload, "Citrix.TcpProxyService", payload_len) == 0)) {
                     MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "Found citrix.\n");
                     mmt_internal_add_connection(ipacket, PROTO_CITRIX, MMT_REAL_PROTOCOL);

@@ -9,7 +9,7 @@ bool ipv4_addr_comp(void * l_ip, void * r_ip) {
 }
 
 bool ipv6_addr_comp(void * l_ip, void * r_ip) {
-    return (memcmp(&((struct in6_addr *) l_ip)->s6_addr, &((struct in6_addr *) r_ip)->s6_addr, IPv6_ALEN) < 0);
+    return (mmt_memcmp(&((struct in6_addr *) l_ip)->s6_addr, &((struct in6_addr *) r_ip)->s6_addr, IPv6_ALEN) < 0);
 }
 
 static inline int _insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip4_id_t * ip_id) {

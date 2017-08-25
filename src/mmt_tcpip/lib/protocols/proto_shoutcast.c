@@ -24,7 +24,7 @@ void mmt_classify_me_shoutcast(ipacket_t * ipacket, unsigned index) {
     if (ipacket->session->data_packet_count == 1) {
         /* this case in paul_upload_oddcast_002.pcap */
         if (packet->payload_packet_len >= 6
-                && packet->payload_packet_len < 80 && memcmp(packet->payload, "123456", 6) == 0) {
+                && packet->payload_packet_len < 80 && mmt_memcmp(packet->payload, "123456", 6) == 0) {
             MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 1, \"123456\".\n");
             return;
         }
@@ -49,7 +49,7 @@ void mmt_classify_me_shoutcast(ipacket_t * ipacket, unsigned index) {
 
     }
     /* evtl. f�r asym detection noch User-Agent:Winamp dazunehmen. */
-    if (packet->payload_packet_len > 11 && memcmp(packet->payload, "ICY 200 OK\x0d\x0a", 12) == 0) {
+    if (packet->payload_packet_len > 11 && mmt_memcmp(packet->payload, "ICY 200 OK\x0d\x0a", 12) == 0) {
         MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "found shoutcast by ICY 200 OK.\n");
         mmt_int_shoutcast_add_connection(ipacket);
         return;
@@ -60,7 +60,7 @@ void mmt_classify_me_shoutcast(ipacket_t * ipacket, unsigned index) {
     }
 
     if (ipacket->session->data_packet_count == 2) {
-        if (packet->payload_packet_len == 2 && memcmp(packet->payload, "\x0d\x0a", 2) == 0) {
+        if (packet->payload_packet_len == 2 && mmt_memcmp(packet->payload, "\x0d\x0a", 2) == 0) {
             MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 1 continuation.\n");
             return;
         } else if (packet->payload_packet_len > 3 && mmt_mem_cmp(&packet->payload[0], "OK2", 3) == 0) {
@@ -99,7 +99,7 @@ int mmt_check_shoutcast(ipacket_t * ipacket, unsigned index) {
         if (ipacket->session->data_packet_count == 1) {
             /* this case in paul_upload_oddcast_002.pcap */
             if (packet->payload_packet_len >= 6
-                    && packet->payload_packet_len < 80 && memcmp(packet->payload, "123456", 6) == 0) {
+                    && packet->payload_packet_len < 80 && mmt_memcmp(packet->payload, "123456", 6) == 0) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 1, \"123456\".\n");
                 return 4;
             }
@@ -115,7 +115,7 @@ int mmt_check_shoutcast(ipacket_t * ipacket, unsigned index) {
             }
         }
         /* evtl. for asym detection noch User-Agent:Winamp dazunehmen. */
-        if (packet->payload_packet_len > 11 && memcmp(packet->payload, "ICY 200 OK\x0d\x0a", 12) == 0) {
+        if (packet->payload_packet_len > 11 && mmt_memcmp(packet->payload, "ICY 200 OK\x0d\x0a", 12) == 0) {
             MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "found shoutcast by ICY 200 OK.\n");
             mmt_int_shoutcast_add_connection(ipacket);
             return 1;
@@ -126,7 +126,7 @@ int mmt_check_shoutcast(ipacket_t * ipacket, unsigned index) {
         }
 
         if (ipacket->session->data_packet_count == 2) {
-            if (packet->payload_packet_len == 2 && memcmp(packet->payload, "\x0d\x0a", 2) == 0) {
+            if (packet->payload_packet_len == 2 && mmt_memcmp(packet->payload, "\x0d\x0a", 2) == 0) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 1 continuation.\n");
                 return 4;
             } else if (packet->payload_packet_len > 3 && mmt_mem_cmp(&packet->payload[0], "OK2", 3) == 0) {

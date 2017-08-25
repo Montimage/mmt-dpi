@@ -35,7 +35,7 @@ void mmt_classify_me_xbox(ipacket_t * ipacket, unsigned index) {
 
         if (packet->payload_packet_len > 12 &&
                 get_u32(packet->payload, 0) == 0 && packet->payload[5] == 0x58 &&
-                memcmp(&packet->payload[7], "\x00\x00\x00", 3) == 0) {
+                mmt_memcmp(&packet->payload[7], "\x00\x00\x00", 3) == 0) {
 
             if ((packet->payload[4] == 0x0c && packet->payload[6] == 0x76) ||
                     (packet->payload[4] == 0x02 && packet->payload[6] == 0x18) ||
@@ -102,7 +102,7 @@ int mmt_check_xbox(ipacket_t * ipacket, unsigned index) {
 
             if (packet->payload_packet_len > 12 &&
                     get_u32(packet->payload, 0) == 0 && packet->payload[5] == 0x58 &&
-                    memcmp(&packet->payload[7], "\x00\x00\x00", 3) == 0) {
+                    mmt_memcmp(&packet->payload[7], "\x00\x00\x00", 3) == 0) {
 
                 if ((packet->payload[4] == 0x0c && packet->payload[6] == 0x76) ||
                         (packet->payload[4] == 0x02 && packet->payload[6] == 0x18) ||

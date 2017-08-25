@@ -29,10 +29,10 @@ void mmt_classify_me_feidian(ipacket_t * ipacket, unsigned index) {
                     packet->payload_packet_len, flow->l4.udp.feidian_stage);
             mmt_int_feidian_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return;
-        } else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /", 5) == 0) {
+        } else if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->host_line.ptr != NULL && packet->host_line.len == 18
-                    && memcmp(packet->host_line.ptr, "config.feidian.com", 18) == 0) {
+                    && mmt_memcmp(packet->host_line.ptr, "config.feidian.com", 18) == 0) {
                 mmt_int_feidian_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
@@ -79,10 +79,10 @@ int mmt_check_feidian_tcp(ipacket_t * ipacket, unsigned index) {
                     packet->payload_packet_len, flow->l4.udp.feidian_stage);
             mmt_int_feidian_add_connection(ipacket, MMT_REAL_PROTOCOL);
             return 1;
-        } else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /", 5) == 0) {
+        } else if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->host_line.ptr != NULL && packet->host_line.len == 18
-                    && memcmp(packet->host_line.ptr, "config.feidian.com", 18) == 0) {
+                    && mmt_memcmp(packet->host_line.ptr, "config.feidian.com", 18) == 0) {
                 mmt_int_feidian_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             }

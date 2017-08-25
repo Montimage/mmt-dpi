@@ -313,7 +313,7 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
                         nb_offset += 1;
                     }
                     char subject_CN_pattern[] = {0x55, 0x04, 0x03};
-                    if ((current_offset + nb_offset * 2 + 2 + 3 + 2 < packet->payload_packet_len) && memcmp(&packet->payload[current_offset + nb_offset * 2 + 2], subject_CN_pattern, 3) == 0) {
+                    if ((current_offset + nb_offset * 2 + 2 + 3 + 2 < packet->payload_packet_len) && mmt_memcmp(&packet->payload[current_offset + nb_offset * 2 + 2], subject_CN_pattern, 3) == 0) {
                         uint8_t CN_len = packet->payload[current_offset + nb_offset * 2 + 2 + 3 + 1];
                         /* unused
                         uint8_t CN_ecoding_type = packet->payload[current_offset + nb_offset * 2 + 2 + 3];
@@ -457,16 +457,16 @@ uint32_t sslDetectProtocolFromClientHello(ipacket_t * ipacket) {
             mmt_int_ssl_add_connection(ipacket, proto);
             return proto;
         }else {
-            if(memcmp((void *) certificate, (void *) "pop.", 4) == 0) {
+            if(mmt_memcmp((void *) certificate, (void *) "pop.", 4) == 0) {
                 mmt_int_ssl_add_connection(ipacket, PROTO_POPS);
                 return PROTO_POPS;
-            } else if(memcmp((void *) certificate, (void *) "imap.", 5) == 0) {
+            } else if(mmt_memcmp((void *) certificate, (void *) "imap.", 5) == 0) {
                 mmt_int_ssl_add_connection(ipacket, PROTO_IMAPS);
                 return PROTO_IMAPS;
-            } else if(memcmp((void *) certificate, (void *) "pop3.", 5) == 0) {
+            } else if(mmt_memcmp((void *) certificate, (void *) "pop3.", 5) == 0) {
                 mmt_int_ssl_add_connection(ipacket, PROTO_POPS);
                 return PROTO_POPS;
-            } else if(memcmp((void *) certificate, (void *) "smtp.", 5) == 0) {
+            } else if(mmt_memcmp((void *) certificate, (void *) "smtp.", 5) == 0) {
                 mmt_int_ssl_add_connection(ipacket, PROTO_SMTPS);
                 return PROTO_SMTPS;
             }
@@ -532,7 +532,7 @@ int check_whatsapp(ipacket_t * ipacket) {
             return 1;
         }
         if (flow->l4.tcp.whatsapp_conn_stage == 0 && packet->payload_packet_len >= 1 && packet->payload[0] == 0x57) {
-            if (packet->payload_packet_len > 5 && (memcmp(packet->payload, whatsapp_pattern, sizeof (whatsapp_pattern)) == 0)) {
+            if (packet->payload_packet_len > 5 && (mmt_memcmp(packet->payload, whatsapp_pattern, sizeof (whatsapp_pattern)) == 0)) {
                 flow->l4.tcp.whatsapp_conn_stage = 2;
                 return 1;
             }
@@ -540,7 +540,7 @@ int check_whatsapp(ipacket_t * ipacket) {
             return 1;
         }
         if ((flow->l4.tcp.whatsapp_conn_stage == 1) && (packet->payload_packet_len > 5) &&
-                (memcmp(packet->payload, &whatsapp_pattern[1], sizeof (whatsapp_pattern) - 1) == 0)) {
+                (mmt_memcmp(packet->payload, &whatsapp_pattern[1], sizeof (whatsapp_pattern) - 1) == 0)) {
             flow->l4.tcp.whatsapp_conn_stage = 2;
             return 1;
         }

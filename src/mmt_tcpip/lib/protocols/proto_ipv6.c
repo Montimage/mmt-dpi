@@ -14,11 +14,11 @@ bool ipv6_session_comp(void * key1, void * key2) {
     mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
 
     // both flows of the same type
-    int comp_val = memcmp(&l_session->next_proto, &r_session->next_proto, 5);
+    int comp_val = mmt_memcmp(&l_session->next_proto, &r_session->next_proto, 5);
     if (comp_val == 0) {
-   	 comp_val = memcmp(l_session->lower_ip, r_session->lower_ip, IPv6_ALEN);
+   	 comp_val = mmt_memcmp(l_session->lower_ip, r_session->lower_ip, IPv6_ALEN);
    	 if (comp_val == 0) {
-   		 comp_val = memcmp(l_session->higher_ip, r_session->higher_ip, IPv6_ALEN);
+   		 comp_val = mmt_memcmp(l_session->higher_ip, r_session->higher_ip, IPv6_ALEN);
    	 }
     }
     return comp_val < 0;
@@ -1224,7 +1224,7 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     /* BW: add the length of the truncated packet as well */
     packet->l3_captured_packet_len = (ipacket->p_hdr->caplen - ip_offset);
 
-    if (memcmp(&((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->ip.s6_addr,
+    if (mmt_memcmp(&((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->ip.s6_addr,
             &ip6h->saddr, IPv6_ALEN) == 0) {
         src = &((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->id_internal_context;
         dst = &((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->lower_ip)->id_internal_context;

@@ -135,7 +135,7 @@ int mmt_int_search_thunder_http(ipacket_t * ipacket)
     }
 
     if (packet->payload_packet_len > 5
-            && memcmp(packet->payload, "GET /", 5) == 0 && MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_THUNDER)) {
+            && mmt_memcmp(packet->payload, "GET /", 5) == 0 && MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_THUNDER)) {
         MMT_LOG(PROTO_THUNDER, MMT_LOG_DEBUG, "HTTP packet detected.\n");
         mmt_parse_packet_line_info(ipacket);
 

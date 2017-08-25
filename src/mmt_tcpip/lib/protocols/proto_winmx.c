@@ -26,7 +26,7 @@ void mmt_classify_me_winmx_tcp(ipacket_t * ipacket, unsigned index) {
         }
         /* did not see this pattern in any trace that we have */
         if (((packet->payload_packet_len) == 4)
-                && (memcmp(packet->payload, "SEND", 4) == 0)) {
+                && (mmt_memcmp(packet->payload, "SEND", 4) == 0)) {
 
             MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "maybe WinMX Send\n");
             flow->l4.tcp.winmx_stage = 1;
@@ -34,7 +34,7 @@ void mmt_classify_me_winmx_tcp(ipacket_t * ipacket, unsigned index) {
         }
 
         if (((packet->payload_packet_len) == 3)
-                && (memcmp(packet->payload, "GET", 3) == 0)) {
+                && (mmt_memcmp(packet->payload, "GET", 3) == 0)) {
             MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "found winmx by GET\n");
             mmt_int_winmx_add_connection(ipacket);
             return;
@@ -90,7 +90,7 @@ int mmt_check_winmx(ipacket_t * ipacket, unsigned index) {
             }
             /* did not see this pattern in any trace that we have */
             if (((packet->payload_packet_len) == 4)
-                    && (memcmp(packet->payload, "SEND", 4) == 0)) {
+                    && (mmt_memcmp(packet->payload, "SEND", 4) == 0)) {
 
                 MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "maybe WinMX Send\n");
                 flow->l4.tcp.winmx_stage = 1;
@@ -98,7 +98,7 @@ int mmt_check_winmx(ipacket_t * ipacket, unsigned index) {
             }
 
             if (((packet->payload_packet_len) == 3)
-                    && (memcmp(packet->payload, "GET", 3) == 0)) {
+                    && (mmt_memcmp(packet->payload, "GET", 3) == 0)) {
                 MMT_LOG(PROTO_WINMX, MMT_LOG_DEBUG, "found winmx by GET\n");
                 mmt_int_winmx_add_connection(ipacket);
                 return 1;

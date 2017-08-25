@@ -52,8 +52,8 @@ void mmt_classify_me_popo(ipacket_t * ipacket, unsigned index) {
         register uint16_t ii;
         for (ii = 14; ii < 50 && ii < packet->payload_packet_len - 8; ++ii) {
             if (packet->payload[ii] == '@')
-                if (!memcmp(&packet->payload[ii + 1], "163.com", 7)
-                        || (ii <= packet->payload_packet_len - 13 && !memcmp(&packet->payload[ii + 1], "popo.163.com", 12))) {
+                if (!mmt_memcmp(&packet->payload[ii + 1], "163.com", 7)
+                        || (ii <= packet->payload_packet_len - 13 && !mmt_memcmp(&packet->payload[ii + 1], "popo.163.com", 12))) {
                     MMT_LOG(PROTO_POPO, MMT_LOG_DEBUG, "POPO  detected.\n");
                     mmt_int_popo_add_connection(ipacket);
                     return;

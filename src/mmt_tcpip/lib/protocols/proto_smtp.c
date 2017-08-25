@@ -48,15 +48,15 @@ void mmt_classify_me_smtp(ipacket_t * ipacket, unsigned index) {
 
             // expected server responses
             if (packet->line[a].len >= 3) {
-                if (memcmp(packet->line[a].ptr, "220", 3) == 0) {
+                if (mmt_memcmp(packet->line[a].ptr, "220", 3) == 0) {
                     flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_220;
-                } else if (memcmp(packet->line[a].ptr, "250", 3) == 0) {
+                } else if (mmt_memcmp(packet->line[a].ptr, "250", 3) == 0) {
                     flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_250;
-                } else if (memcmp(packet->line[a].ptr, "235", 3) == 0) {
+                } else if (mmt_memcmp(packet->line[a].ptr, "235", 3) == 0) {
                     flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_235;
-                } else if (memcmp(packet->line[a].ptr, "334", 3) == 0) {
+                } else if (mmt_memcmp(packet->line[a].ptr, "334", 3) == 0) {
                     flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_334;
-                } else if (memcmp(packet->line[a].ptr, "354", 3) == 0) {
+                } else if (mmt_memcmp(packet->line[a].ptr, "354", 3) == 0) {
                     flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_354;
                 }
             }
@@ -147,7 +147,7 @@ void mmt_classify_me_smtp(ipacket_t * ipacket, unsigned index) {
     if (ipacket->session->data_packet_count <= 4 &&
             packet->payload_packet_len >= 4 &&
             (ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a
-            || memcmp(packet->payload, "220", 3) == 0 || memcmp(packet->payload, "EHLO", 4) == 0)) {
+            || mmt_memcmp(packet->payload, "220", 3) == 0 || mmt_memcmp(packet->payload, "EHLO", 4) == 0)) {
         MMT_LOG(PROTO_SMTP, MMT_LOG_DEBUG, "maybe SMTP, need next packet.\n");
         return;
     }

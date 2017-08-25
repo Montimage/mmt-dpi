@@ -31,7 +31,7 @@ static void mmt_int_zattoo_add_connection(ipacket_t * ipacket, mmt_protocol_type
 
 static uint8_t mmt_int_zattoo_user_agent_set(ipacket_t * ipacket) {
     if (ipacket->internal_packet->user_agent_line.ptr != NULL && ((mmt_tcpip_internal_packet_t *) ipacket->internal_packet)->user_agent_line.len == 111) {
-        if (memcmp(ipacket->internal_packet->user_agent_line.ptr +
+        if (mmt_memcmp(ipacket->internal_packet->user_agent_line.ptr +
                 ipacket->internal_packet->user_agent_line.len - 25, "Zattoo/4", sizeof ("Zattoo/4") - 1) == 0) {
             MMT_LOG(PROTO_ZATTOO, MMT_LOG_DEBUG, "found zattoo useragent\n");
             return 1;
@@ -63,22 +63,22 @@ void mmt_classify_me_zattoo(ipacket_t * ipacket, unsigned index) {
     }
 
     if (packet->tcp != NULL) {
-        if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /frontdoor/fd?brand=Zattoo&v=", 33) == 0) {
+        if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /frontdoor/fd?brand=Zattoo&v=", 33) == 0) {
             MMT_LOG(PROTO_ZATTOO,
                     MMT_LOG_DEBUG, "add connection over tcp with pattern GET /frontdoor/fd?brand=Zattoo&v=\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
         }
         if (packet->payload_packet_len > 50
-                && memcmp(packet->payload, "GET /ZattooAdRedirect/redirect.jsp?user=", 40) == 0) {
+                && mmt_memcmp(packet->payload, "GET /ZattooAdRedirect/redirect.jsp?user=", 40) == 0) {
             MMT_LOG(PROTO_ZATTOO,
                     MMT_LOG_DEBUG, "add connection over tcp with pattern GET /ZattooAdRedirect/redirect.jsp?user=\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return;
         }
         if (packet->payload_packet_len > 50
-                && (memcmp(packet->payload, "POST /channelserver/player/channel/update HTTP/1.1", 50) == 0
-                || memcmp(packet->payload, "GET /epg/query", 14) == 0)) {
+                && (mmt_memcmp(packet->payload, "POST /channelserver/player/channel/update HTTP/1.1", 50) == 0
+                || mmt_memcmp(packet->payload, "GET /epg/query", 14) == 0)) {
             mmt_parse_packet_line_info(ipacket);
             for (i = 0; i < packet->parsed_lines; i++) {
                 if (packet->line[i].len >= 18 && (mmt_mem_cmp(packet->line[i].ptr, "User-Agent: Zattoo", 18) == 0)) {
@@ -90,8 +90,8 @@ void mmt_classify_me_zattoo(ipacket_t * ipacket, unsigned index) {
                 }
             }
         } else if (packet->payload_packet_len > 50
-                && (memcmp(packet->payload, "GET /", 5) == 0
-                || memcmp(packet->payload, "POST /", 6) == 0)) {
+                && (mmt_memcmp(packet->payload, "GET /", 5) == 0
+                || mmt_memcmp(packet->payload, "POST /", 6) == 0)) {
             /* TODO to avoid searching currently only a specific length and offset is used
              * that might be changed later */
             mmt_parse_packet_line_info(ipacket);
@@ -99,7 +99,7 @@ void mmt_classify_me_zattoo(ipacket_t * ipacket, unsigned index) {
                 mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return;
             }
-        } else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "POST http://", 12) == 0) {
+        } else if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "POST http://", 12) == 0) {
             mmt_parse_packet_line_info(ipacket);
             // test for unique character of the zattoo header
             if (packet->parsed_lines == 4 && packet->host_line.ptr != NULL) {
@@ -233,22 +233,22 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
             return 1;
         }
 
-        if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /frontdoor/fd?brand=Zattoo&v=", 33) == 0) {
+        if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "GET /frontdoor/fd?brand=Zattoo&v=", 33) == 0) {
             MMT_LOG(PROTO_ZATTOO,
                     MMT_LOG_DEBUG, "add connection over tcp with pattern GET /frontdoor/fd?brand=Zattoo&v=\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         }
         if (packet->payload_packet_len > 50
-                && memcmp(packet->payload, "GET /ZattooAdRedirect/redirect.jsp?user=", 40) == 0) {
+                && mmt_memcmp(packet->payload, "GET /ZattooAdRedirect/redirect.jsp?user=", 40) == 0) {
             MMT_LOG(PROTO_ZATTOO,
                     MMT_LOG_DEBUG, "add connection over tcp with pattern GET /ZattooAdRedirect/redirect.jsp?user=\n");
             mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             return 1;
         }
         if (packet->payload_packet_len > 50
-                && (memcmp(packet->payload, "POST /channelserver/player/channel/update HTTP/1.1", 50) == 0
-                || memcmp(packet->payload, "GET /epg/query", 14) == 0)) {
+                && (mmt_memcmp(packet->payload, "POST /channelserver/player/channel/update HTTP/1.1", 50) == 0
+                || mmt_memcmp(packet->payload, "GET /epg/query", 14) == 0)) {
             mmt_parse_packet_line_info(ipacket);
             for (i = 0; i < packet->parsed_lines; i++) {
                 if (packet->line[i].len >= 18 && (mmt_mem_cmp(packet->line[i].ptr, "User-Agent: Zattoo", 18) == 0)) {
@@ -260,8 +260,8 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
                 }
             }
         } else if (packet->payload_packet_len > 50
-                && (memcmp(packet->payload, "GET /", 5) == 0
-                || memcmp(packet->payload, "POST /", 6) == 0)) {
+                && (mmt_memcmp(packet->payload, "GET /", 5) == 0
+                || mmt_memcmp(packet->payload, "POST /", 6) == 0)) {
             /* TODO to avoid searching currently only a specific length and offset is used
              * that might be changed later */
             mmt_parse_packet_line_info(ipacket);
@@ -269,7 +269,7 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
                 mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
             }
-        } else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "POST http://", 12) == 0) {
+        } else if (packet->payload_packet_len > 50 && mmt_memcmp(packet->payload, "POST http://", 12) == 0) {
             mmt_parse_packet_line_info(ipacket);
             // test for unique character of the zattoo header
             if (packet->parsed_lines == 4 && packet->host_line.ptr != NULL) {

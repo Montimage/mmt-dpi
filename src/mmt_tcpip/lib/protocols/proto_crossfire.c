@@ -35,16 +35,16 @@ void mmt_classify_me_crossfire(ipacket_t * ipacket, unsigned index) {
 
     } else if (packet->tcp != 0) {
 
-        if (packet->payload_packet_len > 4 && memcmp(packet->payload, "GET /", 5) == 0) {
+        if (packet->payload_packet_len > 4 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->parsed_lines == 8
                     && (packet->line[0].ptr != NULL && packet->line[0].len >= 30
-                    && (memcmp(&packet->payload[5], "notice/login_big", 16) == 0
-                    || memcmp(&packet->payload[5], "notice/login_small", 18) == 0))
-                    && memcmp(&packet->payload[packet->line[0].len - 19], "/index.asp HTTP/1.", 18) == 0
+                    && (mmt_memcmp(&packet->payload[5], "notice/login_big", 16) == 0
+                    || mmt_memcmp(&packet->payload[5], "notice/login_small", 18) == 0))
+                    && mmt_memcmp(&packet->payload[packet->line[0].len - 19], "/index.asp HTTP/1.", 18) == 0
                     && (packet->host_line.ptr != NULL && packet->host_line.len >= 13
-                    && (memcmp(packet->host_line.ptr, "crossfire", 9) == 0
-                    || memcmp(packet->host_line.ptr, "www.crossfire", 13) == 0))
+                    && (mmt_memcmp(packet->host_line.ptr, "crossfire", 9) == 0
+                    || mmt_memcmp(packet->host_line.ptr, "www.crossfire", 13) == 0))
                     ) {
                 MMT_LOG(PROTO_CROSSFIRE, MMT_LOG_DEBUG, "Crossfire: found HTTP request.\n");
                 mmt_int_crossfire_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -69,16 +69,16 @@ int mmt_check_crossfire_tcp(ipacket_t * ipacket, unsigned index) {
 
         MMT_LOG(PROTO_CROSSFIRE, MMT_LOG_DEBUG, "search crossfire.\n");
 
-        if (packet->payload_packet_len > 4 && memcmp(packet->payload, "GET /", 5) == 0) {
+        if (packet->payload_packet_len > 4 && mmt_memcmp(packet->payload, "GET /", 5) == 0) {
             mmt_parse_packet_line_info(ipacket);
             if (packet->parsed_lines == 8
                     && (packet->line[0].ptr != NULL && packet->line[0].len >= 30
-                    && (memcmp(&packet->payload[5], "notice/login_big", 16) == 0
-                    || memcmp(&packet->payload[5], "notice/login_small", 18) == 0))
-                    && memcmp(&packet->payload[packet->line[0].len - 19], "/index.asp HTTP/1.", 18) == 0
+                    && (mmt_memcmp(&packet->payload[5], "notice/login_big", 16) == 0
+                    || mmt_memcmp(&packet->payload[5], "notice/login_small", 18) == 0))
+                    && mmt_memcmp(&packet->payload[packet->line[0].len - 19], "/index.asp HTTP/1.", 18) == 0
                     && (packet->host_line.ptr != NULL && packet->host_line.len >= 13
-                    && (memcmp(packet->host_line.ptr, "crossfire", 9) == 0
-                    || memcmp(packet->host_line.ptr, "www.crossfire", 13) == 0))
+                    && (mmt_memcmp(packet->host_line.ptr, "crossfire", 9) == 0
+                    || mmt_memcmp(packet->host_line.ptr, "www.crossfire", 13) == 0))
                     ) {
                 MMT_LOG(PROTO_CROSSFIRE, MMT_LOG_DEBUG, "Crossfire: found HTTP request.\n");
                 mmt_int_crossfire_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);

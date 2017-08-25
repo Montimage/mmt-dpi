@@ -21,8 +21,8 @@ void mmt_classify_me_activesync(ipacket_t * ipacket, unsigned index) {
     if (packet->tcp != NULL) {
 
         if (packet->payload_packet_len > 150
-                && ((memcmp(packet->payload, "OPTIONS /Microsoft-Server-ActiveSync?", 37) == 0)
-                || (memcmp(packet->payload, "POST /Microsoft-Server-ActiveSync?", 34) == 0))) {
+                && ((mmt_memcmp(packet->payload, "OPTIONS /Microsoft-Server-ActiveSync?", 37) == 0)
+                || (mmt_memcmp(packet->payload, "POST /Microsoft-Server-ActiveSync?", 34) == 0))) {
             mmt_int_activesync_add_connection(ipacket);
             MMT_LOG(PROTO_HTTP_APPLICATION_ACTIVESYNC, MMT_LOG_DEBUG,
                     " flow marked as ActiveSync \n");
@@ -44,8 +44,8 @@ int mmt_check_http_application_activesync(ipacket_t * ipacket, unsigned index) {
         
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         if (packet->payload_packet_len > 150
-                && ((memcmp(packet->payload, "OPTIONS /Microsoft-Server-ActiveSync?", 37) == 0)
-                || (memcmp(packet->payload, "POST /Microsoft-Server-ActiveSync?", 34) == 0))) {
+                && ((mmt_memcmp(packet->payload, "OPTIONS /Microsoft-Server-ActiveSync?", 37) == 0)
+                || (mmt_memcmp(packet->payload, "POST /Microsoft-Server-ActiveSync?", 34) == 0))) {
             mmt_int_activesync_add_connection(ipacket);
             MMT_LOG(PROTO_HTTP_APPLICATION_ACTIVESYNC, MMT_LOG_DEBUG,
                     " flow marked as ActiveSync \n");
