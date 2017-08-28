@@ -30,7 +30,6 @@ int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
                          (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
                          (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
                          (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
-                    MMT_LOG(PROTO_VNC, ndpi_struct, NDPI_LOG_DEBUG, "reached vnc stage one\n");
                     flow->l4.tcp.vnc_stage = 1 + ipacket->session->last_packet_direction;
                     return 4;
                 }

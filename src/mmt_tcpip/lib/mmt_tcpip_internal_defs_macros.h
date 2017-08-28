@@ -14,7 +14,7 @@ extern "C" {
 
 #include "../include/mmt_tcpip_protocols.h"
 
-#ifndef OPENDPI_NETFILTER_MODULE
+#ifndef MMT_NETFILTER_MODULE
 #include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -24,7 +24,7 @@ extern "C" {
 //#define __forceinline __attribute__((always_inline))
 #if !(defined(_WIN32))
  #if 1 && !defined __APPLE__ && !defined __FreeBSD__
-  #ifndef OPENDPI_NETFILTER_MODULE
+  #ifndef MMT_NETFILTER_MODULE
    #include <endian.h>
    #include <byteswap.h>
   #else
@@ -45,7 +45,7 @@ extern "C" {
 #include <netinet/in.h>
 #endif
 #else							/* APPLE */
-#ifndef OPENDPI_NETFILTER_MODULE
+#ifndef MMT_NETFILTER_MODULE
 #include <netinet/in.h>
 #endif
 #include <netinet/ip.h>
@@ -260,7 +260,7 @@ extern "C" {
     /* new definitions to get little endian from network bytes */
 #define get_ul8(X,O) get_u8(X,O)
 
-#ifndef OPENDPI_NETFILTER_MODULE
+#ifndef MMT_NETFILTER_MODULE
 #ifndef __BYTE_ORDER
 #define __BYTE_ORDER BYTE_ORDER
 #define __LITTLE_ENDIAN LITTLE_ENDIAN
@@ -283,7 +283,7 @@ extern "C" {
 #elif defined( __BIG_ENDIAN) && __BYTE_ORDER == __BIG_ENDIAN
 
     /* convert the bytes from big to little endian */
-#ifndef OPENDPI_NETFILTER_MODULE
+#ifndef MMT_NETFILTER_MODULE
 #define get_l16(X,O) bswap_16(get_u16(X,O))
 #define get_l32(X,O) bswap_32(get_u32(X,O))
 #else
