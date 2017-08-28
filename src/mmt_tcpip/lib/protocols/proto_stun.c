@@ -15,8 +15,8 @@ static void mmt_int_stun_add_connection(ipacket_t * ipacket) {
 }
 
 typedef enum {
-    IPOQUE_IS_STUN,
-    IPOQUE_IS_NOT_STUN
+    MMT_IS_STUN,
+    MMT_IS_NOT_STUN
 } mmt_int_stun_result_t;
 
 static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8_t * payload, const uint16_t payload_length) {
@@ -49,7 +49,7 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
 
         if (payload_length == 20) {
             MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found stun.\n");
-            return IPOQUE_IS_STUN;
+            return MMT_IS_STUN;
         }
 
         a = 20;
@@ -78,7 +78,7 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
                 }
                 if (a == payload_length || (padding && (a + padding) == payload_length)) {
                     MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found stun.\n");
-                    return IPOQUE_IS_STUN;
+                    return MMT_IS_STUN;
                 }
 
             } else if (payload_length >= a + padding + 4
@@ -108,7 +108,7 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
                 }
                 if (a == payload_length) {
                     MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found stun.\n");
-                    return IPOQUE_IS_STUN;
+                    return MMT_IS_STUN;
                 }
             } else {
                 break;
@@ -116,7 +116,7 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
         }
     }
 
-    return IPOQUE_IS_NOT_STUN;
+    return MMT_IS_NOT_STUN;
 }
 
 void mmt_classify_me_stun(ipacket_t * ipacket, unsigned index) {
@@ -139,14 +139,14 @@ void mmt_classify_me_stun(ipacket_t * ipacket, unsigned index) {
              * improved by checking only the STUN packet of given length */
 
             if (mmt_int_check_stun(ipacket, packet->payload + 2, packet->payload_packet_len - 2) ==
-                    IPOQUE_IS_STUN) {
+                    MMT_IS_STUN) {
                 MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found TCP stun.\n");
                 mmt_int_stun_add_connection(ipacket);
                 return;
             }
         }
     }
-    if (mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == IPOQUE_IS_STUN) {
+    if (mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == MMT_IS_STUN) {
         MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found UDP stun.\n");
         mmt_int_stun_add_connection(ipacket);
         return;
@@ -174,7 +174,7 @@ int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
             /* TODO there could be several STUN packets in a single TCP packet so maybe the detection could be
              * improved by checking only the STUN packet of given length */
             if (mmt_int_check_stun(ipacket, packet->payload + 2, packet->payload_packet_len - 2) ==
-                    IPOQUE_IS_STUN) {
+                    MMT_IS_STUN) {
                 MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found TCP stun.\n");
                 mmt_int_stun_add_connection(ipacket);
                 return 1;
@@ -396,7 +396,7 @@ int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
 
         MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "search stun.\n");
 
-        if (mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == IPOQUE_IS_STUN) {
+        if (mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == MMT_IS_STUN) {
             MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found UDP stun.\n");
             mmt_int_stun_add_connection(ipacket);
             check_stun_internal(ipacket);

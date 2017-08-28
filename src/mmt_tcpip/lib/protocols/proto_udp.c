@@ -56,7 +56,7 @@ int udp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 
     MMT_SAVE_AS_BITMASK(packet->detection_bitmask, packet->detected_protocol_stack[0]);
 
-    /* build ipq_selction packet bitmask */
+    /* build mmt_selction packet bitmask */
     packet->mmt_selection_packet |= (MMT_SELECTION_BITMASK_PROTOCOL_INT_UDP | MMT_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP);
 
     if (packet->payload_packet_len != 0) {

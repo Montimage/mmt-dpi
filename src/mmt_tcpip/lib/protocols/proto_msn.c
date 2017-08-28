@@ -307,11 +307,11 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                         break;
                     }
                     if (packet->payload[plen] < '0' || packet->payload[plen] > '9') {
-                        goto ipq_msn_exclude;
+                        goto mmt_msn_exclude;
                     }
                     plen++;
                     if (plen >= endlen) {
-                        goto ipq_msn_exclude;
+                        goto mmt_msn_exclude;
                     }
                 }
 
@@ -322,11 +322,11 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                     }
                     if (packet->payload_packet_len > plen + 1
                             && (packet->payload[plen] < 20 || packet->payload[plen] > 128)) {
-                        goto ipq_msn_exclude;
+                        goto mmt_msn_exclude;
                     }
                     plen++;
                     if (plen >= endlen) {
-                        goto ipq_msn_exclude;
+                        goto mmt_msn_exclude;
                     }
 
                 }
@@ -472,7 +472,7 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
            n port 443 flows exclude flow bitmask after first packet itself */
     }
     MMT_LOG(PROTO_MSN, MMT_LOG_TRACE, "exclude msn.\n");
-ipq_msn_exclude:
+mmt_msn_exclude:
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN);
 }
 

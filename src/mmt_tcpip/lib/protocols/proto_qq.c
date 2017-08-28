@@ -231,9 +231,9 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                 && packet->payload[packet->payload_packet_len - 1] == 0x03
                 && packet->payload[4] == packet->payload_packet_len)))) {
             /*
-               if (flow->qq_stage == 3 && flow->detected_protocol == IPOQUE_PROTOCOL_QQ) {
+               if (flow->qq_stage == 3 && flow->detected_protocol == MMT_PROTOCOL_QQ) {
                if (flow->packet_direction_counter[0] > 0 && flow->packet_direction_counter[1] > 0) {
-               flow->protocol_subtype = IPOQUE_PROTOCOL_QQ_SUBTYPE_AUDIO;
+               flow->protocol_subtype = MMT_PROTOCOL_QQ_SUBTYPE_AUDIO;
                return;
                } else if (flow->packet_counter < 10) {
                return;
@@ -259,7 +259,7 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                                 "found qq udp pattern 02 ... 03 four times.\n");
                         /*
                            if (packet->payload[0] == 0x04) {
-                           mmt_int_qq_add_connection( IPOQUE_REAL_PROTOCOL);
+                           mmt_int_qq_add_connection( MMT_REAL_PROTOCOL);
                            return;
                            } */
                         mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
@@ -277,8 +277,8 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                     /*
                        if (flow->qq_stage == 3 && flow->packet_direction_counter[0] > 0 &&
                        flow->packet_direction_counter[1] > 0) {
-                       IPQ_LOG(IPOQUE_PROTOCOL_QQ, IPQ_LOG_DEBUG, "found qq udp pattern four times.\n");
-                       mmt_int_qq_add_connection( IPOQUE_REAL_PROTOCOL);
+                       MMT_LOG(MMT_PROTOCOL_QQ, MMT_LOG_DEBUG, "found qq udp pattern four times.\n");
+                       mmt_int_qq_add_connection( MMT_REAL_PROTOCOL);
                        return;
                        } else */ if (flow->qq_stage == 3) {
                         MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq udp pattern four times.\n");
@@ -595,7 +595,7 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
     }
 #ifdef PROTO_HTTP
     if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
-#endif							/* IPOQUE_PROTOCOL_HTTP */
+#endif							/* MMT_PROTOCOL_HTTP */
 
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QQ);
         MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "QQ tcp excluded; len %u\n",
@@ -603,7 +603,7 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
 
 #ifdef PROTO_HTTP
     }
-#endif							/* IPOQUE_PROTOCOL_HTTP */
+#endif							/* MMT_PROTOCOL_HTTP */
 
 }
 

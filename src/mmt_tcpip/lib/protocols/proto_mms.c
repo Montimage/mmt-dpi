@@ -44,7 +44,7 @@ void mmt_classify_me_mms(ipacket_t * ipacket, unsigned index) {
     }
 #ifdef PROTO_HTTP
     if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
-#endif							/* IPOQUE_PROTOCOL_HTTP */
+#endif							/* PROTOCOL_HTTP */
         MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS: exclude\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MMS);
 
@@ -52,7 +52,7 @@ void mmt_classify_me_mms(ipacket_t * ipacket, unsigned index) {
     } else {
         MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS avoid early exclude from http\n");
     }
-#endif							/* IPOQUE_PROTOCOL_HTTP */
+#endif							/* PROTOCOL_HTTP */
 
 }
 

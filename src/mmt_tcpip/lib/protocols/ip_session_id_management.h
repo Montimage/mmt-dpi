@@ -70,7 +70,7 @@ extern "C" {
     internal_ip_proto_context_t * setup_ipv4_internal_context();
     internal_ip_proto_context_t * setup_ipv6_internal_context();
     /**
-     * Sets up Ipoque application detection
+     * Sets up application detection
      * @return non zero value upon success, zero on failure.
      */
     int setup_application_detection(void);
@@ -88,7 +88,7 @@ extern "C" {
     int close_session_id_lists(void * proto_context);
 
     /**
-     * Closes Ipoque application classification module
+     * Closes application classification module
      * @return non zero value upon success, zero on failure.
      */
 //    int close_application_detection();

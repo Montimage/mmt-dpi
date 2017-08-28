@@ -148,7 +148,7 @@ struct mmt_session_struct {
     void * session_data[PROTO_PATH_SIZE];    /**< Table of protocol specific session data. This is a repository where each
                                                   detected protocol of this session will maintain its session specific data. */
     void * session_key;                      /**< pointer ot the session key structure */
-    void * internal_data;                    /**< interval data (Used by openDPI) */
+    void * internal_data;                    /**< interval data  */
     void * user_data;                        /**< user data associated with the structure */
 #if BYTE_ORDER == LITTLE_ENDIAN
     uint8_t status : 3;                      /**< indicate the status of the session */

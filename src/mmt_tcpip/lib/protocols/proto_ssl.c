@@ -29,7 +29,7 @@ version Version type
  */
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
-#define IPOQUE_MAX_SSL_REQUEST_SIZE 10000
+#define MMT_MAX_SSL_REQUEST_SIZE 10000
 
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -812,7 +812,7 @@ void mmt_init_classify_me_ssl() {
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SSL);
     MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL); //Exclude processing when http is detected! Obvious no?
-    //IPOQUE_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL);
+    //MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL);
 }
 
 int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {

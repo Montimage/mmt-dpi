@@ -37,8 +37,8 @@ void mmt_classify_me_rtsp(ipacket_t * ipacket, unsigned index) {
 
 
 	if (flow->rtsprdt_stage == 0
-#ifdef IPOQUE_PROTOCOL_RTCP
-		&& !(packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_RTCP)
+#ifdef PROTOCOL_RTCP
+		&& !(packet->detected_protocol_stack[0] == PROTOCOL_RTCP)
 #endif
 		) {
 		flow->rtsprdt_stage = 1 + ipacket->session->last_packet_direction;
@@ -81,8 +81,8 @@ void mmt_classify_me_rtsp(ipacket_t * ipacket, unsigned index) {
 	}
 	if (packet->udp != NULL && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
 		&& ((MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP) == 0)
-#ifdef IPOQUE_PROTOCOL_RTCP
-			|| (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTCP) == 0)
+#ifdef PROTOCOL_RTCP
+			|| (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTOCOL_RTCP) == 0)
 #endif
 		)) {
 		MMT_LOG(PROTO_RTSP, MMT_LOG_DEBUG,
