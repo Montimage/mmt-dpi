@@ -443,7 +443,6 @@ int dns_get_answers_offset(const ipacket_t * ipacket, unsigned proto_index){
     int answer_payload_offset = 12;
 
     int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
-    
     // Get number of queries
     int qdcount_offset = 4;
     uint16_t qdcount = bytes_to_int_extraction(ipacket->data + proto_offset + qdcount_offset,2);
@@ -805,16 +804,12 @@ static void mmt_int_dns_add_connection(ipacket_t * ipacket) {
     set_session_timeout_delay(ipacket->session, MMT_DNS_SESSION_TIMEOUT_DELAY);
 }
 
-void mmt_classify_me_dns(ipacket_t * ipacket, unsigned index) {
-
+int mmt_classify_me_dns(ipacket_t * ipacket, unsigned index) {
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
-
     uint16_t dport = 0;
-
-#define MMT_MAX_DNS_REQUESTS			16
 
     MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "search DNS.\n");
 
@@ -831,9 +826,9 @@ void mmt_classify_me_dns(ipacket_t * ipacket, unsigned index) {
     }
 
     /*check standard DNS to port 53 */
-    if (dport == 53 && packet->payload_packet_len >= 12) {
+    if (packet->payload_packet_len >= 12) {
 
-        MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "dport==53, packet-payload-packet-len>=12.\n");
+        MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "packet-payload-packet-len>=12.\n");
 
         /* dns header
            0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
@@ -855,30 +850,23 @@ void mmt_classify_me_dns(ipacket_t * ipacket, unsigned index) {
          *
          */
 
-        if (((packet->payload[2] & 0x80) == 0 &&
-                ntohs(get_u16(packet->payload, 4)) <= MMT_MAX_DNS_REQUESTS &&
-                ntohs(get_u16(packet->payload, 4)) != 0 &&
-                ntohs(get_u16(packet->payload, 6)) == 0 &&
-                ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) <= MMT_MAX_DNS_REQUESTS)
-                ||
-                ((ntohs(get_u16(packet->payload, 0)) == packet->payload_packet_len - 2) &&
-                (packet->payload[4] & 0x80) == 0 &&
-                ntohs(get_u16(packet->payload, 6)) <= MMT_MAX_DNS_REQUESTS &&
-                ntohs(get_u16(packet->payload, 6)) != 0 &&
-                ntohs(get_u16(packet->payload, 8)) == 0 &&
-                ntohs(get_u16(packet->payload, 10)) == 0 &&
-                packet->payload_packet_len >= 14 && ntohs(get_u16(packet->payload, 12)) <= MMT_MAX_DNS_REQUESTS)) {
-
-            MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "found DNS.\n");
-
-            mmt_int_dns_add_connection(ipacket);
-            return;
+        if (dns_check_payload(packet->payload,packet->payload_packet_len)){
+            MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "found DNS.\n");            
+            mmt_int_dns_add_connection(ipacket);    
+            if(dport == 53){
+                return 1;
+            }
+            return 4;
+        }else{
+            MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "exclude DNS.\n");
+            MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DNS);
+            return 0;
         }
     }
 
     MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "exclude DNS.\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DNS);
-
+    return 0;
 }
 
 int mmt_check_dns(ipacket_t * ipacket, unsigned index) {
@@ -886,8 +874,7 @@ int mmt_check_dns(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
-        mmt_classify_me_dns(ipacket, index);
+        return mmt_classify_me_dns(ipacket, index);
     }
     return 4;
 }
