@@ -814,7 +814,7 @@ void mmt_classify_me_dns(ipacket_t * ipacket, unsigned index) {
 
     uint16_t dport = 0;
 
-#define IPOQUE_MAX_DNS_REQUESTS			16
+#define MMT_MAX_DNS_REQUESTS			16
 
     MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "search DNS.\n");
 
@@ -856,18 +856,18 @@ void mmt_classify_me_dns(ipacket_t * ipacket, unsigned index) {
          */
 
         if (((packet->payload[2] & 0x80) == 0 &&
-                ntohs(get_u16(packet->payload, 4)) <= IPOQUE_MAX_DNS_REQUESTS &&
+                ntohs(get_u16(packet->payload, 4)) <= MMT_MAX_DNS_REQUESTS &&
                 ntohs(get_u16(packet->payload, 4)) != 0 &&
                 ntohs(get_u16(packet->payload, 6)) == 0 &&
-                ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) <= IPOQUE_MAX_DNS_REQUESTS)
+                ntohs(get_u16(packet->payload, 8)) == 0 && ntohs(get_u16(packet->payload, 10)) <= MMT_MAX_DNS_REQUESTS)
                 ||
                 ((ntohs(get_u16(packet->payload, 0)) == packet->payload_packet_len - 2) &&
                 (packet->payload[4] & 0x80) == 0 &&
-                ntohs(get_u16(packet->payload, 6)) <= IPOQUE_MAX_DNS_REQUESTS &&
+                ntohs(get_u16(packet->payload, 6)) <= MMT_MAX_DNS_REQUESTS &&
                 ntohs(get_u16(packet->payload, 6)) != 0 &&
                 ntohs(get_u16(packet->payload, 8)) == 0 &&
                 ntohs(get_u16(packet->payload, 10)) == 0 &&
-                packet->payload_packet_len >= 14 && ntohs(get_u16(packet->payload, 12)) <= IPOQUE_MAX_DNS_REQUESTS)) {
+                packet->payload_packet_len >= 14 && ntohs(get_u16(packet->payload, 12)) <= MMT_MAX_DNS_REQUESTS)) {
 
             MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "found DNS.\n");
 

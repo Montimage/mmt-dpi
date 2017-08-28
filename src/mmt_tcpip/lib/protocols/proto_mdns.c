@@ -5,7 +5,7 @@
 
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
-#define IPOQUE_MAX_MDNS_REQUESTS                        128
+#define MMT_MAX_MDNS_REQUESTS                        128
 
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -22,15 +22,15 @@ static int mmt_int_check_mdns_payload(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = (struct mmt_tcpip_internal_packet_struct *) ipacket->internal_packet;
 
     if ((packet->payload[2] & 0x80) == 0 &&
-            ntohs(get_u16(packet->payload, 4)) <= IPOQUE_MAX_MDNS_REQUESTS &&
-            ntohs(get_u16(packet->payload, 6)) <= IPOQUE_MAX_MDNS_REQUESTS) {
+            ntohs(get_u16(packet->payload, 4)) <= MMT_MAX_MDNS_REQUESTS &&
+            ntohs(get_u16(packet->payload, 6)) <= MMT_MAX_MDNS_REQUESTS) {
 
         MMT_LOG(PROTO_MDNS, MMT_LOG_DEBUG, "found MDNS with question query.\n");
 
         return 1;
     } else if ((packet->payload[2] & 0x80) != 0 &&
             ntohs(get_u16(packet->payload, 4)) == 0 &&
-            ntohs(get_u16(packet->payload, 6)) <= IPOQUE_MAX_MDNS_REQUESTS &&
+            ntohs(get_u16(packet->payload, 6)) <= MMT_MAX_MDNS_REQUESTS &&
             ntohs(get_u16(packet->payload, 6)) != 0) {
         MMT_LOG(PROTO_MDNS, MMT_LOG_DEBUG, "found MDNS with answer query.\n");
 

@@ -60,10 +60,6 @@ extern "C" {
     /* misc definitions */
 #define MMT_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE 0x10000
 
-    /////////// GLOBAL VARIABLES - WILL NEVER CHANGE AFTER INITIALIZATION
-    //static uint32_t tcp_max_retransmission_window_size = IPOQUE_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE;
-    ///////////
-
     typedef enum {
         MMT_REAL_PROTOCOL = 0,
         MMT_CORRELATED_PROTOCOL = 1

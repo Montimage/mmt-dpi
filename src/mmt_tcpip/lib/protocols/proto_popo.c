@@ -33,13 +33,13 @@ void mmt_classify_me_popo(ipacket_t * ipacket, unsigned index) {
         }
 
         if (MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_POPO) != 0) {
-#define IPOQUE_POPO_IP_SUBNET_START ( (220 << 24) + (181 << 16) + (28 << 8) + 220)
-#define IPOQUE_POPO_IP_SUBNET_END ( (220 << 24) + (181 << 16) + (28 << 8) + 238)
+#define MMT_POPO_IP_SUBNET_START ( (220 << 24) + (181 << 16) + (28 << 8) + 220)
+#define MMT_POPO_IP_SUBNET_END ( (220 << 24) + (181 << 16) + (28 << 8) + 238)
 
             /* may match the first payload ip packet only ... */
 
-            if (ntohl(packet->iph->daddr) >= IPOQUE_POPO_IP_SUBNET_START
-                    && ntohl(packet->iph->daddr) <= IPOQUE_POPO_IP_SUBNET_END) {
+            if (ntohl(packet->iph->daddr) >= MMT_POPO_IP_SUBNET_START
+                    && ntohl(packet->iph->daddr) <= MMT_POPO_IP_SUBNET_END) {
                 MMT_LOG(PROTO_POPO, MMT_LOG_DEBUG, "POPO ip subnet detected\n");
                 mmt_int_popo_add_connection(ipacket);
                 return;

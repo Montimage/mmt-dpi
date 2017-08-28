@@ -782,7 +782,7 @@ exclude_rtp:
         MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "STUN: is detected, need next packet.\n");
         return;
     }
-#endif							/*  IPOQUE_PROTOCOL_STUN */
+#endif							/*  PROTOCOL_STUN */
     MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "exclude rtp.\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP);
 }

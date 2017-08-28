@@ -26,7 +26,7 @@ void mmt_classify_me_secondlife(ipacket_t * ipacket, unsigned index) {
     //      && ntohl(get_u32(packet->payload, 1)) == 0x00000001 // sequence number equals 1
     //      //ntohl (get_u32 (packet->payload, 5)) == 0x00FFFF00      // no extra header, low frequency message - can't use, message may have higher frequency
     //      ) {
-    //      IPQ_LOG(IPOQUE_PROTOCOL_SECONDLIFE, IPQ_LOG_DEBUG, "Second Life detected.\n");
+    //      MMT_LOG(MMT_PROTOCOL_SECONDLIFE, MMT_LOG_DEBUG, "Second Life detected.\n");
     //      mmt_int_secondlife_add_connection(mmt_struct);
     //      return;
     //  }
