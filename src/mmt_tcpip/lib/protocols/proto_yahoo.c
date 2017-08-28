@@ -27,7 +27,7 @@ struct mmt_yahoo_header {
 
 /* This function checks the pattern '<Ymsg Command=' in line 8 of parsed lines or
  * in the payload*/
-static uint8_t ipq_check_for_YmsgCommand(uint16_t len, const uint8_t * ptr) {
+static uint8_t mmt_check_for_YmsgCommand(uint16_t len, const uint8_t * ptr) {
     uint16_t i;
 
     for (i = 0; i < len - 12; i++) {
@@ -183,7 +183,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
             }
             if (packet->parsed_lines > 8 && packet->line[8].len > 250 && packet->line[8].ptr != NULL) {
                 if (memcmp(packet->line[8].ptr, "<Session ", 9) == 0) {
-                    if (ipq_check_for_YmsgCommand(packet->line[8].len, packet->line[8].ptr)) {
+                    if (mmt_check_for_YmsgCommand(packet->line[8].len, packet->line[8].ptr)) {
                         MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG,
                                 "found HTTP Proxy Yahoo Chat <Ymsg Command= pattern  \n");
                         mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -326,7 +326,7 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
         }
         if (flow->l4.tcp.yahoo_http_proxy_stage == 1 + ipacket->session->last_packet_direction) {
             if ((packet->payload_packet_len > 250) && (memcmp(packet->payload, "<Session ", 9) == 0)) {
-                if (ipq_check_for_YmsgCommand(packet->payload_packet_len, packet->payload)) {
+                if (mmt_check_for_YmsgCommand(packet->payload_packet_len, packet->payload)) {
                     MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG,
                             "found HTTP Proxy Yahoo Chat <Ymsg Command= pattern  \n");
                     mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);

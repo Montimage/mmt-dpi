@@ -121,7 +121,6 @@ int mmt_check_skype_udp(ipacket_t * ipacket, unsigned index) { //BW: TODO: Check
 void mmt_init_classify_me_skype() {
     selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    //IPOQUE_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SKYPE);
     MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SKYPE);
 }
 
