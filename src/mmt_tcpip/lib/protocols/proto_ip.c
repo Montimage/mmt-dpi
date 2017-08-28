@@ -49,24 +49,29 @@ bool ipv4_session_comp(void * key1, void * key2) {
 
     if( comp_val == 0 )
    	 comp_val = l_session->higher_ip_port - r_session->higher_ip_port;
+    char * l_session_higher_ip = (char *)l_session->higher_ip;
+    char * r_session_higher_ip = (char *)r_session->higher_ip;
 
     if( comp_val == 0 )
-   	 comp_val = ((char *)l_session->higher_ip)[0] - ((char *)r_session->higher_ip)[0];
+   	 comp_val = l_session_higher_ip[0] - r_session_higher_ip[0];
     if( comp_val == 0 )
-   	 comp_val = ((char *)l_session->higher_ip)[1] - ((char *)r_session->higher_ip)[1];
+   	 comp_val = l_session_higher_ip[1] - r_session_higher_ip[1];
     if( comp_val == 0 )
-   	 comp_val = ((char *)l_session->higher_ip)[2] - ((char *)r_session->higher_ip)[2];
+   	 comp_val = l_session_higher_ip[2] - r_session_higher_ip[2];
     if( comp_val == 0 )
-   	 comp_val = ((char *)l_session->higher_ip)[3] - ((char *)r_session->higher_ip)[3];
+   	 comp_val = l_session_higher_ip[3] - r_session_higher_ip[3];
+
+    char * l_session_lower_ip = (char *)l_session->lower_ip;
+    char * r_session_lower_ip = (char *)r_session->lower_ip;
 
     if( comp_val == 0 )
-   	 comp_val = ((char *)l_session->lower_ip)[0] - ((char *)r_session->lower_ip)[0];
+   	 comp_val = l_session_lower_ip[0] - r_session_lower_ip[0];
     if( comp_val == 0 )
-   	 comp_val = ((char *)l_session->lower_ip)[1] - ((char *)r_session->lower_ip)[1];
+   	 comp_val = l_session_lower_ip[1] - r_session_lower_ip[1];
     if( comp_val == 0 )
-   	 comp_val = ((char *)l_session->lower_ip)[2] - ((char *)r_session->lower_ip)[2];
+   	 comp_val = l_session_lower_ip[2] - r_session_lower_ip[2];
     if( comp_val == 0 )
-   	 comp_val = ((char *)l_session->lower_ip)[3] - ((char *)r_session->lower_ip)[3];
+   	 comp_val = l_session_lower_ip[3] - r_session_lower_ip[3];
 
     return comp_val < 0;
 }
