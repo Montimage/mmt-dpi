@@ -934,7 +934,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
     ret = s1[19] - s2[19];
     if ( size == 20 || ret != 0 )
         return ret;
-
+    
     return memcmp( s1 + 20, s2 + 20, size - 20 );
 }
 
