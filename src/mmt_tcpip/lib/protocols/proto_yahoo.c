@@ -325,13 +325,8 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
             return;
         }
         if (flow->l4.tcp.yahoo_http_proxy_stage == 1 + ipacket->session->last_packet_direction) {
-<<<<<<< HEAD
-            if ((packet->payload_packet_len > 250) && (mmt_memcmp(packet->payload, "<Session ", 9) == 0)) {
-                if (ipq_check_for_YmsgCommand(packet->payload_packet_len, packet->payload)) {
-=======
             if ((packet->payload_packet_len > 250) && (memcmp(packet->payload, "<Session ", 9) == 0)) {
                 if (mmt_check_for_YmsgCommand(packet->payload_packet_len, packet->payload)) {
->>>>>>> origin/dev
                     MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG,
                             "found HTTP Proxy Yahoo Chat <Ymsg Command= pattern  \n");
                     mmt_int_yahoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
