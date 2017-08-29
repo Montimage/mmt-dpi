@@ -543,6 +543,26 @@ MMTAPI int MMTCALL disable_mmt_reassembly(
 );
 
 /**
+ * Enable classification by port number
+ * @param  mmt_handler mmt handler
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI int MMTCALL enable_port_classify(
+    mmt_handler_t *mmt_handler
+);
+
+/**
+ * Disable classification by port number
+ * @param  mmt_handler mmt handler
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI int MMTCALL disable_port_classify(
+    mmt_handler_t *mmt_handler
+);
+
+/**
  * Sets the timeout delay for the given session.
  * @param session pointer to the session to set its timeout delay
  * @param timeout_delay timeout delay value in seconds

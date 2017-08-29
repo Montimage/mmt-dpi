@@ -40,7 +40,6 @@ extern "C" {
 #define MMT_MAX_DNS_REQUESTS      16
 #define MMT_PORT_MATCH(srcp, dstp, port) (((port == srcp) || (port == dstp)) ? 1 : 0)
     // unsigned int mmt_get_protocol_by_port_number(uint8_t proto, uint16_t sport, uint16_t dport);
-    int dns_check_payload(const u_char * payload,int payload_packet_len);
     unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket);
 
     uint32_t get_proto_id_from_address(ipacket_t * ipacket);

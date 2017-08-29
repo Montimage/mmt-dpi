@@ -21,6 +21,40 @@ uint64_t bytes_to_uint64_extraction(const u_char *payload,int nb_bytes){
     return ret;
 }
 
+int dns_check_payload(const u_char * payload,int payload_packet_len){
+    if(payload_packet_len <=12){
+        return 0;
+    }
+
+    uint16_t v0 = ntohs(get_u16(payload, 0));
+    uint16_t v4 = ntohs(get_u16(payload, 4));
+    uint16_t v6 = ntohs(get_u16(payload, 6));
+    uint16_t v8 = ntohs(get_u16(payload, 8));
+    uint16_t v10 = ntohs(get_u16(payload, 10));
+    uint16_t v12 = ntohs(get_u16(payload, 12));
+    if (
+        ((payload[2] & 0x80) == 0 
+            && v4 <= MMT_MAX_DNS_REQUESTS 
+            && v4 != 0 
+            && v6 == 0 
+            && v8 == 0 
+            && v10 <= MMT_MAX_DNS_REQUESTS)
+        ||
+        ((v0 == payload_packet_len - 2) 
+            && (payload[4] & 0x80) == 0 
+            && v6 <= MMT_MAX_DNS_REQUESTS 
+            && v6 != 0 
+            && v8 == 0 
+            && v10 == 0 
+            && payload_packet_len >= 14 
+            && v12 <= MMT_MAX_DNS_REQUESTS)
+        ){
+        return 1;   
+    }
+    return 0;
+}
+
+
 dns_name_t * dns_new_name(){
     dns_name_t * dns_name;
     dns_name = (dns_name_t *)malloc(sizeof(dns_name_t));

@@ -334,39 +334,6 @@ inline static uint64_t _get_proto_by_tcp_port_number(uint16_t port_number,const 
     return PROTO_UNKNOWN;
 }
 
-int dns_check_payload(const u_char * payload,int payload_packet_len){
-    if(payload_packet_len <=12){
-        return 0;
-    }
-
-    uint16_t v0 = ntohs(get_u16(payload, 0));
-    uint16_t v4 = ntohs(get_u16(payload, 4));
-    uint16_t v6 = ntohs(get_u16(payload, 6));
-    uint16_t v8 = ntohs(get_u16(payload, 8));
-    uint16_t v10 = ntohs(get_u16(payload, 10));
-    uint16_t v12 = ntohs(get_u16(payload, 12));
-    if (
-        ((payload[2] & 0x80) == 0 
-            && v4 <= MMT_MAX_DNS_REQUESTS 
-            && v4 != 0 
-            && v6 == 0 
-            && v8 == 0 
-            && v10 <= MMT_MAX_DNS_REQUESTS)
-        ||
-        ((v0 == payload_packet_len - 2) 
-            && (payload[4] & 0x80) == 0 
-            && v6 <= MMT_MAX_DNS_REQUESTS 
-            && v6 != 0 
-            && v8 == 0 
-            && v10 == 0 
-            && payload_packet_len >= 14 
-            && v12 <= MMT_MAX_DNS_REQUESTS)
-        ){
-        return 1;   
-    }
-    return 0;
-}
-
 inline static uint64_t _get_proto_by_udp_port_number(uint16_t port_number,const u_char * payload, int payload_packet_len){
     switch(port_number){
         case 67:
@@ -386,10 +353,7 @@ inline static uint64_t _get_proto_by_udp_port_number(uint16_t port_number,const 
         return PROTO_MDNS;
 
         case 53:
-        if(dns_check_payload(payload, payload_packet_len)){
-            return PROTO_DNS;        
-        }
-            break;
+        return PROTO_DNS;        
 
         case 88:
         return PROTO_KERBEROS;
