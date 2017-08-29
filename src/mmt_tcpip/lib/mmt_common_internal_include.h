@@ -230,6 +230,7 @@ extern "C" {
     int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index);
     int mmt_check_usenet(ipacket_t * ipacket, unsigned index);
     int mmt_check_dns(ipacket_t * ipacket, unsigned index);
+    int mmt_check_rtsp(ipacket_t * ipacket, unsigned index);
     int mmt_check_filetopia(ipacket_t * ipacket, unsigned index);
     int mmt_check_manolito_tcp(ipacket_t * ipacket, unsigned index);
     int mmt_check_manolito_udp(ipacket_t * ipacket, unsigned index);
