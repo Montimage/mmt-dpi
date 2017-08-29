@@ -2,6 +2,9 @@ RELEASE NOTES
 ---
 ## Pre-version 1.6.11.0
 
+Pre-Version 1.6.10.5
+- Add APIs: enable_port_classify()/ disable_port_classify() to change the classification based on port number. Disable by default
+
 Version 1.6.10.5
 - Fix classification of PROTO_DNS -> Not use port number
 - Correct some license and copyright
