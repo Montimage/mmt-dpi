@@ -2250,6 +2250,8 @@ extern "C" {
     int init_proto_llmnr_struct();
     /////////// PLUGIN INIT FOR PROTO_eclipse_tcf //////////////////
     int init_proto_eclipse_tcf_struct();
+    /////////// PLUGIN INIT FOR PROTO_LOOPBACK //////////////////
+    int init_proto_loopback_struct();
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus

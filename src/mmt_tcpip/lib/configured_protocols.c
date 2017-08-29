@@ -3824,6 +3824,13 @@ int init_tcpip_plugin() {
         fprintf(stderr, "Error initializing protocol PROTO_ECLIPSE_TCF\n Exiting\n");
         exit(0);
     }
+
+    /////////////////////////////////////////////
+       /////////// INITILIZING PROTO_loopback //////////////////
+    if (!init_proto_loopback_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_LOOPBACK\n Exiting\n");
+        exit(0);
+    }
     /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////
