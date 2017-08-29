@@ -2,6 +2,15 @@ RELEASE NOTES
 ---
 ## Pre-version 1.6.11.0
 
+Version 1.6.10.5
+- Fix classification of PROTO_DNS -> Not use port number
+- Correct some license and copyright
+- Optimize some functions to improve the performance
+- Add VALGRIND as an compile option
+- Fix getting port number in proto_mssql.c
+- Replace macro MMT_STATICSTRING_LEN by static value -> improve performance
+- Fix setting classification function weight
+
 Version 1.6.10.4
 - Implemented some optimization techniques to improve the performance
 - Update classification of PROTO_MSSQL (to ignore port 102 - port for PROTO_S7COMM)
