@@ -364,7 +364,8 @@ struct protocol_instance_struct {
 
 struct mmt_handler_struct {
     uint8_t has_reassembly; // 0 - no, 1 - yes
-    
+    uint8_t port_classify; // 0 - no classification based on port number, 1 - classification based on port number
+
     uint32_t last_expiry_timeout;
     uint32_t attr_extraction_strategy;
     uint32_t stats_reporting_status;

@@ -1149,7 +1149,8 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->link_layer_stack = temp_stack;
     new_handler->process_packet = process_packet;
 
-    new_handler->has_reassembly = 0;
+    new_handler->has_reassembly = 0; // Disable TCP-reassembly by default
+    new_handler->port_classify = 0; // Disable classification by port number by default
     new_handler->clean_packet = clean_packet;
     new_handler->process_packet = process_packet;
 
@@ -2782,6 +2783,7 @@ void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * confi
         //Classify next protocol
         if (configured_protocol->protocol->classify_next.classify_protos && classif_status) { // Classify next proto only when such a function exists!
             mmt_classify_me_t * temp = configured_protocol->protocol->classify_next.classify_protos;
+            // Checking for the port number ??????
             for (; temp != NULL; temp = temp->next) {
                 classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
                 // // LN: check if the classify return 1-> do not need to go to check other protocol
@@ -3023,9 +3025,10 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     }
 
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
-    if (target == MMT_CONTINUE) {
-        /* Try to classify the encapsulated data */
-        proto_packet_classify_next(ipacket, configured_protocol, index);
+    if (target == MMT_CONTINUE) {        
+        
+        proto_packet_classify_next(ipacket, configured_protocol, index);    
+        
         if (ipacket->session != NULL) {
             // Update proto_path_direction
             if (ipacket->session->proto_path.len > 0) {
@@ -3181,6 +3184,22 @@ int disable_mmt_reassembly(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->process_packet = process_packet;
         mmt->clean_packet = clean_packet;
+        return 1;
+    }
+    return 0;
+}
+
+int enable_port_classify(mmt_handler_t *mmt) {
+    if (likely(mmt != NULL)) {
+        mmt->port_classify = 1;
+        return 1;
+    }
+    return 0;
+}
+
+int disable_port_classify(mmt_handler_t *mmt) {
+    if (likely(mmt != NULL)) {
+        mmt->port_classify = 0;
         return 1;
     }
     return 0;

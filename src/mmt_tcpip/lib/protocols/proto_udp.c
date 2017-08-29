@@ -96,7 +96,7 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.  
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         retval.proto_id = get_proto_id_from_address(ipacket);
-        if (retval.proto_id == PROTO_UNKNOWN) {
+        if (retval.proto_id == PROTO_UNKNOWN && ipacket->mmt_handler->port_classify != 0) {
             retval.proto_id = mmt_guess_protocol_by_port_number(ipacket);
         }
 
