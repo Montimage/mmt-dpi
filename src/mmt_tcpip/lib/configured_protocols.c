@@ -3946,6 +3946,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_citrix, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dcerpc, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_spotify, 50);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rtsp, 50);
     
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 60);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn_http, 60);
