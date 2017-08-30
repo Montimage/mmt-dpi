@@ -7,11 +7,11 @@ extern "C" {
 
 #include "mmt_contents_defs.h"
 
-    enum {
-        ETH_PROTOCOL = 1,
-        ETH_DST,
-        ETH_SRC,
-    };
+enum {
+    ETH_PROTOCOL = 1,
+    ETH_DST,
+    ETH_SRC,
+};
 
 #define ETHERNET_ATTRIBUTES_NB ETH_SRC
 
@@ -19,37 +19,37 @@ extern "C" {
 #define ETH_SRC_ALIAS           "src"
 #define ETH_DST_ALIAS           "dst"
 
-    enum ip_attributes {
-        IP_VERSION = 1,
-        IP_HEADER_LEN,
-        IP_PROTO_TOS,
-        IP_TOT_LEN,
-        IP_IDENTIFICATION,
-        IP_DF_FLAG,
-        IP_MF_FLAG,
-        IP_FRAG_OFFSET,
-        IP_PROTO_TTL,
-        IP_PROTO_ID,
-        IP_CHECKSUM_MMT, // LN: On Linux ubuntu 4.4.0-53-generic IP_CHECKSUM has been declared in /usr/include/linux/in.h
-        IP_SRC,
-        IP_DST,
-        IP_OPTS,
-        IP_RTT,
-        IP_CLIENT_ADDR,
-        IP_SERVER_ADDR,
-        IP_CLIENT_PORT,
-        IP_SERVER_PORT,
-        // LN: Move from packet_processing.c
-        IP_FRAG_PACKET_COUNT,
-        IP_FRAG_DATA_VOLUME,
-        IP_DF_PACKET_COUNT, 
-        IP_DF_DATA_VOLUME, 
-        IP_SESSIONS_COUNT,
-        IP_ACTIVE_SESSIONS_COUNT,
-        IP_TIMEDOUT_SESSIONS_COUNT,
-        // End of LN
-        IP_ATTRIBUTES_NB = IP_TIMEDOUT_SESSIONS_COUNT,
-    };
+enum ip_attributes {
+    IP_VERSION = 1,
+    IP_HEADER_LEN,
+    IP_PROTO_TOS,
+    IP_TOT_LEN,
+    IP_IDENTIFICATION,
+    IP_DF_FLAG,
+    IP_MF_FLAG,
+    IP_FRAG_OFFSET,
+    IP_PROTO_TTL,
+    IP_PROTO_ID,
+    IP_CHECKSUM_MMT, // LN: On Linux ubuntu 4.4.0-53-generic IP_CHECKSUM has been declared in /usr/include/linux/in.h
+    IP_SRC,
+    IP_DST,
+    IP_OPTS,
+    IP_RTT,
+    IP_CLIENT_ADDR,
+    IP_SERVER_ADDR,
+    IP_CLIENT_PORT,
+    IP_SERVER_PORT,
+    // LN: Move from packet_processing.c
+    IP_FRAG_PACKET_COUNT,
+    IP_FRAG_DATA_VOLUME,
+    IP_DF_PACKET_COUNT,
+    IP_DF_DATA_VOLUME,
+    IP_SESSIONS_COUNT,
+    IP_ACTIVE_SESSIONS_COUNT,
+    IP_TIMEDOUT_SESSIONS_COUNT,
+    // End of LN
+    IP_ATTRIBUTES_NB = IP_TIMEDOUT_SESSIONS_COUNT,
+};
 
 #define IP_SRC_ALIAS            "src"
 #define IP_DST_ALIAS            "dst"
@@ -77,41 +77,41 @@ extern "C" {
 #define IP_DF_DATA_VOLUME_LABEL           "ip_df_data_volume"
 #define IP_SESSIONS_COUNT_LABEL              "ip_session_count"
 #define IP_ACTIVE_SESSIONS_COUNT_LABEL       "ip_active_session_count"
-#define IP_TIMEDOUT_SESSIONS_COUNT_LABEL     "ip_timedout_session_count"    
+#define IP_TIMEDOUT_SESSIONS_COUNT_LABEL     "ip_timedout_session_count"
 // End of LN
-    enum ip6_attributes {
-        IP6_VERSION = 1,
-        IP6_TRAFFIC_CLASS,
-        IP6_FLOW_LABEL,
-        IP6_PAYLOAD_LEN,
-        IP6_NEXT_HEADER,
-        IP6_NEXT_PROTO,
-        IP6_HOP_LIMIT,
-        IP6_SRC,
-        IP6_DST,
-        IP6_RTT,
-        IP6_CLIENT_ADDR,
-        IP6_SERVER_ADDR,
-        IP6_CLIENT_PORT,
-        IP6_SERVER_PORT,
-        // LN: Move from packet_processing.c
-        IP6_FRAG_PACKET_COUNT,
-        IP6_FRAG_DATA_VOLUME,
-        IP6_DF_PACKET_COUNT, 
-        IP6_DF_DATA_VOLUME, 
-        IP6_SESSIONS_COUNT,
-        IP6_ACTIVE_SESSIONS_COUNT,
-        IP6_TIMEDOUT_SESSIONS_COUNT,
-        // End of LN
-        IP6_ATTRIBUTES_NB = IP6_TIMEDOUT_SESSIONS_COUNT,
-    };
-    /*
-     * Hop by hop attribute
-     * routing header
-     * Fragement
-     * authentication header
-     * ESP header
-     */
+enum ip6_attributes {
+    IP6_VERSION = 1,
+    IP6_TRAFFIC_CLASS,
+    IP6_FLOW_LABEL,
+    IP6_PAYLOAD_LEN,
+    IP6_NEXT_HEADER,
+    IP6_NEXT_PROTO,
+    IP6_HOP_LIMIT,
+    IP6_SRC,
+    IP6_DST,
+    IP6_RTT,
+    IP6_CLIENT_ADDR,
+    IP6_SERVER_ADDR,
+    IP6_CLIENT_PORT,
+    IP6_SERVER_PORT,
+    // LN: Move from packet_processing.c
+    IP6_FRAG_PACKET_COUNT,
+    IP6_FRAG_DATA_VOLUME,
+    IP6_DF_PACKET_COUNT,
+    IP6_DF_DATA_VOLUME,
+    IP6_SESSIONS_COUNT,
+    IP6_ACTIVE_SESSIONS_COUNT,
+    IP6_TIMEDOUT_SESSIONS_COUNT,
+    // End of LN
+    IP6_ATTRIBUTES_NB = IP6_TIMEDOUT_SESSIONS_COUNT,
+};
+/*
+ * Hop by hop attribute
+ * routing header
+ * Fragement
+ * authentication header
+ * ESP header
+ */
 #define IP6_VERSION_ALIAS "version"
 #define IP6_TRAFFIC_CLASS_ALIAS "TC"
 #define IP6_FLOW_LABEL_ALIAS "flow_label"
@@ -121,7 +121,7 @@ extern "C" {
 #define IP6_HOP_LIMIT_ALIAS "hop_limit"
 #define IP6_SRC_ALIAS "src"
 #define IP6_DST_ALIAS "dst"
-#define IP6_RTT_ALIAS        "ip_rtt"     
+#define IP6_RTT_ALIAS        "ip_rtt"
 #define IP6_CLIENT_ADDR_ALIAS    "client_addr"
 #define IP6_SERVER_ADDR_ALIAS    "server_addr"
 #define IP6_CLIENT_PORT_ALIAS    "client_port"
@@ -133,36 +133,36 @@ extern "C" {
 #define IP6_DF_DATA_VOLUME_LABEL           "ip6_df_data_volume"
 #define IP6_SESSIONS_COUNT_LABEL              "ip6_session_count"
 #define IP6_ACTIVE_SESSIONS_COUNT_LABEL       "ip6_active_session_count"
-#define IP6_TIMEDOUT_SESSIONS_COUNT_LABEL     "ip6_timedout_session_count"    
+#define IP6_TIMEDOUT_SESSIONS_COUNT_LABEL     "ip6_timedout_session_count"
 // End of LN
-    enum {
-        TCP_SRC_PORT = 1,
-        TCP_DEST_PORT,
-        TCP_SEQ_NB,
-        TCP_ACK_NB,
-        TCP_DATA_OFF, //tcp data offset
-        TCP_FLAGS,
-        TCP_FIN,
-        TCP_SYN,
-        TCP_RST,
-        TCP_PSH,
-        TCP_ACK,
-        TCP_URG,
-        TCP_ECE,
-        TCP_CWR,
-        TCP_WINDOW,
-        TCP_CHECKSUM,
-        TCP_URG_PTR,
-        TCP_RTT,
-        TCP_SYN_RCV,
-        TCP_RETRANSMISSION,
-        TCP_OUTOFORDER,
-        TCP_SESSION_RETRANSMISSION,
-        // TCP_SESSION_OUTOFORDER,
-        TCP_PAYLOAD_LEN,
-        TCP_CONN_CLOSED,
-        TCP_CONN_ESTABLISHED,
-    };
+enum {
+    TCP_SRC_PORT = 1,
+    TCP_DEST_PORT,
+    TCP_SEQ_NB,
+    TCP_ACK_NB,
+    TCP_DATA_OFF, //tcp data offset
+    TCP_FLAGS,
+    TCP_FIN,
+    TCP_SYN,
+    TCP_RST,
+    TCP_PSH,
+    TCP_ACK,
+    TCP_URG,
+    TCP_ECE,
+    TCP_CWR,
+    TCP_WINDOW,
+    TCP_CHECKSUM,
+    TCP_URG_PTR,
+    TCP_RTT,
+    TCP_SYN_RCV,
+    TCP_RETRANSMISSION,
+    TCP_OUTOFORDER,
+    TCP_SESSION_RETRANSMISSION,
+    // TCP_SESSION_OUTOFORDER,
+    TCP_PAYLOAD_LEN,
+    TCP_CONN_CLOSED,
+    TCP_CONN_ESTABLISHED,
+};
 
 #define TCP_ATTRIBUTES_NB    TCP_CONN_ESTABLISHED
 
@@ -192,14 +192,14 @@ extern "C" {
 #define TCP_PAYLOAD_LEN_ALIAS     "payload_len"
 #define TCP_CONN_CLOSED_ALIAS "closed"
 #define TCP_CONN_ESTABLISHED_ALIAS "established"
-    //TODO: addition of the tcp options
+//TODO: addition of the tcp options
 
-    enum {
-        UDP_SRC_PORT = 1,
-        UDP_DEST_PORT,
-        UDP_LEN,
-        UDP_CHECKSUM,
-    };
+enum {
+    UDP_SRC_PORT = 1,
+    UDP_DEST_PORT,
+    UDP_LEN,
+    UDP_CHECKSUM,
+};
 
 #define UDP_ATTRIBUTES_NB UDP_CHECKSUM
 
@@ -208,32 +208,32 @@ extern "C" {
 #define UDP_LEN_ALIAS           "len"
 #define UDP_CHECKSUM_ALIAS      "checksum"
 
-    enum rfc2822_attributes {
-        RFC2822_METHOD = 1,
-        RFC2822_RESPONSE,
-        RFC2822_HOST,
-        RFC2822_URI,
-        RFC2822_REFERER,
-        RFC2822_CONTENT_TYPE,
-        RFC2822_USER_AGENT,
-        // LN
-        RFC2822_UPGRADE,
-        RFC2822_CONNECTION,
-        RFC2822_ACCEPT,
-        RFC2822_TRANSFER_ENCODING,
-        RFC2822_CONTENT_ENCODING,
-        RFC2822_COOKIE,
-        RFC2822_X_SESSION_TYPE,
-        // End of LN
-        RFC2822_CONTENT_LEN,
-        RFC2822_SERVER,
-        RFC2822_XCDN_SEEN,
-        HTTP_MESSAGE_START, // Beginning of an HTTP message
-        HTTP_HEADER, // Generic HTTP header
-        HTTP_HEADERS_END, // End of an HTTP message headers
-        HTTP_DATA, // HTTP data chunk
-        HTTP_MESSAGE_END, // End of an HTTP message
-    };
+enum rfc2822_attributes {
+    RFC2822_METHOD = 1,
+    RFC2822_RESPONSE,
+    RFC2822_HOST,
+    RFC2822_URI,
+    RFC2822_REFERER,
+    RFC2822_CONTENT_TYPE,
+    RFC2822_USER_AGENT,
+    // LN
+    RFC2822_UPGRADE,
+    RFC2822_CONNECTION,
+    RFC2822_ACCEPT,
+    RFC2822_TRANSFER_ENCODING,
+    RFC2822_CONTENT_ENCODING,
+    RFC2822_COOKIE,
+    RFC2822_X_SESSION_TYPE,
+    // End of LN
+    RFC2822_CONTENT_LEN,
+    RFC2822_SERVER,
+    RFC2822_XCDN_SEEN,
+    HTTP_MESSAGE_START, // Beginning of an HTTP message
+    HTTP_HEADER, // Generic HTTP header
+    HTTP_HEADERS_END, // End of an HTTP message headers
+    HTTP_DATA, // HTTP data chunk
+    HTTP_MESSAGE_END, // End of an HTTP message
+};
 
 #define RFC2822_ATTRIBUTES_NB HTTP_MESSAGE_END
 
@@ -246,7 +246,7 @@ extern "C" {
 #define RFC2822_USER_AGENT_ALIAS "user_agent"
 // LN
 #define RFC2822_UPGRADE_ALIAS "upgrade"
-#define RFC2822_CONNECTION_ALIAS "connection"    
+#define RFC2822_CONNECTION_ALIAS "connection"
 #define RFC2822_ACCEPT_ALIAS "accept"
 #define RFC2822_TRANSFER_ENCODING_ALIAS "transfer_encoding"
 #define RFC2822_CONTENT_ENCODING_ALIAS "content_encoding"
@@ -262,22 +262,22 @@ extern "C" {
 #define HTTP_DATA_ALIAS "data"
 #define HTTP_MESSAGE_END_ALIAS "msg_end"
 
-    enum arp_attributes {
-        ARP_AR_HRD = 1,
-        ARP_AR_PRO,
-        ARP_AR_HLN,
-        ARP_AR_PLN,
-        ARP_AR_OP,
-        ARP_AR_SHA,
-        ARP_AR_SIP,
-        ARP_AR_THA,
-        ARP_AR_TIP,
-        ARP_SRC_HARD,
-        ARP_SRC_PROTO,
-        ARP_DST_HARD,
-        ARP_DST_PROTO,
-        ARP_ATTRIBUTES_NB = ARP_DST_PROTO,
-    };
+enum arp_attributes {
+    ARP_AR_HRD = 1,
+    ARP_AR_PRO,
+    ARP_AR_HLN,
+    ARP_AR_PLN,
+    ARP_AR_OP,
+    ARP_AR_SHA,
+    ARP_AR_SIP,
+    ARP_AR_THA,
+    ARP_AR_TIP,
+    ARP_SRC_HARD,
+    ARP_SRC_PROTO,
+    ARP_DST_HARD,
+    ARP_DST_PROTO,
+    ARP_ATTRIBUTES_NB = ARP_DST_PROTO,
+};
 
 
 #define ARP_AR_HRD_ALIAS "ar_hrd"
@@ -294,27 +294,27 @@ extern "C" {
 #define ARP_DST_HARD_ALIAS "dst_hard"
 #define ARP_DST_PROTO_ALIAS "dst_proto"
 
-    /**
-     * GRE protocol: extraction of ann of the protocol fields.
-     * <p>
-     * TODO: Link sequence numbers and Keys to extract attributes like: out of sequence, in sequence, sequence gap, loss.
-     */
+/**
+ * GRE protocol: extraction of ann of the protocol fields.
+ * <p>
+ * TODO: Link sequence numbers and Keys to extract attributes like: out of sequence, in sequence, sequence gap, loss.
+ */
 
-    enum gre_attributes {
-        GRE_PROTOCOL = 1,
-        GRE_FLAGS,
-        GRE_CHECKSUM,
-        GRE_KEY,
-        GRE_SEQ_NB,
-        GRE_C_FLAG,
-        GRE_K_FLAG,
-        GRE_S_FLAG,
-        GRE_VERSION,
-        GRE_OUT_SEQENCE, //TODO
-        GRE_IN_SEQENCE, //TODO
-        GRE_SEQENCE_GAP, //TODO
-        GRE_LOSS, //TODO
-    };
+enum gre_attributes {
+    GRE_PROTOCOL = 1,
+    GRE_FLAGS,
+    GRE_CHECKSUM,
+    GRE_KEY,
+    GRE_SEQ_NB,
+    GRE_C_FLAG,
+    GRE_K_FLAG,
+    GRE_S_FLAG,
+    GRE_VERSION,
+    GRE_OUT_SEQENCE, //TODO
+    GRE_IN_SEQENCE, //TODO
+    GRE_SEQENCE_GAP, //TODO
+    GRE_LOSS, //TODO
+};
 
 #define GRE_ATTRIBUTES_NB GRE_LOSS
 
@@ -326,21 +326,21 @@ extern "C" {
 #define GRE_C_FLAG_ALIAS "cflag"
 #define GRE_K_FLAG_ALIAS "kflag"
 #define GRE_S_FLAG_ALIAS "sflag"
-#define GRE_VERSION_ALIAS "version"    
+#define GRE_VERSION_ALIAS "version"
 #define GRE_OUT_SEQENCE_ALIAS "seq_out"
 #define GRE_IN_SEQENCE_ALIAS "seq_in"
 #define GRE_SEQENCE_GAP_ALIAS "seq_gap"
 #define GRE_LOSS_ALIAS "loss"
 
-    enum {
-        ICMP_TYPE = 1,
-        ICMP_CODE,
-        ICMP_CHECKSUM,
-        ICMP_IDENTIFIER,
-        ICMP_SEQUENCE_NB,
-        ICMP_GATEWAY,
-        ICMP_DATA,
-    };
+enum {
+    ICMP_TYPE = 1,
+    ICMP_CODE,
+    ICMP_CHECKSUM,
+    ICMP_IDENTIFIER,
+    ICMP_SEQUENCE_NB,
+    ICMP_GATEWAY,
+    ICMP_DATA,
+};
 
 #define ICMP_ATTRIBUTES_NB ICMP_DATA
 
@@ -352,11 +352,11 @@ extern "C" {
 #define ICMP_GATEWAY_ALIAS      "gateway"
 #define ICMP_DATA_ALIAS         "data"
 
-    enum {
-        ICMP6_TYPE = 1,
-        ICMP6_CODE,
-        ICMP6_CHECKSUM,
-    };
+enum {
+    ICMP6_TYPE = 1,
+    ICMP6_CODE,
+    ICMP6_CHECKSUM,
+};
 
 #define ICMP6_ATTRIBUTES_NB ICMP6_CHECKSUM
 
@@ -364,16 +364,16 @@ extern "C" {
 #define ICMP6_CODE_ALIAS         "code"
 #define ICMP6_CHECKSUM_ALIAS     "checksum"
 
-    enum {
-        OSPF_VERSION = 1,
-        OSPF_TYPE,
-        OSPF_PACKET_LENGTH,
-        OSPF_ROUTER_ID,
-        OSPF_AREA_ID,
-        OSPF_CHECKSUM,
-        OSPF_INSTANCE_ID,
-        OSPF_ATTRIBUTES_NB = OSPF_INSTANCE_ID,
-    };
+enum {
+    OSPF_VERSION = 1,
+    OSPF_TYPE,
+    OSPF_PACKET_LENGTH,
+    OSPF_ROUTER_ID,
+    OSPF_AREA_ID,
+    OSPF_CHECKSUM,
+    OSPF_INSTANCE_ID,
+    OSPF_ATTRIBUTES_NB = OSPF_INSTANCE_ID,
+};
 
 #define  OSPF_VERSION_ALIAS "version"
 #define  OSPF_TYPE_ALIAS "type"
@@ -383,28 +383,28 @@ extern "C" {
 #define  OSPF_CHECKSUM_ALIAS "checksum"
 #define  OSPF_INSTANCE_ID_ALIAS "instance_id"
 
-    enum {
-        RTP_IGNORE = 0,
-        RTP_VERSION,
-        RTP_PADDING,
-        RTP_EXTENSION,
-        RTP_CSRCCOUNT,
-        RTP_MARKER,
-        RTP_PAYLOADTYPE,
-        RTP_SEQNB,
-        RTP_TIMESTAMP,
-        RTP_SSRC,
-        RTP_CSRC,
-        RTP_QUALITY_INDEX,
-        RTP_JITTER,
-        RTP_INTER_ARRIVAL_JITTER, //TODO
-        RTP_INTER_DELAY, //TODO
-        RTP_LOSS,
-        RTP_BURST_LOSS,
-        RTP_UNORDER,
-        RTP_DUPLICATE,
-        RTP_ERROR_ORDER,
-    };
+enum {
+    RTP_IGNORE = 0,
+    RTP_VERSION,
+    RTP_PADDING,
+    RTP_EXTENSION,
+    RTP_CSRCCOUNT,
+    RTP_MARKER,
+    RTP_PAYLOADTYPE,
+    RTP_SEQNB,
+    RTP_TIMESTAMP,
+    RTP_SSRC,
+    RTP_CSRC,
+    RTP_QUALITY_INDEX,
+    RTP_JITTER,
+    RTP_INTER_ARRIVAL_JITTER, //TODO
+    RTP_INTER_DELAY, //TODO
+    RTP_LOSS,
+    RTP_BURST_LOSS,
+    RTP_UNORDER,
+    RTP_DUPLICATE,
+    RTP_ERROR_ORDER,
+};
 #define RTP_ATTRIBUTES_NB RTP_ERROR_ORDER
 
 #define RTP_VERSION_LABEL "VERSION"
@@ -447,17 +447,17 @@ extern "C" {
 #define RTP_ERROR_ORDER_SHORT_LABEL "order_err"
 #define RTP_DUPLICATE_SHORT_LABEL "duplicate"
 
-    enum ssl_attributes {
-        SSL_SERVER_NAME = 1,
-        TLS_NUMBER_RECORD,
-        TLS_CONTENT_TYPE,
-        TLS_VERSION,
-        TLS_LENGTH,
-        // SSL_HS_TYPE,
-        // SSL_HS_LENGTH,
-        // SSL_HS_VERSION,
-        SSL_ATTRIBUTES_NB = TLS_LENGTH,
-    };
+enum ssl_attributes {
+    SSL_SERVER_NAME = 1,
+    TLS_NUMBER_RECORD,
+    TLS_CONTENT_TYPE,
+    TLS_VERSION,
+    TLS_LENGTH,
+    // SSL_HS_TYPE,
+    // SSL_HS_LENGTH,
+    // SSL_HS_VERSION,
+    SSL_ATTRIBUTES_NB = TLS_LENGTH,
+};
 
 #define SSL_SERVER_NAME_ALIAS "server_name"
 #define TLS_NUMBER_RECORD_ALIAS "tls_number_record"
@@ -466,197 +466,197 @@ extern "C" {
 #define TLS_LENGTH_ALIAS "tls_length"
 // #define SSL_HS_TYPE_ALIAS "hs_type"
 // #define SSL_HS_VERSION_ALIAS "hs_version"
-// #define SSL_HS_LENGTH_ALIAS "hs_length"    
-    enum radius_attributes {
-        RADIUS_CODE = 1,
-        RADIUS_RID,
-        RADIUS_RLEN,
-        RADIUS_AUTHENTICATOR,
-        RADIUS_USER_NAME,
-        RADIUS_USER_PASSWORD,
-        RADIUS_CHAP_PASSWORD,
-        RADIUS_NAS_IP_ADDRESS,
-        RADIUS_NAS_PORT,
-        RADIUS_SERVICE_TYPE,
-        RADIUS_FRAMED_PROTOCOL,
-        RADIUS_FRAMED_IP_ADDRESS,
-        RADIUS_FRAMED_IP_NETMASK,
-        RADIUS_FRAMED_MTU,
-        RADIUS_CALLBACK_NUMBER,
-        RADIUS_CALLBACK_ID,
-        RADIUS_STATE,
-        RADIUS_CLASS,
-        RADIUS_SESSION_TIMEOUT,
-        RADIUS_IDLE_TIMEOUT,
-        RADIUS_CALLED_STATION_ID,
-        RADIUS_CALLING_STATION_ID,
-        RADIUS_NAS_IDENTIFIER,
-        RADIUS_ACCT_STATUS_TYPE,
-        RADIUS_ACCT_DELAY_TIME,
-        RADIUS_ACCT_INPUT_OCTETS,
-        RADIUS_ACCT_OUTPUT_OCTETS,
-        RADIUS_ACCT_SESSION_ID,
-        RADIUS_ACCT_AUTHENTIC,
-        RADIUS_ACCT_SESSION_TIME,
-        RADIUS_ACCT_INPUT_PACKETS,
-        RADIUS_ACCT_OUTPUT_PACKETS,
-        RADIUS_ACCT_TERMINATE_CAUSE,
-        RADIUS_EVENT_TIMESTAMP,
-        RADIUS_NAS_PORT_TYPE,
-        RADIUS_MESSAGE_AUTHENTICATOR,
-        RADIUS_NAS_PORT_ID,
-        RADIUS_NAS_IPV6_ADDRESS,
-        RADIUS_FRAMED_INTERFACE_ID,
-        RADIUS_FRAMED_IPV6_PREFIX,
-        RADIUS_FRAMED_IPV6_POOL,
-        RADIUS_3GPP_IMSI,
-        RADIUS_3GPP_CHARGING_ID,
-        RADIUS_3GPP_PDP_TYPE,
-        RADIUS_3GPP_CG_ADDRESS,
-        RADIUS_3GPP_QOS_PROFILE,
-        RADIUS_3GPP_SGSN_ADDRESS,
-        RADIUS_3GPP_GGSN_ADDRESS,
-        RADIUS_3GPP_IMSI_MCCMNC,
-        RADIUS_3GPP_GGSN_MCCMNC,
-        RADIUS_3GPP_NSAPI,
-        RADIUS_3GPP_SESSION_STOP_IND,
-        RADIUS_3GPP_SELECTION_MODE,
-        RADIUS_3GPP_CHARGIN_CHARACT,
-        RADIUS_3GPP_CG_IPV6,
-        RADIUS_3GPP_SGSN_IPV6,
-        RADIUS_3GPP_GGSN_IPV6,
-        RADIUS_3GPP_DNS_IPV6,
-        RADIUS_3GPP_SGSN_MCCMNC,
-        RADIUS_3GPP_TEARDOWN_IND,
-        RADIUS_3GPP_IMEISV,
-        RADIUS_3GPP_RAT_TYPE,
-        RADIUS_3GPP_USER_LOCATION,
-        RADIUS_3GPP_TIMEZONE,
-        RADIUS_3GPP_CAMELCHARGING,
-        RADIUS_3GPP_PACKET_FILTER,
-        RADIUS_3GPP_NEG_DSCP,
-        RADIUS_3GPP_ALLOC_IP_TYPE,
-        RADIUS_AVP1,
-        RADIUS_AVP2,
-        RADIUS_AVP3,
-        RADIUS_AVP4,
-        RADIUS_AVP5,
-        RADIUS_AVP6,
-        RADIUS_AVP7,
-        RADIUS_AVP8,
-        RADIUS_AVP9,
-        RADIUS_AVP10,
-        RADIUS_AVP11,
-        RADIUS_AVP12,
-        RADIUS_AVP13,
-        RADIUS_AVP14,
-        RADIUS_AVP15,
-        RADIUS_AVP16,
-        RADIUS_AVP17,
-        RADIUS_AVP18,
-        RADIUS_AVP19,
-        RADIUS_AVP20,
-        RADIUS_AVP21,
-        RADIUS_AVP22,
-        RADIUS_AVP23,
-        RADIUS_AVP24,
-        RADIUS_AVP25,
-        RADIUS_AVP26,
-        RADIUS_AVP27,
-        RADIUS_AVP28,
-        RADIUS_AVP29,
-        RADIUS_AVP30,
-        RADIUS_AVP31,
-        RADIUS_AVP32,
-        RADIUS_AVP33,
-        RADIUS_AVP34,
-        RADIUS_AVP35,
-        RADIUS_AVP36,
-        RADIUS_AVP37,
-        RADIUS_AVP38,
-        RADIUS_AVP39,
-        RADIUS_AVP40,
-        RADIUS_AVP41,
-        RADIUS_AVP42,
-        RADIUS_AVP43,
-        RADIUS_AVP44,
-        RADIUS_AVP45,
-        RADIUS_AVP46,
-        RADIUS_AVP47,
-        RADIUS_AVP48,
-        RADIUS_AVP49,
-        RADIUS_AVP50,
-        RADIUS_AVP51,
-        RADIUS_AVP52,
-        RADIUS_AVP53,
-        RADIUS_AVP54,
-        RADIUS_AVP55,
-        RADIUS_AVP56,
-        RADIUS_AVP57,
-        RADIUS_AVP58,
-        RADIUS_AVP59,
-        RADIUS_AVP60,
-        RADIUS_AVP61,
-        RADIUS_AVP62,
-        RADIUS_AVP63,
-        RADIUS_AVP64,
-        RADIUS_AVP65,
-        RADIUS_AVP66,
-        RADIUS_AVP67,
-        RADIUS_AVP68,
-        RADIUS_AVP69,
-        RADIUS_AVP70,
-        RADIUS_AVP71,
-        RADIUS_AVP72,
-        RADIUS_AVP73,
-        RADIUS_AVP74,
-        RADIUS_AVP75,
-        RADIUS_AVP76,
-        RADIUS_AVP77,
-        RADIUS_AVP78,
-        RADIUS_AVP79,
-        RADIUS_AVP80,
-        RADIUS_AVP81,
-        RADIUS_AVP82,
-        RADIUS_AVP83,
-        RADIUS_AVP84,
-        RADIUS_AVP85,
-        RADIUS_AVP86,
-        RADIUS_AVP87,
-        RADIUS_AVP88,
-        RADIUS_AVP89,
-        RADIUS_AVP90,
-        RADIUS_AVP91,
-        RADIUS_AVP92,
-        RADIUS_AVP93,
-        RADIUS_AVP94,
-        RADIUS_AVP95,
-        RADIUS_AVP96,
-        RADIUS_AVP97,
-        RADIUS_AVP98,
-        RADIUS_AVP99,
-        RADIUS_AVP100,
-        RADIUS_AVP101,
-        RADIUS_AVP102,
-        RADIUS_AVP224,
-        RADIUS_AVP225,
-        RADIUS_AVP226,
-        RADIUS_AVP227,
-        RADIUS_AVP228,
-        RADIUS_AVP229,
-        RADIUS_AVP230,
-        RADIUS_AVP231,
-        RADIUS_AVP232,
-        RADIUS_AVP233,
-        RADIUS_AVP234,
-        RADIUS_AVP235,
-        RADIUS_AVP236,
-        RADIUS_AVP237,
-        RADIUS_AVP238,
-        RADIUS_AVP239,
-        RADIUS_AVP240,
-        RADIUS_ATTRIBUTES_NB = RADIUS_AVP240,
-    };
+// #define SSL_HS_LENGTH_ALIAS "hs_length"
+enum radius_attributes {
+    RADIUS_CODE = 1,
+    RADIUS_RID,
+    RADIUS_RLEN,
+    RADIUS_AUTHENTICATOR,
+    RADIUS_USER_NAME,
+    RADIUS_USER_PASSWORD,
+    RADIUS_CHAP_PASSWORD,
+    RADIUS_NAS_IP_ADDRESS,
+    RADIUS_NAS_PORT,
+    RADIUS_SERVICE_TYPE,
+    RADIUS_FRAMED_PROTOCOL,
+    RADIUS_FRAMED_IP_ADDRESS,
+    RADIUS_FRAMED_IP_NETMASK,
+    RADIUS_FRAMED_MTU,
+    RADIUS_CALLBACK_NUMBER,
+    RADIUS_CALLBACK_ID,
+    RADIUS_STATE,
+    RADIUS_CLASS,
+    RADIUS_SESSION_TIMEOUT,
+    RADIUS_IDLE_TIMEOUT,
+    RADIUS_CALLED_STATION_ID,
+    RADIUS_CALLING_STATION_ID,
+    RADIUS_NAS_IDENTIFIER,
+    RADIUS_ACCT_STATUS_TYPE,
+    RADIUS_ACCT_DELAY_TIME,
+    RADIUS_ACCT_INPUT_OCTETS,
+    RADIUS_ACCT_OUTPUT_OCTETS,
+    RADIUS_ACCT_SESSION_ID,
+    RADIUS_ACCT_AUTHENTIC,
+    RADIUS_ACCT_SESSION_TIME,
+    RADIUS_ACCT_INPUT_PACKETS,
+    RADIUS_ACCT_OUTPUT_PACKETS,
+    RADIUS_ACCT_TERMINATE_CAUSE,
+    RADIUS_EVENT_TIMESTAMP,
+    RADIUS_NAS_PORT_TYPE,
+    RADIUS_MESSAGE_AUTHENTICATOR,
+    RADIUS_NAS_PORT_ID,
+    RADIUS_NAS_IPV6_ADDRESS,
+    RADIUS_FRAMED_INTERFACE_ID,
+    RADIUS_FRAMED_IPV6_PREFIX,
+    RADIUS_FRAMED_IPV6_POOL,
+    RADIUS_3GPP_IMSI,
+    RADIUS_3GPP_CHARGING_ID,
+    RADIUS_3GPP_PDP_TYPE,
+    RADIUS_3GPP_CG_ADDRESS,
+    RADIUS_3GPP_QOS_PROFILE,
+    RADIUS_3GPP_SGSN_ADDRESS,
+    RADIUS_3GPP_GGSN_ADDRESS,
+    RADIUS_3GPP_IMSI_MCCMNC,
+    RADIUS_3GPP_GGSN_MCCMNC,
+    RADIUS_3GPP_NSAPI,
+    RADIUS_3GPP_SESSION_STOP_IND,
+    RADIUS_3GPP_SELECTION_MODE,
+    RADIUS_3GPP_CHARGIN_CHARACT,
+    RADIUS_3GPP_CG_IPV6,
+    RADIUS_3GPP_SGSN_IPV6,
+    RADIUS_3GPP_GGSN_IPV6,
+    RADIUS_3GPP_DNS_IPV6,
+    RADIUS_3GPP_SGSN_MCCMNC,
+    RADIUS_3GPP_TEARDOWN_IND,
+    RADIUS_3GPP_IMEISV,
+    RADIUS_3GPP_RAT_TYPE,
+    RADIUS_3GPP_USER_LOCATION,
+    RADIUS_3GPP_TIMEZONE,
+    RADIUS_3GPP_CAMELCHARGING,
+    RADIUS_3GPP_PACKET_FILTER,
+    RADIUS_3GPP_NEG_DSCP,
+    RADIUS_3GPP_ALLOC_IP_TYPE,
+    RADIUS_AVP1,
+    RADIUS_AVP2,
+    RADIUS_AVP3,
+    RADIUS_AVP4,
+    RADIUS_AVP5,
+    RADIUS_AVP6,
+    RADIUS_AVP7,
+    RADIUS_AVP8,
+    RADIUS_AVP9,
+    RADIUS_AVP10,
+    RADIUS_AVP11,
+    RADIUS_AVP12,
+    RADIUS_AVP13,
+    RADIUS_AVP14,
+    RADIUS_AVP15,
+    RADIUS_AVP16,
+    RADIUS_AVP17,
+    RADIUS_AVP18,
+    RADIUS_AVP19,
+    RADIUS_AVP20,
+    RADIUS_AVP21,
+    RADIUS_AVP22,
+    RADIUS_AVP23,
+    RADIUS_AVP24,
+    RADIUS_AVP25,
+    RADIUS_AVP26,
+    RADIUS_AVP27,
+    RADIUS_AVP28,
+    RADIUS_AVP29,
+    RADIUS_AVP30,
+    RADIUS_AVP31,
+    RADIUS_AVP32,
+    RADIUS_AVP33,
+    RADIUS_AVP34,
+    RADIUS_AVP35,
+    RADIUS_AVP36,
+    RADIUS_AVP37,
+    RADIUS_AVP38,
+    RADIUS_AVP39,
+    RADIUS_AVP40,
+    RADIUS_AVP41,
+    RADIUS_AVP42,
+    RADIUS_AVP43,
+    RADIUS_AVP44,
+    RADIUS_AVP45,
+    RADIUS_AVP46,
+    RADIUS_AVP47,
+    RADIUS_AVP48,
+    RADIUS_AVP49,
+    RADIUS_AVP50,
+    RADIUS_AVP51,
+    RADIUS_AVP52,
+    RADIUS_AVP53,
+    RADIUS_AVP54,
+    RADIUS_AVP55,
+    RADIUS_AVP56,
+    RADIUS_AVP57,
+    RADIUS_AVP58,
+    RADIUS_AVP59,
+    RADIUS_AVP60,
+    RADIUS_AVP61,
+    RADIUS_AVP62,
+    RADIUS_AVP63,
+    RADIUS_AVP64,
+    RADIUS_AVP65,
+    RADIUS_AVP66,
+    RADIUS_AVP67,
+    RADIUS_AVP68,
+    RADIUS_AVP69,
+    RADIUS_AVP70,
+    RADIUS_AVP71,
+    RADIUS_AVP72,
+    RADIUS_AVP73,
+    RADIUS_AVP74,
+    RADIUS_AVP75,
+    RADIUS_AVP76,
+    RADIUS_AVP77,
+    RADIUS_AVP78,
+    RADIUS_AVP79,
+    RADIUS_AVP80,
+    RADIUS_AVP81,
+    RADIUS_AVP82,
+    RADIUS_AVP83,
+    RADIUS_AVP84,
+    RADIUS_AVP85,
+    RADIUS_AVP86,
+    RADIUS_AVP87,
+    RADIUS_AVP88,
+    RADIUS_AVP89,
+    RADIUS_AVP90,
+    RADIUS_AVP91,
+    RADIUS_AVP92,
+    RADIUS_AVP93,
+    RADIUS_AVP94,
+    RADIUS_AVP95,
+    RADIUS_AVP96,
+    RADIUS_AVP97,
+    RADIUS_AVP98,
+    RADIUS_AVP99,
+    RADIUS_AVP100,
+    RADIUS_AVP101,
+    RADIUS_AVP102,
+    RADIUS_AVP224,
+    RADIUS_AVP225,
+    RADIUS_AVP226,
+    RADIUS_AVP227,
+    RADIUS_AVP228,
+    RADIUS_AVP229,
+    RADIUS_AVP230,
+    RADIUS_AVP231,
+    RADIUS_AVP232,
+    RADIUS_AVP233,
+    RADIUS_AVP234,
+    RADIUS_AVP235,
+    RADIUS_AVP236,
+    RADIUS_AVP237,
+    RADIUS_AVP238,
+    RADIUS_AVP239,
+    RADIUS_AVP240,
+    RADIUS_ATTRIBUTES_NB = RADIUS_AVP240,
+};
 
 #define RADIUS_CODE_ALIAS "code"
 #define RADIUS_RID_ALIAS "id"
@@ -846,28 +846,28 @@ extern "C" {
 #define RADIUS_AVP239_ALIAS  "avp239"
 #define RADIUS_AVP240_ALIAS  "avp240"
 
-    enum dns_attributes {
-        DNS_TID = 1,
-        DNS_QR,
-        DNS_OPCODE,
-        DNS_AA,
-        DNS_TC,
-        DNS_RD,
-        DNS_RA,
-        DNS_Z,
-        DNS_ANS_AUTH,
-        DNS_DATA_AUTH,
-        DNS_RCODE,
-        DNS_QDCOUNT,
-        DNS_ANCOUNT,
-        DNS_NSCOUNT,
-        DNS_ARCOUNT,
-        DNS_QUERIES,
-        DNS_ANSWERS,
-        DNS_AUTH_RECORDS,
-        DNS_ADD_RECORDS,
-        DNS_ATTRIBUTES_NB = DNS_ADD_RECORDS,
-    };
+enum dns_attributes {
+    DNS_TID = 1,
+    DNS_QR,
+    DNS_OPCODE,
+    DNS_AA,
+    DNS_TC,
+    DNS_RD,
+    DNS_RA,
+    DNS_Z,
+    DNS_ANS_AUTH,
+    DNS_DATA_AUTH,
+    DNS_RCODE,
+    DNS_QDCOUNT,
+    DNS_ANCOUNT,
+    DNS_NSCOUNT,
+    DNS_ARCOUNT,
+    DNS_QUERIES,
+    DNS_ANSWERS,
+    DNS_AUTH_RECORDS,
+    DNS_ADD_RECORDS,
+    DNS_ATTRIBUTES_NB = DNS_ADD_RECORDS,
+};
 
 #define DNS_TID_ALIAS "tid"
 #define DNS_QR_ALIAS "qr"
@@ -889,15 +889,15 @@ extern "C" {
 #define DNS_AUTH_RECORDS_ALIAS "auth_records"
 #define DNS_ADD_RECORDS_ALIAS "add_records"
 
-    enum sll_attributes {
-        SLL_PKTTYPE = 1,
-        SLL_HATYPE,
-        SLL_HALEN,
-        SLL_ADDR,
-        SLL_ADDR2,
-        SLL_PROTOCOL,
-        SLL_ATTRIBUTES_NB = SLL_PROTOCOL,
-    };
+enum sll_attributes {
+    SLL_PKTTYPE = 1,
+    SLL_HATYPE,
+    SLL_HALEN,
+    SLL_ADDR,
+    SLL_ADDR2,
+    SLL_PROTOCOL,
+    SLL_ATTRIBUTES_NB = SLL_PROTOCOL,
+};
 
 
 #define SLL_PKTTYPE_ALIAS  "pkttype"
@@ -907,49 +907,49 @@ extern "C" {
 #define SLL_PROTOCOL_ALIAS "protocol"
 
 /////////////////////////////// FTP ATTRIBUTES //////////////////////////////////////////
-    // FTP protocol attribute
-    enum ftp_attributes{
-        /*--- SESSION ATTRIBUTES --- */
-        FTP_SESSION_CONN_TYPE=1,// CONTROL or DATA connection
-        /* CONTROL CONNECTION */
-        FTP_SERVER_CONT_ADDR,
-        FTP_SERVER_CONT_PORT, // Alway 21
-        FTP_CLIENT_CONT_ADDR,
-        FTP_CLIENT_CONT_PORT,
-        FTP_CONT_IP_SESSION_ID,
-        // ACCOUNT
-        FTP_USERNAME,
-        FTP_PASSWORD,
-        // OTHER
-        FTP_SESSION_FEATURES,
-        FTP_SYST,//
-        FTP_STATUS,
-        FTP_LAST_COMMAND,
-        FTP_LAST_RESPONSE_CODE,
-        FTP_CURRENT_DIR,
-        /* DATA CONNECTION */
-        FTP_SERVER_DATA_ADDR,
-        FTP_SERVER_DATA_PORT,
-        FTP_CLIENT_DATA_ADDR,
-        FTP_CLIENT_DATA_PORT,
-        FTP_DATA_IP_SESSION_ID,
-        FTP_DATA_TYPE, // FTP_LIST_DIRECTORY, FTP_FILE_TRANSFER
-        FTP_DATA_TRANSFER_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
-        FTP_DATA_MODE,// PASSIVE or ACTIVE
-        FTP_DATA_DIRECTION,
-        // FILE ATTRIBUTE - ONLY for FTP_FILE_TRANSFER
-        FTP_FILE_NAME,
-        FTP_FILE_SIZE,
-        FTP_FILE_LAST_MODIFIED,
-        /*--- Packet attributes ---*/
-        FTP_PACKET_TYPE, // DATA, REQUEST, RESPONSE - WITH PACKET_TYPE WE CAN KNOW WHO IS THE SERVER AND WHO IS THE CLIENT
-        FTP_PACKET_REQUEST, // ONLY REQUEST PACKET
-        FTP_PACKET_REQUEST_PARAMETER, // ONLY REQUEST PACKET
-        FTP_PACKET_RESPONSE_CODE, // ONLY RESPONSE PACKET
-        FTP_PACKET_RESPONSE_VALUE, // ONLY RESPONSE PACKET
-        FTP_PACKET_DATA_LEN,// ONLY DATA PACKET 
-        FTP_ATTRIBUTES_NB = FTP_PACKET_DATA_LEN
-    };
+// FTP protocol attribute
+enum ftp_attributes {
+    /*--- SESSION ATTRIBUTES --- */
+    FTP_SESSION_CONN_TYPE = 1, // CONTROL or DATA connection
+    /* CONTROL CONNECTION */
+    FTP_SERVER_CONT_ADDR,
+    FTP_SERVER_CONT_PORT, // Alway 21
+    FTP_CLIENT_CONT_ADDR,
+    FTP_CLIENT_CONT_PORT,
+    FTP_CONT_IP_SESSION_ID,
+    // ACCOUNT
+    FTP_USERNAME,
+    FTP_PASSWORD,
+    // OTHER
+    FTP_SESSION_FEATURES,
+    FTP_SYST,//
+    FTP_STATUS,
+    FTP_LAST_COMMAND,
+    FTP_LAST_RESPONSE_CODE,
+    FTP_CURRENT_DIR,
+    /* DATA CONNECTION */
+    FTP_SERVER_DATA_ADDR,
+    FTP_SERVER_DATA_PORT,
+    FTP_CLIENT_DATA_ADDR,
+    FTP_CLIENT_DATA_PORT,
+    FTP_DATA_IP_SESSION_ID,
+    FTP_DATA_TYPE, // FTP_LIST_DIRECTORY, FTP_FILE_TRANSFER
+    FTP_DATA_TRANSFER_TYPE,// ASCII, IMAGE, EBCDIC, LOCAL
+    FTP_DATA_MODE,// PASSIVE or ACTIVE
+    FTP_DATA_DIRECTION,
+    // FILE ATTRIBUTE - ONLY for FTP_FILE_TRANSFER
+    FTP_FILE_NAME,
+    FTP_FILE_SIZE,
+    FTP_FILE_LAST_MODIFIED,
+    /*--- Packet attributes ---*/
+    FTP_PACKET_TYPE, // DATA, REQUEST, RESPONSE - WITH PACKET_TYPE WE CAN KNOW WHO IS THE SERVER AND WHO IS THE CLIENT
+    FTP_PACKET_REQUEST, // ONLY REQUEST PACKET
+    FTP_PACKET_REQUEST_PARAMETER, // ONLY REQUEST PACKET
+    FTP_PACKET_RESPONSE_CODE, // ONLY RESPONSE PACKET
+    FTP_PACKET_RESPONSE_VALUE, // ONLY RESPONSE PACKET
+    FTP_PACKET_DATA_LEN,// ONLY DATA PACKET
+    FTP_ATTRIBUTES_NB = FTP_PACKET_DATA_LEN
+};
 
 #define FTP_SESSION_CONN_TYPE_ALIAS    "session_connection_type"
 // Control connection
@@ -993,7 +993,7 @@ extern "C" {
 
 //////////////////////////////// NDN ATTRIBUTES ////////////////////////
 // Type of ndn - do not change the order
-enum 
+enum
 {
     // Packet type
     NDN_IMPLICIT_SHA256_DIGEST_COMPONENT = 1,
@@ -1043,13 +1043,13 @@ enum
 #define NDN_IMPLICIT_SHA256_DIGEST_COMPONENT_ALIAS  "implicitSHA256DigestComponent"
 #define NDN_PACKET_TYPE_ALIAS                       "packet_type"
 #define NDN_PACKET_LENGTH_ALIAS                     "packet_length"
-    // Common field
+// Common field
 #define NDN_COMMON_NAME_ALIAS                       "common_name"
 #define NDN_NAME_COMPONENTS_ALIAS                   "name_components"
-    // Interest packet
+// Interest packet
 #define NDN_INTEREST_NONCE_ALIAS                    "nonce"
 #define NDN_INTEREST_LIFETIME_ALIAS                 "life_time"
-    // Interest/selectors
+// Interest/selectors
 #define NDN_INTEREST_MIN_SUFFIX_COMPONENT_ALIAS     "min_suffix"
 #define NDN_INTEREST_MAX_SUFFIX_COMPONENT_ALIAS     "max_suffix"
 #define NDN_INTEREST_PUBLISHER_PUBLICKEY_LOCATOR_ALIAS  "publisher_publickey_locator"
@@ -1057,14 +1057,14 @@ enum
 #define NDN_INTEREST_CHILD_SELECTOR_ALIAS           "child_selector"
 #define NDN_INTEREST_MUST_BE_FRESH_ALIAS            "must_be_fresh"
 #define NDN_INTEREST_ANY_ALIAS                      "any"
-    // Data packet
+// Data packet
 #define NDN_DATA_CONTENT_ALIAS                      "content"
 #define NDN_DATA_SIGNATURE_VALUE_ALIAS              "signature_value"
-    // data/metainfo
+// data/metainfo
 #define NDN_DATA_CONTENT_TYPE_ALIAS                 "content_type"
 #define NDN_DATA_FRESHNESS_PERIOD_ALIAS             "fresh_period"
 #define NDN_DATA_FINAL_BLOCK_ID_ALIAS               "final_block_id"
-    // Data/signature
+// Data/signature
 #define NDN_DATA_SIGNATURE_TYPE_ALIAS               "signature_type"
 #define NDN_DATA_KEY_LOCATOR_ALIAS                  "key_locator"
 #define NDN_DATA_KEY_DIGEST_ALIAS                   "key_digest"
@@ -1077,7 +1077,7 @@ enum
 
 
 //////////// NFS PROTOCOL ATTRIBUTES ////////////////////
-enum{
+enum {
     // -- RPC attribute ////
     NFS_XID = 1,
     NFS_MESSAGE_TYPE,
@@ -1115,7 +1115,7 @@ enum{
 
 
 //////////// GTP PROTOCOL ATTRIBUTES ////////////////////
-enum{
+enum {
     // Flags
     GTP_VERSION = 1,
     GTP_PROTOCOL_TYPE,
@@ -1142,6 +1142,104 @@ enum{
 #define GTP_TEID_ALIAS                  "teid"
 
 //////////// END OF GTP PROTOCOL ATTRIBUTES ////////////////////
+
+
+//////////// TPKT PROTOCOL ATTRIBUTES ////////////////////
+enum tpkt_attributes {
+
+    TPKT_VERSION = 1,
+
+    TPKT_RESERVED,
+
+    TPKT_LENGTH,
+
+    TPKT_ATTRIBUTES_NB = TPKT_LENGTH,
+
+};
+
+
+#define TPKT_VERSION_ALIAS "version"
+
+#define TPKT_RESERVED_ALIAS "reserved"
+
+#define TPKT_LENGTH_ALIAS "length"
+
+struct tpkthdr {
+    uint8_t version ;
+    uint8_t reserved ;
+    uint16_t length ;
+};
+
+
+//////////// END OF TPKT PROTOCOL ATTRIBUTES ////////////////////
+
+
+//////////// COTP PROTOCOL ATTRIBUTES ////////////////////
+enum cotp_attributes {
+
+    COTP_LENGTH = 1,
+
+    COTP_PDU_TYPE,
+
+    COTP_ATTRIBUTES_NB = COTP_PDU_TYPE,
+
+};
+
+
+#define COTP_LENGTH_ALIAS "length"
+
+#define COTP_PDU_TYPE_ALIAS "pdu_type"
+
+struct cotphdr {
+    uint8_t length ;
+    uint8_t pdu_type ;
+};
+
+//////////// END OF COTP PROTOCOL ATTRIBUTES ////////////////////
+
+//////////// S7COMM PROTOCOL ATTRIBUTES ////////////////////
+
+enum s7comm_attributes {
+
+    S7COMM_PROTO_ID = 1,
+
+    S7COMM_ROSCTR,
+
+    S7COMM_RESERVED,
+
+    S7COMM_PDUR,
+
+    S7COMM_PARAM_LENGTH,
+
+    S7COMM_DATA_LENGTH,
+
+    S7COMM_ATTRIBUTES_NB = S7COMM_DATA_LENGTH,
+
+};
+
+
+#define S7COMM_PROTO_ID_ALIAS "proto_id"
+
+#define S7COMM_ROSCTR_ALIAS "rosctr"
+
+#define S7COMM_RESERVED_ALIAS "reserved"
+
+#define S7COMM_PDUR_ALIAS "pdur"
+
+#define S7COMM_PARAM_LENGTH_ALIAS "param_length"
+
+#define S7COMM_DATA_LENGTH_ALIAS "data_length"
+
+struct s7commphdr {
+    uint8_t proto_id ;
+    uint8_t rosctr ;
+    uint16_t reserved ;
+    uint16_t pdur ;
+    uint16_t param_length ;
+    uint16_t data_length ;
+};
+
+//////////// END OF S7COMM PROTOCOL ATTRIBUTES ////////////////////
 
 #ifdef __cplusplus
 }

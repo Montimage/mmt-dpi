@@ -3832,6 +3832,24 @@ int init_tcpip_plugin() {
         exit(0);
     }
     /////////////////////////////////////////////
+       /////////// INITILIZING PROTO_tpkt //////////////////
+    if (!init_proto_tpkt_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_tpkt\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
+       /////////// INITILIZING PROTO_cotp //////////////////
+    if (!init_proto_cotp_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_cotp\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
+       /////////// INITILIZING PROTO_s7comm //////////////////
+    if (!init_proto_s7comm_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_s7comm\n Exiting\n");
+        exit(0);
+    }
+    /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -3947,7 +3965,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dcerpc, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_spotify, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rtsp, 50);
-    
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_tpkt, 50);
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 60);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn_http, 60);
 
