@@ -13,7 +13,7 @@ MMT_EXAMS ?= $(MMT_BASE)/examples
 
 CP       := cp -R
 RM       := rm -rf
-
+MKDIR  	 := mkdir -p
 #  - - - - -
 # DEFINE VERBOSE MODE
 #  - - - - -
