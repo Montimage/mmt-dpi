@@ -360,9 +360,6 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             if ( packet->empty_line_position != 0 || (a + 2) >= packet->payload_packet_len ) {
                 return;
             }
-            // if (http_data_analyser == 0 && skip_parsing == 1) {
-            //     break;
-            // }
         } // End of get_u16(packet->payload, a) == NEW_LINE
     }// End of for loop
     if (packet->parsed_lines > 0) {
