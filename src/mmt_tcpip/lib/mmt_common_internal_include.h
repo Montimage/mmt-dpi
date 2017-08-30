@@ -339,6 +339,7 @@ extern "C" {
     int mmt_check_redis(ipacket_t * ipacket, unsigned index);
     int mmt_check_vmware(ipacket_t * ipacket, unsigned index);
     int mmt_check_eclipse_tcf(ipacket_t * ipacket, unsigned index);
+    int mmt_check_tpkt(ipacket_t * ipacket, unsigned index);
     // int mmt_check_ftp_control(ipacket_t * ipacket, unsigned index);
     // int mmt_check_ftp_data(ipacket_t * ipacket, unsigned index);
     ////////////////////////////////////////////////////////////////////////////
@@ -2253,6 +2254,13 @@ extern "C" {
     int init_proto_eclipse_tcf_struct();
     /////////// PLUGIN INIT FOR PROTO_LOOPBACK //////////////////
     int init_proto_loopback_struct();
+    /////////// PLUGIN INIT FOR PROTO_tpkt //////////////////
+    int init_proto_tpkt_struct();
+    /////////// PLUGIN INIT FOR PROTO_cotp //////////////////
+    int init_proto_cotp_struct();
+    /////////// PLUGIN INIT FOR PROTO_s7comm //////////////////
+    int init_proto_s7comm_struct();
+    
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus
