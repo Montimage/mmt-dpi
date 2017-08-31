@@ -160,6 +160,27 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 
 	$(QUIET) $(RM) $(BUILD_DIR) rpmbuild mmt-dpi.spec
 
+
+#  - - - - - - - - - -
+#  B U I L D   Z I P 
+#  - - - - - - - - - -
+
+
+zip: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
+	echo $(BUILD_DIR)
+	# Remove old build
+	$(QUIET) $(RM) $(BUILD_DIR)
+	$(QUIET) $(MKDIR) $(BUILD_DIR)
+	# Copy make file
+	$(QUIET) $(CP) ../dist/ZIP/* $(BUILD_DIR)
+	# Copy source to zip file
+	$(QUIET) $(CP) -R $(SDKLIB) $(BUILD_DIR)
+	$(QUIET) $(CP) -R $(SDKINC) $(BUILD_DIR)
+	$(QUIET) $(CP) -R $(SDKXAM) $(BUILD_DIR)
+	# Make zip file
+	zip -r $(BUILD_DIR).zip $(BUILD_DIR)
+
+	$(QUIET) $(RM) $(BUILD_DIR)
 #  - - - - -
 #  C L E A N
 #  - - - - -
