@@ -75,7 +75,7 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 		> $(BUILD_DIR)/DEBIAN/control
 	# Copy resources
 	echo $(SDKLIB)
-	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi
+	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi/lib
 	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
 	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
 	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
@@ -110,16 +110,17 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/etc/ld.so.conf.d/
 	# Copy resources
 	echo $(SDKLIB)
-	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so
+	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi/lib	
 	$(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
 	$(QUIET) $(CP) -r $(SDKXAM) $(BUILD_DIR)/opt/mmt
 	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/plugins/libmmt_tcpip.so
 	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
-
+	# Make links
+	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
+	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
+	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
+	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so
+	
 	# Build .rpm file ...
 	mkdir -p ./rpmbuild/{RPMS,BUILD}
 
