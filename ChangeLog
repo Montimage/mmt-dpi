@@ -2,10 +2,15 @@ RELEASE NOTES
 ---
 ## Pre-version 1.6.11.0
 
-Pre-Version 1.6.10.5
+Pre-Version 1.6.10.6
 - Add APIs: enable_port_classify()/ disable_port_classify() to change the classification based on port number. Disable by default
 - Add new protocol stack: PROTO_LOOPBACK -> Prove that PROTO_VNC has been classified correctly
 - Add classification of PROTO_RTSP which is not based on port number
+- Add protocols: TPKT, COTP, S7COMM
+- Update Makefile, add option to build installation file: 
+	+ make zip: create zip file to install mmt-dpi on unix machine
+	+ make deb: create deb file to install mmt-dpi on debian machine
+	+ make rpm: create rpm file to install mmt-dpi on centos (redhat) machine
 
 
 Version 1.6.10.5
