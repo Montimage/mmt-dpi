@@ -40,11 +40,7 @@ install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT
 SYS_NAME    = $(shell uname -s)
 SYS_VERSION = $(shell uname -p)
 
-ifdef DEBUG
-	BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)_debug
-else
-	BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
-endif
+BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 
 deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	echo $(BUILD_DIR)
