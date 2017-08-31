@@ -85,7 +85,7 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	# $(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
 	$(QUIET) $(CP) -r $(SDKXAM) $(BUILD_DIR)/opt/mmt
 	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/plugins/libmmt_tcpip.so
-	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt.conf
+	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
 	
 	$(QUIET) dpkg-deb -b $(BUILD_DIR)
 	$(QUIET) $(RM) $(BUILD_DIR)
@@ -118,7 +118,7 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	$(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
 	$(QUIET) $(CP) -r $(SDKXAM) $(BUILD_DIR)/opt/mmt
 	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/plugins/libmmt_tcpip.so
-	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt.conf
+	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
 
 	# Build .rpm file ...
 	mkdir -p ./rpmbuild/{RPMS,BUILD}
@@ -126,13 +126,13 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	$(QUIET) echo -e\
 	    "Summary:  MMT-DPI\
 	    \nName: mmt-dpi\
-	    \nVersion: $(VERSION)-$(GIT_VERSION)\
+	    \nVersion: $(GIT_VERSION)\
 	    \nRelease: $(VERSION)\
 	    \nLicense: proprietary\
 	    \nGroup: Development/Libraries\
 	    \nURL: http://montimage.com/\
 	    \n\
-	    \nBuildRoot: %{_topdir}/BUILD/%{name}-%{version}-%{release}\
+	    \nBuildRoot: %{_topdir}/BUILD/$(BUILD_DIR)\
 	    \n\
 	    \n%description\
 	    \nMMT-DPI is a library for deep packet inspection.\
@@ -155,7 +155,7 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	    \nldconfig\
 	" > ./mmt-dpi.spec
 
-	rpmbuild --quiet --rmspec --define "_topdir $(pwd)/rpmbuild" --define "_rpmfilename ../../$rpm_name.rpm" -bb ./mmt-dpi.spec
+	rpmbuild --quiet --rmspec --define "_topdir `pwd`/rpmbuild" --define "_rpmfilename ../../$(BUILD_DIR).rpm" -bb ./mmt-dpi.spec
 
 	$(QUIET) $(RM) $(BUILD_DIR) rpmbuild mmt-dpi.spec
 
