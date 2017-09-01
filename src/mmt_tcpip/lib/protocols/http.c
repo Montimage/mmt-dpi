@@ -2138,36 +2138,111 @@ void mmt_classify_me_http(ipacket_t * ipacket, unsigned index) {
 
     uint16_t filename_start;
 
-    /* BW: TODO: the following strategy should be enforced! No?
-     * HTTP stages: 0 means no request no response seen, expecting a request or response
-     *              1 means request seen, expecting response now
-     *              2 means resposne seen, expecting request now
-     *
-     * Exclude strategy: If we have seen payload data on both directions, then this is not HTTP!
-     */
+    // /* BW: TODO: the following strategy should be enforced! No?
+    //  * HTTP stages: 0 means no request no response seen, expecting a request or response
+    //  *              1 means request seen, expecting response now
+    //  *              2 means resposne seen, expecting request now
+    //  *
+    //  * Exclude strategy: If we have seen payload data on both directions, then this is not HTTP!
+    //  */
 
-    //First parse the packet to check if it contains any: field: value lines
-    packet->empty_line_position = 0; 
-    if(packet->payload_packet_len < 32) {
-        return;
+    // //First parse the packet to check if it contains any: field: value lines
+    // packet->empty_line_position = 0; 
+    // if(packet->payload_packet_len < 32) {
+    //     return;
+    // }
+
+    // mmt_parse_packet_line_info(ipacket);
+
+    // if (packet->parsed_lines > 1) {
+    //     //If the packet contains a response, try to check the payload
+    //     if (packet->http_response.ptr) {
+    //         if (!flow->http_detected) {
+    //             mmt_int_http_add_connection(ipacket, PROTO_HTTP);
+    //         }
+    //         check_content_type_and_change_protocol(ipacket);
+    //         if (packet->empty_line_position_set) {
+    //             check_http_payload(ipacket);
+    //         }
+    //     } else {
+    //         //The packet is not a response! maybe this is a request
+    //         filename_start = http_request_url_offset(ipacket);
+    //         if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
+    //                 && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+    //             packet->http_url_name.ptr = &packet->payload[filename_start];
+    //             packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
+
+    //             packet->http_method.ptr = packet->line[0].ptr;
+    //             packet->http_method.len = filename_start - 1;
+
+    //             MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "next http action, "
+    //                     "resetting to http and search for other protocols later.\n");
+    //             if (!flow->http_detected) {
+    //                 mmt_int_http_add_connection(ipacket, PROTO_HTTP);
+    //             }
+    //         }
+    //         check_content_type_and_change_protocol(ipacket);
+    //     }
+    // }
+
+    // return;
+
+    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "search http\n");
+
+    /* set client-server_direction */
+    if (flow->l4.tcp.http_setup_dir == 0) {
+        const struct tcphdr *l4ptr = packet->tcp;
+        if (l4ptr->syn) {
+            //This is still the TCP handshake, do nothing
+            return;
+        }
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "initializes http to stage: 1 \n");
+        flow->l4.tcp.http_setup_dir = 1 + ipacket->session->last_packet_direction;
     }
 
-    mmt_parse_packet_line_info(ipacket);
+    if (MMT_COMPARE_PROTOCOL_TO_BITMASK
+            (detection_bitmask, packet->detected_protocol_stack[0]) != 0) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
+                "protocol might be detected earlier as http jump to payload type detection\n");
+        goto http_parse_detection;
+    }
 
-    if (packet->parsed_lines > 1) {
-        //If the packet contains a response, try to check the payload
-        if (packet->http_response.ptr) {
-            if (!flow->http_detected) {
-                mmt_int_http_add_connection(ipacket, PROTO_HTTP);
+    if (flow->l4.tcp.http_setup_dir == 1 + ipacket->session->last_packet_direction) {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "http stage: 1\n");
+
+        if (flow->l4.tcp.http_wait_for_retransmission) {
+            if (!packet->tcp_retransmission) {
+                if (ipacket->session->data_packet_count <= 5) {
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "still waiting for retransmission\n");
+                    return;
+                } else {
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "retransmission not found, exclude\n");
+                    fprintf(stdout, "retransmission not found, exclude\n");
+                    http_bitmask_exclude(flow);
+                    return;
+                }
             }
-            check_content_type_and_change_protocol(ipacket);
-            if (packet->empty_line_position_set) {
-                check_http_payload(ipacket);
-            }
-        } else {
-            //The packet is not a response! maybe this is a request
+        }
+
+        if (flow->l4.tcp.http_stage == 0) {
             filename_start = http_request_url_offset(ipacket);
-            if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
+            if (filename_start == 0) {
+                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "filename not found, exclude\n");
+                fprintf(stdout, "filename not found, exclude\n");
+                http_bitmask_exclude(flow);
+                return;
+            }
+            // parse packet
+            mmt_parse_packet_line_info(ipacket);
+
+            if (packet->parsed_lines <= 1) {
+                /* parse one more packet .. */
+                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "just one line, search next packet\n");
+                flow->l4.tcp.http_stage = 1;
+                return;
+            }
+            // parsed_lines > 1 here
+            if (packet->line[0].len >= (9 + filename_start)
                     && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
                 packet->http_url_name.ptr = &packet->payload[filename_start];
                 packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
@@ -2175,208 +2250,143 @@ void mmt_classify_me_http(ipacket_t * ipacket, unsigned index) {
                 packet->http_method.ptr = packet->line[0].ptr;
                 packet->http_method.len = filename_start - 1;
 
-                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "next http action, "
-                        "resetting to http and search for other protocols later.\n");
+                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "http structure detected, adding\n");
+
+                //BW: TODO: What the hell is HTTP_CONNECT ?????
+                //mmt_int_http_add_connection(ipacket, (filename_start == 8) ? PROTO_HTTP_CONNECT : PROTO_HTTP);
+                mmt_int_http_add_connection(ipacket, PROTO_HTTP);
+
+                check_content_type_and_change_protocol(ipacket);
+                /* HTTP found, look for host... */
+                if (packet->host_line.ptr != NULL) {
+                    /* aaahh, skip this direction and wait for a server reply here */
+                    flow->l4.tcp.http_stage = 2;
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP START HOST found\n");
+                    return;
+                }
+                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP START HOST found\n");
+
+                /* host not found, check in next packet after */
+                flow->l4.tcp.http_stage = 1;
+                return;
+            }
+        } else if (flow->l4.tcp.http_stage == 1) {
+            /* SECOND PAYLOAD TRAFFIC FROM CLIENT, FIRST PACKET MIGHT HAVE BEEN HTTP... */
+            /* UNKNOWN TRAFFIC, HERE FOR HTTP again.. */
+            // parse packet
+            mmt_parse_packet_line_info(ipacket);
+
+            if (packet->parsed_lines <= 1) {
+
+                /* wait some packets in case request is split over more than 2 packets */
+                if (ipacket->session->data_packet_count < 5) {
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
+                            "line still not finished, search next packet\n");
+                    return;
+                } else {
+                    /* stop parsing here */
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
+                            "HTTP: PACKET DOES NOT HAVE A LINE STRUCTURE\n");
+                    fprintf(stdout, "HTTP: PACKET DOES NOT HAVE A LINE STRUCTURE\n");
+                    http_bitmask_exclude(flow);
+                    return;
+                }
+            }
+
+            if (packet->line[0].len >= 9 && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+                mmt_int_http_add_connection(ipacket, PROTO_HTTP);
+                check_content_type_and_change_protocol(ipacket);
+                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
+                        "HTTP START HTTP found in 2. packet, check host here...\n");
+                /* HTTP found, look for host... */
+                flow->l4.tcp.http_stage = 2;
+
+                return;
+            }
+        }
+    }
+    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: REQUEST NOT HTTP CONFORM\n");
+    fprintf(stdout, "HTTP: REQUEST NOT HTTP CONFORM\n");
+    http_bitmask_exclude(flow);
+    return;
+
+http_parse_detection:
+    if (flow->l4.tcp.http_setup_dir == 1 + ipacket->session->last_packet_direction) {
+        /* we have something like http here, so check for host and content type if possible */
+        if (flow->l4.tcp.http_stage == 0 || flow->l4.tcp.http_stage == 3) {
+            MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP RUN MAYBE NEXT GET/POST...\n");
+            // parse packet
+            mmt_parse_packet_line_info(ipacket);
+            if (packet->http_response.ptr) {
                 if (!flow->http_detected) {
                     mmt_int_http_add_connection(ipacket, PROTO_HTTP);
                 }
+                check_content_type_and_change_protocol(ipacket);
+                if (packet->empty_line_position_set) {
+                    check_http_payload(ipacket);
+                }
+                flow->l4.tcp.http_stage = 1;
+            }else{
+                /* check for url here */
+                filename_start = http_request_url_offset(ipacket);
+                if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
+                        && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+                    packet->http_url_name.ptr = &packet->payload[filename_start];
+                    packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
+
+                    packet->http_method.ptr = packet->line[0].ptr;
+                    packet->http_method.len = filename_start - 1;
+
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "next http action, "
+                            "resetting to http and search for other protocols later.\n");
+                    mmt_int_http_add_connection(ipacket, PROTO_HTTP);
+                }
+                check_content_type_and_change_protocol(ipacket);
+                /* HTTP found, look for host... */
+                if (packet->host_line.ptr != NULL) {
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
+                            "HTTP RUN MAYBE NEXT HOST found, skipping all packets from this direction\n");
+                    /* aaahh, skip this direction and wait for a server reply here */
+                    flow->l4.tcp.http_stage = 2;
+                    return;
+                }
+                MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
+                        "HTTP RUN MAYBE NEXT HOST NOT found, scanning one more packet from this direction\n");
+                flow->l4.tcp.http_stage = 1;   
             }
+        } else if (flow->l4.tcp.http_stage == 1) {
+            // parse packet and maybe find a packet info with host ptr,...
+            mmt_parse_packet_line_info(ipacket);
             check_content_type_and_change_protocol(ipacket);
+            MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP RUN second packet scanned\n");
+            /* HTTP found, look for host... */
+            flow->l4.tcp.http_stage = 2;
         }
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
+                "HTTP skipping client packets after second packet\n");
+        return;
     }
+    /* server response */
+    if (flow->l4.tcp.http_stage > 0) {
+        /* first packet from server direction, might have a content line */
+        mmt_parse_packet_line_info(ipacket);
+        check_content_type_and_change_protocol(ipacket);
 
-    return;
-
-//     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "search http\n");
-
-//     /* set client-server_direction */
-//     if (flow->l4.tcp.http_setup_dir == 0) {
-//         const struct tcphdr *l4ptr = packet->tcp;
-//         if (l4ptr->syn) {
-//             //This is still the TCP handshake, do nothing
-//             return;
-//         }
-//         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "initializes http to stage: 1 \n");
-//         flow->l4.tcp.http_setup_dir = 1 + ipacket->session->last_packet_direction;
-//     }
-
-//     if (MMT_COMPARE_PROTOCOL_TO_BITMASK
-//             (detection_bitmask, packet->detected_protocol_stack[0]) != 0) {
-//         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-//                 "protocol might be detected earlier as http jump to payload type detection\n");
-//         goto http_parse_detection;
-//     }
-
-//     if (flow->l4.tcp.http_setup_dir == 1 + ipacket->session->last_packet_direction) {
-//         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "http stage: 1\n");
-
-//         if (flow->l4.tcp.http_wait_for_retransmission) {
-//             if (!packet->tcp_retransmission) {
-//                 if (ipacket->session->data_packet_count <= 5) {
-//                     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "still waiting for retransmission\n");
-//                     return;
-//                 } else {
-//                     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "retransmission not found, exclude\n");
-//                     fprintf(stdout, "retransmission not found, exclude\n");
-//                     http_bitmask_exclude(flow);
-//                     return;
-//                 }
-//             }
-//         }
-
-//         if (flow->l4.tcp.http_stage == 0) {
-//             filename_start = http_request_url_offset(ipacket);
-//             if (filename_start == 0) {
-//                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "filename not found, exclude\n");
-//                 fprintf(stdout, "filename not found, exclude\n");
-//                 http_bitmask_exclude(flow);
-//                 return;
-//             }
-//             // parse packet
-//             mmt_parse_packet_line_info(ipacket);
-
-//             if (packet->parsed_lines <= 1) {
-//                 /* parse one more packet .. */
-//                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "just one line, search next packet\n");
-//                 flow->l4.tcp.http_stage = 1;
-//                 return;
-//             }
-//             // parsed_lines > 1 here
-//             if (packet->line[0].len >= (9 + filename_start)
-//                     && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
-//                 packet->http_url_name.ptr = &packet->payload[filename_start];
-//                 packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
-
-//                 packet->http_method.ptr = packet->line[0].ptr;
-//                 packet->http_method.len = filename_start - 1;
-
-//                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "http structure detected, adding\n");
-
-//                 //BW: TODO: What the hell is HTTP_CONNECT ?????
-//                 //mmt_int_http_add_connection(ipacket, (filename_start == 8) ? PROTO_HTTP_CONNECT : PROTO_HTTP);
-//                 mmt_int_http_add_connection(ipacket, PROTO_HTTP);
-
-//                 check_content_type_and_change_protocol(ipacket);
-//                 /* HTTP found, look for host... */
-//                 if (packet->host_line.ptr != NULL) {
-//                     /* aaahh, skip this direction and wait for a server reply here */
-//                     flow->l4.tcp.http_stage = 2;
-//                     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP START HOST found\n");
-//                     return;
-//                 }
-//                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP START HOST found\n");
-
-//                 /* host not found, check in next packet after */
-//                 flow->l4.tcp.http_stage = 1;
-//                 return;
-//             }
-//         } else if (flow->l4.tcp.http_stage == 1) {
-//             /* SECOND PAYLOAD TRAFFIC FROM CLIENT, FIRST PACKET MIGHT HAVE BEEN HTTP... */
-//             /* UNKNOWN TRAFFIC, HERE FOR HTTP again.. */
-//             // parse packet
-//             mmt_parse_packet_line_info(ipacket);
-
-//             if (packet->parsed_lines <= 1) {
-
-//                 /* wait some packets in case request is split over more than 2 packets */
-//                 if (ipacket->session->data_packet_count < 5) {
-//                     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-//                             "line still not finished, search next packet\n");
-//                     return;
-//                 } else {
-//                     /* stop parsing here */
-//                     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-//                             "HTTP: PACKET DOES NOT HAVE A LINE STRUCTURE\n");
-//                     fprintf(stdout, "HTTP: PACKET DOES NOT HAVE A LINE STRUCTURE\n");
-//                     http_bitmask_exclude(flow);
-//                     return;
-//                 }
-//             }
-
-//             if (packet->line[0].len >= 9 && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
-//                 mmt_int_http_add_connection(ipacket, PROTO_HTTP);
-//                 check_content_type_and_change_protocol(ipacket);
-//                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-//                         "HTTP START HTTP found in 2. packet, check host here...\n");
-//                 /* HTTP found, look for host... */
-//                 flow->l4.tcp.http_stage = 2;
-
-//                 return;
-//             }
-//         }
-//     }
-//     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: REQUEST NOT HTTP CONFORM\n");
-//     fprintf(stdout, "HTTP: REQUEST NOT HTTP CONFORM\n");
-//     http_bitmask_exclude(flow);
-//     return;
-
-// http_parse_detection:
-//     if (flow->l4.tcp.http_setup_dir == 1 + ipacket->session->last_packet_direction) {
-//         /* we have something like http here, so check for host and content type if possible */
-//         if (flow->l4.tcp.http_stage == 0 || flow->l4.tcp.http_stage == 3) {
-//             MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP RUN MAYBE NEXT GET/POST...\n");
-//             // parse packet
-//             mmt_parse_packet_line_info(ipacket);
-//             /* check for url here */
-//             filename_start = http_request_url_offset(ipacket);
-//             if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
-//                     && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
-//                 packet->http_url_name.ptr = &packet->payload[filename_start];
-//                 packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
-
-//                 packet->http_method.ptr = packet->line[0].ptr;
-//                 packet->http_method.len = filename_start - 1;
-
-//                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "next http action, "
-//                         "resetting to http and search for other protocols later.\n");
-//                 mmt_int_http_add_connection(ipacket, PROTO_HTTP);
-//             }
-//             check_content_type_and_change_protocol(ipacket);
-//             /* HTTP found, look for host... */
-//             if (packet->host_line.ptr != NULL) {
-//                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-//                         "HTTP RUN MAYBE NEXT HOST found, skipping all packets from this direction\n");
-//                 /* aaahh, skip this direction and wait for a server reply here */
-//                 flow->l4.tcp.http_stage = 2;
-//                 return;
-//             }
-//             MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-//                     "HTTP RUN MAYBE NEXT HOST NOT found, scanning one more packet from this direction\n");
-//             flow->l4.tcp.http_stage = 1;
-//         } else if (flow->l4.tcp.http_stage == 1) {
-//             // parse packet and maybe find a packet info with host ptr,...
-//             mmt_parse_packet_line_info(ipacket);
-//             check_content_type_and_change_protocol(ipacket);
-//             MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP RUN second packet scanned\n");
-//             /* HTTP found, look for host... */
-//             flow->l4.tcp.http_stage = 2;
-//         }
-//         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-//                 "HTTP skipping client packets after second packet\n");
-//         return;
-//     }
-//     /* server response */
-//     if (flow->l4.tcp.http_stage > 0) {
-//         /* first packet from server direction, might have a content line */
-//         mmt_parse_packet_line_info(ipacket);
-//         check_content_type_and_change_protocol(ipacket);
-
-
-//         if (packet->empty_line_position_set != 0 || flow->l4.tcp.http_empty_line_seen == 1) {
-//             MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "empty line. check_http_payload.\n");
-//             check_http_payload(ipacket);
-//         }
-//         if (flow->l4.tcp.http_stage == 2) {
-//             flow->l4.tcp.http_stage = 3;
-//         } else {
-//             flow->l4.tcp.http_stage = 0;
-//         }
-//         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
-//                 "HTTP response first or second packet scanned,new stage is: %u\n", flow->l4.tcp.http_stage);
-//         return;
-//     } else {
-//         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP response next packet skipped\n");
-//     }
+        if (packet->empty_line_position_set != 0 || flow->l4.tcp.http_empty_line_seen == 1) {
+            MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "empty line. check_http_payload.\n");
+            check_http_payload(ipacket);
+        }
+        if (flow->l4.tcp.http_stage == 2) {
+            flow->l4.tcp.http_stage = 3;
+        } else {
+            flow->l4.tcp.http_stage = 0;
+        }
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG,
+                "HTTP response first or second packet scanned,new stage is: %u\n", flow->l4.tcp.http_stage);
+        return;
+    } else {
+        MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP response next packet skipped\n");
+    }
 }
 
 int mmt_check_http(ipacket_t * ipacket, unsigned index) {
