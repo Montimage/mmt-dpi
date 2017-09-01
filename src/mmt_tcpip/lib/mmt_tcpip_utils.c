@@ -129,16 +129,8 @@ uint32_t mmt_bytestream_to_ipv4(const uint8_t * str, uint16_t max_chars_to_read,
 
 static const uint16_t NEW_LINE = ntohs(0x0d0a);
 
-/* internal function for every detection to parse one packet and to increase the info buffer */
-void mmt_parse_packet_line_info(ipacket_t * ipacket) {
+void _mmt_parse_packet_line_info(ipacket_t * ipacket){
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-
-    if ( unlikely( packet->payload_packet_len == 0 ))
-        return;
-
-    if (packet->packet_lines_parsed_complete != 0)
-        return;
-
     uint32_t a;
     uint16_t line_length;
     const uint8_t *str;
@@ -367,6 +359,19 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
             &packet->payload[packet->payload_packet_len] - packet->line[packet->parsed_lines].ptr;
         packet->parsed_lines++;
     }
+}
+
+/* internal function for every detection to parse one packet and to increase the info buffer */
+void mmt_parse_packet_line_info(ipacket_t * ipacket) {
+    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+
+    if ( unlikely( packet->payload_packet_len == 0 ))
+        return;
+
+    if (packet->packet_lines_parsed_complete != 0)
+        return;
+    _mmt_parse_packet_line_info(ipacket);
+    
 }
 
 void mmt_parse_packet_line_info_unix(ipacket_t * ipacket) {
