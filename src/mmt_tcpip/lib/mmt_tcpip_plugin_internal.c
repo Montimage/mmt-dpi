@@ -268,7 +268,7 @@ inline static uint64_t _get_proto_by_tcp_port_number(uint16_t port_number,const 
 
         case 80:
         case 8080:
-        return PROTO_SSL;
+        return PROTO_HTTP;
 
         case 22:
         return PROTO_SSH;
