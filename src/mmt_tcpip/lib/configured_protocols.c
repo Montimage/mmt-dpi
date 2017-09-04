@@ -3977,7 +3977,7 @@ int init_tcpip_plugin() {
 
     ***/
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_quic, 30);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_mdns, 30);
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_mdns, 30); // Must be before mmt_check_dns
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dns, 30);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dhcp, 30);
 

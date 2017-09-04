@@ -11,6 +11,8 @@ Pre-Version 1.6.10.6
 	+ make zip: create zip file to install mmt-dpi on unix machine
 	+ make deb: create deb file to install mmt-dpi on debian machine
 	+ make rpm: create rpm file to install mmt-dpi on centos (redhat) machine
+- Change classification order: PROTO_MDNS before PROTO_DNS
+- Update mmt_check_http: using stage to classify HTTP
 
 
 Version 1.6.10.5
