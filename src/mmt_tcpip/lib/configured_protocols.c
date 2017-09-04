@@ -3977,6 +3977,7 @@ int init_tcpip_plugin() {
 
     ***/
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_quic, 30);
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_mdns, 30);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dns, 30);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dhcp, 30);
 
@@ -4031,7 +4032,6 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_snmp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_kontiki, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_veohtv_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_mdns, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ipp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ldap, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_warcraft3, 50);
