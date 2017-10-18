@@ -2254,6 +2254,8 @@ extern "C" {
     int init_proto_eclipse_tcf_struct();
     /////////// PLUGIN INIT FOR PROTO_LOOPBACK //////////////////
     int init_proto_loopback_struct();
+    /////////// PLUGIN INIT FOR PROTO_CTP //////////////////
+    int init_proto_ctp_struct();
     /////////// PLUGIN INIT FOR PROTO_tpkt //////////////////
     int init_proto_tpkt_struct();
     /////////// PLUGIN INIT FOR PROTO_cotp //////////////////

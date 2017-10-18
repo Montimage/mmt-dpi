@@ -42,3 +42,8 @@ sdk/*
 .cproject
 .project
 .settings/
+
+# ignore some configuration file
+sftp.json
+sftp-config.json
+.vscode
