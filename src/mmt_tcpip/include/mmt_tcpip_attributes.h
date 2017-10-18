@@ -11,11 +11,13 @@ enum {
     ETH_PROTOCOL = 1,
     ETH_DST,
     ETH_SRC,
+    ETH_LENGTH
 };
 
-#define ETHERNET_ATTRIBUTES_NB ETH_SRC
+#define ETHERNET_ATTRIBUTES_NB ETH_LENGTH
 
 #define ETH_PROTOCOL_ALIAS      "proto"
+#define ETH_LENGTH_ALIAS        "length"
 #define ETH_SRC_ALIAS           "src"
 #define ETH_DST_ALIAS           "dst"
 

@@ -98,9 +98,15 @@ int ethernet_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.status = Classified;
             break;    
         default:
-            retval.proto_id = PROTO_UNKNOWN;
-            retval.offset = sizeof (struct ethhdr);
-            retval.status = Classified;
+            if(ntohs(ethernet->h_proto) < 0x600){
+                retval.proto_id = PROTO_LLC;
+                retval.offset = sizeof (struct ethhdr);
+                retval.status = Classified;
+            }else{
+                retval.proto_id = PROTO_UNKNOWN;
+                retval.offset = sizeof (struct ethhdr);
+                retval.status = Classified;
+            }
             break;
     }
     return set_classified_proto(ipacket, index + 1, retval);
@@ -115,10 +121,26 @@ classified_proto_t ethernet_stack_classification(ipacket_t * ipacket) {
     return retval;
 }
 
+int eth_extract_protocol(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    const struct ethhdr *ethernet = (struct ethhdr *) & ipacket->data[offset];
+    if(ntohs(ethernet->h_proto) < 0x600) return 0;
+    return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+}
+
+int eth_extract_length(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    const struct ethhdr *ethernet = (struct ethhdr *) & ipacket->data[offset];
+    if(ntohs(ethernet->h_proto) > 0x600) return 0;
+    return general_short_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
+}
+
+
 static attribute_metadata_t ethernet_attributes_metadata[ETHERNET_ATTRIBUTES_NB] = {
     {ETH_DST, ETH_DST_ALIAS, MMT_DATA_MAC_ADDR, sizeof (mac_addr_t), 0, SCOPE_PACKET, general_byte_to_byte_extraction},
     {ETH_SRC, ETH_SRC_ALIAS, MMT_DATA_MAC_ADDR, sizeof (mac_addr_t), ETH_ALEN, SCOPE_PACKET, general_byte_to_byte_extraction},
-    {ETH_PROTOCOL, ETH_PROTOCOL_ALIAS, MMT_U16_DATA, sizeof (short), 2 * ETH_ALEN, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+    {ETH_PROTOCOL, ETH_PROTOCOL_ALIAS, MMT_U16_DATA, sizeof (short), 2 * ETH_ALEN, SCOPE_PACKET, eth_extract_protocol/*general_short_extraction_with_ordering_change*/},
+    {ETH_LENGTH, ETH_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), 2 * ETH_ALEN, SCOPE_PACKET, eth_extract_length/*general_short_extraction_with_ordering_change*/},
 };
 
 /*
