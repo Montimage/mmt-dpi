@@ -92,6 +92,11 @@ int ethernet_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
             break;
+        case ETH_P_LOOP:
+            retval.proto_id = PROTO_CTP;
+            retval.offset = sizeof (struct ethhdr);
+            retval.status = Classified;
+            break;    
         default:
             retval.proto_id = PROTO_UNKNOWN;
             retval.offset = sizeof (struct ethhdr);

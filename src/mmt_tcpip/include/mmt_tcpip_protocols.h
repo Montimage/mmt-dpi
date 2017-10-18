@@ -652,9 +652,9 @@ extern "C" {
 #define PROTO_TPKT 637
 #define PROTO_COTP 638
 #define PROTO_S7COMM 639	
+#define PROTO_CTP 640
 
-
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_S7COMM
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_CTP
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -1298,6 +1298,7 @@ extern "C" {
 #define PROTO_TPKT_ALIAS "tpkt"
 #define PROTO_COTP_ALIAS "cotp"
 #define PROTO_S7COMM_ALIAS "s7comm"	
+#define PROTO_CTP_ALIAS "ctp"
 // #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
 // #define PROTO_FTP_DATA_ALIAS "ftp_data"
 

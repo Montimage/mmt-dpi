@@ -3831,6 +3831,13 @@ int init_tcpip_plugin() {
         fprintf(stderr, "Error initializing protocol PROTO_LOOPBACK\n Exiting\n");
         exit(0);
     }
+
+    /////////////////////////////////////////////
+       /////////// INITILIZING PROTO_CTP //////////////////
+       if (!init_proto_ctp_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_CTP\n Exiting\n");
+        exit(0);
+    }
     /////////////////////////////////////////////
        /////////// INITILIZING PROTO_tpkt //////////////////
     if (!init_proto_tpkt_struct()) {

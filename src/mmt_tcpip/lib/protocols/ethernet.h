@@ -64,6 +64,10 @@ extern "C" {
 #define ETH_P_FC		0x8914	/* PROTOCOL FCoE*/
 #endif
 
+#ifndef ETH_P_LOOP
+#define ETH_P_LOOP		0x9000	/* PROTOCOL LOOPBACK*/
+#endif
+
     struct ethhdr {
         unsigned char h_dest[ETH_ALEN];
         unsigned char h_source[ETH_ALEN];
