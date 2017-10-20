@@ -1,7 +1,7 @@
 RELEASE NOTES
 ---
 Version 1.6.11.1
-- Add new Protocols: CTP (Configuration Test Protocol)
+- Add new Protocols: CTP (Configuration Test Protocol), CDP (Cisco Discovery Protocol), DTP (Dynamic Trunk Protocol), XID (Logical-Link Control Based XID)
 
 Version 1.6.11.0
 - Add APIs: enable_port_classify()/ disable_port_classify() to change the classification based on port number. Disable by default

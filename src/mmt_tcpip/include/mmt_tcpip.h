@@ -1054,6 +1054,10 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_LLMNR:        
         case PROTO_LOOPBACK:
         case PROTO_CTP:
+        case PROTO_LLC:
+        case PROTO_CDP:
+        case PROTO_DTP:
+        case PROTO_XID:
             return PROTO_CLASS_NETWORK;
         case PROTO_PCANYWHERE:
         case PROTO_RDP:
