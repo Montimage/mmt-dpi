@@ -654,8 +654,10 @@ extern "C" {
 #define PROTO_S7COMM 639	
 #define PROTO_CTP 640
 #define PROTO_LLC 641
-
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_LLC
+#define PROTO_XID 642
+#define PROTO_CDP 643
+#define PROTO_DTP 644
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_DTP
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -1301,6 +1303,9 @@ extern "C" {
 #define PROTO_S7COMM_ALIAS "s7comm"	
 #define PROTO_CTP_ALIAS "ctp"
 #define PROTO_LLC_ALIAS "llc"
+#define PROTO_XID_ALIAS "xid"
+#define PROTO_CDP_ALIAS "cdp"
+#define PROTO_DTP_ALIAS "dtp"
 // #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
 // #define PROTO_FTP_DATA_ALIAS "ftp_data"
 

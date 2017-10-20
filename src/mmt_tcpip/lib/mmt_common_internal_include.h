@@ -2264,6 +2264,12 @@ extern "C" {
     int init_proto_s7comm_struct();
     /////////// PLUGIN INIT FOR PROTO_LLC //////////////////
     int init_proto_llc_struct();
+    /////////// PLUGIN INIT FOR PROTO_XID //////////////////
+    int init_proto_xid_struct();
+    /////////// PLUGIN INIT FOR PROTO_CDP //////////////////
+    int init_proto_cdp_struct();
+    /////////// PLUGIN INIT FOR PROTO_DTP //////////////////
+    int init_proto_dtp_struct();
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus
