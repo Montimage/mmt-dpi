@@ -282,9 +282,9 @@ unsigned htoi(char * chdata, const char *ptr, int len) {
             if (ch >= '0' && ch <= '9') {
                 chdata[index_nb] = (char) ((ch - '0'));
             } else if (ch >= 'A' && ch <= 'F') {
-                chdata[index_nb] = (char) ((ch - 'A' + 10));
+                chdata[index_nb] = (char) (ch - 'A' + 10);
             } else if (ch >= 'a' && ch <= 'f') {
-                chdata[index_nb] = (char) ((ch - 'a' + 10));
+                chdata[index_nb] = (char) (ch - 'a' + 10);
             } else {
                 //*((int *) & chdata[0]) = index_nb;
                 return index_nb;
