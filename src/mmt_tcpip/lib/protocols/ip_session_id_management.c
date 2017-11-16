@@ -321,21 +321,13 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             fprintf(stderr, "[error] get_session: insert_session_into_protocol_context return 0\n");
             //The session failed to be inserted into the MAP.
             //Cleanup what was created for this
-            if (session_key->ip_type == 4) {
-                if (isl_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
-                }
-                if (ish_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
-                }
-
-            }else {
-                if (isl_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
-                }
-                if (ish_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
-                }
+            if (isl_new)
+            {
+                mmt_free(((mmt_session_key_t *)retval->session_key)->lower_ip);
+            }
+            if (ish_new)
+            {
+                mmt_free(((mmt_session_key_t *)retval->session_key)->higher_ip);
             }
             // mmt_free(session_key->lower_ip);
             // mmt_free(session_key->higher_ip);
