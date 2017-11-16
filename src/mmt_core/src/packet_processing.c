@@ -216,7 +216,7 @@ int validate_attribute_metadata(attribute_metadata_t * attribute_meta_data) {
     // The id must not be null
     if (attribute_meta_data->id == 0) return false;
     // The name must have a length of at least one and less than Max_Alias_Len
-    if ((strlen(attribute_meta_data->alias) == 0) || (strlen(attribute_meta_data->alias) > Max_Alias_Len)) return false;
+    if ((strlen(attribute_meta_data->alias) < 1) || (strlen(attribute_meta_data->alias) > Max_Alias_Len)) return false;
     // The data type should have a value greater than MMT_UNDEFINED_TYPE and less than MMT_HIGHER_VALUED_VALID_DATA_TYPE
     if ((attribute_meta_data->data_type <= MMT_UNDEFINED_TYPE)
             || (attribute_meta_data->data_type >= MMT_HIGHER_VALUED_VALID_DATA_TYPE))
@@ -468,7 +468,7 @@ void session_timer_handler_callback(void * timeout_milestone, void * milestone_s
     mmt_handler_t * mmt_handler = (mmt_handler_t *) args;
     mmt_session_t * current_session = (mmt_session_t *) milestone_sessions_list;
     while (current_session != NULL) {
-        // printf("session_timer_handler_callback and session id: %lu\n",current_session->session_id);
+        // printf("session_timer_handler_callback and session id: %"PRIu64"\n",current_session->session_id);
         mmt_handler->session_timer_handler.session_timer_handler_fct(current_session, mmt_handler->session_timer_handler.args);
         current_session = current_session->next;
     }
@@ -768,7 +768,7 @@ int register_session_data_analysis_function_full(protocol_t *proto,
 
 
 int is_free_protocol_id_for_registractionl(uint32_t proto_id) {
-    if (proto_id > PROTO_MAX_IDENTIFIER) return 0; //The prtocol id is not valid
+    if (proto_id >= PROTO_MAX_IDENTIFIER) return 0; //The prtocol id is not valid
 
     protocol_t *proto = configured_protocols[proto_id];
     if ( !proto ) return 1; // protocol just doesn't exist (plugin ?)
@@ -1147,7 +1147,6 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->last_received_packet.time.tv_usec = 0;
 
     new_handler->link_layer_stack = temp_stack;
-    new_handler->process_packet = process_packet;
 
     new_handler->has_reassembly = 0; // Disable TCP-reassembly by default
     new_handler->port_classify = 0; // Disable classification by port number by default
@@ -1727,9 +1726,9 @@ void close_extraction() {
     mmt_meminfo_t m;
     mmt_meminfo(&m);
     (void)fprintf( stderr, "*** MEMORY USAGE ***\n" );
-    (void)fprintf( stderr, "allocated: %lu bytes\n", m.allocated );
-    (void)fprintf( stderr, "    freed: %lu bytes\n", m.freed );
-    (void)fprintf( stderr, "     lost: %lu bytes\n", m.allocated - m.freed );
+    (void)fprintf( stderr, "allocated: %"PRIu64" bytes\n", m.allocated );
+    (void)fprintf( stderr, "    freed: %"PRIu64" bytes\n", m.freed );
+    (void)fprintf( stderr, "     lost: %"PRIu64" bytes\n", m.allocated - m.freed );
 #endif
 }
 
@@ -1917,40 +1916,24 @@ int unregister_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char 
 
 int set_default_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
-    if(timedout_value < 0) {
-        fprintf(stderr, "set_default_session_timed_out() - timedout_value cannot be negative\n");
-        return 0;
-    }
     mmt_handler->default_session_timed_out = timedout_value;
     return 1;
 }
 
 int set_long_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
-    if(timedout_value < 0) {
-        fprintf(stderr, "set_default_session_timed_out() - timedout_value cannot be negative\n");
-        return 0;
-    }
     mmt_handler->long_session_timed_out = timedout_value;
     return 1;
 }
 
 int set_short_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
-    if(timedout_value < 0) {
-        fprintf(stderr, "set_short_session_timed_out() - timedout_value cannot be negative\n");
-        return 0;
-    }
     mmt_handler->short_session_timed_out = timedout_value;
     return 1;
 }
 
 int set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
-    if(timedout_value < 0) {
-        fprintf(stderr, "set_live_session_timed_out() - timedout_value cannot be negative\n");
-        return 0;
-    }
     mmt_handler->live_session_timed_out = timedout_value;
     return 1;
 }
@@ -2251,7 +2234,7 @@ void setDataLinkType(mmt_handler_t *mmt_handler, int dltype) {
 
 
 int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *args) {
-    printf("\nPacket id: %lu - protocol hierarchy len: %d\n", ipacket->packet_id,ipacket->proto_hierarchy->len);
+    printf("\nPacket id: %"PRIu64" - protocol hierarchy len: %d\n", ipacket->packet_id,ipacket->proto_hierarchy->len);
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     unsigned proto_index = 0;
     int quiet = args ? *((int*)args) : 0;
@@ -2306,7 +2289,7 @@ void mmt_print_proto_info(protocol_t * proto) {
                 printf("SCOPE_SESSION");
             } else if (attr_scope == 4) {
                 printf("SCOPE_SESSION_CHANGING");
-            } else if (attr_scope == 16) {
+            } else if (attr_scope == 7) {
                 printf("SCOPE_ON_DEMAND");
             } else if (attr_scope == 0x10) {
                 printf("SCOPE_EVENT");
@@ -2420,7 +2403,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
                 //Initialize its session data if such initialization function exists
                 if (configured_protocol->protocol->session_data_init != NULL) {
-                    // debug("[PACKET_PROCESS-]> session_data_init - 0 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
+                    // debug("[PACKET_PROCESS-]> session_data_init - 0 : %"PRIu64" %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
                     ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
                 }
                 //Mark this protocol as done with the classification process
@@ -2471,7 +2454,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
         if ((ipacket->session != NULL) && ((classify_status == PROTO_CLASSIFICATION_DETECTION) || (classify_status == PROTO_RECLASSIFICATION)||(classify_status == PROTO_CLASSIFICATION_UPDATE))) {
             //Initialize its session data if such initialization function exists
             if (configured_protocol->protocol->session_data_init != NULL) {
-                // debug("[PACKET_PROCESS-]> session_data_init - 1 : %lu %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
+                // debug("[PACKET_PROCESS-]> session_data_init - 1 : %"PRIu64" %p",ipacket->packet_id,(generic_session_data_initialization_function) configured_protocol->protocol->session_data_init);
                 ((generic_session_data_initialization_function) configured_protocol->protocol->session_data_init)(ipacket, index);
             }
             is_new_session = NEW_PROTO_IN_SESSION; //This is not a new session, rather a new protocol in the session
@@ -2788,7 +2771,7 @@ void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * confi
                 classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
                 // // LN: check if the classify return 1-> do not need to go to check other protocol
                 if(classif_status & 3){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
-                    // printf("\n-]> Classified for protocol %d: %lu - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
+                    // printf("\n-]> Classified for protocol %d: %"PRIu64" - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
                     break;
                 }
                 // // End of LN
