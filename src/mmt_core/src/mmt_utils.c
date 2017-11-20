@@ -20,7 +20,7 @@ char * str_hex2str(char *hstr, int start_index, int end_index){
 
     char *ret;
     ret = (char*)malloc(length);
-
+    if(ret == NULL) return NULL;
     int i = 0;
     
     int current_index = 0;
@@ -107,6 +107,7 @@ char * hex2str(char *h_str){
     if ((str_len % 2)!=0) return NULL;
     char *ret;
     ret = (char*)malloc(str_len/2 + 1);
+    if(ret == NULL) return NULL;
     int i = 0 ;
     int j = 0;
     for(i = 0; i < str_len/2; i++){
@@ -157,6 +158,7 @@ int str_compare(char * str1, char * str2){
     int len = end_index - start_index + 1;
     char * sub;
     sub = (char *)malloc(len + 1);
+    if(sub == NULL) return NULL;
     memcpy(sub,(str + start_index), len);
     sub[len]='\0';
     return sub;
@@ -170,15 +172,20 @@ int str_compare(char * str1, char * str2){
     if(str1 == NULL && str2 != NULL) {
         len = strlen(str2);
         comb = (char *)malloc(len + 1);
+        if(comb == NULL) return NULL;
         memcpy(comb,str2,len);
         comb[len]='\0';
     }else if(str2 == NULL && str1 != NULL){
         len = strlen(str1);
         comb = (char *)malloc(len + 1);
+        if (comb == NULL)
+            return NULL;
         strcpy(comb,str1);
     }else {
         len = strlen(str1) + strlen(str2);
         comb = (char*)malloc(len + 1);
+        if (comb == NULL)
+            return NULL;
         strcpy(comb,str1);
         strcat(comb,str2);
     }
@@ -228,7 +235,7 @@ int * str_get_indexes(char *str, char* str1){
 
     int *indexes;
     indexes = (int*)malloc((strlen(str)+1)*sizeof(int));
-
+    if(indexes == NULL) return NULL;
     int start_index = 0;
     int current_index = 0;
     while(str1_index != -1){
@@ -242,6 +249,10 @@ int * str_get_indexes(char *str, char* str1){
 
     int *res;
     res = (int*)malloc((current_index + 1)*sizeof(int));
+    if(res == NULL) {
+        free(indexes);
+        return NULL;
+    }
     int i = 0;
     for(i = 0;i <current_index + 1;i++){
         res[i]=indexes[i];
@@ -274,6 +285,10 @@ int * str_get_indexes(char *str, char* str1){
     int new_string_len = strlen(str) + nb_element * strlen(rep) - nb_element * strlen(str1)+1;
     char * new_string;
     new_string = (char * )malloc(new_string_len);
+    if(new_string == NULL) {
+        free(array_index);
+        return NULL;
+    }
     new_string[0] = '\0';
 
     if(array_index[current_index] != 0){
@@ -343,26 +358,6 @@ int * str_get_indexes(char *str, char* str1){
     return str_sub(str,start_index,end_index - 1);
 }
 
-char ** str_add_string_to_array(char **array,char *str){
-  
-  if(str == NULL) return array;
-
-  if(array == NULL){
-    char **ret = (char** )malloc(C_EASY_STR_MAX_ARRAY_SIZE);
-    ret[0] = str_copy(str);
-    ret[1] = NULL;
-    return ret;
-  }
-
-  int i=0;
-  while(array[i] != NULL){
-    i++;
-  }
-  array[i] = str_copy(str);
-  array[i+1] = NULL;
-  return array;
-}
-
 char * str_copy(char *str2){
     
     char *str1 = NULL;
@@ -371,7 +366,7 @@ char * str_copy(char *str2){
         int length = strlen(str2);
 
         str1 = malloc(length + 1);
-
+        if(str1 == NULL) return NULL;
         memcpy(str1,str2,length);
 
         str1[length] = '\0';
