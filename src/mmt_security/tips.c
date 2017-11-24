@@ -86,15 +86,17 @@
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "types_defs.h"
+#define _STDC_FORMAT_MARCROS
+#include <inttypes.h>
 
-static FILE * OutputFile = NULL;
-static long long packet_count = 0;
-static short p_meta = 0;
-static short a_utime = 0;
-static char *token2;
-static char *token3;
+    static FILE *OutputFile = NULL;
+    static long long packet_count = 0;
+    static short p_meta = 0;
+    static short a_utime = 0;
+    static char *token2;
+    static char *token3;
 
-static long long corr_mess = 0;
+    static long long corr_mess = 0;
 #define SIZE_CAUSE 1000
 
 FILE *open_file(char *name, char *mode)
@@ -315,6 +317,7 @@ void *get_xdata(long type, int size, void *str)
             temp_MAC = xmalloc(22);
             if (temp_MAC == NULL)
             {
+                xfree(data);
                 return NULL;
             }
                 
@@ -1091,7 +1094,10 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         if (ref > 0) {
             new_rule->t.event_id = ref;
             tuple * a_tuple = (tuple *) xmalloc(sizeof (tuple));
-            if(a_tuple == NULL) return;
+            if(a_tuple == NULL) {
+                xfree(new_rule);
+                return;
+            }
             a_tuple->protocol_id = new_rule->t.protocol_id;
             a_tuple->field_id = new_rule->t.field_id;
             a_tuple->data_type_id = new_rule->t.data_type_id;
@@ -1166,7 +1172,10 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
 
         char * command2;
         tuple * top_tuple = (tuple *) xmalloc(sizeof (tuple)); //top of parameter list
-        if(top_tuple == NULL) return ;
+        if(top_tuple == NULL) {
+            xfree(new_rule);
+            return ;
+        }
         new_rule->t.next = top_tuple; //attach to list_of_tuples (first one is info on return value and the reste info on each param)
         top_tuple->protocol_id = -1;
         top_tuple->field_id = -1;
@@ -1780,9 +1789,6 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
       return NULL;
   }
   rule *new_rule = create_instance(root_inst, r, father);
-  if(new_rule == NULL){
-      return NULL;
-  }
   int buff_ids[100];
   short i=0;
   for(i=0;i<100;i++)buff_ids[i]=0;
@@ -1804,6 +1810,10 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
   if(new_rule != NULL){
     if(orig_rule->json_history != NULL){
       char * json_history = strdup(orig_rule->json_history);
+      if(json_history == NULL){
+          xfree(buff);
+          return;
+      }
       pt = strstr(json_history,"event");
       while (pt != NULL){
         pt2 = strstr(pt,"description");
@@ -2364,7 +2374,7 @@ void store_tuples( const ipacket_t *pkt, short context, rule *curr_root, rule *c
         }
         data = get_attribute_extracted_data( pkt, temp_tuple->protocol_id, temp_tuple->field_id );
         if (data == NULL) {
-            (void)fprintf(stderr, "Error 16: in stored reference tuples. Data is not available. packet_id=%lu, protocol_id=%ld, field_id=%ld\n",
+            (void)printf("Error 16: in stored reference tuples. Data is not available. packet_id=%"PRIu64", protocol_id=%ld, field_id=%ld\n",
             		pkt->packet_id,
                     temp_tuple->protocol_id, temp_tuple->field_id);
             //exit(-1);
@@ -3130,6 +3140,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                         data = (void*)(((mmt_header_line_t *)data)->ptr);
             }
             tmp_v->data = xcalloc(1, tmp_v->size);
+            if(tmp_v->data == NULL){
+                xfree(data);
+                return 0;
+            }
             memcpy(tmp_v->data, data, tmp_v->size);
         }
     }
@@ -3180,8 +3194,9 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
 void get_verdict( int t, int po, int state, char **str_verdict, char **str_type ){
 	char verdict[100];
 	char type[100];
-
-	switch (t) {
+    memset(verdict,0,100);
+    memset(type, 0, 100);
+    switch (t) {
 		case TEST:
 		case SECURITY_RULE:
 			if (po == SATISFIED && state == SATISFIED) {
@@ -3710,10 +3725,12 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                 history[strlen(history) - 1] = '\0';
 
             char *temp = xmalloc(strlen(history) + 3);
-            sprintf(temp, "{%s}", history);
-            ((op->callback_funct))(prop_id, verdict, type, des, temp, pkt->p_hdr->ts, (void *)op->user_args);
-
-            xfree(temp);
+            if(temp != NULL){
+                sprintf(temp, "{%s}", history);
+                ((op->callback_funct))(prop_id, verdict, type, des, temp, pkt->p_hdr->ts, (void *)op->user_args);
+                xfree(temp);
+            }
+           
         }
 		xfree( verdict );
 		xfree( type );
