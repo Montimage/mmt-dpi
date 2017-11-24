@@ -1015,7 +1015,7 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
 			  break;
 
    	 case 'v':
-			  if (packet->content_line.len >= 13 && mmt_memcmp(packet->content_line.ptr, "model/vrml", 13) == 0) {
+			  if (packet->content_line.len >= 13 && mmt_memcmp(packet->content_line.ptr, "model/vrml", 10) == 0) {
 					MMT_LOG(MMT_CONTENT_FAMILY_MODEL, MMT_LOG_DEBUG, "MODEL: Content-Type: model/vrml found.\n");
 					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_MODEL, MMT_CONTENT_TYPE_VRML);
 					return;
@@ -1132,7 +1132,7 @@ static inline void check_packet_contents(ipacket_t * ipacket) {
 			  break;
 
    	 case 'p':
-			  if (packet->content_line.len >= 9 && mmt_memcmp(packet->content_line.ptr, "text/plain", 9) == 0) {
+			  if (packet->content_line.len >= 9 && mmt_memcmp(packet->content_line.ptr, "text/plain", 10) == 0) {
 					MMT_LOG(MMT_CONTENT_FAMILY_TEXT, MMT_LOG_DEBUG, "TEXT: Content-Type: text/plain found.\n");
 					mmt_add_content_type(ipacket, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_PLAIN);
 					return;
@@ -1651,7 +1651,7 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
     /* check if the packet starts with POST or GET */
     switch(packet->payload[0]){
         case 'G':
-            if(packet->payload_packet_len >= 4 && mmt_memcmp(packet->payload, "GET ", 4) == 0){
+            if(mmt_memcmp(packet->payload, "GET ", 4) == 0){
                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: GET FOUND\n");
                 return 4;        
             }        
@@ -1665,7 +1665,7 @@ static inline uint16_t http_request_url_offset(ipacket_t * ipacket) {
                     }        
                 break;
                 case 'U':
-                    if(packet->payload_packet_len >= 4 && mmt_memcmp(packet->payload, "PUT ", 4) == 0){
+                    if(mmt_memcmp(packet->payload, "PUT ", 4) == 0){
                         MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "HTTP: PUT FOUND\n");
                         return 4;        
                     }        

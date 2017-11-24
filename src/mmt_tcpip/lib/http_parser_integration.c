@@ -34,6 +34,7 @@ int header_field_cb (http_parser *p, const char *buf, size_t len)
     free(sp->hfield);
   }
   sp->hfield = malloc((len+1)*sizeof(char));
+  if(sp->hfield == NULL) return 0;
   strncpy(sp->hfield, buf, len);
   sp->hfield[len] = '\0';
   //fprintf(stdout, "Header: %s : ", sp->hfield);
@@ -52,6 +53,8 @@ int header_value_cb (http_parser *p, const char *buf, size_t len)
     free(sp->hvalue);
   }
   sp->hvalue = malloc((len+1)*sizeof(char));
+  if (sp->hvalue == NULL)
+    return 0;
   strncpy(sp->hvalue, buf, len);
   sp->hvalue[len] = '\0';
 
