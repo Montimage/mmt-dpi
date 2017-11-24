@@ -413,13 +413,13 @@ int register_grade_membership_function_with_metric(metric_t * metric, metric_gra
  * @return
  */
 metric_grade_membership_function_t * init_new_grade_membership_function(int membership_function_type, int grade_value, int nb_parameters) {
-    metric_grade_membership_function_t * grade_membership_function = (metric_grade_membership_function_t *) malloc(sizeof (metric_grade_membership_function_t) + nb_parameters * sizeof (double));
+    metric_grade_membership_function_t * grade_membership_function = (metric_grade_membership_function_t *) malloc(sizeof (metric_grade_membership_function_t));
     if (grade_membership_function == NULL) {
         fprintf(stderr, "Memory allocation Error while initializing new grade_membership_function struct! Exiting\n");
         exit(-1);
     }
 
-    memset(grade_membership_function, '\0', sizeof (sizeof (metric_grade_membership_function_t) + nb_parameters * sizeof (double)));
+    memset(grade_membership_function, '\0', sizeof (metric_grade_membership_function_t));
     grade_membership_function->grade_value = grade_value;
     grade_membership_function->membership_function_type = membership_function_type;
     grade_membership_function->nb_membership_function_parameters = nb_parameters;
