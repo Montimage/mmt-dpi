@@ -99,6 +99,7 @@ static long long corr_mess = 0;
 
 FILE *open_file(char *name, char *mode)
 {
+    if(name == NULL) return NULL;
     FILE *file = NULL;
     errno = 0;
     file = fopen(name, mode);
@@ -143,6 +144,7 @@ void xfree(void *freeable) {
 rule * create_rule()
 {
     rule * a_rule = (rule *) xmalloc(sizeof (rule));
+    if(a_rule == NULL) return NULL;
     a_rule->type = ROOT; //ROOT/SON/LEAF/ROOT_INSTANCE
     a_rule->value = THEN; //THEN/OR/AND/NOT/REPEAT/COMPUTE
     a_rule->event_id = 0; //Only if a LEAF in a EVENT
@@ -212,6 +214,7 @@ void create_father(rule *a_rule, short depth, short clean)
     }
     if (top_father == NULL) {
         top_father = (father *) xmalloc(sizeof (father));
+        if(top_father == NULL) return;
         top_father->node = a_rule;
         top_father->depth = depth;
         top_father->next = NULL;
@@ -219,6 +222,8 @@ void create_father(rule *a_rule, short depth, short clean)
         bot_father = top_father;
     } else {
         temp = (father *) xmalloc(sizeof (father));
+        if (temp == NULL)
+            return;
         temp->node = a_rule;
         temp->depth = depth;
         temp->next = NULL;
@@ -238,15 +243,9 @@ void eliminate_bot_father()
         return;
     }
     father *temp = bot_father->prev;
-    if (temp != NULL) {
-        temp->next = NULL;
-        xfree(bot_father);
-        bot_father = temp;
-    } else {
-        xfree(bot_father);
-        bot_father = NULL;
-        top_father = NULL;
-    }
+    temp->next = NULL;
+    xfree(bot_father);
+    bot_father = temp;
 }
 
 const char cSep = ':'; //Bytes separator in MAC address string like 00-aa-bb-cc-dd-ee
@@ -308,11 +307,17 @@ void *get_xdata(long type, int size, void *str)
     unsigned long l = 0;
     unsigned long long ll = 0L;
     void * data = (void *) xmalloc(size);
+    if(data == NULL) return NULL;
     unsigned char *temp_MAC = NULL;
     mmt_string_data_t *tmp = NULL;
     switch (type) {
         case MMT_DATA_MAC_ADDR:
             temp_MAC = xmalloc(22);
+            if (temp_MAC == NULL)
+            {
+                return NULL;
+            }
+                
             //str+4 to skip size of mmt_string_data_t structure
             convert_mac_string_to_byte((const char *) (str + 4), &temp_MAC);
             memcpy(data, (void *) temp_MAC, size);
@@ -355,8 +360,15 @@ void *get_xdata(long type, int size, void *str)
         	//str is an instance of mmt_string_data_t
         	tmp = str;
         	mmt_header_line_t *hl = (mmt_header_line_t *) xmalloc( size );
+            if(hl == NULL){
+                return NULL;
+            }
         	hl->len = tmp->len;
         	char *str = xmalloc( hl->len);
+            if(str == NULL){
+                xfree(hl);
+                return NULL;
+            }
         	memcpy(str, (void *)tmp->data, hl->len);
         	str[ hl->len - 1 ] = '\0';
         	hl->ptr = str;
@@ -393,7 +405,14 @@ void *get_xdata(long type, int size, void *str)
 
 char *get_my_data(void *data1, short size, long type) {
     char *buff1 = xmalloc(100);
+    if (buff1 == NULL)
+        return NULL;
     char *buff0 = xmalloc(10);
+    if (buff0 == NULL){
+        xfree(buff1);
+        return NULL;
+    }
+        
     void * data2 = NULL;
     struct timeval t1;
     unsigned long L1=0,L2=0,L3=0,L4=0;
@@ -709,6 +728,7 @@ void add_tuple_to_list_of_tuples(tuple *a_tuple)
 {
     if (a_tuple->event_id > 0) {
         tuple * b_tuple = (tuple *) xmalloc(sizeof (tuple));
+        if(b_tuple == NULL) return;
         b_tuple->protocol_id = a_tuple->protocol_id;
         b_tuple->field_id = a_tuple->field_id;
         b_tuple->data_type_id = a_tuple->data_type_id;
@@ -749,6 +769,7 @@ char * funct_extract_name(char * input)
     end = start;
     while (*end != '(' && *end != ' ')end++;
     output = xmalloc(end - start + 1);
+    if(output == NULL) return NULL;
     strncpy(output, start, end - start);
     output[end - start] = '\0';
     //caller needs to free return value
@@ -817,6 +838,9 @@ char * funct_get_info_param( mmt_handler_t *mmt, short reg_tuple, char * input, 
 
     if (isdigit(*start)) {
         a_tuple->data = xmalloc(end - start + 1);
+        if(a_tuple->data == NULL){
+            return NULL;
+        }
         strncpy(a_tuple->data, start, end - start);
         ((char *) a_tuple->data)[end - start] = '\0';
         if (*end == ',') {
@@ -893,6 +917,10 @@ void * funct_get_params_and_execute( const ipacket_t *pkt, short skip_refs, char
                 break;
         }
         result_data = (void *) xmalloc(data_size);
+        if(result_data == NULL){
+            xfree(ihandle);
+            return NULL;
+        }
         memcpy(result_data, ihandle, data_size);
         xfree(ihandle);
 #ifdef WIN32
@@ -930,6 +958,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         } else {
             //create new_rule
             new_rule = create_rule();
+            if(new_rule == NULL) return;
             new_rule->type = SON;
             new_rule->value = NOP;
             if (a_rule->list_of_sons == NULL) {
@@ -1062,6 +1091,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         if (ref > 0) {
             new_rule->t.event_id = ref;
             tuple * a_tuple = (tuple *) xmalloc(sizeof (tuple));
+            if(a_tuple == NULL) return;
             a_tuple->protocol_id = new_rule->t.protocol_id;
             a_tuple->field_id = new_rule->t.field_id;
             a_tuple->data_type_id = new_rule->t.data_type_id;
@@ -1136,6 +1166,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
 
         char * command2;
         tuple * top_tuple = (tuple *) xmalloc(sizeof (tuple)); //top of parameter list
+        if(top_tuple == NULL) return ;
         new_rule->t.next = top_tuple; //attach to list_of_tuples (first one is info on return value and the reste info on each param)
         top_tuple->protocol_id = -1;
         top_tuple->field_id = -1;
@@ -1153,6 +1184,9 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         command2 = funct_get_info_param( mmt, reg_tuple, command2, a_tuple );
         while( command2 ) {
             new_tuple = (tuple *)xmalloc(sizeof (tuple));
+            if(new_tuple == NULL){
+                return;
+            }
             new_tuple->protocol_id = -1;
             new_tuple->field_id = -1;
             new_tuple->data_type_id = -1;
@@ -1187,6 +1221,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
 
         // create new_rule
         new_rule = create_rule();
+        if(new_rule == NULL) return;
         new_rule->type = LEAF;
         new_rule->value = XCON;
         // need to find a right handed LEAF to determine the type
@@ -1325,6 +1360,9 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
         if (xmlStrcmp(name, (const xmlChar*)"beginning") == 0) {
         } else if (xmlStrcmp(name, (const xmlChar*)"property") == 0) {
             a_rule = create_rule();
+            if(a_rule == NULL){
+                return 0;
+            }
             a_rule->type = ROOT;
             if (top_rule == NULL) {
                 top_rule = a_rule;
@@ -1339,10 +1377,18 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
             create_father(a_rule, depth, CLEAN);
         } else if (xmlStrcmp(name, (const xmlChar*)"operator") == 0) {
             a_rule = create_rule();
+            if (a_rule == NULL)
+            {
+                return 0;
+            }
             a_rule->type = SON;
             state = SON;
         } else if (xmlStrcmp(name, (const xmlChar*)"event") == 0) {
             a_rule = create_rule();
+            if (a_rule == NULL)
+            {
+                return 0;
+            }
             a_rule->type = SON;
             state = EVENT;
         }
@@ -1465,6 +1511,10 @@ void recuperate_attributes(rule* root, rule *r)
     if (r->t.protocol_id != 0 && r->t.field_id != 0) {
         //Create a tuple in ROOT. It will serve to indicate the attributes to printout when a rule is satisfied or not.
         a_tuple = (tuple *) xmalloc(sizeof (tuple));
+        if (a_tuple == NULL)
+        {
+            return;
+        }
         a_tuple->protocol_id = r->t.protocol_id;
         a_tuple->field_id = r->t.field_id;
         a_tuple->data_type_id = r->t.data_type_id;
@@ -1697,6 +1747,10 @@ void set_events_to_not_yet(int buff_ids[100], rule * r, rule *orig_rule)
           temp_tuple->valid = temp_tuple_orig->valid;
           if(temp_tuple_orig->data != NULL && temp_tuple_orig->data_size != 0){
             temp_tuple->data = xmalloc(temp_tuple_orig->data_size);
+            if (temp_tuple->data == NULL)
+            {
+                return;
+            }
             memcpy(temp_tuple->data, (void *) (temp_tuple_orig->data), temp_tuple_orig->data_size);
           }
           temp_tuple = temp_tuple->next;
@@ -1720,8 +1774,15 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
   char *pt = NULL, *pt2 = NULL, *pt3 = NULL;
   pt = orig_rule->keep_state;
   if(pt == NULL) return NULL;
-  rule *new_rule = create_instance(root_inst, r, father);
   char *buff = xmalloc(10);
+  if (buff == NULL)
+  {
+      return NULL;
+  }
+  rule *new_rule = create_instance(root_inst, r, father);
+  if(new_rule == NULL){
+      return NULL;
+  }
   int buff_ids[100];
   short i=0;
   for(i=0;i<100;i++)buff_ids[i]=0;
@@ -1775,6 +1836,11 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
         temp_lot->data = NULL;
         if(temp_lot_orig->data!=NULL){
           temp_lot->data = xmalloc(temp_lot_orig->data_size);
+          if(temp_lot->data == NULL){
+              xfree(new_rule);
+              xfree(buff);
+              return NULL;
+          }
           memcpy(temp_lot->data, (void *) (temp_lot_orig->data), temp_lot_orig->data_size);
         }
       }
@@ -1890,6 +1956,7 @@ char * convert_string_to_json_compatible (char * p, int size){
     result = xmalloc (size * 2);
 
     r = result;
+    if(r == NULL) return NULL;
     *r = '\0';
     for (pos=0; pos<size; pos++){
         switch (*c) {
@@ -1974,7 +2041,12 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     char * new_data_pointer = NULL;
     struct timeval tvp;
     char *json_buff=xcalloc(7000,1);
+    if(json_buff == NULL) return;
     char *json_buff1=xcalloc(7000,1);
+    if (json_buff1 == NULL) {
+        xfree(json_buff);
+        return;
+    }
     char *temp_MAC;
     //mmt_header_line_t *hl;
     void *data_ptr;
@@ -2060,7 +2132,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     // TODO
                     break;
                 case MMT_DATA_IP_ADDR:
-                    if(proto_name!=NULL && att_name!=NULL && data1!=NULL && *((char*)data1)!=0){
+                    if(proto_name!=NULL && att_name!=NULL && *((char*)data1)!=0){
                        L1 = (*(unsigned long*)(data1)&0x000000ff);
                        L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
                        L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
@@ -2093,6 +2165,11 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_HEADER_LINE:
                 	//parse_mmt_header_line( &data1, & data_size );
                     buff = xmalloc ((((mmt_header_line_t *)data1)->len) + 1);
+                    if(buff == NULL){
+                        xfree(json_buff);
+                        xfree(json_buff1);
+                        break;
+                    }
                     strncpy(buff, ((mmt_header_line_t *)data1)->ptr, ((mmt_header_line_t *)data1)->len);
                     buff[((mmt_header_line_t *)data1)->len] ='\0';
 					(void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
@@ -2252,9 +2329,21 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         int json_buff_size = strlen(json_buff) + 1 + c;
         if (curr_rule->json_history != NULL) {
             json_buff_size = json_buff_size + strlen(curr_rule->json_history);
-            curr_rule->json_history = realloc(curr_rule->json_history, json_buff_size);
+            char *tmp = realloc(curr_rule->json_history, json_buff_size);
+            if(tmp!=NULL){
+                curr_rule->json_history = tmp;
+            }else{
+                xfree(json_buff);
+                xfree(json_buff1);
+                return;
+            }
         } else {
             curr_rule->json_history = xcalloc(1, json_buff_size);
+            if (curr_rule->json_history == NULL){
+                xfree(json_buff);
+                xfree(json_buff1);
+                return;
+            }
         }
 
         (void)strcat(curr_rule->json_history, json_buff);
@@ -2275,7 +2364,7 @@ void store_tuples( const ipacket_t *pkt, short context, rule *curr_root, rule *c
         }
         data = get_attribute_extracted_data( pkt, temp_tuple->protocol_id, temp_tuple->field_id );
         if (data == NULL) {
-            (void)fprintf(stderr, "Error 16: in stored reference tuples. Data is not available. packet_id=%ju, protocol_id=%ld, field_id=%ld\n",
+            (void)fprintf(stderr, "Error 16: in stored reference tuples. Data is not available. packet_id=%lu, protocol_id=%ld, field_id=%ld\n",
             		pkt->packet_id,
                     temp_tuple->protocol_id, temp_tuple->field_id);
             //exit(-1);
@@ -2283,6 +2372,9 @@ void store_tuples( const ipacket_t *pkt, short context, rule *curr_root, rule *c
             temp_tuple->data_size = get_data_size_by_proto_and_field_ids(temp_tuple->protocol_id, temp_tuple->field_id);
             temp_tuple->valid = FOUND;
             temp_tuple->data = (void *) xmalloc(temp_tuple->data_size);
+            if (temp_tuple->data == NULL) {
+                return;
+            }
             memcpy(temp_tuple->data, data, temp_tuple->data_size);
         }
         temp_tuple = temp_tuple->next;
@@ -2686,6 +2778,9 @@ void * compute(compare_value v1, compare_value v2, short operator)
       else if(v2.type == MMT_U8_DATA)  ull2 = *((uint8_t *)      (v2.data));
 
       ull0 = xmalloc(sizeof (unsigned long long));
+      if(ull0 == NULL){
+          return NULL;
+      }
       if (operator == ADD)
          *ull0 = ull1 + ull2;
       else if (operator == SUB)
@@ -2725,6 +2820,10 @@ void * compute(compare_value v1, compare_value v2, short operator)
             us1 = *((unsigned short *) (data1));
             us2 = *((unsigned short *) (data2));
             us0 = xmalloc(sizeof (unsigned short));
+            if(us0 == NULL){
+                xfree(ull0);
+                return NULL;
+            }
             if (operator == ADD)
                 *us0 = us1 + us2;
             else if (operator == SUB)
@@ -2740,6 +2839,11 @@ void * compute(compare_value v1, compare_value v2, short operator)
             ul1 = *((unsigned long *) (data1));
             ul2 = *((unsigned long *) (data2));
             ul0 = xmalloc(sizeof (unsigned long));
+            if (ul0 == NULL)
+            {
+                xfree(ull0);
+                return NULL;
+            }
             if (operator == ADD)
                 *ul0 = ul1 + ul2;
             else if (operator == SUB)
@@ -2756,6 +2860,11 @@ void * compute(compare_value v1, compare_value v2, short operator)
             ull1 = *((unsigned long long *) (data1));
             ull2 = *((unsigned long long *) (data2));
             ull0 = xmalloc(sizeof (unsigned long long));
+            if (ull0 == NULL)
+            {
+                xfree(ull0);
+                return NULL;
+            }
             if (operator == ADD)
                 *ull0 = ull1 + ull2;
             else if (operator == SUB)
@@ -2770,6 +2879,11 @@ void * compute(compare_value v1, compare_value v2, short operator)
             uc1 = *((unsigned char *) (data1));
             uc2 = *((unsigned char *) (data2));
             uc0 = xmalloc(sizeof (unsigned char));
+            if (uc0 == NULL)
+            {
+                xfree(ull0);
+                return NULL;
+            }
             if (operator == ADD) {
                 // *i0 = i1 + i2;
                 uc = uc1 + uc2;
@@ -2783,8 +2897,11 @@ void * compute(compare_value v1, compare_value v2, short operator)
                     // *i0 = i1 / i2;
                     uc = uc1 / uc2;
                     memcpy(uc0, &uc, sizeof (unsigned char));
-                } else
+                } else{
+                    xfree(uc0);
+                    xfree(ull0);
                     return NULL;
+                }
             } else if (operator == MUL) {
                 // *i0 = i1 * i2;
                 uc = uc1 * uc2;
@@ -2869,6 +2986,9 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         }
 
         v1.data = (void *) xcalloc(1, v1.size);
+        if(v1.data == NULL){
+            return 0;
+        }
         memcpy(v1.data, data, v1.size);
     } else if (r1->t.event_id != 0) {
         if (skip_refs == YES) v1.found = SKIP;
@@ -2918,6 +3038,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         }
 
         v2.data = (void *) xcalloc(1, v2.size);
+        if (v2.data == NULL)
+        {
+            return 0;
+        }
         memcpy(v2.data, data, v2.size);
     } else if (r2->t.event_id != 0) {
         if (skip_refs == YES) v1.found = SKIP;
@@ -2979,6 +3103,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
               tmp_v->found = FOUND;
               tmp_v->size = tmp_r->t.data_size;
               tmp_v->data = (void *) xcalloc(1, tmp_v->size);
+              if (tmp_v->data == NULL)
+              {
+                  xfree(data);
+                  return 0;
+              }
               memcpy(tmp_v->data, data, tmp_v->size);
             }
             xfree(data);
@@ -3141,7 +3270,12 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
 		  if( history[ strlen( history ) - 1 ] == ',')
 			history[ strlen( history ) - 1 ] = '\0';
 
-      	  str = xmalloc( strlen( history ) + 3 );
+            str = xmalloc( strlen( history ) + 3 );
+            if(str == NULL){
+                xfree(verdict);
+                xfree(type);
+                return;
+            }
       	  sprintf( str, "{%s}", history );
       	  ((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
           xfree( str );
@@ -3270,6 +3404,10 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
             c->t.data_size = sizeof(uint64_t);//temp1->t.data_size;
             c->t.valid = VALID;
             c->t.data = xmalloc(c->t.data_size);
+            if(c->t.data == NULL){
+                xfree(result_value);
+                return NOT_VALID;
+            }
             memcpy(c->t.data, (void *)result_value, c->t.data_size);
             xfree(result_value);
             c->valid = VALID;
@@ -3565,19 +3703,18 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 
 		get_verdict( curr_root->type_rule, print_option, state, &verdict, &type );
 		if( verdict == NULL) return;
-		if (r->json_history != NULL)
-			history = r->json_history;
+		if (r->json_history != NULL){
+            history = r->json_history;
+            //remove the last comma
+            if (history[strlen(history) - 1] == ',')
+                history[strlen(history) - 1] = '\0';
 
-		//remove the last comma
-		if( history[ strlen( history ) - 1 ] == ',')
-			history[ strlen( history ) - 1 ] = '\0';
+            char *temp = xmalloc(strlen(history) + 3);
+            sprintf(temp, "{%s}", history);
+            ((op->callback_funct))(prop_id, verdict, type, des, temp, pkt->p_hdr->ts, (void *)op->user_args);
 
-		char *temp = xmalloc( strlen( history ) + 3 );
-		sprintf( temp, "{%s}", history );
-
-		((op->callback_funct))( prop_id, verdict, type, des, temp ,pkt->p_hdr->ts,(void *)op->user_args);
-
-        xfree( temp );
+            xfree(temp);
+        }
 		xfree( verdict );
 		xfree( type );
     }
@@ -3613,6 +3750,10 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                 while (*command == ' ') command++;
                 char * command2;
                 tuple * top_tuple = (tuple *) xmalloc(sizeof (tuple));
+                if(top_tuple == NULL){
+                    xfree(funct_name);
+                    return;
+                }
                 top_tuple->protocol_id = -1;
                 top_tuple->field_id = -1;
                 top_tuple->data_type_id = -1;
@@ -3627,6 +3768,11 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                 command2 = funct_get_info_param( pkt->mmt_handler, NOT_USED, command, a_tuple);
                 while( command2 ) {
                     new_tuple = (tuple *)xmalloc(sizeof (tuple));
+                    if(new_tuple == NULL){
+                        xfree(top_tuple);
+                        xfree(funct_name);
+                        return;
+                    }
                     new_tuple->protocol_id = -1;
                     new_tuple->field_id = -1;
                     new_tuple->data_type_id = -1;
@@ -3635,9 +3781,11 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                     new_tuple->valid = NOT_YET; //not used in this context
                     new_tuple->data = NULL;
                     new_tuple->next = NULL;
-                    a_tuple->next = new_tuple;
-                    a_tuple = new_tuple;
-                    command2 = funct_get_info_param( pkt->mmt_handler, NOT_USED, command2, a_tuple);
+                    if(a_tuple != NULL){
+                        a_tuple->next = new_tuple;
+                        a_tuple = new_tuple;
+                        command2 = funct_get_info_param(pkt->mmt_handler, NOT_USED, command2, a_tuple);
+                    }
                 }
                 short found = NOT_FOUND; //not used in this context
                 data = funct_get_params_and_execute( pkt, NO, LIB_NAME, funct_name, data_size, top_tuple, r->list_of_tuples, &found);
@@ -3699,7 +3847,7 @@ int check_for_countout(rule *r, int count)
 {
     // TODO: increment counter
     int ret = 0;
-    ret = COUNTIN;
+    // ret = COUNTIN;
     ret = COUNTOUT;
     return ret;
 }
@@ -4009,7 +4157,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                     }
                 }
                 (void)fprintf(stderr, "Error 30: Encoutered incorrect sequence of events.\n");
-            } else if (situation == BEFORE) {
+            } else {
                 if (r->list_of_sons != NULL) {
                     if (r->list_of_sons->next->valid == NOT_YET) {
                         //Need to verify right branch
@@ -4270,7 +4418,9 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
     struct timeval current_packet_time;
     short reference = 0;
     char *cause = xmalloc(SIZE_CAUSE+1);
-
+    if(cause == NULL){
+        return 0;
+    }
     current_packet_time.tv_sec = get_seconds( ipacket );
     current_packet_time.tv_usec = get_useconds( ipacket );
     curr_rule = top_rule;
@@ -4334,6 +4484,10 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
         temp = curr_rule->next;
         if (skip == NO) {
             curr_rule_instance = create_instance(&root_inst, curr_rule, NULL);
+            if(curr_rule_instance == NULL){
+                xfree(cause);
+                return 0;
+            }
             result = verify(ipacket, YES, SAME, curr_rule, curr_rule_instance->list_of_tuples, &reference, cause, curr_rule_instance, current_packet_time);
             //if instance is VALID or NOT_VALID then eliminate it
             if (result != NOT_YET) {
@@ -4409,6 +4563,7 @@ char * xml_summary()
     int spb = 0;
     rule *temp = top_rule;
     char *xml_string = xmalloc(10000);
+    if(xml_string == NULL) return NULL;
     strcpy(xml_string, "</detail>\n");
     (void)strcat(xml_string, "<summary>\n");
     char tmp[1000];
@@ -4488,6 +4643,7 @@ void init_sec_lib( mmt_handler_t *mmt, char * property_file,
         result_callback db_create_funct, result_callback db_insert_funct, void * user_args)
 {
     op = (OPTIONS_struct *)xcalloc(1, sizeof (OPTIONS_struct));
+    if(op == NULL) return ;
     op->StartTime = time(NULL);
     op->Print = BOTH;
     op->user_args = (void *)user_args;
