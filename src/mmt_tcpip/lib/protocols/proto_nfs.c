@@ -591,7 +591,7 @@ int nfs_file_new_name_extraction(const ipacket_t * ipacket, unsigned proto_index
                     return ret;
                 }
                 nfs_opcode_free(main_opcode);
-                return 0;
+                // return 0;
             }
             return 0;
         }
