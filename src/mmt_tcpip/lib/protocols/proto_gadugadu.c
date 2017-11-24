@@ -119,7 +119,7 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
 
         mmt_int_gadugadu_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
 
-    } else if (mmt_memcmp(packet->payload, "POST /send/message/", 15) == 0) {
+    } else if (mmt_memcmp(packet->payload, "POST /send/message/", 19) == 0) {
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
 
         // parse packet
@@ -194,7 +194,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
             dst->gg_timeout = packet->tick_timestamp;
 
         if (packet->payload_packet_len == 311) {
-            if (packet->payload[28] != 0) {
+            if (packet->payload[28] != 0 && packet->tcp!=NULL) {
                 if (src != NULL) {
                     src->gg_timeout = packet->tick_timestamp;
                     if (ntohs(packet->tcp->dest) == 8074 || ntohs(packet->tcp->dest) == 443)
