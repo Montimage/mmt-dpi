@@ -421,8 +421,7 @@ void parseNoderule(xmlNodePtr cur, application_quality_estimation_t * applicatio
 
     }
 */
-    cur = cur->xmlChildrenNode;
-    rule = init_new_rule_struct(AND_RULE);
+    cur = cur->xmlChildrenNode;    
 
     while (cur != NULL) {
         if (xmlStrcmp(cur->name, (const xmlChar *) "rules_elements") == 0) {
@@ -462,6 +461,7 @@ struct application_quality_estimation_rules_struct * parseNoderules(xmlNodePtr c
         }
 */
         if (xmlStrcmp(cur->name, (const xmlChar *) "rule") == 0) {
+            rule = init_new_rule_struct(AND_RULE);
             parseNoderule(cur, application,rule, quality_estimation_rules);
 
         }
