@@ -9,7 +9,8 @@
 #include "ip.h"
 #include "ip_session_id_management.h"
 #include "proto_ip_dgram.h"
-
+#define _STDC_FORMAT_MARCROS
+#include <inttypes.h>
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
 bool ip_session_comp(void * key1, void * key2) {
@@ -1119,7 +1120,7 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     unsigned len = ipacket->p_hdr->caplen - off;
 
     if ( len < sizeof( struct iphdr )) {
-        (void)fprintf( stderr, "*** Warning: malformed packet (not enough data): %lu\n",ipacket->packet_id );
+        (void)printf("*** Warning: malformed packet (not enough data): %"PRIu64"\n",ipacket->packet_id );
         return 0;
     }
 
