@@ -130,7 +130,7 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 break;
 
                 case 'i':
-                if ((mmt_memcmp(packet_payload + 1, "invite ", 6) == 0)
+                if ((mmt_memcmp(packet_payload + 1, "invite ", 7) == 0)
                     && (mmt_memcmp(&packet_payload[7], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[7], "sip:", 4) == 0)) {
                     MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip INVITE.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
@@ -157,7 +157,7 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                  * maybe it could be deleted, if somebody sees it in the first direction,
                  * please delete this comment.
                  */
-                if (mmt_memcmp(packet_payload + 1, "sip/2.0 200 OK", 13) == 0) {
+                if (mmt_memcmp(packet_payload + 1, "sip/2.0 200 OK", 14) == 0) {
                     MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip SIP/2.0 0K.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);
