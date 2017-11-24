@@ -353,7 +353,7 @@ int mmt_int_edonkey_udp(ipacket_t * ipacket) {
             flow->edk_stage += 2;
         } else if ((packet->payload_packet_len == 27) && (packet->payload[1] == 0x10 || packet->payload[1] == 0x18)) {
             flow->edk_stage += 2;
-        } else if ((packet->payload_packet_len >= 19) && (packet->payload[1] == 0x29 || packet->payload[1] == 0x28) && (packet->payload_packet_len == (19 + packet->payload[18] * 25))) {
+        } else if ((packet->payload[1] == 0x29 || packet->payload[1] == 0x28) && (packet->payload_packet_len == (19 + packet->payload[18] * 25))) {
             flow->edk_stage += 1;
         } else if ((packet->payload_packet_len > 19) && ((packet->payload[1] == 0x43) || (packet->payload[1] == 0x38))) {
             flow->edk_stage += 1;
