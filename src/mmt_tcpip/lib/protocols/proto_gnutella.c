@@ -113,7 +113,7 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
                 }
             }
         }
-        if (packet->payload_packet_len > 50 && ((mmt_memcmp(packet->payload, "GET / HTTP", 9) == 0))) {
+        if (packet->payload_packet_len > 50 && ((mmt_memcmp(packet->payload, "GET / HTTP", 10) == 0))) {
             mmt_parse_packet_line_info(ipacket);
             if ((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > 15
                     && mmt_memcmp(packet->user_agent_line.ptr, "BearShare Lite ", 15) == 0)
@@ -183,7 +183,7 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
             }
         }
         /* haven't found any trace with this pattern */
-        if (packet->payload_packet_len > 1 && packet->payload[packet->payload_packet_len - 1] == 0x0a
+        if (packet->payload[packet->payload_packet_len - 1] == 0x0a
                 && packet->payload[packet->payload_packet_len - 2] == 0x0a) {
             if (packet->payload_packet_len > 3 && mmt_memcmp(packet->payload, "GIV", 3) == 0) {
                 MMT_LOG_GNUTELLA(PROTO_GNUTELLA, MMT_LOG_TRACE, "MORPHEUS GIV DETECTED\n");
