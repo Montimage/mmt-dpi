@@ -189,13 +189,13 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
                 t6->s_addr = ipacket->internal_packet->iph->saddr;
                 t6->c_addr = ipacket->internal_packet->iph->daddr;    
             }else{
-                t6->c_addr_v6 = (char*)malloc(33*sizeof(char));
-                t6->s_addr_v6 = (char*)malloc(33*sizeof(char));
+                t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
+                t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL){
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->saddr.mmt_v6_u.u6_addr8, 16);
                     memcpy(t6->c_addr_v6, &ipacket->internal_packet->iphv6->daddr.mmt_v6_u.u6_addr8, 16);
-                    t6->s_addr_v6[32] = '\0';
-                    t6->c_addr_v6[32] = '\0';
+                    t6->s_addr_v6[16] = '\0';
+                    t6->c_addr_v6[16] = '\0';
                 }
             }            
             t6->s_port = ipacket->internal_packet->tcp->source;
@@ -208,14 +208,14 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
                 t6->s_addr = ipacket->internal_packet->iph->daddr;
                 t6->c_addr = ipacket->internal_packet->iph->saddr;    
             }else{
-                t6->c_addr_v6 = (char*)malloc(33*sizeof(char));
-                t6->s_addr_v6 = (char*)malloc(33*sizeof(char));
+                t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
+                t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL)
                 {
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->daddr.mmt_v6_u.u6_addr8, 16);
                     memcpy(t6->c_addr_v6, &ipacket->internal_packet->iphv6->saddr.mmt_v6_u.u6_addr8, 16);
-                    t6->s_addr_v6[32] = '\0';
-                    t6->c_addr_v6[32] = '\0';
+                    t6->s_addr_v6[16] = '\0';
+                    t6->c_addr_v6[16] = '\0';
                 }
             }
             t6->s_port = ipacket->internal_packet->tcp->dest;
@@ -228,14 +228,14 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
                 t6->s_addr = ipacket->internal_packet->iph->saddr;
                 t6->c_addr = ipacket->internal_packet->iph->daddr;    
             }else{
-                t6->c_addr_v6 = (char*)malloc(33*sizeof(char));
-                t6->s_addr_v6 = (char*)malloc(33*sizeof(char));
+                t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
+                t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL)
                 {
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->saddr.mmt_v6_u.u6_addr8, 16);
                     memcpy(t6->c_addr_v6, &ipacket->internal_packet->iphv6->daddr.mmt_v6_u.u6_addr8, 16);
-                    t6->s_addr_v6[32] = '\0';
-                    t6->c_addr_v6[32] = '\0';
+                    t6->s_addr_v6[16] = '\0';
+                    t6->c_addr_v6[16] = '\0';
                 }
             }
             t6->s_port = ipacket->internal_packet->tcp->source;
