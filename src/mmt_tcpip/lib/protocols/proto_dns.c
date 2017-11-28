@@ -289,16 +289,16 @@ dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char*
                 }else{
                     snprintf(temp_name,q_name_length + 1,"%s",current_name->value);
                 }
-                com_name = malloc((q_name_length + 2) * sizeof(char));
-                if(com_name == NULL) {
-                    dns_free_name(q_name);
-                    free(temp_name);
-                    return NULL;
-                }
-                memcpy(com_name,temp_name,q_name_length+1);
-                com_name[q_name_length+1]='\0';
-                // com_name = temp_name;
-                free(temp_name);
+                // com_name = malloc((q_name_length + 2) * sizeof(char));
+                // if(com_name == NULL) {
+                //     dns_free_name(q_name);
+                //     free(temp_name);
+                //     return NULL;
+                // }
+                // memcpy(com_name,temp_name,q_name_length+1);
+                // com_name[q_name_length+1]='\0';
+                com_name = temp_name;
+                // free(temp_name);
                 dns_name_t * del_name = current_name;
                 current_name = current_name->next;
                 dns_free_name(del_name);
