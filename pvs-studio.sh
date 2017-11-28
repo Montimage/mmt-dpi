@@ -5,7 +5,7 @@ PUBLIC_PATH=/home/montimage/workspace/express-server/public/sdk
 SRC=/home/montimage/workspace/montimage/mmt-sdk
 cd $BUILD_PATH/mmt-sdk/sdk
 make clean
-sudo make dist-clean
+# sudo make dist-clean
 cd ~
 rm -rf $BUILD_PATH/mmt-sdk
 cp -r $SRC $BUILD_PATH
