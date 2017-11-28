@@ -239,7 +239,7 @@ void free_session_data(void * key, void * value, void * args) {
     //mmt_free(session->internal_data);
     //Free the session data
     // printf("Session is going to be freed: %lu\n",session->session_id);
-    mmt_free(session);
+    free(session);
 }
 
 mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session_key, ipacket_t * ipacket, int * is_new) {
