@@ -254,8 +254,8 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
 
         uint32_t isl_new = 0, ish_new = 0;
         /* Initialize the memory for the session: 1024 bytes */
-        retval = (mmt_session_t *) mmt_malloc( sizeof (mmt_session_t));
-        memset(retval, 0, sizeof (mmt_session_t));
+        retval = (mmt_session_t *) mmt_malloc( sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct) );
+        memset(retval, 0, sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct));
         retval->session_key   = &retval[1]; //(mmt_session_key_t *) &((char *)retval)[sizeof(mmt_session_t)];
         retval->internal_data = (struct mmt_internal_tcpip_session_struct *) &((char *)retval)[sizeof(mmt_session_t) + sizeof (mmt_session_key_t)];
         /*
