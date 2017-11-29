@@ -675,9 +675,9 @@ read_privmsg:
                                         ((packet->line[i].ptr[j] >= 'a' && packet->line[i].ptr[j] <= 'z')
                                         || (packet->line[i].ptr[j] >= 'A' && packet->line[i].ptr[j] <= 'Z')
                                         || (packet->line[i].ptr[j] >= '0' && packet->line[i].ptr[j] <= '9')
-                                        || (packet->line[i].ptr[j] >= ' ')
-                                        || (packet->line[i].ptr[j] >= '.')
-                                        || (packet->line[i].ptr[j] >= '-'))) {
+                                        || (packet->line[i].ptr[j] == ' ')
+                                        || (packet->line[i].ptr[j] == '.')
+                                        || (packet->line[i].ptr[j] == '-'))) {
 
                                     if (packet->line[i].ptr[j] == ' ') {
                                         space++;
