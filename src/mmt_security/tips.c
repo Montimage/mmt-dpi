@@ -572,6 +572,9 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     token3[0] = '\0';
 
     output = xmalloc(200);
+    if(output == NULL){
+        return NULL;
+    }
     tempo = output;
 
     temp2 = input;
@@ -1613,6 +1616,10 @@ rule *create_instance(rule **root_inst, rule *r, rule* father)
         tuple *temp_tuple2 = NULL;
         while (temp_tuple != NULL) {
             tuple * a_tuple = (tuple *) xmalloc(sizeof (tuple));
+            if(a_tuple == NULL){
+                xfree(a_rule);
+                return NULL;
+            }
             a_tuple->protocol_id = temp_tuple->protocol_id;
             a_tuple->field_id = temp_tuple->field_id;
             a_tuple->data_type_id = temp_tuple->data_type_id;
@@ -1679,7 +1686,11 @@ rule *create_instance(rule **root_inst, rule *r, rule* father)
         }
         if (r->value == XCON) {
             a_rule->t.data = xmalloc(a_rule->t.data_size);
-            memcpy(a_rule->t.data, (void *) (r->t.data), a_rule->t.data_size);
+            if (a_rule->t.data==NULL){
+                xfree(a_rule);
+                return NULL;
+            }
+            memcpy(a_rule->t.data, (void *)(r->t.data), a_rule->t.data_size);
             a_rule->t.valid = VALID;
         } else {
             a_rule->t.valid = NOT_YET;
@@ -3165,6 +3176,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                         data = (void*)(((mmt_header_line_t *)data)->ptr);
             }
             tmp_v->data = (void *) xcalloc(1, tmp_v->size);
+            if(tmp_v->data == NULL){
+                xfree(v1.data);
+                xfree(v2.data);
+                return NOT_VALID;
+            }
             memcpy(tmp_v->data, data, tmp_v->size);
         }
     }
