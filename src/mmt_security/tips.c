@@ -1812,7 +1812,7 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
       char * json_history = strdup(orig_rule->json_history);
       if(json_history == NULL){
           xfree(buff);
-          return;
+          return NULL;
       }
       pt = strstr(json_history,"event");
       while (pt != NULL){
@@ -2572,11 +2572,11 @@ int comp2(compare_value v1, compare_value v2, short ope)
       if     (v1.type == MMT_U64_DATA) ll1 = *((uint64_t *) (v1.data));
       else if(v1.type == MMT_U32_DATA) ll1 = *((uint32_t *)      (v1.data));
       else if(v1.type == MMT_U16_DATA) ll1 = *((uint16_t *)     (v1.data));
-      else if(v1.type == MMT_U8_DATA)  ll1 = *((uint8_t *)      (v1.data));
+      else ll1 = *((uint8_t *)      (v1.data));
       if     (v2.type == MMT_U64_DATA) ll2 = *((uint64_t *) (v2.data));
       else if(v2.type == MMT_U32_DATA) ll2 = *((uint32_t *)      (v2.data));
       else if(v2.type == MMT_U16_DATA) ll2 = *((uint16_t *)     (v2.data));
-      else if(v2.type == MMT_U8_DATA)  ll2 = *((uint8_t *)      (v2.data));
+      else  ll2 = *((uint8_t *)      (v2.data));
       if ((ope == NEQ && ll1 != ll2) || (ope == EQ && ll1 == ll2) || (ope == LT && ll1 < ll2) || (ope == LTE && ll1 <= ll2) || (ope == GT && ll1 > ll2) ||
                     (ope == GTE && ll1 >= ll2)) return VALID;
       else return NOT_VALID;
@@ -2781,11 +2781,11 @@ void * compute(compare_value v1, compare_value v2, short operator)
       if     (v1.type == MMT_U64_DATA) ull1 = *((uint64_t *) (v1.data));
       else if(v1.type == MMT_U32_DATA) ull1 = *((uint32_t *)      (v1.data));
       else if(v1.type == MMT_U16_DATA) ull1 = *((uint16_t *)     (v1.data));
-      else if(v1.type == MMT_U8_DATA)  ull1 = *((uint8_t *)      (v1.data));
+      else ull1 = *((uint8_t *)      (v1.data));
       if     (v2.type == MMT_U64_DATA) ull2 = *((uint64_t *) (v2.data));
       else if(v2.type == MMT_U32_DATA) ull2 = *((uint32_t *)      (v2.data));
       else if(v2.type == MMT_U16_DATA) ull2 = *((uint16_t *)     (v2.data));
-      else if(v2.type == MMT_U8_DATA)  ull2 = *((uint8_t *)      (v2.data));
+      else  ull2 = *((uint8_t *)      (v2.data));
 
       ull0 = xmalloc(sizeof (unsigned long long));
       if(ull0 == NULL){
@@ -4455,7 +4455,7 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
         }
         while (curr_rule_instance != NULL) {
             result = verify(ipacket, NO, SAME, curr_rule, curr_rule_instance->list_of_tuples, &reference, cause, curr_rule_instance, current_packet_time);
-            if (result == SKIP2) {
+            if (result == NOT_VALID) {
                 (void)fprintf(stderr, "Error 41: Problem in packet number: %lld\n", packet_count);
                 continue;
             }
