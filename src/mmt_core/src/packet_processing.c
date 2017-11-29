@@ -213,10 +213,10 @@ protocol_t * get_protocol_struct_by_protocol_id(uint32_t proto_id) {
 
 int validate_attribute_metadata(attribute_metadata_t * attribute_meta_data) {
     //int retval = true;
-    // The id must not be null
+    // The id must not be 0
     if (attribute_meta_data->id == 0) return false;
-    // The name must have a length of at least one and less than Max_Alias_Len
-    if ((strlen(attribute_meta_data->alias) < 1) || (strlen(attribute_meta_data->alias) > Max_Alias_Len)) return false;
+    // The name must have a length of at least one and less than Max_Alias_Len - PVS V560: due to the decleration: char alias[Max_Alias_Len + 1]; -> but it could be a fault possitive because some time we have terminated character in the alias
+    if ((strlen(attribute_meta_data->alias) == 0) || (strlen(attribute_meta_data->alias) > Max_Alias_Len)) return false;
     // The data type should have a value greater than MMT_UNDEFINED_TYPE and less than MMT_HIGHER_VALUED_VALID_DATA_TYPE
     if ((attribute_meta_data->data_type <= MMT_UNDEFINED_TYPE)
             || (attribute_meta_data->data_type >= MMT_HIGHER_VALUED_VALID_DATA_TYPE))
