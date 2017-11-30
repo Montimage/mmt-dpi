@@ -37,7 +37,7 @@ void mmt_classify_me_icecast(ipacket_t * ipacket, unsigned index) {
             }
         }
 
-        if (packet->parsed_unix_lines < 1 && !flow->l4.tcp.icecast_stage) {
+        if (flow!=NULL && packet->parsed_unix_lines < 1 && !flow->l4.tcp.icecast_stage) {
             flow->l4.tcp.icecast_stage = 1;
             return;
         }
@@ -100,7 +100,8 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
                 }
             }
 
-            if (packet->parsed_unix_lines < 1 && !flow->l4.tcp.icecast_stage) {
+            if (flow != NULL && packet->parsed_unix_lines < 1 && !flow->l4.tcp.icecast_stage)
+            {
                 flow->l4.tcp.icecast_stage = 1;
                 return 4;
             }

@@ -445,7 +445,7 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
             return 1;
         }
 
-        if ((ipacket->session->data_packet_count < 5) || packet->actual_payload_len == 0) {
+        if ((ipacket->session->data_packet_count < 5)) {
             return 4;
         }
         //imesh_not_found_end:

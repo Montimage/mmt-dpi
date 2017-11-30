@@ -239,7 +239,7 @@ void free_session_data(void * key, void * value, void * args) {
     //mmt_free(session->internal_data);
     //Free the session data
     // printf("Session is going to be freed: %lu\n",session->session_id);
-    mmt_free(session);
+    free(session);
 }
 
 mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session_key, ipacket_t * ipacket, int * is_new) {
@@ -254,8 +254,11 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
 
         uint32_t isl_new = 0, ish_new = 0;
         /* Initialize the memory for the session: 1024 bytes */
-        retval = (mmt_session_t *) mmt_malloc( sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct) );
-        memset(retval, 0, sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct));
+        retval = (mmt_session_t *) malloc( sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct) );
+        if(retval == NULL){
+            return NULL;
+        }
+        memset(retval, 0, sizeof (mmt_session_t) + sizeof (mmt_session_key_t) + sizeof (struct mmt_internal_tcpip_session_struct) );
         retval->session_key   = &retval[1]; //(mmt_session_key_t *) &((char *)retval)[sizeof(mmt_session_t)];
         retval->internal_data = (struct mmt_internal_tcpip_session_struct *) &((char *)retval)[sizeof(mmt_session_t) + sizeof (mmt_session_key_t)];
         /*
@@ -321,21 +324,13 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             fprintf(stderr, "[error] get_session: insert_session_into_protocol_context return 0\n");
             //The session failed to be inserted into the MAP.
             //Cleanup what was created for this
-            if (session_key->ip_type == 4) {
-                if (isl_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
-                }
-                if (ish_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
-                }
-
-            }else {
-                if (isl_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
-                }
-                if (ish_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
-                }
+            if (isl_new)
+            {
+                mmt_free(((mmt_session_key_t *)retval->session_key)->lower_ip);
+            }
+            if (ish_new)
+            {
+                mmt_free(((mmt_session_key_t *)retval->session_key)->higher_ip);
             }
             // mmt_free(session_key->lower_ip);
             // mmt_free(session_key->higher_ip);

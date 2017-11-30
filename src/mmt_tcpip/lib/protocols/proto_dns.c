@@ -216,7 +216,7 @@ void dns_free_answer(dns_answer_t *da){
 }
 
 dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_payload){
-    if(dns_name_payload== NULL || (dns_name_payload+1)==NULL) return NULL;
+    if(dns_name_payload== NULL) return NULL;
     uint16_t str_length = hex2int(dns_name_payload[0]);
     if(str_length == 0){
         return NULL;
@@ -236,6 +236,10 @@ dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_
         dns_name = dns_new_name();
         if(dns_name){
             dns_name->value = malloc(str_length + 1);
+            if(dns_name->value == NULL) {
+                dns_free_name(dns_name);
+                return NULL;
+            }
             memcpy(dns_name->value,dns_name_payload + 1,str_length);
             dns_name->value[str_length]='\0';
             dns_name->length = str_length;
@@ -274,7 +278,10 @@ dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char*
                 }
                 
                 temp_name = malloc((q_name_length + 1) * sizeof(char));   
-                
+                if(temp_name == NULL) {
+                    dns_free_name(q_name);
+                    return NULL;
+                }
                 if(com_name){
                     snprintf(temp_name,q_name_length + 1,"%s.%s",com_name,current_name->value);
                     free(com_name);
@@ -282,11 +289,16 @@ dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char*
                 }else{
                     snprintf(temp_name,q_name_length + 1,"%s",current_name->value);
                 }
-                com_name = malloc((q_name_length + 2) * sizeof(char));
-                memcpy(com_name,temp_name,q_name_length+1);
-                com_name[q_name_length+1]='\0';
-                // com_name = temp_name;
-                free(temp_name);
+                // com_name = malloc((q_name_length + 2) * sizeof(char));
+                // if(com_name == NULL) {
+                //     dns_free_name(q_name);
+                //     free(temp_name);
+                //     return NULL;
+                // }
+                // memcpy(com_name,temp_name,q_name_length+1);
+                // com_name[q_name_length+1]='\0';
+                com_name = temp_name;
+                // free(temp_name);
                 dns_name_t * del_name = current_name;
                 current_name = current_name->next;
                 dns_free_name(del_name);
@@ -312,6 +324,11 @@ dns_query_t * dns_extract_queries(const u_char * dns_queries_payload,int nb_quer
         dns_query_t * dq = dns_new_query();
         if(dq == NULL) return NULL;
         dq->name = malloc((current_name->length+1)*sizeof(char));
+        if(dq->name == NULL) {
+            dns_free_query(dq);
+            dns_free_name(current_name);
+            return NULL;
+        }
         memcpy(dq->name,current_name->value,current_name->length);
         dq->name[current_name->length]='\0';
         int name_offset = 0;
@@ -353,6 +370,9 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
         case 28:
         // AAAA - IPv6 Address
             str_value = malloc((data_length+1)*sizeof(char));
+            if(str_value == NULL){
+                return NULL;
+            }
             memcpy(str_value,data_anwser_payload,data_length);
             str_value[data_length]='\0';
             txtValue = (void*)str_value;
@@ -366,6 +386,10 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
             name = dns_extract_name_value(data_anwser_payload,dns_payload);
             if(name){
                 str_value = malloc((name->length+1)*sizeof(char));
+                if(str_value == NULL){
+                    dns_free_name(name);
+                    return NULL;
+                }
                 memcpy(str_value,name->value,name->length);
                 str_value[name->length]='\0';
                 dns_free_name(name);
@@ -376,6 +400,11 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
             // TXT - Text string
             txtLength = bytes_to_int_extraction(data_anwser_payload,1);
             str_value = malloc((txtLength+1)*sizeof(char));
+            if (str_value == NULL)
+            {
+                dns_free_name(name);
+                return NULL;
+            }
             memcpy(str_value,data_anwser_payload + 1,txtLength);
             str_value[txtLength]='\0';
             txtValue = (void*)str_value;
@@ -388,6 +417,12 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
                 name = dns_extract_name_value(data_anwser_payload + 2,dns_payload);
                 if(name){
                     amx->mx_server = malloc((name->length+1)*sizeof(char));
+                    if (amx->mx_server == NULL)
+                    {
+                        dns_free_answer_mx(amx);
+                        dns_free_name(name);
+                        return NULL;
+                    }
                     memcpy(amx->mx_server,name->value,name->length);
                     amx->mx_server[name->length]='\0';
                     dns_free_name(name);
@@ -405,6 +440,12 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
                 uint16_t pri_server_offset = 0;
                 if(pri_server){
                     as->soa_pri_server = malloc((pri_server->length +1)*sizeof(char));
+                    if (as->soa_pri_server == NULL)
+                    {
+                        dns_free_answer_soa(as);
+                        dns_free_name(pri_server);
+                        return NULL;
+                    }
                     memcpy(as->soa_pri_server,pri_server->value,pri_server->length);
                     as->soa_pri_server[pri_server->length]='\0';
                     if(pri_server->is_ref){
@@ -419,6 +460,12 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
                 uint16_t mailbox_offset = 0;
                 if(mail_box){
                     as->soa_mail_box = malloc((mail_box->length +1)*sizeof(char));
+                    if (as->soa_mail_box == NULL)
+                    {
+                        dns_free_answer_soa(as);
+                        dns_free_name(mail_box);
+                        return NULL;
+                    }
                     memcpy(as->soa_mail_box,mail_box->value,mail_box->length);
                     as->soa_mail_box[mail_box->length]='\0';
                     if(mail_box->is_ref){
@@ -451,6 +498,12 @@ dns_answer_t * dns_extract_answers(const u_char *dns_answers_payload,int nb_answ
         dns_answer_t * da = dns_new_answer();
         if(da == NULL) return NULL;
         da->name = malloc((current_name->length+1)*sizeof(char));
+        if (da->name  == NULL)
+        {
+            dns_free_answer(da);
+            dns_free_name(current_name);
+            return NULL;
+        }
         memcpy(da->name,current_name->value,current_name->length);
         da->name[current_name->length]='\0';
         int name_offset = 0;

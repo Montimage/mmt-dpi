@@ -282,7 +282,8 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     /* check for new tcp syn packets, here
      * idea: reset detection state if a connection is unknown
      */
-     if (packet->tcp->syn != 0
+     if (packet->tcp!=NULL 
+        && packet->tcp->syn != 0
         && packet->tcp->ack == 0
         && packet->flow != NULL
         && ipacket->session->packet_count == 0 /*First packet of the flow*/
@@ -329,8 +330,8 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     int a;
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     classified_proto_t retval;
-    retval.offset = 0;
-    retval.proto_id = 0;
+    // retval.offset = 0;
+    // retval.proto_id = 0;
     retval.status = NonClassified;
     retval.offset = packet->tcp->doff * 4; //TCP header length
 

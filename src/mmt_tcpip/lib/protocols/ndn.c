@@ -18,6 +18,7 @@ int ndn_TLV_check_type(int type){
 ndn_tlv_t * ndn_TLV_init(){
     ndn_tlv_t *ndn_tlv;
     ndn_tlv = (ndn_tlv_t *)malloc(sizeof(ndn_tlv_t));
+    if(ndn_tlv == NULL) return NULL;
     ndn_tlv->type = 0;
     ndn_tlv->length = 0;
     ndn_tlv->nb_octets = 0;
@@ -110,6 +111,7 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length){
     if(first_octet == 0 ){
         if(offset + 2 == total_length){
             ndn_new_node = ndn_TLV_init();
+            if(ndn_new_node == NULL) return NULL;
             ndn_new_node->type = hex2int(payload[offset]);
             ndn_new_node->length = 0;
             ndn_new_node->node_offset = offset;
@@ -862,7 +864,7 @@ int ndn_interest_max_suffix_component_extraction(const ipacket_t * ipacket, unsi
         payload_len = ipacket->internal_packet->payload_packet_len;
     }
 
-    int ret_v = ndn_interest_min_suffix_component_extraction_payload(payload,payload_len);
+    int ret_v = ndn_interest_max_suffix_component_extraction_payload(payload,payload_len);
     if(ret_v != -1){
         *((int*)extracted_data->data) = ret_v;
         return 1;
@@ -1011,7 +1013,7 @@ int ndn_interest_child_selector_extraction(const ipacket_t * ipacket, unsigned p
 
     ndn_tlv_t *ndn_child = ndn_find_node(payload, payload_len,ndn_selectors,NDN_INTEREST_CHILD_SELECTOR);
 
-    uint8_t ret_v = ndn_TLV_get_int(ndn_child,payload,payload_len);
+    int ret_v = ndn_TLV_get_int(ndn_child,payload,payload_len);
 
     ndn_TLV_free(ndn_child);
 

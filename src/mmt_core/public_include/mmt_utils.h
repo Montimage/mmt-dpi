@@ -209,17 +209,6 @@ int * str_get_indexes(char *str, char *str1); // Passed
 char * str_subvalue(char *str, char* begin, char * end); // Passed
 
 /**
- * Add a string into an array of string. New string will be filled in the first NULL element of array
- * @param  array Array of string
- * @param  str   String to add
- * @return       if @str is NULL return array
- *               if @array is NULL return new array with @str is the first element
- *               new array with the @str is added to the first NULL element in array (not at the end of array)
- */
-char ** str_add_string_to_array(char **array,char *str); // Passed
-
-
-/**
  * Copy a string
  * @param str2 string to be coppied
  * @return new string

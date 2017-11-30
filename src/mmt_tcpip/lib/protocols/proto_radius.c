@@ -414,7 +414,7 @@ int radius_nas_ipv6_address_extraction(const ipacket_t * ipacket, unsigned proto
         attribute_t * extracted_data) {
     radius_session_context_t * radius_session_data = ipacket->session->session_data[proto_index];
     if (radius_session_data != NULL && radius_session_data->packet_tlvs[95]) {
-        memcpy((u_char *) extracted_data->data, & radius_session_data->packet_tlvs[95]->val, IPv6_ALEN);
+        memcpy((u_char *) extracted_data->data, (char*) & radius_session_data->packet_tlvs[95]->val, IPv6_ALEN);
         return 1;
     }
     return 0;
@@ -425,7 +425,7 @@ int radius_framed_interface_id_extraction(const ipacket_t * ipacket, unsigned pr
     radius_session_context_t * radius_session_data = ipacket->session->session_data[proto_index];
     if (radius_session_data != NULL && radius_session_data->packet_tlvs[96]) {
         //The length of the framed interface id is 8Bytes.
-        memcpy((u_char *) extracted_data->data, & radius_session_data->packet_tlvs[96]->val, 8);
+        memcpy((u_char *) extracted_data->data, (char*)& radius_session_data->packet_tlvs[96]->val, 8);
         return 1;
     }
     return 0;
@@ -1691,7 +1691,7 @@ int radius_sgsn_ipv6_extraction(const ipacket_t * ipacket, unsigned proto_index,
         attribute_t * extracted_data) {
     radius_session_context_t * radius_session_data = ipacket->session->session_data[proto_index];
     if (radius_session_data != NULL && radius_session_data->vendor_3gpp_tlvs[15]) {
-        memcpy((u_char *) extracted_data->data, & radius_session_data->vendor_3gpp_tlvs[15]->val, IPv6_ALEN);
+        memcpy((u_char *) extracted_data->data, (char*) & radius_session_data->vendor_3gpp_tlvs[15]->val, IPv6_ALEN);
         return 1;
     }
     return 0;
@@ -1701,7 +1701,7 @@ int radius_ggsn_ipv6_extraction(const ipacket_t * ipacket, unsigned proto_index,
         attribute_t * extracted_data) {
     radius_session_context_t * radius_session_data = ipacket->session->session_data[proto_index];
     if (radius_session_data != NULL && radius_session_data->vendor_3gpp_tlvs[16]) {
-        memcpy((u_char *) extracted_data->data, & radius_session_data->vendor_3gpp_tlvs[16]->val, IPv6_ALEN);
+        memcpy((u_char *) extracted_data->data, (char*) & radius_session_data->vendor_3gpp_tlvs[16]->val, IPv6_ALEN);
         return 1;
     }
     return 0;

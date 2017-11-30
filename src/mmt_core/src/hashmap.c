@@ -197,7 +197,7 @@ mmt_hent_t *hmap_lookup( mmt_hashmap_t *map, mmt_key_t key )
 
 void hmap_dump_entry( mmt_hashmap_t *map, mmt_hent_t *he, void *arg )
 {
-   (void)printf( "KEY: %08lx\n", he->key );
+   (void)printf( "KEY: 0x%p\n", (void*)he->key );
    (void)printf( "VAL: *(%p)\n",    he->val );
 }
 

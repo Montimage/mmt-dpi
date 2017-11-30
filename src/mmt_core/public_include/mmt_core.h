@@ -41,7 +41,7 @@ extern "C" {
 #define SCOPE_SESSION           2 /**< Code of session scope attribute. Session scope attributes will not change during the session lifetime. */
 #define SCOPE_SESSION_CHANGING  4 /**< Code indicating a session scope attribute that might change during the lifetime of the session. */
 
-#define SCOPE_ON_DEMAND         ( SCOPE_PACKET | SCOPE_SESSION | SCOPE_SESSION_CHANGING )
+#define SCOPE_ON_DEMAND         ( SCOPE_PACKET | SCOPE_SESSION | SCOPE_SESSION_CHANGING ) /* (1 | 2 | 4) = 7 */
 #define SCOPE_EVENT             0x10
 
 #define ATTRIBUTE_UNSET         0 /**< Code indicating the attribute is not set. */
@@ -71,7 +71,7 @@ extern "C" {
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
 #ifndef VERSION
-#define VERSION "1.6.11.1"
+#define VERSION "1.6.12.0"
 #endif
 
 #ifdef GIT_VERSION

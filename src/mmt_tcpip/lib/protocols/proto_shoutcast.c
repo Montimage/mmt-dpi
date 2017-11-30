@@ -103,8 +103,7 @@ int mmt_check_shoutcast(ipacket_t * ipacket, unsigned index) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG, "Shoutcast stage 1, \"123456\".\n");
                 return 4;
             }
-            if (ipacket->session->data_packet_count < 3 && packet->detected_protocol_stack[0] == PROTO_HTTP
-                    ) {
+            if (packet->detected_protocol_stack[0] == PROTO_HTTP) {
                 MMT_LOG(PROTO_SHOUTCAST, MMT_LOG_DEBUG,
                         "http detected, need next packet for shoutcast detection.\n");
                 if (packet->payload_packet_len > 4 && get_u32(packet->payload, packet->payload_packet_len - 4) != htonl(0x0d0a0d0a)) {

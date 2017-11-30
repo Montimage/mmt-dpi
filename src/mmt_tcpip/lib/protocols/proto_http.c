@@ -336,7 +336,7 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
                 //The packet is not a response! maybe this is a request
                 uint16_t filename_start;
                 filename_start = http_request_url_offset(ipacket);
-                if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
+                if (filename_start != 0 && packet->line[0].len >= (9 + filename_start)
                         && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
                     packet->http_url_name.ptr = &packet->payload[filename_start];
                     packet->http_url_name.len = packet->line[0].len - (filename_start + 9);

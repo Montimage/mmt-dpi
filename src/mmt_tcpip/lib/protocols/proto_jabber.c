@@ -131,7 +131,7 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
             return;
         }
         /* need message to or type for file-transfer */
-        if (mmt_memcmp(packet->payload, "<iq from=\"", 8) == 0 || mmt_memcmp(packet->payload, "<iq from=\'", 8) == 0) {
+        if (mmt_memcmp(packet->payload, "<iq from=\"", 10) == 0 || mmt_memcmp(packet->payload, "<iq from=\'", 10) == 0) {
             MMT_LOG(PROTO_UNENCRYPED_JABBER, MMT_LOG_DEBUG, "JABBER <iq from=\".\n");
             lastlen = packet->payload_packet_len - 11;
             for (x = 10; x < lastlen; x++) {

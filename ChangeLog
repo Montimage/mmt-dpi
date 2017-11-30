@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+
+Version 1.6.12.0
+- Improve source code quality with Static code analysis tool: PVS-Studio
+
 Version 1.6.11.1
 - Add new Protocols: CTP (Configuration Test Protocol), CDP (Cisco Discovery Protocol), DTP (Dynamic Trunk Protocol), XID (Logical-Link Control Based XID)
 

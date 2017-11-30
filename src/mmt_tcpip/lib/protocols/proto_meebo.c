@@ -120,7 +120,7 @@ void mmt_classify_me_meebo(ipacket_t * ipacket, unsigned index) {
         return;
     }
 
-    if (ipacket->session->data_packet_count < 5 && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
+    if (flow!=NULL && ipacket->session->data_packet_count < 5 && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
             && MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SSL) == 0) {
         MMT_LOG(PROTO_MEEBO, MMT_LOG_DEBUG, "ssl not yet excluded. need next packet.\n");
         return;

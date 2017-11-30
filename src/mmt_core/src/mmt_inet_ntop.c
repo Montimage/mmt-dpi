@@ -91,7 +91,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
       }
 
       hx8 = x8 & 0x0f;
-      if ((skip == 0) || ((skip == 1) && (hx8 != 0)))
+      if ((skip == 0) || (hx8 != 0))
       {
          skip = 0;
          hexa[k][j++] = hexchars[hx8];
@@ -106,7 +106,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 #endif
 
       hx8 = x8 >> 4;
-      if ((skip == 0) || ((skip == 1) && (hx8 != 0)))
+      if ((skip == 0) || (hx8 != 0))
       {
          hexa[k][j++] = hexchars[hx8];
       }

@@ -349,7 +349,7 @@ static void mmt_int_search_bittorrent_tcp(ipacket_t * ipacket) {
         return;
     }
 
-    if (flow->bittorrent_stage < 10 && packet->payload_packet_len != 0) {
+    if (flow->bittorrent_stage < 10) {
         /* exclude stage 0 detection from next run */
         flow->bittorrent_stage++;
         if (mmt_int_search_bittorrent_tcp_zero(ipacket) != 0) {

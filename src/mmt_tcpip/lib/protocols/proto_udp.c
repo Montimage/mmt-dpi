@@ -78,8 +78,8 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     int a;
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     classified_proto_t retval;
-    retval.offset = -1;
-    retval.proto_id = -1;
+    // retval.offset = -1;
+    // retval.proto_id = -1;
     retval.status = NonClassified;
     retval.offset = 8; //UDP header is 8 bytes long
 

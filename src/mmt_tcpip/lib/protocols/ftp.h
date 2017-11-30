@@ -14,7 +14,8 @@ extern "C" {
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
-
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #define MMT_FTP_TIMEOUT                     10
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;

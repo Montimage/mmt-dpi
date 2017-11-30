@@ -429,7 +429,7 @@ void process_packet_timediff_jitter(ipacket_t * ipacket, struct rtp_session_data
         uint32_t timearrivaldiff = short_time_diff(&rtp_session_data->rtp_media_session_context.last_arrival_time, &ipacket->p_hdr->ts);
         uint32_t timestmpdiff = timestmp - rtp_session_data->rtp_media_session_context.last_tstmp;
 
-        double timestmpdiff_usec = (timestmpdiff * 1000000) / rtp_session_data->mime_type->clock_rate;
+        double timestmpdiff_usec = (double)(timestmpdiff * 1000000) / rtp_session_data->mime_type->clock_rate;
         timestmpdiff = (uint32_t) timestmpdiff_usec;
 
         int diff = abs(timearrivaldiff - timestmpdiff);
@@ -829,7 +829,7 @@ void mmt_classify_me_rtp(ipacket_t * ipacket, unsigned index) {
                 return;
             }
         }
-        if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1) {
+        if (flow!=NULL && packet->detected_protocol_stack[0] == PROTO_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1) {
 
             if (packet->payload_packet_len >= 4 && ntohl(get_u32(packet->payload, 0)) + 4 == packet->payload_packet_len) {
 
@@ -903,7 +903,8 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
                 return 4;
             }
         }
-        if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1) {
+        if (flow != NULL && packet->detected_protocol_stack[0] == PROTO_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1)
+        {
             if (packet->payload_packet_len >= 4 && ntohl(get_u32(packet->payload, 0)) + 4 == packet->payload_packet_len) {
                 /* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
                  * improved by checking only the RTP packet of given length */

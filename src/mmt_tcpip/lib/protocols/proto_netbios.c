@@ -28,7 +28,7 @@ void mmt_classify_me_netbios(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_NETBIOS, MMT_LOG_DEBUG, "netbios udp start\n");
 
         /*check standard NETBIOS over udp to port 137 */
-        if ((dport == 137 || 0) && packet->payload_packet_len >= 50) {
+        if (dport == 137 && packet->payload_packet_len >= 50) {
 
             MMT_LOG(PROTO_NETBIOS, 
                     MMT_LOG_DEBUG, "found netbios port 137 and payload_packet_len 50\n");
@@ -253,10 +253,7 @@ void mmt_classify_me_netbios(ipacket_t * ipacket, unsigned index) {
 
         /*netbios header token from http://www.protocolbase.net/protocols/protocol_NBDGM.php */
 
-        if ((dport == 138 ||
-                0) &&
-                packet->payload_packet_len >= 14 &&
-                ntohs(get_u16(packet->payload, 10)) == packet->payload_packet_len - 14) {
+        if (dport == 138 && packet->payload_packet_len >= 14  && ntohs(get_u16(packet->payload, 10)) == packet->payload_packet_len - 14) {
 
             MMT_LOG(PROTO_NETBIOS, 
                     MMT_LOG_DEBUG, "found netbios port 138 and payload length >= 112 \n");
@@ -370,7 +367,7 @@ int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_NETBIOS, MMT_LOG_DEBUG, "netbios udp start\n");
 
         /*check standard NETBIOS over udp to port 137 */
-        if ((dport == 137 || 0) && packet->payload_packet_len >= 50) {
+        if (dport == 137 && packet->payload_packet_len >= 50) {
             MMT_LOG(PROTO_NETBIOS, 
                     MMT_LOG_DEBUG, "found netbios port 137 and payload_packet_len 50\n");
 
@@ -589,8 +586,7 @@ int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
 
         /*check standard NETBIOS over udp to port 138 */
         /*netbios header token from http://www.protocolbase.net/protocols/protocol_NBDGM.php */
-        if ((dport == 138 ||
-                0) &&
+        if (dport == 138 &&
                 packet->payload_packet_len >= 14 &&
                 ntohs(get_u16(packet->payload, 10)) == packet->payload_packet_len - 14) {
 
