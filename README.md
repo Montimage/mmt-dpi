@@ -16,7 +16,7 @@ A software C library desinged to extract data attributes from network packets, s
 - Update documents:
     
     + Update wiki page for new APIs, tutorials, ...
-    + list all protocol + attributes (GoogleDocs - sheet)
+    + list all protocol + attributes (GoogleDocs - sheet) - `src/examples/mmt_export_info.c`
     + MMT_Extract document: protocol categories
     + Update http://montimage.com/sdk/changelog.html
 
