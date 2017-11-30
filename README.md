@@ -15,10 +15,10 @@ A software C library desinged to extract data attributes from network packets, s
 - Update installation files (.deb, .zip, .rpm)
 - Update documents:
     
-    + Update wiki page for new APIs, tutorials, ...
-    + list all protocol + attributes (GoogleDocs - sheet) - `src/examples/mmt_export_info.c`
+    + Wiki page for new APIs, tutorials, ...
+    + List all protocol + attributes [GoogleSheet](https://docs.google.com/spreadsheets/d/10ircpIPJEEvZ5eUzwG5vY6YOw07kw6btzoDNTg3cMPU/edit?usp=sharing) - by compile and run `src/examples/mmt_export_info.c`
     + MMT_Extract document: protocol categories
-    + Update http://montimage.com/sdk/changelog.html
+    + `changelog.html` and publish on http://www.montimage.com/sdk/changelog.html
 
 ---
 Website: [http://www.montimage.com](http://www.montimage.com)
