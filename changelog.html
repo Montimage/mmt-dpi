@@ -14,19 +14,22 @@
         .card{
             margin-top: 20px;
         }
+        .card-header{
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <!-- <div class="jumbotron"> -->
+        <div class="page-header">
             <h1 class="display-3">MMT-SDK</h1>
-            <!-- <p class="lead">Montimage Monitoring Tool</p> -->
-            <hr class="my-4">            
-            <p class="lead">
-                <a class="btn btn-primary btn-lg" href="http://www.montimage.com" role="button">Learn more</a>
-            </p>
-            <p>MMT-SDK change logs website</p>
+            <hr class="my-4">
+        </div>
+        <p class="lead">
+            <a class="btn btn-primary" href="http://www.montimage.com" role="button">Learn more</a>
+        </p>
+        <p>MMT-SDK change logs website
             <ul>
                 <li>
                     <a href="http://www.montimage.com/contact.html">Download list all protocols and attributes</a>
@@ -35,93 +38,114 @@
                     <a href="http://www.montimage.com/contact.html">Download MMT-Classification documents</a>
                 </li>
             </ul>
-            <!-- </div> -->
-            <div class="card">
-                <div class="card-header">
-                    Version 1.6.12.0
-                </div>
-                <div class="card-body">
-                    <h4 class="card-title"></h4>
-                    <p class="card-text">
-                        <ul>
-                            <li>Improve source code quality with Static code analysis tool: PVS-Studio</li>
-                        </ul>
-                    </p>
-                </div>
+        </p>        
+        <div class="card border border-success">
+            <div class="card-header bg-success">
+                Overview
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    Version 1.6.11.1
-                </div>
-                <div class="card-body">
-                    <h4 class="card-title"></h4>
-                    <p class="card-text">
-                        <ul>
-                            <li>Add new Protocols: CTP (Configuration Test Protocol), CDP (Cisco Discovery Protocol), DTP (Dynamic Trunk Protocol), XID (Logical-Link
-                                Control Based XID)
-                            </li>
-                        </ul>
-                    </p>
-                </div>
+            <div class="card-body">
+                <h4 class="card-title"></h4>
+                <p class="card-text">
+                    <ul class="list-group">
+                        <li class="list-group-item">Current stable version:<strong>1.6.12.0</strong></li>
+                        <li class="list-group-item">Number of protocols: <strong>643</strong></li>
+                        <li class="list-group-item">Number of attributes: <strong>6334</strong></li>
+                    </ul>                    
+                </p>
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    Version 1.6.10.0
-                </div>
-                <div class="card-body">
-                    <h4 class="card-title"></h4>
-                    <p class="card-text">
-                        <ul>
-                            <li>dd APIs: enable_port_classify()/ disable_port_classify() to change the classification based on port number. Disable by default</li>
-                            <li>Add new protocol stack: PROTO_LOOPBACK -> Prove that PROTO_VNC has been classified correctly</li>
-                            <li>Add classification of PROTO_RTSP which is not based on port number</li>
-                            <li>Add protocols: TPKT, COTP, S7COMM</li>
-                            <li>Update Makefile, add option to build installation file:
-                                <ul>
-                                    <li>make zip: create zip file to install mmt-dpi on unix machine</li>
-                                    <li>make deb: create deb file to install mmt-dpi on debian machine</li>
-                                    <li>make rpm: create rpm file to install mmt-dpi on centos (redhat) machine</li>
-                                </ul>
-                            </li>
-                            <li>Change classification order: PROTO_MDNS before PROTO_DNS</li>
-                            <li>Update mmt_check_http: using stage to classify HTTP</li>
-                        </ul>
-                    </p>
-                </div>
+        </div>
+        <!-- START CHANGE LOGS -->
+        <div class="card border border-secondary">
+            <div class="card-header bg-secondary">
+                Version 1.6.12.0
             </div>
-            
-            
-            <div class="card">
-                <div class="card-header">
-                    Version 1.6.10.5
-                </div>
-                <div class="card-body">
-                    <h4 class="card-title"></h4>
-                    <p class="card-text">
-                        <ul>
-                            <li>Fix classification of PROTO_DNS -> Not use port number</li>
-                            <li>Correct some license and copyright</li>
-                            <li>Optimize some functions to improve the performance</li>
-                            <li>Add VALGRIND as an compile option</li>
-                            <li>Fix getting port number in proto_mssql.c</li>
-                            <li>Replace macro MMT_STATICSTRING_LEN by static value -> improve performance</li>
-                            <li>Fix setting classification function weight</li>
-                        </ul>
-                    </p>
-                </div>
+            <div class="card-body">
+                <h4 class="card-title"></h4>
+                <p class="card-text">
+                    <ul>
+                        <li>Improve source code quality with Static code analysis tool: PVS-Studio</li>
+                    </ul>
+                </p>
             </div>
         </div>
         
-        <!-- Optional JavaScript -->
-        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-        crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh"
-        crossorigin="anonymous"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ"
-        crossorigin="anonymous"></script>
-    </body>
+        <div class="card border border-secondary">
+            <div class="card-header bg-secondary">
+                Version 1.6.11.1
+            </div>
+            <div class="card-body">
+                <h4 class="card-title"></h4>
+                <p class="card-text">
+                    <ul>
+                        <li>Add new Protocols:
+                            <ul>
+                                <li>CTP (Configuration Test Protocol)</li>
+                                <li>CDP (Cisco Discovery Protocol)</li>
+                                <li>DTP (Dynamic Trunk Protocol)</li>
+                                <li>XID (Logical-Link Control Based XID)</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </p>
+            </div>
+        </div>
+        
+        <div class="card border border-secondary">
+            <div class="card-header bg-secondary">
+                Version 1.6.10.0
+            </div>
+            <div class="card-body">
+                <h4 class="card-title"></h4>
+                <p class="card-text">
+                    <ul>
+                        <li>Add APIs: enable_port_classify()/ disable_port_classify() to change the classification based on port number. Disable by default</li>
+                        <li>Add new protocol stack: PROTO_LOOPBACK -> Prove that PROTO_VNC has been classified correctly</li>
+                        <li>Add classification of PROTO_RTSP which is not based on port number</li>
+                        <li>Add protocols: TPKT, COTP, S7COMM</li>
+                        <li>Update Makefile, add option to build installation file:
+                            <ul>
+                                <li>make zip: create zip file to install mmt-dpi on unix machine</li>
+                                <li>make deb: create deb file to install mmt-dpi on debian machine</li>
+                                <li>make rpm: create rpm file to install mmt-dpi on centos (redhat) machine</li>
+                            </ul>
+                        </li>
+                        <li>Change classification order: PROTO_MDNS before PROTO_DNS</li>
+                        <li>Update mmt_check_http: using stage to classify HTTP</li>
+                    </ul>
+                </p>
+            </div>
+        </div>
+        
+        
+        <div class="card border border-secondary">
+            <div class="card-header bg-secondary">
+                Version 1.6.10.5
+            </div>
+            <div class="card-body">
+                <h4 class="card-title"></h4>
+                <p class="card-text">
+                    <ul>
+                        <li>Fix classification of PROTO_DNS -> Not use port number</li>
+                        <li>Correct some license and copyright</li>
+                        <li>Optimize some functions to improve the performance</li>
+                        <li>Add VALGRIND as an compile option</li>
+                        <li>Fix getting port number in proto_mssql.c</li>
+                        <li>Replace macro MMT_STATICSTRING_LEN by static value -> improve performance</li>
+                        <li>Fix setting classification function weight</li>
+                    </ul>
+                </p>
+            </div>
+        </div>
+    </div>
     
-    </html>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh"
+    crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>
