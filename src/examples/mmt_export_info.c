@@ -31,7 +31,8 @@ uint64_t nb_attr = 0;
 void attributes_iterator(attribute_metadata_t *attribute, uint32_t proto_id, void *args)
 {
     nb_attr++;
-    printf(",,%i,%s\n", attribute->id, attribute->alias);
+    const char *proto_name = get_protocol_name_by_id(proto_id);
+    printf("%i,%s,%i,%s\n", proto_id, proto_name, attribute->id, attribute->alias);
 }
 
 /**
@@ -43,7 +44,6 @@ void attributes_iterator(attribute_metadata_t *attribute, uint32_t proto_id, voi
 void protocols_iterator(uint32_t proto_id, void *args)
 {
     nb_proto++;
-    printf("%i,%s\n", proto_id, get_protocol_name_by_id(proto_id));
     iterate_through_protocol_attributes(proto_id, attributes_iterator, NULL);
 }
 
@@ -52,16 +52,16 @@ int main(int argc, char **argv)
 
     init_extraction();
 
-    printf("proto_id, proto_name, attr_id, attr_name, version: %s\n", mmt_version());
+    printf("_proto_id, proto_name, attr_id, attr_name, version: %s\n", mmt_version());
 
     iterate_through_protocols(protocols_iterator, NULL);
     
     close_extraction();
     nb_proto = nb_proto - 2; // 2 protocols: unknown and meta
-    printf("Number of protocols,%lu,Not include UNKNOWN and META protocols\n",nb_proto);
+    printf("-1,Number of protocols,%lu,Not include UNKNOWN and META protocols\n",nb_proto);
     uint64_t nb_attr_real = nb_attr - (nb_proto - 1) * 9;
-    printf("Number of attributes (all),%lu\n", nb_attr);
-    printf("Number of attributes (no repeat),%lu\n", nb_attr_real);
+    printf("-1,Number of attributes (all),%lu\n", nb_attr);
+    printf("-1,Number of attributes (no repeat),%lu\n", nb_attr_real);
 
     return (EXIT_SUCCESS);
 }
