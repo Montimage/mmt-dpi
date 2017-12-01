@@ -3294,7 +3294,7 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
 
         //char * xml_string = xml_message(ATTACK, print_option, state, 0, cause);
       	if ( verdict == NULL) {
-            if (type != null)
+            if (type != NULL)
                 free(type);
             return;
           }
@@ -3744,7 +3744,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 
 		get_verdict( curr_root->type_rule, print_option, state, &verdict, &type );
 		if( verdict == NULL) {
-            if(type!=null) free(type);
+            if(type!=NULL) free(type);
             return;
         }
 		if (r->json_history != NULL){
