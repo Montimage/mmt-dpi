@@ -13,6 +13,6 @@ cd $BUILD_PATH/mmt-sdk/sdk
 pvs-studio-analyzer trace -- make
 # Hack the license
 pvs-studio-analyzer analyze -l ~/.config/PVS-Studio/PVS-Studio.lic
-plog-converter -a GA:1,2 -t html -o sdk_$1/ PVS-Studio.log
-cp -Ru sdk_$1/ $PUBLIC_PATH
+plog-converter -a GA:1,2 -t html -o pvs_$1/ PVS-Studio.log
+cp -Ru pvs_$1/ $PUBLIC_PATH
 cd ~
