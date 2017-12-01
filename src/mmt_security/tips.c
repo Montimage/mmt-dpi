@@ -1500,15 +1500,21 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
                 eliminate_bot_father();
             }
         }
-        if (los->list_of_sons == NULL) {
-            los->list_of_sons = a_rule;
-            a_rule->father = los;
-        } else {
-            a_temp = los->list_of_sons;
-            while (a_temp->next != NULL) a_temp = a_temp->next;
-            a_temp->next = a_rule;
-            a_rule->father = los;
-            a_rule->prev = a_temp;
+        if(los!=NULL){
+            if (los->list_of_sons == NULL)
+            {
+                los->list_of_sons = a_rule;
+                a_rule->father = los;
+            }
+            else
+            {
+                a_temp = los->list_of_sons;
+                while (a_temp->next != NULL)
+                    a_temp = a_temp->next;
+                a_temp->next = a_rule;
+                a_rule->father = los;
+                a_rule->prev = a_temp;
+            }
         }
     }
     return 0;
@@ -3287,7 +3293,11 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
     	get_verdict( ATTACK, print_option, state, &verdict, &type );
 
         //char * xml_string = xml_message(ATTACK, print_option, state, 0, cause);
-      	if ( verdict == NULL) return;
+      	if ( verdict == NULL) {
+            if (type != null)
+                free(type);
+            return;
+          }
 
       	if (temp != NULL && temp->json_history == NULL)
     	  temp = temp->root;
@@ -3733,7 +3743,10 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 		char *des   = r->description;
 
 		get_verdict( curr_root->type_rule, print_option, state, &verdict, &type );
-		if( verdict == NULL) return;
+		if( verdict == NULL) {
+            if(type!=null) free(type);
+            return;
+        }
 		if (r->json_history != NULL){
             history = r->json_history;
             //remove the last comma
@@ -3755,7 +3768,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
     // TODO: Folder where the scripts are installed is current folder
     void *data = NULL;
     short do_it = 0;
-    char * what_to_do;
+    char * what_to_do = NULL;
     if (state == SATISFIED) {
         do_it = 1;
         what_to_do = r->if_satisfied;
