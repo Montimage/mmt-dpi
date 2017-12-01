@@ -114,7 +114,7 @@ double estimate_quality_index(application_quality_estimation_internal_t * app_in
     set_metric_grades_values_matrix(app_internal_struct);
 
     get_index_value(app_internal_struct, app_internal_struct->application_quality_estimation->estimation_metrics, aggregation_index_array);
-    for (s = 0; s <= SAMPLES_NB; s++) {
+    for (s = 0; s < SAMPLES_NB; s++) {
         input_value = app_internal_struct->application_quality_estimation->estimation_metrics->metric_range_low + s*quality_metric_step;
         sum1 = sum1 + (aggregation_index_array[s]*(input_value));
         sum2 = sum2 + aggregation_index_array[s];
