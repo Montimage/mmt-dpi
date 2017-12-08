@@ -152,7 +152,11 @@ static void mmt_add_connection_as_edonkey(ipacket_t * ipacket, const uint8_t sav
         insert_to_local_protos(packet->udp->source, PROTO_EDONKEY, 17 /*UDP*/, &src->local_protos);
     } else if (packet->tcp != NULL) {
         /* avoid implications of missclassification */
-        if(get_proto_id_from_address(ipacket) != PROTO_UNKNOWN) return;
+        if (ipacket->mmt_handler->ip_address_classify == 1)
+        {
+            if (get_proto_id_from_address(ipacket) != PROTO_UNKNOWN)
+                return;
+        }        
 
         uint16_t sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);
         /* for source and dst port 80 & 443 avoid inserting eDonkey as local proto! avoid false positives */

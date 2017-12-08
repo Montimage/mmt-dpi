@@ -451,7 +451,11 @@ uint32_t sslDetectProtocolFromClientHello(ipacket_t * ipacket) {
 
     if (rc > 0) {
         /* Check the protocol by hostname */
-        uint32_t proto = get_proto_id_by_hostname(ipacket, certificate, strlen(certificate));
+        uint32_t proto = PROTO_UNKNOWN;
+        if (ipacket->mmt_handler->hostname_classify == 1)
+        {
+            proto = get_proto_id_by_hostname(ipacket, certificate, strlen(certificate));
+        }
         //printf("From detect proto from certificate = %s ---- len = %i\n", certificate, strlen(certificate));
         if (proto != PROTO_UNKNOWN) {
             mmt_int_ssl_add_connection(ipacket, proto);
@@ -489,7 +493,11 @@ uint32_t sslDetectProtocolFromServerHello(ipacket_t * ipacket) {
 
     if (rc > 0) {
         /* Check the protocol by hostname */
-        uint32_t proto = get_proto_id_by_hostname(ipacket, certificate, strlen(certificate));
+        uint32_t proto = PROTO_UNKNOWN;
+        if (ipacket->mmt_handler->hostname_classify == 1)
+        {
+            proto = get_proto_id_by_hostname(ipacket, certificate, strlen(certificate));
+        }
         //printf("Protocol detected has id = %u --- Server: %s --- %u \n", proto, certificate, strlen(certificate));
         if (proto != PROTO_UNKNOWN) {
             mmt_int_ssl_add_connection(ipacket, proto);
@@ -684,8 +692,12 @@ int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 	if (flow->l4.tcp.ssl_stage >= 3) {
 		mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
 		//try to guess from IP address! this is the only way now!
-		uint32_t proto = get_proto_id_from_address(ipacket);
-		if (proto != PROTO_UNKNOWN) {
+        uint32_t proto = PROTO_UNKNOWN;
+        if (ipacket->mmt_handler->ip_address_classify == 1)
+        {
+            proto = get_proto_id_from_address(ipacket);
+        }
+        if (proto != PROTO_UNKNOWN) {
 			mmt_int_ssl_add_connection(ipacket, proto);
 		}
 		return 1;

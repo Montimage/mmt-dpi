@@ -1527,17 +1527,23 @@ static inline void parseHttpSubprotocol(ipacket_t * ipacket) {
         return;
 
     /* Check the protocol by hostname */
-    proto = get_proto_id_by_hostname(ipacket, (char*) packet->host_line.ptr, packet->host_line.len);
+    if(ipacket->mmt_handler->hostname_classify == 1){
+        proto = get_proto_id_by_hostname(ipacket, (char *)packet->host_line.ptr, packet->host_line.len);
+    }
+    
     if (proto != PROTO_UNKNOWN) {
         mmt_int_http_add_connection(ipacket, proto);
         return;
     }
 
     /* Check the protocol by the IP addresses!!!*/
-    proto = get_proto_id_from_address(ipacket);
-    if (proto != PROTO_UNKNOWN) {
-        mmt_int_http_add_connection(ipacket, proto);
-        return;
+    if(ipacket->mmt_handler->ip_address_classify == 1){
+        proto = get_proto_id_from_address(ipacket);
+        if (proto != PROTO_UNKNOWN)
+        {
+            mmt_int_http_add_connection(ipacket, proto);
+            return;
+        }
     }
 }
 
