@@ -593,7 +593,12 @@ static void mmt_int_rtp_add_connection(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
     /* Check the protocol by the IP addresses!!!*/
-    uint32_t proto = get_proto_id_from_address(ipacket);
+    uint32_t proto = PROTO_UNKNOWN;
+    if (ipacket->mmt_handler->ip_address_classify == 1)
+    {
+        proto = get_proto_id_from_address(ipacket);
+    }
+    
     if (proto != PROTO_UNKNOWN) {
         switch (proto) {
             case PROTO_GOOGLE:

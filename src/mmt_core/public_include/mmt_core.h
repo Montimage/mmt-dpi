@@ -563,6 +563,42 @@ MMTAPI int MMTCALL disable_port_classify(
 );
 
 /**
+ * Enable classification by hostname
+ * @param  mmt_handler mmt handler
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI int MMTCALL enable_hostname_classify(
+    mmt_handler_t *mmt_handler);
+
+/**
+ * Disable classification by hostname
+ * @param  mmt_handler mmt handler
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI int MMTCALL disable_hostname_classify(
+    mmt_handler_t *mmt_handler);
+
+/**
+ * Enable classification by IP address (only ipv4)
+ * @param  mmt_handler mmt handler
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI int MMTCALL enable_ip_address_classify(
+    mmt_handler_t *mmt_handler);
+
+/**
+ * Disable classification by IP address (only ipv4)
+ * @param  mmt_handler mmt handler
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI int MMTCALL disable_ip_address_classify(
+    mmt_handler_t *mmt_handler);
+
+/**
  * Sets the timeout delay for the given session.
  * @param session pointer to the session to set its timeout delay
  * @param timeout_delay timeout delay value in seconds

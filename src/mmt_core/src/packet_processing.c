@@ -1150,6 +1150,8 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
 
     new_handler->has_reassembly = 0; // Disable TCP-reassembly by default
     new_handler->port_classify = 0; // Disable classification by port number by default
+    new_handler->hostname_classify = 1; // Enable classification by Hostname by default
+    new_handler->ip_address_classify = 1; // Enable classification by IP address by default
     new_handler->clean_packet = clean_packet;
     new_handler->process_packet = process_packet;
 
@@ -3188,6 +3190,45 @@ int disable_port_classify(mmt_handler_t *mmt) {
     return 0;
 }
 
+int enable_hostname_classify(mmt_handler_t *mmt)
+{
+    if (likely(mmt != NULL))
+    {
+        mmt->hostname_classify = 1;
+        return 1;
+    }
+    return 0;
+}
+
+int disable_hostname_classify(mmt_handler_t *mmt)
+{
+    if (likely(mmt != NULL))
+    {
+        mmt->hostname_classify = 0;
+        return 1;
+    }
+    return 0;
+}
+
+int enable_ip_address_classify(mmt_handler_t *mmt)
+{
+    if (likely(mmt != NULL))
+    {
+        mmt->ip_address_classify = 1;
+        return 1;
+    }
+    return 0;
+}
+
+int disable_ip_address_classify(mmt_handler_t *mmt)
+{
+    if (likely(mmt != NULL))
+    {
+        mmt->ip_address_classify = 0;
+        return 1;
+    }
+    return 0;
+}
 
 int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
     
