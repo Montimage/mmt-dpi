@@ -1200,6 +1200,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
 
     new_handler->session_timer_handler.session_timer_handler_fct = NULL;
     new_handler->session_timer_handler.args = NULL;
+    new_handler->evasion_handler = NULL;
     new_handler->default_session_timed_out = CFG_DEFAULT_SESSION_TIMEOUT;
     new_handler->long_session_timed_out = CFG_LONG_SESSION_TIMEOUT;
     new_handler->short_session_timed_out = CFG_SHORT_LIFE_SESSION_TIMEOUT;
@@ -1841,6 +1842,17 @@ void free_registered_attribute_handlers(mmt_handler_t *mmt_handler) {
         mmt_handler->proto_registered_attribute_handlers[i] = NULL;
     }
 }
+
+int register_evasion_handler(mmt_handler_t *mmt_handler, generic_evasion_handler_callback evasion_handler){
+    if(mmt_handler){
+        if(!mmt_handler->evasion_handler){
+            mmt_handler->evasion_handler = evasion_handler;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 int unregister_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const char *protocol_name, const char *attribute_name) {
     uint32_t proto_id, attribute_id;
@@ -2816,6 +2828,14 @@ void fire_attribute_event(ipacket_t * ipacket, uint32_t proto_id, uint32_t attri
     }
 }
 
+void fire_evasion_event(ipacket_t * ipacket, uint32_t proto_id, unsigned proto_index, unsigned evasion_id, void * data) {
+    mmt_handler_t * mmt_handler = ipacket->mmt_handler;
+    if(mmt_handler->evasion_handler){
+        mmt_handler->evasion_handler(ipacket,proto_id,proto_index,evasion_id,data);
+    }
+}
+
+
 /**
  * Process attribute handler of protocol: such as source_port of TCP protocol
  * @param ipacket packet to process the handler on
@@ -2994,6 +3014,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     if (is_new_session == NEW_SESSION) {
         parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
+        fire_evasion_event(ipacket,configured_protocol->protocol->proto_id, index,1,NULL);
     } 
     // else {
         //Update the protocol statistics

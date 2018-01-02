@@ -92,6 +92,11 @@ extern "C" {
 typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
 
 /**
+ * Generic evasion handler callback
+ */
+typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, uint32_t proto_id, unsigned proto_index, unsigned evasion_id, void * args);
+
+/**
  * Generic process_packet
  */
 typedef int (*generic_process_packet_fct) (mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet);
@@ -266,6 +271,18 @@ MMTAPI int MMTCALL is_registered_attribute(
     mmt_handler_t *mmt_handler,
     uint32_t proto_id,
     uint32_t attribute_id
+);
+
+/**
+ * Registers the evasion handler
+ * @param mmt_handler pointer to the mmt handler we want to register the extraction attribute with
+ * @param evasion_handler the identifier of the protocol of the attribute.
+ * @param attribute_id the identifier of the attribute itself.
+ * @return a positive value upon success, a zero value otherwise.
+ */
+MMTAPI int MMTCALL register_evasion_handler(
+    mmt_handler_t *mmt_handler,
+    generic_evasion_handler_callback evasion_handler
 );
 
 /**
@@ -492,6 +509,22 @@ MMTAPI void MMTCALL fire_attribute_event(
     uint32_t proto_id,
     uint32_t attribute_id,
     unsigned index,
+    void *data
+);
+
+/**
+ * Fires an evasion detection event. If the attribute is registered, this function will extract its value.
+ * @param ipacket pointer to the current internal packet
+ * @param proto_id protocol identifier of the attribute
+ * @param proto_index index of the protocol in the path
+ * @param evasion_id the number indicates the type of evasion
+ * @param data pointer to the extra data
+ */
+MMTAPI void MMTCALL fire_evasion_event(
+    ipacket_t *ipacket,
+    uint32_t proto_id,
+    unsigned proto_index,
+    unsigned evasion_id,
     void *data
 );
 
