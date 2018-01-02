@@ -1139,6 +1139,7 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     // Check timed-out for all data gram
     if ( !ip_dgram_is_complete( dg )) {
         // debug("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
+        // fire_evasion_event(ipacket,PROTO_IP,index,1,(void*)NULL);
         return 0;
     }
     // At this point, dg is a fully reassembled datagram.

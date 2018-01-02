@@ -2832,6 +2832,8 @@ void fire_evasion_event(ipacket_t * ipacket, uint32_t proto_id, unsigned proto_i
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     if(mmt_handler->evasion_handler){
         mmt_handler->evasion_handler(ipacket,proto_id,proto_index,evasion_id,data);
+    }else{
+        printf("There is no evasion_handler!");
     }
 }
 
@@ -3014,7 +3016,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     if (is_new_session == NEW_SESSION) {
         parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
-        fire_evasion_event(ipacket,configured_protocol->protocol->proto_id, index,1,NULL);
+        // fire_evasion_event(ipacket, configured_protocol->protocol->proto_id, index, 1, (void *) NULL);
     } 
     // else {
         //Update the protocol statistics

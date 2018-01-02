@@ -388,13 +388,13 @@ struct mmt_handler_struct {
     ipacket_t current_ipacket;
     generic_process_packet_fct process_packet;
     generic_clean_packet_fct clean_packet;
+    generic_evasion_handler_callback evasion_handler;
 
     protocol_stack_t * link_layer_stack;
     protocol_instance_t configured_protocols[PROTO_MAX_IDENTIFIER];
     attribute_internal_t * proto_registered_attributes[PROTO_MAX_IDENTIFIER];
     attribute_handler_element_t * proto_registered_attribute_handlers[PROTO_MAX_IDENTIFIER];
     packet_handler_t * packet_handlers;
-    generic_evasion_handler_callback evasion_handler;
     // Specific session timedout value
     // uint32_t mmt_http_session_timed_out;
     mmt_hashmap_t *ip_streams;
