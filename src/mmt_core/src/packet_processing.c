@@ -1201,6 +1201,8 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->session_timer_handler.session_timer_handler_fct = NULL;
     new_handler->session_timer_handler.args = NULL;
     new_handler->evasion_handler = NULL;
+    new_handler->fragment_in_packet = 0;
+    new_handler->fragmented_packet_in_session = 0;
     new_handler->default_session_timed_out = CFG_DEFAULT_SESSION_TIMEOUT;
     new_handler->long_session_timed_out = CFG_LONG_SESSION_TIMEOUT;
     new_handler->short_session_timed_out = CFG_SHORT_LIFE_SESSION_TIMEOUT;
@@ -1952,6 +1954,18 @@ int set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_valu
     return 1;
 }
 
+int set_fragment_in_packet(mmt_handler_t *mmt_handler,uint32_t fragment_in_packet){
+    if ( mmt_handler == NULL ) return 0;
+    mmt_handler->fragment_in_packet = fragment_in_packet;
+    return 1;
+}
+
+int set_fragmented_packet_in_session(mmt_handler_t *mmt_handler,uint32_t fragmented_packet_in_session){
+    if ( mmt_handler == NULL ) return 0;
+    mmt_handler->fragmented_packet_in_session = fragmented_packet_in_session;
+    return 1;
+}
+
 int unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id, attribute_handler_function handler_fct) {
     attribute_handler_t * temp_attr_handler;
     attribute_handler_t * safe_to_delete_attr_handler = NULL;
@@ -2368,6 +2382,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->next = NULL;
                 session->previous = NULL;
                 session->packet_count = 0;
+                session->fragmented_packet_count = 0;
                 session->packet_cap_count = 0;
                 session->data_volume = 0;
                 session->data_cap_volume = 0;

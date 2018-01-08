@@ -81,6 +81,10 @@ extern "C" {
 #define MMT_VERSION VERSION
 #endif
 
+// EVASION TYPE
+
+#define EVA_IP_FRAG_PACKET 1 // Event which relates to fragment in packet
+#define EVA_IP_FRAG_SESSION 2 // Event which relates to fragmented packet in session
 /**
  * Generic packet handler callback
  */
@@ -484,6 +488,33 @@ MMTAPI int MMTCALL set_live_session_timed_out(
     uint32_t timedout_value
 );
 
+// IP fragmentation paramters
+
+/**
+ * Set value for number of fragment per packet
+ * @param  mmt_handler    handler
+ * @param  frag_per_packet value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_fragment_in_packet(
+    mmt_handler_t *mmt_handler,
+    uint32_t frag_per_packet
+);
+
+/**
+ * Set value for number of fragmented packet per session
+ * @param  mmt_handler    handler
+ * @param  frag_packet_per_session value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_fragmented_packet_in_session(
+    mmt_handler_t *mmt_handler,
+    uint32_t frag_packet_per_session
+);
+
+//
 /**
  * A debug function that can be used as a packet handler callback. It will print out the
  * extracted attributes.

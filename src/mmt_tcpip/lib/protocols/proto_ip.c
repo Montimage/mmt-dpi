@@ -1137,6 +1137,12 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     }
     ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
     // Check timed-out for all data gram
+    
+    // TODO: Check number of fragment: dg->nb_packets -> notify
+    if (ipacket->mmt_handler->fragment_in_packet > 0 
+        && (dg->nb_packets % ipacket->mmt_handler->fragment_in_packet) == 0){
+        fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAG_PACKET,(void*)&(dg->nb_packets));
+    }
     if ( !ip_dgram_is_complete( dg )) {
         // debug("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
         // fire_evasion_event(ipacket,PROTO_IP,index,1,(void*)NULL);
@@ -1195,7 +1201,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
         }
     }
 
-    ipacket->is_completed = 1;
+    ipacket->is_completed = 1;    
 
     // re-point to the reassempled IP header if reassembly took place
     // points to the same pointer if no fragmentation
@@ -1206,6 +1212,15 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
 
     mmt_session_t * session = get_session(protocol_context, & ipv4_session_key, ipacket, is_new_session);
     if (session) {
+        // TODO: Check if dg->nb_packets > 1 -> update number of fragmented packet in current session
+        if(ipacket->nb_reassembled_packets > 1){
+            // printf("\nNew fragmented packet: %lu\n",session->session_id);
+            session->fragmented_packet_count++;
+            if ( ipacket->mmt_handler->fragmented_packet_in_session > 0 
+                && (session->fragmented_packet_count % ipacket->mmt_handler->fragmented_packet_in_session) == 0 ){
+                fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAG_SESSION,(void*)&session->fragmented_packet_count);
+            }
+        }
         if (session->last_packet_direction != packet_direction && session->packet_count > 0) {
             ip_rtt_t ip_rtt;
             ip_rtt.direction = session->last_packet_direction;
