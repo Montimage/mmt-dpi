@@ -110,6 +110,7 @@ struct mmt_session_struct {
     uint64_t session_id;                     /**< session identifier */
     uint64_t packet_count;                   /**< tracks the number of packets */
     uint64_t fragmented_packet_count;        /**< number of fragmented packets which are in this session*/
+    uint64_t fragment_count;                 /**< number of fragments which are in this session*/
     uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
     uint64_t data_cap_volume;                /**< data volume captured  - include fragmented packets*/
     uint64_t data_volume;                    /**< tracks the octet data volume */
@@ -391,8 +392,9 @@ struct mmt_handler_struct {
     generic_clean_packet_fct clean_packet;
     // Evasion
     generic_evasion_handler_callback evasion_handler;
-    uint32_t fragment_in_packet; // Number of new fragment per packet which will trigger the fragmentation evasion: 1
-    uint32_t fragmented_packet_in_session; // Number of fragmented packet per session which will trigger the fragmentation evasion: 2
+    uint32_t fragment_in_packet; // Number of new fragment in one packet which will trigger the fragmentation evasion: 1
+    uint32_t fragmented_packet_in_session; // Number of fragmented packet in one session which will trigger the fragmentation evasion: 2
+    uint32_t fragment_in_session; // Number of fragment in one session which will trigger the fragmentation evasion: 2
 
     protocol_stack_t * link_layer_stack;
     protocol_instance_t configured_protocols[PROTO_MAX_IDENTIFIER];

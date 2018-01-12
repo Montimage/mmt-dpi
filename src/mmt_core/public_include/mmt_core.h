@@ -83,8 +83,9 @@ extern "C" {
 
 // EVASION TYPE
 
-#define EVA_IP_FRAG_PACKET 1 // Event which relates to fragment in packet
-#define EVA_IP_FRAG_SESSION 2 // Event which relates to fragmented packet in session
+#define EVA_IP_FRAGMENT_PACKET 1 // Event too many fragments in one packet
+#define EVA_IP_FRAGMENT_SESSION 2 // Event too many fragments in one session
+#define EVA_IP_FRAGMENTED_PACKET_SESSION 3 // Event too many fragmented packet in one session
 /**
  * Generic packet handler callback
  */
@@ -491,7 +492,7 @@ MMTAPI int MMTCALL set_live_session_timed_out(
 // IP fragmentation paramters
 
 /**
- * Set value for number of fragment per packet
+ * Set value for number of fragment in one packet
  * @param  mmt_handler    handler
  * @param  frag_in_packet value
  * @return                1 if successful
@@ -503,7 +504,7 @@ MMTAPI int MMTCALL set_fragment_in_packet(
 );
 
 /**
- * Set value for number of fragmented packet per session
+ * Set value for number of fragmented packet in one session
  * @param  mmt_handler    handler
  * @param  frag_packet_in_session value
  * @return                1 if successful
@@ -512,6 +513,18 @@ MMTAPI int MMTCALL set_fragment_in_packet(
 MMTAPI int MMTCALL set_fragmented_packet_in_session(
     mmt_handler_t *mmt_handler,
     uint32_t frag_packet_in_session
+);
+
+/**
+ * Set value for number of fragments in one session
+ * @param  mmt_handler    handler
+ * @param  frag_in_session value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_fragment_in_session(
+    mmt_handler_t *mmt_handler,
+    uint32_t frag_in_session
 );
 
 //
