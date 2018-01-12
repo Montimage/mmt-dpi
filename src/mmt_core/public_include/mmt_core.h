@@ -493,25 +493,25 @@ MMTAPI int MMTCALL set_live_session_timed_out(
 /**
  * Set value for number of fragment per packet
  * @param  mmt_handler    handler
- * @param  frag_per_packet value
+ * @param  frag_in_packet value
  * @return                1 if successful
  *                          0 if failed
  */
 MMTAPI int MMTCALL set_fragment_in_packet(
     mmt_handler_t *mmt_handler,
-    uint32_t frag_per_packet
+    uint32_t frag_in_packet
 );
 
 /**
  * Set value for number of fragmented packet per session
  * @param  mmt_handler    handler
- * @param  frag_packet_per_session value
+ * @param  frag_packet_in_session value
  * @return                1 if successful
  *                          0 if failed
  */
 MMTAPI int MMTCALL set_fragmented_packet_in_session(
     mmt_handler_t *mmt_handler,
-    uint32_t frag_packet_per_session
+    uint32_t frag_packet_in_session
 );
 
 //
