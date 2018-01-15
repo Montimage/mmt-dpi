@@ -83,9 +83,11 @@ extern "C" {
 
 // EVASION TYPE
 
-#define EVA_IP_FRAGMENT_PACKET 1 // Event too many fragments in one packet
-#define EVA_IP_FRAGMENT_SESSION 2 // Event too many fragments in one session
-#define EVA_IP_FRAGMENTED_PACKET_SESSION 3 // Event too many fragmented packet in one session
+#define EVA_IP_FRAGMENT_PACKET 1 // Event: too many fragments in one packet
+#define EVA_IP_FRAGMENT_SESSION 2 // Event: too many fragments in one session
+#define EVA_IP_FRAGMENTED_PACKET_SESSION 3 // Event: too many fragmented packet in one session
+#define EVA_IP_FRAGMENT_OVERLAPPED 4 // Event: IP fragmentation overlapping
+
 /**
  * Generic packet handler callback
  */
