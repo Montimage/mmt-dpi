@@ -1136,7 +1136,9 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
         hashmap_insert_kv( map, key, dg );
     }
     int dgram_update_result = ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
-    if (dgram_update_result > 0 ) {
+    if(dgram_update_result == 2 || dgram_update_result == 6 ){
+        fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_DUPLICATED,(void*)&(dgram_update_result));
+    }else if (dgram_update_result > 0 ) {
         // There are some overlapping
         fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_OVERLAPPED,(void*)&(dgram_update_result));
     }

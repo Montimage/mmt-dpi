@@ -103,7 +103,7 @@ void ip_dgram_cleanup( ip_dgram_t *dg )
  *      3 - overlapped data on the left of the hole
  *      4 - overlapped data on the right of the hole
  *      5 - overlapped data on both sides of the hole
- *      6 - duplicated fragment data ()
+ *      6 - duplicated fragment data
  *      0 - No problem
  */
 
@@ -281,7 +281,7 @@ void ip_dgram_dump_holes( ip_dgram_t *dg )
  *          3 - overlapped data on the left side of the hole
  *          4 - overlapped data on the right side of the hole
  *          5 - overlapped data on both left and right side of the hole
- *          6 - fragment has not been used!
+ *          6 - fragment has not been used - duplicated data fragments
  *          0 - No overlapped data
  */
 
