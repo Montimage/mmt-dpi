@@ -1135,7 +1135,11 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
         dg = ip_dgram_alloc();
         hashmap_insert_kv( map, key, dg );
     }
-    ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
+    int dgram_update_result = ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
+    if (dgram_update_result > 0 ) {
+        // There are some overlapping
+        fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_OVERLAPPED,(void*)&(dgram_update_result));
+    }
     // Check timed-out for all data gram
     
     // Detect too many fragment in one packet
@@ -1201,7 +1205,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
         }
     }
 
-    ipacket->is_completed = 1;    
+    ipacket->is_completed = 1;
 
     // re-point to the reassempled IP header if reassembly took place
     // points to the same pointer if no fragmentation
