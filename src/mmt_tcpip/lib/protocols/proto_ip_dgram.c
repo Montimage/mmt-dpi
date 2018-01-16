@@ -312,7 +312,7 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
          // 1       0           36
          // 2       24          4
          // -> so should we ignore fragment 2 or we will overwrite fragment 2 into fragment 1???
-         // Ignore for now -> but with notify!
+         // IGNORE FOR NOW -> BUT WITH NOTIFY!
          break;
       }
         // printf("[ip_dgram_update_holes] hole->loff: %d, hole->roff: %d, loff: %d, roff: %d \n",hole->loff, hole->roff, loff, roff);

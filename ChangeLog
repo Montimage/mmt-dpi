@@ -1,6 +1,15 @@
 RELEASE NOTES
 ---
 
+Version 1.6.12.2
+- Open API to register evasion_event_handler
+- Handle some IP fragmentation event:
+	+ Too many fragments in one packet
+	+ Too many fragments in one session
+	+ Too many fragmented packets in one session
+	+ Duplicated segments
+	+ Overlapping segments
+
 Version 1.6.12.1
 - Add APIs to enable/disable classification by hostname and ip address
 
