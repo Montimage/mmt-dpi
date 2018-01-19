@@ -1846,12 +1846,17 @@ void free_registered_attribute_handlers(mmt_handler_t *mmt_handler) {
     }
 }
 
-int register_evasion_handler(mmt_handler_t *mmt_handler, generic_evasion_handler_callback evasion_handler){
+int register_evasion_handler(mmt_handler_t *mmt_handler, generic_evasion_handler_callback evasion_handler, void * user_args){
     if(mmt_handler){
-        if(!mmt_handler->evasion_handler){
-            mmt_handler->evasion_handler = evasion_handler;
-            return 1;
+        if (mmt_handler->evasion_handler != NULL) {
+            fprintf(stderr,"[ERROR] register_evasion_handler - Evasion handler function has been registered already!");
+            return 0;
         }
+        evasion_handler_t * new_evasion_handler = (evasion_handler_t *) malloc(sizeof(evasion_handler_t));
+        new_evasion_handler->function = evasion_handler;
+        new_evasion_handler->args = user_args;
+        mmt_handler->evasion_handler = new_evasion_handler;
+        return 1;
     }
     return 0;
 }
@@ -2854,7 +2859,7 @@ void fire_attribute_event(ipacket_t * ipacket, uint32_t proto_id, uint32_t attri
 void fire_evasion_event(ipacket_t * ipacket, uint32_t proto_id, unsigned proto_index, unsigned evasion_id, void * data) {
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     if(mmt_handler->evasion_handler){
-        mmt_handler->evasion_handler(ipacket,proto_id,proto_index,evasion_id,data);
+        mmt_handler->evasion_handler->function(ipacket,proto_id,proto_index,evasion_id,data,mmt_handler->evasion_handler->args);
     }else{
         printf("There is no evasion_handler!");
     }

@@ -102,7 +102,7 @@ typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, void 
 /**
  * Generic evasion handler callback
  */
-typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, uint32_t proto_id, unsigned proto_index, unsigned evasion_id, void * args);
+typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, uint32_t proto_id, unsigned proto_index, unsigned evasion_id, void * data, void * args);
 
 /**
  * Generic process_packet
@@ -286,11 +286,13 @@ MMTAPI int MMTCALL is_registered_attribute(
  * @param mmt_handler pointer to the mmt handler we want to register the extraction attribute with
  * @param evasion_handler the identifier of the protocol of the attribute.
  * @param attribute_id the identifier of the attribute itself.
+ * @param user_args User data
  * @return a positive value upon success, a zero value otherwise.
  */
 MMTAPI int MMTCALL register_evasion_handler(
     mmt_handler_t *mmt_handler,
-    generic_evasion_handler_callback evasion_handler
+    generic_evasion_handler_callback evasion_handler,
+    void * user_args
 );
 
 /**
