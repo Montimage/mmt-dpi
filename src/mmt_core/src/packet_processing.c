@@ -1200,6 +1200,10 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
 
     new_handler->session_timer_handler.session_timer_handler_fct = NULL;
     new_handler->session_timer_handler.args = NULL;
+    new_handler->evasion_handler = NULL;
+    new_handler->fragment_in_packet = 0;
+    new_handler->fragmented_packet_in_session = 0;
+    new_handler->fragment_in_session = 0;
     new_handler->default_session_timed_out = CFG_DEFAULT_SESSION_TIMEOUT;
     new_handler->long_session_timed_out = CFG_LONG_SESSION_TIMEOUT;
     new_handler->short_session_timed_out = CFG_SHORT_LIFE_SESSION_TIMEOUT;
@@ -1842,6 +1846,22 @@ void free_registered_attribute_handlers(mmt_handler_t *mmt_handler) {
     }
 }
 
+int register_evasion_handler(mmt_handler_t *mmt_handler, generic_evasion_handler_callback evasion_handler, void * user_args){
+    if(mmt_handler){
+        if (mmt_handler->evasion_handler != NULL) {
+            fprintf(stderr,"[ERROR] register_evasion_handler - Evasion handler function has been registered already!");
+            return 0;
+        }
+        evasion_handler_t * new_evasion_handler = (evasion_handler_t *) malloc(sizeof(evasion_handler_t));
+        new_evasion_handler->function = evasion_handler;
+        new_evasion_handler->args = user_args;
+        mmt_handler->evasion_handler = new_evasion_handler;
+        return 1;
+    }
+    return 0;
+}
+
+
 int unregister_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const char *protocol_name, const char *attribute_name) {
     uint32_t proto_id, attribute_id;
     proto_id = get_protocol_id_by_name(protocol_name);
@@ -1937,6 +1957,24 @@ int set_short_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_val
 int set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
     mmt_handler->live_session_timed_out = timedout_value;
+    return 1;
+}
+
+int set_fragment_in_packet(mmt_handler_t *mmt_handler,uint32_t fragment_in_packet){
+    if ( mmt_handler == NULL ) return 0;
+    mmt_handler->fragment_in_packet = fragment_in_packet;
+    return 1;
+}
+
+int set_fragmented_packet_in_session(mmt_handler_t *mmt_handler,uint32_t fragmented_packet_in_session){
+    if ( mmt_handler == NULL ) return 0;
+    mmt_handler->fragmented_packet_in_session = fragmented_packet_in_session;
+    return 1;
+}
+
+int set_fragment_in_session(mmt_handler_t *mmt_handler,uint32_t fragment_in_session){
+    if ( mmt_handler == NULL ) return 0;
+    mmt_handler->fragment_in_session = fragment_in_session;
     return 1;
 }
 
@@ -2356,6 +2394,8 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->next = NULL;
                 session->previous = NULL;
                 session->packet_count = 0;
+                session->fragmented_packet_count = 0;
+                session->fragment_count = 0;
                 session->packet_cap_count = 0;
                 session->data_volume = 0;
                 session->data_cap_volume = 0;
@@ -2816,6 +2856,16 @@ void fire_attribute_event(ipacket_t * ipacket, uint32_t proto_id, uint32_t attri
     }
 }
 
+void fire_evasion_event(ipacket_t * ipacket, uint32_t proto_id, unsigned proto_index, unsigned evasion_id, void * data) {
+    mmt_handler_t * mmt_handler = ipacket->mmt_handler;
+    if(mmt_handler->evasion_handler){
+        mmt_handler->evasion_handler->function(ipacket,proto_id,proto_index,evasion_id,data,mmt_handler->evasion_handler->args);
+    }else{
+        printf("There is no evasion_handler!");
+    }
+}
+
+
 /**
  * Process attribute handler of protocol: such as source_port of TCP protocol
  * @param ipacket packet to process the handler on
@@ -2994,6 +3044,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     if (is_new_session == NEW_SESSION) {
         parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
+        // fire_evasion_event(ipacket, configured_protocol->protocol->proto_id, index, 1, (void *) NULL);
     } 
     // else {
         //Update the protocol statistics

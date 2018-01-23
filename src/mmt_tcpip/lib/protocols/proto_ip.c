@@ -1135,10 +1135,23 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
         dg = ip_dgram_alloc();
         hashmap_insert_kv( map, key, dg );
     }
-    ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
+    int dgram_update_result = ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
+    if(dgram_update_result == 2 || dgram_update_result == 6 ){
+        fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_DUPLICATED,(void*)&(dgram_update_result));
+    }else if (dgram_update_result > 0 ) {
+        // There are some overlapping
+        fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_OVERLAPPED,(void*)&(dgram_update_result));
+    }
     // Check timed-out for all data gram
+    
+    // Detect too many fragment in one packet
+    if (ipacket->mmt_handler->fragment_in_packet > 0 
+        && (dg->nb_packets % ipacket->mmt_handler->fragment_in_packet) == 0){
+        fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_PACKET,(void*)&(dg->nb_packets));
+    }
     if ( !ip_dgram_is_complete( dg )) {
         // debug("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
+        // fire_evasion_event(ipacket,PROTO_IP,index,1,(void*)NULL);
         return 0;
     }
     // At this point, dg is a fully reassembled datagram.
@@ -1205,6 +1218,22 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
 
     mmt_session_t * session = get_session(protocol_context, & ipv4_session_key, ipacket, is_new_session);
     if (session) {
+        // TODO: Check if dg->nb_packets > 1 -> update number of fragmented packet in current session
+        if(ipacket->nb_reassembled_packets > 1){
+            // printf("\nNew fragmented packet: %lu\n",session->session_id);
+            session->fragmented_packet_count++;
+            session->fragment_count += ipacket->nb_reassembled_packets;
+            // Detect too many fragmented packet in one session
+            if ( ipacket->mmt_handler->fragmented_packet_in_session > 0 
+                && (session->fragmented_packet_count % ipacket->mmt_handler->fragmented_packet_in_session) == 0 ){
+                fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENTED_PACKET_SESSION,(void*)&session->fragmented_packet_count);
+            }
+            // Detect too many fragments in one session
+            if ( ipacket->mmt_handler->fragment_in_session > 0 
+                && (session->fragment_count % ipacket->mmt_handler->fragment_in_session) == 0 ){
+                fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_SESSION,(void*)&session->fragment_count);
+            }
+        }
         if (session->last_packet_direction != packet_direction && session->packet_count > 0) {
             ip_rtt_t ip_rtt;
             ip_rtt.direction = session->last_packet_direction;

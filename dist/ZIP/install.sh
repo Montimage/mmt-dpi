@@ -4,7 +4,7 @@ if [[ $(id -u) -ne 0 ]]; then
     exit 1
 else
 	echo "Start installing mmt-sdk .... "
-	VERSION=1.6.12.0
+	VERSION=1.6.12.2
 	MMT_BASE=/opt/mmt
 	MMT_DPI=$MMT_BASE/dpi
 	MMT_LIB=$MMT_DPI/lib

@@ -32,6 +32,7 @@ extern "C" {
 #define NEW_PROTO_IN_SESSION    2 /**< defines the detection of a new protocol in a previously detected session */
 
 typedef struct packet_handler_struct               packet_handler_t;
+typedef struct evasion_handler_struct              evasion_handler_t;
 typedef struct packet_info_struct                  packet_info_t;
 
 typedef struct attribute_handler_struct            attribute_handler_t;
@@ -109,6 +110,8 @@ struct mmt_session_struct {
     
     uint64_t session_id;                     /**< session identifier */
     uint64_t packet_count;                   /**< tracks the number of packets */
+    uint64_t fragmented_packet_count;        /**< number of fragmented packets which are in this session*/
+    uint64_t fragment_count;                 /**< number of fragments which are in this session*/
     uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
     uint64_t data_cap_volume;                /**< data volume captured  - include fragmented packets*/
     uint64_t data_volume;                    /**< tracks the octet data volume */
@@ -178,6 +181,11 @@ struct packet_handler_struct {
     generic_packet_handler_callback function; /**< the packet handler callback function */
     u_char * args; /**< registered user argument that will be passed to the callback handler */
     packet_handler_t * next; /**< next packet handler */
+};
+
+struct evasion_handler_struct {
+    generic_evasion_handler_callback function; // the evasion handler callback function
+    void * args; // User arguments that will be passed to the callback handler
 };
 
 /**
@@ -388,6 +396,11 @@ struct mmt_handler_struct {
     ipacket_t current_ipacket;
     generic_process_packet_fct process_packet;
     generic_clean_packet_fct clean_packet;
+    // Evasion
+    evasion_handler_t * evasion_handler;
+    uint32_t fragment_in_packet; // Number of new fragment in one packet which will trigger the fragmentation evasion: 1
+    uint32_t fragmented_packet_in_session; // Number of fragmented packet in one session which will trigger the fragmentation evasion: 2
+    uint32_t fragment_in_session; // Number of fragment in one session which will trigger the fragmentation evasion: 2
 
     protocol_stack_t * link_layer_stack;
     protocol_instance_t configured_protocols[PROTO_MAX_IDENTIFIER];

@@ -71,7 +71,7 @@ extern "C" {
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
 #ifndef VERSION
-#define VERSION "1.6.12.0"
+#define VERSION "1.6.12.2"
 #endif
 
 #ifdef GIT_VERSION
@@ -80,6 +80,14 @@ extern "C" {
 #else
 #define MMT_VERSION VERSION
 #endif
+
+// EVASION TYPE
+
+#define EVA_IP_FRAGMENT_PACKET 1 // Event: too many fragments in one packet
+#define EVA_IP_FRAGMENT_SESSION 2 // Event: too many fragments in one session
+#define EVA_IP_FRAGMENTED_PACKET_SESSION 3 // Event: too many fragmented packet in one session
+#define EVA_IP_FRAGMENT_OVERLAPPED 4 // Event: IP fragmentation overlapping data
+#define EVA_IP_FRAGMENT_DUPLICATED 5 // Event: IP fragmentation duplicated segments
 
 /**
  * Generic packet handler callback
@@ -90,6 +98,11 @@ extern "C" {
  * Generic packet handler callback
  */
 typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+
+/**
+ * Generic evasion handler callback
+ */
+typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, uint32_t proto_id, unsigned proto_index, unsigned evasion_id, void * data, void * args);
 
 /**
  * Generic process_packet
@@ -266,6 +279,20 @@ MMTAPI int MMTCALL is_registered_attribute(
     mmt_handler_t *mmt_handler,
     uint32_t proto_id,
     uint32_t attribute_id
+);
+
+/**
+ * Registers the evasion handler
+ * @param mmt_handler pointer to the mmt handler we want to register the extraction attribute with
+ * @param evasion_handler the identifier of the protocol of the attribute.
+ * @param attribute_id the identifier of the attribute itself.
+ * @param user_args User data
+ * @return a positive value upon success, a zero value otherwise.
+ */
+MMTAPI int MMTCALL register_evasion_handler(
+    mmt_handler_t *mmt_handler,
+    generic_evasion_handler_callback evasion_handler,
+    void * user_args
 );
 
 /**
@@ -467,6 +494,45 @@ MMTAPI int MMTCALL set_live_session_timed_out(
     uint32_t timedout_value
 );
 
+// IP fragmentation paramters
+
+/**
+ * Set value for number of fragment in one packet
+ * @param  mmt_handler    handler
+ * @param  frag_in_packet value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_fragment_in_packet(
+    mmt_handler_t *mmt_handler,
+    uint32_t frag_in_packet
+);
+
+/**
+ * Set value for number of fragmented packet in one session
+ * @param  mmt_handler    handler
+ * @param  frag_packet_in_session value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_fragmented_packet_in_session(
+    mmt_handler_t *mmt_handler,
+    uint32_t frag_packet_in_session
+);
+
+/**
+ * Set value for number of fragments in one session
+ * @param  mmt_handler    handler
+ * @param  frag_in_session value
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI int MMTCALL set_fragment_in_session(
+    mmt_handler_t *mmt_handler,
+    uint32_t frag_in_session
+);
+
+//
 /**
  * A debug function that can be used as a packet handler callback. It will print out the
  * extracted attributes.
@@ -492,6 +558,22 @@ MMTAPI void MMTCALL fire_attribute_event(
     uint32_t proto_id,
     uint32_t attribute_id,
     unsigned index,
+    void *data
+);
+
+/**
+ * Fires an evasion detection event. If the attribute is registered, this function will extract its value.
+ * @param ipacket pointer to the current internal packet
+ * @param proto_id protocol identifier of the attribute
+ * @param proto_index index of the protocol in the path
+ * @param evasion_id the number indicates the type of evasion
+ * @param data pointer to the extra data
+ */
+MMTAPI void MMTCALL fire_evasion_event(
+    ipacket_t *ipacket,
+    uint32_t proto_id,
+    unsigned proto_index,
+    unsigned evasion_id,
     void *data
 );
 

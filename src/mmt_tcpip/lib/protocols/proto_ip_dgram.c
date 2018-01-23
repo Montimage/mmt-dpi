@@ -97,9 +97,17 @@ void ip_dgram_cleanup( ip_dgram_t *dg )
  * @param dg  a pointer to a ip_dgram_t previously initialized with dgram_init()
  * @param x   payload address
  * @param len payload length
+ * @return
+ *      1 - malformed packet (header length mismatch or length mismatch)
+ *      2 - duplicated fragment
+ *      3 - overlapped data on the left of the hole
+ *      4 - overlapped data on the right of the hole
+ *      5 - overlapped data on both sides of the hole
+ *      6 - duplicated fragment data
+ *      0 - No problem
  */
 
-void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsigned caplen)
+int ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsigned caplen)
 {
    unsigned ip_len =  ntohs( ip->tot_len  );
    unsigned ip_off = (ntohs( ip->frag_off ) & IP_OFFSET) << 3;
@@ -110,12 +118,12 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsi
 
    if(( ip_hl < sizeof( struct iphdr )) || ( ip_hl > len )) {
       MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (header length mismatch)\n" );
-      return;
+      return 1;
    }
 
    if( len < ip_len ) {
       MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (length mismatch)\n" );
-      return;
+      return 1;
    }
 
    dg->nb_packets ++;
@@ -137,11 +145,11 @@ void ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsi
       dg->current_packet_size += ip_len - ip_hl;
    }else{
       // TODO: Can return here to not overwrite the later fragment
-      return;
+      return 2;
    }
    // ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf);
    // LN: Using ip_len to remove the padding from IP payload
-   ip_dgram_update_holes( dg, payload, ip_off, ip_len - ip_hl, ip_mf);
+   return ip_dgram_update_holes( dg, payload, ip_off, ip_len - ip_hl, ip_mf);
 }
 
 /**
@@ -269,15 +277,23 @@ void ip_dgram_dump_holes( ip_dgram_t *dg )
  * @param off payload offset in the datagram (bytes)
  * @param len payload length in the datagram (bytes)
  * @param mf  true if more fragments are expected
+ * @return 
+ *          3 - overlapped data on the left side of the hole
+ *          4 - overlapped data on the right side of the hole
+ *          5 - overlapped data on both left and right side of the hole
+ *          6 - fragment has not been used - duplicated data fragments
+ *          0 - No overlapped data
  */
 
-void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsigned len, int mf)
+int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsigned len, int mf)
 {
    ip_frags_t *holes = &dg->holes;
    ip_frag_t  *hole  = holes->lh_first;
 
    unsigned loff = off;
    unsigned roff = off+len;
+   int is_overlapped = 0;
+   int unused_fragment = 1;
    while( hole ) {
       int do_delete = 0;
       //if(( hole->roff < loff ) || ( hole->loff > roff )) {
@@ -291,34 +307,55 @@ void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsi
          // current hole is past the payload.
          // don't bother considering the rest of the list since
          // any subsequent hole would be even further right.
+         // LN: There is one case missing here: the current fragment is overlap some data which were already in the datagram. For example this case
+         // frag    offset      len
+         // 1       0           36
+         // 2       24          4
+         // -> so should we ignore fragment 2 or we will overwrite fragment 2 into fragment 1???
+         // IGNORE FOR NOW -> BUT WITH NOTIFY!
          break;
       }
-
+        // printf("[ip_dgram_update_holes] hole->loff: %d, hole->roff: %d, loff: %d, roff: %d \n",hole->loff, hole->roff, loff, roff);
       if( hole->loff < loff ) {
          // hole is trimmed from the right
          if( mf && ( hole->roff > roff )) {
-            // hole is also trimmed from the left
+            // hole is also trimmed from the left - the new segment split the current hole into 2 holes: before and after current sgements
             // -> resize current (left) hole
             // -> allocate a new (right) hole
             ip_frag_t *new = ip_frag_alloc( roff, hole->roff );
             hole->roff = loff - 1;
             LIST_INSERT_AFTER( hole, new, frags );
             hole = new;
+            unused_fragment = 0;
          } else {
             // hole is trimmed only from the right
+            if (roff > hole->roff){
+                // Overlap data on the right side of the hole
+                is_overlapped = 4;
+            }
             // -> resize it
             hole->roff = loff - 1;
+            unused_fragment = 0;            
          }
       } else if( mf && ( hole->roff > roff )) {
          // hole is trimmed only from the left
+         if(loff < hole->loff){
+            // Overlap data on the left side of the hole
+            is_overlapped = 3;
+         }
          // -> resize it
          hole->loff = roff;
+         unused_fragment = 0;
       } else {
          // payload is overlapping the entire hole
          // -> remove it from the list
          //BW: at this point we should delete the fragment, first need to step into the next frag
          LIST_REMOVE( hole, frags );
          do_delete = 1;
+         if(hole->loff > loff && hole->roff < roff){
+            is_overlapped = 5;
+         }
+         unused_fragment = 0;
       }
 
       // copy the payload, possibly growing the reassembly buffer
@@ -338,6 +375,8 @@ void ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsi
          hole = hole->frags.le_next;
       }
    }
+   if (unused_fragment) return 6;
+   return is_overlapped;
 }
 
 
