@@ -705,6 +705,22 @@ MMTAPI void* MMTCALL get_attribute_extracted_data(
 );
 
 /**
+ * Returns a pointer to the extracted data of the attribute identified by its protocol and field ids. The extracted
+ * data is not NULL if the attribute existed in the last processed message.
+ * @param ipacket pointer to the internal from which to extract the attribute.
+ * @param proto_id the identifier of the protocol of the attribute.
+ * @param attribute_id the identifier of the attribute itself.
+ * @param encap_index   The index of the encapsulation layer: for example, if we have: ETH.IP.IP.IP, then encap_index of IP can be: 0, 1, 2
+ * @return a pointer to the extracted data if it exists, NULL otherwise.
+ */
+MMTAPI void* MMTCALL get_attribute_extracted_data_encap_index(
+    const ipacket_t *ipacket,
+    uint32_t proto_id,
+    uint32_t attribute_id,
+    unsigned encap_index
+);
+
+/**
  * Returns a pointer to the extracted data of the attribute identified by its protocol and field names. The extracted
  * data is not NULL if the attribute existed in the last processed message.
  * @param ipacket pointer to the internal from which to extract the attribute.
