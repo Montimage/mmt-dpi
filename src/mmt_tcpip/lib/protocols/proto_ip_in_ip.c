@@ -16,5 +16,3 @@ int init_proto_ip_in_ip_struct() {
         return 0;
     }
 }
-
-
