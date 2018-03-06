@@ -23,7 +23,7 @@ uint32_t check_sip_internal(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
     */
-    uint32_t proto;
+    uint32_t proto= PROTO_UNKNOWN;
     if (packet->user_agent_line.ptr != NULL && packet->user_agent_line.len >= 11 && mmt_memcmp(packet->user_agent_line.ptr, "Yahoo Voice", 11) == 0) {
         mmt_int_sip_add_connection(ipacket, PROTO_YAHOOMSG);
         //printf("Test from sip\n");

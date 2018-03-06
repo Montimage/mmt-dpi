@@ -1356,7 +1356,7 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
     rule *a_temp = NULL;
     int state = 0;
     int ret;
-    short depth;
+    short depth = 0;
     attribute_name = NULL;
     for (ret = 0; ret < 100; ret++)attribute_value[ret] = NULL;
     name = xmlTextReaderConstName(reader);
