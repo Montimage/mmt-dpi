@@ -1123,25 +1123,31 @@ enum {
     GTP_PROTOCOL_TYPE,
     GTP_RESERVED,
     GTP_EXTENSION_HEADER,
-    GTP_SEQUENCE_NUMBER,
+    GTP_SEQ_CHECK,
     GTP_NPDU_NUMBER,
     // Message
     GTP_MESSAGE_TYPE,
     GTP_LENGTH,
     GTP_TEID,
-    GTP_ATTRIBUTES_NB = GTP_TEID
+    GTP_SEQ_NUM,
+    GTP_IMSI_MMC,
+    GTP_IMSI_MNC,
+    GTP_ATTRIBUTES_NB = GTP_IMSI_MNC
 };
 
 #define GTP_VERSION_ALIAS               "version"
 #define GTP_PROTOCOL_TYPE_ALIAS         "proto_type"
 #define GTP_RESERVED_ALIAS              "reserved"
 #define GTP_EXTENSION_HEADER_ALIAS      "extension_header"
-#define GTP_SEQUENCE_NUMBER_ALIAS       "sequence_number"
+#define GTP_SEQ_CHECK_ALIAS             "seq_check"
 #define GTP_NPDU_NUMBER_ALIAS           "ndpu_number"
 // Message
 #define GTP_MESSAGE_TYPE_ALIAS          "message_type"
 #define GTP_LENGTH_ALIAS                "length"
 #define GTP_TEID_ALIAS                  "teid"
+#define GTP_SEQ_NUM_ALIAS               "seq_num"
+#define GTP_IMSI_MMC_ALIAS                  "imsi_mmc"
+#define GTP_IMSI_MNC_ALIAS                  "imsi_mnc"
 
 //////////// END OF GTP PROTOCOL ATTRIBUTES ////////////////////
 
