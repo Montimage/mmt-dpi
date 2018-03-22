@@ -4,6 +4,7 @@ RELEASE NOTES
 Version 1.6.12.3
 - Add new API to extract protocol attributes with encapsulation index
 - Extract some more information in GTP: sequence number, IMSI values
+- Extract RF_FLAG in IP header
 
 Version 1.6.12.2
 - Open API to register evasion_event_handler

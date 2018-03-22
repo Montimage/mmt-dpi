@@ -106,6 +106,21 @@ int ip_ihl_extraction(const ipacket_t * packet, unsigned proto_index,
     return 1;
 }
 
+int ip_rf_extraction(const ipacket_t * packet, unsigned proto_index,
+                     attribute_t * extracted_data) {
+
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    int attribute_offset = extracted_data->position_in_packet;
+    //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
+
+    if (*((unsigned char *) & packet->data[proto_offset + attribute_offset]) & 0x80) {
+        *((unsigned char *) extracted_data->data) = 1;
+    } else {
+        *((unsigned char *) extracted_data->data) = 0;
+    }
+    return 1;
+}
+
 int ip_df_extraction(const ipacket_t * packet, unsigned proto_index,
                      attribute_t * extracted_data) {
 
@@ -120,6 +135,7 @@ int ip_df_extraction(const ipacket_t * packet, unsigned proto_index,
     }
     return 1;
 }
+
 
 int ip_mf_extraction(const ipacket_t * packet, unsigned proto_index,
                      attribute_t * extracted_data) {
@@ -1334,6 +1350,7 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_PROTO_TOS, IP_PROTO_TOS_ALIAS, MMT_U8_DATA, sizeof (char), 1, SCOPE_PACKET, general_byte_to_byte_extraction},
     {IP_TOT_LEN, IP_TOT_LEN_ALIAS, MMT_U16_DATA, sizeof (short), 2, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {IP_IDENTIFICATION, IP_IDENTIFICATION_ALIAS, MMT_U16_DATA, sizeof (short), 4, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+    {IP_RF_FLAG, IP_RF_FLAG_ALIAS, MMT_U8_DATA, sizeof (char), 6, SCOPE_PACKET, ip_rf_extraction},
     {IP_DF_FLAG, IP_DF_FLAG_ALIAS, MMT_U8_DATA, sizeof (char), 6, SCOPE_PACKET, ip_df_extraction},
     {IP_MF_FLAG, IP_MF_FLAG_ALIAS, MMT_U8_DATA, sizeof (char), 6, SCOPE_PACKET, ip_mf_extraction},
     {IP_FRAG_OFFSET, IP_FRAG_OFFSET_ALIAS, MMT_U16_DATA, sizeof (short), 6, SCOPE_PACKET, ip_frag_offset_extraction},

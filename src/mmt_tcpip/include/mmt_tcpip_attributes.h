@@ -27,6 +27,7 @@ enum ip_attributes {
     IP_PROTO_TOS,
     IP_TOT_LEN,
     IP_IDENTIFICATION,
+    IP_RF_FLAG,
     IP_DF_FLAG,
     IP_MF_FLAG,
     IP_FRAG_OFFSET,
@@ -59,6 +60,7 @@ enum ip_attributes {
 #define IP_PROTO_TOS_ALIAS      "proto_tos"
 #define IP_PROTO_TTL_ALIAS      "proto_ttl"
 #define IP_TOT_LEN_ALIAS        "tot_len"
+#define IP_RF_FLAG_ALIAS        "rf_flag"
 #define IP_DF_FLAG_ALIAS        "df_flag"
 #define IP_MF_FLAG_ALIAS        "mf_flag"
 #define IP_FRAG_OFFSET_ALIAS    "frag_offset"
