@@ -137,13 +137,49 @@ int gtp_extension_header_flag_extraction(const ipacket_t * packet, unsigned prot
 	return 1;
 }
 
-int gtp_sequence_number_flag_extraction(const ipacket_t * packet, unsigned proto_index,
+int gtp_seq_check_flag_extraction(const ipacket_t * packet, unsigned proto_index,
                                         attribute_t * extracted_data) {
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	struct gtp_header_generic * gtp = (struct gtp_header_generic *) & packet->data[proto_offset];
 	*((unsigned char *) extracted_data->data) = gtp->sequence_number;
 	return 1;
+}
+
+int gtp_seq_num_extraction(const ipacket_t * packet, unsigned proto_index,
+                                    attribute_t * extracted_data) {
+
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	if(packet->data[proto_offset + 1] == 0x10 || packet->data[proto_offset + 1] == 0x12){
+		int attribute_offset = extracted_data->position_in_packet;
+		*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset]));
+		return 1;
+	} 
+	return 0;
+}
+
+int gtp_imsi_mmc_extraction(const ipacket_t * packet, unsigned proto_index,
+                                    attribute_t * extracted_data) {
+
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	if(packet->data[proto_offset + 1] == 0x10){
+		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
+		return 1;
+	} 
+	extracted_data->data = NULL;
+	return 0;
+}
+
+int gtp_imsi_mnc_extraction(const ipacket_t * packet, unsigned proto_index,
+                                    attribute_t * extracted_data) {
+
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	if(packet->data[proto_offset + 1] == 0x10){
+		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
+		return 1;
+	} 
+	extracted_data->data = NULL;
+	return 0;
 }
 
 int gtp_npdu_number_flag_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -161,11 +197,14 @@ static attribute_metadata_t gtp_attributes_metadata[GTP_ATTRIBUTES_NB] = {
 	{GTP_PROTOCOL_TYPE, GTP_PROTOCOL_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_protocol_type_flag_extraction},
 	{GTP_RESERVED, GTP_RESERVED_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_reserved_flag_extraction},
 	{GTP_EXTENSION_HEADER, GTP_EXTENSION_HEADER_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_extension_header_flag_extraction},
-	{GTP_SEQUENCE_NUMBER, GTP_SEQUENCE_NUMBER_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_sequence_number_flag_extraction},
+	{GTP_SEQ_CHECK, GTP_SEQ_CHECK_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_seq_check_flag_extraction},
 	{GTP_NPDU_NUMBER, GTP_NPDU_NUMBER_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_npdu_number_flag_extraction},
 	{GTP_MESSAGE_TYPE, GTP_MESSAGE_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 1, SCOPE_PACKET, general_byte_to_byte_extraction},
 	{GTP_LENGTH, GTP_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), 2, SCOPE_PACKET, general_short_extraction_with_ordering_change},
 	{GTP_TEID, GTP_TEID_ALIAS, MMT_U32_DATA, sizeof (int), 4, SCOPE_PACKET, general_int_extraction_with_ordering_change},
+	{GTP_SEQ_NUM, GTP_SEQ_NUM_ALIAS, MMT_U16_DATA, sizeof (short), 8, SCOPE_PACKET, gtp_seq_num_extraction},
+	{GTP_IMSI_MMC, GTP_IMSI_MMC_ALIAS, MMT_U16_DATA, sizeof (short), 13, SCOPE_PACKET, gtp_imsi_mmc_extraction},
+	{GTP_IMSI_MNC, GTP_IMSI_MNC_ALIAS, MMT_U16_DATA, sizeof (short), 14, SCOPE_PACKET, gtp_imsi_mnc_extraction},
 };
 
 int init_proto_gtp_struct() {

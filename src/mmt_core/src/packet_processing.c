@@ -1694,6 +1694,28 @@ void * get_attribute_extracted_data(const ipacket_t * ipacket, uint32_t proto_id
     return NULL;
 }
 
+void * get_attribute_extracted_data_encap_index(const ipacket_t * ipacket, uint32_t proto_id, uint32_t field_id, unsigned encap_index) {
+    unsigned index = 0;
+    unsigned encap = 0;
+    for (; index < ipacket->proto_hierarchy->len; index++) {
+        if (proto_id == ipacket->proto_hierarchy->proto_path[index]) {
+            if(encap_index == encap){
+#ifdef DEBUG
+                (void)fprintf( stderr, "[debug] get_attribute_extracted_data: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %"PRIu32" , field_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,field_id, index);
+#endif /*DEBUG*/
+                return _get_attribute_extracted_data_at_index(ipacket, proto_id, field_id, index);
+            }
+            encap++;
+        }
+    }
+
+#ifdef DEBUG
+    (void)fprintf( stderr, "[debug] get_attribute_extracted_data(): proto_id not found in pathpacket - %"PRIu64", proto_id - %"PRIu32" , field_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,field_id, index);
+#endif /*DEBUG*/
+
+    return NULL;
+}
+
 attribute_t * get_extracted_attribute(const ipacket_t * ipacket, uint32_t proto_id, uint32_t field_id) {
     unsigned index = 0;
     for (; index < ipacket->proto_hierarchy->len; index++) {

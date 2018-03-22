@@ -1,6 +1,10 @@
 RELEASE NOTES
 ---
 
+Version 1.6.12.3
+- Add new API to extract protocol attributes with encapsulation index
+- Extract some more information in GTP: sequence number, IMSI values
+
 Version 1.6.12.2
 - Open API to register evasion_event_handler
 - Handle some IP fragmentation event:

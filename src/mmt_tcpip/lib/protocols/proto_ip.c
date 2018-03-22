@@ -312,7 +312,7 @@ int ip_classify_next_proto(ipacket_t * ipacket, unsigned index) {
         break;
     // IPv4
     case 4:
-        retval.proto_id = PROTO_IP_IN_IP;
+        retval.proto_id = PROTO_IP;
         retval.offset = (ip_hdr->ihl * 4);
         retval.status = Classified;
         break;
@@ -367,7 +367,7 @@ int ip_classify_next_proto(ipacket_t * ipacket, unsigned index) {
         retval.status = Classified;
         break;
     case 94:
-        retval.proto_id = PROTO_IP_IN_IP;
+        retval.proto_id = PROTO_IP;
         retval.offset = (ip_hdr->ihl * 4);
         retval.status = Classified;
         break;
