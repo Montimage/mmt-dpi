@@ -1522,7 +1522,7 @@ static inline void rtsp_parse_packet_acceptline(ipacket_t * ipacket) {
 
 static inline void parseHttpSubprotocol(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    uint32_t proto;
+    uint32_t proto = PROTO_UNKNOWN;
     if (packet->detected_protocol_stack[0] != PROTO_HTTP)
         return;
 

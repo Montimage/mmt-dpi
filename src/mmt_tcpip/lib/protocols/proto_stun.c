@@ -345,7 +345,7 @@ uint32_t check_stun_internal(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
-    uint32_t proto;
+    uint32_t proto = PROTO_UNKNOWN;
 
     if (packet->iph /* IPv4 only */) {
         /*
