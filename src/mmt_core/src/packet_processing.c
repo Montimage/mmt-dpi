@@ -2883,7 +2883,9 @@ void fire_evasion_event(ipacket_t * ipacket, uint32_t proto_id, unsigned proto_i
     if(mmt_handler->evasion_handler){
         mmt_handler->evasion_handler->function(ipacket,proto_id,proto_index,evasion_id,data,mmt_handler->evasion_handler->args);
     }else{
+#ifdef DEBUG        
         printf("There is no evasion_handler!");
+#endif
     }
 }
 
