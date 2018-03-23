@@ -37,6 +37,8 @@ enum ip_attributes {
     IP_SRC,
     IP_DST,
     IP_OPTS,
+    IP_OPTS_TYPE,
+    IP_PADDING_CHECK,
     IP_RTT,
     IP_CLIENT_ADDR,
     IP_SERVER_ADDR,
@@ -68,6 +70,8 @@ enum ip_attributes {
 #define IP_HEADER_LEN_ALIAS     "header_len"
 #define IP_VERSION_ALIAS        "version"
 #define IP_OPTS_ALIAS        "options"
+#define IP_OPTS_TYPE_ALIAS        "opts_type"
+#define IP_PADDING_CHECK_ALIAS        "padding_check"
 #define IP_RTT_ALIAS        "ip_rtt"
 #define IP_CHECKSUM_MMT_ALIAS       "checksum"
 #define IP_CLIENT_ADDR_ALIAS    "client_addr"
