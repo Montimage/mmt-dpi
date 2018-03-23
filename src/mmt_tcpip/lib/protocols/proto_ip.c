@@ -11,6 +11,14 @@
 #include "proto_ip_dgram.h"
 #define _STDC_FORMAT_MARCROS
 #include <inttypes.h>
+
+/**
+ * IP protocol references:
+ * - IP parameters value: https://www.iana.org/assignments/ip-parameters/ip-parameters.xhtml
+ * - IP packet structure: http://www.freesoft.org/CIE/Course/Section3/7.htm
+ * - 
+ */
+
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
 bool ip_session_comp(void * key1, void * key2) {
@@ -228,6 +236,70 @@ int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attrib
     return 0;
 }
 
+
+int ip_opts_type_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
+    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
+    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+
+    struct iphdr * ip_hdr = (struct iphdr *) (& packet->data[proto_offset]);
+    int ihl = ip_hdr->ihl;
+    if (ihl > 5) {
+        general_byte_to_byte_extraction(packet, proto_index, extracted_data);
+        return 1;
+    }
+    return 0;
+}
+
+int ip_padding_check_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
+    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
+    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+
+    struct iphdr * ip_hdr = (struct iphdr *) (& packet->data[proto_offset]);
+    int ihl = ip_hdr->ihl;
+    if (ihl > 5) {
+        int total_opt_len = (ihl - 5) * 4;
+        int checked_len = 0;
+        while (checked_len < total_opt_len){
+            if (packet->data[proto_offset + 5*4 + checked_len] == 0x00){
+                // EOL presents
+                checked_len++;
+                if (checked_len == total_opt_len){
+                    return 0;
+                }else{
+                    int i = 0;
+                    for (i = checked_len + 1; i < total_opt_len; i++){
+                        if (packet->data[proto_offset + 5*4 + checked_len] != 0x00){
+                           *((uint8_t *) extracted_data->data) = 1;
+                           return 1;
+                        }
+                    }
+                    *((uint8_t *) extracted_data->data) = 0;
+                    return 1;
+                }
+            }else{
+                uint8_t opt_len = *((uint8_t*)&packet->data[proto_offset + 5*4 + 1 + checked_len]);
+                checked_len += opt_len;
+                if (opt_len == total_opt_len){
+                    // There is only one option
+                    return 0;
+                }
+
+                if (opt_len > total_opt_len){
+                    // Not a standard options
+                    return 0;
+                }
+
+            }
+        }
+    }
+    return 0;
+}
 
 /*
  * End of IP data extraction routines
@@ -1360,6 +1432,8 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_SRC, IP_SRC_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), 12, SCOPE_PACKET, general_int_extraction},
     {IP_DST, IP_DST_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), 16, SCOPE_PACKET, general_int_extraction},
     {IP_OPTS, IP_OPTS_ALIAS, MMT_DATA_POINTER,  sizeof (void *), -2, SCOPE_PACKET, ip_options_extraction},
+    {IP_OPTS_TYPE, IP_OPTS_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 20, SCOPE_PACKET, ip_opts_type_extraction},
+    {IP_PADDING_CHECK, IP_PADDING_CHECK_ALIAS, MMT_U8_DATA,  sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_padding_check_extraction},
     {IP_CLIENT_ADDR, IP_CLIENT_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_client_addr_extraction},
     {IP_SERVER_ADDR, IP_SERVER_ADDR_ALIAS, MMT_DATA_IP_ADDR, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_server_addr_extraction},
     {IP_CLIENT_PORT, IP_CLIENT_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip_client_port_extraction},
