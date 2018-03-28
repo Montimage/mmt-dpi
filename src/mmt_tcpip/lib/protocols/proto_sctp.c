@@ -14,7 +14,7 @@ static attribute_metadata_t sctp_attributes_metadata[SCTP_ATTRIBUTES_NB] = {
     {SCTP_CH_TYPE, SCTP_CH_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 12, SCOPE_PACKET, general_char_extraction},
     {SCTP_CH_FLAGS, SCTP_CH_FLAGS_ALIAS, MMT_U8_DATA, sizeof (char), 13, SCOPE_PACKET, general_char_extraction},
     {SCTP_CH_LENGTH, SCTP_CH_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), 14, SCOPE_PACKET, general_short_extraction_with_ordering_change},
-   
+
 };
 
 static attribute_metadata_t sctp_data_attributes_metadata[SCTP_DATA_ATTRIBUTES_NB] = {
@@ -78,12 +78,11 @@ int sctp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.offset = 12; //TODO replace with defination
             retval.status = Classified;
             break;
-
-        default:
-            retval.proto_id = PROTO_UNKNOWN;
-            retval.offset = 12; //TODO replace with defination
-            retval.status = Classified;
-            break;
+        // default:
+        //     retval.proto_id = PROTO_UNKNOWN;
+        //     retval.offset = 12; //TODO replace with defination
+        //     retval.status = Classified;
+        //     break;
     }
     return set_classified_proto(ipacket, index + 1, retval);
     //return retval;
