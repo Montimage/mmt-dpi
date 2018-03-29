@@ -35,10 +35,11 @@ $(SDKLIB)/$(LIBTCPIP)_lib.a: $(SDKLIB)/$(LIBTCPIP).a
 	$(QUIET) $(DLLTOOL) -l $@ $^
 
 .INTERMEDIATE: $(SDKLIB)/$(LIBTCPIP)_lib.a
-
+ifdef ENABLESEC
 # SECURITY
 
 $(SDKLIB)/$(LIBSECURITY).dll: $(SDKLIB)/$(LIBSECURITY).a $(SDKLIB)/$(LIBTCPIP)_lib.a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--output-def,$(SDKLIB)/$(LIBSECURITY).def,--out-implib,$(SDKLIB)/$(LIBSECURITY)_dll.a -Wl,--soname=$(LIBSECURITY).dll $(LDFLAGS) -lmmt_core -lxml2-2 -lws2_32
 
+endif
