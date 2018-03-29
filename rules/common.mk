@@ -19,8 +19,8 @@ MKDIR  	 := mkdir -p
 #  - - - - -
 
 ifndef VERBOSE
- QUIET := @
- export QUIET
+QUIET := @
+export QUIET
 endif
 
 #  - - - - -
@@ -72,15 +72,17 @@ endif
 SRCDIR       := $(TOPDIR)/src
 SRCINC       := $(SRCDIR)/mmt_core/public_include  \
                 $(SRCDIR)/mmt_core/private_include \
-                $(SRCDIR)/mmt_fuzz_engine          \
-                $(SRCDIR)/mmt_tcpip/include        \
-                $(SRCDIR)/mmt_tcpip/lib
+                $(SRCDIR)/mmt_tcpip/include \
+                $(SRCDIR)/mmt_tcpip/lib	\
+				$(SRCDIR)/mmt_fuzz_engine
 
 SDKDIR       := $(TOPDIR)/sdk
 SDKDOC       := $(SDKDIR)/doc
 SDKINC       := $(SDKDIR)/include
 SDKINC_TCPIP := $(SDKDIR)/include/tcpip
+ifdef ENABLESEC
 SDKINC_FUZZ  := $(SDKDIR)/include/fuzz
+endif
 SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
@@ -96,8 +98,10 @@ $(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM)
 LIBCORE     := libmmt_core
 LIBTCPIP    := libmmt_tcpip
 LIBEXTRACT  := libmmt_extract
+ifdef ENABLESEC
 LIBSECURITY := libmmt_security
 LIBFUZZ     := libmmt_fuzz
+endif
 
 CORE_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_core/src/*.c)) \
@@ -110,14 +114,19 @@ TCPIP_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/*.c)) \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/protocols/*.c))
 
+$(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+$(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+
+ifdef ENABLESEC
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))
 
 SECURITY_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_security/*.c))
 
-$(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
-$(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+$(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+$(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+endif
 
 # CORE
 
@@ -127,10 +136,11 @@ $(SDKLIB)/$(LIBCORE).a: $(SDKLIB) $(CORE_OBJECTS)
 
 # TCP/IP
 
-$(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS) 
+$(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
-	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS) 
+	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS)
 
+ifdef ENABLESEC
 # FUZZ
 
 $(SDKLIB)/$(LIBFUZZ).a: $(SDKLIB) $(FUZZ_OBJECTS)
@@ -142,7 +152,7 @@ $(SDKLIB)/$(LIBFUZZ).a: $(SDKLIB) $(FUZZ_OBJECTS)
 $(SDKLIB)/$(LIBSECURITY).a: $(SDKLIB) $(SECURITY_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(SECURITY_OBJECTS)
-
+endif
 
 #  - - - - - - - -
 #  I N C L U D E S
@@ -154,10 +164,13 @@ SDK_HEADERS       = $(addprefix $(SDKINC)/,$(notdir $(MMT_HEADERS)))
 MMT_TCPIP_HEADERS = $(wildcard $(SRCDIR)/mmt_tcpip/include/*.h)
 SDK_TCPIP_HEADERS = $(addprefix $(SDKINC_TCPIP)/,$(notdir $(MMT_TCPIP_HEADERS)))
 
+includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS)
+
+ifdef ENABLESEC
 MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)
 SDK_FUZZ_HEADERS = $(addprefix $(SDKINC_FUZZ)/,$(notdir $(MMT_FUZZ_HEADERS)))
-
-includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_FUZZ_HEADERS)
+includes: $(SDK_FUZZ_HEADERS)
+endif
 
 $(SDKINC)/%.h: $(SRCDIR)/mmt_core/public_include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
@@ -167,11 +180,17 @@ $(SDKINC_TCPIP)/%.h: $(SRCDIR)/mmt_tcpip/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 
+$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP)
+
+ifdef ENABLESEC
 $(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 
-$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ)
+$(SDK_HEADERS): $(SDKINC_FUZZ)
+endif
+
+
 
 
 #  - - - - -
@@ -192,7 +211,7 @@ documentation: $(SDKDOC)
 #  E X A M P L E S
 #  - - - - - - - -
 
-MMT_EXAMPLES_SRC = attribute_handler_session_counter.c extract_all.c google-fr.pcap html_integration.c html_integration.h MAC_extraction.c packet_handler.c proto_attributes_iterator.c reconstruct_body.c simple_traffic_reporting.c 
+MMT_EXAMPLES_SRC = attribute_handler_session_counter.c extract_all.c google-fr.pcap html_integration.c html_integration.h MAC_extraction.c packet_handler.c proto_attributes_iterator.c reconstruct_body.c simple_traffic_reporting.c
 SDK_EXAMPLES_SRC = $(addprefix $(SDKXAM)/,$(MMT_EXAMPLES_SRC))
 
 examples: $(SDK_EXAMPLES_SRC)
