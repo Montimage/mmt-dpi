@@ -72,17 +72,17 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	# Copy resources
 	echo $(SDKLIB)
 	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi/lib
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so
+	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_core.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
+	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_fuzz.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
+	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_security.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
+	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so
 	$(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
 	# $(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
 	# $(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
 	$(QUIET) $(CP) -r $(SDKXAM) $(BUILD_DIR)/opt/mmt
 	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/plugins/libmmt_tcpip.so
 	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
-	
+
 	$(QUIET) dpkg-deb -b $(BUILD_DIR)
 	$(QUIET) $(RM) $(BUILD_DIR)
 
@@ -106,17 +106,17 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/etc/ld.so.conf.d/
 	# Copy resources
 	echo $(SDKLIB)
-	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi/lib	
+	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi/lib
 	$(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
 	$(QUIET) $(CP) -r $(SDKXAM) $(BUILD_DIR)/opt/mmt
 	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/plugins/libmmt_tcpip.so
 	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
 	# Make links
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
-	$(QUIET) ln -s $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so.* $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so
-	
+	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_core.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
+	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_fuzz.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
+	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_security.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
+	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so
+
 	# Build .rpm file ...
 	mkdir -p ./rpmbuild/{RPMS,BUILD}
 
@@ -158,7 +158,7 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 
 
 #  - - - - - - - - - -
-#  B U I L D   Z I P 
+#  B U I L D   Z I P
 #  - - - - - - - - - -
 
 
@@ -186,9 +186,9 @@ clean:
 	$(QUIET) $(RM) $(SDKLIB) $(SDKBIN) $(SDKINC) $(SDKDOC) $(SDKXAM) $(BUILD_DIR) rpmbuild mmt-dpi.spec
 
 
-# - - - - - - - - - - 
+# - - - - - - - - - -
 # D I S T - C L E A N
-# - - - - - - - - - - 
+# - - - - - - - - - -
 
 dist-clean:
 	@ echo "[MMT-]> Going to remove MMT"
@@ -196,7 +196,7 @@ dist-clean:
 	$(QUIET) $(RM) /etc/ld.so.conf.d/mmt.conf
 	@ echo "[MMT-]> Done!"
 
-# - - - - - - - - - - 
+# - - - - - - - - - -
 # T E S T
 # - - - - - - - - - -
 
