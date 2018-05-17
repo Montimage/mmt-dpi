@@ -443,7 +443,7 @@ void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
 
     // Clean the session context
     ((generic_session_context_cleanup_function) ((protocol_instance_t *) timed_out_session->protocol_container_context)->protocol->session_context_cleanup)((protocol_instance_t *) timed_out_session->protocol_container_context,
-            timed_out_session, NULL);    
+            timed_out_session, NULL);
 }
 
 void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args) {
@@ -1040,7 +1040,7 @@ static attribute_metadata_t proto_stats_attributes_metadata[PROTO_STATS_ATTRIBUT
     {PROTO_DATA, PROTO_DATA_LABEL, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_data_extraction},
     {PROTO_PAYLOAD, PROTO_PAYLOAD_LABEL, MMT_DATA_POINTER, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_payload_extraction},
     {PROTO_PACKET_COUNT, PROTO_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_packet_count_extraction},
-    {PROTO_DATA_VOLUME, PROTO_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_data_volume_extraction},    
+    {PROTO_DATA_VOLUME, PROTO_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_data_volume_extraction},
     {PROTO_PAYLOAD_VOLUME, PROTO_PAYLOAD_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_payload_volume_extraction},
     {PROTO_STATISTICS, PROTO_STATISTICS_LABEL, MMT_STATS, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_stats_extraction},
     {PROTO_FIRST_PACKET_TIME, PROTO_FIRST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_first_packet_time_extraction},
@@ -1098,7 +1098,7 @@ int unregister_protocol_by_name(char* proto_name) {
                 return 1;
             }
         }
-        
+
     }
     return 0;
 }
@@ -1432,7 +1432,7 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
     }
 #ifdef DEBUG
     (void)fprintf( stderr,"[debug] internal_extract_attribute (%p) : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u\n",tmp_attr_ref->extraction_function,ipacket->packet_id, tmp_attr_ref->proto_id, tmp_attr_ref->field_id, index);
-#endif /*DEBUG*/    
+#endif /*DEBUG*/
     // tmp_attr_ref->status = ATTRIBUTE_UNSET;
     return 0;
 }
@@ -1493,12 +1493,12 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
         }
     } else {
         /* THIS IS SCOPE_EVENT  should do nothing
-        LN: But we shoud return something not NULL ???? 
+        LN: But we shoud return something not NULL ????
         */
     }
 #ifdef DEBUG
     if(!(tmp_attr_ref->scope & SCOPE_EVENT)){
-        (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : unexpected failure\n",ipacket->packet_id, proto_id, attribute_id, index );    
+        (void)fprintf( stderr,"[error] get_attribute_extracted_data_at_index : packet - %"PRIu64", proto_id - %"PRIu32", attribute_id - %"PRIu32" - index: %u : unexpected failure\n",ipacket->packet_id, proto_id, attribute_id, index );
     }
 #endif /*DEBUG*/
     return NULL;
@@ -1507,7 +1507,7 @@ static inline void * _get_attribute_extracted_data_at_index(const ipacket_t * ip
 void * get_attribute_extracted_data_at_index(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
 #ifdef DEBUG
         (void)fprintf( stderr,"[debug] get_attribute_extracted_data_at_index: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %"PRIu32" , attribute_id - %"PRIu32", index - %u \n", ipacket->packet_id,proto_id,attribute_id, index);
-#endif /*DEBUG*/ 
+#endif /*DEBUG*/
     return _get_attribute_extracted_data_at_index( ipacket, proto_id, attribute_id, index);
 }
 
@@ -1603,7 +1603,7 @@ void * _get_attribute_extracted_data_at_index_by_name(const ipacket_t * ipacket,
     }
 #ifdef DEBUG
         (void)fprintf( stderr, "[debug] _get_attribute_extracted_data_at_index_by_name: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", protocol_name - %s , attribute_name - %s, index - %u \n", ipacket->packet_id,protocol_name,attribute_name, index);
-#endif /*DEBUG*/    
+#endif /*DEBUG*/
     return _get_attribute_extracted_data_at_index(ipacket, proto_id, attribute_id, index);
 }
 
@@ -2761,7 +2761,7 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
             // Update the fist packet
             if (proto_stats->packets_count == 1) {
                 proto_stats->first_packet_time = ipacket->p_hdr->ts;
-                proto_stats->ip_frag_packets_count = 0;    
+                proto_stats->ip_frag_packets_count = 0;
                 proto_stats->ip_frag_data_volume = 0;
                 proto_stats->ip_df_packets_count = 0;
                 proto_stats->ip_df_data_volume = 0;
@@ -2771,11 +2771,11 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
             // Check if this is IP protocol, then update ip_fragment information
             if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179)){
                 if(ipacket->is_fragment){
-                    proto_stats->ip_frag_packets_count ++;    
+                    proto_stats->ip_frag_packets_count ++;
                     if(ipacket->is_completed){
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
                         proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
-                        proto_stats->ip_df_data_volume += ipacket->total_caplen;    
+                        proto_stats->ip_df_data_volume += ipacket->total_caplen;
                     }else{
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
                     }
@@ -2883,7 +2883,7 @@ void fire_evasion_event(ipacket_t * ipacket, uint32_t proto_id, unsigned proto_i
     if(mmt_handler->evasion_handler){
         mmt_handler->evasion_handler->function(ipacket,proto_id,proto_index,evasion_id,data,mmt_handler->evasion_handler->args);
     }else{
-#ifdef DEBUG        
+#ifdef DEBUG
         printf("There is no evasion_handler!");
 #endif
     }
@@ -2970,14 +2970,15 @@ void clean_packet_with_reassembly(ipacket_t *ipacket){
         // data was dynamically allocated during the reassembly process:
         //   . free dynamically allocated ipacket->data
         //   . reset ipacket->data to its original value
+        if(ipacket->internal_packet){
+            mmt_free(ipacket->internal_packet);
+        }
         mmt_free((void *) ipacket->data);
         ipacket->data = ipacket->original_data;
     }
     // mmt_free(ipacket->proto_hierarchy);
     // mmt_free(ipacket->proto_headers_offset);
     // mmt_free(ipacket->proto_classif_status);
-    mmt_free((void *) ipacket->data);
-    mmt_free(ipacket);
 }
 
 /**
@@ -3019,7 +3020,7 @@ void process_packet_handler(ipacket_t *ipacket) {
 
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
-    ipacket->mmt_handler->clean_packet(ipacket);    
+    ipacket->mmt_handler->clean_packet(ipacket);
 }
 
 /**
@@ -3049,7 +3050,7 @@ void mmt_drop_packet(ipacket_t *ipacket) {
 int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * parent_stats, unsigned index) {
 
     debug("proto_packet_process of %"PRIu64" index: %d", ipacket->packet_id, index);
-    
+
     int target = MMT_CONTINUE;
     int is_new_session = 0;
     int proto_offset = get_packet_offset_at_index(ipacket, index);
@@ -3069,7 +3070,7 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
         parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
         // fire_evasion_event(ipacket, configured_protocol->protocol->proto_id, index, 1, (void *) NULL);
-    } 
+    }
     // else {
         //Update the protocol statistics
         parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
@@ -3085,10 +3086,10 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     }
 
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
-    if (target == MMT_CONTINUE) {        
-        
-        proto_packet_classify_next(ipacket, configured_protocol, index);    
-        
+    if (target == MMT_CONTINUE) {
+
+        proto_packet_classify_next(ipacket, configured_protocol, index);
+
         if (ipacket->session != NULL) {
             // Update proto_path_direction
             if (ipacket->session->proto_path.len > 0) {
@@ -3105,9 +3106,9 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
                 }else{
                     if(ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] != ipacket->session->proto_path.proto_path[proto_path_len - 1]){
                         ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] = ipacket->session->proto_path.proto_path[proto_path_len - 1];
-                    }    
+                    }
                 }
-                
+
             }
         }
         // Need to check if the ipacket is still exist
@@ -3235,6 +3236,7 @@ int enable_mmt_reassembly(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->process_packet = process_packet_with_reassembly;
         mmt->clean_packet = clean_packet_with_reassembly;
+        mmt->has_reassembly = 1;
         return 1;
     }
     return 0;
@@ -3244,6 +3246,7 @@ int disable_mmt_reassembly(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->process_packet = process_packet;
         mmt->clean_packet = clean_packet;
+        mmt->has_reassembly = 0;
         return 1;
     }
     return 0;
@@ -3306,7 +3309,7 @@ int disable_ip_address_classify(mmt_handler_t *mmt)
 }
 
 int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
-    
+
 #ifdef CFG_OS_MAX_PACKET
     if ( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
         (void)fprintf( stderr, "This demo version of MMT is limited to %lu packets.\n", (unsigned long)CFG_OS_MAX_PACKET );
