@@ -6,6 +6,7 @@ Version 1.6.13.0
 - Extract some more information in GTP: sequence number, IMSI values
 - Extract RF_FLAG in IP header
 - Extract ip.opts_type and ip.padding_check
+- Fix setting value of has_reassembly when enable/disable tcp_reassembly
 
 Version 1.6.12.2
 - Open API to register evasion_event_handler
@@ -30,7 +31,7 @@ Version 1.6.11.0
 - Add new protocol stack: PROTO_LOOPBACK -> Prove that PROTO_VNC has been classified correctly
 - Add classification of PROTO_RTSP which is not based on port number
 - Add protocols: TPKT, COTP, S7COMM
-- Update Makefile, add option to build installation file: 
+- Update Makefile, add option to build installation file:
 	+ make zip: create zip file to install mmt-dpi on unix machine
 	+ make deb: create deb file to install mmt-dpi on debian machine
 	+ make rpm: create rpm file to install mmt-dpi on centos (redhat) machine
@@ -105,7 +106,7 @@ Version 1.6.9.1
 	- Replace PROTO_TLS by PROTO_CDISCOUNT
 	- Replace PROTO_YAHOOGAMES by PROTO_ALLOCINE
 	- Replace PROTO_COTENDO by PROTO_FRANCETVINFO
-	- Replace PROTO_VOXTEL by PROTO_STACKPATH	
+	- Replace PROTO_VOXTEL by PROTO_STACKPATH
 
 ## Version 1.6.9.0
 - Fixed some protocols based on hostname -> there are 8 protocol based on the hostname that does not exist anymore
@@ -148,11 +149,11 @@ Version 1.6.9.1
 - Fixed in HTTP protocol and SSL protocol: Change excluded_protocol_bitmask
 - Fixed problem with IP Defragmentation and Packet padding
 - Add PROTO_UNKNOWN after TCP if cannot classify TCP payload
-- Refactory Makefile with some compiling options: 
-	+ NDEBUG = 1 : show all messages in debug(...), 
-	+ DEBUG = 1 : enable debug mode, 
-	+ SHOWLOG = 1 : show all messages in MMT_LOG(...), 
-	+ LIGHTSDK = 1 : compile the light version of SDK 
+- Refactory Makefile with some compiling options:
+	+ NDEBUG = 1 : show all messages in debug(...),
+	+ DEBUG = 1 : enable debug mode,
+	+ SHOWLOG = 1 : show all messages in MMT_LOG(...),
+	+ LIGHTSDK = 1 : compile the light version of SDK
 
 ## Release version 1.6.6.0
 - Add timestamp to built .deb and .zip files
@@ -197,7 +198,7 @@ Version 1.6.9.1
 - Merge with ndn_http branch
 - Classify all NDN packets as NDN_HTTP packets
 - Change the installation location. Moved everything (lib, include, examples) to `/opt/mmt`. Created `/etc/ld.so.conf.d/mmt.conf` to update the environment variable for MMT
-- Update script generates the installation file (.deb, .zip) 
+- Update script generates the installation file (.deb, .zip)
 
 
 ## Release version 1.6.2.1
@@ -213,16 +214,16 @@ Version 1.6.9.1
 ## Release version 1.6.1.0
 12 April 2016
 - Added and updated some protocols:
-	+ oracle 
-	+ quic 
-	+ redis_net 
-	+ vmware 
-	+ viber 
-	+ twitter 
-	+ skype 
-	+ mail_imap 
-	+ mail_pop 
-	+ mail_smtp 
+	+ oracle
+	+ quic
+	+ redis_net
+	+ vmware
+	+ viber
+	+ twitter
+	+ skype
+	+ mail_imap
+	+ mail_pop
+	+ mail_smtp
 - Applied software versioning method to version number of release
 
 ## Release version 1.6
