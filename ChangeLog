@@ -9,6 +9,7 @@ Version 1.6.13.0
 - Extract some more information in GTP: sequence number, IMSI values
 - Extract RF_FLAG in IP header
 - Extract ip.opts_type and ip.padding_check
+- Fix setting value of has_reassembly when enable/disable tcp_reassembly
 
 Version 1.6.12.2
 - Open API to register evasion_event_handler
