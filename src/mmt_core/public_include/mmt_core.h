@@ -149,6 +149,16 @@ typedef void (*generic_protocol_iteration_callback) (uint32_t proto_id, void * a
 typedef void (*generic_handler_iteration_callback) (mmt_handler_t *mmt_handler, void * args);
 
 /**
+ * Start process packet handlers
+ */
+MMTAPI void MMTCALL process_packet_handler(ipacket_t *ipacket);
+
+/**
+ * Drop a packet - stop analysing the packet
+*/
+MMTAPI void MMTCALL mmt_drop_packet(ipacket_t *ipacket);
+
+/**
  * Initializes the extraction. This function MUST be called first.
  * @return a positive value on success, 0 otherwise
  */
@@ -1090,7 +1100,7 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
    // ret = s1[19] - s2[19];
    // if ( size == 20 || ret != 0 )
    //     return ret;
-   // 
+   //
    // return memcmp( s1 + 20, s2 + 20, size - 20 );
 }
 
