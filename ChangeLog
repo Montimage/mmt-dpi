@@ -1,6 +1,10 @@
 RELEASE NOTES
 ---
 
+Version 1.6.13.1
+- Fix memory leak when using with mmt-reassembly library
+- Fix some bug in http.c and proto_tpkt.c
+
 Version 1.6.13.0
 - Add new API to extract protocol attributes with encapsulation index
 - Extract some more information in GTP: sequence number, IMSI values

@@ -1,4 +1,4 @@
-VERSION  := 1.6.13.0
+VERSION  := 1.6.13.1
 GIT_VERSION := $(shell git log --format="%h" -n 1)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
@@ -127,9 +127,9 @@ $(SDKLIB)/$(LIBCORE).a: $(SDKLIB) $(CORE_OBJECTS)
 
 # TCP/IP
 
-$(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS) 
+$(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
-	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS) 
+	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS)
 
 # FUZZ
 
@@ -192,7 +192,7 @@ documentation: $(SDKDOC)
 #  E X A M P L E S
 #  - - - - - - - -
 
-MMT_EXAMPLES_SRC = attribute_handler_session_counter.c extract_all.c google-fr.pcap html_integration.c html_integration.h MAC_extraction.c packet_handler.c proto_attributes_iterator.c reconstruct_body.c simple_traffic_reporting.c 
+MMT_EXAMPLES_SRC = attribute_handler_session_counter.c extract_all.c google-fr.pcap html_integration.c html_integration.h MAC_extraction.c packet_handler.c proto_attributes_iterator.c reconstruct_body.c simple_traffic_reporting.c
 SDK_EXAMPLES_SRC = $(addprefix $(SDKXAM)/,$(MMT_EXAMPLES_SRC))
 
 examples: $(SDK_EXAMPLES_SRC)
