@@ -3027,7 +3027,7 @@ void process_packet_handler(ipacket_t *ipacket) {
  * @param ipacket Packet to process
  */
 void mmt_drop_packet(ipacket_t *ipacket) {
-    printf("mmt_drop_packet of ipacket: %"PRIu64"\n", ipacket->packet_id);
+    fprintf(stderr,"[mmt_drop_packet] Drop packet: %"PRIu64"\n", ipacket->packet_id);
 
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
 
