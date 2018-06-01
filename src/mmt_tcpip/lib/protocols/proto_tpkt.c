@@ -45,10 +45,10 @@ int mmt_check_tpkt(ipacket_t * ipacket, unsigned index) {
         }
 
         if (packet->tcp != NULL) {
-            int tpkt_offset = get_packet_offset_at_index(ipacket, index + 1);
-            struct tpkthdr * tpkt_header = (struct tpkthdr *)&ipacket->data[tpkt_offset];
-            if (ntohs(tpkt_header->length) == payload_len) {
-                if (ntohs(packet->tcp->dest) == 102 || ntohs(packet->tcp->source) == 102) {
+            if (ntohs(packet->tcp->dest) == 102 || ntohs(packet->tcp->source) == 102) {
+                int tpkt_offset = get_packet_offset_at_index(ipacket, index + 1);
+                struct tpkthdr * tpkt_header = (struct tpkthdr *)&ipacket->data[tpkt_offset];
+                if (tpkt_header != NULL && ntohs(tpkt_header->length) == payload_len) {
                     int l3_offset = get_packet_offset_at_index(ipacket, index);
                     classified_proto_t tpkt_proto = tpkt_stack_classification(ipacket);
                     tpkt_proto.offset = tpkt_offset - l3_offset;
