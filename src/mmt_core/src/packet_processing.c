@@ -2976,14 +2976,13 @@ void clean_packet(ipacket_t *ipacket){
 }
 
 void clean_packet_with_reassembly(ipacket_t *ipacket){
-    //if ( (ipacket->data != ipacket->original_data) &&
-    //   (ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB) ) {
-        // data was dynamically allocated during the reassembly process:
-        //   . free dynamically allocated ipacket->data
-        //   . reset ipacket->data to its original value
-	mmt_free(ipacket->proto_hierarchy);
-    mmt_free(ipacket->proto_headers_offset);
-    mmt_free(ipacket->proto_classif_status);
+
+    if(ipacket->session){ // Only packet which has session need to be clean those information
+        if (ipacket->proto_hierarchy) mmt_free(ipacket->proto_hierarchy);
+        if (ipacket->proto_headers_offset) mmt_free(ipacket->proto_headers_offset);
+        if (ipacket->proto_classif_status) mmt_free(ipacket->proto_classif_status);
+    }
+
     mmt_free(ipacket->internal_packet);
 	mmt_free((void *) ipacket->data);
         //ipacket->data = ipacket->original_data;
