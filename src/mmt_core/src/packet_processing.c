@@ -2487,9 +2487,20 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             }
 
             //Now update the packet structure to point to the flow and the protocol hierarchy info
-            ipacket->proto_hierarchy      = &session->proto_path;
-            ipacket->proto_headers_offset = &session->proto_headers_offset;
-            ipacket->proto_classif_status = &session->proto_classif_status;
+            if(likely(!ipacket->mmt_handler->has_reassembly)){
+                ipacket->proto_hierarchy = &session->proto_path;
+                ipacket->proto_headers_offset = &session->proto_headers_offset;
+                ipacket->proto_classif_status = &session->proto_classif_status;
+            }else{
+                // TODO: copy value
+                ipacket->proto_headers_offset      = (proto_hierarchy_t*)mmt_malloc(sizeof(proto_hierarchy_t));
+                memcpy(ipacket->proto_headers_offset,&session->proto_headers_offset,sizeof(proto_hierarchy_t));
+                ipacket->proto_hierarchy      = (proto_hierarchy_t*)mmt_malloc(sizeof(proto_hierarchy_t));
+                memcpy(ipacket->proto_hierarchy,&session->proto_path,sizeof(proto_hierarchy_t));
+                ipacket->proto_classif_status      = (proto_hierarchy_t*)mmt_malloc(sizeof(proto_hierarchy_t));
+                memcpy(ipacket->proto_classif_status,&session->proto_classif_status,sizeof(proto_hierarchy_t));
+            }
+
             ipacket->session = session;
 
             //update the session basic statistics
@@ -2970,13 +2981,14 @@ void clean_packet_with_reassembly(ipacket_t *ipacket){
         // data was dynamically allocated during the reassembly process:
         //   . free dynamically allocated ipacket->data
         //   . reset ipacket->data to its original value
-	mmt_free(ipacket->internal_packet);
+	mmt_free(ipacket->proto_hierarchy);
+    mmt_free(ipacket->proto_headers_offset);
+    mmt_free(ipacket->proto_classif_status);
+    mmt_free(ipacket->internal_packet);
 	mmt_free((void *) ipacket->data);
         //ipacket->data = ipacket->original_data;
     mmt_free( ipacket );
-    // mmt_free(ipacket->proto_hierarchy);
-    // mmt_free(ipacket->proto_headers_offset);
-    // mmt_free(ipacket->proto_classif_status);
+
 }
 
 /**
