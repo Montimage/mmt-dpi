@@ -97,7 +97,7 @@ typedef struct field_value_attribute_information_struct {
  */
 struct mmt_session_struct {
     uint8_t family;                          /**< identifier of the application family to which this session belongs. */
-    
+
     uint32_t session_protocol_index;         /**< index of the protocol to which the session belongs */
     uint32_t session_timeout_delay;          /**< The inactivity delay after which the session can be considered as expired */
     uint32_t session_timeout_milestone;      /**< The time expressed as seconds since Epoch (1st Jan 1970) when the session will be considered as expired */
@@ -107,7 +107,7 @@ struct mmt_session_struct {
     uint32_t tcp_outoforders;                 /**< number of TCP outoforder */
     /* tcp sequence number connection tracking and retransmissions counting */
     uint32_t next_tcp_seq_nr[2];
-    
+
     uint64_t session_id;                     /**< session identifier */
     uint64_t packet_count;                   /**< tracks the number of packets */
     uint64_t fragmented_packet_count;        /**< number of fragmented packets which are in this session*/
@@ -117,7 +117,7 @@ struct mmt_session_struct {
     uint64_t data_volume;                    /**< tracks the octet data volume */
     uint64_t data_packet_count;              /**< tracks the number of packets holding effective payload data */
     uint64_t data_byte_volume;               /**< tracks the effective payload data volume */
-    
+
     uint64_t packet_count_direction[2];      /**< Session's packet count in both directions: initiator <-> remote */
     uint64_t data_volume_direction[2];       /**< Session's data volume in both directions: initiator <-> remote */
     uint64_t packet_cap_count_direction[2];      /**< Session's packet count ( - include fragmented packets) in both directions: initiator <-> remote */
@@ -129,7 +129,7 @@ struct mmt_session_struct {
     struct timeval s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
     struct timeval rtt;                      /**< TCP RTT calculated at connection setup */
     struct timeval s_last_data_packet_time[2];     /**< indicates the time when the last data packet (packet has payload) on this session was detected in both direction: initiator <-> remote. */
-    
+
     proto_hierarchy_t proto_path;            /**< The session detected protocol hierarchy */
     proto_hierarchy_t proto_headers_offset;  /**< The protocol offsets of the detected protocols */
     proto_hierarchy_t proto_classif_status;  /**< the classification status of the protocols in the path */
@@ -170,7 +170,8 @@ struct mmt_session_struct {
 #else
 #error "BYTE_ORDER must be defined"
 #endif
-
+    void * session_payload[2]; // TCP Payload of session
+    uint16_t session_payload_len[2]; // session payload len
 };
 
 /**
@@ -226,7 +227,7 @@ struct attribute_internal_struct {
     uint32_t proto_id;    /**< identifier of the protocol */
     uint32_t field_id;       /**< identifier of the attribute */
     void *data;              /**< pointer to the attribute data */
-    
+
     int memsize; /**< indicates the memory size of the attribute including the memory pointed to by data */
     int registration_count; /**< Number of times this attributes has been registered */
     int handlers_count; /**< Number of times this attributes has been registered with an attribute handler */
@@ -330,10 +331,10 @@ struct protocol_struct {
     int protocol_code; /**< Code of the protocol. Usually the same as the identifier. */
     int has_session; /**< indicates if the protocol has a session context or not. */
     int session_timeout_delay; /**< indicates if the protocol has a session context or not. */
-    
+
     uint32_t proto_id; /**< unique identifier of the protocol. */
     const char * protocol_name; /**< The name of the protocol. Must be unique. */
-    
+
     generic_get_attribute_id_by_name get_attribute_id_by_name; /**< funtion pointer that returns the protocol's attribute id by name */
     generic_get_attribute_name_by_id get_attribute_name_by_id; /**< function pointer that returns the protocol's attribute name by id */
     generic_get_attribute_data_type_by_id get_attribute_data_type_by_id; /**< function pointer that returns the data type of an attribute */
@@ -346,7 +347,7 @@ struct protocol_struct {
 
     mmt_classify_next_t classify_next; /**< For internal use. MUST not be changed. */
     mmt_analyser_t data_analyser; /**< For internal use. Must not be chagned.*/
-    
+
     void * attributes_map; /**< For internal use. MUST not be changed. */
     void * attributes_names_map; /**< For internal use. MUST not be changed. */
     //void * sessions_map; /**< For internal use. MUST not be changed. */
