@@ -62,6 +62,11 @@ CFLAGS   += -DHTTP_PARSER_STRICT=0
 CXXFLAGS += -DHTTP_PARSER_STRICT=0
 endif
 
+ifdef TCP_SEGMENT
+CFLAGS   += -DTCP_SEGMENT
+CXXFLAGS += -DTCP_SEGMENT
+endif
+
 .PHONY: libraries includes tools documentation examples
 
 

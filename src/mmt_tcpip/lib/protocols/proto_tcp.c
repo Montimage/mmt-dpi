@@ -4,7 +4,9 @@
 #include "../mmt_common_internal_include.h"
 
 #include "tcp.h"
+#ifdef TCP_SEGMENT
 #include "tcp_segment.h"
+#endif
 
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
@@ -198,6 +200,7 @@ int tcp_session_retransmission_extraction(const ipacket_t * ipacket, unsigned pr
     return 1;
 }
 
+#ifdef TCP_SEGMENT
 int tcp_session_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
@@ -217,6 +220,7 @@ int tcp_session_payload_extraction(const ipacket_t * ipacket, unsigned proto_ind
     return 0;
 }
 
+#endif
 // int tcp_session_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
 //     attribute_t * extracted_data){
 
@@ -261,17 +265,22 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_RETRANSMISSION, TCP_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_retransmission_extraction},
     {TCP_OUTOFORDER, TCP_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_outoforder_extraction},
     {TCP_SESSION_RETRANSMISSION, TCP_SESSION_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_retransmission_extraction},
+#ifdef TCP_SEGMENT
     {TCP_SESSION_PAYLOAD_LEN, TCP_SESSION_PAYLOAD_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_len_extraction},
     {TCP_SESSION_PAYLOAD, TCP_SESSION_PAYLOAD_ALIAS, MMT_DATA_POINTER, sizeof (void*), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_extraction},
+#endif
     // {TCP_SESSION_OUTOFORDER, TCP_SESSION_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_outoforder_extraction},
     {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_ack_flag_extraction},
 };
+
+#ifdef TCP_SEGMENT
 
 void clean_session_payload(mmt_session_t * session, unsigned index){
     tcp_seg_free_list(session->session_payload[session->last_packet_direction]);
     tcp_seg_free_list(session->session_payload[!session->last_packet_direction]);
 }
 
+#endif
 int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // printf("TEST: Enter TCP packet of packet %"PRIu64" at index: %d\n",ipacket->packet_id,index);
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
@@ -330,6 +339,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         return 0; //TODO: replace with a definition
     }
 
+#ifdef TCP_SEGMENT
     // Update segment list
     if (packet->payload_packet_len > 0) {
         // Copy data
@@ -356,6 +366,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         }
     }
 
+#endif
     //Set the offset for the next proto anyway! we might not get there
     ipacket->proto_headers_offset->proto_path[index + 1] = tcphdr_len;
 
@@ -446,16 +457,12 @@ int init_proto_tcp_struct() {
         for (; i < TCP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &tcp_attributes_metadata[i]);
         }
+#ifdef TCP_SEGMENT
         register_session_data_cleanup_function(protocol_struct, clean_session_payload);
+#endif
         register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
         return register_protocol(protocol_struct, PROTO_TCP);
     } else {
         return 0;
     }
 }
-
-// int cleanup_proto_tcp_struct(){
-//     debug("Cleanup tcp protocol");
-//     return 1;
-// }
-//

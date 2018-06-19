@@ -170,8 +170,10 @@ struct mmt_session_struct {
 #else
 #error "BYTE_ORDER must be defined"
 #endif
+#ifdef TCP_SEGMENT
     void * session_payload[2]; // TCP Payload of session
     uint16_t session_payload_len[2]; // session payload len
+#endif
 };
 
 /**
