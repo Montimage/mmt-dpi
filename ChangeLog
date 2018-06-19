@@ -1,10 +1,12 @@
 RELEASE NOTES
 ---
+Version 1.6.14.0
+- Add TCP_SEGMENT option: to enable handling tcp_segment inside mmt-sdk. Support for: reconstruct the payload, manage outoforder, retransmission, overlapping, ...
+To enable this feature in mmt-dpi -> compile with option: `make -j4 TCP_SEGMENT=1`
+
 Version 1.6.13.1
 - Update proto_sctp.c: do not add UNKNOWN protocol at the end
 - Update make file to disable SECURITY by default. To compile mmt-sdk with security: make ENABLESEC=1
-
-Version 1.6.13.1
 - Fix memory leak when using with mmt-reassembly library
 - Fix some bug in http.c and proto_tpkt.c
 
