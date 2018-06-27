@@ -354,7 +354,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
                 tcp_seg_t * root = tcp_seg_insert((tcp_seg_t *) ipacket->session->session_payload[ipacket->session->last_packet_direction], new_seg);
                 if ( root == NULL){
                     // Cannot insert new segment, need to do something
-                    fprintf(stderr,"[tcp_pre_classification_function] Cannot insert new segment: %lu\n",ipacket->packet_id);
+                    // fprintf(stderr,"[tcp_pre_classification_function] Cannot insert new segment: %lu\n",ipacket->packet_id);
                     tcp_seg_free(new_seg);
                 } else {
                     // Do something if success
