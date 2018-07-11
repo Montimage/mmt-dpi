@@ -1368,6 +1368,14 @@ static inline int isProtocolStatisticsEnabled(mmt_handler_t *mmt_handler) {
     return mmt_handler->stats_reporting_status;
 }
 
+int update_protocol(uint32_t proto_id, int action_id){
+    protocol_t * proto_struct = get_protocol_struct_by_id(proto_id);
+    if (proto_struct && proto_struct->update_protocol_fct){
+        return proto_struct->update_protocol_fct(action_id);
+    }
+    return 0;
+}
+
 int init_extraction()
 {
     int i = 0;
@@ -2426,12 +2434,10 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->session_protocol_index = index;
                 session->tcp_retransmissions = 0;
                 session->tcp_outoforders = 0;
-#ifdef TCP_SEGMENT
                 session->session_payload_len[0] = 0;
                 session->session_payload_len[1] = 0;
                 session->session_payload[0] = NULL;
                 session->session_payload[1] = NULL;
-#endif
                 mmt_handler->sessions_count += 1;
                 mmt_handler->active_sessions_count += 1;
 

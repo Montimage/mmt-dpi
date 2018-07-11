@@ -4,9 +4,7 @@
 #include "../mmt_common_internal_include.h"
 
 #include "tcp.h"
-#ifdef TCP_SEGMENT
 #include "tcp_segment.h"
-#endif
 
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
@@ -200,7 +198,6 @@ int tcp_session_retransmission_extraction(const ipacket_t * ipacket, unsigned pr
     return 1;
 }
 
-#ifdef TCP_SEGMENT
 int tcp_session_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
@@ -219,8 +216,6 @@ int tcp_session_payload_extraction(const ipacket_t * ipacket, unsigned proto_ind
 
     return 0;
 }
-
-#endif
 // int tcp_session_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
 //     attribute_t * extracted_data){
 
@@ -265,24 +260,19 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_RETRANSMISSION, TCP_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_retransmission_extraction},
     {TCP_OUTOFORDER, TCP_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_outoforder_extraction},
     {TCP_SESSION_RETRANSMISSION, TCP_SESSION_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_retransmission_extraction},
-#ifdef TCP_SEGMENT
     {TCP_SESSION_PAYLOAD_LEN, TCP_SESSION_PAYLOAD_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_len_extraction},
     {TCP_SESSION_PAYLOAD, TCP_SESSION_PAYLOAD_ALIAS, MMT_DATA_POINTER, sizeof (void*), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_extraction},
-#endif
     // {TCP_SESSION_OUTOFORDER, TCP_SESSION_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_outoforder_extraction},
     {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_ack_flag_extraction},
 };
-
-#ifdef TCP_SEGMENT
 
 void clean_session_payload(mmt_session_t * session, unsigned index){
     tcp_seg_free_list(session->session_payload[session->last_packet_direction]);
     tcp_seg_free_list(session->session_payload[!session->last_packet_direction]);
 }
 
-#endif
 int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
-    // printf("TEST: Enter TCP packet of packet %"PRIu64" at index: %d\n",ipacket->packet_id,index);
+    debug("[tcp_pre_classification_function] packet %"PRIu64" at index: %d\n",ipacket->packet_id,index);
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     int l4_offset = get_packet_offset_at_index(ipacket, index);
     if (packet->iphv6) {
@@ -339,7 +329,86 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         return 0; //TODO: replace with a definition
     }
 
-#ifdef TCP_SEGMENT
+    //Set the offset for the next proto anyway! we might not get there
+    ipacket->proto_headers_offset->proto_path[index + 1] = tcphdr_len;
+
+    MMT_SAVE_AS_BITMASK(packet->detection_bitmask, packet->detected_protocol_stack[0]);
+
+    /* build selction packet bitmask */
+    packet->mmt_selection_packet |= (MMT_SELECTION_BITMASK_PROTOCOL_INT_TCP | MMT_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP);
+
+    if (packet->payload_packet_len != 0) {
+        packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD;
+    }
+
+    if (packet->tcp_retransmission == 0) {
+        packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION;
+    }
+
+    // if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
+    //    return 0;
+    // }
+
+    return 1;
+}
+
+int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigned index) {
+    debug("[tcp_pre_classification_function_with_reassemble] packet %"PRIu64" at index: %d\n",ipacket->packet_id,index);
+    mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
+    int l4_offset = get_packet_offset_at_index(ipacket, index);
+    if (packet->iphv6) {
+        packet->l4_packet_len = (ipacket->p_hdr->caplen - l4_offset);
+    }
+
+    ////////////////////////////////////////////////
+    packet->tcp = (struct tcphdr *) & ipacket->data[l4_offset];
+    packet->udp = NULL;
+
+    if (likely(packet->flow)) {
+        mmt_set_flow_protocol_to_packet(packet->flow, packet);
+    } else {
+        mmt_reset_internal_packet_protocol(packet);
+    }
+
+    // This is a TCP flow, get the offset
+    uint16_t tcphdr_len = packet->tcp->doff * 4; //TCP header length
+
+    packet->l4_protocol = 6; /* TCP for sure ;) */
+
+    if( packet->l4_packet_len < tcphdr_len ) {
+        MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp length mismatch)\n" );
+        return 0;
+    }
+
+    packet->payload_packet_len = packet->l4_packet_len - tcphdr_len;
+    packet->actual_payload_len = packet->payload_packet_len;
+    packet->payload = ((uint8_t *) packet->tcp) + tcphdr_len;
+    packet->https_server_name.ptr = NULL;
+    packet->https_server_name.len = 0;
+
+    /* check for new tcp syn packets, here
+     * idea: reset detection state if a connection is unknown
+     */
+     if (packet->tcp!=NULL
+        && packet->tcp->syn != 0
+        && packet->tcp->ack == 0
+        && packet->flow != NULL
+        && ipacket->session->packet_count == 0 /*First packet of the flow*/
+        && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN) {
+
+        memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO: Is this memset needed? the syn should be
+        //seen at the start of the flow, this should have been set to zero
+        //at the creation of the flow!!! Check this out
+        MMT_LOG(PROTO_UNKNOWN, packet,
+                MMT_LOG_DEBUG,
+                "%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
+        }
+
+    mmt_connection_tracking(ipacket, index);
+
+    if (packet->flow == NULL && packet->tcp != NULL) {
+        return 0; //TODO: replace with a definition
+    }
     // Update segment list
     if (packet->payload_packet_len > 0) {
         // Copy data
@@ -365,8 +434,6 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
             }
         }
     }
-
-#endif
     //Set the offset for the next proto anyway! we might not get there
     ipacket->proto_headers_offset->proto_path[index + 1] = tcphdr_len;
 
@@ -389,6 +456,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 
     return 1;
 }
+
 
 int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     int a;
@@ -447,6 +515,28 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
+int update_tcp_protocol(int action_id){
+    protocol_t * protocol_struct = get_protocol_struct_by_id(PROTO_TCP);
+    switch (action_id)
+    {
+        case TCP_ENABLE_REASSEMBLE:
+        // Enable tcp_action
+            printf("[active_tcp_reassembly] action_id: %d", action_id);
+            register_session_data_cleanup_function(protocol_struct, clean_session_payload);
+            register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function_with_reassemble, tcp_post_classification_function);
+            return 1;
+        case TCP_DISABLE_REASSEMBLE:
+            printf("[active_tcp_reassembly] action_id: %d", action_id);
+            register_session_data_cleanup_function(protocol_struct, NULL);
+            register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
+            return 1;
+        default:
+            printf("[active_tcp_reassembly] Not implemented yet! %d", action_id);
+            break;
+    }
+    return 0;
+}
+
 int init_proto_tcp_struct() {
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_TCP, PROTO_TCP_ALIAS);
@@ -457,10 +547,8 @@ int init_proto_tcp_struct() {
         for (; i < TCP_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &tcp_attributes_metadata[i]);
         }
-#ifdef TCP_SEGMENT
-        register_session_data_cleanup_function(protocol_struct, clean_session_payload);
-#endif
         register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
+        protocol_struct->update_protocol_fct = &update_tcp_protocol;
         return register_protocol(protocol_struct, PROTO_TCP);
     } else {
         return 0;

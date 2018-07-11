@@ -129,7 +129,7 @@ extern "C" {
 #define PROTO_FOX 115
 #define PROTO_FREE 116
 #define PROTO_FTP 117
-// #define PROTO_FTP_CONTROL 117	
+// #define PROTO_FTP_CONTROL 117
 #define PROTO_GADUGADU 118
 #define PROTO_GAMEFAQS 119
 #define PROTO_GAMESPOT 120
@@ -641,17 +641,17 @@ extern "C" {
 #define PROTO_NDN_HTTP 626 // NDN_HTTP protocol
 #define PROTO_QUIC 627
 #define PROTO_ORACLE 628
-#define PROTO_REDIS 629	
+#define PROTO_REDIS 629
 #define PROTO_VMWARE 630
 #define PROTO_SCTP_DATA 631
 #define PROTO_SCTP_SACK 632
 #define PROTO_SCTP_INIT 633
 #define PROTO_LLMNR 634
-#define PROTO_ECLIPSE_TCF 635	
+#define PROTO_ECLIPSE_TCF 635
 #define PROTO_LOOPBACK 636
 #define PROTO_TPKT 637
 #define PROTO_COTP 638
-#define PROTO_S7COMM 639	
+#define PROTO_S7COMM 639
 #define PROTO_CTP 640
 #define PROTO_LLC 641
 #define PROTO_XID 642
@@ -1287,7 +1287,7 @@ extern "C" {
 #define PROTO_TWITCH_ALIAS "twitch"
 #define PROTO_SLL_ALIAS "sll"
 #define PROTO_NDN_ALIAS "ndn"
-#define PROTO_NDN_HTTP_ALIAS "ndn_http"	
+#define PROTO_NDN_HTTP_ALIAS "ndn_http"
 #define PROTO_QUIC_ALIAS "quic"
 #define PROTO_ORACLE_ALIAS "oracle"
 #define PROTO_REDIS_ALIAS "redis"
@@ -1297,10 +1297,10 @@ extern "C" {
 #define PROTO_SCTP_INIT_ALIAS "sctp_init"
 #define PROTO_LLMNR_ALIAS "llmnr"
 #define PROTO_ECLIPSE_TCF_ALIAS "eclipse_tcf"
-#define PROTO_LOOPBACK_ALIAS "loopback"	
+#define PROTO_LOOPBACK_ALIAS "loopback"
 #define PROTO_TPKT_ALIAS "tpkt"
 #define PROTO_COTP_ALIAS "cotp"
-#define PROTO_S7COMM_ALIAS "s7comm"	
+#define PROTO_S7COMM_ALIAS "s7comm"
 #define PROTO_CTP_ALIAS "ctp"
 #define PROTO_LLC_ALIAS "llc"
 #define PROTO_XID_ALIAS "xid"
@@ -1343,6 +1343,10 @@ extern "C" {
  "Remote",                 \
  "Misc",                   \
  "CDN"
+
+// DEFINE ACTION ON UPDATE PROTOCOL
+#define TCP_ENABLE_REASSEMBLE 1
+#define TCP_DISABLE_REASSEMBLE 0
 
 #ifdef __cplusplus
 }

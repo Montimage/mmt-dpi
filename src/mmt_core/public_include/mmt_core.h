@@ -165,6 +165,14 @@ MMTAPI void MMTCALL mmt_drop_packet(ipacket_t *ipacket);
 MMTAPI int MMTCALL init_extraction();
 
 /**
+ * Update protocol
+ * @param   proto_id    Protocol id
+ * @param   action_id   Action id -> to update
+ * @return a positive value on success, 0 otherwise
+ */
+MMTAPI int MMTCALL update_protocol(uint32_t proto_id, int action_id);
+
+/**
  * Closes the extraction and frees any previously allocated memory.
  */
 MMTAPI void MMTCALL close_extraction();

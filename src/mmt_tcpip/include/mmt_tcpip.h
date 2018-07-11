@@ -839,7 +839,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_GTALK:
         case PROTO_OSCAR:
         case PROTO_IRC:
-        case PROTO_UNENCRYPED_JABBER:        
+        case PROTO_UNENCRYPED_JABBER:
         case PROTO_KAKAO:
         case PROTO_MEEBO:
         case PROTO_WHATSAPP:
@@ -896,7 +896,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_ETHERIP:
         case PROTO_IPX_IN_IP:
         case PROTO_MPLS_IN_IP:
-        case PROTO_GTP:        
+        case PROTO_GTP:
         case PROTO_L2TP:
             return PROTO_CLASS_TUNNEL;
         case PROTO_ESP:
@@ -919,7 +919,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_IPSEC:
         case PROTO_KERBEROS:
         case PROTO_LDAP:
-        case PROTO_MDNS:        
+        case PROTO_MDNS:
         case PROTO_NETBIOS:
         case PROTO_NETFLOW:
         case PROTO_NTP:
@@ -1051,7 +1051,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_XNS_IDP:
         case PROTO_XTP:
         case PROTO_SLL:
-        case PROTO_LLMNR:        
+        case PROTO_LLMNR:
         case PROTO_LOOPBACK:
         case PROTO_CTP:
         case PROTO_LLC:

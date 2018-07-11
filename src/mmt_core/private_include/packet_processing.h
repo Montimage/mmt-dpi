@@ -170,10 +170,8 @@ struct mmt_session_struct {
 #else
 #error "BYTE_ORDER must be defined"
 #endif
-#ifdef TCP_SEGMENT
     void * session_payload[2]; // TCP Payload of session
-    uint16_t session_payload_len[2]; // session payload len
-#endif
+    uint32_t session_payload_len[2]; // session payload len
 };
 
 /**
@@ -364,6 +362,7 @@ struct protocol_struct {
     void * protocol_context_args; /**< For internal use. Must not be changed. Pointer to the protocol's context argument.
                                    * Will be passed when calling protocol_context_init and protocol_context_cleanup. */
     //void * args; /**< For internal use. MUST not be changed. */
+    int (* update_protocol_fct) (int); // function to update protocol structure
 };
 
 struct protocol_instance_struct {

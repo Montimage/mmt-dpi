@@ -166,10 +166,8 @@ enum {
     TCP_RETRANSMISSION,
     TCP_OUTOFORDER,
     TCP_SESSION_RETRANSMISSION,
-#ifdef TCP_SEGMENT
     TCP_SESSION_PAYLOAD_LEN,
     TCP_SESSION_PAYLOAD,
-#endif
     // TCP_SESSION_OUTOFORDER,
     TCP_PAYLOAD_LEN,
     TCP_CONN_CLOSED,
@@ -200,10 +198,8 @@ enum {
 #define TCP_RETRANSMISSION_ALIAS     "retransmission"
 #define TCP_OUTOFORDER_ALIAS     "outoforder"
 #define TCP_SESSION_RETRANSMISSION_ALIAS     "session_retransmission"
-#ifdef TCP_SEGMENT
 #define TCP_SESSION_PAYLOAD_LEN_ALIAS     "session_payload_len"
 #define TCP_SESSION_PAYLOAD_ALIAS     "session_payload"
-#endif
 // #define TCP_SESSION_OUTOFORDER_ALIAS     "session_outoforder"
 #define TCP_PAYLOAD_LEN_ALIAS     "payload_len"
 #define TCP_CONN_CLOSED_ALIAS "closed"
