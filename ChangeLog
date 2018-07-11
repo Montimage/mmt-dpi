@@ -1,5 +1,10 @@
 RELEASE NOTES
 ---
+Version 1.6.14.1
+- remove TCP_SEGMENT compile option.
+- new API: update_protocol(proto_id, action_id), to update protocol structure after initializing
+- 2 action for protocol tcp: TCP_ENABLE_REASSEMBLE (to enable tcp reasseble process) and TCP_DISABLE_REASSEMBLE
+
 Version 1.6.14.0
 - Add TCP_SEGMENT option: to enable handling tcp_segment inside mmt-sdk. Support for: reconstruct the payload, manage outoforder, retransmission, overlapping, ...
 To enable this feature in mmt-dpi -> compile with option: `make -j4 TCP_SEGMENT=1`
