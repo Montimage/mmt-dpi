@@ -201,25 +201,16 @@ int tcp_seg_size(tcp_seg_t * seg) {
 	return size;
 }
 
-int tcp_seg_reassembly(tcp_seg_t * root, char * data){
+int tcp_seg_reassembly(uint8_t * data, tcp_seg_t * root, uint32_t len){
 
 	int current_len = 0;
 
 	tcp_seg_t * current_seg = root;
 
-	while(current_seg){
+	while(current_seg && current_len < len) {
 		memcpy(data + current_len , current_seg->data, current_seg->len);
 		current_len +=  current_seg->len;
-		if (current_seg->next){
-			if (current_seg->next_seq < current_seg->next->seq){
-				// printf("[tcp_seg_reassembly] Lost segment: %lu - %lu\n",current_seg->next_seq, current_seg->next->seq);
-			} else if (current_seg->next_seq > current_seg->next->seq){
-				// printf("[tcp_seg_reassembly] Overlap segment: %lu %lu\n",current_seg->next_seq, current_seg->next->seq);
-				// TODO: process overlapping segments
-			}
-		}
 		current_seg = current_seg->next;
 	}
-
 	return 1;
 }

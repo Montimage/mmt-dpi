@@ -208,7 +208,18 @@ int tcp_session_payload_len_extraction(const ipacket_t * ipacket, unsigned proto
 int tcp_session_payload_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     if (ipacket->session){
-        if (ipacket->session->session_payload_len[ipacket->session->last_packet_direction] > 0){
+        uint32_t payload_len = ipacket->session->session_payload_len[ipacket->session->last_packet_direction];
+        if ( payload_len > 0){
+            if (ipacket->session->session_payload[ipacket->session->last_packet_direction]) {
+                free(ipacket->session->session_payload[ipacket->session->last_packet_direction]);
+            }
+            ipacket->session->session_payload[ipacket->session->last_packet_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
+            tcp_seg_reassembly(
+                ipacket->session->session_payload[ipacket->session->last_packet_direction],
+                ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction],
+                payload_len
+            );
+
             extracted_data->data = (void*) ipacket->session->session_payload[ipacket->session->last_packet_direction];
             return 1;
         }
@@ -267,8 +278,10 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
 };
 
 void clean_session_payload(mmt_session_t * session, unsigned index){
-    tcp_seg_free_list(session->session_payload[session->last_packet_direction]);
-    tcp_seg_free_list(session->session_payload[!session->last_packet_direction]);
+    tcp_seg_free_list(session->tcp_segment_list[session->last_packet_direction]);
+    tcp_seg_free_list(session->tcp_segment_list[!session->last_packet_direction]);
+    if (session->session_payload[session->last_packet_direction] ) free(session->session_payload[session->last_packet_direction]);
+    if (session->session_payload[!session->last_packet_direction] ) free(session->session_payload[!session->last_packet_direction]);
 }
 
 int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
@@ -417,22 +430,24 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
         // Create a new segment
         tcp_seg_t * new_seg = tcp_seg_new(ipacket->packet_id, ntohl(packet->tcp->seq), ntohl(packet->tcp->seq) + packet->payload_packet_len, ntohl(packet->tcp->ack) ,packet->payload_packet_len, data);
         if (new_seg != NULL){
-            if (ipacket->session->session_payload[ipacket->session->last_packet_direction] == NULL){
-                ipacket->session->session_payload[ipacket->session->last_packet_direction] = (void*) new_seg;
+            if (ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction] == NULL){
+                ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction] = (void*) new_seg;
+                ipacket->session->session_payload_len[ipacket->session->last_packet_direction] += packet->payload_packet_len;
             } else {
-                tcp_seg_t * root = tcp_seg_insert((tcp_seg_t *) ipacket->session->session_payload[ipacket->session->last_packet_direction], new_seg);
+                tcp_seg_t * root = tcp_seg_insert((tcp_seg_t *) ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction], new_seg);
                 if ( root == NULL){
                     // Cannot insert new segment, need to do something
                     // fprintf(stderr,"[tcp_pre_classification_function] Cannot insert new segment: %lu\n",ipacket->packet_id);
                     tcp_seg_free(new_seg);
                 } else {
                     // Do something if success
-                    ipacket->session->session_payload[ipacket->session->last_packet_direction] = root;
+                    ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction] = root;
                     ipacket->session->session_payload_len[ipacket->session->last_packet_direction] += packet->payload_packet_len;
                     // tcp_seg_show_list(root);
                 }
             }
         }
+        debug("[tcp_pre_classification_function_with_reassemble] %u\n",ipacket->session->session_payload_len[ipacket->session->last_packet_direction]);
     }
     //Set the offset for the next proto anyway! we might not get there
     ipacket->proto_headers_offset->proto_path[index + 1] = tcphdr_len;

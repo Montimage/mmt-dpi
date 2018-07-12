@@ -2438,6 +2438,8 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->session_payload_len[1] = 0;
                 session->session_payload[0] = NULL;
                 session->session_payload[1] = NULL;
+                session->tcp_segment_list[0] = NULL;
+                session->tcp_segment_list[1] = NULL;
                 mmt_handler->sessions_count += 1;
                 mmt_handler->active_sessions_count += 1;
 
