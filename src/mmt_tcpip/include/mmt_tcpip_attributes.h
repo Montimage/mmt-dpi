@@ -166,8 +166,10 @@ enum {
     TCP_RETRANSMISSION,
     TCP_OUTOFORDER,
     TCP_SESSION_RETRANSMISSION,
-    TCP_SESSION_PAYLOAD_LEN,
-    TCP_SESSION_PAYLOAD,
+    TCP_SESSION_PAYLOAD_UP_LEN,
+    TCP_SESSION_PAYLOAD_UP,
+    TCP_SESSION_PAYLOAD_DOWN_LEN,
+    TCP_SESSION_PAYLOAD_DOWN,
     // TCP_SESSION_OUTOFORDER,
     TCP_PAYLOAD_LEN,
     TCP_CONN_CLOSED,
@@ -197,9 +199,11 @@ enum {
 #define TCP_SYN_RCV_ALIAS     "syn_received"
 #define TCP_RETRANSMISSION_ALIAS     "retransmission"
 #define TCP_OUTOFORDER_ALIAS     "outoforder"
-#define TCP_SESSION_RETRANSMISSION_ALIAS     "session_retransmission"
-#define TCP_SESSION_PAYLOAD_LEN_ALIAS     "session_payload_len"
-#define TCP_SESSION_PAYLOAD_ALIAS     "session_payload"
+#define TCP_SESSION_RETRANSMISSION_ALIAS     "tcp_session_retransmission"
+#define TCP_SESSION_PAYLOAD_UP_LEN_ALIAS     "tcp_session_payload_up_len"
+#define TCP_SESSION_PAYLOAD_UP_ALIAS     "tcp_session_payload_up"
+#define TCP_SESSION_PAYLOAD_DOWN_LEN_ALIAS     "tcp_session_payload_down_len"
+#define TCP_SESSION_PAYLOAD_DOWN_ALIAS     "tcp_session_payload_down"
 // #define TCP_SESSION_OUTOFORDER_ALIAS     "session_outoforder"
 #define TCP_PAYLOAD_LEN_ALIAS     "payload_len"
 #define TCP_CONN_CLOSED_ALIAS "closed"

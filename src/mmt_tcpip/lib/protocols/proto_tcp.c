@@ -198,29 +198,61 @@ int tcp_session_retransmission_extraction(const ipacket_t * ipacket, unsigned pr
     return 1;
 }
 
-int tcp_session_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
+int tcp_session_payload_up_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
-    *((uint32_t*) extracted_data->data) = ipacket->session->session_payload_len[ipacket->session->last_packet_direction];
+    *((uint32_t*) extracted_data->data) = ipacket->session->session_payload_len[ipacket->session->setup_packet_direction];
     return 1;
 }
 
-int tcp_session_payload_extraction(const ipacket_t * ipacket, unsigned proto_index,
+int tcp_session_payload_up_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     if (ipacket->session){
-        uint32_t payload_len = ipacket->session->session_payload_len[ipacket->session->last_packet_direction];
+        uint8_t up_direction = ipacket->session->setup_packet_direction;
+        uint32_t payload_len = ipacket->session->session_payload_len[up_direction];
         if ( payload_len > 0){
-            if (ipacket->session->session_payload[ipacket->session->last_packet_direction]) {
-                free(ipacket->session->session_payload[ipacket->session->last_packet_direction]);
+            if (ipacket->session->session_payload[up_direction]) {
+                free(ipacket->session->session_payload[up_direction]);
             }
-            ipacket->session->session_payload[ipacket->session->last_packet_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
+            ipacket->session->session_payload[up_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
             tcp_seg_reassembly(
-                ipacket->session->session_payload[ipacket->session->last_packet_direction],
-                ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction],
+                ipacket->session->session_payload[up_direction],
+                ipacket->session->tcp_segment_list[up_direction],
                 payload_len
             );
 
-            extracted_data->data = (void*) ipacket->session->session_payload[ipacket->session->last_packet_direction];
+            extracted_data->data = (void*) ipacket->session->session_payload[up_direction];
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int tcp_session_payload_down_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+
+    *((uint32_t*) extracted_data->data) = ipacket->session->session_payload_len[!ipacket->session->setup_packet_direction];
+    return 1;
+}
+
+int tcp_session_payload_down_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+    if (ipacket->session){
+        uint8_t down_direction = !ipacket->session->setup_packet_direction;
+        uint32_t payload_len = ipacket->session->session_payload_len[down_direction];
+        if ( payload_len > 0){
+            if (ipacket->session->session_payload[down_direction]) {
+                free(ipacket->session->session_payload[down_direction]);
+            }
+            ipacket->session->session_payload[down_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
+            tcp_seg_reassembly(
+                ipacket->session->session_payload[down_direction],
+                ipacket->session->tcp_segment_list[down_direction],
+                payload_len
+            );
+
+            extracted_data->data = (void*) ipacket->session->session_payload[down_direction];
             return 1;
         }
     }
@@ -271,8 +303,10 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_RETRANSMISSION, TCP_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_retransmission_extraction},
     {TCP_OUTOFORDER, TCP_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_outoforder_extraction},
     {TCP_SESSION_RETRANSMISSION, TCP_SESSION_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_retransmission_extraction},
-    {TCP_SESSION_PAYLOAD_LEN, TCP_SESSION_PAYLOAD_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_len_extraction},
-    {TCP_SESSION_PAYLOAD, TCP_SESSION_PAYLOAD_ALIAS, MMT_DATA_POINTER, sizeof (void*), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_extraction},
+    {TCP_SESSION_PAYLOAD_UP_LEN, TCP_SESSION_PAYLOAD_UP_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_up_len_extraction},
+    {TCP_SESSION_PAYLOAD_UP, TCP_SESSION_PAYLOAD_UP_ALIAS, MMT_DATA_POINTER, sizeof (void*), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_up_extraction},
+    {TCP_SESSION_PAYLOAD_DOWN_LEN, TCP_SESSION_PAYLOAD_DOWN_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_down_len_extraction},
+    {TCP_SESSION_PAYLOAD_DOWN, TCP_SESSION_PAYLOAD_DOWN_ALIAS, MMT_DATA_POINTER, sizeof (void*), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_down_extraction},
     // {TCP_SESSION_OUTOFORDER, TCP_SESSION_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_outoforder_extraction},
     {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_ack_flag_extraction},
 };
