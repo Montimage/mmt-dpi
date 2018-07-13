@@ -5,9 +5,11 @@ RULESDIR     := $(TOPDIR)/rules
 BUILD_DIR	 :=mmt-dpi_$(VERSION)_`uname -s`_`uname -p`_`date +%s`
 
 #Directory given by user (e.g., make install INSTALL_DIR=/home/tata/mmt) to install MMT-DPI to
-ifdef INSTALL_DIR
-  MMT_BASE := $(INSTALL_DIR)
+ifdef MMT_BASE
   $(info Change default install directory to $(MMT_BASE))
+else
+  MMT_BASE             := /opt/mmt
+  NEED_ROOT_PERMISSION := 1
 endif
 
 default: sdk
@@ -39,6 +41,12 @@ sdk: --refresh-plugin-engine libraries includes tools documentation examples
 
 install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB)
 	@ cp $(SDKLIB)/* $(MMT_LIB)
+# Make links
+	@ln -sf $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(MMT_LIB)/libmmt_core.so
+	@ln -sf $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(MMT_LIB)/libmmt_fuzz.so
+	@ln -sf $(MMT_LIB)/libmmt_security.so.$(VERSION) $(MMT_LIB)/libmmt_security.so
+	@ln -sf $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(MMT_LIB)/libmmt_tcpip.so
+	
 	@ echo "[MMT-]> Installed  "$(SDKLIB)" at "$(MMT_LIB)
 	@ cp -R $(SDKINC)/* $(MMT_INC)
 	@ echo "[MMT-]> Installed  "$(SDKINC)" at "$(MMT_INC)
@@ -46,8 +54,11 @@ install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT
 	@ echo "[MMT-]> Installed  "$(SDKXAM)" at "$(MMT_EXAMS)
 	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(MMT_PLUGINS)/libmmt_tcpip.so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/libmmt_tcpip.so
+	
+ifdef NEED_ROOT_PERMISSION
 	@ echo "$(MMT_LIB)" > /etc/ld.so.conf.d/mmt-dpi.conf
 	@ ldconfig
+endif
 	@ echo "[MMT-]> Done! "
 
 #  - - - - - - -
@@ -73,7 +84,7 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	$(QUIET) $(CP)    $(SDKLIB)/* $(BUILD_DIR)$(MMT_BASE)/dpi/lib
 	$(QUIET) $(CP) -r $(SDKINC)   $(BUILD_DIR)$(MMT_BASE)/dpi
 	$(QUIET) $(CP) -r $(SDKXAM)   $(BUILD_DIR)$(MMT_BASE)
-	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION)    $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
+	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
 	# Make links
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_core.so
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so
@@ -180,7 +191,9 @@ clean:
 dist-clean:
 	@ echo "[MMT-]> Going to remove MMT"
 	$(QUIET) $(RM) $(MMT_DPI)
+ifdef NEED_ROOT_PERMISSION
 	$(QUIET) $(RM) /etc/ld.so.conf.d/mmt.conf
+endif
 	@ echo "[MMT-]> Done!"
 
 # - - - - - - - - - -
