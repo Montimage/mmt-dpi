@@ -157,12 +157,12 @@ int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     // if(ipacket->internal_packet->payload_packet_len){
         // Check padding packet
         if(ipacket->internal_packet->iph==NULL){
-            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
+            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
             return 1;
         }
-        
+
         if((ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)){
-            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
+            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
             return 1;
         }
     // }
@@ -282,7 +282,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     /* check for new tcp syn packets, here
      * idea: reset detection state if a connection is unknown
      */
-     if (packet->tcp!=NULL 
+     if (packet->tcp!=NULL
         && packet->tcp->syn != 0
         && packet->tcp->ack == 0
         && packet->flow != NULL
@@ -322,7 +322,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
     //    return 0;
     // }
-    
+
     return 1;
 }
 
@@ -336,6 +336,10 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     retval.offset = packet->tcp->doff * 4; //TCP header length
 
     a = packet->detected_protocol_stack[0];
+    if (a == PROTO_GTP) {
+        // Do not know why yet, for temporary solution
+        a = PROTO_UNKNOWN;
+    }
     ////////////////////////////////////////////////
     retval.proto_id = a;
 
@@ -369,10 +373,9 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         for (a = stack_size; a >= 0; a--) {
             if (packet->flow->detected_protocol_stack[a] != PROTO_UNKNOWN) {
                 if ((a > 0 && packet->flow->detected_protocol_stack[a] != packet->flow->detected_protocol_stack[a - 1]) || (a == 0)) {
-                    index++;
                     retval.proto_id = packet->flow->detected_protocol_stack[a];
                     retval.status = Classified;
-                    new_retval = set_classified_proto(ipacket, index, retval);
+                    new_retval = set_classified_proto(ipacket, index + 1, retval);
                     retval.offset = 0; //From the second proto the offset is the same! //TODO: check this out
                 }
             }
@@ -405,4 +408,4 @@ int init_proto_tcp_struct() {
 //     debug("Cleanup tcp protocol");
 //     return 1;
 // }
-// 
+//
