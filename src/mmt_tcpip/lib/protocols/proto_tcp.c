@@ -336,16 +336,12 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     retval.offset = packet->tcp->doff * 4; //TCP header length
 
     a = packet->detected_protocol_stack[0];
-    if (a == PROTO_GTP) {
-        // Do not know why yet, for temporary solution
-        a = PROTO_UNKNOWN;
-    }
     ////////////////////////////////////////////////
     retval.proto_id = a;
 
     int new_retval = 0;
     // if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count >= CFG_CLASSIFICATION_THRESHOLD) {
-    if (retval.proto_id == PROTO_UNKNOWN) {
+    if (retval.proto_id == PROTO_UNKNOWN || retval.proto_id == PROTO_GTP) {
         // LN: Check if the protocol id in the last index of protocol hierarchy is not PROTO_UDP -> do not try to classify more - external classification
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_TCP){
             return new_retval;
@@ -373,9 +369,10 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         for (a = stack_size; a >= 0; a--) {
             if (packet->flow->detected_protocol_stack[a] != PROTO_UNKNOWN) {
                 if ((a > 0 && packet->flow->detected_protocol_stack[a] != packet->flow->detected_protocol_stack[a - 1]) || (a == 0)) {
+                    index++;
                     retval.proto_id = packet->flow->detected_protocol_stack[a];
                     retval.status = Classified;
-                    new_retval = set_classified_proto(ipacket, index + 1, retval);
+                    new_retval = set_classified_proto(ipacket, index, retval);
                     retval.offset = 0; //From the second proto the offset is the same! //TODO: check this out
                 }
             }
