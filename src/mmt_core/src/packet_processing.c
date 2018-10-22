@@ -2804,7 +2804,7 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
  * @return                     updated protocol statistic
  */
 static inline
-proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session) {
+proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset) {
     if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
         return NULL;
     }
@@ -2815,6 +2815,33 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
     if (likely(proto_stats)) {
         if (new_session) {
             proto_stats->sessions_count += 1;
+            proto_stats->touched         = 1;
+            proto_stats->packets_count  += 1;
+            proto_stats->data_volume    += ipacket->p_hdr->original_len;
+            proto_stats->payload_volume += ipacket->p_hdr->original_len - proto_offset;
+            // Update the fist packet
+            if (proto_stats->packets_count == 1) {
+                proto_stats->first_packet_time = ipacket->p_hdr->ts;
+                proto_stats->ip_frag_packets_count = 0;
+                proto_stats->ip_frag_data_volume = 0;
+                proto_stats->ip_df_packets_count = 0;
+                proto_stats->ip_df_data_volume = 0;
+            }
+            proto_stats->last_packet_time = ipacket->p_hdr->ts;
+
+            // Check if this is IP protocol, then update ip_fragment information
+            if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179)){
+                if(ipacket->is_fragment){
+                    proto_stats->ip_frag_packets_count ++;
+                    if(ipacket->is_completed){
+                        proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
+                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
+                        proto_stats->ip_df_data_volume += ipacket->total_caplen;
+                    }else{
+                        proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
+                    }
+                }
+            }
         }
     }
     return proto_stats;
@@ -3071,14 +3098,14 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     //The protocol is registered: First we check if it requires to maintain a session
     is_new_session = proto_session_management(ipacket, configured_protocol, index);
     if (is_new_session == NEW_SESSION) {
-        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session);
+        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session, proto_offset);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
         // fire_evasion_event(ipacket, configured_protocol->protocol->proto_id, index, 1, (void *) NULL);
     }
-    // else {
+    else {
         //Update the protocol statistics
         parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
-    // }
+    }
 
     //Analyze packet data
     target = proto_packet_analyze(ipacket, configured_protocol, index);
