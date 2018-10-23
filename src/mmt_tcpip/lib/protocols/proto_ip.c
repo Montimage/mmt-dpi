@@ -16,7 +16,7 @@
  * IP protocol references:
  * - IP parameters value: https://www.iana.org/assignments/ip-parameters/ip-parameters.xhtml
  * - IP packet structure: http://www.freesoft.org/CIE/Course/Section3/7.htm
- * - 
+ * -
  */
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
@@ -328,7 +328,7 @@ static inline uint8_t build_ipv4_session_key(u_char * ip_packet, mmt_session_key
         // memcpy(ipv4_session->higher_ip,&iph->daddr,sizeof(iph->daddr));
         ipv4_session->lower_ip = &iph->saddr;
         ipv4_session->higher_ip = &iph->daddr;
-        
+
         ipv4_session->lower_ip_port = sport;
         ipv4_session->higher_ip_port = dport;
 
@@ -1231,9 +1231,9 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
         fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_OVERLAPPED,(void*)&(dgram_update_result));
     }
     // Check timed-out for all data gram
-    
+
     // Detect too many fragment in one packet
-    if (ipacket->mmt_handler->fragment_in_packet > 0 
+    if (ipacket->mmt_handler->fragment_in_packet > 0
         && (dg->nb_packets % ipacket->mmt_handler->fragment_in_packet) == 0){
         fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_PACKET,(void*)&(dg->nb_packets));
     }
@@ -1312,12 +1312,12 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
             session->fragmented_packet_count++;
             session->fragment_count += ipacket->nb_reassembled_packets;
             // Detect too many fragmented packet in one session
-            if ( ipacket->mmt_handler->fragmented_packet_in_session > 0 
+            if ( ipacket->mmt_handler->fragmented_packet_in_session > 0
                 && (session->fragmented_packet_count % ipacket->mmt_handler->fragmented_packet_in_session) == 0 ){
                 fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENTED_PACKET_SESSION,(void*)&session->fragmented_packet_count);
             }
             // Detect too many fragments in one session
-            if ( ipacket->mmt_handler->fragment_in_session > 0 
+            if ( ipacket->mmt_handler->fragment_in_session > 0
                 && (session->fragment_count % ipacket->mmt_handler->fragment_in_session) == 0 ){
                 fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_SESSION,(void*)&session->fragment_count);
             }
@@ -1505,7 +1505,7 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     if(ipacket->nb_reassembled_packets > 1){
         packet->l4_packet_len = packet->l3_captured_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
     }else{
-        packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp   
+        packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
     }
 
     if (mmt_memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
@@ -1524,11 +1524,21 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->mmt_selection_packet = MMT_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC;
     packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_IP | MMT_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6;
 
+    // Update session statistics
     session->packet_count_direction[session->last_packet_direction]++;
     session->packet_cap_count_direction[session->last_packet_direction] += ipacket->nb_reassembled_packets;
     session->data_volume_direction[session->last_packet_direction] += ipacket->p_hdr->len;
     session->data_cap_volume_direction[session->last_packet_direction] += ipacket->total_caplen;
-
+    mmt_session_t *p_session = session->parent_session;
+    while (p_session)
+    {
+        uint8_t direction = p_session->last_packet_direction ;
+        p_session->sub_packet_count_direction[direction]++;
+        p_session->sub_packet_cap_count_direction[direction] += ipacket->nb_reassembled_packets;
+        p_session->sub_data_volume_direction[direction] += ipacket->p_hdr->len;
+        p_session->sub_data_cap_volume_direction[direction] += ipacket->total_caplen;
+        p_session = p_session->parent_session;
+    }
     return 1;
 }
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////

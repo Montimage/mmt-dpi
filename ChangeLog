@@ -1,5 +1,8 @@
 RELEASE NOTES
 ---
+Version 1.6.14.0
+- Open new APIs to get session statistics with 2 possibilities: with subsession and without subsession. By default, when talking about session statistic which means it does not include subsession statistics
+
 Version 1.6.13.2
 - Fix bug: incorrect protocol path - eth.ip.ip
 - Fix bug which cause segmentation fault in PROTO_GTP (temporary fix)

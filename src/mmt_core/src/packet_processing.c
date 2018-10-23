@@ -2415,17 +2415,57 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->session_id = mmt_handler->sessions_count + 1;
                 session->next = NULL;
                 session->previous = NULL;
-                session->packet_count = 0;
+
                 session->fragmented_packet_count = 0;
                 session->fragment_count = 0;
+
+                session->packet_count = 0;
                 session->packet_cap_count = 0;
+                session->data_packet_count = 0;
                 session->data_volume = 0;
                 session->data_cap_volume = 0;
+                session->data_byte_volume = 0;
+
+                session->packet_count_direction[1] = 0;
+                session->data_volume_direction[1] = 0;
+                session->packet_cap_count_direction[1] = 0;
+                session->data_cap_volume_direction[1] = 0;
+                session->data_packet_count_direction[1] = 0;
+                session->data_byte_volume_direction[1] = 0;
+
+                session->packet_count_direction[0] = 0;
+                session->data_volume_direction[0] = 0;
+                session->packet_cap_count_direction[0] = 0;
+                session->data_cap_volume_direction[0] = 0;
+                session->data_packet_count_direction[0] = 0;
+                session->data_byte_volume_direction[0] = 0;
+
+                session->sub_packet_count = 0;
+                session->sub_packet_cap_count = 0;
+                session->sub_data_packet_count = 0;
+                session->sub_data_volume = 0;
+                session->sub_data_cap_volume = 0;
+                session->sub_data_byte_volume = 0;
+
+                session->sub_packet_count_direction[1] = 0;
+                session->sub_data_volume_direction[1] = 0;
+                session->sub_packet_cap_count_direction[1] = 0;
+                session->sub_data_cap_volume_direction[1] = 0;
+                session->sub_data_packet_count_direction[1] = 0;
+                session->sub_data_byte_volume_direction[1] = 0;
+
+                session->sub_packet_count_direction[0] = 0;
+                session->sub_data_volume_direction[0] = 0;
+                session->sub_packet_cap_count_direction[0] = 0;
+                session->sub_data_cap_volume_direction[0] = 0;
+                session->sub_data_packet_count_direction[0] = 0;
+                session->sub_data_byte_volume_direction[0] = 0;
+
+                session->tcp_retransmissions = 0;
+                session->tcp_outoforders = 0;
                 session->status = NonClassified;
                 session->protocol_container_context = configured_protocol;
                 session->session_protocol_index = index;
-                session->tcp_retransmissions = 0;
-                session->tcp_outoforders = 0;
                 mmt_handler->sessions_count += 1;
                 mmt_handler->active_sessions_count += 1;
 
@@ -2505,6 +2545,14 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             session->data_volume      += ipacket->p_hdr->len;
             session->data_cap_volume  += ipacket->total_caplen;
             session->packet_cap_count += ipacket->nb_reassembled_packets;
+            mmt_session_t * p_session = session->parent_session;
+            while(p_session) {
+                p_session->sub_packet_count     ++;
+                p_session->sub_data_volume      += ipacket->p_hdr->len;
+                p_session->sub_data_cap_volume  += ipacket->total_caplen;
+                p_session->sub_packet_cap_count += ipacket->nb_reassembled_packets;
+                p_session = p_session->parent_session;
+            }
 
             session->s_last_activity_time.tv_sec  = ipacket->p_hdr->ts.tv_sec;
             session->s_last_activity_time.tv_usec = ipacket->p_hdr->ts.tv_usec;

@@ -267,7 +267,7 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
             }
             fire_attribute_event(ipacket, PROTO_IPV6, IP6_RTT, index, (void *) &(ip_rtt));
         }
-        
+
         // Fix proto_path , only fix til IP
         if (session->proto_path.proto_path[index] != PROTO_IPV6) {
             // debug("[IP6] Fixing proto_path of session: %lu", session->session_id);
@@ -1197,6 +1197,7 @@ int ipv6_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 }
 
 int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
+    mmt_session_t * session = ipacket->session;
     if(ipacket->mmt_handler->has_reassembly){
         int s = sizeof(mmt_tcpip_internal_packet_t);
         ipacket->internal_packet = mmt_malloc (s);
@@ -1205,8 +1206,8 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
         ipacket->internal_packet->tcp = NULL;
         ipacket->internal_packet->packet_id = ipacket->packet_id;
     }else {
-        ipacket->internal_packet = &((internal_ip_proto_context_t *) ((protocol_instance_t *) ipacket->session->protocol_container_context)->args)->packet;    
-    }  
+        ipacket->internal_packet = &((internal_ip_proto_context_t *) ((protocol_instance_t *) session->protocol_container_context)->args)->packet;
+    }
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
 
     int ip_offset = get_packet_offset_at_index(ipacket, index);
@@ -1224,27 +1225,37 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     /* BW: add the length of the truncated packet as well */
     packet->l3_captured_packet_len = (ipacket->p_hdr->caplen - ip_offset);
 
-    if (mmt_memcmp(&((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->ip.s6_addr,
+    if (mmt_memcmp(&((mmt_ip6_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->ip.s6_addr,
             &ip6h->saddr, IPv6_ALEN) == 0) {
-        src = &((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->id_internal_context;
-        dst = &((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->lower_ip)->id_internal_context;
+        src = &((mmt_ip6_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->id_internal_context;
+        dst = &((mmt_ip6_id_t *) ((mmt_session_key_t *) session->session_key)->lower_ip)->id_internal_context;
     } else {
-        dst = &((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->higher_ip)->id_internal_context;
-        src = &((mmt_ip6_id_t *) ((mmt_session_key_t *) ipacket->session->session_key)->lower_ip)->id_internal_context;
+        dst = &((mmt_ip6_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->id_internal_context;
+        src = &((mmt_ip6_id_t *) ((mmt_session_key_t *) session->session_key)->lower_ip)->id_internal_context;
     }
 
-    packet->flow = ipacket->session->internal_data;
+    packet->flow = session->internal_data;
     packet->src = src;
     packet->dst = dst;
 
     /* build selction packet bitmask */
     packet->mmt_selection_packet = MMT_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC;
     packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_IPV6 | MMT_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6;
-
-    ipacket->session->packet_count_direction[ipacket->session->last_packet_direction]++;
-    ipacket->session->packet_cap_count_direction[ipacket->session->last_packet_direction] += ipacket->nb_reassembled_packets;
-    ipacket->session->data_volume_direction[ipacket->session->last_packet_direction] += ipacket->p_hdr->len;
-    ipacket->session->data_cap_volume_direction[ipacket->session->last_packet_direction] += ipacket->total_caplen;
+    // Update session statistics
+    session->packet_count_direction[session->last_packet_direction]++;
+    session->packet_cap_count_direction[session->last_packet_direction] += ipacket->nb_reassembled_packets;
+    session->data_volume_direction[session->last_packet_direction] += ipacket->p_hdr->len;
+    session->data_cap_volume_direction[session->last_packet_direction] += ipacket->total_caplen;
+    mmt_session_t *p_session = session->parent_session;
+    while (p_session)
+    {
+        uint8_t direction = p_session->last_packet_direction ;
+        p_session->sub_packet_count_direction[direction]++;
+        p_session->sub_packet_cap_count_direction[direction] += ipacket->nb_reassembled_packets;
+        p_session->sub_data_volume_direction[direction] += ipacket->p_hdr->len;
+        p_session->sub_data_cap_volume_direction[direction] += ipacket->total_caplen;
+        p_session = p_session->parent_session;
+    }
     return 1;
 }
 
