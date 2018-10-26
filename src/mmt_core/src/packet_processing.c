@@ -2813,7 +2813,7 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
             proto_stats->touched         = 1;
             proto_stats->packets_count  += 1;
             proto_stats->data_volume    += ipacket->p_hdr->original_len;
-            proto_stats->payload_volume += ipacket->p_hdr->original_len - proto_offset;
+            proto_stats->payload_volume += ipacket->p_hdr->len - proto_offset;
             // Update the fist packet
             if (proto_stats->packets_count == 1) {
                 proto_stats->first_packet_time = ipacket->p_hdr->ts;
@@ -2900,7 +2900,7 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
  * @param configured_protocol protocol configuration
  * @param index               index of protocol
  */
-void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
+int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
     //TODO: review the exit codes; this depends on the return values of the sub-classification routines
     //TODO: why don't to enforce here a threshold on the classification?
     //Verify that classification is not disabled for this protocol
@@ -2927,10 +2927,11 @@ void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * confi
             //Post-classification! Post classification is only accessible if there is a classification function
             //And if the preclassification returned non zero which means: proceed with the classification routines.
             if (configured_protocol->protocol->classify_next.post_classify) {
-                configured_protocol->protocol->classify_next.post_classify(ipacket, index);
+                return configured_protocol->protocol->classify_next.post_classify(ipacket, index);
             }
         }
     }
+    return 1;
 }
 
 /**
@@ -3159,44 +3160,54 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     target = proto_packet_analyze(ipacket, configured_protocol, index);
     //Proceed with the extraction and the handlers notification for this protocol
     //if the target action is CONTINUE or SKIP (skip means continue with this proto but no further)
-    if (target != MMT_DROP) {
+    if (target != MMT_DROP)
+    {
         //Attributes extraction
         proto_process_attribute_handlers(ipacket, index);
     }
 
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
-    if (target == MMT_CONTINUE) {
+    if (target == MMT_CONTINUE)
+    {
 
-        proto_packet_classify_next(ipacket, configured_protocol, index);
-
-        if (ipacket->session != NULL) {
+        target = proto_packet_classify_next(ipacket, configured_protocol, index) ? MMT_CONTINUE : MMT_SKIP;
+        if (ipacket->session != NULL)
+        {
             // Update proto_path_direction
-            if (ipacket->session->proto_path.len > 0) {
-
+            if (ipacket->session->proto_path.len > 0)
+            {
                 int proto_direction = ipacket->session->last_packet_direction;
                 int proto_path_len = ipacket->session->proto_path.len;
-                if (ipacket->session->proto_path_direction[proto_direction].len != proto_path_len) {
+                if (ipacket->session->proto_path_direction[proto_direction].len != proto_path_len)
+                {
                     ipacket->session->proto_path_direction[proto_direction].len = proto_path_len;
                     int i = 0;
-                    for (i = 0; i < proto_path_len; i++) {
+                    for (i = 0; i < proto_path_len; i++)
+                    {
                         ipacket->session->proto_path_direction[proto_direction].proto_path[i] = ipacket->session->proto_path.proto_path[i];
                     }
                     // debug("[IP] Update protocol path direction: %d", proto_direction);
-                }else{
-                    if(ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] != ipacket->session->proto_path.proto_path[proto_path_len - 1]){
+                }
+                else
+                {
+                    if (ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] != ipacket->session->proto_path.proto_path[proto_path_len - 1])
+                    {
                         ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] = ipacket->session->proto_path.proto_path[proto_path_len - 1];
                     }
                 }
-
             }
         }
         // Need to check if the ipacket is still exist
         // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
-        if (ipacket->proto_hierarchy->len > (index + 1)) {
-            if (_is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
-                /* process the packet by the next encapsulated protocol */
-                return proto_packet_process(ipacket, parent_stats, index + 1);
-            }
+        if (index ==0 || target == MMT_CONTINUE) {
+          if (ipacket->proto_hierarchy->len > (index + 1))
+          {
+              if (_is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1]))
+              {
+                  /* process the packet by the next encapsulated protocol */
+                  return proto_packet_process(ipacket, parent_stats, index + 1);
+              }
+          }
         }
         process_packet_handler(ipacket);
     }
