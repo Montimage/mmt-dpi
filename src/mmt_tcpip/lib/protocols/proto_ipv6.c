@@ -1243,7 +1243,7 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_IPV6 | MMT_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6;
     // Update session statistics
     session->packet_count_direction[session->last_packet_direction]++;
-    session->packet_cap_count_direction[session->last_packet_direction] += ipacket->nb_reassembled_packets;
+    session->packet_cap_count_direction[session->last_packet_direction] += ipacket->nb_reassembled_packets[index];
     session->data_volume_direction[session->last_packet_direction] += ipacket->p_hdr->len;
     session->data_cap_volume_direction[session->last_packet_direction] += ipacket->total_caplen;
     mmt_session_t *p_session = session->parent_session;
@@ -1251,7 +1251,7 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     {
         uint8_t direction = p_session->last_packet_direction ;
         p_session->sub_packet_count_direction[direction]++;
-        p_session->sub_packet_cap_count_direction[direction] += ipacket->nb_reassembled_packets;
+        p_session->sub_packet_cap_count_direction[direction] += ipacket->nb_reassembled_packets[index];
         p_session->sub_data_volume_direction[direction] += ipacket->p_hdr->len;
         p_session->sub_data_cap_volume_direction[direction] += ipacket->total_caplen;
         p_session = p_session->parent_session;

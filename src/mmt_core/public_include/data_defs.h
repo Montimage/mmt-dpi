@@ -99,10 +99,10 @@ typedef struct proto_hierarchy_struct {
 struct ipacket_struct {
     uint64_t packet_id;                       /**< identifier of the packet. */
     uint64_t total_caplen;                    /**< Total captured length of all packets which are assembled to this packet*/
-    uint8_t is_completed;                     /**< 1 - yes, 0 - no: Indicate if the packet is completed to go to parse to next protocol*/
-    uint8_t is_fragment;                      /**< 1 - yes, 0 - no: Indicate if the packet is a fragmented packet */
+    uint8_t is_completed[PROTO_PATH_SIZE];    /**< 1 - yes, 0 - no: Indicate if the packet is completed to go to parse to next protocol*/
+    uint8_t is_fragment[PROTO_PATH_SIZE];                      /**< 1 - yes, 0 - no: Indicate if the packet is a fragmented packet */
     int last_callback_fct_id;                           /**< The extra field for tcp packet handler */
-    unsigned nb_reassembled_packets;          /**< number of packets which are assembled to this packet */
+    unsigned nb_reassembled_packets[PROTO_PATH_SIZE];          /**< number of packets which are assembled to this packet */
     proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */
     proto_hierarchy_t internal_proto_headers_offset; /**< internal: - never modify it.  the offsets corresponding to the protocol layers of this packet */
     proto_hierarchy_t internal_proto_classif_status; /**< internal: - never modify it.  the classification status of the protocols in the path */

@@ -2544,13 +2544,13 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             session->packet_count     ++;
             session->data_volume      += ipacket->p_hdr->len;
             session->data_cap_volume  += ipacket->total_caplen;
-            session->packet_cap_count += ipacket->nb_reassembled_packets;
+            session->packet_cap_count += ipacket->nb_reassembled_packets[index];
             mmt_session_t * p_session = session->parent_session;
             while(p_session) {
                 p_session->sub_packet_count     ++;
                 p_session->sub_data_volume      += ipacket->p_hdr->len;
                 p_session->sub_data_cap_volume  += ipacket->total_caplen;
-                p_session->sub_packet_cap_count += ipacket->nb_reassembled_packets;
+                p_session->sub_packet_cap_count += ipacket->nb_reassembled_packets[index];
                 p_session = p_session->parent_session;
             }
 
@@ -2804,7 +2804,7 @@ void reset_proto_stats(protocol_instance_t * proto) {
 * @parent_stats             Statistic of protocol parent
 */
 static inline
-proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset) {
+proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset, unsigned index) {
     if (likely(isProtocolStatisticsEnabled(ipacket->mmt_handler))) {
         /* TODO: Throughout metrics should be replaced by periodic handlers! */
         proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
@@ -2826,11 +2826,11 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
 
             // Check if this is IP protocol, then update ip_fragment information
             if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179)){
-                if(ipacket->is_fragment){
+                if(ipacket->is_fragment[index]){
                     proto_stats->ip_frag_packets_count ++;
-                    if(ipacket->is_completed){
+                    if(ipacket->is_completed[index]){
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
-                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
+                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets[index];
                         proto_stats->ip_df_data_volume += ipacket->total_caplen;
                     }else{
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
@@ -2852,7 +2852,7 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
  * @return                     updated protocol statistic
  */
 static inline
-proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset) {
+proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset, unsigned index) {
     if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
         return NULL;
     }
@@ -2879,11 +2879,11 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
 
             // Check if this is IP protocol, then update ip_fragment information
             if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179)){
-                if(ipacket->is_fragment){
+                if(ipacket->is_fragment[index]){
                     proto_stats->ip_frag_packets_count ++;
-                    if(ipacket->is_completed){
+                    if(ipacket->is_completed[index]){
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
-                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
+                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets[index];
                         proto_stats->ip_df_data_volume += ipacket->total_caplen;
                     }else{
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
@@ -3146,13 +3146,13 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     //The protocol is registered: First we check if it requires to maintain a session
     is_new_session = proto_session_management(ipacket, configured_protocol, index);
     if (is_new_session == NEW_SESSION) {
-        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session, proto_offset);
+        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session, proto_offset, index);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
         // fire_evasion_event(ipacket, configured_protocol->protocol->proto_id, index, 1, (void *) NULL);
     }
     else {
         //Update the protocol statistics
-        parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
+        parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset, index);
     }
 
     //Analyze packet data
@@ -3244,9 +3244,12 @@ int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     mmt->current_ipacket.mmt_handler = mmt;
     mmt->current_ipacket.internal_packet = NULL;
     mmt->current_ipacket.last_callback_fct_id = 0;
-    mmt->current_ipacket.nb_reassembled_packets = 1;
-    mmt->current_ipacket.is_completed = 0;
-    mmt->current_ipacket.is_fragment = 0;
+    int i = 0;
+    for ( i = 0; i < PROTO_PATH_SIZE; i++ ) {
+        mmt->current_ipacket.nb_reassembled_packets[i] = 1;
+        mmt->current_ipacket.is_completed[i] = 0;
+        mmt->current_ipacket.is_fragment[i] = 0;
+    }
     mmt->current_ipacket.total_caplen = header->caplen;
     // update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
     mmt->last_received_packet.packet_id += 1;
@@ -3296,9 +3299,12 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     ipacket->mmt_handler = mmt;
     ipacket->internal_packet = NULL;
     ipacket->last_callback_fct_id = 0;
-    ipacket->nb_reassembled_packets = 1;
-    ipacket->is_completed = 0;
-    ipacket->is_fragment = 0;
+    int i = 0;
+    for ( i = 0; i < PROTO_PATH_SIZE; i++ ) {
+        ipacket->nb_reassembled_packets[i] = 1;
+        ipacket->is_completed[i] = 0;
+        ipacket->is_fragment[i] = 0;
+    }
     ipacket->total_caplen = header->caplen;
     // update_last_received_packet(&mmt->last_received_packet, ipacket);
     mmt->last_received_packet.packet_id += 1;
