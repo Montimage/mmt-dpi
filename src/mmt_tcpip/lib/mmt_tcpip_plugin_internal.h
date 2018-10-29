@@ -144,6 +144,7 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     /* const for gcc code optimisation and cleaner code */
     struct mmt_tcpip_internal_packet_struct *packet = (mmt_tcpip_internal_packet_t *) ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
+    mmt_session_t * session = ipacket->session;
     if (flow == NULL)
         return;
 
@@ -200,42 +201,42 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
                     flow_l4_tcp->seen_syn = 1;
                     flow_l4_tcp->rtt.tv_sec = ipacket->p_hdr->ts.tv_sec;
                     flow_l4_tcp->rtt.tv_usec = ipacket->p_hdr->ts.tv_usec;
-                    
-                    fire_attribute_event(ipacket, PROTO_TCP, TCP_SYN_RCV, index, (void *) &seen);    
+
+                    fire_attribute_event(ipacket, PROTO_TCP, TCP_SYN_RCV, index, (void *) &seen);
                 }
 
                 if(tcph->ack != 0 && flow_l4_tcp->seen_syn == 1){
-                    flow_l4_tcp->seen_syn_ack = 1;    
+                    flow_l4_tcp->seen_syn_ack = 1;
                 }
             }
 
             if (tcph->syn == 0 && tcph->ack == 1 && flow_l4_tcp->seen_syn == 1 && flow_l4_tcp->seen_syn_ack == 1) {
                 flow_l4_tcp->seen_ack = 1;
-                
+
                 fire_attribute_event(ipacket, PROTO_TCP, TCP_CONN_ESTABLISHED, index, (void *) &seen);
-                
+
                 if (flow_l4_tcp->rtt.tv_sec != 0) {
-                    ipacket->session->rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - flow_l4_tcp->rtt.tv_sec;
-                    ipacket->session->rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - flow_l4_tcp->rtt.tv_usec;
-                    
-                    if ((int) ipacket->session->rtt.tv_usec < 0) {
-                        ipacket->session->rtt.tv_usec += 1000000;
-                        ipacket->session->rtt.tv_sec -= 1;
+                    session->rtt.tv_sec = ipacket->p_hdr->ts.tv_sec - flow_l4_tcp->rtt.tv_sec;
+                    session->rtt.tv_usec = ipacket->p_hdr->ts.tv_usec - flow_l4_tcp->rtt.tv_usec;
+
+                    if ((int) session->rtt.tv_usec < 0) {
+                        session->rtt.tv_usec += 1000000;
+                        session->rtt.tv_sec -= 1;
                     }
-                    
-                    fire_attribute_event(ipacket, PROTO_TCP, TCP_RTT, index, (void *) &ipacket->session->rtt);
+
+                    fire_attribute_event(ipacket, PROTO_TCP, TCP_RTT, index, (void *) &session->rtt);
                 }
             }
-        }        
+        }
 
         // TCP connection closing flags.
         // The order is important
         if (tcph->ack != 0 && flow_l4_tcp->seen_fin != 0 && flow_l4_tcp->seen_fin_ack != 0) {
             flow_l4_tcp->seen_close = 1;
-            ipacket->session->force_timeout = 1;
-            
+            session->force_timeout = 1;
+
             fire_attribute_event(ipacket, PROTO_TCP, TCP_CONN_CLOSED, index, (void *) &seen);
-        
+
         }
         if(tcph->fin != 0){
             if (tcph->ack != 0 && flow_l4_tcp->seen_fin != 0) {
@@ -243,17 +244,17 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
             }
             if (flow_l4_tcp->seen_fin == 0) {
                 flow_l4_tcp->seen_fin = 1;
-                
-                set_session_timeout_delay(ipacket->session, ipacket->mmt_handler->default_session_timed_out);
 
-            }    
+                set_session_timeout_delay(session, ipacket->mmt_handler->default_session_timed_out);
+
+            }
         }
 
         if (tcph->rst) {
-            set_session_timeout_delay(ipacket->session, ipacket->mmt_handler->short_session_timed_out);
+            set_session_timeout_delay(session, ipacket->mmt_handler->short_session_timed_out);
         }
 
-        if ((ipacket->session->next_tcp_seq_nr[0] == 0 && ipacket->session->next_tcp_seq_nr[1] == 0)) {
+        if ((session->next_tcp_seq_nr[0] == 0 && session->next_tcp_seq_nr[1] == 0)) {
             /* initalize tcp sequence counters */
             /* the ack flag needs to be set to get valid sequence numbers from the other
              * direction. Usually it will catch the second packet syn+ack but it works
@@ -263,26 +264,26 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
              * otherwise use the payload length.
              */
             if (tcph->ack != 0) {
-                ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + (tcph->syn ? 1 : packet->payload_packet_len);
-                ipacket->session->next_tcp_seq_nr[1 - ipacket->session->last_packet_direction] = ntohl(tcph->ack_seq);
-                    // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
+                session->next_tcp_seq_nr[session->last_packet_direction] = ntohl(tcph->seq) + (tcph->syn ? 1 : packet->payload_packet_len);
+                session->next_tcp_seq_nr[1 - session->last_packet_direction] = ntohl(tcph->ack_seq);
+                    // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", session->next_tcp_seq_nr[session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
             }
             //  ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 == 60  -> padding packet
         } else if (packet->payload_packet_len > 0 && ( (packet->iph != NULL) && (ntohs(packet->iph->tot_len) + packet->payload_packet_len + 14 != 60))) {
             /* check tcp sequence counters */
-            uint32_t next_seq_nb = ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction];
+            uint32_t next_seq_nb = session->next_tcp_seq_nr[session->last_packet_direction];
             uint32_t temp_seq_number = ((uint32_t) (ntohl(tcph->seq) - next_seq_nb));
 
             if ( temp_seq_number > 0 && next_seq_nb > 0) {
                 packet->tcp_outoforder = 1;
-                ipacket->session->tcp_outoforders += 1;
+                session->tcp_outoforders += 1;
             } else {
                 packet->tcp_outoforder = 0;
             }
             if (temp_seq_number > MMT_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE) {
                 // debug("TCP: set tcp_retransmission = 1 for ipacket: %lu", ipacket->packet_id);
                 packet->tcp_retransmission = 1;
-                ipacket->session->tcp_retransmissions += 1;
+                session->tcp_retransmissions += 1;
 
                 /*CHECK IF PARTIAL RETRY IS HAPPENENING */
                 if ((next_seq_nb - ntohl(tcph->seq) < packet->payload_packet_len)) {
@@ -291,33 +292,44 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
                        Other analyzer can use packet->payload_packet_len */
                     packet->num_retried_bytes = next_seq_nb - ntohl(tcph->seq);
                     packet->actual_payload_len = packet->payload_packet_len - packet->num_retried_bytes;
-                    ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
-                    // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
+                    session->next_tcp_seq_nr[session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
+                    // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", session->next_tcp_seq_nr[session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
                 }
             }/*normal path actual_payload_len is initialized to payload_packet_len during tcp header parsing itself. It will be changed only in case of retransmission */
             else {
                 packet->num_retried_bytes = 0;
-                ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
-                // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", ipacket->session->next_tcp_seq_nr[ipacket->session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
+                session->next_tcp_seq_nr[session->last_packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
+                // debug("TCP: set next seq number = %d for ipacket: %lu (seq: %d)", session->next_tcp_seq_nr[session->last_packet_direction], ipacket->packet_id, ntohl(tcph->seq));
             }
         }
 
         if (tcph->rst) {
-            ipacket->session->next_tcp_seq_nr[0] = 0;
-            ipacket->session->next_tcp_seq_nr[1] = 0;
+            session->next_tcp_seq_nr[0] = 0;
+            session->next_tcp_seq_nr[1] = 0;
         }
     }
 
     if (packet->payload_packet_len) {
-        ipacket->session->data_packet_count++;
-        ipacket->session->data_byte_volume += packet->payload_packet_len;
-        ipacket->session->data_packet_count_direction[ipacket->session->last_packet_direction]++;
-        ipacket->session->data_byte_volume_direction[ipacket->session->last_packet_direction] += packet->payload_packet_len;
-        if ((ipacket->internal_packet->iph == NULL) || (ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)) {
-            ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_sec = ipacket->p_hdr->ts.tv_sec;
-            ipacket->session->s_last_data_packet_time[ipacket->session->last_packet_direction].tv_usec = ipacket->p_hdr->ts.tv_usec;
+        // Update session statistics
+        session->data_packet_count++;
+        session->data_byte_volume += packet->payload_packet_len;
+        session->data_packet_count_direction[session->last_packet_direction]++;
+        session->data_byte_volume_direction[session->last_packet_direction] += packet->payload_packet_len;
+        mmt_session_t * p_session = session->parent_session;
+        while (p_session)
+        {
+            uint8_t direction = p_session->last_packet_direction;
+            p_session->sub_data_packet_count++;
+            p_session->sub_data_byte_volume += packet->payload_packet_len;
+            p_session->sub_data_packet_count_direction[direction]++;
+            p_session->sub_data_byte_volume_direction[direction] += packet->payload_packet_len;
+            p_session = p_session->parent_session;
         }
-        // debug("[DIRECTION] packet: %lu,%u\n",ipacket->packet_id,ipacket->session->last_packet_direction);
+        if ((ipacket->internal_packet->iph == NULL) || (ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)) {
+            session->s_last_data_packet_time[session->last_packet_direction].tv_sec = ipacket->p_hdr->ts.tv_sec;
+            session->s_last_data_packet_time[session->last_packet_direction].tv_usec = ipacket->p_hdr->ts.tv_usec;
+        }
+        // debug("[DIRECTION] packet: %lu,%u\n",ipacket->packet_id,session->last_packet_direction);
     }
 }
 

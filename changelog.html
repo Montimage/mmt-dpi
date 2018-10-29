@@ -58,7 +58,21 @@
     <!-- START CHANGE LOGS -->
     <div class="card border border-secondary">
       <div class="card-header bg-secondary">
-        Version 1.6.13.2
+        Version 1.6.14.1
+      </div>
+      <div class="card-body">
+        <h4 class="card-title"></h4>
+        <p class="card-text">
+          <ul>
+            <li>Update DPI for correcting the statistics of IP fragmentation (which is encapsulated in other IP packet)</li>
+          </ul>
+        </p>
+      </div>
+    </div>
+
+    <div class="card border border-secondary">
+      <div class="card-header bg-secondary">
+        Version 1.6.14.0
       </div>
       <div class="card-body">
         <h4 class="card-title"></h4>
@@ -67,6 +81,20 @@
             <li>Fix bug: incorrect protocol path - eth.ip.ip</li>
             <li>Fix bug which cause segmentation fault in PROTO_GTP (temporary fix)</li>
             <li>Update Makefile for new plugin path (@huunghia PR)</li>
+          </ul>
+        </p>
+      </div>
+    </div>
+
+    <div class="card border border-secondary">
+      <div class="card-header bg-secondary">
+        Version 1.6.13.2
+      </div>
+      <div class="card-body">
+        <h4 class="card-title"></h4>
+        <p class="card-text">
+          <ul>
+            <li>Open new APIs to get session statistics with 2 possibilities: with subsession and without subsession. By default, when talking about session statistic which means it does not include subsession statistics</li>
           </ul>
         </p>
       </div>

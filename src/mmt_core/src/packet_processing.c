@@ -2415,17 +2415,57 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 session->session_id = mmt_handler->sessions_count + 1;
                 session->next = NULL;
                 session->previous = NULL;
-                session->packet_count = 0;
+
                 session->fragmented_packet_count = 0;
                 session->fragment_count = 0;
+
+                session->packet_count = 0;
                 session->packet_cap_count = 0;
+                session->data_packet_count = 0;
                 session->data_volume = 0;
                 session->data_cap_volume = 0;
+                session->data_byte_volume = 0;
+
+                session->packet_count_direction[1] = 0;
+                session->data_volume_direction[1] = 0;
+                session->packet_cap_count_direction[1] = 0;
+                session->data_cap_volume_direction[1] = 0;
+                session->data_packet_count_direction[1] = 0;
+                session->data_byte_volume_direction[1] = 0;
+
+                session->packet_count_direction[0] = 0;
+                session->data_volume_direction[0] = 0;
+                session->packet_cap_count_direction[0] = 0;
+                session->data_cap_volume_direction[0] = 0;
+                session->data_packet_count_direction[0] = 0;
+                session->data_byte_volume_direction[0] = 0;
+
+                session->sub_packet_count = 0;
+                session->sub_packet_cap_count = 0;
+                session->sub_data_packet_count = 0;
+                session->sub_data_volume = 0;
+                session->sub_data_cap_volume = 0;
+                session->sub_data_byte_volume = 0;
+
+                session->sub_packet_count_direction[1] = 0;
+                session->sub_data_volume_direction[1] = 0;
+                session->sub_packet_cap_count_direction[1] = 0;
+                session->sub_data_cap_volume_direction[1] = 0;
+                session->sub_data_packet_count_direction[1] = 0;
+                session->sub_data_byte_volume_direction[1] = 0;
+
+                session->sub_packet_count_direction[0] = 0;
+                session->sub_data_volume_direction[0] = 0;
+                session->sub_packet_cap_count_direction[0] = 0;
+                session->sub_data_cap_volume_direction[0] = 0;
+                session->sub_data_packet_count_direction[0] = 0;
+                session->sub_data_byte_volume_direction[0] = 0;
+
+                session->tcp_retransmissions = 0;
+                session->tcp_outoforders = 0;
                 session->status = NonClassified;
                 session->protocol_container_context = configured_protocol;
                 session->session_protocol_index = index;
-                session->tcp_retransmissions = 0;
-                session->tcp_outoforders = 0;
                 mmt_handler->sessions_count += 1;
                 mmt_handler->active_sessions_count += 1;
 
@@ -2504,7 +2544,15 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             session->packet_count     ++;
             session->data_volume      += ipacket->p_hdr->len;
             session->data_cap_volume  += ipacket->total_caplen;
-            session->packet_cap_count += ipacket->nb_reassembled_packets;
+            session->packet_cap_count += ipacket->nb_reassembled_packets[index];
+            mmt_session_t * p_session = session->parent_session;
+            while(p_session) {
+                p_session->sub_packet_count     ++;
+                p_session->sub_data_volume      += ipacket->p_hdr->len;
+                p_session->sub_data_cap_volume  += ipacket->total_caplen;
+                p_session->sub_packet_cap_count += ipacket->nb_reassembled_packets[index];
+                p_session = p_session->parent_session;
+            }
 
             session->s_last_activity_time.tv_sec  = ipacket->p_hdr->ts.tv_sec;
             session->s_last_activity_time.tv_usec = ipacket->p_hdr->ts.tv_usec;
@@ -2756,7 +2804,7 @@ void reset_proto_stats(protocol_instance_t * proto) {
 * @parent_stats             Statistic of protocol parent
 */
 static inline
-proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset) {
+proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset, unsigned index) {
     if (likely(isProtocolStatisticsEnabled(ipacket->mmt_handler))) {
         /* TODO: Throughout metrics should be replaced by periodic handlers! */
         proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
@@ -2765,7 +2813,7 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
             proto_stats->touched         = 1;
             proto_stats->packets_count  += 1;
             proto_stats->data_volume    += ipacket->p_hdr->original_len;
-            proto_stats->payload_volume += ipacket->p_hdr->original_len - proto_offset;
+            proto_stats->payload_volume += ipacket->p_hdr->len - proto_offset;
             // Update the fist packet
             if (proto_stats->packets_count == 1) {
                 proto_stats->first_packet_time = ipacket->p_hdr->ts;
@@ -2778,11 +2826,11 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
 
             // Check if this is IP protocol, then update ip_fragment information
             if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179)){
-                if(ipacket->is_fragment){
+                if(ipacket->is_fragment[index]){
                     proto_stats->ip_frag_packets_count ++;
-                    if(ipacket->is_completed){
+                    if(ipacket->is_completed[index]){
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
-                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
+                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets[index];
                         proto_stats->ip_df_data_volume += ipacket->total_caplen;
                     }else{
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
@@ -2804,7 +2852,7 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
  * @return                     updated protocol statistic
  */
 static inline
-proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset) {
+proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset, unsigned index) {
     if (!isProtocolStatisticsEnabled(ipacket->mmt_handler)) {
         return NULL;
     }
@@ -2831,11 +2879,11 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
 
             // Check if this is IP protocol, then update ip_fragment information
             if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179)){
-                if(ipacket->is_fragment){
+                if(ipacket->is_fragment[index]){
                     proto_stats->ip_frag_packets_count ++;
-                    if(ipacket->is_completed){
+                    if(ipacket->is_completed[index]){
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
-                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets;
+                        proto_stats->ip_df_packets_count += ipacket->nb_reassembled_packets[index];
                         proto_stats->ip_df_data_volume += ipacket->total_caplen;
                     }else{
                         proto_stats->ip_frag_data_volume += ipacket->p_hdr->caplen;
@@ -2852,7 +2900,7 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
  * @param configured_protocol protocol configuration
  * @param index               index of protocol
  */
-void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
+int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
     //TODO: review the exit codes; this depends on the return values of the sub-classification routines
     //TODO: why don't to enforce here a threshold on the classification?
     //Verify that classification is not disabled for this protocol
@@ -2879,10 +2927,11 @@ void proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * confi
             //Post-classification! Post classification is only accessible if there is a classification function
             //And if the preclassification returned non zero which means: proceed with the classification routines.
             if (configured_protocol->protocol->classify_next.post_classify) {
-                configured_protocol->protocol->classify_next.post_classify(ipacket, index);
+                return configured_protocol->protocol->classify_next.post_classify(ipacket, index);
             }
         }
     }
+    return 1;
 }
 
 /**
@@ -3098,57 +3147,67 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     //The protocol is registered: First we check if it requires to maintain a session
     is_new_session = proto_session_management(ipacket, configured_protocol, index);
     if (is_new_session == NEW_SESSION) {
-        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session, proto_offset);
+        parent_stats = update_proto_stats_on_new_session(ipacket, configured_protocol, (proto_statistics_internal_t*)parent_stats, is_new_session, proto_offset, index);
         fire_attribute_event(ipacket, configured_protocol->protocol->proto_id, PROTO_SESSION, index, (void *) ipacket->session);
         // fire_evasion_event(ipacket, configured_protocol->protocol->proto_id, index, 1, (void *) NULL);
     }
     else {
         //Update the protocol statistics
-        parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset);
+        parent_stats = update_proto_stats_on_packet(ipacket, configured_protocol, parent_stats, proto_offset, index);
     }
 
     //Analyze packet data
     target = proto_packet_analyze(ipacket, configured_protocol, index);
     //Proceed with the extraction and the handlers notification for this protocol
     //if the target action is CONTINUE or SKIP (skip means continue with this proto but no further)
-    if (target != MMT_DROP) {
+    if (target != MMT_DROP)
+    {
         //Attributes extraction
         proto_process_attribute_handlers(ipacket, index);
     }
 
     //Proceed with the classification sub-process only if the target action is set to CONTINUE
-    if (target == MMT_CONTINUE) {
+    if (target == MMT_CONTINUE)
+    {
 
-        proto_packet_classify_next(ipacket, configured_protocol, index);
-
-        if (ipacket->session != NULL) {
+        target = proto_packet_classify_next(ipacket, configured_protocol, index) ? MMT_CONTINUE : MMT_SKIP;
+        if (ipacket->session != NULL)
+        {
             // Update proto_path_direction
-            if (ipacket->session->proto_path.len > 0) {
-
+            if (ipacket->session->proto_path.len > 0)
+            {
                 int proto_direction = ipacket->session->last_packet_direction;
                 int proto_path_len = ipacket->session->proto_path.len;
-                if (ipacket->session->proto_path_direction[proto_direction].len != proto_path_len) {
+                if (ipacket->session->proto_path_direction[proto_direction].len != proto_path_len)
+                {
                     ipacket->session->proto_path_direction[proto_direction].len = proto_path_len;
                     int i = 0;
-                    for (i = 0; i < proto_path_len; i++) {
+                    for (i = 0; i < proto_path_len; i++)
+                    {
                         ipacket->session->proto_path_direction[proto_direction].proto_path[i] = ipacket->session->proto_path.proto_path[i];
                     }
                     // debug("[IP] Update protocol path direction: %d", proto_direction);
-                }else{
-                    if(ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] != ipacket->session->proto_path.proto_path[proto_path_len - 1]){
+                }
+                else
+                {
+                    if (ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] != ipacket->session->proto_path.proto_path[proto_path_len - 1])
+                    {
                         ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] = ipacket->session->proto_path.proto_path[proto_path_len - 1];
                     }
                 }
-
             }
         }
         // Need to check if the ipacket is still exist
         // send the packet to the next encapsulated protocol if an encapsulated protocol exists in the path
-        if (ipacket->proto_hierarchy->len > (index + 1)) {
-            if (_is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1])) {
-                /* process the packet by the next encapsulated protocol */
-                return proto_packet_process(ipacket, parent_stats, index + 1);
-            }
+        if (index ==0 || target == MMT_CONTINUE) {
+          if (ipacket->proto_hierarchy->len > (index + 1))
+          {
+              if (_is_registered_protocol(ipacket->proto_hierarchy->proto_path[index + 1]))
+              {
+                  /* process the packet by the next encapsulated protocol */
+                  return proto_packet_process(ipacket, parent_stats, index + 1);
+              }
+          }
         }
         process_packet_handler(ipacket);
     }
@@ -3196,9 +3255,12 @@ int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     mmt->current_ipacket.mmt_handler = mmt;
     mmt->current_ipacket.internal_packet = NULL;
     mmt->current_ipacket.last_callback_fct_id = 0;
-    mmt->current_ipacket.nb_reassembled_packets = 1;
-    mmt->current_ipacket.is_completed = 0;
-    mmt->current_ipacket.is_fragment = 0;
+    int i = 0;
+    for ( i = 0; i < PROTO_PATH_SIZE; i++ ) {
+        mmt->current_ipacket.nb_reassembled_packets[i] = 1;
+        mmt->current_ipacket.is_completed[i] = 0;
+        mmt->current_ipacket.is_fragment[i] = 0;
+    }
     mmt->current_ipacket.total_caplen = header->caplen;
     // update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
     mmt->last_received_packet.packet_id += 1;
@@ -3248,9 +3310,12 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     ipacket->mmt_handler = mmt;
     ipacket->internal_packet = NULL;
     ipacket->last_callback_fct_id = 0;
-    ipacket->nb_reassembled_packets = 1;
-    ipacket->is_completed = 0;
-    ipacket->is_fragment = 0;
+    int i = 0;
+    for ( i = 0; i < PROTO_PATH_SIZE; i++ ) {
+        ipacket->nb_reassembled_packets[i] = 1;
+        ipacket->is_completed[i] = 0;
+        ipacket->is_fragment[i] = 0;
+    }
     ipacket->total_caplen = header->caplen;
     // update_last_received_packet(&mmt->last_received_packet, ipacket);
     mmt->last_received_packet.packet_id += 1;
