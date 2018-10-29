@@ -109,9 +109,11 @@ struct mmt_session_struct {
     uint32_t next_tcp_seq_nr[2];
 
     uint64_t session_id;                     /**< session identifier */
-    uint64_t packet_count;                   /**< tracks the number of packets */
     uint64_t fragmented_packet_count;        /**< number of fragmented packets which are in this session*/
     uint64_t fragment_count;                 /**< number of fragments which are in this session*/
+
+    /* Total statistics */
+    uint64_t packet_count;                   /**< tracks the number of packets */
     uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
     uint64_t data_cap_volume;                /**< data volume captured  - include fragmented packets*/
     uint64_t data_volume;                    /**< tracks the octet data volume */
@@ -124,6 +126,23 @@ struct mmt_session_struct {
     uint64_t data_cap_volume_direction[2];       /**< Session's data volume ( - include fragmented packets) in both directions: initiator <-> remote */
     uint64_t data_packet_count_direction[2]; /**< Session's effective payload packet count in both directions: initiator <-> remote */
     uint64_t data_byte_volume_direction[2];  /**< Session's effective payload data volume in both directions: initiator <-> remote */
+    // End of total statistics
+
+    // Children's statistics: subsession: all sessions which are created inside this session (tunnel, GTP, VPN, ...)
+    uint64_t sub_packet_count;                   /**< subsession: tracks the number of packets*/
+    uint64_t sub_packet_cap_count;               /**< subsession: number of packets which are captured as in this session - include fragmented packets*/
+    uint64_t sub_data_cap_volume;                /**< subsession: data volume captured  - include fragmented packets*/
+    uint64_t sub_data_volume;                    /**< subsession: tracks the octet data volume */
+    uint64_t sub_data_packet_count;              /**< subsession: tracks the number of packets holding effective payload data */
+    uint64_t sub_data_byte_volume;               /**< subsession: tracks the effective payload data volume */
+
+    uint64_t sub_packet_count_direction[2];      /**< subsession: Session's packet count in both directions: initiator <-> remote */
+    uint64_t sub_data_volume_direction[2];       /**< subsession: Session's data volume in both directions: initiator <-> remote */
+    uint64_t sub_packet_cap_count_direction[2];      /**< subsession: Session's packet count ( - include fragmented packets) in both directions: initiator <-> remote */
+    uint64_t sub_data_cap_volume_direction[2];       /**< subsession: Session's data volume ( - include fragmented packets) in both directions: initiator <-> remote */
+    uint64_t sub_data_packet_count_direction[2]; /**< subsession: Session's effective payload packet count in both directions: initiator <-> remote */
+    uint64_t sub_data_byte_volume_direction[2];  /**< subsession: Session's effective payload data volume in both directions: initiator <-> remote */
+    // End of children's statistics
 
     struct timeval s_init_time;              /**< indicates the time when the session was first detected. */
     struct timeval s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */

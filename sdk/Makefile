@@ -4,17 +4,35 @@ RULESDIR     := $(TOPDIR)/rules
 # Set name of package with given version
 BUILD_DIR	 :=mmt-dpi_$(VERSION)_`uname -s`_`uname -p`_`date +%s`
 
+#Directory given by user (e.g., make install INSTALL_DIR=/home/tata/mmt) to install MMT-DPI to
+ifdef MMT_BASE
+  $(info Change default install directory to $(MMT_BASE))
+else
+  MMT_BASE             := /opt/mmt
+  NEED_ROOT_PERMISSION := 1
+endif
+
 default: sdk
 .PHONY: sdk install clean dist-clean
 
 include $(RULESDIR)/arch-$(ARCH).mk
 
-
+# This target is to deal with the issue when user uses 
+#   2 differrent values of INSTALL_DIR for "make" and "make install"
+# Ex: make; sudo make install INSTALL_DIR=/tmp/mmt
+#   - the first "make" will set in the codes PLUGINS_REPOSITORY_OPT to /opt/mmt/plugins
+#   - while the second "make install" will install to /tmp/mmt
+# Thus we need to recompile the codes that use PLUGINS_REPOSITORY_OPT to update the new directory.
+# The following target will remove the object files of the codes, thus it will trigger to recompile them.
+# So, in the example above, the PLUGINS_REPOSITORY_OPT will be update to /tmp/mmt/plugins.
+--refresh-plugin-engine:
+	$(QUIET) $(RM) $(SRCDIR)/mmt_core/src/plugins_engine.o
+	
 #  - - -
 #  S D K
 #  - - -
 
-sdk: libraries includes tools documentation examples
+sdk: --refresh-plugin-engine libraries includes tools documentation examples
 
 
 #  - - - - - - -
@@ -23,6 +41,12 @@ sdk: libraries includes tools documentation examples
 
 install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB)
 	@ cp $(SDKLIB)/* $(MMT_LIB)
+# Make links
+	@ln -sf $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(MMT_LIB)/libmmt_core.so
+	@ln -sf $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(MMT_LIB)/libmmt_fuzz.so
+	@ln -sf $(MMT_LIB)/libmmt_security.so.$(VERSION) $(MMT_LIB)/libmmt_security.so
+	@ln -sf $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(MMT_LIB)/libmmt_tcpip.so
+	
 	@ echo "[MMT-]> Installed  "$(SDKLIB)" at "$(MMT_LIB)
 	@ cp -R $(SDKINC)/* $(MMT_INC)
 	@ echo "[MMT-]> Installed  "$(SDKINC)" at "$(MMT_INC)
@@ -30,8 +54,11 @@ install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT
 	@ echo "[MMT-]> Installed  "$(SDKXAM)" at "$(MMT_EXAMS)
 	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(MMT_PLUGINS)/libmmt_tcpip.so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/libmmt_tcpip.so
-	@ echo $(MMT_DPI)"/lib" >> /etc/ld.so.conf.d/mmt.conf
+	
+ifdef NEED_ROOT_PERMISSION
+	@ echo "$(MMT_LIB)" > /etc/ld.so.conf.d/mmt-dpi.conf
 	@ ldconfig
+endif
 	@ echo "[MMT-]> Done! "
 
 #  - - - - - - -
@@ -42,22 +69,32 @@ SYS_VERSION = $(shell uname -p)
 
 BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 
-deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
+--private-prepare-build-dir:
 	echo $(BUILD_DIR)
 	# Remove old build
 	$(QUIET) $(RM) $(BUILD_DIR)
 	# Create new build location
+	$(QUIET) $(MKDIR) -p $(BUILD_DIR)$(MMT_LIB)
+	$(QUIET) $(MKDIR) -p $(BUILD_DIR)$(MMT_INCLUDE)
+	$(QUIET) $(MKDIR) -p $(BUILD_DIR)$(MMT_EXAMS)
+	$(QUIET) $(MKDIR) -p $(BUILD_DIR)$(MMT_PLUGINS)
+	$(QUIET) $(MKDIR) -p $(BUILD_DIR)/etc/ld.so.conf.d/
+	# Copy resources
+	echo $(SDKLIB)
+	$(QUIET) $(CP)    $(SDKLIB)/* $(BUILD_DIR)$(MMT_BASE)/dpi/lib
+	$(QUIET) $(CP) -r $(SDKINC)   $(BUILD_DIR)$(MMT_BASE)/dpi
+	$(QUIET) $(CP) -r $(SDKXAM)   $(BUILD_DIR)$(MMT_BASE)
+	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
+	# Make links
+	$(QUIET) ln -s $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_core.so
+	$(QUIET) ln -s $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so
+	$(QUIET) ln -s $(MMT_LIB)/libmmt_security.so.$(VERSION) $(BUILD_DIR)$(MMT_LIB)/libmmt_security.so
+	$(QUIET) ln -s $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/libmmt_tcpip.so
+	#tell ldconfig to find mmt-dpi libraries at the installed folder
+	echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
+	
+deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/DEBIAN
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/dpi
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/dpi/lib
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/dpi/include
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/examples
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/plugins
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/etc
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/etc/ld.so.conf.d/
-
 	$(QUIET) echo "Package: mmt-dpi \
         \nVersion: $(VERSION)-$(GIT_VERSION)\
         \nSection: base \
@@ -69,19 +106,6 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
         \n A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis \
         \n Homepage: http://www.montimage.com" \
 		> $(BUILD_DIR)/DEBIAN/control
-	# Copy resources
-	echo $(SDKLIB)
-	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi/lib
-	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_core.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
-	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_fuzz.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
-	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_security.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
-	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so
-	$(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
-	# $(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
-	# $(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
-	$(QUIET) $(CP) -r $(SDKXAM) $(BUILD_DIR)/opt/mmt
-	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/plugins/libmmt_tcpip.so
-	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
 
 	$(QUIET) dpkg-deb -b $(BUILD_DIR)
 	$(QUIET) $(RM) $(BUILD_DIR)
@@ -90,35 +114,9 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 #  B U I L D   R P M
 #  - - - - - - - - - -
 
-rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
-	echo $(BUILD_DIR)
-	# Remove old build
-	$(QUIET) $(RM) $(BUILD_DIR)
-	# Create new build location
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/dpi
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/dpi/lib
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/dpi/include
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/examples
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/opt/mmt/plugins
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/etc
-	$(QUIET) $(MKDIR) $(BUILD_DIR)/etc/ld.so.conf.d/
-	# Copy resources
-	echo $(SDKLIB)
-	$(QUIET) $(CP) $(SDKLIB)/* $(BUILD_DIR)/opt/mmt/dpi/lib
-	$(QUIET) $(CP) -r $(SDKINC) $(BUILD_DIR)/opt/mmt/dpi
-	$(QUIET) $(CP) -r $(SDKXAM) $(BUILD_DIR)/opt/mmt
-	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/plugins/libmmt_tcpip.so
-	echo "/opt/mmt/dpi/lib" >> $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
-	# Make links
-	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_core.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_core.so
-	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_fuzz.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_fuzz.so
-	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_security.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_security.so
-	$(QUIET) ln -s /opt/mmt/dpi/lib/libmmt_tcpip.so.$(VERSION) $(BUILD_DIR)/opt/mmt/dpi/lib/libmmt_tcpip.so
-
+rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	# Build .rpm file ...
-	mkdir -p ./rpmbuild/{RPMS,BUILD}
+	$(QUIET) $(MKDIR) ./rpmbuild/{RPMS,BUILD}
 
 	$(QUIET) echo -e\
 	    "Summary:  MMT-DPI\
@@ -193,7 +191,9 @@ clean:
 dist-clean:
 	@ echo "[MMT-]> Going to remove MMT"
 	$(QUIET) $(RM) $(MMT_DPI)
+ifdef NEED_ROOT_PERMISSION
 	$(QUIET) $(RM) /etc/ld.so.conf.d/mmt.conf
+endif
 	@ echo "[MMT-]> Done!"
 
 # - - - - - - - - - -
@@ -202,5 +202,5 @@ dist-clean:
 
 test:
 	@ echo "Start testing..."
-	gcc -o proto_attributes_iterator /opt/mmt/examples/proto_attributes_iterator.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl
+	gcc -o proto_attributes_iterator $(MMT_EXAMS)/proto_attributes_iterator.c -I $(MMT_INC) -L $(MMT_LIB) -lmmt_core -ldl
 	./proto_attributes_iterator

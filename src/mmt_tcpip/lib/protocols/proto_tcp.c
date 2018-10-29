@@ -522,7 +522,7 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
 
     int new_retval = 0;
     // if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count >= CFG_CLASSIFICATION_THRESHOLD) {
-    if (retval.proto_id == PROTO_UNKNOWN) {
+    if (retval.proto_id == PROTO_UNKNOWN || retval.proto_id == PROTO_GTP) {
         // LN: Check if the protocol id in the last index of protocol hierarchy is not PROTO_UDP -> do not try to classify more - external classification
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_TCP){
             return new_retval;
