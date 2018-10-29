@@ -19,7 +19,16 @@ extern "C" {
 #endif
 
 #define PLUGINS_REPOSITORY "plugins"
-#define PLUGINS_REPOSITORY_OPT "/opt/mmt/plugins"
+/*
+ * The folder of plugin may be given when building,
+ * For example: make INSTALL_DIR=/home/tata/mmt
+ *   then the PLUGINS_REPOSITORY_OPT will be /home/tata/mmt/plugins
+ * see mmt-sdk/rules/common.mk
+ */
+#ifndef PLUGINS_REPOSITORY_OPT
+	#define PLUGINS_REPOSITORY_OPT "/opt/mmt/plugins"
+#endif
+
 #define PLUGIN_INIT_FUNCTION_NAME "init_proto"
 #define PLUGIN_CLEANUP_FUNCTION_NAME "cleanup_proto"
 

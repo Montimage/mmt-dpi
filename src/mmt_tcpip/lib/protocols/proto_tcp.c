@@ -157,12 +157,12 @@ int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     // if(ipacket->internal_packet->payload_packet_len){
         // Check padding packet
         if(ipacket->internal_packet->iph==NULL){
-            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
+            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
             return 1;
         }
-        
+
         if((ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)){
-            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;    
+            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
             return 1;
         }
     // }
@@ -282,7 +282,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     /* check for new tcp syn packets, here
      * idea: reset detection state if a connection is unknown
      */
-     if (packet->tcp!=NULL 
+     if (packet->tcp!=NULL
         && packet->tcp->syn != 0
         && packet->tcp->ack == 0
         && packet->flow != NULL
@@ -322,7 +322,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // if (ipacket->session->packet_count > CFG_CLASSIFICATION_THRESHOLD) {
     //    return 0;
     // }
-    
+
     return 1;
 }
 
@@ -341,7 +341,7 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
 
     int new_retval = 0;
     // if (retval.proto_id == PROTO_UNKNOWN && ipacket->session->packet_count >= CFG_CLASSIFICATION_THRESHOLD) {
-    if (retval.proto_id == PROTO_UNKNOWN) {
+    if (retval.proto_id == PROTO_UNKNOWN || retval.proto_id == PROTO_GTP) {
         // LN: Check if the protocol id in the last index of protocol hierarchy is not PROTO_UDP -> do not try to classify more - external classification
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_TCP){
             return new_retval;
@@ -405,4 +405,4 @@ int init_proto_tcp_struct() {
 //     debug("Cleanup tcp protocol");
 //     return 1;
 // }
-// 
+//

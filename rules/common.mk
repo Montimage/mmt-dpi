@@ -1,4 +1,4 @@
-VERSION  := 1.6.13.1
+VERSION  := 1.6.14.1
 GIT_VERSION := $(shell git log --format="%h" -n 1)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
@@ -27,8 +27,8 @@ endif
 # DEFINE FLAG FOR COMPILE COMMAND
 #  - - - - -
 
-CFLAGS   := -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
-CXXFLAGS := -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\"
+CFLAGS   := -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\" -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"
+CXXFLAGS := -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\" -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"
 
 # NDEBUG = 1 to show all message come from debug(), ...
 ifdef NDEBUG
