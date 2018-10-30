@@ -71,7 +71,7 @@ extern "C" {
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
 #ifndef VERSION
-#define VERSION "1.6.14.1"
+#define VERSION "1.6.14.2"
 #endif
 
 #ifdef GIT_VERSION
@@ -282,7 +282,8 @@ MMTAPI int MMTCALL register_session_timeout_handler(
 MMTAPI int MMTCALL register_session_timer_handler(
     mmt_handler_t *mmt_handler,
     generic_session_timer_handler_function session_timer_handler_fct,
-    void *user
+    void *user,
+    uint8_t no_fragmented
 );
 
 

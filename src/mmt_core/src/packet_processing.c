@@ -347,9 +347,10 @@ int register_session_timeout_handler(mmt_handler_t *mmt_h, generic_session_timeo
     return 1;
 }
 
-int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_handler_function session_timer_handler_fct, void * args) {
+int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_handler_function session_timer_handler_fct, void * args, uint8_t no_fragmented) {
     mmt_h->session_timer_handler.session_timer_handler_fct = session_timer_handler_fct;
     mmt_h->session_timer_handler.args = args;
+    mmt_h->session_timer_handler.no_fragmented = no_fragmented;
     return 1;
 }
 
@@ -464,13 +465,21 @@ void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_
 }
 
 void session_timer_handler_callback(void * timeout_milestone, void * milestone_sessions_list, void * args) {
-    // printf("session_timer_handler_callback \n");
     mmt_handler_t * mmt_handler = (mmt_handler_t *) args;
     mmt_session_t * current_session = (mmt_session_t *) milestone_sessions_list;
-    while (current_session != NULL) {
-        // printf("session_timer_handler_callback and session id: %"PRIu64"\n",current_session->session_id);
-        mmt_handler->session_timer_handler.session_timer_handler_fct(current_session, mmt_handler->session_timer_handler.args);
-        current_session = current_session->next;
+    if (mmt_handler->session_timer_handler.session_timer_handler_fct != NULL) {
+        while (current_session != NULL) {
+            // printf("session_timer_handler_callback and session id: %"PRIu64"\n",current_session->session_id);
+            if (mmt_handler->session_timer_handler.no_fragmented && current_session->is_fragmenting) {
+                // Skip processing the session that contains a fragmented packet.
+                current_session = current_session->next;
+            } else {
+                mmt_handler->session_timer_handler.session_timer_handler_fct(current_session, mmt_handler->session_timer_handler.args);
+                current_session = current_session->next;
+            }
+        }
+    } else {
+        fprintf(stderr, "There is not any session_timer_handler\n");
     }
 }
 
@@ -2426,6 +2435,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
                 session->fragmented_packet_count = 0;
                 session->fragment_count = 0;
+                session->is_fragmenting = 0;
 
                 session->packet_count = 0;
                 session->packet_cap_count = 0;
