@@ -1,10 +1,20 @@
 RELEASE NOTES
 ---
+Version 1.6.14.2
+- Add is_fragmenting in session to mark a session holding a incompleted packet
+- Update API for session_timer_handler, add parameter to choose executing the session handler with or without incompleted packet.
+
 Version 1.6.14.1
 - Update DPI for correcting the statistics of IP fragmentation (which is encapsulated in other IP packet)
+- remove TCP_SEGMENT compile option.
+- new API: update_protocol(proto_id, action_id), to update protocol structure after initializing
+- 2 action for protocol tcp: TCP_ENABLE_REASSEMBLE (to enable tcp reasseble process) and TCP_DISABLE_REASSEMBLE
+- Return single pointer when extracting session data
 
 Version 1.6.14.0
 - Open new APIs to get session statistics with 2 possibilities: with subsession and without subsession. By default, when talking about session statistic which means it does not include subsession statistics
+- Add TCP_SEGMENT option: to enable handling tcp_segment inside mmt-sdk. Support for: reconstruct the payload, manage outoforder, retransmission, overlapping, ...
+- To enable this feature in mmt-dpi -> compile with option: `make -j4 TCP_SEGMENT=1`
 
 Version 1.6.13.2
 - Fix bug: incorrect protocol path - eth.ip.ip

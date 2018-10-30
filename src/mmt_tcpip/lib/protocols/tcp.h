@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   tcp.h
  * Author: Gerardo
  *
@@ -14,8 +14,9 @@ extern "C" {
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
+#include "tcp_segment.h"
 
-   
+
 #if defined(_WIN32) || defined(_OSX)
     struct tcphdr {
         uint16_t source;

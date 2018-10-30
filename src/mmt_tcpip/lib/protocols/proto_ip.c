@@ -1288,6 +1288,9 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     // Check if the packet is a fragment or not
     if (mmt_iph_is_fragmented(ip_hdr)) {
         ipacket->is_fragment[index] = 1;
+        if (ipacket->session) {
+            ipacket->session->is_fragmenting = 1;
+        }
         // debug("Fragmented packet: %lu\n", ipacket->packet_id);
         if ( !ip_process_fragment( ipacket, index )) {
             *is_new_session = 0;
@@ -1296,7 +1299,9 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     }
 
     ipacket->is_completed[index] = 1;
-
+    if (ipacket->session) {
+        ipacket->session->is_fragmenting = 0;
+    }
     // re-point to the reassempled IP header if reassembly took place
     // points to the same pointer if no fragmentation
     ip_hdr = (struct iphdr *) & ipacket->data[offset];

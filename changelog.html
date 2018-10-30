@@ -2,13 +2,13 @@
 <html lang="en">
 
 <head>
-  <title>Montimage | MMT-SDK Change Logs</title>
-  <!-- Required meta tags -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Montimage | MMT-SDK Change Logs</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb"
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb"
     crossorigin="anonymous">
   <style>
     .card {
@@ -58,6 +58,21 @@
     <!-- START CHANGE LOGS -->
     <div class="card border border-secondary">
       <div class="card-header bg-secondary">
+        Version 1.6.14.2
+      </div>
+      <div class="card-body">
+        <h4 class="card-title"></h4>
+        <p class="card-text">
+          <ul>
+            <li>Add is_fragmenting in session to mark a session holding a incompleted packet</li>
+            <li>Update API for session_timer_handler, add parameter to choose executing the session handler with or without incompleted packet.</li>
+          </ul>
+        </p>
+      </div>
+    </div>
+
+    <div class="card border border-secondary">
+      <div class="card-header bg-secondary">
         Version 1.6.14.1
       </div>
       <div class="card-body">
@@ -65,6 +80,10 @@
         <p class="card-text">
           <ul>
             <li>Update DPI for correcting the statistics of IP fragmentation (which is encapsulated in other IP packet)</li>
+            <li>remove TCP_SEGMENT compile option.</li>
+            <li>new API: update_protocol(proto_id, action_id), to update protocol structure after initializing</li>
+            <li>2 action for protocol tcp: TCP_ENABLE_REASSEMBLE (to enable tcp reasseble process) and TCP_DISABLE_REASSEMBLE</li>
+            <li>Return single pointer when extracting session data</li>
           </ul>
         </p>
       </div>
@@ -78,9 +97,8 @@
         <h4 class="card-title"></h4>
         <p class="card-text">
           <ul>
-            <li>Fix bug: incorrect protocol path - eth.ip.ip</li>
-            <li>Fix bug which cause segmentation fault in PROTO_GTP (temporary fix)</li>
-            <li>Update Makefile for new plugin path (@huunghia PR)</li>
+            <li>Open new APIs to get session statistics with 2 possibilities: with subsession and without subsession. By default, when talking about session statistic which means it does not include subsession statistics</li>
+            <li>Add TCP_SEGMENT option: to enable handling tcp_segment inside mmt-sdk. Support for: reconstruct the payload, manage outoforder, retransmission, overlapping, ...To enable this feature in mmt-dpi -> compile with option: `make -j4 TCP_SEGMENT=1`</li>
           </ul>
         </p>
       </div>
@@ -94,7 +112,9 @@
         <h4 class="card-title"></h4>
         <p class="card-text">
           <ul>
-            <li>Open new APIs to get session statistics with 2 possibilities: with subsession and without subsession. By default, when talking about session statistic which means it does not include subsession statistics</li>
+            <li>Fix bug: incorrect protocol path - eth.ip.ip</li>
+            <li>Fix bug which cause segmentation fault in PROTO_GTP (temporary fix)</li>
+            <li>Update Makefile for new plugin path (@huunghia PR)</li>
           </ul>
         </p>
       </div>
@@ -111,6 +131,8 @@
           <ul>
             <li>Fix memory leak when using with mmt-reassembly library</li>
             <li>Fix some bug in http.c and proto_tpkt.c</li>
+            <li>Update proto_sctp.c: do not add UNKNOWN protocol at the end</li>
+            <li>Update make file to disable SECURITY by default. To compile mmt-sdk with security: make ENABLESEC=1</li>
           </ul>
         </p>
       </div>

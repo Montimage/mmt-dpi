@@ -111,7 +111,7 @@ struct mmt_session_struct {
     uint64_t session_id;                     /**< session identifier */
     uint64_t fragmented_packet_count;        /**< number of fragmented packets which are in this session*/
     uint64_t fragment_count;                 /**< number of fragments which are in this session*/
-
+    uint8_t is_fragmenting;                  /** 1 - session is processing a fragmented packet, 0 - session is not processing any fragmented packet*/
     /* Total statistics */
     uint64_t packet_count;                   /**< tracks the number of packets */
     uint64_t packet_cap_count;               /**< number of packets which are captured as in this session - include fragmented packets*/
@@ -189,7 +189,9 @@ struct mmt_session_struct {
 #else
 #error "BYTE_ORDER must be defined"
 #endif
-
+    void * tcp_segment_list[2]; // TCP Payload of session
+    uint8_t * session_payload[2]; // TCP Payload of session
+    uint32_t session_payload_len[2]; // session payload len
 };
 
 /**
@@ -274,6 +276,7 @@ struct session_expiry_handler_struct {
 struct session_timer_handler_struct{
     generic_session_timer_handler_function session_timer_handler_fct;
     void *args;
+    uint8_t no_fragmented;
 };
 
 struct mmt_classify_proto_struct {
@@ -380,6 +383,7 @@ struct protocol_struct {
     void * protocol_context_args; /**< For internal use. Must not be changed. Pointer to the protocol's context argument.
                                    * Will be passed when calling protocol_context_init and protocol_context_cleanup. */
     //void * args; /**< For internal use. MUST not be changed. */
+    int (* update_protocol_fct) (int); // function to update protocol structure
 };
 
 struct protocol_instance_struct {

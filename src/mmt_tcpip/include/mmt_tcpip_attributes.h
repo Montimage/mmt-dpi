@@ -166,6 +166,10 @@ enum {
     TCP_RETRANSMISSION,
     TCP_OUTOFORDER,
     TCP_SESSION_RETRANSMISSION,
+    TCP_SESSION_PAYLOAD_UP_LEN,
+    TCP_SESSION_PAYLOAD_UP,
+    TCP_SESSION_PAYLOAD_DOWN_LEN,
+    TCP_SESSION_PAYLOAD_DOWN,
     // TCP_SESSION_OUTOFORDER,
     TCP_PAYLOAD_LEN,
     TCP_CONN_CLOSED,
@@ -195,7 +199,11 @@ enum {
 #define TCP_SYN_RCV_ALIAS     "syn_received"
 #define TCP_RETRANSMISSION_ALIAS     "retransmission"
 #define TCP_OUTOFORDER_ALIAS     "outoforder"
-#define TCP_SESSION_RETRANSMISSION_ALIAS     "session_retransmission"
+#define TCP_SESSION_RETRANSMISSION_ALIAS     "tcp_session_retransmission"
+#define TCP_SESSION_PAYLOAD_UP_LEN_ALIAS     "tcp_session_payload_up_len"
+#define TCP_SESSION_PAYLOAD_UP_ALIAS     "tcp_session_payload_up"
+#define TCP_SESSION_PAYLOAD_DOWN_LEN_ALIAS     "tcp_session_payload_down_len"
+#define TCP_SESSION_PAYLOAD_DOWN_ALIAS     "tcp_session_payload_down"
 // #define TCP_SESSION_OUTOFORDER_ALIAS     "session_outoforder"
 #define TCP_PAYLOAD_LEN_ALIAS     "payload_len"
 #define TCP_CONN_CLOSED_ALIAS "closed"
@@ -995,7 +1003,7 @@ enum ftp_attributes {
 #define FTP_PACKET_REQUEST_PARAMETER_ALIAS "packet_request_parameter"// ONLY REQUEST PACKET
 #define FTP_PACKET_RESPONSE_CODE_ALIAS "packet_response_code"// ONLY RESPONSE PACKET
 #define FTP_PACKET_RESPONSE_VALUE_ALIAS "packet_reponse_value"// ONLY RESPONSE PACKET
-#define FTP_PACKET_DATA_LEN_ALIAS "packet_payload_len"// ONLY DATA PACKET 
+#define FTP_PACKET_DATA_LEN_ALIAS "packet_payload_len"// ONLY DATA PACKET
 
 /////////////////////////////// END OF FTP ATTRIBUTES ///////////////////////////////////
 
