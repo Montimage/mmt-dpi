@@ -48,6 +48,7 @@ int load_plugins() {
     struct dirent **entries;
     struct dirent *entry;
     int plugins_path=0;
+    int ret;
     int n = scandir( PLUGINS_REPOSITORY, &entries, load_filter, alphasort );
     if( n < 0 ) {
         /* can't read PLUGINS_REPOSITORY -> just ignore and return success
@@ -65,7 +66,11 @@ int load_plugins() {
     int i;
     for( i = 0 ; i < n ; ++i ) {
         entry = entries[i];
-        (void)snprintf( path, 256, "%s/%s",plugins_path==0?PLUGINS_REPOSITORY:PLUGINS_REPOSITORY_OPT,entry->d_name );
+        ret = snprintf( path, 256, "%s/%s",plugins_path==0?PLUGINS_REPOSITORY:PLUGINS_REPOSITORY_OPT,entry->d_name );
+
+        if( ret <= 0 ) //must not occurs, but we need to check anyway to avoid warning when compiling using gcc7
+        	return 0;
+
         // printf("Loading plugins from: %s \n",path);
 	(void)load_plugin( path );
         free( entry );
