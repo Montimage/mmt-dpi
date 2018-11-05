@@ -3,6 +3,7 @@ include $(RULESDIR)/common.mk
 
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS   += -fPIC
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -fPIC
+$(CORE_OBJECTS) $(LIB5G_OBJECTS): CXXFLAGS += -fPIC
 ifdef ENABLESEC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS   += -fPIC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -fPIC
@@ -16,7 +17,8 @@ endif
 
 libraries: \
 	$(SDKLIB)/$(LIBCORE).so \
-	$(SDKLIB)/$(LIBTCPIP).so
+	$(SDKLIB)/$(LIBTCPIP).so \
+	$(SDKLIB)/$(LIB5G).so
 ifdef ENABLESEC
 libraries: \
 	$(SDKLIB)/$(LIBFUZZ).so \
@@ -37,6 +39,16 @@ $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so
+	
+$(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
+
+# LIB_5G
+$(SDKLIB)/$(LIB5G).so: $(SDKLIB)/$(LIB5G).so.$(VERSION)
+
+$(SDKLIB)/$(LIB5G).so.$(VERSION): $(SDKLIB)/$(LIB5G).a
+	@echo "[LIBRARY] $(notdir $@)"
+	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIB5G).so
+	
 ifdef ENABLESEC
 # FUZZ
 

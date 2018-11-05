@@ -74,12 +74,14 @@ SRCINC       := $(SRCDIR)/mmt_core/public_include  \
                 $(SRCDIR)/mmt_core/private_include \
                 $(SRCDIR)/mmt_tcpip/include \
                 $(SRCDIR)/mmt_tcpip/lib	\
+                $(SRCDIR)/mmt_5g/s1ap/asn1c	\
 				$(SRCDIR)/mmt_fuzz_engine
 
 SDKDIR       := $(TOPDIR)/sdk
 SDKDOC       := $(SDKDIR)/doc
 SDKINC       := $(SDKDIR)/include
 SDKINC_TCPIP := $(SDKDIR)/include/tcpip
+SDKINC_LIB5G := $(SDKDIR)/include/lib5g
 ifdef ENABLESEC
 SDKINC_FUZZ  := $(SDKDIR)/include/fuzz
 endif
@@ -87,7 +89,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_LIB5G) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
 	@mkdir -p $@
 
 
@@ -97,6 +99,9 @@ $(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM)
 
 LIBCORE     := libmmt_core
 LIBTCPIP    := libmmt_tcpip
+
+#z to ensure libmmt_z5g is after libmmt_tcpip in alphabet
+LIB5G       := libmmt_z5g
 LIBEXTRACT  := libmmt_extract
 ifdef ENABLESEC
 LIBSECURITY := libmmt_security
@@ -117,6 +122,13 @@ TCPIP_OBJECTS := \
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
+LIB5G_OBJECTS := \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/*.c))   \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/s1ap/asn1c/*.c)) \
+	
+$(CORE_OBJECTS) $(LIB5G_OBJECTS): CFLAGS += -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+
+	
 ifdef ENABLESEC
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))
@@ -140,6 +152,12 @@ $(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS)
 
+# 5G
+
+$(SDKLIB)/$(LIB5G).a: $(SDKLIB) $(LIB5G_OBJECTS)
+	@echo "[ARCHIVE] $(notdir $@)"
+	$(QUIET) $(AR) $@ $(LIB5G_OBJECTS)
+	
 ifdef ENABLESEC
 # FUZZ
 
@@ -164,7 +182,10 @@ SDK_HEADERS       = $(addprefix $(SDKINC)/,$(notdir $(MMT_HEADERS)))
 MMT_TCPIP_HEADERS = $(wildcard $(SRCDIR)/mmt_tcpip/include/*.h)
 SDK_TCPIP_HEADERS = $(addprefix $(SDKINC_TCPIP)/,$(notdir $(MMT_TCPIP_HEADERS)))
 
-includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS)
+MMT_LIB5G_HEADER  = $(wildcard $(SRCDIR)/mmt_5g/*.h)
+SDK_LIB5G_HEADERS = $(addprefix $(SDKINC_LIB5G)/,$(notdir $(MMT_LIB5G_HEADERS)))
+
+includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(MMT_5G_HEADER)
 
 ifdef ENABLESEC
 MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)
@@ -180,7 +201,11 @@ $(SDKINC_TCPIP)/%.h: $(SRCDIR)/mmt_tcpip/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 
-$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP)
+$(SDKINC_LIB5G)/%.h: $(SRCDIR)/mmt_5g/%.h
+	@echo "[INCLUDE] $(notdir $@)"
+	$(QUIET) cp -f $< $@
+	
+$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_LIB5G)
 
 ifdef ENABLESEC
 $(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h
