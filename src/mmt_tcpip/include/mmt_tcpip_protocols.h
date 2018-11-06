@@ -657,7 +657,18 @@ extern "C" {
 #define PROTO_XID 642
 #define PROTO_CDP 643
 #define PROTO_DTP 644
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_DTP
+#define PROTO_SCTP_HEARTBEAT          645
+#define PROTO_SCTP_SHUTDOWN           646
+#define PROTO_SCTP_SHUTDOWN_COMPLETE  647
+#define PROTO_SCTP_ABORT              648
+#define PROTO_SCTP_ERROR              649
+#define PROTO_SCTP_COOKIE_ECHO        650
+#define PROTO_SCTP_ECNE               651
+#define PROTO_SCTP_CWR                652
+#define PROTO_SCTP_AUTH               653
+#define PROTO_SCTP_ASCONF             654
+#define PROTO_SCTP_RE_CONFIG          655
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_SCTP_RE_CONFIG
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -1295,6 +1306,17 @@ extern "C" {
 #define PROTO_SCTP_DATA_ALIAS "sctp_data"
 #define PROTO_SCTP_SACK_ALIAS "sctp_sack"
 #define PROTO_SCTP_INIT_ALIAS "sctp_init"
+#define PROTO_SCTP_HEARTBEAT_ALIAS         "sctp_heartbeat"
+#define PROTO_SCTP_SHUTDOWN_ALIAS          "sctp_shutdown"
+#define PROTO_SCTP_SHUTDOWN_COMPLETE_ALIAS "sctp_shutdown_complete"
+#define PROTO_SCTP_ABORT_ALIAS             "sctp_abort"
+#define PROTO_SCTP_ERROR_ALIAS             "sctp_error"
+#define PROTO_SCTP_COOKIE_ECHO_ALIAS       "sctp_cookie_echo"
+#define PROTO_SCTP_ECNE_ALIAS              "sctp_ecne"
+#define PROTO_SCTP_CWR_ALIAS               "sctp_cwr"
+#define PROTO_SCTP_AUTH_ALIAS              "sctp_auth"
+#define PROTO_SCTP_ASCONF_ALIAS            "sctp_asconf"
+#define PROTO_SCTP_RE_CONFIG_ALIAS         "sctp_re_config"
 #define PROTO_LLMNR_ALIAS "llmnr"
 #define PROTO_ECLIPSE_TCF_ALIAS "eclipse_tcf"
 #define PROTO_LOOPBACK_ALIAS "loopback"
