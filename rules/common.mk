@@ -125,6 +125,9 @@ $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,
 LIB5G_OBJECTS := \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/*.c))   \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/s1ap/asn1c/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/util/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/emm/*.c)) \
 	
 $(CORE_OBJECTS) $(LIB5G_OBJECTS): CFLAGS += -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
