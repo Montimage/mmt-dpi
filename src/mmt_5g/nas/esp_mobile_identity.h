@@ -61,5 +61,5 @@ typedef union EpsMobileIdentity_tag {
   ImeiEpsMobileIdentity_t imei;
 } EpsMobileIdentity;
 
-int decode_eps_mobile_identity(EpsMobileIdentity *epsmobileidentity, uint8_t iei, const uint8_t *buffer, uint32_t len);
+int nas_decode_eps_mobile_identity(EpsMobileIdentity *epsmobileidentity, uint8_t iei, const uint8_t *buffer, uint32_t len);
 #endif /* SRC_MMT_5G_NAS_ESP_MOBILE_IDENTITY_H_ */

@@ -11,9 +11,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "../msg_header.h"
-#include "attach_request.h"
-
 
 /* Message identifiers for EPS Mobility Management     */
 # define ATTACH_REQUEST                0b01000001 /* 65 = 0x41 */
@@ -45,12 +42,9 @@
 # define UPLINK_NAS_TRANSPORT          0b01100011 /* 99 = 0x63 */
 # define CS_SERVICE_NOTIFICATION       0b01100100 /* 100 = 0x64 */
 
-typedef union {
-  msg_header_t header;
-  attach_request_msg attach_request;
-} emm_msg;
+typedef uint8_t nas_emm_msg_type_t;
 
 
-int emm_msg_decode(emm_msg *msg, const uint8_t *buffer, uint32_t len);
+int nas_decode_emm_msg_type(nas_emm_msg_type_t *msg, const uint8_t *buffer, uint32_t len);
 
 #endif /* SRC_MMT_5G_NAS_EMM_EMM_MSG_H_ */

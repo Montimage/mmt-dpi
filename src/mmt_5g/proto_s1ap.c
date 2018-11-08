@@ -72,9 +72,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		h->ptr = msg.mme_name.ptr;
 		break;
 	case S1AP_IMSI:
-		h = (mmt_header_line_t *)extracted_data->data;
-		h->len = msg.imsi.len;
-		h->ptr = msg.imsi.ptr;
+		memcpy( extracted_data->data, msg.imsi, sizeof( msg.imsi ));
 		break;
 	}
 
@@ -83,13 +81,13 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 
 static attribute_metadata_t s1ap_attributes_metadata[] = {
-		{S1AP_IMSI,     S1AP_IMSI_ALIAS,     MMT_HEADER_LINE,  sizeof (MMT_HEADER_LINE), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_TEID,     S1AP_TEID_ALIAS,     MMT_U32_DATA,     sizeof( uint32_t),        POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_UE_IP,    S1AP_UE_IP_ALIAS,    MMT_DATA_IP_ADDR, sizeof( MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ENB_NAME, S1AP_ENB_NAME_ALIAS, MMT_HEADER_LINE,  sizeof (MMT_HEADER_LINE), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ENB_IP,   S1AP_ENB_IP_ALIAS,   MMT_DATA_IP_ADDR, sizeof (MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_MME_NAME, S1AP_MME_NAME_ALIAS, MMT_HEADER_LINE,  sizeof (MMT_HEADER_LINE), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_MME_IP,   S1AP_MME_IP_ALIAS,   MMT_DATA_IP_ADDR, sizeof (MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
+		{S1AP_IMSI,     S1AP_IMSI_ALIAS,     MMT_STRING_DATA_POINTER, 16,                       POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_TEID,     S1AP_TEID_ALIAS,     MMT_U32_DATA,            sizeof( uint32_t),        POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_UE_IP,    S1AP_UE_IP_ALIAS,    MMT_DATA_IP_ADDR,        sizeof( MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ENB_NAME, S1AP_ENB_NAME_ALIAS, MMT_HEADER_LINE,         sizeof (MMT_HEADER_LINE), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ENB_IP,   S1AP_ENB_IP_ALIAS,   MMT_DATA_IP_ADDR,        sizeof (MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_MME_NAME, S1AP_MME_NAME_ALIAS, MMT_HEADER_LINE,         sizeof (MMT_HEADER_LINE), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_MME_IP,   S1AP_MME_IP_ALIAS,   MMT_DATA_IP_ADDR,        sizeof (MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
 };
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 

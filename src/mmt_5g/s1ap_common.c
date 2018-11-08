@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "mmt_core.h"
 #include "s1ap_common.h"
-#include "nas/nas_msg.h"
+#include "nas/emm/nas_emm_attach_request.h"
 
 static inline uint32_t _octet_string_to_uint32_t( const OCTET_STRING_t *t){
 	if( t->size != 4 )
@@ -225,13 +225,31 @@ static inline int _decode_s1ap_initialuemessageies(
 			}
 			decoded += tempDecoded;
 
-			//TODO: extract IMSI
-			nas_msg_t nas_msg;
-			nas_msg_t *nas_msg_p = &nas_msg;
-			memset( nas_msg_p, 0, sizeof( nas_msg_t ) );
+			nas_emm_attach_request_msg_t  m;
+			memset( &m, 0, sizeof( m ) );
 			//we can get IMSI
-			if( nas_msg_decode( nas_msg_p, s1apNASPDU_p->buf, s1apNASPDU_p->size, NULL ) != 0 ){
+			if( nas_decode_emm_attach_request( &m, s1apNASPDU_p->buf, s1apNASPDU_p->size ) > 0 ){
 
+				//imsi.digitX are numbers
+				//=> we convert them to char, e.g., 7 => '7'
+				message->imsi[0] = '0' + m.old_guti_or_imsi.imsi.digit1;
+				message->imsi[1] = '0' + m.old_guti_or_imsi.imsi.digit2;
+				message->imsi[2] = '0' + m.old_guti_or_imsi.imsi.digit3;
+				message->imsi[3] = '0' + m.old_guti_or_imsi.imsi.digit4;
+				message->imsi[4] = '0' + m.old_guti_or_imsi.imsi.digit5;
+				message->imsi[5] = '0' + m.old_guti_or_imsi.imsi.digit6;
+				message->imsi[6] = '0' + m.old_guti_or_imsi.imsi.digit7;
+				message->imsi[7] = '0' + m.old_guti_or_imsi.imsi.digit8;
+				message->imsi[8] = '0' + m.old_guti_or_imsi.imsi.digit9;
+				message->imsi[9] = '0' + m.old_guti_or_imsi.imsi.digit10;
+				message->imsi[10] ='0' + m.old_guti_or_imsi.imsi.digit11;
+				message->imsi[11] ='0' + m.old_guti_or_imsi.imsi.digit12;
+				message->imsi[12] ='0' + m.old_guti_or_imsi.imsi.digit13;
+				message->imsi[13] ='0' + m.old_guti_or_imsi.imsi.digit14;
+				message->imsi[14] ='0' + m.old_guti_or_imsi.imsi.digit15;
+				message->imsi[15] = '\0';
+
+				//printf("Got IMSI: %s\n", message->imsi );
 			}
 
 			XER_FPRINT(&asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
@@ -322,7 +340,7 @@ static inline int _decode_s1ap_S1SetupResponse(
 
 	                //HN: Here we can get MME's name
 	                message->mme_name.len = s1apMMEname_p->size;
-	                message->mme_name.ptr = s1apMMEname_p->buf;
+	                message->mme_name.ptr = (char *)s1apMMEname_p->buf;
 	            }
 	            break;
 	        }

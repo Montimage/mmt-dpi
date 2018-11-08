@@ -338,9 +338,9 @@ typedef struct s1ap_message{
 	uint32_t ue_ipv4;
 	uint32_t mme_ipv4;
 	uint32_t enb_ipv4;
-	mmt_header_line_t imsi;
 	mmt_header_line_t enb_name;
 	mmt_header_line_t mme_name;
+	char imsi[16]; //maximum 15 character, ended by '\0'
 }s1ap_message_t;
 
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
