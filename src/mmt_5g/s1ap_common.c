@@ -53,12 +53,13 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 			//HN: here we can get IP of mme
 			message->mme_ipv4 =  _bit_string_to_uint32_t( & s1apERABToBeSetupItemCtxtSUReq_p->transportLayerAddress );
 
-			decoded += tempDecoded;
 
 			//TODO extract IP from NAS PDU
 			//s1apERABToBeSetupItemCtxtSUReq_p->nAS_PDU;
 
+			decoded += tempDecoded;
 			XER_FPRINT( &asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, s1apERABToBeSetupItemCtxtSUReq_p);
+			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, s1apERABToBeSetupItemCtxtSUReq_p);
 		} break;
 		default:
 			S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uplinkueassociatedlppatransport_ies\n", (int)ie_p->id);
@@ -95,15 +96,15 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 					ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
 				return -1;
 			}
-			decoded += tempDecoded;
-
-			XER_FPRINT(&asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
-
 			if (_s1ap_decode_e_rabtobesetuplistctxtsureq(message, s1apERABToBeSetupListCtxtSUReq_p) < 0) {
 				S1AP_ERROR("Decoding of encapsulated IE s1apERABToBeSetupListCtxtSUReq failed\n");
-				ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
 			}
-		} break;
+
+			decoded += tempDecoded;
+			XER_FPRINT(&asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
+			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
+		}
+		break;
 
 		}
 	}
@@ -143,7 +144,9 @@ static inline int _decode_s1ap_e_rabsetuplistctxtsures(
 
                 decoded += tempDecoded;
                 XER_FPRINT( &asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
-            } break;
+                ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
+            }
+            break;
             default:
                 S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uplinkueassociatedlppatransport_ies\n", (int)ie_p->id);
                 return -1;
@@ -181,13 +184,14 @@ static inline int _decode_s1ap_initialContextSetupResponse(
                         ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
                     return -1;
                 }
-                decoded += tempDecoded;
-				XER_FPRINT( &asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
 
                 if (_decode_s1ap_e_rabsetuplistctxtsures( message, s1apERABSetupListCtxtSURes_p) < 0) {
                     S1AP_ERROR("Decoding of encapsulated IE s1apERABSetupListCtxtSURes failed\n");
-                    ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
                 }
+
+                decoded += tempDecoded;
+				XER_FPRINT( &asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
+                ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
             }
             break;
         }
@@ -247,12 +251,12 @@ static inline int _decode_s1ap_initialuemessageies(
 				message->imsi[12] ='0' + m.old_guti_or_imsi.imsi.digit13;
 				message->imsi[13] ='0' + m.old_guti_or_imsi.imsi.digit14;
 				message->imsi[14] ='0' + m.old_guti_or_imsi.imsi.digit15;
-				message->imsi[15] = '\0';
+				//printf("Got IMSI: %.*s\n", 15, message->imsi );
 
-				//printf("Got IMSI: %s\n", message->imsi );
 			}
 
 			XER_FPRINT(&asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
+			ASN_STRUCT_FREE(asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
 		}
 		break;
 		}
@@ -299,7 +303,9 @@ static inline int _decode_s1ap_S1SetupRequest(
                 S1AP_DEBUG("ENB name: %.*s\n", s1apENBname_p->size, message->enb_name.ptr );
 
                 decoded += tempDecoded;
-				XER_FPRINT( &asn_DEF_S1ap_ENBname, s1apENBname_p);
+
+                XER_FPRINT( &asn_DEF_S1ap_ENBname, s1apENBname_p);
+				ASN_STRUCT_FREE(asn_DEF_S1ap_ENBname, s1apENBname_p);
             } break;
         }
     }
@@ -341,6 +347,9 @@ static inline int _decode_s1ap_S1SetupResponse(
 	                //HN: Here we can get MME's name
 	                message->mme_name.len = s1apMMEname_p->size;
 	                message->mme_name.ptr = (char *)s1apMMEname_p->buf;
+
+	                if (s1apMMEname_p)
+	                	ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
 	            }
 	            break;
 	        }
@@ -405,6 +414,7 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 
 	memset((void *)pdu_p, 0, sizeof(S1AP_PDU_t));
 
+
 	dec_ret = aper_decode(NULL,
 			&asn_DEF_S1AP_PDU,
 			(void **)&pdu_p,
@@ -417,6 +427,9 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		log_err("Failed to decode pdu");
 		return -1;
 	}
+
+	return 0;
+
 
 	switch(pdu_p->present) {
 	case S1AP_PDU_PR_initiatingMessage:
@@ -432,5 +445,5 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		break;
 	}
 
-	return -1;
+	return 0;
 }

@@ -47,7 +47,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	_parse_s1ap_packet( &msg, packet, proto_index );
 
 	mmt_header_line_t *h;
-
+	mmt_binary_data_t *b;
 	switch( extracted_data->field_id ){
 	case S1AP_UE_IP:
 		*((uint32_t *) extracted_data->data) = msg.ue_ipv4;
@@ -72,7 +72,10 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		h->ptr = msg.mme_name.ptr;
 		break;
 	case S1AP_IMSI:
-		memcpy( extracted_data->data, msg.imsi, sizeof( msg.imsi ));
+		b = (mmt_binary_data_t *) extracted_data->data;
+		b->len = sizeof( msg.imsi );
+		memcpy( b->data, msg.imsi, b->len);
+		b->data[ b->len + 1 ] = '\0';
 		break;
 	}
 
@@ -81,13 +84,13 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 
 static attribute_metadata_t s1ap_attributes_metadata[] = {
-		{S1AP_IMSI,     S1AP_IMSI_ALIAS,     MMT_STRING_DATA_POINTER, 16,                       POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_TEID,     S1AP_TEID_ALIAS,     MMT_U32_DATA,            sizeof( uint32_t),        POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_UE_IP,    S1AP_UE_IP_ALIAS,    MMT_DATA_IP_ADDR,        sizeof( MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ENB_NAME, S1AP_ENB_NAME_ALIAS, MMT_HEADER_LINE,         sizeof (MMT_HEADER_LINE), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ENB_IP,   S1AP_ENB_IP_ALIAS,   MMT_DATA_IP_ADDR,        sizeof (MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_MME_NAME, S1AP_MME_NAME_ALIAS, MMT_HEADER_LINE,         sizeof (MMT_HEADER_LINE), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_MME_IP,   S1AP_MME_IP_ALIAS,   MMT_DATA_IP_ADDR,        sizeof (MMT_DATA_IP_ADDR),POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
+		{S1AP_IMSI,     S1AP_IMSI_ALIAS,     MMT_STRING_DATA,  sizeof( mmt_binary_data_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_TEID,     S1AP_TEID_ALIAS,     MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_UE_IP,    S1AP_UE_IP_ALIAS,    MMT_DATA_IP_ADDR, sizeof( MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ENB_NAME, S1AP_ENB_NAME_ALIAS, MMT_HEADER_LINE,  sizeof (MMT_HEADER_LINE),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ENB_IP,   S1AP_ENB_IP_ALIAS,   MMT_DATA_IP_ADDR, sizeof (MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_MME_NAME, S1AP_MME_NAME_ALIAS, MMT_HEADER_LINE,  sizeof (MMT_HEADER_LINE),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_MME_IP,   S1AP_MME_IP_ALIAS,   MMT_DATA_IP_ADDR, sizeof (MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
 };
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
@@ -118,7 +121,7 @@ static int _classify_s1ap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
-int init_proto() {
+int init_proto_s1ap() {
 	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_S1AP, PROTO_S1AP_ALIAS);
 
 	if( protocol_struct == NULL ){
@@ -142,6 +145,10 @@ int init_proto() {
 	}
 }
 
+
+int init_proto() {
+	return init_proto_s1ap();
+}
 int cleanup_proto(){
 	//printf("close s1ap protocol");
 	return 0;
