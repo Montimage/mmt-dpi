@@ -62,23 +62,35 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	mmt_binary_data_t *b;
 	switch( extracted_data->field_id ){
 	case S1AP_UE_IP:
+		if( msg.ue_ipv4 == 0 )
+			return 0;
 		*((uint32_t *) extracted_data->data) = msg.ue_ipv4;
 		break;
 	case S1AP_ENB_IP:
+		if( msg.enb_ipv4 == 0 )
+			return 0;
 		*((uint32_t *) extracted_data->data) = msg.enb_ipv4;
 		break;
 	case S1AP_MME_IP:
+		if( msg.mme_ipv4 == 0 )
+			return 0;
 		*((uint32_t *) extracted_data->data) = msg.mme_ipv4;
 		break;
 	case S1AP_TEID:
+		if( msg.gtp_teid == 0 )
+			return 0;
 		*((uint32_t *) extracted_data->data) = ntohl( msg.gtp_teid );
 		break;
 	case S1AP_ENB_NAME:
+		if( msg.enb_name.len == 0 )
+			return 0;
 		h = (mmt_header_line_t *)extracted_data->data;
 		h->len = msg.enb_name.len;
 		h->ptr = msg.enb_name.ptr;
 		break;
 	case S1AP_MME_NAME:
+		if( msg.mme_name.len == 0 )
+			return 0;
 		h = (mmt_header_line_t *)extracted_data->data;
 		h->len = msg.mme_name.len;
 		h->ptr = msg.mme_name.ptr;
