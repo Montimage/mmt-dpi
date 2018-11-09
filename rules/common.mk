@@ -129,7 +129,7 @@ LIB5G_OBJECTS := \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/util/*.c)) \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/emm/*.c)) \
 	
-$(CORE_OBJECTS) $(LIB5G_OBJECTS): CFLAGS += -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+$(CORE_OBJECTS) $(LIB5G_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
 	
 ifdef ENABLESEC

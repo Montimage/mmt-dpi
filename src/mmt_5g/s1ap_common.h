@@ -9,13 +9,6 @@
 #ifndef S1AP_COMMON_H_
 #define S1AP_COMMON_H_
 
-/* Defined in asn_internal.h */
-// extern int asn_debug_indent;
-extern int asn_debug;
-
-#if defined(EMIT_ASN_DEBUG_EXTERN)
-inline void ASN_DEBUG(const char *fmt, ...);
-#endif
 #include "S1ap-Criticality.h"
 #include "S1ap-Presence.h"
 #include "S1ap-PrivateIE-ID.h"

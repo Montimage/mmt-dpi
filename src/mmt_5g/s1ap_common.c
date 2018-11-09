@@ -453,7 +453,7 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 	return ret;
 }
 
-
+/*
 int main(){
 	s1ap_message_t msg;
 	const uint8_t *buffer[] = {
@@ -491,3 +491,4 @@ int main(){
 		printf( "gtp_teid: %d\n", msg.gtp_teid );
 	}
 }
+*/

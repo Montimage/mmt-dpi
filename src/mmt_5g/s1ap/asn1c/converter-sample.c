@@ -380,7 +380,7 @@ DEBUG(const char *fmt, ...) {
 }
 
 int
-main(int ac, char *av[]) {
+_main(int ac, char *av[]) {
 	static asn_TYPE_descriptor_t *pduType = &PDU_Type;
 	ssize_t suggested_bufsize = 8192;  /* close or equal to stdio buffer */
 	int number_of_iterations = 1;
