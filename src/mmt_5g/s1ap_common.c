@@ -6,7 +6,6 @@
  */
 
 #include <stdlib.h>
-#include "mmt_core.h"
 #include "s1ap_common.h"
 #include "nas/emm/nas_emm_attach_request.h"
 
@@ -72,8 +71,7 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 static inline int _decode_s1ap_initialContextSetupRequest(
 		s1ap_message_t *message,
 		ANY_t *any_p) {
-	S1ap_InitialContextSetupRequest_t  s1ap_InitialContextSetupRequest;
-	S1ap_InitialContextSetupRequest_t *s1ap_InitialContextSetupRequest_p = &s1ap_InitialContextSetupRequest;
+	S1ap_InitialContextSetupRequest_t *s1ap_InitialContextSetupRequest_p = NULL;
 	int i, decoded = 0;
 	int tempDecoded = 0;
 	assert(any_p != NULL);
@@ -108,6 +106,8 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 
 		}
 	}
+
+	ASN_STRUCT_FREE(asn_DEF_S1ap_InitialContextSetupRequest, s1ap_InitialContextSetupRequest_p);
 	return decoded;
 }
 
@@ -117,42 +117,42 @@ static inline int _decode_s1ap_e_rabsetuplistctxtsures(
 		s1ap_message_t *message,
 		S1ap_E_RABSetupListCtxtSURes_t *s1ap_E_RABSetupListCtxtSURes) {
 
-    int i, decoded = 0;
-    int tempDecoded = 0;
+	int i, decoded = 0;
+	int tempDecoded = 0;
 
-    assert(s1ap_E_RABSetupListCtxtSURes != NULL);
+	assert(s1ap_E_RABSetupListCtxtSURes != NULL);
 
-    for (i = 0; i < s1ap_E_RABSetupListCtxtSURes->list.count; i++) {
-        S1ap_IE_t *ie_p = s1ap_E_RABSetupListCtxtSURes->list.array[i];
-        switch (ie_p->id) {
-            case S1ap_ProtocolIE_ID_id_E_RABSetupItemCtxtSURes:
-            {
-                S1ap_E_RABSetupItemCtxtSURes_t *s1apERABSetupItemCtxtSURes_p = NULL;
-                tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABSetupItemCtxtSURes, (void**)&s1apERABSetupItemCtxtSURes_p);
-                if (tempDecoded < 0 || s1apERABSetupItemCtxtSURes_p == NULL) {
-                    S1AP_ERROR("Decoding of IE e_RABSetupItemCtxtSURes for message S1ap_E_RABSetupListCtxtSURes failed\n");
-                    if (s1apERABSetupItemCtxtSURes_p)
-                        ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
-                    return -1;
-                }
+	for (i = 0; i < s1ap_E_RABSetupListCtxtSURes->list.count; i++) {
+		S1ap_IE_t *ie_p = s1ap_E_RABSetupListCtxtSURes->list.array[i];
+		switch (ie_p->id) {
+		case S1ap_ProtocolIE_ID_id_E_RABSetupItemCtxtSURes:
+		{
+			S1ap_E_RABSetupItemCtxtSURes_t *s1apERABSetupItemCtxtSURes_p = NULL;
+			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABSetupItemCtxtSURes, (void**)&s1apERABSetupItemCtxtSURes_p);
+			if (tempDecoded < 0 || s1apERABSetupItemCtxtSURes_p == NULL) {
+				S1AP_ERROR("Decoding of IE e_RABSetupItemCtxtSURes for message S1ap_E_RABSetupListCtxtSURes failed\n");
+				if (s1apERABSetupItemCtxtSURes_p)
+					ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
+				return -1;
+			}
 
-    			//HN: here we can get gtp teid
-    			message->gtp_teid = _octet_string_to_uint32_t( & s1apERABSetupItemCtxtSURes_p->gTP_TEID );
+			//HN: here we can get gtp teid
+			message->gtp_teid = _octet_string_to_uint32_t( & s1apERABSetupItemCtxtSURes_p->gTP_TEID );
 
-    			//HN: here we can get ENB IP
-    			message->enb_ipv4 = _bit_string_to_uint32_t( & s1apERABSetupItemCtxtSURes_p->transportLayerAddress );
+			//HN: here we can get ENB IP
+			message->enb_ipv4 = _bit_string_to_uint32_t( & s1apERABSetupItemCtxtSURes_p->transportLayerAddress );
 
-                decoded += tempDecoded;
-                XER_FPRINT( &asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
-                ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
-            }
-            break;
-            default:
-                S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uplinkueassociatedlppatransport_ies\n", (int)ie_p->id);
-                return -1;
-        }
-    }
-    return decoded;
+			decoded += tempDecoded;
+			XER_FPRINT( &asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
+			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
+		}
+		break;
+		default:
+			S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uplinkueassociatedlppatransport_ies\n", (int)ie_p->id);
+			return -1;
+		}
+	}
+	return decoded;
 }
 
 
@@ -160,51 +160,51 @@ static inline int _decode_s1ap_initialContextSetupResponse(
 		s1ap_message_t *message,
 		ANY_t *any_p) {
 
-    S1ap_InitialContextSetupResponse_t  s1ap_InitialContextSetupResponse;
-    S1ap_InitialContextSetupResponse_t *s1ap_InitialContextSetupResponse_p = &s1ap_InitialContextSetupResponse;
-    int i, decoded = 0;
-    int tempDecoded = 0;
-    assert(any_p != NULL);
+	S1ap_InitialContextSetupResponse_t *s1ap_InitialContextSetupResponse_p = NULL;
+	int i, decoded = 0;
+	int tempDecoded = 0;
+	assert(any_p != NULL);
 
-    S1AP_DEBUG("Decoding message S1ap_InitialContextSetupResponseIEs (%s:%d)\n", __FILE__, __LINE__);
+	S1AP_DEBUG("Decoding message S1ap_InitialContextSetupResponseIEs (%s:%d)\n", __FILE__, __LINE__);
 
-    ANY_to_type_aper(any_p, &asn_DEF_S1ap_InitialContextSetupResponse, (void**)&s1ap_InitialContextSetupResponse_p);
+	ANY_to_type_aper(any_p, &asn_DEF_S1ap_InitialContextSetupResponse, (void**)&s1ap_InitialContextSetupResponse_p);
 
-    for (i = 0; i < s1ap_InitialContextSetupResponse_p->s1ap_InitialContextSetupResponse_ies.list.count; i++) {
-        S1ap_IE_t *ie_p;
-        ie_p = s1ap_InitialContextSetupResponse_p->s1ap_InitialContextSetupResponse_ies.list.array[i];
-        switch(ie_p->id) {
-            case S1ap_ProtocolIE_ID_id_E_RABSetupListCtxtSURes:
-            {
-                S1ap_E_RABSetupListCtxtSURes_t *s1apERABSetupListCtxtSURes_p = NULL;
-                tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABSetupListCtxtSURes, (void**)&s1apERABSetupListCtxtSURes_p);
-                if (tempDecoded < 0 || s1apERABSetupListCtxtSURes_p == NULL) {
-                    S1AP_ERROR("Decoding of IE e_RABSetupListCtxtSURes failed\n");
-                    if (s1apERABSetupListCtxtSURes_p)
-                        ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
-                    return -1;
-                }
+	for (i = 0; i < s1ap_InitialContextSetupResponse_p->s1ap_InitialContextSetupResponse_ies.list.count; i++) {
+		S1ap_IE_t *ie_p;
+		ie_p = s1ap_InitialContextSetupResponse_p->s1ap_InitialContextSetupResponse_ies.list.array[i];
+		switch(ie_p->id) {
+		case S1ap_ProtocolIE_ID_id_E_RABSetupListCtxtSURes:
+		{
+			S1ap_E_RABSetupListCtxtSURes_t *s1apERABSetupListCtxtSURes_p = NULL;
+			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABSetupListCtxtSURes, (void**)&s1apERABSetupListCtxtSURes_p);
+			if (tempDecoded < 0 || s1apERABSetupListCtxtSURes_p == NULL) {
+				S1AP_ERROR("Decoding of IE e_RABSetupListCtxtSURes failed\n");
+				if (s1apERABSetupListCtxtSURes_p)
+					ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
+				return -1;
+			}
 
-                if (_decode_s1ap_e_rabsetuplistctxtsures( message, s1apERABSetupListCtxtSURes_p) < 0) {
-                    S1AP_ERROR("Decoding of encapsulated IE s1apERABSetupListCtxtSURes failed\n");
-                }
+			if (_decode_s1ap_e_rabsetuplistctxtsures( message, s1apERABSetupListCtxtSURes_p) < 0) {
+				S1AP_ERROR("Decoding of encapsulated IE s1apERABSetupListCtxtSURes failed\n");
+			}
 
-                decoded += tempDecoded;
-				XER_FPRINT( &asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
-                ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
-            }
-            break;
-        }
-    }
-    return decoded;
+			decoded += tempDecoded;
+			XER_FPRINT( &asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
+			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
+		}
+		break;
+		}
+	}
+
+	ASN_STRUCT_FREE(asn_DEF_S1ap_InitialContextSetupResponse, s1ap_InitialContextSetupResponse_p);
+	return decoded;
 }
 
 static inline int _decode_s1ap_initialuemessageies(
 		s1ap_message_t *message,
 		ANY_t *any_p) {
 
-	S1ap_InitialUEMessage_t  s1ap_InitialUEMessage;
-	S1ap_InitialUEMessage_t *s1ap_InitialUEMessage_p = &s1ap_InitialUEMessage;
+	S1ap_InitialUEMessage_t *s1ap_InitialUEMessage_p = NULL;
 	int i, decoded = 0;
 	int tempDecoded = 0;
 	assert(any_p != NULL);
@@ -261,100 +261,104 @@ static inline int _decode_s1ap_initialuemessageies(
 		break;
 		}
 	}
+
+	ASN_STRUCT_FREE( asn_DEF_S1ap_InitialUEMessage, s1ap_InitialUEMessage_p );
 	return decoded;
 }
 
 
 static inline int _decode_s1ap_S1SetupRequest(
-    s1ap_message_t *message,
-    ANY_t *any_p) {
+		s1ap_message_t *message,
+		ANY_t *any_p) {
 
-    S1ap_S1SetupRequest_t  s1ap_S1SetupRequest;
-    S1ap_S1SetupRequest_t *s1ap_S1SetupRequest_p = &s1ap_S1SetupRequest;
-    int i, decoded = 0;
-    int tempDecoded = 0;
+	S1ap_S1SetupRequest_t *s1ap_S1SetupRequest_p = NULL;
+	int i, decoded = 0;
+	int tempDecoded = 0;
 
-    assert(any_p != NULL);
+	assert(any_p != NULL);
 
-    S1AP_DEBUG("Decoding message S1ap_S1SetupRequestIEs (%s:%d)\n", __FILE__, __LINE__);
+	S1AP_DEBUG("Decoding message S1ap_S1SetupRequestIEs (%s:%d)\n", __FILE__, __LINE__);
 
-    ANY_to_type_aper(any_p, &asn_DEF_S1ap_S1SetupRequest, (void**)&s1ap_S1SetupRequest_p);
+	ANY_to_type_aper(any_p, &asn_DEF_S1ap_S1SetupRequest, (void**)&s1ap_S1SetupRequest_p);
 
-    for (i = 0; i < s1ap_S1SetupRequest_p->s1ap_S1SetupRequest_ies.list.count; i++) {
-        S1ap_IE_t *ie_p;
-        ie_p = s1ap_S1SetupRequest_p->s1ap_S1SetupRequest_ies.list.array[i];
-        switch(ie_p->id) {
-            case S1ap_ProtocolIE_ID_id_eNBname:
-            {
-                S1ap_ENBname_t *s1apENBname_p = NULL;
+	for (i = 0; i < s1ap_S1SetupRequest_p->s1ap_S1SetupRequest_ies.list.count; i++) {
+		S1ap_IE_t *ie_p;
+		ie_p = s1ap_S1SetupRequest_p->s1ap_S1SetupRequest_ies.list.array[i];
+		switch(ie_p->id) {
+		case S1ap_ProtocolIE_ID_id_eNBname:
+		{
+			S1ap_ENBname_t *s1apENBname_p = NULL;
 
-                tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_ENBname, (void**)&s1apENBname_p);
-                if (tempDecoded < 0 || s1apENBname_p == NULL) {
-                    S1AP_ERROR("Decoding of IE eNBname failed\n");
-                    if (s1apENBname_p)
-                        ASN_STRUCT_FREE(asn_DEF_S1ap_ENBname, s1apENBname_p);
-                    return -1;
-                }
+			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_ENBname, (void**)&s1apENBname_p);
+			if (tempDecoded < 0 || s1apENBname_p == NULL) {
+				S1AP_ERROR("Decoding of IE eNBname failed\n");
+				if (s1apENBname_p)
+					ASN_STRUCT_FREE(asn_DEF_S1ap_ENBname, s1apENBname_p);
+				return -1;
+			}
 
-                //HN: here we got eNodeB's name
-                message->enb_name.len = s1apENBname_p->size;
-                message->enb_name.ptr = (char *)s1apENBname_p->buf;
+			//HN: here we got eNodeB's name
+			message->enb_name.len = s1apENBname_p->size;
+			message->enb_name.ptr = (char *)s1apENBname_p->buf;
 
-                S1AP_DEBUG("ENB name: %.*s\n", s1apENBname_p->size, message->enb_name.ptr );
+			S1AP_DEBUG("ENB name: %.*s\n", s1apENBname_p->size, message->enb_name.ptr );
 
-                decoded += tempDecoded;
+			decoded += tempDecoded;
 
-                XER_FPRINT( &asn_DEF_S1ap_ENBname, s1apENBname_p);
-				ASN_STRUCT_FREE(asn_DEF_S1ap_ENBname, s1apENBname_p);
-            } break;
-        }
-    }
-    return decoded;
+			XER_FPRINT( &asn_DEF_S1ap_ENBname, s1apENBname_p);
+			ASN_STRUCT_FREE(asn_DEF_S1ap_ENBname, s1apENBname_p);
+		} break;
+		}
+	}
+
+	ASN_STRUCT_FREE( asn_DEF_S1ap_S1SetupRequest, s1ap_S1SetupRequest_p);
+	return decoded;
 }
 
 static inline int _decode_s1ap_S1SetupResponse(
-    s1ap_message_t *message,
-    ANY_t *any_p) {
-	 S1ap_S1SetupResponse_t  s1ap_S1SetupResponse;
-	    S1ap_S1SetupResponse_t *s1ap_S1SetupResponse_p = &s1ap_S1SetupResponse;
-	    int i, decoded = 0;
-	    int tempDecoded = 0;
-	    assert(any_p != NULL);
+		s1ap_message_t *message,
+		ANY_t *any_p) {
+	S1ap_S1SetupResponse_t *s1ap_S1SetupResponse_p = NULL;
+	int i, decoded = 0;
+	int tempDecoded = 0;
+	assert(any_p != NULL);
 
-	    S1AP_DEBUG("Decoding message S1ap_S1SetupResponseIEs (%s:%d)\n", __FILE__, __LINE__);
+	S1AP_DEBUG("Decoding message S1ap_S1SetupResponseIEs (%s:%d)\n", __FILE__, __LINE__);
 
-	    ANY_to_type_aper(any_p, &asn_DEF_S1ap_S1SetupResponse, (void**)&s1ap_S1SetupResponse_p);
+	ANY_to_type_aper(any_p, &asn_DEF_S1ap_S1SetupResponse, (void**)&s1ap_S1SetupResponse_p);
 
-	    for (i = 0; i < s1ap_S1SetupResponse_p->s1ap_S1SetupResponse_ies.list.count; i++) {
-	        S1ap_IE_t *ie_p;
-	        ie_p = s1ap_S1SetupResponse_p->s1ap_S1SetupResponse_ies.list.array[i];
-	        switch(ie_p->id) {
-	            /* Optional field */
-	            case S1ap_ProtocolIE_ID_id_MMEname:
-	            {
-	                S1ap_MMEname_t *s1apMMEname_p = NULL;
+	for (i = 0; i < s1ap_S1SetupResponse_p->s1ap_S1SetupResponse_ies.list.count; i++) {
+		S1ap_IE_t *ie_p;
+		ie_p = s1ap_S1SetupResponse_p->s1ap_S1SetupResponse_ies.list.array[i];
+		switch(ie_p->id) {
+		/* Optional field */
+		case S1ap_ProtocolIE_ID_id_MMEname:
+		{
+			S1ap_MMEname_t *s1apMMEname_p = NULL;
 
-	                tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_MMEname, (void**)&s1apMMEname_p);
-	                if (tempDecoded < 0 || s1apMMEname_p == NULL) {
-	                    S1AP_ERROR("Decoding of IE mmEname failed\n");
-	                    if (s1apMMEname_p)
-	                        ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
-	                    return -1;
-	                }
-	                decoded += tempDecoded;
-	                XER_FPRINT(&asn_DEF_S1ap_MMEname, s1apMMEname_p);
+			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_MMEname, (void**)&s1apMMEname_p);
+			if (tempDecoded < 0 || s1apMMEname_p == NULL) {
+				S1AP_ERROR("Decoding of IE mmEname failed\n");
+				if (s1apMMEname_p)
+					ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
+				return -1;
+			}
+			decoded += tempDecoded;
+			XER_FPRINT(&asn_DEF_S1ap_MMEname, s1apMMEname_p);
 
-	                //HN: Here we can get MME's name
-	                message->mme_name.len = s1apMMEname_p->size;
-	                message->mme_name.ptr = (char *)s1apMMEname_p->buf;
+			//HN: Here we can get MME's name
+			message->mme_name.len = s1apMMEname_p->size;
+			message->mme_name.ptr = (char *)s1apMMEname_p->buf;
 
-	                if (s1apMMEname_p)
-	                	ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
-	            }
-	            break;
-	        }
-	    }
-	    return decoded;
+			if (s1apMMEname_p)
+				ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
+		}
+		break;
+		}
+	}
+
+	ASN_STRUCT_FREE( asn_DEF_S1ap_S1SetupResponse, s1ap_S1SetupResponse_p);
+	return decoded;
 }
 
 static int _decode_s1ap_initiatingMessage(s1ap_message_t *message,
@@ -404,15 +408,14 @@ static int _decode_s1ap_successfulOutcomeMessage(s1ap_message_t *message,
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		const uint32_t length)
 {
-	S1AP_PDU_t  pdu;
-	S1AP_PDU_t *pdu_p = &pdu;
+	S1AP_PDU_t *pdu_p = NULL;
 	asn_dec_rval_t dec_ret;
 
 	assert(message != NULL);
 
 	memset((void *)message, 0, sizeof(s1ap_message_t));
 
-	memset((void *)pdu_p, 0, sizeof(S1AP_PDU_t));
+	//memset((void *)pdu_p, 0, sizeof(S1AP_PDU_t));
 
 
 	dec_ret = aper_decode(NULL,
@@ -428,16 +431,16 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		return -1;
 	}
 
-	return 0;
-
-
+	int ret = 0;
 	switch(pdu_p->present) {
 	case S1AP_PDU_PR_initiatingMessage:
-		return _decode_s1ap_initiatingMessage(message,
+		ret = _decode_s1ap_initiatingMessage(message,
 				&pdu_p->choice.initiatingMessage);
+		break;
 	case S1AP_PDU_PR_successfulOutcome:
-		return _decode_s1ap_successfulOutcomeMessage(message,
-						&pdu_p->choice.successfulOutcome);
+		ret = _decode_s1ap_successfulOutcomeMessage(message,
+				&pdu_p->choice.successfulOutcome);
+		break;
 	case S1AP_PDU_PR_unsuccessfulOutcome:
 		break;
 	default:
@@ -445,5 +448,46 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		break;
 	}
 
-	return 0;
+	ASN_STRUCT_FREE( asn_DEF_S1AP_PDU, pdu_p );
+
+	return ret;
+}
+
+
+int main(){
+	s1ap_message_t msg;
+	const uint8_t *buffer[] = {
+			"\x00\x09\x00\x80\xd9\x00\x00\x06\x00\x00\x00\x02\x00\x03\x00\x08" \
+			"\x00\x04\x80\x06\x69\x2d\x00\x42\x00\x08\x10\x01\x86\xa0\x40\x01" \
+			"\x86\xa0\x00\x18\x00\x80\x8a\x00\x00\x34\x00\x80\x84\x45\x00\x09" \
+			"\x3c\x0f\x80\xac\x10\x00\x01\x00\x00\x00\x01\x75\x27\x2e\xb9\xda" \
+			"\xae\x01\x07\x42\x02\x49\x06\x00\x42\xf4\x99\x31\x32\x00\x48\x52" \
+			"\x03\xc1\x01\x09\x1c\x08\x69\x6e\x74\x65\x72\x6e\x65\x74\x06\x6d" \
+			"\x6e\x63\x30\x39\x39\x06\x6d\x63\x63\x32\x34\x34\x04\x67\x70\x72" \
+			"\x73\x05\x01\x0a\x00\x00\x01\x27\x1e\x80\x80\x21\x0a\x03\x00\x00" \
+			"\x0a\x81\x06\x08\x08\x08\x08\x00\x0d\x04\x08\x08\x08\x08\x00\x05" \
+			"\x01\x02\x00\x10\x02\x05\xa0\x50\x0b\xf6\x42\xf4\x99\x80\x04\x03" \
+			"\x00\x00\x04\x57\x13\x42\xf4\x99\x31\x32\x23\x05\xf4\x00\x00\x68" \
+			"\x61\x00\x6b\x00\x05\x1a\x00\x0d\x00\x00\x00\x49\x00\x20\x43\xfa" \
+			"\x55\x1d\x17\xf2\xdc\x7d\x37\x01\x71\x78\x5a\xc4\x68\xcc\x8d\xa4" \
+			"\x7b\x65\x3b\x58\xce\xcd\x9b\xf0\x19\xfb\x63\x66\x74\xe9",
+
+			"\x00\x0c\x00\x80\x8a\x00\x00\x05\x00\x08\x00\x04\x80\x06\x69\x2d" \
+			"\x00\x1a\x00\x60\x5f\x07\x41\x72\x08\x29\x44\x99\x00\x00\x00\x00" \
+			"\x20\x05\xe0\x60\xc0\x40\x19\x00\x23\x02\x03\xd0\x11\x27\x1d\x80" \
+			"\x80\x21\x10\x01\x00\x00\x10\x81\x06\x00\x00\x00\x00\x83\x06\x00" \
+			"\x00\x00\x00\x00\x0d\x00\x00\x0a\x00\x00\x10\x00\x5c\x0a\x00\x31" \
+			"\x03\xe5\xe0\x2e\x90\x11\x03\x57\x58\xa6\x20\x0a\x60\x14\x04\x62" \
+			"\x91\x81\x00\x12\x1e\x00\x40\x08\x04\x02\x60\x04\x00\x02\x1f\x00" \
+			"\x5d\x01\x00\xc1\x00\x43\x00\x06\x00\x42\xf4\x99\x31\x32\x00\x64" \
+			"\x40\x08\x00\x42\xf4\x99\x00\xe0\x00\x00\x00\x86\x40\x01\x30"
+
+	};
+	uint32_t len[] = {222, 143};
+	int i;
+	for( i=0; i<2; i++ ){
+		printf("%d buffer len : %d\n", i, len[i] );
+		s1ap_decode( &msg, buffer[i], len[i] );
+		printf( "gtp_teid: %d\n", msg.gtp_teid );
+	}
 }
