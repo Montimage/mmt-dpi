@@ -389,14 +389,14 @@
 # define S1AP_ERROR(x, args...) fprintf(stdout, "[S1AP][E]"x, ##args)
 # define S1AP_WARN(x, args...)  fprintf(stdout, "[S1AP][W]"x, ##args)
 
-#include "mmt_core.h"
 typedef struct s1ap_message{
+	uint16_t procedure_code;
 	uint32_t gtp_teid;
 	uint32_t ue_ipv4;
 	uint32_t mme_ipv4;
 	uint32_t enb_ipv4;
-	mmt_header_line_t enb_name;
-	mmt_header_line_t mme_name;
+	char enb_name[30];
+	char mme_name[30];
 	char imsi[15]; //maximum 15 character
 }s1ap_message_t;
 

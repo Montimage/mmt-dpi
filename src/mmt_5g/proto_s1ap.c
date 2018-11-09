@@ -34,6 +34,9 @@ static int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * packet, un
 //	printf("    %s\n", string );
 
 	int offset = get_packet_offset_at_index(packet, proto_index);
+
+//	printf("ipacket id %lu, proto_index: %d, offset: %d\n", packet->packet_id, proto_index, offset );
+
 	if( unlikely( packet->p_hdr->caplen <= offset ))
 		return 0;
 
@@ -53,14 +56,17 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 	s1ap_message_t msg;
 	memset(&msg, 0, sizeof(s1ap_message_t));
+
 	int ret = _parse_s1ap_packet( &msg, packet, proto_index );
 
 	if( ret < 0 )
 			return 0;
 
-	mmt_header_line_t *h;
 	mmt_binary_data_t *b;
 	switch( extracted_data->field_id ){
+	case S1AP_PROCEDURE_CODE:
+		*((uint16_t *) extracted_data->data) = msg.procedure_code;
+		break;
 	case S1AP_UE_IP:
 		if( msg.ue_ipv4 == 0 )
 			return 0;
@@ -82,18 +88,20 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		*((uint32_t *) extracted_data->data) = ntohl( msg.gtp_teid );
 		break;
 	case S1AP_ENB_NAME:
-		if( msg.enb_name.len == 0 )
+		b = (mmt_binary_data_t *)extracted_data->data;
+		b->len = strlen( msg.enb_name );
+		if( b->len == 0 )
 			return 0;
-		h = (mmt_header_line_t *)extracted_data->data;
-		h->len = msg.enb_name.len;
-		h->ptr = msg.enb_name.ptr;
+		memcpy( b->data, msg.enb_name, b->len);
+		b->data[ b->len + 1 ] = '\0';
 		break;
 	case S1AP_MME_NAME:
-		if( msg.mme_name.len == 0 )
+		b = (mmt_binary_data_t *)extracted_data->data;
+		b->len = strlen( msg.mme_name );
+		if( b->len == 0 )
 			return 0;
-		h = (mmt_header_line_t *)extracted_data->data;
-		h->len = msg.mme_name.len;
-		h->ptr = msg.mme_name.ptr;
+		memcpy( b->data, msg.mme_name, b->len);
+		b->data[ b->len + 1 ] = '\0';
 		break;
 	case S1AP_IMSI:
 		b = (mmt_binary_data_t *) extracted_data->data;
@@ -108,13 +116,14 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 
 static attribute_metadata_t s1ap_attributes_metadata[] = {
-		{S1AP_IMSI,     S1AP_IMSI_ALIAS,     MMT_STRING_DATA,  sizeof( mmt_binary_data_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_TEID,     S1AP_TEID_ALIAS,     MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_UE_IP,    S1AP_UE_IP_ALIAS,    MMT_DATA_IP_ADDR, sizeof( MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ENB_NAME, S1AP_ENB_NAME_ALIAS, MMT_HEADER_LINE,  sizeof (MMT_HEADER_LINE),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ENB_IP,   S1AP_ENB_IP_ALIAS,   MMT_DATA_IP_ADDR, sizeof (MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_MME_NAME, S1AP_MME_NAME_ALIAS, MMT_HEADER_LINE,  sizeof (MMT_HEADER_LINE),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_MME_IP,   S1AP_MME_IP_ALIAS,   MMT_DATA_IP_ADDR, sizeof (MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
+		{S1AP_PROCEDURE_CODE, S1AP_PROCEDURE_CODE_ALIAS, MMT_U16_DATA,     sizeof( uint16_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_IMSI,           S1AP_IMSI_ALIAS,           MMT_STRING_DATA,  sizeof( mmt_binary_data_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_TEID,           S1AP_TEID_ALIAS,           MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_UE_IP,          S1AP_UE_IP_ALIAS,          MMT_DATA_IP_ADDR, sizeof( MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ENB_NAME,       S1AP_ENB_NAME_ALIAS,       MMT_STRING_DATA,  sizeof (MMT_STRING_DATA),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ENB_IP,         S1AP_ENB_IP_ALIAS,         MMT_DATA_IP_ADDR, sizeof (MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_MME_NAME,       S1AP_MME_NAME_ALIAS,       MMT_STRING_DATA,  sizeof (MMT_STRING_DATA),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_MME_IP,         S1AP_MME_IP_ALIAS,         MMT_DATA_IP_ADDR, sizeof (MMT_DATA_IP_ADDR),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
 };
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 

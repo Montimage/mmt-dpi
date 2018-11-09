@@ -11,6 +11,7 @@
 #define PROTO_S1AP 900
 #define PROTO_S1AP_ALIAS     "s1ap"
 
+#define S1AP_PROCEDURE_CODE_ALIAS "procedure_code"
 #define S1AP_IMSI_ALIAS     "imsi"
 #define S1AP_TEID_ALIAS     "gtp_teid"
 #define S1AP_UE_IP_ALIAS    "ue_ipv4"
@@ -21,7 +22,8 @@
 
 //protocol attributes
 enum{
-	S1AP_IMSI = 1,
+	S1AP_PROCEDURE_CODE = 1,
+	S1AP_IMSI,
 	S1AP_TEID,
 	S1AP_UE_IP,
 	S1AP_ENB_NAME,

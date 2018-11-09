@@ -303,8 +303,11 @@ static inline int _decode_s1ap_S1SetupRequest(
 			}
 
 			//HN: here we got eNodeB's name
-			message->enb_name.len = s1apENBname_p->size;
-			message->enb_name.ptr = (char *)s1apENBname_p->buf;
+			int len = sizeof( message->enb_name ) - 1; //one byte for '\0'
+			if( len > s1apENBname_p->size )
+				len = s1apENBname_p->size;
+			memcpy( message->enb_name,  s1apENBname_p->buf, len );
+			message->enb_name[len-1] = '\0';
 
 			S1AP_DEBUG("ENB name: %.*s\n", s1apENBname_p->size, message->enb_name.ptr );
 
@@ -352,8 +355,11 @@ static inline int _decode_s1ap_S1SetupResponse(
 			decoded += tempDecoded;
 
 			//HN: Here we can get MME's name
-			message->mme_name.len = s1apMMEname_p->size;
-			message->mme_name.ptr = (char *)s1apMMEname_p->buf;
+			int len = sizeof( message->mme_name ) - 1; //one byte for '\0'
+			if( len > s1apMMEname_p->size )
+				len = s1apMMEname_p->size;
+			memcpy( message->mme_name,  s1apMMEname_p->buf, len );
+			message->mme_name[len-1] = '\0';
 
 			XER_FPRINT(&asn_DEF_S1ap_MMEname, s1apMMEname_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
@@ -369,7 +375,7 @@ static inline int _decode_s1ap_S1SetupResponse(
 
 static int _decode_s1ap_initiatingMessage(s1ap_message_t *message,
 		S1ap_InitiatingMessage_t *initiating_p){
-	int ret = -1;
+	int ret = 0;
 
 	switch(initiating_p->procedureCode) {
 	case S1ap_ProcedureCode_id_initialUEMessage:
@@ -389,7 +395,7 @@ static int _decode_s1ap_initiatingMessage(s1ap_message_t *message,
 
 static int _decode_s1ap_successfulOutcomeMessage(s1ap_message_t *message,
 		S1ap_SuccessfulOutcome_t *initiating_p){
-	int ret = -1;
+	int ret = 0;
 
 	switch(initiating_p->procedureCode) {
 	case S1ap_ProcedureCode_id_InitialContextSetup:
@@ -421,8 +427,6 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 
 	if( length == 0 )
 		return 0;
-	//memset((void *)pdu_p, 0, sizeof(S1AP_PDU_t));
-
 
 	dec_ret = aper_decode(NULL,
 			&asn_DEF_S1AP_PDU,
@@ -433,24 +437,27 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 			0);
 
 	if (dec_ret.code != RC_OK) {
-		log_err("Failed to decode S1AP, code %d, consumed: %zu", dec_ret.code, dec_ret.consumed);
+		fprintf(stderr, "[S1AP] Failed to decode S1AP, code %d, consumed: %zu\n", dec_ret.code, dec_ret.consumed);
 		return -1;
 	}
 
 	int ret = 0;
 	switch(pdu_p->present) {
 	case S1AP_PDU_PR_initiatingMessage:
+		message->procedure_code = pdu_p->choice.initiatingMessage.procedureCode;
 		ret = _decode_s1ap_initiatingMessage(message,
 				&pdu_p->choice.initiatingMessage);
 		break;
 	case S1AP_PDU_PR_successfulOutcome:
+		message->procedure_code = pdu_p->choice.successfulOutcome.procedureCode;
 		ret = _decode_s1ap_successfulOutcomeMessage(message,
 				&pdu_p->choice.successfulOutcome);
 		break;
 	case S1AP_PDU_PR_unsuccessfulOutcome:
+		message->procedure_code = pdu_p->choice.unsuccessfulOutcome.procedureCode;
 		break;
 	default:
-		debug("Unknown presence (%d) or not implemented", (int)pdu_p->present);
+		fprintf(stderr, "[S1AP] Unknown S1AP presence (%d)\n", (int)pdu_p->present);
 		break;
 	}
 
