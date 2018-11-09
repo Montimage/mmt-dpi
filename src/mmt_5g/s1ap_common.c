@@ -59,6 +59,8 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 			decoded += tempDecoded;
 			XER_FPRINT( &asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, s1apERABToBeSetupItemCtxtSUReq_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, s1apERABToBeSetupItemCtxtSUReq_p);
+
+			return decoded;
 		} break;
 		default:
 			S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uplinkueassociatedlppatransport_ies\n", (int)ie_p->id);
@@ -101,6 +103,7 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 			decoded += tempDecoded;
 			XER_FPRINT(&asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
+			return decoded;
 		}
 		break;
 
@@ -145,6 +148,7 @@ static inline int _decode_s1ap_e_rabsetuplistctxtsures(
 			decoded += tempDecoded;
 			XER_FPRINT( &asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupItemCtxtSURes, s1apERABSetupItemCtxtSURes_p);
+			return decoded;
 		}
 		break;
 		default:
@@ -191,6 +195,7 @@ static inline int _decode_s1ap_initialContextSetupResponse(
 			decoded += tempDecoded;
 			XER_FPRINT( &asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
+			return decoded;
 		}
 		break;
 		}
@@ -252,11 +257,11 @@ static inline int _decode_s1ap_initialuemessageies(
 				message->imsi[13] ='0' + m.old_guti_or_imsi.imsi.digit14;
 				message->imsi[14] ='0' + m.old_guti_or_imsi.imsi.digit15;
 				//printf("Got IMSI: %.*s\n", 15, message->imsi );
-
 			}
 
 			XER_FPRINT(&asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
+			return decoded;
 		}
 		break;
 		}
@@ -307,6 +312,7 @@ static inline int _decode_s1ap_S1SetupRequest(
 
 			XER_FPRINT( &asn_DEF_S1ap_ENBname, s1apENBname_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_ENBname, s1apENBname_p);
+			return decoded;
 		} break;
 		}
 	}
@@ -344,14 +350,14 @@ static inline int _decode_s1ap_S1SetupResponse(
 				return -1;
 			}
 			decoded += tempDecoded;
-			XER_FPRINT(&asn_DEF_S1ap_MMEname, s1apMMEname_p);
 
 			//HN: Here we can get MME's name
 			message->mme_name.len = s1apMMEname_p->size;
 			message->mme_name.ptr = (char *)s1apMMEname_p->buf;
 
-			if (s1apMMEname_p)
-				ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
+			XER_FPRINT(&asn_DEF_S1ap_MMEname, s1apMMEname_p);
+			ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
+			return decoded;
 		}
 		break;
 		}
@@ -413,8 +419,8 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 
 	assert(message != NULL);
 
-	memset((void *)message, 0, sizeof(s1ap_message_t));
-
+	if( length == 0 )
+		return 0;
 	//memset((void *)pdu_p, 0, sizeof(S1AP_PDU_t));
 
 
@@ -427,7 +433,7 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 			0);
 
 	if (dec_ret.code != RC_OK) {
-		log_err("Failed to decode pdu");
+		log_err("Failed to decode S1AP, code %d, consumed: %zu", dec_ret.code, dec_ret.consumed);
 		return -1;
 	}
 

@@ -28,11 +28,19 @@ struct sctp_datahdr {
 
 static int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * packet, unsigned proto_index ){
 
+
+//	char string[1000];
+//	proto_hierarchy_to_str( packet->proto_hierarchy, string );
+//	printf("    %s\n", string );
+
 	int offset = get_packet_offset_at_index(packet, proto_index);
-	if( unlikely( packet->p_hdr->caplen < offset ))
+	if( unlikely( packet->p_hdr->caplen <= offset ))
 		return 0;
 
 	const uint16_t data_len = packet->p_hdr->caplen - offset;
+
+//	printf("ipacket id %lu, proto_index: %d, offset: %d, data_len: %d\n", packet->packet_id, proto_index, offset, data_len );
+
 
 	return s1ap_decode( msg, & packet->data[offset], data_len );
 }
@@ -44,7 +52,11 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		return 0;
 
 	s1ap_message_t msg;
-	_parse_s1ap_packet( &msg, packet, proto_index );
+	memset(&msg, 0, sizeof(s1ap_message_t));
+	int ret = _parse_s1ap_packet( &msg, packet, proto_index );
+
+	if( ret < 0 )
+			return 0;
 
 	mmt_header_line_t *h;
 	mmt_binary_data_t *b;
