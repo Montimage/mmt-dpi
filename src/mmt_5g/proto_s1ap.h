@@ -12,13 +12,15 @@
 #define PROTO_S1AP_ALIAS     "s1ap"
 
 #define S1AP_PROCEDURE_CODE_ALIAS "procedure_code"
-#define S1AP_IMSI_ALIAS     "imsi"
-#define S1AP_TEID_ALIAS     "gtp_teid"
-#define S1AP_UE_IP_ALIAS    "ue_ipv4"
-#define S1AP_MME_IP_ALIAS   "mme_ipv4"
-#define S1AP_MME_NAME_ALIAS "mme_name"
-#define S1AP_ENB_IP_ALIAS   "enb_ipv4"
-#define S1AP_ENB_NAME_ALIAS "enb_name"
+#define S1AP_IMSI_ALIAS       "imsi"
+#define S1AP_TEID_ALIAS       "gtp_teid"
+#define S1AP_UE_IP_ALIAS      "ue_ipv4"
+#define S1AP_MME_IP_ALIAS     "mme_ipv4"
+#define S1AP_MME_NAME_ALIAS   "mme_name"
+#define S1AP_MME_UE_ID_ALIAS  "mme_ue_id"
+#define S1AP_ENB_IP_ALIAS     "enb_ipv4"
+#define S1AP_ENB_NAME_ALIAS   "enb_name"
+#define S1AP_ENB_UE_ID_ALIAS  "enb_ue_id"
 
 //protocol attributes
 enum{
@@ -28,8 +30,10 @@ enum{
 	S1AP_UE_IP,
 	S1AP_ENB_NAME,
 	S1AP_ENB_IP,
+	S1AP_ENB_UE_ID,
 	S1AP_MME_NAME,
-	S1AP_MME_IP
+	S1AP_MME_IP,
+	S1AP_MME_UE_ID
 };
 
 
