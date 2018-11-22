@@ -165,6 +165,25 @@ int ip6_server_addr_extraction(const ipacket_t * packet, unsigned proto_index,
     return 0;
 }
 
+int ip6_header_count_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    struct ipv6hdr * ip6_hdr = (struct ipv6hdr *) & packet->data[proto_offset];
+    uint16_t header_count = 0;
+    uint8_t  next_hdr    = ip6_hdr->nexthdr;
+    uint16_t next_offset = sizeof (struct ipv6hdr);
+
+    while (is_extention_header(next_hdr) && (packet->p_hdr->caplen >= (proto_offset + next_offset + 2))) {
+        header_count++;
+        next_offset += get_next_header_offset(next_hdr, & packet->data[proto_offset + next_offset], & next_hdr);
+    }
+
+    *((uint16_t *) extracted_data->data) = header_count;
+
+    return 1;
+}
+
 
 int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * ipv6_session) {
     int retval;
@@ -249,7 +268,24 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
     int offset = get_packet_offset_at_index(ipacket, index);
     mmt_session_key_t ipv6_session_key;
     int packet_direction;
-
+    // LN: Defragmentation
+    // struct ipv6hdr * ip6h = (struct ipv6hdr *) (struct ipv6hdr *) & ipacket->data[offset];
+    // uint8_t next_hdr = ip6h->nexthdr;
+    // if (next_hdr == IPPROTO_FRAGMENT) {
+    //     uint16_t next_offset = sizeof (struct ipv6hdr);
+    //     uint8_t flags = &ipacket->data[offset + next_offset + 2];
+    //     if (flag & 0x0001) {
+    //         ipacket->is_fragment[index] = 1;
+    //         if (ipacket->session) {
+    //             ipacket->session->is_fragmenting = 1;
+    //         }
+    //         // Going to defragment the packet
+    //         if (!ip6_process_fragment(ipacket, index)) {
+    //             return NULL:
+    //         }
+    //     }
+    // }
+    // End of defragmentation
     // Get the session of this packet and set it to the packet's session
     packet_direction = build_ipv6_session_key(ipacket, offset, &ipv6_session_key);
 
@@ -1172,6 +1208,7 @@ static attribute_metadata_t ip6_attributes_metadata[IP6_ATTRIBUTES_NB] = {
     {IP6_HOP_LIMIT, IP6_HOP_LIMIT_ALIAS, MMT_U8_DATA, sizeof (char), 7, SCOPE_PACKET, general_char_extraction},
     {IP6_SRC, IP6_SRC_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, 8, SCOPE_PACKET, general_byte_to_byte_extraction},
     {IP6_DST, IP6_DST_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, 24, SCOPE_PACKET, general_byte_to_byte_extraction},
+    {IP6_HEADER_COUNT, IP6_HEADER_COUNT_LABEL, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_header_count_extraction},
     {IP6_CLIENT_ADDR, IP6_CLIENT_ADDR_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_client_addr_extraction},
     {IP6_SERVER_ADDR, IP6_SERVER_ADDR_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_server_addr_extraction},
     {IP6_CLIENT_PORT, IP6_CLIENT_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_client_port_extraction},
