@@ -102,9 +102,12 @@ enum ip6_attributes {
     IP6_SERVER_ADDR,
     IP6_CLIENT_PORT,
     IP6_SERVER_PORT,
-    IP6_HEADER_COUNT,
     // LN: Move from packet_processing.c
     IP6_FRAG_PACKET_COUNT,
+    IP6_EXT_HEADERS_COUNT,
+    IP6_REDUNDANT_EXT_HEADERS,
+    IP6_FRAGMENT_OVERLAPPING,
+    IP6_OUT_OF_ORDER,
     IP6_FRAG_DATA_VOLUME,
     IP6_DF_PACKET_COUNT,
     IP6_DF_DATA_VOLUME,
@@ -135,9 +138,12 @@ enum ip6_attributes {
 #define IP6_SERVER_ADDR_ALIAS    "server_addr"
 #define IP6_CLIENT_PORT_ALIAS    "client_port"
 #define IP6_SERVER_PORT_ALIAS    "server_port"
-#define IP6_HEADER_COUNT_LABEL        "ip6_header_count"
 // LN Move from packet_processing.c
 #define IP6_FRAG_PACKET_COUNT_LABEL        "ip6_frag_packets_count"
+#define IP6_EXT_HEADERS_COUNT_LABEL        "ip6_ext_headers_count"
+#define IP6_REDUNDANT_EXT_HEADERS_LABEL "redundent_extension_header"
+#define IP6_FRAGMENT_OVERLAPPING_LABEL  "fragment_overlapping"
+#define IP6_OUT_OF_ORDER_LABEL  "ip6_outoforder"
 #define IP6_FRAG_DATA_VOLUME_LABEL         "ip6_frag_data_volume"
 #define IP6_DF_PACKET_COUNT_LABEL          "ip6_df_packets_count"
 #define IP6_DF_DATA_VOLUME_LABEL           "ip6_df_data_volume"

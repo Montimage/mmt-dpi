@@ -5,6 +5,7 @@
 
 #include "ipv6.h"
 #include "ip_session_id_management.h"
+#include "proto_ipv6_dgram.h"
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 /** macro to compare 2 IPv6 addresses with each other to identify the "smaller" IPv6 address  */
@@ -33,6 +34,9 @@ int is_extention_header(uint8_t next_header) {
         case IPPROTO_AH:
         case IPPROTO_DSTOPTS:
         case IPPROTO_MH:
+        case IPPROTO_HIP:
+        case IPPROTO_ESP:
+        case IPPROTO_SHIM6P:
             return 1;
         default:
             return 0;
@@ -46,17 +50,21 @@ uint32_t get_next_header_offset(uint8_t current_header, const uint8_t * packet, 
         case IPPROTO_HOPOPTS:
         case IPPROTO_ROUTING:
         case IPPROTO_AH:
+        case IPPROTO_HIP:
+        case IPPROTO_ESP:
+        case IPPROTO_SHIM6P:
+        case IPPROTO_MH:
         case IPPROTO_DSTOPTS:
             exthdr = (struct ext_hdr_generic *) packet;
             *next_hdr = exthdr->nexthdr;
+            // printf("next offset: %u\n",exthdr->ext_len);
             return 8 + ((uint32_t) (exthdr->ext_len) * 8); // The length is provided as the number of 8 octet words not including the first 8 octets
         case IPPROTO_FRAGMENT:
             exthdr = (struct ext_hdr_generic *) packet;
             *next_hdr = exthdr->nexthdr;
             return 8; // The fragment extention header has a fixed length
-        case IPPROTO_MH:
         default:
-            *next_hdr = IPPROTO_NONE;
+            // *next_hdr = exthdr->nexthdr;
             return 0;
     }
 }
@@ -165,26 +173,6 @@ int ip6_server_addr_extraction(const ipacket_t * packet, unsigned proto_index,
     return 0;
 }
 
-int ip6_header_count_extraction(const ipacket_t * packet, unsigned proto_index,
-        attribute_t * extracted_data) {
-
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    struct ipv6hdr * ip6_hdr = (struct ipv6hdr *) & packet->data[proto_offset];
-    uint16_t header_count = 0;
-    uint8_t  next_hdr    = ip6_hdr->nexthdr;
-    uint16_t next_offset = sizeof (struct ipv6hdr);
-
-    while (is_extention_header(next_hdr) && (packet->p_hdr->caplen >= (proto_offset + next_offset + 2))) {
-        header_count++;
-        next_offset += get_next_header_offset(next_hdr, & packet->data[proto_offset + next_offset], & next_hdr);
-    }
-
-    *((uint16_t *) extracted_data->data) = header_count;
-
-    return 1;
-}
-
-
 int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * ipv6_session) {
     int retval;
     struct ipv6hdr * ip6h = (struct ipv6hdr *) (struct ipv6hdr *) & ipacket->data[offset];
@@ -264,28 +252,136 @@ int ip6_session_cleanup_on_timeout(void * protocol_context, mmt_session_t * time
     return 0;
 }
 
-void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned index, int * is_new_session) {
+static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
+{
+    mmt_handler_t *mmt = ipacket->mmt_handler;
+    mmt_hashmap_t *map = mmt->ip_streams;
+    mmt_key_t key;
+    ipv6_dgram_t *dg;
+    int offset = get_packet_offset_at_index(ipacket, index);
+    struct ipv6hdr *ip6h = (struct ipv6hdr *)(struct ipv6hdr *)&ipacket->data[offset];
+    uint8_t next_hdr = ip6h->nexthdr;
+    uint16_t next_offset = sizeof(struct ipv6hdr);
+    // Get offset of Fragment header
+    while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2)) && next_hdr != IPPROTO_FRAGMENT)
+    {
+        next_offset += get_next_header_offset(next_hdr, &ipacket->data[offset + next_offset], &next_hdr);
+    }
+    uint16_t ext_header_len = next_offset + 8 - sizeof(struct ipv6hdr);
+    struct ext_hdr_fragment *frag_header = (struct ext_hdr_fragment *)&ipacket->data[offset + next_offset];
+    uint8_t more_fragment = ntohs(frag_header->flag) & 0x0001;
+    uint16_t frag_offset = ntohs(frag_header->flag) >> 3;
+
+    key = *(uint64_t *)(&ip6h->saddr + 12);
+    key <<= 32;
+    key |= *(uint64_t *)(&ip6h->daddr + 12);
+    key <<= 32;
+    key |= frag_header->ident;
+    if (!hashmap_get(map, key, (void **)&dg))
+    {
+        dg = ipv6_dgram_alloc();
+        hashmap_insert_kv(map, key, dg);
+    }
+
+    int dgram_update_result = ipv6_dgram_update(dg, ip6h, ipacket->p_hdr->caplen, frag_offset, next_offset + 8, more_fragment, ext_header_len);
+
+    if (dgram_update_result > 0)
+    {
+        // Overlapping
+        ipacket->ipv6_overlapping[index] = 1;
+    }
+    // printf("%lu: %u, %d, %d, %d\n",ipacket->packet_id, dg->current_packet_size, frag_offset, ntohs(ip6h->payload_len), ext_header_len);
+    if (dg->current_packet_size != frag_offset * 8 + ntohs(ip6h->payload_len) - ext_header_len) {
+        ipacket->ipv6_outoforder[index] = 1;
+    }
+    // Check timed-out for all data gram
+
+    // Detect too many fragment in one packet
+    if (ipacket->mmt_handler->fragment_in_packet > 0 && (dg->nb_packets % ipacket->mmt_handler->fragment_in_packet) == 0)
+    {
+        fire_evasion_event(ipacket, PROTO_IPV6, index, EVA_IP_FRAGMENT_PACKET, (void *)&(dg->nb_packets));
+    }
+    if (!ipv6_dgram_is_complete(dg))
+    {
+        // debug("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
+        // printf("Fragmented packet is incompleted: %lu\n", ipacket->packet_id);
+        // fire_evasion_event(ipacket,PROTO_IPV6,index,1,(void*)NULL);
+        return 0;
+    }
+    // At this point, dg is a fully reassembled datagram.
+    // -> reconstruct ipacket from dg, and pass it along
+    // printf("Going to combine packet: %d, %d\n",offset, ext_header_len);
+    // printf("Datagram: %d\n", dg->len);
+    unsigned ioff = offset + ext_header_len + sizeof(struct ipv6hdr);
+    uint8_t *x = (uint8_t*)mmt_malloc( ioff + dg->len );
+    // copy the original ipacket data + IP header
+    (void)memcpy( x,        ipacket->data, ioff );
+    // copy the IP payload
+    (void)memcpy( x + ioff, dg->x,         dg->len );
+    ipacket->data = x;
+    ipacket->p_hdr->len    = ioff + dg->len;
+    ipacket->p_hdr->caplen = ioff + dg->len;
+    ipacket->total_caplen  = dg->caplen;
+    ipacket->nb_reassembled_packets[index] = dg->nb_packets;
+    // debug("Total captured packet: %d\n", dg->nb_packets);
+    // hexdump( dg->x, dg->len );
+    // hexdump( x, ioff + dg->len );
+    hashmap_remove(map, key);
+    ipv6_dgram_free(dg);
+    return 1;
+}
+
+void ipv6_parse_extension_headers(ipacket_t *ipacket, unsigned index)
+{
+    int offset = get_packet_offset_at_index(ipacket, index);
+    struct ipv6hdr *ip6h = (struct ipv6hdr *)(struct ipv6hdr *)&ipacket->data[offset];
+    uint8_t next_hdr = ip6h->nexthdr;
+    uint16_t next_offset = sizeof(struct ipv6hdr);
+    while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2)))
+    {
+        ipacket->ipv6_ext_headers_path[ipacket->ipv6_ext_headers_len] = next_hdr;
+        ipacket->ipv6_ext_headers_offset[ipacket->ipv6_ext_headers_len] = next_offset;
+        ipacket->ipv6_ext_headers_len++;
+        next_offset += get_next_header_offset(next_hdr, &ipacket->data[offset + next_offset], &next_hdr);
+    }
+}
+
+void *ip6_sessionizer(void *protocol_context, ipacket_t *ipacket, unsigned index, int *is_new_session)
+{
     int offset = get_packet_offset_at_index(ipacket, index);
     mmt_session_key_t ipv6_session_key;
     int packet_direction;
     // LN: Defragmentation
-    // struct ipv6hdr * ip6h = (struct ipv6hdr *) (struct ipv6hdr *) & ipacket->data[offset];
-    // uint8_t next_hdr = ip6h->nexthdr;
-    // if (next_hdr == IPPROTO_FRAGMENT) {
-    //     uint16_t next_offset = sizeof (struct ipv6hdr);
-    //     uint8_t flags = &ipacket->data[offset + next_offset + 2];
-    //     if (flag & 0x0001) {
-    //         ipacket->is_fragment[index] = 1;
-    //         if (ipacket->session) {
-    //             ipacket->session->is_fragmenting = 1;
-    //         }
-    //         // Going to defragment the packet
-    //         if (!ip6_process_fragment(ipacket, index)) {
-    //             return NULL:
-    //         }
-    //     }
-    // }
+    struct ipv6hdr *ip6h = (struct ipv6hdr *)(struct ipv6hdr *)&ipacket->data[offset];
+    uint8_t next_hdr = ip6h->nexthdr;
+    uint16_t next_offset = sizeof(struct ipv6hdr);
+
+    // Get offset of Fragment header
+    while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2)) && next_hdr != IPPROTO_FRAGMENT)
+    {
+        next_offset += get_next_header_offset(next_hdr, &ipacket->data[offset + next_offset], &next_hdr);
+    }
+
+    if (next_hdr == IPPROTO_FRAGMENT)
+    {
+        ipacket->is_completed[index] = 0;
+        ipacket->is_fragment[index] = 1;
+        if (ipacket->session)
+        {
+            ipacket->session->is_fragmenting = 1;
+        }
+        // Going to defragment the packet
+        if (!ip6_process_fragment(ipacket, index))
+        {
+            return NULL;
+        }
+    }
     // End of defragmentation
+    ipacket->is_completed[index] = 1;
+    if (ipacket->session)
+    {
+        ipacket->session->is_fragmenting = 0;
+    }
     // Get the session of this packet and set it to the packet's session
     packet_direction = build_ipv6_session_key(ipacket, offset, &ipv6_session_key);
 
@@ -367,10 +463,14 @@ void * ip6_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned in
         session->last_packet_direction = packet_direction;
     }
 
+    // Parse extension headers
+    ipv6_parse_extension_headers(ipacket, index);
+
     return (void *) session;
 }
 
 int ip6_classify_next_proto(ipacket_t * ipacket, unsigned index) {
+
     int offset = get_packet_offset_at_index(ipacket, index);
     struct ipv6hdr * ip6_hdr = (struct ipv6hdr *) & ipacket->data[offset];
 
@@ -378,6 +478,7 @@ int ip6_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     uint16_t next_offset = sizeof (struct ipv6hdr);
 
     while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2))) {
+        // printf("[ip6_classify_next_proto] %d, %d\n", next_offset, next_hdr);
         next_offset += get_next_header_offset(next_hdr, & ipacket->data[offset + next_offset], & next_hdr);
     }
 
@@ -1198,6 +1299,68 @@ void * setup_ipv6_context(void * proto_context, void * args) {
     //setup_session_id_lists();
 }
 
+int proto_ext_headers_count_extraction(const ipacket_t * ipacket, unsigned proto_index,
+                                  attribute_t * extracted_data) {
+    if (ipacket->ipv6_ext_headers_len > 0) {
+        *((uint16_t *) extracted_data->data) = ipacket->ipv6_ext_headers_len;
+        return 1;
+    }
+    return 0;
+}
+
+int proto_redundent_ext_header_extraction(const ipacket_t * ipacket, unsigned proto_index,
+                                  attribute_t * extracted_data) {
+
+    if (ipacket->ipv6_ext_headers_len == 1) return 0;
+    int i = 0, j = 0;
+    uint16_t ext_headers[PROTO_PATH_SIZE];
+    for (i = 0; i < ipacket->ipv6_ext_headers_len; i++) {
+        uint16_t current_hdr = ipacket->ipv6_ext_headers_path[i];
+        uint16_t nb_found = 0;
+        ext_headers[i] = current_hdr;
+        for (j = 0; j < i; j++) {
+            if (ext_headers[j] == current_hdr) {
+                nb_found++;
+                if (current_hdr == IPPROTO_HOPOPTS && nb_found == 1) {
+                    continue;
+                }
+                *((uint16_t *) extracted_data->data) = ext_headers[j];
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int proto_fragment_overlapping_extraction(const ipacket_t * ipacket, unsigned proto_index,
+                                  attribute_t * extracted_data) {
+    if (ipacket->ipv6_overlapping[proto_index]) {
+        *((uint16_t *) extracted_data->data) = 1;
+        return 1;
+    }
+    return 0;
+}
+
+int proto_out_of_order_extraction(const ipacket_t * ipacket, unsigned proto_index,
+                                  attribute_t * extracted_data) {
+    if (ipacket->ipv6_outoforder[proto_index]) {
+        *((uint16_t *) extracted_data->data) = 1;
+        return 1;
+    }
+    return 0;
+}
+
+// int proto_unknown_ext_header_extraction(const ipacket_t * ipacket, unsigned proto_index,
+//                                   attribute_t * extracted_data) {
+//     int offset = get_packet_offset_at_index(ipacket, index);
+//     if (ipacket->ipv6_ext_headers_len > 0) {
+//         struct ext_hdr_generic * header = (struct ext_hdr_generic *)& ipacket->data[offset + sizeof(struct iphdr) + ipacket->ipv6_ext_headers_offset[ipacket->ipv6_ext_headers_len - 1]];
+//         *((uint16_t *) extracted_data->data) = header->nexthdr;
+//         return 1;
+//     }
+//     return 0;
+// }
+
 static attribute_metadata_t ip6_attributes_metadata[IP6_ATTRIBUTES_NB] = {
     {IP6_VERSION, IP6_VERSION_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, ip6_version_extraction},
     {IP6_TRAFFIC_CLASS, IP6_TRAFFIC_CLASS_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, ip6_traffic_class_extraction},
@@ -1208,12 +1371,16 @@ static attribute_metadata_t ip6_attributes_metadata[IP6_ATTRIBUTES_NB] = {
     {IP6_HOP_LIMIT, IP6_HOP_LIMIT_ALIAS, MMT_U8_DATA, sizeof (char), 7, SCOPE_PACKET, general_char_extraction},
     {IP6_SRC, IP6_SRC_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, 8, SCOPE_PACKET, general_byte_to_byte_extraction},
     {IP6_DST, IP6_DST_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, 24, SCOPE_PACKET, general_byte_to_byte_extraction},
-    {IP6_HEADER_COUNT, IP6_HEADER_COUNT_LABEL, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_header_count_extraction},
     {IP6_CLIENT_ADDR, IP6_CLIENT_ADDR_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_client_addr_extraction},
     {IP6_SERVER_ADDR, IP6_SERVER_ADDR_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_server_addr_extraction},
     {IP6_CLIENT_PORT, IP6_CLIENT_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_client_port_extraction},
     {IP6_SERVER_PORT, IP6_SERVER_PORT_ALIAS, MMT_U16_DATA, sizeof (short), POSITION_NOT_KNOWN, SCOPE_PACKET, ip6_server_port_extraction},
     {IP6_FRAG_PACKET_COUNT, IP6_FRAG_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_packet_count_extraction},
+    {IP6_EXT_HEADERS_COUNT, IP6_EXT_HEADERS_COUNT_LABEL, MMT_U16_DATA, sizeof (uint16_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ext_headers_count_extraction},
+    {IP6_REDUNDANT_EXT_HEADERS, IP6_REDUNDANT_EXT_HEADERS_LABEL, MMT_U16_DATA, sizeof (uint16_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_redundent_ext_header_extraction},
+    // {IP6_UNKNOWN_EXT_HEADERS, IP6_UNKNOWN_EXT_HEADERS_LABEL, MMT_U16_DATA, sizeof (uint16_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_unknown_ext_header_extraction},
+    {IP6_FRAGMENT_OVERLAPPING, IP6_FRAGMENT_OVERLAPPING_LABEL, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_fragment_overlapping_extraction},
+    {IP6_OUT_OF_ORDER, IP6_OUT_OF_ORDER_LABEL, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_out_of_order_extraction},
     {IP6_FRAG_DATA_VOLUME, IP_FRAG_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_frag_data_volume_extraction},
     {IP6_DF_PACKET_COUNT, IP6_DF_PACKET_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_packet_count_extraction},
     {IP6_DF_DATA_VOLUME, IP_DF_DATA_VOLUME_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_ip_df_data_volume_extraction},

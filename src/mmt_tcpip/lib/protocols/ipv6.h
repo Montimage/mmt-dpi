@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   ipv6.h
  * Author: montimage
  *
@@ -15,7 +15,7 @@ extern "C" {
 #include "plugin_defs.h"
 #include "mmt_core.h"
 #include "ip.h"
-    
+
 #ifndef IPPROTO_HOPOPTS
 #define IPPROTO_HOPOPTS         0       /* IPv6 hop-by-hop options      */
 #endif
@@ -38,6 +38,14 @@ extern "C" {
 #define IPPROTO_MH              135     /* IPv6 mobility header         */
 #endif
 
+#ifndef IPPROTO_HIP
+#define IPPROTO_HIP              139     /* Host Identity Protocol         */
+#endif
+
+#ifndef IPPROTO_SHIM6P
+#define IPPROTO_SHIM6P              140     /* Shim6 Protocol         */
+#endif
+
   //#ifdef _WIN32
     struct ipv6hdr {
 
@@ -57,7 +65,7 @@ extern "C" {
             }l1_1;
             struct {
                 uint16_t short_word_1;
-                uint16_t short_word_2;                
+                uint16_t short_word_2;
             }l1_2;
             uint32_t flow_label;
         };
@@ -75,7 +83,12 @@ extern "C" {
         uint8_t ext_len;
         uint16_t data;
     };
-
+    struct ext_hdr_fragment {
+        uint8_t nexthdr;
+        uint8_t reserved;
+        uint16_t flag;
+        uint32_t ident;
+    };
     int init_ip6_proto_struct();
 
 #ifdef	__cplusplus
