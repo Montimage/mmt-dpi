@@ -1,4 +1,4 @@
-VERSION  := 1.6.14.2
+VERSION  := 1.6.15.0
 GIT_VERSION := $(shell git log --format="%h" -n 1)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
@@ -128,10 +128,10 @@ LIB5G_OBJECTS := \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/*.c)) \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/util/*.c)) \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/emm/*.c)) \
-	
+
 $(CORE_OBJECTS) $(LIB5G_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
-	
+
 ifdef ENABLESEC
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))
@@ -160,7 +160,7 @@ $(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 $(SDKLIB)/$(LIB5G).a: $(SDKLIB) $(LIB5G_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(LIB5G_OBJECTS)
-	
+
 ifdef ENABLESEC
 # FUZZ
 
@@ -207,7 +207,7 @@ $(SDKINC_TCPIP)/%.h: $(SRCDIR)/mmt_tcpip/include/%.h
 $(SDKINC_LIB5G)/%.h: $(SRCDIR)/mmt_5g/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
-	
+
 $(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_LIB5G)
 
 ifdef ENABLESEC

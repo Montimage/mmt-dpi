@@ -1,5 +1,8 @@
 RELEASE NOTES
 ---
+Version 1.6.15.0
+- Update protocol IPV6: process fragmentation, extract number of extension header, number of fragment packets, check fragment order
+
 Version 1.6.14.2
 - Add is_fragmenting in session to mark a session holding a incompleted packet
 - Update API for session_timer_handler, add parameter to choose executing the session handler with or without incompleted packet.

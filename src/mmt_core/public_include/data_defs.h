@@ -101,6 +101,12 @@ struct ipacket_struct {
     uint64_t total_caplen;                    /**< Total captured length of all packets which are assembled to this packet*/
     uint8_t is_completed[PROTO_PATH_SIZE];    /**< 1 - yes, 0 - no: Indicate if the packet is completed to go to parse to next protocol*/
     uint8_t is_fragment[PROTO_PATH_SIZE];                      /**< 1 - yes, 0 - no: Indicate if the packet is a fragmented packet */
+    // uint16_t is_outoforder[PROTO_PATH_SIZE];      /** out of order*/
+    uint16_t ipv6_ext_headers_path[PROTO_PATH_SIZE]; /** IPv6 extension header path*/
+    uint16_t ipv6_ext_headers_offset[PROTO_PATH_SIZE]; /**IPv6 extension header offset*/
+    uint16_t ipv6_ext_headers_len; /* IPv6 header path length*/
+    uint16_t ipv6_overlapping[PROTO_PATH_SIZE]; /** IPv6 fragment header overlaps another fragment*/
+    uint16_t ipv6_outoforder[PROTO_PATH_SIZE]; /** IPv6 fragment header is out of order*/
     int last_callback_fct_id;                           /**< The extra field for tcp packet handler */
     unsigned nb_reassembled_packets[PROTO_PATH_SIZE];          /**< number of packets which are assembled to this packet */
     proto_hierarchy_t internal_proto_hierarchy; /**< internal: - never modify it. the protocol layers corresponding to this packet */

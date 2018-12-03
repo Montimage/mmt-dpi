@@ -2851,7 +2851,7 @@ proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, 
             proto_stats->last_packet_time = ipacket->p_hdr->ts;
 
             // Check if this is IP protocol, then update ip_fragment information
-            if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179)){
+            if(likely(configured_protocol->protocol->proto_id == 178 || configured_protocol->protocol->proto_id == 179 || configured_protocol->protocol->proto_id == 182 )){
                 if(ipacket->is_fragment[index]){
                     proto_stats->ip_frag_packets_count ++;
                     if(ipacket->is_completed[index]){
@@ -3281,11 +3281,17 @@ int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     mmt->current_ipacket.mmt_handler = mmt;
     mmt->current_ipacket.internal_packet = NULL;
     mmt->current_ipacket.last_callback_fct_id = 0;
+    // IPV6
+    mmt->current_ipacket.ipv6_ext_headers_len = 0;
     int i = 0;
     for ( i = 0; i < PROTO_PATH_SIZE; i++ ) {
         mmt->current_ipacket.nb_reassembled_packets[i] = 1;
         mmt->current_ipacket.is_completed[i] = 0;
         mmt->current_ipacket.is_fragment[i] = 0;
+        mmt->current_ipacket.ipv6_ext_headers_path[i] = 0;
+        mmt->current_ipacket.ipv6_ext_headers_offset[i] = 0;
+        mmt->current_ipacket.ipv6_overlapping[i] = 0;
+        mmt->current_ipacket.ipv6_outoforder[i] = 0;
     }
     mmt->current_ipacket.total_caplen = header->caplen;
     // update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
@@ -3336,11 +3342,17 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     ipacket->mmt_handler = mmt;
     ipacket->internal_packet = NULL;
     ipacket->last_callback_fct_id = 0;
+    // ipv6
+    ipacket->ipv6_ext_headers_len = 0;
     int i = 0;
     for ( i = 0; i < PROTO_PATH_SIZE; i++ ) {
         ipacket->nb_reassembled_packets[i] = 1;
         ipacket->is_completed[i] = 0;
         ipacket->is_fragment[i] = 0;
+        ipacket->ipv6_ext_headers_offset[i] = 0;
+        ipacket->ipv6_ext_headers_path[i] = 0;
+        ipacket->ipv6_overlapping[i] = 0;
+        ipacket->ipv6_outoforder[i] = 0;
     }
     ipacket->total_caplen = header->caplen;
     // update_last_received_packet(&mmt->last_received_packet, ipacket);
