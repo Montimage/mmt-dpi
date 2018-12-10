@@ -1,0 +1,19 @@
+/*
+ * nas_esm_msg.h
+ *
+ *  Created on: Dec 10, 2018
+ *          by: Huu-Nghia
+ */
+
+#ifndef SRC_MMT_5G_NAS_ESM_NAS_ESM_MSG_H_
+#define SRC_MMT_5G_NAS_ESM_NAS_ESM_MSG_H_
+
+#include <stdlib.h>
+#include <stdint.h>
+
+typedef union{
+	nas_esm_msg_header_t header;
+}nas_esm_msg_t;
+
+int nas_esm_decode_msg( nas_esm_msg_t *msg, const uint8_t *buffer, uint32_t len );
+#endif /* SRC_MMT_5G_NAS_ESM_NAS_ESM_MSG_H_ */

@@ -128,8 +128,15 @@ LIB5G_OBJECTS := \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/*.c)) \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/util/*.c)) \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/emm/*.c)) \
+
+#specific include paths for mmt_5g
+LIB5G_INC := $(SRCINC)         \
+   $(SRCDIR)/mmt_5g/           \
+	$(SRCDIR)/mmt_5g/nas        \
+	$(SRCDIR)/mmt_5g/nas/util   \
+	$(SRCDIR)/mmt_5g/nas/emm
 	
-$(CORE_OBJECTS) $(LIB5G_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+$(CORE_OBJECTS) $(LIB5G_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIB5G_INC))
 
 	
 ifdef ENABLESEC

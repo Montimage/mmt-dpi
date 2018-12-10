@@ -7,9 +7,8 @@
 #ifndef SRC_MMT_5G_NAS_EMM_ATTACH_REQUEST_H_
 #define SRC_MMT_5G_NAS_EMM_ATTACH_REQUEST_H_
 
-#include "../nas_msg_header.h"
-#include "../esp_mobile_identity.h"
-#include "nas_emm_msg_type_t.h"
+#include "nas_emm_msg_header.h"
+#include "../ies/esp_mobile_identity.h"
 
 #define EPS_ATTACH_TYPE_EPS   0b0001
 #define EPS_ATTACH_TYPE_IMSI  0b0010
@@ -22,15 +21,14 @@
 
 typedef struct {
 	/* Mandatory fields */
-	nas_msg_header_t    header;
-	nas_emm_msg_type_t  message_type;
-	uint8_t             eps_attach_type;
-	EpsMobileIdentity   old_guti_or_imsi;
+	nas_emm_msg_header_t    header;
+	uint8_t                 eps_attach_type;
+	eps_mobile_identity_t   old_guti_or_imsi;
 
 	//FURTHER: Need to examine other fields
-} nas_emm_attach_request_msg_t;
+} nas_emm_attach_request_t;
 
-int nas_decode_emm_attach_request(nas_emm_attach_request_msg_t *attachrequest, const uint8_t *buffer, uint32_t len);
+int nas_emm_decode_attach_request(nas_emm_attach_request_t *msg, const uint8_t *buffer, uint32_t len);
 
 
 

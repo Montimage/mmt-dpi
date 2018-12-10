@@ -113,12 +113,12 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	case S1AP_ENB_UE_ID:
 		if( msg.enb_ue_id == 0 )
 			return 0;
-		*((uint32_t *) extracted_data->data) = ntohl( msg.enb_ue_id );
+		*((uint32_t *) extracted_data->data) = msg.enb_ue_id;
 		break;
 	case S1AP_MME_UE_ID:
 		if( msg.mme_ue_id == 0 )
 			return 0;
-		*((uint32_t *) extracted_data->data) = ntohl( msg.mme_ue_id );
+		*((uint32_t *) extracted_data->data) = msg.mme_ue_id;
 		break;
 
 	}//end of switch

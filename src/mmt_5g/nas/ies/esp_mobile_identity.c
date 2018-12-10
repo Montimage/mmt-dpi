@@ -1,50 +1,9 @@
 #include "esp_mobile_identity.h"
-#include "./util/TLVEncoder.h"
-#include "./util/TLVDecoder.h"
+#include "../util/decoder.h"
 
 
-static int decode_guti_eps_mobile_identity(GutiEpsMobileIdentity_t *guti, const uint8_t *buffer);
-static int decode_imsi_eps_mobile_identity(ImsiEpsMobileIdentity_t *imsi, const uint8_t *buffer);
-static int decode_imei_eps_mobile_identity(ImeiEpsMobileIdentity_t *imei, const uint8_t *buffer);
 
-int nas_decode_eps_mobile_identity(EpsMobileIdentity *epsmobileidentity, uint8_t iei, const uint8_t *buffer, uint32_t len)
-{
-	int decoded_rc = TLV_DECODE_VALUE_DOESNT_MATCH;
-	int decoded = 0;
-	uint8_t ielen = 0;
-
-	if (iei > 0) {
-		CHECK_IEI_DECODER(iei, *buffer);
-		decoded++;
-	}
-	ielen = *(buffer + decoded);
-	decoded++;
-	CHECK_LENGTH_DECODER(len - decoded, ielen);
-
-	uint8_t typeofidentity = *(buffer + decoded) & 0x7;
-
-	if (typeofidentity == EPS_MOBILE_IDENTITY_IMSI) {
-		decoded_rc = decode_imsi_eps_mobile_identity(&epsmobileidentity->imsi,
-				buffer + decoded);
-	} else if (typeofidentity == EPS_MOBILE_IDENTITY_GUTI) {
-		decoded_rc = decode_guti_eps_mobile_identity(&epsmobileidentity->guti,
-				buffer + decoded);
-	} else if (typeofidentity == EPS_MOBILE_IDENTITY_IMEI) {
-		decoded_rc = decode_imei_eps_mobile_identity(&epsmobileidentity->imei,
-				buffer + decoded);
-	}
-
-	if (decoded_rc < 0) {
-		return decoded_rc;
-	}
-
-#if defined (NAS_DEBUG)
-		  dump_eps_mobile_identity_xml(epsmobileidentity, iei);
-#endif
-		  return (decoded + decoded_rc);
-}
-
-static int decode_guti_eps_mobile_identity(GutiEpsMobileIdentity_t *guti, const uint8_t *buffer)
+static int _decode_guti_eps_mobile_identity(guti_eps_mobile_identity_t *guti, const uint8_t *buffer)
 {
 	int decoded = 0;
 	guti->spare = (*(buffer + decoded) >> 4) & 0xf;
@@ -53,14 +12,14 @@ static int decode_guti_eps_mobile_identity(GutiEpsMobileIdentity_t *guti, const 
 	 * For the GUTI, bits 5 to 8 of octet 3 are coded as "1111"
 	 */
 	if (guti->spare != 0xf) {
-		return (TLV_ENCODE_VALUE_DOESNT_MATCH);
+		return (DECODE_VALUE_DOESNT_MATCH);
 	}
 
 	guti->oddeven = (*(buffer + decoded) >> 3) & 0x1;
 	guti->typeofidentity = *(buffer + decoded) & 0x7;
 
 	if (guti->typeofidentity != EPS_MOBILE_IDENTITY_GUTI) {
-		return (TLV_ENCODE_VALUE_DOESNT_MATCH);
+		return (DECODE_VALUE_DOESNT_MATCH);
 	}
 
 	decoded++;
@@ -82,13 +41,13 @@ static int decode_guti_eps_mobile_identity(GutiEpsMobileIdentity_t *guti, const 
 	return decoded;
 }
 
-static int decode_imsi_eps_mobile_identity(ImsiEpsMobileIdentity_t *imsi, const uint8_t *buffer)
+static int _decode_imsi_eps_mobile_identity(imsi_eps_mobile_identity_t *imsi, const uint8_t *buffer)
 {
 	int decoded = 0;
 	imsi->typeofidentity = *(buffer + decoded) & 0x7;
 
 	if (imsi->typeofidentity != EPS_MOBILE_IDENTITY_IMSI) {
-		return (TLV_ENCODE_VALUE_DOESNT_MATCH);
+		return (DECODE_VALUE_DOESNT_MATCH);
 	}
 
 	imsi->oddeven = (*(buffer + decoded) >> 3) & 0x1;
@@ -121,20 +80,20 @@ static int decode_imsi_eps_mobile_identity(ImsiEpsMobileIdentity_t *imsi, const 
 	 * mark coded as "1111".
 	 */
 	if ((imsi->oddeven == EPS_MOBILE_IDENTITY_EVEN) && (imsi->digit15 != 0x0f)) {
-		return (TLV_ENCODE_VALUE_DOESNT_MATCH);
+		return (DECODE_VALUE_DOESNT_MATCH);
 	}
 
 	decoded++;
 	return decoded;
 }
 
-static int decode_imei_eps_mobile_identity(ImeiEpsMobileIdentity_t *imei, const uint8_t *buffer)
+static int _decode_imei_eps_mobile_identity(imei_eps_mobile_identity_t *imei, const uint8_t *buffer)
 {
 	int decoded = 0;
 	imei->typeofidentity = *(buffer + decoded) & 0x7;
 
 	if (imei->typeofidentity != EPS_MOBILE_IDENTITY_IMEI) {
-		return (TLV_ENCODE_VALUE_DOESNT_MATCH);
+		return (DECODE_VALUE_DOESNT_MATCH);
 	}
 
 	imei->oddeven = (*(buffer + decoded) >> 3) & 0x1;
@@ -164,3 +123,40 @@ static int decode_imei_eps_mobile_identity(ImeiEpsMobileIdentity_t *imei, const 
 	return decoded;
 }
 
+
+int nas_decode_eps_mobile_identity(eps_mobile_identity_t *ident, uint8_t iei, const uint8_t *buffer, uint32_t len)
+{
+	int decoded_rc = DECODE_VALUE_DOESNT_MATCH;
+	int decoded = 0;
+	uint8_t ielen = 0;
+
+	if (iei > 0) {
+		CHECK_IEI_DECODER(iei, *buffer);
+		decoded++;
+	}
+	ielen = *(buffer + decoded);
+	decoded++;
+	CHECK_LENGTH_DECODER(len - decoded, ielen);
+
+	uint8_t typeofidentity = *(buffer + decoded) & 0x7;
+
+	switch( typeofidentity){
+	case EPS_MOBILE_IDENTITY_IMSI:
+		decoded_rc = _decode_imsi_eps_mobile_identity(&ident->imsi,
+				buffer + decoded);
+		break;
+	case EPS_MOBILE_IDENTITY_GUTI:
+		decoded_rc = _decode_guti_eps_mobile_identity(&ident->guti,
+				buffer + decoded);
+		break;
+	case EPS_MOBILE_IDENTITY_IMEI:
+		decoded_rc = _decode_imei_eps_mobile_identity(&ident->imei,
+				buffer + decoded);
+		break;
+	}
+
+	if (decoded_rc < 0)
+		return decoded_rc;
+
+	return (decoded + decoded_rc);
+}
