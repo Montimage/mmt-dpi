@@ -1271,6 +1271,21 @@ struct s7commphdr {
 
 //////////// END OF S7COMM PROTOCOL ATTRIBUTES ////////////////////
 
+//////////// SMB PROTOCOL ATTRIBUTES ////////////////////
+
+enum smb_attributes {
+    SMB_VERSION = 1,
+    SMB_PADDING,
+    SMB_COMMAND,
+    SMB_ATTRIBUTES_NB = SMB_COMMAND,
+};
+
+
+#define SMB_VERSION_ALIAS "version"
+#define SMB_PADDING_ALIAS "padding"
+#define SMB_COMMAND_ALIAS "command"
+//////////// END OF SMB PROTOCOL ATTRIBUTES ////////////////////
+
 #ifdef __cplusplus
 }
 #endif

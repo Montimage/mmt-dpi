@@ -92,6 +92,7 @@ MSG_TYPE values (in hexidecimal):
 
 */
 
+#define NB_MSG_SESSION_MESSAGE 0
 #define NB_MSG_DIRECT_UNIQUE 16
 #define NB_MSG_DIRECT_GROUP 17
 #define NB_MSG_BROADCAST_DATAGRAM 18
@@ -129,7 +130,7 @@ int mmt_check_netbios_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_LOG(PROTO_NETBIOS, MMT_LOG_DEBUG, "netbios tcp start\n");
 
         /* destination port must be 139 */
-        if (dport == 139) {
+        if (dport == 139 || dport == 445) {
             MMT_LOG(PROTO_NETBIOS, MMT_LOG_DEBUG, "found netbios with destination port 139\n");
             /* payload_packet_len must be 72 */
             if (packet->payload_packet_len == 72) {
@@ -432,17 +433,19 @@ int netbios_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     struct mmt_netbios_header_struct * netbios_header = (struct mmt_netbios_header_struct *) & ipacket->data[offset];
     classified_proto_t retval;
     // Classify base on port number
-    if (ntohs(netbios_header->source_port) == 138) {
+    if (ntohs(netbios_header->source_port) == 138 || ntohs(netbios_header->source_port) == 445) {
       retval.proto_id = PROTO_SMB;
     }
     retval.status = Classified;
     retval.offset = -1;
-    printf("Message type: %d\n", netbios_header->msg_type);
     switch(netbios_header->msg_type){
+      case NB_MSG_SESSION_MESSAGE:
+        retval.offset = 4;
+        break;
       case NB_MSG_DIRECT_UNIQUE:
       case NB_MSG_DIRECT_GROUP:
       case NB_MSG_BROADCAST_DATAGRAM:
-        retval.offset = 64;
+        retval.offset = 82;
         break;
       case NB_MSG_ERROR:
         retval.offset = 11;
