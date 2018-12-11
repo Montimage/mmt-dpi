@@ -3,7 +3,7 @@
 
 
 
-static int _decode_guti_eps_mobile_identity(guti_eps_mobile_identity_t *guti, const uint8_t *buffer)
+static int _decode_guti_eps_mobile_identity(nas_guti_eps_mobile_identity_t *guti, const uint8_t *buffer)
 {
 	int decoded = 0;
 	guti->spare = (*(buffer + decoded) >> 4) & 0xf;
@@ -41,7 +41,7 @@ static int _decode_guti_eps_mobile_identity(guti_eps_mobile_identity_t *guti, co
 	return decoded;
 }
 
-static int _decode_imsi_eps_mobile_identity(imsi_eps_mobile_identity_t *imsi, const uint8_t *buffer)
+static int _decode_imsi_eps_mobile_identity(nas_imsi_eps_mobile_identity_t *imsi, const uint8_t *buffer)
 {
 	int decoded = 0;
 	imsi->typeofidentity = *(buffer + decoded) & 0x7;
@@ -87,7 +87,7 @@ static int _decode_imsi_eps_mobile_identity(imsi_eps_mobile_identity_t *imsi, co
 	return decoded;
 }
 
-static int _decode_imei_eps_mobile_identity(imei_eps_mobile_identity_t *imei, const uint8_t *buffer)
+static int _decode_imei_eps_mobile_identity(nas_imei_eps_mobile_identity_t *imei, const uint8_t *buffer)
 {
 	int decoded = 0;
 	imei->typeofidentity = *(buffer + decoded) & 0x7;
@@ -124,7 +124,7 @@ static int _decode_imei_eps_mobile_identity(imei_eps_mobile_identity_t *imei, co
 }
 
 
-int nas_decode_eps_mobile_identity(eps_mobile_identity_t *ident, uint8_t iei, const uint8_t *buffer, uint32_t len)
+int nas_decode_eps_mobile_identity(nas_eps_mobile_identity_t *ident, uint8_t iei, const uint8_t *buffer, uint32_t len)
 {
 	int decoded_rc = DECODE_VALUE_DOESNT_MATCH;
 	int decoded = 0;

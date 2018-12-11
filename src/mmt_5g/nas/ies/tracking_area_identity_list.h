@@ -23,9 +23,9 @@ typedef struct TrackingAreaIdentityList_tag {
   uint8_t  mncdigit2:4;
   uint8_t  mncdigit1:4;
   uint16_t tac;
-} tracking_area_identity_list_t;
+} nas_tracking_area_identity_list_t;
 
-int decode_tracking_area_identity_list(tracking_area_identity_list_t *trackingareaidentitylist, uint8_t iei, const  uint8_t *buffer, uint32_t len);
+int nas_decode_tracking_area_identity_list(nas_tracking_area_identity_list_t *trackingareaidentitylist, uint8_t iei, const  uint8_t *buffer, uint32_t len);
 
 #endif /* TRACKING AREA IDENTITY LIST_H_ */
 

@@ -72,6 +72,10 @@ typedef enum {
 #define LOG(fmt, args...) fprintf(stderr, "%s:%d" fmt, __FILE__, __LINE__,##args)
 
 extern int errorCodeDecoder;
+#define CHECK_RESULT_DECODER( ret, decoded )                                   \
+		if( unlikely( ret <0 )) return ret;                                    \
+		else                    decoded += ret;
+
 #define RETURN(x, y)                                                           \
 		if(unlikely( x<0 )) return x;   /*error*/                              \
 		else                return (x+y);

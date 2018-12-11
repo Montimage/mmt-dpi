@@ -7,8 +7,7 @@
 
 #include <stdlib.h>
 #include "s1ap_common.h"
-#include "nas/emm/nas_emm_attach_request.h"
-#include "nas/emm/nas_emm_attach_accept.h"
+#include "nas/nas_msg.h"
 
 static inline uint32_t _octet_string_to_uint32_t( const OCTET_STRING_t *t){
 	if( t->size != 4 )
@@ -146,13 +145,25 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 			//HN: here we can get IP of mme
 			message->mme_ipv4 =  _bit_string_to_uint32_t( & s1apERABToBeSetupItemCtxtSUReq_p->transportLayerAddress );
 
-
-			//TODO extract UE IP from NAS PDU
+			//HN: extract UE IP from NAS PDU
 			//s1apERABToBeSetupItemCtxtSUReq_p->nAS_PDU;
-			nas_emm_attach_accept_t  m;
-			memset( &m, 0, sizeof( m ) );
-			//we can get IMSI
-			if( nas_decode_emm_attach_accept( &m, s1apERABToBeSetupItemCtxtSUReq_p->nAS_PDU->buf, s1apERABToBeSetupItemCtxtSUReq_p->nAS_PDU->size ) > 0 ){
+			S1ap_NAS_PDU_t *nas_pdu = s1apERABToBeSetupItemCtxtSUReq_p->nAS_PDU;
+			if( nas_pdu != NULL ){
+				nas_msg_t  m;
+				memset( &m, 0, sizeof( m ) );
+				//HN: get UE IP here
+				if( nas_decode( &m, nas_pdu->buf, nas_pdu->size ) > 0 ){
+					const nas_octet_string_t *octet = & m.protected_msg.msg.emm.attach_accept.esm_message_container;
+					nas_msg_t  mm;
+					memset( &mm, 0, sizeof( mm ) );
+					if( octet->len > 0 && nas_decode( &mm, octet->data, octet->len) > 0 ){
+						//need to check
+						nas_pdn_address_t *pdn = &mm.plain_msg.esm.active_default_esp_bearer_context_request.pdn_address;
+						if( pdn && pdn->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4 ){
+							message->ue_ipv4 = *(uint32_t *) pdn->pdn_address_information.data;
+						}
+					}
+				}
 			}
 
 			decoded += tempDecoded;
@@ -310,28 +321,28 @@ static inline int _decode_s1ap_initialuemessageies(
 			}
 			decoded += tempDecoded;
 
-			nas_emm_attach_request_msg_t  m;
+			nas_msg_t  m;
 			memset( &m, 0, sizeof( m ) );
 			//we can get IMSI
-			if( nas_decode_emm_attach_request( &m, s1apNASPDU_p->buf, s1apNASPDU_p->size ) > 0 ){
-
+			if( nas_decode( &m, s1apNASPDU_p->buf, s1apNASPDU_p->size ) > 0 ){
+				const nas_imsi_eps_mobile_identity_t *imsi = &m.plain_msg.emm.attach_request.old_guti_or_imsi.imsi;
 				//imsi.digitX are numbers
 				//=> we convert them to char, e.g., 7 => '7'
-				message->imsi[0] = '0' + m.old_guti_or_imsi.imsi.digit1;
-				message->imsi[1] = '0' + m.old_guti_or_imsi.imsi.digit2;
-				message->imsi[2] = '0' + m.old_guti_or_imsi.imsi.digit3;
-				message->imsi[3] = '0' + m.old_guti_or_imsi.imsi.digit4;
-				message->imsi[4] = '0' + m.old_guti_or_imsi.imsi.digit5;
-				message->imsi[5] = '0' + m.old_guti_or_imsi.imsi.digit6;
-				message->imsi[6] = '0' + m.old_guti_or_imsi.imsi.digit7;
-				message->imsi[7] = '0' + m.old_guti_or_imsi.imsi.digit8;
-				message->imsi[8] = '0' + m.old_guti_or_imsi.imsi.digit9;
-				message->imsi[9] = '0' + m.old_guti_or_imsi.imsi.digit10;
-				message->imsi[10] ='0' + m.old_guti_or_imsi.imsi.digit11;
-				message->imsi[11] ='0' + m.old_guti_or_imsi.imsi.digit12;
-				message->imsi[12] ='0' + m.old_guti_or_imsi.imsi.digit13;
-				message->imsi[13] ='0' + m.old_guti_or_imsi.imsi.digit14;
-				message->imsi[14] ='0' + m.old_guti_or_imsi.imsi.digit15;
+				message->imsi[0] = '0' + imsi->digit1;
+				message->imsi[1] = '0' + imsi->digit2;
+				message->imsi[2] = '0' + imsi->digit3;
+				message->imsi[3] = '0' + imsi->digit4;
+				message->imsi[4] = '0' + imsi->digit5;
+				message->imsi[5] = '0' + imsi->digit6;
+				message->imsi[6] = '0' + imsi->digit7;
+				message->imsi[7] = '0' + imsi->digit8;
+				message->imsi[8] = '0' + imsi->digit9;
+				message->imsi[9] = '0' + imsi->digit10;
+				message->imsi[10] ='0' + imsi->digit11;
+				message->imsi[11] ='0' + imsi->digit12;
+				message->imsi[12] ='0' + imsi->digit13;
+				message->imsi[13] ='0' + imsi->digit14;
+				message->imsi[14] ='0' + imsi->digit15;
 				//printf("Got IMSI: %.*s\n", 15, message->imsi );
 			}
 

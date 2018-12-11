@@ -21,9 +21,9 @@
 
 typedef struct {
 	/* Mandatory fields */
-	nas_emm_msg_header_t    header;
-	uint8_t                 eps_attach_type;
-	eps_mobile_identity_t   old_guti_or_imsi;
+	nas_emm_msg_header_t        header;
+	uint8_t                     eps_attach_type;
+	nas_eps_mobile_identity_t   old_guti_or_imsi;
 
 	//FURTHER: Need to examine other fields
 } nas_emm_attach_request_t;

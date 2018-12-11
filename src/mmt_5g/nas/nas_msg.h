@@ -26,7 +26,7 @@
 #define SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED     0b0010
 #define SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_NEW          0b0011
 #define SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW 0b0100
-#define SECURITY_HEADER_TYPE_SERVICE_REQUEST                  0b0110
+#define SECURITY_HEADER_TYPE_SERVICE_REQUEST                  0b1100
 
 
 
@@ -98,6 +98,6 @@ typedef union{
  *  A positive number of bytes in the buffer if the buffer if the data have been successfully decoded
  *  Otherwise, a negative number representing code error
  */
-int nas_decode_msg_header( nas_msg_t *msg, const uint8_t *buffer, int length );
+int nas_decode( nas_msg_t *msg, const uint8_t *buffer, int length );
 
 #endif /* SRC_MMT_5G_NAS_NAS_MSG_H_ */

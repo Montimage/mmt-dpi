@@ -16,31 +16,30 @@ static inline int _nas_msg_plain_decode(
 		int                             length)
 {
 	int size = 0, byte = 0;
-	DECODE_U8( buffer, &msg->emm.header, size );
+	DECODE_U8( buffer, *(uint8_t *)& msg->emm.header, size );
 
 	switch ( msg->emm.header.protocol_discriminator ){
 	case NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE:
-		DECODE_U8( buffer+size, &msg->emm.header.message_type, size );
+		DECODE_U8( buffer+size, msg->emm.header.message_type, size );
 
 		/* Decode EPS Mobility Management L3 message */
 		byte = nas_emm_decode_msg(&msg->emm, buffer + size, length - size);
 		break;
 	case NAS_EPS_SESSION_MANAGEMENT_MESSAGE:
 
-		DECODE_U8( buffer+size, &msg->esm.header.procedure_transaction_identity, size );
-		DECODE_U8( buffer+size, &msg->esm.header.message_type, size );
+		DECODE_U8( buffer+size, msg->esm.header.procedure_transaction_identity, size );
+		DECODE_U8( buffer+size, msg->esm.header.message_type, size );
 
 		/* Decode EPS Session Management L3 message */
 		byte = nas_esm_decode_msg(&msg->esm, buffer+size, length - size);
 		break;
+	default:
+		return DECODE_PROTOCOL_NOT_SUPPORTED;
 	}
 
 	if( byte < 0 )
 		return byte;
-	else if( size > 0 )
-		return (size + byte );
-
-	return DECODE_PROTOCOL_NOT_SUPPORTED;
+	return (size + byte );
 }
 
 /**
@@ -51,11 +50,11 @@ static inline const uint8_t* _nas_msg_decrypt(
 		uint8_t             security_header_type,
 		uint32_t            code,
 		uint8_t             seq,
-		int                 length,
+		int                 length
 		//  const emm_security_context_t * const emm_security_context
 )
 {
-	const uint8_t dest = NULL;
+	const uint8_t *dest = NULL;
 	int size = 0;
 	switch (security_header_type) {
 	case SECURITY_HEADER_TYPE_NOT_PROTECTED:
@@ -70,12 +69,7 @@ static inline const uint8_t* _nas_msg_decrypt(
 	case SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED:
 	case SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW:
 		//TODO: decrypt
-		LOG( "Unknown Cyphering protection algorithm %d" );
 		dest = src;
-		/* Decode the first octet (security header type or EPS bearer identity,
-		 * and protocol discriminator) */
-		DECODE_U8(dest, *(uint8_t*)(&header), size);
-
 		break;
 	default:
 		LOG("Unknown security header type %u", security_header_type);
@@ -101,7 +95,7 @@ static inline const uint8_t* _nas_msg_decrypt(
 static inline int _nas_msg_protected_decode(
 		const uint8_t                 *buffer,
 		nas_msg_security_protected_t  *msg,
-		int                            length,
+		int                            length
 		//  const emm_security_context_t * const emm_security_context
 )
 {
@@ -123,7 +117,7 @@ static inline int _nas_msg_protected_decode(
 
 
 	/* Decrypt the security protected NAS message */
-	 const uint8_t* plain_msg = _nas_msg_decrypt( &plain_msg,
+	 const uint8_t* plain_msg = _nas_msg_decrypt(
 					buffer + size,
 					header->security_header_type,
 					header->message_authentication_code,
@@ -143,7 +137,7 @@ static inline int _nas_msg_protected_decode(
 	return (size + bytes);
 }
 
-int nas_decode_msg_header( nas_msg_t *msg, const uint8_t *buffer, int length ){
+int nas_decode( nas_msg_t *msg, const uint8_t *buffer, int length ){
 	/* Decode the header */
 
 	CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, 3, length );
@@ -154,6 +148,15 @@ int nas_decode_msg_header( nas_msg_t *msg, const uint8_t *buffer, int length ){
 	/* Decode the first octet of the header (security header type or EPS bearer
 	 * identity, and protocol discriminator) */
 	*(uint8_t*)(header) = *buffer;
+
+	/*
+	 * EMM Service Request message is an exception that breaks the normal rules
+	 * since it has been tweaked to fit into a single initial RRC message
+	 * and hence optimizing the performance of the system.
+	 */
+	if( header->security_header_type == SECURITY_HEADER_TYPE_SERVICE_REQUEST ){
+		return 0;
+	}
 
 	if (header->protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE) {
 		if (header->security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {

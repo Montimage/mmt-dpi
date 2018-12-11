@@ -28,7 +28,7 @@ typedef struct {
 	uint16_t mmegroupid;
 	uint8_t  mmecode;
 	uint32_t mtmsi;
-} guti_eps_mobile_identity_t;
+} nas_guti_eps_mobile_identity_t;
 
 typedef struct {
 	uint8_t  digit1:4;
@@ -48,19 +48,19 @@ typedef struct {
 	uint8_t  digit13:4;
 	uint8_t  digit14:4;
 	uint8_t  digit15:4;
-} imsi_eps_mobile_identity_t;
+} nas_imsi_eps_mobile_identity_t;
 
-typedef imsi_eps_mobile_identity_t imei_eps_mobile_identity_t;
+typedef nas_imsi_eps_mobile_identity_t nas_imei_eps_mobile_identity_t;
 
 #define EPS_MOBILE_IDENTITY_IMSI  0b001
 #define EPS_MOBILE_IDENTITY_GUTI  0b110
 #define EPS_MOBILE_IDENTITY_IMEI  0b011
 
-typedef union EpsMobileIdentity_tag {
-	imsi_eps_mobile_identity_t imsi;
-	guti_eps_mobile_identity_t guti;
-	imei_eps_mobile_identity_t imei;
-} eps_mobile_identity_t;
+typedef union {
+	nas_imsi_eps_mobile_identity_t imsi;
+	nas_guti_eps_mobile_identity_t guti;
+	nas_imei_eps_mobile_identity_t imei;
+} nas_eps_mobile_identity_t;
 
-int nas_decode_eps_mobile_identity(eps_mobile_identity_t *epsmobileidentity, uint8_t iei, const uint8_t *buffer, uint32_t len);
+int nas_decode_eps_mobile_identity(nas_eps_mobile_identity_t *epsmobileidentity, uint8_t iei, const uint8_t *buffer, uint32_t len);
 #endif /* SRC_MMT_5G_NAS_ESP_MOBILE_IDENTITY_H_ */

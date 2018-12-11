@@ -20,7 +20,7 @@ int nas_emm_decode_attach_request(nas_emm_attach_request_t *msg, const uint8_t *
 	uint32_t decoded = 0;
 	uint32_t ret = 0;
 
-	DECODE_U8(buffer+decoded, &msg->eps_attach_type, decoded );
+	DECODE_U8(buffer+decoded, msg->eps_attach_type, decoded );
 
 	if( msg->eps_attach_type & EPS_ATTACH_TYPE_IMSI )
 		decoded += nas_decode_eps_mobile_identity(&msg->old_guti_or_imsi, 0, buffer+decoded, len-decoded) ;

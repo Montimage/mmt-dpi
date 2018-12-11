@@ -12,18 +12,18 @@
 #include <stdint.h>
 
 #include "nas_emm_msg_header.h"
-#include "../ies/esm_message_container.h"
+#include "../util/octet_string.h"
 #include "../ies/tracking_area_identity_list.h"
 
 #define NAS_EMM_ATTACH_ACCEPT_MIN_LEN 10
 #define NAS_EMM_ATTACH_ACCEPT_MAX_LEN 100
 typedef struct {
 	/* Mandatory fields */
-	nas_emm_msg_header_t           header;
-	uint8_t                        eps_attach_result;
-	uint8_t                        t3412value;
-	tracking_area_identity_list_t  tailist;
-	esm_message_container_t        esm_message_container;
+	nas_emm_msg_header_t               header;
+	uint8_t                            eps_attach_result;
+	uint8_t                            t3412value;
+	nas_tracking_area_identity_list_t  tailist;
+	nas_octet_string_t                 esm_message_container;
 	//FURTHER: Need to examine other fields
 } nas_emm_attach_accept_t;
 
