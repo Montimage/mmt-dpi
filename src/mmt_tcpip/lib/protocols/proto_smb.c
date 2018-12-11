@@ -1,5 +1,84 @@
 #include "smb.h"
 
+/////////////// IMPLEMENTATION OF smb.h ///////////////////
+smb_session_t * smb_session_new(uint64_t session_id) {
+    smb_session_t * new_session = (smb_session_t *) malloc(sizeof(smb_session_t));
+    new_session->next = NULL;
+    new_session->prev = NULL;
+    new_session->nt_create_request = 1;
+    new_session->write_request = 1;
+    new_session->session_id = session_id;
+    return new_session;
+}
+void * smb_session_free(smb_session_t * node) {
+  if (node != NULL) {
+    node->next = NULL;
+    node->prev = NULL;
+    node->nt_create_request = 0;
+    node->write_request = 0;
+    node->session_id = 0;
+    free(node);
+    node = NULL;
+  }
+}
+
+int smb_insert_session(smb_session_t * root, smb_session_t * new_session) {
+  if (!new_session) return 0;
+  if (root == NULL) {
+    root = new_session;
+    return 1;
+  }
+  smb_session_t * head = root;
+  while (head->next != NULL) {
+    head = head->next;
+  }
+  head->next = new_session;
+  new_session->prev = head;
+  return 1;
+}
+
+smb_session_t * smb_find_session_by_id(smb_session_t * root, uint64_t session_id) {
+  smb_session_t * head = root;
+  while (head != NULL) {
+    if (head->session_id == session_id) return head;
+    head = head->next;
+  }
+  return NULL;
+}
+
+smb_session_t * smb_remove_session_by_id(smb_session_t * root, uint64_t session_id) {
+  smb_session_t * head = root;
+  while (head != NULL) {
+    if (head->session_id == session_id) break;
+    head = head->next;
+  }
+  if (head == NULL) return NULL;
+  if (head->next != NULL) {
+    head->next->prev = head->prev;
+  }
+  if (head->prev != NULL) {
+    head->prev->next = head->next;
+  }
+  return head;
+}
+
+smb_session_t *smb_get_session_list(const ipacket_t *ipacket, unsigned index)
+{
+  protocol_instance_t *configured_protocol = &(ipacket->mmt_handler)
+                                                  ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+  return (smb_session_t *)configured_protocol->args;
+}
+
+
+smb_session_t * smb_get_session_from_packet(ipacket_t *ipacket, unsigned index) {
+  smb_session_t * root = smb_get_session_list(ipacket, index);
+  if (root == NULL) {
+    return NULL;
+  }
+  return smb_find_session_by_id(root, ipacket->session->session_id);
+}
+
+
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static void mmt_int_smb_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_SMB, MMT_REAL_PROTOCOL);
@@ -45,22 +124,45 @@ const uint8_t * get_smb_payload(const ipacket_t * ipacket, unsigned proto_index)
     }
     return NULL;
 }
+
+uint8_t smb_version(const uint8_t *smb_payload)
+{
+  if (smb_payload[0] == 0xff)
+  {
+    return 1;
+  }
+  else if (smb_payload[0] == 0xfe)
+  {
+    return 2;
+  }
+  else if (smb_payload[0] == 0xfd)
+  {
+    return 3;
+  }
+  return 0;
+}
 int smb_version_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
-    uint8_t smb_version = 0;
     const uint8_t * smb_payload = get_smb_payload(ipacket, proto_index + 1);
     if (smb_payload != NULL) {
-        if (smb_payload[0] == 0xff) {
-            smb_version = 1;
-        } else if (smb_payload[0] == 0xfe) {
-            smb_version = 2;
-        } else if (smb_payload[0] == 0xfd) {
-            smb_version = 3;
-        }
-        *(uint8_t *)extracted_data->data = smb_version;
-        return 1;
+      uint8_t version = smb_version(smb_payload);
+      *(uint8_t *)extracted_data->data = version;
+      return 1;
     }
     return 0;
+}
+
+uint8_t smb_command(const uint8_t *smb_payload)
+{
+  if (smb_payload[0] == 0xff)
+  {
+    return *(uint8_t *)&smb_payload[4];
+  }
+  if (smb_payload[0] == 0xfe)
+  {
+    return *(uint8_t *)&smb_payload[12];
+  }
+  return 0;
 }
 
 int smb_command_extraction(const ipacket_t * ipacket, unsigned proto_index,
@@ -81,10 +183,12 @@ int smb_command_extraction(const ipacket_t * ipacket, unsigned proto_index,
 
 int smb_padding_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
+    smb_session_t * smb_session = smb_get_session_from_packet(ipacket, proto_index);
+    if (smb_session == NULL) return 0;
+    if (smb_session->write_request)  return 0;
     const uint8_t * smb_payload = get_smb_payload(ipacket, proto_index + 1);
     if (smb_payload != NULL) {
-        uint8_t write_request_seen = 0; // extract this value from session
-        if (smb_payload[0] == 0xff && smb_payload[4] == 0x2f && !write_request_seen) {
+        if (smb_payload[0] == 0xff) {
             const uint8_t * write_request_payload = &smb_payload[32];
             uint16_t data_length_low = *(uint16_t *)&write_request_payload[21];
             uint16_t byte_count = *(uint16_t *)&write_request_payload[29];
@@ -101,10 +205,31 @@ int smb_padding_extraction(const ipacket_t * ipacket, unsigned proto_index,
     return 0;
 }
 
+int smb_nt_create_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+    smb_session_t * smb_session = smb_get_session_from_packet(ipacket, proto_index);
+    if (smb_session == NULL) return 0;
+    if (smb_session->nt_create_request)  return 0;
+    const uint8_t * smb_payload = get_smb_payload(ipacket, proto_index + 1);
+    if (smb_payload != NULL) {
+        if (smb_payload[0] == 0xff) {
+            const uint8_t * nt_create_payload = &smb_payload[32];
+            uint16_t file_name_len = *(uint16_t *)&nt_create_payload[6];
+            mmt_header_line_t * file_name = (mmt_header_line_t *) malloc(sizeof(mmt_header_line_t));
+            file_name->len = file_name_len;
+            file_name->ptr = (const char *) &nt_create_payload[52];
+            extracted_data->data = (void*)file_name;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 static attribute_metadata_t smb_attributes_metadata[SMB_ATTRIBUTES_NB] = {
     {SMB_VERSION,SMB_VERSION_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_version_extraction},
     {SMB_COMMAND,SMB_COMMAND_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_command_extraction},
     {SMB_PADDING,SMB_PADDING_ALIAS,MMT_HEADER_LINE,sizeof (void *),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_padding_extraction},
+    {SMB_NT_CREATE_FILE_NAME,SMB_NT_CREATE_FILE_NAME_ALIAS,MMT_HEADER_LINE,sizeof (void *),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_nt_create_file_name_extraction},
 };
 
 void mmt_init_classify_me_smb() {
@@ -115,6 +240,59 @@ void mmt_init_classify_me_smb() {
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
+void smb_setup_session_context(ipacket_t *ipacket, unsigned index, smb_session_t * root)
+{
+  protocol_instance_t *configured_protocol = &(ipacket->mmt_handler)
+                                                  ->configured_protocols[ipacket->proto_hierarchy->proto_path[index]];
+  configured_protocol->args = (void*) root;
+}
+
+void * smb_context_cleanup(void *proto_context, void *args)
+{
+  smb_session_t * root = (smb_session_t*)((protocol_instance_t *) proto_context)->args;
+  while( root!= NULL) {
+    smb_session_t * to_be_deleted = root;
+    root = root->next;
+    smb_session_free(to_be_deleted);
+  }
+}
+
+int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
+{
+  if (!ipacket->session) return MMT_CONTINUE;
+  if (ipacket->internal_packet->payload_packet_len == 0) return MMT_CONTINUE;
+  smb_session_t * root = smb_get_session_list(ipacket, index);
+  if (root == NULL) {
+    root = smb_session_new(ipacket->session->session_id);
+    if (root) {
+      smb_setup_session_context(ipacket,index,root);
+    }
+  }
+
+  smb_session_t * current_session = smb_find_session_by_id(root, ipacket->session->session_id);
+  if (current_session == NULL) {
+    // Create a new session
+    current_session = smb_session_new(ipacket->session->session_id);
+    smb_insert_session(root, current_session);
+  }
+
+  // Start analysis the packet and update to the session
+  const uint8_t * smb_payload = get_smb_payload(ipacket, index);
+  if (smb_payload == NULL) return MMT_CONTINUE;
+  uint8_t version = smb_version(smb_payload);
+  if (version != 1) {
+    return MMT_CONTINUE; // skip for now
+  }
+  uint8_t smb_cmd = smb_command(smb_payload);
+  if (smb_cmd == 0x2f) {
+    current_session->write_request = !current_session->write_request;
+  }
+  if (smb_cmd == 0xa2) {
+    current_session->nt_create_request = !current_session->nt_create_request;
+  }
+  return MMT_CONTINUE;
+}
+
 int init_proto_smb_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_SMB, PROTO_SMB_ALIAS);
     if (protocol_struct != NULL) {
@@ -124,6 +302,9 @@ int init_proto_smb_struct() {
         }
         mmt_init_classify_me_smb();
 
+        register_session_data_analysis_function(protocol_struct, smb_session_data_analysis);
+
+        register_proto_context_init_cleanup_function(protocol_struct, NULL, smb_context_cleanup, NULL);
         return register_protocol(protocol_struct, PROTO_SMB);
     } else {
         return 0;
