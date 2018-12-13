@@ -127,7 +127,9 @@ LIB5G_OBJECTS := \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/s1ap/asn1c/*.c)) \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/*.c)) \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/util/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/ies/*.c)) \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/emm/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_5g/nas/esm/*.c)) \
 
 #specific include paths for mmt_5g
 LIB5G_INC := $(SRCINC)         \

@@ -152,15 +152,21 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 				nas_msg_t  m;
 				memset( &m, 0, sizeof( m ) );
 				//HN: get UE IP here
-				if( nas_decode( &m, nas_pdu->buf, nas_pdu->size ) > 0 ){
+				if( nas_decode( &m, nas_pdu->buf, nas_pdu->size ) > 0
+						&& nas_is_security_protected_msg( &m )
+						&& m.protected_msg.header.protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE
+						&& m.protected_msg.msg.emm.header.message_type   == NAS_EMM_ATTACH_ACCEPT
+						){
 					const nas_octet_string_t *octet = & m.protected_msg.msg.emm.attach_accept.esm_message_container;
-					nas_msg_t  mm;
-					memset( &mm, 0, sizeof( mm ) );
-					if( octet->len > 0 && nas_decode( &mm, octet->data, octet->len) > 0 ){
-						//need to check
-						nas_pdn_address_t *pdn = &mm.plain_msg.esm.active_default_esp_bearer_context_request.pdn_address;
-						if( pdn && pdn->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4 ){
-							message->ue_ipv4 = *(uint32_t *) pdn->pdn_address_information.data;
+					if( octet->len > 0 ){
+						nas_msg_t  mm;
+						memset( &mm, 0, sizeof( mm ) );
+						if( nas_decode( &mm, octet->data, octet->len) > 0 ){
+							//need to check
+							nas_pdn_address_t *pdn = &mm.plain_msg.esm.active_default_esp_bearer_context_request.pdn_address;
+							if( pdn && pdn->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4 ){
+								message->ue_ipv4 = *(uint32_t *) pdn->pdn_address_information.data;
+							}
 						}
 					}
 				}
@@ -211,7 +217,9 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 				S1AP_ERROR("Decoding of IE e_RABToBeSetupListCtxtSUReq failed\n");
 				if (s1apERABToBeSetupListCtxtSUReq_p)
 					ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
-				return -1;
+
+				decoded = -1;
+				goto _finish;
 			}
 			if (_s1ap_decode_e_rabtobesetuplistctxtsureq(message, s1apERABToBeSetupListCtxtSUReq_p) < 0) {
 				S1AP_ERROR("Decoding of encapsulated IE s1apERABToBeSetupListCtxtSUReq failed\n");
@@ -220,13 +228,15 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 			decoded += tempDecoded;
 			XER_FPRINT(&asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, s1apERABToBeSetupListCtxtSUReq_p);
-			return decoded;
+
+			goto _finish;
 		}
 		break;
 
 		}
 	}
 
+	_finish:
 	ASN_STRUCT_FREE(asn_DEF_S1ap_InitialContextSetupRequest, s1ap_InitialContextSetupRequest_p);
 	return decoded;
 }
@@ -317,7 +327,9 @@ static inline int _decode_s1ap_initialuemessageies(
 				S1AP_ERROR("Decoding of IE nas_pdu failed\n");
 				if (s1apNASPDU_p)
 					ASN_STRUCT_FREE(asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
-				return -1;
+
+				decoded = -1;
+				goto _finish;
 			}
 			decoded += tempDecoded;
 
@@ -325,35 +337,40 @@ static inline int _decode_s1ap_initialuemessageies(
 			memset( &m, 0, sizeof( m ) );
 			//we can get IMSI
 			if( nas_decode( &m, s1apNASPDU_p->buf, s1apNASPDU_p->size ) > 0 ){
-				const nas_imsi_eps_mobile_identity_t *imsi = &m.plain_msg.emm.attach_request.old_guti_or_imsi.imsi;
-				//imsi.digitX are numbers
-				//=> we convert them to char, e.g., 7 => '7'
-				message->imsi[0] = '0' + imsi->digit1;
-				message->imsi[1] = '0' + imsi->digit2;
-				message->imsi[2] = '0' + imsi->digit3;
-				message->imsi[3] = '0' + imsi->digit4;
-				message->imsi[4] = '0' + imsi->digit5;
-				message->imsi[5] = '0' + imsi->digit6;
-				message->imsi[6] = '0' + imsi->digit7;
-				message->imsi[7] = '0' + imsi->digit8;
-				message->imsi[8] = '0' + imsi->digit9;
-				message->imsi[9] = '0' + imsi->digit10;
-				message->imsi[10] ='0' + imsi->digit11;
-				message->imsi[11] ='0' + imsi->digit12;
-				message->imsi[12] ='0' + imsi->digit13;
-				message->imsi[13] ='0' + imsi->digit14;
-				message->imsi[14] ='0' + imsi->digit15;
-				//printf("Got IMSI: %.*s\n", 15, message->imsi );
+				if( m.header.protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE
+						&& m.plain_msg.emm.header.message_type == NAS_EMM_ATTACH_REQUEST
+				){
+					const nas_imsi_eps_mobile_identity_t *imsi = &m.plain_msg.emm.attach_request.old_guti_or_imsi.imsi;
+					//imsi.digitX are numbers
+					//=> we convert them to char, e.g., 7 => '7'
+					message->imsi[0] = '0' + imsi->digit1;
+					message->imsi[1] = '0' + imsi->digit2;
+					message->imsi[2] = '0' + imsi->digit3;
+					message->imsi[3] = '0' + imsi->digit4;
+					message->imsi[4] = '0' + imsi->digit5;
+					message->imsi[5] = '0' + imsi->digit6;
+					message->imsi[6] = '0' + imsi->digit7;
+					message->imsi[7] = '0' + imsi->digit8;
+					message->imsi[8] = '0' + imsi->digit9;
+					message->imsi[9] = '0' + imsi->digit10;
+					message->imsi[10] ='0' + imsi->digit11;
+					message->imsi[11] ='0' + imsi->digit12;
+					message->imsi[12] ='0' + imsi->digit13;
+					message->imsi[13] ='0' + imsi->digit14;
+					message->imsi[14] ='0' + imsi->digit15;
+					//printf("Got IMSI: %.*s\n", 15, message->imsi );
+				}
 			}
 
 			XER_FPRINT(&asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
-			return decoded;
+			goto _finish;
 		}
 		break;
 		}
 	}
 
+	_finish:
 	ASN_STRUCT_FREE( asn_DEF_S1ap_InitialUEMessage, s1ap_InitialUEMessage_p );
 	return decoded;
 }
@@ -393,7 +410,9 @@ static inline int _decode_s1ap_S1SetupRequest(
 				S1AP_ERROR("Decoding of IE eNBname failed\n");
 				if (s1apENBname_p)
 					ASN_STRUCT_FREE(asn_DEF_S1ap_ENBname, s1apENBname_p);
-				return -1;
+
+				decoded = -1;
+				goto _finish;
 			}
 
 			//HN: here we got eNodeB's name
@@ -409,11 +428,13 @@ static inline int _decode_s1ap_S1SetupRequest(
 
 			XER_FPRINT( &asn_DEF_S1ap_ENBname, s1apENBname_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_ENBname, s1apENBname_p);
-			return decoded;
+
+			goto _finish;
 		} break;
 		}
 	}
 
+	_finish:
 	ASN_STRUCT_FREE( asn_DEF_S1ap_S1SetupRequest, s1ap_S1SetupRequest_p);
 	return decoded;
 }
@@ -451,7 +472,9 @@ static inline int _decode_s1ap_S1SetupResponse(
 				S1AP_ERROR("Decoding of IE mmEname failed\n");
 				if (s1apMMEname_p)
 					ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
-				return -1;
+
+				decoded = -1;
+				goto _finish;
 			}
 			decoded += tempDecoded;
 
@@ -464,12 +487,13 @@ static inline int _decode_s1ap_S1SetupResponse(
 
 			XER_FPRINT(&asn_DEF_S1ap_MMEname, s1apMMEname_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_MMEname, s1apMMEname_p);
-			return decoded;
+			goto _finish;
 		}
 		break;
 		}
 	}
 
+	_finish:
 	ASN_STRUCT_FREE( asn_DEF_S1ap_S1SetupResponse, s1ap_S1SetupResponse_p);
 	return decoded;
 }

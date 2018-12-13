@@ -69,7 +69,7 @@ typedef enum {
 /* Defines error code limit below which received message should be discarded
  * because it cannot be further processed */
 #define DECODE_FATAL_ERROR  (DECODE_VALUE_DOESNT_MATCH)
-#define LOG(fmt, args...) fprintf(stderr, "%s:%d" fmt, __FILE__, __LINE__,##args)
+#define LOG(fmt, args...) fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__,##args)
 
 extern int errorCodeDecoder;
 #define CHECK_RESULT_DECODER( ret, decoded )                                   \

@@ -52,8 +52,8 @@ typedef struct __package__ {
 
 } nas_emm_msg_header_t;
 
-#define MIN_LEN_NAS_EMM_MSG_HEADER 2
-#define MAX_LEN_NAS_EMM_MSG_HEADER 2
+#define NAS_EMM_MSG_HEADER_MINIMUM_LENGTH 2
+#define NAS_EMM_MSG_HEADER_MAXIMUM_LENGTH 2
 
 int nas_decode_emm_msg_header(nas_emm_msg_header_t *msg, const uint8_t *buffer, uint32_t len);
 

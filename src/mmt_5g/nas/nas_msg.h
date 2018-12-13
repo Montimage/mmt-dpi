@@ -10,23 +10,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "util/common.h"
 #include "emm/nas_emm_msg.h"
 #include "esm/nas_esm_msg.h"
 
 
-  /* Protocol discriminator identifier for EPS Mobility Management */
+/* Protocol discriminator identifier for EPS Mobility Management */
 #define NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE 0b0111
-  /* Protocol discriminator identifier for EPS Session Management */
+/* Protocol discriminator identifier for EPS Session Management */
 #define NAS_EPS_SESSION_MANAGEMENT_MESSAGE  0b0010
 
-#define SECURITY_HEADER_TYPE_NOT_PROTECTED                    0b0000
-#define SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED              0b0001
-#define SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED     0b0010
-#define SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_NEW          0b0011
-#define SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW 0b0100
-#define SECURITY_HEADER_TYPE_SERVICE_REQUEST                  0b1100
+#define NAS_SECURITY_HEADER_TYPE_NOT_PROTECTED                    0b0000
+#define NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED              0b0001
+#define NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED     0b0010
+#define NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_NEW          0b0011
+#define NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW 0b0100
+#define NAS_SECURITY_HEADER_TYPE_SERVICE_REQUEST                  0b1100
 
 
 
@@ -53,22 +54,23 @@
  *  +-----------------------+------------------------+
  */
 
+
+/*The first common byte of any NAS message*/
 typedef struct __package__ {
-#ifdef __LITTLE_ENDIAN__
-  uint8_t protocol_discriminator: 4;
-  uint8_t security_header_type  : 4;
-#else
-  uint8_t security_header_type  : 4;
-  uint8_t protocol_discriminator: 4;
-#endif
-  uint32_t message_authentication_code;
-  uint8_t  sequence_number;
+	__NAS_MSG_FIRST_OCTET__
+}nas_msg_header_t;
+
+typedef struct __package__ {
+	__NAS_MSG_FIRST_OCTET__
+	uint32_t message_authentication_code;
+	uint8_t  sequence_number;
 } nas_msg_security_header_t ;
 
 /* Plain NAS message */
 typedef union{
-	nas_emm_msg_t emm;
-	nas_esm_msg_t esm;
+	nas_msg_header_t  header;
+	nas_emm_msg_t     emm;
+	nas_esm_msg_t     esm;
 } nas_msg_plain_t;
 
 /* Security-protected NAS message */
@@ -79,10 +81,22 @@ typedef struct{
 
 /* A NAS message is either a plain one or a security-protected one */
 typedef union{
+	nas_msg_header_t             header;
 	nas_msg_security_protected_t protected_msg;
 	nas_msg_plain_t              plain_msg;
 }nas_msg_t;
 
+
+
+static inline bool nas_is_plain_msg( const nas_msg_t *msg ){
+	return (msg->header.security_header_type == NAS_SECURITY_HEADER_TYPE_NOT_PROTECTED);
+}
+
+static inline bool nas_is_security_protected_msg( const nas_msg_t *msg ){
+	return (msg->header.protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE
+		&&  msg->header.security_header_type   != NAS_SECURITY_HEADER_TYPE_SERVICE_REQUEST
+		&&  msg->header.security_header_type   != NAS_SECURITY_HEADER_TYPE_NOT_PROTECTED);
+}
 
 /**
  * Decode layer 3 NAS message

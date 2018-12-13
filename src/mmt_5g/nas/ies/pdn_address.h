@@ -22,7 +22,7 @@
 #define NAS_PDN_VALUE_TYPE_IPV4V6    0b011
 
 typedef struct {
-  uint8_t            pdn_type_value:3;
+  uint8_t            pdn_type_value;
   nas_octet_string_t pdn_address_information;
 } nas_pdn_address_t;
 

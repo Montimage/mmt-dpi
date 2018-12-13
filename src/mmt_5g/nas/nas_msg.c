@@ -34,6 +34,7 @@ static inline int _nas_msg_plain_decode(
 		byte = nas_esm_decode_msg(&msg->esm, buffer+size, length - size);
 		break;
 	default:
+		LOG("Unknown protocol discriminator %d", msg->emm.header.protocol_discriminator );
 		return DECODE_PROTOCOL_NOT_SUPPORTED;
 	}
 
@@ -57,17 +58,17 @@ static inline const uint8_t* _nas_msg_decrypt(
 	const uint8_t *dest = NULL;
 	int size = 0;
 	switch (security_header_type) {
-	case SECURITY_HEADER_TYPE_NOT_PROTECTED:
-	case SECURITY_HEADER_TYPE_SERVICE_REQUEST:
-	case SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED:
-	case SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_NEW:
+	case NAS_SECURITY_HEADER_TYPE_NOT_PROTECTED:
+	case NAS_SECURITY_HEADER_TYPE_SERVICE_REQUEST:
+	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED:
+	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_NEW:
 		LOG( "No decryption of message length %u according to security header type 0x%02x",
 				length, security_header_type);
 		dest = src;
 		break;
 
-	case SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED:
-	case SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW:
+	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED:
+	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW:
 		//TODO: decrypt
 		dest = src;
 		break;
@@ -143,7 +144,7 @@ int nas_decode( nas_msg_t *msg, const uint8_t *buffer, int length ){
 	CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, 3, length );
 
 	//1. if the message is security-protected?
-	nas_msg_security_header_t *header = &msg->protected_msg.header;
+	nas_msg_header_t *header = &msg->header;
 
 	/* Decode the first octet of the header (security header type or EPS bearer
 	 * identity, and protocol discriminator) */
@@ -154,27 +155,23 @@ int nas_decode( nas_msg_t *msg, const uint8_t *buffer, int length ){
 	 * since it has been tweaked to fit into a single initial RRC message
 	 * and hence optimizing the performance of the system.
 	 */
-	if( header->security_header_type == SECURITY_HEADER_TYPE_SERVICE_REQUEST ){
+
+	if( header->security_header_type == NAS_SECURITY_HEADER_TYPE_SERVICE_REQUEST ){
 		return 0;
 	}
-
-	if (header->protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE) {
-		if (header->security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {
-
-			//we are going to decode security-protected NAS message
-
-			/* Decode security protected NAS message */
-			return _nas_msg_protected_decode(buffer,
-					&msg->protected_msg,
-					length
-					//, emm_security_context
-			);
-		}
+	else if ( nas_is_security_protected_msg( msg )){
+		//we are going to decode security-protected NAS message
+		return _nas_msg_protected_decode(buffer,
+				&msg->protected_msg,
+				length
+				//, emm_security_context
+		);
 	}
+	else{
 
-
-	/* Decode plain NAS message */
-	return _nas_msg_plain_decode(buffer,
-			&msg->plain_msg,
-			length);
+		/* Decode plain NAS message */
+		return _nas_msg_plain_decode(buffer,
+				&msg->plain_msg,
+				length);
+	}
 }
