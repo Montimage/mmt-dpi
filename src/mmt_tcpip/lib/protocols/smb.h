@@ -41,8 +41,8 @@ typedef struct smb_file_struct smb_file_t;
 
 struct smb_file_struct {
   uint16_t file_id;
-  uint16_t current_len;
-  uint16_t current_seg_len;
+  uint32_t current_len;
+  uint32_t current_seg_len;
   mmt_header_line_t * file_path;
   smb_file_t * next;
 };

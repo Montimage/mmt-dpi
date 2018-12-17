@@ -62,7 +62,6 @@ void * smb_session_free(smb_session_t * node) {
     node->next = NULL;
     node->prev = NULL;
     free(node);
-    node = NULL;
   }
 }
 
@@ -151,18 +150,20 @@ smb_file_t * smb_session_find_file(smb_session_t * smb_ss, uint16_t file_path_le
 int smb_session_update_last_file_id(smb_session_t * smb_ss, uint16_t file_id) {
   if (!smb_ss) return 0;
   if (!smb_ss->files) return 0;
+  smb_file_t * f_need_id = NULL;
   if (smb_ss->files->file_id == 0) {
-    smb_ss->files->file_id = file_id;
-    smb_ss->current_file = smb_ss->files;
-    return 1;
+    f_need_id = smb_ss->files;
   }
   smb_file_t * f = smb_ss->files;
   while(f->next != NULL) {
     f = f->next;
+    if (f->file_id == 0) {
+      f_need_id = f;
+    }
   }
-  if (f->file_id == 0) {
-    f->file_id = file_id;
-    smb_ss->current_file = f;
+  if (f_need_id != NULL) {
+    f_need_id->file_id = file_id;
+    smb_ss->current_file = f_need_id;
     return 1;
   }
   return 0;
@@ -262,11 +263,11 @@ int smb_version_extraction(const ipacket_t *ipacket, unsigned proto_index,
 
 uint8_t smb_command(const uint8_t *smb_payload)
 {
-  if (smb_payload[0] == 0xff)
+  if (smb_payload[0] == SMB_VERSION_1)
   {
     return *(uint8_t *)&smb_payload[4];
   }
-  if (smb_payload[0] == 0xfe)
+  if (smb_payload[0] == SMB_VERSION_2)
   {
     return *(uint8_t *)&smb_payload[12];
   }
@@ -277,11 +278,11 @@ int smb_command_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     const uint8_t * smb_payload = get_smb_payload(ipacket, proto_index + 1);
     if (smb_payload != NULL) {
-        if (smb_payload[0] == 0xff) {
+        if (smb_payload[0] == SMB_VERSION_1) {
             *(uint8_t *)extracted_data->data = *(uint8_t *)&smb_payload[4];
             return 1;
         }
-        if (smb_payload[0] == 0xfe) {
+        if (smb_payload[0] == SMB_VERSION_2) {
             *(uint8_t *)extracted_data->data = *(uint8_t *)&smb_payload[12];
             return 1;
         }
@@ -410,7 +411,7 @@ int smb_nt_create_file_name_extraction(const ipacket_t *ipacket, unsigned proto_
   if (smb_payload != NULL)
   {
     uint8_t smb_cmd = smb_command(smb_payload);
-    if (smb_payload[0] == 0xff && smb_cmd == 0xa2)
+    if (smb_payload[0] == SMB_VERSION_1 && smb_cmd == 0xa2)
     {
       if (smb_session->current_file)
       {
@@ -540,7 +541,7 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
         if (seg_offset != file->current_len)
         {
           // Trigger an event here
-          fprintf(stderr, "\n[SMB] Segment offset missmatched: %lu - %d, %d", ipacket->packet_id, file->current_len, seg_offset);
+          fprintf(stderr, "\n[SMB] Segment offset missmatched: %lu - %d, %u\n", ipacket->packet_id, file->current_len, seg_offset);
         }
         else
         {
