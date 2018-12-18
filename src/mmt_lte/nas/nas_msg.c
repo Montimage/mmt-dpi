@@ -62,8 +62,6 @@ static inline const uint8_t* _nas_msg_decrypt(
 	case NAS_SECURITY_HEADER_TYPE_SERVICE_REQUEST:
 	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED:
 	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_NEW:
-		LOG( "No decryption of message length %u according to security header type 0x%02x",
-				length, security_header_type);
 		dest = src;
 		break;
 
