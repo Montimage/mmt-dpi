@@ -1277,6 +1277,7 @@ enum smb_attributes {
     SMB_VERSION = 1,
     SMB_PADDING,
     SMB_NT_CREATE_FILE_NAME,
+    SMB_TRANSFER_PAYLOAD,
     SMB_COMMAND,
     SMB_ATTRIBUTES_NB = SMB_COMMAND,
 };
@@ -1286,6 +1287,7 @@ enum smb_attributes {
 #define SMB_PADDING_ALIAS "padding"
 #define SMB_NT_CREATE_FILE_NAME_ALIAS "nt_create_file"
 #define SMB_COMMAND_ALIAS "command"
+#define SMB_TRANSFER_PAYLOAD_ALIAS "payload"
 //////////// END OF SMB PROTOCOL ATTRIBUTES ////////////////////
 
 #ifdef __cplusplus

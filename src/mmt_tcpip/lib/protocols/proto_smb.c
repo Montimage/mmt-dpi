@@ -32,6 +32,7 @@ smb_session_t * smb_session_new(uint64_t session_id) {
     new_session->smb1_cmd_close = 0;
     new_session->smb1_cmd_read = 0;
     new_session->smb1_cmd_trans2 = 0;
+    new_session->sm1_file_transferring = 0;
     new_session->last_cmd = 0;
     new_session->current_file_id = 0;
     new_session->files = NULL;
@@ -40,7 +41,7 @@ smb_session_t * smb_session_new(uint64_t session_id) {
     new_session->prev = NULL;
     return new_session;
 }
-void * smb_session_free(smb_session_t * node) {
+void smb_session_free(smb_session_t * node) {
   if (node != NULL) {
     node->session_id = 0;
     node->smb1_cmd_nt_create = 0;
@@ -49,10 +50,10 @@ void * smb_session_free(smb_session_t * node) {
     node->smb1_cmd_close = 0;
     node->smb1_cmd_read = 0;
     node->smb1_cmd_trans2 = 0;
+    node->sm1_file_transferring = 0;
     node->last_cmd = 0;
     node->current_file_id = 0;
     node->current_file = NULL;
-    node->smb1_cmd_close = NULL;
     smb_file_t * file = node->files;
     while(file != NULL) {
       smb_file_t * to_be_deleted = file;
@@ -177,7 +178,7 @@ smb_session_t *smb_get_session_list(const ipacket_t *ipacket, unsigned index)
 }
 
 
-smb_session_t * smb_get_session_from_packet(ipacket_t *ipacket, unsigned index) {
+smb_session_t * smb_get_session_from_packet(const ipacket_t *ipacket, unsigned index) {
   smb_session_t * root = smb_get_session_list(ipacket, index);
   if (root == NULL) {
     return NULL;
@@ -290,6 +291,80 @@ int smb_command_extraction(const ipacket_t * ipacket, unsigned proto_index,
     return 0;
 }
 
+int smb_transfer_payload_extraction(const ipacket_t * ipacket, unsigned proto_index,
+    attribute_t * extracted_data){
+  struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+  if (packet->payload_packet_len == 0) return 0;
+  int offset = get_packet_offset_at_index(ipacket, proto_index);
+  smb_session_t *smb_session = smb_get_session_from_packet(ipacket, proto_index);
+  if (smb_session == NULL) return 0;
+  if (smb_session->sm1_file_transferring == 1) {
+    mmt_header_line_t * padding = (mmt_header_line_t *)malloc(sizeof(mmt_header_line_t));
+    padding->len = packet->payload_packet_len;
+    padding->ptr = (void *) packet->payload;
+    extracted_data->data = (void *)padding;
+    return 1;
+  }
+
+  const uint8_t *smb_payload = get_smb_payload(ipacket, proto_index + 1);
+  if (!smb_payload) return 0;
+  if (smb_version(smb_payload) != SMB_VERSION_1) return 0;// Only process SMB1 for now
+
+  const uint8_t * cmd_payload = &smb_payload[32];
+  uint8_t cmd = smb_command(smb_payload);
+  uint16_t padding_size = 0;
+  uint16_t padding_offset = 0;
+  uint16_t byte_count_offset = 0;
+  uint16_t byte_count = 0;
+  uint16_t data_length_low = 0;
+  uint16_t payload_offset = 0;
+  switch (cmd)
+  {
+    case SMB1_CMD_READ:
+      if (smb_session->smb1_cmd_read) return 0; // there is no padding in Read request
+      data_length_low = *(uint16_t *) &cmd_payload[12];
+      byte_count_offset = 26;
+      byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
+      if (byte_count > data_length_low) {
+        // there is some padding
+        padding_size = byte_count - data_length_low;
+        padding_offset = byte_count_offset + 2;
+        payload_offset = padding_offset + padding_size;
+      } else {
+        payload_offset = byte_count_offset + 2;
+      }
+      smb_session->sm1_file_transferring = 1;
+      break;
+    case SMB1_CMD_WRITE:
+      if (!smb_session->smb1_cmd_write) return 0; // there is no payload in write response
+      data_length_low = *(uint16_t *) &cmd_payload[21];
+      byte_count_offset = 29;
+      byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
+      if (byte_count > data_length_low) {
+        // there is some padding
+        padding_size = byte_count - data_length_low;
+        padding_offset = byte_count_offset + 2;
+        payload_offset = padding_offset + padding_size;
+      } else {
+        payload_offset = byte_count_offset + 2;
+      }
+      smb_session->sm1_file_transferring = 1;
+      break;
+    default:
+      break;
+  }
+
+  if (payload_offset > 0) {
+    uint32_t payload_len = ipacket->p_hdr->caplen - offset - 32 - payload_offset;
+    mmt_header_line_t * padding = (mmt_header_line_t *)malloc(sizeof(mmt_header_line_t));
+    padding->len = payload_len;
+    padding->ptr = (const char *)&cmd_payload[payload_offset];
+    extracted_data->data = (void *)padding;
+    return 1;
+  }
+  return 0;
+}
+
 int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
                            attribute_t *extracted_data)
 {
@@ -311,8 +386,7 @@ int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
   switch (cmd)
   {
   case SMB1_CMD_READ:
-    if (smb_session->smb1_cmd_read) return 0; // there is no padding in Read request
-    if (!smb_session->smb1_cmd_write) return 0; // there is no padding in write response
+    if (!smb_session->smb1_cmd_read) return 0; // there is no padding in Read request
     data_length_low = *(uint16_t *) &cmd_payload[12];
     byte_count_offset = 26;
     byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
@@ -391,10 +465,10 @@ int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
 
   if (padding_size > 0) {
     mmt_header_line_t * padding = (mmt_header_line_t *)malloc(sizeof(mmt_header_line_t));
-      padding->len = padding_size;
-      padding->ptr = (const char *)&cmd_payload[padding_offset];
-      extracted_data->data = (void *)padding;
-      return 1;
+    padding->len = padding_size;
+    padding->ptr = (const char *)&cmd_payload[padding_offset];
+    extracted_data->data = (void *)padding;
+    return 1;
   }
   return 0;
 }
@@ -427,6 +501,7 @@ static attribute_metadata_t smb_attributes_metadata[SMB_ATTRIBUTES_NB] = {
     {SMB_VERSION,SMB_VERSION_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_version_extraction},
     {SMB_COMMAND,SMB_COMMAND_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_command_extraction},
     {SMB_PADDING,SMB_PADDING_ALIAS,MMT_HEADER_LINE,sizeof (void *),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_padding_extraction},
+    {SMB_TRANSFER_PAYLOAD,SMB_TRANSFER_PAYLOAD_ALIAS,MMT_DATA_POINTER,sizeof (void *),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_transfer_payload_extraction},
     {SMB_NT_CREATE_FILE_NAME,SMB_NT_CREATE_FILE_NAME_ALIAS,MMT_HEADER_LINE,sizeof (void *),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_nt_create_file_name_extraction},
 };
 
@@ -445,7 +520,7 @@ void smb_setup_session_context(ipacket_t *ipacket, unsigned index, smb_session_t
   configured_protocol->args = (void*) root;
 }
 
-void * smb_context_cleanup(void *proto_context, void *args)
+void smb_context_cleanup(void *proto_context, void *args)
 {
   smb_session_t * root = (smb_session_t*)((protocol_instance_t *) proto_context)->args;
   while( root!= NULL) {
@@ -520,6 +595,7 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
     current_session->smb1_cmd_close = !current_session->smb1_cmd_close;
     if (current_session->smb1_cmd_close)
     {
+      current_session->sm1_file_transferring = 0;
       // Close request
       uint16_t file_id = *(uint16_t *)&command_payload[1];
       current_session->current_file_id = file_id;
@@ -553,6 +629,7 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
     else
     {
       // Write AndX response
+      current_session->sm1_file_transferring = 0;
       uint16_t count_low = *(uint16_t *)&command_payload[5];
       if (current_session->current_file != NULL)
       {
@@ -576,9 +653,9 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
       // Update file path
       uint16_t file_path_len = *(uint16_t *)&command_payload[6];
       char *file_path = (char *)malloc((file_path_len / 2 + 1) * sizeof(char));
-      int path_len = smb_path_builder(&command_payload[52], file_path, file_path_len);
+      int path_len = smb_path_builder((char* ) &command_payload[52], file_path, file_path_len);
       // memcpy(file_path, &command_payload[52], file_path_len );
-      file_path[file_path_len] = '\0';
+      file_path[file_path_len / 2] = '\0';
       smb_file_t *file = smb_session_find_file(current_session, path_len, file_path);
       if (!file)
       {
@@ -594,6 +671,8 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
           current_session->current_file = file;
           smb_session_insert_file(current_session, file);
         }
+      } else {
+        free(file_path);
       }
     }
     else

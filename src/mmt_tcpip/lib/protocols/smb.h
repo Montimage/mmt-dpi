@@ -57,6 +57,7 @@ struct smb_session_struct {
   uint8_t smb1_cmd_nt_trans; // 0xa0
   uint8_t smb1_cmd_close; // 0x04
   // For files
+  uint8_t sm1_file_transferring;
   uint16_t last_cmd;
   smb_file_t * files;
   smb_file_t * current_file;
@@ -67,7 +68,7 @@ struct smb_session_struct {
 };
 
 smb_session_t * smb_session_new();
-void * smb_session_free();
+void smb_session_free();
 
 int smb_insert_session(smb_session_t * root, smb_session_t * new_session);
 
