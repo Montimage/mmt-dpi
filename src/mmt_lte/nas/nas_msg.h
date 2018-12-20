@@ -88,8 +88,16 @@ typedef union{
 
 
 
+
 static inline bool nas_is_plain_msg( const nas_msg_t *msg ){
 	return (msg->header.security_header_type == NAS_SECURITY_HEADER_TYPE_NOT_PROTECTED);
+}
+
+
+static inline nas_msg_plain_t *nas_get_plain_msg( nas_msg_t *msg ){
+	if( nas_is_plain_msg( msg) )
+		return &msg->plain_msg;
+	return &msg->protected_msg.msg;
 }
 
 static inline bool nas_is_security_protected_msg( const nas_msg_t *msg ){

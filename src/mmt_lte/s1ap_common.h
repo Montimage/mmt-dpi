@@ -389,6 +389,9 @@
 # define S1AP_ERROR(x, args...) fprintf(stdout, "[S1AP][E]"x, ##args)
 # define S1AP_WARN(x, args...)  fprintf(stdout, "[S1AP][W]"x, ##args)
 
+//Maximum 150 characters (See ETSI TS 136 413 V15.3.0/9.1.8.4 S1 SETUP REQUEST), the last one is for '\0'
+#define ENTITY_NAME_LENGTH (150 + 1)
+
 typedef struct s1ap_message{
 	uint32_t mme_ue_id;
 	uint32_t enb_ue_id;
@@ -396,13 +399,24 @@ typedef struct s1ap_message{
 	uint16_t procedure_code;
 	uint32_t gtp_teid;
 	uint32_t ue_ipv4;
+
 	uint32_t mme_ipv4;
 	uint32_t enb_ipv4;
-	char enb_name[30];
-	char mme_name[30];
+	uint32_t gw_ipv4;
+
+	uint32_t m_tmsi;
+
+	char enb_name[ENTITY_NAME_LENGTH];
+	char mme_name[ENTITY_NAME_LENGTH];
 
 	char imsi[15]; //maximum 15 character
-	char m_tmsi[15];
+	char t_imsi[15];
+
+	uint8_t pdu_present;
+
+	uint8_t ue_status;
+	uint8_t enb_status;
+	uint8_t mme_status;
 }s1ap_message_t;
 
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,

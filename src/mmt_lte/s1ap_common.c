@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "s1ap_common.h"
 #include "nas/nas_msg.h"
+#include "proto_s1ap.h"
 
 static inline uint32_t _octet_string_to_uint32_t( const OCTET_STRING_t *t){
 	if( t->size != 4 )
@@ -98,6 +99,7 @@ static inline int _decode_s1ap_e_rabsetuplistctxtsures(
 
 			//HN: here we can get gtp teid
 			message->gtp_teid = _octet_string_to_uint32_t( & s1apERABSetupItemCtxtSURes_p->gTP_TEID );
+			message->gtp_teid = ntohl( message->gtp_teid );
 
 			//HN: here we can get ENB IP
 			message->enb_ipv4 = _bit_string_to_uint32_t( & s1apERABSetupItemCtxtSURes_p->transportLayerAddress );
@@ -141,9 +143,10 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 
 			//HN:here we can get gtp teid
 			message->gtp_teid = _octet_string_to_uint32_t( & s1apERABToBeSetupItemCtxtSUReq_p->gTP_TEID );
+			message->gtp_teid = ntohl( message->gtp_teid );
 
-			//HN: here we can get IP of mme
-			message->mme_ipv4 =  _bit_string_to_uint32_t( & s1apERABToBeSetupItemCtxtSUReq_p->transportLayerAddress );
+			//HN: here we can get IP of gw
+			message->gw_ipv4 =  _bit_string_to_uint32_t( & s1apERABToBeSetupItemCtxtSUReq_p->transportLayerAddress );
 
 			//HN: extract UE IP from NAS PDU
 			//s1apERABToBeSetupItemCtxtSUReq_p->nAS_PDU;
@@ -157,6 +160,8 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 						&& m.protected_msg.header.protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE
 						&& m.protected_msg.msg.emm.header.message_type   == NAS_EMM_ATTACH_ACCEPT
 						){
+
+					//parser ESM message container to get UE's IP
 					const nas_octet_string_t *octet = & m.protected_msg.msg.emm.attach_accept.esm_message_container;
 					if( octet->len > 0 ){
 						nas_msg_t  mm;
@@ -168,6 +173,10 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 								message->ue_ipv4 = *(uint32_t *) pdn->pdn_address_information.data;
 							}
 						}
+					}
+					//parse EPS mobile identity to get m_tmsi
+					if( m.protected_msg.msg.emm.attach_accept.guti.guti.typeofidentity == EPS_MOBILE_IDENTITY_GUTI ){
+						message->m_tmsi = m.protected_msg.msg.emm.attach_accept.guti.guti.mtmsi;
 					}
 				}
 			}
@@ -337,36 +346,70 @@ static inline int _decode_s1ap_initialuemessageies(
 			memset( &m, 0, sizeof( m ) );
 			//we can get IMSI
 			if( nas_decode( &m, s1apNASPDU_p->buf, s1apNASPDU_p->size ) > 0 ){
-				if( m.header.protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE
-						&& m.plain_msg.emm.header.message_type == NAS_EMM_ATTACH_REQUEST
-				){
-					const nas_imsi_eps_mobile_identity_t *imsi = &m.plain_msg.emm.attach_request.old_guti_or_imsi.imsi;
-					//imsi.digitX are numbers
-					//=> we convert them to char, e.g., 7 => '7'
-					message->imsi[0] = '0' + imsi->digit1;
-					message->imsi[1] = '0' + imsi->digit2;
-					message->imsi[2] = '0' + imsi->digit3;
-					message->imsi[3] = '0' + imsi->digit4;
-					message->imsi[4] = '0' + imsi->digit5;
-					message->imsi[5] = '0' + imsi->digit6;
-					message->imsi[6] = '0' + imsi->digit7;
-					message->imsi[7] = '0' + imsi->digit8;
-					message->imsi[8] = '0' + imsi->digit9;
-					message->imsi[9] = '0' + imsi->digit10;
-					message->imsi[10] ='0' + imsi->digit11;
-					message->imsi[11] ='0' + imsi->digit12;
-					message->imsi[12] ='0' + imsi->digit13;
-					message->imsi[13] ='0' + imsi->digit14;
-					message->imsi[14] ='0' + imsi->digit15;
-					//printf("Got IMSI: %.*s\n", 15, message->imsi );
+				nas_msg_plain_t *plain_msg = nas_get_plain_msg( &m );
+
+				if( plain_msg->header.protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE
+						&& plain_msg->emm.header.message_type == NAS_EMM_ATTACH_REQUEST ){
+
+					nas_eps_mobile_identity_t *eps_id = & plain_msg->emm.attach_request.old_guti_or_imsi;
+					switch( eps_id->guti.typeofidentity ){
+					case EPS_MOBILE_IDENTITY_IMSI: {
+						const nas_imsi_eps_mobile_identity_t *imsi = & eps_id->imsi;
+						//imsi.digitX are numbers
+						//=> we convert them to char, e.g., 7 => '7'
+						message->imsi[0] = '0' + imsi->digit1;
+						message->imsi[1] = '0' + imsi->digit2;
+						message->imsi[2] = '0' + imsi->digit3;
+						message->imsi[3] = '0' + imsi->digit4;
+						message->imsi[4] = '0' + imsi->digit5;
+						message->imsi[5] = '0' + imsi->digit6;
+						message->imsi[6] = '0' + imsi->digit7;
+						message->imsi[7] = '0' + imsi->digit8;
+						message->imsi[8] = '0' + imsi->digit9;
+						message->imsi[9] = '0' + imsi->digit10;
+						message->imsi[10] ='0' + imsi->digit11;
+						message->imsi[11] ='0' + imsi->digit12;
+						message->imsi[12] ='0' + imsi->digit13;
+						message->imsi[13] ='0' + imsi->digit14;
+						message->imsi[14] ='0' + imsi->digit15;
+						//printf("Got IMSI: %.*s\n", 15, message->imsi );
+						break;
+					}
+					case EPS_MOBILE_IDENTITY_GUTI: {
+						message->m_tmsi = eps_id->guti.mtmsi;
+						break;
+					}
+					}
 				}
 			}
 
 			XER_FPRINT(&asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
 			ASN_STRUCT_FREE(asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
-			goto _finish;
 		}
 		break;
+
+		case S1ap_ProtocolIE_ID_id_S_TMSI: {
+            S1ap_S_TMSI_t *s1apSTMSI_p = NULL;
+            tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_S_TMSI, (void**)&s1apSTMSI_p);
+            if (tempDecoded < 0 || s1apSTMSI_p == NULL) {
+                S1AP_ERROR("Decoding of IE s_tmsi failed\n");
+                if (s1apSTMSI_p)
+                    ASN_STRUCT_FREE(asn_DEF_S1ap_S_TMSI, s1apSTMSI_p);
+                decoded = -1;
+				goto _finish;
+            }
+            decoded += tempDecoded;
+
+
+            message->m_tmsi = _octet_string_to_uint32_t( &s1apSTMSI_p->m_TMSI );
+            message->m_tmsi = ntohl( message->m_tmsi );
+
+            XER_FPRINT( &asn_DEF_S1ap_S_TMSI, s1apSTMSI_p);
+            ASN_STRUCT_FREE(asn_DEF_S1ap_S_TMSI, s1apSTMSI_p);
+        }
+		break;
+
+
 		}
 	}
 
@@ -498,19 +541,201 @@ static inline int _decode_s1ap_S1SetupResponse(
 	return decoded;
 }
 
+
+/**
+ * Set status of UE depending the cause it was released
+ */
+static inline int _decode_s1ap_cause(
+		s1ap_message_t *message,
+		S1ap_IE_t *ie_p){
+
+	int decoded = 0;
+	S1ap_Cause_t *s1apCause_p = NULL;
+	decoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_Cause, (void**)&s1apCause_p);
+	if (decoded < 0 || s1apCause_p == NULL) {
+		S1AP_ERROR("Decoding of IE cause failed\n");
+		if (s1apCause_p)
+			ASN_STRUCT_FREE(asn_DEF_S1ap_Cause, s1apCause_p);
+		return -1;
+	}
+
+	switch( s1apCause_p->present ){
+	case S1ap_Cause_PR_NOTHING:
+		break;
+	case S1ap_Cause_PR_transport:
+		break;
+	case S1ap_Cause_PR_radioNetwork: {
+		switch( s1apCause_p->choice.radioNetwork ){
+		case S1ap_CauseRadioNetwork_radio_connection_with_ue_lost:
+			message->ue_status = S1AP_ENTITY_STATUS_LOST_SIGNAL;
+			break;
+		default:
+			break;
+		}
+	}
+	break;
+
+	case S1ap_Cause_PR_nas:{
+		switch( s1apCause_p->choice.nas ){
+		case S1ap_CauseNas_detach:
+			message->ue_status = S1AP_ENTITY_STATUS_DETACHED;
+			break;
+		}
+	}
+	break;
+
+	case S1ap_Cause_PR_protocol:
+		break;
+	case S1ap_Cause_PR_misc:
+		break;
+	}
+
+	XER_FPRINT(&asn_DEF_S1ap_Cause, s1apCause_p);
+	ASN_STRUCT_FREE(asn_DEF_S1ap_Cause, s1apCause_p);
+	return decoded;
+}
+
+static inline int _decode_s1ap_uecontextrelease(
+		s1ap_message_t *message,
+		ANY_t *any_p) {
+
+    S1ap_UEContextReleaseCommand_t *s1ap_UEContextReleaseCommand_p = NULL;
+    int i, decoded = 0;
+    int tempDecoded = 0;
+    assert(any_p != NULL);
+
+    S1AP_DEBUG("Decoding message S1ap_UEContextReleaseCommandIEs (%s:%d)\n", __FILE__, __LINE__);
+
+    ANY_to_type_aper(any_p, &asn_DEF_S1ap_UEContextReleaseCommand, (void**)&s1ap_UEContextReleaseCommand_p);
+
+    for (i = 0; i < s1ap_UEContextReleaseCommand_p->s1ap_UEContextReleaseCommand_ies.list.count; i++) {
+        S1ap_IE_t *ie_p;
+        ie_p = s1ap_UEContextReleaseCommand_p->s1ap_UEContextReleaseCommand_ies.list.array[i];
+        switch(ie_p->id) {
+            case S1ap_ProtocolIE_ID_id_UE_S1AP_IDs: {
+
+                S1ap_UE_S1AP_IDs_t *s1apUES1APIDs_p = NULL;
+                tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_UE_S1AP_IDs, (void**)&s1apUES1APIDs_p);
+                if (tempDecoded < 0 || s1apUES1APIDs_p == NULL) {
+                    S1AP_ERROR("Decoding of IE uE_S1AP_IDs failed\n");
+                    if (s1apUES1APIDs_p)
+                        ASN_STRUCT_FREE(asn_DEF_S1ap_UE_S1AP_IDs, s1apUES1APIDs_p);
+                    decoded = -1;
+                    goto _finish;
+                }
+
+                //HN: here we cant get either only mme_ue_id or (mme_ue_id, pair enb_ue_id)
+                switch( s1apUES1APIDs_p->present ){
+                case S1ap_UE_S1AP_IDs_PR_mME_UE_S1AP_ID:
+                	message->mme_ue_id = s1apUES1APIDs_p->choice.mME_UE_S1AP_ID;
+                	break;
+                case S1ap_UE_S1AP_IDs_PR_uE_S1AP_ID_pair:
+                	message->mme_ue_id = s1apUES1APIDs_p->choice.uE_S1AP_ID_pair.mME_UE_S1AP_ID;
+                	message->enb_ue_id = s1apUES1APIDs_p->choice.uE_S1AP_ID_pair.eNB_UE_S1AP_ID;
+                	break;
+                case S1ap_UE_S1AP_IDs_PR_NOTHING:
+                	break;
+                }
+
+                decoded += tempDecoded;
+                XER_FPRINT( &asn_DEF_S1ap_UE_S1AP_IDs, s1apUES1APIDs_p);
+                ASN_STRUCT_FREE( asn_DEF_S1ap_UE_S1AP_IDs, s1apUES1APIDs_p);
+            }
+			break;
+            case S1ap_ProtocolIE_ID_id_Cause:
+            	tempDecoded = _decode_s1ap_cause( message, ie_p );
+            	if (tempDecoded < 0 ) {
+            		decoded = -1;
+            		goto _finish;
+            		return -1;
+            	}
+            	decoded += tempDecoded;
+            	break;
+            default:
+                S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uecontextreleasecommandies\n", (int)ie_p->id);
+                decoded = -1;
+                goto _finish;
+        }
+    }
+
+    _finish:
+	ASN_STRUCT_FREE( asn_DEF_S1ap_UEContextReleaseCommand, s1ap_UEContextReleaseCommand_p);
+    return decoded;
+}
+
+static inline int _decode_s1ap_UEContextReleaseRequest(
+		s1ap_message_t *message,
+		ANY_t *any_p) {
+
+	S1ap_UEContextReleaseRequest_t *s1ap_UEContextReleaseRequest_p =  NULL;
+	int i, decoded = 0;
+	int tempDecoded = 0;
+	assert(any_p != NULL);
+
+	S1AP_DEBUG("Decoding message S1ap_UEContextReleaseRequestIEs (%s:%d)\n", __FILE__, __LINE__);
+
+	ANY_to_type_aper(any_p, &asn_DEF_S1ap_UEContextReleaseRequest, (void**)&s1ap_UEContextReleaseRequest_p);
+
+	for (i = 0; i < s1ap_UEContextReleaseRequest_p->s1ap_UEContextReleaseRequest_ies.list.count; i++) {
+
+		S1ap_IE_t *ie_p;
+		ie_p = s1ap_UEContextReleaseRequest_p->s1ap_UEContextReleaseRequest_ies.list.array[i];
+
+		tempDecoded = _decode_mme_enb_ue_id( message, ie_p );
+		if( tempDecoded != 0 ){
+			decoded += tempDecoded;
+			continue;
+		}
+
+		switch(ie_p->id) {
+		case S1ap_ProtocolIE_ID_id_MME_UE_S1AP_ID:
+		case S1ap_ProtocolIE_ID_id_eNB_UE_S1AP_ID:
+			break;
+		case S1ap_ProtocolIE_ID_id_Cause:
+			tempDecoded = _decode_s1ap_cause( message, ie_p );
+			if (tempDecoded < 0 ) {
+				decoded = -1;
+				goto _finish;
+				return -1;
+			}
+			decoded += tempDecoded;
+			break;
+			/* Optional field */
+		case S1ap_ProtocolIE_ID_id_GWContextReleaseIndication:
+			break;
+		default:
+			S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uecontextreleaserequesties\n", (int)ie_p->id);
+			decoded = -1;
+			goto _finish;
+		}
+	}
+
+	_finish:
+	ASN_STRUCT_FREE( asn_DEF_S1ap_UEContextReleaseRequest, s1ap_UEContextReleaseRequest_p);
+	return decoded;
+}
+
 static int _decode_s1ap_initiatingMessage(s1ap_message_t *message,
 		S1ap_InitiatingMessage_t *initiating_p){
 	int ret = 0;
 
 	switch(initiating_p->procedureCode) {
 	case S1ap_ProcedureCode_id_initialUEMessage:
+		message->ue_status = S1AP_ENTITY_STATUS_ATTACHING;
 		return _decode_s1ap_initialuemessageies( message, &initiating_p->value );
 		break;
 	case S1ap_ProcedureCode_id_InitialContextSetup:
 		return _decode_s1ap_initialContextSetupRequest( message, &initiating_p->value );
 		break;
 	case S1ap_ProcedureCode_id_S1Setup:
+		message->enb_status = S1AP_ENTITY_STATUS_ATTACHING;
 		return _decode_s1ap_S1SetupRequest( message, &initiating_p->value);
+		break;
+	case S1ap_ProcedureCode_id_UEContextRelease:
+		return _decode_s1ap_uecontextrelease( message, &initiating_p->value);
+		break;
+	case S1ap_ProcedureCode_id_UEContextReleaseRequest:
+		return _decode_s1ap_UEContextReleaseRequest( message, &initiating_p->value);
 		break;
 	}
 
@@ -524,9 +749,11 @@ static int _decode_s1ap_successfulOutcomeMessage(s1ap_message_t *message,
 
 	switch(initiating_p->procedureCode) {
 	case S1ap_ProcedureCode_id_InitialContextSetup:
+		message->ue_status = S1AP_ENTITY_STATUS_ATTACHED;
 		return _decode_s1ap_initialContextSetupResponse( message, &initiating_p->value );
 		break;
 	case S1ap_ProcedureCode_id_S1Setup:
+		message->enb_status = S1AP_ENTITY_STATUS_ATTACHED;
 		return _decode_s1ap_S1SetupResponse( message, &initiating_p->value);
 		break;
 	}
@@ -566,6 +793,7 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		return -1;
 	}
 
+	message->pdu_present = pdu_p->present;
 	int ret = 0;
 	switch(pdu_p->present) {
 	case S1AP_PDU_PR_initiatingMessage:
