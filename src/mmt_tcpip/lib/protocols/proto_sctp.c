@@ -265,7 +265,8 @@ int init_proto_sctp_struct()
 	};
 
 	const int n = sizeof (protos_id) / sizeof( protos_id[0] );
-	for( int i=0; i<n; i++ )
+	int i = 0;
+    for( i=0; i<n; i++ )
 		_registe_protocol( protos_id[i], protos_name[i] );
 
 	return 1;
