@@ -406,17 +406,19 @@ typedef struct s1ap_message{
 
 	uint32_t m_tmsi;
 
-	char enb_name[ENTITY_NAME_LENGTH];
-	char mme_name[ENTITY_NAME_LENGTH];
-
-	char imsi[15]; //maximum 15 character
-	char t_imsi[15];
-
 	uint8_t pdu_present;
 
 	uint8_t ue_status;
 	uint8_t enb_status;
 	uint8_t mme_status;
+
+	uint32_t enb_plmn_id;
+	uint32_t mme_group_code_id;
+
+	char enb_name[ENTITY_NAME_LENGTH];
+	char mme_name[ENTITY_NAME_LENGTH];
+
+	char imsi[15]; //maximum 15 character
 }s1ap_message_t;
 
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
