@@ -729,6 +729,7 @@ static int _decode_s1ap_initiatingMessage(s1ap_message_t *message,
 		break;
 	case S1ap_ProcedureCode_id_S1Setup:
 		message->enb_status = S1AP_ENTITY_STATUS_ATTACHING;
+		message->mme_status = S1AP_ENTITY_STATUS_ATTACHING;
 		return _decode_s1ap_S1SetupRequest( message, &initiating_p->value);
 		break;
 	case S1ap_ProcedureCode_id_UEContextRelease:
@@ -754,6 +755,7 @@ static int _decode_s1ap_successfulOutcomeMessage(s1ap_message_t *message,
 		break;
 	case S1ap_ProcedureCode_id_S1Setup:
 		message->enb_status = S1AP_ENTITY_STATUS_ATTACHED;
+		message->mme_status = S1AP_ENTITY_STATUS_ATTACHED;
 		return _decode_s1ap_S1SetupResponse( message, &initiating_p->value);
 		break;
 	}

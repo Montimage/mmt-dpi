@@ -39,7 +39,6 @@
 #define S1AP_ENTITY_UE_ALIAS      "ue_entity"  //current entity concerning the packet
 #define S1AP_ENTITY_ENODEB_ALIAS  "enb_entity"  //current entity concerning the packet
 #define S1AP_ENTITY_MME_ALIAS     "mme_entity"  //current entity concerning the packet
-#define S1AP_ENTITIES_ALIAS       "entities" //all entities
 
 //protocol attributes
 enum{
@@ -70,10 +69,9 @@ enum{
 	S1AP_ATT_MME_UE_ID,
 	S1AP_ATT_MME_STATUS,
 
-	S1AP_ATT_ENTITY_UE,
-	S1AP_ATT_ENTITY_ENODEB,
-	S1AP_ATT_ENTITY_MME,
-	S1AP_ATT_ENTITIES
+	S1AP_ATT_ENTITY_UE,  //full information of UE represented by an s1ap_entity_t object
+	S1AP_ATT_ENTITY_ENODEB, //full information of eNodeB represented by an s1ap_entity_t object
+	S1AP_ATT_ENTITY_MME //full information of MME represented by an s1ap_entity_t object
 };
 
 //status of an entity in EPC/LTE network
@@ -89,7 +87,8 @@ typedef enum{
 
 
 typedef enum{
-	S1AP_ENTITY_TYPE_UE = 0,
+	S1AP_ENTITY_TYPE_UNKNOWN = 0,
+	S1AP_ENTITY_TYPE_UE,
 	S1AP_ENTITY_TYPE_ENODEB,
 	S1AP_ENTITY_TYPE_MME,
 	S1AP_ENTITY_TYPE_GW
@@ -109,6 +108,8 @@ typedef struct {
 
 	s1ap_entity_status_t status;
 
+	uint32_t parent; //id of entity it attached to. Zero if nothing.
+
 	//private data of each kind of element
 	union{
 
@@ -117,7 +118,6 @@ typedef struct {
 			uint32_t mme_ue_s1ap_id;
 			uint32_t m_tmsi;
 			char imsi[15];
-			char t_imsi[15];
 		}ue;
 
 		struct{
@@ -133,11 +133,6 @@ typedef struct {
 		}gw;
 	}data;
 }s1ap_entity_t;
-
-typedef struct s1ap_entities_struct{
-	s1ap_entity_t entity;
-	struct s1ap_entities_struct *next;
-}s1ap_entities_t;
 
 enum S1AP_ProcedureCode {
 	S1AP_ProcedureCode_id_HandoverPreparation	= 0,
