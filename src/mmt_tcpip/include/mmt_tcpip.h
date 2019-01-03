@@ -901,6 +901,7 @@ static inline int get_application_class_by_protocol_id(int id) {
             return PROTO_CLASS_TUNNEL;
         case PROTO_ESP:
         case PROTO_8021Q:
+        case PROTO_8021AD:
         case PROTO_AH:
         case PROTO_ARP:
         case PROTO_BATMAN:

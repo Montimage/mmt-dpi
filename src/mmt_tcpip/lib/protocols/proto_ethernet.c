@@ -67,25 +67,25 @@ int ethernet_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
             break;
-        // IEEE1588           
+        // IEEE1588
         case ETH_P_PTP:
             retval.proto_id = PROTO_PTP;
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
-            break;            
-        // IEEE1588           
+            break;
+        // IEEE1588
         case ETH_P_PPP_IPCP:
         case ETH_P_PPP_LCP:
             retval.proto_id = PROTO_PPP;
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
-            break; 
-        // FC           
+            break;
+        // FC
         case ETH_P_FC:
             retval.proto_id = PROTO_FC;
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
-            break; 
+            break;
             /* Batman */
         case ETH_P_BATMAN:
             retval.proto_id = PROTO_BATMAN;
@@ -96,7 +96,12 @@ int ethernet_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             retval.proto_id = PROTO_CTP;
             retval.offset = sizeof (struct ethhdr);
             retval.status = Classified;
-            break;    
+            break;
+        case ETH_P_8021AD:
+            retval.proto_id = PROTO_8021AD;
+            retval.offset = sizeof (struct ethhdr);
+            retval.status = Classified;
+            break;
         default:
             if(ntohs(ethernet->h_proto) < 0x600){
                 retval.proto_id = PROTO_LLC;

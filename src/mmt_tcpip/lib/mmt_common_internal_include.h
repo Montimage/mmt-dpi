@@ -375,6 +375,8 @@ extern "C" {
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_8021Q //////////////////
     int init_proto_8021q_struct();
+    /////////// PLUGIN INIT FOR PROTO_8021AD //////////////////
+    int init_proto_8021ad_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_888poker //////////////////
     int init_proto_888poker_struct();

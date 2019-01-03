@@ -2,6 +2,7 @@ RELEASE NOTES
 ---
 Version 1.6.15.1
 - Update protocol SMB: extract version, command, file name, padding and payload
+- Add protocol 802.1ad
 
 Version 1.6.15.0
 - Update protocol IPV6: process fragmentation, extract number of extension header, number of fragment packets, check fragment order
