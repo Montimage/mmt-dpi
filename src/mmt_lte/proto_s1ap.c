@@ -117,12 +117,13 @@ static inline s1ap_entities_t* _find_entity_node( s1ap_entity_type_t type, const
 			//same MME_UE_ID
 			if( HAS_VAL( msg->mme_ue_id ) && msg->mme_ue_id == p->entity.data.ue.mme_ue_s1ap_id )
 				return p;
-			//same ip
-			if( HAS_VAL( msg->ue_ipv4) && msg->ue_ipv4 == p->entity.ipv4 )
-				return p;
 			//same imsi
 			if( HAS_STR( msg->imsi ) && memcmp( msg->imsi, p->entity.data.ue.imsi, sizeof( msg->imsi)) == 0 )
 				return p;
+
+			//same ip
+			//if( HAS_VAL( msg->ue_ipv4) && msg->ue_ipv4 == p->entity.ipv4 )
+			//	return p;
 		}
 		return NULL;
 	}
@@ -171,6 +172,7 @@ static inline void _update_entity( s1ap_entity_type_t type, s1ap_entity_t *p, co
 			ASSIGN_VAL( p->data.ue.m_tmsi, msg->m_tmsi );
 			ASSIGN_VAL( p->data.ue.enb_ue_s1ap_id, msg->enb_ue_id );
 			ASSIGN_VAL( p->data.ue.mme_ue_s1ap_id, msg->mme_ue_id );
+			ASSIGN_VAL( p->data.ue.gtp_teid,       msg->gtp_teid );
 			ASSIGN_STR( p->data.ue.imsi, msg->imsi, sizeof( msg->imsi) );
 		}
 		break;

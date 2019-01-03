@@ -117,6 +117,7 @@ typedef struct {
 			uint32_t enb_ue_s1ap_id;
 			uint32_t mme_ue_s1ap_id;
 			uint32_t m_tmsi;
+			uint32_t gtp_teid;
 			char imsi[15];
 		}ue;
 
