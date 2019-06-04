@@ -454,6 +454,15 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		b->data[ b->len + 1 ] = '\0';
 		break;
 
+	case S1AP_ATT_QCI:
+		IF_TRUE_UNLOCK_AND_RETURN( msg.qos_qci == 0, 0 );
+		*((uint8_t *) extracted_data->data) = msg.qos_qci;
+		break;
+
+	case S1AP_ATT_PRIORITY_LEVEL:
+		IF_TRUE_UNLOCK_AND_RETURN( msg.qos_priority_level == 0, 0 );
+		*((uint8_t *) extracted_data->data) = msg.qos_priority_level;
+		break;
 
 	case S1AP_ATT_ENB_UE_ID:
 		IF_TRUE_UNLOCK_AND_RETURN( msg.enb_ue_id == 0, 0 );
@@ -526,8 +535,11 @@ static attribute_metadata_t s1ap_attributes_metadata[] = {
 
 		{S1AP_ATT_UE_ID,          S1AP_UE_ID_ALIAS,          MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		{S1AP_ATT_IMSI,           S1AP_IMSI_ALIAS,           MMT_STRING_DATA,  BINARY_64DATA_LEN,          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_TEID,           S1AP_TEID_ALIAS,           MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		{S1AP_ATT_M_TMSI,         S1AP_M_TMSI_ALIAS,         MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_TEID,           S1AP_TEID_ALIAS,           MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_QCI,            S1AP_QCI_ALIAS,            MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_PRIORITY_LEVEL, S1AP_PRIORITY_LEVEL_ALIAS, MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
 		{S1AP_ATT_UE_IP,          S1AP_UE_IP_ALIAS,          MMT_DATA_IP_ADDR, sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		{S1AP_ATT_UE_STATUS,      S1AP_UE_STATUS_ALIAS,      MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 

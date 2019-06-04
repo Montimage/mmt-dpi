@@ -397,6 +397,8 @@ typedef struct s1ap_message{
 	uint32_t enb_ue_id;
 
 	uint16_t procedure_code;
+	uint8_t qos_qci;
+	uint8_t qos_priority_level;
 	uint32_t gtp_teid;
 	uint32_t ue_ipv4;
 
@@ -419,6 +421,7 @@ typedef struct s1ap_message{
 	char mme_name[ENTITY_NAME_LENGTH];
 
 	char imsi[15]; //maximum 15 character
+
 }s1ap_message_t;
 
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,

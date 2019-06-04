@@ -141,6 +141,11 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 				return -1;
 			}
 
+			//HN: extract qci, priority level
+			const S1ap_E_RABLevelQoSParameters_t *qos = &s1apERABToBeSetupItemCtxtSUReq_p->e_RABlevelQoSParameters;
+			message->qos_qci = qos->qCI;
+			message->qos_priority_level = qos->allocationRetentionPriority.priorityLevel;
+
 			//HN:here we can get gtp teid
 			message->gtp_teid = _octet_string_to_uint32_t( & s1apERABToBeSetupItemCtxtSUReq_p->gTP_TEID );
 			message->gtp_teid = ntohl( message->gtp_teid );
