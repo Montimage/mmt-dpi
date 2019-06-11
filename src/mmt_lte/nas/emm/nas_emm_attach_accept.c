@@ -65,6 +65,10 @@ int nas_emm_decode_attach_accept(nas_emm_attach_accept_t *attach_accept, const u
 		  return decoded;
 		  break;
 	  default:
+		  //TODO: need to extract full message
+		  //as we are interested only in ATTACH_ACCEPT_GUTI_IEI
+		  //increasing decoded will examine all buffer
+		  decoded ++;
 		  break;
 	  }
   }

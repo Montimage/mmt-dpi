@@ -305,9 +305,28 @@ static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * pac
 		//_classify_s1ap_from_sctp_shutdown will attach S1AP after SCTP_SHUTDOWN and SCTP_SHUTDOWN_COMPLETE
 		//
 		//if we got SCTP_SHUTDOWN => eNodeB is detaching
-		if( get_protocol_index_by_id( packet, PROTO_SCTP_SHUTDOWN ) != -1 ){
+		if( (proto_index = get_protocol_index_by_id( packet, PROTO_SCTP_SHUTDOWN )) != -1 ){
 			msg->enb_status = S1AP_ENTITY_STATUS_DETACHING;
-			_assign_enb_mme_ip( msg, packet, true );
+
+			//need to check shutdown or shutdown_ack
+			//not enough room
+			offset = get_packet_offset_at_index(packet, proto_index);
+			if( offset > packet->p_hdr->caplen + sizeof(struct sctp_datahdr) )
+				return 0;
+
+			classified_proto_t retval;
+
+			struct sctp_datahdr *hdr = (struct sctp_datahdr *) &packet->data[ offset ];
+			switch( hdr->type ){
+			case 7: //SHUTDOWN
+				_assign_enb_mme_ip( msg, packet, true );
+				break;
+			case 8: //ACK
+				_assign_enb_mme_ip( msg, packet, false );
+				break;
+			}
+
+
 		}else if( get_protocol_index_by_id( packet, PROTO_SCTP_SHUTDOWN_COMPLETE ) != -1 ){
 			msg->enb_status = S1AP_ENTITY_STATUS_DETACHED;
 			//a confirm from eNodeB -> MME
@@ -363,7 +382,7 @@ static inline void _copy_binary_data_type( void *dst, const s1ap_entity_t *src )
  */
 static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
-
+//printf("packet_id: %"PRIu64"\n", packet->packet_id );
 	//static variables for each thread
 	//these variables are used to keep information between extracting different attributes of a packet
 	//they must be updated for each packet
