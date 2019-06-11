@@ -9,9 +9,8 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - echo 'Nothing here'
-#          - apt-get update -y
-#          - apt-get install -y libxml2-dev libpcap-dev
-#          - cd sdk/ make
-#          - make install
-#          - make test
+          - apt-get update -y
+          - apt-get install -y libxml2-dev libpcap-dev
+          - cd sdk/ make
+          - make install
+          - make test
