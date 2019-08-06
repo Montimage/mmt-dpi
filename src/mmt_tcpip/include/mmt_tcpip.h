@@ -1059,6 +1059,7 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_CDP:
         case PROTO_DTP:
         case PROTO_XID:
+        case PROTO_MQTT:
             return PROTO_CLASS_NETWORK;
         case PROTO_PCANYWHERE:
         case PROTO_RDP:

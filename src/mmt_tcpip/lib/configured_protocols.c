@@ -1494,6 +1494,13 @@ int init_tcpip_plugin() {
         fprintf(stderr, "Error initializing protocol proto_netbios\n Exiting\n");
         exit(0);
     }
+
+    /////////////////////////////////////////////
+    /////////// INITILIZING PROTO_MQTT //////////////////
+    if (!init_proto_mqtt_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_mqtt\n Exiting\n");
+        exit(0);
+    }
     /////////////////////////////////////////////
     /////////// INITILIZING PROTO_NETFLIX //////////////////
     if (!init_proto_netflix_struct()) {
@@ -4006,6 +4013,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_tpkt, 50);
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 60);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn_http, 60);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_mqtt, 60);
 
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp_control, 50);
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp_data, 50);

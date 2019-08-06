@@ -353,7 +353,7 @@ inline static uint64_t _get_proto_by_udp_port_number(uint16_t port_number,const 
         return PROTO_MDNS;
 
         case 53:
-        return PROTO_DNS;        
+        return PROTO_DNS;
 
         case 88:
         return PROTO_KERBEROS;
@@ -363,6 +363,9 @@ inline static uint64_t _get_proto_by_udp_port_number(uint16_t port_number,const 
 
         case 5355:
         return PROTO_LLMNR;
+        case 1883:
+        case 8883:
+        return PROTO_MQTT;
     }
     return PROTO_UNKNOWN;
 }

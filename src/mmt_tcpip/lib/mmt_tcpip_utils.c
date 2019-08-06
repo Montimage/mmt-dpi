@@ -142,7 +142,7 @@ void _mmt_parse_packet_line_info(ipacket_t * ipacket){
 
     packet->empty_line_position_set = 0;
     packet->empty_line_position = 0;
-    
+
     /* Attribute need to extract for classification */
     packet->host_line.ptr = NULL; // Need for classification
     packet->host_line.len = 0;
@@ -203,6 +203,8 @@ void _mmt_parse_packet_line_info(ipacket_t * ipacket){
                 case 'H':
                     if (str[1] == 'T') {
                         if (packet->parsed_lines == 0 && str[2] == 'T' && str[3] == 'P' && str[4] == '/' && str[5] == '1' && str[6] == '.') {
+                            // Start of response
+                            // printf("start RESPONSE: %lu, %lu\n", ipacket->session->session_id, packet->packet_id);
                             packet->http_response.ptr = &str[9];
                             packet->http_response.len = packet->line[0].len - 9;
                         }
@@ -371,7 +373,7 @@ void mmt_parse_packet_line_info(ipacket_t * ipacket) {
     if (packet->packet_lines_parsed_complete != 0)
         return;
     _mmt_parse_packet_line_info(ipacket);
-    
+
 }
 
 void mmt_parse_packet_line_info_unix(ipacket_t * ipacket) {

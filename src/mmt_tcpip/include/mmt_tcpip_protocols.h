@@ -669,7 +669,8 @@ extern "C" {
 #define PROTO_SCTP_ASCONF             654
 #define PROTO_SCTP_RE_CONFIG          655
 #define PROTO_8021AD  656
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_8021AD
+#define PROTO_MQTT  657
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_MQTT
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
@@ -1330,6 +1331,7 @@ extern "C" {
 #define PROTO_CDP_ALIAS "cdp"
 #define PROTO_DTP_ALIAS "dtp"
 #define PROTO_8021AD_ALIAS "8021ad"
+#define PROTO_MQTT_ALIAS "mqtt"
 // #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
 // #define PROTO_FTP_DATA_ALIAS "ftp_data"
 
