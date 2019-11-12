@@ -1255,6 +1255,20 @@ struct s7commphdr {
 
 //////////// END OF S7COMM PROTOCOL ATTRIBUTES ////////////////////
 
+//////////// 802.1Q PROTOCOL ATTRIBUTES ////////////////////
+enum vlan_8021q_attributes {
+	VLAN_TPID = 1, //< Tag protocol identifier
+	VLAN_PCP,      //< Priority code point
+	VLAN_DEI,      //< Drop eligible indicator
+	VLAN_VID       //< VLAN identifier
+};
+
+#define VLAN_TPID_ALIAS "tpid" //< Tag protocol identifier
+#define VLAN_PCP_ALIAS  "pcp"  //< Priority code point
+#define VLAN_DEI_ALIAS  "dei"  //< Drop eligible indicator
+#define VLAN_VID_ALIAS  "vid"  //< VLAN identifier
+//////////// END OF 802.1Q PROTOCOL ATTRIBUTES ////////////////////
+
 #ifdef __cplusplus
 }
 #endif
