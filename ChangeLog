@@ -1,5 +1,11 @@
 RELEASE NOTES
 ---
+Version 1.7.0.0
+- Add classificaiton for protocol MQTT
+- Add S1AP protocol (Huu Nghia)
+- Extract some VLAN attributes
+- Release a new stable version
+
 Version 1.6.15.1
 - Update protocol SMB: extract version, command, file name, padding and payload
 - Add protocol 802.1ad
