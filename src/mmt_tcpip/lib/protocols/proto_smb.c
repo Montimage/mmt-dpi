@@ -636,7 +636,7 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
         if (current_session->current_file->current_seg_len != count_low)
         {
           // Trigger an event here
-          fprintf(stderr, "\n[SMB] Segment length missmatched: %lu - %d, %d", ipacket->packet_id, current_session->current_file->current_seg_len, count_low);
+          // fprintf(stderr, "\n[SMB] Segment length missmatched: %lu - %d, %d", ipacket->packet_id, current_session->current_file->current_seg_len, count_low);
         }
         else
         {
