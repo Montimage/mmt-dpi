@@ -315,7 +315,7 @@ void http_internal_session_data_init(ipacket_t * ipacket, unsigned index) {
 
 
 /**
- * HTTP session data analysis function. 
+ * HTTP session data analysis function.
  * Contains compatibility code plus new HTTP parser integration
  **/
 int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
@@ -343,6 +343,8 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
                     packet->http_method.ptr = packet->line[0].ptr;
                     packet->http_method.len = filename_start - 1;
+                    // START OF HTTP METHOD
+                    // printf("start METHOD: %lu, %lu\n", ipacket->session->session_id, packet->packet_id);
                 }
             }
         }
@@ -356,18 +358,18 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
       size_t nparsed;
       http_parser_settings * settings = get_settings();
       http_parser * parser = &((stream_parser_t *) ipacket->session->session_data[index])->parser[ipacket->session->last_packet_direction];
-      
+
       // update the parser internal data with the current index and ipacket
       ( (stream_processor_t *) parser->data)->index = index;
       ( (stream_processor_t *) parser->data)->ipacket = ipacket;
 
       // Feeds the HTTP parser with additional data to process.
-      // Returns the length of successfully parsed data bytes. 
-      // If the parsed data length is different than the provided 
+      // Returns the length of successfully parsed data bytes.
+      // If the parsed data length is different than the provided
       // data length, an error has occurred.
       nparsed = http_parser_execute(parser, settings, (const char *) packet->payload, packet->payload_packet_len);
       if (parser->upgrade) {
-        // handle new protocol 
+        // handle new protocol
       } else if (nparsed != packet->payload_packet_len) {
         // Handle error. Usually just close the connection.
         //TODO: LN uncomment the next line please :p

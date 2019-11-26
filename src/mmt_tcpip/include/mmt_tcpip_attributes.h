@@ -104,6 +104,10 @@ enum ip6_attributes {
     IP6_SERVER_PORT,
     // LN: Move from packet_processing.c
     IP6_FRAG_PACKET_COUNT,
+    IP6_EXT_HEADERS_COUNT,
+    IP6_REDUNDANT_EXT_HEADERS,
+    IP6_FRAGMENT_OVERLAPPING,
+    IP6_OUT_OF_ORDER,
     IP6_FRAG_DATA_VOLUME,
     IP6_DF_PACKET_COUNT,
     IP6_DF_DATA_VOLUME,
@@ -136,6 +140,10 @@ enum ip6_attributes {
 #define IP6_SERVER_PORT_ALIAS    "server_port"
 // LN Move from packet_processing.c
 #define IP6_FRAG_PACKET_COUNT_LABEL        "ip6_frag_packets_count"
+#define IP6_EXT_HEADERS_COUNT_LABEL        "ip6_ext_headers_count"
+#define IP6_REDUNDANT_EXT_HEADERS_LABEL "redundent_extension_header"
+#define IP6_FRAGMENT_OVERLAPPING_LABEL  "fragment_overlapping"
+#define IP6_OUT_OF_ORDER_LABEL  "ip6_outoforder"
 #define IP6_FRAG_DATA_VOLUME_LABEL         "ip6_frag_data_volume"
 #define IP6_DF_PACKET_COUNT_LABEL          "ip6_df_packets_count"
 #define IP6_DF_DATA_VOLUME_LABEL           "ip6_df_data_volume"
@@ -1262,6 +1270,38 @@ struct s7commphdr {
 };
 
 //////////// END OF S7COMM PROTOCOL ATTRIBUTES ////////////////////
+
+//////////// SMB PROTOCOL ATTRIBUTES ////////////////////
+
+enum smb_attributes {
+    SMB_VERSION = 1,
+    SMB_PADDING,
+    SMB_NT_CREATE_FILE_NAME,
+    SMB_TRANSFER_PAYLOAD,
+    SMB_COMMAND,
+    SMB_ATTRIBUTES_NB = SMB_COMMAND,
+};
+
+
+#define SMB_VERSION_ALIAS "version"
+#define SMB_PADDING_ALIAS "padding"
+#define SMB_NT_CREATE_FILE_NAME_ALIAS "nt_create_file"
+#define SMB_COMMAND_ALIAS "command"
+#define SMB_TRANSFER_PAYLOAD_ALIAS "payload"
+//////////// END OF SMB PROTOCOL ATTRIBUTES ////////////////////
+//////////// 802.1Q PROTOCOL ATTRIBUTES ////////////////////
+enum vlan_8021q_attributes {
+	VLAN_TPID = 1, //< Tag protocol identifier
+	VLAN_PCP,      //< Priority code point
+	VLAN_DEI,      //< Drop eligible indicator
+	VLAN_VID       //< VLAN identifier
+};
+
+#define VLAN_TPID_ALIAS "tpid" //< Tag protocol identifier
+#define VLAN_PCP_ALIAS  "pcp"  //< Priority code point
+#define VLAN_DEI_ALIAS  "dei"  //< Drop eligible indicator
+#define VLAN_VID_ALIAS  "vid"  //< VLAN identifier
+//////////// END OF 802.1Q PROTOCOL ATTRIBUTES ////////////////////
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   ethernet.h
  * Author: montimage
  *
@@ -62,6 +62,10 @@ extern "C" {
 
 #ifndef ETH_P_FC
 #define ETH_P_FC		0x8914	/* PROTOCOL FCoE*/
+#endif
+
+#ifndef ETH_P_8021AD
+#define ETH_P_8021AD		0x88a8	/* PROTOCOL IEEE 802.1ad*/
 #endif
 
 #ifndef ETH_P_LOOP

@@ -143,6 +143,20 @@ int tcp_cwr_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     return 0;
 }
 
+int tcp_established_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+    struct mmt_internal_tcpip_session_struct *flow = packet->internal_packet->flow;
+    *((unsigned char *) extracted_data->data) = flow->l4.tcp.seen_ack;
+    return 1;
+}
+
+int tcp_connection_closed_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+    struct mmt_internal_tcpip_session_struct *flow = packet->internal_packet->flow;
+    *((unsigned char *) extracted_data->data) = flow->l4.tcp.seen_fin_ack;
+    return 1;
+}
+
 int tcp_flags_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
@@ -308,7 +322,8 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_SESSION_PAYLOAD_DOWN_LEN, TCP_SESSION_PAYLOAD_DOWN_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_down_len_extraction},
     {TCP_SESSION_PAYLOAD_DOWN, TCP_SESSION_PAYLOAD_DOWN_ALIAS, MMT_DATA_POINTER, sizeof (void*), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_payload_down_extraction},
     // {TCP_SESSION_OUTOFORDER, TCP_SESSION_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_outoforder_extraction},
-    {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_ack_flag_extraction},
+    {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_established_extraction},
+    {TCP_CONN_CLOSED, TCP_CONN_CLOSED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_connection_closed_extraction},
 };
 
 void clean_session_payload(mmt_session_t * session, unsigned index){

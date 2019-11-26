@@ -61,6 +61,13 @@ int init_tcpip_plugin() {
         fprintf(stderr, "Error initializing protocol proto_8021q\n Exiting\n");
         exit(0);
     }
+
+    /////////////////////////////////////////////
+    /////////// INITILIZING PROTO_8021AD //////////////////
+    if (!init_proto_8021ad_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_8021AD\n Exiting\n");
+        exit(0);
+    }
     /////////////////////////////////////////////
     /////////// INITILIZING PROTO_888poker //////////////////
     if (!init_proto_888poker_struct()) {
@@ -1485,6 +1492,13 @@ int init_tcpip_plugin() {
     /////////// INITILIZING PROTO_NETBIOS //////////////////
     if (!init_proto_netbios_struct()) {
         fprintf(stderr, "Error initializing protocol proto_netbios\n Exiting\n");
+        exit(0);
+    }
+
+    /////////////////////////////////////////////
+    /////////// INITILIZING PROTO_MQTT //////////////////
+    if (!init_proto_mqtt_struct()) {
+        fprintf(stderr, "Error initializing protocol proto_mqtt\n Exiting\n");
         exit(0);
     }
     /////////////////////////////////////////////
@@ -3889,7 +3903,7 @@ int init_tcpip_plugin() {
     /////////////////START OF INTER-PROTOCOL CLASSIFICATIONS ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /***
-        
+
         CLASSIFY PROTOCOL OVER TCP PROTOCOL
 
     ***/
@@ -3903,7 +3917,7 @@ int init_tcpip_plugin() {
      */
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_http, 20);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ssl, 20);
-    
+
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dns, 30);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_imap, 30);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_smtp, 30);
@@ -3915,7 +3929,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_bittorrent_tcp, 40);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ssh, 40);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_smb, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_nfs, 40);    
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_nfs, 40);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_mysql, 40);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_postgres, 40);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_kerberos, 40);
@@ -3923,7 +3937,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_oracle, 40);
 
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_stun_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_telnet, 50);    
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_telnet, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rtp_tcp, 50); //Check STUN before RTP
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rdp, 50);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_mssql, 50);
@@ -3999,11 +4013,12 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_tpkt, 50);
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 60);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn_http, 60);
+    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_mqtt, 60);
 
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp_control, 50);
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp_data, 50);
     /***
-        
+
         CLASSIFY PROTOCOL OVER UDP PROTOCOL
 
     ***/
