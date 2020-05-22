@@ -140,6 +140,10 @@ static int sctp_classify_next_chunk(ipacket_t * ipacket, unsigned index) {
 		//the next chunk is started after this chunk
 		const struct sctp_chunkhdr *next_chunk_hdr = (struct sctp_chunkhdr *) & ipacket->data[current_chunk_offset + current_chunk_len];
 
+		//padding
+		if( next_chunk_hdr->length == 0 )
+			return 0;
+
 		classified_proto_t retval;
 		retval.proto_id = _get_next_proto_id( next_chunk_hdr->type );
 		retval.status   = Classified;
