@@ -530,7 +530,7 @@ void smb_context_cleanup(void *proto_context, void *args)
   }
 }
 
-inline int smb_path_builder(const char * payload, char * path, uint16_t length) {
+int smb_path_builder(const char * payload, char * path, uint16_t length) {
   int i = 0;
   int k = 0;
   for (i = 0; i < length; i ++) {
