@@ -13,7 +13,7 @@ MMT_EXAMS ?= $(MMT_BASE)/examples
 
 CP       := cp -R
 RM       := rm -rf
-MKDIR  	 := mkdir -p
+MKDIR    := mkdir -p
 #  - - - - -
 # DEFINE VERBOSE MODE
 #  - - - - -
@@ -73,14 +73,14 @@ SRCDIR       := $(TOPDIR)/src
 SRCINC       := $(SRCDIR)/mmt_core/public_include  \
                 $(SRCDIR)/mmt_core/private_include \
                 $(SRCDIR)/mmt_tcpip/include \
-                $(SRCDIR)/mmt_tcpip/lib	\
-				    $(SRCDIR)/mmt_fuzz_engine
+                $(SRCDIR)/mmt_tcpip/lib \
+                $(SRCDIR)/mmt_fuzz_engine
 
 SDKDIR       := $(TOPDIR)/sdk
 SDKDOC       := $(SDKDIR)/doc
 SDKINC       := $(SDKDIR)/include
 SDKINC_TCPIP := $(SDKDIR)/include/tcpip
-SDKINC_LTE   := $(SDKDIR)/include/lte
+SDKINC_MOBILE := $(SDKDIR)/include/mobile
 ifdef ENABLESEC
 SDKINC_FUZZ  := $(SDKDIR)/include/fuzz
 endif
@@ -88,7 +88,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_LTE) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
 	@mkdir -p $@
 
 
@@ -99,8 +99,9 @@ $(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_LTE) $(SDKINC_FUZZ) $(SDKBIN) $(SDK
 LIBCORE     := libmmt_core
 LIBTCPIP    := libmmt_tcpip
 
-#z to ensure libmmt_zlte is after libmmt_tcpip in alphabet
-LIBLTE      := libmmt_zlte
+#t to ensure libmmt_tmobile is after libmmt_tcpip in alphabet
+#=> MMT will load libmmt_tcpip, then, libmmt_tmobile
+LIBMOBILE   := libmmt_tmobile
 LIBEXTRACT  := libmmt_extract
 ifdef ENABLESEC
 LIBSECURITY := libmmt_security
@@ -121,26 +122,26 @@ TCPIP_OBJECTS := \
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
-LIBLTE_OBJECTS := \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_lte/*.c))   \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_lte/s1ap/asn1c/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_lte/nas/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_lte/nas/util/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_lte/nas/ies/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_lte/nas/emm/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_lte/nas/esm/*.c)) \
+LIBMOBILE_OBJECTS := \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*.c))   \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/s1ap/asn1c/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/util/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/ies/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/emm/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/esm/*.c)) \
 
-#specific include paths for mmt_lte
-LIBLTE_INC := $(SRCINC)         \
-   $(SRCDIR)/mmt_lte/           \
-   $(SRCDIR)/mmt_lte/include    \
-	$(SRCDIR)/mmt_lte/nas        \
-	$(SRCDIR)/mmt_lte/nas/util   \
-	$(SRCDIR)/mmt_lte/nas/emm    \
-	$(SRCDIR)/mmt_lte/s1ap       \
-	$(SRCDIR)/mmt_lte/s1ap/asn1c 
+#specific include paths for mmt_mobile
+LIBMOBILE_INC := $(SRCINC)         \
+   $(SRCDIR)/mmt_mobile/           \
+   $(SRCDIR)/mmt_mobile/include    \
+	$(SRCDIR)/mmt_mobile/nas        \
+	$(SRCDIR)/mmt_mobile/nas/util   \
+	$(SRCDIR)/mmt_mobile/nas/emm    \
+	$(SRCDIR)/mmt_mobile/s1ap       \
+	$(SRCDIR)/mmt_mobile/s1ap/asn1c 
 	
-$(CORE_OBJECTS) $(LIBLTE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBLTE_INC))
+$(CORE_OBJECTS) $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
 
 	
 ifdef ENABLESEC
@@ -166,11 +167,11 @@ $(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS)
 
-# LTE
+# MOBILE
 
-$(SDKLIB)/$(LIBLTE).a: $(SDKLIB) $(LIBLTE_OBJECTS)
+$(SDKLIB)/$(LIBMOBILE).a: $(SDKLIB) $(LIBMOBILE_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
-	$(QUIET) $(AR) $@ $(LIBLTE_OBJECTS)
+	$(QUIET) $(AR) $@ $(LIBMOBILE_OBJECTS)
 	
 ifdef ENABLESEC
 # FUZZ
@@ -196,10 +197,10 @@ SDK_HEADERS       = $(addprefix $(SDKINC)/,$(notdir $(MMT_HEADERS)))
 MMT_TCPIP_HEADERS = $(wildcard $(SRCDIR)/mmt_tcpip/include/*.h)
 SDK_TCPIP_HEADERS = $(addprefix $(SDKINC_TCPIP)/,$(notdir $(MMT_TCPIP_HEADERS)))
 
-MMT_LTE_HEADERS = $(wildcard $(SRCDIR)/mmt_lte/include/*.h)
-SDK_LTE_HEADERS = $(addprefix $(SDKINC_LTE)/,$(notdir $(MMT_LTE_HEADERS)))
+mmt_mobile_HEADERS = $(wildcard $(SRCDIR)/mmt_mobile/include/*.h)
+SDK_MOBILE_HEADERS = $(addprefix $(SDKINC_MOBILE)/,$(notdir $(mmt_mobile_HEADERS)))
 
-includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_LTE_HEADERS)
+includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS)
 
 ifdef ENABLESEC
 MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)
@@ -215,11 +216,11 @@ $(SDKINC_TCPIP)/%.h: $(SRCDIR)/mmt_tcpip/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 
-$(SDKINC_LTE)/%.h: $(SRCDIR)/mmt_lte/include/%.h
+$(SDKINC_MOBILE)/%.h: $(SRCDIR)/mmt_mobile/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 	
-$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_LTE)
+$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE)
 
 ifdef ENABLESEC
 $(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h
