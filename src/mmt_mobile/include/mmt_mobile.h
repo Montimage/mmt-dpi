@@ -5,13 +5,19 @@
  *          by: Huu-Nghia
  */
 
-#ifndef SRC_MMT_LTE_INCLUDE_MMT_LTE_H_
-#define SRC_MMT_LTE_INCLUDE_MMT_LTE_H_
+#ifndef SRC_MMT_MOBILE_INCLUDE_MMT_MOBILE_H_
+#define SRC_MMT_MOBILE_INCLUDE_MMT_MOBILE_H_
 
 #include <stdlib.h>
 #include <stdint.h>
 
 #include "proto_s1ap.h"
+#include "proto_diameter.h"
 
+#define PROTO_S1AP 900
+#define PROTO_S1AP_ALIAS "s1ap"
 
-#endif /* SRC_MMT_5G_INCLUDE_MMT_LTE_H_ */
+#define PROTO_DIAMETER 901
+#define PROTO_DIAMETER_ALIAS "diameter"
+
+#endif /* SRC_MMT_MOBILE_INCLUDE_MMT_MOBILE_H_ */

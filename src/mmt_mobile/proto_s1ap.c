@@ -5,26 +5,8 @@
  *          by: nhnghia
  */
 #include<pthread.h>
-#include "mmt_core.h"
-#include "plugin_defs.h"
-#include "extraction_lib.h"
-
-#include "proto_s1ap.h"
-#include "mmt_tcpip.h"
+#include "mmt_mobile_internal.h"
 #include "s1ap_common.h"
-
-#define __PACKED __attribute__((packed))
-
-struct sctp_datahdr {
-	uint8_t type;
-	uint8_t flags;
-	uint16_t length;
-	uint32_t tsn;
-	uint16_t stream;
-	uint16_t ssn;
-	uint32_t ppid;
-} __PACKED;
-
 
 //A linked-list containing all entities (UE, eNodeB, MME, gw) of the current LTE network being monitored
 typedef struct s1ap_entities_struct{
@@ -642,7 +624,7 @@ int init_proto_s1ap() {
 	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_S1AP, PROTO_S1AP_ALIAS);
 
 	if( protocol_struct == NULL ){
-		S1AP_ERROR("Cannot initialize S1AP protocol");
+		S1AP_ERROR("Cannot initialize S1AP protocol\n");
 		return 0;
 	}
 
@@ -653,20 +635,20 @@ int init_proto_s1ap() {
 
 	int ret = register_classification_function_with_parent_protocol( PROTO_SCTP_DATA, _classify_s1ap_from_sctp_data, 100 );
 	if( ret == 0 ){
-		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d", PROTO_SCTP_DATA);
+		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d\n", PROTO_SCTP_DATA);
 		return 0;
 	}
 
 	//We need to process S1AP after SCTP_SHUTDOWN and SCTP_SHUTDOWN_COPLETE
 	register_classification_function_with_parent_protocol( PROTO_SCTP_SHUTDOWN, _classify_s1ap_from_sctp_shutdown, 100 );
 	if( ret == 0 ){
-		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_SHUTDOWN having id = %d", PROTO_SCTP_SHUTDOWN);
+		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_SHUTDOWN having id = %d\n", PROTO_SCTP_SHUTDOWN);
 		return 0;
 	}
 
 	register_classification_function_with_parent_protocol( PROTO_SCTP_SHUTDOWN_COMPLETE, _classify_s1ap_from_sctp_shutdown, 100 );
 	if( ret == 0 ){
-		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_SHUTDOWN_COMPLETE having id = %d", PROTO_SCTP_SHUTDOWN_COMPLETE);
+		S1AP_ERROR("Need mmt_tcpip library containing PROTO_SCTP_SHUTDOWN_COMPLETE having id = %d\n", PROTO_SCTP_SHUTDOWN_COMPLETE);
 		return 0;
 	}
 
@@ -674,13 +656,4 @@ int init_proto_s1ap() {
 	register_proto_context_init_cleanup_function( protocol_struct, _on_init_protocol, _on_clean_protocol, NULL );
 
 	return register_protocol(protocol_struct, PROTO_S1AP);
-}
-
-
-int init_proto() {
-	return init_proto_s1ap();
-}
-int cleanup_proto(){
-	//printf("close s1ap protocol");
-	return 0;
 }

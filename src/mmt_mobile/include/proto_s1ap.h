@@ -5,11 +5,8 @@
  *          by: nhnghia
  */
 
-#ifndef SRC_MMT_LTE_PROTO_S1AP_H_
-#define SRC_MMT_LTE_PROTO_S1AP_H_
-
-#define PROTO_S1AP 900
-#define PROTO_S1AP_ALIAS          "s1ap"
+#ifndef SRC_MMT_MOBILE_PROTO_S1AP_H_
+#define SRC_MMT_MOBILE_PROTO_S1AP_H_
 
 #define S1AP_PROCEDURE_CODE_ALIAS "procedure_code"
 #define S1AP_PDU_PRESENT_ALIAS    "pdu_present"
@@ -202,4 +199,4 @@ enum S1ap_PDU_Present {
 	S1AP_PDU_Present_unsuccessfulOutcome,
 };
 
-#endif /* SRC_MMT_LTE_PROTO_S1AP_H_ */
+#endif /* SRC_MMT_MOBILE_PROTO_S1AP_H_ */
