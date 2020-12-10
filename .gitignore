@@ -47,3 +47,5 @@ sdk/*
 sftp.json
 sftp-config.json
 .vscode
+.pydevproject
+rsync.sh
