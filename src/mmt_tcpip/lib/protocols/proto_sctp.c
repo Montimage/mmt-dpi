@@ -113,9 +113,11 @@ static int sctp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 	int offset = get_packet_offset_at_index(ipacket, index);
 
 	const struct sctphdr *hdr = (struct sctphdr *) & ipacket->data[offset];
-
+	uint32_t next_proto = _get_next_proto_id( hdr->type );
+	if( next_proto == PROTO_UNKNOWN )
+		return 0;
 	classified_proto_t retval;
-	retval.proto_id = _get_next_proto_id( hdr->type );
+	retval.proto_id = next_proto;
 	retval.status   = Classified;
 	retval.offset   = 12; //the next protocol is started after 12 bytes of SCTP header
 
@@ -143,9 +145,11 @@ static int sctp_classify_next_chunk(ipacket_t * ipacket, unsigned index) {
 		//padding
 		if( next_chunk_hdr->length == 0 )
 			return 0;
-
+		uint32_t next_proto = _get_next_proto_id( next_chunk_hdr->type );
+		if( next_proto == PROTO_UNKNOWN )
+			return 0;
 		classified_proto_t retval;
-		retval.proto_id = _get_next_proto_id( next_chunk_hdr->type );
+		retval.proto_id = next_proto;
 		retval.status   = Classified;
 		retval.offset   = current_chunk_len; //the next chunk is just after this one
 
