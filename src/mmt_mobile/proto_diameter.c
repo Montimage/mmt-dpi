@@ -8,33 +8,69 @@
 #include "mmt_mobile_internal.h"
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
-#define __PACKED __attribute__((packed))
-
-struct diameter_header {
-	uint8_t version        :  8; //0-7
-	uint32_t length        : 24; //9-31 ;//length of the Diameter message in bytes, including the header, always a multiple of 4
-	uint8_t flag_r         :  1; //32
-	uint8_t flag_p         :  1; //33
-	uint8_t flag_e         :  1; //34
-	uint8_t flag_t         :  1; //35
-	uint8_t padding        :  4; //  4 bit padding
-	uint32_t command_code  : 24;
-	uint32_t application_id: 32;
-	uint32_t hop_to_hop_id : 32;
-	uint32_t end_to_end_id : 32;
-} __PACKED;
+//https://www.ietf.org/proceedings/52/I-D/draft-ietf-aaa-diameter-08.txt:
+//The fields are transmitted in network byte order.
+static inline uint32_t _get_byte_order( uint32_t data, int length ){
+	uint32_t value = 0;
+	char *dst = (char *)(&value);
+	const char *src = (char *) &data;
+	switch( length ){
+	case 4:
+		dst[3] = src[0];
+		dst[2] = src[1];
+		dst[1] = src[2];
+		dst[0] = src[3];
+		break;
+	case 3:
+		dst[2] = src[0];
+		dst[1] = src[1];
+		dst[0] = src[2];
+		break;
+	}
+	return value;
+}
 
 /**
  * Extract attribute
  */
-static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index,
-		attribute_t * extracted_data) {
+static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
 	int offset = get_packet_offset_at_index(ipacket, proto_index);
 	const struct diameter_header *hdr = (struct diameter_header *) &ipacket->data[offset];
 
 	//depending on id of attribute to be extracted
 	switch( extracted_data->field_id ){
-
+	case DIAMETER_VERSION:
+		*((uint8_t *) extracted_data->data) = hdr->version;
+		break;
+	case DIAMETER_MESSAGE_LENGTH:
+		*((uint32_t *) extracted_data->data) = _get_byte_order(hdr->length, 3);
+		break;
+	case DIAMETER_FLAG_R:
+		*((uint8_t *) extracted_data->data) = hdr->flag_r;
+		break;
+	case DIAMETER_FLAG_P:
+		*((uint8_t *) extracted_data->data) = hdr->flag_p;
+		break;
+	case DIAMETER_FLAG_E:
+		*((uint8_t *) extracted_data->data) = hdr->flag_e;
+		break;
+	case DIAMETER_FLAG_T:
+		*((uint8_t *) extracted_data->data) = hdr->flag_t;
+		break;
+	case DIAMETER_COMMAND_CODE:
+		*((uint32_t *) extracted_data->data) = _get_byte_order( hdr->command_code, 3);
+		break;
+	case DIAMETER_APPLICATION_ID:
+		*((uint32_t *) extracted_data->data) = _get_byte_order( hdr->application_id, 4 );
+		break;
+	case DIAMETER_HOP_TO_HOP_ID:
+		*((uint32_t *) extracted_data->data) = _get_byte_order( hdr->hop_to_hop_id, 4 );
+		break;
+	case DIAMETER_END_TO_END_ID:
+		*((uint32_t *) extracted_data->data) = _get_byte_order( hdr->end_to_end_id, 4 );
+		break;
+	default:
+		log_warn("Unknown attribute %d.%d", extracted_data->proto_id, extracted_data->field_id );
 	}
 	return 1;
 }
@@ -52,16 +88,17 @@ static int _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uint16_t
 	if( ntohs( sctp_hdr->source ) == 3868 && ntohs( sctp_hdr->dest) == 3868 ){
 		//need to confirm more by other signatures of diameter: version
 		const struct diameter_header *hdr = (struct diameter_header *) &ipacket->data[offset];
-		uint32_t length = hdr->length;
+		uint32_t length = _get_byte_order( hdr->length, 3 );
 		//length = ntohl( length );
 		//currently only version = 1
-		printf("offset: %d, version: %d, length: %d", offset, hdr->version, length);
+		//printf("offset: %d, version: %d, length: %d", offset, hdr->version, length);
 		if( hdr->version != 1 )
 			return PROTO_UNKNOWN;
 		//length is incorrect
-		//TODO: check hdr->length
 		if( length + offset > ipacket->p_hdr->caplen )
 			return PROTO_UNKNOWN;
+		//always a multiple of 4 bytes
+
 		//need to check other features???
 		return PROTO_DIAMETER;
 	}
@@ -72,12 +109,14 @@ static int _classify_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	//index: index of the current proto to be classified (DIAMETER?), not the one of parent (SCTP_DATA)
 
 	int offset = get_packet_offset_at_index(ipacket, index);
+	//next porotocol is encapsulated inside payload of SCTP_DATA
 	uint16_t next_offset = offset + sizeof(struct sctp_datahdr);
 	//not enough room for other data
 	if( next_offset  >= ipacket->p_hdr->caplen )
 		return 0;
 
 	classified_proto_t retval;
+	retval.proto_id = PROTO_UNKNOWN;
 
 	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ offset ];
 	//sctp data Packet payload ID
@@ -96,27 +135,47 @@ static int _classify_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	}
 	//we found something
 	if( retval.proto_id != PROTO_UNKNOWN ){
-		retval.offset = next_offset;
+		retval.offset = sizeof(struct sctp_datahdr); //offset from its precedent protocol, not from root
 		retval.status = Classified;
 		//fix length
-		ipacket->proto_hierarchy->len =      (index + 1) + 1;
+		//ipacket->proto_hierarchy->len =      (index + 1) + 1;
 		return set_classified_proto(ipacket, (index + 1), retval);
 	}
 
 	return 0;
 }
 
+static attribute_metadata_t diameter_attributes_metadata[] = {
+		{DIAMETER_VERSION,        DIAMETER_VERSION_ALIAS,        MMT_U8_DATA,  sizeof( uint8_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_MESSAGE_LENGTH, DIAMETER_MESSAGE_LENGTH_ALIAS, MMT_U32_DATA, sizeof( uint32_t ), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_FLAG_R,         DIAMETER_FLAG_R_ALIAS,         MMT_U8_DATA,  sizeof( uint8_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_FLAG_P,         DIAMETER_FLAG_P_ALIAS,         MMT_U8_DATA,  sizeof( uint8_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_FLAG_E,         DIAMETER_FLAG_E_ALIAS,         MMT_U8_DATA,  sizeof( uint8_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_FLAG_T,         DIAMETER_FLAG_T_ALIAS,         MMT_U8_DATA,  sizeof( uint8_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_COMMAND_CODE,   DIAMETER_COMMAND_CODE_ALIAS,   MMT_U32_DATA, sizeof( uint32_t ), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_APPLICATION_ID, DIAMETER_APPLICATION_ID_ALIAS, MMT_U32_DATA, sizeof( uint32_t ), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_HOP_TO_HOP_ID,  DIAMETER_HOP_TO_HOP_ID_ALIAS,  MMT_U32_DATA, sizeof( uint32_t ), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{DIAMETER_END_TO_END_ID,  DIAMETER_END_TO_END_ID_ALIAS,  MMT_U32_DATA, sizeof( uint32_t ), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+};
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_diameter_struct() {
 	protocol_t *protocol_struct = init_protocol_struct_for_registration(PROTO_DIAMETER, PROTO_DIAMETER_ALIAS);
 	if (protocol_struct == NULL)
 		return 0;
+	//register attributes
+	int i;
+	int len = sizeof( diameter_attributes_metadata ) / sizeof( attribute_metadata_t);
+	for( i=0; i<len; i++ )
+		if( !register_attribute_with_protocol(protocol_struct, &diameter_attributes_metadata[i])){
+			log_err("Cannot register attribute %s.%s", PROTO_DIAMETER_ALIAS, diameter_attributes_metadata[i].alias);
+			return PROTO_NOT_REGISTERED;
+		}
 	int ret = register_classification_function_with_parent_protocol( PROTO_SCTP_DATA, _classify_from_sctp_data, 100 );
 	if( ret == 0 ){
 		//no SCTP (need to do if diameter can work with TCP)
 		fprintf(stderr, "Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d", PROTO_SCTP_DATA);
-		return 0;
+		return PROTO_NOT_REGISTERED;
 	}
 	return register_protocol(protocol_struct, PROTO_DIAMETER);
 
