@@ -8,27 +8,6 @@
 #include "mmt_mobile_internal.h"
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
-//https://www.ietf.org/proceedings/52/I-D/draft-ietf-aaa-diameter-08.txt:
-//The fields are transmitted in network byte order.
-static inline uint32_t _get_byte_order( uint32_t data, int length ){
-	uint32_t value = 0;
-	char *dst = (char *)(&value);
-	const char *src = (char *) &data;
-	switch( length ){
-	case 4:
-		dst[3] = src[0];
-		dst[2] = src[1];
-		dst[1] = src[2];
-		dst[0] = src[3];
-		break;
-	case 3:
-		dst[2] = src[0];
-		dst[1] = src[1];
-		dst[0] = src[2];
-		break;
-	}
-	return value;
-}
 
 /**
  * Extract attribute
@@ -43,7 +22,8 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 		*((uint8_t *) extracted_data->data) = hdr->version;
 		break;
 	case DIAMETER_MESSAGE_LENGTH:
-		*((uint32_t *) extracted_data->data) = _get_byte_order(hdr->length, 3);
+		//https://www.ietf.org/proceedings/52/I-D/draft-ietf-aaa-diameter-08.txt:
+		*((uint32_t *) extracted_data->data) = copy_4bytes_order(hdr->length, 3);
 		break;
 	case DIAMETER_FLAG_R:
 		*((uint8_t *) extracted_data->data) = hdr->flag_r;
@@ -58,16 +38,16 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 		*((uint8_t *) extracted_data->data) = hdr->flag_t;
 		break;
 	case DIAMETER_COMMAND_CODE:
-		*((uint32_t *) extracted_data->data) = _get_byte_order( hdr->command_code, 3);
+		*((uint32_t *) extracted_data->data) = copy_4bytes_order( hdr->command_code, 3);
 		break;
 	case DIAMETER_APPLICATION_ID:
-		*((uint32_t *) extracted_data->data) = _get_byte_order( hdr->application_id, 4 );
+		*((uint32_t *) extracted_data->data) = copy_4bytes_order( hdr->application_id, 4 );
 		break;
 	case DIAMETER_HOP_TO_HOP_ID:
-		*((uint32_t *) extracted_data->data) = _get_byte_order( hdr->hop_to_hop_id, 4 );
+		*((uint32_t *) extracted_data->data) = copy_4bytes_order( hdr->hop_to_hop_id, 4 );
 		break;
 	case DIAMETER_END_TO_END_ID:
-		*((uint32_t *) extracted_data->data) = _get_byte_order( hdr->end_to_end_id, 4 );
+		*((uint32_t *) extracted_data->data) = copy_4bytes_order( hdr->end_to_end_id, 4 );
 		break;
 	default:
 		log_warn("Unknown attribute %d.%d", extracted_data->proto_id, extracted_data->field_id );
@@ -88,7 +68,7 @@ static int _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uint16_t
 	if( ntohs( sctp_hdr->source ) == 3868 && ntohs( sctp_hdr->dest) == 3868 ){
 		//need to confirm more by other signatures of diameter: version
 		const struct diameter_header *hdr = (struct diameter_header *) &ipacket->data[offset];
-		uint32_t length = _get_byte_order( hdr->length, 3 );
+		uint32_t length = copy_4bytes_order( hdr->length, 3 );
 		//length = ntohl( length );
 		//currently only version = 1
 		//printf("offset: %d, version: %d, length: %d", offset, hdr->version, length);

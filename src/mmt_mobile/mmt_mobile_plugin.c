@@ -8,13 +8,14 @@
 #include "mmt_mobile_internal.h"
 
 int init_proto() {
-	/////////// INITILIZING PROTO_DDIAMETER //////////////////
 	if (!init_proto_diameter_struct()) {
-		fprintf(stderr,
-				"Error initializing protocol PROTO_DIAMETER\n Exiting\n");
+		fprintf(stderr,	"Error initializing protocol PROTO_DIAMETER\n Exiting\n");
 		exit(0);
 	}
-	/////////////////////////////////////////////
+	if (!init_proto_gtpv2_struct()) {
+		fprintf(stderr, "Error initializing protocol PROTO_GTPV2\n Exiting\n");
+		exit(0);
+	}
 	return init_proto_s1ap();
 }
 int cleanup_proto() {
