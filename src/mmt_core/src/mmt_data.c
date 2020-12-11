@@ -14,7 +14,7 @@ int get_packet_offset_at_index(const ipacket_t * ipacket, unsigned index) {
 unsigned get_protocol_index_by_id(const ipacket_t * ipacket, uint32_t proto_id) {
     int retval = -1, i;
     int nb_proto = ipacket->proto_hierarchy->len;
-    for (i = nb_proto ; i >= 0; i--) {
+    for (i = nb_proto - 1 ; i >= 0; i--) {
         if (ipacket->proto_hierarchy->proto_path[i] == proto_id) {
             retval = i;
             break;
