@@ -18,7 +18,7 @@
 //init protocols
 int init_proto_diameter_struct();
 int init_proto_gtpv2_struct();
-
+int init_proto_ngap_struct();
 int init_proto_s1ap();
 
 

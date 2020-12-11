@@ -55,7 +55,7 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 	return 1;
 }
 
-static int _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uint16_t offset ){
+static uint32_t _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uint16_t offset ){
 	//first SCTP from the lattest proto in protocol hierarchy
 	int sctp_index = get_protocol_index_by_id( ipacket, PROTO_SCTP );
 	//not found SCTP
@@ -86,11 +86,12 @@ static int _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uint16_t
 }
 
 static int _classify_from_sctp_data( ipacket_t * ipacket, unsigned index ){
-	//index: index of the current proto to be classified (DIAMETER?), not the one of parent (SCTP_DATA)
+	//index: index of the parent protocol (SCTP_DATA)
+	int sctp_data_index  = index; //get_protocol_index_by_id( ipacket, PROTO_SCTP_DATA );
+	int sctp_data_offset = get_packet_offset_at_index(ipacket, sctp_data_index);
 
-	int offset = get_packet_offset_at_index(ipacket, index);
 	//next porotocol is encapsulated inside payload of SCTP_DATA
-	uint16_t next_offset = offset + sizeof(struct sctp_datahdr);
+	uint16_t next_offset = sctp_data_offset + sizeof(struct sctp_datahdr);
 	//not enough room for other data
 	if( next_offset  >= ipacket->p_hdr->caplen )
 		return 0;
@@ -98,7 +99,7 @@ static int _classify_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	classified_proto_t retval;
 	retval.proto_id = PROTO_UNKNOWN;
 
-	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ offset ];
+	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
 	//sctp data Packet payload ID
 	switch( ntohl( hdr->ppid )){
 	case 46: //DIAMETER
