@@ -123,23 +123,20 @@ $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
 LIBMOBILE_OBJECTS := \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*.c))   \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/s1ap/asn1c/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/util/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/ies/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/emm/*.c)) \
-	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/nas/esm/*.c)) \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*.c))     \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*/*.c))   \
+	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*/*/*.c))
 
 #specific include paths for mmt_mobile
-LIBMOBILE_INC := $(SRCINC)         \
-   $(SRCDIR)/mmt_mobile/           \
-   $(SRCDIR)/mmt_mobile/include    \
-	$(SRCDIR)/mmt_mobile/nas        \
-	$(SRCDIR)/mmt_mobile/nas/util   \
-	$(SRCDIR)/mmt_mobile/nas/emm    \
-	$(SRCDIR)/mmt_mobile/s1ap       \
-	$(SRCDIR)/mmt_mobile/s1ap/asn1c 
+LIBMOBILE_INC := $(SRCINC)          \
+   $(SRCDIR)/mmt_mobile/            \
+   $(SRCDIR)/mmt_mobile/include     \
+	$(SRCDIR)/mmt_mobile/nas         \
+	$(SRCDIR)/mmt_mobile/nas/util    \
+	$(SRCDIR)/mmt_mobile/nas/emm     \
+	$(SRCDIR)/mmt_mobile/asn1c/common\
+	$(SRCDIR)/mmt_mobile/asn1c/s1ap  \
+	$(SRCDIR)/mmt_mobile/asn1c/ngap 
 	
 $(CORE_OBJECTS) $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
 

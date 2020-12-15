@@ -6,7 +6,7 @@
  */
 #include<pthread.h>
 #include "mmt_mobile_internal.h"
-#include "s1ap_common.h"
+#include "s1ap/s1ap_common.h"
 
 //A linked-list containing all entities (UE, eNodeB, MME, gw) of the current LTE network being monitored
 typedef struct s1ap_entities_struct{
