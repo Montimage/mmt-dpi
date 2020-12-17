@@ -7,12 +7,13 @@
 
 
 #include "mmt_mobile_internal.h"
+#include "ngap/ngap.h"
 
-static uint32_t  _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uint16_t offset ){
+static bool _is_valid_by_sctp_ports( ipacket_t *ipacket ){
 	int sctp_index = get_protocol_index_by_id( ipacket, PROTO_SCTP );
 	//not found SCTP
 	if( sctp_index == -1 )
-		return PROTO_UNKNOWN;
+		return false;
 	//offset of sctp in packet
 	int sctp_offset = get_packet_offset_at_index(ipacket, sctp_index);
 	const struct sctphdr *sctp_hdr = (struct sctphdr *) &ipacket->data[ sctp_offset ];
@@ -21,9 +22,8 @@ static uint32_t  _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, ui
 	//The SCTP Destination Port number value assigned by IANA to be used for NGAP is 38412.
 	const uint16_t sctp_port_for_ngap = htons( 38412 );
 	if( sctp_hdr->dest != sctp_port_for_ngap )
-		return PROTO_UNKNOWN;
-	//need to check other signatures of NGAP
-	return PROTO_NGAP;
+		return false;
+	return true;
 }
 
 static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
@@ -37,7 +37,10 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	retval.proto_id = PROTO_UNKNOWN;
 
 	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
-	int s1ap_offset = sctp_data_offset + sizeof(struct sctp_datahdr);
+	int ngap_offset = sctp_data_offset + sizeof(struct sctp_datahdr);
+	//not enought room for NGAP
+	if( ngap_offset >= ipacket->p_hdr->len )
+		return 0;
 	//sctp data Packet payload ID
 	switch( ntohl( hdr->ppid )){
 	case 60: //
@@ -45,7 +48,12 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 		break;
 	case 0: //not specified
 		//try to classify NGAP
-		retval.proto_id = _classify_by_sctp_ports(ipacket, index, s1ap_offset);
+		//is it used valid SCTP ports?
+		if( ! _is_valid_by_sctp_ports(ipacket ))
+			return 0;
+		//can we parse NGAP packet?
+		if( !try_decode_ngap(&ipacket->data[ sctp_data_offset ], hdr->length))
+			return 0;
 		break;
 	default:
 		break;
@@ -61,7 +69,58 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	return 0;
 }
 
+static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
+		attribute_t * extracted_data) {
+	ngap_message_t msg;
+	const int offset = get_packet_offset_at_index(packet, proto_index);
+	const int data_len = packet->p_hdr->caplen - offset;
+	if( data_len <= 0 )
+		return 0;
+	if( ! decode_ngap(&msg, & packet->data[offset], data_len ) )
+		return 0;
+
+	switch( extracted_data->field_id ){
+	case S1AP_ATT_PROCEDURE_CODE:
+		*((uint16_t *) extracted_data->data) = msg.procedure_code;
+		break;
+	case S1AP_ATT_PDU_PRESENT:
+		*((uint8_t *) extracted_data->data) = msg.pdu_present;
+	}
+	return 1;
+}
+
 static attribute_metadata_t _attributes_metadata[] = {
+		{S1AP_ATT_PROCEDURE_CODE, S1AP_PROCEDURE_CODE_ALIAS, MMT_U16_DATA,     sizeof( uint16_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_PDU_PRESENT,    S1AP_PDU_PRESENT_ALIAS,    MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+		{S1AP_ATT_UE_ID,          S1AP_UE_ID_ALIAS,          MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_IMSI,           S1AP_IMSI_ALIAS,           MMT_STRING_DATA,  BINARY_64DATA_LEN,          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_M_TMSI,         S1AP_M_TMSI_ALIAS,         MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_TEID,           S1AP_TEID_ALIAS,           MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_QCI,            S1AP_QCI_ALIAS,            MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_PRIORITY_LEVEL, S1AP_PRIORITY_LEVEL_ALIAS, MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+		{S1AP_ATT_UE_IP,          S1AP_UE_IP_ALIAS,          MMT_DATA_IP_ADDR, sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_UE_STATUS,      S1AP_UE_STATUS_ALIAS,      MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+
+		{S1AP_ATT_MME_ID,         S1AP_MME_ID_ALIAS,         MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_MME_NAME,       S1AP_MME_NAME_ALIAS,       MMT_STRING_DATA,  BINARY_64DATA_LEN,          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_MME_IP,         S1AP_MME_IP_ALIAS,         MMT_DATA_IP_ADDR, sizeof( uint32_t ),         POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_MME_UE_ID,      S1AP_MME_UE_ID_ALIAS,      MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_MME_STATUS,     S1AP_MME_STATUS_ALIAS,     MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+		{S1AP_ATT_ENB_ID,         S1AP_ENB_ID_ALIAS,         MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_ENB_NAME,       S1AP_ENB_NAME_ALIAS,       MMT_STRING_DATA,  BINARY_64DATA_LEN,          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_ENB_IP,         S1AP_ENB_IP_ALIAS,         MMT_DATA_IP_ADDR, sizeof( uint32_t ),         POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_ENB_UE_ID,      S1AP_ENB_UE_ID_ALIAS,      MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_ENB_STATUS,     S1AP_ENB_STATUS_ALIAS,     MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+
+		{S1AP_ATT_ENTITY_UE,      S1AP_ENTITY_UE_ALIAS,      MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_ENTITY_MME,     S1AP_ENTITY_MME_ALIAS,     MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{S1AP_ATT_ENTITY_ENODEB,  S1AP_ENTITY_ENODEB_ALIAS,  MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
 };
 
 int init_proto_ngap_struct() {
