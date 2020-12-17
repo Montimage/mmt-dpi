@@ -1,10 +1,9 @@
-/*-
- * Copyright (c) 2003, 2004, 2005 Lev Walkin <vlm@lionet.info>.
- * All rights reserved.
+/*
+ * Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info>. All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
-#ifndef	_ASN_CODECS_H_
-#define	_ASN_CODECS_H_
+#ifndef	ASN_CODECS_H
+#define	ASN_CODECS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,12 +51,12 @@ typedef struct asn_enc_rval_s {
 	 */
 
 	/* Type which cannot be encoded */
-	struct asn_TYPE_descriptor_s *failed_type;
+	const struct asn_TYPE_descriptor_s *failed_type;
 
 	/* Pointer to the structure of that type */
-	void *structure_ptr;
+	const void *structure_ptr;
 } asn_enc_rval_t;
-#define	_ASN_ENCODE_FAILED do {					\
+#define	ASN__ENCODE_FAILED do {					\
 	asn_enc_rval_t tmp_error;				\
 	tmp_error.encoded = -1;					\
 	tmp_error.failed_type = td;				\
@@ -65,7 +64,7 @@ typedef struct asn_enc_rval_s {
 	ASN_DEBUG("Failed to encode element %s", td ? td->name : "");	\
 	return tmp_error;					\
 } while(0)
-#define	_ASN_ENCODED_OK(rval) do {				\
+#define	ASN__ENCODED_OK(rval) do {				\
 	rval.structure_ptr = 0;					\
 	rval.failed_type = 0;					\
 	return rval;						\
@@ -88,14 +87,14 @@ typedef struct asn_dec_rval_s {
 	enum asn_dec_rval_code_e code;	/* Result code */
 	size_t consumed;		/* Number of bytes consumed */
 } asn_dec_rval_t;
-#define	_ASN_DECODE_FAILED do {					\
+#define	ASN__DECODE_FAILED do {					\
 	asn_dec_rval_t tmp_error;				\
 	tmp_error.code = RC_FAIL;				\
 	tmp_error.consumed = 0;					\
 	ASN_DEBUG("Failed to decode element %s", td ? td->name : "");	\
 	return tmp_error;					\
 } while(0)
-#define	_ASN_DECODE_STARVED do {				\
+#define	ASN__DECODE_STARVED do {				\
 	asn_dec_rval_t tmp_error;				\
 	tmp_error.code = RC_WMORE;				\
 	tmp_error.consumed = 0;					\
@@ -106,4 +105,4 @@ typedef struct asn_dec_rval_s {
 }
 #endif
 
-#endif	/* _ASN_CODECS_H_ */
+#endif	/* ASN_CODECS_H */

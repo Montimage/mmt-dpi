@@ -1,13 +1,13 @@
-/*-
- * Copyright (c) 2003, 2004, 2005, 2007 Lev Walkin <vlm@lionet.info>.
- * All rights reserved.
+/*
+ * Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info>. All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
 /*
  * Declarations internally useful for the ASN.1 support code.
  */
-#ifndef	_ASN_INTERNAL_H_
-#define	_ASN_INTERNAL_H_
+#ifndef	ASN_INTERNAL_H
+#define	ASN_INTERNAL_H
+#define __EXTENSIONS__          /* for Sun */
 
 #include "asn_application.h"	/* Application-visible API */
 
@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 /* Environment version might be used to avoid running with the old library */
-#define	ASN1C_ENVIRONMENT_VERSION	924	/* Compile-time version */
+#define	ASN1C_ENVIRONMENT_VERSION	923	/* Compile-time version */
 int get_asn1c_environment_version(void);	/* Run-time version */
 
 #define	CALLOC(nmemb, size)	calloc(nmemb, size)
@@ -31,13 +31,18 @@ int get_asn1c_environment_version(void);	/* Run-time version */
 #define	asn_debug_indent	0
 #define ASN_DEBUG_INDENT_ADD(i) do{}while(0)
 
+#ifdef  EMIT_ASN_DEBUG
+#warning "Use ASN_EMIT_DEBUG instead of EMIT_ASN_DEBUG"
+#define ASN_EMIT_DEBUG  EMIT_ASN_DEBUG
+#endif
+
 /*
  * A macro for debugging the ASN.1 internals.
  * You may enable or override it.
  */
 #ifndef	ASN_DEBUG	/* If debugging code is not defined elsewhere... */
-#if	EMIT_ASN_DEBUG == 1	/* And it was asked to emit this code... */
-#ifdef	__GNUC__
+#if	ASN_EMIT_DEBUG == 1	/* And it was asked to emit this code... */
+#if __STDC_VERSION__ >= 199901L
 #ifdef	ASN_THREAD_SAFE
 /* Thread safety requires sacrifice in output indentation:
  * Retain empty definition of ASN_DEBUG_INDENT_ADD. */
@@ -48,69 +53,85 @@ int asn_debug_indent;
 #define ASN_DEBUG_INDENT_ADD(i) do { asn_debug_indent += i; } while(0)
 #endif	/* ASN_THREAD_SAFE */
 #define	ASN_DEBUG(fmt, args...)	do {			\
-	int adi = asn_debug_indent;			\
-	while(adi--) fprintf(stderr, " ");	\
-	fprintf(stderr, fmt, ##args);		\
-	fprintf(stderr, " (%s:%d)\n",		\
-		__FILE__, __LINE__);				\
-} while(0)
-#else	/* !__GNUC__ */
-void ASN_DEBUG_f(const char *fmt, ...);
+		int adi = asn_debug_indent;		\
+		while(adi--) fprintf(stderr, " ");	\
+		fprintf(stderr, fmt, ##args);		\
+		fprintf(stderr, " (%s:%d)\n",		\
+			__FILE__, __LINE__);		\
+	} while(0)
+#else	/* !C99 */
+void CC_PRINTFLIKE(1, 2) ASN_DEBUG_f(const char *fmt, ...);
 #define	ASN_DEBUG	ASN_DEBUG_f
-#endif	/* __GNUC__ */
-#else	/* EMIT_ASN_DEBUG != 1 */
-# ifdef EMIT_ASN_DEBUG_EXTERN
-extern inline void ASN_DEBUG(const char *fmt, ...);
-# else
-static inline void ASN_DEBUG(const char *fmt, ...) { (void)fmt; }
-# endif
-#endif	/* EMIT_ASN_DEBUG */
+#endif	/* C99 */
+#else	/* ASN_EMIT_DEBUG != 1 */
+#if __STDC_VERSION__ >= 199901L
+#define ASN_DEBUG(...) do{}while(0)
+#else   /* not C99 */
+static void CC_PRINTFLIKE(1, 2) ASN_DEBUG(const char *fmt, ...) { (void)fmt; }
+#endif  /* C99 or better */
+#endif	/* ASN_EMIT_DEBUG */
 #endif	/* ASN_DEBUG */
+
+/*
+ * Print to a callback.
+ * The callback is expected to return negative values on error.
+ * 0 and positive values are treated as success.
+ * RETURN VALUES:
+ *  -1: Failed to format or invoke the callback.
+ *  >0: Size of the data that got delivered to the callback.
+ */
+ssize_t CC_PRINTFLIKE(3, 4)
+asn__format_to_callback(
+    int (*callback)(const void *, size_t, void *key), void *key,
+    const char *fmt, ...);
 
 /*
  * Invoke the application-supplied callback and fail, if something is wrong.
  */
-#define	__ASN_E_cbc(buf, size)	(cb((buf), (size), app_key) < 0)
-#define	_ASN_E_CALLBACK(foo)	do {					\
-		if(foo)	goto cb_failed;					\
-	} while(0)
-#define	_ASN_CALLBACK(buf, size)					\
-	_ASN_E_CALLBACK(__ASN_E_cbc(buf, size))
-#define	_ASN_CALLBACK2(buf1, size1, buf2, size2)			\
-	_ASN_E_CALLBACK(__ASN_E_cbc(buf1, size1) || __ASN_E_cbc(buf2, size2))
-#define	_ASN_CALLBACK3(buf1, size1, buf2, size2, buf3, size3)		\
-	_ASN_E_CALLBACK(__ASN_E_cbc(buf1, size1)			\
-		|| __ASN_E_cbc(buf2, size2)				\
-		|| __ASN_E_cbc(buf3, size3))
+#define ASN__E_cbc(buf, size) (cb((buf), (size), app_key) < 0)
+#define ASN__E_CALLBACK(size, foo) \
+    do {                           \
+        if(foo) goto cb_failed;    \
+        er.encoded += (size);      \
+    } while(0)
+#define ASN__CALLBACK(buf, size) ASN__E_CALLBACK(size, ASN__E_cbc(buf, size))
+#define ASN__CALLBACK2(buf1, size1, buf2, size2) \
+    ASN__E_CALLBACK((size1) + (size2),           \
+                    ASN__E_cbc(buf1, size1) || ASN__E_cbc(buf2, size2))
+#define ASN__CALLBACK3(buf1, size1, buf2, size2, buf3, size3)          \
+    ASN__E_CALLBACK((size1) + (size2) + (size3),                       \
+                    ASN__E_cbc(buf1, size1) || ASN__E_cbc(buf2, size2) \
+                        || ASN__E_cbc(buf3, size3))
 
-#define	_i_ASN_TEXT_INDENT(nl, level) do {				\
-	int __level = (level);						\
-	int __nl = ((nl) != 0);						\
-	int __i;							\
-	if(__nl) _ASN_CALLBACK("\n", 1);				\
-	if(__level < 0) __level = 0;					\
-	for(__i = 0; __i < __level; __i++)				\
-		_ASN_CALLBACK("    ", 4);				\
-	er.encoded += __nl + 4 * __level;				\
-} while(0)
+#define ASN__TEXT_INDENT(nl, level)                                          \
+    do {                                                                     \
+        int tmp_level = (level);                                             \
+        int tmp_nl = ((nl) != 0);                                            \
+        int tmp_i;                                                           \
+        if(tmp_nl) ASN__CALLBACK("\n", 1);                                   \
+        if(tmp_level < 0) tmp_level = 0;                                     \
+        for(tmp_i = 0; tmp_i < tmp_level; tmp_i++) ASN__CALLBACK("    ", 4); \
+    } while(0)
 
-#define	_i_INDENT(nl)	do {						\
-	int __i;							\
-	if((nl) && cb("\n", 1, app_key) < 0) return -1;			\
-	for(__i = 0; __i < ilevel; __i++)				\
-		if(cb("    ", 4, app_key) < 0) return -1;		\
-} while(0)
+#define	_i_INDENT(nl)	do {                        \
+        int tmp_i;                                  \
+        if((nl) && cb("\n", 1, app_key) < 0)        \
+            return -1;                              \
+        for(tmp_i = 0; tmp_i < ilevel; tmp_i++)     \
+            if(cb("    ", 4, app_key) < 0)          \
+                return -1;                          \
+    } while(0)
 
 /*
  * Check stack against overflow, if limit is set.
  */
-#define	_ASN_DEFAULT_STACK_MAX	(30000)
-static inline int
-_ASN_STACK_OVERFLOW_CHECK(asn_codec_ctx_t *ctx) {
+#define	ASN__DEFAULT_STACK_MAX	(30000)
+static int CC_NOTUSED
+ASN__STACK_OVERFLOW_CHECK(const asn_codec_ctx_t *ctx) {
 	if(ctx && ctx->max_stack_size) {
 
 		/* ctx MUST be allocated on the stack */
-		ptrdiff_t usedstack = ((char *)ctx - (char *)&ctx);
+		ptrdiff_t usedstack = ((const char *)ctx - (const char *)&ctx);
 		if(usedstack > 0) usedstack = -usedstack; /* grows up! */
 
 		/* double negative required to avoid int wrap-around */
@@ -127,4 +148,4 @@ _ASN_STACK_OVERFLOW_CHECK(asn_codec_ctx_t *ctx) {
 }
 #endif
 
-#endif	/* _ASN_INTERNAL_H_ */
+#endif	/* ASN_INTERNAL_H */

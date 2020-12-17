@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, 2005, 2006, 2007 Lev Walkin <vlm@lionet.info>.
- * All rights reserved.
+ * Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info>. All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
 #include <asn_internal.h>
@@ -63,8 +62,13 @@
 /*
  * See the definitions.
  */
-static int _fetch_present_idx(const void *struct_ptr, int off, int size);
-static void _set_present_idx(void *sptr, int offset, int size, int pres);
+static unsigned _fetch_present_idx(const void *struct_ptr, unsigned off,
+                                   unsigned size);
+static void _set_present_idx(void *sptr, unsigned offset, unsigned size,
+                             unsigned pres);
+static const void *_get_member_ptr(const asn_TYPE_descriptor_t *,
+                                   const void *sptr, asn_TYPE_member_t **elm,
+                                   unsigned *present);
 
 /*
  * Tags are canonically sorted in the tag to member table.
@@ -98,12 +102,14 @@ _search4tag(const void *ap, const void *bp) {
  * The decoder of the CHOICE type.
  */
 asn_dec_rval_t
-CHOICE_decode_ber(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
-	void **struct_ptr, const void *ptr, size_t size, int tag_mode) {
-	/*
+CHOICE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
+                  const asn_TYPE_descriptor_t *td, void **struct_ptr,
+                  const void *ptr, size_t size, int tag_mode) {
+    /*
 	 * Bring closer parts of structure description.
 	 */
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
+	const asn_CHOICE_specifics_t *specs =
+		(const asn_CHOICE_specifics_t *)td->specifics;
 	asn_TYPE_member_t *elements = td->elements;
 
 	/*
@@ -183,11 +189,11 @@ CHOICE_decode_ber(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 		}
 
 		do {
-			asn_TYPE_tag2member_t *t2m;
+			const asn_TYPE_tag2member_t *t2m;
 			asn_TYPE_tag2member_t key;
 
 			key.el_tag = tlv_tag;
-			t2m = (asn_TYPE_tag2member_t *)bsearch(&key,
+			t2m = (const asn_TYPE_tag2member_t *)bsearch(&key,
 					specs->tag2el, specs->tag2el_count,
 					sizeof(specs->tag2el[0]), _search4tag);
 			if(t2m) {
@@ -259,7 +265,7 @@ CHOICE_decode_ber(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 		/*
 		 * Invoke the member fetch routine according to member's type
 		 */
-		rval = elm->type->ber_decoder(opt_codec_ctx, elm->type,
+		rval = elm->type->op->ber_decoder(opt_codec_ctx, elm->type,
 				memb_ptr2, ptr, LEFT, elm->tag_mode);
 		switch(rval.code) {
 		case RC_OK:
@@ -354,17 +360,17 @@ CHOICE_decode_ber(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 }
 
 asn_enc_rval_t
-CHOICE_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
-		int tag_mode, ber_tlv_tag_t tag,
-		asn_app_consume_bytes_f *cb, void *app_key) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
+CHOICE_encode_der(const asn_TYPE_descriptor_t *td, const void *sptr,
+                  int tag_mode, ber_tlv_tag_t tag, asn_app_consume_bytes_f *cb,
+                  void *app_key) {
+    const asn_CHOICE_specifics_t *specs = (const asn_CHOICE_specifics_t *)td->specifics;
 	asn_TYPE_member_t *elm;	/* CHOICE element */
 	asn_enc_rval_t erval;
-	void *memb_ptr;
+	const void *memb_ptr;
 	size_t computed_size = 0;
-	int present;
+	unsigned present;
 
-	if(!sptr) _ASN_ENCODE_FAILED;
+	if(!sptr) ASN__ENCODE_FAILED;
 
 	ASN_DEBUG("%s %s as CHOICE",
 		cb?"Encoding":"Estimating", td->name);
@@ -376,13 +382,13 @@ CHOICE_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
 	 * If the structure was not initialized, it cannot be encoded:
 	 * can't deduce what to encode in the choice type.
 	 */
-	if(present <= 0 || present > td->elements_count) {
+	if(present == 0 || present > td->elements_count) {
 		if(present == 0 && td->elements_count == 0) {
 			/* The CHOICE is empty?! */
 			erval.encoded = 0;
-			_ASN_ENCODED_OK(erval);
+			ASN__ENCODED_OK(erval);
 		}
-		_ASN_ENCODE_FAILED;
+		ASN__ENCODE_FAILED;
 	}
 
 	/*
@@ -390,18 +396,19 @@ CHOICE_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
 	 */
 	elm = &td->elements[present-1];
 	if(elm->flags & ATF_POINTER) {
-		memb_ptr = *(void **)((char *)sptr + elm->memb_offset);
-		if(memb_ptr == 0) {
+        memb_ptr =
+            *(const void *const *)((const char *)sptr + elm->memb_offset);
+        if(memb_ptr == 0) {
 			if(elm->optional) {
 				erval.encoded = 0;
-				_ASN_ENCODED_OK(erval);
+				ASN__ENCODED_OK(erval);
 			}
 			/* Mandatory element absent */
-			_ASN_ENCODE_FAILED;
+			ASN__ENCODE_FAILED;
 		}
 	} else {
-		memb_ptr = (void *)((char *)sptr + elm->memb_offset);
-	}
+        memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
+    }
 
 	/*
 	 * If the CHOICE itself is tagged EXPLICIT:
@@ -415,7 +422,7 @@ CHOICE_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
 		ssize_t ret;
 
 		/* Encode member with its tag */
-		erval = elm->type->der_encoder(elm->type, memb_ptr,
+		erval = elm->type->op->der_encoder(elm->type, memb_ptr,
 			elm->tag_mode, elm->tag, 0, 0);
 		if(erval.encoded == -1)
 			return erval;
@@ -424,14 +431,14 @@ CHOICE_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
 		ret = der_write_tags(td, erval.encoded, tag_mode, 1, tag,
 			cb, app_key);
 		if(ret == -1)
-			_ASN_ENCODE_FAILED;
+			ASN__ENCODE_FAILED;
 		computed_size += ret;
 	}
 
 	/*
 	 * Encode the single underlying member.
 	 */
-	erval = elm->type->der_encoder(elm->type, memb_ptr,
+	erval = elm->type->op->der_encoder(elm->type, memb_ptr,
 		elm->tag_mode, elm->tag, cb, app_key);
 	if(erval.encoded == -1)
 		return erval;
@@ -445,9 +452,9 @@ CHOICE_encode_der(asn_TYPE_descriptor_t *td, void *sptr,
 }
 
 ber_tlv_tag_t
-CHOICE_outmost_tag(asn_TYPE_descriptor_t *td, const void *ptr, int tag_mode, ber_tlv_tag_t tag) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
-	int present;
+CHOICE_outmost_tag(const asn_TYPE_descriptor_t *td, const void *ptr, int tag_mode, ber_tlv_tag_t tag) {
+	const asn_CHOICE_specifics_t *specs = (const asn_CHOICE_specifics_t *)td->specifics;
+	unsigned present;
 
 	assert(tag_mode == 0); (void)tag_mode;
 	assert(tag == 0); (void)tag;
@@ -457,8 +464,8 @@ CHOICE_outmost_tag(asn_TYPE_descriptor_t *td, const void *ptr, int tag_mode, ber
 	 */
 	present = _fetch_present_idx(ptr, specs->pres_offset, specs->pres_size);
 
-	if(present > 0 || present <= td->elements_count) {
-		asn_TYPE_member_t *elm = &td->elements[present-1];
+	if(present > 0 && present <= td->elements_count) {
+		const asn_TYPE_member_t *elm = &td->elements[present-1];
 		const void *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
@@ -477,13 +484,14 @@ CHOICE_outmost_tag(asn_TYPE_descriptor_t *td, const void *ptr, int tag_mode, ber
 }
 
 int
-CHOICE_constraint(asn_TYPE_descriptor_t *td, const void *sptr,
-		asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
-	int present;
+CHOICE_constraint(const asn_TYPE_descriptor_t *td, const void *sptr,
+                  asn_app_constraint_failed_f *ctfailcb, void *app_key) {
+    const asn_CHOICE_specifics_t *specs =
+        (const asn_CHOICE_specifics_t *)td->specifics;
+    unsigned present;
 
 	if(!sptr) {
-		_ASN_CTFAIL(app_key, td, sptr,
+		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
@@ -502,7 +510,7 @@ CHOICE_constraint(asn_TYPE_descriptor_t *td, const void *sptr,
 			if(!memb_ptr) {
 				if(elm->optional)
 					return 0;
-				_ASN_CTFAIL(app_key, td, sptr,
+				ASN__CTFAIL(app_key, td, sptr,
 					"%s: mandatory CHOICE element %s absent (%s:%d)",
 					td->name, elm->name, __FILE__, __LINE__);
 				return -1;
@@ -511,21 +519,15 @@ CHOICE_constraint(asn_TYPE_descriptor_t *td, const void *sptr,
 			memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
 		}
 
-		if(elm->memb_constraints) {
-			return elm->memb_constraints(elm->type, memb_ptr,
+		if(elm->encoding_constraints.general_constraints) {
+			return elm->encoding_constraints.general_constraints(elm->type, memb_ptr,
 				ctfailcb, app_key);
 		} else {
-			int ret = elm->type->check_constraints(elm->type,
+			return elm->type->encoding_constraints.general_constraints(elm->type,
 					memb_ptr, ctfailcb, app_key);
-			/*
-			 * Cannot inherit it eralier:
-			 * need to make sure we get the updated version.
-			 */
-			elm->memb_constraints = elm->type->check_constraints;
-			return ret;
 		}
 	} else {
-		_ASN_CTFAIL(app_key, td, sptr,
+		ASN__CTFAIL(app_key, td, sptr,
 			"%s: no CHOICE element given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
@@ -535,7 +537,7 @@ CHOICE_constraint(asn_TYPE_descriptor_t *td, const void *sptr,
 #undef	XER_ADVANCE
 #define	XER_ADVANCE(num_bytes)	do {			\
 		size_t num = num_bytes;			\
-		buf_ptr = ((const char *)buf_ptr) + num;\
+		buf_ptr = (const void *)(((const char *)buf_ptr) + num); \
 		size -= num;				\
 		consumed_myself += num;			\
 	} while(0)
@@ -544,13 +546,13 @@ CHOICE_constraint(asn_TYPE_descriptor_t *td, const void *sptr,
  * Decode the XER (XML) data.
  */
 asn_dec_rval_t
-CHOICE_decode_xer(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
-	void **struct_ptr, const char *opt_mname,
-		const void *buf_ptr, size_t size) {
-	/*
+CHOICE_decode_xer(const asn_codec_ctx_t *opt_codec_ctx,
+                  const asn_TYPE_descriptor_t *td, void **struct_ptr,
+                  const char *opt_mname, const void *buf_ptr, size_t size) {
+    /*
 	 * Bring closer parts of structure description.
 	 */
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
+	const asn_CHOICE_specifics_t *specs = (const asn_CHOICE_specifics_t *)td->specifics;
 	const char *xml_tag = opt_mname ? opt_mname : td->xml_tag;
 
 	/*
@@ -561,7 +563,7 @@ CHOICE_decode_xer(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 
 	asn_dec_rval_t rval;		/* Return value of a decoder */
 	ssize_t consumed_myself = 0;	/* Consumed bytes from ptr */
-	int edx;			/* Element index */
+	size_t edx;			/* Element index */
 
 	/*
 	 * Create the target structure if it is not present already.
@@ -600,6 +602,7 @@ CHOICE_decode_xer(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 			asn_dec_rval_t tmprval;
 			void *memb_ptr;		/* Pointer to the member */
 			void **memb_ptr2;	/* Pointer to that pointer */
+			unsigned old_present;
 
 			elm = &td->elements[edx];
 
@@ -613,19 +616,20 @@ CHOICE_decode_xer(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 			}
 
 			/* Start/Continue decoding the inner member */
-			tmprval = elm->type->xer_decoder(opt_codec_ctx,
+			tmprval = elm->type->op->xer_decoder(opt_codec_ctx,
 					elm->type, memb_ptr2, elm->name,
 					buf_ptr, size);
 			XER_ADVANCE(tmprval.consumed);
 			ASN_DEBUG("XER/CHOICE: itdf: [%s] code=%d",
 				elm->type->name, tmprval.code);
-			if(tmprval.code != RC_OK)
-				RETURN(tmprval.code);
-			assert(_fetch_present_idx(st,
-				specs->pres_offset, specs->pres_size) == 0);
+			old_present = _fetch_present_idx(st,
+				specs->pres_offset, specs->pres_size);
+			assert(old_present == 0 || old_present == edx + 1);
 			/* Record what we've got */
 			_set_present_idx(st,
 				specs->pres_offset, specs->pres_size, edx + 1);
+			if(tmprval.code != RC_OK)
+				RETURN(tmprval.code);
 			ctx->phase = 3;
 			/* Fall through */
 		}
@@ -640,11 +644,12 @@ CHOICE_decode_xer(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 		 * Get the next part of the XML stream.
 		 */
 		ch_size = xer_next_token(&ctx->context, buf_ptr, size, &ch_type);
-		switch(ch_size) {
-		case -1: RETURN(RC_FAIL);
-		case 0:  RETURN(RC_WMORE);
-		default:
+		if(ch_size == -1) {
+            RETURN(RC_FAIL);
+        } else {
 			switch(ch_type) {
+			case PXER_WMORE:
+                RETURN(RC_WMORE);
 			case PXER_COMMENT:	/* Got XML comment */
 			case PXER_TEXT:		/* Ignore free-standing text */
 				XER_ADVANCE(ch_size);	/* Skip silently */
@@ -670,7 +675,6 @@ CHOICE_decode_xer(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 			case -1:
 				ctx->phase = 5;
 				RETURN(RC_FAIL);
-				continue;
 			case 1:
 				ctx->phase = 3;
 				/* Fall through */
@@ -772,111 +776,118 @@ CHOICE_decode_xer(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 
 
 asn_enc_rval_t
-CHOICE_encode_xer(asn_TYPE_descriptor_t *td, void *sptr,
-	int ilevel, enum xer_encoder_flags_e flags,
-		asn_app_consume_bytes_f *cb, void *app_key) {
-	asn_CHOICE_specifics_t *specs=(asn_CHOICE_specifics_t *)td->specifics;
-	asn_enc_rval_t er;
-	int present;
+CHOICE_encode_xer(const asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
+                  enum xer_encoder_flags_e flags, asn_app_consume_bytes_f *cb,
+                  void *app_key) {
+    const asn_CHOICE_specifics_t *specs =
+        (const asn_CHOICE_specifics_t *)td->specifics;
+    asn_enc_rval_t er;
+	unsigned present;
 
 	if(!sptr)
-		_ASN_ENCODE_FAILED;
+		ASN__ENCODE_FAILED;
 
 	/*
 	 * Figure out which CHOICE element is encoded.
 	 */
 	present = _fetch_present_idx(sptr, specs->pres_offset,specs->pres_size);
 
-	if(present <= 0 || present > td->elements_count) {
-		_ASN_ENCODE_FAILED;
+	if(present == 0 || present > td->elements_count) {
+		ASN__ENCODE_FAILED;
 	}  else {
 		asn_enc_rval_t tmper;
 		asn_TYPE_member_t *elm = &td->elements[present-1];
-		void *memb_ptr;
+		const void *memb_ptr;
 		const char *mname = elm->name;
 		unsigned int mlen = strlen(mname);
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(void **)((char *)sptr + elm->memb_offset);
-			if(!memb_ptr) _ASN_ENCODE_FAILED;
+            memb_ptr =
+                *(const void *const *)((const char *)sptr + elm->memb_offset);
+            if(!memb_ptr) ASN__ENCODE_FAILED;
 		} else {
-			memb_ptr = (void *)((char *)sptr + elm->memb_offset);
-		}
+            memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
+        }
 
-		er.encoded = 0;
+        er.encoded = 0;
 
-                if(!(flags & XER_F_CANONICAL)) _i_ASN_TEXT_INDENT(1, ilevel);
-		_ASN_CALLBACK3("<", 1, mname, mlen, ">", 1);
+		if(!(flags & XER_F_CANONICAL)) ASN__TEXT_INDENT(1, ilevel);
+		ASN__CALLBACK3("<", 1, mname, mlen, ">", 1);
 
-		tmper = elm->type->xer_encoder(elm->type, memb_ptr,
+		tmper = elm->type->op->xer_encoder(elm->type, memb_ptr,
 				ilevel + 1, flags, cb, app_key);
 		if(tmper.encoded == -1) return tmper;
+		er.encoded += tmper.encoded;
 
-		_ASN_CALLBACK3("</", 2, mname, mlen, ">", 1);
-
-		er.encoded += 5 + (2 * mlen) + tmper.encoded;
+		ASN__CALLBACK3("</", 2, mname, mlen, ">", 1);
 	}
 
-	if(!(flags & XER_F_CANONICAL)) _i_ASN_TEXT_INDENT(1, ilevel - 1);
+	if(!(flags & XER_F_CANONICAL)) ASN__TEXT_INDENT(1, ilevel - 1);
 
-	_ASN_ENCODED_OK(er);
+	ASN__ENCODED_OK(er);
 cb_failed:
-	_ASN_ENCODE_FAILED;
+	ASN__ENCODE_FAILED;
 }
 
 asn_dec_rval_t
-CHOICE_decode_uper(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
-	asn_per_constraints_t *constraints, void **sptr, asn_per_data_t *pd) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
-	asn_dec_rval_t rv;
-	asn_per_constraint_t *ct;
+CHOICE_decode_uper(const asn_codec_ctx_t *opt_codec_ctx,
+                   const asn_TYPE_descriptor_t *td,
+                   const asn_per_constraints_t *constraints, void **sptr,
+                   asn_per_data_t *pd) {
+    const asn_CHOICE_specifics_t *specs =
+        (const asn_CHOICE_specifics_t *)td->specifics;
+    asn_dec_rval_t rv;
+	const asn_per_constraint_t *ct;
 	asn_TYPE_member_t *elm;	/* CHOICE's element */
 	void *memb_ptr;
 	void **memb_ptr2;
 	void *st = *sptr;
 	int value;
 
-	if(_ASN_STACK_OVERFLOW_CHECK(opt_codec_ctx))
-		_ASN_DECODE_FAILED;
+	if(ASN__STACK_OVERFLOW_CHECK(opt_codec_ctx))
+		ASN__DECODE_FAILED;
 
 	/*
 	 * Create the target structure if it is not present already.
 	 */
 	if(!st) {
 		st = *sptr = CALLOC(1, specs->struct_size);
-		if(!st) _ASN_DECODE_FAILED;
+		if(!st) ASN__DECODE_FAILED;
 	}
 
 	if(constraints) ct = &constraints->value;
-	else if(td->per_constraints) ct = &td->per_constraints->value;
+	else if(td->encoding_constraints.per_constraints) ct = &td->encoding_constraints.per_constraints->value;
 	else ct = 0;
 
 	if(ct && ct->flags & APC_EXTENSIBLE) {
 		value = per_get_few_bits(pd, 1);
-		if(value < 0) _ASN_DECODE_STARVED;
+		if(value < 0) ASN__DECODE_STARVED;
 		if(value) ct = 0;	/* Not restricted */
 	}
 
 	if(ct && ct->range_bits >= 0) {
 		value = per_get_few_bits(pd, ct->range_bits);
-		if(value < 0) _ASN_DECODE_STARVED;
+		if(value < 0) ASN__DECODE_STARVED;
 		ASN_DEBUG("CHOICE %s got index %d in range %d",
 			td->name, value, ct->range_bits);
 		if(value > ct->upper_bound)
-			_ASN_DECODE_FAILED;
+			ASN__DECODE_FAILED;
 	} else {
 		if(specs->ext_start == -1)
-			_ASN_DECODE_FAILED;
+			ASN__DECODE_FAILED;
 		value = uper_get_nsnnwn(pd);
-		if(value < 0) _ASN_DECODE_STARVED;
+		if(value < 0) ASN__DECODE_STARVED;
 		value += specs->ext_start;
-		if(value >= td->elements_count)
-			_ASN_DECODE_FAILED;
+		if((unsigned)value >= td->elements_count)
+			ASN__DECODE_FAILED;
 	}
 
 	/* Adjust if canonical order is different from natural order */
-	if(specs->canonical_order)
-		value = specs->canonical_order[value];
+	if(specs->from_canonical_order) {
+        ASN_DEBUG("CHOICE presence from wire %d", value);
+		value = specs->from_canonical_order[value];
+        ASN_DEBUG("CHOICE presence index effective %d", value);
+    }
 
 	/* Set presence to be able to free it later */
 	_set_present_idx(st, specs->pres_offset, specs->pres_size, value + 1);
@@ -892,92 +903,11 @@ CHOICE_decode_uper(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 	ASN_DEBUG("Discovered CHOICE %s encodes %s", td->name, elm->name);
 
 	if(ct && ct->range_bits >= 0) {
-		rv = elm->type->uper_decoder(opt_codec_ctx, elm->type,
-			elm->per_constraints, memb_ptr2, pd);
+		rv = elm->type->op->uper_decoder(opt_codec_ctx, elm->type,
+			elm->encoding_constraints.per_constraints, memb_ptr2, pd);
 	} else {
 		rv = uper_open_type_get(opt_codec_ctx, elm->type,
-			elm->per_constraints, memb_ptr2, pd);
-	}
-
-	if(rv.code != RC_OK)
-		ASN_DEBUG("Failed to decode %s in %s (CHOICE) %d",
-			elm->name, td->name, rv.code);
-	return rv;
-}
-
-asn_dec_rval_t
-CHOICE_decode_aper(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
-	asn_per_constraints_t *constraints, void **sptr, asn_per_data_t *pd) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
-	asn_dec_rval_t rv;
-	asn_per_constraint_t *ct;
-	asn_TYPE_member_t *elm;	/* CHOICE's element */
-	void *memb_ptr;
-	void **memb_ptr2;
-	void *st = *sptr;
-	int value;
-
-	if(_ASN_STACK_OVERFLOW_CHECK(opt_codec_ctx))
-		_ASN_DECODE_FAILED;
-
-	/*
-	 * Create the target structure if it is not present already.
-	 */
-	if(!st) {
-		st = *sptr = CALLOC(1, specs->struct_size);
-		if(!st) _ASN_DECODE_FAILED;
-	}
-
-	if(constraints) ct = &constraints->value;
-	else if(td->per_constraints) ct = &td->per_constraints->value;
-	else ct = 0;
-
-	if(ct && ct->flags & APC_EXTENSIBLE) {
-		value = per_get_few_bits(pd, 1);
-		if(value < 0) _ASN_DECODE_STARVED;
-		if(value) ct = 0;	/* Not restricted */
-	}
-
-	if(ct && ct->range_bits >= 0) {
-		value = per_get_few_bits(pd, ct->range_bits);
-		if(value < 0) _ASN_DECODE_STARVED;
-		ASN_DEBUG("CHOICE %s got index %d in range %d",
-			td->name, value, ct->range_bits);
-		if(value > ct->upper_bound)
-			_ASN_DECODE_FAILED;
-	} else {
-		if(specs->ext_start == -1)
-			_ASN_DECODE_FAILED;
-		value = uper_get_nsnnwn(pd);
-		if(value < 0) _ASN_DECODE_STARVED;
-		value += specs->ext_start;
-		if(value >= td->elements_count)
-			_ASN_DECODE_FAILED;
-	}
-
-	/* Adjust if canonical order is different from natural order */
-	if(specs->canonical_order)
-		value = specs->canonical_order[value];
-
-	/* Set presence to be able to free it later */
-	_set_present_idx(st, specs->pres_offset, specs->pres_size, value + 1);
-
-	elm = &td->elements[value];
-	if(elm->flags & ATF_POINTER) {
-		/* Member is a pointer to another structure */
-		memb_ptr2 = (void **)((char *)st + elm->memb_offset);
-	} else {
-		memb_ptr = (char *)st + elm->memb_offset;
-		memb_ptr2 = &memb_ptr;
-	}
-	ASN_DEBUG("Discovered CHOICE %s encodes %s", td->name, elm->name);
-
-	if(ct && ct->range_bits >= 0) {
-		rv = elm->type->aper_decoder(opt_codec_ctx, elm->type,
-			elm->per_constraints, memb_ptr2, pd);
-	} else {
-		rv = uper_open_type_get(opt_codec_ctx, elm->type,
-			elm->per_constraints, memb_ptr2, pd);
+			elm->encoding_constraints.per_constraints, memb_ptr2, pd);
 	}
 
 	if(rv.code != RC_OK)
@@ -987,174 +917,270 @@ CHOICE_decode_aper(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
 }
 
 asn_enc_rval_t
-CHOICE_encode_uper(asn_TYPE_descriptor_t *td,
-	asn_per_constraints_t *constraints, void *sptr, asn_per_outp_t *po) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
+CHOICE_encode_uper(const asn_TYPE_descriptor_t *td,
+                   const asn_per_constraints_t *constraints, const void *sptr,
+                   asn_per_outp_t *po) {
+    const asn_CHOICE_specifics_t *specs = (const asn_CHOICE_specifics_t *)td->specifics;
 	asn_TYPE_member_t *elm;	/* CHOICE's element */
-	asn_per_constraint_t *ct;
-	void *memb_ptr;
-	int present;
+	const asn_per_constraint_t *ct;
+	const void *memb_ptr;
+	unsigned present;
 	int present_enc;
 
-	if(!sptr) _ASN_ENCODE_FAILED;
+	if(!sptr) ASN__ENCODE_FAILED;
 
-	ASN_DEBUG("Encoding %s as CHOICE using UPER", td->name);
+	ASN_DEBUG("Encoding %s as CHOICE", td->name);
 
 	if(constraints) ct = &constraints->value;
-	else if(td->per_constraints) ct = &td->per_constraints->value;
+	else if(td->encoding_constraints.per_constraints)
+		ct = &td->encoding_constraints.per_constraints->value;
 	else ct = 0;
 
-	present = _fetch_present_idx(sptr,
-		specs->pres_offset, specs->pres_size);
+	present = _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
 
 	/*
 	 * If the structure was not initialized properly, it cannot be encoded:
 	 * can't deduce what to encode in the choice type.
 	 */
-	if(present <= 0 || present > td->elements_count)
-		_ASN_ENCODE_FAILED;
+	if(present == 0 || present > td->elements_count)
+		ASN__ENCODE_FAILED;
 	else
 		present--;
 
 	ASN_DEBUG("Encoding %s CHOICE element %d", td->name, present);
 
-	/* Adjust if canonical order is different from natural order */
-	if(specs->canonical_order)
-		present_enc = specs->canonical_order[present];
-	else
-		present_enc = present;
+    /* Adjust if canonical order is different from natural order */
+    if(specs->to_canonical_order)
+        present_enc = specs->to_canonical_order[present];
+    else
+        present_enc = present;
 
-	if(ct && ct->range_bits >= 0) {
+    if(ct && ct->range_bits >= 0) {
 		if(present_enc < ct->lower_bound
 		|| present_enc > ct->upper_bound) {
 			if(ct->flags & APC_EXTENSIBLE) {
-				if(per_put_few_bits(po, 1, 1))
-					_ASN_ENCODE_FAILED;
+                ASN_DEBUG(
+                    "CHOICE member %d (enc %d) is an extension (%ld..%ld)",
+                    present, present_enc, ct->lower_bound, ct->upper_bound);
+                if(per_put_few_bits(po, 1, 1))
+					ASN__ENCODE_FAILED;
 			} else {
-				_ASN_ENCODE_FAILED;
+				ASN__ENCODE_FAILED;
 			}
 			ct = 0;
 		}
 	}
-	if(ct && ct->flags & APC_EXTENSIBLE)
-		if(per_put_few_bits(po, 0, 1))
-			_ASN_ENCODE_FAILED;
+	if(ct && ct->flags & APC_EXTENSIBLE) {
+        ASN_DEBUG("CHOICE member %d (enc %d) is not an extension (%ld..%ld)",
+                  present, present_enc, ct->lower_bound, ct->upper_bound);
+        if(per_put_few_bits(po, 0, 1))
+			ASN__ENCODE_FAILED;
+    }
+
 
 	elm = &td->elements[present];
-	if(elm->flags & ATF_POINTER) {
+    ASN_DEBUG("CHOICE member \"%s\" %d (as %d)", elm->name, present,
+              present_enc);
+    if(elm->flags & ATF_POINTER) {
 		/* Member is a pointer to another structure */
-		memb_ptr = *(void **)((char *)sptr + elm->memb_offset);
-		if(!memb_ptr) _ASN_ENCODE_FAILED;
+        memb_ptr =
+            *(const void *const *)((const char *)sptr + elm->memb_offset);
+        if(!memb_ptr) ASN__ENCODE_FAILED;
 	} else {
-		memb_ptr = (char *)sptr + elm->memb_offset;
+        memb_ptr = (const char *)sptr + elm->memb_offset;
+    }
+
+    if(ct && ct->range_bits >= 0) {
+        if(per_put_few_bits(po, present_enc, ct->range_bits))
+            ASN__ENCODE_FAILED;
+
+        return elm->type->op->uper_encoder(
+            elm->type, elm->encoding_constraints.per_constraints, memb_ptr, po);
+    } else {
+        asn_enc_rval_t rval;
+        if(specs->ext_start == -1) ASN__ENCODE_FAILED;
+        if(uper_put_nsnnwn(po, present_enc - specs->ext_start))
+            ASN__ENCODE_FAILED;
+        if(uper_open_type_put(elm->type,
+                              elm->encoding_constraints.per_constraints,
+                              memb_ptr, po))
+            ASN__ENCODE_FAILED;
+        rval.encoded = 0;
+        ASN__ENCODED_OK(rval);
+    }
+}
+
+asn_dec_rval_t
+CHOICE_decode_aper(const asn_codec_ctx_t *opt_codec_ctx,
+                   const asn_TYPE_descriptor_t *td,
+                   const asn_per_constraints_t *constraints, void **sptr, asn_per_data_t *pd) {
+	const asn_CHOICE_specifics_t *specs = (const asn_CHOICE_specifics_t *)td->specifics;
+	asn_dec_rval_t rv;
+	const asn_per_constraint_t *ct;
+	asn_TYPE_member_t *elm;	/* CHOICE's element */
+	void *memb_ptr;
+	void **memb_ptr2;
+	void *st = *sptr;
+	int value;
+
+	if(ASN__STACK_OVERFLOW_CHECK(opt_codec_ctx))
+		ASN__DECODE_FAILED;
+
+	/*
+	 * Create the target structure if it is not present already.
+	 */
+	if(!st) {
+		st = *sptr = CALLOC(1, specs->struct_size);
+		if(!st) ASN__DECODE_FAILED;
+	}
+
+	if(constraints) ct = &constraints->value;
+	else if(td->encoding_constraints.per_constraints)
+		ct = &td->encoding_constraints.per_constraints->value;
+	else ct = 0;
+
+	if(ct && ct->flags & APC_EXTENSIBLE) {
+		value = per_get_few_bits(pd, 1);
+		if(value < 0) ASN__DECODE_STARVED;
+		if(value) ct = 0;	/* Not restricted */
 	}
 
 	if(ct && ct->range_bits >= 0) {
-		if(per_put_few_bits(po, present_enc, ct->range_bits))
-			_ASN_ENCODE_FAILED;
-
-		return elm->type->uper_encoder(elm->type, elm->per_constraints,
-			memb_ptr, po);
+		value = per_get_few_bits(pd, ct->range_bits);
+		if(value < 0) ASN__DECODE_STARVED;
+		ASN_DEBUG("CHOICE %s got index %d in range %d",
+		          td->name, value, ct->range_bits);
+		if(value > ct->upper_bound)
+			ASN__DECODE_FAILED;
 	} else {
-		asn_enc_rval_t rval;
 		if(specs->ext_start == -1)
-			_ASN_ENCODE_FAILED;
-		if(uper_put_nsnnwn(po, present_enc - specs->ext_start))
-			_ASN_ENCODE_FAILED;
-		if(uper_open_type_put(elm->type, elm->per_constraints,
-			memb_ptr, po))
-			_ASN_ENCODE_FAILED;
-		rval.encoded = 0;
-		_ASN_ENCODED_OK(rval);
+			ASN__DECODE_FAILED;
+		value = uper_get_nsnnwn(pd);
+		if(value < 0) ASN__DECODE_STARVED;
+		value += specs->ext_start;
+		if((unsigned)value >= td->elements_count)
+			ASN__DECODE_FAILED;
 	}
+
+	/* Adjust if canonical order is different from natural order */
+	if(specs->from_canonical_order)
+		value = specs->from_canonical_order[value];
+
+	/* Set presence to be able to free it later */
+	_set_present_idx(st, specs->pres_offset, specs->pres_size, value + 1);
+
+	elm = &td->elements[value];
+	if(elm->flags & ATF_POINTER) {
+		/* Member is a pointer to another structure */
+		memb_ptr2 = (void **)((char *)st + elm->memb_offset);
+	} else {
+		memb_ptr = (char *)st + elm->memb_offset;
+		memb_ptr2 = &memb_ptr;
+	}
+	ASN_DEBUG("Discovered CHOICE %s encodes %s", td->name, elm->name);
+
+	if(ct && ct->range_bits >= 0) {
+		rv = elm->type->op->aper_decoder(opt_codec_ctx, elm->type,
+		                                 elm->encoding_constraints.per_constraints, memb_ptr2, pd);
+	} else {
+		rv = uper_open_type_get(opt_codec_ctx, elm->type,
+		                        elm->encoding_constraints.per_constraints, memb_ptr2, pd);
+	}
+
+	if(rv.code != RC_OK)
+		ASN_DEBUG("Failed to decode %s in %s (CHOICE) %d",
+		          elm->name, td->name, rv.code);
+	return rv;
 }
 
 asn_enc_rval_t
-CHOICE_encode_aper(asn_TYPE_descriptor_t *td,
-				   asn_per_constraints_t *constraints, void *sptr, asn_per_outp_t *po) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
-	asn_TYPE_member_t *elm; /* CHOICE's element */
-	asn_per_constraint_t *ct;
-	void *memb_ptr;
+CHOICE_encode_aper(const asn_TYPE_descriptor_t *td,
+                   const asn_per_constraints_t *constraints,
+                   const void *sptr, asn_per_outp_t *po) {
+	const asn_CHOICE_specifics_t *specs = (const asn_CHOICE_specifics_t *)td->specifics;
+	const asn_TYPE_member_t *elm; /* CHOICE's element */
+	const asn_per_constraint_t *ct;
+	const void *memb_ptr;
 	int present;
 
-	if(!sptr) _ASN_ENCODE_FAILED;
+	if(!sptr) ASN__ENCODE_FAILED;
 
 	ASN_DEBUG("Encoding %s as CHOICE using ALIGNED PER", td->name);
 
 	if(constraints) ct = &constraints->value;
-	else if(td->per_constraints) ct = &td->per_constraints->value;
+	else if(td->encoding_constraints.per_constraints)
+		ct = &td->encoding_constraints.per_constraints->value;
 	else ct = 0;
-	
+
 	present = _fetch_present_idx(sptr,
-								 specs->pres_offset, specs->pres_size);
+	                             specs->pres_offset, specs->pres_size);
 
 	/*
 	 * If the structure was not initialized properly, it cannot be encoded:
 	 * can't deduce what to encode in the choice type.
 	 */
-	if(present <= 0 || present > td->elements_count)
-		_ASN_ENCODE_FAILED;
+	if(present <= 0 || (unsigned)present > td->elements_count)
+		ASN__ENCODE_FAILED;
 	else
 		present--;
 
 	/* Adjust if canonical order is different from natural order */
-	if(specs->canonical_order)
-		present = specs->canonical_order[present];
+	if(specs->to_canonical_order)
+		present = specs->to_canonical_order[present];
 
 	ASN_DEBUG("Encoding %s CHOICE element %d", td->name, present);
 
 	if(ct && ct->range_bits >= 0) {
 		if(present < ct->lower_bound
-			|| present > ct->upper_bound) {
+		        || present > ct->upper_bound) {
 			if(ct->flags & APC_EXTENSIBLE) {
 				if(per_put_few_bits(po, 1, 1))
-					_ASN_ENCODE_FAILED;
+					ASN__ENCODE_FAILED;
 			} else {
-				_ASN_ENCODE_FAILED;
+				ASN__ENCODE_FAILED;
 			}
 			ct = 0;
-			}
+		}
 	}
 	if(ct && ct->flags & APC_EXTENSIBLE) {
 		if(per_put_few_bits(po, 0, 1))
-			_ASN_ENCODE_FAILED;
+			ASN__ENCODE_FAILED;
 	}
 
 	elm = &td->elements[present];
 	if(elm->flags & ATF_POINTER) {
 		/* Member is a pointer to another structure */
-		memb_ptr = *(void **)((char *)sptr + elm->memb_offset);
-		if(!memb_ptr) _ASN_ENCODE_FAILED;
+		memb_ptr = *(const void *const *)((const char *)sptr + elm->memb_offset);
+		if(!memb_ptr) ASN__ENCODE_FAILED;
 	} else {
-		memb_ptr = (char *)sptr + elm->memb_offset;
+		memb_ptr = (const char *)sptr + elm->memb_offset;
 	}
 
 	if(ct && ct->range_bits >= 0) {
 		if(per_put_few_bits(po, present, ct->range_bits))
-			_ASN_ENCODE_FAILED;
+			ASN__ENCODE_FAILED;
 
-			return elm->type->aper_encoder(elm->type, elm->per_constraints,
-										   memb_ptr, po);
+		return elm->type->op->aper_encoder(elm->type, elm->encoding_constraints.per_constraints,
+		                                   memb_ptr, po);
 	} else {
 		asn_enc_rval_t rval;
 		if(specs->ext_start == -1)
-			_ASN_ENCODE_FAILED;
-        if(aper_put_nsnnwn(po, ct->range_bits, present - specs->ext_start))
-			_ASN_ENCODE_FAILED;
-		if(aper_open_type_put(elm->type, elm->per_constraints,
-			memb_ptr, po))
-			_ASN_ENCODE_FAILED;
+			ASN__ENCODE_FAILED;
+		if(aper_put_nsnnwn(po, ct->range_bits, present - specs->ext_start))
+			ASN__ENCODE_FAILED;
+		if(aper_open_type_put(elm->type, elm->encoding_constraints.per_constraints,
+		                      memb_ptr, po))
+			ASN__ENCODE_FAILED;
 		rval.encoded = 0;
-		_ASN_ENCODED_OK(rval);
+		ASN__ENCODED_OK(rval);
 	}
 }
 
 int
-CHOICE_print(asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
-		asn_app_consume_bytes_f *cb, void *app_key) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
-	int present;
+CHOICE_print(const asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
+             asn_app_consume_bytes_f *cb, void *app_key) {
+    const asn_CHOICE_specifics_t *specs = (const asn_CHOICE_specifics_t *)td->specifics;
+	unsigned present;
 
 	if(!sptr) return (cb("<absent>", 8, app_key) < 0) ? -1 : 0;
 
@@ -1184,7 +1210,7 @@ CHOICE_print(asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
 				return -1;
 		}
 
-		return elm->type->print_struct(elm->type, memb_ptr, ilevel,
+		return elm->type->op->print_struct(elm->type, memb_ptr, ilevel,
 			cb, app_key);
 	} else {
 		return (cb("<absent>", 8, app_key) < 0) ? -1 : 0;
@@ -1192,9 +1218,11 @@ CHOICE_print(asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
 }
 
 void
-CHOICE_free(asn_TYPE_descriptor_t *td, void *ptr, int contents_only) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
-	int present;
+CHOICE_free(const asn_TYPE_descriptor_t *td, void *ptr,
+            enum asn_struct_free_method method) {
+    const asn_CHOICE_specifics_t *specs =
+        (const asn_CHOICE_specifics_t *)td->specifics;
+    unsigned present;
 
 	if(!td || !ptr)
 		return;
@@ -1223,9 +1251,16 @@ CHOICE_free(asn_TYPE_descriptor_t *td, void *ptr, int contents_only) {
 		}
 	}
 
-	if(!contents_only) {
-		FREEMEM(ptr);
-	}
+    switch(method) {
+    case ASFM_FREE_EVERYTHING:
+        FREEMEM(ptr);
+        break;
+    case ASFM_FREE_UNDERLYING:
+        break;
+    case ASFM_FREE_UNDERLYING_AND_RESET:
+        memset(ptr, 0, specs->struct_size);
+        break;
+    }
 }
 
 
@@ -1238,17 +1273,18 @@ CHOICE_free(asn_TYPE_descriptor_t *td, void *ptr, int contents_only) {
  * is guaranteed to be aligned properly. ASN.1 compiler itself does not
  * produce packed code.
  */
-static int
-_fetch_present_idx(const void *struct_ptr, int pres_offset, int pres_size) {
-	const void *present_ptr;
-	int present;
+static unsigned
+_fetch_present_idx(const void *struct_ptr, unsigned pres_offset,
+                   unsigned pres_size) {
+    const void *present_ptr;
+	unsigned present;
 
 	present_ptr = ((const char *)struct_ptr) + pres_offset;
 
 	switch(pres_size) {
-	case sizeof(int):	present =   *(const int *)present_ptr; break;
-	case sizeof(short):	present = *(const short *)present_ptr; break;
-	case sizeof(char):	present =  *(const char *)present_ptr; break;
+	case sizeof(int):	present = *(const unsigned int *)present_ptr; break;
+	case sizeof(short):	present = *(const unsigned short *)present_ptr; break;
+	case sizeof(char):	present = *(const unsigned char *)present_ptr; break;
 	default:
 		/* ANSI C mandates enum to be equivalent to integer */
 		assert(pres_size != sizeof(int));
@@ -1259,16 +1295,215 @@ _fetch_present_idx(const void *struct_ptr, int pres_offset, int pres_size) {
 }
 
 static void
-_set_present_idx(void *struct_ptr, int pres_offset, int pres_size, int present) {
-	void *present_ptr;
+_set_present_idx(void *struct_ptr, unsigned pres_offset, unsigned pres_size,
+                 unsigned present) {
+    void *present_ptr;
 	present_ptr = ((char *)struct_ptr) + pres_offset;
 
 	switch(pres_size) {
-	case sizeof(int):	*(int *)present_ptr   = present; break;
-	case sizeof(short):	*(short *)present_ptr = present; break;
-	case sizeof(char):	*(char *)present_ptr  = present; break;
+	case sizeof(int):	*(unsigned int *)present_ptr   = present; break;
+	case sizeof(short):	*(unsigned short *)present_ptr = present; break;
+	case sizeof(char):	*(unsigned char *)present_ptr  = present; break;
 	default:
 		/* ANSI C mandates enum to be equivalent to integer */
 		assert(pres_size != sizeof(int));
 	}
 }
+
+static const void *
+_get_member_ptr(const asn_TYPE_descriptor_t *td, const void *sptr,
+                asn_TYPE_member_t **elm_ptr, unsigned *present_out) {
+    const asn_CHOICE_specifics_t *specs =
+        (const asn_CHOICE_specifics_t *)td->specifics;
+    unsigned present;
+
+    if(!sptr) {
+        *elm_ptr = NULL;
+        *present_out = 0;
+        return NULL;
+    }
+
+    /*
+	 * Figure out which CHOICE element is encoded.
+	 */
+	present = _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
+    *present_out = present;
+
+    /*
+     * The presence index is intentionally 1-based to avoid
+     * treating zeroed structure as a valid one.
+     */
+	if(present > 0 && present <= td->elements_count) {
+        asn_TYPE_member_t *const elm = &td->elements[present - 1];
+        const void *memb_ptr;
+
+		if(elm->flags & ATF_POINTER) {
+            memb_ptr =
+                *(const void *const *)((const char *)sptr + elm->memb_offset);
+        } else {
+            memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
+        }
+        *elm_ptr = elm;
+        return memb_ptr;
+    } else {
+        *elm_ptr = NULL;
+        return NULL;
+    }
+
+}
+
+int
+CHOICE_compare(const asn_TYPE_descriptor_t *td, const void *aptr, const void *bptr) {
+    asn_TYPE_member_t *aelm;
+    asn_TYPE_member_t *belm;
+    unsigned apresent = 0;
+    unsigned bpresent = 0;
+    const void *amember = _get_member_ptr(td, aptr, &aelm, &apresent);
+    const void *bmember = _get_member_ptr(td, bptr, &belm, &bpresent);
+
+    if(amember && bmember) {
+        if(apresent == bpresent) {
+            assert(aelm == belm);
+            return aelm->type->op->compare_struct(aelm->type, amember, bmember);
+        } else if(apresent < bpresent) {
+            return -1;
+        } else {
+            return 1;
+        }
+    } else if(!amember) {
+        return -1;
+    } else {
+        return 1;
+    }
+}
+
+/*
+ * Return the 1-based choice variant presence index.
+ * Returns 0 in case of error.
+ */
+unsigned
+CHOICE_variant_get_presence(const asn_TYPE_descriptor_t *td, const void *sptr) {
+    const asn_CHOICE_specifics_t *specs =
+        (const asn_CHOICE_specifics_t *)td->specifics;
+    return _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
+}
+
+/*
+ * Sets or resets the 1-based choice variant presence index.
+ * In case a previous index is not zero, the currently selected structure
+ * member is freed and zeroed-out first.
+ * Returns 0 on success and -1 on error.
+ */
+int
+CHOICE_variant_set_presence(const asn_TYPE_descriptor_t *td, void *sptr,
+                            unsigned present) {
+    const asn_CHOICE_specifics_t *specs =
+        (const asn_CHOICE_specifics_t *)td->specifics;
+    unsigned old_present;
+
+    if(!sptr) {
+        return -1;
+    }
+
+    if(present > td->elements_count)
+        return -1;
+
+    old_present =
+        _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
+    if(present == old_present)
+        return 0;
+
+    if(old_present != 0) {
+        assert(old_present <= td->elements_count);
+        ASN_STRUCT_RESET(*td, sptr);
+    }
+
+    _set_present_idx(sptr, specs->pres_offset, specs->pres_size, present);
+
+    return 0;
+}
+
+
+asn_random_fill_result_t
+CHOICE_random_fill(const asn_TYPE_descriptor_t *td, void **sptr,
+                   const asn_encoding_constraints_t *constr,
+                   size_t max_length) {
+    const asn_CHOICE_specifics_t *specs =
+        (const asn_CHOICE_specifics_t *)td->specifics;
+    asn_random_fill_result_t res;
+    asn_random_fill_result_t result_failed = {ARFILL_FAILED, 0};
+    asn_random_fill_result_t result_skipped = {ARFILL_SKIPPED, 0};
+    const asn_TYPE_member_t *elm;
+    unsigned present;
+    void *memb_ptr;   /* Pointer to the member */
+    void **memb_ptr2; /* Pointer to that pointer */
+    void *st = *sptr;
+
+    if(max_length == 0) return result_skipped;
+
+    (void)constr;
+
+    if(st == NULL) {
+        st = CALLOC(1, specs->struct_size);
+        if(st == NULL) {
+            return result_failed;
+        }
+    }
+
+    present = asn_random_between(1, td->elements_count);
+    elm = &td->elements[present - 1];
+
+	if(elm->flags & ATF_POINTER) {
+		/* Member is a pointer to another structure */
+		memb_ptr2 = (void **)((char *)st + elm->memb_offset);
+	} else {
+		memb_ptr = (char *)st + elm->memb_offset;
+		memb_ptr2 = &memb_ptr;
+	}
+
+    res = elm->type->op->random_fill(elm->type, memb_ptr2,
+                                    &elm->encoding_constraints, max_length);
+    _set_present_idx(st, specs->pres_offset, specs->pres_size, present);
+    if(res.code == ARFILL_OK) {
+        *sptr = st;
+    } else {
+        if(st == *sptr) {
+            ASN_STRUCT_RESET(*td, st);
+        } else {
+            ASN_STRUCT_FREE(*td, st);
+        }
+    }
+
+    return res;
+}
+
+
+asn_TYPE_operation_t asn_OP_CHOICE = {
+	CHOICE_free,
+	CHOICE_print,
+	CHOICE_compare,
+	CHOICE_decode_ber,
+	CHOICE_encode_der,
+	CHOICE_decode_xer,
+	CHOICE_encode_xer,
+#ifdef	ASN_DISABLE_OER_SUPPORT
+	0,
+	0,
+#else
+	CHOICE_decode_oer,
+	CHOICE_encode_oer,
+#endif  /* ASN_DISABLE_OER_SUPPORT */
+#ifdef ASN_DISABLE_PER_SUPPORT
+	0,
+	0,
+	0,
+	0,
+#else
+	CHOICE_decode_uper,
+	CHOICE_encode_uper,
+	CHOICE_decode_aper,
+	CHOICE_encode_aper,
+#endif	/* ASN_DISABLE_PER_SUPPORT */
+	CHOICE_random_fill,
+	CHOICE_outmost_tag
+};
