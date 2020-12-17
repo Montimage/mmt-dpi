@@ -127,6 +127,8 @@ LIBMOBILE_OBJECTS := \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*/*.c))   \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*/*/*.c))
 
+LIBMOBILE_OBJECTS := $(filter-out $(SRCDIR)/mmt_mobile/asn1c,$(LIBMOBILE_OBJECTS))
+
 #specific include paths for mmt_mobile
 LIBMOBILE_INC := $(SRCINC)          \
    $(SRCDIR)/mmt_mobile/            \
@@ -134,11 +136,11 @@ LIBMOBILE_INC := $(SRCINC)          \
 	$(SRCDIR)/mmt_mobile/nas         \
 	$(SRCDIR)/mmt_mobile/nas/util    \
 	$(SRCDIR)/mmt_mobile/nas/emm     \
-	$(SRCDIR)/mmt_mobile/asn1c/common\
-	$(SRCDIR)/mmt_mobile/asn1c/s1ap  \
-	$(SRCDIR)/mmt_mobile/asn1c/ngap 
+
+
+$(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -lm -Wno-unused-variable $(patsubst %,-I%,$(LIBMOBILE_INC))
 	
-$(CORE_OBJECTS) $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
+$(CORE_OBJECTS) : CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK
 
 	
 ifdef ENABLESEC
