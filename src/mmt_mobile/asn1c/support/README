@@ -1,0 +1,2 @@
+- ngap-r15.2.0: https://github.com/OPENAIRINTERFACE/oai-libngapcodec/tree/support/15.2.0/asn.1
+- s1ap-r16.1.0 + ngap-r16.1.0: https://github.com/open5gs/open5gs/tree/v2.1.1/lib/asn1c/support
