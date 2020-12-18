@@ -7,6 +7,8 @@
 #include "ngap.h"
 #include "NGAP_ProtocolIE-Field.h"
 
+#include "nas_msg.h"
+
 bool try_decode_ngap( const uint8_t * buffer, const uint32_t length ){
 	NGAP_NGAP_PDU_t *pdu_p = NULL;
 	asn_dec_rval_t dec_ret;
@@ -191,7 +193,8 @@ bool decode_ngap( ngap_message_t *msg, const uint8_t * buffer, const uint32_t le
 
 	NGAP_NGAP_PDU_t *pdu_p = NULL;
 	asn_dec_rval_t dec_ret;
-	if( length == 0 )
+	void *p;
+	if( length == 0 || buffer == NULL)
 		return false;
 	dec_ret = aper_decode( NULL, &asn_DEF_NGAP_NGAP_PDU, (void **)&pdu_p,
 			buffer,
@@ -220,6 +223,63 @@ bool decode_ngap( ngap_message_t *msg, const uint8_t * buffer, const uint32_t le
 	case NGAP_NGAP_PDU_PR_NOTHING:
 		break;
 	}
+
 	ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
 	return ret;
+}
+
+
+uint32_t get_nas_pdu( void *data, uint32_t data_size, const uint8_t *buffer, uint32_t length ){
+	ngap_message_t message, *msg = &message;
+	if( data == NULL || data_size == 0 )
+		return 0;
+
+	NGAP_NGAP_PDU_t *pdu_p = NULL;
+	asn_dec_rval_t dec_ret;
+	void *p;
+	if( length == 0 || buffer == NULL )
+		return false;
+	dec_ret = aper_decode( NULL, &asn_DEF_NGAP_NGAP_PDU, (void **)&pdu_p,
+			buffer,
+			length,
+			0,
+			0);
+	if( dec_ret.code != RC_OK )
+		return false;
+	//reset msg
+	memset(msg, 0, sizeof( ngap_message_t));
+	msg->pdu_present = pdu_p->present;
+	bool ret = false;
+	switch( pdu_p->present ){
+	case NGAP_NGAP_PDU_PR_initiatingMessage:
+		msg->procedure_code = pdu_p->choice.initiatingMessage->procedureCode;
+		ret = _decode_initiatingMessage(msg, pdu_p->choice.initiatingMessage);
+		break;
+	case NGAP_NGAP_PDU_PR_successfulOutcome:
+		msg->procedure_code = pdu_p->choice.successfulOutcome->procedureCode;
+		ret = _decode_successfulOutcome( msg, pdu_p->choice.successfulOutcome);
+		break;
+	case NGAP_NGAP_PDU_PR_unsuccessfulOutcome:
+		msg->procedure_code = pdu_p->choice.unsuccessfulOutcome->procedureCode;
+		ret = _decode_unsuccessfulOutcome( msg, pdu_p->choice.unsuccessfulOutcome);
+		break;
+	case NGAP_NGAP_PDU_PR_NOTHING:
+		break;
+	}
+
+	if( ! ret ){
+		ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
+		return 0;
+	}
+
+	if( msg->nas_pdu.size > 0 ){
+		//copy data used by NAS_PDU
+		if( data_size > msg->nas_pdu.size )
+			data_size = msg->nas_pdu.size;
+		memcpy(data, msg->nas_pdu.data, data_size);
+	}
+
+
+	ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
+	return data_size;
 }

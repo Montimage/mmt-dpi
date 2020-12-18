@@ -44,4 +44,14 @@ bool try_decode_ngap( const uint8_t * buffer, const uint32_t length );
  * @return true if decode successfully, otherwise false
  */
 bool decode_ngap( ngap_message_t *message, const uint8_t * buffer, const uint32_t length );
+
+/**
+ * Store NAS-5G PDU into data
+ * @param data
+ * @param data_size: capacity of data
+ * @param buffer
+ * @param length
+ * @return number of data being stored in `data`
+ */
+uint32_t get_nas_pdu( void *data, uint32_t data_size, const uint8_t *buffer, uint32_t length );
 #endif /* SRC_MMT_MOBILE_NGAP_NGAP_H_ */
