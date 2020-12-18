@@ -35,9 +35,9 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 
 	classified_proto_t retval;
 	retval.proto_id = PROTO_UNKNOWN;
-
+	const int SCTP_DATA_HEADER_SIZE = sizeof(struct sctp_datahdr);
 	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
-	int ngap_offset = sctp_data_offset + sizeof(struct sctp_datahdr);
+	int ngap_offset = sctp_data_offset + SCTP_DATA_HEADER_SIZE;
 	//not enought room for NGAP
 	if( ngap_offset >= ipacket->p_hdr->len )
 		return 0;
@@ -51,9 +51,14 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 		//is it used valid SCTP ports?
 		if( ! _is_valid_by_sctp_ports(ipacket ))
 			return 0;
+		//SCTP data chunk length: A 16-bit unsigned value specifying the total length of the chunk in bytes (excludes any padding)
+		// that includes chunk type, flags, length, and value fields.
+		uint16_t ngap_length = ntohs(hdr->length) - SCTP_DATA_HEADER_SIZE;
 		//can we parse NGAP packet?
-		if( !try_decode_ngap(&ipacket->data[ sctp_data_offset ], hdr->length))
+		if( !try_decode_ngap(&ipacket->data[ ngap_offset ], ngap_length))
 			return 0;
+		//now we can confirm NGAP
+		retval.proto_id = PROTO_NGAP;
 		break;
 	default:
 		break;
@@ -61,7 +66,7 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 
 	//we found something
 	if( retval.proto_id != PROTO_UNKNOWN ){
-		retval.offset = sizeof(struct sctp_datahdr); //offset from its precedent protocol, not from root
+		retval.offset = SCTP_DATA_HEADER_SIZE; //offset from its precedent protocol, not from root
 		retval.status = Classified;
 		return set_classified_proto(ipacket, (index + 1), retval);
 	}
