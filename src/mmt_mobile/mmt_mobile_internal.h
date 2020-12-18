@@ -20,6 +20,7 @@ int init_proto_diameter_struct();
 int init_proto_gtpv2_struct();
 int init_proto_ngap_struct();
 int init_proto_s1ap();
+int init_proto_nas_5g_struct();
 
 
 #define __PACKED __attribute__((packed))

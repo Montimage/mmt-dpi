@@ -89,6 +89,32 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	return 1;
 }
 
+int ngap_classify_next_proto(ipacket_t *packet, unsigned index) {
+	ngap_message_t msg;
+	int offset = get_packet_offset_at_index(packet, index);
+	const int data_len = packet->p_hdr->caplen - offset;
+	if( data_len <= 0 )
+		return 0;
+	if( ! decode_ngap(&msg, & packet->data[offset], data_len ) )
+		return 0;
+	if( msg.nas_pdu.size == 0 )
+		return 0;
+	//offset from root
+	int nas_offset = 0; /*msg.nas_pdu.data - packet->data;
+	if( nas_offset <= 0 || nas_offset >= packet->p_hdr->caplen )
+		return 0;
+	//offset from ngap
+	nas_offset -= offset;
+	*/
+
+	classified_proto_t retval;
+	retval.proto_id = PROTO_NAS5G;
+	retval.offset = nas_offset;
+	retval.status = Classified;
+	return set_classified_proto(packet, index + 1, retval);
+	return 0;
+}
+
 static attribute_metadata_t _attributes_metadata[] = {
 		{S1AP_ATT_PROCEDURE_CODE, S1AP_PROCEDURE_CODE_ALIAS, MMT_U16_DATA,     sizeof( uint16_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		{S1AP_ATT_PDU_PRESENT,    S1AP_PDU_PRESENT_ALIAS,    MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
@@ -140,6 +166,7 @@ int init_proto_ngap_struct() {
 		fprintf(stderr, "Need mmt_tcpip library containing PROTO_SCTP_DATA having id = %d", PROTO_SCTP_DATA);
 		return PROTO_NOT_REGISTERED;
 	}
+	register_classification_function(protocol_struct, ngap_classify_next_proto);
 	return register_protocol(protocol_struct, PROTO_NGAP);
 
 }

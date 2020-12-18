@@ -20,6 +20,10 @@
 typedef struct ngap_message{
 	uint16_t procedure_code;
 	NGAP_NGAP_PDU_PR pdu_present;
+	struct{
+		const uint8_t *data;
+		size_t size;
+	}nas_pdu; //pdu of NAS-5G
 }ngap_message_t;
 
 /**

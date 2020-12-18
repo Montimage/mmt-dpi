@@ -20,6 +20,10 @@ int init_proto() {
 		fprintf(stderr, "Error initializing protocol PROTO_NGAP\n Exiting\n");
 		exit(0);
 	}
+	if (!init_proto_nas_5g_struct()) {
+		fprintf(stderr, "Error initializing protocol PROTO_NAS5G\n Exiting\n");
+		exit(0);
+	}
 	return init_proto_s1ap();
 }
 int cleanup_proto() {
