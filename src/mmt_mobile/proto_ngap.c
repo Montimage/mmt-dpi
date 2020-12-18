@@ -85,11 +85,18 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		return 0;
 
 	switch( extracted_data->field_id ){
-	case S1AP_ATT_PROCEDURE_CODE:
+	case NGAP_ATT_PROCEDURE_CODE:
 		*((uint16_t *) extracted_data->data) = msg.procedure_code;
 		break;
-	case S1AP_ATT_PDU_PRESENT:
+	case NGAP_ATT_PDU_PRESENT:
 		*((uint8_t *) extracted_data->data) = msg.pdu_present;
+		break;
+	case NGAP_ATT_AMF_UE_ID:
+		*((uint64_t *) extracted_data->data) = msg.amf_ue_id;
+		break;
+	case NGAP_ATT_RAN_UE_ID:
+		*((uint16_t *) extracted_data->data) = msg.ran_ue_id;
+		break;
 	}
 	return 1;
 }
@@ -121,37 +128,11 @@ int ngap_classify_next_proto(ipacket_t *packet, unsigned index) {
 }
 
 static attribute_metadata_t _attributes_metadata[] = {
-		{S1AP_ATT_PROCEDURE_CODE, S1AP_PROCEDURE_CODE_ALIAS, MMT_U16_DATA,     sizeof( uint16_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_PDU_PRESENT,    S1AP_PDU_PRESENT_ALIAS,    MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{NGAP_ATT_PROCEDURE_CODE, NGAP_PROCEDURE_CODE_ALIAS, MMT_U16_DATA,     sizeof( uint16_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{NGAP_ATT_PDU_PRESENT,    NGAP_PDU_PRESENT_ALIAS,    MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 
-		{S1AP_ATT_UE_ID,          S1AP_UE_ID_ALIAS,          MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_IMSI,           S1AP_IMSI_ALIAS,           MMT_STRING_DATA,  BINARY_64DATA_LEN,          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_M_TMSI,         S1AP_M_TMSI_ALIAS,         MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_TEID,           S1AP_TEID_ALIAS,           MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_QCI,            S1AP_QCI_ALIAS,            MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_PRIORITY_LEVEL, S1AP_PRIORITY_LEVEL_ALIAS, MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-
-		{S1AP_ATT_UE_IP,          S1AP_UE_IP_ALIAS,          MMT_DATA_IP_ADDR, sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_UE_STATUS,      S1AP_UE_STATUS_ALIAS,      MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-
-
-		{S1AP_ATT_MME_ID,         S1AP_MME_ID_ALIAS,         MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_MME_NAME,       S1AP_MME_NAME_ALIAS,       MMT_STRING_DATA,  BINARY_64DATA_LEN,          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_MME_IP,         S1AP_MME_IP_ALIAS,         MMT_DATA_IP_ADDR, sizeof( uint32_t ),         POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_MME_UE_ID,      S1AP_MME_UE_ID_ALIAS,      MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_MME_STATUS,     S1AP_MME_STATUS_ALIAS,     MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-
-		{S1AP_ATT_ENB_ID,         S1AP_ENB_ID_ALIAS,         MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_ENB_NAME,       S1AP_ENB_NAME_ALIAS,       MMT_STRING_DATA,  BINARY_64DATA_LEN,          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_ENB_IP,         S1AP_ENB_IP_ALIAS,         MMT_DATA_IP_ADDR, sizeof( uint32_t ),         POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_ENB_UE_ID,      S1AP_ENB_UE_ID_ALIAS,      MMT_U32_DATA,     sizeof( uint32_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_ENB_STATUS,     S1AP_ENB_STATUS_ALIAS,     MMT_U8_DATA,      sizeof( uint8_t),           POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-
-
-		{S1AP_ATT_ENTITY_UE,      S1AP_ENTITY_UE_ALIAS,      MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_ENTITY_MME,     S1AP_ENTITY_MME_ALIAS,     MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-		{S1AP_ATT_ENTITY_ENODEB,  S1AP_ENTITY_ENODEB_ALIAS,  MMT_BINARY_VAR_DATA, BINARY_1024DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-
+		{NGAP_ATT_AMF_UE_ID,      NGAP_AMF_UE_ID_ALIAS,      MMT_U64_DATA,     sizeof( uint64_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{NGAP_ATT_RAN_UE_ID,      NGAP_RAN_UE_ID_ALIAS,      MMT_U16_DATA,     sizeof( uint16_t),          POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
 };
 
 int init_proto_ngap_struct() {

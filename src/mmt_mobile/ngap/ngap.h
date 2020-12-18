@@ -20,6 +20,8 @@
 typedef struct ngap_message{
 	uint16_t procedure_code;
 	NGAP_NGAP_PDU_PR pdu_present;
+	uint16_t ran_ue_id;
+	uint64_t amf_ue_id;
 	struct{
 		const uint8_t *data;
 		size_t size;
