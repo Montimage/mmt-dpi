@@ -6,7 +6,7 @@
  */
 #include "ngap.h"
 #include "NGAP_ProtocolIE-Field.h"
-
+#include "NGAP_UE-NGAP-ID-pair.h"
 #include "nas_msg.h"
 
 bool try_decode_ngap( const uint8_t * buffer, const uint32_t length ){
@@ -115,6 +115,125 @@ static inline bool _decode_NGAP_HandoverRequired(ngap_message_t *msg, NGAP_Hando
 	return true;
 }
 
+static inline bool _decode_NGAP_PathSwitchRequest(ngap_message_t *msg, NGAP_PathSwitchRequest_t *data){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_PathSwitchRequestIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_PathSwitchRequestIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_PathSwitchRequestIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+static inline bool _decode_NGAP_UEContextReleaseCommand(ngap_message_t *msg, NGAP_UEContextReleaseCommand_t *data){
+	int i, decoded = 0;
+	NGAP_UE_NGAP_IDs_t *id;
+	NGAP_UE_NGAP_ID_pair_t *pair;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_UEContextReleaseCommand_IEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_UEContextReleaseCommand_IEs__value_PR_UE_NGAP_IDs:
+			id = &ie_p->value.choice.UE_NGAP_IDs;
+			switch( id->present ){
+			case NGAP_UE_NGAP_IDs_PR_uE_NGAP_ID_pair:
+				pair = id->choice.uE_NGAP_ID_pair;
+				msg->amf_ue_id = _get_amf_ue_ngap_id( &pair->aMF_UE_NGAP_ID );
+				msg->ran_ue_id = pair->rAN_UE_NGAP_ID;
+				break;
+			case NGAP_UE_NGAP_IDs_PR_aMF_UE_NGAP_ID:
+				msg->amf_ue_id = _get_amf_ue_ngap_id( &id->choice.aMF_UE_NGAP_ID );
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+static inline bool _decode_NGAP_UEContextReleaseRequest(ngap_message_t *msg, NGAP_UEContextReleaseRequest_t *data){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_UEContextReleaseRequest_IEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_UEContextReleaseRequest_IEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_UEContextReleaseRequest_IEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+static inline bool _decode_NGAP_UERadioCapabilityInfoIndication(ngap_message_t *msg, NGAP_UERadioCapabilityInfoIndication_t *data){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_UERadioCapabilityInfoIndicationIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+static inline bool _decode_NGAP_PDUSessionResourceSetupRequest(ngap_message_t *msg, NGAP_PDUSessionResourceSetupRequest_t *data){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_PDUSessionResourceSetupRequestIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_PDUSessionResourceSetupRequestIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_PDUSessionResourceSetupRequestIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+static inline bool _decode_NGAP_HandoverNotify(ngap_message_t *msg, NGAP_HandoverNotify_t *data){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_HandoverNotifyIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_HandoverNotifyIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_HandoverNotifyIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
 static inline bool _decode_initiatingMessage( ngap_message_t *msg, NGAP_InitiatingMessage_t *data ){
 	switch( data->value.present ){
 	case NGAP_InitiatingMessage__value_PR_InitialUEMessage:
@@ -123,8 +242,20 @@ static inline bool _decode_initiatingMessage( ngap_message_t *msg, NGAP_Initiati
 		return _decode_NGAP_DownlinkNASTransport(msg, &data->value.choice.DownlinkNASTransport);
 	case NGAP_InitiatingMessage__value_PR_UplinkNASTransport:
 		return _decode_NGAP_UplinkNASTransport(msg, &data->value.choice.UplinkNASTransport);
+	case NGAP_InitiatingMessage__value_PR_UEContextReleaseCommand:
+		return _decode_NGAP_UEContextReleaseCommand(msg, &data->value.choice.UEContextReleaseCommand);
+	case NGAP_InitiatingMessage__value_PR_UEContextReleaseRequest:
+		return _decode_NGAP_UEContextReleaseRequest(msg, &data->value.choice.UEContextReleaseRequest);
+	case NGAP_InitiatingMessage__value_PR_UERadioCapabilityInfoIndication:
+		return _decode_NGAP_UERadioCapabilityInfoIndication(msg, &data->value.choice.UERadioCapabilityInfoIndication);
 	case NGAP_InitiatingMessage__value_PR_HandoverRequired:
 		return _decode_NGAP_HandoverRequired(msg, &data->value.choice.HandoverRequired);
+	case NGAP_InitiatingMessage__value_PR_PathSwitchRequest:
+		return _decode_NGAP_PathSwitchRequest(msg, &data->value.choice.PathSwitchRequest);
+	case NGAP_InitiatingMessage__value_PR_PDUSessionResourceSetupRequest:
+		return _decode_NGAP_PDUSessionResourceSetupRequest(msg, &data->value.choice.PDUSessionResourceSetupRequest);
+	case NGAP_InitiatingMessage__value_PR_HandoverNotify:
+		return _decode_NGAP_HandoverNotify(msg, &data->value.choice.HandoverNotify);
 	default:
 		break;
 	}
@@ -149,10 +280,111 @@ static inline bool _decode_NGAP_UEContextReleaseComplete( ngap_message_t *msg, N
 	return true;
 }
 
+static inline bool _decode_NGAP_InitialContextSetupResponse( ngap_message_t *msg, NGAP_InitialContextSetupResponse_t *data ){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_InitialContextSetupResponseIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_InitialContextSetupResponseIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_InitialContextSetupResponseIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+static inline bool _decode_NGAP_HandoverRequestAcknowledge( ngap_message_t *msg, NGAP_HandoverRequestAcknowledge_t *data ){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_HandoverRequestAcknowledgeIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_HandoverRequestAcknowledgeIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_HandoverRequestAcknowledgeIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+static inline bool _decode_NGAP_HandoverCommand( ngap_message_t *msg, NGAP_HandoverCommand_t *data ){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_HandoverCommandIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_HandoverCommandIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_HandoverCommandIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+
+static inline bool _decode_NGAP_PDUSessionResourceSetupResponse( ngap_message_t *msg, NGAP_PDUSessionResourceSetupResponse_t *data ){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_PDUSessionResourceSetupResponseIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_PDUSessionResourceSetupResponseIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_PDUSessionResourceSetupResponseIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+static inline bool _decode_NGAP_PathSwitchRequestAcknowledge( ngap_message_t *msg, NGAP_PathSwitchRequestAcknowledge_t *data ){
+	int i, decoded = 0;
+	for( i=0; i<data->protocolIEs.list.count; i++){
+		NGAP_PathSwitchRequestAcknowledgeIEs_t *ie_p = data->protocolIEs.list.array[i];
+		switch( ie_p->value.present ){
+		case NGAP_PathSwitchRequestAcknowledgeIEs__value_PR_AMF_UE_NGAP_ID:
+			msg->amf_ue_id = _get_amf_ue_ngap_id( & ie_p->value.choice.AMF_UE_NGAP_ID );
+			break;
+		case NGAP_PathSwitchRequestAcknowledgeIEs__value_PR_RAN_UE_NGAP_ID:
+			msg->ran_ue_id = ie_p->value.choice.RAN_UE_NGAP_ID;
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
 static bool _decode_successfulOutcome( ngap_message_t *msg, NGAP_SuccessfulOutcome_t *data ){
 	switch( data->value.present ){
 	case NGAP_SuccessfulOutcome__value_PR_UEContextReleaseComplete:
 		return _decode_NGAP_UEContextReleaseComplete( msg, &data->value.choice.UEContextReleaseComplete );
+	case NGAP_SuccessfulOutcome__value_PR_InitialContextSetupResponse:
+		return _decode_NGAP_InitialContextSetupResponse( msg, &data->value.choice.InitialContextSetupResponse );
+	case NGAP_SuccessfulOutcome__value_PR_HandoverRequestAcknowledge:
+		return _decode_NGAP_HandoverRequestAcknowledge( msg, &data->value.choice.HandoverRequestAcknowledge );
+	case NGAP_SuccessfulOutcome__value_PR_HandoverCommand:
+		return _decode_NGAP_HandoverCommand( msg, &data->value.choice.HandoverCommand );
+	case NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse:
+		return _decode_NGAP_PDUSessionResourceSetupResponse( msg, &data->value.choice.PDUSessionResourceSetupResponse );
+	case NGAP_SuccessfulOutcome__value_PR_PathSwitchRequestAcknowledge:
+		return _decode_NGAP_PathSwitchRequestAcknowledge( msg, &data->value.choice.PathSwitchRequestAcknowledge );
 	default:
 		break;
 	}
