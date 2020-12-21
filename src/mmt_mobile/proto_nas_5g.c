@@ -63,7 +63,7 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 		break;
 	}
 
-	return 0;
+	return 1;
 }
 
 static attribute_metadata_t _attributes_metadata[] = {

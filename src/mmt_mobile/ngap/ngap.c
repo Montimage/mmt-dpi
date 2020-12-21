@@ -20,6 +20,7 @@ bool try_decode_ngap( const uint8_t * buffer, const uint32_t length ){
 			0,
 			0);
 	if( dec_ret.code != RC_OK ){
+		ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
 		return false;
 	}
 	ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
@@ -201,8 +202,10 @@ bool decode_ngap( ngap_message_t *msg, const uint8_t * buffer, const uint32_t le
 			length,
 			0,
 			0);
-	if( dec_ret.code != RC_OK )
+	if( dec_ret.code != RC_OK ){
+		ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
 		return false;
+	}
 	//reset msg
 	memset(msg, 0, sizeof( ngap_message_t));
 	msg->pdu_present = pdu_p->present;
@@ -244,8 +247,10 @@ uint32_t get_nas_pdu( void *data, uint32_t data_size, const uint8_t *buffer, uin
 			length,
 			0,
 			0);
-	if( dec_ret.code != RC_OK )
+	if( dec_ret.code != RC_OK ){
+		ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
 		return false;
+	}
 	//reset msg
 	memset(msg, 0, sizeof( ngap_message_t));
 	msg->pdu_present = pdu_p->present;
