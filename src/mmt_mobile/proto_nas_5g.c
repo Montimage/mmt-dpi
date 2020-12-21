@@ -13,6 +13,7 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 		attribute_t * extracted_data) {
 	nas_5g_msg_t nas_msg;
 	ngap_message_t ngap_msg;
+	//Ensure NGAP is existing (before NAS-5G)
 	const int ngap_index = get_protocol_index_by_id(packet, PROTO_NGAP);
 	if( ngap_index < 0 )
 		return 0;
@@ -20,7 +21,7 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 	const int data_len = packet->p_hdr->caplen - offset;
 	if( data_len <= 0 )
 		return 0;
-
+	//get length of NGAP payload
 	int sctp_data_index  = get_protocol_index_by_id( packet, PROTO_SCTP_DATA );
 	if( sctp_data_index < 0 )
 		return 0;
@@ -46,8 +47,14 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 	case NAS5G_ATT_MESSAGE_TYPE:
 		if( nas_msg.protocol_discriminator == NAS5G_SESSION_MANAGEMENT_MESSAGE )
 			*((uint8_t *) extracted_data->data) = nas_msg.smm.message_type;
-		else
-			*((uint8_t *) extracted_data->data) = nas_msg.mmm.message_type;
+		else {
+			//when no security (plain text) => having message type
+			if( nas_msg.mmm.security_header_type == 0)
+				*((uint8_t *) extracted_data->data) = nas_msg.mmm.message_type;
+			else
+				//otherwise the message is encrypted
+				*((uint8_t *) extracted_data->data) = 0;
+		}
 		break;
 	case NAS5G_ATT_PROCEDURE_TRANSACTION_ID:
 		if( nas_msg.protocol_discriminator == NAS5G_SESSION_MANAGEMENT_MESSAGE )
@@ -56,10 +63,10 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 			*((uint8_t *) extracted_data->data) = 0;
 		break;
 	case NAS5G_ATT_SECURITY_TYPE:
-		if( nas_msg.protocol_discriminator == NAS5G_MOBILITY_MANAGEMENT_MESSAGE )
-			*((uint8_t *) extracted_data->data) = nas_msg.mmm.security_header_type;
-		else
+		if( nas_msg.protocol_discriminator == NAS5G_SESSION_MANAGEMENT_MESSAGE )
 			*((uint8_t *) extracted_data->data) = 0;
+		else
+			*((uint8_t *) extracted_data->data) = nas_msg.mmm.security_header_type;
 		break;
 	}
 
