@@ -30,28 +30,41 @@ typedef struct ngap_message{
 
 /**
  * Try decoding NGAP protocol
- * @param buffer
+ * @param payload
  * @param length
  * @return true if decode successfully, otherwise false
  */
-bool try_decode_ngap( const uint8_t * buffer, const uint32_t length );
+bool try_decode_ngap( const uint8_t * payload, const uint32_t length );
 
 /**
- * Decode buffer to get attributes and store them into `message`
+ * Decode payload to get attributes and store them into `message`
  * @param message
- * @param buffer
+ * @param payload
  * @param length
  * @return true if decode successfully, otherwise false
  */
-bool decode_ngap( ngap_message_t *message, const uint8_t * buffer, const uint32_t length );
+bool decode_ngap( ngap_message_t *message, const uint8_t * payload, const uint32_t length );
+
+
+/**
+ * Decode NGAP stored in `payload`, then update some attributes' values of NGAP by the one in `message`,
+ * then encode NGAP into buffer
+ * @param buffer
+ * @param buffer_size
+ * @param message
+ * @param payload
+ * @param length
+ * @return number of bytes being stored in `buffer`
+ */
+uint32_t encode_ngap( void *buffer, uint32_t buffer_size, const ngap_message_t *message, const uint8_t *payload, const uint32_t length);
 
 /**
  * Store NAS-5G PDU into data
- * @param data
- * @param data_size: capacity of data
  * @param buffer
+ * @param buffer_size: capacity of `buffer`
+ * @param payload
  * @param length
- * @return number of data being stored in `data`
+ * @return number of bytes being stored in `buffer`
  */
-uint32_t get_nas_pdu( void *data, uint32_t data_size, const uint8_t *buffer, uint32_t length );
+uint32_t get_nas_pdu( void *buffer, uint32_t buffer_size, const uint8_t *payload, uint32_t length );
 #endif /* SRC_MMT_MOBILE_NGAP_NGAP_H_ */
