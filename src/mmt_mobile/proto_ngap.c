@@ -9,7 +9,7 @@
 #include "mmt_mobile_internal.h"
 #include "ngap/ngap.h"
 
-static bool _is_valid_by_sctp_ports( ipacket_t *ipacket ){
+static bool _is_valid_by_sctp_ports( const ipacket_t *ipacket ){
 	int sctp_index = get_protocol_index_by_id( ipacket, PROTO_SCTP );
 	//not found SCTP
 	if( sctp_index == -1 )
@@ -23,6 +23,40 @@ static bool _is_valid_by_sctp_ports( ipacket_t *ipacket ){
 	const uint16_t sctp_port_for_ngap = htons( 38412 );
 	if( sctp_hdr->dest != sctp_port_for_ngap )
 		return false;
+	return true;
+}
+
+static bool _get_ngap_offset_and_length( const ipacket_t *ipacket, unsigned *offset, unsigned *length ){
+	if( length == NULL || offset == NULL )
+		return false;
+
+	int sctp_data_index  = get_protocol_index_by_id( ipacket, PROTO_SCTP_DATA );
+	int sctp_data_offset = get_packet_offset_at_index(ipacket, sctp_data_index);
+
+	const int SCTP_DATA_HEADER_SIZE = sizeof(struct sctp_datahdr);
+	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
+	int ngap_offset = sctp_data_offset + SCTP_DATA_HEADER_SIZE;
+	//not enought room for NGAP
+	if( ngap_offset >= ipacket->p_hdr->len )
+		return false;
+	//sctp data Packet payload ID
+	switch( ntohl( hdr->ppid )){
+	case 60: //
+		break;
+	case 0: //not specified
+		//try to classify NGAP
+		//is it used valid SCTP ports?
+		if( ! _is_valid_by_sctp_ports(ipacket ))
+			return false;
+		break;
+	default:
+		return false;
+	}
+	//SCTP data chunk length: A 16-bit unsigned value specifying the total length of the chunk in bytes (excludes any padding)
+	// that includes chunk type, flags, length, and value fields.
+	uint16_t ngap_length = ntohs(hdr->length) - SCTP_DATA_HEADER_SIZE;
+	*offset = ngap_offset;
+	*length = ngap_length;
 	return true;
 }
 
@@ -77,9 +111,9 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
 	ngap_message_t msg;
-	const int offset = get_packet_offset_at_index(packet, proto_index);
-	const int data_len = packet->p_hdr->caplen - offset;
-	if( data_len <= 0 )
+	unsigned offset   = 0;
+	unsigned data_len = 0;
+	if( ! _get_ngap_offset_and_length(packet, &offset, &data_len ))
 		return 0;
 	if( ! decode_ngap(&msg, & packet->data[offset], data_len ) )
 		return 0;
@@ -157,3 +191,42 @@ int init_proto_ngap_struct() {
 
 }
 
+
+
+uint32_t update_ngap_data( u_char *data, uint32_t data_size, const ipacket_t *ipacket, uint32_t proto_id, uint32_t att_id, uint64_t new_val ){
+	uint32_t ret = 0;
+	if( proto_id != PROTO_NGAP )
+		return ret;
+	int index = get_protocol_index_by_id( ipacket, PROTO_NGAP );
+	if( index == -1 )
+		return ret;
+
+	unsigned ngap_offset = 0;
+	unsigned ngap_length = 0;
+	if( !_get_ngap_offset_and_length(ipacket, &ngap_offset, &ngap_length))
+		return 0;
+
+	ngap_message_t msg;
+	//can we parse NGAP packet?
+	if( !decode_ngap(&msg, &ipacket->data[ ngap_offset ], ngap_length)){
+		return ret;
+	}
+
+	switch( att_id ){
+	case NGAP_ATT_PROCEDURE_CODE:
+		msg.procedure_code = new_val;
+		break;
+	case NGAP_ATT_PDU_PRESENT:
+		msg.pdu_present = new_val;
+		break;
+	case NGAP_ATT_AMF_UE_ID:
+		msg.amf_ue_id = new_val;
+		break;
+	case NGAP_ATT_RAN_UE_ID:
+		msg.ran_ue_id = new_val;
+		break;
+	}
+
+	void *buffer = &data[ ngap_offset ];
+	return encode_ngap( buffer, data_size - ngap_offset, &msg, &ipacket->data[ ngap_offset ], ngap_length );
+}
