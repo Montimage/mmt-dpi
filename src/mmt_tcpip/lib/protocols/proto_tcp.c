@@ -293,6 +293,84 @@ int tcp_session_rtt_extraction(const ipacket_t * ipacket, unsigned proto_index,
     }
     return 0;
 }
+
+int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t * extracted_data){
+    int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
+    struct tcphdr * tcp_hdr = (struct tcphdr *) & ipacket->data[proto_offset];
+    int data_offset = tcp_hdr->doff;
+    //no optional fields
+    if( data_offset <= 5 )
+       return 0;
+    //tcp data offset specifies the size of tcp header length in 32-bit words
+    //its value is from 5 (no option fields) to 15
+    int option_offset = proto_offset + (5*4); //5 words of tcp header
+    int end_of_option = proto_offset + data_offset * 4;
+
+    //structure of a tcp option field
+    struct tcp_option{
+        uint8_t kind;
+        uint8_t length; //indicates the total length of the option
+        uint8_t data[];
+    } *opt_field;
+    struct timestamp_option_field{
+        uint32_t tsval;
+        uint32_t tserc;
+    } *ts_field;
+
+    while( option_offset < end_of_option ){
+        opt_field = (struct tcp_option *) &ipacket->data[ option_offset ];
+        switch( opt_field->kind ){
+        case 0: //end of option list
+            return 0;
+        case 1: //no option: not have an Option-Length or Option-Data fields following it.
+            option_offset += 1; //jump over this option
+            break;
+        case 2: //Maximum segment size
+            option_offset += opt_field->length; //jump over this option
+            break;
+        case 3: //Window scale
+            option_offset += opt_field->length; //jump over this option
+            break;
+        case 4: //Selective Acknowledgement permitted
+            option_offset += opt_field->length; //jump over this option
+            break;
+        case 5: //Selective ACKnowledgement (SACK)
+            option_offset += opt_field->length; //jump over this option
+            break;
+        case 8: //Timestamp and echo of previous timestamp
+            option_offset += opt_field->length; //jump over this option
+            ts_field = (struct timestamp_option_field *) opt_field->data;
+            //depending on which attribute we are extracting
+            switch( extracted_data->field_id ){
+            case TCP_TSVAL:
+                *((uint32_t*) extracted_data->data) = ntohl(ts_field->tsval);
+                return 1; //we got the value
+            case TCP_TSECR:
+                *((uint32_t*) extracted_data->data) = ntohl(ts_field->tserc);
+                return 1; //we got the value
+            default:
+                break;
+            }
+            break;
+        default:
+            option_offset += opt_field->length; //jump over this option
+            break;
+        }
+    }
+    //do we need to set the value to zero when not found ???
+    switch( extracted_data->field_id ){
+        case TCP_TSVAL:
+        *((uint32_t*) extracted_data->data) = 0;
+        break;
+    case TCP_TSECR:
+        *((uint32_t*) extracted_data->data) = 0;
+        break;
+    default:
+        break;
+    }
+    return 0; //no value for the attribute to be extracted
+}
+
 static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_SRC_PORT, TCP_SRC_PORT_ALIAS, MMT_U16_DATA, sizeof (short), 0, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_DEST_PORT, TCP_DEST_PORT_ALIAS, MMT_U16_DATA, sizeof (short), 2, SCOPE_PACKET, general_short_extraction_with_ordering_change},
@@ -324,6 +402,8 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     // {TCP_SESSION_OUTOFORDER, TCP_SESSION_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_session_outoforder_extraction},
     {TCP_CONN_ESTABLISHED, TCP_CONN_ESTABLISHED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_established_extraction},
     {TCP_CONN_CLOSED, TCP_CONN_CLOSED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_connection_closed_extraction},
+	{TCP_TSVAL, TCP_TSVAL_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_option_extraction},
+	{TCP_TSECR, TCP_TSECR_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_option_extraction},
 };
 
 void clean_session_payload(mmt_session_t * session, unsigned index){
