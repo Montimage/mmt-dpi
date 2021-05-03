@@ -12,12 +12,16 @@ enum{
 	NAS5G_ATT_PROTOCOL_DISCRIMINATOR = 1,
 	NAS5G_ATT_MESSAGE_TYPE,
 	NAS5G_ATT_SECURITY_TYPE,
-	NAS5G_ATT_PROCEDURE_TRANSACTION_ID
+	NAS5G_ATT_PROCEDURE_TRANSACTION_ID,
+	NAS5G_ATT_MESSAGE_AUTHENTICAION_CODE,
+	NAS5G_ATT_SEQUENCE_NUMBER,
 };
 
-#define NAS5G_PROTOCOL_DISCRIMINATOR_ALIAS   "protocol_discriminator"
-#define NAS5G_MESSAGE_TYPE_ALIAS             "message_type"
-#define NAS5G_SECURITY_TYPE_ALIAS            "security_type"
-#define NAS5G_PROCEDURE_TRANSACTION_ID_ALIAS "procedure_transaction_id"
+#define NAS5G_PROTOCOL_DISCRIMINATOR_ALIAS         "protocol_discriminator"
+#define NAS5G_MESSAGE_TYPE_ALIAS                   "message_type"
+#define NAS5G_SECURITY_TYPE_ALIAS                  "security_type"
+#define NAS5G_PROCEDURE_TRANSACTION_ID_ALIAS       "procedure_transaction_id"
+#define NAS5G_ATT_MESSAGE_AUTHENTICAION_CODE_ALIAS "message_authentication_code"
+#define NAS5G_ATT_SEQUENCE_NUMBER_ALIAS            "sequence_number"
 
 #endif /* SRC_MMT_MOBILE_INCLUDE_PROTO_NAS_5G_H_ */
