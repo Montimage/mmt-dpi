@@ -81,6 +81,7 @@ SDKDOC       := $(SDKDIR)/doc
 SDKINC       := $(SDKDIR)/include
 SDKINC_TCPIP := $(SDKDIR)/include/tcpip
 SDKINC_MOBILE := $(SDKDIR)/include/mobile
+SDKINC_B_APP  := $(SDKDIR)/include/business_app
 ifdef ENABLESEC
 SDKINC_FUZZ  := $(SDKDIR)/include/fuzz
 endif
@@ -88,7 +89,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
 	@mkdir -p $@
 
 
@@ -102,6 +103,7 @@ LIBTCPIP    := libmmt_tcpip
 #t to ensure libmmt_tmobile is after libmmt_tcpip in alphabet
 #=> MMT will load libmmt_tcpip, then, libmmt_tmobile
 LIBMOBILE   := libmmt_tmobile
+LIBBAPP     := libmmt_business_app
 LIBEXTRACT  := libmmt_extract
 ifdef ENABLESEC
 LIBSECURITY := libmmt_security
@@ -118,6 +120,11 @@ CORE_OBJECTS := $(filter-out $(SRCDIR)/mmt_core/src/mmt_tcpip_init.o,$(CORE_OBJE
 TCPIP_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/*.c)) \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_tcpip/lib/protocols/*.c))
+
+LIBBAPP_OBJECTS := \
+ $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_business_app/*.c))
+
+$(LIBBAPP_OBJECTS): CFLAGS +=  -lm -Wno-unused-variable -fPIC
 
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
@@ -170,6 +177,10 @@ $(SDKLIB)/$(LIBMOBILE).a: $(SDKLIB) $(LIBMOBILE_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(LIBMOBILE_OBJECTS)
 	
+# BUSINESS APP/PROTOCOL
+$(SDKLIB)/$(LIBBAPP).a: $(SDKLIB) $(LIBBAPP_OBJECTS)
+	@echo "[ARCHIVE] $(notdir $@)"
+	$(QUIET) $(AR) $@ $(LIBBAPP_OBJECTS)
 ifdef ENABLESEC
 # FUZZ
 
@@ -197,7 +208,10 @@ SDK_TCPIP_HEADERS = $(addprefix $(SDKINC_TCPIP)/,$(notdir $(MMT_TCPIP_HEADERS)))
 mmt_mobile_HEADERS = $(wildcard $(SRCDIR)/mmt_mobile/include/*.h)
 SDK_MOBILE_HEADERS = $(addprefix $(SDKINC_MOBILE)/,$(notdir $(mmt_mobile_HEADERS)))
 
-includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS)
+B_APP_HEADERS = $(wildcard $(SRCDIR)/mmt_business_appinclude/*.h)
+SDK_B_APP_HEADERS = $(addprefix $(SDKINC_B_APP)/,$(notdir $(B_APP_HEADERS)))
+
+includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS)
 
 ifdef ENABLESEC
 MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)
@@ -217,7 +231,11 @@ $(SDKINC_MOBILE)/%.h: $(SRCDIR)/mmt_mobile/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 	
-$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE)
+$(SDKINC_B_APP)/%.h: $(SRCDIR)/mmt_business_app/include/%.h
+	@echo "[INCLUDE] $(notdir $@)"
+	$(QUIET) cp -f $< $@
+	
+$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP)
 
 ifdef ENABLESEC
 $(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h

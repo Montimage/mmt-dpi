@@ -17,7 +17,8 @@ endif
 libraries: \
 	$(SDKLIB)/$(LIBCORE).so \
 	$(SDKLIB)/$(LIBTCPIP).so \
-	$(SDKLIB)/$(LIBMOBILE).so
+	$(SDKLIB)/$(LIBMOBILE).so \
+	$(SDKLIB)/$(LIBBAPP).so
 ifdef ENABLESEC
 libraries: \
 	$(SDKLIB)/$(LIBFUZZ).so \
@@ -47,6 +48,13 @@ $(SDKLIB)/$(LIBMOBILE).so: $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)
 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION): $(SDKLIB)/$(LIBMOBILE).a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBMOBILE).so
+	
+# BUSINESS APP/PROTOCOLS
+$(SDKLIB)/$(LIBBAPP).so: $(SDKLIB)/$(LIBBAPP).so.$(VERSION)
+
+$(SDKLIB)/$(LIBBAPP).so.$(VERSION): $(SDKLIB)/$(LIBBAPP).a
+	@echo "[LIBRARY] $(notdir $@)"
+	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBBAPP).so
 	
 ifdef ENABLESEC
 # FUZZ
