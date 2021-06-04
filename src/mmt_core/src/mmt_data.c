@@ -298,6 +298,8 @@ uint32_t get_data_size_by_data_type(uint32_t data_type) {
             return sizeof (int);
         case MMT_U64_DATA: /**< unsigned 8-bytes constant value */
             return sizeof (long long);
+        case MMT_DATA_FLOAT:
+            return sizeof( float );
         case MMT_DATA_POINTER: /**< pointer constant value (size is CPU dependant) */
             return sizeof (void *);
         case MMT_DATA_MAC_ADDR: /**< ethernet mac address constant value */

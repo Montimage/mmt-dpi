@@ -3727,6 +3727,11 @@ int mmt_uint64_sprintf(char * buff, int len, attribute_internal_t * attr) {
     return snprintf(buff, len, "%"PRIu64, *(uint64_t *) attr->data);
 }
 
+int mmt_float_sprintf(char * buff, int len, attribute_internal_t * attr) {
+    if (len < MMT_U64_STRLEN) return -1;
+    return snprintf(buff, len, "%.3f", *(float *) attr->data);
+}
+
 int mmt_pointer_sprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_POINTER_STRLEN) return -1;
     return snprintf(buff, len, "%p", (void *) attr->data);
@@ -3817,6 +3822,8 @@ int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
         return mmt_uint32_sprintf(buff, len, attr);
     case MMT_U64_DATA:
         return mmt_uint64_sprintf(buff, len, attr);
+    case MMT_DATA_FLOAT:
+         return mmt_float_sprintf(buff, len, attr);
     case MMT_DATA_CHAR:
         return mmt_char_sprintf(buff, len, attr);
     case MMT_DATA_POINTER:
