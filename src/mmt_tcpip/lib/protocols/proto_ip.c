@@ -1505,6 +1505,11 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->l3_packet_len = ntohs(ip_hdr->tot_len);
     /* BW: add the length of the truncated packet as well */
     packet->l3_captured_packet_len = (ipacket->p_hdr->caplen - ip_offset);
+    //HN: IP->tot_len = 0 will cause error when calculating packet->l4_packet_len (thus segementation faut)
+    //Wireshark shows this when tot_len==0: [Total Length: 2930 bytes (reported as 0, presumed to be because of "TCP segmentation offload" (TSO))]
+    if( packet->l3_packet_len == 0 && packet->l3_captured_packet_len > 0 )
+        packet->l3_packet_len = packet->l3_captured_packet_len;
+
     /* TODO: Check the padding -> allow only certain type of padding and inform other : if packet->l3_captured_packet_len != packet->l3_packet_len -> padding */
     //packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
     // packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
