@@ -182,9 +182,11 @@ enum {
     TCP_PAYLOAD_LEN,
     TCP_CONN_CLOSED,
     TCP_CONN_ESTABLISHED,
+    TCP_TSVAL,
+    TCP_TSECR
 };
 
-#define TCP_ATTRIBUTES_NB    TCP_CONN_ESTABLISHED
+#define TCP_ATTRIBUTES_NB    TCP_TSECR
 
 #define TCP_SRC_PORT_ALIAS    "src_port"
 #define TCP_DEST_PORT_ALIAS   "dest_port"
@@ -216,6 +218,8 @@ enum {
 #define TCP_PAYLOAD_LEN_ALIAS     "payload_len"
 #define TCP_CONN_CLOSED_ALIAS "closed"
 #define TCP_CONN_ESTABLISHED_ALIAS "established"
+#define TCP_TSVAL_ALIAS "tsval" //timestamp value
+#define TCP_TSECR_ALIAS "tsecr" //timestamp echo reply
 //TODO: addition of the tcp options
 
 enum {
