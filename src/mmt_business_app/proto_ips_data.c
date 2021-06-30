@@ -153,6 +153,9 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
 		_assign_uint32_t( ptr, extracted_data );
 		break;
+	case IPS_DATA_ORDER:
+		*((uint64_t *) extracted_data->data) = packet->packet_id;
+		break;
 	}
 	return 1;
 }
@@ -180,6 +183,8 @@ static attribute_metadata_t _attributes_metadata[] = {
 
 		{IPS_DATA_M6_X,         IPS_DATA_M6_X_ALIAS,         MMT_U32_DATA,  sizeof( uint32_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		{IPS_DATA_M6_Y,         IPS_DATA_M6_Y_ALIAS,         MMT_U32_DATA,  sizeof( uint32_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+		{IPS_DATA_ORDER,        IPS_DATA_ORDER_ALIAS,        MMT_U64_DATA,  sizeof( uint64_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 };
 
 static classified_proto_t _ips_data_stack_classification(ipacket_t * ipacket) {

@@ -30,6 +30,7 @@ TrolleyPos: 32.978, Hoistpos: 38.124, NoOfMarkers: 3, m1: (58843,70948) , m2: (7
 #define IPS_DATA_M5_Y_ALIAS           "m5_y"
 #define IPS_DATA_M6_X_ALIAS           "m6_x"
 #define IPS_DATA_M6_Y_ALIAS           "m6_y"
+#define IPS_DATA_ORDER_ALIAS          "order" //order of the current data in the csv file (== packet_id)
 
 enum {
 	IPS_DATA_TROLLEY_POS = 1,
@@ -46,7 +47,8 @@ enum {
 	IPS_DATA_M5_X,
 	IPS_DATA_M5_Y,
 	IPS_DATA_M6_X,
-	IPS_DATA_M6_Y
+	IPS_DATA_M6_Y,
+	IPS_DATA_ORDER
 };
 
 #endif /* SRC_MMT_BUSINESS_APP_INCLUDE_IPS_DATA_H_ */
