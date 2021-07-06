@@ -301,6 +301,65 @@ int ip_padding_check_extraction(const ipacket_t * packet, unsigned proto_index, 
     return 0;
 }
 
+//HN: extract L4S metrics
+
+/* we store drops in 5 bits */
+#define DROPS_M 2
+#define DROPS_E 3
+
+/* we store queue length in 11 bits */
+#define QDELAY_M 7
+#define QDELAY_E 4
+
+/* Decode float value
+ *
+ * fl: Float value
+ * m_b: Number of mantissa bits
+ * e_b: Number of exponent bits
+ */
+static inline uint32_t fl2int(uint32_t fl, uint32_t m_b, uint32_t e_b)
+{
+	const uint32_t m_max = 1 << m_b;
+
+	fl &= ((m_max << e_b) - 1);
+
+	if (fl < (m_max << 1)) {
+		return fl;
+	} else {
+		return (((fl & (m_max - 1)) + m_max) << ((fl >> m_b) - 1));
+	}
+}
+static int _extract_l4s_metrics(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	//protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
+	//int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
+	//int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+
+	struct iphdr * ip_hdr = (struct iphdr *) (& packet->data[proto_offset]);
+	int ihl = ip_hdr->ihl;
+
+	if (ihl <= 5)
+		return 0;
+
+	uint16_t id = ntohs(ip_hdr->id);
+	//drops = decodeDrops(id >> 11); // drops stored in 5 bits MSB
+	// We don't decode queueing delay here as we need to store it in a table,
+	// so defer this to the actual serialization of the table to file
+	//qdelay_encoded = id & 2047; // 2047 = 0b0000011111111111
+	switch( extracted_data->field_id ){
+	case IP_L4S_NB_DROPS:
+		*(uint16_t *)extracted_data->data = ( id >> 11 );
+		break;
+	case IP_L4S_QUEUE_DELAY:
+		*(float *)extracted_data->data = fl2int( (id & 2047), QDELAY_M, QDELAY_E );
+		break;
+	default:
+		extracted_data->data = NULL;
+	}
+	return 1;
+}
+
 /*
  * End of IP data extraction routines
  */
@@ -1452,6 +1511,9 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_ACTIVE_SESSIONS_COUNT, IP_ACTIVE_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_active_sessions_count_extraction},
     {IP_TIMEDOUT_SESSIONS_COUNT, IP_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
     // End of LN
+	//HN
+	{IP_L4S_QUEUE_DELAY, IP_L4S_QUEUE_DELAY_ALIAS, MMT_DATA_FLOAT, sizeof (float), POSITION_NOT_KNOWN, SCOPE_PACKET, _extract_l4s_metrics},
+	{IP_L4S_NB_DROPS, IP_L4S_NB_DROPS_ALIAS, MMT_U16_DATA, sizeof (uint16_t), POSITION_NOT_KNOWN, SCOPE_PACKET,  _extract_l4s_metrics},
 };
 
 int ip_pre_classification_function(ipacket_t * ipacket, unsigned index) {
