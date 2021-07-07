@@ -54,6 +54,8 @@ enum ip_attributes {
     IP_TIMEDOUT_SESSIONS_COUNT,
     // End of LN
 	//HN: monitor L4S metrics using in Mosaico
+	IP_ECN,
+	IP_L4S_MARKED,
 	IP_L4S_QUEUE_DELAY,
 	IP_L4S_NB_DROPS,
     IP_ATTRIBUTES_NB = IP_L4S_NB_DROPS,
@@ -90,6 +92,8 @@ enum ip_attributes {
 #define IP_ACTIVE_SESSIONS_COUNT_LABEL       "ip_active_session_count"
 #define IP_TIMEDOUT_SESSIONS_COUNT_LABEL     "ip_timedout_session_count"
 // End of LN
+#define IP_ECN_ALIAS              "ecn"
+#define IP_L4S_MARKED_ALIAS       "l4s_marked"
 #define IP_L4S_QUEUE_DELAY_ALIAS  "l4s_queue_delay"
 #define IP_L4S_NB_DROPS_ALIAS     "l4s_nb_drops"
 enum ip6_attributes {

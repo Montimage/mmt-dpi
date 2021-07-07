@@ -339,10 +339,11 @@ static int _extract_l4s_metrics(const ipacket_t * packet, unsigned proto_index, 
 	struct iphdr * ip_hdr = (struct iphdr *) (& packet->data[proto_offset]);
 	int ihl = ip_hdr->ihl;
 
-	if (ihl <= 5)
+	if (ihl < 5)
 		return 0;
 
-	uint16_t id = ntohs(ip_hdr->id);
+	uint8_t ecn_val = (ip_hdr->tos & 0x3);
+	uint16_t id     = ntohs(ip_hdr->id);
 	//drops = decodeDrops(id >> 11); // drops stored in 5 bits MSB
 	// We don't decode queueing delay here as we need to store it in a table,
 	// so defer this to the actual serialization of the table to file
@@ -354,8 +355,20 @@ static int _extract_l4s_metrics(const ipacket_t * packet, unsigned proto_index, 
 	case IP_L4S_QUEUE_DELAY:
 		*(float *)extracted_data->data = fl2int( (id & 2047), QDELAY_M, QDELAY_E );
 		break;
+	case IP_ECN:
+		//when ecn_val == 0 => Value does not exist
+		if( ecn_val == 0 )
+			return 0;
+		*(uint8_t *)extracted_data->data = ecn_val;
+		break;
+	case IP_L4S_MARKED:
+		//when ecn_val == 0 => Value does not exist
+		if( ecn_val == 0 )
+			return 0;
+		*(uint8_t *)extracted_data->data = (ecn_val == 0x3);
+		break;
 	default:
-		extracted_data->data = NULL;
+		return 0;
 	}
 	return 1;
 }
@@ -1512,6 +1525,8 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_TIMEDOUT_SESSIONS_COUNT, IP_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
     // End of LN
 	//HN
+	{IP_ECN, IP_ECN_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, _extract_l4s_metrics},
+	{IP_L4S_MARKED, IP_L4S_MARKED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, _extract_l4s_metrics},
 	{IP_L4S_QUEUE_DELAY, IP_L4S_QUEUE_DELAY_ALIAS, MMT_DATA_FLOAT, sizeof (float), POSITION_NOT_KNOWN, SCOPE_PACKET, _extract_l4s_metrics},
 	{IP_L4S_NB_DROPS, IP_L4S_NB_DROPS_ALIAS, MMT_U16_DATA, sizeof (uint16_t), POSITION_NOT_KNOWN, SCOPE_PACKET,  _extract_l4s_metrics},
 };
