@@ -102,6 +102,13 @@ int classified_extraction(const ipacket_t * packet, unsigned proto_index,
     return 0;
 }
 
+int packet_id_extraction(const ipacket_t * packet, unsigned proto_index,
+        attribute_t * extracted_data) {
+
+    *((uint64_t *) extracted_data->data) = packet->packet_id;
+    return 1;
+}
+
 //This function is not used yet!
 
 void meta_session_data_init(ipacket_t * ipacket, unsigned index) {
@@ -122,6 +129,7 @@ static attribute_metadata_t meta_attributes_metadata[META_ATTRIBUTES_NB] = {
     {META_CLASSIFIED, META_CLASSIFIED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_SESSION, classified_extraction},
     {META_PROBE_ID, META_PROBE_ID_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION, probe_id_extraction},
     {META_SOURCE_ID, META_SOURCE_ID_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION, source_id_extraction},
+    {META_PACKET_INDEX, META_PACKET_INDEX_ALIAS, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_SESSION, packet_id_extraction},
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
