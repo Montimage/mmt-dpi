@@ -350,10 +350,10 @@ static int _extract_l4s_metrics(const ipacket_t * packet, unsigned proto_index, 
 	//qdelay_encoded = id & 2047; // 2047 = 0b0000011111111111
 	switch( extracted_data->field_id ){
 	case IP_L4S_NB_DROPS:
-		*(uint16_t *)extracted_data->data = ( id >> 11 );
+		*(uint16_t *)extracted_data->data = fl2int(id >> 11, DROPS_M, DROPS_E); //( id >> 11 );
 		break;
 	case IP_L4S_QUEUE_DELAY:
-		*(float *)extracted_data->data = fl2int( (id & 2047), QDELAY_M, QDELAY_E );
+		*(float *)extracted_data->data = (id & 2047); //fl2int( (id & 2047), QDELAY_M, QDELAY_E );
 		break;
 	case IP_ECN:
 		//when ecn_val == 0 => Value does not exist
@@ -363,13 +363,37 @@ static int _extract_l4s_metrics(const ipacket_t * packet, unsigned proto_index, 
 		break;
 	case IP_L4S_MARKED:
 		//when ecn_val == 0 => Value does not exist
-		if( ecn_val == 0 )
+		if( ecn_val != 0x3 )
 			return 0;
-		*(uint8_t *)extracted_data->data = (ecn_val == 0x3);
+		*(uint8_t *)extracted_data->data = 1;
 		break;
 	default:
 		return 0;
 	}
+	return 1;
+}
+
+int _extract_jitter(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+
+	//no session => no jitter
+	if (packet->session == NULL)
+		return 0;
+	int dir = packet->session->last_packet_direction;
+	struct timeval last_ts = packet->session->s_last_data_packet_time[dir];
+	struct timeval *ts = (struct timeval *) extracted_data->data;
+	if( last_ts.tv_sec != 0 || last_ts.tv_usec != 0 ){
+
+		ts->tv_sec = packet->p_hdr->ts.tv_sec - last_ts.tv_sec;
+		ts->tv_usec = packet->p_hdr->ts.tv_usec - last_ts.tv_usec;
+
+		if (ts->tv_usec < 0) {
+			ts->tv_usec += 1000000;
+			ts->tv_sec -= 1;
+		}
+	} else
+		ts->tv_sec = ts->tv_usec = 0;
+
+
 	return 1;
 }
 
@@ -1525,6 +1549,7 @@ static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {
     {IP_TIMEDOUT_SESSIONS_COUNT, IP_TIMEDOUT_SESSIONS_COUNT_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_timedout_sessions_count_extraction},
     // End of LN
 	//HN
+	{IP_JITTER, IP_JITTER_ALIAS, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, _extract_jitter},
 	{IP_ECN, IP_ECN_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, _extract_l4s_metrics},
 	{IP_L4S_MARKED, IP_L4S_MARKED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_PACKET, _extract_l4s_metrics},
 	{IP_L4S_QUEUE_DELAY, IP_L4S_QUEUE_DELAY_ALIAS, MMT_DATA_FLOAT, sizeof (float), POSITION_NOT_KNOWN, SCOPE_PACKET, _extract_l4s_metrics},

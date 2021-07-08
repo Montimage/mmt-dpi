@@ -55,9 +55,12 @@ enum ip_attributes {
     // End of LN
 	//HN: monitor L4S metrics using in Mosaico
 	IP_ECN,
-	IP_L4S_MARKED,
-	IP_L4S_QUEUE_DELAY,
-	IP_L4S_NB_DROPS,
+	IP_JITTER, /*interval between 2 packets in the same direction (up or down link) of a flow*/
+	/* The L4S_XX attributes are dedicated to L4S routers.
+	 * The information is encoded in IP identification by the router. We need to decode the info and store in these attributes */
+	IP_L4S_MARKED, /* Specific to L4S: number of marked packets in L4S AQM queue of a router*/
+	IP_L4S_QUEUE_DELAY, /* delay of a packet resting in a queue */
+	IP_L4S_NB_DROPS, /* number of packets being dropped by a queue */
     IP_ATTRIBUTES_NB = IP_L4S_NB_DROPS,
 };
 
@@ -93,6 +96,7 @@ enum ip_attributes {
 #define IP_TIMEDOUT_SESSIONS_COUNT_LABEL     "ip_timedout_session_count"
 // End of LN
 #define IP_ECN_ALIAS              "ecn"
+#define IP_JITTER_ALIAS           "jitter"
 #define IP_L4S_MARKED_ALIAS       "l4s_marked"
 #define IP_L4S_QUEUE_DELAY_ALIAS  "l4s_queue_delay"
 #define IP_L4S_NB_DROPS_ALIAS     "l4s_nb_drops"
