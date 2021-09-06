@@ -7,7 +7,14 @@
 
 #include "mmt_mobile_internal.h"
 
-int init_proto() {
+/**
+ * Initialize protocols in mobile suite
+ * @return
+ *
+ * This function can be called auto by init_proto when this plugin is loaded
+ * or called directly when this plugin is linked as static
+ */
+int init_mobile_plugin() {
 	if (!init_proto_diameter_struct()) {
 		fprintf(stderr,	"Error initializing protocol PROTO_DIAMETER\n Exiting\n");
 		exit(0);
@@ -25,6 +32,10 @@ int init_proto() {
 		exit(0);
 	}
 	return init_proto_s1ap();
+}
+
+int int_proto(){
+	return init_mobile_plugin();
 }
 int cleanup_proto() {
 	//printf("close s1ap protocol");
