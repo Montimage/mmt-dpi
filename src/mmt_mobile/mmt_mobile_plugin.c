@@ -34,7 +34,7 @@ int init_mobile_plugin() {
 	return init_proto_s1ap();
 }
 
-int int_proto(){
+int init_proto(){
 	return init_mobile_plugin();
 }
 int cleanup_proto() {
