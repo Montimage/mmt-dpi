@@ -11,6 +11,6 @@ pipelines:
         script: # Modify the commands below to build your repository.
           - apt-get update -y
           - apt-get install -y libxml2-dev libpcap-dev
-          - cd sdk/ make
+          - cd sdk/ && make
           - make install
           - make test
