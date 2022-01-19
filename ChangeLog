@@ -1,5 +1,14 @@
 RELEASE NOTES
 ---
+Version 1.7.1.0 (19 january 2022 - by HN)
+- Extract IP attributes for L4S implementation: jitter, l4s_ecn, l4s_marked
+- Extract TCP option fiels: tsval, tsecr
+- Extract NAS_5GS attributes: authentication_code, sequence_number
+- Extract NGAP 5G attributes: amf_ue_id, ran_ue_id
+- Add meta.packet_index to get order of packets
+- Add ips_data, GTPv2, Diameter protocols
+- Rename libmmt_lte.so to libmmt_mobile.so
+
 Version 1.7.0.0
 - Add classificaiton for protocol MQTT
 - Add S1AP protocol (Huu Nghia)
