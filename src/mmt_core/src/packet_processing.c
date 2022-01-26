@@ -3811,6 +3811,15 @@ int mmt_header_line_pointer_sprintf(char * buff, int len, attribute_internal_t *
     return copy_len;
 }
 
+int mmt_u32_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
+    mmt_u32_array_t * b = (mmt_u32_array_t *) attr->data;
+    int i, total=0;
+    for( i=0; i<b->len; i++ )
+       total += snprintf(buff, len-total, (i==0?"%u":",%u"), b->data[i]);
+    return total;
+}
+
+
 int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
     switch (attr->data_type) {
@@ -3852,6 +3861,8 @@ int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
         return mmt_header_line_pointer_sprintf(buff, len, attr);
     case MMT_STATS:
         return mmt_stats_sprintf(buff, len, attr);
+    case MMT_U32_ARRAY:
+        return mmt_u32_array_sprintf( buff, len, attr );
     default:
         return mmt_stats_sprintf(buff, len, attr); //TODO
     }
