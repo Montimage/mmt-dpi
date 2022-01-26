@@ -3815,7 +3815,7 @@ int mmt_u32_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
     mmt_u32_array_t * b = (mmt_u32_array_t *) attr->data;
     int i, total=0;
     for( i=0; i<b->len; i++ )
-       total += snprintf(buff, len-total, (i==0?"%u":",%u"), b->data[i]);
+       total += snprintf(&buff[total], len-total, (i==0?"%u":",%u"), b->data[i]);
     return total;
 }
 
