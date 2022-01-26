@@ -54,8 +54,8 @@ typedef struct int_report_v10_struct {
 	len    :4;
 
 	uint8_t
-	n_proto  :3, //Next Protocol
-	rep_bits :6, //Report Metadata Bits: Bitmap that indicates which optional metadata is present in the telemetry report header.
+	next_proto  :3, //Next Protocol
+	report_metadata_bits :6, //Report Metadata Bits: Bitmap that indicates which optional metadata is present in the telemetry report header.
 	reserved :6,
 	d        :1; //Drop:
 
@@ -72,22 +72,22 @@ typedef struct int_report_v10_struct {
 	uint8_t
 	d        :1,
 	reserved :6,
-	rep_bits :6,
-	n_proto  :3;
+	report_metadata_bits :6,
+	next_proto :3;
 
 	uint8_t
 	hw_id:6,
 	f    :1,
 	q    :1;
 #endif
-	uint32_t switch_id;
-	uint32_t seq_number;
-	uint32_t ingress_timestamp;
+	uint32_t switch_id; //unique ID of a switch (generally administratively assigned)
+	uint32_t seq_number; //sequence of reports from a specific combination of (Switch id, hw_id) to a particular telemetry report destination
+	uint32_t ingress_timestamp; //local time when the packet was first received on the ingress physical or logical port, in nanoseconds
 } __attribute__((packed))
 int_report_v10_t;
 
 
-#define INT_MAX_HOP 32
+
 typedef struct int_info_struct{
 	// flow info
 	uint32_t src_ip;
@@ -99,34 +99,91 @@ typedef struct int_info_struct{
 	// u64 pkt_cnt;
 	// u64 byte_cnt;
 
-	uint8_t num_int_hop;
-	//for each INT node
-	uint32_t sw_ids[INT_MAX_HOP];
-	uint16_t in_port_ids[INT_MAX_HOP];
-	uint16_t e_port_ids[INT_MAX_HOP];
-	uint32_t hop_latencies[INT_MAX_HOP];
-	uint16_t queue_ids[INT_MAX_HOP];
-	uint16_t queue_occups[INT_MAX_HOP];
-	uint32_t ingr_times[INT_MAX_HOP];
-	uint32_t egr_times[INT_MAX_HOP];
-	// uint16_t queue_congests[MAX_INT_HOP];
-	uint32_t lv2_in_e_port_ids[INT_MAX_HOP];
-	uint32_t tx_utilizes[INT_MAX_HOP];
-
+	uint32_t switch_id; //ID of the switch (sink node) that generates this report
+	uint32_t seq_number;
+	uint32_t hw_id;
 	uint32_t hop_latency; //total time of hop_latencies
 	uint32_t sink_time; //the moment this report was created by a sink node
+	uint8_t  report_metadata_bits; //Report Metadata Bits
+	uint8_t  num_int_hop;
 
-	uint8_t is_n_flow;
+	//for each INT node
+	mmt_u32_array_t sw_ids;
+	mmt_u32_array_t in_port_ids;
+	mmt_u32_array_t e_port_ids;
+	mmt_u32_array_t hop_latencies;
+	mmt_u32_array_t queue_ids;
+	mmt_u32_array_t queue_occups;
+	mmt_u32_array_t ingr_times;
+	mmt_u32_array_t egr_times;
+	mmt_u32_array_t lv2_in_e_port_ids;
+	mmt_u32_array_t tx_utilizes;
 
-	// #ifdef USE_INFLUXDB
-	uint8_t is_flow;
-	// #endif
-
+	//details of report_metadata_bits
+	uint8_t is_in_egress_port_id;
 	uint8_t is_hop_latency;
-	uint8_t is_queue_occup;
+	uint8_t is_queue_id_occup;
+	uint8_t is_egress_time;
+	uint8_t is_queue_id_drop_reason_padding;
 	uint8_t is_tx_utilize;
-	uint32_t seq_number;
-	uint32_t switch_id;
+
 }int_info_t;
+
+#define PROTO_INT_REPORT_ALIAS "int_report"
+enum int_report_attributes {
+	INT_REPORT_SWITCH_ID = 1,
+	INT_REPORT_SEQ_NUMBER,
+	INT_REPORT_HW_ID,
+	//IP/port's info src/dst
+	INT_REPORT_HOP_LATENCY, //total latency of all hops (= sum_of(INT_REPORT_HOP_LATENCIES))
+	INT_REPORT_SINK_TIME,
+	INT_REPORT_METADATA_BITS,
+	INT_REPORT_NUM_HOP,     //total number of hops
+	//for each hop
+	INT_REPORT_HOP_SWITCH_IDS,
+	INT_REPORT_HOP_INGRESS_PORT_IDS,
+	INT_REPORT_HOP_EGRESS_PORT_IDS,
+	INT_REPORT_HOP_LATENCIES,
+	INT_REPORT_HOP_QUEUE_IDS,
+	INT_REPORT_HOP_QUEUE_OCCUPS,
+	INT_REPORT_HOP_INGRESS_TIMES,
+	INT_REPORT_HOP_EGRESS_TIMES,
+	INT_REPORT_HOP_LV2_IE_PORT_IDS,
+	INT_REPORT_HOP_TX_UTILIZES,
+	//details of bits
+	INT_REPORT_IS_IN_EGRESS_PORT_ID,
+	INT_REPORT_IS_HOP_LATENCY,
+	INT_REPORT_IS_QUEUE_ID_OCCUP,
+	INT_REPORT_IS_EGRESS_TIME,
+	INT_REPORT_IS_QUEUE_ID_DROP_REASON_PADDING,
+	INT_REPORT_IS_TX_UTILIZE
+};
+
+
+#define INT_REPORT_SWITCH_ID_ALIAS     "switch_id"
+#define INT_REPORT_HW_ID_ALIAS         "hw_id"
+#define INT_REPORT_SEQ_NUMBER_ALIAS    "seq_num"
+#define INT_REPORT_HOP_LATENCY_ALIAS   "hop_latency"
+#define INT_REPORT_SINK_TIME_ALIAS     "sink_time"
+#define INT_REPORT_METADATA_BITS_ALIAS  "metadata_bits"
+#define INT_REPORT_NUM_HOP_ALIAS        "num_hop"
+
+#define INT_REPORT_HOP_SWITCH_IDS_ALIAS        "hop_switch_ids"
+#define INT_REPORT_HOP_INGRESS_PORT_IDS_ALIAS  "hop_ingress_port_ids"
+#define INT_REPORT_HOP_EGRESS_PORT_IDS_ALIAS   "hop_egress_port_ids"
+#define INT_REPORT_HOP_LATENCIES_ALIAS         "hop_latencies"
+#define INT_REPORT_HOP_QUEUE_IDS_ALIAS         "hop_queue_ids"
+#define INT_REPORT_HOP_QUEUE_OCCUPS_ALIAS      "hop_queue_occups"
+#define INT_REPORT_HOP_INGRESS_TIMES_ALIAS     "hop_ingress_times"
+#define INT_REPORT_HOP_EGRESS_TIMES_ALIAS      "hop_egress_times"
+#define INT_REPORT_HOP_LV2_IE_PORT_IDS_ALIAS   "hop_lv2_ie_port_ids"
+#define INT_REPORT_HOP_TX_UTILIZES_ALIAS       "hop_tx_utilizes"
+
+#define INT_REPORT_IS_IN_EGRESS_PORT_ID_ALIAS  "is_in_egress_port_id"
+#define INT_REPORT_IS_HOP_LATENCY_ALIAS        "is_hop_latency"
+#define INT_REPORT_IS_QUEUE_ID_OCCUP_ALIAS     "is_queue_id_occup"
+#define INT_REPORT_IS_EGRESS_TIME_ALIAS        "is_egress_time"
+#define INT_REPORT_IS_QUEUE_ID_DROP_REASON_PADDING_ALIAS  "is_queue_id_drop_reason_padding"
+#define INT_REPORT_IS_TX_UTILIZE_ALIAS         "is_tx_utilize"
 
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_INBAND_TELEMETRY_REPORT_H_ */
