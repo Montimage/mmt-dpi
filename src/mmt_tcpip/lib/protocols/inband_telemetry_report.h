@@ -132,9 +132,14 @@ typedef struct int_info_struct{
 #define PROTO_INT_REPORT_ALIAS "int_report"
 enum int_report_attributes {
 	INT_REPORT_SWITCH_ID = 1,
-	INT_REPORT_SEQ_NUMBER,
 	INT_REPORT_HW_ID,
+	INT_REPORT_SEQ_NUMBER,
 	//IP/port's info src/dst
+	INT_REPORT_FLOW_IP_SRC,
+	INT_REPORT_FLOW_IP_DST,
+	INT_REPORT_FLOW_PORT_SRC,
+	INT_REPORT_FLOW_PORT_DST,
+
 	INT_REPORT_HOP_LATENCY, //total latency of all hops (= sum_of(INT_REPORT_HOP_LATENCIES))
 	INT_REPORT_SINK_TIME,
 	INT_REPORT_METADATA_BITS,
@@ -163,6 +168,13 @@ enum int_report_attributes {
 #define INT_REPORT_SWITCH_ID_ALIAS     "switch_id"
 #define INT_REPORT_HW_ID_ALIAS         "hw_id"
 #define INT_REPORT_SEQ_NUMBER_ALIAS    "seq_num"
+
+#define INT_REPORT_FLOW_IP_SRC_ALIAS   "ip_src"
+#define INT_REPORT_FLOW_IP_DST_ALIAS   "ip_dst"
+#define INT_REPORT_FLOW_PORT_SRC_ALIAS "port_src"
+#define INT_REPORT_FLOW_PORT_DST_ALIAS "port_dst"
+
+
 #define INT_REPORT_HOP_LATENCY_ALIAS   "hop_latency"
 #define INT_REPORT_SINK_TIME_ALIAS     "sink_time"
 #define INT_REPORT_METADATA_BITS_ALIAS  "metadata_bits"
