@@ -142,7 +142,7 @@ enum int_report_attributes {
 
 	INT_REPORT_HOP_LATENCY, //total latency of all hops (= sum_of(INT_REPORT_HOP_LATENCIES))
 	INT_REPORT_SINK_TIME,
-	INT_REPORT_METADATA_BITS,
+	INT_REPORT_INSTRUCTION_BITS,
 	INT_REPORT_NUM_HOP,     //total number of hops
 	//for each hop
 	INT_REPORT_HOP_SWITCH_IDS,
@@ -153,14 +153,17 @@ enum int_report_attributes {
 	INT_REPORT_HOP_QUEUE_OCCUPS,
 	INT_REPORT_HOP_INGRESS_TIMES,
 	INT_REPORT_HOP_EGRESS_TIMES,
-	INT_REPORT_HOP_LV2_IE_PORT_IDS,
+	INT_REPORT_HOP_LV2_INGRESS_PORT_IDS,
+	INT_REPORT_HOP_LV2_EGRESS_PORT_IDS,
 	INT_REPORT_HOP_TX_UTILIZES,
 	//details of bits
+	INT_REPORT_IS_SWITCH_ID,
 	INT_REPORT_IS_IN_EGRESS_PORT_ID,
 	INT_REPORT_IS_HOP_LATENCY,
 	INT_REPORT_IS_QUEUE_ID_OCCUP,
+	INT_REPORT_IS_INGRESS_TIME,
 	INT_REPORT_IS_EGRESS_TIME,
-	INT_REPORT_IS_QUEUE_ID_DROP_REASON_PADDING,
+	INT_REPORT_IS_LV2_IN_EGRESS_PORT_ID,
 	INT_REPORT_IS_TX_UTILIZE
 };
 
@@ -175,27 +178,30 @@ enum int_report_attributes {
 #define INT_REPORT_FLOW_PORT_DST_ALIAS "port_dst"
 
 
-#define INT_REPORT_HOP_LATENCY_ALIAS   "hop_latency"
-#define INT_REPORT_SINK_TIME_ALIAS     "sink_time"
-#define INT_REPORT_METADATA_BITS_ALIAS  "metadata_bits"
-#define INT_REPORT_NUM_HOP_ALIAS        "num_hop"
+#define INT_REPORT_HOP_LATENCY_ALIAS        "hop_latency"
+#define INT_REPORT_SINK_TIME_ALIAS          "sink_time"
+#define INT_REPORT_INSTRUCTION_BITS_ALIAS   "instruction_bits"
+#define INT_REPORT_NUM_HOP_ALIAS            "num_hop"
 
-#define INT_REPORT_HOP_SWITCH_IDS_ALIAS        "hop_switch_ids"
-#define INT_REPORT_HOP_INGRESS_PORT_IDS_ALIAS  "hop_ingress_port_ids"
-#define INT_REPORT_HOP_EGRESS_PORT_IDS_ALIAS   "hop_egress_port_ids"
-#define INT_REPORT_HOP_LATENCIES_ALIAS         "hop_latencies"
-#define INT_REPORT_HOP_QUEUE_IDS_ALIAS         "hop_queue_ids"
-#define INT_REPORT_HOP_QUEUE_OCCUPS_ALIAS      "hop_queue_occups"
-#define INT_REPORT_HOP_INGRESS_TIMES_ALIAS     "hop_ingress_times"
-#define INT_REPORT_HOP_EGRESS_TIMES_ALIAS      "hop_egress_times"
-#define INT_REPORT_HOP_LV2_IE_PORT_IDS_ALIAS   "hop_lv2_ie_port_ids"
-#define INT_REPORT_HOP_TX_UTILIZES_ALIAS       "hop_tx_utilizes"
+#define INT_REPORT_HOP_SWITCH_IDS_ALIAS           "hop_switch_ids"
+#define INT_REPORT_HOP_INGRESS_PORT_IDS_ALIAS     "hop_ingress_port_ids"
+#define INT_REPORT_HOP_EGRESS_PORT_IDS_ALIAS      "hop_egress_port_ids"
+#define INT_REPORT_HOP_LATENCIES_ALIAS            "hop_latencies"
+#define INT_REPORT_HOP_QUEUE_IDS_ALIAS            "hop_queue_ids"
+#define INT_REPORT_HOP_QUEUE_OCCUPS_ALIAS         "hop_queue_occups"
+#define INT_REPORT_HOP_INGRESS_TIMES_ALIAS        "hop_ingress_times"
+#define INT_REPORT_HOP_EGRESS_TIMES_ALIAS         "hop_egress_times"
+#define INT_REPORT_HOP_LV2_INGRESS_PORT_IDS_ALIAS "hop_lv2_ingress_port_ids"
+#define INT_REPORT_HOP_LV2_EGRESS_PORT_IDS_ALIAS  "hop_lv2_egress_port_ids"
+#define INT_REPORT_HOP_TX_UTILIZES_ALIAS          "hop_tx_utilizes"
 
-#define INT_REPORT_IS_IN_EGRESS_PORT_ID_ALIAS  "is_in_egress_port_id"
-#define INT_REPORT_IS_HOP_LATENCY_ALIAS        "is_hop_latency"
-#define INT_REPORT_IS_QUEUE_ID_OCCUP_ALIAS     "is_queue_id_occup"
-#define INT_REPORT_IS_EGRESS_TIME_ALIAS        "is_egress_time"
-#define INT_REPORT_IS_QUEUE_ID_DROP_REASON_PADDING_ALIAS  "is_queue_id_drop_reason_padding"
-#define INT_REPORT_IS_TX_UTILIZE_ALIAS         "is_tx_utilize"
+#define INT_REPORT_IS_SWITCH_ID_ALIAS             "is_switch_id"
+#define INT_REPORT_IS_IN_EGRESS_PORT_ID_ALIAS     "is_in_egress_port_id"
+#define INT_REPORT_IS_HOP_LATENCY_ALIAS           "is_hop_latency"
+#define INT_REPORT_IS_QUEUE_ID_OCCUP_ALIAS        "is_queue_id_occup"
+#define INT_REPORT_IS_INGRESS_TIME_ALIAS          "is_ingress_time"
+#define INT_REPORT_IS_EGRESS_TIME_ALIAS           "is_egress_time"
+#define INT_REPORT_IS_LV2_IN_EGRESS_PORT_ID_ALIAS "is_lv2_in_egress_port_id"
+#define INT_REPORT_IS_TX_UTILIZE_ALIAS            "is_tx_utilize"
 
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_INBAND_TELEMETRY_REPORT_H_ */

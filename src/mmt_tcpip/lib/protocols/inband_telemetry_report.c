@@ -86,29 +86,22 @@ static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsi
 static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
 	int i, offset = get_packet_offset_at_index(ipacket, index);
-	const unsigned int packet_len = ipacket->p_hdr->caplen;
-	const u_char *cursor = &ipacket->data[offset], *end_cursor = &ipacket->data[packet_len];
+	const u_char *cursor = &ipacket->data[offset], *end_cursor = &ipacket->data[ipacket->p_hdr->caplen];
 
 	const int FOUND = 1, NOT_FOUND = 0;
 	// INT Raport structure
 	// [Eth][IP][UDP][INT RAPORT HDR][ETH][IP][UDP/TCP][INT SHIM][INT DATA]
 	// We are here --------^
-	const int_report_v10_t *int_header = (int_report_v10_t *) &ipacket->data[offset];
-	offset += sizeof( int_report_v10_t );
-	if( offset >= packet_len )
-		return 0;
+	const int_report_v10_t *int_header;
+	advance_pointer(int_header, int_report_v10_t, cursor, end_cursor, "No INT header");
 
 	if( int_header->version != 1 ){
 		debug("Unsupported INT version %d", int_header->version);
 		return 0;
 	}
 	//parse inner: ETH -> IP -> UDP/TCP->INT
-	const struct ethhdr *eth = (struct ethhdr *)&ipacket->data[offset];
-	offset += sizeof( struct ethhdr );
-	if( offset >= packet_len ){
-		debug("No Ethernet");
-		return 0;
-	}
+	const struct ethhdr *eth;
+	advance_pointer(eth, struct ethhdr, cursor, end_cursor, "No INT.Ethernet");
 
 	if( ntohs(eth->type) != ETH_TYPE_IP ){
 		//TODO support IPv6?
@@ -116,46 +109,34 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		return 0;
 	}
 
-	const struct iphdr *ip = (struct iphdr *)&ipacket->data[offset];
-	offset += sizeof( struct iphdr );
-	if( offset >= packet_len ){
-		debug("Not enough room for IPv4");
-		return 0;
-	}
+	const struct iphdr *ip;
+	advance_pointer( ip, struct iphdr, cursor, end_cursor, "No INT.Ethernet.IP");
 
 	//Although the next proto can be TCP but we can use UDP to get src/dst ports
 	//as the src/dst ports of TCP are in the same position as the ones of UDP
-	const struct udphdr *ports = (struct udphdr *)&ipacket->data[offset];
+	const struct udphdr *ports;
+	advance_pointer( ports, struct udphdr, cursor, end_cursor, "No INT.Ethernet.IP.UDP");
 	switch( ip->protocol ){
 	case IP_PROTO_UDP:
-		offset += UDP_HDR_SIZE;
 		break;
 	case IP_PROTO_TCP:
-		offset += TCP_HDR_SIZE;
+		//jump over TCP header
+		cursor += (TCP_HDR_SIZE - UDP_HDR_SIZE);
+		if( cursor >= end_cursor ){
+			debug("No INT.Ethernet.IP.TCP");
+			return 0;
+		}
 		break;
 	default:
 		debug("Neither UDP, nor TCP is found after IP. Need to support INT over other proto than TCP/UDP");
 		return 0;
 	}
 
-	if( offset >= packet_len ){
-		debug("Not enough room for UDP/TCP");
-		return 0;
-	}
+	int_shim_tcpudp_v10_t *shim;
+	advance_pointer( shim, int_shim_tcpudp_v10_t, cursor, end_cursor, "No INT.Ethernet.IP.TCP/UDP.Shim");
 
-	int_shim_tcpudp_v10_t *shim = (int_shim_tcpudp_v10_t*) &ipacket->data[offset];
-	offset += sizeof(int_shim_tcpudp_v10_t );
-	if( offset >= packet_len ){
-		debug("Not enough room for int_shim_tcpudp_v10_t");
-		return 0;
-	}
-
-	int_hop_by_hop_v10_t *hbh_report = (int_hop_by_hop_v10_t*) &ipacket->data[offset];
-	offset += sizeof( int_hop_by_hop_v10_t );
-	if( offset >= packet_len ){
-		debug("Not enough room for int_hop_by_hop_v10_t");
-		return 0;
-	}
+	int_hop_by_hop_v10_t *hbh_report;
+	advance_pointer( hbh_report, int_hop_by_hop_v10_t, cursor, end_cursor, "No INT.Ethernet.IP.TCP/UDP.Shim.HopByHopReport");
 
 
 	int num_hops = 0;
@@ -193,8 +174,8 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	case INT_REPORT_SINK_TIME:
 		(*(uint32_t *) extracted_data->data) = ntohl( int_header->ingress_timestamp );
 		return FOUND;
-	case INT_REPORT_METADATA_BITS:
-		(*(uint8_t *) extracted_data->data) = ins_bits;
+	case INT_REPORT_INSTRUCTION_BITS:
+		(*(uint16_t *) extracted_data->data) = ins_bits;
 		return FOUND;
 	case INT_REPORT_NUM_HOP:
 		(*(uint8_t *) extracted_data->data) = num_hops;
@@ -202,10 +183,6 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	default:
 		break;
 	}
-
-	//no INT data => no need to extract other attributes
-	if( num_hops == 0 )
-		return NOT_FOUND;
 
 	uint8_t is_switches_id       = (ins_bits >> 15) & 0x1;
 	uint8_t is_in_e_port_ids     = (ins_bits >> 14) & 0x1;
@@ -216,91 +193,151 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	uint8_t is_lv2_in_e_port_ids = (ins_bits >>  9) & 0x1;
 	uint8_t is_tx_utilizes       = (ins_bits >>  8) & 0x1;
 
-	switch( extracted_data->field_id ){
-	case INT_REPORT_IS_QUEUE_ID_OCCUP:
-		(*(uint8_t *) extracted_data->data) = 1;
-		break;
-	case INT_REPORT_HOP_SWITCH_IDS:
+#define extract_u8( v )\
+	if( v ){\
+		(*(uint8_t *) extracted_data->data) = 1;\
+		return FOUND;\
+	} else return NOT_FOUND;
 
+	switch( extracted_data->field_id ){
+	case INT_REPORT_IS_SWITCH_ID:
+		extract_u8( is_switches_id );
+	case INT_REPORT_IS_IN_EGRESS_PORT_ID:
+		extract_u8( is_in_e_port_ids );
+	case INT_REPORT_IS_HOP_LATENCY:
+		extract_u8( is_hop_latencies );
+	case INT_REPORT_IS_QUEUE_ID_OCCUP:
+		extract_u8( is_queue_occups );
+	case INT_REPORT_IS_INGRESS_TIME:
+		extract_u8( is_ingr_times );
+	case INT_REPORT_IS_EGRESS_TIME:
+		extract_u8( is_egr_times );
+	case INT_REPORT_IS_LV2_IN_EGRESS_PORT_ID:
+		extract_u8( is_lv2_in_e_port_ids );
+	case INT_REPORT_IS_TX_UTILIZE:
+		extract_u8( is_tx_utilizes );
+	default:
 		break;
 	}
 
 	uint32_t *u32;
-	mmt_u32_array_t data;
-	data.len = num_hops;
+	struct {
+		mmt_u32_array_t
+		sw_ids,
+		in_port_ids, e_port_ids,
+		hop_latencies,
+		queue_ids, queue_occups,
+		ingress_times,
+		egress_times,
+		lv2_in_port_ids, lv2_e_port_ids,
+		tx_utilizes;
+	}data;
+
+	memset( &data, 0, sizeof(data) );
+
+	//TODO: limit number of hops by 64
+	//we can increase size of "data" in "mmt_u32_array_t" to contain more hops
+	// but 64 should be further than enough
+	//This check is to avoid overflow attack that should never occurs in a normal condition
+	if( num_hops > BINARY_64DATA_LEN )
+		num_hops = BINARY_64DATA_LEN;
+
+	uint32_t total_latency = 0;
 
 	for( i=0; i<num_hops; i++ ){
 		if( is_switches_id ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No SW_IDS");
-			if( extracted_data->field_id == INT_REPORT_HOP_SWITCH_IDS )
-				data.data[i] = ntohl( *u32 );
+			data.sw_ids.data[i] = ntohl( *u32 );
 		}
 
 		if( is_in_e_port_ids ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No In Egress port IDs");
-			if( extracted_data->field_id == INT_REPORT_HOP_INGRESS_PORT_IDS )
-				data.data[i] = (ntohl( *u32 ) >> 16) & 0xffff;
-			else if( extracted_data->field_id == INT_REPORT_HOP_EGRESS_PORT_IDS )
-				data.data[i] = (ntohl( *u32 ) ) & 0xffff;
+			data.in_port_ids.data[i] = (ntohl( *u32 ) >> 16) & 0xffff;
+			data.e_port_ids.data[i]  = (ntohl( *u32 ) ) & 0xffff;
 		}
 
 		if( is_hop_latencies ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No Hop latencies");
-			if( extracted_data->field_id == INT_REPORT_HOP_LATENCIES )
-				data.data[i] = ntohl( *u32 );
+			data.hop_latencies.data[i] = ntohl( *u32 );
+			total_latency += ntohl( *u32 );
 		}
 
 		if( is_queue_occups ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No queue occups");
-			if( extracted_data->field_id == INT_REPORT_HOP_QUEUE_IDS )
-				data.data[i] = (ntohl( *u32 ) >> 24) & 0xffff;
-			else if( extracted_data->field_id == INT_REPORT_HOP_QUEUE_OCCUPS )
-				data.data[i] = (ntohl( *u32 ) ) & 0xffff;
+			data.queue_ids.data[i]    = (ntohl( *u32 ) >> 24) & 0xffff;
+			data.queue_occups.data[i] = (ntohl( *u32 ) ) & 0xffff;
 		}
 
 		if( is_ingr_times ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No Ingrees time");
-			if( extracted_data->field_id == INT_REPORT_HOP_INGRESS_TIMES )
-				data.data[i] = ntohl( *u32 );
+			data.ingress_times.data[i] = ntohl( *u32 );
 		}
 
 		if( is_egr_times ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No Egress Time");
-			if( extracted_data->field_id == INT_REPORT_HOP_EGRESS_TIMES )
-				data.data[i] = ntohl( *u32 );
+			data.egress_times.data[i] = ntohl( *u32 );
 		}
 
 		if( is_lv2_in_e_port_ids ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2");
-			if( extracted_data->field_id == INT_REPORT_HOP_LV2_IE_PORT_IDS )
-				data.data[i] = ntohl( *u32 );
+			//4.7 INT Hop-by-Hop Metadata Header Format (page 15)
+			//Level 2 Ingress Port ID + Egress Port ID (4 bytes each)
+			advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Ingress");
+			data.lv2_in_port_ids.data[i] = ntohl( *u32 );
+			advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Egress");
+			data.lv2_e_port_ids.data[i]  = ntohl( *u32 );
 		}
 
 		if( is_tx_utilizes ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No TX Utilize");
-			if( extracted_data->field_id == INT_REPORT_HOP_TX_UTILIZES )
-				data.data[i] = ntohl( *u32 );
+			data.tx_utilizes.data[i] = ntohl( *u32 );
 		}
 	}
 
+
+#define assign_if( cond, target, src )\
+	if( ! cond )\
+		return NOT_FOUND;\
+	target = src;\
+	break;
+
+	mmt_u32_array_t *ptr = NULL;
 	switch( extracted_data->field_id ){
+	//total latency of all hops
+	case INT_REPORT_HOP_LATENCY:
+		if( !is_hop_latencies )
+			return NOT_FOUND;
+		(*(uint32_t *) extracted_data->data) = total_latency;
+		return FOUND;
 	case INT_REPORT_HOP_SWITCH_IDS:
-		if( ! is_switches_id )
-			return NOT_FOUND;
-		memcpy( extracted_data->data, &data, sizeof(mmt_u32_array_t) );
-		return FOUND;
+		assign_if( is_switches_id, ptr, &data.sw_ids );
 	case INT_REPORT_HOP_INGRESS_PORT_IDS:
-		if( ! is_in_e_port_ids )
-			return NOT_FOUND;
-		memcpy( extracted_data->data, &data, sizeof(mmt_u32_array_t) );
-		return FOUND;
+		assign_if( is_in_e_port_ids, ptr, &data.in_port_ids );
 	case INT_REPORT_HOP_EGRESS_PORT_IDS:
-		if( ! is_in_e_port_ids )
-			return NOT_FOUND;
-		memcpy( extracted_data->data, &data, sizeof(mmt_u32_array_t) );
+		assign_if( is_in_e_port_ids, ptr, &data.e_port_ids );
+	case INT_REPORT_HOP_LATENCIES:
+		assign_if( is_hop_latencies, ptr, &data.hop_latencies );
+	case INT_REPORT_HOP_QUEUE_IDS:
+		assign_if( is_queue_occups, ptr, &data.queue_ids );
+	case INT_REPORT_HOP_QUEUE_OCCUPS:
+		assign_if( is_queue_occups, ptr, &data.queue_occups );
+	case INT_REPORT_HOP_INGRESS_TIMES:
+		assign_if( is_ingr_times, ptr, &data.ingress_times );
+	case INT_REPORT_HOP_EGRESS_TIMES:
+		assign_if( is_egr_times, ptr, &data.egress_times );
+	case INT_REPORT_HOP_LV2_INGRESS_PORT_IDS:
+		assign_if( is_lv2_in_e_port_ids, ptr, &data.lv2_in_port_ids );
+	case INT_REPORT_HOP_LV2_EGRESS_PORT_IDS:
+		assign_if( is_lv2_in_e_port_ids, ptr, &data.lv2_e_port_ids );
+	case INT_REPORT_HOP_TX_UTILIZES:
+		assign_if( is_tx_utilizes, ptr, &data.tx_utilizes );
+	default:
+		break;
+	}
+	if( ptr != NULL ){
+		ptr->len = num_hops;
+		memcpy( extracted_data->data, ptr, sizeof(mmt_u32_array_t) );
 		return FOUND;
 	}
-
 	return NOT_FOUND;
 }
 
@@ -315,10 +352,10 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_REPORT_FLOW_PORT_SRC, MMT_U16_DATA,   sizeof( uint16_t) ),
 	def_att( INT_REPORT_FLOW_PORT_DST, MMT_U16_DATA,   sizeof( uint16_t) ),
 
-	def_att( INT_REPORT_HOP_LATENCY, MMT_U32_DATA, sizeof(uint32_t) ),
-	def_att( INT_REPORT_SINK_TIME,   MMT_U32_DATA, sizeof(uint32_t) ),
-	def_att( INT_REPORT_METADATA_BITS , MMT_U8_DATA, sizeof(uint8_t) ),
-	def_att( INT_REPORT_NUM_HOP ,       MMT_U8_DATA, sizeof(uint8_t) ),
+	def_att( INT_REPORT_HOP_LATENCY,       MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_REPORT_SINK_TIME,         MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_REPORT_INSTRUCTION_BITS , MMT_U16_DATA, sizeof(uint16_t) ),
+	def_att( INT_REPORT_NUM_HOP ,          MMT_U8_DATA,  sizeof(uint8_t) ),
 
 	def_att( INT_REPORT_HOP_SWITCH_IDS ,       MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_REPORT_HOP_INGRESS_PORT_IDS , MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
@@ -328,14 +365,17 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_REPORT_HOP_QUEUE_OCCUPS ,     MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_REPORT_HOP_INGRESS_TIMES ,    MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_REPORT_HOP_EGRESS_TIMES ,     MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
-	def_att( INT_REPORT_HOP_LV2_IE_PORT_IDS ,  MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
+	def_att( INT_REPORT_HOP_LV2_INGRESS_PORT_IDS , MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
+	def_att( INT_REPORT_HOP_LV2_EGRESS_PORT_IDS ,  MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_REPORT_HOP_TX_UTILIZES ,      MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 
+	def_att( INT_REPORT_IS_SWITCH_ID,          MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_REPORT_IS_IN_EGRESS_PORT_ID , MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_REPORT_IS_HOP_LATENCY ,       MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_REPORT_IS_QUEUE_ID_OCCUP ,    MMT_U8_DATA, sizeof(uint8_t) ),
+	def_att( INT_REPORT_IS_INGRESS_TIME ,      MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_REPORT_IS_EGRESS_TIME ,       MMT_U8_DATA, sizeof(uint8_t) ),
-	def_att( INT_REPORT_IS_QUEUE_ID_DROP_REASON_PADDING , MMT_U8_DATA, sizeof(uint8_t) ),
+	def_att( INT_REPORT_IS_LV2_IN_EGRESS_PORT_ID, MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_REPORT_IS_TX_UTILIZE ,        MMT_U8_DATA, sizeof(uint8_t) )
 };
 
