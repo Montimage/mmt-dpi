@@ -326,6 +326,8 @@ uint32_t get_data_size_by_data_type(uint32_t data_type) {
             return sizeof(void *);
         case MMT_U32_ARRAY:
              return U32_ARRAY_TYPE_LEN;
+        case MMT_U64_ARRAY:
+             return U64_ARRAY_TYPE_LEN;
         default:
             return 0;
     }

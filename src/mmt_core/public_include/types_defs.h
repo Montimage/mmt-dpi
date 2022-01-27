@@ -145,6 +145,15 @@ typedef struct mmt_u32_array_struct{
 #endif
 
 
+typedef struct mmt_u64_array_struct{
+	uint32_t len;
+	uint64_t data[ BINARY_64DATA_LEN ];
+} mmt_u64_array_t;
+
+#ifndef U64_ARRAY_TYPE_LEN
+#define U64_ARRAY_TYPE_LEN  (sizeof(mmt_u64_array_t)) /**< Length in bytes of a 1024binary data type. A 1024binary data type is composed of an int indicating the data length and a char table of 1024 bytes. */
+#endif
+
 /** Defines the different data types that can be used */
 enum data_types {
     MMT_UNDEFINED_TYPE, /**< no type constant value */
@@ -180,10 +189,11 @@ enum data_types {
     MMT_GENERIC_HEADER_LINE, /**< structure representing an RFC2822 header line with null terminating field and value elements. */
     MMT_STRING_DATA_POINTER, /**< pointer constant value (size is void *). The data pointed to is of type string with null terminating character included */
 	MMT_U32_ARRAY,
+	MMT_U64_ARRAY
 };
 
 // This should be updated whenever data_types is updated.
-#define MMT_HIGHER_VALUED_VALID_DATA_TYPE MMT_U32_ARRAY + 1/**< Defines the higher valued valid data type.*/
+#define MMT_HIGHER_VALUED_VALID_DATA_TYPE MMT_U64_ARRAY + 1/**< Defines the higher valued valid data type.*/
 
 #ifdef	__cplusplus
 }

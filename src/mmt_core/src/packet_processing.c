@@ -3818,7 +3818,13 @@ int mmt_u32_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
        total += snprintf(&buff[total], len-total, (i==0?"%u":",%u"), b->data[i]);
     return total;
 }
-
+int mmt_u64_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
+    mmt_u64_array_t * b = (mmt_u64_array_t *) attr->data;
+    int i, total=0;
+    for( i=0; i<b->len; i++ )
+       total += snprintf(&buff[total], len-total, (i==0?"%"PRIu64:",%"PRIu64), b->data[i]);
+    return total;
+}
 
 int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
@@ -3863,6 +3869,8 @@ int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
         return mmt_stats_sprintf(buff, len, attr);
     case MMT_U32_ARRAY:
         return mmt_u32_array_sprintf( buff, len, attr );
+    case MMT_U64_ARRAY:
+        return mmt_u64_array_sprintf( buff, len, attr );
     default:
         return mmt_stats_sprintf(buff, len, attr); //TODO
     }
