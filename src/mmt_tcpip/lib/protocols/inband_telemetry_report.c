@@ -49,6 +49,31 @@ struct iphdr {
 
 #define INT_UDP_DST_PORT 6000
 
+/* Structure used to swap the bytes in a 64-bit unsigned long long. */
+union byteswap_64_u {
+	uint64_t a;
+	uint32_t b[2];
+};
+
+
+/* Function to byteswap big endian 64bit unsigned integers
+ * back to little endian host order on little endian machines.
+ * As above, on big endian machines this will be a null macro.
+ * The macro ntohll() is defined in byteorder64.h, and if needed,
+ * refers to _ntohll() here.
+ */
+#ifndef ntohll
+uint64_t ntohll(uint64_t x){
+	union byteswap_64_u u1;
+	union byteswap_64_u u2;
+	u1.a = x;
+	u2.b[1] = ntohl(u1.b[0]);
+	u2.b[0] = ntohl(u1.b[1]);
+
+	return u2.a;
+}
+#endif
+
 static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsigned index) {
 	int offset = get_packet_offset_at_index(ipacket, index);
 
@@ -221,16 +246,16 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	}
 
 	uint32_t *u32;
+	uint64_t *u64;
 	struct {
 		mmt_u32_array_t
 		sw_ids,
 		in_port_ids, e_port_ids,
 		hop_latencies,
 		queue_ids, queue_occups,
-		ingress_times,
-		egress_times,
 		lv2_in_port_ids, lv2_e_port_ids,
 		tx_utilizes;
+		mmt_u64_array_t ingress_times, egress_times;
 	}data;
 
 	memset( &data, 0, sizeof(data) );
@@ -268,23 +293,31 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 			data.queue_occups.data[i] = (ntohl( *u32 ) ) & 0xffff;
 		}
 
+		//Some implementation uses 64 bit to store timestamp
+		//https://github.com/GEANT-DataPlaneProgramming/int-platforms/blob/master/p4src/int_v1.0/include/headers.p4#L124
 		if( is_ingr_times ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No Ingrees time");
-			data.ingress_times.data[i] = ntohl( *u32 );
+			advance_pointer( u64, uint64_t, cursor, end_cursor, "No Ingress time");
+			data.ingress_times.data[i] = ntohll( *u64 );
 		}
 
 		if( is_egr_times ){
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No Egress Time");
-			data.egress_times.data[i] = ntohl( *u32 );
+			advance_pointer( u64, uint64_t, cursor, end_cursor, "No Egress Time");
+			data.egress_times.data[i] = ntohll( *u64 );
 		}
 
 		if( is_lv2_in_e_port_ids ){
+			//TODO: somewho no LV2 Egress Port in
 			//4.7 INT Hop-by-Hop Metadata Header Format (page 15)
 			//Level 2 Ingress Port ID + Egress Port ID (4 bytes each)
+			//
+			//In this implementation:
+			//https://github.com/GEANT-DataPlaneProgramming/int-platforms/blob/master/p4src/int_v1.0/include/headers.p4#L131
+			// they use 16bits for ingress, and 16 bit for egress
+			// we adapt here to test their pcap files
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Ingress");
-			data.lv2_in_port_ids.data[i] = ntohl( *u32 );
-			advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Egress");
-			data.lv2_e_port_ids.data[i]  = ntohl( *u32 );
+			data.lv2_in_port_ids.data[i] = (ntohl( *u32 ) >> 16) & 0xffff;
+			//advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Egress");
+			data.lv2_e_port_ids.data[i]  = (ntohl( *u32 ) ) & 0xffff;
 		}
 
 		if( is_tx_utilizes ){
@@ -301,6 +334,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	break;
 
 	mmt_u32_array_t *ptr = NULL;
+	mmt_u64_array_t *ptr64 = NULL;
 	switch( extracted_data->field_id ){
 	//total latency of all hops
 	case INT_REPORT_HOP_LATENCY:
@@ -321,9 +355,9 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	case INT_REPORT_HOP_QUEUE_OCCUPS:
 		assign_if( is_queue_occups, ptr, &data.queue_occups );
 	case INT_REPORT_HOP_INGRESS_TIMES:
-		assign_if( is_ingr_times, ptr, &data.ingress_times );
+		assign_if( is_ingr_times, ptr64, &data.ingress_times );
 	case INT_REPORT_HOP_EGRESS_TIMES:
-		assign_if( is_egr_times, ptr, &data.egress_times );
+		assign_if( is_egr_times, ptr64, &data.egress_times );
 	case INT_REPORT_HOP_LV2_INGRESS_PORT_IDS:
 		assign_if( is_lv2_in_e_port_ids, ptr, &data.lv2_in_port_ids );
 	case INT_REPORT_HOP_LV2_EGRESS_PORT_IDS:
@@ -336,6 +370,10 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	if( ptr != NULL ){
 		ptr->len = num_hops;
 		memcpy( extracted_data->data, ptr, sizeof(mmt_u32_array_t) );
+		return FOUND;
+	} else if( ptr64 != NULL ){
+		ptr64->len = num_hops;
+		memcpy( extracted_data->data, ptr64, sizeof(mmt_u64_array_t) );
 		return FOUND;
 	}
 	return NOT_FOUND;
@@ -363,8 +401,10 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_REPORT_HOP_LATENCIES ,        MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_REPORT_HOP_QUEUE_IDS ,        MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_REPORT_HOP_QUEUE_OCCUPS ,     MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
-	def_att( INT_REPORT_HOP_INGRESS_TIMES ,    MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
-	def_att( INT_REPORT_HOP_EGRESS_TIMES ,     MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
+
+	def_att( INT_REPORT_HOP_INGRESS_TIMES ,    MMT_U64_ARRAY, sizeof(mmt_u64_array_t) ),
+	def_att( INT_REPORT_HOP_EGRESS_TIMES ,     MMT_U64_ARRAY, sizeof(mmt_u64_array_t) ),
+
 	def_att( INT_REPORT_HOP_LV2_INGRESS_PORT_IDS , MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_REPORT_HOP_LV2_EGRESS_PORT_IDS ,  MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_REPORT_HOP_TX_UTILIZES ,      MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
