@@ -420,7 +420,6 @@ static attribute_metadata_t _attributes_metadata[] = {
 };
 
 
-
 int init_proto_inband_network_telemetry_struct() {
 	protocol_t *protocol_struct = init_protocol_struct_for_registration(PROTO_INT_REPORT, PROTO_INT_REPORT_ALIAS);
 	if (protocol_struct == NULL)

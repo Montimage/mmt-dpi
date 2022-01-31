@@ -102,4 +102,6 @@ typedef struct int_hop_by_hop_v10_struct {
 int_hop_by_hop_v10_t;
 
 
+#define PROTO_INT_ALIAS "int"
+
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_INBAND_TELEMETRY_H_ */

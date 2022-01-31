@@ -3898,6 +3898,10 @@ int init_tcpip_plugin() {
         fprintf(stderr, "Error initializing protocol PROTO_INT_REPORT\n Exiting\n");
         exit(0);
     }
+   if (!init_proto_int_struct()) {
+		fprintf(stderr, "Error initializing protocol PROTO_INT\n Exiting\n");
+		exit(0);
+	}
     /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////
