@@ -12,6 +12,32 @@
 #include "mmt_core.h"
 
 
+#ifndef ntohll
+/* Structure used to swap the bytes in a 64-bit unsigned long long. */
+union byteswap_64_u {
+	uint64_t a;
+	uint32_t b[2];
+};
+
+
+/* Function to byteswap big endian 64bit unsigned integers
+ * back to little endian host order on little endian machines.
+ * As above, on big endian machines this will be a null macro.
+ * The macro ntohll() is defined in byteorder64.h, and if needed,
+ * refers to _ntohll() here.
+ */
+
+static inline uint64_t ntohll(uint64_t x){
+	union byteswap_64_u u1;
+	union byteswap_64_u u2;
+	u1.a = x;
+	u2.b[1] = ntohl(u1.b[0]);
+	u2.b[0] = ntohl(u1.b[1]);
+
+	return u2.a;
+}
+#endif
+
 /**
  * INT shim header for TCP/UDP:
  *   the INT metadata header and INT metadata stack will be encapsulated
@@ -102,6 +128,60 @@ typedef struct int_hop_by_hop_v10_struct {
 int_hop_by_hop_v10_t;
 
 
+
 #define PROTO_INT_ALIAS "int"
+enum int_attributes {
+	INT_INSTRUCTION_BITS = 1,
+	INT_NUM_HOP,     //total number of hops
+	INT_HOP_LATENCY, //total latency of all hops (sum of INT_HOP_LATENCIES)
+	//for each hop
+	INT_HOP_SWITCH_IDS,
+	INT_HOP_INGRESS_PORT_IDS,
+	INT_HOP_EGRESS_PORT_IDS,
+	INT_HOP_LATENCIES,
+	INT_HOP_QUEUE_IDS,
+	INT_HOP_QUEUE_OCCUPS,
+	INT_HOP_INGRESS_TIMES,
+	INT_HOP_EGRESS_TIMES,
+	INT_HOP_LV2_INGRESS_PORT_IDS,
+	INT_HOP_LV2_EGRESS_PORT_IDS,
+	INT_HOP_TX_UTILIZES,
+	//details of bits
+	INT_IS_SWITCH_ID,
+	INT_IS_IN_EGRESS_PORT_ID,
+	INT_IS_HOP_LATENCY,
+	INT_IS_QUEUE_ID_OCCUP,
+	INT_IS_INGRESS_TIME,
+	INT_IS_EGRESS_TIME,
+	INT_IS_LV2_IN_EGRESS_PORT_ID,
+	INT_IS_TX_UTILIZE
+};
+
+
+
+#define INT_INSTRUCTION_BITS_ALIAS         "instruction_bits"
+#define INT_NUM_HOP_ALIAS                  "num_hop"
+#define INT_HOP_LATENCY_ALIAS              "latency"
+
+#define INT_HOP_SWITCH_IDS_ALIAS           "hop_switch_ids"
+#define INT_HOP_INGRESS_PORT_IDS_ALIAS     "hop_ingress_port_ids"
+#define INT_HOP_EGRESS_PORT_IDS_ALIAS      "hop_egress_port_ids"
+#define INT_HOP_LATENCIES_ALIAS            "hop_latencies"
+#define INT_HOP_QUEUE_IDS_ALIAS            "hop_queue_ids"
+#define INT_HOP_QUEUE_OCCUPS_ALIAS         "hop_queue_occups"
+#define INT_HOP_INGRESS_TIMES_ALIAS        "hop_ingress_times"
+#define INT_HOP_EGRESS_TIMES_ALIAS         "hop_egress_times"
+#define INT_HOP_LV2_INGRESS_PORT_IDS_ALIAS "hop_lv2_ingress_port_ids"
+#define INT_HOP_LV2_EGRESS_PORT_IDS_ALIAS  "hop_lv2_egress_port_ids"
+#define INT_HOP_TX_UTILIZES_ALIAS          "hop_tx_utilizes"
+
+#define INT_IS_SWITCH_ID_ALIAS             "is_switch_id"
+#define INT_IS_IN_EGRESS_PORT_ID_ALIAS     "is_in_egress_port_id"
+#define INT_IS_HOP_LATENCY_ALIAS           "is_hop_latency"
+#define INT_IS_QUEUE_ID_OCCUP_ALIAS        "is_queue_id_occup"
+#define INT_IS_INGRESS_TIME_ALIAS          "is_ingress_time"
+#define INT_IS_EGRESS_TIME_ALIAS           "is_egress_time"
+#define INT_IS_LV2_IN_EGRESS_PORT_ID_ALIAS "is_lv2_in_egress_port_id"
+#define INT_IS_TX_UTILIZE_ALIAS            "is_tx_utilize"
 
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_INBAND_TELEMETRY_H_ */
