@@ -6,6 +6,7 @@
  */
 
 #include "proto_int.h"
+#include "proto_int_report.h"
 #include "mmt_tcpip_protocols.h"
 
 // indicates an INT header in the packet
@@ -43,6 +44,7 @@ struct iphdr {
 #define FOUND     1
 
 static int _classify_int_from_udp_or_tcp(ipacket_t * ipacket, unsigned index, bool is_udp) {
+	//need IP.UDP/TCP
 	if( index <=1 )
 		return 0;
 	//must be preceded by IPv4 (TODO: need to support IPv6)
@@ -88,6 +90,7 @@ static int _classify_int_from_tcp(ipacket_t * ipacket, unsigned index) {
 #define debug(M, ...)\
 	fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
+
 #define extract_u8( v )\
 	if( v ){\
 		(*(uint8_t *) extracted_data->data) = 1;\
@@ -99,6 +102,7 @@ static int _classify_int_from_tcp(ipacket_t * ipacket, unsigned index) {
 		return NOT_FOUND;\
 	target = src;\
 	break;
+
 
 static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
@@ -343,6 +347,7 @@ int init_proto_int_struct() {
 			log_err("Cannot register attribute %s.%s", PROTO_INT_ALIAS, _attributes_metadata[i].alias);
 			return PROTO_NOT_REGISTERED;
 		}
+
 	int ret = register_classification_function_with_parent_protocol( PROTO_UDP, _classify_int_from_udp, 100 );
 	if( ret == 0 ){
 		log_err("Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);

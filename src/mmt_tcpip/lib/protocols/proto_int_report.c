@@ -8,43 +8,7 @@
 #include "proto_int_report.h"
 #include "mmt_tcpip_protocols.h"
 
-struct udphdr {
-	uint16_t source;
-	uint16_t dest;
-	uint16_t len;
-	uint16_t check;
-};
-
-struct ethhdr{
-	uint64_t dst:48;
-	uint64_t src:48;
-	uint16_t type;
-} __attribute__((packed));
-
-#define ETH_TYPE_IP 0x0800
-#define IP_PROTO_UDP 17
-#define IP_PROTO_TCP  6
-#define TCP_HDR_SIZE 20
-#define UDP_HDR_SIZE  8
-
-struct iphdr {
-#if BYTE_ORDER == LITTLE_ENDIAN
-	uint8_t ihl : 4, version : 4;
-#elif BYTE_ORDER == BIG_ENDIAN
-	uint8_t version : 4, ihl : 4;
-#else
-#error "BYTE_ORDER must be defined"
-#endif
-	uint8_t tos;
-	uint16_t tot_len;
-	uint16_t id;
-	uint16_t frag_off;
-	uint8_t ttl;
-	uint8_t protocol;
-	uint16_t check;
-	uint32_t saddr;
-	uint32_t daddr;
-}__attribute__((packed));
+#include "../mmt_common_internal_include.h"
 
 #define INT_UDP_DST_PORT 6000
 
@@ -53,15 +17,16 @@ static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsi
 	int offset = get_packet_offset_at_index(ipacket, index);
 
 	const struct udphdr *udp = (struct udphdr *) & ipacket->data[offset];
-	if( ntohs(udp->dest) != INT_UDP_DST_PORT )
+	if( ntohs(udp->dest) != INT_UDP_DST_PORT ){
+		//checked but not found
+		//=> exclude from the next check
+		MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
 		return 0;
+	}
 
-	classified_proto_t retval;
-	retval.proto_id = PROTO_INT_REPORT;
-	retval.status   = Classified;
-	retval.offset   = sizeof( struct udphdr ); //the next protocol is started after x bytes of UDP header
-
-	return set_classified_proto(ipacket, index + 1, retval);
+	//return set_classified_proto(ipacket, index + 1, retval);
+	mmt_internal_add_connection(ipacket, PROTO_INT_REPORT, MMT_REAL_PROTOCOL);
+	return 1;
 }
 
 #define advance_pointer( var, var_type, cursor, end_cursor, msg )\
@@ -78,6 +43,12 @@ static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsi
 	#define debug(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
+#define ETH_TYPE_IP 0x0800
+#define IP_PROTO_UDP 17
+#define IP_PROTO_TCP  6
+#define TCP_HDR_SIZE (sizeof(struct tcphdr))
+#define UDP_HDR_SIZE (sizeof(struct udphdr))
+
 
 /**
  * Get size of data of INT report headers: that consists of [INT][ETH][IP][TCP/UDP]
@@ -86,7 +57,7 @@ static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsi
  * @param extracted_data
  * @return
  */
-static size_t _get_int_report_size(const u_char *cursor, const u_char *end_cursor) {
+size_t proto_int_get_int_report_header_size(const u_char *cursor, const u_char *end_cursor) {
 	const u_char *init_cursor = cursor;
 
 	// INT Raport structure
@@ -103,7 +74,7 @@ static size_t _get_int_report_size(const u_char *cursor, const u_char *end_curso
 	const struct ethhdr *eth;
 	advance_pointer(eth, struct ethhdr, cursor, end_cursor, "No INT.Ethernet");
 
-	if( ntohs(eth->type) != ETH_TYPE_IP ){
+	if( ntohs(eth->h_proto) != ETH_TYPE_IP ){
 		//TODO support IPv6?
 		debug("No IPv4 after Ethernet");
 		return 0;
@@ -137,28 +108,25 @@ static size_t _get_int_report_size(const u_char *cursor, const u_char *end_curso
 	return (cursor - init_cursor);
 }
 
-static int _int_report_classify_next_proto(ipacket_t * ipacket, unsigned index) {
+static int _classify_int_report_next(ipacket_t * ipacket, unsigned index) {
 	//the current (index) protocol is PROT_INT_REPORT
 	int offset = get_packet_offset_at_index(ipacket, index);
 	const u_char *cursor = &ipacket->data[offset], *end_cursor = &ipacket->data[ipacket->p_hdr->caplen];
 
-	size_t int_report_len = _get_int_report_size(cursor, end_cursor);
-	printf("offset : %zu\n", int_report_len );
+	size_t int_report_len = proto_int_get_int_report_header_size(cursor, end_cursor);
+	debug("offset : %zu\n", int_report_len );
 
 	classified_proto_t retval;
-	retval.proto_id = -1;
-	retval.status   = NonClassified;
-	retval.offset   = -1;
 
-	if( int_report_len > 0 ){
-		retval.proto_id = PROTO_INT;
-		retval.status   = Classified;
-		retval.offset   = int_report_len;
-	}
+	if( int_report_len == 0 )
+		return 0;
+
+	retval.proto_id = PROTO_INT;
+	retval.status   = Classified;
+	retval.offset   = int_report_len;
 
 	return set_classified_proto(ipacket, index + 1, retval);
 }
-
 
 static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
@@ -180,7 +148,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	const struct ethhdr *eth;
 	advance_pointer(eth, struct ethhdr, cursor, end_cursor, "No INT.Ethernet");
 
-	if( ntohs(eth->type) != ETH_TYPE_IP ){
+	if( ntohs(eth->h_proto) != ETH_TYPE_IP ){
 		//TODO support IPv6?
 		debug("No IPv4 after Ethernet");
 		return NOT_FOUND;
@@ -271,14 +239,15 @@ int init_proto_inband_network_telemetry_struct() {
 			return PROTO_NOT_REGISTERED;
 		}
 
-	int ret = register_classification_function(protocol_struct, _int_report_classify_next_proto);
-	if( ret == 0 ){
-		log_err("Cannot register the classify function to for PROT_INT");
-		return PROTO_NOT_REGISTERED;
-	}
-	ret = register_classification_function_with_parent_protocol( PROTO_UDP, _classify_inband_network_telemetry_from_udp, 100 );
+	int ret = register_classification_function_with_parent_protocol( PROTO_UDP, _classify_inband_network_telemetry_from_udp, 99 );
 	if( ret == 0 ){
 		log_err( "Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
+		return PROTO_NOT_REGISTERED;
+	}
+
+	ret = register_classification_function( protocol_struct, _classify_int_report_next );
+	if( ret == 0 ){
+		log_err( "Cannot register the function to classify the next protocols from PROTO_INT_REPORT");
 		return PROTO_NOT_REGISTERED;
 	}
 
