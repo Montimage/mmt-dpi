@@ -5,7 +5,7 @@
  *      Author: nhnghia
  */
 
-#include "inband_telemetry.h"
+#include "proto_int.h"
 #include "mmt_tcpip_protocols.h"
 
 // indicates an INT header in the packet
@@ -62,14 +62,7 @@ static int _classify_int_from_udp_or_tcp(ipacket_t * ipacket, unsigned index, bo
 	classified_proto_t retval;
 	retval.proto_id = PROTO_INT;
 	retval.status   = Classified;
-	retval.offset   = is_udp? UDP_HDR_SIZE : TCP_HDR_SIZE;
-
-	 //HN: do not copy session proto path into ipacket's proto path.
-	//As we know explicitly the protocol at index-th position in the hierarchy,
-	// so we limit the length of hierarchy for now.
-	//This length will be increased by another classification function
-	//  if further protocols will classified latter.
-	ipacket->proto_hierarchy->len = index + 1 + 1;
+	retval.offset   = is_udp? UDP_HDR_SIZE : TCP_HDR_SIZE; //need to jump over UDP or TCP header
 
 	return set_classified_proto(ipacket, index + 1, retval);
 }

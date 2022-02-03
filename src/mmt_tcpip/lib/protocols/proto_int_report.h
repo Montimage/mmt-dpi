@@ -24,7 +24,6 @@
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
-#include "inband_telemetry.h"
 
 /**
  * Inband-telemetry report version 1.0

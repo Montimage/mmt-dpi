@@ -5,7 +5,7 @@
  *      Author: nhnghia
  */
 
-#include "inband_telemetry_report.h"
+#include "proto_int_report.h"
 #include "mmt_tcpip_protocols.h"
 
 struct udphdr {
@@ -60,13 +60,6 @@ static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsi
 	retval.proto_id = PROTO_INT_REPORT;
 	retval.status   = Classified;
 	retval.offset   = sizeof( struct udphdr ); //the next protocol is started after x bytes of UDP header
-
-	 //HN: do not copy session proto path into ipacket's proto path.
-	//As we know explicitly the protocol at index-th position in the hierarchy,
-	// so we limit the length of hierarchy for now.
-	//This length will be increased by another classification function
-	//  if further protocols will classified latter.
-	ipacket->proto_hierarchy->len = index + 1 + 1;
 
 	return set_classified_proto(ipacket, index + 1, retval);
 }
@@ -151,20 +144,17 @@ static int _int_report_classify_next_proto(ipacket_t * ipacket, unsigned index) 
 
 	size_t int_report_len = _get_int_report_size(cursor, end_cursor);
 	printf("offset : %zu\n", int_report_len );
-	if( int_report_len == 0 )
-		return 0;
 
 	classified_proto_t retval;
-	retval.proto_id = PROTO_INT;
-	retval.status   = Classified;
-	retval.offset   = int_report_len;
+	retval.proto_id = -1;
+	retval.status   = NonClassified;
+	retval.offset   = -1;
 
-	 //HN: do not copy session proto path into ipacket's proto path.
-	//As we know explicitly the protocol at index-th position in the hierarchy,
-	// so we limit the length of hierarchy for now.
-	//This length will be increased by another classification function
-	//  if further protocols will classified latter.
-	ipacket->proto_hierarchy->len = index + 1 + 1;
+	if( int_report_len > 0 ){
+		retval.proto_id = PROTO_INT;
+		retval.status   = Classified;
+		retval.offset   = int_report_len;
+	}
 
 	return set_classified_proto(ipacket, index + 1, retval);
 }
@@ -280,15 +270,15 @@ int init_proto_inband_network_telemetry_struct() {
 			log_err("Cannot register attribute %s.%s", PROTO_INT_REPORT_ALIAS, _attributes_metadata[i].alias);
 			return PROTO_NOT_REGISTERED;
 		}
-	int ret = register_classification_function_with_parent_protocol( PROTO_UDP, _classify_inband_network_telemetry_from_udp, 100 );
-	if( ret == 0 ){
-		log_err( "Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
-		return PROTO_NOT_REGISTERED;
-	}
 
-	ret = register_classification_function(protocol_struct, _int_report_classify_next_proto);
+	int ret = register_classification_function(protocol_struct, _int_report_classify_next_proto);
 	if( ret == 0 ){
 		log_err("Cannot register the classify function to for PROT_INT");
+		return PROTO_NOT_REGISTERED;
+	}
+	ret = register_classification_function_with_parent_protocol( PROTO_UDP, _classify_inband_network_telemetry_from_udp, 100 );
+	if( ret == 0 ){
+		log_err( "Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
 		return PROTO_NOT_REGISTERED;
 	}
 
