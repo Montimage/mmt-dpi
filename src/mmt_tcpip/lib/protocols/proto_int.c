@@ -9,10 +9,12 @@
 #include "proto_int_report.h"
 #include "mmt_tcpip_protocols.h"
 
+#include "../mmt_common_internal_include.h"
+
 // indicates an INT header in the packet
 #define IPv4_DSCP_INT 0x20
 
-struct iphdr {
+struct _iphdr {
 #if BYTE_ORDER == LITTLE_ENDIAN
 	uint8_t
 		ihl     : 4,
@@ -37,8 +39,6 @@ struct iphdr {
 	uint32_t saddr;
 	uint32_t daddr;
 }__attribute__((packed));
-#define TCP_HDR_SIZE 20
-#define UDP_HDR_SIZE  8
 
 #define NOT_FOUND 0
 #define FOUND     1
@@ -49,24 +49,28 @@ static int _classify_int_from_udp_or_tcp(ipacket_t * ipacket, unsigned index, bo
 		return 0;
 	//must be preceded by IPv4 (TODO: need to support IPv6)
 	if( get_protocol_id_at_index(ipacket, index - 1) != PROTO_IP )
-		return 0;
+		goto _not_found_int;
 
 	int offset = get_packet_offset_at_index(ipacket, index);
 	//must be enough room for ipv4
-	if( offset <= sizeof( struct iphdr ) )
-		return 0;
+	if( offset <= sizeof( struct _iphdr ) )
+		goto _not_found_int;
 
-	const struct iphdr *ip = (struct iphdr *) & ipacket->data[offset - sizeof(struct iphdr)];
+	const struct _iphdr *ip = (struct _iphdr *) & ipacket->data[offset - sizeof(struct _iphdr)];
 	//not found specific DSCP in IP
 	if( ip->dscp != IPv4_DSCP_INT )
-		return 0;
+		goto _not_found_int;
 
-	classified_proto_t retval;
-	retval.proto_id = PROTO_INT;
-	retval.status   = Classified;
-	retval.offset   = is_udp? UDP_HDR_SIZE : TCP_HDR_SIZE; //need to jump over UDP or TCP header
+	//return set_classified_proto(ipacket, index + 1, retval);
+	mmt_internal_add_connection(ipacket, PROTO_INT, MMT_REAL_PROTOCOL);
+	return FOUND;
 
-	return set_classified_proto(ipacket, index + 1, retval);
+	_not_found_int:
+	//checked but not found
+	//=> exclude from the next check
+	MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
+	return NOT_FOUND;
+
 }
 
 static int _classify_int_from_udp(ipacket_t * ipacket, unsigned index) {
@@ -87,9 +91,10 @@ static int _classify_int_from_tcp(ipacket_t * ipacket, unsigned index) {
 		cursor += sizeof(var_type);\
 	}
 
+#ifndef debug
 #define debug(M, ...)\
 	fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
-
+#endif
 
 #define extract_u8( v )\
 	if( v ){\

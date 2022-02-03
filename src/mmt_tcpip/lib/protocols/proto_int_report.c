@@ -239,7 +239,7 @@ int init_proto_inband_network_telemetry_struct() {
 			return PROTO_NOT_REGISTERED;
 		}
 
-	int ret = register_classification_function_with_parent_protocol( PROTO_UDP, _classify_inband_network_telemetry_from_udp, 99 );
+	int ret = register_classification_function_with_parent_protocol( PROTO_UDP, _classify_inband_network_telemetry_from_udp, 100 );
 	if( ret == 0 ){
 		log_err( "Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
 		return PROTO_NOT_REGISTERED;
