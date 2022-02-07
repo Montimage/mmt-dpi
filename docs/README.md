@@ -17,7 +17,7 @@
 * [MMT-Extract user guide](./user-guide)
 * [Developer](./Developer)
 * [Deployment Consideration](./Deployment-Consideration)
-* [Data Types](./Data Types.md)
+* [Data Types](./Data-Types.md)
 * [Prepare for a new released version.md](./Prepare-for-a-new-released-version.md)
 * [Memory Management](./Memory-Management.md)
 * [Discussion Points](./Discussion-Points.md)
