@@ -2,7 +2,8 @@
 
 A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis
 
-[Documents for developer](./docs)
+- [Compile and Install](docs/Compilation-and-Installation-Instructions.md)
+- [Full documentation](./docs)
 
 ---
 
