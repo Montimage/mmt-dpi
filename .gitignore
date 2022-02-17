@@ -1,7 +1,7 @@
 *.a
 .DS_Store
 sftp-config.json
-src/.DS_Store
+.DS_Store
 src/c-doxygen.conf
 *.o
 *.lo
@@ -40,6 +40,7 @@ sdk/*
 .cproject
 .project
 .settings/
+.gdb*
 
 # ignore some configuration file
 sftp.json

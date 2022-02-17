@@ -1,0 +1,19 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: build-from-source
+      run: |
+         sudo apt-get update-y && install -y libxml2-dev libpcap-dev
+         cd sdk/ && make -j2 && sudo make install && make test

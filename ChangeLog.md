@@ -1,5 +1,11 @@
 RELEASE NOTES
 ---
+Version 1.7.2 (17 February 2022 - by @nhnghia)
+- Classify and extract inband-network telemetry protocol and report
+- Add mmt_u32_array and mmt_u64_array data type structs
+- Enable Github CI to check code
+
+
 Version 1.7.1.0 (19 january 2022 - by HN)
 - Extract IP attributes for L4S implementation: jitter, l4s_ecn, l4s_marked
 - Extract TCP option fiels: tsval, tsecr
@@ -117,12 +123,12 @@ Version 1.6.10.1
 - Fixed FTP memory corruption when freeing command which contains special character
 - Fixed Redis classification
 
-## Version 1.6.10.0
+Version 1.6.10.0
 - Add classification function to 25 unknown protocols
 - Update PROTO_SCTP: Extract more information
 - Replace the 8 dead hostname protocols by new protocols from top 50 in France
 
-Version 1.6.9.2
+#Version 1.6.9.2
 - Deliver to THALES
 - Fixed double free AVL tree on Centos environment
 - Replace PROTO_GCM by PROTO_TWITCH
@@ -133,7 +139,7 @@ Version 1.6.9.2
 - Replace PROTO_HTTP_CONNECT by PROTO_FOXNEWS
 - Replace PROTO_FOXNEWS by PROTO_REUTERS
 
-Version 1.6.9.1
+#Version 1.6.9.1
 - Update PROTO_GTP: classify_next, extract GTP header information such as: version, proto_type,...
 - Update PROTO_SCTP: add next protocols: PROTO_SCTP_INT, PROTO_SCTP_SACK, PROTO_SCTP_DATA
 - Fixed FTP reconstruction in ACTIVE MODE - remove some unexpected value in the command
@@ -157,7 +163,7 @@ Version 1.6.9.1
 	- Replace PROTO_COTENDO by PROTO_FRANCETVINFO
 	- Replace PROTO_VOXTEL by PROTO_STACKPATH
 
-## Version 1.6.9.0
+Version 1.6.9.0
 - Fixed some protocols based on hostname -> there are 8 protocol based on the hostname that does not exist anymore
 - Fixed memory leaks in PROTO_NFS
 - Fixed classification of PROTO_MANOLITO
@@ -171,7 +177,7 @@ Version 1.6.9.1
 - Fixed the classification of PROTO_SOULSEEK
 
 
-## Version 1.6.8.0
+Version 1.6.8.0
 - Change package name (of .deb file) from mmt-sdk to mmt-dpi
 - Fixed classification of PROTO_MSSQL
 - Added classification of PROTO_PTP over ETHERNET (Need to do for PROTO_PTP Over UDP)
@@ -190,7 +196,7 @@ Version 1.6.9.1
 - Move some IP statistics to IP protocol: active_session, timedout_session, defragmentation, ....
 - Fixed IP options pointer
 
-## Version 1.6.7.0
+Version 1.6.7.0
 - Fixed buffer overflow when working with HTTP header field
 - Fixed in FTP protocol: check tuple6==NULL and memory leak
 - 1.6.6.1 - Fixed problem with IP fragmentation
@@ -204,13 +210,13 @@ Version 1.6.9.1
 	+ SHOWLOG = 1 : show all messages in MMT_LOG(...),
 	+ LIGHTSDK = 1 : compile the light version of SDK
 
-## Release version 1.6.6.0
+Release version 1.6.6.0
 - Add timestamp to built .deb and .zip files
 - Extract file name from NFS protocol version 4 - only focus on some operation: OPEN, LOOKUP, REMOVE, RENAME
 - Version 1.6.5.1: Fixed insert_key_value() - use memcpy to build session_key instead of using reference address
 - Use inline function to optimize performance - Done by @Huu Nghia
 
-## Release version 1.6.5.0
+Release version 1.6.5.0
 - API for set SESSION TIMEDOUT
 - Fixed classify SMTP protocol - not done
 - Added GIT_VERSION into mmt_version()
@@ -220,7 +226,7 @@ Version 1.6.9.1
 - Commented out some unused function in proto_dns.c. (Note: When testing memory leak, we need to test with dns-extraction.c to avoid memory from dns attributes)
 
 
-## Release version 1.6.4.0
+Release version 1.6.4.0
 - Add API function to unregister a protocol
 - Add firing event when TCP session closed
 - Extract DNS packets
@@ -229,11 +235,11 @@ Version 1.6.9.1
 - Fixed some bugs and memory leaks in NDN protocol
 
 
-## Release version 1.6.3.1
+Release version 1.6.3.1
 - Hot fixed for ipv6 parsing
 - Relocated mmt-sdk to opt/mmt/dpi
 
-## Release version 1.6.3.0
+Release version 1.6.3.0
 13 July 2016
 - Added IP session ID to each FTP session
 - Fixed extracting control session information for FTP Data packet
@@ -250,17 +256,17 @@ Version 1.6.9.1
 - Update script generates the installation file (.deb, .zip)
 
 
-## Release version 1.6.2.1
+Release version 1.6.2.1
 04 May 2016
 - Fixed a bug with FTP PORT command
 - Fixed proto_header_offsets and proto_classif_status for session base on ipacket hierarchy
 
-## Release version 1.6.2.0
+Release version 1.6.2.0
 2 May 2016
 - Added proto_path_direction for session
 - Fixed proto_path if the proto_path different with ipacket->proto_hierachy: ETH.IP/ ETH.802Q.IP
 
-## Release version 1.6.1.0
+Release version 1.6.1.0
 12 April 2016
 - Added and updated some protocols:
 	+ oracle
@@ -275,13 +281,13 @@ Version 1.6.9.1
 	+ mail_smtp
 - Applied software versioning method to version number of release
 
-## Release version 1.6
+Release version 1.6
 06 April 2016
 
 - Added option to use mmt-reassembly with mmt-sdk
 - Has been tested with valgrind for: memory leak and multiple-thread
 
-## Release version 1.5
+Release version 1.5
 05 April 2016
 
 - No copy packet in sdk
