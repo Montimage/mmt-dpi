@@ -14,6 +14,9 @@
  *
  */
 
+#define GTP_MESSAGE_TYPE_T_PDU 0xFF
+#define GTP_NEXT_EXTENSION_HEADER_TYPE_PDU_SESSION 0x85
+
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
@@ -23,6 +26,16 @@ struct gtp_header_generic {
 	u_int8_t message_type;
 	u_int16_t message_len;
 	u_int32_t teid;
+};
+
+struct gtp_header_extension_pdu {
+	//an 8-bit field. This field states the length of this extension header,
+	// including the length, the contents, and the next extension header field,
+	// in 4-octet units, so the length of the extension must always be a multiple of 4.
+	uint8_t extension_length;
+	uint8_t _spare_1 : 4, pdu_type : 4;
+	uint8_t qfi : 6, _spare_2 : 2;
+	uint8_t next_extesnion_header_type;
 };
 
 // end of TDS header
@@ -191,8 +204,48 @@ int gtp_npdu_number_flag_extraction(const ipacket_t * packet, unsigned proto_ind
 	return 1;
 }
 
+int _gtp_extract_next_extension_header_type(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	struct gtp_header_generic * gtp = (struct gtp_header_generic *) & packet->data[proto_offset];
+	if( gtp->extension_header == 0 ) //no extension
+		return 0;
+	*((uint8_t *) extracted_data->data) = *(uint8_t *) &packet->data[ proto_offset + 11 ];
+	return 1;
+}
 
-static attribute_metadata_t gtp_attributes_metadata[GTP_ATTRIBUTES_NB] = {
+
+static int _gtp_extract_pdu_extension_header_field(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	const struct gtp_header_generic * gtp = (struct gtp_header_generic *) & packet->data[proto_offset];
+	if( gtp->message_type != GTP_MESSAGE_TYPE_T_PDU //not T-PDU
+			|| gtp->extension_header == 0 ) //no extension
+		return 0;
+
+	//not PDU extension
+	const uint8_t next_extension_header = *(uint8_t *) &packet->data[ proto_offset + 11 ];
+	if( next_extension_header != GTP_NEXT_EXTENSION_HEADER_TYPE_PDU_SESSION )
+		return 0;
+
+	const struct gtp_header_extension_pdu *pdu = (struct gtp_header_extension_pdu *) & packet->data[proto_offset + 12];
+	switch( extracted_data->field_id ){
+	case GTP_EXTENSION_PDU__LENGTH:
+		*(( uint8_t *) extracted_data->data) = pdu->extension_length * 4;
+		return 1;
+	case GTP_EXTENSION_PDU__TYPE:
+		*(( uint8_t *) extracted_data->data) = pdu->pdu_type;
+		return 1;
+	case GTP_EXTENSION_PDU__QFI:
+		*(( uint8_t *) extracted_data->data) = pdu->qfi;
+		return 1;
+	case GTP_EXTENSION_PDU__NEXT_EXTENSION_HEADER_TYPE:
+		*(( uint8_t *) extracted_data->data) = pdu->next_extesnion_header_type;
+		return 1;
+	}
+
+	return 0;
+}
+
+static attribute_metadata_t gtp_attributes_metadata[] = {
 	{GTP_VERSION, GTP_VERSION_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_version_flag_extraction},
 	{GTP_PROTOCOL_TYPE, GTP_PROTOCOL_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_protocol_type_flag_extraction},
 	{GTP_RESERVED, GTP_RESERVED_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_reserved_flag_extraction},
@@ -205,19 +258,27 @@ static attribute_metadata_t gtp_attributes_metadata[GTP_ATTRIBUTES_NB] = {
 	{GTP_SEQ_NUM, GTP_SEQ_NUM_ALIAS, MMT_U16_DATA, sizeof (short), 8, SCOPE_PACKET, gtp_seq_num_extraction},
 	{GTP_IMSI_MMC, GTP_IMSI_MMC_ALIAS, MMT_U16_DATA, sizeof (short), 13, SCOPE_PACKET, gtp_imsi_mmc_extraction},
 	{GTP_IMSI_MNC, GTP_IMSI_MNC_ALIAS, MMT_U16_DATA, sizeof (short), 14, SCOPE_PACKET, gtp_imsi_mnc_extraction},
+	{GTP_NEXT_EXTENSION_HEADER_TYPE, GTP_NEXT_EXTENSION_HEADER_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, _gtp_extract_next_extension_header_type},
+	{GTP_EXTENSION_PDU__LENGTH, GTP_EXTENSION_PDU__LENGTH_ALIAS, MMT_U16_DATA, sizeof (uint16_t), 0, SCOPE_PACKET, _gtp_extract_pdu_extension_header_field},
+	{GTP_EXTENSION_PDU__TYPE, GTP_EXTENSION_PDU__TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, _gtp_extract_pdu_extension_header_field},
+	{GTP_EXTENSION_PDU__QFI, GTP_EXTENSION_PDU__QFI_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, _gtp_extract_pdu_extension_header_field},
+	{GTP_EXTENSION_PDU__NEXT_EXTENSION_HEADER_TYPE, GTP_EXTENSION_PDU__NEXT_EXTENSION_HEADER_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, _gtp_extract_pdu_extension_header_field}
 };
 
 int init_proto_gtp_struct() {
+	const int length = (sizeof(gtp_attributes_metadata) / sizeof(gtp_attributes_metadata[0]) );
 	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_GTP, PROTO_GTP_ALIAS);
 	if (protocol_struct != NULL) {
 		int i = 0;
-		for (; i < GTP_ATTRIBUTES_NB; i++) {
-			register_attribute_with_protocol(protocol_struct, &gtp_attributes_metadata[i]);
+		for (; i < length; i++) {
+			if( !register_attribute_with_protocol(protocol_struct, &gtp_attributes_metadata[i]) )
+				log_err("Cannot register attribute %s.%s", PROTO_GTP_ALIAS, gtp_attributes_metadata[i].alias);;
 		}
 		mmt_init_classify_me_gtp();
 		register_classification_function(protocol_struct, gtp_classify_next_proto);
 		return register_protocol(protocol_struct, PROTO_GTP);
 	} else {
+		log_err("Cannot register protocol %s (id=%d)", PROTO_GTP_ALIAS, PROTO_GTP);
 		return 0;
 	}
 }

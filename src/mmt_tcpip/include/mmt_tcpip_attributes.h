@@ -1171,7 +1171,11 @@ enum {
     GTP_SEQ_NUM,
     GTP_IMSI_MMC,
     GTP_IMSI_MNC,
-    GTP_ATTRIBUTES_NB = GTP_IMSI_MNC
+	GTP_NEXT_EXTENSION_HEADER_TYPE,
+	GTP_EXTENSION_PDU__LENGTH,
+	GTP_EXTENSION_PDU__TYPE,
+	GTP_EXTENSION_PDU__QFI, //QoS Flow Identifier
+	GTP_EXTENSION_PDU__NEXT_EXTENSION_HEADER_TYPE
 };
 
 #define GTP_VERSION_ALIAS               "version"
@@ -1187,6 +1191,11 @@ enum {
 #define GTP_SEQ_NUM_ALIAS               "seq_num"
 #define GTP_IMSI_MMC_ALIAS                  "imsi_mmc"
 #define GTP_IMSI_MNC_ALIAS                  "imsi_mnc"
+#define GTP_NEXT_EXTENSION_HEADER_TYPE_ALIAS "next_header_type"
+#define GTP_EXTENSION_PDU__LENGTH_ALIAS                     "pdu_length"
+#define GTP_EXTENSION_PDU__TYPE_ALIAS                       "pdu_type"
+#define GTP_EXTENSION_PDU__QFI_ALIAS                        "pdu_qfi"
+#define GTP_EXTENSION_PDU__NEXT_EXTENSION_HEADER_TYPE_ALIAS "pdu_next_header_type"
 
 //////////// END OF GTP PROTOCOL ATTRIBUTES ////////////////////
 
