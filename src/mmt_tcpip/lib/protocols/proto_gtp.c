@@ -252,6 +252,7 @@ static attribute_metadata_t gtp_attributes_metadata[] = {
 	{GTP_EXTENSION_HEADER, GTP_EXTENSION_HEADER_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_extension_header_flag_extraction},
 	{GTP_SEQ_CHECK, GTP_SEQ_CHECK_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_seq_check_flag_extraction},
 	{GTP_NPDU_NUMBER, GTP_NPDU_NUMBER_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, gtp_npdu_number_flag_extraction},
+	{GTP_FLAGS, GTP_FLAGS_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, general_byte_to_byte_extraction},
 	{GTP_MESSAGE_TYPE, GTP_MESSAGE_TYPE_ALIAS, MMT_U8_DATA, sizeof (char), 1, SCOPE_PACKET, general_byte_to_byte_extraction},
 	{GTP_LENGTH, GTP_LENGTH_ALIAS, MMT_U16_DATA, sizeof (short), 2, SCOPE_PACKET, general_short_extraction_with_ordering_change},
 	{GTP_TEID, GTP_TEID_ALIAS, MMT_U32_DATA, sizeof (int), 4, SCOPE_PACKET, general_int_extraction_with_ordering_change},

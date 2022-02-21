@@ -1164,6 +1164,7 @@ enum {
     GTP_EXTENSION_HEADER,
     GTP_SEQ_CHECK,
     GTP_NPDU_NUMBER,
+    GTP_FLAGS,
     // Message
     GTP_MESSAGE_TYPE,
     GTP_LENGTH,
@@ -1181,21 +1182,22 @@ enum {
 #define GTP_VERSION_ALIAS               "version"
 #define GTP_PROTOCOL_TYPE_ALIAS         "proto_type"
 #define GTP_RESERVED_ALIAS              "reserved"
-#define GTP_EXTENSION_HEADER_ALIAS      "extension_header"
-#define GTP_SEQ_CHECK_ALIAS             "seq_check"
-#define GTP_NPDU_NUMBER_ALIAS           "ndpu_number"
+#define GTP_EXTENSION_HEADER_ALIAS      "flag_ext_hdr"
+#define GTP_SEQ_CHECK_ALIAS             "flag_seq_num"
+#define GTP_NPDU_NUMBER_ALIAS           "flag_ndpu_num"
+#define GTP_FLAGS_ALIAS                 "flags"
 // Message
-#define GTP_MESSAGE_TYPE_ALIAS          "message_type"
+#define GTP_MESSAGE_TYPE_ALIAS          "msg_type"
 #define GTP_LENGTH_ALIAS                "length"
 #define GTP_TEID_ALIAS                  "teid"
 #define GTP_SEQ_NUM_ALIAS               "seq_num"
 #define GTP_IMSI_MMC_ALIAS                  "imsi_mmc"
 #define GTP_IMSI_MNC_ALIAS                  "imsi_mnc"
-#define GTP_NEXT_EXTENSION_HEADER_TYPE_ALIAS "next_header_type"
-#define GTP_EXTENSION_PDU__LENGTH_ALIAS                     "pdu_length"
-#define GTP_EXTENSION_PDU__TYPE_ALIAS                       "pdu_type"
-#define GTP_EXTENSION_PDU__QFI_ALIAS                        "pdu_qfi"
-#define GTP_EXTENSION_PDU__NEXT_EXTENSION_HEADER_TYPE_ALIAS "pdu_next_header_type"
+#define GTP_NEXT_EXTENSION_HEADER_TYPE_ALIAS "next_hdr_type"
+#define GTP_EXTENSION_PDU__LENGTH_ALIAS                     "ext_pdu_length"
+#define GTP_EXTENSION_PDU__TYPE_ALIAS                       "ext_pdu_type"
+#define GTP_EXTENSION_PDU__QFI_ALIAS                        "ext_pdu_qfi"
+#define GTP_EXTENSION_PDU__NEXT_EXTENSION_HEADER_TYPE_ALIAS "ext_pdu_next_hdr_type"
 
 //////////// END OF GTP PROTOCOL ATTRIBUTES ////////////////////
 
