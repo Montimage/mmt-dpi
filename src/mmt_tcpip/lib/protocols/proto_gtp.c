@@ -85,16 +85,41 @@ int mmt_check_gtp(ipacket_t * ipacket, unsigned index) {
 int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 
 	int offset = get_packet_offset_at_index(ipacket, index);
+	const u_char *gtp_binary = &ipacket->data[offset];
 	struct gtp_header_generic *gtp = (struct gtp_header_generic*)& ipacket->data[offset];
 	int gtp_offset = sizeof (struct gtp_header_generic);
-	if(gtp->sequence_number == 1){
-		gtp_offset += 4;
+	int next_ext_header_type = 0, next_ext_header_length = 0;
+
+	/*
+	- Sequence number
+	an (optional) 16-bit field. This field exists if any of the E, S, or PN bits are on. The field must be interpreted only if the S bit is on.
+	- N-PDU number
+	an (optional) 8-bit field. This field exists if any of the E, S, or PN bits are on. The field must be interpreted only if the PN bit is on.
+	- Next extension header type
+	an (optional) 8-bit field. This field exists if any of the E, S, or PN bits are on. The field must be interpreted only if the E bit is on.
+
+	=> So the 3 fields above are present if any of 3 bits (E, S, PN) are on
+	*/
+	int bit_E_S_PN = gtp->extension_header || gtp->sequence_number || gtp->ndpu_number;
+	if( bit_E_S_PN ){
+		gtp_offset += 2; //sequence number
+		gtp_offset += 1; //n-pdu number
+		gtp_offset += 1; //next ext header
 	}
-	if(gtp->ndpu_number == 1){
-		gtp_offset += 2;
-	}
+	//we check ext header only if its flag bit is on
 	if(gtp->extension_header == 1){
-		gtp_offset += 2;	
+		//last byte indicate whether the next ext is present
+		next_ext_header_type = gtp_binary[gtp_offset-1];
+		//jump over each extension header
+		while( next_ext_header_type != 0 ){
+			//the first byte of extension indicate its length in 4 bytes
+			next_ext_header_length = 4 * gtp_binary[ gtp_offset ];
+			//jump over the current ext header
+			gtp_offset += next_ext_header_length;
+
+			//check the next ext header
+			next_ext_header_type = gtp_binary[gtp_offset - 1]; //last byte indicate whether the next ext is present
+		}
 	}
 	if (gtp->message_type == 0xff) {
 		classified_proto_t retval;
