@@ -146,6 +146,9 @@ enum int_attributes {
 	INT_HOP_LV2_INGRESS_PORT_IDS,
 	INT_HOP_LV2_EGRESS_PORT_IDS,
 	INT_HOP_TX_UTILIZES,
+	INT_HOP_L4S_MARK,
+	INT_HOP_L4S_DROP,
+
 	//details of bits
 	INT_IS_SWITCH_ID,
 	INT_IS_IN_EGRESS_PORT_ID,
@@ -154,7 +157,8 @@ enum int_attributes {
 	INT_IS_INGRESS_TIME,
 	INT_IS_EGRESS_TIME,
 	INT_IS_LV2_IN_EGRESS_PORT_ID,
-	INT_IS_TX_UTILIZE
+	INT_IS_TX_UTILIZE,
+	INT_IS_L4S_MARK_DROP
 };
 
 
@@ -174,6 +178,8 @@ enum int_attributes {
 #define INT_HOP_LV2_INGRESS_PORT_IDS_ALIAS "hop_lv2_ingress_port_ids"
 #define INT_HOP_LV2_EGRESS_PORT_IDS_ALIAS  "hop_lv2_egress_port_ids"
 #define INT_HOP_TX_UTILIZES_ALIAS          "hop_tx_utilizes"
+#define INT_HOP_L4S_MARK_ALIAS             "hop_l4s_mark"
+#define INT_HOP_L4S_DROP_ALIAS             "hop_l4s_drop"
 
 #define INT_IS_SWITCH_ID_ALIAS             "is_switch_id"
 #define INT_IS_IN_EGRESS_PORT_ID_ALIAS     "is_in_egress_port_id"
@@ -183,5 +189,6 @@ enum int_attributes {
 #define INT_IS_EGRESS_TIME_ALIAS           "is_egress_time"
 #define INT_IS_LV2_IN_EGRESS_PORT_ID_ALIAS "is_lv2_in_egress_port_id"
 #define INT_IS_TX_UTILIZE_ALIAS            "is_tx_utilize"
+#define INT_IS_L4S_MARK_DROP_ALIAS         "is_l4s_mark_drop"
 
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_INBAND_TELEMETRY_H_ */
