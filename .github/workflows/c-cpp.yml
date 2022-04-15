@@ -3,6 +3,7 @@ name: C/C++ CI
 on:
   push:
     branches: [ master ]
+    tags: ["v*"] # Push events to matching v*, i.e. v1.0, v20.15.10
   pull_request:
     branches: [ master ]
 
@@ -12,8 +13,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Initialize variables
+      env:
+        IS_NEED_TO_PACKAGE: ${{ startsWith( github.ref, 'refs/tags/v' ) }}
+        GITHUB_REF: ${{ github.ref }}
+      run: |
+        cat <<EOF >> $GITHUB_ENV
+        IS_NEED_TO_PACKAGE=$IS_NEED_TO_PACKAGE
+        PACKAGE_VERSION=$(echo $GITHUB_REF | tr -d 'refs/tags/' )
+        EOF
+
     - uses: actions/checkout@v2
     - name: build-from-source
       run: |
          sudo apt-get update-y && install -y libxml2-dev libpcap-dev
-         cd sdk/ && make -j2 && sudo make install && make test
+         cd sdk/ && make -j2 && sudo make install && make test && make deb
+
+    #The following steps are executed only on new tag
+    - name: Upload artifact
+      if: ${{ fromJSON(env.IS_NEED_TO_PACKAGE) }}
+      env:
+        TAG_NAME: ${{ github.ref }}
+      run: |
+        make STATIC_LINK=1 dist
+        #get name of distribution tar file
+        ARTIFACT_PATHNAME=$(ls sdk/*.deb | head -n 1)
+        ARTIFACT_NAME=$(basename $ARTIFACT_PATHNAME)
+        echo ARTIFACT_NAME=${ARTIFACT_NAME}         >> $GITHUB_ENV
+        echo ARTIFACT_PATHNAME=${ARTIFACT_PATHNAME} >> $GITHUB_ENV
+
+    - name: Create Release
+      if: ${{ fromJSON(env.IS_NEED_TO_PACKAGE) }}
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.PACKAGE_VERSION }}
+        release_name: Release ${{ env.PACKAGE_VERSION }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      if: ${{ fromJSON(env.IS_NEED_TO_PACKAGE) }}
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ${{ env.ARTIFACT_PATHNAME }}
+        asset_name: ${{ env.ARTIFACT_NAME }}
+        asset_content_type: application/zip
