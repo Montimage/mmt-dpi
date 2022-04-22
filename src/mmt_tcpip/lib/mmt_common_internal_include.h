@@ -2277,6 +2277,7 @@ extern "C" {
     int init_proto_dtp_struct();
     int init_proto_inband_network_telemetry_struct();
     int init_proto_int_struct();
+    int init_proto_dtls_struct();
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus

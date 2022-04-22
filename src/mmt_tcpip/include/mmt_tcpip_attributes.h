@@ -508,6 +508,21 @@ enum ssl_attributes {
 // #define SSL_HS_TYPE_ALIAS "hs_type"
 // #define SSL_HS_VERSION_ALIAS "hs_version"
 // #define SSL_HS_LENGTH_ALIAS "hs_length"
+
+enum dtls_attributes {
+	DTLS_CONTENT_TYPE = 1,
+	DTLS_VERSION,
+	DTLS_EPOCH,
+	DTLS_SEQUENCE_NUMBER,
+	DTLS_LENGTH
+};
+
+#define DTLS_CONTENT_TYPE_ALIAS    "content_length"
+#define DTLS_VERSION_ALIS          "version"
+#define DTLS_EPOCH_ALIAS           "epoch"
+#define DTLS_SEQUENCE_NUMBER_ALIAS "sequence_number"
+#define DTLS_LENGTH_ALIAS          "length"
+
 enum radius_attributes {
     RADIUS_CODE = 1,
     RADIUS_RID,
