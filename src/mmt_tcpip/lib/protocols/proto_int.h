@@ -12,32 +12,6 @@
 #include "mmt_core.h"
 
 
-#ifndef ntohll
-/* Structure used to swap the bytes in a 64-bit unsigned long long. */
-union byteswap_64_u {
-	uint64_t a;
-	uint32_t b[2];
-};
-
-
-/* Function to byteswap big endian 64bit unsigned integers
- * back to little endian host order on little endian machines.
- * As above, on big endian machines this will be a null macro.
- * The macro ntohll() is defined in byteorder64.h, and if needed,
- * refers to _ntohll() here.
- */
-
-static inline uint64_t ntohll(uint64_t x){
-	union byteswap_64_u u1;
-	union byteswap_64_u u2;
-	u1.a = x;
-	u2.b[1] = ntohl(u1.b[0]);
-	u2.b[0] = ntohl(u1.b[1]);
-
-	return u2.a;
-}
-#endif
-
 /**
  * INT shim header for TCP/UDP:
  *   the INT metadata header and INT metadata stack will be encapsulated
