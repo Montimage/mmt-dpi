@@ -10,12 +10,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-// {254, 255}
-#define DTLS_VERSION_1_0 0xFEFF
-// {254, 253}
-#define DTLS_VERSION_1_2 0xFEFD
-#define DTLS_VERSION_1_3 0xFEFC
-
 /*
  * Search info about DTLS header structure on April 21, 2022
  * version 1.0: https://datatracker.ietf.org/doc/html/rfc4347#section-4.1
@@ -34,11 +28,11 @@ dtls_header_t;
 
 static bool _is_dtls_content_type( uint8_t content_type ){
 	switch( content_type){
-	case 20: //changeCiperSpect
-	case 21: //Alert
-	case 22: //handShake
-	case 23: //Application
-	case 24: //Heartbeat
+	case DTLS_CONTENT_TYPE_CHANGE_CIPER_SPECT:
+	case DTLS_CONTENT_TYPE_ALERT:
+	case DTLS_CONTENT_TYPE_HANDSHAKE:
+	case DTLS_CONTENT_TYPE_APPLICATION:
+	case DTLS_CONTENT_TYPE_HEARTBEAT:
 		return true;
 	default:
 		return false;
@@ -47,9 +41,9 @@ static bool _is_dtls_content_type( uint8_t content_type ){
 
 static bool _is_dtls_version( uint16_t version ){
 	switch( version ){
-	case 0xFEFF: //1.0
-	case 0xFEFD: //1.2
-	case 0xFEFC: //1.3
+	case DTLS_VERSION_1_0:
+	case DTLS_VERSION_1_2:
+	case DTLS_VERSION_1_3:
 	case 0x0100: //1.0??? HN does not found doc about this number
 		// but it is in a pcap file:
 		// https://wiki.wireshark.org/SampleCaptures#dtls-with-decryption-keys

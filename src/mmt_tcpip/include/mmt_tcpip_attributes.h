@@ -517,6 +517,16 @@ enum dtls_attributes {
 	DTLS_LENGTH
 };
 
+#define DTLS_VERSION_1_0 0xFEFF
+// {254, 253}
+#define DTLS_VERSION_1_2 0xFEFD
+#define DTLS_VERSION_1_3 0xFEFC
+#define DTLS_CONTENT_TYPE_CHANGE_CIPER_SPECT 20
+#define DTLS_CONTENT_TYPE_ALERT              21
+#define DTLS_CONTENT_TYPE_HANDSHAKE          22
+#define DTLS_CONTENT_TYPE_APPLICATION        23
+#define DTLS_CONTENT_TYPE_HEARTBEAT          24
+
 #define DTLS_CONTENT_TYPE_ALIAS    "content_length"
 #define DTLS_VERSION_ALIS          "version"
 #define DTLS_EPOCH_ALIAS           "epoch"
