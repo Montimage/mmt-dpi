@@ -324,6 +324,8 @@ uint32_t get_data_size_by_data_type(uint32_t data_type) {
             return STRING_DATA_TYPE_LEN;
         case MMT_HEADER_LINE: /**< pointer to MMT header line structure. Used for HTTP like protocols header fields */
             return sizeof(void *);
+        case MMT_U16_ARRAY:
+             return U16_ARRAY_TYPE_LEN;
         case MMT_U32_ARRAY:
              return U32_ARRAY_TYPE_LEN;
         case MMT_U64_ARRAY:
