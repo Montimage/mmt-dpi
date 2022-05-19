@@ -514,7 +514,8 @@ enum dtls_attributes {
 	DTLS_VERSION,
 	DTLS_EPOCH,
 	DTLS_SEQUENCE_NUMBER,
-	DTLS_LENGTH
+	DTLS_LENGTH,
+	DTLS_CLIENT_HELLO_CIPHER_SUITE
 };
 
 #define DTLS_VERSION_1_0 0xFEFF
@@ -527,11 +528,22 @@ enum dtls_attributes {
 #define DTLS_CONTENT_TYPE_APPLICATION        23
 #define DTLS_CONTENT_TYPE_HEARTBEAT          24
 
+
+#define TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256 0xd001
+#define TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256 0xd005
+#define TLS_PSK_WITH_AES_128_GCM_SHA256       0x00a8
+#define TLS_PSK_WITH_AES_128_CCM              0xc0a4
+#define TLS_PSK_WITH_AES_256_CCM              0xc0a5
+#define TLS_ECJPAKE_WITH_AES_128_CCM_8        0xc0ff
+#define TLS_PSK_WITH_AES_128_CCM_8            0xc0a8
+#define TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 0xc037
+
 #define DTLS_CONTENT_TYPE_ALIAS    "content_length"
 #define DTLS_VERSION_ALIS          "version"
 #define DTLS_EPOCH_ALIAS           "epoch"
 #define DTLS_SEQUENCE_NUMBER_ALIAS "sequence_number"
 #define DTLS_LENGTH_ALIAS          "length"
+#define DTLS_CLIENT_HELLO_CIPHER_SUITE_ALIAS "client_hello_cipher_suite"
 
 enum radius_attributes {
     RADIUS_CODE = 1,
