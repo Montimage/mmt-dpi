@@ -2,7 +2,8 @@
 #define MMT_TCPIP_PROTOCOLS
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #include "mmt_contents_defs.h"
@@ -634,10 +635,10 @@ extern "C" {
 #define PROTO_OGAME 619
 #define PROTO_BATTLEKNIGHT 620
 #define PROTO_4STORY 621
-#define PROTO_FBMSG 622 //Facebook messaging
-#define PROTO_TWITCH 623 //Google Cloud Messaging
-#define PROTO_SLL 624 //Linux Cooked Socket
-#define PROTO_NDN 625 // NDN protocol
+#define PROTO_FBMSG 622    // Facebook messaging
+#define PROTO_TWITCH 623   // Google Cloud Messaging
+#define PROTO_SLL 624      // Linux Cooked Socket
+#define PROTO_NDN 625      // NDN protocol
 #define PROTO_NDN_HTTP 626 // NDN_HTTP protocol
 #define PROTO_QUIC 627
 #define PROTO_ORACLE 628
@@ -657,21 +658,24 @@ extern "C" {
 #define PROTO_XID 642
 #define PROTO_CDP 643
 #define PROTO_DTP 644
-#define PROTO_SCTP_HEARTBEAT          645
-#define PROTO_SCTP_SHUTDOWN           646
-#define PROTO_SCTP_SHUTDOWN_COMPLETE  647
-#define PROTO_SCTP_ABORT              648
-#define PROTO_SCTP_ERROR              649
-#define PROTO_SCTP_COOKIE_ECHO        650
-#define PROTO_SCTP_ECNE               651
-#define PROTO_SCTP_CWR                652
-#define PROTO_SCTP_AUTH               653
-#define PROTO_SCTP_ASCONF             654
-#define PROTO_SCTP_RE_CONFIG          655
-#define PROTO_8021AD  656
-#define PROTO_MQTT  657
+#define PROTO_SCTP_HEARTBEAT 645
+#define PROTO_SCTP_SHUTDOWN 646
+#define PROTO_SCTP_SHUTDOWN_COMPLETE 647
+#define PROTO_SCTP_ABORT 648
+#define PROTO_SCTP_ERROR 649
+#define PROTO_SCTP_COOKIE_ECHO 650
+#define PROTO_SCTP_ECNE 651
+#define PROTO_SCTP_CWR 652
+#define PROTO_SCTP_AUTH 653
+#define PROTO_SCTP_ASCONF 654
+#define PROTO_SCTP_RE_CONFIG 655
+#define PROTO_8021AD 656
+#define PROTO_MQTT 657
 #define PROTO_INT 658
-#define PROTO_INT_REPORT 659
+#define PROTO_GEO_NETWORKING 659
+#define PROTO_BTPB 660
+#define PROTO_CAM 661
+#define PROTO_INT_REPORT 662
 #define LAST_IMPLEMENTED_PROTOCOL PROTO_INT_REPORT
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
@@ -1310,17 +1314,17 @@ extern "C" {
 #define PROTO_SCTP_DATA_ALIAS "sctp_data"
 #define PROTO_SCTP_SACK_ALIAS "sctp_sack"
 #define PROTO_SCTP_INIT_ALIAS "sctp_init"
-#define PROTO_SCTP_HEARTBEAT_ALIAS         "sctp_heartbeat"
-#define PROTO_SCTP_SHUTDOWN_ALIAS          "sctp_shutdown"
+#define PROTO_SCTP_HEARTBEAT_ALIAS "sctp_heartbeat"
+#define PROTO_SCTP_SHUTDOWN_ALIAS "sctp_shutdown"
 #define PROTO_SCTP_SHUTDOWN_COMPLETE_ALIAS "sctp_shutdown_complete"
-#define PROTO_SCTP_ABORT_ALIAS             "sctp_abort"
-#define PROTO_SCTP_ERROR_ALIAS             "sctp_error"
-#define PROTO_SCTP_COOKIE_ECHO_ALIAS       "sctp_cookie_echo"
-#define PROTO_SCTP_ECNE_ALIAS              "sctp_ecne"
-#define PROTO_SCTP_CWR_ALIAS               "sctp_cwr"
-#define PROTO_SCTP_AUTH_ALIAS              "sctp_auth"
-#define PROTO_SCTP_ASCONF_ALIAS            "sctp_asconf"
-#define PROTO_SCTP_RE_CONFIG_ALIAS         "sctp_re_config"
+#define PROTO_SCTP_ABORT_ALIAS "sctp_abort"
+#define PROTO_SCTP_ERROR_ALIAS "sctp_error"
+#define PROTO_SCTP_COOKIE_ECHO_ALIAS "sctp_cookie_echo"
+#define PROTO_SCTP_ECNE_ALIAS "sctp_ecne"
+#define PROTO_SCTP_CWR_ALIAS "sctp_cwr"
+#define PROTO_SCTP_AUTH_ALIAS "sctp_auth"
+#define PROTO_SCTP_ASCONF_ALIAS "sctp_asconf"
+#define PROTO_SCTP_RE_CONFIG_ALIAS "sctp_re_config"
 #define PROTO_LLMNR_ALIAS "llmnr"
 #define PROTO_ECLIPSE_TCF_ALIAS "eclipse_tcf"
 #define PROTO_LOOPBACK_ALIAS "loopback"
@@ -1334,43 +1338,48 @@ extern "C" {
 #define PROTO_DTP_ALIAS "dtp"
 #define PROTO_8021AD_ALIAS "8021ad"
 #define PROTO_MQTT_ALIAS "mqtt"
-// #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
-// #define PROTO_FTP_DATA_ALIAS "ftp_data"
+#define PROTO_INT_REPORT_ALIAS "int_report"
+#define PROTO_GEO_NETWORKING_ALIAS "geo_networking"
+#define PROTO_BTPB_ALIAS "btpb"
+#define PROTO_CAM_ALIAS "cam"
 
-#define PROTO_CLASS_UNKOWN         0
-#define PROTO_CLASS_WEB            1
-#define PROTO_CLASS_P2P            2
-#define PROTO_CLASS_GAMING         3
-#define PROTO_CLASS_STREAMING      4
+  // #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
+  // #define PROTO_FTP_DATA_ALIAS "ftp_data"
+
+#define PROTO_CLASS_UNKOWN 0
+#define PROTO_CLASS_WEB 1
+#define PROTO_CLASS_P2P 2
+#define PROTO_CLASS_GAMING 3
+#define PROTO_CLASS_STREAMING 4
 #define PROTO_CLASS_CONVERSATIONAL 5
-#define PROTO_CLASS_MAIL           6
-#define PROTO_CLASS_FILETRANSFER   7
-#define PROTO_CLASS_CLOUD_STORAGE  8
-#define PROTO_CLASS_DDL            9
-#define PROTO_CLASS_NETWORK       10
-#define PROTO_CLASS_TUNNEL        11
-#define PROTO_CLASS_DB            12
-#define PROTO_CLASS_REMOTE        13
-#define PROTO_CLASS_MISC          14
-#define PROTO_CLASS_CDN           15
+#define PROTO_CLASS_MAIL 6
+#define PROTO_CLASS_FILETRANSFER 7
+#define PROTO_CLASS_CLOUD_STORAGE 8
+#define PROTO_CLASS_DDL 9
+#define PROTO_CLASS_NETWORK 10
+#define PROTO_CLASS_TUNNEL 11
+#define PROTO_CLASS_DB 12
+#define PROTO_CLASS_REMOTE 13
+#define PROTO_CLASS_MISC 14
+#define PROTO_CLASS_CDN 15
 
-#define PROTO_CLASS_LABELS \
- "Unkown",                 \
- "Web",                    \
- "P2P",                    \
- "Gaming",                 \
- "Streaming",              \
- "Conversational",         \
- "Mail",                   \
- "FileTransfer",           \
- "CloudStorage",           \
- "DirectDownloadLink",     \
- "Network",                \
- "Tunnelling",             \
- "DataBase",               \
- "Remote",                 \
- "Misc",                   \
- "CDN"
+#define PROTO_CLASS_LABELS  \
+  "Unkown",                 \
+      "Web",                \
+      "P2P",                \
+      "Gaming",             \
+      "Streaming",          \
+      "Conversational",     \
+      "Mail",               \
+      "FileTransfer",       \
+      "CloudStorage",       \
+      "DirectDownloadLink", \
+      "Network",            \
+      "Tunnelling",         \
+      "DataBase",           \
+      "Remote",             \
+      "Misc",               \
+      "CDN"
 
 // DEFINE ACTION ON UPDATE PROTOCOL
 #define TCP_ENABLE_REASSEMBLE 1
@@ -1379,4 +1388,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif //MMT_TCPIP_PROTOCOLS
+#endif // MMT_TCPIP_PROTOCOLS

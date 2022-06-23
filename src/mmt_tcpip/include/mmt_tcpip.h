@@ -9,442 +9,480 @@
 #define MMT_TCPIP_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 #include <stdlib.h>
 #include "mmt_tcpip_protocols.h"
 #include "mmt_tcpip_attributes.h"
 
-static inline int get_content_class_by_content_type(char * str) {
-    int str_len = strlen(str);
+    static inline int get_content_class_by_content_type(char *str)
+    {
+        int str_len = strlen(str);
 
-    if (str_len > 12 && mmt_memcmp(str, "application/", 12) == 0) {
-        // For non-standard files : x prefix
-        // For vendor-specific files : vnd prefix
-        if (str_len >= 15 && mmt_memcmp(&str[12], "flv", 3) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 17 && mmt_memcmp(&str[12], "x-fcs", 5) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 20 && mmt_memcmp(&str[12], "atom+xml", 8) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 22 && mmt_memcmp(&str[12], "ecmascript", 10) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 22 && mmt_memcmp(&str[12], "javascript", 10) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 16 && mmt_memcmp(&str[12], "json", 4) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 15 && mmt_memcmp(&str[12], "ogg", 3) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 19 && mmt_memcmp(&str[12], "rdf+xml", 7) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 19 && mmt_memcmp(&str[12], "rss+xml", 7) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 20 && mmt_memcmp(&str[12], "soap+xml", 8) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 21 && mmt_memcmp(&str[12], "font-woff", 9) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 23 && mmt_memcmp(&str[12], "x-font-woff", 11) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 21 && mmt_memcmp(&str[12], "xhtml+xml", 9) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 19 && mmt_memcmp(&str[12], "xml-dtd", 7) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 19 && mmt_memcmp(&str[12], "xop+xml", 7) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 28 && mmt_memcmp(&str[12], "vnd.rn-realmedia", 16) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 22 && mmt_memcmp(&str[12], "x-font-ttf", 10) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 24 && mmt_memcmp(&str[12], "x-javascript", 12) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 29 && mmt_memcmp(&str[12], "x-shockwave-flash", 17) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 33 && mmt_memcmp(&str[12], "x-www-form-urlencoded", 21) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        /* Skip the rest as application family */
-        /*
-        if (str_len >= 19 && mmt_memcmp(&str[12], "EDI-X12", 7) == 0) {
+        if (str_len > 12 && mmt_memcmp(str, "application/", 12) == 0)
+        {
+            // For non-standard files : x prefix
+            // For vendor-specific files : vnd prefix
+            if (str_len >= 15 && mmt_memcmp(&str[12], "flv", 3) == 0)
+            {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 17 && mmt_memcmp(&str[12], "x-fcs", 5) == 0)
+            {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 20 && mmt_memcmp(&str[12], "atom+xml", 8) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 22 && mmt_memcmp(&str[12], "ecmascript", 10) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 22 && mmt_memcmp(&str[12], "javascript", 10) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 16 && mmt_memcmp(&str[12], "json", 4) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 15 && mmt_memcmp(&str[12], "ogg", 3) == 0)
+            {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 19 && mmt_memcmp(&str[12], "rdf+xml", 7) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 19 && mmt_memcmp(&str[12], "rss+xml", 7) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 20 && mmt_memcmp(&str[12], "soap+xml", 8) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 21 && mmt_memcmp(&str[12], "font-woff", 9) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 23 && mmt_memcmp(&str[12], "x-font-woff", 11) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 21 && mmt_memcmp(&str[12], "xhtml+xml", 9) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 19 && mmt_memcmp(&str[12], "xml-dtd", 7) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 19 && mmt_memcmp(&str[12], "xop+xml", 7) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 28 && mmt_memcmp(&str[12], "vnd.rn-realmedia", 16) == 0)
+            {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 22 && mmt_memcmp(&str[12], "x-font-ttf", 10) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 24 && mmt_memcmp(&str[12], "x-javascript", 12) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 29 && mmt_memcmp(&str[12], "x-shockwave-flash", 17) == 0)
+            {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 33 && mmt_memcmp(&str[12], "x-www-form-urlencoded", 21) == 0)
+            {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            /* Skip the rest as application family */
+            /*
+            if (str_len >= 19 && mmt_memcmp(&str[12], "EDI-X12", 7) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 19 && mmt_memcmp(&str[12], "EDIFACT", 7) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 24 && mmt_memcmp(&str[12], "octet-stream", 12) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 15 && mmt_memcmp(&str[12], "pdf", 3) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 22 && mmt_memcmp(&str[12], "postscript", 10) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 15 && mmt_memcmp(&str[12], "zip", 3) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 16 && mmt_memcmp(&str[12], "gzip", 4) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 23 && mmt_memcmp(&str[12], "vnd.ms.wms-", 11) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 39 && mmt_memcmp(&str[12], "vnd.oasis.opendocument.text", 27) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 46 && mmt_memcmp(&str[12], "vnd.oasis.opendocument.spreadsheet", 36) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 47 && mmt_memcmp(&str[12], "vnd.oasis.opendocument.presentation", 35) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 43 && mmt_memcmp(&str[12], "vnd.oasis.opendocument.graphics", 31) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 24 && mmt_memcmp(&str[12], "vnd.ms-excel", 12) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 65 && mmt_memcmp(&str[12], "vnd.openxmlformats-officedocument.spreadsheetml.sheet", 53) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 29 && mmt_memcmp(&str[12], "vnd.ms-powerpoint", 17) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 73 && mmt_memcmp(str, "vnd.openxmlformats-officedocument.presentationml.presentation", 61) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 71 && mmt_memcmp(&str[12], "vnd.openxmlformats-officedocument.wordprocessingml.document", 59) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 31 && mmt_memcmp(&str[12], "vnd.mozilla.xul+xml", 19) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 36 && mmt_memcmp(&str[12], "vnd.google-earth.kml+xml", 24) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 17 && mmt_memcmp(&str[12], "x-dvi", 5) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 19 && mmt_memcmp(&str[12], "x-latex", 7) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 21 && mmt_memcmp(&str[12], "x-stuffit", 9) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 28 && mmt_memcmp(&str[12], "x-rar-compressed", 16) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 17 && mmt_memcmp(&str[12], "x-tar", 5) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 17 && mmt_memcmp(&str[12], "x-deb", 5) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 21 && mmt_memcmp(&str[12], "x-mpegURL", 9) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            // For PKCS standard files: x-pkcs prefix
+            if (str_len >= 20 && mmt_memcmp(&str[12], "x-pkcs12", 8) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 32 && mmt_memcmp(&str[12], "x-pkcs7-certificates", 20) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 31 && mmt_memcmp(&str[12], "x-pkcs7-certreqresp", 19) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 24 && mmt_memcmp(&str[12], "x-pkcs7-mime", 12) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+            if (str_len >= 29 && mmt_memcmp(&str[12], "x-pkcs7-signature", 17) == 0) {
+                return MMT_CONTENT_FAMILY_APPLICATION;
+            }
+             */
             return MMT_CONTENT_FAMILY_APPLICATION;
         }
-        if (str_len >= 19 && mmt_memcmp(&str[12], "EDIFACT", 7) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 24 && mmt_memcmp(&str[12], "octet-stream", 12) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 15 && mmt_memcmp(&str[12], "pdf", 3) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 22 && mmt_memcmp(&str[12], "postscript", 10) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 15 && mmt_memcmp(&str[12], "zip", 3) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 16 && mmt_memcmp(&str[12], "gzip", 4) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 23 && mmt_memcmp(&str[12], "vnd.ms.wms-", 11) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 39 && mmt_memcmp(&str[12], "vnd.oasis.opendocument.text", 27) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 46 && mmt_memcmp(&str[12], "vnd.oasis.opendocument.spreadsheet", 36) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 47 && mmt_memcmp(&str[12], "vnd.oasis.opendocument.presentation", 35) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 43 && mmt_memcmp(&str[12], "vnd.oasis.opendocument.graphics", 31) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 24 && mmt_memcmp(&str[12], "vnd.ms-excel", 12) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 65 && mmt_memcmp(&str[12], "vnd.openxmlformats-officedocument.spreadsheetml.sheet", 53) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 29 && mmt_memcmp(&str[12], "vnd.ms-powerpoint", 17) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 73 && mmt_memcmp(str, "vnd.openxmlformats-officedocument.presentationml.presentation", 61) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 71 && mmt_memcmp(&str[12], "vnd.openxmlformats-officedocument.wordprocessingml.document", 59) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 31 && mmt_memcmp(&str[12], "vnd.mozilla.xul+xml", 19) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 36 && mmt_memcmp(&str[12], "vnd.google-earth.kml+xml", 24) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 17 && mmt_memcmp(&str[12], "x-dvi", 5) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 19 && mmt_memcmp(&str[12], "x-latex", 7) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 21 && mmt_memcmp(&str[12], "x-stuffit", 9) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 28 && mmt_memcmp(&str[12], "x-rar-compressed", 16) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 17 && mmt_memcmp(&str[12], "x-tar", 5) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 17 && mmt_memcmp(&str[12], "x-deb", 5) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 21 && mmt_memcmp(&str[12], "x-mpegURL", 9) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        // For PKCS standard files: x-pkcs prefix
-        if (str_len >= 20 && mmt_memcmp(&str[12], "x-pkcs12", 8) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 32 && mmt_memcmp(&str[12], "x-pkcs7-certificates", 20) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 31 && mmt_memcmp(&str[12], "x-pkcs7-certreqresp", 19) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 24 && mmt_memcmp(&str[12], "x-pkcs7-mime", 12) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-        if (str_len >= 29 && mmt_memcmp(&str[12], "x-pkcs7-signature", 17) == 0) {
-            return MMT_CONTENT_FAMILY_APPLICATION;
-        }
-         */
-        return MMT_CONTENT_FAMILY_APPLICATION;
-    }
-    if (str_len > 6 && mmt_memcmp(str, "audio/", 6) == 0) {
-        return MMT_CONTENT_FAMILY_AUDIO;
-        /* This is audio do nothing else
-        if (str_len >= 11 && mmt_memcmp(str, "audio/basic", 11) == 0) {
+        if (str_len > 6 && mmt_memcmp(str, "audio/", 6) == 0)
+        {
             return MMT_CONTENT_FAMILY_AUDIO;
+            /* This is audio do nothing else
+            if (str_len >= 11 && mmt_memcmp(str, "audio/basic", 11) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "audio/L24", 9) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "audio/mp4", 9) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 10 && mmt_memcmp(str, "audio/mpeg", 10) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 12 && mmt_memcmp(str, "audio/x-mpeg", 12) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 11 && mmt_memcmp(str, "audio/mpeg3", 11) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 11 && mmt_memcmp(str, "audio/mp4a", 10) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 24 && mmt_memcmp(str, "audio/x-wav", 11) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 20 && mmt_memcmp(str, "audio/x-pn-realaudio", 20) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "audio/ogg", 9) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 12 && mmt_memcmp(str, "audio/vorbis", 12) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 22 && mmt_memcmp(str, "audio/vnd.rn-realaudio", 22) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 14 && mmt_memcmp(str, "audio/vnd.wave", 14) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 10 && mmt_memcmp(str, "audio/webm", 10) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            // For non-standard files : x prefix
+            if (str_len >= 11 && mmt_memcmp(str, "audio/x-aac", 11) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+            if (str_len >= 11 && mmt_memcmp(str, "audio/x-caf", 11) == 0) {
+                return MMT_CONTENT_FAMILY_AUDIO;
+            }
+             */
         }
-        if (str_len >= 9 && mmt_memcmp(str, "audio/L24", 9) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "audio/mp4", 9) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 10 && mmt_memcmp(str, "audio/mpeg", 10) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 12 && mmt_memcmp(str, "audio/x-mpeg", 12) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 11 && mmt_memcmp(str, "audio/mpeg3", 11) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 11 && mmt_memcmp(str, "audio/mp4a", 10) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 24 && mmt_memcmp(str, "audio/x-wav", 11) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 20 && mmt_memcmp(str, "audio/x-pn-realaudio", 20) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "audio/ogg", 9) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 12 && mmt_memcmp(str, "audio/vorbis", 12) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 22 && mmt_memcmp(str, "audio/vnd.rn-realaudio", 22) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 14 && mmt_memcmp(str, "audio/vnd.wave", 14) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 10 && mmt_memcmp(str, "audio/webm", 10) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        // For non-standard files : x prefix
-        if (str_len >= 11 && mmt_memcmp(str, "audio/x-aac", 11) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-        if (str_len >= 11 && mmt_memcmp(str, "audio/x-caf", 11) == 0) {
-            return MMT_CONTENT_FAMILY_AUDIO;
-        }
-         */
-    }
-    if (str_len > 6 && mmt_memcmp(str, "image/", 6) == 0) {
-        return MMT_CONTENT_FAMILY_IMAGE;
-        /* This is Image, do nothing else
-        if (str_len >= 9 && mmt_memcmp(str, "image/gif", 9) == 0) {
+        if (str_len > 6 && mmt_memcmp(str, "image/", 6) == 0)
+        {
             return MMT_CONTENT_FAMILY_IMAGE;
+            /* This is Image, do nothing else
+            if (str_len >= 9 && mmt_memcmp(str, "image/gif", 9) == 0) {
+                return MMT_CONTENT_FAMILY_IMAGE;
+            }
+            if (str_len >= 10 && mmt_memcmp(str, "image/jpeg", 10) == 0) {
+                return MMT_CONTENT_FAMILY_IMAGE;
+            }
+            if (str_len >= 11 && mmt_memcmp(str, "image/pjpeg", 11) == 0) {
+                return MMT_CONTENT_FAMILY_IMAGE;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "image/png", 9) == 0) {
+                return MMT_CONTENT_FAMILY_IMAGE;
+            }
+            if (str_len >= 13 && mmt_memcmp(str, "image/svg+xml", 13) == 0) {
+                return MMT_CONTENT_FAMILY_IMAGE;
+            }
+            if (str_len >= 10 && mmt_memcmp(str, "image/tiff", 10) == 0) {
+                return MMT_CONTENT_FAMILY_IMAGE;
+            }
+            if (str_len >= 24 && mmt_memcmp(str, "image/vnd.microsoft.icon", 24) == 0) {
+                return MMT_CONTENT_FAMILY_IMAGE;
+            }
+            // For non-standard files : x prefix
+            if (str_len >= 11 && mmt_memcmp(str, "image/x-xcf", 11) == 0) {
+                return MMT_CONTENT_FAMILY_IMAGE;
+            }
+             */
         }
-        if (str_len >= 10 && mmt_memcmp(str, "image/jpeg", 10) == 0) {
-            return MMT_CONTENT_FAMILY_IMAGE;
-        }
-        if (str_len >= 11 && mmt_memcmp(str, "image/pjpeg", 11) == 0) {
-            return MMT_CONTENT_FAMILY_IMAGE;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "image/png", 9) == 0) {
-            return MMT_CONTENT_FAMILY_IMAGE;
-        }
-        if (str_len >= 13 && mmt_memcmp(str, "image/svg+xml", 13) == 0) {
-            return MMT_CONTENT_FAMILY_IMAGE;
-        }
-        if (str_len >= 10 && mmt_memcmp(str, "image/tiff", 10) == 0) {
-            return MMT_CONTENT_FAMILY_IMAGE;
-        }
-        if (str_len >= 24 && mmt_memcmp(str, "image/vnd.microsoft.icon", 24) == 0) {
-            return MMT_CONTENT_FAMILY_IMAGE;
-        }
-        // For non-standard files : x prefix
-        if (str_len >= 11 && mmt_memcmp(str, "image/x-xcf", 11) == 0) {
-            return MMT_CONTENT_FAMILY_IMAGE;
-        }
-         */
-    }
 
-    if (str_len > 8 && mmt_memcmp(str, "message/", 8) == 0) {
-        return MMT_CONTENT_FAMILY_MESSAGE;
-        /* This is message type, do nothing else
-        if (str_len >= 12 && mmt_memcmp(str, "message/http", 12) == 0) {
+        if (str_len > 8 && mmt_memcmp(str, "message/", 8) == 0)
+        {
             return MMT_CONTENT_FAMILY_MESSAGE;
+            /* This is message type, do nothing else
+            if (str_len >= 12 && mmt_memcmp(str, "message/http", 12) == 0) {
+                return MMT_CONTENT_FAMILY_MESSAGE;
+            }
+            if (str_len >= 16 && mmt_memcmp(str, "message/imdn+xml", 16) == 0) {
+                return MMT_CONTENT_FAMILY_MESSAGE;
+            }
+            if (str_len >= 15 && mmt_memcmp(str, "message/partial", 15) == 0) {
+                return MMT_CONTENT_FAMILY_MESSAGE;
+            }
+            if (str_len >= 14 && mmt_memcmp(str, "message/rfc822", 14) == 0) {
+                return MMT_CONTENT_FAMILY_MESSAGE;
+            }
+             */
         }
-        if (str_len >= 16 && mmt_memcmp(str, "message/imdn+xml", 16) == 0) {
-            return MMT_CONTENT_FAMILY_MESSAGE;
+
+        if (str_len > 6 && mmt_memcmp(str, "model/", 6) == 0)
+        {
+            return MMT_CONTENT_FAMILY_MODEL;
+            /* This is Model type, return and do nothing else
+            if (str_len >= 13 && mmt_memcmp(str, "model/example", 13) == 0) {
+                return MMT_CONTENT_FAMILY_MODEL;
+            }
+            if (str_len >= 10 && mmt_memcmp(str, "model/iges", 10) == 0) {
+                return MMT_CONTENT_FAMILY_MODEL;
+            }
+            if (str_len >= 10 && mmt_memcmp(str, "model/mesh", 10) == 0) {
+                return MMT_CONTENT_FAMILY_MODEL;
+            }
+            if (str_len >= 13 && mmt_memcmp(str, "model/vrml", 13) == 0) {
+                return MMT_CONTENT_FAMILY_MODEL;
+            }
+            if (str_len >= 16 && mmt_memcmp(str, "model/x3d+binary", 16) == 0) {
+                return MMT_CONTENT_FAMILY_MODEL;
+            }
+            if (str_len >= 14 && mmt_memcmp(str, "model/x3d+vrml", 14) == 0) {
+                return MMT_CONTENT_FAMILY_MODEL;
+            }
+            if (str_len >= 13 && mmt_memcmp(str, "model/x3d+xml", 13) == 0) {
+                return MMT_CONTENT_FAMILY_MODEL;
+            }
+             * */
         }
-        if (str_len >= 15 && mmt_memcmp(str, "message/partial", 15) == 0) {
-            return MMT_CONTENT_FAMILY_MESSAGE;
+        if (str_len > 10 && mmt_memcmp(str, "multipart/", 10) == 0)
+        {
+            return MMT_CONTENT_FAMILY_MULTIPART;
+            /* This is multipart type, do nothing else
+            if (str_len >= 15 && mmt_memcmp(str, "multipart/mixed", 15) == 0) {
+                return MMT_CONTENT_FAMILY_MULTIPART;
+            }
+            if (str_len >= 21 && mmt_memcmp(str, "multipart/alternative", 21) == 0) {
+                return MMT_CONTENT_FAMILY_MULTIPART;
+            }
+            if (str_len >= 17 && mmt_memcmp(str, "multipart/related", 17) == 0) {
+                return MMT_CONTENT_FAMILY_MULTIPART;
+            }
+            if (str_len >= 19 && mmt_memcmp(str, "multipart/form-data", 19) == 0) {
+                return MMT_CONTENT_FAMILY_MULTIPART;
+            }
+            if (str_len >= 16 && mmt_memcmp(str, "multipart/signed", 16) == 0) {
+                return MMT_CONTENT_FAMILY_MULTIPART;
+            }
+            if (str_len >= 19 && mmt_memcmp(str, "multipart/encrypted", 19) == 0) {
+                return MMT_CONTENT_FAMILY_MULTIPART;
+            }
+             * */
         }
-        if (str_len >= 14 && mmt_memcmp(str, "message/rfc822", 14) == 0) {
-            return MMT_CONTENT_FAMILY_MESSAGE;
+        if (str_len > 5 && mmt_memcmp(str, "text/", 5) == 0)
+        {
+            return MMT_CONTENT_FAMILY_TEXT;
+            /* This is test, do nothing else
+            if (str_len >= 8 && mmt_memcmp(str, "text/cmd", 8) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 8 && mmt_memcmp(str, "text/css", 8) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 8 && mmt_memcmp(str, "text/csv", 8) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "text/html", 9) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 15 && mmt_memcmp(str, "text/javascript", 15) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "text/plain", 9) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 10 && mmt_memcmp(str, "text/vcard", 10) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 8 && mmt_memcmp(str, "text/xml", 8) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            // For non-standard files : x prefix
+            if (str_len >= 14 && mmt_memcmp(str, "text/x-gwt-rpc", 14) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+            if (str_len >= 18 && mmt_memcmp(str, "text/x-jquery-tmpl", 18) == 0) {
+                return MMT_CONTENT_FAMILY_TEXT;
+            }
+             * */
         }
-         */
+        if (str_len > 6 && mmt_memcmp(str, "video/", 6) == 0)
+        {
+            return MMT_CONTENT_FAMILY_VIDEO;
+            /* This is video, do nothing else
+            if (str_len >= 10 && mmt_memcmp(str, "video/mpeg", 10) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 11 && mmt_memcmp(str, "video/flash", 11) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "video/nsv", 9) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "video/mp4", 9) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 11 && mmt_memcmp(str, "video/x-m4v", 11) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "video/m4v", 9) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "video/ogg", 9) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 15 && mmt_memcmp(str, "video/quicktime", 15) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 10 && mmt_memcmp(str, "video/webm", 10) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 16 && mmt_memcmp(str, "video/x-matroska", 16) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 14 && mmt_memcmp(str, "video/x-ms-wmv", 14) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 14 && mmt_memcmp(str, "video/x-ms-asf", 14) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 24 && mmt_memcmp(str, "video/x-msvideo", 15) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 14 && mmt_memcmp(str, "video/x-ms-asx", 14) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 9 && mmt_memcmp(str, "video/flv", 9) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+            if (str_len >= 11 && mmt_memcmp(str, "video/x-flv", 11) == 0) {
+                return MMT_CONTENT_FAMILY_VIDEO;
+            }
+             * */
+        }
+        return MMT_CONTENT_FAMILY_UNSPECIFIED;
     }
 
-    if (str_len > 6 && mmt_memcmp(str, "model/", 6) == 0) {
-        return MMT_CONTENT_FAMILY_MODEL;
-        /* This is Model type, return and do nothing else
-        if (str_len >= 13 && mmt_memcmp(str, "model/example", 13) == 0) {
-            return MMT_CONTENT_FAMILY_MODEL;
-        }
-        if (str_len >= 10 && mmt_memcmp(str, "model/iges", 10) == 0) {
-            return MMT_CONTENT_FAMILY_MODEL;
-        }
-        if (str_len >= 10 && mmt_memcmp(str, "model/mesh", 10) == 0) {
-            return MMT_CONTENT_FAMILY_MODEL;
-        }
-        if (str_len >= 13 && mmt_memcmp(str, "model/vrml", 13) == 0) {
-            return MMT_CONTENT_FAMILY_MODEL;
-        }
-        if (str_len >= 16 && mmt_memcmp(str, "model/x3d+binary", 16) == 0) {
-            return MMT_CONTENT_FAMILY_MODEL;
-        }
-        if (str_len >= 14 && mmt_memcmp(str, "model/x3d+vrml", 14) == 0) {
-            return MMT_CONTENT_FAMILY_MODEL;
-        }
-        if (str_len >= 13 && mmt_memcmp(str, "model/x3d+xml", 13) == 0) {
-            return MMT_CONTENT_FAMILY_MODEL;
-        }
-         * */
+    static inline char *get_content_class_name_by_content_type(char *str)
+    {
+        static char *classes[] = {MMT_CONTENT_LONG_LABELS}; // Safe static as this is read only thing!
+        int class_id = get_content_class_by_content_type(str);
+        return classes[class_id];
     }
-    if (str_len > 10 && mmt_memcmp(str, "multipart/", 10) == 0) {
-        return MMT_CONTENT_FAMILY_MULTIPART;
-        /* This is multipart type, do nothing else
-        if (str_len >= 15 && mmt_memcmp(str, "multipart/mixed", 15) == 0) {
-            return MMT_CONTENT_FAMILY_MULTIPART;
-        }
-        if (str_len >= 21 && mmt_memcmp(str, "multipart/alternative", 21) == 0) {
-            return MMT_CONTENT_FAMILY_MULTIPART;
-        }
-        if (str_len >= 17 && mmt_memcmp(str, "multipart/related", 17) == 0) {
-            return MMT_CONTENT_FAMILY_MULTIPART;
-        }
-        if (str_len >= 19 && mmt_memcmp(str, "multipart/form-data", 19) == 0) {
-            return MMT_CONTENT_FAMILY_MULTIPART;
-        }
-        if (str_len >= 16 && mmt_memcmp(str, "multipart/signed", 16) == 0) {
-            return MMT_CONTENT_FAMILY_MULTIPART;
-        }
-        if (str_len >= 19 && mmt_memcmp(str, "multipart/encrypted", 19) == 0) {
-            return MMT_CONTENT_FAMILY_MULTIPART;
-        }
-         * */
+
+    static inline int get_content_class_by_content_flags(uint32_t content_flags)
+    {
+        if (content_flags & MMT_CONTENT_VIDEO)
+            return MMT_CONTENT_FAMILY_VIDEO;
+        if (content_flags & MMT_CONTENT_AUDIO)
+            return MMT_CONTENT_FAMILY_AUDIO;
+        if (content_flags & MMT_CONTENT_IMAGE)
+            return MMT_CONTENT_FAMILY_IMAGE;
+        return MMT_CONTENT_FAMILY_UNSPECIFIED;
     }
-    if (str_len > 5 && mmt_memcmp(str, "text/", 5) == 0) {
-        return MMT_CONTENT_FAMILY_TEXT;
-        /* This is test, do nothing else
-        if (str_len >= 8 && mmt_memcmp(str, "text/cmd", 8) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 8 && mmt_memcmp(str, "text/css", 8) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 8 && mmt_memcmp(str, "text/csv", 8) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "text/html", 9) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 15 && mmt_memcmp(str, "text/javascript", 15) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "text/plain", 9) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 10 && mmt_memcmp(str, "text/vcard", 10) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 8 && mmt_memcmp(str, "text/xml", 8) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        // For non-standard files : x prefix
-        if (str_len >= 14 && mmt_memcmp(str, "text/x-gwt-rpc", 14) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-        if (str_len >= 18 && mmt_memcmp(str, "text/x-jquery-tmpl", 18) == 0) {
-            return MMT_CONTENT_FAMILY_TEXT;
-        }
-         * */
+
+    static inline char *get_content_class_name_by_content_flags(uint32_t content_flags)
+    {
+        static char *classes[] = {MMT_CONTENT_LONG_LABELS}; // Safe static as this is read only thing!
+        int class_id = get_content_class_by_content_flags(content_flags);
+        return classes[class_id];
     }
-    if (str_len > 6 && mmt_memcmp(str, "video/", 6) == 0) {
-        return MMT_CONTENT_FAMILY_VIDEO;
-        /* This is video, do nothing else
-        if (str_len >= 10 && mmt_memcmp(str, "video/mpeg", 10) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 11 && mmt_memcmp(str, "video/flash", 11) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "video/nsv", 9) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "video/mp4", 9) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 11 && mmt_memcmp(str, "video/x-m4v", 11) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "video/m4v", 9) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "video/ogg", 9) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 15 && mmt_memcmp(str, "video/quicktime", 15) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 10 && mmt_memcmp(str, "video/webm", 10) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 16 && mmt_memcmp(str, "video/x-matroska", 16) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 14 && mmt_memcmp(str, "video/x-ms-wmv", 14) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 14 && mmt_memcmp(str, "video/x-ms-asf", 14) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 24 && mmt_memcmp(str, "video/x-msvideo", 15) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 14 && mmt_memcmp(str, "video/x-ms-asx", 14) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 9 && mmt_memcmp(str, "video/flv", 9) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-        if (str_len >= 11 && mmt_memcmp(str, "video/x-flv", 11) == 0) {
-            return MMT_CONTENT_FAMILY_VIDEO;
-        }
-         * */
-    }
-    return MMT_CONTENT_FAMILY_UNSPECIFIED;
-}
 
-static inline char * get_content_class_name_by_content_type(char * str) {
-    static char *classes[] = {MMT_CONTENT_LONG_LABELS}; //Safe static as this is read only thing!
-    int class_id = get_content_class_by_content_type(str);
-    return classes[class_id];
-}
-
-static inline int get_content_class_by_content_flags(uint32_t content_flags) {
-    if (content_flags & MMT_CONTENT_VIDEO) return MMT_CONTENT_FAMILY_VIDEO;
-    if (content_flags & MMT_CONTENT_AUDIO) return MMT_CONTENT_FAMILY_AUDIO;
-    if (content_flags & MMT_CONTENT_IMAGE) return MMT_CONTENT_FAMILY_IMAGE;
-    return MMT_CONTENT_FAMILY_UNSPECIFIED;
-}
-
-static inline char * get_content_class_name_by_content_flags(uint32_t content_flags) {
-    static char *classes[] = {MMT_CONTENT_LONG_LABELS}; //Safe static as this is read only thing!
-    int class_id = get_content_class_by_content_flags(content_flags);
-    return classes[class_id];
-}
-
-static inline int get_application_class_by_protocol_id(int id) {
-    switch (id) {
+    static inline int get_application_class_by_protocol_id(int id)
+    {
+        switch (id)
+        {
         case PROTO_BLOOMBERG:
         case PROTO_LEFIGARO:
         case PROTO_META:
@@ -1060,6 +1098,9 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_DTP:
         case PROTO_XID:
         case PROTO_MQTT:
+        case PROTO_GEO_NETWORKING:
+        case PROTO_BTPB:
+        case PROTO_CAM:
             return PROTO_CLASS_NETWORK;
         case PROTO_PCANYWHERE:
         case PROTO_RDP:
@@ -1097,14 +1138,15 @@ static inline int get_application_class_by_protocol_id(int id) {
         case PROTO_UNKNOWN:
         default:
             return PROTO_CLASS_UNKOWN;
+        }
     }
-}
 
-static inline char * get_application_class_name_by_protocol_id(int id) {
-    static char *classes[] = {PROTO_CLASS_LABELS};
-    int class_id = get_application_class_by_protocol_id(id);
-    return classes[class_id];
-}
+    static inline char *get_application_class_name_by_protocol_id(int id)
+    {
+        static char *classes[] = {PROTO_CLASS_LABELS};
+        int class_id = get_application_class_by_protocol_id(id);
+        return classes[class_id];
+    }
 
 #ifdef __cplusplus
 }
