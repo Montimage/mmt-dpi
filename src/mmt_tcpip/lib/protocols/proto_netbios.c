@@ -432,6 +432,7 @@ int netbios_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     // printf("Message type: %d\n", *netbios_type);
     struct mmt_netbios_header_struct * netbios_header = (struct mmt_netbios_header_struct *) & ipacket->data[offset];
     classified_proto_t retval;
+    retval.proto_id = 0;
     // Classify base on port number
     if (ntohs(netbios_header->source_port) == 138 || ntohs(netbios_header->source_port) == 445) {
       retval.proto_id = PROTO_SMB;
@@ -458,7 +459,9 @@ int netbios_classify_next_proto(ipacket_t * ipacket, unsigned index) {
       default:
         return 0;
     }
-    // return 0;
+    //not found any signature
+    if( retval.proto_id == 0 || retval.offset == -1)
+       return 0;
     return set_classified_proto(ipacket, index + 1, retval);
 }
 

@@ -676,8 +676,8 @@ extern "C"
 #define PROTO_BTPB 660
 #define PROTO_CAM 661
 #define PROTO_INT_REPORT 662
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_INT_REPORT
-
+#define PROTO_DTLS 663
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_DTLS
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
 //#define PROTO_UNKNOWN_ALIAS "ukn" //Already defined in the core
@@ -1342,6 +1342,7 @@ extern "C"
 #define PROTO_GEO_NETWORKING_ALIAS "geo_networking"
 #define PROTO_BTPB_ALIAS "btpb"
 #define PROTO_CAM_ALIAS "cam"
+#define PROTO_DTLS_ALIAS "dtls"
 
   // #define PROTO_FTP_CONTROL_ALIAS "ftp_control"
   // #define PROTO_FTP_DATA_ALIAS "ftp_data"

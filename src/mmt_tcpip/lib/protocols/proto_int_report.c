@@ -12,23 +12,6 @@
 
 #define INT_UDP_DST_PORT 6000
 
-static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsigned index) {
-	//the current (index) protocol is UDP
-	int offset = get_packet_offset_at_index(ipacket, index);
-
-	const struct udphdr *udp = (struct udphdr *) & ipacket->data[offset];
-	if( ntohs(udp->dest) != INT_UDP_DST_PORT ){
-		//checked but not found
-		//=> exclude from the next check
-		MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
-		return 0;
-	}
-
-	//return set_classified_proto(ipacket, index + 1, retval);
-	mmt_internal_add_connection(ipacket, PROTO_INT_REPORT, MMT_REAL_PROTOCOL);
-	return 1;
-}
-
 #define advance_pointer( var, var_type, cursor, end_cursor, msg )\
 	if( cursor + sizeof(var_type) > end_cursor ){\
 		debug(msg);\
@@ -106,6 +89,33 @@ size_t proto_int_get_int_report_header_size(const u_char *cursor, const u_char *
 	}
 	//get offset of cursor wrt the initial offset
 	return (cursor - init_cursor);
+}
+
+static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsigned index) {
+	//the current (index) protocol is UDP
+	int offset = get_packet_offset_at_index(ipacket, index);
+
+	const struct udphdr *udp = (struct udphdr *) & ipacket->data[offset];
+	const u_char *cursor = &ipacket->data[offset + UDP_HDR_SIZE], *end_cursor = &ipacket->data[ipacket->p_hdr->caplen];
+
+	//the port is correct?
+	if( ntohs(udp->dest) != INT_UDP_DST_PORT )
+		goto _not_found_int_report;
+	//the size is correct?
+	// INT Raport structure
+	//    [Eth][IP][UDP][INT RAPORT HDR][ETH][IP][UDP/TCP][INT SHIM][INT DATA]
+	// We are here --^
+	if( proto_int_get_int_report_header_size( cursor, end_cursor) == 0 )
+		goto _not_found_int_report;
+
+	//return set_classified_proto(ipacket, index + 1, retval);
+	mmt_internal_add_connection(ipacket, PROTO_INT_REPORT, MMT_REAL_PROTOCOL);
+	return 1;
+
+	_not_found_int_report:
+	//=> exclude from the next check
+	MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
+	return 0;
 }
 
 static int _classify_int_report_next(ipacket_t * ipacket, unsigned index) {

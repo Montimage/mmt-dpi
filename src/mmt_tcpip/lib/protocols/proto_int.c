@@ -155,6 +155,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	uint8_t is_egr_times         = (ins_bits >> 10) & 0x1;
 	uint8_t is_lv2_in_e_port_ids = (ins_bits >>  9) & 0x1;
 	uint8_t is_tx_utilizes       = (ins_bits >>  8) & 0x1;
+	uint8_t is_l4s_mark_drop     = (ins_bits >>  7) & 0x1;
 
 
 	switch( extracted_data->field_id ){
@@ -174,6 +175,8 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		extract_u8( is_lv2_in_e_port_ids );
 	case INT_IS_TX_UTILIZE:
 		extract_u8( is_tx_utilizes );
+	case INT_IS_L4S_MARK_DROP:
+		extract_u8( is_l4s_mark_drop );
 	default:
 		break;
 	}
@@ -187,7 +190,9 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		hop_latencies,
 		queue_ids, queue_occups,
 		lv2_in_port_ids, lv2_e_port_ids,
-		tx_utilizes;
+		tx_utilizes,
+		l4s_mark,
+		l4s_drop;
 		mmt_u64_array_t ingress_times, egress_times;
 	}data;
 
@@ -257,6 +262,11 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No TX Utilize");
 			data.tx_utilizes.data[i] = ntohl( *u32 );
 		}
+		if( is_l4s_mark_drop ){
+			advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark-Drop");
+			data.l4s_mark.data[i] = (ntohl( *u32 ) >> 16) & 0xffff;
+			data.l4s_drop.data[i] = (ntohl( *u32 ) ) & 0xffff;
+		}
 	}
 
 	mmt_u32_array_t *ptr = NULL;
@@ -290,6 +300,10 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		assign_if( is_lv2_in_e_port_ids, ptr, &data.lv2_e_port_ids );
 	case INT_HOP_TX_UTILIZES:
 		assign_if( is_tx_utilizes, ptr, &data.tx_utilizes );
+	case INT_HOP_L4S_MARK:
+		assign_if( is_l4s_mark_drop, ptr, &data.l4s_mark );
+	case INT_HOP_L4S_DROP:
+		assign_if( is_l4s_mark_drop, ptr, &data.l4s_drop );
 	default:
 		break;
 	}
@@ -325,7 +339,9 @@ static attribute_metadata_t _attributes_metadata[] = {
 
 	def_att( INT_HOP_LV2_INGRESS_PORT_IDS , MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_HOP_LV2_EGRESS_PORT_IDS ,  MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
-	def_att( INT_HOP_TX_UTILIZES ,      MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
+	def_att( INT_HOP_TX_UTILIZES ,          MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
+	def_att( INT_HOP_L4S_MARK,              MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
+	def_att( INT_HOP_L4S_DROP,              MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 
 	def_att( INT_IS_SWITCH_ID,          MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_IN_EGRESS_PORT_ID , MMT_U8_DATA, sizeof(uint8_t) ),
@@ -334,7 +350,8 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_IS_INGRESS_TIME ,      MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_EGRESS_TIME ,       MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_LV2_IN_EGRESS_PORT_ID, MMT_U8_DATA, sizeof(uint8_t) ),
-	def_att( INT_IS_TX_UTILIZE ,        MMT_U8_DATA, sizeof(uint8_t) )
+	def_att( INT_IS_TX_UTILIZE ,        MMT_U8_DATA, sizeof(uint8_t) ),
+	def_att( INT_IS_L4S_MARK_DROP ,     MMT_U8_DATA, sizeof(uint8_t) )
 };
 
 

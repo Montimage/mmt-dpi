@@ -1,11 +1,16 @@
 RELEASE NOTES
 ---
+Version 1.7.3 (19 May 2022 - by HN)
+- support `MMT_U16_ARRAY` data type
+- Inspire5G+: add rule 79 to ensure DTLS traffic is in v1.2 or v1.3 and its ciphersuite is in a given list giving by `MMT_SEC_DTLS_CIPHER_ALLOWLIST` environment variable
+
+
 Version 1.7.2 (17 February 2022 - by @nhnghia)
 - Classify and extract inband-network telemetry protocol and report
 - Add mmt_u32_array and mmt_u64_array data type structs
 - Fixed [bug](#2) in GTP classification
 - Extract pdu extension of GTP: `next_header_type`, `pdu_length`, `pdu_type`, `pdu_qfi`, `pdu_next_header_type`
-- Enable Github CI to check code
+- Enable Github CI to check code and create a new debian package when releasing a new tag
 
 
 Version 1.7.1.0 (19 january 2022 - by HN)

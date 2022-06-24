@@ -1,5 +1,5 @@
 *.a
-.DS_Store
+*.DS_Store
 sftp-config.json
 .DS_Store
 src/c-doxygen.conf
