@@ -3,7 +3,7 @@
 ------------------
 
 # Before compiling
-Please use the gxx version `>= 4.9` et `<10`.
+Please use the gxx version from `4.9` upto `9.x`. Some users have experienced some problems during the installation with the compiler `gxx >= 10`
 
 # Pre-requisites
 
