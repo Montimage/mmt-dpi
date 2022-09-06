@@ -2,6 +2,9 @@
 
 ------------------
 
+# Before compiling
+Please use the gxx version `>= 4.9` et `<10`.
+
 # Pre-requisites
 
 Required packages: `libxml2-dev`
