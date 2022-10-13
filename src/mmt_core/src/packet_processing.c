@@ -997,6 +997,20 @@ int proto_data_extraction(const ipacket_t * packet, unsigned proto_index,
     return 1;
 }
 
+int proto_data_len_extraction(const ipacket_t * packet, unsigned proto_index,
+                          attribute_t * extracted_data) {
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    int next_offset  = packet->p_hdr->caplen;
+    if( proto_index + 1 < packet->proto_hierarchy->len )
+        next_offset = get_packet_offset_at_index(packet, proto_index+1);
+    int len = next_offset - proto_offset;
+    //occurs only if there exists errors??
+    if( len < 0 )
+       len = 0;
+    *((uint64_t *) extracted_data->data) = len;
+    return 1;
+}
+
 int proto_payload_extraction(const ipacket_t * packet, unsigned proto_index,
                              attribute_t * extracted_data) {
     int proto_offset;
@@ -1054,6 +1068,7 @@ static attribute_metadata_t proto_stats_attributes_metadata[PROTO_STATS_ATTRIBUT
     {PROTO_STATISTICS, PROTO_STATISTICS_LABEL, MMT_STATS, sizeof (void *), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_stats_extraction},
     {PROTO_FIRST_PACKET_TIME, PROTO_FIRST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_first_packet_time_extraction},
     {PROTO_LAST_PACKET_TIME, PROTO_LAST_PACKET_TIME_LABEL, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_last_packet_time_extraction},
+    {PROTO_DATA_LEN, PROTO_DATA_LEN_LABEL, MMT_U64_DATA, sizeof (uint64_t), POSITION_NOT_KNOWN, SCOPE_PACKET, proto_data_len_extraction},
 
 };
 

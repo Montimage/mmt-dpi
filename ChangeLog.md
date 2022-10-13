@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+Version 1.7.4 (14 Oct 2022 - by HN)
+- extend `ngap.ran_ue_id` to store 64-bit values (instead of 16 bit)
+- add `p_data_len` to `meta` to represent size of `p_data` attribute
+
 Version 1.7.3 (19 May 2022 - by HN)
 - support `MMT_U16_ARRAY` data type
 - Inspire5G+: add rule 79 to ensure DTLS traffic is in v1.2 or v1.3 and its ciphersuite is in a given list giving by `MMT_SEC_DTLS_CIPHER_ALLOWLIST` environment variable
