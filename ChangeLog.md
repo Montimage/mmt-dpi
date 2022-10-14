@@ -1,8 +1,9 @@
 RELEASE NOTES
 ---
-Version 1.7.4 (13 Oct 2022 - by HN)
+Version 1.7.4 (14 Oct 2022 - by HN)
 - extend `ngap.ran_ue_id` to store 64-bit values (instead of 16 bit)
 - add `p_data_len` to `meta` to represent size of `p_data` attribute
+- add `-lm` in CFLAGS when compiling within lib math
 
 Version 1.7.3 (19 May 2022 - by HN)
 - support `MMT_U16_ARRAY` data type
