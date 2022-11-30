@@ -1,5 +1,8 @@
 RELEASE NOTES
 ---
+Version 1.7.5 (30 Nov 2022 - by HN)
+- fixed multiple definition errors in sctp.h when compiling using gcc 11
+
 Version 1.7.4 (14 Oct 2022 - by HN)
 - extend `ngap.ran_ue_id` to store 64-bit values (instead of 16 bit)
 - add `p_data_len` to `meta` to represent size of `p_data` attribute
