@@ -673,7 +673,8 @@ extern "C" {
 #define PROTO_INT                     658
 #define PROTO_INT_REPORT              659
 #define PROTO_DTLS                    660
-#define LAST_IMPLEMENTED_PROTOCOL PROTO_DTLS
+#define PROTO_QUIC_IETF               661
+#define LAST_IMPLEMENTED_PROTOCOL PROTO_QUIC_IETF
 
 #define NB_SUPPORTED_PROTOCOLS (LAST_IMPLEMENTED_PROTOCOL + 1)
 
