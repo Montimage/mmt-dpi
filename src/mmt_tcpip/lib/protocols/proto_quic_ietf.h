@@ -3,6 +3,9 @@
  *
  *  Created on: Feb 16, 2023
  *      Author: nhnghia
+ *
+ *  This file classifies QUIC RFC 9000
+ *  https://datatracker.ietf.org/doc/html/rfc9000
  */
 
 #ifndef SRC_MMT_TCPIP_LIB_PROTOCOLS_PROTO_QUIC_IETF_H_
@@ -101,6 +104,10 @@ typedef struct quic_ietf_1_rtt_packet {
 	uint8_t fixed_bit           : 1; //is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded
 	uint8_t header_form         : 1; //is set to 0
 #endif
+
+	//https://datatracker.ietf.org/doc/html/rfc9000#section-5.1
+	// Packets with short headers (Section 17.3) only include the Destination Connection ID
+	//  and omit the explicit length
 	uint8_t destination_connection_id[8]; //0..160, TODO: fixed 8 bytes for now
 	uint8_t packet_number[4]; // (8..32),
 	const uint8_t *packet_payload;

@@ -25,7 +25,7 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 	// get the first bit in the UDP payload
 	uint8_t first_bit = ipacket->data[ offset ] & 0b10000000;
 	const uint8_t *p;
-	const uint32_t *u32;
+	uint32_t u32;
 	mmt_string_data_t *string;
 
 	if( first_bit != 0 ){
@@ -105,18 +105,27 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 			snprintf( (char*)string->data, 8, "%s", hdr->destination_connection_id );
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_PACKET_NUMBER:
-			u32 = (uint32_t*)&hdr->packet_number;
-			(*(uint32_t *) extracted_data->data) = 0;//ntohl( *u32 );
+			//the length of the Packet Number field is the value of QUIC_IETF_PACKET_NUMBER_LENGTH plus one
+			memcpy((char*)&u32, hdr->packet_number, 4);
+
+			switch( hdr->packet_number_length + 1 ){
+			case 1:
+				((char*)&u32)[1] = 0; //no break here as we need to clear 2nd and 3rd elements
+			case 2:
+				((char*)&u32)[2] = 0; //no break here as we need to clear 3rd element
+			case 3:
+				((char*)&u32)[3] = 0;
+				break;
+			}
+
+			(*(uint32_t *) extracted_data->data) = ntohl(u32);
 			return ATTRIBUTE_SET;
 		}
 	}
 	return ATTRIBUTE_UNSET;
 }
 
-static int _classify_quic_ietf_from_udp(ipacket_t *ipacket, unsigned index) {
-	size_t offset = get_packet_offset_at_index(ipacket, index);
-	//const struct udphdr *udp = (struct udphdr *) &ipacket->data[ offset ];
-	offset += 8; //8 bytes of UDP header
+static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned parent_proto_index, size_t offset) {
 	size_t payload_len = ipacket->p_hdr->len - offset;
 
 	// get the first bit in the UDP payload
@@ -149,22 +158,51 @@ static int _classify_quic_ietf_from_udp(ipacket_t *ipacket, unsigned index) {
 		if( hdr->fixed_bit != 1 ) //
 			goto _not_found_quic_ietf;
 
+		//FIXME: not sure why this value can be non-zero
 		//The value included prior to protection MUST be set to 0.
-		if( hdr->reserved_bits != 0 ) //
-			goto _not_found_quic_ietf;
+		//if( hdr->reserved_bits != 0 ) //
+		//	goto _not_found_quic_ietf;
 
 		//check correct packet length
-
 	}
 
 	//if we can reach here => all signatures are valid => got QUIC
-	mmt_internal_add_connection(ipacket, PROTO_QUIC_IETF, MMT_REAL_PROTOCOL);
+	//mmt_internal_add_connection(ipacket, PROTO_QUIC_IETF, MMT_REAL_PROTOCOL);
 	return FOUND;
 
 	_not_found_quic_ietf:
 	//checked but not found
 	//=> exclude from the next check
-	MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_QUIC_IETF);
+	//MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_QUIC_IETF);
+	return NOT_FOUND;
+}
+
+
+static int _classify_quic_ietf_from_udp(ipacket_t *ipacket, unsigned index) {
+	size_t offset = get_packet_offset_at_index(ipacket, index);
+	//const struct udphdr *udp = (struct udphdr *) &ipacket->data[ offset ];
+	offset += 8; //8 bytes of UDP header
+	return _classify_quic_ietf_from_data_offset( ipacket, index, offset );
+}
+
+static int _classify_quic_ietf_from_int(ipacket_t *ipacket, unsigned index) {
+	//
+	if( ipacket->proto_hierarchy->proto_path[index] != PROTO_INT )
+		return NOT_FOUND;
+
+	size_t offset = get_packet_offset_at_index(ipacket, index);
+	//FIXME: need to adapt to INT size
+	offset += 56; //56 bytes of INT
+	if( offset >= ipacket->p_hdr->caplen )
+		return NOT_FOUND;
+
+	if( _classify_quic_ietf_from_data_offset( ipacket, index, offset ) == FOUND ){
+		classified_proto_t retval;
+		retval.offset = 56;
+		retval.proto_id = PROTO_QUIC_IETF;
+		retval.status = Classified;
+		return set_classified_proto(ipacket, index+1, retval);
+	}
 	return NOT_FOUND;
 }
 
@@ -183,7 +221,6 @@ static void _session_data_cleanup(mmt_session_t * session, unsigned index) {
 }
 
 static int _session_data_analysis(ipacket_t * ipacket, unsigned index) {
-	//Dummy function! just calls the function registered with the session context
 	//struct quic_ietf_session_t * session_data = ipacket->session->session_data[index];
 	return MMT_CONTINUE;
 }
@@ -192,7 +229,7 @@ static int _session_data_analysis(ipacket_t * ipacket, unsigned index) {
 void _init_bitmask() {
 	selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD;
 	MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-	MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_UDP);
+	MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INT);
 	MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_QUIC_IETF);
 }
 
@@ -215,7 +252,6 @@ static attribute_metadata_t _attributes_metadata[] = {
 
 
 int init_proto_quic_ietf_struct() {
-
 	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_QUIC_IETF, PROTO_QUIC_IETF_ALIAS);
 	if( protocol_struct == NULL ){
 		log_err("Cannot initialize PROTO_QUIC_IETF having id=%d", PROTO_QUIC_IETF);
@@ -232,8 +268,15 @@ int init_proto_quic_ietf_struct() {
 
 	//QUIC is after UDP, so we classify it once we got UDP
 	//TODO: need to classify QUIC after QUIC
+	/*
 	if( !register_classification_function_with_parent_protocol( PROTO_UDP, _classify_quic_ietf_from_udp, 100 ) ){
 		log_err("Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
+		return PROTO_NOT_REGISTERED;
+	}
+	*/
+
+	if( !register_classification_function_with_parent_protocol( PROTO_INT, _classify_quic_ietf_from_int, 100 ) ){
+		log_err("Need mmt_tcpip library containing PROTO_INT having id = %d", PROTO_INT);
 		return PROTO_NOT_REGISTERED;
 	}
 

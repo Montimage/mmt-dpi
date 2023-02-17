@@ -81,11 +81,19 @@ static int _classify_int_from_tcp(ipacket_t * ipacket, unsigned index) {
 	return _classify_int_from_udp_or_tcp( ipacket, index, false );
 }
 
+static int _int_classify_me(ipacket_t * ipacket, unsigned index) {
+	classified_proto_t retval;
+	retval.offset = 56;
+	retval.proto_id = 0; //FIXME: need to update to QUIC_IETF
+	retval.status = NonClassified;
+	set_classified_proto(ipacket, index+1, retval);
+	return NOT_FOUND;
+}
 
 #define advance_pointer( var, var_type, cursor, end_cursor, msg )\
 	if( cursor + sizeof(var_type) > end_cursor ){\
 		debug(msg);\
-		return 0;\
+		return NOT_FOUND;\
 	} else {\
 		var = (var_type *) cursor;\
 		cursor += sizeof(var_type);\
@@ -192,7 +200,8 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		lv2_in_port_ids, lv2_e_port_ids,
 		tx_utilizes,
 		l4s_mark,
-		l4s_drop;
+		l4s_drop,
+		l4s_mark_probability;
 		mmt_u64_array_t ingress_times, egress_times;
 	}data;
 
@@ -266,6 +275,9 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark-Drop");
 			data.l4s_mark.data[i] = (ntohl( *u32 ) >> 16) & 0xffff;
 			data.l4s_drop.data[i] = (ntohl( *u32 ) ) & 0xffff;
+
+			advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark Probability");
+			data.l4s_mark_probability.data[i] = ntohl( *u32 );
 		}
 	}
 
@@ -304,6 +316,8 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		assign_if( is_l4s_mark_drop, ptr, &data.l4s_mark );
 	case INT_HOP_L4S_DROP:
 		assign_if( is_l4s_mark_drop, ptr, &data.l4s_drop );
+	case INT_HOP_L4S_MARK_PROBABILITY:
+		assign_if( is_l4s_mark_drop, ptr, &data.l4s_mark_probability );
 	default:
 		break;
 	}
@@ -342,6 +356,7 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_HOP_TX_UTILIZES ,          MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_HOP_L4S_MARK,              MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_HOP_L4S_DROP,              MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
+	def_att( INT_HOP_L4S_MARK_PROBABILITY,  MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 
 	def_att( INT_IS_SWITCH_ID,          MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_IN_EGRESS_PORT_ID , MMT_U8_DATA, sizeof(uint8_t) ),
@@ -380,5 +395,8 @@ int init_proto_int_struct() {
 		log_err( "Need mmt_tcpip library containing PROTO_TCP having id = %d", PROTO_TCP);
 		return PROTO_NOT_REGISTERED;
 	}
+
+	register_classification_function(protocol_struct, _int_classify_me);
+
 	return register_protocol(protocol_struct, PROTO_INT);
 }
