@@ -6,9 +6,9 @@
 
 ** Started date: ** `13/07/2016`
 
-** Deadline: ** `18/07/2016` 
+** Deadline: ** `18/07/2016`
 
-** Developer: ** @luongnv89 
+** Developer: ** @luongnv89
 
 ** Probe example **: extract file information such as: Transaction Id, ...
 
@@ -28,12 +28,12 @@
 
 **DNS General Message Format**
 
-![dnsgenformat.png](https://bitbucket.org/repo/ankEpA/images/1765138158-dnsgenformat.png)
+![dnsgenformat.png](images/1765138158-dnsgenformat.png)
 
 
 **DNS Message Header Format**
 
-![DNS Message Header Format](https://bitbucket.org/repo/ankEpA/images/3103432425-dnsheaderformat.png)
+![DNS Message Header Format](images/3103432425-dnsheaderformat.png)
 
 | Attribute | MMT value | Value |data size| Notes |
 | ------------ | ------------ | --- | --- | ---------------------- |
@@ -80,7 +80,7 @@
 
 **DNS Question Section Format**
 
-![dnsquestionformat.png](https://bitbucket.org/repo/ankEpA/images/4206171857-dnsquestionformat.png)
+![dnsquestionformat.png](images/4206171857-dnsquestionformat.png)
 
 | Attribute | MMT value | Value |data size| Notes |
 | ------------ | ------------ | --- | --- | ---------------------- |
@@ -95,7 +95,7 @@
 
 **DNS Common resource Record Format**
 
-![dnsrrformat.png](https://bitbucket.org/repo/ankEpA/images/536635463-dnsrrformat.png)
+![dnsrrformat.png](images/536635463-dnsrrformat.png)
 
 | Attribute | MMT value | Value |data size| Notes |
 | ------------ | ------------ | --- | --- | ---------------------- |
@@ -126,7 +126,7 @@ The string is separated by `.` or `@`
 
 `www.xyzindustries.com` -> `[3] w w w [13] x y z i n d u s t r i e s [3] c o m [0]`
 
-![dnsnameformat.png](https://bitbucket.org/repo/ankEpA/images/772490498-dnsnameformat.png)
+![dnsnameformat.png](images/772490498-dnsnameformat.png)
 
 **DNS Electronic Mail Address Notation: ** `[6] j o h n n y [9] s o m e w h e r e [3] o r g [0]`
 
