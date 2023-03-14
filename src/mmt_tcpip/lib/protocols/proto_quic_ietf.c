@@ -27,6 +27,21 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 	const uint8_t *p;
 	uint32_t u32;
 	mmt_string_data_t *string;
+	quic_ietf_session_t * session_data = ipacket->session->session_data[index];
+	//extract session's attributes
+	if( session_data != NULL ){
+		int dir = (ipacket->internal_packet->src == session_data->quic_client ? CLIENT_TO_SERVER : SERVER_TO_CLIENT );
+		spinbit_edge_t *edge = &session_data->spinbit_edge[dir];
+		switch( extracted_data->field_id ){
+		case QUIC_IETF_RTT:
+			//return RTT only when we got 2 halfs of RTT
+			if( edge->rtt_us ){
+				(*(uint64_t *) extracted_data->data) = edge->rtt_us;
+				return ATTRIBUTE_SET;
+			} else
+				return ATTRIBUTE_UNSET;
+		}
+	}
 
 	if( first_bit != 0 ){
 		//Long header
@@ -66,7 +81,7 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 		//for each type of packet
 		switch( hdr->long_packet_type ){
 		//Initial: https://datatracker.ietf.org/doc/html/rfc9000#packet-initial
-		case 0: {
+		case QUIC_IETF_INITIAL_PACKET_TYPE: {
 			quic_ietf_initial_packet_t *ext = (quic_ietf_initial_packet_t* ) hdr->types_pecific_payload;
 			switch( extracted_data->field_id ){
 			case QUIC_IETF_TOKEN_LENGTH:
@@ -76,14 +91,14 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 		}
 			break;
 		//0-RTT: https://datatracker.ietf.org/doc/html/rfc9000#packet-0rtt
-		case 1:
+		case QUIC_IETF_0RTT_PACKET_TYPE:
 			break;
 
 		//Handshake: https://datatracker.ietf.org/doc/html/rfc9000#packet-handshake
-		case 2:
+		case QUIC_IETF_HANDSHAKE_PACKET_TYPE:
 			break;
 		//Retry: https://datatracker.ietf.org/doc/html/rfc9000#packet-retry
-		case 3:
+		case QUIC_IETF_RETRY_PACKET_TYPE:
 			break;
 		}
 	} else {
@@ -127,11 +142,8 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 
 static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned parent_proto_index, size_t offset) {
 	size_t payload_len = ipacket->p_hdr->len - offset;
-
 	// get the first bit in the UDP payload
 	uint8_t first_bit = ipacket->data[ offset ] & 0b10000000;
-
-
 	if( first_bit != 0 ){
 		// Long Header
 		const quic_ietf_long_header_t *hdr = (quic_ietf_long_header_t*) &ipacket->data[offset];
@@ -150,6 +162,17 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 
 	} else {
 		//Short Header
+
+		unsigned quick_proto_index = parent_proto_index+1; //index of QUIC protocol if it is available
+
+		//must have enough room to contain QUIC
+		if( quick_proto_index >= PROTO_PATH_SIZE )
+			goto _not_found_quic_ietf;
+
+		//QUIC session must be initialized (must be seen long header first)
+		if( ipacket->session->session_data[quick_proto_index] == NULL )
+			goto _not_found_quic_ietf;
+
 		const quic_ietf_short_packet_t *hdr = (quic_ietf_short_packet_t *) &ipacket->data[offset];
 		// must have enough room
 		if( payload_len < sizeof( *hdr))
@@ -168,6 +191,7 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 
 	//if we can reach here => all signatures are valid => got QUIC
 	//mmt_internal_add_connection(ipacket, PROTO_QUIC_IETF, MMT_REAL_PROTOCOL);
+	//debug("classified QUIC");
 	return FOUND;
 
 	_not_found_quic_ietf:
@@ -177,17 +201,35 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 	return NOT_FOUND;
 }
 
+static void _quic_ietf_session_data_init(ipacket_t * ipacket, unsigned index);
+static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index);
 
+static int _classified_quic_ietf(ipacket_t *ipacket, unsigned index, size_t offset){
+	classified_proto_t retval;
+	retval.offset = offset;
+	retval.proto_id = PROTO_QUIC_IETF;
+	retval.status = Classified;
+
+	//TODO: need to find a suitable place to put these 2 functions
+	_quic_ietf_session_data_init( ipacket, index+1 );
+	_quic_ietf_session_data_analysis( ipacket, index+1 );
+	return set_classified_proto(ipacket, index+1, retval);
+}
 static int _classify_quic_ietf_from_udp(ipacket_t *ipacket, unsigned index) {
 	size_t offset = get_packet_offset_at_index(ipacket, index);
 	//const struct udphdr *udp = (struct udphdr *) &ipacket->data[ offset ];
 	offset += 8; //8 bytes of UDP header
-	return _classify_quic_ietf_from_data_offset( ipacket, index, offset );
+	if( _classify_quic_ietf_from_data_offset( ipacket, index, offset ) == FOUND )
+		return _classified_quic_ietf( ipacket, index, 8 );
+	return NOT_FOUND;
 }
 
 static int _classify_quic_ietf_from_int(ipacket_t *ipacket, unsigned index) {
-	//
+	//it is evident
 	if( ipacket->proto_hierarchy->proto_path[index] != PROTO_INT )
+		return NOT_FOUND;
+	//classify only if we got UDP
+	if( index >=1 && ipacket->proto_hierarchy->proto_path[index-1] != PROTO_UDP )
 		return NOT_FOUND;
 
 	size_t offset = get_packet_offset_at_index(ipacket, index);
@@ -196,32 +238,100 @@ static int _classify_quic_ietf_from_int(ipacket_t *ipacket, unsigned index) {
 	if( offset >= ipacket->p_hdr->caplen )
 		return NOT_FOUND;
 
-	if( _classify_quic_ietf_from_data_offset( ipacket, index, offset ) == FOUND ){
-		classified_proto_t retval;
-		retval.offset = 56;
-		retval.proto_id = PROTO_QUIC_IETF;
-		retval.status = Classified;
-		return set_classified_proto(ipacket, index+1, retval);
-	}
+	if( _classify_quic_ietf_from_data_offset( ipacket, index, offset ) == FOUND )
+		return _classified_quic_ietf( ipacket, index, 56 );
 	return NOT_FOUND;
 }
 
-static void _session_data_init(ipacket_t * ipacket, unsigned index) {
-	quic_ietf_session_t * session_data = (quic_ietf_session_t *) mmt_malloc(sizeof (*session_data));
+static void _quic_ietf_session_data_init(ipacket_t * ipacket, unsigned index) {
+	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
-	memset(session_data, 0, sizeof(*session_data));
-	ipacket->session->session_data[index] = session_data;
+	quic_ietf_session_t * session_data = ipacket->session->session_data[index];
+	if( session_data == NULL ){
+		session_data = (quic_ietf_session_t *) mmt_malloc(sizeof (*session_data));
+		debug("QUIC session init");
+		memset(session_data, 0, sizeof(*session_data));
+		ipacket->session->session_data[index] = session_data;
+
+		session_data->quic_client = packet->src;
+	}
 }
 
 
-static void _session_data_cleanup(mmt_session_t * session, unsigned index) {
+static void _quic_ietf_session_data_cleanup(mmt_session_t * session, unsigned index) {
+	debug("QUIC session clean");
 	if (session->session_data[index] != NULL) {
 		mmt_free(session->session_data[index]);
 	}
 }
 
-static int _session_data_analysis(ipacket_t * ipacket, unsigned index) {
-	//struct quic_ietf_session_t * session_data = ipacket->session->session_data[index];
+
+
+static void _quic_ietf_calculate_rtts(ipacket_t * ipacket, unsigned index, quic_ietf_session_t * session){
+	attribute_t extracted_data;
+	uint8_t spinbit = 0;
+	//prepare to extract spinbit
+	extracted_data.proto_id = PROTO_QUIC_IETF;
+	extracted_data.field_id = QUIC_IETF_SPIN_BIT;
+	extracted_data.data     = &spinbit;
+	//get spinbit
+	if( _extraction_quic_ietf_att( ipacket, index, &extracted_data ) == ATTRIBUTE_UNSET ){
+		//no spinbit => long header
+		//=> reset rtt
+		memset(& session->spinbit_edge[0], 0, sizeof(spinbit_edge_t));
+		memset(& session->spinbit_edge[1], 0, sizeof(spinbit_edge_t));
+		debug("QUIC reset spinbit edge");
+
+		//extract long packet type
+		uint8_t long_packet_type = 0;
+		extracted_data.field_id = QUIC_IETF_LONG_PACKET_TYPE;
+		extracted_data.data     = &long_packet_type;
+
+		//update quic client depending on the type of packet
+		if( _extraction_quic_ietf_att( ipacket, index, &extracted_data ) == ATTRIBUTE_SET ){
+			if( long_packet_type == QUIC_IETF_INITIAL_PACKET_TYPE )
+				session->quic_client = ipacket->internal_packet->src;
+			else if( long_packet_type == QUIC_IETF_HANDSHAKE_PACKET_TYPE )
+				session->quic_client = ipacket->internal_packet->dst;
+		}
+		return;
+	}
+
+	int dir = (ipacket->internal_packet->src == session->quic_client ? CLIENT_TO_SERVER : SERVER_TO_CLIENT );
+	spinbit_edge_t *edge = &session->spinbit_edge[dir];
+	//we do not see see any modification of spinbit
+	if( spinbit == edge->last_pkt_spinbit )
+		return;
+	edge->last_pkt_spinbit = spinbit;
+
+	// avoid 2 consecutive edge in the same direction
+	//if( session->spinbit_edge.pkt_src == ipacket->internal_packet->src )
+	//	return;
+
+	//timestamp of the current packet in microsecond
+	size_t us = ipacket->p_hdr->ts.tv_sec * 1000000 + ipacket->p_hdr->ts.tv_usec;
+	//avoid unordered packets
+	if( us <= edge->pkt_us)
+		return;
+
+	//we got the spinbit edge here
+	debug("QUIC spinbit edge %s at packet_id=%zu", dir == CLIENT_TO_SERVER? "c->s":"s->c", ipacket->packet_id);
+
+	//get RTT ( pkt_us==0 for the first time )
+	if( edge->pkt_us > 0 )
+		edge->rtt_us = us - edge->pkt_us;
+
+	//remember the last values
+	edge->pkt_us  = us;
+}
+
+static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index) {
+	//debug("QUIC session analysis");
+	quic_ietf_session_t * session_data = ipacket->session->session_data[index];
+	if( session_data == NULL )
+		return MMT_CONTINUE;
+
+	_quic_ietf_calculate_rtts( ipacket, index, session_data );
 	return MMT_CONTINUE;
 }
 
@@ -247,7 +357,8 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( QUIC_IETF_PACKET_NUMBER_LENGTH, MMT_U8_DATA,  sizeof(uint8_t) ),
 	def_att( QUIC_IETF_PACKET_NUMBER,        MMT_U32_DATA, sizeof(uint32_t) ),
 	def_att( QUIC_IETF_TOKEN_LENGTH,         MMT_U16_DATA, sizeof(uint16_t) ),
-	def_att( QUIC_IETF_TOKEN,                MMT_STRING_DATA_POINTER, sizeof(mmt_string_data_t) )
+	def_att( QUIC_IETF_TOKEN,                MMT_STRING_DATA_POINTER, sizeof(mmt_string_data_t) ),
+	def_att( QUIC_IETF_RTT,                  MMT_U64_DATA, sizeof(uint64_t) )
 };
 
 
@@ -268,12 +379,10 @@ int init_proto_quic_ietf_struct() {
 
 	//QUIC is after UDP, so we classify it once we got UDP
 	//TODO: need to classify QUIC after QUIC
-	/*
 	if( !register_classification_function_with_parent_protocol( PROTO_UDP, _classify_quic_ietf_from_udp, 100 ) ){
 		log_err("Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
 		return PROTO_NOT_REGISTERED;
 	}
-	*/
 
 	if( !register_classification_function_with_parent_protocol( PROTO_INT, _classify_quic_ietf_from_int, 100 ) ){
 		log_err("Need mmt_tcpip library containing PROTO_INT having id = %d", PROTO_INT);
@@ -283,9 +392,9 @@ int init_proto_quic_ietf_struct() {
 	_init_bitmask();
 
 	//TODO: need to get QUIC session
-	register_session_data_initialization_function(protocol_struct, _session_data_init);
-	register_session_data_cleanup_function(protocol_struct, _session_data_cleanup);
-	register_session_data_analysis_function(protocol_struct, _session_data_analysis);
+	register_session_data_initialization_function(protocol_struct, _quic_ietf_session_data_init);
+	register_session_data_cleanup_function(protocol_struct, _quic_ietf_session_data_cleanup);
+	register_session_data_analysis_function(protocol_struct, _quic_ietf_session_data_analysis);
 
 	return register_protocol(protocol_struct, PROTO_QUIC_IETF);
 }

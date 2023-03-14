@@ -117,11 +117,22 @@ quic_ietf_1_rtt_packet_t;
 typedef quic_ietf_1_rtt_packet_t quic_ietf_short_packet_t;
 
 
+#define CLIENT_TO_SERVER 0
+#define SERVER_TO_CLIENT 1
+typedef struct {
+	size_t pkt_us; //timestamp of the packet at the edge spinbit
+	size_t rtt_us; //remember RTT for other packets in flight
+	uint8_t last_pkt_spinbit; //spinbit value of the last packet => it is compare to the one of the current packet to detect the edge
+} spinbit_edge_t;
+
 typedef struct quic_ietf_session {
 	//we need to remember the length of connection ID so that we can get them in packets of short header form
 	uint16_t destination_connection_id_length;
 	uint16_t source_connection_id_length;
 	uint8_t packet_number_length;
+	const void *quic_client; //the client that init QUIC connection
+
+	spinbit_edge_t spinbit_edge[2];
 } quic_ietf_session_t;
 
 
@@ -139,9 +150,16 @@ enum quic_ietf_attributes {
 	QUIC_IETF_PACKET_NUMBER_LENGTH,
 	QUIC_IETF_PACKET_NUMBER,
 	QUIC_IETF_TOKEN_LENGTH,
-	QUIC_IETF_TOKEN
+	QUIC_IETF_TOKEN,
+	QUIC_IETF_RTT
 };
 
+enum quic_ietf_long_packet_types {
+	QUIC_IETF_INITIAL_PACKET_TYPE = 0,
+	QUIC_IETF_0RTT_PACKET_TYPE,
+	QUIC_IETF_HANDSHAKE_PACKET_TYPE,
+	QUIC_IETF_RETRY_PACKET_TYPE
+};
 
 #define QUIC_IETF_HEADER_FORM_ALIAS                      "header_form"
 #define QUIC_IETF_LONG_PACKET_TYPE_ALIAS                 "long_packet_type"
@@ -156,5 +174,6 @@ enum quic_ietf_attributes {
 #define QUIC_IETF_PACKET_NUMBER_ALIAS                    "packet_number"
 #define QUIC_IETF_TOKEN_LENGTH_ALIAS                     "token_len"
 #define QUIC_IETF_TOKEN_ALIAS                            "token"
+#define QUIC_IETF_RTT_ALIAS                              "rtt"
 
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_PROTO_QUIC_IETF_H_ */
