@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+Version 1.7.6 (16 Mar 2023 - by HN)
+- classify and extract attributes of QUIC IETF rfc9000
+- calculate RTT, in microsecond, of QUIC packets by using QUIC spinbit. Every QUIC packets in the same flight will receive the same RTT.
+
 Version 1.7.5 (30 Nov 2022 - by HN)
 - fixed multiple definition errors in sctp.h when compiling using gcc 11
 
