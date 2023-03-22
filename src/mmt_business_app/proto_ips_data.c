@@ -7,7 +7,8 @@
 
 
 #include "mmt_business_app_internal.h"
-
+#include <time.h>
+#include <sys/time.h>
 
 /*
 TrolleyPos: 32.981, Hoistpos: 38.042, NoOfMarkers: 3, m1: (58901,70912) , m2: (72175,70950) , m3: (65803,71939) , m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)
@@ -62,6 +63,30 @@ static inline void _assign_float(const char* ptr, attribute_t * extracted_data){
 		*((float *) extracted_data->data) = 0;
 }
 
+static inline void _assign_date(const char* ptr, attribute_t * extracted_data){
+	if( ptr ){
+
+		struct tm timestamp; // struttura per memorizzare le informazioni sulla data e l'ora
+		memset(&timestamp, 0, sizeof(struct tm)); // inizializza la struttura a zero
+		strptime(ptr, "%Y-%m-%d %H:%M:%S", &timestamp); // analizza la stringa e memorizza le informazioni nella struttura
+
+		// calcola i decimali a partire dalla stringa
+		double decimal_seconds = strtod(strchr(ptr, '.') + 1, NULL) / 1000000.0;
+
+		// crea una struttura timeval a partire dalle informazioni sulla data e l'ora
+		struct timeval tv;
+		tv.tv_sec = mktime(&timestamp);
+		tv.tv_usec = (long)(decimal_seconds * 1000000.0);
+		memcpy(extracted_data->data, &tv, sizeof(struct timeval)); //26 since is the length of the entire date 
+		//printf("-------------Timeval: %ld.%06ld-------------\n", (long) tv.tv_sec, (long) tv.tv_usec);
+		//printf("%d", ((struct timeval *)extracted_data->data)->tv_sec);
+		//printf("-------------extracted_data->data: %s---------------- \n", extracted_data->data);
+	}
+	else
+		printf("PROBLEMI PROBLEMI PROBLEMI, %s", &ptr);
+
+}
+
 static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
 	int offset = get_packet_offset_at_index(packet, proto_index);
@@ -71,10 +96,23 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	if( data_len <= 0 )
 		return 0;
 	switch( extracted_data->field_id ){
-	case IPS_DATA_TROLLEY_POS:
+	case IPS_DATA_TROLLEY_POS: {
 		ptr = _get_pos( data_len, data, "TrolleyPos:" );
 		_assign_float( ptr, extracted_data );
+/*		float f = atof(ptr);
+	 	static float a = 0;
+		static int counter=0;
+		a += f;
+		counter++;
+		if( counter >= 10 ){
+			(*(float*) extracted_data->data) = a/counter;
+			counter = 0;
+			return 1;
+		}else
+			return 0;
+			*/
 		break;
+	}
 
 	case IPS_DATA_HOIST_POS:
 		ptr = _get_pos( data_len, data, "Hoistpos:" );
@@ -156,6 +194,32 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	case IPS_DATA_ORDER:
 		*((uint64_t *) extracted_data->data) = packet->packet_id;
 		break;
+	case IPS_DATA_GASPD:
+		ptr = _get_pos( data_len, data, "GaSpd: " );
+		if (ptr == NULL )
+			printf("NULLLLLLLLLLLLLLLLLLLLLLLLLLLL - GA_SPEED NOT FOUND");
+		_assign_float( ptr, extracted_data );
+		break;
+	case IPS_DATA_TRSPD:
+		ptr = _get_pos( data_len, data, "TrSpd: " );
+		if (ptr == NULL )
+			printf("NULLLLLLLLLLLLLLLLLLLLLLLLLLLL - TR_SPEED NOT FOUND");
+		_assign_float( ptr, extracted_data );
+		break;
+	case IPS_DATA_MHSPD:
+		ptr = _get_pos( data_len, data, "MhSpd: " );
+		if (ptr == NULL )
+			printf("NULLLLLLLLLLLLLLLLLLLLLLLLLLLL - MH_SPEED NOT FOUND");
+		_assign_float( ptr, extracted_data );
+		break;	
+	case IPS_DATA_TIMESTAMP:
+		ptr = _get_pos( data_len, data, "T:" );
+		if (ptr == NULL )
+			printf("NULLLLLLLLLLLLLLLLLLLLLLLLLLLL - TIMESTAMP NOT FOUND");
+		_assign_date( ptr, extracted_data );
+		break;		
+	
+	
 	}
 	return 1;
 }
@@ -185,6 +249,14 @@ static attribute_metadata_t _attributes_metadata[] = {
 		{IPS_DATA_M6_Y,         IPS_DATA_M6_Y_ALIAS,         MMT_U32_DATA,  sizeof( uint32_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 
 		{IPS_DATA_ORDER,        IPS_DATA_ORDER_ALIAS,        MMT_U64_DATA,  sizeof( uint64_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+		{IPS_DATA_GASPD,        IPS_DATA_GASPD_ALIAS,        MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_TRSPD,        IPS_DATA_TRSPD_ALIAS,        MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_MHSPD,        IPS_DATA_MHSPD_ALIAS,        MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		//change 											 type of data,	  sizeof timestamp
+		{IPS_DATA_TIMESTAMP,    IPS_DATA_TIMESTAMP_ALIAS,    MMT_DATA_TIMEVAL,  sizeof (struct timeval),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+
+		
 };
 
 static classified_proto_t _ips_data_stack_classification(ipacket_t * ipacket) {
