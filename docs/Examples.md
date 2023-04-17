@@ -4,12 +4,12 @@
 
 
 
-To run these example,`mmt-sdk` installing is required (see [compilation and installation instructions](https://bitbucket.org/montimage/mmt-sdk/wiki/Compilation%20and%20Installation%20Instructions)).
+To run these example,`mmt-sdk` installing is required (see [compilation and installation instructions](Compilation-and-Installation-Instructions.md)).
 
 Now you can use `mmt-sdk` library. All the source code of example can see in `mmt-sdk/sdk/examples/`
 
 ## Attributes Listing ##
-This example is intended to provide the list of available protocols and for each protocol, the list of its attributes. 
+This example is intended to provide the list of available protocols and for each protocol, the list of its attributes.
 
 ```c
 #include <stdio.h>
@@ -47,9 +47,9 @@ Run the example:
 ```sh
 ./proto_attributes_iterator
 ```
-The output is the list of available protocols and for each protocol, the list of its attributes. 
+The output is the list of available protocols and for each protocol, the list of its attributes.
 
-If you want to test your own plugins, you need to copy your plugins to `/opt/mmt/plugins` or you can create a `plugins` folder in the same directory with the example file, then copy your plugin to `plugins` folder. 
+If you want to test your own plugins, you need to copy your plugins to `/opt/mmt/plugins` or you can create a `plugins` folder in the same directory with the example file, then copy your plugin to `plugins` folder.
 ```sh
 mkdir plugins
 cp /opt/mmt/lib/libmmt_tcpip.so.0.100 plugins/libmmt_tcpip.so
@@ -150,7 +150,7 @@ void live_capture_callback( u_char *user, const struct pcap_pkthdr *p_pkthdr, co
 
 int main(int argc, char** argv) {
     mmt_handler_t *mmt_handler; //MMT handler
-    char mmt_errbuf[1024]; 
+    char mmt_errbuf[1024];
     struct pkthdr header; //MMT packet header
 
     pcap_t *pcap;
@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 
     quiet = 0;
     parseOptions(argc, argv, filename, &type);
-    
+
     //First of all initialize MMT
     init_extraction();
 
@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "MMT handler init failed for the following reason: %s\n", mmt_errbuf);
         return EXIT_FAILURE;
     }
- 
+
     //Iterate through registered protocols and call the given function for every one
     iterate_through_protocols(protocols_iterator, mmt_handler);
 
@@ -203,10 +203,10 @@ int main(int argc, char** argv) {
         (void)pcap_loop( pcap, -1, &live_capture_callback, (u_char*)mmt_handler );
     }
 
-    //Close the MMT handler. 
+    //Close the MMT handler.
     mmt_close_handler(mmt_handler);
 
-    //Close MMT. 
+    //Close MMT.
     close_extraction();
 
     pcap_close(pcap);
@@ -231,7 +231,7 @@ sudo ./extract_all -i eth0
 The output is all the attributes of al registered protocols.
 
 ## Packet Handler ##
-This example is intended to show a simple packet handler. That is a callback function that will be called after the processing of every packet by the MMT core. 
+This example is intended to show a simple packet handler. That is a callback function that will be called after the processing of every packet by the MMT core.
 
 ```c
 #include <stdio.h>
@@ -261,7 +261,7 @@ int main(int argc, char** argv) {
 
     //Initialize the MMT handler
     mmt_handler # mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);
-    if (!mmt_handler) { 
+    if (!mmt_handler) {
         fprintf(stderr, "MMT handler init failed for the following reason: %s\n", mmt_errbuf);
         return EXIT_FAILURE;
     }
@@ -308,7 +308,7 @@ Execute the program:
 The output is the size of received packets.
 
 ## Attribute Handler (Sessions counter) ##
-This example is intended to show a simple attribute handler - count number of session. 
+This example is intended to show a simple attribute handler - count number of session.
 
 ```c
 #include <stdio.h>
@@ -371,7 +371,7 @@ int main(int argc, char** argv) {
       fprintf(stderr, "Packet data extraction failure.\n");
     }
   }
-  
+
   //Close the MMT handler
   mmt_close_handler(mmt_handler);
 
@@ -395,7 +395,7 @@ The output is the number of session
 
 ## Simple Traffic Reporting ##
 This example is intended to extract the statisitic of all stream: TODO
- 
+
 ```c
 #include <pcap.h>
 #include <stdio.h>
@@ -540,7 +540,7 @@ void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
     fprintf(out_file, "%"PRIu64",%lu.%lu,%lu.%lu,"
             "%u,%s,%s,%hu,%hu,%hu,"
             "%"PRIu64",%"PRIu64",%"PRIu64",%"PRIu64",%u,%u,%s,%s,%s"
-            "\n", 
+            "\n",
             get_session_id(expired_session),
             (get_session_last_activity_time(expired_session)).tv_sec, (get_session_last_activity_time(expired_session)).tv_usec,
             (get_session_init_time(expired_session)).tv_sec, (get_session_init_time(expired_session)).tv_usec,
@@ -632,7 +632,7 @@ int main(int argc, const char **argv) {
 ```
 Compile this example with:
 ```sh
-gcc -o simple_traffic_reporting simple_traffic_reporting.c -lmmt_core -lmmt_tcpip -ldl -lpcap 
+gcc -o simple_traffic_reporting simple_traffic_reporting.c -lmmt_core -lmmt_tcpip -ldl -lpcap
 ```
 
 To test example:

@@ -2,6 +2,9 @@
 
 ------------------
 
+# Before compiling
+Please use the gxx version from `4.9` upto `9.x`. Some users have experienced some problems during the installation with the compiler `gxx >= 10`
+
 # Pre-requisites
 
 Required packages: `libxml2-dev`
@@ -17,7 +20,7 @@ cd mmt-dpi
 ## Install required tools
 
 ```bash
-apt-get install gcc make build-essential git cmake 
+sudo apt-get install gcc make build-essential git cmake 
 ```
 
 ## Install required packages
@@ -52,7 +55,7 @@ sudo apt-get install libpcap-dev
 You can test `mmt-dpi` library with some examples in [`src/examples`](../src/examples) to see how it works.
 
 ```sh
-cd src/examples
+cd ./examples
 gcc -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
 sudo ./extract_all -i eth0
 ```

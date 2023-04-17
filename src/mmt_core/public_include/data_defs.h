@@ -210,6 +210,7 @@ enum proto_stats_attr {
     PROTO_PAYLOAD_VOLUME,
     PROTO_FIRST_PACKET_TIME,
     PROTO_LAST_PACKET_TIME,
+    PROTO_DATA_LEN,
     PROTO_STATISTICS,
     PROTO_STATS_ATTRIBUTES_NB = PROTO_STATISTICS - PROTO_HEADER + 1,
 };
@@ -234,10 +235,12 @@ typedef struct ip_rtt_struct{
 #define PROTO_DATA_VOLUME_LABEL                 "data_count"
 #define PROTO_PAYLOAD_VOLUME_LABEL              "payload_count"
 #define PROTO_FIRST_PACKET_TIME_LABEL           "first_packet_time"
-#define PROTO_LAST_PACKET_TIME_LABEL           "last_packet_time"
+#define PROTO_LAST_PACKET_TIME_LABEL            "last_packet_time"
 #define PROTO_STATISTICS_LABEL                  "stats"
 #define PROTO_SESSION_LABEL                     "session"
 #define PROTO_SESSION_ID_LABEL                  "session_id"
+#define PROTO_DATA_LEN_LABEL                    "p_data_len"
+
 /**
  * Returns the protocol name given its identifier.
  * @param proto_id the identifier of the protocol

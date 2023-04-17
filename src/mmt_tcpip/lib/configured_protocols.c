@@ -4575,6 +4575,10 @@ int init_tcpip_plugin()
         fprintf(stderr, "Error initializing protocol PROTO_DTLS\n Exiting\n");
         exit(0);
     }
+    if (!init_proto_quic_ietf_struct()) {
+		fprintf(stderr, "Error initializing protocol PROTO_QUIC_IETF\n Exiting\n");
+		exit(0);
+	}
     /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////

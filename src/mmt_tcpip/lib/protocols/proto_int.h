@@ -122,6 +122,7 @@ enum int_attributes {
 	INT_HOP_TX_UTILIZES,
 	INT_HOP_L4S_MARK,
 	INT_HOP_L4S_DROP,
+	INT_HOP_L4S_MARK_PROBABILITY,
 
 	//details of bits
 	INT_IS_SWITCH_ID,
@@ -154,6 +155,7 @@ enum int_attributes {
 #define INT_HOP_TX_UTILIZES_ALIAS          "hop_tx_utilizes"
 #define INT_HOP_L4S_MARK_ALIAS             "hop_l4s_mark"
 #define INT_HOP_L4S_DROP_ALIAS             "hop_l4s_drop"
+#define INT_HOP_L4S_MARK_PROBABILITY_ALIAS "hop_l4s_mark_probability"
 
 #define INT_IS_SWITCH_ID_ALIAS             "is_switch_id"
 #define INT_IS_IN_EGRESS_PORT_ID_ALIAS     "is_in_egress_port_id"

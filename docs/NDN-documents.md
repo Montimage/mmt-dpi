@@ -4,8 +4,6 @@
 
 * [Named data networking: Basic principle (presentation)](http://www.slideshare.net/wanderer_from/named-date)
 
-* [How to generate NDN trace file](https://bitbucket.org/montimage/mmt-sdk/src/ea87c605bd8bbd05bfa1a6b246cae398bbe2f1f7/data-set/ndn-trace.md?at=master)
-
 * [Named data networking - wikipedia](https://en.wikipedia.org/wiki/Named_data_networking)
 
 * [NDN packet format specification](http://named-data.net/doc/ndn-tlv/)

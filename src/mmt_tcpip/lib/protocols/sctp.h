@@ -15,7 +15,7 @@ extern "C" {
 #include "plugin_defs.h"
 #include "mmt_core.h"
     
-    enum {
+    enum sctp_attributes {
         SCTP_SCR_PORT = 1,
         SCTP_DEST_PORT,
         SCTP_VERIF_TAG,
@@ -29,7 +29,7 @@ extern "C" {
         //SCTP_DATA_SSN,
        // SCTP_DATA_PPID,
         
-    } sctp_attributes;
+    };
 
     /*
      * Chunk type
@@ -53,7 +53,7 @@ extern "C" {
 //#define SCTP_DATA_SSN_ALIAS     "data_ssn"
 //#define SCTP_DATA_PPID_ALIAS    "data_ppid"
 
-    enum {
+    enum sctp_data_attributes {
         SCTP_DATA_CH_TYPE = 1,
         SCTP_DATA_CH_FLAGS,
         SCTP_DATA_CH_LENGTH,
@@ -62,7 +62,7 @@ extern "C" {
         SCTP_DATA_SSN,
         SCTP_DATA_PPID,
 
-    } sctp_data_attributes;
+    };
     
 #define SCTP_DATA_ATTRIBUTES_NB  SCTP_DATA_PPID
 #define SCTP_DATA_CH_TYPE_ALIAS      "ch_type"
@@ -73,7 +73,7 @@ extern "C" {
 #define SCTP_DATA_SSN_ALIAS          "data_ssn"
 #define SCTP_DATA_PPID_ALIAS         "data_ppid"
     
- enum {
+ enum sctp_sack_attributes {
         SCTP_SACK_CH_TYPE = 1,
         SCTP_SACK_CH_FLAGS,
         SCTP_SACK_CH_LENGTH,
@@ -82,7 +82,7 @@ extern "C" {
         SCTP_SACK_NUM_GAP_BLOCKS,
         SCTP_SACK_NUM_DUP_TSN,
 
-    } sctp_sack_attributes;
+    };
 
 #define SCTP_SACK_ATTRIBUTES_NB    SCTP_SACK_NUM_DUP_TSN
 #define SCTP_SACK_CH_TYPE_ALIAS             "ch_type"
@@ -93,7 +93,7 @@ extern "C" {
 #define SCTP_SACK_NUM_GAP_BLOCKS_ALIAS      "sack_num_gap_blocks"
 #define SCTP_SACK_NUM_DUP_TSN_ALIAS         "sack_num_dup_tsn"
 
-     enum {
+     enum sctp_init_attributes {
         SCTP_INIT_CH_TYPE = 1,
         SCTP_INIT_CH_FLAGS,
         SCTP_INIT_CH_LENGTH,
@@ -102,7 +102,7 @@ extern "C" {
         SCTP_INIT_NUM_OUT_STREAMS,
         SCTP_INIT_NUM_IN_STREAMS,
         SCTP_INIT_INI_TSN,
-    } sctp_init_attributes;
+    };
 
 #define SCTP_INIT_ATTRIBUTES_NB             SCTP_INIT_INI_TSN
 #define SCTP_INIT_CH_TYPE_ALIAS             "ch_type"
@@ -124,7 +124,7 @@ extern "C" {
         uint16_t length;
     };
 
-    enum {
+    enum sctp_cid_t {
         SCTP_CID_DATA = 0,
         SCTP_CID_INIT = 1,
         SCTP_CID_INIT_ACK = 2,
@@ -150,7 +150,7 @@ extern "C" {
         /* Use hex, as defined in ADDIP sec. 3.1 */
         SCTP_CID_ASCONF = 0xC1,
         SCTP_CID_ASCONF_ACK = 0x80,
-    } sctp_cid_t; /* enum */
+    }; /* enum */
 
     struct sctp_chunkhdr {
         uint8_t type;
