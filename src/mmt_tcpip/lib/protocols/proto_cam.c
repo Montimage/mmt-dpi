@@ -20,12 +20,19 @@ int proto_cam_classify_next_proto(ipacket_t *ipacket, unsigned index)
     retval.status = NonClassified;
     return set_classified_proto(ipacket, index + 1, retval);
 }
-
 static attribute_metadata_t cam_attributes_metadata[CAM_ATTRIBUTES_NB] = {
-    {CAM_ITS_PDU_HEADER_PROTOCOL_VERSION, CAM_ITS_PDU_HEADER_PROTOCOL_VERSION_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 0, SCOPE_PACKET, general_char_extraction},
-    {CAM_ITS_PDU_HEADER_MESSAGE_ID, CAM_ITS_PDU_HEADER_MESSAGE_ID_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 1, SCOPE_PACKET, general_char_extraction},
-    {CAM_ITS_PDU_HEADER_STATION_ID, CAM_ITS_PDU_HEADER_STATION_ID_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 2, SCOPE_PACKET, general_int_extraction_with_ordering_change},
-    {CAM_COOP_AWARENESS_GENERATION_DELTA_TIME, CAM_COOP_AWARENESS_GENERATION_DELTA_TIME_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 6, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+	{CAM_PROTOCOLVERSION, CAM_PROTOCOLVERSION_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 0, SCOPE_PACKET, general_char_extraction},
+	{CAM_MESSAGEID, CAM_MESSAGEID_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 1, SCOPE_PACKET, general_char_extraction},
+	{CAM_STATIONID, CAM_STATIONID_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 2, SCOPE_PACKET, general_int_extraction_with_ordering_change},
+	{CAM_GENERATIONTIME, CAM_GENERATIONTIME_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 6, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+	{CAM_BASIC_STATION_TYPE, CAM_BASIC_STATION_TYPE_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 8, SCOPE_PACKET, general_char_extraction},
+	{CAM_BASIC_RP_LATITUDE, CAM_BASIC_RP_LATITUDE_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 9, SCOPE_PACKET, general_int_extraction_with_ordering_change},
+	{CAM_BASIC_RP_LONGITUDE, CAM_BASIC_RP_LONGITUDE_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 13, SCOPE_PACKET, general_int_extraction_with_ordering_change},
+	{CAM_BASIC_RP_PCE_MAJOR_CONF, CAM_BASIC_RP_PCE_MAJOR_CONF_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 17, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+	{CAM_BASIC_RP_PCE_MINOR_CONF, CAM_BASIC_RP_PCE_MINOR_CONF_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 18, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+	{CAM_BASIC_RP_PCE_MAJOR_ORIE, CAM_BASIC_RP_PCE_MAJOR_ORIE_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 20, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+	{CAM_BASIC_RP_ALTITUDE_VALUE, CAM_BASIC_RP_ALTITUDE_VALUE_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 22, SCOPE_PACKET, general_short_extraction_with_ordering_change},
+	{CAM_BASIC_RP_ALTITUDE_CONF, CAM_BASIC_RP_ALTITUDE_CONF_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 24, SCOPE_PACKET, general_char_extraction},
 };
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////

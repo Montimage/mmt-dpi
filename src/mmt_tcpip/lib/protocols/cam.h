@@ -23,19 +23,34 @@ extern "C"
     char *cam_parameters;
   };
 
-  enum cam_networking_attributes
-  {
-    CAM_ITS_PDU_HEADER_PROTOCOL_VERSION = 1,
-    CAM_ITS_PDU_HEADER_MESSAGE_ID,
-    CAM_ITS_PDU_HEADER_STATION_ID,
-    CAM_COOP_AWARENESS_GENERATION_DELTA_TIME,
-    CAM_ATTRIBUTES_NB = CAM_COOP_AWARENESS_GENERATION_DELTA_TIME,
-  };
+  enum cam_attributes {
+		CAM_PROTOCOLVERSION = 1,
+		CAM_MESSAGEID,
+		CAM_STATIONID,
+		CAM_GENERATIONTIME,
+		CAM_BASIC_STATION_TYPE,
+		CAM_BASIC_RP_LATITUDE,
+		CAM_BASIC_RP_LONGITUDE,
+		CAM_BASIC_RP_PCE_MAJOR_CONF,
+		CAM_BASIC_RP_PCE_MINOR_CONF,
+		CAM_BASIC_RP_PCE_MAJOR_ORIE,
+		CAM_BASIC_RP_ALTITUDE_VALUE,
+		CAM_BASIC_RP_ALTITUDE_CONF,
+		CAM_ATTRIBUTES_NB = CAM_BASIC_RP_ALTITUDE_CONF,
+	};
 
-#define CAM_ITS_PDU_HEADER_PROTOCOL_VERSION_ALIAS "its_pdu_header_protocol_version"
-#define CAM_ITS_PDU_HEADER_MESSAGE_ID_ALIAS "its_pdu_header_message_id"
-#define CAM_ITS_PDU_HEADER_STATION_ID_ALIAS "its_pdu_header_station_id"
-#define CAM_COOP_AWARENESS_GENERATION_DELTA_TIME_ALIAS "coop_awareness_generation_delta_time"
+#define CAM_PROTOCOLVERSION_ALIAS "protocolversion"
+#define CAM_MESSAGEID_ALIAS "messageid"
+#define CAM_STATIONID_ALIAS "stationid"
+#define CAM_GENERATIONTIME_ALIAS "generationtime"
+#define CAM_BASIC_STATION_TYPE_ALIAS "basic_station_type"
+#define CAM_BASIC_RP_LATITUDE_ALIAS "basic_rp_latitude"
+#define CAM_BASIC_RP_LONGITUDE_ALIAS "basic_rp_longitude"
+#define CAM_BASIC_RP_PCE_MAJOR_CONF_ALIAS "basic_rp_pce_major_conf"
+#define CAM_BASIC_RP_PCE_MINOR_CONF_ALIAS "basic_rp_pce_minor_conf"
+#define CAM_BASIC_RP_PCE_MAJOR_ORIE_ALIAS "basic_rp_pce_major_orie"
+#define CAM_BASIC_RP_ALTITUDE_VALUE_ALIAS "basic_rp_altitude_value"
+#define CAM_BASIC_RP_ALTITUDE_CONF_ALIAS "basic_rp_altitude_conf"
 
 #ifdef __cplusplus
 }
