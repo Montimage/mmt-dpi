@@ -343,6 +343,9 @@ extern "C" {
     // int mmt_check_ftp_control(ipacket_t * ipacket, unsigned index);
     // int mmt_check_ftp_data(ipacket_t * ipacket, unsigned index);
     int mmt_check_mqtt(ipacket_t * ipacket, unsigned index);
+    
+    
+    int mmt_check_http2(ipacket_t * ipacket, unsigned index);
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -2279,6 +2282,10 @@ extern "C" {
     int init_proto_int_struct();
     int init_proto_dtls_struct();
     int init_proto_quic_ietf_struct();
+    
+    
+        /////////// PLUGIN INIT FOR PROTO_HTTP2 //////////////////
+    int init_http2_proto_struct();
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus

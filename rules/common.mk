@@ -27,7 +27,7 @@ endif
 # DEFINE FLAG FOR COMPILE COMMAND
 #  - - - - -
 
-CFLAGS   := -lm -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\" -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"
+CFLAGS   := -lm -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\" -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\" -I/usr/include/nghttp2
 CXXFLAGS := -lm -Wall -DVERSION=\"$(VERSION)\" -DGIT_VERSION=\"$(GIT_VERSION)\" -DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"
 
 # NDEBUG = 1 to show all message come from debug(), ...
@@ -147,6 +147,7 @@ LIBMOBILE_INC := $(SRCINC)          \
 
 $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -lm -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
 	
+$(TCPIP_OBJECTS): CFLAGS +=   -I/usr/include/nghttp2 -lnghttp2
 	
 ifdef ENABLESEC
 FUZZ_OBJECTS := \
