@@ -5,7 +5,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap -I/usr/include/nghttp2
+ * $ gcc -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
  *   
  * Then execute the program:
  * 
@@ -40,8 +40,6 @@
 #endif
 #include "mmt_core.h"
 #include "tcpip/mmt_tcpip.h"
-
-#include <nghttp2/nghttp2.h>
 
 #define MAX_FILENAME_SIZE 256
 #define TRACE_FILE 1
