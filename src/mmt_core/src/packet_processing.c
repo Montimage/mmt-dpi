@@ -550,6 +550,7 @@ int register_classification_function_internal(protocol_t * proto, generic_classi
     if (weight > 100) weight = 100;
     mmt_classify_me_t * temp = (mmt_classify_me_t *) mmt_malloc(sizeof (mmt_classify_me_t));
     if (temp == NULL) {
+        fprintf(stderr,"[error] Cannot allocate memory for a classification function");
         return 0;
     }
     memset(temp, 0, sizeof (mmt_classify_me_t));
@@ -610,6 +611,7 @@ int register_classification_function_with_parent_protocol(uint32_t proto_id, gen
             // if ((weight > 10) && (weight < 90)) weight = 90;// LN: Dont know why we do that????
             return register_classification_function_internal(proto, classification_fct, weight);
         }
+        fprintf(stderr,"[error] Cannot get protocol structure of %d\n", proto_id);
     }
     return 0;
 }
