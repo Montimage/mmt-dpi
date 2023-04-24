@@ -1101,6 +1101,7 @@ extern "C"
         case PROTO_GEO_NETWORKING:
         case PROTO_BTPB:
         case PROTO_CAM:
+        case PROTO_CPM:
             return PROTO_CLASS_NETWORK;
         case PROTO_PCANYWHERE:
         case PROTO_RDP:

@@ -452,6 +452,7 @@ extern "C"
     int init_proto_geo_networking_struct();
     int init_proto_btpb_struct();
     int init_proto_cam_struct();
+    int init_proto_cpm_struct();
     /////////////////////////////////////////////////
     /////////// PLUGIN INIT FOR PROTO_ASK //////////////////
     int init_proto_ask_struct();

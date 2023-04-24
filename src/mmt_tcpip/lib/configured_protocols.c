@@ -255,11 +255,6 @@ int init_tcpip_plugin()
         exit(0);
     }
 
-    if (!init_proto_cam_struct())
-    {
-        fprintf(stderr, "Error initializing protocol proto_cam\n Exiting\n");
-        exit(0);
-    }
     /////////////////////////////////////////////
     /////////// INITILIZING PROTO_ASK //////////////////
     if (!init_proto_ask_struct())
@@ -4579,6 +4574,18 @@ int init_tcpip_plugin()
 		fprintf(stderr, "Error initializing protocol PROTO_QUIC_IETF\n Exiting\n");
 		exit(0);
 	}
+
+    if (!init_proto_cam_struct())
+    {
+        fprintf(stderr, "Error initializing protocol proto_cam\n Exiting\n");
+        exit(0);
+    }
+
+    if (!init_proto_cpm_struct())
+    {
+        fprintf(stderr, "Error initializing protocol proto_cpm\n Exiting\n");
+        exit(0);
+    }
     /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////
@@ -4776,6 +4783,7 @@ int init_tcpip_plugin()
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_eclipse_tcf, 50);
     // register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn, 60);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn_http, 60);
+    // register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_cam_udp, 50);
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////////END OF INTER-PROTOCOL CLASSIFICATIONS ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
