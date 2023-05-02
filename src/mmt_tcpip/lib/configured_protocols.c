@@ -3910,6 +3910,10 @@ int init_tcpip_plugin() {
 		fprintf(stderr, "Error initializing protocol PROTO_QUIC_IETF\n Exiting\n");
 		exit(0);
 	}
+	    if (!init_http2_proto_struct()) {
+        fprintf(stderr, "Error initializing protocol PROTO_HTTP2\n Exiting\n");
+        exit(0);
+    }
     /////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////END OF GENERATED CODE ////////////////////////////
@@ -3931,6 +3935,7 @@ int init_tcpip_plugin() {
      * 50: Rare
      * 60: Special project: NDN
      */
+     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_http2, 9);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_http, 20);
     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ssl, 20);
 
