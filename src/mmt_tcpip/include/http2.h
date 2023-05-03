@@ -90,7 +90,9 @@ typedef struct  http2_header_struct{
 		HTTP2_HEADER_LENGTH,
 		HTTP2_HEADER_STREAM_ID,
 		HTTP2_PAYLOAD_STREAM_ID,
-		HTTP2_ATTRIBUTES_NB = HTTP2_PAYLOAD_STREAM_ID,
+		HTTP2_PAYLOAD_LENGTH,
+		HTTP2_PAYLOAD_DATA,
+		HTTP2_ATTRIBUTES_NB = HTTP2_PAYLOAD_DATA,
 		
 	};
 
@@ -114,14 +116,16 @@ struct http2_session_data_struct {
 #define HTTP2_INJECT_WIN_UPDATE 13
 #define HTTP2_RESTORE_PACKET 14
 #define HTTP2_HEADER_AMPLIFICATION 15
-
+#define HTTP2_PAYLOAD_LENGTH 16
+#define HTTP2_PAYLOAD_DATA 17//payload first char
 
 #define HTTP2_TYPE_ALIAS "type"
 #define HTTP2_HEADER_METHOD_ALIAS "header_method"
 #define HTTP2_HEADER_LENGTH_ALIAS "header_length"
 #define HTTP2_HEADER_STREAM_ID_ALIAS "header_stream_id"
 #define HTTP2_PAYLOAD_STREAM_ID_ALIAS "payload_stream_id"
-
+#define HTTP2_PAYLOAD_LENGTH_ALIAS "payload_length"
+#define HTTP2_PAYLOAD_DATA_ALIAS "payload_data"
 	//int init_HTTP2_proto_struct();
 
 

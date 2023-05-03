@@ -84,8 +84,77 @@ int http2_payload_stream_id_extraction(const ipacket_t * packet, unsigned proto_
 	return 0;
 }
 
+int http2_payload_length_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data){
+     //Go to http2
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    //Go to method field
+    int method_offset = proto_offset+9;
+    uint8_t method_value= *((uint8_t *) & packet->data[method_offset]);
 
 
+	
+    //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
+
+	//printf("method_value %d\n",method_value);
+	if(method_value==131){
+
+      		// Get http2 protocol offset
+   		 int offset_header_length = proto_offset -1;
+   		 int header_length =ntohl( *((unsigned int *) & packet->data[offset_header_length]));
+   		 header_length=header_length & 0x00FFFFFF;
+
+  	        // printf("header_length %d\n",header_length );
+  		 int payload_offset= header_length+9+proto_offset-1;
+
+   	 
+
+    		*((unsigned int*) extracted_data->data) =ntohl( *((unsigned int *) & packet->data[payload_offset]));
+
+    		*((unsigned int*) extracted_data->data) &= 0x00FFFFFF;
+    		 //printf("payload stream id %d\n",  *((unsigned int*) extracted_data->data));
+		return 1;
+ }
+	return 0;
+}
+int http2_payload_data_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data){
+     //Go to http2
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    //Go to method field
+    int method_offset = proto_offset+9;
+    uint8_t method_value= *((uint8_t *) & packet->data[method_offset]);
+
+
+	
+    //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
+
+	//printf("method_value %d\n",method_value);
+	if(method_value==131){
+
+      		// Get http2 protocol offset
+   		 int offset_header_length = proto_offset -1;
+   		 int header_length =ntohl( *((unsigned int *) & packet->data[offset_header_length]));
+   		 header_length=header_length & 0x00FFFFFF;
+
+  	        // printf("header_length %d\n",header_length );
+  		 int payload_offset= header_length+9+proto_offset-1;
+
+   	 
+
+    		int payload_length =ntohl( *((unsigned int *) & packet->data[payload_offset]));
+
+    		payload_length &= 0x00FFFFFF;
+    		
+    		extracted_data->data = (char*) &packet->data[payload_offset + 9+1];
+
+    		 //printf("payload stream id %d\n",  *((unsigned int*) extracted_data->data));
+		return 1;
+ }
+ 	else
+     	*((unsigned int*) extracted_data->data)=0;
+	return 0;
+}
 int http2_stream_id_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
@@ -101,11 +170,15 @@ int http2_stream_id_extraction(const ipacket_t * packet, unsigned proto_index,
 
 static attribute_metadata_t http2_attributes_metadata[HTTP2_ATTRIBUTES_NB] = {
 
-	{HTTP2_HEADER_LENGTH,     HTTP2_HEADER_LENGTH_ALIAS,   MMT_U32_DATA, sizeof(uint32_t),  0 , SCOPE_PACKET, http2_header_length_extraction},
-	{HTTP2_TYPE,                HTTP2_TYPE_ALIAS,          MMT_U8_DATA, sizeof(char), 3, SCOPE_PACKET, http2_header_method_extraction},//put here all extract function
+	{HTTP2_HEADER_LENGTH,     HTTP2_HEADER_LENGTH_ALIAS,      MMT_U32_DATA, sizeof(uint32_t),  0 , SCOPE_PACKET, http2_header_length_extraction},
+	{HTTP2_TYPE,                HTTP2_TYPE_ALIAS,             MMT_U8_DATA	, sizeof(char), 3, SCOPE_PACKET, http2_header_method_extraction},//put here all extract function
 	{HTTP2_HEADER_STREAM_ID,     HTTP2_HEADER_STREAM_ID_ALIAS, MMT_U32_DATA, sizeof(uint32_t),   5, SCOPE_PACKET, http2_stream_id_extraction},
-	{HTTP2_HEADER_METHOD,      HTTP2_HEADER_METHOD_ALIAS,     MMT_U8_DATA, sizeof(char), 9, SCOPE_PACKET, http2_header_method_extraction},
+	{HTTP2_HEADER_METHOD,      HTTP2_HEADER_METHOD_ALIAS,      MMT_U8_DATA, sizeof(char), 9, 	SCOPE_PACKET, http2_header_method_extraction},
+	{HTTP2_PAYLOAD_LENGTH,    HTTP2_PAYLOAD_LENGTH_ALIAS,      MMT_U32_DATA, sizeof(uint32_t),POSITION_NOT_KNOWN, SCOPE_PACKET, http2_payload_length_extraction},
 	{HTTP2_PAYLOAD_STREAM_ID, HTTP2_PAYLOAD_STREAM_ID_ALIAS,       MMT_U32_DATA, sizeof(uint32_t),  POSITION_NOT_KNOWN, SCOPE_PACKET, http2_payload_stream_id_extraction},
+
+        {HTTP2_PAYLOAD_DATA,         HTTP2_PAYLOAD_DATA_ALIAS,      MMT_DATA_POINTER,    sizeof (char*),    POSITION_NOT_KNOWN, SCOPE_PACKET, http2_payload_data_extraction},
+
 };
 
 int init_http2_proto_struct() {
