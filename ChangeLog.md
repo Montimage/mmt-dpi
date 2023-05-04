@@ -1,5 +1,8 @@
 RELEASE NOTES
 ---
+Version 1.7.7 (04 May 2023 - by FC)
+- add http2 protocol
+
 Version 1.7.6 (16 Mar 2023 - by HN)
 - classify and extract attributes of QUIC IETF rfc9000
 - calculate RTT, in microsecond, of QUIC packets by using QUIC spinbit. Every QUIC packets in the same flight will receive the same RTT.
