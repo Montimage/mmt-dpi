@@ -211,9 +211,14 @@ int init_http2_proto_struct() {
 
 	//printf("I am inside mmt_check_http2 \n");
 	// Get the offset for the packet to be classified at next protocol
+	int proto_offset_tcp = get_packet_offset_at_index(ipacket, proto_index);
 	int proto_offset = get_packet_offset_at_index(ipacket, proto_index+1);
 	
-  	
+	//size of TCP header
+	int tcp_header_size = proto_offset - proto_offset_tcp;
+	int http2_header_size = 0;
+	//this attribute data is to use to extract http2 length
+  	//attribute_t extracted_data;
 
   	
 	//printf("Proto_offset  %d\n",proto_offset);
@@ -239,11 +244,15 @@ int init_http2_proto_struct() {
 	if(strncmp(payload,signature_http2,strlen(signature_http2))==0){
 		//printf("Id of packet is   ");
   		//printf(" %lu ",ipacket->packet_id);
-  	
+  		
 //		printf("\n Signature:%.*s",(int) strlen(signature_http2), payload);
 
 		//printf("\nHTTP2 recognized");
+		//extract http2 length
+		//http2_header_length_extraction(ipacket, proto_index, &extracted_data);
+		//http2_header_size = *(unsigned int*) (extracted_data.data);
 		classified_proto_t http2_proto = http2_stack_classification(ipacket);
+		http2_proto.offset = tcp_header_size + http2_header_size;
 		return set_classified_proto(ipacket, proto_index + 1, http2_proto);
 	}
 	else
