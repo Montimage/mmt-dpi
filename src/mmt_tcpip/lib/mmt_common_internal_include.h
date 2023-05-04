@@ -346,7 +346,7 @@ extern "C" {
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-
+ int mmt_check_http2(ipacket_t * ipacket, unsigned proto_index) ;
     /**
      * macro for getting the string len of a static string
      *
@@ -2279,6 +2279,9 @@ extern "C" {
     int init_proto_int_struct();
     int init_proto_dtls_struct();
     int init_proto_quic_ietf_struct();
+    
+    
+    int init_http2_proto_struct() ;
     ////////// END OF GENERATED CODE ////////////////
 
 #ifdef	__cplusplus
