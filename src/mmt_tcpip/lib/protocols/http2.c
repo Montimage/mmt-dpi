@@ -207,9 +207,8 @@ int init_http2_proto_struct() {
 * HTTP2 data extraction routines
  */
  int mmt_check_http2(ipacket_t * ipacket, unsigned proto_index) {
-              srand(time(NULL));   // Initialization, should only be called once.
+         	srand(time(NULL));   // Initialization, should only be called once.
 
-	//printf("I am inside mmt_check_http2 \n");
 	// Get the offset for the packet to be classified at next protocol
 	int proto_offset_tcp = get_packet_offset_at_index(ipacket, proto_index);
 	int proto_offset = get_packet_offset_at_index(ipacket, proto_index+1);
@@ -218,7 +217,7 @@ int init_http2_proto_struct() {
 	int tcp_header_size = proto_offset - proto_offset_tcp;
 	int http2_header_size = 0;
 	//this attribute data is to use to extract http2 length
-  	//attribute_t extracted_data;
+  	attribute_t extracted_data;
 
   	
 	//printf("Proto_offset  %d\n",proto_offset);
@@ -226,37 +225,46 @@ int init_http2_proto_struct() {
 	 //second way to calculate the offset
 
 	char * payload= (char*) &ipacket->data[proto_offset ];
-/*
-	printf("Len payload %zu\n",strlen(payload));
-		printf("Payload1  is   ");
-		for (int i = 0; i < strlen(payload); i++){
-  		printf(" %02hhX ",payload[i]);
 
-	}
-*/
-		//printf("\n Payload[9] and [10]");
-  		//printf(" %02hhX ",payload[9]);
-  		//printf(" %02hhX ",payload[10]);
   		
 
 	char* signature_http2="PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
 
-	if(strncmp(payload,signature_http2,strlen(signature_http2))==0){
-		//printf("Id of packet is   ");
-  		//printf(" %lu ",ipacket->packet_id);
-  		
-//		printf("\n Signature:%.*s",(int) strlen(signature_http2), payload);
 
-		//printf("\nHTTP2 recognized");
-		//extract http2 length
-		//http2_header_length_extraction(ipacket, proto_index, &extracted_data);
-		//http2_header_size = *(unsigned int*) (extracted_data.data);
+
+	if(strncmp(payload,signature_http2,strlen(signature_http2))==0){
+		
 		classified_proto_t http2_proto = http2_stack_classification(ipacket);
-		http2_proto.offset = tcp_header_size + http2_header_size;
+		http2_proto.offset = tcp_header_size;
 		return set_classified_proto(ipacket, proto_index + 1, http2_proto);
+	} else if(ipacket->proto_hierarchy->proto_path[proto_index+1] == PROTO_HTTP2){
+		//extract http2 length
+		//extracted_data.position_in_packet = 1;
+		//extracted_data.data = &http2_header_size;
+		
+		
+
+		      // Get http2 protocol offset
+		payload--;
+
+		http2_header_size = ntohl( *((unsigned int *) payload)) ;
+		http2_header_size &= 0x00FFFFFF;
+		http2_header_size =http2_header_size+ 9;
+
+
+		
+		//classify the next protocol that is after HTTP2
+		// the next protocol resides inside the payload of HTTP2. The HTTP2 payload is the memory segment after the HTTP2 header
+		// so we need to calculate the length of HTTP2 header 
+		classified_proto_t unknown_proto;
+		unknown_proto.offset = http2_header_size;
+		unknown_proto.proto_id = 1; //unknown protocol id
+		unknown_proto.status = Classified;
+		
+		
+		return set_classified_proto(ipacket, proto_index + 2, unknown_proto);
 	}
 	else
 		return 0;
-
 }
 
