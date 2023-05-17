@@ -1,5 +1,8 @@
 RELEASE NOTES
 ---
+Version 1.7.8 (17 May 2023 - by HN)
+- improved and fixed minor issues in http2 protocol
+
 Version 1.7.7 (04 May 2023 - by FC)
 - add http2 protocol
 
