@@ -4,7 +4,6 @@
 #include "../mmt_common_internal_include.h"
 #include "../../include/http2.h"
 
-
 classified_proto_t http2_stack_classification(ipacket_t * ipacket) {
 
 	classified_proto_t retval;
@@ -12,6 +11,7 @@ classified_proto_t http2_stack_classification(ipacket_t * ipacket) {
 	retval.proto_id = PROTO_HTTP2;
 	retval.status = Classified;
 	return retval;
+	
 }
 
 int http2_header_method_extraction(const ipacket_t * packet, unsigned proto_index,attribute_t * extracted_data) {
@@ -23,8 +23,8 @@ int http2_header_method_extraction(const ipacket_t * packet, unsigned proto_inde
 	return 1;
 	
 }
-int http2_header_length_extraction(const ipacket_t * packet, unsigned proto_index,
-    attribute_t * extracted_data) {
+
+int http2_header_length_extraction(const ipacket_t * packet, unsigned proto_index,  attribute_t * extracted_data) {
     
 	//int proto_http2 = get_protocol_index_by_id(packet, PROTO_HTTP2);
  	//int proto_offset = get_packet_offset_at_index(packet,proto_http2);
@@ -51,7 +51,6 @@ int http2_header_length_extraction(const ipacket_t * packet, unsigned proto_inde
 	return 1;
 	
 }
-
 
 int http2_payload_stream_id_extraction(const ipacket_t * packet, unsigned proto_index,attribute_t * extracted_data){
 	//Go to http2
@@ -103,6 +102,7 @@ int http2_payload_length_extraction(const ipacket_t * packet, unsigned proto_ind
  	}
 	return 0;
 }
+
 int http2_payload_data_extraction(const ipacket_t * packet, unsigned proto_index,attribute_t * extracted_data){
 	//Go to http2
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
@@ -182,7 +182,6 @@ int init_http2_proto_struct() {
  */
  int mmt_check_http2(ipacket_t * ipacket, unsigned proto_index) {
  
-         srand(time(NULL));   // Initialization, should only be called once.
 	// Get the offset for the packet to be classified at next protocol
 	int proto_offset_tcp = get_packet_offset_at_index(ipacket, proto_index);
 	int proto_offset = get_packet_offset_at_index(ipacket, proto_index+1);
