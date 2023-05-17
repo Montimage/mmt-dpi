@@ -30,6 +30,9 @@ int http2_header_length_extraction(const ipacket_t *packet,
 	//int proto_offset = get_packet_offset_at_index(packet,proto_http2);
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	int http2_offset = get_packet_offset_at_index(packet, proto_index + 1);
+	//not enough room
+	if( http2_offset >= packet->p_hdr->caplen )
+		return 0;
 	// printf("http2_offset %d \n", http2_offset);
 
 	char *payload = (char*) &packet->data[http2_offset];
@@ -61,6 +64,11 @@ int http2_payload_stream_id_extraction(const ipacket_t *packet,
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	//Go to method field
 	int method_offset = proto_offset + 9;
+
+	//not enough room
+	if( method_offset >= packet->p_hdr->caplen )
+		return 0;
+
 	uint8_t method_value = *((uint8_t*) &packet->data[method_offset]);
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 	//printf("method_value %d\n",method_value);
@@ -89,6 +97,12 @@ int http2_payload_length_extraction(const ipacket_t *packet,
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	//Go to method field
 	int method_offset = proto_offset + 9;
+
+
+	//not enough room
+	if( method_offset >= packet->p_hdr->caplen )
+		return 0;
+
 	uint8_t method_value = *((uint8_t*) &packet->data[method_offset]);
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 	//printf("method_value %d\n",method_value);
@@ -117,6 +131,11 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	//Go to method field
 	int method_offset = proto_offset + 9;
+
+	//not enough room
+	if( method_offset >= packet->p_hdr->caplen )
+		return 0;
+
 	uint8_t method_value = *((uint8_t*) &packet->data[method_offset]);
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 	if (method_value == 131) {
@@ -200,6 +219,11 @@ int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index) {
 	//this attribute data is to use to extract http2 length
 	//attribute_t extracted_data;
 	//printf("Proto_offset  %d\n",proto_offset);
+
+	//not enough room
+	if( proto_offset >= ipacket->p_hdr->caplen )
+		return 0;
+
 	//second way to calculate the offset
 	char *payload = (char*) &ipacket->data[proto_offset];
 	char *signature_http2 = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
