@@ -25,19 +25,19 @@ int http2_header_method_extraction(const ipacket_t *packet,
 
 int http2_header_length_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
-
-	//int proto_http2 = get_protocol_index_by_id(packet, PROTO_HTTP2);
-	//int proto_offset = get_packet_offset_at_index(packet,proto_http2);
-	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	int http2_offset = get_packet_offset_at_index(packet, proto_index + 1);
+	// [ETH][IP][TCP][HTTP2][xxx]
+	//=================^
+	
+	int http2_offset = get_packet_offset_at_index(packet, proto_index );
 	//not enough room
-	if( http2_offset >= packet->p_hdr->caplen )
-		return 0;
+	//if (http2_offset >= packet->p_hdr->caplen)
+	//	return 0;
 	// printf("http2_offset %d \n", http2_offset);
 
+	
 	char *payload = (char*) &packet->data[http2_offset];
 	char signature_http2[] = { 0x0D, 0x0A, 0x0D, 0x0A, 0x53, 0x4D, 0x0D, 0x0A, 0x0D, 0x0A }; 	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
-	if (strncmp(payload + http2_offset, signature_http2,
+	if (strncmp(payload , signature_http2,
 			sizeof(signature_http2) / sizeof(signature_http2[0])) == 0) { //The first packet must be ignored
 
 		*((unsigned int*) extracted_data->data) = 0;
@@ -48,10 +48,10 @@ int http2_header_length_extraction(const ipacket_t *packet,
 	int attribute_offset = extracted_data->position_in_packet - 1;
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 	*((unsigned int*) extracted_data->data) = ntohl(
-			*((unsigned int* ) &packet->data[proto_offset + attribute_offset]));
+			*((unsigned int* ) &packet->data[http2_offset + attribute_offset]));
 	*((unsigned int*) extracted_data->data) =
 			*((unsigned int*) extracted_data->data) & (0x00FFFFFF);
-	if ((*((unsigned int*) extracted_data->data)) > 1500) {
+	if ((*((unsigned int*) extracted_data->data)) > 2000) {
 		*((unsigned int*) extracted_data->data) = 0;
 		return 0;
 	}
@@ -61,12 +61,19 @@ int http2_header_length_extraction(const ipacket_t *packet,
 int http2_payload_stream_id_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
 	//Go to http2
+	// [ETH][IP][TCP][HTTP2-HDR PAYLOAD][xxx]
+	//===============^
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	//Go to method field
+	//9 header characters: 
+	// - 3 bytes for length
+	// - 1 byte for type
+	// - 1 byte for flag
+	// - 4 bytes for reserve
 	int method_offset = proto_offset + 9;
 
 	//not enough room
-	if( method_offset >= packet->p_hdr->caplen )
+	if (method_offset >= packet->p_hdr->caplen)
 		return 0;
 
 	uint8_t method_value = *((uint8_t*) &packet->data[method_offset]);
@@ -74,6 +81,9 @@ int http2_payload_stream_id_extraction(const ipacket_t *packet,
 	//printf("method_value %d\n",method_value);
 	if (method_value == 131) {
 
+		// 3 bytes for payload length
+		// we go back 1 byte to extract an integer of 4 bytes
+		// we then later remove the latest byte
 		// Get http2 protocol offset
 		int offset_header_length = proto_offset - 1;
 		int header_length = ntohl(
@@ -100,8 +110,8 @@ int http2_payload_length_extraction(const ipacket_t *packet,
 
 
 	//not enough room
-	if( method_offset >= packet->p_hdr->caplen )
-		return 0;
+	//if (method_offset >= packet->p_hdr->caplen)
+	//	return 0;
 
 	uint8_t method_value = *((uint8_t*) &packet->data[method_offset]);
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
@@ -114,7 +124,8 @@ int http2_payload_length_extraction(const ipacket_t *packet,
 				*((unsigned int* ) &packet->data[offset_header_length]));
 		header_length = header_length & 0x00FFFFFF;
 		// printf("header_length %d\n",header_length );
-		int payload_offset = header_length + 9 + proto_offset - 1;
+		int payload_offset = header_length + 9 + proto_offset - 1;//In order to get to http2 payload you need to get the header length, adding the 9 bytes of the header. 
+		//Payload length is three bytes, while an integer is 4 bytes, so here we start from one byte before and and bitwise with 0x00FFFFFF that integer to remove last byte.
 		*((unsigned int*) extracted_data->data) = ntohl(
 				*((unsigned int* ) &packet->data[payload_offset]));
 		*((unsigned int*) extracted_data->data) &= 0x00FFFFFF;
@@ -133,7 +144,7 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 	int method_offset = proto_offset + 9;
 
 	//not enough room
-	if( method_offset >= packet->p_hdr->caplen )
+	if (method_offset >= packet->p_hdr->caplen)
 		return 0;
 
 	uint8_t method_value = *((uint8_t*) &packet->data[method_offset]);
@@ -146,7 +157,8 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 				*((unsigned int* ) &packet->data[offset_header_length]));
 		header_length = header_length & 0x00FFFFFF;
 		// printf("header_length %d\n",header_length );
-		int payload_offset = header_length + 9 + proto_offset - 1;
+		int payload_offset = header_length + 9 + proto_offset - 1;//In order to get to http2 payload you need to get the header length, adding the 9 bytes of the header. 
+		//Payload length is three bytes, while an integer is 4 bytes, so here we start from one byte before and and bitwise with 0x00FFFFFF that integer to remove last byte.
 		int payload_length = ntohl(
 				*((unsigned int* ) &packet->data[payload_offset]));
 		payload_length &= 0x00FFFFFF;
@@ -221,7 +233,7 @@ int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index) {
 	//printf("Proto_offset  %d\n",proto_offset);
 
 	//not enough room
-	if( proto_offset >= ipacket->p_hdr->caplen )
+	if (proto_offset >= ipacket->p_hdr->caplen)
 		return 0;
 
 	//second way to calculate the offset
