@@ -123,6 +123,7 @@ enum int_attributes {
 	INT_HOP_L4S_MARK,
 	INT_HOP_L4S_DROP,
 	INT_HOP_L4S_MARK_PROBABILITY,
+	INT_L4S_CLOUD_GAMING, //data is available only one hop, not for each hop
 
 	//details of bits
 	INT_IS_SWITCH_ID,
@@ -133,7 +134,8 @@ enum int_attributes {
 	INT_IS_EGRESS_TIME,
 	INT_IS_LV2_IN_EGRESS_PORT_ID,
 	INT_IS_TX_UTILIZE,
-	INT_IS_L4S_MARK_DROP
+	INT_IS_L4S_MARK_DROP,
+	INT_IS_L4S_CLOUD_GAMING
 };
 
 
@@ -156,6 +158,7 @@ enum int_attributes {
 #define INT_HOP_L4S_MARK_ALIAS             "hop_l4s_mark"
 #define INT_HOP_L4S_DROP_ALIAS             "hop_l4s_drop"
 #define INT_HOP_L4S_MARK_PROBABILITY_ALIAS "hop_l4s_mark_probability"
+#define INT_L4S_CLOUD_GAMING_ALIAS         "l4s_cloud_gaming" //data is available only one hop, not for each hop
 
 #define INT_IS_SWITCH_ID_ALIAS             "is_switch_id"
 #define INT_IS_IN_EGRESS_PORT_ID_ALIAS     "is_in_egress_port_id"
@@ -166,5 +169,6 @@ enum int_attributes {
 #define INT_IS_LV2_IN_EGRESS_PORT_ID_ALIAS "is_lv2_in_egress_port_id"
 #define INT_IS_TX_UTILIZE_ALIAS            "is_tx_utilize"
 #define INT_IS_L4S_MARK_DROP_ALIAS         "is_l4s_mark_drop"
+#define INT_IS_L4S_CLOUD_GAMING_ALIAS      "is_l4s_cloud_gaming"
 
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_INBAND_TELEMETRY_H_ */
