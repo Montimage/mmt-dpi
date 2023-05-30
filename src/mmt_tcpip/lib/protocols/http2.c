@@ -1,7 +1,7 @@
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "extraction_lib.h"
-#include "../mmt_common_internal_include.h"
+#include "mmt_common_internal_include.h"
 #include "../../include/http2.h"
 
 classified_proto_t http2_stack_classification(ipacket_t *ipacket) {
@@ -265,5 +265,203 @@ int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index) {
 
 	} else
 		return 0;
+}
+
+int restore_http2_packet(uint8_t*data_out,const ipacket_t * packet,int proto_offset){
+ 	int header_length=0;
+ 	int offset_header_length = proto_offset -1;
+   	for (int i = offset_header_length; i < offset_header_length+4; i++) {
+      		  header_length = (header_length << 8) | data_out[i];
+   	 }
+   	 header_length=header_length & 0x00FFFFFF;
+ 	int new_length=0;
+   	 for (int i = offset_header_length; i < offset_header_length+4; i++) {
+      		  new_length = (new_length << 8) | packet->data[i];
+   	 }
+   	 new_length=new_length & 0x00FFFFFF;
+   	// printf("new_length %d, header_length %d\n",new_length,header_length);
+   	// printf("data_out %02X packet_data %02X \n",data_out[proto_offset],packet->data[proto_offset]);
+ 	memcpy((uint8_t*)data_out+proto_offset,packet->data+proto_offset,new_length+9);
+ 	return new_length-header_length;
+}
+int modify_get(uint8_t*data_out,int proto_offset){
+    	//Go to method field
+   	int header_length =0;
+      	// Get http2 protocol offset
+   	int offset_header_length = proto_offset -1;
+   	for (int i = offset_header_length; i < offset_header_length+4; i++) {
+      		  header_length = (header_length << 8) | data_out[i];
+   	 }
+   	header_length=header_length & 0x00FFFFFF;
+	uint8_t authority_amf[] = {0x41,0x8d,0x0b,0xa2,0x5c,0x2e,0x2e,0xdb,0xeb,0xba,0xcd,0xc7,0x80,0xf0,0x3f,0x7a,0x03,0x61,0x6d,0x66};
+	int authority_amf_length = sizeof(authority_amf) ;
+	//printf("[modify_get]authority_amf_length %d\n",authority_amf_length);
+	memcpy(data_out+proto_offset+9+header_length-2,authority_amf,authority_amf_length);
+	//printf("modify get after update:\n");
+	//for(int i=proto_offset+9+header_length-2;i<proto_offset+9+header_length-2+authority_amf_length;i++)
+	//	printf("%02hhX ",data_out[i]);
+	header_length+=authority_amf_length-2;//Http2 buffers the authority and amf with 2 bytes(0xc0 0xc1)from the first packet.The code restore the first authority_amf value.
+	//The new header lenght will be the sizeof authority and amf minus 2
+	data_out[offset_header_length+1]=header_length>>16; //I update the last 24 bites
+	data_out[offset_header_length+2]=header_length>>9; //I update the last 16 bites
+	data_out[offset_header_length+3]=header_length ;//I update the last 8 bites
+	//printf("[modify_get]offset_header_length %02hhX %02hhX %02hhX \n",data_out[offset_header_length+1],data_out[offset_header_length+2],data_out[offset_header_length+3]);
+		return (int)(sizeof(authority_amf)-2);
+}
+uint32_t update_window_update(char *data_out,int proto_offset,uint32_t modify){
+	int window_size_offset=proto_offset+9;
+	//int offset_header_length = proto_offset -1;
+	if(modify==1){
+		data_out[window_size_offset]=0x00;
+		data_out[window_size_offset+1]=0x00;
+		data_out[window_size_offset+2]=0x00;
+		data_out[window_size_offset+3]=0xFF;	
+		int difference_size=-9;
+		return difference_size;
+	}
+	//int header_length=0;
+   	//int header_length =ntohl( *((unsigned int *) & packet->data[offset_header_length]));
+	return 0;
+}
+
+int inject_http2_packet(uint8_t*data_out, uint8_t*data_to_inject,int proto_offset,int data_to_inject_len){
+   	int offset_header_length = proto_offset -1;
+   	int header_length=0;
+   	for (int i = offset_header_length; i < offset_header_length+4; i++) {
+      		  header_length = (header_length << 8) | data_out[i];
+   	 }
+   	// printf("inject_http2_packet Header_length %d",header_length);
+ 	memcpy(data_out+proto_offset,data_to_inject,data_to_inject_len);
+ 	return (data_to_inject_len- header_length-9); 
+}
+
+int update_stream_id(char *data_out,int proto_offset,uint32_t new_val){
+	
+  	int stream_id_offset = proto_offset+5;
+	//printf("update_stream_id  data_out[stream_id_offset] %02hhX \n",data_out[stream_id_offset]);
+	data_out[stream_id_offset]=new_val>> 24;
+	data_out[stream_id_offset+1]=new_val>> 16;
+	data_out[stream_id_offset+2]=new_val>> 8;
+	data_out[stream_id_offset+3]=new_val;
+	//printf("update_stream_id  data_out[stream_id_offset] after the modification %02hhX %02hhX %02hhX %02hhX  \n",data_out[stream_id_offset],data_out[stream_id_offset+1],data_out[stream_id_offset+2],data_out[stream_id_offset+3]);
+	int offset_header_length = proto_offset -1;
+	int method_offset = proto_offset+9;
+	uint8_t method_value= ((uint8_t )  data_out[method_offset]);
+   	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
+	if(method_value==131){
+		int header_length=0;
+	   	//int header_length =ntohl( *((unsigned int *) & packet->data[offset_header_length]));
+	   	 for (int i = offset_header_length; i < offset_header_length+4; i++) {
+	      		  header_length = (header_length << 8) | data_out[i];
+	   	 }
+	  	//printf("update_stream_id header_length %d\n",header_length );
+	  	int payload_offset= header_length+9+proto_offset;
+	   	int stream_id_payload_offset=payload_offset+5;
+		data_out[stream_id_payload_offset]=new_val>> 24;
+		data_out[stream_id_payload_offset+1]=new_val>> 16;
+		data_out[stream_id_payload_offset+2]=new_val>> 8;
+		data_out[stream_id_payload_offset+3]=new_val;
+		//printf("update_stream_id  data_out[stream_id_payload_offset] after the modification %02hhX \n",data_out[stream_id_payload_offset]);
+	}
+	return 1;
+}
+
+    
+int fuzz_payload(uint8_t*data_out,const ipacket_t*packet,int proto_offset){
+    	//Go to method field
+   	int header_length=0;
+   	int payload_length=0;
+      	// Get http2 protocol offset
+   	int offset_header_length = proto_offset -1;
+   	for (int i = offset_header_length; i < offset_header_length+4; i++) {
+      		  header_length = (header_length << 8) | data_out[i];
+   	 }
+  	//printf("fuzz_payload header_length %d\n",header_length );
+  	int payload_offset= header_length+9+proto_offset-1;
+	//printf("fuzz payload payload_pffset %d\n",payload_offset);
+	for (int i = payload_offset; i < payload_offset+4; i++) {
+      		payload_length = (payload_length << 8) | data_out[i];
+        //        printf(" data_out[payload_offset]%02hhX  ", data_out[i]);
+   	 }
+	int mask = 0x00FFFFFF; // mask to set last 2 bytes to 0
+	payload_length = payload_length & mask; // put to 0 last byte
+	//printf("fuzz_payload payload_length %d\n",payload_length );
+	payload_offset= payload_offset+ 9+1;
+   	//printf("%d \n",data_out[payload_offset]);
+   	for(int i= payload_offset+payload_length;i>(int)((payload_offset+(payload_length/2)));i--){
+               	char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;\'///:,.<>/?\\";
+                int r = rand() % (sizeof(characters)-1);
+                data_out[i]=characters[r];
+       }
+       // printf("fuzz_payload data_out after modification");
+        //for(int i=payload_offset;i<payload_offset+payload_length;i++)
+      	//	printf("%c",data_out[i]);
+	return 0;
+}
+
+
+uint32_t update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *packet, uint32_t proto_id, uint32_t att_id, uint32_t new_val ){
+   	//Go to http2
+	//printf("update_http2_data Id of packet is   ");
+  	//printf(" %lu \n",packet->packet_id);
+	int difference_size=0;
+	uint32_t ret = 0;
+	if( proto_id != PROTO_HTTP2 )
+		return ret;
+  	int proto_http2 = get_protocol_index_by_id(packet, proto_id);
+  	int proto_offset = get_packet_offset_at_index(packet,proto_http2);
+  	//printf("Proto offset %d and proto_id %u",proto_offset,proto_id);
+  	//Go to method field
+  	//data_out  = (char*) &packet->data[proto_offset ];	
+  	switch(att_id){
+  	
+  		case(HTTP2_HEADER_STREAM_ID):
+  			update_stream_id(data_out,proto_offset,new_val);
+			break;
+		
+		case(HTTP2_WINDOW_UPDATE):
+			difference_size=update_window_update(data_out,proto_offset,new_val);
+			return difference_size; 
+			break;
+			
+		case(HTTP2_DISCARD_SETTINGS):
+			difference_size=-9;
+			return difference_size; 
+
+		case(HTTP2_PAYLOAD_FUZZ):
+			fuzz_payload((uint8_t*)data_out,packet,proto_offset);
+			//printf("[update_http2_data]data_size %d\n",data_size);
+			update_stream_id(data_out,proto_offset,new_val);
+			break;
+			
+		case(HTTP2_GET_MODIFY):
+			update_stream_id(data_out,proto_offset,new_val);
+			difference_size=modify_get((uint8_t*)data_out, proto_offset);
+			return difference_size;
+			break;
+			
+		case(HTTP2_INJECT_WIN_UPDATE):
+			uint8_t window_update_frame[]={0x00,0x00,0x04,0x08,0x00,0x00,0x00,0x00,0x00,
+			0x0f,0xff,0x00,0x01//window size increment:set to a small value
+			};
+			int win_len=(int)sizeof(window_update_frame);
+			difference_size=inject_http2_packet((uint8_t*)data_out,window_update_frame,proto_offset,win_len);
+			return difference_size;
+			break;
+			
+		case (HTTP2_RESTORE_PACKET):
+			difference_size=  restore_http2_packet((uint8_t*)data_out,packet,proto_offset);
+			return difference_size;
+			break;
+
+		default:
+			//printf("update_http2_data  INSERT A VALID ATT_ID  \n");
+			break;
+	
+	}
+
+	return 0;
+	
+
 }
 
