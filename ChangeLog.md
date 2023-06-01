@@ -1,5 +1,8 @@
 RELEASE NOTES
 ---
+Version 1.7.9 (01 Juin 2023 - by HN)
+- add HTTP2 mutation functions
+
 Version 1.7.8 (17 May 2023 - by HN)
 - improved and fixed minor issues in http2 protocol
 

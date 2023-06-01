@@ -406,7 +406,7 @@ int fuzz_payload(uint8_t*data_out,const ipacket_t*packet,int proto_offset){
 }
 
 
-uint32_t update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *packet, uint32_t proto_id, uint32_t att_id, uint32_t new_val ){
+int update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *packet, uint32_t proto_id, uint32_t att_id, uint32_t new_val ){
 	//Go to http2
 	//printf("update_http2_data Id of packet is   ");
 	//printf(" %lu \n",packet->packet_id);
