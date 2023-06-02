@@ -259,7 +259,7 @@ int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index) {
 		// so we need to calculate the length of HTTP2 header 
 		classified_proto_t unknown_proto;
 		unknown_proto.offset = http2_header_size;
-		unknown_proto.proto_id = 1; //unknown protocol id
+		unknown_proto.proto_id = 0; //unknown protocol id
 		unknown_proto.status = Classified;
 		return set_classified_proto(ipacket, proto_index + 2, unknown_proto);
 
