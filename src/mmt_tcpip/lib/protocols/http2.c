@@ -18,6 +18,10 @@ int http2_header_method_extraction(const ipacket_t *packet,
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	int attribute_offset = extracted_data->position_in_packet;
+	//ensure that we do not go out of the packet
+	if( proto_offset + attribute_offset >= packet->p_hdr->caplen )
+		return 0;
+
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 	*((unsigned char*) extracted_data->data) = *((unsigned char*) &packet->data[proto_offset + attribute_offset]);
 	return 1;
@@ -46,6 +50,10 @@ int http2_header_length_extraction(const ipacket_t *packet,
 
 	//char * payload= (char*) &packet->data[proto_offset ];
 	int attribute_offset = extracted_data->position_in_packet - 1;
+	//ensure that we do not go out of the packet
+	if( http2_offset + attribute_offset >= packet->p_hdr->caplen )
+		return 0;
+
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 	*((unsigned int*) extracted_data->data) = ntohl(
 			*((unsigned int* ) &packet->data[http2_offset + attribute_offset]));
@@ -92,6 +100,11 @@ int http2_payload_stream_id_extraction(const ipacket_t *packet,
 		// printf("header_length %d\n",header_length );
 		int payload_offset = header_length + 9 + proto_offset;
 		int stream_id_payload_offset = payload_offset + 5;
+
+		//ensure that we do not go out of the packet
+		if( stream_id_payload_offset >= packet->p_hdr->caplen )
+			return 0;
+
 		*((unsigned int*) extracted_data->data) = ntohl(
 				*((unsigned int* ) &packet->data[stream_id_payload_offset]));
 		//printf("payload stream id %d\n",  *((unsigned int*) extracted_data->data));
@@ -124,7 +137,12 @@ int http2_payload_length_extraction(const ipacket_t *packet,
 				*((unsigned int* ) &packet->data[offset_header_length]));
 		header_length = header_length & 0x00FFFFFF;
 		// printf("header_length %d\n",header_length );
-		int payload_offset = header_length + 9 + proto_offset - 1;//In order to get to http2 payload you need to get the header length, adding the 9 bytes of the header. 
+		int payload_offset = header_length + 9 + proto_offset - 1;//In order to get to http2 payload you need to get the header length, adding the 9 bytes of the header.
+
+		//ensure that we do not go out of the packet
+		if( payload_offset >= packet->p_hdr->caplen )
+			return 0;
+
 		//Payload length is three bytes, while an integer is 4 bytes, so here we start from one byte before and and bitwise with 0x00FFFFFF that integer to remove last byte.
 		*((unsigned int*) extracted_data->data) = ntohl(
 				*((unsigned int* ) &packet->data[payload_offset]));
@@ -162,9 +180,13 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 		int payload_length = ntohl(
 				*((unsigned int* ) &packet->data[payload_offset]));
 		payload_length &= 0x00FFFFFF;
-		extracted_data->data = (char*) &packet->data[payload_offset + 9 + 1];
-		//printf("payload stream id %d\n",  *((unsigned int*) extracted_data->data));
-		return 1;
+
+		payload_offset += 9 + 1; //why?
+		if( payload_offset <= packet->p_hdr->caplen ){
+			extracted_data->data = (char*) &packet->data[payload_offset];
+			//printf("payload stream id %d\n",  *((unsigned int*) extracted_data->data));
+			return 1;
+		}
 
 	}
 	*((unsigned int*) extracted_data->data) = 0;
@@ -176,8 +198,47 @@ int http2_stream_id_extraction(const ipacket_t *packet, unsigned proto_index,
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	int attribute_offset = (extracted_data->position_in_packet);
-	*((unsigned int*) extracted_data->data) = (ntohl( *((unsigned int* ) &packet->data[proto_offset + attribute_offset])));
+
+	proto_offset =+ attribute_offset;
+	if( proto_offset >=packet->p_hdr->caplen )
+		return 0;
+	*((unsigned int*) extracted_data->data) = (ntohl( *((unsigned int* ) &packet->data[proto_offset])));
 	return 1;
+}
+
+int _http2_classify_next_proto(ipacket_t * ipacket, unsigned index) {
+	//packet offset of http2 header
+	int proto_offset = get_packet_offset_at_index(ipacket, index);
+	int http2_header_size = 0;
+	const char *payload = (char*) &ipacket->data[proto_offset];
+	const char *signature_http2 = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
+	if (strncmp(payload, signature_http2, strlen(signature_http2)) == 0) {
+		return 0;
+	} else {
+
+		//extract http2 length
+		//extracted_data.position_in_packet = 1;
+		//extracted_data.data = &http2_header_size;
+		// Get http2 protocol offset
+		payload--;
+		http2_header_size = ntohl(*((unsigned int* ) payload));
+		http2_header_size &= 0x00FFFFFF;
+		http2_header_size = http2_header_size + 9;
+
+
+		//ensure that we do not go out of the packet
+		if( proto_offset + http2_header_size >= ipacket->p_hdr->caplen )
+			return 0;
+
+		//classify the next protocol that is after HTTP2
+		// the next protocol resides inside the payload of HTTP2. The HTTP2 payload is the memory segment after the HTTP2 header
+		// so we need to calculate the length of HTTP2 header
+		classified_proto_t unknown_proto;
+		unknown_proto.offset = http2_header_size;
+		unknown_proto.proto_id = 0; //unknown protocol id
+		unknown_proto.status = Classified;
+		return set_classified_proto(ipacket, index+1, unknown_proto);
+	}
 }
 
 static attribute_metadata_t http2_attributes_metadata[HTTP2_ATTRIBUTES_NB] = {
@@ -210,6 +271,8 @@ int init_http2_proto_struct() {
 					"[err] init_http2_proto_struct - cannot register_classification_function_with_parent_protocol\n");
 		};
 
+		register_classification_function(protocol_struct, _http2_classify_next_proto);
+
 		register_protocol_stack(PROTO_HTTP2, PROTO_HTTP2_ALIAS,
 				http2_stack_classification);
 		return register_protocol(protocol_struct, PROTO_HTTP2);
@@ -227,44 +290,23 @@ int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index) {
 	int proto_offset = get_packet_offset_at_index(ipacket, proto_index + 1);
 	//size of TCP header
 	int tcp_header_size = proto_offset - proto_offset_tcp;
-	int http2_header_size = 0;
 	//this attribute data is to use to extract http2 length
 	//attribute_t extracted_data;
 	//printf("Proto_offset  %d\n",proto_offset);
 
 	//not enough room
-	if (proto_offset >= ipacket->p_hdr->caplen)
+	if (proto_offset >= ipacket->p_hdr->caplen || tcp_header_size < 0)
 		return 0;
 
 	//second way to calculate the offset
-	char *payload = (char*) &ipacket->data[proto_offset];
-	char *signature_http2 = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
+	const char *payload = (char*) &ipacket->data[proto_offset];
+	const char *signature_http2 = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
 	if (strncmp(payload, signature_http2, strlen(signature_http2)) == 0) {
 		classified_proto_t http2_proto = http2_stack_classification(ipacket);
 		http2_proto.offset = tcp_header_size;
 		return set_classified_proto(ipacket, proto_index + 1, http2_proto);
-
-	} else if (ipacket->proto_hierarchy->proto_path[proto_index + 1] == PROTO_HTTP2) {
-
-		//extract http2 length
-		//extracted_data.position_in_packet = 1;
-		//extracted_data.data = &http2_header_size;
-		// Get http2 protocol offset
-		payload--;
-		http2_header_size = ntohl(*((unsigned int* ) payload));
-		http2_header_size &= 0x00FFFFFF;
-		http2_header_size = http2_header_size + 9;
-		//classify the next protocol that is after HTTP2
-		// the next protocol resides inside the payload of HTTP2. The HTTP2 payload is the memory segment after the HTTP2 header
-		// so we need to calculate the length of HTTP2 header 
-		classified_proto_t unknown_proto;
-		unknown_proto.offset = http2_header_size;
-		unknown_proto.proto_id = 0; //unknown protocol id
-		unknown_proto.status = Classified;
-		return set_classified_proto(ipacket, proto_index + 2, unknown_proto);
-
-	} else
-		return 0;
+	}
+	return 0;
 }
 
 int restore_http2_packet(uint8_t*data_out,const ipacket_t * packet,int proto_offset,uint32_t data_out_size){
