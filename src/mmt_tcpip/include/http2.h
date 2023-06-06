@@ -119,6 +119,7 @@ struct http2_session_data_struct {
 #define HTTP2_PAYLOAD_LENGTH 16
 #define HTTP2_PAYLOAD_DATA 17//payload first char
 
+
 #define HTTP2_TYPE_ALIAS "type"
 #define HTTP2_HEADER_METHOD_ALIAS "header_method"
 #define HTTP2_HEADER_LENGTH_ALIAS "header_length"

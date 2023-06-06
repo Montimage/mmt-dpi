@@ -271,12 +271,12 @@ int restore_http2_packet(uint8_t*data_out,const ipacket_t * packet,int proto_off
  	int header_length = 0;
  	int offset_header_length = proto_offset -1;
    	for (int i = offset_header_length; i < offset_header_length+4; i++) {
-      		  header_length = (header_length << 8) | data_out[i];
+      		  header_length = (header_length << 8) | (data_out[i] & 0xFF);
    	 }
    	 header_length=header_length & 0x00FFFFFF;
  	int new_length = 0;
    	 for (int i = offset_header_length; i < offset_header_length+4; i++) {
-      		  new_length = (new_length << 8) | packet->data[i];
+      		  new_length = (new_length << 8) | (packet->data[i] & 0xFF);
    	 }
    	 new_length = new_length & 0x00FFFFFF;
    	// printf("new_length %d, header_length %d\n",new_length,header_length);
@@ -292,7 +292,7 @@ int modify_get(uint8_t*data_out,int proto_offset,uint32_t data_out_size){
       	// Get http2 protocol offset
    	int offset_header_length = proto_offset -1;
    	for (int i = offset_header_length; i < offset_header_length+4; i++) {
-      		  header_length = (header_length << 8) | data_out[i];
+      		  header_length = (header_length << 8) |(data_out[i] & 0xFF);
    	 }
    	header_length = header_length & 0x00FFFFFF;
 	uint8_t authority_amf[] = {0x41,0x8d,0x0b,0xa2,0x5c,0x2e,0x2e,0xdb,0xeb,0xba,0xcd,0xc7,0x80,0xf0,0x3f,0x7a,0x03,0x61,0x6d,0x66};
@@ -332,7 +332,7 @@ int inject_http2_packet(uint8_t*data_out, uint8_t*data_to_inject,int proto_offse
    	int offset_header_length = proto_offset -1;
    	int header_length = 0;
    	for (int i = offset_header_length; i < offset_header_length+4; i++) {
-      		  header_length = (header_length << 8) | data_out[i];
+      		  header_length = (header_length << 8) | (data_out[i] & 0xFF);
    	 }
    	// printf("inject_http2_packet Header_length %d",header_length);
    	if(data_to_inject_len > data_out_size || proto_offset > data_out_size)
@@ -345,10 +345,10 @@ int update_stream_id(char *data_out,int proto_offset,uint32_t new_val){
 	
   	int stream_id_offset = proto_offset+5;
 	//printf("update_stream_id  data_out[stream_id_offset] %02hhX \n",data_out[stream_id_offset]);
-	data_out[stream_id_offset] = new_val>> 24;
-	data_out[stream_id_offset+1] = new_val>> 16;
-	data_out[stream_id_offset+2] = new_val>> 8;
-	data_out[stream_id_offset+3] = new_val;
+	data_out[stream_id_offset] = (new_val>> 24) & 0xFF;
+	data_out[stream_id_offset+1] = (new_val>> 16) & 0xFF;
+	data_out[stream_id_offset+2] = (new_val>> 8) & 0xFF;
+	data_out[stream_id_offset+3] = (new_val) & 0xFF;
 	//printf("update_stream_id  data_out[stream_id_offset] after the modification %02hhX %02hhX %02hhX %02hhX  \n",data_out[stream_id_offset],data_out[stream_id_offset+1],data_out[stream_id_offset+2],data_out[stream_id_offset+3]);
 	int offset_header_length = proto_offset -1;
 	int method_offset = proto_offset+9;
@@ -358,55 +358,62 @@ int update_stream_id(char *data_out,int proto_offset,uint32_t new_val){
 		int header_length = 0;
 	   	//int header_length =ntohl( *((unsigned int *) & packet->data[offset_header_length]));
 	   	 for (int i = offset_header_length; i < offset_header_length+4; i++) {
-	      		  header_length = (header_length << 8) | data_out[i];
+	      		  header_length = (header_length << 8) | (data_out[i] & 0xFF);
 	   	 }
 	  	//printf("update_stream_id header_length %d\n",header_length );
 	  	int payload_offset = header_length+9+proto_offset;
 	   	int stream_id_payload_offset = payload_offset+5;
-		data_out[stream_id_payload_offset] = new_val>> 24;
-		data_out[stream_id_payload_offset+1] = new_val>> 16;
-		data_out[stream_id_payload_offset+2] = new_val>> 8;
-		data_out[stream_id_payload_offset+3] = new_val;
+		data_out[stream_id_payload_offset] = (new_val>> 24) & 0xFF;
+		data_out[stream_id_payload_offset+1] = (new_val>> 16) & 0xFF;
+		data_out[stream_id_payload_offset+2] = (new_val>> 8) & 0xFF;
+		data_out[stream_id_payload_offset+3] = (new_val) & 0xFF;
 		//printf("update_stream_id  data_out[stream_id_payload_offset] after the modification %02hhX \n",data_out[stream_id_payload_offset]);
 	}
 	return 1;
 }
 
-    
-int fuzz_payload(uint8_t*data_out,const ipacket_t*packet,int proto_offset){
-    	//Go to method field
-   	int header_length = 0;
-   	int payload_length = 0;
-      	// Get http2 protocol offset
-   	int offset_header_length = proto_offset -1;
-   	for (int i = offset_header_length; i < offset_header_length+4; i++) {
-      		  header_length = (header_length << 8) | data_out[i];
-   	 }
-  	//printf("fuzz_payload header_length %d\n",header_length );
-  	int payload_offset = header_length+9+proto_offset-1;
-	//printf("fuzz payload payload_pffset %d\n",payload_offset);
+int update_http2_payload(char *data_out, uint32_t data_size, const ipacket_t *packet, uint32_t proto_id, uint32_t att_id, char* new_data,uint32_t new_data_len){
+	//1.Go to payload data
+	int header_length = 0;
+	uint32_t old_payload_length = 0;
+	// Get http2 protocol offset
+	int proto_http2 = get_protocol_index_by_id(packet, proto_id);
+  	int proto_offset = get_packet_offset_at_index(packet,proto_http2);
+	int offset_header_length = proto_offset -1;
+	for (int i = offset_header_length; i < offset_header_length+4; i++) {
+		header_length = (header_length << 8) | (data_out[i] & 0xFF);
+	}
+	//printf(" update_http2_payload header_length %d\n",header_length );
+	int payload_offset = header_length+9+proto_offset-1;
+	//printf("update_http2_payload payload_offset %d\n",payload_offset);
+	//printf("Payload_length before %02hhX\n",old_payload_length);
+	//This operation puts the 4 bytes in data_out in integer variable.
 	for (int i = payload_offset; i < payload_offset+4; i++) {
-      		payload_length = (payload_length << 8) | data_out[i];
-        //        printf(" data_out[payload_offset]%02hhX  ", data_out[i]);
-   	 }
+		old_payload_length = (uint32_t)(old_payload_length << 8) | (data_out[i] & 0xFF);//By applying the bitwise AND operation array[i] & 0xFF, the 0xFF mask ensures that only the lower 8 bits are preserved, regardless of the signedness of char. This masking operation effectively clears the higher bits, preventing sign extension issue, so it converts signed char to unsigned char.
+		       //printf(" data_out[payload_offset]%02hhX,\npayload_length  %02hhX\n", data_out[i],payload_length);
+	}
 	int mask = 0x00FFFFFF; // mask to set last 2 bytes to 0
-	payload_length = payload_length & mask; // put to 0 last byte
-	//printf("fuzz_payload payload_length %d\n",payload_length );
-	payload_offset = payload_offset+ 9+1;
-   	//printf("%d \n",data_out[payload_offset]);
-   	for(int i = payload_offset+payload_length;i > (int)((payload_offset+(payload_length/2)));i--){
-               	char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;\'///:,.<>/?\\";
-                int r = rand() % (sizeof(characters)-1);
-                data_out[i] = characters[r];
-       }
-       // printf("fuzz_payload data_out after modification");
-        //for(int i=payload_offset;i<payload_offset+payload_length;i++)
-      	//	printf("%c",data_out[i]);
-	return 0;
+	old_payload_length = old_payload_length & mask; // put to 0 last byte
+	//printf("update_http2_payload payload_length %d\n",payload_length );
+	//printf("%d \n",data_out[payload_offset]);
+	// printf("update_http2_payload data_out after modification");
+	//for(int i=payload_offset;i<payload_offset+payload_length;i++)
+	//printf("%c",data_out[i]);
+	//2.I update the length with the new_length
+	data_out[payload_offset+1] = (new_data_len>>16) & 0xFF; //I update the last 24 bites
+	data_out[payload_offset+2] = (new_data_len>>9) & 0xFF; //I update the last 16 bites
+	data_out[payload_offset+3] = (new_data_len) & 0xFF ;//I update the last 8 bites
+	for(int i=payload_offset+1; i<payload_offset+4; i++)
+		printf("data_out new_length  %02hhX",data_out[i]);
+	printf("update_http2_payload old_payload_length %d\n",old_payload_length );
+	int payload_data_offset = payload_offset+ 9+1;
+	//3. copy new payload characters
+	if(new_data_len <= old_payload_length && payload_data_offset < data_size)
+		 memcpy(data_out + payload_data_offset,new_data,new_data_len);
+	return new_data_len - old_payload_length;
 }
 
-
-uint32_t update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *packet, uint32_t proto_id, uint32_t att_id, uint32_t new_val ){
+int update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *packet, uint32_t proto_id, uint32_t att_id, uint32_t new_val ){
    	//Go to http2
 	//printf("update_http2_data Id of packet is   ");
   	//printf(" %lu \n",packet->packet_id);
@@ -414,9 +421,12 @@ uint32_t update_http2_data( char *data_out, uint32_t data_size, const ipacket_t 
 	uint32_t ret = 0;
 	if( proto_id != PROTO_HTTP2 )
 		return ret;
+	uint8_t window_update_frame[] = {0x00,0x00,0x04,0x08,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0xFF,0x01//window size increment:set to a small value
+			};
   	int proto_http2 = get_protocol_index_by_id(packet, proto_id);
   	int proto_offset = get_packet_offset_at_index(packet,proto_http2);
-  	//printf("Proto offset %d and proto_id %u",proto_offset,proto_id);
+  	//printf("Proto offset %d and proto_id %u\n",proto_offset,proto_id);
   	//Go to method field
   	//data_out  = (char*) &packet->data[proto_offset ];	
   	switch(att_id){
@@ -434,11 +444,11 @@ uint32_t update_http2_data( char *data_out, uint32_t data_size, const ipacket_t 
 			difference_size = -9;
 			return difference_size; 
 
-		case(HTTP2_PAYLOAD_FUZZ):
-			fuzz_payload((uint8_t*)data_out,packet,proto_offset);
+		//case(HTTP2_PAYLOAD_FUZZ):
+			//fuzz_payload((uint8_t*)data_out,packet,proto_offset);
 			//printf("[update_http2_data]data_size %d\n",data_size);
-			update_stream_id(data_out,proto_offset,new_val);
-			break;
+			//update_stream_id(data_out,proto_offset,new_val);
+			//break;
 			
 		case(HTTP2_GET_MODIFY):
 			update_stream_id(data_out,proto_offset,new_val);
@@ -447,9 +457,6 @@ uint32_t update_http2_data( char *data_out, uint32_t data_size, const ipacket_t 
 			break;
 			
 		case(HTTP2_INJECT_WIN_UPDATE):
-			uint8_t window_update_frame[] = {0x00,0x00,0x04,0x08,0x00,0x00,0x00,0x00,0x00,
-			0x0f,0xff,0x00,0x01//window size increment:set to a small value
-			};
 			int win_len = (int)sizeof(window_update_frame);
 			difference_size = inject_http2_packet((uint8_t*)data_out,window_update_frame,proto_offset,win_len,data_size);
 			return difference_size;
