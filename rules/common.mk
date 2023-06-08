@@ -285,7 +285,7 @@ $(SDK_EXAMPLES_SRC): $(SDKXAM)
 
 %.o: %.c
 	@echo "[COMPILE] $(notdir $@)"
-	$(QUIET) $(CC) $(CFLAGS) -I. -o $@ -c $<
+	$(QUIET) $(CC) $(CFLAGS) -I. -I/usr/include/nghttp2 -lnghttp2 -o $@ -lnghttp2  -c $<
 
 %.o: %.cc
 	@echo "[COMPILE] $(notdir $@)"

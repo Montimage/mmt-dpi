@@ -91,9 +91,9 @@ int inflate_header_fuzz(nghttp2_hd_inflater *inflater, nghttp2_nv* nv,
         inlen -= rv;
   	//printf("Input Inflate\n");
         if(inflate_flags & NGHTTP2_HD_INFLATE_EMIT) {
-            fwrite(nv->name, nv->namelen, 1, stderr);
+            //fwrite(nv->name, nv->namelen, 1, stderr);
           //  fprintf(stderr, ": ");
-            fwrite(nv->value, nv->valuelen, 1, stderr);
+           // fwrite(nv->value, nv->valuelen, 1, stderr);
            // fprintf(stderr, "\n ");
             if(nv->value[0]==0x2F&& j==1){
                 char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;\'///:,.<>/?\\";
@@ -563,8 +563,8 @@ int update_stream_id(char *data_out,int proto_offset,uint32_t new_val){
 
 int update_path( uint8_t*data_out,  int proto_offset,int type, uint32_t data_size ){
 	int   rv;
-	int header_length;
-	int payload_length;
+	int header_length = 0;
+	int payload_length = 0;
 	// Get http2 protocol offset
    	int offset_header_length = proto_offset -1;
 	size_t len_out=0;

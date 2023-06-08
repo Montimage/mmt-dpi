@@ -6,9 +6,10 @@ $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -fPIC
 ifdef ENABLESEC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS   += -fPIC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -fPIC
-$(SECURITY_OBJECTS): CFLAGS += -I/usr/include/libxml2
-$(FUZZ_OBJECTS): CFLAGS += -I/usr/include/libxml2
+$(SECURITY_OBJECTS): CFLAGS += -I/usr/include/libxml2 -I/usr/include/nghttp2
+$(FUZZ_OBJECTS): CFLAGS += -I/usr/include/libxml2 
 endif
+CXXFLAGS += 
 #  - - - - - - - - - - - - - - -
 #  L I N U X   L I B R A R I E S
 #  - - - - - - - - - - - - - - -
@@ -38,8 +39,8 @@ $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 
 $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so
-	
+	$(QUIET) $(CXX) $(CXXFLAGS) -I/usr/include/nghttp2 -shared  -L/usr/lib/x86_64-linux-gnu/ -o  $@  -Wl,--whole-archive $^ -lnghttp2 -Wl,--no-whole-archive -Wl,--soname=$(LIBTCPIP).so
+#libraries to be linked must be after $^ symbol
 $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 
 # LIB_MOBILE 4G 5G
