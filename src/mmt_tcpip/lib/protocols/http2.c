@@ -12,117 +12,112 @@
 int inflate_header_increase(nghttp2_hd_inflater *inflater, nghttp2_nv* nv,
                          uint8_t *in, size_t inlen,  nghttp2_nv* nv_out,int *dim_out)
 {
-    ssize_t rv;
-   // int final=0;
-    int j=0;//Dimension of array nv_out
-    
-    for(;;) {
-	//printf("Iterazione %d  \n",j);
-        int inflate_flags = 0;
-	//printf("Inlen %lu \n",inlen);
-        rv = nghttp2_hd_inflate_hd2(inflater, nv, &inflate_flags,
-                                    in, inlen, 0);
-        if(rv < 0) {
-            fprintf(stderr, "inflate failed with error code %zd\n", rv);
-            return 0;
-        }
-        in += rv;
-        inlen -= rv;
-        //char c[30];
-  	//printf("Input Inflate\n");
-        if(inflate_flags & NGHTTP2_HD_INFLATE_EMIT) {
-           // fwrite(nv->name, nv->namelen, 1, stderr);
-           // fprintf(stderr, ": ");
-           // fwrite(nv->value, nv->valuelen, 1, stderr);
-          //  fprintf(stderr, "\n ");
-            
-            nv_out[j].name=malloc(sizeof(uint8_t)*(nv->namelen));
-            memcpy((uint8_t*)nv_out[j].name,(uint8_t*)nv->name,nv->namelen);
-            nv_out[j].namelen=nv->namelen;
-            
-            nv_out[j].flags=NGHTTP2_NV_FLAG_NONE;
-            if( j==1){// 0x2F is ASCII code for /
-            	//printf("inflate_header_increase allocation of the value in output");
-           	nv_out[j].value=malloc(sizeof(uint8_t)*((nv->valuelen)+HEADER_MAX_LENGTH));
-           	nv_out[j].valuelen=(nv->valuelen+HEADER_MAX_LENGTH);
-            	memcpy((uint8_t*)nv_out[j].value,(uint8_t*)nv->value,nv->valuelen);
-           	for(int i =nv->valuelen;i<nv->valuelen+HEADER_MAX_LENGTH;i++){ 
-
-			nv_out[j].value[i]=(uint8_t)'A';
-          	}
-              }
-              else{
-                  nv_out[j].value=malloc(sizeof(uint8_t)*(nv->valuelen));
-         	  memcpy((uint8_t*)nv_out[j].value,(uint8_t*)nv->value,nv->valuelen);
-          	  nv_out[j].valuelen=nv->valuelen;    
-              }
-          //  printf("\n");
-            j=j+1;
-          //printf("Next Method\n");
-        }
-        if((inflate_flags & NGHTTP2_HD_INFLATE_FINAL)) {
-            nghttp2_hd_inflate_end_headers(inflater);
-            break;
-        }
-        if((inflate_flags & NGHTTP2_HD_INFLATE_EMIT) == 0 &&  inlen == 0) {
-           break;
-          }
-       }
+	ssize_t rv;
+	// int final=0;
+	int j=0;//Dimension of array nv_out
+	for(;;) {
+		//printf("Iterazione %d  \n",j);
+		int inflate_flags = 0;
+		//printf("Inlen %lu \n",inlen);
+		rv = nghttp2_hd_inflate_hd2(inflater, nv, &inflate_flags, in, inlen, 0);//function to decompress. It outs every couple of key-values in the struct nv
+		//Ex. nv.name[0]=POST nv.value[0]=/path/to/something etc.
+		if(rv < 0) {
+			fprintf(stderr, "inflate failed with error code %zd\n", rv);
+			return 0;
+		}
+		in += rv;
+		inlen -= rv;
+		//char c[30];
+		//printf("Input Inflate\n");
+		if(inflate_flags & NGHTTP2_HD_INFLATE_EMIT) {
+			// fwrite(nv->name, nv->namelen, 1, stderr);
+			// fprintf(stderr, ": ");
+			// fwrite(nv->value, nv->valuelen, 1, stderr);
+			//  fprintf(stderr, "\n ");
+			//Setting Output structure: nv_out
+			nv_out[j].name=malloc(sizeof(uint8_t)*(nv->namelen));
+			memcpy((uint8_t*)nv_out[j].name,(uint8_t*)nv->name,nv->namelen);
+			nv_out[j].namelen = nv->namelen;
+			nv_out[j].flags=NGHTTP2_NV_FLAG_NONE;
+			if( j==1 ){// 0x2F is ASCII code for /
+				//printf("inflate_header_increase allocation of the value in output");
+				nv_out[j].value = malloc(sizeof(uint8_t)*((nv->valuelen)+HEADER_MAX_LENGTH));
+				nv_out[j].valuelen = (nv->valuelen+HEADER_MAX_LENGTH);
+				memcpy((uint8_t*)nv_out[j].value,(uint8_t*)nv->value,nv->valuelen);
+				for(int i =nv->valuelen;i<nv->valuelen+HEADER_MAX_LENGTH;i++){ 
+					nv_out[j].value[i]=(uint8_t)'A';
+				}
+			}
+			else{
+				nv_out[j].value=malloc(sizeof(uint8_t)*(nv->valuelen));
+				memcpy((uint8_t*)nv_out[j].value,(uint8_t*)nv->value,nv->valuelen);
+				nv_out[j].valuelen=nv->valuelen;    
+			}
+			//  printf("\n");
+			j=j+1;
+			//printf("Next Method\n");
+			}
+			if((inflate_flags & NGHTTP2_HD_INFLATE_FINAL)) {
+				nghttp2_hd_inflate_end_headers(inflater);
+				break;
+			}
+			if((inflate_flags & NGHTTP2_HD_INFLATE_EMIT) == 0 &&  inlen == 0) {
+				break;
+			}
+		}
 	*dim_out=j;
-    return 0;
+	return 0;
 }
 
 int inflate_header_fuzz(nghttp2_hd_inflater *inflater, nghttp2_nv* nv,
                          uint8_t *in, size_t inlen,  nghttp2_nv* nv_out,int *dim_out)
 {
-    ssize_t rv;
-   // int final=0;
-    int j=0;//Dimension of array nv_out
-    for(;;) {
-        int inflate_flags = 0;
-	//printf("Inlen %lu \n",inlen);
-        rv = nghttp2_hd_inflate_hd2(inflater, nv, &inflate_flags,
-                                    in, inlen, 0);
-        if(rv < 0) {
-            fprintf(stderr, "inflate failed with error code %zd\n", rv);
-            return 0;
-        }
-        in += rv;
-        inlen -= rv;
-  	//printf("Input Inflate\n");
-        if(inflate_flags & NGHTTP2_HD_INFLATE_EMIT) {
-            //fwrite(nv->name, nv->namelen, 1, stderr);
-          //  fprintf(stderr, ": ");
-           // fwrite(nv->value, nv->valuelen, 1, stderr);
-           // fprintf(stderr, "\n ");
-            if(nv->value[0]==0x2F&& j==1){
-                char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;\'///:,.<>/?\\";
-          //      printf("Random char generated\n");
-                for(int i=(int)nv->valuelen;i>(int)(nv->valuelen/3);i--){
-                            int r = rand() % (sizeof(characters)-1);
-                            nv->value[i]=characters[r];
-                }
-              }
-             //remove this code 
-            nv_out[j].name=malloc(sizeof(uint8_t)*(nv->namelen));
-            memcpy((uint8_t*)nv_out[j].name,(uint8_t*)nv->name,nv->namelen);
-            nv_out[j].namelen=nv->namelen;
-            nv_out[j].value=malloc(sizeof(uint8_t)*(nv->valuelen));
-            memcpy((uint8_t*)nv_out[j].value,(uint8_t*)nv->value,nv->valuelen);
-            nv_out[j].valuelen=nv->valuelen;
-            nv_out[j].flags=NGHTTP2_NV_FLAG_NONE;
-           // for(int x=0;x<(int)nv->valuelen;x++)
-           //    printf(" %02hhX  ", nv_out[j].value[x]);
-           // printf("\n");
-            j=j+1;
-        //  printf("Next Method\n");
-        }
-        if((inflate_flags & NGHTTP2_HD_INFLATE_FINAL)) {
-            nghttp2_hd_inflate_end_headers(inflater);
-            break;
-        }
-        if((inflate_flags & NGHTTP2_HD_INFLATE_EMIT) == 0 &&  inlen == 0) {
-           break;
+	ssize_t rv;
+	// int final=0;
+	int j=0;//Dimension of array nv_out
+	for(;;) {
+        	int inflate_flags = 0;
+		//printf("Inlen %lu \n",inlen);
+        	rv = nghttp2_hd_inflate_hd2(inflater, nv, &inflate_flags, in, inlen, 0);
+		if(rv < 	0) {
+			fprintf(stderr, "inflate failed with error code %zd\n", rv);
+			return 0;
+		}
+		in += rv;
+		inlen -= rv;
+		//printf("Input Inflate\n");
+		if(inflate_flags & NGHTTP2_HD_INFLATE_EMIT) {
+		//fwrite(nv->name, nv->namelen, 1, stderr);
+		//fprintf(stderr, ": ");
+		// fwrite(nv->value, nv->valuelen, 1, stderr);
+        	// fprintf(stderr, "\n ");
+		if(nv->value[0]==0x2F&& j==1){
+			char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;\'///:,.<>/?\\";
+			//printf("Random char generated\n");
+			for(int i= (int)nv->valuelen; i > (int)(nv->valuelen/3); i--){
+				int r = rand() % (sizeof(characters)-1);
+				nv->value[i]=characters[r];
+				}
+		}
+		nv_out[j].name=malloc(sizeof(uint8_t)*(nv->namelen));
+		memcpy((uint8_t*)nv_out[j].name,(uint8_t*)nv->name,nv->namelen);
+		nv_out[j].namelen=nv->namelen;
+		nv_out[j].value=malloc(sizeof(uint8_t)*(nv->valuelen));
+		memcpy((uint8_t*)nv_out[j].value,(uint8_t*)nv->value,nv->valuelen);
+		nv_out[j].valuelen=nv->valuelen;
+		nv_out[j].flags=NGHTTP2_NV_FLAG_NONE;
+		// for(int x=0;x<(int)nv->valuelen;x++)
+		//printf(" %02hhX  ", nv_out[j].value[x]);
+		// printf("\n");
+		j=j+1;
+		// printf("Next Method\n");
+		}
+		if((inflate_flags & NGHTTP2_HD_INFLATE_FINAL)) {
+			nghttp2_hd_inflate_end_headers(inflater);
+			break;
+		}
+		if((inflate_flags & NGHTTP2_HD_INFLATE_EMIT) == 0 &&  inlen == 0) {
+			break;
           }
        }
 	*dim_out=j;
@@ -130,14 +125,14 @@ int inflate_header_fuzz(nghttp2_hd_inflater *inflater, nghttp2_nv* nv,
 }
 
 
-static void deflate(nghttp2_hd_deflater *deflater,//nghttp2_hd_inflater *inflater, 
+static void deflate(nghttp2_hd_deflater *deflater,
                      const nghttp2_nv *const nva, uint8_t*buf,
                     size_t nvlen,size_t *len_out) {
 	ssize_t rv;
 	size_t buflen;
 	size_t outlen;
 	size_t i;
-	size_t sum;
+	//size_t sum;
 	// printf("Input deflate   \n\n");
 	//printf("nvlen %lu \n",nvlen);
 	/*
@@ -147,10 +142,10 @@ static void deflate(nghttp2_hd_deflater *deflater,//nghttp2_hd_inflater *inflate
 		printf("\n");
 	}
 	*/
-	sum = 0;
-	for (i = 0; i < nvlen; ++i) {
-		sum += nva[i].namelen + nva[i].valuelen;
-	}
+	//sum = 0;// USeful for debugging to show the dimension of header compressed
+	//for (i = 0; i < nvlen; ++i) {
+	//	sum += nva[i].namelen + nva[i].valuelen;
+	//}
 	//  printf("Input deflate (%zu byte(s)):\n\n", sum);
 	//for (i = 0; i < nvlen; ++i) {
 	// fwrite(nva[i].name, 1, nva[i].namelen, stdout);
@@ -160,16 +155,13 @@ static void deflate(nghttp2_hd_deflater *deflater,//nghttp2_hd_inflater *inflate
 		//fwrite(nva[i].value, 1, nva[i].valuelen, stdout);
 		//printf("\n");
 	//}
-	buflen = nghttp2_hd_deflate_bound(deflater, nva, nvlen);
+	buflen = nghttp2_hd_deflate_bound(deflater, nva, nvlen);//Returns an upper bound on the compressed size after compression of nva of length nvlen.
 	//printf("Name   %lu\n",buflen);
-	rv = nghttp2_hd_deflate_hd(deflater, buf, buflen, nva, nvlen);
-
+	rv = nghttp2_hd_deflate_hd(deflater, buf, buflen, nva, nvlen);//Deflates the nva, which has the nvlen name/value pairs, into the buf of length buflen.
 	if (rv < 0) {
 		fprintf(stderr, "nghttp2_hd_deflate_hd() failed with error: %s\n",
 				nghttp2_strerror((int)rv));
-
 		//free(buf);
-
 		exit(EXIT_FAILURE);
 		}
 		outlen = (size_t)rv;
@@ -338,7 +330,7 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 
 	uint8_t method_value = *((uint8_t*) &packet->data[method_offset]);
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
-	if (method_value == 131) {
+	if (method_value == 131) { //Payload is present only in POST Methods. This check is necessary cause otherwise there will be an out of bounds error
 
 		// Get http2 protocol offset
 		int offset_header_length = proto_offset - 1;
@@ -749,7 +741,8 @@ int update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *pack
 		case(HTTP2_DISCARD_SETTINGS):
 			difference_size = -9;
 			return difference_size; 
-
+			break;
+			
 		//case(HTTP2_PAYLOAD_FUZZ):
 			//fuzz_payload((uint8_t*)data_out,packet,proto_offset);
 			//printf("[update_http2_data]data_size %d\n",data_size);
@@ -779,6 +772,7 @@ int update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *pack
 			update_stream_id(data_out,proto_offset,new_val);
 			return difference_size;
 			break;
+			
 		case(HTTP2_HEADER_AMPLIFICATION):
 			difference_size = update_path((uint8_t*)data_out,proto_offset,HTTP2_HEADER_AMPLIFICATION,data_size);
 			//printf("[update_http2_data]data_size %d\n",data_size);
