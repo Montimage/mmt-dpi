@@ -6,7 +6,7 @@ $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -fPIC
 ifdef ENABLESEC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS   += -fPIC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -fPIC
-$(SECURITY_OBJECTS): CFLAGS += -I/usr/include/libxml2 -I/usr/include/nghttp2
+$(SECURITY_OBJECTS): CFLAGS += -I/usr/include/libxml2
 $(FUZZ_OBJECTS): CFLAGS += -I/usr/include/libxml2 
 endif
 CXXFLAGS += 

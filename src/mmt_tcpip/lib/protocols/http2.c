@@ -6,7 +6,7 @@
 #include <nghttp2/nghttp2.h>
 
 #define HEADER_MAX_LENGTH 400
-
+#define HEADER_NUMBER 7
 
 //Function to decompress header and adding character to increase the size of the packet
 int inflate_header_increase(nghttp2_hd_inflater *inflater, nghttp2_nv* nv,
@@ -56,15 +56,15 @@ int inflate_header_increase(nghttp2_hd_inflater *inflater, nghttp2_nv* nv,
 			//  printf("\n");
 			j=j+1;
 			//printf("Next Method\n");
-			}
-			if((inflate_flags & NGHTTP2_HD_INFLATE_FINAL)) {
-				nghttp2_hd_inflate_end_headers(inflater);
-				break;
-			}
-			if((inflate_flags & NGHTTP2_HD_INFLATE_EMIT) == 0 &&  inlen == 0) {
-				break;
-			}
 		}
+		if((inflate_flags & NGHTTP2_HD_INFLATE_FINAL)) {
+			nghttp2_hd_inflate_end_headers(inflater);
+			break;
+		}
+		if((inflate_flags & NGHTTP2_HD_INFLATE_EMIT) == 0 &&  inlen == 0) {
+			break;
+		}
+	}
 	*dim_out=j;
 	return 0;
 }
@@ -89,9 +89,10 @@ int inflate_header_fuzz(nghttp2_hd_inflater *inflater, nghttp2_nv* nv,
 		if(inflate_flags & NGHTTP2_HD_INFLATE_EMIT) {
 		//fwrite(nv->name, nv->namelen, 1, stderr);
 		//fprintf(stderr, ": ");
-		// fwrite(nv->value, nv->valuelen, 1, stderr);
-        	// fprintf(stderr, "\n ");
-		if(nv->value[0]==0x2F&& j==1){
+		//fwrite(nv->value, nv->valuelen, 1, stderr);
+        	//fprintf(stderr, "\n ");
+        	//
+		if(nv->value[0]==0x2F&& j==1){ //0x2f is ASCII COde for /
 			char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;\'///:,.<>/?\\";
 			//printf("Random char generated\n");
 			for(int i= (int)nv->valuelen; i > (int)(nv->valuelen/3); i--){
@@ -460,8 +461,10 @@ int restore_http2_packet(uint8_t*data_out,const ipacket_t * packet,int proto_off
    	 new_length = new_length & 0x00FFFFFF;
    	// printf("new_length %d, header_length %d\n",new_length,header_length);
    	// printf("data_out %02X packet_data %02X \n",data_out[proto_offset],packet->data[proto_offset]);
-   	if(new_length+9>data_out_size || proto_offset>(data_out_size))
+   	if(new_length+9 > data_out_size || proto_offset > (data_out_size)){
+		MMT_LOG(PROTO_HTTP2, MMT_LOG_ERROR, " restore_http2_packet(),data_out_size error.\n");
    		return 0;
+   		}
  	memcpy((uint8_t*)data_out+proto_offset,packet->data+proto_offset,new_length+9);
  	return new_length-header_length;
 }
@@ -478,8 +481,10 @@ int modify_get(uint8_t*data_out,int proto_offset,uint32_t data_out_size){
 	uint8_t authority_amf[] = {0x41,0x8d,0x0b,0xa2,0x5c,0x2e,0x2e,0xdb,0xeb,0xba,0xcd,0xc7,0x80,0xf0,0x3f,0x7a,0x03,0x61,0x6d,0x66};
 	int authority_amf_length = sizeof(authority_amf) ;
 	//printf("[modify_get]authority_amf_length %d\n",authority_amf_length);
-	if(authority_amf_length > data_out_size || proto_offset+9+header_length-2 > data_out_size)
+	if(authority_amf_length > data_out_size || proto_offset+9+header_length-2 > data_out_size){
+		MMT_LOG(PROTO_HTTP2, MMT_LOG_ERROR, " modify_get(),data_out_size error.\n");
 		return 0;
+		}
 	memcpy(data_out+proto_offset+9+header_length-2,authority_amf,authority_amf_length);
 	//printf("modify get after update:\n");
 	//for(int i=proto_offset+9+header_length-2;i<proto_offset+9+header_length-2+authority_amf_length;i++)
@@ -516,8 +521,10 @@ int inject_http2_packet(uint8_t*data_out, uint8_t*data_to_inject,int proto_offse
       		  header_length = (header_length << 8) | (data_out[i] & 0xFF);
    	 }
    	// printf("inject_http2_packet Header_length %d",header_length);
-   	if(data_to_inject_len > data_out_size || proto_offset > data_out_size)
+   	if(data_to_inject_len > data_out_size || proto_offset > data_out_size){
+   		MMT_LOG(PROTO_HTTP2, MMT_LOG_ERROR, " inject_http2_packet(),data_out_size error.\n");
    		return 0;
+   		}
  	memcpy(data_out + proto_offset,data_to_inject,data_to_inject_len);
  	return (data_to_inject_len - header_length-9); 
 }
@@ -554,7 +561,7 @@ int update_stream_id(char *data_out,int proto_offset,uint32_t new_val){
 }
 
 int update_path( uint8_t*data_out,  int proto_offset,int type, uint32_t data_size ){
-	int   rv;
+	int rv; //indicates the result of the execution of nghttp2 functions.
 	int header_length = 0;
 	int payload_length = 0;
 	// Get http2 protocol offset
@@ -573,9 +580,11 @@ int update_path( uint8_t*data_out,  int proto_offset,int type, uint32_t data_siz
    	 }
 	int mask = 0x00FFFFFF; // mask to set last 2 bytes to 0
 	payload_length = payload_length & mask; // put to 0 last byte
-	if(sizeof(data_to_modify)>data_size)
+	if(sizeof(data_to_modify) > data_size){
+	   	MMT_LOG(PROTO_HTTP2, MMT_LOG_ERROR, " update_path(),data_to_modify size error.\n");
 		return 0;
-   	memcpy(data_to_modify,data_out+9+proto_offset,sizeof(data_to_modify));
+	}
+   	memcpy(data_to_modify,data_out+9+proto_offset,sizeof(data_to_modify));//Copy the original header in data_to_modify array.
    	//printf("sizeof Data_to_modify %lu\n",sizeof(data_to_modify));
    	//printf("Data_to_modify ");
    	//for (size_t i = 0; i < sizeof(data_to_modify); i++) {
@@ -584,11 +593,11 @@ int update_path( uint8_t*data_out,  int proto_offset,int type, uint32_t data_siz
     	//printf("\n");
    	nghttp2_hd_inflater* inflater;
 	nghttp2_hd_deflater *deflater;
-	int dim_out=0;
+	int dim_out = 0;
 	nghttp2_nv nv;
-	nghttp2_nv  nv_decompressed[7];
-	uint8_t buf_out[header_length+HEADER_MAX_LENGTH];
-  	 rv = nghttp2_hd_inflate_new(&inflater);
+	nghttp2_nv nv_decompressed[HEADER_NUMBER];
+	uint8_t buf_out[header_length + HEADER_MAX_LENGTH];
+  	rv = nghttp2_hd_inflate_new(&inflater);
 
   	if (rv != 0) {
   	  	fprintf(stderr, "nghttp2_hd_inflate_init failed with error: %s\n",
@@ -607,18 +616,13 @@ int update_path( uint8_t*data_out,  int proto_offset,int type, uint32_t data_siz
    		rv=inflate_header_fuzz(inflater, &nv, data_to_modify, sizeof(data_to_modify),nv_decompressed,&dim_out);
 	 	if (rv != 0) {
   	  		fprintf(stderr, "inflate_header_fuzz failed with error \n");
-
-
   		}
   	}
   	else{
   	   	rv=inflate_header_increase(inflater, &nv, data_to_modify, sizeof(data_to_modify),nv_decompressed,&dim_out);
 	 	if (rv != 0) {
   	  		fprintf(stderr, "inflate_header_increase failed with error \n");
-
-
   		}
-  	
   	}
   	deflate(deflater ,nv_decompressed,buf_out,(size_t) dim_out,&len_out);
   	/*printf("Buf_out ");
@@ -626,20 +630,24 @@ int update_path( uint8_t*data_out,  int proto_offset,int type, uint32_t data_siz
       		printf("%02hhX ", buf_out[i]);
     	}
     	*/
-	if((int)len_out!=header_length){
+	if((int)len_out!=header_length){ //In this case the header with new data is bigger than the oldest one
 		//Go to http2
   		//printf("header_length %d\n",header_length );
   		//printf("Len_out %d\n",(int)len_out );
 		//printf("payload_length %d\n",payload_length);
 		uint8_t temp_payload[payload_length+9];	
-		memcpy(temp_payload,data_out+payload_offset+1,(size_t) payload_length+9);//As the compressed header is usually bigger, I copy the payload in temp var
+		if(payload_length + 9 > data_size){
+			MMT_LOG(PROTO_HTTP2, MMT_LOG_ERROR, "Update path payload length error.\n");
+			return 0;
+		}
+		memcpy(temp_payload,data_out+payload_offset+1,(size_t) payload_length+9);//As the new compressed header is usually bigger than the oldest, I copy the payload in temp var
 		//printf("Siezeof temp_payload %lu ",sizeof(temp_payload));
 		//printf("temp \n");
 		//for(int i=0;i<sizeof(temp);i++)
 		// printf("%02X ",temp[i]);
-		memcpy(data_out+9+proto_offset,buf_out,(size_t)len_out);//I copy the new  header compressed
-		int shift_size=len_out-header_length;
-		memcpy((uint8_t*)data_out+payload_offset+shift_size+1,(uint8_t*)temp_payload,sizeof(temp_payload));
+		memcpy(data_out+9+proto_offset,buf_out,(size_t)len_out);//I copy the new  header compressed in data_out
+		int shift_size=len_out-header_length;//This is to compute how many position should be shifted
+		memcpy((uint8_t*)data_out+payload_offset+shift_size+1,(uint8_t*)temp_payload,sizeof(temp_payload));//I copy the old payload in a shifted position.
 		//printf("\nData_out after modifications: \n");
 		//for(int i=payload_offset+shift_size+1;i<(int)sizeof(temp)+payload_offset+shift_size+1;i++)
 		//printf("%02X ",data_out[i]);
@@ -651,21 +659,15 @@ int update_path( uint8_t*data_out,  int proto_offset,int type, uint32_t data_siz
 	else
 		memcpy(data_out+9+proto_offset,buf_out,(size_t)len_out);
 	//printf("\nLen_out %lu ",len_out);
-
-	
 	//printf("New size %lu\n",len_out+payload_length+9+9);
 	//printf("payload offset %d payload_length %d\n",payload_offset,payload_length);
-
     	//printf("\n");
-    	
     	nghttp2_hd_inflate_del(inflater);
   	nghttp2_hd_deflate_del(deflater);
-    	
-    	for(int x=0;x<dim_out;x++){
-
-           free(nv_decompressed[x].value);
-           free(nv_decompressed[x].name);
-      }
+	for(int x = 0;x < dim_out; x++){
+		free(nv_decompressed[x].value);
+		free(nv_decompressed[x].name);
+	}
 	return (len_out-(header_length));
 }
 
@@ -706,8 +708,11 @@ int update_http2_payload(char *data_out, uint32_t data_size, const ipacket_t *pa
 	//printf("update_http2_payload old_payload_length %d\n",old_payload_length );
 	int payload_data_offset = payload_offset+ 9+1;
 	//3. copy new payload characters
-	if(new_data_len <= old_payload_length && payload_data_offset < data_size)
-		 memcpy(data_out + payload_data_offset,new_data,new_data_len);
+	if(new_data_len > old_payload_length || payload_data_offset > data_size){
+		MMT_LOG(PROTO_HTTP2, MMT_LOG_ERROR, "Update path Invalid new size.\n");
+		return 0;
+	}
+	memcpy(data_out + payload_data_offset,new_data,new_data_len);
 	return new_data_len - old_payload_length;
 }
 
