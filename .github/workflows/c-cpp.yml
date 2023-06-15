@@ -26,7 +26,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: build-from-source
       run: |
-         sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev nghttp2-server
+         sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev nghttp2
+         ls -lrat /usr/include
          cd sdk/ && make -j2 && sudo make install && make test && make deb
 
     #The following steps are executed only on new tag
