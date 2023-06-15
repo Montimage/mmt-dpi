@@ -10,7 +10,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - name: Initialize variables
@@ -26,7 +26,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: build-from-source
       run: |
-         sudo apt-get update-y && install -y libxml2-dev libpcap-dev nghttp2
+         sudo apt-get update-y && install -y libxml2-dev libpcap-dev nghttp2-server
          cd sdk/ && make -j2 && sudo make install && make test && make deb
 
     #The following steps are executed only on new tag
