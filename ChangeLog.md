@@ -1,5 +1,8 @@
 RELEASE NOTES
 ---
+Version 1.7.9-sancus (15 June 2023)
+- a specific version for SANCUS project to use nghttp2 library to decompress HTTP2 headers
+
 Version 1.7.9 (01 Juin 2023 - by HN)
 - add HTTP2 mutation functions
 - update Inband Network Telemetry protocol to parse 10th attribute
