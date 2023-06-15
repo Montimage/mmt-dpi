@@ -116,6 +116,16 @@ static int _int_classify_me(ipacket_t * ipacket, unsigned index) {
 	target = src;\
 	break;
 
+typedef struct {
+	uint32_t  first_ip_dd;
+	uint32_t  second_ip_ad;
+	uint16_t  nb_pkt_window_up;
+	uint16_t  nb_pkt_window_down;
+	uint32_t  sum_pkts_size_window_up;
+	uint32_t  sum_pkts_size_window_down;
+	uint32_t  sum_iat_window_up;
+	uint32_t  sum_iat_window_down;
+} cloud_gaming_data_t;
 
 static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
@@ -128,7 +138,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	int_shim_tcpudp_v10_t *shim;
 	advance_pointer( shim, int_shim_tcpudp_v10_t, cursor, end_cursor, "No Shim");
 
-	if( shim->type != 1 ){
+	if( shim->type != 1 && shim->type != 0 ){
 		debug("Does not support type=%d", shim->type );
 		return NOT_FOUND;
 	}
@@ -164,6 +174,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	uint8_t is_lv2_in_e_port_ids = (ins_bits >>  9) & 0x1;
 	uint8_t is_tx_utilizes       = (ins_bits >>  8) & 0x1;
 	uint8_t is_l4s_mark_drop     = (ins_bits >>  7) & 0x1;
+	uint8_t is_cloud_gaming_meta = (ins_bits >>  6) & 0x1;
 
 
 	switch( extracted_data->field_id ){
@@ -185,6 +196,8 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		extract_u8( is_tx_utilizes );
 	case INT_IS_L4S_MARK_DROP:
 		extract_u8( is_l4s_mark_drop );
+	case INT_IS_L4S_CLOUD_GAMING:
+		extract_u8( is_cloud_gaming_meta );
 	default:
 		break;
 	}
@@ -279,6 +292,76 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark Probability");
 			data.l4s_mark_probability.data[i] = ntohl( *u32 );
 		}
+
+		if( is_cloud_gaming_meta ){
+			cloud_gaming_data_t *p_cg, d_cg;
+			struct ip_v4 {
+				uint8_t a, b, c, d;
+			} *ip_a, *ip_b;
+			advance_pointer( p_cg, cloud_gaming_data_t, cursor, end_cursor, "No CloudGaming data" );
+			if( extracted_data->field_id == INT_L4S_CLOUD_GAMING ){
+				mmt_string_data_t *string = (mmt_string_data_t *) extracted_data->data;
+				// jsonReport = [ recv_firstIP, 2152, recv_secondIP, 8787,
+				//                [recv_nbPktWindowDown, meanPktSizeLastWindowDown, 0, meanIATLastWindowDown,  0, recv_sumPktsSizeWindowDown] ,
+				//                [recv_nbPktWindowUp, meanPktSizeLastWindowUp, 0, meanIATLastWindowUp,  0, recv_sumPktsSizeWindowUp]
+				//              ]
+
+				ip_a = (struct ip_v4 *) &p_cg->first_ip_dd;
+				ip_b = (struct ip_v4 *) &p_cg->second_ip_ad;
+
+				//convert values from network order to host order
+				d_cg.nb_pkt_window_down  = ntohs( p_cg->nb_pkt_window_down );
+				d_cg.nb_pkt_window_up    = ntohs( p_cg->nb_pkt_window_up );
+				d_cg.sum_iat_window_down = ntohl( p_cg->sum_iat_window_down );
+				d_cg.sum_iat_window_up   = ntohl( p_cg->sum_iat_window_up );
+				d_cg.sum_pkts_size_window_down = ntohl( p_cg->sum_pkts_size_window_down );
+				d_cg.sum_pkts_size_window_up   = ntohl( p_cg->sum_pkts_size_window_up );
+
+
+				//# We received IAT values on the 64µs basis
+				//# Need to multiply it by 64 to have the correct value on a 1µs basis
+				d_cg.sum_iat_window_up *= 64;
+				d_cg.sum_iat_window_down *= 64;
+
+				//calculate other synthetic values
+				uint32_t mean_pkt_size_last_window_up = 0;
+				if( d_cg.nb_pkt_window_up != 0 )
+					mean_pkt_size_last_window_up = d_cg.sum_pkts_size_window_up / d_cg.nb_pkt_window_up;
+				uint32_t mean_pkt_size_last_window_down = 0;
+				if( d_cg.nb_pkt_window_down != 0 )
+					mean_pkt_size_last_window_down = d_cg.sum_pkts_size_window_down / d_cg.nb_pkt_window_down;
+
+				//not sure why does it take this default value: https://github.com/mosaico-anr/P4_NFV_CG_Detector/blob/main/Controler.py#L78-L84C13
+				uint32_t mean_iat_last_window_up =  32960;
+				if( d_cg.nb_pkt_window_up != 0 ){
+					if( d_cg.nb_pkt_window_up == 1 )
+						mean_iat_last_window_up = 16448;
+					else
+						mean_iat_last_window_up = d_cg.sum_iat_window_up / d_cg.nb_pkt_window_up;
+				}
+
+				uint32_t mean_iat_last_window_down =  32960;
+				if( d_cg.nb_pkt_window_down != 0 ){
+					if( d_cg.nb_pkt_window_down == 1 )
+						mean_iat_last_window_down = 16448;
+					else
+						mean_iat_last_window_down = d_cg.sum_iat_window_down / d_cg.nb_pkt_window_down;
+				}
+
+				string->len = snprintf((char*)string->data, sizeof(string->data),
+						"[\"%d.%d.%d.%d\",2152,\"%d.%d.%d.%d\",8787,"
+						"[%d,%d,0,%d,0,%d]," //down
+						"[%d,%d,0,%d,0,%d]]" //up
+						,
+						ip_a->a, ip_a->b, ip_a->c, ip_a->d, ip_b->a, ip_b->b, ip_b->c, ip_b->d,
+						//down
+						d_cg.nb_pkt_window_down, mean_pkt_size_last_window_down, mean_iat_last_window_down, d_cg.sum_pkts_size_window_down,
+						// up
+						d_cg.nb_pkt_window_up, mean_pkt_size_last_window_up, mean_iat_last_window_up, d_cg.sum_pkts_size_window_up
+					);
+				return FOUND;
+			}
+		}
 	}
 
 	mmt_u32_array_t *ptr = NULL;
@@ -357,6 +440,7 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_HOP_L4S_MARK,              MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_HOP_L4S_DROP,              MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_HOP_L4S_MARK_PROBABILITY,  MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
+	def_att( INT_L4S_CLOUD_GAMING,          MMT_STRING_LONG_DATA, sizeof(mmt_string_data_t) ),
 
 	def_att( INT_IS_SWITCH_ID,          MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_IN_EGRESS_PORT_ID , MMT_U8_DATA, sizeof(uint8_t) ),
@@ -366,7 +450,8 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_IS_EGRESS_TIME ,       MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_LV2_IN_EGRESS_PORT_ID, MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_TX_UTILIZE ,        MMT_U8_DATA, sizeof(uint8_t) ),
-	def_att( INT_IS_L4S_MARK_DROP ,     MMT_U8_DATA, sizeof(uint8_t) )
+	def_att( INT_IS_L4S_MARK_DROP ,     MMT_U8_DATA, sizeof(uint8_t) ),
+	def_att( INT_IS_L4S_CLOUD_GAMING ,  MMT_U8_DATA, sizeof(uint8_t) )
 };
 
 
