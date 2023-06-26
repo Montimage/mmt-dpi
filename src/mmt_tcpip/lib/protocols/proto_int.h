@@ -123,7 +123,6 @@ enum int_attributes {
 	INT_HOP_L4S_MARK,
 	INT_HOP_L4S_DROP,
 	INT_HOP_L4S_MARK_PROBABILITY,
-	INT_L4S_CLOUD_GAMING, //data is available only one hop, not for each hop
 
 	//details of bits
 	INT_IS_SWITCH_ID,
@@ -135,7 +134,18 @@ enum int_attributes {
 	INT_IS_LV2_IN_EGRESS_PORT_ID,
 	INT_IS_TX_UTILIZE,
 	INT_IS_L4S_MARK_DROP,
-	INT_IS_L4S_CLOUD_GAMING
+	//cloud gaming reports
+	INT_IS_CLOUD_GAMING, //data is available only one hop, not for each hop
+	INT_CLOUD_GAMING_IP_SRC,
+	INT_CLOUD_GAMING_IP_DST,
+	INT_CLOUD_GAMING_NB_PKT_DOWN,
+	INT_CLOUD_GAMING_MEAN_PKT_SIZE_DOWN,
+	INT_CLOUD_GAMING_MEAN_IAT_DOWN,
+	INT_CLOUD_GAMING_SUM_PKT_SIZE_DOWN,
+	INT_CLOUD_GAMING_NB_PKT_UP,
+	INT_CLOUD_GAMING_MEAN_PKT_SIZE_UP,
+	INT_CLOUD_GAMING_MEAN_IAT_UP,
+	INT_CLOUD_GAMING_SUM_PKT_SIZE_UP
 };
 
 
@@ -158,7 +168,6 @@ enum int_attributes {
 #define INT_HOP_L4S_MARK_ALIAS             "hop_l4s_mark"
 #define INT_HOP_L4S_DROP_ALIAS             "hop_l4s_drop"
 #define INT_HOP_L4S_MARK_PROBABILITY_ALIAS "hop_l4s_mark_probability"
-#define INT_L4S_CLOUD_GAMING_ALIAS         "l4s_cloud_gaming" //data is available only one hop, not for each hop
 
 #define INT_IS_SWITCH_ID_ALIAS             "is_switch_id"
 #define INT_IS_IN_EGRESS_PORT_ID_ALIAS     "is_in_egress_port_id"
@@ -169,6 +178,17 @@ enum int_attributes {
 #define INT_IS_LV2_IN_EGRESS_PORT_ID_ALIAS "is_lv2_in_egress_port_id"
 #define INT_IS_TX_UTILIZE_ALIAS            "is_tx_utilize"
 #define INT_IS_L4S_MARK_DROP_ALIAS         "is_l4s_mark_drop"
-#define INT_IS_L4S_CLOUD_GAMING_ALIAS      "is_l4s_cloud_gaming"
+
+#define INT_IS_CLOUD_GAMING_ALIAS                 "is_cloud_gaming" //data is available only one hop, not for each hop
+#define INT_CLOUD_GAMING_IP_SRC_ALIAS             "cg_ip_src"
+#define INT_CLOUD_GAMING_IP_DST_ALIAS             "cg_ip_dst"
+#define INT_CLOUD_GAMING_NB_PKT_DOWN_ALIAS        "cg_nb_pkt_down"
+#define INT_CLOUD_GAMING_MEAN_PKT_SIZE_DOWN_ALIAS "cg_mean_pkt_size_down"
+#define INT_CLOUD_GAMING_MEAN_IAT_DOWN_ALIAS      "cg_mean_iat_down"
+#define INT_CLOUD_GAMING_SUM_PKT_SIZE_DOWN_ALIAS  "cg_sum_pkt_size_down"
+#define INT_CLOUD_GAMING_NB_PKT_UP_ALIAS          "cg_nb_pkt_up"
+#define INT_CLOUD_GAMING_MEAN_PKT_SIZE_UP_ALIAS   "cg_mean_pkt_size_up"
+#define INT_CLOUD_GAMING_MEAN_IAT_UP_ALIAS        "cg_mean_iat_up"
+#define INT_CLOUD_GAMING_SUM_PKT_SIZE_UP_ALIAS    "cg_sum_ptk_size_up"
 
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_INBAND_TELEMETRY_H_ */

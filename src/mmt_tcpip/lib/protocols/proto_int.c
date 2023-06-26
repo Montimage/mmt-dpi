@@ -127,6 +127,106 @@ typedef struct {
 	uint32_t  sum_iat_window_down;
 } cloud_gaming_data_t;
 
+
+static int _extraction_int_cloud_gaming_report_att(const cloud_gaming_data_t *p_cg, const ipacket_t *ipacket, unsigned index,
+	attribute_t * extracted_data) {
+	cloud_gaming_data_t d_cg;
+		// jsonReport = [ recv_firstIP, 2152, recv_secondIP, 8787,
+		//                [recv_nbPktWindowDown, meanPktSizeLastWindowDown, 0, meanIATLastWindowDown,  0, recv_sumPktsSizeWindowDown] ,
+		//                [recv_nbPktWindowUp, meanPktSizeLastWindowUp, 0, meanIATLastWindowUp,  0, recv_sumPktsSizeWindowUp]
+		//              ]
+	switch( extracted_data->field_id ){
+	case INT_CLOUD_GAMING_IP_SRC:
+		(*(uint8_t *) extracted_data->data) = p_cg->first_ip_dd;
+		return FOUND;
+	case INT_CLOUD_GAMING_IP_DST:
+		(*(uint8_t *) extracted_data->data) = p_cg->second_ip_ad;
+		return FOUND;
+	}
+
+	//convert values from network order to host order
+	d_cg.nb_pkt_window_down  = ntohs( p_cg->nb_pkt_window_down );
+	d_cg.nb_pkt_window_up    = ntohs( p_cg->nb_pkt_window_up );
+	d_cg.sum_iat_window_down = ntohl( p_cg->sum_iat_window_down );
+	d_cg.sum_iat_window_up   = ntohl( p_cg->sum_iat_window_up );
+	d_cg.sum_pkts_size_window_down = ntohl( p_cg->sum_pkts_size_window_down );
+	d_cg.sum_pkts_size_window_up   = ntohl( p_cg->sum_pkts_size_window_up );
+
+
+	//# We received IAT values on the 64µs basis
+	//# Need to multiply it by 64 to have the correct value on a 1µs basis
+	d_cg.sum_iat_window_up *= 64;
+	d_cg.sum_iat_window_down *= 64;
+
+	//calculate other synthetic values
+	uint32_t mean_pkt_size_last_window_up = 0;
+	if( d_cg.nb_pkt_window_up != 0 )
+		mean_pkt_size_last_window_up = d_cg.sum_pkts_size_window_up / d_cg.nb_pkt_window_up;
+	uint32_t mean_pkt_size_last_window_down = 0;
+	if( d_cg.nb_pkt_window_down != 0 )
+		mean_pkt_size_last_window_down = d_cg.sum_pkts_size_window_down / d_cg.nb_pkt_window_down;
+
+	//not sure why does it take this default value: https://github.com/mosaico-anr/P4_NFV_CG_Detector/blob/main/Controler.py#L78-L84C13
+	uint32_t mean_iat_last_window_up =  32960;
+	if( d_cg.nb_pkt_window_up != 0 ){
+		if( d_cg.nb_pkt_window_up == 1 )
+			mean_iat_last_window_up = 16448;
+		else
+			mean_iat_last_window_up = d_cg.sum_iat_window_up / d_cg.nb_pkt_window_up;
+	}
+
+	uint32_t mean_iat_last_window_down =  32960;
+	if( d_cg.nb_pkt_window_down != 0 ){
+		if( d_cg.nb_pkt_window_down == 1 )
+			mean_iat_last_window_down = 16448;
+		else
+			mean_iat_last_window_down = d_cg.sum_iat_window_down / d_cg.nb_pkt_window_down;
+	}
+
+	/*
+		string->len = snprintf((char*)string->data, sizeof(string->data),
+				"[\"%d.%d.%d.%d\",2152,\"%d.%d.%d.%d\",8787,"
+				"[%d,%d,0,%d,0,%d]," //down
+				"[%d,%d,0,%d,0,%d]]" //up
+				,
+				ip_a->a, ip_a->b, ip_a->c, ip_a->d, ip_b->a, ip_b->b, ip_b->c, ip_b->d,
+				//down
+				d_cg.nb_pkt_window_down, mean_pkt_size_last_window_down, mean_iat_last_window_down, d_cg.sum_pkts_size_window_down,
+				// up
+				d_cg.nb_pkt_window_up, mean_pkt_size_last_window_up, mean_iat_last_window_up, d_cg.sum_pkts_size_window_up
+			);
+	*/
+
+	switch( extracted_data->field_id ){
+	case INT_CLOUD_GAMING_NB_PKT_DOWN:
+		(*(uint8_t *) extracted_data->data) = d_cg.nb_pkt_window_down;
+		return FOUND;
+	case INT_CLOUD_GAMING_MEAN_PKT_SIZE_DOWN:
+		(*(uint8_t *) extracted_data->data) = mean_pkt_size_last_window_down;
+		return FOUND;
+	case INT_CLOUD_GAMING_MEAN_IAT_DOWN:
+		(*(uint8_t *) extracted_data->data) = mean_iat_last_window_down;
+		return FOUND;
+	case INT_CLOUD_GAMING_SUM_PKT_SIZE_DOWN:
+		(*(uint8_t *) extracted_data->data) = d_cg.sum_pkts_size_window_down;
+		return FOUND;
+
+	case INT_CLOUD_GAMING_NB_PKT_UP:
+		(*(uint8_t *) extracted_data->data) = d_cg.nb_pkt_window_up;
+		return FOUND;
+	case INT_CLOUD_GAMING_MEAN_PKT_SIZE_UP:
+		(*(uint8_t *) extracted_data->data) = mean_pkt_size_last_window_up;
+		return FOUND;
+	case INT_CLOUD_GAMING_MEAN_IAT_UP:
+		(*(uint8_t *) extracted_data->data) = mean_iat_last_window_up;
+		return FOUND;
+	case INT_CLOUD_GAMING_SUM_PKT_SIZE_UP:
+		(*(uint8_t *) extracted_data->data) = d_cg.sum_pkts_size_window_up;
+		return FOUND;
+	}
+
+	return NOT_FOUND;
+}
 static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
 	int i, offset = get_packet_offset_at_index(ipacket, index);
@@ -196,7 +296,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		extract_u8( is_tx_utilizes );
 	case INT_IS_L4S_MARK_DROP:
 		extract_u8( is_l4s_mark_drop );
-	case INT_IS_L4S_CLOUD_GAMING:
+	case INT_IS_CLOUD_GAMING:
 		extract_u8( is_cloud_gaming_meta );
 	default:
 		break;
@@ -293,74 +393,12 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 			data.l4s_mark_probability.data[i] = ntohl( *u32 );
 		}
 
+		//specific data for cloudgaming reports
 		if( is_cloud_gaming_meta ){
-			cloud_gaming_data_t *p_cg, d_cg;
-			struct ip_v4 {
-				uint8_t a, b, c, d;
-			} *ip_a, *ip_b;
+			cloud_gaming_data_t *p_cg;
 			advance_pointer( p_cg, cloud_gaming_data_t, cursor, end_cursor, "No CloudGaming data" );
-			if( extracted_data->field_id == INT_L4S_CLOUD_GAMING ){
-				mmt_string_data_t *string = (mmt_string_data_t *) extracted_data->data;
-				// jsonReport = [ recv_firstIP, 2152, recv_secondIP, 8787,
-				//                [recv_nbPktWindowDown, meanPktSizeLastWindowDown, 0, meanIATLastWindowDown,  0, recv_sumPktsSizeWindowDown] ,
-				//                [recv_nbPktWindowUp, meanPktSizeLastWindowUp, 0, meanIATLastWindowUp,  0, recv_sumPktsSizeWindowUp]
-				//              ]
-
-				ip_a = (struct ip_v4 *) &p_cg->first_ip_dd;
-				ip_b = (struct ip_v4 *) &p_cg->second_ip_ad;
-
-				//convert values from network order to host order
-				d_cg.nb_pkt_window_down  = ntohs( p_cg->nb_pkt_window_down );
-				d_cg.nb_pkt_window_up    = ntohs( p_cg->nb_pkt_window_up );
-				d_cg.sum_iat_window_down = ntohl( p_cg->sum_iat_window_down );
-				d_cg.sum_iat_window_up   = ntohl( p_cg->sum_iat_window_up );
-				d_cg.sum_pkts_size_window_down = ntohl( p_cg->sum_pkts_size_window_down );
-				d_cg.sum_pkts_size_window_up   = ntohl( p_cg->sum_pkts_size_window_up );
-
-
-				//# We received IAT values on the 64µs basis
-				//# Need to multiply it by 64 to have the correct value on a 1µs basis
-				d_cg.sum_iat_window_up *= 64;
-				d_cg.sum_iat_window_down *= 64;
-
-				//calculate other synthetic values
-				uint32_t mean_pkt_size_last_window_up = 0;
-				if( d_cg.nb_pkt_window_up != 0 )
-					mean_pkt_size_last_window_up = d_cg.sum_pkts_size_window_up / d_cg.nb_pkt_window_up;
-				uint32_t mean_pkt_size_last_window_down = 0;
-				if( d_cg.nb_pkt_window_down != 0 )
-					mean_pkt_size_last_window_down = d_cg.sum_pkts_size_window_down / d_cg.nb_pkt_window_down;
-
-				//not sure why does it take this default value: https://github.com/mosaico-anr/P4_NFV_CG_Detector/blob/main/Controler.py#L78-L84C13
-				uint32_t mean_iat_last_window_up =  32960;
-				if( d_cg.nb_pkt_window_up != 0 ){
-					if( d_cg.nb_pkt_window_up == 1 )
-						mean_iat_last_window_up = 16448;
-					else
-						mean_iat_last_window_up = d_cg.sum_iat_window_up / d_cg.nb_pkt_window_up;
-				}
-
-				uint32_t mean_iat_last_window_down =  32960;
-				if( d_cg.nb_pkt_window_down != 0 ){
-					if( d_cg.nb_pkt_window_down == 1 )
-						mean_iat_last_window_down = 16448;
-					else
-						mean_iat_last_window_down = d_cg.sum_iat_window_down / d_cg.nb_pkt_window_down;
-				}
-
-				string->len = snprintf((char*)string->data, sizeof(string->data),
-						"[\"%d.%d.%d.%d\",2152,\"%d.%d.%d.%d\",8787,"
-						"[%d,%d,0,%d,0,%d]," //down
-						"[%d,%d,0,%d,0,%d]]" //up
-						,
-						ip_a->a, ip_a->b, ip_a->c, ip_a->d, ip_b->a, ip_b->b, ip_b->c, ip_b->d,
-						//down
-						d_cg.nb_pkt_window_down, mean_pkt_size_last_window_down, mean_iat_last_window_down, d_cg.sum_pkts_size_window_down,
-						// up
-						d_cg.nb_pkt_window_up, mean_pkt_size_last_window_up, mean_iat_last_window_up, d_cg.sum_pkts_size_window_up
-					);
+			if( _extraction_int_cloud_gaming_report_att(p_cg, ipacket, index, extracted_data) == FOUND)
 				return FOUND;
-			}
 		}
 	}
 
@@ -440,7 +478,6 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_HOP_L4S_MARK,              MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_HOP_L4S_DROP,              MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
 	def_att( INT_HOP_L4S_MARK_PROBABILITY,  MMT_U32_ARRAY, sizeof(mmt_u32_array_t) ),
-	def_att( INT_L4S_CLOUD_GAMING,          MMT_STRING_LONG_DATA, sizeof(mmt_string_data_t) ),
 
 	def_att( INT_IS_SWITCH_ID,          MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_IN_EGRESS_PORT_ID , MMT_U8_DATA, sizeof(uint8_t) ),
@@ -451,7 +488,18 @@ static attribute_metadata_t _attributes_metadata[] = {
 	def_att( INT_IS_LV2_IN_EGRESS_PORT_ID, MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_TX_UTILIZE ,        MMT_U8_DATA, sizeof(uint8_t) ),
 	def_att( INT_IS_L4S_MARK_DROP ,     MMT_U8_DATA, sizeof(uint8_t) ),
-	def_att( INT_IS_L4S_CLOUD_GAMING ,  MMT_U8_DATA, sizeof(uint8_t) )
+	//cloud gaming data
+	def_att( INT_IS_CLOUD_GAMING ,      MMT_U8_DATA, sizeof(uint8_t) ),
+	def_att( INT_CLOUD_GAMING_IP_SRC,   MMT_DATA_IP_ADDR, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_IP_DST,   MMT_DATA_IP_ADDR, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_NB_PKT_DOWN,         MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_MEAN_PKT_SIZE_DOWN,  MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_MEAN_IAT_DOWN,       MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_SUM_PKT_SIZE_DOWN,   MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_NB_PKT_UP,           MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_MEAN_PKT_SIZE_UP,    MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_MEAN_IAT_UP,         MMT_U32_DATA, sizeof(uint32_t) ),
+	def_att( INT_CLOUD_GAMING_SUM_PKT_SIZE_UP,     MMT_U32_DATA, sizeof(uint32_t) )
 };
 
 
