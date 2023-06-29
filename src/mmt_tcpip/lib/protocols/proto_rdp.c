@@ -2,6 +2,7 @@
 #include "plugin_defs.h"
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
+#include <inttypes.h>
 
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
@@ -13,7 +14,7 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 static void mmt_int_rdp_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_RDP, MMT_REAL_PROTOCOL);
 }
-
+/*
 void mmt_classify_me_rdp(ipacket_t * ipacket, unsigned index) {
     
 
@@ -33,8 +34,14 @@ void mmt_classify_me_rdp(ipacket_t * ipacket, unsigned index) {
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RDP);
 }
+*/
 
 int mmt_check_rdp(ipacket_t * ipacket, unsigned index) {
+    const uint8_t *pdata;
+    uint16_t tpkt_length;
+    //
+    // [ETH - IP -] TCP -- PAYLOAD
+    //   we are here -----^
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
@@ -42,7 +49,7 @@ int mmt_check_rdp(ipacket_t * ipacket, unsigned index) {
 
         
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
+        /*
         if (packet->payload_packet_len > 10
                 && get_u8(packet->payload, 0) > 0
                 && get_u8(packet->payload, 0) < 4 && get_u16(packet->payload, 2) == ntohs(packet->payload_packet_len)
@@ -55,6 +62,31 @@ int mmt_check_rdp(ipacket_t * ipacket, unsigned index) {
         } else {
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RDP);
         }
+        */
+
+        //for TPKT header, we should check other header types
+        pdata = packet->payload;
+        //1. first byte must be 00000011: T-Rect ;;;
+        if( pdata[0] != 0b00000011 )
+           goto _not_found_rdp;
+
+        //2. reserve should be 0
+        if( pdata[1] != 0 )
+            goto _not_found_rdp;
+        //3. TPKT length:
+        tpkt_length = ntohs( *(uint16_t *) &pdata[2] );
+        printf("packet id = %"PRIu64"  TPKT length = %d\n", ipacket->packet_id, tpkt_length );
+        if( !(tpkt_length > 7) )
+          goto _not_found_rdp;
+
+        //check other signatures
+        MMT_LOG(PROTO_RDP, MMT_LOG_DEBUG, "RDP detected.\n");
+        mmt_int_rdp_add_connection(ipacket);
+        return 1;
+
+
+        _not_found_rdp:
+		MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RDP);
     }
     return 0;
 }
