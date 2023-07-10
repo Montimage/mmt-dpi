@@ -137,10 +137,10 @@ static int _extraction_int_cloud_gaming_report_att(const cloud_gaming_data_t *p_
 		//              ]
 	switch( extracted_data->field_id ){
 	case INT_CLOUD_GAMING_IP_SRC:
-		(*(uint8_t *) extracted_data->data) = p_cg->first_ip_dd;
+		(*(uint32_t *) extracted_data->data) = p_cg->first_ip_dd;
 		return FOUND;
 	case INT_CLOUD_GAMING_IP_DST:
-		(*(uint8_t *) extracted_data->data) = p_cg->second_ip_ad;
+		(*(uint32_t *) extracted_data->data) = p_cg->second_ip_ad;
 		return FOUND;
 	}
 
@@ -199,29 +199,29 @@ static int _extraction_int_cloud_gaming_report_att(const cloud_gaming_data_t *p_
 
 	switch( extracted_data->field_id ){
 	case INT_CLOUD_GAMING_NB_PKT_DOWN:
-		(*(uint8_t *) extracted_data->data) = d_cg.nb_pkt_window_down;
+		(*(uint32_t *) extracted_data->data) = d_cg.nb_pkt_window_down;
 		return FOUND;
 	case INT_CLOUD_GAMING_MEAN_PKT_SIZE_DOWN:
-		(*(uint8_t *) extracted_data->data) = mean_pkt_size_last_window_down;
+		(*(uint32_t *) extracted_data->data) = mean_pkt_size_last_window_down;
 		return FOUND;
 	case INT_CLOUD_GAMING_MEAN_IAT_DOWN:
-		(*(uint8_t *) extracted_data->data) = mean_iat_last_window_down;
+		(*(uint32_t *) extracted_data->data) = mean_iat_last_window_down;
 		return FOUND;
 	case INT_CLOUD_GAMING_SUM_PKT_SIZE_DOWN:
-		(*(uint8_t *) extracted_data->data) = d_cg.sum_pkts_size_window_down;
+		(*(uint32_t *) extracted_data->data) = d_cg.sum_pkts_size_window_down;
 		return FOUND;
 
 	case INT_CLOUD_GAMING_NB_PKT_UP:
-		(*(uint8_t *) extracted_data->data) = d_cg.nb_pkt_window_up;
+		(*(uint32_t *) extracted_data->data) = d_cg.nb_pkt_window_up;
 		return FOUND;
 	case INT_CLOUD_GAMING_MEAN_PKT_SIZE_UP:
-		(*(uint8_t *) extracted_data->data) = mean_pkt_size_last_window_up;
+		(*(uint32_t *) extracted_data->data) = mean_pkt_size_last_window_up;
 		return FOUND;
 	case INT_CLOUD_GAMING_MEAN_IAT_UP:
-		(*(uint8_t *) extracted_data->data) = mean_iat_last_window_up;
+		(*(uint32_t *) extracted_data->data) = mean_iat_last_window_up;
 		return FOUND;
 	case INT_CLOUD_GAMING_SUM_PKT_SIZE_UP:
-		(*(uint8_t *) extracted_data->data) = d_cg.sum_pkts_size_window_up;
+		(*(uint32_t *) extracted_data->data) = d_cg.sum_pkts_size_window_up;
 		return FOUND;
 	}
 
