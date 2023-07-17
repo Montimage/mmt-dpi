@@ -1,5 +1,9 @@
 RELEASE NOTES
 ---
+
+Version 1.7.10 (17 Jully 2023 - by HN)
+- fixed bug in INT protocol when parsing cloudgaming metadata
+
 Version 1.7.9 (01 Juin 2023 - by HN)
 - add HTTP2 mutation functions
 - update Inband Network Telemetry protocol to parse 10th attribute
