@@ -1,4 +1,4 @@
-VERSION  := 1.7.9
+VERSION  := 1.7.10
 GIT_VERSION := $(shell git log --format="%h" -n 1)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
