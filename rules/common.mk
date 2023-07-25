@@ -1,4 +1,4 @@
-VERSION  := 1.7.9-sancus
+VERSION  := 1.7.10
 GIT_VERSION := $(shell git log --format="%h" -n 1)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
@@ -285,7 +285,7 @@ $(SDK_EXAMPLES_SRC): $(SDKXAM)
 
 %.o: %.c
 	@echo "[COMPILE] $(notdir $@)"
-	$(QUIET) $(CC) $(CFLAGS) -I. -I/usr/include/nghttp2 -lnghttp2 -o $@ -lnghttp2  -c $<
+	$(QUIET) $(CC) $(CFLAGS) -I. -o $@ -c $<
 
 %.o: %.cc
 	@echo "[COMPILE] $(notdir $@)"
@@ -294,4 +294,3 @@ $(SDK_EXAMPLES_SRC): $(SDKXAM)
 %.o: %.cpp
 	@echo "[COMPILE] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -I. -o $@ -c $<
-
