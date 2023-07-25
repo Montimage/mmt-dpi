@@ -380,7 +380,7 @@ int http2_stream_id_extraction(const ipacket_t *packet, unsigned proto_index,
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	int attribute_offset = (extracted_data->position_in_packet);
 
-	proto_offset += attribute_offset;
+	proto_offset =+ attribute_offset;
 	if( proto_offset >=packet->p_hdr->caplen )
 		return 0;
 	*((unsigned int*) extracted_data->data) = (ntohl( *((unsigned int* ) &packet->data[proto_offset])));
