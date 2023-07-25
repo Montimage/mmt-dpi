@@ -389,7 +389,7 @@ int http2_stream_id_extraction(const ipacket_t *packet, unsigned proto_index,
 
 int _http2_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 	//packet offset of http2 header
-	int proto_offset = get_packet_offset_at_index(ipacket, index);
+	int proto_offset = get_packet_offset_at_index(ipacket, index+1);
 	int http2_header_size = 0;
 	const char *payload = (char*) &ipacket->data[proto_offset];
 	const char *signature_http2 = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
@@ -418,7 +418,7 @@ int _http2_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		unknown_proto.offset = http2_header_size;
 		unknown_proto.proto_id = 0; //unknown protocol id
 		unknown_proto.status = Classified;
-		return set_classified_proto(ipacket, index+1, unknown_proto);
+		return set_classified_proto(ipacket, index+2, unknown_proto);
 	}
 }
 
@@ -447,12 +447,12 @@ int init_http2_proto_struct() {
 		}
 
 		if (!register_classification_function_with_parent_protocol(PROTO_TCP,
-				mmt_check_http2, 9)) {
+				_http2_classify_next_proto, 9)) {
 			fprintf(stderr,
 					"[err] init_http2_proto_struct - cannot register_classification_function_with_parent_protocol\n");
 		};
 
-		register_classification_function(protocol_struct, _http2_classify_next_proto);
+		//register_classification_function(protocol_struct, _http2_classify_next_proto);
 
 		register_protocol_stack(PROTO_HTTP2, PROTO_HTTP2_ALIAS,
 				http2_stack_classification);
