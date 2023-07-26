@@ -380,7 +380,7 @@ int http2_stream_id_extraction(const ipacket_t *packet, unsigned proto_index,
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	int attribute_offset = (extracted_data->position_in_packet);
 
-	proto_offset =+ attribute_offset;
+	proto_offset += attribute_offset;
 	if( proto_offset >=packet->p_hdr->caplen )
 		return 0;
 	*((unsigned int*) extracted_data->data) = (ntohl( *((unsigned int* ) &packet->data[proto_offset])));
@@ -740,7 +740,7 @@ int update_http2_payload(char *data_out, uint32_t data_size, const ipacket_t *pa
 	}
 	int mask = 0x00FFFFFF; // mask to set last 2 bytes to 0
 	old_payload_length = old_payload_length & mask; // put to 0 last byte
-	//printf("update_http2_payload payload_length %d\n",payload_length );
+	//printf("update_http2_payload payload_length %d\n",old_payload_length );
 	//printf("%d \n",data_out[payload_offset]);
 	// printf("update_http2_payload data_out after modification");
 	//for(int i=payload_offset;i<payload_offset+payload_length;i++)
