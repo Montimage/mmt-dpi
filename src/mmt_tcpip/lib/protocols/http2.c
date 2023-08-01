@@ -447,7 +447,7 @@ int init_http2_proto_struct() {
 		}
 
 		if (!register_classification_function_with_parent_protocol(PROTO_TCP,
-				_http2_classify_next_proto, 9)) {
+				mmt_check_http2, 9)) {
 			fprintf(stderr,
 					"[err] init_http2_proto_struct - cannot register_classification_function_with_parent_protocol\n");
 		};
