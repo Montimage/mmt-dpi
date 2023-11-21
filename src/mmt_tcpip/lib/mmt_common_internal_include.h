@@ -2279,7 +2279,7 @@ extern "C" {
     int init_proto_int_struct();
     int init_proto_dtls_struct();
     int init_proto_quic_ietf_struct();
-    
+    int inti_proto_vxlan_struct();
     
     int init_http2_proto_struct() ;
     ////////// END OF GENERATED CODE ////////////////

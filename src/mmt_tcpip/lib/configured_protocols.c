@@ -3910,7 +3910,11 @@ int init_tcpip_plugin() {
 		fprintf(stderr, "Error initializing protocol PROTO_QUIC_IETF\n Exiting\n");
 		exit(0);
 	}
-	    if (!init_http2_proto_struct()) {
+    if (!init_proto_vxlan_struct()) {
+		fprintf(stderr, "Error initializing protocol PROTO_VXLAN_GBP\n Exiting\n");
+		exit(0);
+	}
+	if (!init_http2_proto_struct()) {
         fprintf(stderr, "Error initializing protocol PROTO_HTTP2\n Exiting\n");
         exit(0);
     }

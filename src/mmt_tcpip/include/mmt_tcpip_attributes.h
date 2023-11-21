@@ -1368,6 +1368,17 @@ enum vlan_8021q_attributes {
 #define VLAN_VID_ALIAS  "vid"  //< VLAN identifier
 //////////// END OF 802.1Q PROTOCOL ATTRIBUTES ////////////////////
 
+//////////// VXLAN PROTOCOL ATTRIBUTES ////////////////////
+enum vxlan_gbp_attributes {
+	VXLAN_GBP_FLAG = 1,
+	VXLAN_GBP_GROUP_POLICY,
+	VXLAN_GBP_NETWORK_ID
+};
+#define VXLAN_GBP_FLAG_ALIAS       "flag"
+#define VXLAN_GBP_GROUP_POLI_ALIAS "gpolicy"
+#define VXLAN_GBP_NETWORK_ID_ALIAS "vni"
+//////////// END OF VXLAN PROTOCOL ATTRIBUTES ////////////////////
+///
 #ifdef __cplusplus
 }
 #endif
