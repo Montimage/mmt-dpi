@@ -2,6 +2,26 @@
 #include "plugin_defs.h"
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
+#include <inttypes.h>
+
+/*
+
+   +--------+--------+----------------+-----------....---------------+
+   |version |reserved| packet length  |             TPDU             |
+   +----------------------------------------------....---------------+
+   <8 bits> <8 bits> <   16 bits    > <       variable length       >
+
+    - Protocol Version Number
+     Value:  3
+
+    - Reserved
+     Value:  0
+
+    - Packet Length
+     Value:  Length of the entire TPKT in octets, including Packet
+             Header
+
+*/
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
@@ -39,25 +59,46 @@ int mmt_check_tpkt(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
         uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+        const uint8_t *pdata;
 
         if (payload_len == 0) {
-            return 0;
+            printf("Lenght=0\n");
+            goto _not_found_tpkt;
         }
 
         if (packet->tcp != NULL) {
-            if (ntohs(packet->tcp->dest) == 102 || ntohs(packet->tcp->source) == 102) {
-                int tpkt_offset = get_packet_offset_at_index(ipacket, index + 1);
-                struct tpkthdr * tpkt_header = (struct tpkthdr *)&ipacket->data[tpkt_offset];
-                if (tpkt_header != NULL && ntohs(tpkt_header->length) == payload_len) {
-                    int l3_offset = get_packet_offset_at_index(ipacket, index);
-                    classified_proto_t tpkt_proto = tpkt_stack_classification(ipacket);
-                    tpkt_proto.offset = tpkt_offset - l3_offset;
-                    set_classified_proto(ipacket, index + 1, tpkt_proto);
-                    return 1;
-                }
+
+            int tpkt_offset = get_packet_offset_at_index(ipacket, index + 1);
+            struct tpkthdr * tpkt_header = (struct tpkthdr *)&ipacket->data[tpkt_offset];
+            printf("tpktheader version is: %"PRIu8" - reserved %"PRIu8" - lenght %"PRIu16"\n\n", tpkt_header->version, tpkt_header->reserved, tpkt_header->length );
+
+            pdata = packet->payload;
+            if( pdata[0] != 0b00000011 ){
+                printf("First byte not 3\n");
+                goto _not_found_tpkt;
+
             }
+
+            //2. reserve should be 0
+            if( pdata[1] != 0 ){
+                printf("Second byte not 0\n");
+                goto _not_found_tpkt;
+
+            }
+            printf("Could be TPKT\n");
+            if (tpkt_header != NULL && ntohs(tpkt_header->length) == payload_len) {
+                int l3_offset = get_packet_offset_at_index(ipacket, index);
+                classified_proto_t tpkt_proto = tpkt_stack_classification(ipacket);
+                tpkt_proto.offset = tpkt_offset - l3_offset;
+                set_classified_proto(ipacket, index + 1, tpkt_proto);
+                printf("TPKT detected\n");    
+
+                return 1;
+            }
+
         }
     }
+    _not_found_tpkt:
     MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_TPKT);
     return 0;
 }
