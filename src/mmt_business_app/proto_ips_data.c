@@ -13,7 +13,14 @@
 /*
 TrolleyPos: 32.981, Hoistpos: 38.042, NoOfMarkers: 3, m1: (58901,70912) , m2: (72175,70950) , m3: (65803,71939) , m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)
 TrolleyPos: 32.978, Hoistpos: 38.124, NoOfMarkers: 3, m1: (58843,70948) , m2: (72122,70987) , m3: (65767,71983) , m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)
+T:2023-08-03 15:21:25.108736, PVAct: 1 , MhPos: 35.000, TrPos: -12.000, GaPos: 0.000, MhSpdRef: 0.0, TrSpdRef: 0.0, GaSpdRef: 0.0, MhSpdAct: 0.0, TrSpdAct: 0.0, GaSpdAct: 0.0, MhStopOk: False, TrStopOk: False, GaStopOk: False
+
+
  */
+
+#define HAS_STR( x ) (x[0] != '\0') //check if string is not empty
+#define ASSIGN_STR( x, y, len ) while( HAS_STR(y) ){ memcpy(x, y, len); break; }
+
 static int _ips_data_classify_next_proto(ipacket_t *packet, unsigned index) {
 	int offset = get_packet_offset_at_index(packet, index);
 	const int data_len = packet->p_hdr->caplen - offset;
@@ -57,8 +64,10 @@ static inline void _assign_uint32_t(const char* ptr, attribute_t * extracted_dat
 }
 
 static inline void _assign_float(const char* ptr, attribute_t * extracted_data){
-	if( ptr )
+	if( ptr ){
 		*((float *) extracted_data->data) = atof( ptr );
+	}
+		
 	else
 		*((float *) extracted_data->data) = 0;
 }
@@ -66,29 +75,23 @@ static inline void _assign_float(const char* ptr, attribute_t * extracted_data){
 static inline void _assign_date(const char* ptr, attribute_t * extracted_data){
 	if( ptr ){
 
-		struct tm timestamp; // struttura per memorizzare le informazioni sulla data e l'ora
-		memset(&timestamp, 0, sizeof(struct tm)); // inizializza la struttura a zero
-		strptime(ptr, "%Y-%m-%d %H:%M:%S", &timestamp); // analizza la stringa e memorizza le informazioni nella struttura
-
-		// calcola i decimali a partire dalla stringa
+		struct tm timestamp; // structure to store info about date and hour
+		memset(&timestamp, 0, sizeof(struct tm)); 
+		strptime(ptr, "%Y-%m-%d %H:%M:%S", &timestamp); // analyse memory locaction and store it in the struct
 		double decimal_seconds = strtod(strchr(ptr, '.') + 1, NULL) / 1000000.0;
-
-		// crea una struttura timeval a partire dalle informazioni sulla data e l'ora
 		struct timeval tv;
 		tv.tv_sec = mktime(&timestamp);
 		tv.tv_usec = (long)(decimal_seconds * 1000000.0);
-		memcpy(extracted_data->data, &tv, sizeof(struct timeval)); //26 since is the length of the entire date 
-		//printf("-------------Timeval: %ld.%06ld-------------\n", (long) tv.tv_sec, (long) tv.tv_usec);
-		//printf("%d", ((struct timeval *)extracted_data->data)->tv_sec);
-		//printf("-------------extracted_data->data: %s---------------- \n", extracted_data->data);
+		memcpy(extracted_data->data, &tv, sizeof(struct timeval));
 	}
 	else
-		printf("PROBLEMI PROBLEMI PROBLEMI, %s", &ptr);
+		printf("Problems while reading pointer location, %s", &ptr);
 
 }
 
 static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
+
 	int offset = get_packet_offset_at_index(packet, proto_index);
 	const int data_len = packet->p_hdr->caplen - offset;
 	const char* data = (char *)&packet->data[offset];
@@ -96,31 +99,29 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	if( data_len <= 0 )
 		return 0;
 	switch( extracted_data->field_id ){
-	case IPS_DATA_TROLLEY_POS: {
-		ptr = _get_pos( data_len, data, "TrolleyPos:" );
+	case IPS_DATA_TROLLEY_POS:
+		ptr = _get_pos( data_len, data, "TrPos:" );
 		_assign_float( ptr, extracted_data );
-/*		float f = atof(ptr);
-	 	static float a = 0;
-		static int counter=0;
-		a += f;
-		counter++;
-		if( counter >= 10 ){
-			(*(float*) extracted_data->data) = a/counter;
-			counter = 0;
-			return 1;
-		}else
-			return 0;
-			*/
+		// printf("STO PRENDENDO: %f\n", atof( ptr ));
+
 		break;
-	}
 
 	case IPS_DATA_HOIST_POS:
-		ptr = _get_pos( data_len, data, "Hoistpos:" );
+		ptr = _get_pos( data_len, data, "MhPos:" );
 		_assign_float( ptr, extracted_data );
 		break;
-
+	case IPS_DATA_GANTRY_POS:
+		ptr = _get_pos( data_len, data, "GaPos:" );
+		_assign_float( ptr, extracted_data );
+		break;
+	
 	case IPS_DATA_NO_OF_MARKERS:
 		ptr = _get_pos( data_len, data, "NoOfMarkers:" );
+		if( ptr )
+			*((uint16_t *) extracted_data->data) = atoi( ptr );
+		break;
+	case IPS_DATA_PVACT:
+		ptr = _get_pos( data_len, data, "PVAct:" );
 		if( ptr )
 			*((uint16_t *) extracted_data->data) = atoi( ptr );
 		break;
@@ -196,30 +197,62 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		break;
 	case IPS_DATA_GASPD:
 		ptr = _get_pos( data_len, data, "GaSpd: " );
-		if (ptr == NULL )
-			printf("NULLLLLLLLLLLLLLLLLLLLLLLLLLLL - GA_SPEED NOT FOUND");
 		_assign_float( ptr, extracted_data );
 		break;
 	case IPS_DATA_TRSPD:
 		ptr = _get_pos( data_len, data, "TrSpd: " );
-		if (ptr == NULL )
-			printf("NULLLLLLLLLLLLLLLLLLLLLLLLLLLL - TR_SPEED NOT FOUND");
 		_assign_float( ptr, extracted_data );
 		break;
 	case IPS_DATA_MHSPD:
 		ptr = _get_pos( data_len, data, "MhSpd: " );
-		if (ptr == NULL )
-			printf("NULLLLLLLLLLLLLLLLLLLLLLLLLLLL - MH_SPEED NOT FOUND");
 		_assign_float( ptr, extracted_data );
 		break;	
 	case IPS_DATA_TIMESTAMP:
 		ptr = _get_pos( data_len, data, "T:" );
-		if (ptr == NULL )
-			printf("NULLLLLLLLLLLLLLLLLLLLLLLLLLLL - TIMESTAMP NOT FOUND");
 		_assign_date( ptr, extracted_data );
 		break;		
 	
 	
+
+	case IPS_DATA_TROLLEY_SPD_REF:
+		ptr = _get_pos( data_len, data, "TrSpdRef:" );
+		_assign_float( ptr, extracted_data );
+		break;
+
+	case IPS_DATA_HOIST_SPD_REF:
+		ptr = _get_pos( data_len, data, "MhSpdRef:" );
+		_assign_float( ptr, extracted_data );
+		break;
+	case IPS_DATA_GANTRY_SPD_REF:
+		ptr = _get_pos( data_len, data, "GaSpdRef:" );
+		_assign_float( ptr, extracted_data );
+		break;
+	case IPS_DATA_TROLLEY_SPD_ACT:
+		ptr = _get_pos( data_len, data, "TrSpdAct:" );
+		_assign_float( ptr, extracted_data );
+		break;
+
+	case IPS_DATA_HOIST_SPD_ACT:
+		ptr = _get_pos( data_len, data, "MhSpdAct:" );
+		_assign_float( ptr, extracted_data );
+		break;
+	case IPS_DATA_GANTRY_SPD_ACT:
+		ptr = _get_pos( data_len, data, "GaSpdAct:" );
+		_assign_float( ptr, extracted_data );
+		break;
+	case IPS_DATA_TROLLEY_STOP:
+		ptr = _get_pos( data_len, data, "TrStopOk: " );
+		memcpy(extracted_data->data, ptr, 5);
+		break;
+
+	case IPS_DATA_HOIST_STOP:
+		ptr = _get_pos( data_len, data, "MhStopOk: " );
+		memcpy(extracted_data->data, ptr, 5);
+		break;
+	case IPS_DATA_GANTRY_STOP:
+		ptr = _get_pos( data_len, data, "GaStopOk: " );
+		memcpy(extracted_data->data, ptr, 5);
+		break;
 	}
 	return 1;
 }
@@ -227,6 +260,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 static attribute_metadata_t _attributes_metadata[] = {
 		{IPS_DATA_TROLLEY_POS,  IPS_DATA_TROLLEY_POS_ALIAS,  MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		{IPS_DATA_HOIST_POS,    IPS_DATA_HOIST_POS_ALIAS,    MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_GANTRY_POS,    IPS_DATA_GANTRY_POS_ALIAS,    MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		//Normally 6 markers are logged but during the scenario up to 25 markers were detected. => uint16_t is larger enough
 		{IPS_DATA_NO_OF_MARKERS,IPS_DATA_NO_OF_MARKERS_ALIAS,MMT_U16_DATA,  sizeof( uint16_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		//Markers [m1 … m6] (x,y)-coordinates in pixels in a coordinate system 0-131072 in both x and y-axis
@@ -255,8 +289,17 @@ static attribute_metadata_t _attributes_metadata[] = {
 		{IPS_DATA_MHSPD,        IPS_DATA_MHSPD_ALIAS,        MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 		//change 											 type of data,	  sizeof timestamp
 		{IPS_DATA_TIMESTAMP,    IPS_DATA_TIMESTAMP_ALIAS,    MMT_DATA_TIMEVAL,  sizeof (struct timeval),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_TROLLEY_SPD_REF,  IPS_DATA_TROLLEY_SPD_REF_ALIAS,  MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_HOIST_SPD_REF,    IPS_DATA_HOIST_SPD_REF_ALIAS,    MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_GANTRY_SPD_REF,    IPS_DATA_GANTRY_SPD_REF_ALIAS,    MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_TROLLEY_SPD_ACT,  IPS_DATA_TROLLEY_SPD_ACT_ALIAS,  MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_HOIST_SPD_ACT,    IPS_DATA_HOIST_SPD_ACT_ALIAS,    MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_GANTRY_SPD_ACT,    IPS_DATA_GANTRY_SPD_ACT_ALIAS,    MMT_DATA_FLOAT,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_TROLLEY_STOP,  IPS_DATA_TROLLEY_STOP_ALIAS,  MMT_BINARY_DATA,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_HOIST_STOP,    IPS_DATA_HOIST_STOP_ALIAS,    MMT_BINARY_DATA,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_GANTRY_STOP,    IPS_DATA_GANTRY_STOP_ALIAS,    MMT_BINARY_DATA,  sizeof( float ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+		{IPS_DATA_PVACT,  IPS_DATA_PVACT_ALIAS,  MMT_U16_DATA,  sizeof( uint16_t ),  POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 
-		
 };
 
 static classified_proto_t _ips_data_stack_classification(ipacket_t * ipacket) {

@@ -11,13 +11,26 @@ An example of a CSV file from VeriDevOps
 TrolleyPos: 32.981, Hoistpos: 38.042, NoOfMarkers: 3, m1: (58901,70912) , m2: (72175,70950) , m3: (65803,71939) , m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)
 TrolleyPos: 32.978, Hoistpos: 38.124, NoOfMarkers: 3, m1: (58843,70948) , m2: (72122,70987) , m3: (65767,71983) , m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)
 TrolleyPos: 32.978, Hoistpos: 38.124, NoOfMarkers: 3, m1: (58843,70948) , m2: (72122,70987) , m3: (65767,71983) , m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)
+T:2023-08-03 15:21:25.108736, PVAct: 1 , MhPos: 35.000, TrPos: -12.000, GaPos: 0.000, MhSpdRef: 0.0, TrSpdRef: 0.0, GaSpdRef: 0.0, MhSpdAct: 0.0, TrSpdAct: 0.0, GaSpdAct: 0.0, MhStopOk: False, TrStopOk: False, GaStopOk: False
+
  */
 #ifndef SRC_MMT_BUSINESS_APP_INCLUDE_IPS_DATA_H_
 #define SRC_MMT_BUSINESS_APP_INCLUDE_IPS_DATA_H_
 
-#define IPS_DATA_TROLLEY_POS_ALIAS    "trolley_pos"
-#define IPS_DATA_HOIST_POS_ALIAS      "hoist_pos"
+#define IPS_DATA_TROLLEY_POS_ALIAS    "TrPos"
+#define IPS_DATA_HOIST_POS_ALIAS      "MhPos"
+#define IPS_DATA_GANTRY_POS_ALIAS     "GaPos"
+#define IPS_DATA_TROLLEY_SPD_REF_ALIAS    "TrSpdRef"
+#define IPS_DATA_HOIST_SPD_REF_ALIAS      "MhSpdRef"
+#define IPS_DATA_GANTRY_SPD_REF_ALIAS     "GaSpdRef"
+#define IPS_DATA_TROLLEY_SPD_ACT_ALIAS    "TrSpdAct"
+#define IPS_DATA_HOIST_SPD_ACT_ALIAS      "MhSpdAct"
+#define IPS_DATA_GANTRY_SPD_ACT_ALIAS     "GaSpdAct"
+#define IPS_DATA_TROLLEY_STOP_ALIAS    "TrStopOk"
+#define IPS_DATA_HOIST_STOP_ALIAS      "MhStopOk"
+#define IPS_DATA_GANTRY_STOP_ALIAS     "GaStopOk"
 #define IPS_DATA_NO_OF_MARKERS_ALIAS  "no_of_marker"
+#define IPS_DATA_PVACT_ALIAS  "PVAct"
 #define IPS_DATA_M1_X_ALIAS           "m1_x"
 #define IPS_DATA_M1_Y_ALIAS           "m1_y"
 #define IPS_DATA_M2_X_ALIAS           "m2_x"
@@ -36,10 +49,22 @@ TrolleyPos: 32.978, Hoistpos: 38.124, NoOfMarkers: 3, m1: (58843,70948) , m2: (7
 #define IPS_DATA_MHSPD_ALIAS          "mh_speed"
 #define IPS_DATA_TIMESTAMP_ALIAS      "timestamp"
 
+#define IPS_DATA_TIMESTAMP_ALIAS	"timestamp"
 
 enum {
 	IPS_DATA_TROLLEY_POS = 1,
 	IPS_DATA_HOIST_POS,
+	IPS_DATA_GANTRY_POS,
+	IPS_DATA_TROLLEY_SPD_REF,
+	IPS_DATA_HOIST_SPD_REF,
+	IPS_DATA_GANTRY_SPD_REF,
+	IPS_DATA_TROLLEY_SPD_ACT,
+	IPS_DATA_HOIST_SPD_ACT,
+	IPS_DATA_GANTRY_SPD_ACT,
+	IPS_DATA_TROLLEY_STOP,
+	IPS_DATA_HOIST_STOP,
+	IPS_DATA_GANTRY_STOP,
+	IPS_DATA_PVACT, 
 	IPS_DATA_NO_OF_MARKERS,
 	IPS_DATA_M1_X,
 	IPS_DATA_M1_Y,
