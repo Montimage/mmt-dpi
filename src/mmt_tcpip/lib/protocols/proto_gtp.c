@@ -89,6 +89,7 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 	struct gtp_header_generic *gtp = (struct gtp_header_generic*)& ipacket->data[offset];
 	int gtp_offset = sizeof (struct gtp_header_generic);
 	int next_ext_header_type = 0, next_ext_header_length = 0;
+	classified_proto_t retval;
 
 	/*
 	- Sequence number
@@ -121,14 +122,31 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 			next_ext_header_type = gtp_binary[gtp_offset - 1]; //last byte indicate whether the next ext is present
 		}
 	}
-	if (gtp->message_type == 0xff) {
-		classified_proto_t retval;
+
+	// not enough room
+	if( gtp_offset + offset >= ipacket->p_hdr->caplen )
+		return MMT_SKIP;
+
+	switch (gtp->message_type) {
+	case 0xff: //G-PDU
 		retval.proto_id = PROTO_IP;
 		retval.offset = gtp_offset;
 		retval.status = Classified;
 		return set_classified_proto(ipacket, index + 1, retval);
+	case 1: //echo request
+	case 2: //echo response
+	default: //TODO: to go into detail of each GTP message
+		//MMT initializes the proto_path of this packet by the one of the previous packet in the same session
+		//For example, if the previous proto_path = {len = 6, proto_path = {1, 99, 178, 376, 141, 178} //META.ETH.IP.UDP.GTP.IP
+		// mean while, in the current packet we are at GTP (index = 5) and we are going to classify the next protocol which normally is IP
+		//However, this GTP packet is echo request/response ==> no IP after it
+		// ==> thus we need to trunk the length of proto_path
+		if( ipacket->session && ipacket->session->proto_path.len > index + 1 )
+			ipacket->session->proto_path.len = index + 1;
+		return MMT_DROP; //do not classify any further protocol after GTP
 	}
-	return 0;
+
+	return MMT_CONTINUE;
 }
 
 
