@@ -124,7 +124,7 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 	}
 
 	// not enough room
-	if( gtp_offset + offset >= ipacket->p_hdr->caplen )
+	if( gtp_offset + offset > ipacket->p_hdr->caplen )
 		return MMT_SKIP;
 
 	switch (gtp->message_type) {
@@ -143,9 +143,12 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		// ==> thus we need to trunk the length of proto_path
 		if( ipacket->session && ipacket->session->proto_path.len > index + 1 )
 			ipacket->session->proto_path.len = index + 1;
-		return MMT_DROP; //do not classify any further protocol after GTP
+
+		if( gtp_offset + offset >= ipacket->p_hdr->caplen )
+			return MMT_DROP; //do not classify any further protocol after GTP
 	}
 
+	//if we still have room after the GTP
 	return MMT_CONTINUE;
 }
 
