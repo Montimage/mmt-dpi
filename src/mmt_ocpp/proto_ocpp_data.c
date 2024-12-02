@@ -371,7 +371,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 attribute_metadata_t _attributes_metadata[] = {
     {OCPP_DATA_LEVEL_0,                      OCPP_DATA_LEVEL_0_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_INDEX,                        OCPP_DATA_INDEX_ALIAS,                        MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {OCPP_DATA_FLOW_ID,                      OCPP_DATA_FLOW_ID_ALIAS,                      char*,    sizeof(char*),    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {OCPP_DATA_FLOW_ID,                      OCPP_DATA_FLOW_ID_ALIAS,                      MMT_STRING_DATA,    BINARY_64DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_SRC_IP,                       OCPP_DATA_SRC_IP_ALIAS,                       MMT_DATA_IP_ADDR,    IPv4_ALEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_DST_IP,                       OCPP_DATA_DST_IP_ALIAS,                       MMT_DATA_IP_ADDR,    IPv4_ALEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_SRC_PORT,                     OCPP_DATA_SRC_PORT_ALIAS,                     MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
@@ -432,7 +432,7 @@ attribute_metadata_t _attributes_metadata[] = {
 static classified_proto_t _ips_data_stack_classification(ipacket_t * ipacket) {
 	classified_proto_t retval;
 	retval.offset = 0;
-	retval.proto_id = PROTO_IPS_DATA;
+	retval.proto_id = PROTO_OCPP_DATA;
 	retval.status = Classified;
 	return retval;
 }

@@ -18,7 +18,8 @@ libraries: \
 	$(SDKLIB)/$(LIBCORE).so \
 	$(SDKLIB)/$(LIBTCPIP).so \
 	$(SDKLIB)/$(LIBMOBILE).so \
-	$(SDKLIB)/$(LIBBAPP).so
+	$(SDKLIB)/$(LIBBAPP).so \
+	$(SDKLIB)/$(LIBOCPP).so 
 ifdef ENABLESEC
 libraries: \
 	$(SDKLIB)/$(LIBFUZZ).so \
@@ -55,7 +56,14 @@ $(SDKLIB)/$(LIBBAPP).so: $(SDKLIB)/$(LIBBAPP).so.$(VERSION)
 $(SDKLIB)/$(LIBBAPP).so.$(VERSION): $(SDKLIB)/$(LIBBAPP).a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBBAPP).so
-	
+
+# OCPP DATA/PROTOCOLS
+$(SDKLIB)/$(LIBOCPP).so: $(SDKLIB)/$(LIBOCPP).so.$(VERSION)
+
+$(SDKLIB)/$(LIBOCPP).so.$(VERSION): $(SDKLIB)/$(LIBOCPP).a
+	@echo "[LIBRARY] $(notdir $@)"
+	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBOCPP).so
+
 ifdef ENABLESEC
 # FUZZ
 
