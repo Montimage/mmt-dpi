@@ -70,6 +70,26 @@ static inline void _assign_string(const char* ptr, attribute_t * extracted_data)
 		strcpy((char *)extracted_data->data, "");
 }
 
+static inline void _assign_timeval(const char* ptr, attribute_t * extracted_data){
+	char* end;
+    double timestamp;
+    struct timeval tv; 
+    if( ptr ) {
+        timestamp = strtod(ptr, &end);      
+        
+        double fractional_part;
+        tv.tv_sec = (time_t)timestamp; // Integer seconds part
+        fractional_part = timestamp - tv.tv_sec; // Fractional seconds part
+        // Convert fractional part to microseconds
+        tv.tv_usec = (suseconds_t)(fractional_part * 1000000); // 1 second = 1,000,000 microseconds
+        
+        memcpy(extracted_data->data, &tv, sizeof (struct timeval));
+    }else
+        tv.tv_sec = (time_t)(0.0);
+        tv.tv_usec = (suseconds_t)(0.0);
+		memcpy(extracted_data->data, &tv, sizeof (struct timeval));
+}
+
 static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
 	int offset = get_packet_offset_at_index(packet, proto_index);
@@ -182,12 +202,12 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
     case OCPP_DATA_FLOW_START_TIMESTAMP:
         ptr = _get_pos(data_len, data, "flow_start_timestamp:");
-        _assign_double(ptr, extracted_data);
+        _assign_timeval(ptr, extracted_data);
         break;
 
     case OCPP_DATA_FLOW_END_TIMESTAMP:
         ptr = _get_pos(data_len, data, "flow_end_timestamp:");
-        _assign_double(ptr, extracted_data);
+        _assign_timeval(ptr, extracted_data);
         break;
 
     case OCPP_DATA_FLOW_TOTAL_HTTP_GET_PACKETS:
@@ -390,8 +410,8 @@ attribute_metadata_t _attributes_metadata[] = {
     {OCPP_DATA_FLOW_TOTAL_ECE_FLAG,          OCPP_DATA_FLOW_TOTAL_ECE_FLAG_ALIAS,          MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_FLOW_TOTAL_FIN_FLAG,          OCPP_DATA_FLOW_TOTAL_FIN_FLAG_ALIAS,          MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     //Verify the following fields
-    {OCPP_DATA_FLOW_START_TIMESTAMP,         OCPP_DATA_FLOW_START_TIMESTAMP_ALIAS,         MMT_DATA_FLOAT,   sizeof(float),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {OCPP_DATA_FLOW_END_TIMESTAMP,           OCPP_DATA_FLOW_END_TIMESTAMP_ALIAS,           MMT_DATA_FLOAT,   sizeof(float),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {OCPP_DATA_FLOW_START_TIMESTAMP,         OCPP_DATA_FLOW_START_TIMESTAMP_ALIAS,         MMT_DATA_TIMEVAL,   sizeof(struct timeval),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {OCPP_DATA_FLOW_END_TIMESTAMP,           OCPP_DATA_FLOW_END_TIMESTAMP_ALIAS,           MMT_DATA_TIMEVAL,   sizeof(struct timeval),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     //Verify the above fields
     {OCPP_DATA_FLOW_TOTAL_HTTP_GET_PACKETS,  OCPP_DATA_FLOW_TOTAL_HTTP_GET_PACKETS_ALIAS,  MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_FLOW_TOTAL_HTTP_2XX_PACKETS,  OCPP_DATA_FLOW_TOTAL_HTTP_2XX_PACKETS_ALIAS,  MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
