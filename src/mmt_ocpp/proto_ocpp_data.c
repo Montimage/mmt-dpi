@@ -7,6 +7,7 @@
 
 
 #include "mmt_ocpp_internal.h"
+#include <string.h>
 
 
 /*
@@ -63,32 +64,66 @@ static inline void _assign_float(const char* ptr, attribute_t * extracted_data){
 		*((float *) extracted_data->data) = 0;
 }
 
-static inline void _assign_string(const char* ptr, attribute_t * extracted_data){
-	if( ptr )
-		strcpy((char *)extracted_data->data, ptr);
-	else
-		strcpy((char *)extracted_data->data, "");
+static inline void _assign_string(const char* ptr, attribute_t *extracted_data, char delimiter) {
+    if (ptr) {
+        mmt_binary_data_t *b = (mmt_binary_data_t *)extracted_data->data;
+        
+        // Find the first occurrence of the delimiter in the string
+        const char *delimiter_pos = strchr(ptr, delimiter);
+
+        size_t length;
+        if (delimiter_pos) {
+            // Calculate the length of the substring up to the delimiter
+            length = delimiter_pos - ptr;
+        } else {
+            // If the delimiter is not found, use the full string length or limit to 15
+            length = strlen(ptr);
+            if (length > 15) length = 15;
+        }
+
+        // Set the length of data in the binary data structure
+        b->len = length;
+        
+        // Ensure the length does not exceed the size of the data array
+        if (b->len > sizeof(b->data) - 1) {
+            b->len = sizeof(b->data) - 1;
+        }
+
+        // Copy the substring up to the delimiter
+        memcpy(b->data, ptr, b->len);
+
+        // Ensure null termination
+        b->data[b->len] = '\0';
+    } else {
+        // If ptr is NULL, assign an empty string
+        mmt_binary_data_t *b = (mmt_binary_data_t *)extracted_data->data;
+        b->len = 0;
+        strcpy(b->data, "");
+    }
 }
 
-static inline void _assign_timeval(const char* ptr, attribute_t * extracted_data){
-	char* end;
-    double timestamp;
-    struct timeval tv; 
-    if( ptr ) {
-        timestamp = strtod(ptr, &end);      
+
+
+
+// static inline void _assign_timeval(const char* ptr, attribute_t * extracted_data){
+// 	char* end;
+//     double timestamp;
+//     struct timeval tv; 
+//     if( ptr ) {
+//         timestamp = strtod(ptr, &end);      
         
-        double fractional_part;
-        tv.tv_sec = (time_t)timestamp; // Integer seconds part
-        fractional_part = timestamp - tv.tv_sec; // Fractional seconds part
-        // Convert fractional part to microseconds
-        tv.tv_usec = (suseconds_t)(fractional_part * 1000000); // 1 second = 1,000,000 microseconds
+//         double fractional_part;
+//         tv.tv_sec = (time_t)timestamp; // Integer seconds part
+//         fractional_part = timestamp - tv.tv_sec; // Fractional seconds part
+//         // Convert fractional part to microseconds
+//         tv.tv_usec = (suseconds_t)(fractional_part * 1000000); // 1 second = 1,000,000 microseconds
         
-        memcpy(extracted_data->data, &tv, sizeof (struct timeval));
-    }else
-        tv.tv_sec = (time_t)(0.0);
-        tv.tv_usec = (suseconds_t)(0.0);
-		memcpy(extracted_data->data, &tv, sizeof (struct timeval));
-}
+//         memcpy(extracted_data->data, &tv, sizeof (struct timeval));
+//     }else
+//         tv.tv_sec = (time_t)(0.0);
+//         tv.tv_usec = (suseconds_t)(0.0);
+// 		memcpy(extracted_data->data, &tv, sizeof (struct timeval));
+// }
 
 static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
@@ -98,7 +133,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	const char* ptr;
 	if( data_len <= 0 )
 		return 0;
-	
+
 	switch (extracted_data->field_id) {
     case OCPP_DATA_LEVEL_0:
         ptr = _get_pos(data_len, data, "level_0:");
@@ -112,17 +147,17 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
     case OCPP_DATA_FLOW_ID:
         ptr = _get_pos(data_len, data, "flow_id:");
-        _assign_string(ptr, extracted_data);
+        _assign_string(ptr, extracted_data, ',');
         break;
 
     case OCPP_DATA_SRC_IP:
         ptr = _get_pos(data_len, data, "src_ip:");
-        _assign_string(ptr, extracted_data);
+        _assign_string(ptr, extracted_data, ',');
         break;
 
     case OCPP_DATA_DST_IP:
         ptr = _get_pos(data_len, data, "dst_ip:");
-        _assign_string(ptr, extracted_data);
+        _assign_string(ptr, extracted_data, ',');
         break;
 
     case OCPP_DATA_SRC_PORT:
@@ -202,12 +237,12 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
     case OCPP_DATA_FLOW_START_TIMESTAMP:
         ptr = _get_pos(data_len, data, "flow_start_timestamp:");
-        _assign_timeval(ptr, extracted_data);
+        _assign_string(ptr, extracted_data, ',');
         break;
 
     case OCPP_DATA_FLOW_END_TIMESTAMP:
         ptr = _get_pos(data_len, data, "flow_end_timestamp:");
-        _assign_timeval(ptr, extracted_data);
+        _assign_string(ptr, extracted_data, ',');
         break;
 
     case OCPP_DATA_FLOW_TOTAL_HTTP_GET_PACKETS:
@@ -391,9 +426,11 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 attribute_metadata_t _attributes_metadata[] = {
     {OCPP_DATA_LEVEL_0,                      OCPP_DATA_LEVEL_0_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_INDEX,                        OCPP_DATA_INDEX_ALIAS,                        MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {OCPP_DATA_FLOW_ID,                      OCPP_DATA_FLOW_ID_ALIAS,                      MMT_STRING_DATA,    BINARY_64DATA_TYPE_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {OCPP_DATA_SRC_IP,                       OCPP_DATA_SRC_IP_ALIAS,                       MMT_DATA_IP_ADDR,    IPv4_ALEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {OCPP_DATA_DST_IP,                       OCPP_DATA_DST_IP_ALIAS,                       MMT_DATA_IP_ADDR,    IPv4_ALEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {OCPP_DATA_FLOW_ID,                      OCPP_DATA_FLOW_ID_ALIAS,                      MMT_STRING_DATA,    BINARY_64DATA_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    //Ask about handling IP address
+    {OCPP_DATA_SRC_IP,                       OCPP_DATA_SRC_IP_ALIAS,                       MMT_STRING_DATA,    BINARY_64DATA_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {OCPP_DATA_DST_IP,                       OCPP_DATA_DST_IP_ALIAS,                       MMT_STRING_DATA,    BINARY_64DATA_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    //
     {OCPP_DATA_SRC_PORT,                     OCPP_DATA_SRC_PORT_ALIAS,                     MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_DST_PORT,                     OCPP_DATA_DST_PORT_ALIAS,                     MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_TOTAL_FLOW_PACKETS,           OCPP_DATA_TOTAL_FLOW_PACKETS_ALIAS,           MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
@@ -410,8 +447,10 @@ attribute_metadata_t _attributes_metadata[] = {
     {OCPP_DATA_FLOW_TOTAL_ECE_FLAG,          OCPP_DATA_FLOW_TOTAL_ECE_FLAG_ALIAS,          MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_FLOW_TOTAL_FIN_FLAG,          OCPP_DATA_FLOW_TOTAL_FIN_FLAG_ALIAS,          MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     //Verify the following fields
-    {OCPP_DATA_FLOW_START_TIMESTAMP,         OCPP_DATA_FLOW_START_TIMESTAMP_ALIAS,         MMT_DATA_TIMEVAL,   sizeof(struct timeval),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {OCPP_DATA_FLOW_END_TIMESTAMP,           OCPP_DATA_FLOW_END_TIMESTAMP_ALIAS,           MMT_DATA_TIMEVAL,   sizeof(struct timeval),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    //{OCPP_DATA_FLOW_START_TIMESTAMP,         OCPP_DATA_FLOW_START_TIMESTAMP_ALIAS,         MMT_DATA_TIMEVAL,   sizeof(struct timeval),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    //{OCPP_DATA_FLOW_END_TIMESTAMP,           OCPP_DATA_FLOW_END_TIMESTAMP_ALIAS,           MMT_DATA_TIMEVAL,   sizeof(struct timeval),   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {OCPP_DATA_FLOW_START_TIMESTAMP,         OCPP_DATA_FLOW_START_TIMESTAMP_ALIAS,         MMT_STRING_DATA,   BINARY_64DATA_LEN,   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {OCPP_DATA_FLOW_END_TIMESTAMP,           OCPP_DATA_FLOW_END_TIMESTAMP_ALIAS,           MMT_STRING_DATA,   BINARY_64DATA_LEN,   POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     //Verify the above fields
     {OCPP_DATA_FLOW_TOTAL_HTTP_GET_PACKETS,  OCPP_DATA_FLOW_TOTAL_HTTP_GET_PACKETS_ALIAS,  MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_FLOW_TOTAL_HTTP_2XX_PACKETS,  OCPP_DATA_FLOW_TOTAL_HTTP_2XX_PACKETS_ALIAS,  MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
