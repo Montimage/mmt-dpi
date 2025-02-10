@@ -1,8 +1,8 @@
 /*
- * mmt_business_app_internal.h
+ * mmt_ocpp_internal.h
  *
- *  Created on: Jun 3, 2021
- *      Author: nhnghia
+ *  Created on: Nov 20, 2024
+ *      Author: vietpham
  */
 
 #ifndef SRC_MMT_OCPP_MMT_OCPP_INTERNAL_H_

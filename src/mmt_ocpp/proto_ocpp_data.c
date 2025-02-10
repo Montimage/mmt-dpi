@@ -1,8 +1,8 @@
 /*
- * proto_ips_data.c
+ * proto_ocpp_data.c
  *
- *  Created on: Jun 3, 2021
- *      Author: nhnghia
+ *  Created on: Nov 20, 2024
+ *      Author: vietpham
  */
 
 
@@ -10,11 +10,7 @@
 #include <string.h>
 
 
-/*
-TrolleyPos: 32.981, Hoistpos: 38.042, NoOfMarkers: 3, m1: (58901,70912) , m2: (72175,70950) , m3: (65803,71939) , m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)
-TrolleyPos: 32.978, Hoistpos: 38.124, NoOfMarkers: 3, m1: (58843,70948) , m2: (72122,70987) , m3: (65767,71983) , m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)
- */
-static int _ips_data_classify_next_proto(ipacket_t *packet, unsigned index) {
+static int ocpp_data_classify_next_proto(ipacket_t *packet, unsigned index) {
 	int offset = get_packet_offset_at_index(packet, index);
 	const int data_len = packet->p_hdr->caplen - offset;
 	const char* data = (char *)&packet->data[offset];
@@ -98,7 +94,7 @@ static inline void _assign_string(const char* ptr, attribute_t *extracted_data, 
         // If ptr is NULL, assign an empty string
         mmt_binary_data_t *b = (mmt_binary_data_t *)extracted_data->data;
         b->len = 0;
-        strcpy(b->data, "");
+        //strcpy(b->data, "");
     }
 }
 
@@ -488,7 +484,7 @@ attribute_metadata_t _attributes_metadata[] = {
     {OCPP_DATA_FLOW_MIN_OCPP16_METERVALUE_WH_DIFF, OCPP_DATA_FLOW_MIN_OCPP16_METERVALUE_WH_DIFF_ALIAS, MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
 };
 
-static classified_proto_t _ips_data_stack_classification(ipacket_t * ipacket) {
+static classified_proto_t ocpp_data_stack_classification(ipacket_t * ipacket) {
 	classified_proto_t retval;
 	retval.offset = 0;
 	retval.proto_id = PROTO_OCPP_DATA;
@@ -508,11 +504,11 @@ int init_proto_ocpp_data(){
 			log_err("Cannot register attribute %s.%s", PROTO_OCPP_DATA_ALIAS, _attributes_metadata[i].alias);
 			return PROTO_NOT_REGISTERED;
 		}
-	if( register_classification_function(protocol_struct, _ips_data_classify_next_proto) == 0 )
+	if( register_classification_function(protocol_struct, ocpp_data_classify_next_proto) == 0 )
 		return 0;
 
-	// IPS_DATA is a single, independent protocol, register it as a stack
-	if( register_protocol_stack(PROTO_OCPP_DATA, PROTO_OCPP_DATA_ALIAS, _ips_data_stack_classification) == 0 ){
+	// OCPP_DATA is a single, independent protocol, register it as a stack
+	if( register_protocol_stack(PROTO_OCPP_DATA, PROTO_OCPP_DATA_ALIAS, ocpp_data_stack_classification) == 0 ){
 		fprintf(stderr, "Cannot register protocol stack %s", PROTO_OCPP_DATA_ALIAS );
 		return 0;
 	}

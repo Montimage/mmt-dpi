@@ -83,6 +83,7 @@ SDKINC_TCPIP := $(SDKDIR)/include/tcpip
 SDKINC_MOBILE := $(SDKDIR)/include/mobile
 SDKINC_B_APP  := $(SDKDIR)/include/business_app
 SDKINC_OCPP := $(SDKDIR)/include/ocpp
+SDKINC_DYNABIC_HES := $(SDKDIR)/include/dynabic_hes
 ifdef ENABLESEC
 SDKINC_FUZZ  := $(SDKDIR)/include/fuzz
 endif
@@ -90,7 +91,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_OCPP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_OCPP) $(SDKINC_DYNABIC_HES) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
 	@mkdir -p $@
 
 
@@ -107,6 +108,7 @@ LIBMOBILE   := libmmt_tmobile
 LIBBAPP     := libmmt_business_app
 LIBEXTRACT  := libmmt_extract
 LIBOCPP		:= libmmt_ocpp
+LIBDYNABICHES := libmmt_dynabic_hes
 ifdef ENABLESEC
 LIBSECURITY := libmmt_security
 LIBFUZZ     := libmmt_fuzz
@@ -132,6 +134,11 @@ LIBOCPP_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_ocpp/*.c))
 
 $(LIBOCPP_OBJECTS): CFLAGS +=  -lm -Wno-unused-variable -fPIC
+
+LIBDYNABICHES_OBJECTS := \
+ $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_dynabic_hes/*.c))
+
+$(LIBDYNABICHES_OBJECTS): CFLAGS +=  -lm -Wno-unused-variable -fPIC
 
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
@@ -194,6 +201,11 @@ $(SDKLIB)/$(LIBOCPP).a: $(SDKLIB) $(LIBOCPP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(LIBOCPP_OBJECTS)
 
+# DYNABIC_HES_DATA/PROTOCOL
+$(SDKLIB)/$(LIBDYNABICHES).a: $(SDKLIB) $(LIBDYNABICHES_OBJECTS)
+	@echo "[ARCHIVE] $(notdir $@)"
+	$(QUIET) $(AR) $@ $(LIBDYNABICHES_OBJECTS)
+
 ifdef ENABLESEC
 # FUZZ
 
@@ -227,7 +239,10 @@ SDK_B_APP_HEADERS = $(addprefix $(SDKINC_B_APP)/,$(notdir $(B_APP_HEADERS)))
 OCPP_HEADERS = $(wildcard $(SRCDIR)/mmt_ocpp/include/*.h)
 SDK_OCPP_HEADERS = $(addprefix $(SDKINC_OCPP)/,$(notdir $(OCPP_HEADERS)))
 
-includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS) $(SDK_OCPP_HEADERS)
+DYNABIC_HES_HEADERS = $(wildcard $(SRCDIR)/mmt_dynabic_hes/include/*.h)
+SDK_DYNABIC_HES_HEADERS = $(addprefix $(SDKINC_DYNABIC_HES)/,$(notdir $(DYNABIC_HES_HEADERS)))
+
+includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS) $(SDK_OCPP_HEADERS) $(SDK_DYNABIC_HES_HEADERS)
 
 ifdef ENABLESEC
 MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)
@@ -254,8 +269,12 @@ $(SDKINC_B_APP)/%.h: $(SRCDIR)/mmt_business_app/include/%.h
 $(SDKINC_OCPP)/%.h: $(SRCDIR)/mmt_ocpp/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
+
+$(SDKINC_DYNABIC_HES)/%.h: $(SRCDIR)/mmt_dynabic_hes/include/%.h
+	@echo "[INCLUDE] $(notdir $@)"
+	$(QUIET) cp -f $< $@
 	
-$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_OCPP)
+$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_OCPP) $(SDKINC_DYNABIC_HES)
 
 ifdef ENABLESEC
 $(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h

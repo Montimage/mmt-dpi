@@ -1,8 +1,8 @@
 /*
- * OCPP_data.h
+ * ocpp_data.h
  *
- *  Created on: Jun 3, 2021
- *      Author: nhnghia
+ *  Created on: Nov 20, 2024
+ *      Author: vietpham
  */
 
 /*
