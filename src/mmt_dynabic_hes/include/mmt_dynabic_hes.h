@@ -15,7 +15,7 @@
 
 #include "dynabic_hes_data.h"
 
-#define PROTO_DYNABIC_HES_DATA 805
+#define PROTO_DYNABIC_HES_DATA 803
 #define PROTO_DYNABIC_HES_DATA_ALIAS "dynabic_hes_data"
 
 #endif /* SRC_MMT_DYNABIC_HES_INCLUDE_MMT_DYNABIC_HES_H_ */
