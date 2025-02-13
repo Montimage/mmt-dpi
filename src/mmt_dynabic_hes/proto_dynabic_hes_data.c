@@ -160,7 +160,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	return 1;
 }
 
-attribute_metadata_t _attributes_metadata[] = {
+static attribute_metadata_t _attributes_metadata[] = {
     {DYNABIC_HES_DATA_TIMESTAMP,		DYNABIC_HES_DATA_TIMESTAMP_ALIAS, 		MMT_STRING_DATA,		BINARY_64DATA_LEN,		POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 	{DYNABIC_HES_DATA_PROTOCOL,			DYNABIC_HES_DATA_PROTOCOL_ALIAS,		MMT_STRING_DATA,		BINARY_64DATA_LEN,		POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 	{DYNABIC_HES_DATA_SRC_IP,			DYNABIC_HES_DATA_SRC_IP_ALIAS,			MMT_STRING_DATA,		BINARY_64DATA_LEN,		POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},

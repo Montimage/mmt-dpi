@@ -419,7 +419,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	return 1;
 }
 
-attribute_metadata_t _attributes_metadata[] = {
+static attribute_metadata_t _attributes_metadata[] = {
     {OCPP_DATA_LEVEL_0,                      OCPP_DATA_LEVEL_0_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_INDEX,                        OCPP_DATA_INDEX_ALIAS,                        MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_FLOW_ID,                      OCPP_DATA_FLOW_ID_ALIAS,                      MMT_STRING_DATA,    BINARY_64DATA_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
