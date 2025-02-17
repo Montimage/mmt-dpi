@@ -82,6 +82,7 @@ SDKINC       := $(SDKDIR)/include
 SDKINC_TCPIP := $(SDKDIR)/include/tcpip
 SDKINC_MOBILE := $(SDKDIR)/include/mobile
 SDKINC_B_APP  := $(SDKDIR)/include/business_app
+SDKINC_DICOM := $(SDKDIR)/include/dicom
 ifdef ENABLESEC
 SDKINC_FUZZ  := $(SDKDIR)/include/fuzz
 endif
@@ -89,7 +90,7 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
-$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_DICOM) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
 	@mkdir -p $@
 
 
@@ -105,6 +106,7 @@ LIBTCPIP    := libmmt_tcpip
 LIBMOBILE   := libmmt_tmobile
 LIBBAPP     := libmmt_business_app
 LIBEXTRACT  := libmmt_extract
+LIBDICOM    := libmmt_dicom
 ifdef ENABLESEC
 LIBSECURITY := libmmt_security
 LIBFUZZ     := libmmt_fuzz
@@ -143,10 +145,10 @@ LIBMOBILE_INC := $(SRCINC)          \
 	$(SRCDIR)/mmt_mobile/nas/emm     \
 	$(SRCDIR)/mmt_mobile/asn1c/common\
 	$(SRCDIR)/mmt_mobile/asn1c/s1ap  \
-	$(SRCDIR)/mmt_mobile/asn1c/ngap 
+	$(SRCDIR)/mmt_mobile/asn1c/ngap
 
 $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -lm -Wno-unused-variable -fPIC -lnghttp2 -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
-	
+
 $(TCPIP_OBJECTS): CFLAGS +=   -I/usr/include/nghttp2 -lnghttp2 -L/usr/lib/x86_64-linux-gnu/libnghttp2.so
 ifdef ENABLESEC
 FUZZ_OBJECTS := \
@@ -157,6 +159,10 @@ SECURITY_OBJECTS := \
 
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
+
+LIBDICOM_OBJECTS := \
+ $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/dicom/*.c))
+$(LIBDICOM_OBJECTS): CFLAGS +=  -lm -Wno-unused-variable -fPIC
 endif
 
 # CORE
@@ -176,7 +182,7 @@ $(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 $(SDKLIB)/$(LIBMOBILE).a: $(SDKLIB) $(LIBMOBILE_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(LIBMOBILE_OBJECTS)
-	
+
 # BUSINESS APP/PROTOCOL
 $(SDKLIB)/$(LIBBAPP).a: $(SDKLIB) $(LIBBAPP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
@@ -194,6 +200,11 @@ $(SDKLIB)/$(LIBSECURITY).a: $(SDKLIB) $(SECURITY_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(SECURITY_OBJECTS)
 endif
+
+# DICOM
+$(SDKLIB)/$(LIBDICOM).a: $(SDKLIB) $(LIBDICOM_OBJECTS)
+	@echo "[ARCHIVE] $(notdir $@)"
+	$(QUIET) $(AR) $@ $(LIBDICOM_OBJECTS)
 
 #  - - - - - - - -
 #  I N C L U D E S
@@ -213,6 +224,10 @@ SDK_B_APP_HEADERS = $(addprefix $(SDKINC_B_APP)/,$(notdir $(B_APP_HEADERS)))
 
 includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS)
 
+DICOM_HEADERS = $(wildcard $(SRCDIR)/dicom/include/*.h)
+SDK_DICOM_HEADERS = $(addprefix $(SDKINC_DICOM)/,$(notdir $(DICOM_HEADERS)))
+includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS) $(SDK_DICOM_HEADERS)
+
 ifdef ENABLESEC
 MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)
 SDK_FUZZ_HEADERS = $(addprefix $(SDKINC_FUZZ)/,$(notdir $(MMT_FUZZ_HEADERS)))
@@ -230,12 +245,16 @@ $(SDKINC_TCPIP)/%.h: $(SRCDIR)/mmt_tcpip/include/%.h
 $(SDKINC_MOBILE)/%.h: $(SRCDIR)/mmt_mobile/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
-	
+
 $(SDKINC_B_APP)/%.h: $(SRCDIR)/mmt_business_app/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
-	
+
 $(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP)
+
+$(SDKDICOM_OCPP)/%.h: $(SRCDIR)/dicom/include/%.h
+	@echo "[INCLUDE] $(notdir $@)"
+	$(QUIET) cp -f $< $@
 
 ifdef ENABLESEC
 $(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h
