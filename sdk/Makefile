@@ -98,7 +98,7 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
 	$(QUIET) $(CP) $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBMOBILE).so
 	$(QUIET) $(CP) $(SDKLIB)/$(LIBBAPP).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBBAPP).so
-	$(QUIET) ln -s $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBDICOM).so
+	$(QUIET) $(CP) $(SDKLIB)/$(LIBDICOM).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIB).so
 	# Make links
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_core.so
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so
@@ -106,7 +106,7 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/libmmt_tcpip.so
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBMOBILE).so
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBBAPP).so
-	$(QUIET) $(CP) $(SDKLIB)/$(LIBDICOM).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBDICOM).so
+	$(QUIET) ln -s $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBDICOM).so
 
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
 	echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf

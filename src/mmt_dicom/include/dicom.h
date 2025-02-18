@@ -6,12 +6,10 @@
 extern "C" {
 #endif
 
-#include "plugin_defs.h"
-#include "mmt_core.h"
-
+#include "../../mmt_core/public_include/plugin_defs.h"
+#include "../../mmt_core/public_include/mmt_core.h"
 
 #define PROTO_DICOM 701
-
 #define PROTO_DICOM_ALIAS "dicom"
 
 #define PROTO_DICOM_HDRLEN 6
@@ -44,19 +42,19 @@ enum dicom_attributes {
 #define DICOM_CALLED_AE_TITLE_ALIAS "called_ae_title"
 #define DICOM_CALLING_AE_TITLE_ALIAS "calling_ae_title"
 
-	struct dicomhdr {
-		uint8_t pdu_type ;
-		uint8_t reserved ;
-		uint32_t pdu_len ;
-	};
+struct dicomhdr {
+    uint8_t pdu_type ;
+    uint8_t reserved ;
+    uint32_t pdu_len ;
+};
 
-	int init_dicom_proto_struct();
-	classified_proto_t dicom_stack_classification(ipacket_t * ipacket);
-	int mmt_check_dicom_hdr(struct dicomhdr* header);
-	int mmt_check_dicom_payload(struct dicomhdr* header, unsigned int packet_len);
-	int mmt_check_dicom(struct dicomhdr * header, int offset, int packet_len);
-	int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index);
-	static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data);
+int init_dicom_proto_struct();
+classified_proto_t dicom_stack_classification(ipacket_t * ipacket);
+int mmt_check_dicom_hdr(struct dicomhdr* header);
+int mmt_check_dicom_payload(struct dicomhdr* header, unsigned int packet_len);
+int mmt_check_dicom(struct dicomhdr * header, int offset, int packet_len);
+int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index);
+static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data);
 
 #ifndef CORE
 	int init_proto();

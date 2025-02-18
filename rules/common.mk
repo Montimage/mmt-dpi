@@ -128,6 +128,11 @@ LIBBAPP_OBJECTS := \
 
 $(LIBBAPP_OBJECTS): CFLAGS +=  -lm -Wno-unused-variable -fPIC
 
+LIBDICOM_OBJECTS := \
+ $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_dicom/*.c))
+
+$(LIBDICOM_OBJECTS): CFLAGS +=  -lm -Wno-unused-variable -fPIC
+
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
@@ -159,10 +164,6 @@ SECURITY_OBJECTS := \
 
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
-
-LIBDICOM_OBJECTS := \
- $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/dicom/*.c))
-$(LIBDICOM_OBJECTS): CFLAGS +=  -lm -Wno-unused-variable -fPIC
 endif
 
 # CORE
@@ -222,10 +223,9 @@ SDK_MOBILE_HEADERS = $(addprefix $(SDKINC_MOBILE)/,$(notdir $(mmt_mobile_HEADERS
 B_APP_HEADERS = $(wildcard $(SRCDIR)/mmt_business_appinclude/*.h)
 SDK_B_APP_HEADERS = $(addprefix $(SDKINC_B_APP)/,$(notdir $(B_APP_HEADERS)))
 
-includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS)
-
-DICOM_HEADERS = $(wildcard $(SRCDIR)/dicom/include/*.h)
+DICOM_HEADERS = $(wildcard $(SRCDIR)/mmt_dicom/include/*.h)
 SDK_DICOM_HEADERS = $(addprefix $(SDKINC_DICOM)/,$(notdir $(DICOM_HEADERS)))
+
 includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS) $(SDK_DICOM_HEADERS)
 
 ifdef ENABLESEC
@@ -250,11 +250,11 @@ $(SDKINC_B_APP)/%.h: $(SRCDIR)/mmt_business_app/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 
-$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP)
-
-$(SDKDICOM_OCPP)/%.h: $(SRCDIR)/dicom/include/%.h
+$(SDKINC_DICOM)/%.h: $(SRCDIR)/mmt_dicom/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
+
+$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_DICOM)
 
 ifdef ENABLESEC
 $(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h
