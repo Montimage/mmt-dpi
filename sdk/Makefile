@@ -98,7 +98,7 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
 	$(QUIET) $(CP) $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBMOBILE).so
 	$(QUIET) $(CP) $(SDKLIB)/$(LIBBAPP).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBBAPP).so
-	$(QUIET) $(CP) $(SDKLIB)/$(LIBDICOM).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIB).so
+	$(QUIET) $(CP) $(SDKLIB)/$(LIBDICOM).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBDICOM).so
 	# Make links
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_core.so
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so
