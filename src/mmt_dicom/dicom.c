@@ -116,10 +116,10 @@ int init_dicom_proto_struct() {
 
 		// Register classification function of DICOM protocol after TCP
 		// DICOM can be classified after HTTP -> HTTP 10 DICOM 50
-		//if(!register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dicom_tcp, 50)){
-		//	fprintf(stderr, "\n[err] init_dicom_proto_struct - cannot register_classification_function_with_parent_protocol: PROTO_TCP\n");
-		//	return -1;
-		//};
+		if(!register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dicom_tcp, 50)){
+			fprintf(stderr, "\n[err] init_dicom_proto_struct - cannot register_classification_function_with_parent_protocol: PROTO_TCP\n");
+			return -1;
+		};
 		return register_protocol(protocol_struct, PROTO_DICOM);
 
 	}

@@ -104,9 +104,9 @@ LIBTCPIP    := libmmt_tcpip
 #t to ensure libmmt_tmobile is after libmmt_tcpip in alphabet
 #=> MMT will load libmmt_tcpip, then, libmmt_tmobile
 LIBMOBILE   := libmmt_tmobile
+LIBDICOM    := libmmt_tdicom
 LIBBAPP     := libmmt_business_app
 LIBEXTRACT  := libmmt_extract
-LIBDICOM    := libmmt_dicom
 ifdef ENABLESEC
 LIBSECURITY := libmmt_security
 LIBFUZZ     := libmmt_fuzz
