@@ -8,6 +8,16 @@
 #include <netinet/in.h>
 #include "../mmt_tcpip/include/mmt_tcpip_protocols.h"
 
+static attribute_metadata_t dicom_attributes_metadata[DICOM_ATTRIBUTES_NB] = {
+
+	{DICOM_PDU_TYPE, DICOM_PDU_TYPE_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_PDU_LEN, DICOM_PDU_LEN_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 2, SCOPE_PACKET, _extraction_att},
+	{DICOM_PROTO_VERSION, DICOM_PROTO_VERSION_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 6, SCOPE_PACKET, _extraction_att},
+	{DICOM_CALLED_AE_TITLE, DICOM_CALLED_AE_TITLE_ALIAS, MMT_STRING_DATA, 16, 10, SCOPE_PACKET, _extraction_att},
+	{DICOM_CALLING_AE_TITLE, DICOM_CALLING_AE_TITLE_ALIAS, MMT_STRING_DATA, 16, 26, SCOPE_PACKET, _extraction_att},
+
+};
+
 /*
  * DICOM data extraction routines
  */
@@ -35,12 +45,30 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 			*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & ipacket->data[dicom_offset + attribute_offset]));
 		break;
 	case DICOM_CALLED_AE_TITLE:
-		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC)
-			*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & ipacket->data[dicom_offset + attribute_offset]));
+		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+			int start_offset = dicom_offset + attribute_offset;
+			int length = dicom_attributes_metadata[DICOM_CALLED_AE_TITLE].data_len;
+
+			memcpy(binary_data->data, &ipacket->data[start_offset], length);
+			binary_data->len = length;
+			binary_data->data[length] = '\0';
+
+			//printf("Extracted Called AE Title: %s\n", binary_data->data);
+		}
 		break;
 	case DICOM_CALLING_AE_TITLE:
-		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC)
-			*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & ipacket->data[dicom_offset + attribute_offset]));
+		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+			int start_offset = dicom_offset + attribute_offset;
+			int length = dicom_attributes_metadata[DICOM_CALLED_AE_TITLE].data_len;
+
+			memcpy(binary_data->data, &ipacket->data[start_offset], length);
+			binary_data->len = length;
+			binary_data->data[length] = '\0';
+
+			//printf("Extracted Calling AE Title: %s\n", binary_data->data);
+		}
 		break;
 	default:
 		log_warn("Unknown attribute %d.%d", extracted_data->proto_id, extracted_data->field_id );
@@ -56,16 +84,6 @@ classified_proto_t dicom_stack_classification(ipacket_t * ipacket) {
 	return retval;
 }
 
-static attribute_metadata_t dicom_attributes_metadata[DICOM_ATTRIBUTES_NB] = {
-
-	{DICOM_PDU_TYPE, DICOM_PDU_TYPE_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 0, SCOPE_PACKET, _extraction_att},
-	{DICOM_PDU_LEN, DICOM_PDU_LEN_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 2, SCOPE_PACKET, _extraction_att},
-	{DICOM_PROTO_VERSION, DICOM_PROTO_VERSION_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 6, SCOPE_PACKET, _extraction_att},
-	{DICOM_CALLED_AE_TITLE, DICOM_CALLED_AE_TITLE_ALIAS, MMT_STRING_DATA, sizeof(void *), 10, SCOPE_PACKET, _extraction_att},
-	{DICOM_CALLING_AE_TITLE, DICOM_CALLING_AE_TITLE_ALIAS, MMT_STRING_DATA, sizeof(void *), 26, SCOPE_PACKET, _extraction_att},
-
-};
-
 /*
  * DICOM classification routine
  */
@@ -76,7 +94,7 @@ int mmt_check_dicom_hdr(struct dicomhdr* header) {
 }
 
 int mmt_check_dicom_payload(struct dicomhdr* header, unsigned int packet_len) {
-	// debug("DICOM: TYPE= %u LEN= %u", header->pdu_type, packet_len);
+	//printf("DICOM: TYPE= %u LEN= %u\n", header->pdu_type, packet_len);
 	// Dicom packets have at least a payload of size 4
 	if(packet_len < PROTO_DICOM_HDRLEN + DICOM_PAYLOAD_MIN_LEN) return 0;
 	// Check the second condition: PDU length
@@ -100,7 +118,7 @@ int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index) {
 
 	classified_proto_t dicom_proto = dicom_stack_classification(ipacket);
 	dicom_proto.offset = dicom_offset - l3_offset;
-	// debug("DICOM: found DICOM packet %lu",ipacket->packet_id);
+	//printf("DICOM: found DICOM packet %lu\n",ipacket->packet_id);
 	return set_classified_proto(ipacket, index + 1, dicom_proto);
 }
 
