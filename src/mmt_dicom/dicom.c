@@ -22,6 +22,8 @@ static attribute_metadata_t dicom_attributes_metadata[DICOM_ATTRIBUTES_NB] = {
 	{DICOM_PDV_LENGTH, DICOM_PDV_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 6, SCOPE_PACKET, _extraction_att},
 	{DICOM_PDV_CONTEXT, DICOM_PDV_CONTEXT_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 10, SCOPE_PACKET, _extraction_att},
 	{DICOM_PDV_FLAGS, DICOM_PDV_FLAGS_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 11, SCOPE_PACKET, _extraction_att},
+	{DICOM_COMMAND_GROUP_LENGTH, DICOM_COMMAND_GROUP_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 20, SCOPE_PACKET, _extraction_att},
+	{DICOM_COMMAND_FIELD, DICOM_COMMAND_FIELD_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 68, SCOPE_PACKET, _extraction_att},
 };
 
 /*
@@ -34,17 +36,12 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 	int attribute_offset = extracted_data->position_in_packet;
 	unsigned int packet_len = ipacket->p_hdr->caplen - dicom_offset;
 
-	if((ipacket->p_hdr->caplen - dicom_offset) == 0) return 0;
+	if((ipacket->p_hdr->caplen - dicom_offset) == 0) {
+		return 0;
+	}
 
-	// For PDV attributes, check specifically if it's a P-DATA-TF packet
-	if (extracted_data->field_id >= DICOM_PDV_LENGTH &&
-		extracted_data->field_id <= DICOM_PDV_FLAGS) {
-		if (hdr->pdu_type != P_DATA_TF) {
-			return 0;
-		}
-	} else {
-		// Normal validation for other attributes
-		if (!mmt_check_dicom(hdr, dicom_offset, packet_len)) return 0;
+	if (!mmt_check_dicom(hdr, dicom_offset, packet_len)) {
+		return 0;
 	}
 
 	//depending on id of attribute to be extracted
@@ -188,6 +185,63 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 			*((unsigned char *)extracted_data->data) = *((unsigned char *)&ipacket->data[dicom_offset + attribute_offset]);
 		}
 		break;
+	case DICOM_COMMAND_GROUP_LENGTH:
+		if (hdr->pdu_type == P_DATA_TF) {
+			// Print hex values for debugging
+			printf("Command Group Length bytes: ");
+			for(int i = 0; i < 4; i++) {
+				printf("%02x ", ipacket->data[dicom_offset + attribute_offset + i]);
+			}
+			printf("\n");
+
+			uint32_t group_length = ipacket->data[dicom_offset + attribute_offset];
+			*((uint32_t *)extracted_data->data) = group_length;
+		}
+		break;
+	case DICOM_COMMAND_FIELD:
+		if (hdr->pdu_type == P_DATA_TF) {
+			// Print hex values for debugging
+			printf("Command Field bytes: ");
+			for(int i = 0; i < 2; i++) {
+				printf("%02x ", ipacket->data[dicom_offset + attribute_offset + i]);
+			}
+			printf("\n");
+
+			// Command Field is 2 bytes in little-endian, manually construct the value
+			uint16_t command_field = (ipacket->data[dicom_offset + attribute_offset + 1] << 8) |
+			                         ipacket->data[dicom_offset + attribute_offset];
+			*((uint16_t *)extracted_data->data) = command_field;
+
+			// Print the command type for debugging
+			printf("Command Field value: 0x%04X - ", command_field);
+			switch(command_field) {
+				case DICOM_C_STORE_RQ:         printf("C-STORE-RQ\n"); break;
+				case DICOM_C_STORE_RSP:        printf("C-STORE-RSP\n"); break;
+				case DICOM_C_GET_RQ:           printf("C-GET-RQ\n"); break;
+				case DICOM_C_GET_RSP:          printf("C-GET-RSP\n"); break;
+				case DICOM_C_FIND_RQ:          printf("C-FIND-RQ\n"); break;
+				case DICOM_C_FIND_RSP:         printf("C-FIND-RSP\n"); break;
+				case DICOM_C_MOVE_RQ:          printf("C-MOVE-RQ\n"); break;
+				case DICOM_C_MOVE_RSP:         printf("C-MOVE-RSP\n"); break;
+				case DICOM_C_ECHO_RQ:          printf("C-ECHO-RQ\n"); break;
+				case DICOM_C_ECHO_RSP:         printf("C-ECHO-RSP\n"); break;
+				case DICOM_N_EVENT_REPORT_RQ:  printf("N-EVENT-REPORT-RQ\n"); break;
+				case DICOM_N_EVENT_REPORT_RSP: printf("N-EVENT-REPORT-RSP\n"); break;
+				case DICOM_N_GET_RQ:           printf("N-GET-RQ\n"); break;
+				case DICOM_N_GET_RSP:          printf("N-GET-RSP\n"); break;
+				case DICOM_N_SET_RQ:           printf("N-SET-RQ\n"); break;
+				case DICOM_N_SET_RSP:          printf("N-SET-RSP\n"); break;
+				case DICOM_N_ACTION_RQ:        printf("N-ACTION-RQ\n"); break;
+				case DICOM_N_ACTION_RSP:       printf("N-ACTION-RSP\n"); break;
+				case DICOM_N_CREATE_RQ:        printf("N-CREATE-RQ\n"); break;
+				case DICOM_N_CREATE_RSP:       printf("N-CREATE-RSP\n"); break;
+				case DICOM_N_DELETE_RQ:        printf("N-DELETE-RQ\n"); break;
+				case DICOM_N_DELETE_RSP:       printf("N-DELETE-RSP\n"); break;
+				case DICOM_C_CANCEL_RQ:        printf("C-CANCEL-RQ\n"); break;
+				default:                       printf("Unknown Command\n"); break;
+			}
+		}
+		break;
 	default:
 		printf("Unknown attribute id %d.%d", extracted_data->proto_id, extracted_data->field_id );
 	}
@@ -206,8 +260,15 @@ classified_proto_t dicom_stack_classification(ipacket_t * ipacket) {
  * DICOM classification routine
  */
 int mmt_check_dicom_hdr(struct dicomhdr* header) {
-	if (header->pdu_type < A_ASSOCIATE_RQ || header->pdu_type > A_ABORT) return 0; // Check the first condition: DICOM types: 1 - 7
-	if (header->reserved != 0) return 0; // Check the second condition: Byte 0 after type.
+	// Accept any PDU type for now to debug
+	if (header->pdu_type < 1 || header->pdu_type > 7) {
+		//printf("Invalid PDU type: %d\n", header->pdu_type);
+		return 0;
+	}
+	if (header->reserved != 0) {
+		//printf("Invalid reserved byte: %d\n", header->reserved);
+		return 0;
+	}
 	return 1;
 }
 

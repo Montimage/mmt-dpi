@@ -14,7 +14,31 @@ extern "C" {
 
 #define PROTO_DICOM_HDRLEN 6
 #define DICOM_PAYLOAD_MIN_LEN 4
-#define DICOM_ATTRIBUTES_NB 12
+
+// DICOM Command Field Values
+#define DICOM_C_STORE_RQ          0x0001
+#define DICOM_C_STORE_RSP         0x8001
+#define DICOM_C_GET_RQ            0x0010
+#define DICOM_C_GET_RSP           0x8010
+#define DICOM_C_FIND_RQ           0x0020
+#define DICOM_C_FIND_RSP          0x8020
+#define DICOM_C_MOVE_RQ           0x0021
+#define DICOM_C_MOVE_RSP          0x8021
+#define DICOM_C_ECHO_RQ           0x0030
+#define DICOM_C_ECHO_RSP          0x8030
+#define DICOM_N_EVENT_REPORT_RQ   0x0100
+#define DICOM_N_EVENT_REPORT_RSP  0x8100
+#define DICOM_N_GET_RQ            0x0110
+#define DICOM_N_GET_RSP           0x8110
+#define DICOM_N_SET_RQ            0x0120
+#define DICOM_N_SET_RSP           0x8120
+#define DICOM_N_ACTION_RQ         0x0130
+#define DICOM_N_ACTION_RSP        0x8130
+#define DICOM_N_CREATE_RQ         0x0140
+#define DICOM_N_CREATE_RSP        0x8140
+#define DICOM_N_DELETE_RQ         0x0150
+#define DICOM_N_DELETE_RSP        0x8150
+#define DICOM_C_CANCEL_RQ         0x0FFF
 
 // DICOM PDU Types
 enum dicom_pdu_type {
@@ -28,7 +52,7 @@ enum dicom_pdu_type {
 };
 
 enum dicom_attributes {
-    DICOM_PDU_TYPE = 0,
+    DICOM_PDU_TYPE = 1,
     DICOM_PDU_LEN,
     DICOM_PROTO_VERSION,
     DICOM_CALLED_AE_TITLE,
@@ -41,6 +65,9 @@ enum dicom_attributes {
     DICOM_PDV_LENGTH,
     DICOM_PDV_CONTEXT,
     DICOM_PDV_FLAGS,
+    DICOM_COMMAND_GROUP_LENGTH,
+    DICOM_COMMAND_FIELD,
+    DICOM_ATTRIBUTES_NB = DICOM_COMMAND_FIELD,
 };
 
 #define DICOM_PDU_TYPE_ALIAS "pdu_type"
@@ -56,6 +83,8 @@ enum dicom_attributes {
 #define DICOM_PDV_LENGTH_ALIAS "pdv_length"
 #define DICOM_PDV_CONTEXT_ALIAS "pdv_context"
 #define DICOM_PDV_FLAGS_ALIAS "pdv_flags"
+#define DICOM_COMMAND_GROUP_LENGTH_ALIAS "command_group_length"
+#define DICOM_COMMAND_FIELD_ALIAS "command_field"
 
 struct dicomhdr {
     uint8_t pdu_type ;
