@@ -9,13 +9,14 @@
 #include "../mmt_tcpip/include/mmt_tcpip_protocols.h"
 
 static attribute_metadata_t dicom_attributes_metadata[DICOM_ATTRIBUTES_NB] = {
-
 	{DICOM_PDU_TYPE, DICOM_PDU_TYPE_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 0, SCOPE_PACKET, _extraction_att},
 	{DICOM_PDU_LEN, DICOM_PDU_LEN_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 2, SCOPE_PACKET, _extraction_att},
 	{DICOM_PROTO_VERSION, DICOM_PROTO_VERSION_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 6, SCOPE_PACKET, _extraction_att},
 	{DICOM_CALLED_AE_TITLE, DICOM_CALLED_AE_TITLE_ALIAS, MMT_STRING_DATA, 16, 10, SCOPE_PACKET, _extraction_att},
 	{DICOM_CALLING_AE_TITLE, DICOM_CALLING_AE_TITLE_ALIAS, MMT_STRING_DATA, 16, 26, SCOPE_PACKET, _extraction_att},
-
+	{DICOM_APPLICATION_CONTEXT, DICOM_APPLICATION_CONTEXT_ALIAS, MMT_STRING_DATA, 21, 78, SCOPE_PACKET, _extraction_att},
+	{DICOM_PRESENTATION_CONTEXT, DICOM_PRESENTATION_CONTEXT_ALIAS, MMT_STRING_DATA, 17, 111, SCOPE_PACKET, _extraction_att},
+	{DICOM_IMPLEMENTATION_UID, DICOM_IMPLEMENTATION_UID_ALIAS, MMT_STRING_DATA, 32, 303, SCOPE_PACKET, _extraction_att}
 };
 
 /*
@@ -49,11 +50,9 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
 			int start_offset = dicom_offset + attribute_offset;
 			int length = dicom_attributes_metadata[DICOM_CALLED_AE_TITLE].data_len;
-
 			memcpy(binary_data->data, &ipacket->data[start_offset], length);
 			binary_data->len = length;
 			binary_data->data[length] = '\0';
-
 			//printf("Extracted Called AE Title: %s\n", binary_data->data);
 		}
 		break;
@@ -61,17 +60,85 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
 			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
 			int start_offset = dicom_offset + attribute_offset;
-			int length = dicom_attributes_metadata[DICOM_CALLED_AE_TITLE].data_len;
-
+			int length = dicom_attributes_metadata[DICOM_CALLING_AE_TITLE].data_len;
 			memcpy(binary_data->data, &ipacket->data[start_offset], length);
 			binary_data->len = length;
 			binary_data->data[length] = '\0';
-
 			//printf("Extracted Calling AE Title: %s\n", binary_data->data);
 		}
 		break;
+	case DICOM_APPLICATION_CONTEXT:
+		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+			int start_offset = dicom_offset + attribute_offset;
+			int length = dicom_attributes_metadata[DICOM_APPLICATION_CONTEXT].data_len;
+			memcpy(binary_data->data, &ipacket->data[start_offset], length);
+			binary_data->len = length;
+			binary_data->data[length] = '\0';
+			//printf("Extracted Application Context Item: %s\n", binary_data->data);
+		}
+		break;
+	case DICOM_PRESENTATION_CONTEXT:
+		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+			int start_offset = dicom_offset + attribute_offset;
+			int length = dicom_attributes_metadata[DICOM_PRESENTATION_CONTEXT].data_len;
+			memcpy(binary_data->data, &ipacket->data[start_offset], length);
+			binary_data->len = length;
+			binary_data->data[length] = '\0';
+			//printf("Extracted Presentation Context Item: %s\n", binary_data->data);
+		}
+		break;
+	case DICOM_IMPLEMENTATION_UID:
+		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+
+			// Different tag patterns based on PDU type
+			const uint8_t tag_rq[] = {0x52, 0x00, 0x00, 0x20}; // For A_ASSOCIATE_RQ
+			const uint8_t tag_ac[] = {0x52, 0x00, 0x00, 0x1b}; // For A_ASSOCIATE_AC
+			const uint8_t *tag = (hdr->pdu_type == A_ASSOCIATE_RQ) ? tag_rq : tag_ac;
+			int found = 0;
+
+			// Expected UID length based on PDU type
+			const int rq_len = 32;  // A_ASSOCIATE_RQ length
+			const int ac_len = 27;  // A_ASSOCIATE_AC length
+			int uid_len = (hdr->pdu_type == A_ASSOCIATE_RQ) ? rq_len : ac_len;
+
+			// Search for the tag pattern in the packet
+			for(int i = 0; i < packet_len - 4 - 10; i++) {
+				if(memcmp(&ipacket->data[dicom_offset + i], tag, 4) == 0) {
+					// Found the tag, extract up to uid_len bytes or until non-printable character
+					int extract_len = uid_len;
+					if(dicom_offset + i + 4 + extract_len > ipacket->p_hdr->caplen) {
+						extract_len = ipacket->p_hdr->caplen - (dicom_offset + i + 4);
+					}
+
+					// Find valid string length (stop at non-printable chars)
+					int valid_len = 0;
+					for(int j = 0; j < extract_len; j++) {
+						char c = ipacket->data[dicom_offset + i + 4 + j];
+						if(c >= 32 && c <= 126) {
+							valid_len = j + 1;
+						} else {
+							break;
+						}
+					}
+
+					// Copy data if we found valid characters
+					if(valid_len > 0) {
+						memcpy(binary_data->data, &ipacket->data[dicom_offset + i + 4], valid_len);
+						binary_data->len = valid_len;
+						binary_data->data[valid_len] = '\0';
+						found = 1;
+						break;
+					}
+				}
+			}
+			//printf("Extracted Implementation UID: %s\n", binary_data->data);
+		}
+		break;
 	default:
-		log_warn("Unknown attribute %d.%d", extracted_data->proto_id, extracted_data->field_id );
+		printf("Unknown attribute id %d.%d", extracted_data->proto_id, extracted_data->field_id );
 	}
 	return 1;
 }

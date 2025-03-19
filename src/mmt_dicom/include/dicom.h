@@ -14,6 +14,7 @@ extern "C" {
 
 #define PROTO_DICOM_HDRLEN 6
 #define DICOM_PAYLOAD_MIN_LEN 4
+#define DICOM_ATTRIBUTES_NB 8
 
 // DICOM PDU Types
 enum dicom_pdu_type {
@@ -27,13 +28,14 @@ enum dicom_pdu_type {
 };
 
 enum dicom_attributes {
-
-    DICOM_PDU_TYPE = 1,
+    DICOM_PDU_TYPE = 0,
     DICOM_PDU_LEN,
     DICOM_PROTO_VERSION,
     DICOM_CALLED_AE_TITLE,
     DICOM_CALLING_AE_TITLE,
-    DICOM_ATTRIBUTES_NB = DICOM_CALLING_AE_TITLE,
+    DICOM_APPLICATION_CONTEXT,
+    DICOM_PRESENTATION_CONTEXT,
+    DICOM_IMPLEMENTATION_UID,
 };
 
 #define DICOM_PDU_TYPE_ALIAS "pdu_type"
@@ -41,6 +43,9 @@ enum dicom_attributes {
 #define DICOM_PROTO_VERSION_ALIAS "proto_version"
 #define DICOM_CALLED_AE_TITLE_ALIAS "called_ae_title"
 #define DICOM_CALLING_AE_TITLE_ALIAS "calling_ae_title"
+#define DICOM_APPLICATION_CONTEXT_ALIAS "application_context"
+#define DICOM_PRESENTATION_CONTEXT_ALIAS "presentation_context"
+#define DICOM_IMPLEMENTATION_UID_ALIAS "implementation_uid"
 
 struct dicomhdr {
     uint8_t pdu_type ;
