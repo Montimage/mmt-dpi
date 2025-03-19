@@ -18,7 +18,10 @@ static attribute_metadata_t dicom_attributes_metadata[DICOM_ATTRIBUTES_NB] = {
 	{DICOM_PRESENTATION_CONTEXT, DICOM_PRESENTATION_CONTEXT_ALIAS, MMT_STRING_DATA, 17, 111, SCOPE_PACKET, _extraction_att},
 	{DICOM_MAX_PDU_LENGTH, DICOM_MAX_PDU_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 0, SCOPE_PACKET, _extraction_att},
 	{DICOM_IMPLEMENTATION_CLASS_UID, DICOM_IMPLEMENTATION_CLASS_UID_ALIAS, MMT_STRING_DATA, 32, 0, SCOPE_PACKET, _extraction_att},
-	//{DICOM_IMPLEMENTATION_VERSION_NAME, DICOM_IMPLEMENTATION_VERSION_NAME_ALIAS, MMT_STRING_DATA, 16, 0, SCOPE_PACKET, _extraction_att}
+	// P-DATA-TF attributes
+	{DICOM_PDV_LENGTH, DICOM_PDV_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 6, SCOPE_PACKET, _extraction_att},
+	{DICOM_PDV_CONTEXT, DICOM_PDV_CONTEXT_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 10, SCOPE_PACKET, _extraction_att},
+	{DICOM_PDV_FLAGS, DICOM_PDV_FLAGS_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 11, SCOPE_PACKET, _extraction_att},
 };
 
 /*
@@ -33,7 +36,16 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 
 	if((ipacket->p_hdr->caplen - dicom_offset) == 0) return 0;
 
-	if (!mmt_check_dicom(hdr, dicom_offset, packet_len)) return 0;
+	// For PDV attributes, check specifically if it's a P-DATA-TF packet
+	if (extracted_data->field_id >= DICOM_PDV_LENGTH &&
+		extracted_data->field_id <= DICOM_PDV_FLAGS) {
+		if (hdr->pdu_type != P_DATA_TF) {
+			return 0;
+		}
+	} else {
+		// Normal validation for other attributes
+		if (!mmt_check_dicom(hdr, dicom_offset, packet_len)) return 0;
+	}
 
 	//depending on id of attribute to be extracted
 	switch( extracted_data->field_id ){
@@ -159,6 +171,21 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 					return 0; // No valid characters
 				}
 			}
+		}
+		break;
+	case DICOM_PDV_LENGTH:
+		if(hdr->pdu_type == P_DATA_TF) {
+			*((unsigned int *)extracted_data->data) = ntohl(*((unsigned int *)&ipacket->data[dicom_offset + attribute_offset]));
+		}
+		break;
+	case DICOM_PDV_CONTEXT:
+		if(hdr->pdu_type == P_DATA_TF) {
+			*((unsigned char *)extracted_data->data) = *((unsigned char *)&ipacket->data[dicom_offset + attribute_offset]);
+		}
+		break;
+	case DICOM_PDV_FLAGS:
+		if(hdr->pdu_type == P_DATA_TF) {
+			*((unsigned char *)extracted_data->data) = *((unsigned char *)&ipacket->data[dicom_offset + attribute_offset]);
 		}
 		break;
 	default:
