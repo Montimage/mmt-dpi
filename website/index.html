@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMT-DPI - Deep Packet Inspection Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
+    <style>
+        /* Modern styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Animated background */
+        @keyframes moveThread {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bg-cyber {
+            background:
+                linear-gradient(45deg, transparent 45%, #007cf0 49%, #007cf0 51%, transparent 55%),
+                linear-gradient(-45deg, transparent 45%, #0fa 49%, #0fa 51%, transparent 55%),
+                radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            background-size: 300% 300%, 300% 300%, 100% 100%;
+            animation: moveThread 15s ease infinite;
+            position: relative;
+        }
+
+        .bg-cyber::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 15, 25, 0.85);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Packet flow animation */
+        @keyframes packetFlow {
+            0% { transform: translateX(0) translateY(0); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(100%) translateY(0); opacity: 0; }
+        }
+
+        .packet {
+            width: 10px;
+            height: 10px;
+            background: #0fa;
+            border-radius: 50%;
+            position: absolute;
+            animation: packetFlow 3s infinite;
+        }
+
+        /* Navigation styles */
+        .nav-link {
+            position: relative;
+            color: #e0e0e0;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            transition: color 0.3s;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: #007cf0;
+            transition: all 0.3s;
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Card styles */
+        .feature-card {
+            background: rgba(45, 55, 72, 0.7);
+            border: 1px solid rgba(74, 85, 104, 0.3);
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 124, 240, 0.2);
+        }
+
+        /* Integration steps animation */
+        .step-box {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Code block styling */
+        pre {
+            background: rgba(45, 55, 72, 0.95);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            border: 1px solid rgba(74, 85, 104, 0.3);
+        }
+
+        /* Button styles */
+        .cta-button {
+            background: linear-gradient(135deg, #007cf0, #00dfd8);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 124, 240, 0.3);
+        }
+
+        /* Workflow animation */
+        @keyframes movePacket {
+            0% {
+                left: 0;
+                transform: translate(0, -50%);
+            }
+            20% {
+                left: 20%;
+                transform: translate(-50%, -50%);
+            }
+            40% {
+                left: 40%;
+                transform: translate(-50%, -50%);
+            }
+            60% {
+                left: 60%;
+                transform: translate(-50%, -50%);
+            }
+            80% {
+                left: 80%;
+                transform: translate(-50%, -50%);
+            }
+            100% {
+                left: 100%;
+                transform: translate(-100%, -50%);
+            }
+        }
+
+        #workflow-packet {
+            animation: movePacket 5s infinite ease-in-out;
+        }
+
+        .step-box .bg-blue-900 {
+            transform: translateY(0);
+            opacity: 0.7;
+        }
+
+        .step-box.active .bg-blue-900 {
+            transform: translateY(-5px);
+            opacity: 1;
+            box-shadow: 0 0 15px rgba(66, 153, 225, 0.5);
+        }
+
+        /* Copy button styles */
+        .code-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(45, 55, 72, 0.95);
+            border-bottom: 1px solid rgba(74, 85, 104, 0.3);
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+
+        .copy-button {
+            background: rgba(66, 153, 225, 0.1);
+            border: 1px solid rgba(66, 153, 225, 0.2);
+            color: #63b3ed;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .copy-button:hover {
+            background: rgba(66, 153, 225, 0.2);
+            border-color: rgba(66, 153, 225, 0.3);
+        }
+
+        .copy-button svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        pre {
+            margin-top: 0;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+        /* GitHub-like code block styling */
+        pre[class*="language-"] {
+            background: #0d1117;
+            border-radius: 6px;
+            margin: 0;
+            padding: 1rem;
+            overflow: auto;
+            font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            tab-size: 2;
+        }
+
+        code[class*="language-"] {
+            color: #c9d1d9;
+            text-shadow: none;
+        }
+
+        /* GitHub syntax colors */
+        .token.comment,
+        .token.prolog,
+        .token.doctype,
+        .token.cdata {
+            color: #8b949e;
+        }
+
+        .token.punctuation {
+            color: #c9d1d9;
+        }
+
+        .token.property,
+        .token.tag,
+        .token.constant,
+        .token.symbol,
+        .token.deleted {
+            color: #7ee787;
+        }
+
+        .token.boolean,
+        .token.number {
+            color: #79c0ff;
+        }
+
+        .token.selector,
+        .token.attr-name,
+        .token.string,
+        .token.char,
+        .token.builtin,
+        .token.inserted {
+            color: #a5d6ff;
+        }
+
+        .token.operator,
+        .token.entity,
+        .token.url,
+        .language-css .token.string,
+        .style .token.string {
+            color: #79c0ff;
+        }
+
+        .token.atrule,
+        .token.attr-value,
+        .token.keyword {
+            color: #ff7b72;
+        }
+
+        .token.function,
+        .token.class-name {
+            color: #d2a8ff;
+        }
+
+        .token.regex,
+        .token.important,
+        .token.variable {
+            color: #ffa657;
+        }
+
+        /* Code block header styling */
+        .code-block-header {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-bottom: none;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+
+        pre[class*="language-"] {
+            border: 1px solid #30363d;
+            border-top: none;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+        /* Copy button styling */
+        .copy-button {
+            background: #21262d;
+            border: 1px solid rgba(240,246,252,0.1);
+            color: #c9d1d9;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: .2s cubic-bezier(0.3, 0, 0.5, 1);
+        }
+
+        .copy-button:hover {
+            background: #30363d;
+            border-color: #8b949e;
+        }
+
+        @keyframes journeyPath {
+            0% {
+                stroke-dashoffset: 1000;
+                opacity: 0;
+            }
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+        }
+
+        .journey-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: journeyPath 10s linear infinite;
+        }
+
+        @keyframes journeyPacket {
+            0% {
+                transform: translate(0, 0);
+            }
+            20% {
+                transform: translate(33%, 100px);
+            }
+            40% {
+                transform: translate(66%, 200px);
+            }
+            60% {
+                transform: translate(100%, 300px);
+            }
+            80% {
+                transform: translate(66%, 400px);
+            }
+            100% {
+                transform: translate(33%, 500px);
+            }
+        }
+
+        #journey-packet {
+            animation: journeyPacket 10s linear infinite;
+        }
+
+        .step-box {
+            transition: all 0.3s ease;
+        }
+
+        .step-box.active {
+            transform: translateY(-5px);
+            border-color: rgba(66, 153, 225, 0.5);
+            box-shadow: 0 0 15px rgba(66, 153, 225, 0.2);
+        }
+
+        @keyframes gradientFlow {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .step-box:hover {
+            transform: translateY(-5px);
+        }
+
+        .step-box.active::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(45deg, #3b82f6, #22d3ee);
+            border-radius: inherit;
+            z-index: -1;
+            animation: gradientFlow 3s linear infinite;
+        }
+
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .mermaid {
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        #journey-packet {
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+        }
+
+        @keyframes packetJourney {
+            0% {
+                transform: translate(-2px, -20px);
+                opacity: 0;
+            }
+            5% {
+                opacity: 1;
+            }
+            15% {
+                transform: translate(20%, 15%);
+            }
+            30% {
+                transform: translate(40%, 30%);
+            }
+            45% {
+                transform: translate(60%, 45%);
+            }
+            60% {
+                transform: translate(80%, 60%);
+            }
+            75% {
+                transform: translate(100%, 75%);
+            }
+            90% {
+                transform: translate(120%, 90%);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(140%, 110%);
+                opacity: 0;
+            }
+        }
+
+        #journey-packet {
+            animation: packetJourney 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .mermaid-wrapper {
+            position: relative;
+        }
+
+        /* Enhanced node highlighting */
+        .node.active rect {
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+            transition: all 0.3s ease;
+        }
+
+        .node:hover rect {
+            filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.7));
+        }
+
+        /* Path highlighting */
+        .edgePath.active path {
+            stroke-width: 3;
+            stroke: #3b82f6;
+            filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.4));
+        }
+
+        /* Hero packet animations */
+        @keyframes packetFloat {
+            0% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(calc(100vw + 20px), calc(50vh - 100px));
+                opacity: 0;
+            }
+        }
+
+        @keyframes packetFloatReverse {
+            0% {
+                transform: translate(calc(100vw + 20px), 0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-20px, calc(50vh - 100px));
+                opacity: 0;
+            }
+        }
+
+        @keyframes packetFloatDiagonal {
+            0% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(calc(100vw + 20px), calc(100vh + 20px));
+                opacity: 0;
+            }
+        }
+
+        @keyframes packetFloatDiagonalReverse {
+            0% {
+                transform: translate(calc(100vw + 20px), 0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-20px, calc(100vh + 20px));
+                opacity: 0;
+            }
+        }
+
+        .hero-packet {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            z-index: 5;
+        }
+
+        .hero-packet::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 20px;
+            height: 1px;
+            background: linear-gradient(to right, transparent, currentColor);
+        }
+
+        .hero-packet.flow-right::before {
+            right: 100%;
+            transform: translateY(-50%);
+        }
+
+        .hero-packet.flow-left::before {
+            left: 100%;
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .hero-packet-blue {
+            background: #3b82f6;
+            box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.5);
+        }
+
+        .hero-packet-cyan {
+            background: #06b6d4;
+            box-shadow: 0 0 10px 2px rgba(6, 182, 212, 0.5);
+        }
+
+        .hero-packet-purple {
+            background: #8b5cf6;
+            box-shadow: 0 0 10px 2px rgba(139, 92, 246, 0.5);
+        }
+
+        .hero-packet-green {
+            background: #10b981;
+            box-shadow: 0 0 10px 2px rgba(16, 185, 129, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-cyber min-h-screen text-gray-100">
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 bg-opacity-90 bg-gray-900 backdrop-filter backdrop-blur-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <img src="https://www.montimage.com/user/themes/x-corporation/img/Montimage_logo.png" alt="MMT-DPI Logo" class="h-8">
+                    <span class="ml-3 text-xl font-bold">MMT-DPI</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#how-it-works" class="nav-link">How It Works</a>
+                    <a href="#integration" class="nav-link">Integration</a>
+                    <a href="#docs" class="nav-link">Documentation</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="min-h-screen flex items-center justify-center relative pt-10">
+        <div class="container mx-auto px-6 text-center relative z-10">
+            <h1 class="text-5xl md:text-7xl font-bold mb-8 animate__animated animate__fadeInDown">
+                Deep Packet Inspection
+                <span class="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
+                    Reimagined
+                </span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto animate__animated animate__fadeIn animate__delay-1s">
+                A versatile C library using Deep Packet Inspection (DPI) to extract data attributes from network packets, logs, and other structured data sources.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 animate__animated animate__fadeInUp animate__delay-2s">
+                <a href="#integration" class="cta-button">
+                    Get Started
+                </a>
+                <a href="https://github.com/montimage/mmt-dpi" class="cta-button bg-gray-700 hover:bg-gray-600">
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+
+        <!-- NEW Animated packets container -->
+        <div id="hero-packet-container" class="absolute inset-0 pointer-events-none overflow-hidden">
+            <!-- Packets will be added dynamically by JavaScript -->
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 relative z-10">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-16">Core Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="feature-card rounded-lg p-6">
+                    <div class="text-blue-400 mb-4">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Granular Traffic Analysis</h3>
+                    <p class="text-gray-400">Extract a wide range of network and application parameters including RTT, jitter, loss, HTTP response time, VoIP MOS, and Video QoE metrics.</p>
+                </div>
+
+                <div class="feature-card rounded-lg p-6">
+                    <div class="text-blue-400 mb-4">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Powerful Rule Engine</h3>
+                    <p class="text-gray-400">Advanced packet inspection and event sequence detection for access control, anomaly detection, and performance monitoring.</p>
+                </div>
+
+                <div class="feature-card rounded-lg p-6">
+                    <div class="text-blue-400 mb-4">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Protocol Analysis</h3>
+                    <p class="text-gray-400">Support for 150+ application protocols with detailed message exchange monitoring capabilities.</p>
+                </div>
+
+                <div class="feature-card rounded-lg p-6">
+                    <div class="text-blue-400 mb-4">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">High Performance</h3>
+                    <p class="text-gray-400">Support for high bandwidth analysis with parallelization techniques including traffic splitting and DPDK integration.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Packet Journey Section -->
+    <section id="how-it-works" class="py-20 relative z-10 bg-gray-900/30">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-16">Journey of a Packet</h2>
+
+            <!-- Step-by-step Packet Journey Flow -->
+            <div class="relative">
+                <!-- Journey Path Line -->
+                <div class="absolute left-1/2 top-8 bottom-8 w-1 bg-gradient-to-b from-blue-500 to-cyan-400 hidden md:block transform -translate-x-1/2"></div>
+
+                <!-- Animated packet -->
+                <div id="journey-packet" class="absolute w-6 h-6 left-1/2 top-0 transform -translate-x-1/2 z-20 hidden md:block">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-75"></div>
+                        <div class="relative bg-blue-500 rounded-full w-6 h-6 shadow-lg shadow-blue-500/50">
+                            <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full animate-pulse"></div>
+                        </div>
+                        <!-- Packet trail -->
+                        <div class="absolute top-1/2 right-full h-px w-8 bg-gradient-to-r from-transparent to-blue-400/80"></div>
+                    </div>
+                </div>
+
+                <style>
+                    @keyframes journeyAnimation {
+                        0% { top: 0; }
+                        16% { top:16%; }
+                        33% { top: 33%; }
+                        50% { top: 50%; }
+                        66% { top: 66%; }
+                        80% { top: 80%; }
+                        96% { top: 96%; }
+                    }
+
+                    #journey-packet {
+                        animation: journeyAnimation 8s infinite ease-in-out;
+                    }
+                </style>
+
+                <!-- Steps -->
+                <div class="space-y-16 relative">
+                    <!-- Step 1: Entry Point -->
+                    <div class="journey-step flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 md:pr-12 md:text-right">
+                            <h3 class="text-2xl font-semibold text-blue-400">01. Entry Point</h3>
+                            <p class="mt-4 text-gray-300">Network packets enter the MMT-DPI system through the packet_process API. Each packet undergoes initial metadata extraction.</p>
+                        </div>
+                        <div class="journey-icon bg-blue-900/60 w-16 h-16 rounded-full flex items-center justify-center border-4 border-blue-400 shadow-lg shadow-blue-500/20 my-6 md:my-0 z-10">
+                            <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                            </svg>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 md:hidden">
+                            <h3 class="text-2xl font-semibold text-blue-400">01. Entry Point</h3>
+                            <p class="mt-4 text-gray-300">Network packets enter the MMT-DPI system through the packet_process API. Each packet undergoes initial metadata extraction.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Protocol Processing -->
+                    <div class="journey-step flex flex-col md:flex-row-reverse items-center">
+                        <div class="md:w-1/2 md:pl-12">
+                            <h3 class="text-2xl font-semibold text-blue-400">02. Protocol Processing</h3>
+                            <p class="mt-4 text-gray-300">The packet is analyzed by protocol-specific processors, starting with the META protocol, then moving to lower layers like Ethernet, IP, TCP/UDP.</p>
+                        </div>
+                        <div class="journey-icon bg-blue-900/60 w-16 h-16 rounded-full flex items-center justify-center border-4 border-blue-400 shadow-lg shadow-blue-500/20 my-6 md:my-0 z-10">
+                            <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <div class="md:w-1/2 md:pr-12 md:text-right md:hidden">
+                            <h3 class="text-2xl font-semibold text-blue-400">02. Protocol Processing</h3>
+                            <p class="mt-4 text-gray-300">The packet is analyzed by protocol-specific processors, starting with the META protocol, then moving to lower layers like Ethernet, IP, TCP/UDP.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Sessionization -->
+                    <div class="journey-step flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 md:pr-12 md:text-right">
+                            <h3 class="text-2xl font-semibold text-blue-400">03. Sessionization</h3>
+                            <p class="mt-4 text-gray-300">Packets are grouped into protocol-specific sessions allowing for stateful monitoring and analysis across packets in a conversation.</p>
+                        </div>
+                        <div class="journey-icon bg-blue-900/60 w-16 h-16 rounded-full flex items-center justify-center border-4 border-blue-400 shadow-lg shadow-blue-500/20 my-6 md:my-0 z-10">
+                            <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 md:hidden">
+                            <h3 class="text-2xl font-semibold text-blue-400">03. Sessionization</h3>
+                            <p class="mt-4 text-gray-300">Packets are grouped into protocol-specific sessions allowing for stateful monitoring and analysis across packets in a conversation.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Analysis -->
+                    <div class="journey-step flex flex-col md:flex-row-reverse items-center">
+                        <div class="md:w-1/2 md:pl-12">
+                            <h3 class="text-2xl font-semibold text-blue-400">04. Analysis</h3>
+                            <p class="mt-4 text-gray-300">Multiple analysis phases (pre, core, post) examine packet content, perform deep inspection, and calculate metrics for performance monitoring.</p>
+                        </div>
+                        <div class="journey-icon bg-blue-900/60 w-16 h-16 rounded-full flex items-center justify-center border-4 border-blue-400 shadow-lg shadow-blue-500/20 my-6 md:my-0 z-10">
+                            <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                            </svg>
+                        </div>
+                        <div class="md:w-1/2 md:pr-12 md:text-right md:hidden">
+                            <h3 class="text-2xl font-semibold text-blue-400">04. Analysis</h3>
+                            <p class="mt-4 text-gray-300">Multiple analysis phases (pre, core, post) examine packet content, perform deep inspection, and calculate metrics for performance monitoring.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Extraction -->
+                    <div class="journey-step flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 md:pr-12 md:text-right">
+                            <h3 class="text-2xl font-semibold text-blue-400">05. Extraction</h3>
+                            <p class="mt-4 text-gray-300">Relevant attributes are extracted through event-based or request-based methods, making data available to applications.</p>
+                        </div>
+                        <div class="journey-icon bg-blue-900/60 w-16 h-16 rounded-full flex items-center justify-center border-4 border-blue-400 shadow-lg shadow-blue-500/20 my-6 md:my-0 z-10">
+                            <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                            </svg>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 md:hidden">
+                            <h3 class="text-2xl font-semibold text-blue-400">05. Extraction</h3>
+                            <p class="mt-4 text-gray-300">Relevant attributes are extracted through event-based or request-based methods, making data available to applications.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 6: Classification -->
+                    <div class="journey-step flex flex-col md:flex-row-reverse items-center">
+                        <div class="md:w-1/2 md:pl-12">
+                            <h3 class="text-2xl font-semibold text-blue-400">06. Classification</h3>
+                            <p class="mt-4 text-gray-300">Packets and protocols are classified to determine their types, enabling advanced traffic categorization and application identification.</p>
+                        </div>
+                        <div class="journey-icon bg-blue-900/60 w-16 h-16 rounded-full flex items-center justify-center border-4 border-blue-400 shadow-lg shadow-blue-500/20 my-6 md:my-0 z-10">
+                            <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                            </svg>
+                        </div>
+                        <div class="md:w-1/2 md:pr-12 md:text-right md:hidden">
+                            <h3 class="text-2xl font-semibold text-blue-400">06. Classification</h3>
+                            <p class="mt-4 text-gray-300">Packets and protocols are classified to determine their types, enabling advanced traffic categorization and application identification.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 7: Action -->
+                    <div class="journey-step flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 md:pr-12 md:text-right">
+                            <h3 class="text-2xl font-semibold text-blue-400">07. Action Decision</h3>
+                            <p class="mt-4 text-gray-300">Based on analysis and classification, a decision is made: continue processing with next protocol, skip further analysis, or drop the packet.</p>
+                        </div>
+                        <div class="journey-icon bg-blue-900/60 w-16 h-16 rounded-full flex items-center justify-center border-4 border-blue-400 shadow-lg shadow-blue-500/20 my-6 md:my-0 z-10">
+                            <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 md:hidden">
+                            <h3 class="text-2xl font-semibold text-blue-400">07. Action Decision</h3>
+                            <p class="mt-4 text-gray-300">Based on analysis and classification, a decision is made: continue processing with next protocol, skip further analysis, or drop the packet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description Panel -->
+            <div class="mt-12 bg-gray-900/50 p-6 rounded-lg backdrop-blur-sm border border-blue-500/20 max-w-3xl mx-auto">
+                <h3 class="text-xl font-semibold mb-4 text-blue-400">Process Description</h3>
+                <p id="journey-description" class="text-gray-300 leading-relaxed">
+                    Watch as the packet traverses through each stage of the MMT-DPI processing pipeline, from initial entry to final classification and action.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integration Section -->
+    <section id="integration" class="py-20 relative z-10">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-16">Integration Guide</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div class="space-y-8">
+                    <div class="step-box bg-gray-800 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold mb-4">1. Installation</h3>
+                        <pre class="language-bash"><code>git clone https://github.com/montimage/mmt-dpi.git
+cd mmt-dpi
+make</code></pre>
+                    </div>
+
+                    <div class="step-box bg-gray-800 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold mb-4">2. Include Required Headers</h3>
+                        <pre class="language-c"><code>#include "mmt_core.h"
+#include "tcpip/mmt_tcpip.h"</code></pre>
+                    </div>
+
+                    <div class="step-box bg-gray-800 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold mb-4">3. Initialize MMT Handler</h3>
+                        <pre class="language-c"><code>mmt_handler_t *mmt_handler;
+char mmt_errbuf[1024];
+
+// Initialize extraction
+if (!init_extraction()) {
+    fprintf(stderr, "MMT extract init error\n");
+    return EXIT_FAILURE;
+}
+
+// Initialize MMT handler
+mmt_handler = mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);
+if (!mmt_handler) {
+    fprintf(stderr, "MMT handler init failed: %s\n", mmt_errbuf);
+    return EXIT_FAILURE;
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="step-box bg-gray-800 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold mb-4">4. Register Protocol Attributes</h3>
+                        <pre class="language-c"><code>// Register IP attributes
+register_extraction_attribute(mmt_handler, PROTO_IP, IP_SRC);
+register_extraction_attribute(mmt_handler, PROTO_IP, IP_DST);
+register_extraction_attribute(mmt_handler, PROTO_IP, IP_PROTO_ID);
+register_extraction_attribute(mmt_handler, PROTO_IP, IP_SERVER_PORT);
+register_extraction_attribute(mmt_handler, PROTO_IP, IP_CLIENT_PORT);
+
+// Register TCP attributes
+register_extraction_attribute(mmt_handler, PROTO_TCP, TCP_SRC_PORT);
+register_extraction_attribute(mmt_handler, PROTO_TCP, TCP_DEST_PORT);
+
+// Register handlers
+register_attribute_handler(mmt_handler, PROTO_IP, PROTO_SESSION,
+                         new_flow_handle, NULL, NULL);</code></pre>
+                    </div>
+
+                    <div class="step-box bg-gray-800 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold mb-4">5. Process Packets</h3>
+                        <pre class="language-c"><code>struct pcap_pkthdr pkthdr;
+const u_char *data;
+struct pkthdr header;
+
+while ((data = pcap_next(pcap, &pkthdr))) {
+    header.ts = pkthdr.ts;
+    header.caplen = pkthdr.caplen;
+    header.len = pkthdr.len;
+
+    if (!packet_process(mmt_handler, &header, data)) {
+        fprintf(stderr, "Packet processing error\n");
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="step-box bg-gray-800 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold mb-4">6. Cleanup</h3>
+                        <pre class="language-c"><code>// Close MMT handler
+mmt_close_handler(mmt_handler);
+
+// Close extraction
+close_extraction();
+
+// Close pcap
+pcap_close(pcap);</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complete Example Section -->
+            <div class="mt-16">
+                <h3 class="text-2xl font-semibold mb-8">Complete Working Example</h3>
+                <div class="bg-gray-800 rounded-lg p-6 overflow-hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-blue-400">simple_traffic_reporting.c</span>
+                        <button onclick="copyCode()" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition-colors">
+                            Copy Code
+                        </button>
+                    </div>
+                    <pre class="language-c max-h-[600px] overflow-y-auto"><code>/**
+ * Traffic Reporting Example
+ * Compile with:
+ * gcc -g -o simple_traffic_reporting simple_traffic_reporting.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
+ */
+
+#include <pcap.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "mmt_core.h"
+#include "tcpip/mmt_tcpip.h"
+
+void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
+    // Process expired sessions
+    fprintf(stdout, "Session expired: %"PRIu64"\n", get_session_id(expired_session));
+}
+
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <pcap file>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    // Open pcap file
+    char errbuf[1024];
+    pcap_t *pcap = pcap_open_offline(argv[1], errbuf);
+    if (!pcap) {
+        fprintf(stderr, "pcap_open: %s\n", errbuf);
+        return EXIT_FAILURE;
+    }
+
+    // Initialize MMT
+    if (!init_extraction()) {
+        fprintf(stderr, "MMT extract init error\n");
+        return EXIT_FAILURE;
+    }
+
+    // Initialize handler
+    char mmt_errbuf[1024];
+    mmt_handler_t *mmt_handler = mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);
+    if (!mmt_handler) {
+        fprintf(stderr, "MMT handler init failed: %s\n", mmt_errbuf);
+        return EXIT_FAILURE;
+    }
+
+    // Register handlers and attributes
+    register_session_timeout_handler(mmt_handler, session_expiry_handle, NULL);
+    register_extraction_attribute(mmt_handler, PROTO_IP, IP_SRC);
+    register_extraction_attribute(mmt_handler, PROTO_IP, IP_DST);
+    register_extraction_attribute(mmt_handler, PROTO_TCP, TCP_SRC_PORT);
+    register_extraction_attribute(mmt_handler, PROTO_TCP, TCP_DEST_PORT);
+
+    // Process packets
+    struct pcap_pkthdr pkthdr;
+    const u_char *data;
+    struct pkthdr header;
+
+    while ((data = pcap_next(pcap, &pkthdr))) {
+        header.ts = pkthdr.ts;
+        header.caplen = pkthdr.caplen;
+        header.len = pkthdr.len;
+
+        if (!packet_process(mmt_handler, &header, data)) {
+            fprintf(stderr, "Packet processing error\n");
+        }
+    }
+
+    // Cleanup
+    mmt_close_handler(mmt_handler);
+    close_extraction();
+    pcap_close(pcap);
+
+    return EXIT_SUCCESS;
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- Compilation Instructions -->
+            <div class="mt-12 step-box bg-gray-800 rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Compilation Instructions</h3>
+                <pre class="language-bash"><code>gcc -g -o simple_traffic_reporting simple_traffic_reporting.c \
+    -I /opt/mmt/dpi/include \
+    -L /opt/mmt/dpi/lib \
+    -lmmt_core -ldl -lpcap</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Make sure we always run our initialization
+        window.onload = function() {
+            console.log('Window loaded - initializing hero packets');
+            createHeroPackets();
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded - initializing hero packets');
+            createHeroPackets();
+
+            // Other initializations
+            // Initialize Prism.js
+            if (typeof Prism !== 'undefined') {
+                Prism.highlightAll();
+            }
+
+            // Initialize packet journey
+            const howItWorksSection = document.getElementById('how-it-works');
+            if (howItWorksSection) {
+                const journeyObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            if (typeof initializePacketJourney === 'function') {
+                                initializePacketJourney();
+                            }
+                            journeyObserver.disconnect();
+                        }
+                    });
+                });
+
+                journeyObserver.observe(howItWorksSection);
+            }
+
+            // Initialize code blocks
+            if (typeof initializeCodeBlocks === 'function') {
+                initializeCodeBlocks();
+            }
+        });
+
+        // Create hero packets animation
+        function createHeroPackets() {
+            console.log('Creating hero packets animation');
+            const container = document.getElementById('hero-packet-container');
+            if (!container) {
+                console.error('Hero packets container not found!');
+                return;
+            }
+
+            console.log('Hero packets container found:', container);
+
+            // Create a test packet to verify animation is working
+            const testPacket = document.createElement('div');
+            testPacket.classList.add('hero-packet', 'hero-packet-blue');
+            testPacket.style.width = '12px';
+            testPacket.style.height = '12px';
+            testPacket.style.top = '50%';
+            testPacket.style.left = '0';
+            testPacket.style.animation = 'packetFloat 8s linear forwards';
+            testPacket.classList.add('flow-right');
+            container.appendChild(testPacket);
+
+            // Regular packet creation
+            const colors = ['blue', 'cyan', 'purple', 'green'];
+            const animations = ['packetFloat', 'packetFloatReverse', 'packetFloatDiagonal', 'packetFloatDiagonalReverse'];
+            const maxPackets = 15;
+
+            // Create initial packets
+            for (let i = 0; i < maxPackets; i++) {
+                setTimeout(() => createHeroPacket(), i * 500);
+            }
+
+            // Create new packets periodically
+            setInterval(() => createHeroPacket(), 1000);
+
+            function createHeroPacket() {
+                const packet = document.createElement('div');
+
+                // Random properties
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const animation = animations[Math.floor(Math.random() * animations.length)];
+                const duration = 5 + Math.random() * 10; // 5-15s
+                const delay = Math.random() * 2; // 0-2s
+                const size = 4 + Math.random() * 8; // 4-12px
+
+                // Starting position (varies by animation)
+                const startY = 100 + Math.random() * (window.innerHeight - 200);
+                packet.style.top = `${startY}px`;
+
+                if (animation.includes('Reverse')) {
+                    packet.style.right = '0';
+                    packet.classList.add('flow-left');
+                } else {
+                    packet.style.left = '0';
+                    packet.classList.add('flow-right');
+                }
+
+                // Set classes and styles
+                packet.classList.add('hero-packet', `hero-packet-${color}`);
+                packet.style.width = `${size}px`;
+                packet.style.height = `${size}px`;
+                packet.style.animation = `${animation} ${duration}s ${delay}s linear forwards`;
+
+                container.appendChild(packet);
+                console.log('Packet added:', packet, 'to container:', container);
+
+                // Remove after animation completes
+                setTimeout(() => {
+                    packet.remove();
+                }, (duration + delay) * 1000);
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        // Initialize Mermaid with dark theme
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                'primaryColor': '#1e293b',
+                'primaryTextColor': '#fff',
+                'primaryBorderColor': '#3b82f6',
+                'lineColor': '#3b82f6',
+                'secondaryColor': '#1d4ed8',
+                'tertiaryColor': '#166534'
+            }
+        });
+    </script>
+</body>
+</html>
