@@ -24,6 +24,7 @@ static attribute_metadata_t dicom_attributes_metadata[DICOM_ATTRIBUTES_NB] = {
 	{DICOM_PDV_FLAGS, DICOM_PDV_FLAGS_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 11, SCOPE_PACKET, _extraction_att},
 	{DICOM_COMMAND_GROUP_LENGTH, DICOM_COMMAND_GROUP_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 20, SCOPE_PACKET, _extraction_att},
 	{DICOM_COMMAND_FIELD, DICOM_COMMAND_FIELD_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 68, SCOPE_PACKET, _extraction_att},
+	{DICOM_PATIENT_NAME, DICOM_PATIENT_NAME_ALIAS, MMT_STRING_DATA, 64, 0, SCOPE_PACKET, _extraction_att},
 };
 
 /*
@@ -240,6 +241,69 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 				case DICOM_C_CANCEL_RQ:        printf("C-CANCEL-RQ\n"); break;
 				default:                       printf("Unknown Command\n"); break;
 			}
+		}
+		break;
+	case DICOM_PATIENT_NAME:
+		if(hdr->pdu_type == P_DATA_TF) {
+			int patient_name_offset = dicom_offset + 46;
+
+			// Check if we have enough data
+			if(patient_name_offset + 4 <= ipacket->p_hdr->caplen) {
+				printf("DICOM: Checking Patient's Name tag at offset %d\n", patient_name_offset);
+
+				// Verify the tag is (0010,0010)
+				uint8_t tag[4];
+				memcpy(tag, &ipacket->data[patient_name_offset], 4);
+				printf("DICOM: Tag bytes: %02x %02x %02x %02x\n", tag[0], tag[1], tag[2], tag[3]);
+
+				if(tag[0] == 0x10 && tag[1] == 0x00 && tag[2] == 0x10 && tag[3] == 0x00) {
+					printf("DICOM: Found Patient's Name tag\n");
+
+					// Skip the tag and get the VR
+					int vr_offset = patient_name_offset + 4;
+					char vr[3] = {0};
+					memcpy(vr, &ipacket->data[vr_offset], 2);
+					printf("DICOM: VR: %c%c\n", vr[0], vr[1]);
+
+					// Skip the VR and get the length
+					int length_offset = vr_offset + 2;
+					uint16_t length = 0;
+
+					// For explicit VR, the length is 2 bytes
+					if(vr[0] == 'P' && vr[1] == 'N') {
+						// Fix: Interpret length as little-endian (swap bytes)
+						length = (ipacket->data[length_offset + 1] << 8) | ipacket->data[length_offset];
+						length_offset += 2;
+						printf("DICOM: Explicit VR, length: %d\n", length);
+					} else {
+						// For implicit VR, the length is 4 bytes
+						length = (ipacket->data[length_offset] << 24) |
+						         (ipacket->data[length_offset + 1] << 16) |
+						         (ipacket->data[length_offset + 2] << 8) |
+						         ipacket->data[length_offset + 3];
+						length_offset += 4;
+						printf("DICOM: Implicit VR, length: %d\n", length);
+					}
+
+					// Now extract the patient name
+					if(length_offset + length <= ipacket->p_hdr->caplen) {
+						mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+						memcpy(binary_data->data, &ipacket->data[length_offset], length);
+						binary_data->len = length;
+						binary_data->data[length] = '\0';
+						printf("DICOM: Extracted Patient's Name: %s\n", binary_data->data);
+						return 1;
+					} else {
+						printf("DICOM: Not enough data for Patient's Name value\n");
+					}
+				} else {
+					printf("DICOM: Patient's Name tag not found at expected offset\n");
+				}
+			} else {
+				printf("DICOM: Not enough data to check Patient's Name tag\n");
+			}
+		} else {
+			printf("DICOM: Not a P-DATA-TF packet (PDU type: %d)\n", hdr->pdu_type);
 		}
 		break;
 	default:

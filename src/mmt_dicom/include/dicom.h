@@ -67,7 +67,8 @@ enum dicom_attributes {
     DICOM_PDV_FLAGS,
     DICOM_COMMAND_GROUP_LENGTH,
     DICOM_COMMAND_FIELD,
-    DICOM_ATTRIBUTES_NB = DICOM_COMMAND_FIELD,
+    DICOM_PATIENT_NAME,
+    DICOM_ATTRIBUTES_NB = DICOM_PATIENT_NAME,
 };
 
 #define DICOM_PDU_TYPE_ALIAS "pdu_type"
@@ -85,6 +86,7 @@ enum dicom_attributes {
 #define DICOM_PDV_FLAGS_ALIAS "pdv_flags"
 #define DICOM_COMMAND_GROUP_LENGTH_ALIAS "command_group_length"
 #define DICOM_COMMAND_FIELD_ALIAS "command_field"
+#define DICOM_PATIENT_NAME_ALIAS "patient_name"
 
 struct dicomhdr {
     uint8_t pdu_type ;
