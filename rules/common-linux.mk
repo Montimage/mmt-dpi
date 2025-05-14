@@ -17,8 +17,11 @@ endif
 libraries: \
 	$(SDKLIB)/$(LIBCORE).so \
 	$(SDKLIB)/$(LIBTCPIP).so \
-	$(SDKLIB)/$(LIBMOBILE).so \
 	$(SDKLIB)/$(LIBBAPP).so
+ifdef ENABLEMOBILE
+libraries: \
+	$(SDKLIB)/$(LIBMOBILE).so
+endif
 ifdef ENABLESEC
 libraries: \
 	$(SDKLIB)/$(LIBFUZZ).so \
@@ -42,12 +45,14 @@ $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
 	
 $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
 
+ifdef ENABLEMOBILE
 # LIB_MOBILE 4G 5G
 $(SDKLIB)/$(LIBMOBILE).so: $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)
 
 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION): $(SDKLIB)/$(LIBMOBILE).a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBMOBILE).so
+endif
 	
 # BUSINESS APP/PROTOCOLS
 $(SDKLIB)/$(LIBBAPP).so: $(SDKLIB)/$(LIBBAPP).so.$(VERSION)

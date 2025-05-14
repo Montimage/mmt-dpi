@@ -80,7 +80,9 @@ SDKDIR       := $(TOPDIR)/sdk
 SDKDOC       := $(SDKDIR)/doc
 SDKINC       := $(SDKDIR)/include
 SDKINC_TCPIP := $(SDKDIR)/include/tcpip
+ifdef ENABLEMOBILE
 SDKINC_MOBILE := $(SDKDIR)/include/mobile
+endif
 SDKINC_B_APP  := $(SDKDIR)/include/business_app
 ifdef ENABLESEC
 SDKINC_FUZZ  := $(SDKDIR)/include/fuzz
@@ -89,7 +91,11 @@ SDKLIB       := $(SDKDIR)/lib
 SDKBIN       := $(SDKDIR)/bin
 SDKXAM       := $(SDKDIR)/examples
 
+ifdef ENABLEMOBILE
 $(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
+else
+$(SDKLIB) $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_B_APP) $(SDKINC_FUZZ) $(SDKBIN) $(SDKDOC) $(SDKXAM) $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB):
+endif
 	@mkdir -p $@
 
 
@@ -102,7 +108,9 @@ LIBTCPIP    := libmmt_tcpip
 
 #t to ensure libmmt_tmobile is after libmmt_tcpip in alphabet
 #=> MMT will load libmmt_tcpip, then, libmmt_tmobile
+ifdef ENABLEMOBILE
 LIBMOBILE   := libmmt_tmobile
+endif
 LIBBAPP     := libmmt_business_app
 LIBEXTRACT  := libmmt_extract
 ifdef ENABLESEC
@@ -129,11 +137,14 @@ $(LIBBAPP_OBJECTS): CFLAGS +=  -lm -Wno-unused-variable -fPIC
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 
+ifdef ENABLEMOBILE
 LIBMOBILE_OBJECTS := \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*.c))     \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*/*.c))   \
 	$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_mobile/*/*/*.c))
+endif
 
+ifdef ENABLEMOBILE
 #specific include paths for mmt_mobile
 LIBMOBILE_INC := $(SRCINC)          \
    $(SRCDIR)/mmt_mobile/            \
@@ -144,8 +155,11 @@ LIBMOBILE_INC := $(SRCINC)          \
 	$(SRCDIR)/mmt_mobile/asn1c/common\
 	$(SRCDIR)/mmt_mobile/asn1c/s1ap  \
 	$(SRCDIR)/mmt_mobile/asn1c/ngap 
+endif
 
+ifdef ENABLEMOBILE
 $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -lm -Wno-unused-variable -fPIC -lnghttp2 -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
+endif
 	
 $(TCPIP_OBJECTS): CFLAGS +=   -I/usr/include/nghttp2 -lnghttp2 -L/usr/lib/x86_64-linux-gnu/libnghttp2.so
 ifdef ENABLESEC
@@ -171,11 +185,13 @@ $(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(TCPIP_OBJECTS)
 
+ifdef ENABLEMOBILE
 # MOBILE
 
 $(SDKLIB)/$(LIBMOBILE).a: $(SDKLIB) $(LIBMOBILE_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(LIBMOBILE_OBJECTS)
+endif
 	
 # BUSINESS APP/PROTOCOL
 $(SDKLIB)/$(LIBBAPP).a: $(SDKLIB) $(LIBBAPP_OBJECTS)
@@ -205,13 +221,19 @@ SDK_HEADERS       = $(addprefix $(SDKINC)/,$(notdir $(MMT_HEADERS)))
 MMT_TCPIP_HEADERS = $(wildcard $(SRCDIR)/mmt_tcpip/include/*.h)
 SDK_TCPIP_HEADERS = $(addprefix $(SDKINC_TCPIP)/,$(notdir $(MMT_TCPIP_HEADERS)))
 
+ifdef ENABLEMOBILE
 mmt_mobile_HEADERS = $(wildcard $(SRCDIR)/mmt_mobile/include/*.h)
 SDK_MOBILE_HEADERS = $(addprefix $(SDKINC_MOBILE)/,$(notdir $(mmt_mobile_HEADERS)))
+endif
 
 B_APP_HEADERS = $(wildcard $(SRCDIR)/mmt_business_appinclude/*.h)
 SDK_B_APP_HEADERS = $(addprefix $(SDKINC_B_APP)/,$(notdir $(B_APP_HEADERS)))
 
+ifdef ENABLEMOBILE
 includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS)
+else
+includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_B_APP_HEADERS)
+endif
 
 ifdef ENABLESEC
 MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)
@@ -227,15 +249,21 @@ $(SDKINC_TCPIP)/%.h: $(SRCDIR)/mmt_tcpip/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 
+ifdef ENABLEMOBILE
 $(SDKINC_MOBILE)/%.h: $(SRCDIR)/mmt_mobile/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
+endif
 	
 $(SDKINC_B_APP)/%.h: $(SRCDIR)/mmt_business_app/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
 	
+ifdef ENABLEMOBILE
 $(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP)
+else
+$(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_B_APP)
+endif
 
 ifdef ENABLESEC
 $(SDKINC_FUZZ)/%.h: $(SRCDIR)/mmt_fuzz_engine/%.h
