@@ -20,6 +20,7 @@ libraries: \
 	$(SDKLIB)/$(LIBMOBILE).so \
 	$(SDKLIB)/$(LIBBAPP).so \
 	$(SDKLIB)/$(LIBOCPP).so \
+	$(SDKLIB)/$(LIBCICFLOW).so \
 	$(SDKLIB)/$(LIBDYNABICHES).so 
 ifdef ENABLESEC
 libraries: \
@@ -64,6 +65,13 @@ $(SDKLIB)/$(LIBOCPP).so: $(SDKLIB)/$(LIBOCPP).so.$(VERSION)
 $(SDKLIB)/$(LIBOCPP).so.$(VERSION): $(SDKLIB)/$(LIBOCPP).a
 	@echo "[LIBRARY] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBOCPP).so
+
+# CICFLOW DATA/PROTOCOLS
+$(SDKLIB)/$(LIBCICFLOW).so: $(SDKLIB)/$(LIBCICFLOW).so.$(VERSION)
+
+$(SDKLIB)/$(LIBCICFLOW).so.$(VERSION): $(SDKLIB)/$(LIBCICFLOW).a
+	@echo "[LIBRARY] $(notdir $@)"
+	$(QUIET) $(CXX) $(CXXFLAGS) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive -Wl,--soname=$(LIBCICFLOW).so
 
 # DYNANBIC_HES DATA/PROTOCOLS
 $(SDKLIB)/$(LIBDYNABICHES).so: $(SDKLIB)/$(LIBDYNABICHES).so.$(VERSION)

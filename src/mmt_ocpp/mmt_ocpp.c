@@ -18,6 +18,6 @@ int init_proto() {
 	return 1;
 }
 int cleanup_proto() {
-	//printf("close s1ap protocol");
+	//printf("close ocpp protocol");
 	return 0;
 }
