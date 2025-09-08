@@ -2,12 +2,29 @@
  * 
  * Compile this example with:
  * 
+ * Linux:
  * $ gcc -g -o MAC_extraction MAC_extraction.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
  * 
+ * macOS (from MMT-DPI root directory):
+ * $ clang -o MAC_extraction src/examples/MAC_extraction.c \
+ *     -I sdk/include -I sdk/include/tcpip \
+ *     -I /opt/homebrew/opt/libpcap/include \
+ *     -L sdk/lib -L /opt/homebrew/opt/libpcap/lib \
+ *     -lmmt_core -lpcap -ldl \
+ *     -Wl,-rpath,sdk/lib
+ * 
+ * macOS (if installed in /opt/mmt):
+ * $ clang -o MAC_extraction MAC_extraction.c \
+ *     -I /opt/mmt/dpi/include -I /opt/mmt/dpi/include/tcpip \
+ *     -L /opt/mmt/dpi/lib -lmmt_core -lpcap -ldl \
+ *     -Wl,-rpath,/opt/mmt/dpi/lib
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
  * 
  * Then execute the program:
+ * 
+ * IMPORTANT for macOS: Set the plugin path before running:
+ * $ export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
  * 
  * $ ./MAC_extraction -t ftp_trace.pcap > output.xls
  * 

@@ -3,11 +3,25 @@
  * 
  * Compile this example with:
  * 
- * gcc -o proto_attributes_iterator proto_attributes_iterator.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
+ * Linux:
+ * $ gcc -o proto_attributes_iterator proto_attributes_iterator.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
+ * 
+ * macOS (from MMT-DPI root directory):
+ * $ clang -o proto_attributes_iterator src/examples/proto_attributes_iterator.c \
+ *     -I sdk/include -L sdk/lib -lmmt_core -ldl \
+ *     -Wl,-rpath,sdk/lib
+ * 
+ * macOS (if installed in /opt/mmt):
+ * $ clang -o proto_attributes_iterator proto_attributes_iterator.c \
+ *     -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl \
+ *     -Wl,-rpath,/opt/mmt/dpi/lib
  * 
  * Then execute the program:
  * 
- * ./proto_attributes_iterator > proto_attr_output.txt
+ * IMPORTANT for macOS: Set the plugin path before running:
+ * $ export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
+ * 
+ * $ ./proto_attributes_iterator > proto_attr_output.txt
  * 
  * The output in the file proto_attr_output.txt
  * 

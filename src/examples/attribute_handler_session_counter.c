@@ -3,11 +3,28 @@
  * 
  * Compile this example with:
  * 
+ * Linux:
  * $ gcc -o attribute_handler_session_counter attribute_handler_session_counter.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
+ * 
+ * macOS (from MMT-DPI root directory):
+ * $ clang -o attribute_handler_session_counter src/examples/attribute_handler_session_counter.c \
+ *     -I sdk/include -I /opt/homebrew/opt/libpcap/include \
+ *     -L sdk/lib -L /opt/homebrew/opt/libpcap/lib \
+ *     -lmmt_core -lpcap -ldl \
+ *     -Wl,-rpath,sdk/lib
+ * 
+ * macOS (if installed in /opt/mmt):
+ * $ clang -o attribute_handler_session_counter attribute_handler_session_counter.c \
+ *     -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib \
+ *     -lmmt_core -lpcap -ldl \
+ *     -Wl,-rpath,/opt/mmt/dpi/lib
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
  * 
  * Then execute the program:
+ * 
+ * IMPORTANT for macOS: Set the plugin path before running:
+ * $ export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
  * 
  * $ ./attribute_handler_session_counter tcp_plugin_image.pcap
  * 
