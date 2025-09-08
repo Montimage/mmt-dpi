@@ -35,14 +35,20 @@ clang -o <program_name> <source_file>.c \
     -Wl,-rpath,/opt/mmt/dpi/lib
 ```
 
-## CRITICAL: Set Plugin Path Before Running
+## CRITICAL: Environment Setup Before Running
 
-**Every example requires the MMT_PLUGINS_PATH to be set:**
+**Every example requires these environment variables on macOS:**
 ```bash
 export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
+export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
 ```
 
-Without this, you'll get "Unsupported stack type" errors because the TCP/IP plugin won't load.
+**Why both variables are needed:**
+- `MMT_PLUGINS_PATH`: Tells MMT where to find protocol plugins
+- `DYLD_LIBRARY_PATH`: Tells macOS where to find dynamic libraries at runtime
+
+Without `MMT_PLUGINS_PATH`, you'll get "Unsupported stack type" errors.  
+Without `DYLD_LIBRARY_PATH`, you'll get "Library not loaded" errors.
 
 ## Example: Compile and Run extract_all
 
@@ -58,14 +64,15 @@ clang -o extract_all src/examples/extract_all.c \
     -lmmt_core -lpcap -ldl \
     -Wl,-rpath,sdk/lib
 
-# Set plugin path (REQUIRED!)
+# Set environment variables (REQUIRED for macOS!)
 export MMT_PLUGINS_PATH=$(pwd)/sdk/lib
+export DYLD_LIBRARY_PATH=$(pwd)/sdk/lib:$DYLD_LIBRARY_PATH
 
 # Run with pcap file
 ./extract_all -t sample.pcap > output.txt
 
 # Run on live interface (requires sudo)
-sudo ./extract_all -i en0
+sudo env MMT_PLUGINS_PATH=$MMT_PLUGINS_PATH DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH ./extract_all -i en0
 ```
 
 ## Key Differences from Linux
@@ -88,8 +95,14 @@ export MMT_PLUGINS_PATH=/full/path/to/sdk/lib
 
 ### "Library not loaded" Error
 ```bash
-# Solution: Add rpath when compiling
+# Solution 1: Add rpath when compiling
 clang ... -Wl,-rpath,/path/to/sdk/lib
+
+# Solution 2: Set DYLD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=/path/to/sdk/lib:$DYLD_LIBRARY_PATH
+
+# Solution 3: Use both for sudo commands
+sudo env MMT_PLUGINS_PATH=/path DYLD_LIBRARY_PATH=/path ./program
 ```
 
 ### Permission Denied for Live Capture
@@ -104,8 +117,9 @@ Create a test script `test_examples.sh`:
 ```bash
 #!/bin/bash
 
-# Set environment
+# Set environment (REQUIRED for macOS)
 export MMT_PLUGINS_PATH=$(pwd)/sdk/lib
+export DYLD_LIBRARY_PATH=$(pwd)/sdk/lib:$DYLD_LIBRARY_PATH
 export PCAP_FILE="sample.pcap"
 
 # Compile all examples
@@ -133,12 +147,23 @@ fi
 echo "Done!"
 ```
 
+## Recent Updates (September 2025)
+
+**Enhanced macOS Support:**
+- ✅ Updated `extract_all.c` with comprehensive macOS compilation instructions
+- ✅ Fixed pcap timeout issues on macOS (now uses 1-second timeout)
+- ✅ Added proper `DYLD_LIBRARY_PATH` setup instructions 
+- ✅ Enhanced troubleshooting section with environment variable solutions
+- ✅ Updated all example commands to use `env` with `sudo` for proper variable passing
+
 ## Notes
 - All examples now work correctly on macOS with the fixed TCP/IP plugin
 - The compilation commands are embedded in each source file's header
-- Remember to set `MMT_PLUGINS_PATH` before running any example
+- **IMPORTANT**: Both `MMT_PLUGINS_PATH` and `DYLD_LIBRARY_PATH` must be set on macOS
 - For Apple Silicon Macs, ensure all libraries are arm64 architecture
+- Use `sudo env VAR1=value VAR2=value ./program` for live capture
 
 ---
-*Last Updated: September 2025*  
-*MMT-DPI Version: 1.7.10*
+*Last Updated: September 8, 2025*  
+*MMT-DPI Version: 1.7.10*  
+*macOS Support: Fully Tested and Working*

@@ -5,15 +5,27 @@
  * 
  * Compile this example with:
  * 
+ * Linux:
  * $ gcc -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
+ * 
+ * macOS:
+ * $ clang -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap -Wl,-rpath,/opt/mmt/dpi/lib
+ * 
+ * Or from MMT-DPI build directory:
+ * $ clang -g -o extract_all src/examples/extract_all.c -I sdk/include -L sdk/lib -lmmt_core -ldl -lpcap -Wl,-rpath,sdk/lib
+ * 
+ * Before running on macOS, set:
+ * $ export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib  # or path to your sdk/lib
+ * $ export DYLD_LIBRARY_PATH=/opt/mmt/dpi/lib:$DYLD_LIBRARY_PATH  # if needed
  *   
  * Then execute the program:
  * 
  * -> Extract from a pcap file
- * $ ./extract_all -t tcp_plugin_image.pcap > exta_output.txt
+ * $ ./extract_all -t sample.pcap > extract_output.txt
  *
  * -> Extract from an interface
- * $ ./extract_all -i eth0 > exta_output.txt
+ * Linux: $ ./extract_all -i eth0 > extract_output.txt
+ * macOS: $ ./extract_all -i en0 > extract_output.txt
  * 
  * -> Test with valgrind tool:
  * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./extract_all -t tcp_plugin_image.pcap 2> valgrind_test_.txt
@@ -68,8 +80,15 @@ pcap_t * init_pcap(char *iname, uint16_t buffer_size, uint16_t snaplen){
     }
     pcap_set_snaplen(my_pcap, snaplen);
     pcap_set_promisc(my_pcap, 1);
+#ifdef __APPLE__
+    // macOS needs a non-zero timeout for proper operation
+    pcap_set_timeout(my_pcap, 1000); // 1 second timeout
+#else
     pcap_set_timeout(my_pcap, 0);
-    pcap_set_buffer_size(my_pcap, buffer_size * 1000 * 1000);
+#endif
+    if (buffer_size > 0) {
+        pcap_set_buffer_size(my_pcap, buffer_size * 1000 * 1000);
+    }
     pcap_activate(my_pcap);
 
     if (pcap_datalink(my_pcap) != DLT_EN10MB) {
