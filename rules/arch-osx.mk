@@ -11,8 +11,8 @@ $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -fPIC
 ifdef ENABLESEC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS   += -fPIC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -fPIC
-$(SECURITY_OBJECTS): CFLAGS += -I/usr/local/Cellar/libxml2/2.9.2/include/libxml2/
-$(FUZZ_OBJECTS): CFLAGS += -I/usr/local/Cellar/libxml2/2.9.2/include/libxml2/
+$(SECURITY_OBJECTS): CFLAGS += -I/opt/homebrew/opt/libxml2/include/libxml2/
+$(FUZZ_OBJECTS): CFLAGS += -I/opt/homebrew/opt/libxml2/include/libxml2/
 endif
 #  - - - - - - - - - - - - - - -
 #  L I N U X   L I B R A R I E S
@@ -29,18 +29,22 @@ endif
 # CORE
 
 $(SDKLIB)/$(LIBCORE).so: $(SDKLIB)/$(LIBCORE).so.$(VERSION)
+	@echo "[SYMLINK] $(notdir $@)"
+	$(QUIET) ln -sf $(notdir $<) $@
 
 $(SDKLIB)/$(LIBCORE).so.$(VERSION): $(SDKLIB)/$(LIBCORE).a
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) -shared -o $@ -Wl,-force_load $^ -Wl,-install_name,$(LIBCORE).so
+	$(QUIET) $(CXX) -shared -o $@ -Wl,-force_load,$^ -Wl,-install_name,@rpath/$(LIBCORE).so.$(VERSION) -Wl,-rpath,@loader_path
 
 # TCP/IP
 
 $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
+	@echo "[SYMLINK] $(notdir $@)"
+	$(QUIET) ln -sf $(notdir $<) $@
 
-$(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a
+$(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a $(SDKLIB)/$(LIBCORE).so.$(VERSION)
 	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) $(LDFLAGS) -lmmt_core -shared -o $@ -Wl,-all_load $^ -Wl,-install_name,$(LIBTCPIP).so
+	$(QUIET) $(CXX) -shared -o $@ -Wl,-force_load,$(SDKLIB)/$(LIBTCPIP).a -L$(SDKLIB) -lmmt_core -Wl,-install_name,@rpath/$(LIBTCPIP).so.$(VERSION) -Wl,-rpath,@loader_path
 
 ifdef ENABLESEC
 # FUZZ
@@ -60,6 +64,6 @@ $(SDKLIB)/$(LIBSECURITY).so.$(VERSION): $(SDKLIB)/$(LIBSECURITY).a
 	$(QUIET) $(CXX) $(LDFLAGS) -lmmt_core -lxml2 -shared -o $@ -Wl,-all_load $^ -Wl,-install_name,$(LIBSECURITY).so
 endif
 
-CXX := g++48
-CC  := gcc48
+CXX := clang++
+CC  := clang
 AR  := ar rcs

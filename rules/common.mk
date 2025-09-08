@@ -145,9 +145,9 @@ LIBMOBILE_INC := $(SRCINC)          \
 	$(SRCDIR)/mmt_mobile/asn1c/s1ap  \
 	$(SRCDIR)/mmt_mobile/asn1c/ngap 
 
-$(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -lm -Wno-unused-variable -fPIC -lnghttp2 -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
+$(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -lm -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
 	
-$(TCPIP_OBJECTS): CFLAGS +=   -I/usr/include/nghttp2 -lnghttp2 -L/usr/lib/x86_64-linux-gnu/libnghttp2.so
+$(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK
 ifdef ENABLESEC
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))

@@ -5,7 +5,7 @@
  * 
  * Compile this example with:
  * 
- * $ gcc -g -o extract_all extract_all.c -I /opt/mmt/dpi/include   -I/usr/include/nghttp2 -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap -lnghttp2 -L/usr/lib/x86_64-linux-gnu/libnghttp2.so
+ * $ gcc -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
  *   
  * Then execute the program:
  * 
@@ -35,7 +35,6 @@
 #include <signal.h>
 #include <errno.h>
 #include <pcap.h>
-#include <nghttp2/nghttp2.h>
 #ifndef __FAVOR_BSD
 # define __FAVOR_BSD
 #endif

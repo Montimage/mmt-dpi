@@ -48,3 +48,4 @@ sftp-config.json
 .vscode
 .pydevproject
 rsync.sh
+WARP.md
