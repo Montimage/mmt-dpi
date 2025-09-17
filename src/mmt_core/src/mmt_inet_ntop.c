@@ -56,7 +56,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 #ifdef _WIN32
       a4.s_addr = addr->u.Word[3];
 #elif _OSX
-      a4.s_addr = 0;	//TODO need to fix in OSX
+      a4.s_addr = ((const uint32_t *)addr)[3];
 #else
       a4.s_addr = addr->__in6_u.__u6_addr32[3];
 #endif
@@ -78,7 +78,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 #ifdef _WIN32
       x8 = addr->u.Byte[i];
 #elif _OSX
-
+      x8 = ((const uint8_t *)addr)[i];
 #else
       x8 = addr->__in6_u.__u6_addr8[i];
 #endif
@@ -100,7 +100,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 #ifdef _WIN32
       x8 = addr->u.Byte[i + 1];
 #elif _OSX
-
+      x8 = ((const uint8_t *)addr)[i + 1];
 #else
       x8 = addr->__in6_u.__u6_addr8[i + 1];
 #endif
@@ -125,7 +125,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 #ifdef _WIN32
       x16 = addr->u.Word[i];
 #elif _OSX
-
+      x16 = ((const uint16_t *)addr)[i];
 #else
       x16 = addr->__in6_u.__u6_addr16[i];
 #endif

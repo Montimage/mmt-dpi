@@ -810,6 +810,14 @@ void init_protocol_struct(protocol_t * proto) {
 
 protocol_t *get_protocol_struct_for_registration_if_free(uint32_t proto_id) {
     if (is_free_protocol_id_for_registractionl(proto_id)) {
+        // Ensure the protocol structure is allocated
+        if (configured_protocols[proto_id] == NULL) {
+            configured_protocols[proto_id] = (protocol_t *) mmt_malloc(sizeof(protocol_t));
+            if (configured_protocols[proto_id] == NULL) {
+                return NULL;
+            }
+            memset(configured_protocols[proto_id], 0, sizeof(protocol_t));
+        }
         init_protocol_struct(configured_protocols[proto_id]);
         return configured_protocols[proto_id];
     }

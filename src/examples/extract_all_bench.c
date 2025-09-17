@@ -1,43 +1,22 @@
 /**
- * This example is intended to extract everything from a pcap file (or from an interface)! 
- * This means all the attributes of all registered protocols will be registed for extraction. 
- * When a packet is processed, the attributes found in the packet will be print out.
- * 
- * Compile this example with:
- * 
- * Linux:
- * $ gcc -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
- * 
- * macOS:
- * $ clang -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap -Wl,-rpath,/opt/mmt/dpi/lib
- * 
- * Or from MMT-DPI build directory:
- * $ clang -g -o extract_all src/examples/extract_all.c -I sdk/include -L sdk/lib -lmmt_core -ldl -lpcap -Wl,-rpath,sdk/lib
- * 
- * Before running on macOS, set:
- * $ export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib  # or path to your sdk/lib
- * $ export DYLD_LIBRARY_PATH=/opt/mmt/dpi/lib:$DYLD_LIBRARY_PATH  # if needed
- *   
- * Then execute the program:
- * 
+ * A benchmark variant of extract_all.c that logs timing and throughput summary to stderr,
+ * while preserving stdout for output comparison.
+ *
+ * Build (from repo root):
+ *   clang -O3 -DNDEBUG -o sdk/bin/extract_all_bench \
+ *     src/examples/extract_all_bench.c -I sdk/include -L sdk/lib \
+ *     -lmmt_core -ldl -lpcap -Wl,-rpath,sdk/lib
+ *
+ * Usage:
+ *   ./extract_all_bench -t sample.pcap > out.txt 2> perf.txt
+ *   ./extract_all_bench -i en0              # live capture (Ctrl-C to stop)
+ *
  * macOS runtime environment (important):
  *   export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
  *   export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
- * 
- * -> Extract from a pcap file
- * $ ./extract_all -t sample.pcap > extract_output.txt
  *
- * -> Extract from an interface
- * Linux: $ ./extract_all -i eth0 > extract_output.txt
- * macOS: $ ./extract_all -i en0 > extract_output.txt
- * 
- * -> Test with valgrind tool:
- * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./extract_all -t tcp_plugin_image.pcap 2> valgrind_test_.txt
- * You can see the example result in file: exta_output.txt
- *
- * You can see the example result in file: exta_live_output.txt
- * That is it!
- * 
+ * The SUMMARY line is printed to stderr as:
+ *   SUMMARY pkts=... bytes=... secs=... pps=... Mbps=... user=... sys=...
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,33 +25,57 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
 #include <errno.h>
 #include <pcap.h>
+#include <time.h>
+#include <inttypes.h>
 #ifndef __FAVOR_BSD
 # define __FAVOR_BSD
 #endif
 #include "mmt_core.h"
 #include "tcpip/mmt_tcpip.h"
 
-
 #define MAX_FILENAME_SIZE 256
 #define TRACE_FILE 1
 #define LIVE_INTERFACE 2
 
-mmt_handler_t *mmt_handler;// MMT handler
-pcap_t *pcap; // Pcap handler
-struct pcap_stat pcs; /* packet capture filter stats */
+mmt_handler_t *mmt_handler;   // MMT handler
+pcap_t *pcap;                  // Pcap handler
+struct pcap_stat pcs;          /* packet capture filter stats */
 int pcap_bs = 0;
+
+// Benchmark globals
+static struct timespec g_t0 = {0}, g_t1 = {0};
+static volatile uint64_t g_pkts = 0;
+static volatile uint64_t g_bytes = 0; // on-wire bytes (pcap hdr.len)
+
+static inline double timespec_diff_s(const struct timespec *a, const struct timespec *b){
+  return (double)(b->tv_sec - a->tv_sec) + (double)(b->tv_nsec - a->tv_nsec)/1e9;
+}
+
+static void print_summary_stderr(void){
+  // stop timer if not stopped
+  if(g_t1.tv_sec == 0 && g_t1.tv_nsec == 0){
+    clock_gettime(CLOCK_MONOTONIC, &g_t1);
+  }
+  double secs = timespec_diff_s(&g_t0, &g_t1);
+  struct rusage ru = {0};
+  getrusage(RUSAGE_SELF, &ru);
+  double user_s = ru.ru_utime.tv_sec + ru.ru_utime.tv_usec/1e6;
+  double sys_s  = ru.ru_stime.tv_sec + ru.ru_stime.tv_usec/1e6;
+  double pps  = secs > 0 ? (double)g_pkts / secs : 0.0;
+  double mbps = secs > 0 ? (g_bytes * 8.0) / (1e6 * secs) : 0.0;
+  fprintf(stderr,
+    "SUMMARY pkts=%" PRIu64 " bytes=%" PRIu64 " secs=%.6f pps=%.0f Mbps=%.2f user=%.3f sys=%.3f\n",
+    g_pkts, g_bytes, secs, pps, mbps, user_s, sys_s);
+}
+
 /**
  * Initialize a pcap handler
- * @param  iname       interface name
- * @param  buffer_size buffer size (MB)
- * @param  snaplen     packet snaplen
- * @return             NULL if cannot create pcap handler
- *                     a pointer points to a new pcap handle
  */
 pcap_t * init_pcap(char *iname, uint16_t buffer_size, uint16_t snaplen){
     pcap_t * my_pcap;
@@ -102,98 +105,62 @@ pcap_t * init_pcap(char *iname, uint16_t buffer_size, uint16_t snaplen){
     return my_pcap;
 }
 
-/**
- * Show help message
- * @param prg_name program name
- */
+/** Show help message */
 void usage(const char * prg_name) {
     fprintf(stderr, "%s [<option>]\n", prg_name);
     fprintf(stderr, "Option:\n");
     fprintf(stderr, "\t-t <trace file>: Gives the trace file to analyse.\n");
     fprintf(stderr, "\t-i <interface> : Gives the interface name for live traffic analysis.\n");
+    fprintf(stderr, "\t-b <MB>        : pcap buffer size in MB (live mode).\n");
     fprintf(stderr, "\t-h             : Prints this help.\n");
     exit(1);
 }
 
-/**
- * parser input parameter
- * @param argc     number of parameter
- * @param argv     parameter string
- * @param filename input source -> file name or interaface name
- * @param type     TRACE_FILE or LIVE_INTERFACE
- */
+/** Parse options */
 void parseOptions(int argc, char ** argv, char * filename, int * type) {
     int opt, optcount = 0;
     while ((opt = getopt(argc, argv, "t:i:b:h")) != EOF) {
         switch (opt) {
             case 't':
             optcount++;
-            if (optcount > 5) {
-                usage(argv[0]);
-            }
+            if (optcount > 5) usage(argv[0]);
             strncpy((char *) filename, optarg, MAX_FILENAME_SIZE);
             *type = TRACE_FILE;
             break;
             case 'i':
             optcount++;
-            if (optcount > 5) {
-                usage(argv[0]);
-            }
+            if (optcount > 5) usage(argv[0]);
             strncpy((char *) filename, optarg, MAX_FILENAME_SIZE);
             *type = LIVE_INTERFACE;
             break;
-            
             case 'b':
             optcount++;
-            if (optcount > 5) {
-                usage(argv[0]);
-            }
+            if (optcount > 5) usage(argv[0]);
             pcap_bs = atoi(optarg);
             break;
-
             case 'h':
             default: usage(argv[0]);
         }
     }
 
     if (filename == NULL || strcmp(filename, "") == 0) {
-        if (*type == TRACE_FILE) {
-            fprintf(stderr, "Missing trace file name\n");
-        }
-        if (*type == LIVE_INTERFACE) {
-            fprintf(stderr, "Missing network interface name\n");
-        }
+        if (*type == TRACE_FILE) fprintf(stderr, "Missing trace file name\n");
+        if (*type == LIVE_INTERFACE) fprintf(stderr, "Missing network interface name\n");
         usage(argv[0]);
     }
-
-    return;
 }
 
-/**
- * Register extraction attributes
- * @param attribute attribute to extract
- * @param proto_id  protocol id
- * @param args     user argument
- */
+/** Register extraction attributes */
 void attributes_iterator(attribute_metadata_t * attribute, uint32_t proto_id, void * args) {
     register_extraction_attribute(args, proto_id, attribute->id);
 }
 
-/**
- * Interate through all protocol attributes
- * @param proto_id protocol id
- * @param args     user argument
- */
+/** Iterate through all protocol attributes */
 void protocols_iterator(uint32_t proto_id, void * args) {
     iterate_through_protocol_attributes(proto_id, attributes_iterator, args);
 }
 
-/**
- * Analyse from an interface
- * @param user     user argument
- * @param p_pkthdr pcap header
- * @param data     packet data
- */
+/** Live capture callback */
 void live_capture_callback( u_char *user, const struct pcap_pkthdr *p_pkthdr, const u_char *data )
 {
     mmt_handler_t *mmt = (mmt_handler_t*)user;
@@ -206,66 +173,59 @@ void live_capture_callback( u_char *user, const struct pcap_pkthdr *p_pkthdr, co
     if (!packet_process(mmt, &header, data)) {
         fprintf(stderr, "Packet data extraction failure.\n");
     }
+    // update counters
+    g_pkts++;
+    g_bytes += p_pkthdr->len;
 }
 
-/**
- * Clean resource when the program finished
- */
+/** Clean resources */
 void clean() {
     printf("\n[info] Cleaning....\n");
-    
     //Close the MMT handler
     mmt_close_handler(mmt_handler);
     printf("[info] Closed mmt_handler\n");
-    
     //Close MMT
     close_extraction();
     printf("[info] Closed extraction \n");
 
     // Show pcap statistic if capture from an interface
-    if (pcap_stats(pcap, &pcs) < 0) {
-        printf("[info] pcap_stats does not exist\n");
-        (void) printf("[info] pcap_stats: %s\n", pcap_geterr(pcap));
-    } else {
+    if (pcap && pcap_stats(pcap, &pcs) == 0) {
         (void) printf("[info] \n%12d packets received by filter\n", pcs.ps_recv);
         (void) printf("[info] %12d packets dropped by kernel (%3.2f%%)\n", pcs.ps_drop, pcs.ps_drop * 100.0 / pcs.ps_recv);
         (void) printf("[info] %12d packets dropped by driver (%3.2f%%)\n", pcs.ps_ifdrop, pcs.ps_ifdrop * 100.0 / pcs.ps_recv);
         fflush(stderr);
     }
-    
+
     printf("[info] Closing pcaps...!\n");
     if (pcap != NULL) pcap_close(pcap);
     printf("[info] Finished cleaning....\n");
 }
 
-/**
- * Handler signals during excutation time
- * @param type signal type
- */
+/** Signal handler */
 void signal_handler(int type) {
-    printf("\n[info] reception of signal %d\n", type);
-    fflush( stderr );
+    fprintf(stderr, "\n[info] reception of signal %d\n", type);
+    // stop timer and print partial summary
+    clock_gettime(CLOCK_MONOTONIC, &g_t1);
+    print_summary_stderr();
+    fflush(stderr);
     clean();
 }
 
-/**
- * Main program start from here
- * @param  argc [description]
- * @param  argv [description]
- * @return      [description]
- */
 int main(int argc, char ** argv) {
-    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     printf("|\t\t MONTIMAGE\n");
     printf("|\t MMT-SDK version: %s\n",mmt_version());
     printf("|\t %s: built %s %s\n", argv[0], __DATE__, __TIME__);
     printf("|\t http://montimage.com\n");
-    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
+
     sigset_t signal_set;
 
     char mmt_errbuf[1024];
     char filename[MAX_FILENAME_SIZE + 1]; // interface name or path to pcap file
     int type; // Online or offline mode
+    filename[0] = '\0';
+    type = TRACE_FILE; // default
 
     // Parse option
     parseOptions(argc, argv, filename, &type);
@@ -280,18 +240,21 @@ int main(int argc, char ** argv) {
         return EXIT_FAILURE;
     }
 
-    // Interate throught protocols to register extract all attributes of all protocols
+    // Interate through protocols to register extraction of all attributes
     iterate_through_protocols(protocols_iterator, mmt_handler);
 
-    // Register packet handler function
+    // Register packet handler function that prints extracted attributes to stdout
     register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler, NULL);
 
-    // Handle signal
+    // Handle signals
     sigfillset(&signal_set);
-    signal(SIGINT, signal_handler);
+    signal(SIGINT,  signal_handler);
     signal(SIGTERM, signal_handler);
     signal(SIGSEGV, signal_handler);
     signal(SIGABRT, signal_handler);
+
+    // Start timing
+    clock_gettime(CLOCK_MONOTONIC, &g_t0);
 
     if (type == TRACE_FILE) {
         // OFFLINE mode
@@ -307,30 +270,34 @@ int main(int argc, char ** argv) {
             header.ts = p_pkthdr.ts;
             header.caplen = p_pkthdr.caplen;
             header.len = p_pkthdr.len;
-            // header.probe_id = 4;
-            // header.source_id = 10;
             if (!packet_process(mmt_handler, &header, data)) {
                 fprintf(stderr, "Packet data extraction failure.\n");
             }
+            // update counters
+            g_pkts++;
+            g_bytes += p_pkthdr.len;
         }
+        clock_gettime(CLOCK_MONOTONIC, &g_t1);
+        print_summary_stderr();
     } else {
+        // ONLINE MODE
         if(pcap_bs == 0){
             printf("[info] Use default buffer size: 50 (MB)\n");
         }else{
             printf("[info] Use buffer size: %d (MB)\n",pcap_bs);
         }
-        // ONLINE MODE
-        pcap = init_pcap(filename,pcap_bs,65535);
-
+        pcap = init_pcap(filename, pcap_bs, 65535);
         if (!pcap) {
             fprintf(stderr, "[error] creating pcap failed for the following reason: %s\n", mmt_errbuf);
             return EXIT_FAILURE;
         }
-        (void)pcap_loop( pcap, -1, &live_capture_callback, (u_char*)mmt_handler );
+        // pcap_loop blocks; summary printed in signal handler or after loop returns
+        int rc = pcap_loop( pcap, -1, &live_capture_callback, (u_char*)mmt_handler );
+        (void)rc;
+        clock_gettime(CLOCK_MONOTONIC, &g_t1);
+        print_summary_stderr();
     }
 
     clean();
-
     return EXIT_SUCCESS;
-
 }

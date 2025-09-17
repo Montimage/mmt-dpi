@@ -48,3 +48,10 @@ sftp-config.json
 .vscode
 .pydevproject
 rsync.sh
+WARP.md# Build artifacts
+extract_all
+*.dSYM/
+proto_attributes_iterator
+test_simple
+smallFlows.pcap
+tcpip/
