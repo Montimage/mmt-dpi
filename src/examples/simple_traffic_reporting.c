@@ -24,8 +24,9 @@
  * 
  * Then execute the program:
  * 
- * IMPORTANT for macOS: Set the plugin path before running:
+ * IMPORTANT for macOS: Set the environment before running:
  * $ export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
+ * $ export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
  * 
  * $ ./simple_traffic_reporting tcp_plugin_image.pcap > simple_traffic_reporting.txt
  * 

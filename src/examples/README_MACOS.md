@@ -37,7 +37,7 @@ clang -o <program_name> <source_file>.c \
 
 ## CRITICAL: Environment Setup Before Running
 
-**Every example requires these environment variables on macOS:**
+**Every example requires these environment variables on macOS (set these before running):**
 ```bash
 export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
 export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
