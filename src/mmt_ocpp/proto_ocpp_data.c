@@ -16,8 +16,8 @@ static int ocpp_data_classify_next_proto(ipacket_t *packet, unsigned index) {
 	const char* data = (char *)&packet->data[offset];
 	if( data_len <= 0 )
 		return 0;
-	//started by "level_0" ??
-	if( strncmp("level_0", data, 7) != 0 )
+	//started by "flow_id" ??
+	if( strncmp("flow_id", data, 7) != 0 )
 		return 0;
 
 	classified_proto_t retval;
@@ -131,16 +131,6 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		return 0;
 
 	switch (extracted_data->field_id) {
-    case OCPP_DATA_LEVEL_0:
-        ptr = _get_pos(data_len, data, "level_0:");
-        _assign_uint32_t(ptr, extracted_data);
-        break;
-
-    case OCPP_DATA_INDEX:
-        ptr = _get_pos(data_len, data, "index:");
-        _assign_uint32_t(ptr, extracted_data);
-        break;
-
     case OCPP_DATA_FLOW_ID:
         ptr = _get_pos(data_len, data, "flow_id:");
         _assign_string(ptr, extracted_data, ',');
@@ -411,6 +401,11 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
         _assign_uint32_t(ptr, extracted_data);
         break;
 
+    case OCPP_DATA_SIMULATION_ID:
+        ptr = _get_pos(data_len, data, "simulation_id:");
+        _assign_uint32_t(ptr, extracted_data);
+        break;
+
     default:
         // Handle unknown field IDs if necessary
         break;
@@ -420,8 +415,6 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 }
 
 static attribute_metadata_t _attributes_metadata[] = {
-    {OCPP_DATA_LEVEL_0,                      OCPP_DATA_LEVEL_0_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {OCPP_DATA_INDEX,                        OCPP_DATA_INDEX_ALIAS,                        MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_FLOW_ID,                      OCPP_DATA_FLOW_ID_ALIAS,                      MMT_STRING_DATA,    BINARY_64DATA_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     //Ask about handling IP address
     {OCPP_DATA_SRC_IP,                       OCPP_DATA_SRC_IP_ALIAS,                       MMT_STRING_DATA,    BINARY_64DATA_LEN,    POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
@@ -481,7 +474,8 @@ static attribute_metadata_t _attributes_metadata[] = {
     {OCPP_DATA_FLOW_MAX_OCPP16_METERVALUE_SOC, OCPP_DATA_FLOW_MAX_OCPP16_METERVALUE_SOC_ALIAS, MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_FLOW_AVG_OCPP16_METERVALUE_WH_DIFF, OCPP_DATA_FLOW_AVG_OCPP16_METERVALUE_WH_DIFF_ALIAS, MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {OCPP_DATA_FLOW_MAX_OCPP16_METERVALUE_WH_DIFF, OCPP_DATA_FLOW_MAX_OCPP16_METERVALUE_WH_DIFF_ALIAS, MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {OCPP_DATA_FLOW_MIN_OCPP16_METERVALUE_WH_DIFF, OCPP_DATA_FLOW_MIN_OCPP16_METERVALUE_WH_DIFF_ALIAS, MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
+    {OCPP_DATA_FLOW_MIN_OCPP16_METERVALUE_WH_DIFF, OCPP_DATA_FLOW_MIN_OCPP16_METERVALUE_WH_DIFF_ALIAS, MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {OCPP_DATA_SIMULATION_ID, OCPP_DATA_SIMULATION_ID_ALIAS, MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att}
 };
 
 static classified_proto_t ocpp_data_stack_classification(ipacket_t * ipacket) {
