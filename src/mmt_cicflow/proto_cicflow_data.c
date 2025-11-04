@@ -439,13 +439,45 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
             ptr = _get_pos(data_len, data, "Idle_Min:");
             _assign_float(ptr, extracted_data);
             break;
-        case CICFLOW_DATA_LABEL:
-            ptr = _get_pos(data_len, data, "Label:");
-            _assign_string(ptr, extracted_data, ',');
+        case CICFLOW_DATA_BWD_ACT_DATA_PKTS:
+            ptr = _get_pos(data_len, data, "Bwd_Act_Data_Pkts:");
+            _assign_uint32_t(ptr, extracted_data);
             break;
-        case CICFLOW_DATA_ID:
-            ptr = _get_pos(data_len, data, "id:");
-            _assign_string(ptr, extracted_data, ',');
+        case CICFLOW_DATA_BWD_RST_FLAGS:
+            ptr = _get_pos(data_len, data, "Bwd_RST_Flags:");
+            _assign_uint32_t(ptr, extracted_data);
+            break;
+        case CICFLOW_DATA_BWD_SEG_SIZE_MIN:
+            ptr = _get_pos(data_len, data, "Bwd_Seg_Size_Min:");
+            _assign_uint32_t(ptr, extracted_data);
+            break;
+        case CICFLOW_DATA_BWD_TCP_RETRANS_COUNT:
+            ptr = _get_pos(data_len, data, "Bwd_TCP_Retrans_Count:");
+            _assign_uint32_t(ptr, extracted_data);
+            break;
+        case CICFLOW_DATA_FWD_RST_FLAGS:
+            ptr = _get_pos(data_len, data, "Fwd_RST_Flags:");
+            _assign_uint32_t(ptr, extracted_data);
+            break;
+        case CICFLOW_DATA_FWD_TCP_RETRANS_COUNT:
+            ptr = _get_pos(data_len, data, "Fwd_TCP_Retrans_Count:");
+            _assign_uint32_t(ptr, extracted_data);
+            break;
+        case CICFLOW_DATA_ICMP_CODE:
+            ptr = _get_pos(data_len, data, "ICMP_Code:");
+            _assign_uint32_t(ptr, extracted_data);
+            break;
+        case CICFLOW_DATA_ICMP_TYPE:
+            ptr = _get_pos(data_len, data, "ICMP_Type:");
+            _assign_uint32_t(ptr, extracted_data);
+            break;
+        case CICFLOW_DATA_TOTAL_CONNECTION_FLOW_TIME:
+            ptr = _get_pos(data_len, data, "Total_Connection_Flow_Time:");
+            _assign_float(ptr, extracted_data);
+            break;
+        case CICFLOW_DATA_TOTAL_TCP_RETRANS_COUNT:
+            ptr = _get_pos(data_len, data, "Total_TCP_Retrans_Count:");
+            _assign_uint32_t(ptr, extracted_data);
             break;
 
         default:
@@ -540,8 +572,16 @@ static attribute_metadata_t _attributes_metadata[] = {
     {CICFLOW_DATA_IDLE_STD,  CICFLOW_DATA_IDLE_STD_ALIAS,                      MMT_DATA_FLOAT, sizeof(float_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {CICFLOW_DATA_IDLE_MAX,  CICFLOW_DATA_IDLE_MAX_ALIAS,                      MMT_DATA_FLOAT, sizeof(float_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {CICFLOW_DATA_IDLE_MIN,  CICFLOW_DATA_IDLE_MIN_ALIAS,                      MMT_DATA_FLOAT, sizeof(float_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {CICFLOW_DATA_LABEL,  CICFLOW_DATA_LABEL_ALIAS,                      MMT_STRING_DATA, BINARY_64DATA_LEN, POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
-    {CICFLOW_DATA_ID,  CICFLOW_DATA_ID_ALIAS,                      MMT_STRING_DATA, BINARY_64DATA_LEN, POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_BWD_ACT_DATA_PKTS,  CICFLOW_DATA_BWD_ACT_DATA_PKTS_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_BWD_RST_FLAGS,  CICFLOW_DATA_BWD_RST_FLAGS_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_BWD_SEG_SIZE_MIN,  CICFLOW_DATA_BWD_SEG_SIZE_MIN_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_BWD_TCP_RETRANS_COUNT,  CICFLOW_DATA_BWD_TCP_RETRANS_COUNT_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_FWD_RST_FLAGS,  CICFLOW_DATA_FWD_RST_FLAGS_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_FWD_TCP_RETRANS_COUNT,  CICFLOW_DATA_FWD_TCP_RETRANS_COUNT_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_ICMP_CODE,  CICFLOW_DATA_ICMP_CODE_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_ICMP_TYPE,  CICFLOW_DATA_ICMP_TYPE_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_TOTAL_CONNECTION_FLOW_TIME,  CICFLOW_DATA_TOTAL_CONNECTION_FLOW_TIME_ALIAS,                      MMT_DATA_FLOAT, sizeof(float_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_TOTAL_TCP_RETRANS_COUNT,  CICFLOW_DATA_TOTAL_TCP_RETRANS_COUNT_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
 };
 
 static classified_proto_t cicflow_data_stack_classification(ipacket_t * ipacket) {
