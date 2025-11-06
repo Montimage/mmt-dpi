@@ -16,7 +16,7 @@
 	if( data_len <= 0 )
 		return 0;
 	//started by "Flow ID"
-	if( strncmp("Flow_ID", data, 7) != 0 )
+	if( strncmp("id", data, 2) != 0 )
 		return 0;
 
 	classified_proto_t retval;
@@ -107,8 +107,8 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
         return 0;
 
     switch (extracted_data->field_id) {
-        case CICFLOW_DATA_FLOW_ID:
-            ptr = _get_pos(data_len, data, "Flow_ID:");
+        case CICFLOW_DATA_ID:
+            ptr = _get_pos(data_len, data, "id:");
             _assign_string(ptr, extracted_data, ',');
             break;
         case CICFLOW_DATA_SRC_IP:
@@ -452,7 +452,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
             _assign_uint32_t(ptr, extracted_data);
             break;
         case CICFLOW_DATA_BWD_TCP_RETRANS_COUNT:
-            ptr = _get_pos(data_len, data, "Bwd_TCP_Retrans_Count:");
+            ptr = _get_pos(data_len, data, "Bwd_TCP_Retrans_dot_Count:");
             _assign_uint32_t(ptr, extracted_data);
             break;
         case CICFLOW_DATA_FWD_RST_FLAGS:
@@ -460,7 +460,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
             _assign_uint32_t(ptr, extracted_data);
             break;
         case CICFLOW_DATA_FWD_TCP_RETRANS_COUNT:
-            ptr = _get_pos(data_len, data, "Fwd_TCP_Retrans_Count:");
+            ptr = _get_pos(data_len, data, "Fwd_TCP_Retrans_dot_Count:");
             _assign_uint32_t(ptr, extracted_data);
             break;
         case CICFLOW_DATA_ICMP_CODE:
@@ -476,7 +476,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
             _assign_float(ptr, extracted_data);
             break;
         case CICFLOW_DATA_TOTAL_TCP_RETRANS_COUNT:
-            ptr = _get_pos(data_len, data, "Total_TCP_Retrans_Count:");
+            ptr = _get_pos(data_len, data, "Total_TCP_Retrans_dot_Count:");
             _assign_uint32_t(ptr, extracted_data);
             break;
 
@@ -489,7 +489,7 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 }
 
 static attribute_metadata_t _attributes_metadata[] = {
-    {CICFLOW_DATA_FLOW_ID,  CICFLOW_DATA_FLOW_ID_ALIAS,                      MMT_STRING_DATA, BINARY_64DATA_LEN, POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
+    {CICFLOW_DATA_ID,  CICFLOW_DATA_ID_ALIAS,                      MMT_STRING_DATA, BINARY_64DATA_LEN, POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {CICFLOW_DATA_SRC_IP,  CICFLOW_DATA_SRC_IP_ALIAS,                      MMT_STRING_DATA, BINARY_64DATA_LEN, POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {CICFLOW_DATA_SRC_PORT,  CICFLOW_DATA_SRC_PORT_ALIAS,                      MMT_U32_DATA, sizeof(uint32_t), POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
     {CICFLOW_DATA_DST_IP,  CICFLOW_DATA_DST_IP_ALIAS,                      MMT_STRING_DATA, BINARY_64DATA_LEN, POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_att},
