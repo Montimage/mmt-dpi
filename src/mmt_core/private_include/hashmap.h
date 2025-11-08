@@ -8,7 +8,8 @@
 #include "data_defs.h"
 
 
-#define MMT_HASHMAP_NSLOTS  0x100
+#define MMT_HASHMAP_NSLOTS  0x1000  /* 4096 slots for better distribution */
+#define MMT_HASHMAP_MASK    (MMT_HASHMAP_NSLOTS - 1)  /* Bitmask for fast modulo */
 
 /*
    +--------------------+

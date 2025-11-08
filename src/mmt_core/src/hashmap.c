@@ -95,7 +95,7 @@ void hashmap_cleanup( mmt_hashmap_t *map )
 
 void hashmap_insert_kv( mmt_hashmap_t *map, mmt_key_t key, void *val )
 {
-   mmt_hslot_t *slot = &map->slots[ key % MMT_HASHMAP_NSLOTS ];
+   mmt_hslot_t *slot = &map->slots[ key & MMT_HASHMAP_MASK ];  /* Use bitmask instead of modulo */
    mmt_hent_t  *he   = hent_new();
 
    he->key  = key;
@@ -185,7 +185,7 @@ int hashmap_remove( mmt_hashmap_t *map, mmt_key_t key )
 
 mmt_hent_t *hmap_lookup( mmt_hashmap_t *map, mmt_key_t key )
 {
-   mmt_hslot_t *slot = &map->slots[ key % MMT_HASHMAP_NSLOTS ];
+   mmt_hslot_t *slot = &map->slots[ key & MMT_HASHMAP_MASK ];  /* Use bitmask instead of modulo */
    mmt_hent_t  *he   = slot->lh_first;
 
    while(( he != NULL ) && ( he->key != key ))
