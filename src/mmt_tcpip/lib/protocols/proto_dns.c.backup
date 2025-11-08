@@ -1,8 +1,4 @@
 #include "dns.h"
-// DNS recursion safety limits
-#define MAX_DNS_RECURSION_DEPTH 10
-#define MAX_DNS_NAME_LENGTH 255
-
 
 uint16_t bytes_to_int_extraction(const u_char *payload,int nb_bytes){
     if(payload==NULL) return -1;
@@ -219,55 +215,23 @@ void dns_free_answer(dns_answer_t *da){
 
 }
 
-/**
- * Internal recursive function with depth limit
- */
-static dns_name_t * dns_extract_name_internal(const u_char* dns_name_payload,
-                                               const u_char* dns_payload,
-                                               const u_char* packet_end,
-                                               int depth){
-    // Check recursion depth
-    if(depth > MAX_DNS_RECURSION_DEPTH){
-        MMT_LOG(PROTO_DNS, MMT_LOG_WARNING, "DNS recursion depth exceeded");
-        return NULL;
-    }
-
-    // Validate pointer within packet
-    if(dns_name_payload == NULL || dns_name_payload >= packet_end) return NULL;
-
-    // Validate we can read at least one byte
-    if(dns_name_payload + 1 > packet_end) return NULL;
-
+dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_payload){
+    if(dns_name_payload== NULL) return NULL;
     uint16_t str_length = hex2int(dns_name_payload[0]);
     if(str_length == 0){
         return NULL;
     }else if(str_length == 192){
-        // Compression pointer - validate we can read offset byte
-        if(dns_name_payload + 2 > packet_end) return NULL;
-
         int offset_name = hex2int(dns_name_payload[1]);
-
-        // Validate offset is within packet
-        if(dns_payload + offset_name >= packet_end) return NULL;
-
-        dns_name_t * original_name = dns_extract_name_internal(dns_payload + offset_name,
-                                                               dns_payload,
-                                                               packet_end,
-                                                               depth + 1);
+        dns_name_t * original_name = dns_extract_name(dns_payload + offset_name,dns_payload);
         if(original_name){
             original_name->real_length = 2;
             original_name->is_ref = 1;
+            // original_name->next = dns_extract_name(dns_payload + offset_name + original_name->length + 1,dns_payload);
             return original_name;
         }else{
             return NULL;
         }
     }else{
-        // Validate label length is reasonable
-        if(str_length > MAX_DNS_NAME_LENGTH) return NULL;
-
-        // Validate we can read the label data
-        if(dns_name_payload + 1 + str_length > packet_end) return NULL;
-
         dns_name_t * dns_name;
         dns_name = dns_new_name();
         if(dns_name){
@@ -276,27 +240,14 @@ static dns_name_t * dns_extract_name_internal(const u_char* dns_name_payload,
                 dns_free_name(dns_name);
                 return NULL;
             }
-            memcpy(dns_name->value, dns_name_payload + 1, str_length);
+            memcpy(dns_name->value,dns_name_payload + 1,str_length);
             dns_name->value[str_length]='\0';
             dns_name->length = str_length;
             dns_name->real_length = str_length;
-            dns_name->next = dns_extract_name_internal(dns_name_payload + str_length + 1,
-                                                       dns_payload,
-                                                       packet_end,
-                                                       depth + 1);
-        }
-        return dns_name;
+            dns_name->next = dns_extract_name(dns_name_payload + str_length + 1,dns_payload);
+        }   
+        return dns_name; 
     }
-}
-
-/**
- * Public wrapper function maintaining original API
- */
-dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_payload){
-    // Use a reasonable packet end estimate for backward compatibility
-    // In real usage, this should be passed from the caller
-    const u_char* packet_end = dns_payload + 65535;
-    return dns_extract_name_internal(dns_name_payload, dns_payload, packet_end, 0);
 }
 
 dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char* dns_payload){

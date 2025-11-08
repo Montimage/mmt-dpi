@@ -24,6 +24,7 @@
 [COMPILE] proto_163.o
 [COMPILE] proto_20minutes.o
 [COMPILE] proto_360.o
+[COMPILE] proto_3pc.o
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c: In function 'get_child_protocol_stats':
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c:2700:31: warning: infinite recursion detected [-Winfinite-recursion]
  2700 | proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal_t * proto_stats, uint32_t child_proto_id) {
@@ -31,7 +32,6 @@
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c:2701:16: note: recursive call
  2701 |         return get_child_protocol_stats( proto_stats, child_proto_id);
       |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[COMPILE] proto_3pc.o
 /home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c: In function 'request_url_cb':
 /home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c:83:24: warning: unused variable 'sp' [-Wunused-variable]
    83 |   stream_processor_t * sp = (stream_processor_t *) p->data;
@@ -274,14 +274,14 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 [COMPILE] proto_gre.o
 [COMPILE] proto_grooveshark.o
 [COMPILE] proto_groupon.o
+[COMPILE] proto_gtalk.o
+[COMPILE] proto_gtp.o
+[COMPILE] proto_guardian.o
 In function 'ftp_set_command_id',
     inlined from 'ftp_get_command' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:795:5:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:564:19: warning: '*cmd.str_cmd' may be used uninitialized [-Wmaybe-uninitialized]
   564 |     if (strlen(cmd->str_cmd) == 3) {
       |                ~~~^~~~~~~~~
-[COMPILE] proto_gtalk.o
-[COMPILE] proto_gtp.o
-[COMPILE] proto_guardian.o
 [COMPILE] proto_guildwars.o
 [COMPILE] proto_haberturk.o
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c: In function 'ftp_request_packet':
@@ -375,40 +375,19 @@ In function 'sprintf',
 [COMPILE] proto_ip_frag.o
 [COMPILE] proto_ip_in_ip.o
 [COMPILE] proto_ipcomp.o
-[COMPILE] proto_ipcv.o
-[COMPILE] proto_iplt.o
-In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:8:
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
-   87 | int_report_v10_t;
-      | ^~~~~~~~~~~~~~~~
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:9:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
    87 | int_report_v10_t;
       | ^~~~~~~~~~~~~~~~
+[COMPILE] proto_ipcv.o
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:8:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
+   87 | int_report_v10_t;
+      | ^~~~~~~~~~~~~~~~
+[COMPILE] proto_iplt.o
 [COMPILE] proto_ipp.o
 [COMPILE] proto_ippc.o
 [COMPILE] proto_ipsec.o
-In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
-                 from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:11:
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c: In function '_classify_inband_network_telemetry_from_udp':
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
-  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
-      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:117:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
-  117 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
-      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
-   85 |         uint64_t bitmask[10];
-      |                  ^~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
-  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
-      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:117:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
-  117 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
-      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
-   85 |         uint64_t bitmask[10];
-      |                  ^~~~~~~
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
                  from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:12:
 In function '_classify_int_from_udp_or_tcp',
@@ -435,31 +414,52 @@ In function '_classify_int_from_udp_or_tcp',
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
+In function '_classify_int_from_udp_or_tcp',
+    inlined from '_classify_int_from_tcp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:81:9:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:71:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   71 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h: In function '_classify_int_from_tcp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+In function '_classify_int_from_udp_or_tcp',
+    inlined from '_classify_int_from_tcp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:81:9:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:71:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   71 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h: In function '_classify_int_from_tcp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
+                 from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:11:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c: In function '_classify_inband_network_telemetry_from_udp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:117:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+  117 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:117:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+  117 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
 [COMPILE] proto_iptm.o
-In function '_classify_int_from_udp_or_tcp',
-    inlined from '_classify_int_from_tcp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:81:9:
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
-  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
-      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:71:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
-   71 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
-      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h: In function '_classify_int_from_tcp':
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
-   85 |         uint64_t bitmask[10];
-      |                  ^~~~~~~
-In function '_classify_int_from_udp_or_tcp',
-    inlined from '_classify_int_from_tcp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:81:9:
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
-  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
-      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:71:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
-   71 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
-      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h: In function '_classify_int_from_tcp':
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
-   85 |         uint64_t bitmask[10];
-      |                  ^~~~~~~
 [COMPILE] proto_ipv6.o
 [COMPILE] proto_ipv6_dgram.o
 [COMPILE] proto_ipx_in_ip.o
@@ -680,7 +680,6 @@ In function '_extraction_quic_ietf_att',
   271 |         attribute_t extracted_data;
       |                     ^~~~~~~~~~~~~~
 [COMPILE] proto_rovio.o
-[COMPILE] proto_rsvp.o
 In function '_extraction_quic_ietf_att',
     inlined from '_quic_ietf_calculate_rtts' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:278:6,
     inlined from '_quic_ietf_session_data_analysis' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:334:2:
@@ -691,6 +690,8 @@ In function '_extraction_quic_ietf_att',
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:271:21: note: object 'extracted_data' of size 40
   271 |         attribute_t extracted_data;
       |                     ^~~~~~~~~~~~~~
+[COMPILE] proto_rsvp.o
+[COMPILE] proto_rsvp_e2e_ignore.o
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
                  from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:10:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c: In function '_init_bitmask':
@@ -712,7 +713,6 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
-[COMPILE] proto_rsvp_e2e_ignore.o
 [COMPILE] proto_rtp.o
 [COMPILE] proto_rtsp.o
 [COMPILE] proto_rutube.o
@@ -984,6 +984,7 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 [COMPILE] NGAP_AMF-TNLAssociationToRemoveItem.o
 [COMPILE] NGAP_AMF-TNLAssociationToRemoveList.o
 [COMPILE] NGAP_AMF-TNLAssociationToUpdateItem.o
+[COMPILE] NGAP_AMF-TNLAssociationToUpdateList.o
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c: In function 'aper_decode':
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c:169:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
   169 |         if(!td->op->aper_decoder)
@@ -991,7 +992,6 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c:171:17: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
   171 |                 rval = td->op->aper_decoder(opt_codec_ctx, td, 0, sptr, &pd);
       |                 ^~~~
-[COMPILE] NGAP_AMF-TNLAssociationToUpdateList.o
 [COMPILE] NGAP_AMF-UE-NGAP-ID.o
 [COMPILE] NGAP_AMFConfigurationUpdate.o
 [COMPILE] NGAP_AMFConfigurationUpdateAcknowledge.o
@@ -1937,6 +1937,9 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 [INCLUDE] extraction_lib.h
 [INCLUDE] mmt_core.h
 [INCLUDE] mmt_exports.h
+[INCLUDE] mmt_safe_access.h
+[INCLUDE] mmt_safe_math.h
+[INCLUDE] mmt_safe_string.h
 [INCLUDE] mmt_utils.h
 [INCLUDE] plugin_defs.h
 [INCLUDE] proto_meta.h
