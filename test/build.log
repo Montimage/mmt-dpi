@@ -2,6 +2,7 @@
 [COMPILE] hashmap.o
 [COMPILE] hexdump.o
 [COMPILE] memory.o
+[COMPILE] mempool.o
 [COMPILE] mmt_data.o
 [COMPILE] mmt_inet_ntop.o
 [COMPILE] mmt_init.o
@@ -24,6 +25,7 @@
 [COMPILE] proto_163.o
 [COMPILE] proto_20minutes.o
 [COMPILE] proto_360.o
+[COMPILE] proto_3pc.o
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c: In function 'get_child_protocol_stats':
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c:2700:31: warning: infinite recursion detected [-Winfinite-recursion]
  2700 | proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal_t * proto_stats, uint32_t child_proto_id) {
@@ -31,7 +33,7 @@
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c:2701:16: note: recursive call
  2701 |         return get_child_protocol_stats( proto_stats, child_proto_id);
       |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[COMPILE] proto_3pc.o
+[COMPILE] proto_4story.o
 /home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c: In function 'request_url_cb':
 /home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c:83:24: warning: unused variable 'sp' [-Wunused-variable]
    83 |   stream_processor_t * sp = (stream_processor_t *) p->data;
@@ -40,7 +42,6 @@
 /home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c:95:24: warning: unused variable 'sp' [-Wunused-variable]
    95 |   stream_processor_t * sp = (stream_processor_t *) p->data;
       |                        ^~
-[COMPILE] proto_4story.o
 [COMPILE] proto_500px.o
 [COMPILE] proto_56.o
 [COMPILE] proto_7digital.o
@@ -197,6 +198,9 @@
 [COMPILE] proto_eksisozluk.o
 [COMPILE] proto_electronicsarts.o
 [COMPILE] proto_emcon.o
+[COMPILE] proto_encap.o
+[COMPILE] proto_engagemedia.o
+[COMPILE] proto_esp.o
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
                  from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_dtls.c:11:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_dtls.c: In function 'classify_dtls_from_udp':
@@ -218,9 +222,6 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
-[COMPILE] proto_encap.o
-[COMPILE] proto_engagemedia.o
-[COMPILE] proto_esp.o
 [COMPILE] proto_espn.o
 [COMPILE] proto_etherip.o
 [COMPILE] proto_ethernet.o
@@ -337,11 +338,11 @@ In function 'sprintf',
 [COMPILE] proto_hootsuite.o
 [COMPILE] proto_hotmail.o
 [COMPILE] proto_http.o
-[COMPILE] proto_http_application_activesync.o
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_gtp.c: In function 'gtp_classify_next_proto':
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_gtp.c:95:39: warning: unused variable 'next_ext_header_length' [-Wunused-variable]
    95 |         int next_ext_header_type = 0, next_ext_header_length = 0;
       |                                       ^~~~~~~~~~~~~~~~~~~~~~
+[COMPILE] proto_http_application_activesync.o
 [COMPILE] proto_http_application_veohtv.o
 [COMPILE] proto_http_proxy.o
 [COMPILE] proto_huffington_post.o
@@ -379,19 +380,16 @@ In function 'sprintf',
 [COMPILE] proto_ip_frag.o
 [COMPILE] proto_ip_in_ip.o
 [COMPILE] proto_ipcomp.o
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:8:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
+   87 | int_report_v10_t;
+      | ^~~~~~~~~~~~~~~~
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:9:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
    87 | int_report_v10_t;
       | ^~~~~~~~~~~~~~~~
 [COMPILE] proto_ipcv.o
 [COMPILE] proto_iplt.o
-In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:8:
-/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
-   87 | int_report_v10_t;
-      | ^~~~~~~~~~~~~~~~
-[COMPILE] proto_ipp.o
-[COMPILE] proto_ippc.o
-[COMPILE] proto_ipsec.o
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
                  from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:12:
 In function '_classify_int_from_udp_or_tcp',
@@ -418,6 +416,7 @@ In function '_classify_int_from_udp_or_tcp',
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
+[COMPILE] proto_ipp.o
 In function '_classify_int_from_udp_or_tcp',
     inlined from '_classify_int_from_tcp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:81:9:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
@@ -442,6 +441,7 @@ In function '_classify_int_from_udp_or_tcp',
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
+[COMPILE] proto_ippc.o
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
                  from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:11:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c: In function '_classify_inband_network_telemetry_from_udp':
@@ -463,6 +463,7 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
+[COMPILE] proto_ipsec.o
 [COMPILE] proto_iptm.o
 [COMPILE] proto_ipv6.o
 [COMPILE] proto_ipv6_dgram.o
@@ -694,7 +695,6 @@ In function '_extraction_quic_ietf_att',
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:271:21: note: object 'extracted_data' of size 40
   271 |         attribute_t extracted_data;
       |                     ^~~~~~~~~~~~~~
-[COMPILE] proto_rsvp.o
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
                  from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:10:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c: In function '_init_bitmask':
@@ -716,6 +716,7 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
+[COMPILE] proto_rsvp.o
 [COMPILE] proto_rsvp_e2e_ignore.o
 [COMPILE] proto_rtp.o
 [COMPILE] proto_rtsp.o
@@ -937,6 +938,7 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 [COMPILE] OPEN_TYPE_oer.o
 [COMPILE] PrintableString.o
 [COMPILE] S1AP-PDU.o
+[COMPILE] asn_SEQUENCE_OF.o
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c: In function 'asn_imax2INTEGER':
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1280:29: warning: array subscript 0 is outside array bounds of 'intmax_t[1]' {aka 'long int[1]'} [-Warray-bounds=]
  1280 |         for(bp = buf, pend1 += add; p != pend1; p += add)
@@ -951,7 +953,6 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1357:1: note: at offset -1 into object 'value' of size 8
  1357 | asn_int642INTEGER(INTEGER_t *st, int64_t value) {
       | ^~~~~~~~~~~~~~~~~
-[COMPILE] asn_SEQUENCE_OF.o
 [COMPILE] asn_SET_OF.o
 [COMPILE] asn_application.o
 [COMPILE] asn_bit_data.o
@@ -1939,6 +1940,7 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 [INCLUDE] data_defs.h
 [INCLUDE] dbg.h
 [INCLUDE] extraction_lib.h
+[INCLUDE] mempool.h
 [INCLUDE] mmt_core.h
 [INCLUDE] mmt_exports.h
 [INCLUDE] mmt_safe_access.h
