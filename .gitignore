@@ -49,7 +49,8 @@ sftp-config.json
 .pydevproject
 rsync.sh
 
-# ignore test binaries
+# ignore test binaries (but not source files)
 test/validation/test_validation_framework
-test/unit/test_*
+test/unit/test_error_handling
+test/unit/test_logging
 test/performance/bench_*
