@@ -80,4 +80,19 @@ static inline bool mmt_safe_shl_u32(uint32_t value, unsigned int shift, uint32_t
     return true;
 }
 
+/**
+ * Safe subtraction for uint32_t
+ * @param a First operand (minuend)
+ * @param b Second operand (subtrahend)
+ * @param result Pointer to store result
+ * @return true if successful, false if underflow would occur
+ */
+static inline bool mmt_safe_sub_u32(uint32_t a, uint32_t b, uint32_t *result) {
+    if (a < b) {
+        return false;  // Underflow would occur
+    }
+    *result = a - b;
+    return true;
+}
+
 #endif /* MMT_SAFE_MATH_H */
