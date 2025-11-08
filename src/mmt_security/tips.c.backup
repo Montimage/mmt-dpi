@@ -86,7 +86,6 @@
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "types_defs.h"
-#include "../mmt_core/public_include/mmt_safe_string.h"
 #define _STDC_FORMAT_MARCROS
 #include <inttypes.h>
 
@@ -291,18 +290,15 @@ void convert_mac_string_to_byte(const char *pszMACAddress, unsigned char** pbyAd
 
 void convert_mac_bytes_to_string(char **pszMACAddress, unsigned char *pbyMacAddressInBytes)
 {
-    if(pbyMacAddressInBytes != NULL) {
-        snprintf(*pszMACAddress, 18, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", pbyMacAddressInBytes[0] & 0xff,
+    if(pbyMacAddressInBytes != NULL)
+        (void)sprintf(*pszMACAddress, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", pbyMacAddressInBytes[0] & 0xff,
             cSep, pbyMacAddressInBytes[1]& 0xff,
             cSep, pbyMacAddressInBytes[2]& 0xff,
             cSep, pbyMacAddressInBytes[3]& 0xff,
             cSep, pbyMacAddressInBytes[4]& 0xff,
             cSep, pbyMacAddressInBytes[5]& 0xff);
-        (*pszMACAddress)[17] = '\0';  // Ensure null termination
-    } else {
-        snprintf(*pszMACAddress, 18, "00:00:00:00:00");
-        (*pszMACAddress)[17] = '\0';
-    }
+    else
+        (void)sprintf(*pszMACAddress, "00:00:00:00:00");
 }
 
 void *get_xdata(long type, int size, void *str)
@@ -456,42 +452,35 @@ char *get_my_data(void *data1, short size, long type) {
         case MMT_DATA_TIMEVAL:
             // TODO
             t1 = *(struct timeval *) (data1);
-            snprintf(buff1, 100, "%lu.%06lu", t1.tv_sec, (long) t1.tv_usec);
-            buff1[99] = '\0';
+            (void)sprintf(buff1, "%lu.%06lu", t1.tv_sec, (long) t1.tv_usec);
             break;
         case MMT_DATA_IP_ADDR:
             // TODO
-            snprintf(buff1, 100, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));
-            buff1[99] = '\0';
+            (void)sprintf(buff1, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));
             break;
         case MMT_U16_DATA:
             // TODO
-            snprintf(buff1, 100, "%d", *(unsigned short*) (data1));
-            buff1[99] = '\0';
+            (void)sprintf(buff1, "%d", *(unsigned short*) (data1));
             break;
         case MMT_U32_DATA:
-            snprintf(buff1, 100, "%lu", *(unsigned long*) (data1));
-            buff1[99] = '\0';
+            (void)sprintf(buff1, "%lu", *(unsigned long*) (data1));
             break;
         case MMT_U64_DATA:
             // TODO
             break;
         case MMT_U8_DATA:
         case MMT_DATA_CHAR:
-            snprintf(buff1, 100, "%c", *(unsigned char*) (data1));
-            buff1[99] = '\0';
+            (void)sprintf(buff1, "%c", *(unsigned char*) (data1));
             break;
         case MMT_DATA_PATH:
             stop = *(int*) (data1 + j*sizeof (int));
             if(stop>0 && stop < 20){
               for(j=1;j<stop;j++){
-                snprintf(buff0, 10, "%d", *(int*) (data1 + j*sizeof (int)));
-                buff0[9] = '\0';
-                if(j==1) {
-                  mmt_strlcpy(buff1, buff0, 100);
-                } else {
-                  mmt_strlcat(buff1, ".", 100);
-                  mmt_strlcat(buff1, buff0, 100);
+                (void)sprintf(buff0, "%d", *(int*) (data1 + j*sizeof (int)));
+                if(j==1)strcpy(buff1, buff0);
+                else {
+                  strcat(buff1, ".");
+                  strcat(buff1, buff0);
                 }
               }
             }
@@ -503,7 +492,7 @@ char *get_my_data(void *data1, short size, long type) {
         	break;
         case MMT_STRING_LONG_DATA:
         case MMT_STRING_DATA:
-            mmt_strlcpy(buff1, (char*) (data1 + sizeof (int)), 100);
+            (void)sprintf(buff1, "%s", (char*) (data1 + sizeof (int)));
             break;
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
@@ -517,32 +506,23 @@ char *get_my_data(void *data1, short size, long type) {
                 L2 = (*(unsigned long*)(data2)&0x0000ff00)>>8;
                 L3 = (*(unsigned long*)(data2)&0x00ff0000)>>16;
                 L4 = (*(unsigned long*)(data2)&0xff000000)>>24;
-                snprintf(buff1, 100, "%lu.%lu.%lu.%lu", L1, L2, L3, L4);
-                buff1[99] = '\0';
+                (void)sprintf(buff1, "%lu.%lu.%lu.%lu", L1, L2, L3, L4);
             } else if (data_size == 6) {
-                buff1[0] = '\0';
-                for (j = 0; j < data_size && j < 6; j++) {
+                for (j = 0; j < data_size; j++) {
                     if (j == 0) {
-                        snprintf(buff1, 100, "%2.2X", *(unsigned char*) (data2 + j));
+                        (void)sprintf(buff1, "%2.2X", *(unsigned char*) (data2 + j));
                     } else {
-                        char temp[5];
-                        snprintf(temp, 5, ":%2.2X", *(unsigned char*) (data2 + j));
-                        mmt_strlcat(buff1, temp, 100);
+                        (void)sprintf(buff1, ":%2.2X", *(unsigned char*) (data2 + j));
                     }
                 }
-                buff1[99] = '\0';
             } else {
-                buff1[0] = '\0';
-                for (j = 0; j < data_size && j < 30; j++) {
+                for (j = 0; j < data_size; j++) {
                     if (j == 0) {
-                        snprintf(buff1, 100, "%02X", *(unsigned char*) (data2 + j));
+                        (void)sprintf(buff1, "%02X", *(unsigned char*) (data2 + j));
                     } else {
-                        char temp[5];
-                        snprintf(temp, 5, ":%02X", *(unsigned char*) (data2 + j));
-                        mmt_strlcat(buff1, temp, 100);
+                        (void)sprintf(buff1, ":%02X", *(unsigned char*) (data2 + j));
                     }
                 }
-                buff1[99] = '\0';
             }
             break;
         case MMT_DATA_LAYERID:
@@ -2016,7 +1996,7 @@ char * convert_string_to_json_compatible (char * p, int size){
             case '\t': strncpy(r, "\\t", 2); r = r + 2; break;
             default:
                 if ('\x00' <= *c && *c <= '\x1f') {
-                    snprintf(&r[0], 7, "\\u%04x", (int)(*c)); r = r + 6;
+                    sprintf(&r[0], "\\u%04x", (int)(*c)); r = r + 6;
             	} else {
                     *r = *c; r++;
             	}
@@ -2055,7 +2035,7 @@ char * convert_string_to_json_compatible (char * p, int size){
             default: {
                 if (*c >= 0x00 && *c <= 0x1f) {
                     // print character *c as \uxxxx
-                    snprintf(&result[pos + 1], 6, "u%04x", (int)(*c));
+                    sprintf(&result[pos + 1], "u%04x", (int)(*c));
                     pos += 6;
                     // overwrite trailing null character
                     result[pos] = '\\';
@@ -2102,15 +2082,15 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     tvp.tv_usec=0;
     tvp = *(struct timeval *) get_attribute_extracted_data(pkt, PROTO_META, META_UTIME);
 
-    snprintf(json_buff, 7000, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (long) tvp.tv_usec);
+    (void)sprintf(json_buff, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (long) tvp.tv_usec);
 
     int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
     const char *proto_name, *att_name;
 
     if (cause != NULL && *cause != '\0') {
-        snprintf(json_buff1, 7000, ",\"description\":\"%s\"", cause);
-        mmt_strlcat(json_buff, json_buff1, 7000);
-        mmt_strlcat(json_buff, ",\"attributes\":[", 7000);
+        (void)sprintf(json_buff1, ",\"description\":\"%s\"", cause);
+        (void)strcat(json_buff, json_buff1);
+        (void)strcat(json_buff, ",\"attributes\":[");
 
         int num_attr = 0;
         unsigned long tmp_lu=0;
@@ -2171,8 +2151,8 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
                     convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-                    snprintf(json_buff1, 7000, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
-                    mmt_strlcat(json_buff, json_buff1, 7000);
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
+                    (void)strcat(json_buff, json_buff1);
                     xfree(temp_MAC);
                     break;
                 case MMT_DATA_TIMEVAL:
@@ -2184,30 +2164,30 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                        L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
                        L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
                        L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
-                       snprintf(json_buff1, 7000,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
+                       (void)sprintf(json_buff1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
                     }else
-                       snprintf(json_buff1, 7000,"{\"x.x\":\"0.0.0.0\"},");
-                    mmt_strlcat(json_buff, json_buff1, 7000);
+                       (void)sprintf(json_buff1,"{\"x.x\":\"0.0.0.0\"},");
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U16_DATA:
-                    snprintf(json_buff1, 7000, "{\"%s.%s\":%u},", proto_name,
+                    (void)sprintf(json_buff1, "{\"%s.%s\":%u},", proto_name,
                             att_name, *(unsigned short*) (data1));
-                    mmt_strlcat(json_buff, json_buff1, 7000);
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U32_DATA:
                     tmp_lu=*(uint32_t*) data1;
-                    snprintf(json_buff1, 7000, "{\"%s.%s\":%lu},", proto_name,
+                    (void)sprintf(json_buff1, "{\"%s.%s\":%lu},", proto_name,
                             att_name, tmp_lu);
-                    mmt_strlcat(json_buff, json_buff1, 7000);
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_U64_DATA:
                     // TODO
                     break;
                 case MMT_U8_DATA:
                 case MMT_DATA_CHAR:
-                    snprintf(json_buff1, 7000, "{\"%s.%s\":\"%u\"},", proto_name,
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%u\"},", proto_name,
                             att_name, *(unsigned char*) (data1));
-                    mmt_strlcat(json_buff, json_buff1, 7000);
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_HEADER_LINE:
                 	//parse_mmt_header_line( &data1, & data_size );
@@ -2219,16 +2199,16 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     }
                     strncpy(buff, ((mmt_header_line_t *)data1)->ptr, ((mmt_header_line_t *)data1)->len);
                     buff[((mmt_header_line_t *)data1)->len] ='\0';
-					snprintf(json_buff1, 7000, "{\"%s.%s\":\"%s\"},", proto_name,
+					(void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
 							att_name, (char *)buff);
                     xfree(buff);
-					mmt_strlcat(json_buff, json_buff1, 7000);
+					(void)strcat(json_buff, json_buff1);
 					break;
                 case MMT_DATA_PATH:
                 case MMT_STRING_LONG_DATA:
                 case MMT_STRING_DATA:
-                    snprintf(json_buff1, 7000, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (data1 + sizeof (int)));
-                    mmt_strlcat(json_buff, json_buff1, 7000);
+                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (data1 + sizeof (int)));
+                    (void)strcat(json_buff, json_buff1);
                     break;
                 case MMT_BINARY_DATA:
                 case MMT_BINARY_VAR_DATA:
@@ -2241,37 +2221,37 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                         L2 = (*(unsigned long*)(data2)&0x0000ff00)>>8;
                         L3 = (*(unsigned long*)(data2)&0x00ff0000)>>16;
                         L4 = (*(unsigned long*)(data2)&0xff000000)>>24;
-                        snprintf(json_buff1, 7000, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
-                        mmt_strlcat(json_buff, json_buff1, 7000);
+                        (void)sprintf(json_buff1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
+                        (void)strcat(json_buff, json_buff1);
                     } else if (data_size == 6) {
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                snprintf(json_buff1, 7000, "{\"%s.%s\":%2.2X", proto_name,
+                                (void)sprintf(json_buff1, "{\"%s.%s\":%2.2X", proto_name,
                                         att_name, *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
-                                snprintf(json_buff1, 7000, ":%2.2X", *(unsigned char*) (data2 + j));
+                                (void)sprintf(json_buff1, ":%2.2X", *(unsigned char*) (data2 + j));
                             }
-                            mmt_strlcat(json_buff, json_buff1, 7000);
+                            (void)strcat(json_buff, json_buff1);
                         }
                         if(close_tag==YES)
-                          mmt_strlcat(json_buff, "},", 7000);
+                          (void)strcat(json_buff, "},");
                     } else {
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                snprintf(json_buff1, 7000, "{\"%s.%s\":\"%02X", proto_name,
+                                (void)sprintf(json_buff1, "{\"%s.%s\":\"%02X", proto_name,
                                         att_name, *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
-                                snprintf(json_buff1, 7000, ":%02X", *(unsigned char*) (data2 + j));
+                                (void)sprintf(json_buff1, ":%02X", *(unsigned char*) (data2 + j));
                             }
-                            mmt_strlcat(json_buff, json_buff1, 7000);
+                            (void)strcat(json_buff, json_buff1);
                         }
                         //end attribute
                         if(close_tag==YES)
-                          mmt_strlcat(json_buff, ""},", 7000);
+                          (void)strcat(json_buff, "\"},");
                     }
                     break;
                 case MMT_DATA_LAYERID:
@@ -2291,8 +2271,8 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 								  data_pointer = get_attribute_extracted_data_by_name(pkt, "tcp","p_payload");
 								  if( data_pointer != NULL ){
 									  new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
-									  snprintf(json_buff1, 7000, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
-									  mmt_strlcat(json_buff, json_buff1, 7000);
+									  (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
+									  (void)strcat(json_buff, json_buff1);
 									  xfree (new_data_pointer);
 								  }
 							  }
@@ -2327,14 +2307,14 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
                 L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
                 L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
-        		snprintf(json_buff1, 7000,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
-        	    mmt_strlcat(json_buff, json_buff1, 7000);
+        		(void)sprintf(json_buff1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
+        	    (void)strcat(json_buff, json_buff1);
        	   }else if( having_mac_src == 0 ){
         		data1 = get_attribute_extracted_data(pkt, 99, 3);
         		temp_MAC = xmalloc(22);
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-        		snprintf(json_buff1, 7000,"{\"eth.src\":\"%s\"},", temp_MAC );
-        		mmt_strlcat(json_buff, json_buff1, 7000);
+        		(void)sprintf(json_buff1,"{\"eth.src\":\"%s\"},", temp_MAC );
+        		(void)strcat(json_buff, json_buff1);
         		xfree( temp_MAC );
         	}
         	num_attr ++;
@@ -2349,14 +2329,14 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
                 L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
                 L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
-				snprintf(json_buff1, 7000,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
-			    mmt_strlcat(json_buff, json_buff1, 7000);
+				(void)sprintf(json_buff1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
+			    (void)strcat(json_buff, json_buff1);
 		    }else if( having_mac_dst == 0 ){
 				data1 = get_attribute_extracted_data(pkt, 99, 2);
 				temp_MAC = xmalloc(22);
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-				snprintf(json_buff1, 7000,"{\"eth.dst\":\"%s\"},", temp_MAC);
-				mmt_strlcat(json_buff, json_buff1, 7000);
+				(void)sprintf(json_buff1,"{\"eth.dst\":\"%s\"},", temp_MAC);
+				(void)strcat(json_buff, json_buff1);
 				xfree( temp_MAC );
 			}
 			num_attr ++;
@@ -2367,9 +2347,9 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         	//remove the last comma in "event: [{...},...,{..},"
         	json_buff[ strlen(json_buff) - 1 ] = '\0';
         }
-        mmt_strlcat(json_buff, "]", 7000);
+        (void)strcat(json_buff, "]");
         sprintf( json_buff1, "\"event_%d\":{%s},", event_id, json_buff );
-        mmt_strlcpy(json_buff, json_buff1, 7000);
+        strcpy(json_buff, json_buff1);
 
         short c = 0;
         if (context == BEFORE || context == AFTER || context == SAME) c = 1;
@@ -2393,7 +2373,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
             }
         }
 
-        mmt_strlcat(curr_rule->json_history, json_buff, sizeof(curr_rule->json_history));
+        (void)strcat(curr_rule->json_history, json_buff);
     }
     xfree(json_buff);
     xfree(json_buff1);
@@ -3242,37 +3222,37 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 		case TEST:
 		case SECURITY_RULE:
 			if (po == SATISFIED && state == SATISFIED) {
-				mmt_strlcpy(verdict, "respected", sizeof(verdict));
+				(void)strcpy(verdict, "respected");
 			} else if (po == NOT_SATISFIED && state == SATISFIED) {
 				return;
 			} else if (po == SATISFIED && state == NOT_SATISFIED) {
 				return;
 			} else if (po == NOT_SATISFIED && state == NOT_SATISFIED) {
-				mmt_strlcpy(verdict, "not_respected", sizeof(verdict));
+				(void)strcpy(verdict, "not_respected");
 			} else if (po == BOTH && state == SATISFIED) {
-				mmt_strlcpy(verdict, "respected", sizeof(verdict));
+				(void)strcpy(verdict, "respected");
 			} else if (po == BOTH && state == NOT_SATISFIED) {
-				mmt_strlcpy(verdict, "not_respected", sizeof(verdict));
+				(void)strcpy(verdict, "not_respected");
 			} else if (po == BOTH && state == NEITHER) {
-				mmt_strlcpy(verdict, "unknown", sizeof(verdict)); // TODO:????
+				(void)strcpy(verdict, "unknown"); // TODO:????
 			}
 			break;
 		case ATTACK:
 		case EVASION:
 			if (po == SATISFIED && state == SATISFIED) {
-				mmt_strlcpy(verdict, "detected", sizeof(verdict));
+				(void)strcpy(verdict, "detected");
 			} else if (po == NOT_SATISFIED && state == SATISFIED) {
 				return;
 			} else if (po == SATISFIED && state == NOT_SATISFIED) {
 				return;
 			} else if (po == NOT_SATISFIED && state == NOT_SATISFIED) {
-				mmt_strlcpy(verdict, "not_detected", sizeof(verdict));
+				(void)strcpy(verdict, "not_detected");
 			} else if (po == BOTH && state == SATISFIED) {
-				mmt_strlcpy(verdict, "detected", sizeof(verdict));
+				(void)strcpy(verdict, "detected");
 			} else if (po == BOTH && state == NOT_SATISFIED) {
-				mmt_strlcpy(verdict, "not_detected", sizeof(verdict));
+				(void)strcpy(verdict, "not_detected");
 			} else if (po == BOTH && state == NEITHER) {
-				mmt_strlcpy(verdict, "unknown", sizeof(verdict)); // TODO for inconclusive at begining or at end of input
+				(void)strcpy(verdict, "unknown"); // TODO for inconclusive at begining or at end of input
 			}
 			break;
 		default:
@@ -3282,7 +3262,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 
 	switch (t) {
 			case TEST:
-				mmt_strlcpy(type, "test", sizeof(type));
+				(void)strcpy(type, "test");
 				break;
 			case SECURITY_RULE:
 				(void)strcpy(type, "security");
