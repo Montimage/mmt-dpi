@@ -19,6 +19,7 @@
 #include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
+#include <pthread.h>  /* For thread safety (Phase 3) */
 // #include "libntoh.h"
 bool session_timeout_comp_fn_pt(uint32_t l_timeout, uint32_t r_timeout) {
     return (l_timeout < r_timeout);
@@ -93,6 +94,7 @@ static protocol_stack_t dummy_stack = {
 };
 
 static protocol_t *configured_protocols[PROTO_MAX_IDENTIFIER];
+static pthread_rwlock_t protocol_registry_lock = PTHREAD_RWLOCK_INITIALIZER;  /* Phase 3: Thread safety for protocol registry */
 static void * mmt_configured_handlers_map;
 
 bool attribute_ids_comparison_fct(uint32_t l_id, uint32_t r_id) {
@@ -111,10 +113,17 @@ int is_valid_protocol_id(uint32_t proto_id) {
 }
 
 static inline int _is_registered_protocol(uint32_t proto_id) {
+    int result = PROTO_NOT_REGISTERED;
+
+    pthread_rwlock_rdlock(&protocol_registry_lock);  /* Phase 3: Read lock */
+
     if (likely(_is_valid_protocol_id(proto_id) > 0))
         if (configured_protocols[proto_id]->is_registered && configured_protocols[proto_id]->proto_id == proto_id)
-            return PROTO_REGISTERED;
-    return PROTO_NOT_REGISTERED;
+            result = PROTO_REGISTERED;
+
+    pthread_rwlock_unlock(&protocol_registry_lock);
+
+    return result;
 }
 
 int is_registered_protocol(uint32_t proto_id) {
@@ -1092,6 +1101,10 @@ void register_protocol_session_attributes(protocol_t *proto) {
 }
 
 int register_protocol(protocol_t *proto, uint32_t proto_id) {
+    int result = PROTO_NOT_REGISTERED;
+
+    pthread_rwlock_wrlock(&protocol_registry_lock);  /* Phase 3: Write lock for registration */
+
     if (is_free_protocol_id_for_registractionl(proto_id)) {
         if (proto->proto_id == proto_id && proto == configured_protocols[proto_id]) {
             register_protocol_stats_attributes(proto);
@@ -1099,32 +1112,50 @@ int register_protocol(protocol_t *proto, uint32_t proto_id) {
                 register_protocol_session_attributes(proto);
             }
             configured_protocols[proto_id]->is_registered = PROTO_REGISTERED;
-            return PROTO_REGISTERED;
+            result = PROTO_REGISTERED;
         }
     }
-    return PROTO_NOT_REGISTERED;
+
+    pthread_rwlock_unlock(&protocol_registry_lock);
+
+    return result;
 }
 
 int unregister_protocol_by_id(uint32_t proto_id) {
+    int result = 0;
+
+    pthread_rwlock_wrlock(&protocol_registry_lock);  /* Phase 3: Write lock for unregistration */
+
     if (!is_free_protocol_id_for_registractionl(proto_id)) {
         configured_protocols[proto_id]->is_registered = PROTO_NOT_REGISTERED;
-        return 1;
+        result = 1;
     }
-    return 0;
+
+    pthread_rwlock_unlock(&protocol_registry_lock);
+
+    return result;
 }
 
 int unregister_protocol_by_name(char* proto_name) {
+    int result = 0;
+
+    pthread_rwlock_wrlock(&protocol_registry_lock);  /* Phase 3: Write lock for unregistration */
+
     int i=0;
     for (i =0;i<PROTO_MAX_IDENTIFIER;i++){
         if (!is_free_protocol_id_for_registractionl(i)) {
             if(mmt_strcasecmp(configured_protocols[i]->protocol_name,proto_name) == 0){
                 configured_protocols[i]->is_registered = PROTO_NOT_REGISTERED;
-                return 1;
+                result = 1;
+                break;
             }
         }
 
     }
-    return 0;
+
+    pthread_rwlock_unlock(&protocol_registry_lock);
+
+    return result;
 }
 
 int init_plugins() {
