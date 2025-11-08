@@ -1,7 +1,6 @@
 #include "hash_utils.h"
 #include <map>
 #include <unordered_map>
-#include <pthread.h>  /* Phase 3: Thread safety for session operations */
 
 using namespace std;
 
@@ -48,15 +47,7 @@ int insert_int_key_value(void * maplist, uint32_t key, void * value) {
 }
 
 int insert_session_into_protocol_context(void * protocol_context, void * key, void * value) {
-    protocol_instance_t *proto_inst = (protocol_instance_t *) protocol_context;
-    int result;
-
-    /* Phase 3: Write lock for session insertion */
-    pthread_rwlock_wrlock(&proto_inst->session_lock);
-    result = insert_key_value(proto_inst->sessions_map, key, value);
-    pthread_rwlock_unlock(&proto_inst->session_lock);
-
-    return result;
+    return insert_key_value(((protocol_instance_t *) protocol_context)->sessions_map, key, value);
 }
 
 int update_key_value(void * maplist, void * key, void * new_value) {
@@ -94,15 +85,7 @@ void * find_int_key_value(void * maplist, uint32_t key) {
 }
 
 void * get_session_from_protocol_context_by_session_key(void * protocol_context, void * key) {
-    protocol_instance_t *proto_inst = (protocol_instance_t *) protocol_context;
-    void *result;
-
-    /* Phase 3: Read lock for session lookup */
-    pthread_rwlock_rdlock(&proto_inst->session_lock);
-    result = find_key_value(proto_inst->sessions_map, key);
-    pthread_rwlock_unlock(&proto_inst->session_lock);
-
-    return result;
+    return find_key_value(((protocol_instance_t *) protocol_context)->sessions_map, key);
 }
 
 int delete_key_value(void * maplist, void * key) {
@@ -126,15 +109,7 @@ int delete_int_key_value(void * maplist, uint32_t key) {
 }
 
 int delete_session_from_protocol_context(void * protocol_context, void * key) {
-    protocol_instance_t *proto_inst = (protocol_instance_t *) protocol_context;
-    int result;
-
-    /* Phase 3: Write lock for session deletion */
-    pthread_rwlock_wrlock(&proto_inst->session_lock);
-    result = delete_key_value(proto_inst->sessions_map, key);
-    pthread_rwlock_unlock(&proto_inst->session_lock);
-
-    return result;
+    return delete_key_value(((protocol_instance_t *) protocol_context)->sessions_map, key);
 }
 
 void clear_map_space(void * maplist) {
@@ -161,12 +136,7 @@ void delete_int_map_space(void * maplist) {
 
 
 void clear_sessions_from_protocol_context(void * protocol_context) {
-    protocol_instance_t *proto_inst = (protocol_instance_t *) protocol_context;
-
-    /* Phase 3: Write lock for clearing all sessions */
-    pthread_rwlock_wrlock(&proto_inst->session_lock);
-    clear_map_space(proto_inst->sessions_map);
-    pthread_rwlock_unlock(&proto_inst->session_lock);
+    return clear_map_space(((protocol_instance_t *) protocol_context)->sessions_map);
 }
 
 void mapspace_iteration_callback(void * maplist, generic_mapspace_iteration_callback fct, void * args) {
@@ -186,14 +156,8 @@ void int_mapspace_iteration_callback(void * maplist, generic_mapspace_iteration_
 }
 
 void protocol_sessions_iteration_callback(void * protocol_context, generic_mapspace_iteration_callback fct, void * args) {
-    protocol_instance_t *proto_inst = (protocol_instance_t *) protocol_context;
-
-    if(proto_inst->sessions_map != NULL) {
-        /* Phase 3: Read lock for session iteration */
-        pthread_rwlock_rdlock(&proto_inst->session_lock);
-        mapspace_iteration_callback(proto_inst->sessions_map, fct, args);
-        pthread_rwlock_unlock(&proto_inst->session_lock);
-    }
+    if(((protocol_instance_t *) protocol_context)->sessions_map != NULL)
+        mapspace_iteration_callback(((protocol_instance_t *) protocol_context)->sessions_map, fct, args);
 }
 //////////////// Wrapper End
 

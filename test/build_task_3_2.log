@@ -1,0 +1,1968 @@
+=== Building MMT-DPI ===
+[COMPILE] extraction_lib.o
+[COMPILE] hashmap.o
+[COMPILE] hexdump.o
+[COMPILE] memory.o
+[COMPILE] mempool.o
+[COMPILE] mmt_data.o
+[COMPILE] mmt_inet_ntop.o
+[COMPILE] mmt_init.o
+[COMPILE] mmt_utils.o
+[COMPILE] packet_processing.o
+[COMPILE] plugins_engine.o
+[COMPILE] proto_meta.o
+[COMPILE] hash_utils.o
+[COMPILE] avltree.o
+[COMPILE] configured_protocols.o
+[COMPILE] http_parser.o
+[COMPILE] http_parser_integration.o
+[COMPILE] mmt_tcpip_classif_utils.o
+[COMPILE] mmt_tcpip_plugin_internal.o
+[COMPILE] mmt_tcpip_utils.o
+[COMPILE] http.o
+[COMPILE] http2.o
+[COMPILE] ip_session_id_management.o
+[COMPILE] ndn.o
+[COMPILE] proto_163.o
+[COMPILE] proto_20minutes.o
+[COMPILE] proto_360.o
+[COMPILE] proto_3pc.o
+/home/user/mmt-dpi/src/mmt_core/src/packet_processing.c: In function 'get_child_protocol_stats':
+/home/user/mmt-dpi/src/mmt_core/src/packet_processing.c:2740:31: warning: infinite recursion detected [-Winfinite-recursion]
+ 2740 | proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal_t * proto_stats, uint32_t child_proto_id) {
+      |                               ^~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_core/src/packet_processing.c:2741:16: note: recursive call
+ 2741 |         return get_child_protocol_stats( proto_stats, child_proto_id);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[COMPILE] proto_4story.o
+/home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c: In function 'request_url_cb':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c:83:24: warning: unused variable 'sp' [-Wunused-variable]
+   83 |   stream_processor_t * sp = (stream_processor_t *) p->data;
+      |                        ^~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c: In function 'response_status_cb':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c:95:24: warning: unused variable 'sp' [-Wunused-variable]
+   95 |   stream_processor_t * sp = (stream_processor_t *) p->data;
+      |                        ^~
+[COMPILE] proto_500px.o
+[COMPILE] proto_56.o
+[COMPILE] proto_7digital.o
+[COMPILE] proto_8021ad.o
+[COMPILE] proto_8021q.o
+[COMPILE] proto_888.o
+[COMPILE] proto_about.o
+[COMPILE] proto_adcash.o
+[COMPILE] proto_addthis.o
+[COMPILE] proto_adf.o
+[COMPILE] proto_adobe.o
+[COMPILE] proto_afp.o
+[COMPILE] proto_afreeca.o
+[COMPILE] proto_ah.o
+[COMPILE] proto_aim.o
+[COMPILE] proto_aimini.o
+[COMPILE] proto_akamai.o
+[COMPILE] proto_alibaba.o
+[COMPILE] proto_aliexpress.o
+[COMPILE] proto_alipay.o
+[COMPILE] proto_allegro.o
+[COMPILE] proto_allocine.o
+[COMPILE] proto_amazon.o
+[COMPILE] proto_ameblo.o
+[COMPILE] proto_ancestry.o
+[COMPILE] proto_angrybirds.o
+[COMPILE] proto_answers.o
+[COMPILE] proto_any_0hop.o
+[COMPILE] proto_any_dfs.o
+[COMPILE] proto_any_hip.o
+[COMPILE] proto_any_local.o
+[COMPILE] proto_any_pes.o
+[COMPILE] proto_aol.o
+[COMPILE] proto_apple.o
+[COMPILE] proto_apple_icloud.o
+[COMPILE] proto_apple_itunes.o
+[COMPILE] proto_applejuice.o
+[COMPILE] proto_archieve.o
+[COMPILE] proto_argus.o
+[COMPILE] proto_aris.o
+[COMPILE] proto_armagetron.o
+[COMPILE] proto_arp.o
+[COMPILE] proto_ask.o
+[COMPILE] proto_avg.o
+[COMPILE] proto_avi.o
+[COMPILE] proto_aweber.o
+[COMPILE] proto_aws.o
+[COMPILE] proto_ax_25.o
+[COMPILE] proto_babylon.o
+[COMPILE] proto_badoo.o
+[COMPILE] proto_baidu.o
+[COMPILE] proto_bankofamerica.o
+[COMPILE] proto_barnesandnoble.o
+[COMPILE] proto_batman.o
+[COMPILE] proto_battlefield.o
+[COMPILE] proto_battleknight.o
+[COMPILE] proto_battlenet.o
+[COMPILE] proto_bbb.o
+[COMPILE] proto_bbc_online.o
+[COMPILE] proto_bbn_rcc_mon.o
+[COMPILE] proto_bestbuy.o
+[COMPILE] proto_betfair.o
+[COMPILE] proto_bgp.o
+[COMPILE] proto_biblegateway.o
+[COMPILE] proto_bild.o
+[COMPILE] proto_bing.o
+[COMPILE] proto_bitgravity.o
+[COMPILE] proto_bittorrent.o
+[COMPILE] proto_bleacherreport.o
+[COMPILE] proto_bliptv.o
+[COMPILE] proto_blogcu.o
+[COMPILE] proto_blogfa.o
+[COMPILE] proto_blogger.o
+[COMPILE] proto_blogspot.o
+[COMPILE] proto_blogtv.o
+[COMPILE] proto_bloomberg.o
+[COMPILE] proto_bna.o
+[COMPILE] proto_bodybuilding.o
+[COMPILE] proto_booking.o
+[COMPILE] proto_box.o
+[COMPILE] proto_br_sat_mon.o
+[COMPILE] proto_break.o
+[COMPILE] proto_buzznet.o
+[COMPILE] proto_cachefly.o
+[COMPILE] proto_cbssports.o
+[COMPILE] proto_cbt.o
+[COMPILE] proto_cdiscount.o
+[COMPILE] proto_cdn77.o
+[COMPILE] proto_cdnetworks.o
+[COMPILE] proto_cdp.o
+[COMPILE] proto_cent.o
+[COMPILE] proto_cftp.o
+[COMPILE] proto_change.o
+[COMPILE] proto_chaos.o
+[COMPILE] proto_chase.o
+[COMPILE] proto_chess.o
+[COMPILE] proto_chinacache.o
+[COMPILE] proto_chinaz.o
+[COMPILE] proto_citrix.o
+[COMPILE] proto_citrixonline.o
+[COMPILE] proto_citynews.o
+[COMPILE] proto_citytv.o
+[COMPILE] proto_clicksor.o
+[COMPILE] proto_cloudfront.o
+[COMPILE] proto_cnn.o
+[COMPILE] proto_cnzz.o
+[COMPILE] proto_comcast.o
+[COMPILE] proto_comedy.o
+[COMPILE] proto_comedycentral.o
+[COMPILE] proto_compaq_peer.o
+[COMPILE] proto_conduit.o
+[COMPILE] proto_copyscape.o
+[COMPILE] proto_correios.o
+[COMPILE] proto_cotp.o
+[COMPILE] proto_cphb.o
+[COMPILE] proto_cpnx.o
+[COMPILE] proto_craigslist.o
+[COMPILE] proto_crossfire.o
+[COMPILE] proto_crtp.o
+[COMPILE] proto_crudp.o
+[COMPILE] proto_ctp.o
+[COMPILE] proto_dailymail.o
+[COMPILE] proto_dailymotion.o
+[COMPILE] proto_dccp.o
+[COMPILE] proto_dcerpc.o
+[COMPILE] proto_dcn_meas.o
+[COMPILE] proto_ddp.o
+[COMPILE] proto_ddx.o
+[COMPILE] proto_deezer.o
+[COMPILE] proto_deviantart.o
+[COMPILE] proto_dgp.o
+[COMPILE] proto_dhcp.o
+[COMPILE] proto_dhcpv6.o
+[COMPILE] proto_digg.o
+[COMPILE] proto_direct_download_link.o
+[COMPILE] proto_directconnect.o
+[COMPILE] proto_disqus.o
+[COMPILE] proto_dns.o
+[COMPILE] proto_dofus.o
+[COMPILE] proto_donanimhaber.o
+[COMPILE] proto_douban.o
+[COMPILE] proto_doubleclick.o
+[COMPILE] proto_dropbox.o
+[COMPILE] proto_dtls.o
+[COMPILE] proto_dtp.o
+[COMPILE] proto_ebay.o
+[COMPILE] proto_eclipse_tcf.o
+[COMPILE] proto_edgecast.o
+[COMPILE] proto_edonkey.o
+[COMPILE] proto_egp.o
+[COMPILE] proto_ehow.o
+[COMPILE] proto_eigrp.o
+[COMPILE] proto_ekoley.o
+[COMPILE] proto_eksisozluk.o
+[COMPILE] proto_electronicsarts.o
+[COMPILE] proto_emcon.o
+[COMPILE] proto_encap.o
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
+                 from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_dtls.c:11:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_dtls.c: In function 'classify_dtls_from_udp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_dtls.c:78:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   78 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_DTLS)
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_dtls.c:78:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   78 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_DTLS)
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+[COMPILE] proto_engagemedia.o
+[COMPILE] proto_esp.o
+[COMPILE] proto_espn.o
+[COMPILE] proto_etherip.o
+[COMPILE] proto_ethernet.o
+[COMPILE] proto_etsy.o
+[COMPILE] proto_europa.o
+[COMPILE] proto_eurosport.o
+[COMPILE] proto_facebook.o
+[COMPILE] proto_facetime.o
+[COMPILE] proto_fastly.o
+[COMPILE] proto_fasttrack.o
+[COMPILE] proto_fbmsg.o
+[COMPILE] proto_fc.o
+[COMPILE] proto_fc2.o
+[COMPILE] proto_feidian.o
+[COMPILE] proto_fiesta.o
+[COMPILE] proto_filetopia.o
+[COMPILE] proto_fire.o
+[COMPILE] proto_fiverr.o
+[COMPILE] proto_flash.o
+[COMPILE] proto_flickr.o
+[COMPILE] proto_florensia.o
+[COMPILE] proto_forbes.o
+[COMPILE] proto_fotki.o
+[COMPILE] proto_fotolog.o
+[COMPILE] proto_foursquare.o
+[COMPILE] proto_fox.o
+[COMPILE] proto_francetvinfo.o
+[COMPILE] proto_free.o
+[COMPILE] proto_ftp.o
+[COMPILE] proto_gadugadu.o
+[COMPILE] proto_gamefaqs.o
+[COMPILE] proto_gameforge.o
+[COMPILE] proto_gamespot.o
+[COMPILE] proto_gap.o
+[COMPILE] proto_garanti.o
+[COMPILE] proto_gazetevatan.o
+[COMPILE] proto_ggp.o
+[COMPILE] proto_gigapeta.o
+[COMPILE] proto_github.o
+[COMPILE] proto_gittigidiyor.o
+[COMPILE] proto_globo.o
+[COMPILE] proto_gmail.o
+[COMPILE] proto_gmtp.o
+[COMPILE] proto_gnutella.o
+[COMPILE] proto_go.o
+[COMPILE] proto_godaddy.o
+[COMPILE] proto_goo.o
+[COMPILE] proto_google.o
+[COMPILE] proto_google_maps.o
+[COMPILE] proto_google_user_content.o
+[COMPILE] proto_gre.o
+In function 'ftp_set_command_id',
+    inlined from 'ftp_get_command' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:795:5:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:564:19: warning: '*cmd.str_cmd' may be used uninitialized [-Wmaybe-uninitialized]
+  564 |     if (strlen(cmd->str_cmd) == 3) {
+      |                ~~~^~~~~~~~~
+[COMPILE] proto_grooveshark.o
+[COMPILE] proto_groupon.o
+[COMPILE] proto_gtalk.o
+[COMPILE] proto_gtp.o
+[COMPILE] proto_guardian.o
+[COMPILE] proto_guildwars.o
+[COMPILE] proto_haberturk.o
+[COMPILE] proto_halflife2.o
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c: In function 'ftp_request_packet':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:1246:46: warning: '%X' directive writing between 2 and 8 bytes into a region of size 4 [-Wformat-overflow=]
+ 1246 |                             sprintf(hvalue, "%X:", temp_nb);
+      |                                              ^~
+In function 'ftp_get_data_client_addr_v6_from_LPRT',
+    inlined from 'ftp_request_packet' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:2782:44:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:1246:45: note: directive argument in the range [16, 2147483647]
+ 1246 |                             sprintf(hvalue, "%X:", temp_nb);
+      |                                             ^~~~~
+In file included from /usr/include/stdio.h:980,
+                 from /home/user/mmt-dpi/src/mmt_core/public_include/data_defs.h:16,
+                 from /home/user/mmt-dpi/src/mmt_core/public_include/plugin_defs.h:14,
+                 from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:1:
+In function 'sprintf',
+    inlined from 'ftp_get_data_client_addr_v6_from_LPRT' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:1246:29,
+    inlined from 'ftp_request_packet' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:2782:44:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:30:10: note: '__builtin___sprintf_chk' output between 4 and 10 bytes into a destination of size 4
+   30 |   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   31 |                                   __glibc_objsize (__s), __fmt,
+      |                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   32 |                                   __va_arg_pack ());
+      |                                   ~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c: In function 'ftp_request_packet':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:1260:46: warning: '%X' directive writing between 2 and 8 bytes into a region of size 3 [-Wformat-overflow=]
+ 1260 |                             sprintf(hvalue, "%X", temp_nb);
+      |                                              ^~
+In function 'ftp_get_data_client_addr_v6_from_LPRT',
+    inlined from 'ftp_request_packet' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:2782:44:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:1260:45: note: directive argument in the range [16, 2147483647]
+ 1260 |                             sprintf(hvalue, "%X", temp_nb);
+      |                                             ^~~~
+In function 'sprintf',
+    inlined from 'ftp_get_data_client_addr_v6_from_LPRT' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:1260:29,
+    inlined from 'ftp_request_packet' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:2782:44:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:30:10: note: '__builtin___sprintf_chk' output between 3 and 9 bytes into a destination of size 3
+   30 |   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   31 |                                   __glibc_objsize (__s), __fmt,
+      |                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   32 |                                   __va_arg_pack ());
+      |                                   ~~~~~~~~~~~~~~~~~
+[COMPILE] proto_hao123.o
+[COMPILE] proto_hepsiburada.o
+[COMPILE] proto_hi5.o
+[COMPILE] proto_highwinds.o
+[COMPILE] proto_hip.o
+[COMPILE] proto_hmp.o
+[COMPILE] proto_homedepot.o
+[COMPILE] proto_hootsuite.o
+[COMPILE] proto_hotmail.o
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_gtp.c: In function 'gtp_classify_next_proto':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_gtp.c:95:39: warning: unused variable 'next_ext_header_length' [-Wunused-variable]
+   95 |         int next_ext_header_type = 0, next_ext_header_length = 0;
+      |                                       ^~~~~~~~~~~~~~~~~~~~~~
+[COMPILE] proto_http.o
+[COMPILE] proto_http_application_activesync.o
+[COMPILE] proto_http_application_veohtv.o
+[COMPILE] proto_http_proxy.o
+[COMPILE] proto_huffington_post.o
+[COMPILE] proto_hulu.o
+[COMPILE] proto_hurriyet.o
+[COMPILE] proto_i23v5.o
+[COMPILE] proto_i_nlsp.o
+[COMPILE] proto_iatp.o
+[COMPILE] proto_iax.o
+[COMPILE] proto_icecast.o
+[COMPILE] proto_icmp.o
+[COMPILE] proto_icmpv6.o
+[COMPILE] proto_idpr.o
+[COMPILE] proto_idpr_cmtp.o
+[COMPILE] proto_idrp.o
+[COMPILE] proto_ifeng.o
+[COMPILE] proto_ifmp.o
+[COMPILE] proto_igmp.o
+[COMPILE] proto_ign.o
+[COMPILE] proto_igp.o
+[COMPILE] proto_ikea.o
+[COMPILE] proto_il.o
+[COMPILE] proto_imap.o
+[COMPILE] proto_imaps.o
+[COMPILE] proto_imesh.o
+[COMPILE] proto_imgur.o
+[COMPILE] proto_indiatimes.o
+[COMPILE] proto_instagram.o
+[COMPILE] proto_int.o
+[COMPILE] proto_int_report.o
+[COMPILE] proto_internap.o
+[COMPILE] proto_internet_movie_database.o
+[COMPILE] proto_ip.o
+[COMPILE] proto_ip_dgram.o
+[COMPILE] proto_ip_frag.o
+[COMPILE] proto_ip_in_ip.o
+[COMPILE] proto_ipcomp.o
+[COMPILE] proto_ipcv.o
+[COMPILE] proto_iplt.o
+[COMPILE] proto_ipp.o
+[COMPILE] proto_ippc.o
+[COMPILE] proto_ipsec.o
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:9:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
+   87 | int_report_v10_t;
+      | ^~~~~~~~~~~~~~~~
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:8:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
+   87 | int_report_v10_t;
+      | ^~~~~~~~~~~~~~~~
+[COMPILE] proto_iptm.o
+[COMPILE] proto_ipv6.o
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
+                 from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:12:
+In function '_classify_int_from_udp_or_tcp',
+    inlined from '_classify_int_from_udp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:77:9:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:71:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   71 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h: In function '_classify_int_from_udp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+In function '_classify_int_from_udp_or_tcp',
+    inlined from '_classify_int_from_udp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:77:9:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:71:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   71 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h: In function '_classify_int_from_udp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+In function '_classify_int_from_udp_or_tcp',
+    inlined from '_classify_int_from_tcp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:81:9:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:71:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   71 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h: In function '_classify_int_from_tcp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+In function '_classify_int_from_udp_or_tcp',
+    inlined from '_classify_int_from_tcp' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:81:9:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c:71:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   71 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h: In function '_classify_int_from_tcp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
+                 from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:11:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c: In function '_classify_inband_network_telemetry_from_udp':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:117:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+  117 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:117:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+  117 |         MMT_ADD_PROTOCOL_TO_BITMASK(ipacket->internal_packet->flow->excluded_protocol_bitmask, PROTO_INT_REPORT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+[COMPILE] proto_ipv6_dgram.o
+[COMPILE] proto_ipx_in_ip.o
+[COMPILE] proto_irc.o
+[COMPILE] proto_irs.o
+[COMPILE] proto_irtp.o
+[COMPILE] proto_is_is.o
+[COMPILE] proto_iso_ip.o
+[COMPILE] proto_iso_tp4.o
+[COMPILE] proto_izlesene.o
+[COMPILE] proto_jabber.o
+[COMPILE] proto_jalbum.o
+[COMPILE] proto_japanpost.o
+[COMPILE] proto_jd.o
+[COMPILE] proto_jeuxvideo.o
+[COMPILE] proto_kakao.o
+[COMPILE] proto_kat.o
+[COMPILE] proto_kerberos.o
+[COMPILE] proto_king.o
+[COMPILE] proto_kohls.o
+[COMPILE] proto_kongregate.o
+[COMPILE] proto_kontiki.o
+[COMPILE] proto_kryptolan.o
+[COMPILE] proto_l2tp.o
+[COMPILE] proto_larp.o
+[COMPILE] proto_lastfm.o
+[COMPILE] proto_ldap.o
+[COMPILE] proto_leaf_1.o
+[COMPILE] proto_leaf_2.o
+[COMPILE] proto_leagueoflegends.o
+[COMPILE] proto_leboncoin.o
+[COMPILE] proto_legacy.o
+[COMPILE] proto_letv.o
+[COMPILE] proto_level3.o
+[COMPILE] proto_limelight.o
+[COMPILE] proto_line.o
+[COMPILE] proto_linkedin.o
+[COMPILE] proto_live.o
+[COMPILE] proto_livedoor.o
+[COMPILE] proto_livehotmail.o
+[COMPILE] proto_liveinternet.o
+[COMPILE] proto_livejasmin.o
+[COMPILE] proto_livejournal.o
+[COMPILE] proto_liveleak.o
+[COMPILE] proto_livescore.o
+[COMPILE] proto_livestream.o
+[COMPILE] proto_livingsocial.o
+[COMPILE] proto_llc.o
+[COMPILE] proto_llmnr.o
+[COMPILE] proto_lockerz.o
+[COMPILE] proto_loopback.o
+[COMPILE] proto_lowes.o
+[COMPILE] proto_macys.o
+[COMPILE] proto_mail_ru.o
+[COMPILE] proto_manet.o
+[COMPILE] proto_manolito.o
+[COMPILE] proto_maplestory.o
+[COMPILE] proto_match.o
+[COMPILE] proto_maxcdn.o
+[COMPILE] proto_mdns.o
+[COMPILE] proto_mediafire.o
+[COMPILE] proto_meebo.o
+[COMPILE] proto_mega.o
+[COMPILE] proto_merit_inp.o
+[COMPILE] proto_metin2.o
+[COMPILE] proto_mevio.o
+[COMPILE] proto_mfe_nsp.o
+[COMPILE] proto_mgcp.o
+[COMPILE] proto_mhrp.o
+[COMPILE] proto_micp.o
+[COMPILE] proto_microsoft.o
+[COMPILE] proto_milliyet.o
+[COMPILE] proto_minecraft.o
+[COMPILE] proto_miniclip.o
+[COMPILE] proto_mlbaseball.o
+[COMPILE] proto_mmo_champion.o
+[COMPILE] proto_mms.o
+[COMPILE] proto_mobile.o
+[COMPILE] proto_mobility_header.o
+[COMPILE] proto_move.o
+[COMPILE] proto_mozilla.o
+[COMPILE] proto_mpeg.o
+[COMPILE] proto_mpls_in_ip.o
+[COMPILE] proto_mqtt.o
+[COMPILE] proto_mscdn.o
+[COMPILE] proto_msn.o
+[COMPILE] proto_mssql.o
+[COMPILE] proto_mtp.o
+[COMPILE] proto_mubi.o
+[COMPILE] proto_multiply.o
+[COMPILE] proto_mux.o
+[COMPILE] proto_mynet.o
+[COMPILE] proto_myspace.o
+[COMPILE] proto_mysql.o
+[COMPILE] proto_mywebsearch.o
+[COMPILE] proto_narp.o
+[COMPILE] proto_nba.o
+[COMPILE] proto_ndn.o
+[COMPILE] proto_ndn_http.o
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
+                 from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_mqtt.c:4:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_mqtt.c: In function 'mmt_check_mqtt':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_mqtt.c:49:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   49 |         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MQTT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_mqtt.c:49:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+   49 |         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MQTT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_mqtt.c: In function 'mmt_init_classify_me_mqtt':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:100:18: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  100 |   (bmask).bitmask[(value) >> 6] = (((uint64_t)1)<<((value) & 0x3F));     \
+      |   ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_mqtt.c:57:5: note: in expansion of macro 'MMT_SAVE_AS_BITMASK'
+   57 |     MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_MQTT);
+      |     ^~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+[COMPILE] proto_neobux.o
+[COMPILE] proto_netbios.o
+[COMPILE] proto_netblt.o
+[COMPILE] proto_netdna.o
+[COMPILE] proto_netflix.o
+[COMPILE] proto_netflow.o
+[COMPILE] proto_newegg.o
+[COMPILE] proto_newsmax.o
+[COMPILE] proto_nfl.o
+[COMPILE] proto_nfs.o
+[COMPILE] proto_nicovideo.o
+[COMPILE] proto_nih.o
+[COMPILE] proto_nordstrom.o
+[COMPILE] proto_nsfnet_igp.o
+[COMPILE] proto_ntp.o
+[COMPILE] proto_nvp_ii.o
+[COMPILE] proto_nytimes.o
+[COMPILE] proto_odnoklassniki.o
+[COMPILE] proto_off.o
+[COMPILE] proto_ogame.o
+[COMPILE] proto_ogg.o
+[COMPILE] proto_onet.o
+[COMPILE] proto_oneworld.o
+[COMPILE] proto_openft.o
+[COMPILE] proto_oracle.o
+[COMPILE] proto_orangedonkey.o
+[COMPILE] proto_orangefr.o
+[COMPILE] proto_oscar.o
+[COMPILE] proto_ospf.o
+[COMPILE] proto_outbrain.o
+[COMPILE] proto_overstock.o
+[COMPILE] proto_pando.o
+[COMPILE] proto_panoramio.o
+[COMPILE] proto_paypal.o
+[COMPILE] proto_pcanywhere.o
+[COMPILE] proto_pch.o
+[COMPILE] proto_pconline.o
+[COMPILE] proto_pgm.o
+[COMPILE] proto_photobucket.o
+[COMPILE] proto_pim.o
+[COMPILE] proto_pinterest.o
+[COMPILE] proto_pipe.o
+[COMPILE] proto_playstation.o
+[COMPILE] proto_pnni.o
+[COMPILE] proto_pogo.o
+[COMPILE] proto_pop.o
+[COMPILE] proto_popo.o
+[COMPILE] proto_pops.o
+[COMPILE] proto_pornhub.o
+[COMPILE] proto_postgres.o
+[COMPILE] proto_pplive.o
+[COMPILE] proto_ppp.o
+[COMPILE] proto_pppoe.o
+[COMPILE] proto_ppstream.o
+[COMPILE] proto_pptp.o
+[COMPILE] proto_premierleague.o
+[COMPILE] proto_prm.o
+[COMPILE] proto_ptp.o
+[COMPILE] proto_pup.o
+[COMPILE] proto_pvp.o
+[COMPILE] proto_qnx.o
+[COMPILE] proto_qq.o
+[COMPILE] proto_qqlive.o
+[COMPILE] proto_quake.o
+[COMPILE] proto_quic.o
+[COMPILE] proto_quic_ietf.o
+[COMPILE] proto_r10.o
+[COMPILE] proto_rackspace.o
+[COMPILE] proto_radius.o
+[COMPILE] proto_rakuten.o
+[COMPILE] proto_rambler.o
+[COMPILE] proto_rdp.o
+[COMPILE] proto_realmedia.o
+[COMPILE] proto_reddit.o
+[COMPILE] proto_redis.o
+[COMPILE] proto_redtube.o
+[COMPILE] proto_reference.o
+[COMPILE] proto_renren.o
+[COMPILE] proto_reuters.o
+In function '_extraction_quic_ietf_att',
+    inlined from '_quic_ietf_calculate_rtts' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:278:6:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:119:37: warning: array subscript 'mmt_string_data_t {aka struct mmt_string_data_struct}[0]' is partly outside array bounds of 'attribute_t[1]' {aka 'struct attribute_struct[1]'} [-Warray-bounds=]
+  119 |                         string->len = 8;
+      |                         ~~~~~~~~~~~~^~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c: In function '_quic_ietf_calculate_rtts':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:271:21: note: object 'extracted_data' of size 40
+  271 |         attribute_t extracted_data;
+      |                     ^~~~~~~~~~~~~~
+[COMPILE] proto_roblox.o
+[COMPILE] proto_rovio.o
+In function '_extraction_quic_ietf_att',
+    inlined from '_quic_ietf_calculate_rtts' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:278:6,
+    inlined from '_quic_ietf_session_data_analysis' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:334:2:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:119:37: warning: array subscript 'mmt_string_data_t {aka struct mmt_string_data_struct}[0]' is partly outside array bounds of 'attribute_t[1]' {aka 'struct attribute_struct[1]'} [-Warray-bounds=]
+  119 |                         string->len = 8;
+      |                         ~~~~~~~~~~~~^~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c: In function '_quic_ietf_session_data_analysis':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:271:21: note: object 'extracted_data' of size 40
+  271 |         attribute_t extracted_data;
+      |                     ^~~~~~~~~~~~~~
+In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
+                 from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:10:
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c: In function '_init_bitmask':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:342:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+  342 |         MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:124:19: warning: array subscript 10 is above array bounds of 'uint64_t[10]' {aka 'long unsigned int[10]'} [-Warray-bounds=]
+  124 |   {(bmask).bitmask[(value) >> 6] |= (((uint64_t)1)<<((value) & 0x3F));}    \
+      |    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:342:9: note: in expansion of macro 'MMT_ADD_PROTOCOL_TO_BITMASK'
+  342 |         MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INT);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
+   85 |         uint64_t bitmask[10];
+      |                  ^~~~~~~
+[COMPILE] proto_rsvp.o
+[COMPILE] proto_rsvp_e2e_ignore.o
+[COMPILE] proto_rtp.o
+[COMPILE] proto_rtsp.o
+[COMPILE] proto_rutube.o
+[COMPILE] proto_rvd.o
+[COMPILE] proto_s7comm.o
+[COMPILE] proto_sabahtr.o
+[COMPILE] proto_sahibinden.o
+[COMPILE] proto_salesforce.o
+[COMPILE] proto_salon.o
+[COMPILE] proto_sat_expak.o
+[COMPILE] proto_sat_mon.o
+[COMPILE] proto_scc_sp.o
+[COMPILE] proto_sciencestage.o
+[COMPILE] proto_scps.o
+[COMPILE] proto_screenjunkies.o
+[COMPILE] proto_sctp.o
+[COMPILE] proto_sdrp.o
+[COMPILE] proto_search_results.o
+[COMPILE] proto_searchnu.o
+[COMPILE] proto_sears.o
+[COMPILE] proto_secondlife.o
+[COMPILE] proto_secure_vmtp.o
+[COMPILE] proto_secureserver.o
+[COMPILE] proto_sevenload.o
+[COMPILE] proto_sflow.o
+[COMPILE] proto_shazam.o
+[COMPILE] proto_shim6.o
+[COMPILE] proto_shoutcast.o
+[COMPILE] proto_sina.o
+[COMPILE] proto_sip.o
+[COMPILE] proto_siteadvisor.o
+[COMPILE] proto_skip.o
+[COMPILE] proto_sky.o
+[COMPILE] proto_skydrive.o
+[COMPILE] proto_skype.o
+[COMPILE] proto_skyrock.o
+[COMPILE] proto_skysports.o
+[COMPILE] proto_slate.o
+[COMPILE] proto_slideshare.o
+[COMPILE] proto_sll.o
+[COMPILE] proto_sm.o
+[COMPILE] proto_smb.o
+[COMPILE] proto_smp.o
+[COMPILE] proto_smtp.o
+[COMPILE] proto_smtps.o
+[COMPILE] proto_smugmug.o
+[COMPILE] proto_snapfish.o
+[COMPILE] proto_snmp.o
+[COMPILE] proto_snp.o
+[COMPILE] proto_socrates.o
+[COMPILE] proto_softonic.o
+[COMPILE] proto_sogou.o
+[COMPILE] proto_sohu.o
+[COMPILE] proto_sopcast.o
+[COMPILE] proto_soso.o
+[COMPILE] proto_soulseek.o
+[COMPILE] proto_soundcloud.o
+[COMPILE] proto_sourgeforge.o
+[COMPILE] proto_spiegel.o
+[COMPILE] proto_sporx.o
+[COMPILE] proto_spotify.o
+[COMPILE] proto_sprite_rpc.o
+[COMPILE] proto_sps.o
+[COMPILE] proto_squidoo.o
+[COMPILE] proto_srp.o
+[COMPILE] proto_sscopmce.o
+[COMPILE] proto_ssdp.o
+[COMPILE] proto_ssh.o
+[COMPILE] proto_ssl.o
+[COMPILE] proto_st.o
+[COMPILE] proto_stack_overflow.o
+[COMPILE] proto_stackpath.o
+[COMPILE] proto_statcounter.o
+[COMPILE] proto_stealthnet.o
+[COMPILE] proto_steam.o
+[COMPILE] proto_stp.o
+[COMPILE] proto_stumbleupon.o
+[COMPILE] proto_stun.o
+[COMPILE] proto_sulekha.o
+[COMPILE] proto_sun_nd.o
+[COMPILE] proto_swipe.o
+[COMPILE] proto_syslog.o
+[COMPILE] proto_tagged.o
+[COMPILE] proto_tango.o
+[COMPILE] proto_taobao.o
+[COMPILE] proto_target.o
+[COMPILE] proto_tcf.o
+[COMPILE] proto_tco.o
+[COMPILE] proto_tcp.o
+[COMPILE] proto_tds.o
+[COMPILE] proto_teamviewer.o
+[COMPILE] proto_telnet.o
+[COMPILE] proto_tftp.o
+[COMPILE] proto_the_pirate_bay.o
+[COMPILE] proto_themeforest.o
+[COMPILE] proto_thunder.o
+[COMPILE] proto_tianya.o
+[COMPILE] proto_tlsp.o
+[COMPILE] proto_tmall.o
+[COMPILE] proto_torrentz.o
+[COMPILE] proto_tp_pp.o
+[COMPILE] proto_tpkt.o
+[COMPILE] proto_trunk_1.o
+[COMPILE] proto_trunk_2.o
+[COMPILE] proto_truphone.o
+[COMPILE] proto_tube8.o
+[COMPILE] proto_tudou.o
+[COMPILE] proto_tuenti.o
+[COMPILE] proto_tumblr.o
+[COMPILE] proto_tvants.o
+[COMPILE] proto_tvuplayer.o
+[COMPILE] proto_twitch.o
+[COMPILE] proto_twitter.o
+[COMPILE] proto_ubi.o
+[COMPILE] proto_ucoz.o
+[COMPILE] proto_udp.o
+[COMPILE] proto_udplite.o
+[COMPILE] proto_uol.o
+[COMPILE] proto_usdepartmentofstate.o
+[COMPILE] proto_usenet.o
+[COMPILE] proto_ustream.o
+[COMPILE] proto_uti.o
+[COMPILE] proto_viadeo.o
+[COMPILE] proto_viber.o
+[COMPILE] proto_video_hosting.o
+[COMPILE] proto_vidoosh.o
+[COMPILE] proto_vimeo.o
+[COMPILE] proto_vines.o
+[COMPILE] proto_visa.o
+[COMPILE] proto_vk.o
+[COMPILE] proto_vkontakte.o
+[COMPILE] proto_vmtp.o
+[COMPILE] proto_vmware.o
+[COMPILE] proto_vnc.o
+[COMPILE] proto_vrrp.o
+[COMPILE] proto_walmart.o
+[COMPILE] proto_warcraft3.o
+[COMPILE] proto_warriorforum.o
+[COMPILE] proto_wayn.o
+[COMPILE] proto_wb_expak.o
+[COMPILE] proto_wb_mon.o
+[COMPILE] proto_weather.o
+[COMPILE] proto_webex.o
+[COMPILE] proto_webshots.o
+[COMPILE] proto_wechat.o
+[COMPILE] proto_weeklystandard.o
+[COMPILE] proto_weibo.o
+[COMPILE] proto_wellsfargo.o
+[COMPILE] proto_whatsapp.o
+[COMPILE] proto_wigetmedia.o
+[COMPILE] proto_wikia.o
+[COMPILE] proto_wikimedia.o
+[COMPILE] proto_wikipedia.o
+[COMPILE] proto_wildscreen.o
+[COMPILE] proto_williamhill.o
+[COMPILE] proto_windowslive.o
+[COMPILE] proto_windowsmedia.o
+[COMPILE] proto_winmx.o
+[COMPILE] proto_winupdate.o
+[COMPILE] proto_wordpress_org.o
+[COMPILE] proto_world_of_kung_fu.o
+[COMPILE] proto_worldofwarcraft.o
+[COMPILE] proto_wowhead.o
+[COMPILE] proto_wsn.o
+[COMPILE] proto_wwe.o
+[COMPILE] proto_xbox.o
+[COMPILE] proto_xdmcp.o
+[COMPILE] proto_xhamster.o
+[COMPILE] proto_xid.o
+[COMPILE] proto_xing.o
+[COMPILE] proto_xinhuanet.o
+[COMPILE] proto_xnet.o
+[COMPILE] proto_xns_idp.o
+[COMPILE] proto_xnxx.o
+[COMPILE] proto_xtp.o
+[COMPILE] proto_xvideos.o
+[COMPILE] proto_yahoo.o
+[COMPILE] proto_yahoomail.o
+[COMPILE] proto_yahoomsg.o
+[COMPILE] proto_yandex.o
+[COMPILE] proto_yelp.o
+[COMPILE] proto_youku.o
+[COMPILE] proto_youporn.o
+[COMPILE] proto_youtube.o
+[COMPILE] proto_zappos.o
+[COMPILE] proto_zattoo.o
+[COMPILE] proto_zedo.o
+[COMPILE] proto_zol.o
+[COMPILE] proto_zone_telechargement.o
+[COMPILE] proto_zynga.o
+[COMPILE] rfc2822utils.o
+[COMPILE] tcp_segment.o
+[COMPILE] mmt_mobile_plugin.o
+[COMPILE] proto_diameter.o
+[COMPILE] proto_gtpv2.o
+[COMPILE] proto_nas_5g.o
+[COMPILE] proto_ngap.o
+[COMPILE] proto_s1ap.o
+[COMPILE] nas_msg.o
+[COMPILE] nas_5g.o
+[COMPILE] ngap.o
+[COMPILE] s1ap_common.o
+[COMPILE] ANY.o
+[COMPILE] BIT_STRING.o
+[COMPILE] BIT_STRING_oer.o
+[COMPILE] BOOLEAN.o
+[COMPILE] INTEGER.o
+[COMPILE] INTEGER_oer.o
+[COMPILE] NULL.o
+[COMPILE] NativeEnumerated.o
+[COMPILE] NativeEnumerated_oer.o
+[COMPILE] NativeInteger.o
+[COMPILE] NativeInteger_oer.o
+[COMPILE] OBJECT_IDENTIFIER.o
+[COMPILE] OCTET_STRING.o
+[COMPILE] OCTET_STRING_oer.o
+[COMPILE] OPEN_TYPE.o
+[COMPILE] OPEN_TYPE_oer.o
+[COMPILE] PrintableString.o
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c: In function 'asn_imax2INTEGER':
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1280:29: warning: array subscript 0 is outside array bounds of 'intmax_t[1]' {aka 'long int[1]'} [-Warray-bounds=]
+ 1280 |         for(bp = buf, pend1 += add; p != pend1; p += add)
+      |                       ~~~~~~^~~~~~
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1236:42: note: at offset -1 into object 'value' of size 8
+ 1236 | asn_imax2INTEGER(INTEGER_t *st, intmax_t value) {
+      |                                 ~~~~~~~~~^~~~~
+[COMPILE] S1AP-PDU.o
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c: In function 'asn_int642INTEGER':
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1280:29: warning: array subscript 0 is outside array bounds of 'intmax_t[1]' {aka 'long int[1]'} [-Warray-bounds=]
+ 1280 |         for(bp = buf, pend1 += add; p != pend1; p += add)
+      |                       ~~~~~~^~~~~~
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1357:1: note: at offset -1 into object 'value' of size 8
+ 1357 | asn_int642INTEGER(INTEGER_t *st, int64_t value) {
+      | ^~~~~~~~~~~~~~~~~
+[COMPILE] asn_SEQUENCE_OF.o
+[COMPILE] asn_SET_OF.o
+[COMPILE] asn_application.o
+[COMPILE] asn_bit_data.o
+[COMPILE] asn_codecs_prim.o
+[COMPILE] asn_internal.o
+[COMPILE] asn_random_fill.o
+[COMPILE] ber_decoder.o
+[COMPILE] ber_tlv_length.o
+[COMPILE] ber_tlv_tag.o
+[COMPILE] constr_CHOICE.o
+[COMPILE] constr_CHOICE_oer.o
+[COMPILE] constr_SEQUENCE.o
+[COMPILE] constr_SEQUENCE_OF.o
+[COMPILE] constr_SEQUENCE_oer.o
+[COMPILE] constr_SET_OF.o
+[COMPILE] constr_SET_OF_oer.o
+[COMPILE] constr_TYPE.o
+[COMPILE] constraints.o
+[COMPILE] der_encoder.o
+[COMPILE] oer_decoder.o
+[COMPILE] oer_encoder.o
+[COMPILE] oer_support.o
+[COMPILE] per_decoder.o
+[COMPILE] per_encoder.o
+[COMPILE] per_opentype.o
+[COMPILE] per_support.o
+[COMPILE] xer_decoder.o
+[COMPILE] xer_encoder.o
+[COMPILE] xer_support.o
+[COMPILE] NGAP_AMF-TNLAssociationSetupItem.o
+[COMPILE] NGAP_AMF-TNLAssociationSetupList.o
+[COMPILE] NGAP_AMF-TNLAssociationToAddItem.o
+[COMPILE] NGAP_AMF-TNLAssociationToAddList.o
+[COMPILE] NGAP_AMF-TNLAssociationToRemoveItem.o
+[COMPILE] NGAP_AMF-TNLAssociationToRemoveList.o
+[COMPILE] NGAP_AMF-TNLAssociationToUpdateItem.o
+[COMPILE] NGAP_AMF-TNLAssociationToUpdateList.o
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c: In function 'aper_decode':
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c:169:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  169 |         if(!td->op->aper_decoder)
+      |         ^~
+/home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c:171:17: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  171 |                 rval = td->op->aper_decoder(opt_codec_ctx, td, 0, sptr, &pd);
+      |                 ^~~~
+[COMPILE] NGAP_AMF-UE-NGAP-ID.o
+[COMPILE] NGAP_AMFConfigurationUpdate.o
+[COMPILE] NGAP_AMFConfigurationUpdateAcknowledge.o
+[COMPILE] NGAP_AMFConfigurationUpdateFailure.o
+[COMPILE] NGAP_AMFName.o
+[COMPILE] NGAP_AMFPagingTarget.o
+[COMPILE] NGAP_AMFPointer.o
+[COMPILE] NGAP_AMFRegionID.o
+[COMPILE] NGAP_AMFSetID.o
+[COMPILE] NGAP_AMFStatusIndication.o
+[COMPILE] NGAP_AdditionalQosFlowInformation.o
+[COMPILE] NGAP_AllocationAndRetentionPriority.o
+[COMPILE] NGAP_AllowedNSSAI-Item.o
+[COMPILE] NGAP_AllowedNSSAI.o
+[COMPILE] NGAP_AllowedTACs.o
+[COMPILE] NGAP_AreaOfInterest.o
+[COMPILE] NGAP_AreaOfInterestCellItem.o
+[COMPILE] NGAP_AreaOfInterestCellList.o
+[COMPILE] NGAP_AreaOfInterestItem.o
+[COMPILE] NGAP_AreaOfInterestList.o
+[COMPILE] NGAP_AreaOfInterestRANNodeItem.o
+[COMPILE] NGAP_AreaOfInterestRANNodeList.o
+[COMPILE] NGAP_AreaOfInterestTAIItem.o
+[COMPILE] NGAP_AreaOfInterestTAIList.o
+[COMPILE] NGAP_AssistanceDataForPaging.o
+[COMPILE] NGAP_AssistanceDataForRecommendedCells.o
+[COMPILE] NGAP_AssociatedQosFlowItem.o
+[COMPILE] NGAP_AssociatedQosFlowList.o
+[COMPILE] NGAP_AveragingWindow.o
+[COMPILE] NGAP_BitRate.o
+[COMPILE] NGAP_BroadcastCancelledAreaList.o
+[COMPILE] NGAP_BroadcastCompletedAreaList.o
+[COMPILE] NGAP_BroadcastPLMNItem.o
+[COMPILE] NGAP_BroadcastPLMNList.o
+[COMPILE] NGAP_COUNTValueForPDCP-SN12.o
+[COMPILE] NGAP_COUNTValueForPDCP-SN18.o
+[COMPILE] NGAP_CPTransportLayerInformation.o
+[COMPILE] NGAP_CancelAllWarningMessages.o
+[COMPILE] NGAP_CancelledCellsInEAI-EUTRA-Item.o
+[COMPILE] NGAP_CancelledCellsInEAI-EUTRA.o
+[COMPILE] NGAP_CancelledCellsInEAI-NR-Item.o
+[COMPILE] NGAP_CancelledCellsInEAI-NR.o
+[COMPILE] NGAP_CancelledCellsInTAI-EUTRA-Item.o
+[COMPILE] NGAP_CancelledCellsInTAI-EUTRA.o
+[COMPILE] NGAP_CancelledCellsInTAI-NR-Item.o
+[COMPILE] NGAP_CancelledCellsInTAI-NR.o
+[COMPILE] NGAP_Cause.o
+[COMPILE] NGAP_CauseMisc.o
+[COMPILE] NGAP_CauseNas.o
+[COMPILE] NGAP_CauseProtocol.o
+[COMPILE] NGAP_CauseRadioNetwork.o
+[COMPILE] NGAP_CauseTransport.o
+[COMPILE] NGAP_CellIDBroadcastEUTRA-Item.o
+[COMPILE] NGAP_CellIDBroadcastEUTRA.o
+[COMPILE] NGAP_CellIDBroadcastNR-Item.o
+[COMPILE] NGAP_CellIDBroadcastNR.o
+[COMPILE] NGAP_CellIDCancelledEUTRA-Item.o
+[COMPILE] NGAP_CellIDCancelledEUTRA.o
+[COMPILE] NGAP_CellIDCancelledNR-Item.o
+[COMPILE] NGAP_CellIDCancelledNR.o
+[COMPILE] NGAP_CellIDListForRestart.o
+[COMPILE] NGAP_CellSize.o
+[COMPILE] NGAP_CellTrafficTrace.o
+[COMPILE] NGAP_CellType.o
+[COMPILE] NGAP_CompletedCellsInEAI-EUTRA-Item.o
+[COMPILE] NGAP_CompletedCellsInEAI-EUTRA.o
+[COMPILE] NGAP_CompletedCellsInEAI-NR-Item.o
+[COMPILE] NGAP_CompletedCellsInEAI-NR.o
+[COMPILE] NGAP_CompletedCellsInTAI-EUTRA-Item.o
+[COMPILE] NGAP_CompletedCellsInTAI-EUTRA.o
+[COMPILE] NGAP_CompletedCellsInTAI-NR-Item.o
+[COMPILE] NGAP_CompletedCellsInTAI-NR.o
+[COMPILE] NGAP_ConcurrentWarningMessageInd.o
+[COMPILE] NGAP_ConfidentialityProtectionIndication.o
+[COMPILE] NGAP_ConfidentialityProtectionResult.o
+[COMPILE] NGAP_CoreNetworkAssistanceInformation.o
+[COMPILE] NGAP_Criticality.o
+[COMPILE] NGAP_CriticalityDiagnostics-IE-Item.o
+[COMPILE] NGAP_CriticalityDiagnostics-IE-List.o
+[COMPILE] NGAP_CriticalityDiagnostics.o
+[COMPILE] NGAP_DL-NGU-TNLInformationReused.o
+[COMPILE] NGAP_DLForwarding.o
+[COMPILE] NGAP_DRB-ID.o
+[COMPILE] NGAP_DRBStatusDL.o
+[COMPILE] NGAP_DRBStatusDL12.o
+[COMPILE] NGAP_DRBStatusDL18.o
+[COMPILE] NGAP_DRBStatusUL.o
+[COMPILE] NGAP_DRBStatusUL12.o
+[COMPILE] NGAP_DRBStatusUL18.o
+[COMPILE] NGAP_DRBsSubjectToStatusTransferItem.o
+[COMPILE] NGAP_DRBsSubjectToStatusTransferList.o
+[COMPILE] NGAP_DRBsToQosFlowsMappingItem.o
+[COMPILE] NGAP_DRBsToQosFlowsMappingList.o
+[COMPILE] NGAP_DataCodingScheme.o
+[COMPILE] NGAP_DataForwardingAccepted.o
+[COMPILE] NGAP_DataForwardingNotPossible.o
+[COMPILE] NGAP_DataForwardingResponseDRBItem.o
+[COMPILE] NGAP_DataForwardingResponseDRBList.o
+[COMPILE] NGAP_DeactivateTrace.o
+[COMPILE] NGAP_DelayCritical.o
+[COMPILE] NGAP_DirectForwardingPathAvailability.o
+[COMPILE] NGAP_DownlinkNASTransport.o
+[COMPILE] NGAP_DownlinkNonUEAssociatedNRPPaTransport.o
+[COMPILE] NGAP_DownlinkRANConfigurationTransfer.o
+[COMPILE] NGAP_DownlinkRANStatusTransfer.o
+[COMPILE] NGAP_DownlinkUEAssociatedNRPPaTransport.o
+[COMPILE] NGAP_Dynamic5QIDescriptor.o
+[COMPILE] NGAP_E-RAB-ID.o
+[COMPILE] NGAP_E-RABInformationItem.o
+[COMPILE] NGAP_E-RABInformationList.o
+[COMPILE] NGAP_EPS-TAC.o
+[COMPILE] NGAP_EPS-TAI.o
+[COMPILE] NGAP_EUTRA-CGI.o
+[COMPILE] NGAP_EUTRA-CGIList.o
+[COMPILE] NGAP_EUTRA-CGIListForWarning.o
+[COMPILE] NGAP_EUTRACellIdentity.o
+[COMPILE] NGAP_EUTRAencryptionAlgorithms.o
+[COMPILE] NGAP_EUTRAintegrityProtectionAlgorithms.o
+[COMPILE] NGAP_EmergencyAreaID.o
+[COMPILE] NGAP_EmergencyAreaIDBroadcastEUTRA-Item.o
+[COMPILE] NGAP_EmergencyAreaIDBroadcastEUTRA.o
+[COMPILE] NGAP_EmergencyAreaIDBroadcastNR-Item.o
+[COMPILE] NGAP_EmergencyAreaIDBroadcastNR.o
+[COMPILE] NGAP_EmergencyAreaIDCancelledEUTRA-Item.o
+[COMPILE] NGAP_EmergencyAreaIDCancelledEUTRA.o
+[COMPILE] NGAP_EmergencyAreaIDCancelledNR-Item.o
+[COMPILE] NGAP_EmergencyAreaIDCancelledNR.o
+[COMPILE] NGAP_EmergencyAreaIDList.o
+[COMPILE] NGAP_EmergencyAreaIDListForRestart.o
+[COMPILE] NGAP_EmergencyFallbackIndicator.o
+[COMPILE] NGAP_EmergencyFallbackRequestIndicator.o
+[COMPILE] NGAP_EmergencyServiceTargetCN.o
+[COMPILE] NGAP_EquivalentPLMNs.o
+[COMPILE] NGAP_ErrorIndication.o
+[COMPILE] NGAP_EventType.o
+[COMPILE] NGAP_ExpectedActivityPeriod.o
+[COMPILE] NGAP_ExpectedHOInterval.o
+[COMPILE] NGAP_ExpectedIdlePeriod.o
+[COMPILE] NGAP_ExpectedUEActivityBehaviour.o
+[COMPILE] NGAP_ExpectedUEBehaviour.o
+[COMPILE] NGAP_ExpectedUEMobility.o
+[COMPILE] NGAP_ExpectedUEMovingTrajectory.o
+[COMPILE] NGAP_ExpectedUEMovingTrajectoryItem.o
+[COMPILE] NGAP_FiveG-S-TMSI.o
+[COMPILE] NGAP_FiveG-TMSI.o
+[COMPILE] NGAP_FiveQI.o
+[COMPILE] NGAP_ForbiddenAreaInformation-Item.o
+[COMPILE] NGAP_ForbiddenAreaInformation.o
+[COMPILE] NGAP_ForbiddenTACs.o
+[COMPILE] NGAP_GBR-QosInformation.o
+[COMPILE] NGAP_GNB-ID.o
+[COMPILE] NGAP_GTP-TEID.o
+[COMPILE] NGAP_GTPTunnel.o
+[COMPILE] NGAP_GUAMI.o
+[COMPILE] NGAP_GlobalGNB-ID.o
+[COMPILE] NGAP_GlobalN3IWF-ID.o
+[COMPILE] NGAP_GlobalNgENB-ID.o
+[COMPILE] NGAP_GlobalRANNodeID.o
+[COMPILE] NGAP_HandoverCancel.o
+[COMPILE] NGAP_HandoverCancelAcknowledge.o
+[COMPILE] NGAP_HandoverCommand.o
+[COMPILE] NGAP_HandoverCommandTransfer.o
+[COMPILE] NGAP_HandoverFailure.o
+[COMPILE] NGAP_HandoverNotify.o
+[COMPILE] NGAP_HandoverPreparationFailure.o
+[COMPILE] NGAP_HandoverPreparationUnsuccessfulTransfer.o
+[COMPILE] NGAP_HandoverRequest.o
+[COMPILE] NGAP_HandoverRequestAcknowledge.o
+[COMPILE] NGAP_HandoverRequestAcknowledgeTransfer.o
+[COMPILE] NGAP_HandoverRequired.o
+[COMPILE] NGAP_HandoverRequiredTransfer.o
+[COMPILE] NGAP_HandoverResourceAllocationUnsuccessfulTransfer.o
+[COMPILE] NGAP_HandoverType.o
+[COMPILE] NGAP_IMSVoiceSupportIndicator.o
+[COMPILE] NGAP_IndexToRFSP.o
+[COMPILE] NGAP_InfoOnRecommendedCellsAndRANNodesForPaging.o
+[COMPILE] NGAP_InitialContextSetupFailure.o
+[COMPILE] NGAP_InitialContextSetupRequest.o
+[COMPILE] NGAP_InitialContextSetupResponse.o
+[COMPILE] NGAP_InitialUEMessage.o
+[COMPILE] NGAP_InitiatingMessage.o
+[COMPILE] NGAP_IntegrityProtectionIndication.o
+[COMPILE] NGAP_IntegrityProtectionResult.o
+[COMPILE] NGAP_IntendedNumberOfPagingAttempts.o
+[COMPILE] NGAP_InterfacesToTrace.o
+[COMPILE] NGAP_LastVisitedCellInformation.o
+[COMPILE] NGAP_LastVisitedCellItem.o
+[COMPILE] NGAP_LastVisitedEUTRANCellInformation.o
+[COMPILE] NGAP_LastVisitedGERANCellInformation.o
+[COMPILE] NGAP_LastVisitedNGRANCellInformation.o
+[COMPILE] NGAP_LastVisitedUTRANCellInformation.o
+[COMPILE] NGAP_LocationReport.o
+[COMPILE] NGAP_LocationReportingControl.o
+[COMPILE] NGAP_LocationReportingFailureIndication.o
+[COMPILE] NGAP_LocationReportingReferenceID.o
+[COMPILE] NGAP_LocationReportingRequestType.o
+[COMPILE] NGAP_MICOModeIndication.o
+[COMPILE] NGAP_MaskedIMEISV.o
+[COMPILE] NGAP_MaximumDataBurstVolume.o
+[COMPILE] NGAP_MaximumIntegrityProtectedDataRate.o
+[COMPILE] NGAP_MessageIdentifier.o
+[COMPILE] NGAP_MobilityRestrictionList.o
+[COMPILE] NGAP_MultipleTNLInformation.o
+[COMPILE] NGAP_N3IWF-ID.o
+[COMPILE] NGAP_NAS-PDU.o
+[COMPILE] NGAP_NASNonDeliveryIndication.o
+[COMPILE] NGAP_NASSecurityParametersFromNGRAN.o
+[COMPILE] NGAP_NGAP-PDU.o
+[COMPILE] NGAP_NGRAN-CGI.o
+[COMPILE] NGAP_NGRANTraceID.o
+[COMPILE] NGAP_NGReset.o
+[COMPILE] NGAP_NGResetAcknowledge.o
+[COMPILE] NGAP_NGSetupFailure.o
+[COMPILE] NGAP_NGSetupRequest.o
+[COMPILE] NGAP_NGSetupResponse.o
+[COMPILE] NGAP_NR-CGI.o
+[COMPILE] NGAP_NR-CGIList.o
+[COMPILE] NGAP_NR-CGIListForWarning.o
+[COMPILE] NGAP_NRCellIdentity.o
+[COMPILE] NGAP_NRPPa-PDU.o
+[COMPILE] NGAP_NRencryptionAlgorithms.o
+[COMPILE] NGAP_NRintegrityProtectionAlgorithms.o
+[COMPILE] NGAP_NetworkInstance.o
+[COMPILE] NGAP_NewSecurityContextInd.o
+[COMPILE] NGAP_NextHopChainingCount.o
+[COMPILE] NGAP_NextPagingAreaScope.o
+[COMPILE] NGAP_NgENB-ID.o
+[COMPILE] NGAP_NonDynamic5QIDescriptor.o
+[COMPILE] NGAP_NotAllowedTACs.o
+[COMPILE] NGAP_NotificationCause.o
+[COMPILE] NGAP_NotificationControl.o
+[COMPILE] NGAP_NumberOfBroadcasts.o
+[COMPILE] NGAP_NumberOfBroadcastsRequested.o
+[COMPILE] NGAP_OverloadAction.o
+[COMPILE] NGAP_OverloadResponse.o
+[COMPILE] NGAP_OverloadStart.o
+[COMPILE] NGAP_OverloadStartNSSAIItem.o
+[COMPILE] NGAP_OverloadStartNSSAIList.o
+[COMPILE] NGAP_OverloadStop.o
+[COMPILE] NGAP_PDUSessionAggregateMaximumBitRate.o
+[COMPILE] NGAP_PDUSessionID.o
+[COMPILE] NGAP_PDUSessionResourceAdmittedItem.o
+[COMPILE] NGAP_PDUSessionResourceAdmittedList.o
+[COMPILE] NGAP_PDUSessionResourceFailedToModifyItemModCfm.o
+[COMPILE] NGAP_PDUSessionResourceFailedToModifyItemModRes.o
+[COMPILE] NGAP_PDUSessionResourceFailedToModifyListModCfm.o
+[COMPILE] NGAP_PDUSessionResourceFailedToModifyListModRes.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupItemCxtFail.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupItemCxtRes.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupItemHOAck.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupItemPSReq.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupItemSURes.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupListCxtFail.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupListCxtRes.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupListHOAck.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupListPSReq.o
+[COMPILE] NGAP_PDUSessionResourceFailedToSetupListSURes.o
+[COMPILE] NGAP_PDUSessionResourceHandoverItem.o
+[COMPILE] NGAP_PDUSessionResourceHandoverList.o
+[COMPILE] NGAP_PDUSessionResourceInformationItem.o
+[COMPILE] NGAP_PDUSessionResourceInformationList.o
+[COMPILE] NGAP_PDUSessionResourceItemCxtRelCpl.o
+[COMPILE] NGAP_PDUSessionResourceItemCxtRelReq.o
+[COMPILE] NGAP_PDUSessionResourceItemHORqd.o
+[COMPILE] NGAP_PDUSessionResourceListCxtRelCpl.o
+[COMPILE] NGAP_PDUSessionResourceListCxtRelReq.o
+[COMPILE] NGAP_PDUSessionResourceListHORqd.o
+[COMPILE] NGAP_PDUSessionResourceModifyConfirm.o
+[COMPILE] NGAP_PDUSessionResourceModifyConfirmTransfer.o
+[COMPILE] NGAP_PDUSessionResourceModifyIndication.o
+[COMPILE] NGAP_PDUSessionResourceModifyIndicationTransfer.o
+[COMPILE] NGAP_PDUSessionResourceModifyIndicationUnsuccessfulTransfer.o
+[COMPILE] NGAP_PDUSessionResourceModifyItemModCfm.o
+[COMPILE] NGAP_PDUSessionResourceModifyItemModInd.o
+[COMPILE] NGAP_PDUSessionResourceModifyItemModReq.o
+[COMPILE] NGAP_PDUSessionResourceModifyItemModRes.o
+[COMPILE] NGAP_PDUSessionResourceModifyListModCfm.o
+[COMPILE] NGAP_PDUSessionResourceModifyListModInd.o
+[COMPILE] NGAP_PDUSessionResourceModifyListModReq.o
+[COMPILE] NGAP_PDUSessionResourceModifyListModRes.o
+[COMPILE] NGAP_PDUSessionResourceModifyRequest.o
+[COMPILE] NGAP_PDUSessionResourceModifyRequestTransfer.o
+[COMPILE] NGAP_PDUSessionResourceModifyResponse.o
+[COMPILE] NGAP_PDUSessionResourceModifyResponseTransfer.o
+[COMPILE] NGAP_PDUSessionResourceModifyUnsuccessfulTransfer.o
+[COMPILE] NGAP_PDUSessionResourceNotify.o
+[COMPILE] NGAP_PDUSessionResourceNotifyItem.o
+[COMPILE] NGAP_PDUSessionResourceNotifyList.o
+[COMPILE] NGAP_PDUSessionResourceNotifyReleasedTransfer.o
+[COMPILE] NGAP_PDUSessionResourceNotifyTransfer.o
+[COMPILE] NGAP_PDUSessionResourceReleaseCommand.o
+[COMPILE] NGAP_PDUSessionResourceReleaseCommandTransfer.o
+[COMPILE] NGAP_PDUSessionResourceReleaseResponse.o
+[COMPILE] NGAP_PDUSessionResourceReleaseResponseTransfer.o
+[COMPILE] NGAP_PDUSessionResourceReleasedItemNot.o
+[COMPILE] NGAP_PDUSessionResourceReleasedItemPSAck.o
+[COMPILE] NGAP_PDUSessionResourceReleasedItemPSFail.o
+[COMPILE] NGAP_PDUSessionResourceReleasedItemRelRes.o
+[COMPILE] NGAP_PDUSessionResourceReleasedListNot.o
+[COMPILE] NGAP_PDUSessionResourceReleasedListPSAck.o
+[COMPILE] NGAP_PDUSessionResourceReleasedListPSFail.o
+[COMPILE] NGAP_PDUSessionResourceReleasedListRelRes.o
+[COMPILE] NGAP_PDUSessionResourceSetupItemCxtReq.o
+[COMPILE] NGAP_PDUSessionResourceSetupItemCxtRes.o
+[COMPILE] NGAP_PDUSessionResourceSetupItemHOReq.o
+[COMPILE] NGAP_PDUSessionResourceSetupItemSUReq.o
+[COMPILE] NGAP_PDUSessionResourceSetupItemSURes.o
+[COMPILE] NGAP_PDUSessionResourceSetupListCxtReq.o
+[COMPILE] NGAP_PDUSessionResourceSetupListCxtRes.o
+[COMPILE] NGAP_PDUSessionResourceSetupListHOReq.o
+[COMPILE] NGAP_PDUSessionResourceSetupListSUReq.o
+[COMPILE] NGAP_PDUSessionResourceSetupListSURes.o
+[COMPILE] NGAP_PDUSessionResourceSetupRequest.o
+[COMPILE] NGAP_PDUSessionResourceSetupRequestTransfer.o
+[COMPILE] NGAP_PDUSessionResourceSetupResponse.o
+[COMPILE] NGAP_PDUSessionResourceSetupResponseTransfer.o
+[COMPILE] NGAP_PDUSessionResourceSetupUnsuccessfulTransfer.o
+[COMPILE] NGAP_PDUSessionResourceSwitchedItem.o
+[COMPILE] NGAP_PDUSessionResourceSwitchedList.o
+[COMPILE] NGAP_PDUSessionResourceToBeSwitchedDLItem.o
+[COMPILE] NGAP_PDUSessionResourceToBeSwitchedDLList.o
+[COMPILE] NGAP_PDUSessionResourceToReleaseItemHOCmd.o
+[COMPILE] NGAP_PDUSessionResourceToReleaseItemRelCmd.o
+[COMPILE] NGAP_PDUSessionResourceToReleaseListHOCmd.o
+[COMPILE] NGAP_PDUSessionResourceToReleaseListRelCmd.o
+[COMPILE] NGAP_PDUSessionType.o
+[COMPILE] NGAP_PLMNIdentity.o
+[COMPILE] NGAP_PLMNSupportItem.o
+[COMPILE] NGAP_PLMNSupportList.o
+[COMPILE] NGAP_PWSCancelRequest.o
+[COMPILE] NGAP_PWSCancelResponse.o
+[COMPILE] NGAP_PWSFailedCellIDList.o
+[COMPILE] NGAP_PWSFailureIndication.o
+[COMPILE] NGAP_PWSRestartIndication.o
+[COMPILE] NGAP_PacketDelayBudget.o
+[COMPILE] NGAP_PacketErrorRate.o
+[COMPILE] NGAP_PacketLossRate.o
+[COMPILE] NGAP_Paging.o
+[COMPILE] NGAP_PagingAttemptCount.o
+[COMPILE] NGAP_PagingAttemptInformation.o
+[COMPILE] NGAP_PagingDRX.o
+[COMPILE] NGAP_PagingOrigin.o
+[COMPILE] NGAP_PagingPriority.o
+[COMPILE] NGAP_PathSwitchRequest.o
+[COMPILE] NGAP_PathSwitchRequestAcknowledge.o
+[COMPILE] NGAP_PathSwitchRequestAcknowledgeTransfer.o
+[COMPILE] NGAP_PathSwitchRequestFailure.o
+[COMPILE] NGAP_PathSwitchRequestSetupFailedTransfer.o
+[COMPILE] NGAP_PathSwitchRequestTransfer.o
+[COMPILE] NGAP_PathSwitchRequestUnsuccessfulTransfer.o
+[COMPILE] NGAP_PeriodicRegistrationUpdateTimer.o
+[COMPILE] NGAP_PortNumber.o
+[COMPILE] NGAP_Pre-emptionCapability.o
+[COMPILE] NGAP_Pre-emptionVulnerability.o
+[COMPILE] NGAP_Presence.o
+[COMPILE] NGAP_PriorityLevelARP.o
+[COMPILE] NGAP_PriorityLevelQos.o
+[COMPILE] NGAP_PrivateIE-Container.o
+[COMPILE] NGAP_PrivateIE-Field.o
+[COMPILE] NGAP_PrivateIE-ID.o
+[COMPILE] NGAP_PrivateMessage.o
+[COMPILE] NGAP_ProcedureCode.o
+[COMPILE] NGAP_ProtocolExtensionContainer.o
+[COMPILE] NGAP_ProtocolExtensionField.o
+[COMPILE] NGAP_ProtocolExtensionID.o
+[COMPILE] NGAP_ProtocolIE-Container.o
+[COMPILE] NGAP_ProtocolIE-ContainerList.o
+[COMPILE] NGAP_ProtocolIE-ContainerPair.o
+[COMPILE] NGAP_ProtocolIE-ContainerPairList.o
+[COMPILE] NGAP_ProtocolIE-Field.o
+[COMPILE] NGAP_ProtocolIE-FieldPair.o
+[COMPILE] NGAP_ProtocolIE-ID.o
+[COMPILE] NGAP_ProtocolIE-SingleContainer.o
+[COMPILE] NGAP_QosCharacteristics.o
+[COMPILE] NGAP_QosFlowAcceptedItem.o
+[COMPILE] NGAP_QosFlowAcceptedList.o
+[COMPILE] NGAP_QosFlowAddOrModifyRequestItem.o
+[COMPILE] NGAP_QosFlowAddOrModifyRequestList.o
+[COMPILE] NGAP_QosFlowAddOrModifyResponseItem.o
+[COMPILE] NGAP_QosFlowAddOrModifyResponseList.o
+[COMPILE] NGAP_QosFlowIdentifier.o
+[COMPILE] NGAP_QosFlowInformationItem.o
+[COMPILE] NGAP_QosFlowInformationList.o
+[COMPILE] NGAP_QosFlowItem.o
+[COMPILE] NGAP_QosFlowLevelQosParameters.o
+[COMPILE] NGAP_QosFlowList.o
+[COMPILE] NGAP_QosFlowModifyConfirmItem.o
+[COMPILE] NGAP_QosFlowModifyConfirmList.o
+[COMPILE] NGAP_QosFlowNotifyItem.o
+[COMPILE] NGAP_QosFlowNotifyList.o
+[COMPILE] NGAP_QosFlowPerTNLInformation.o
+[COMPILE] NGAP_QosFlowSetupRequestItem.o
+[COMPILE] NGAP_QosFlowSetupRequestList.o
+[COMPILE] NGAP_QosFlowSetupResponseItemHOReqAck.o
+[COMPILE] NGAP_QosFlowSetupResponseItemSURes.o
+[COMPILE] NGAP_QosFlowSetupResponseListHOReqAck.o
+[COMPILE] NGAP_QosFlowSetupResponseListSURes.o
+[COMPILE] NGAP_QosFlowToBeForwardedItem.o
+[COMPILE] NGAP_QosFlowToBeForwardedList.o
+[COMPILE] NGAP_RAN-UE-NGAP-ID.o
+[COMPILE] NGAP_RANConfigurationUpdate.o
+[COMPILE] NGAP_RANConfigurationUpdateAcknowledge.o
+[COMPILE] NGAP_RANConfigurationUpdateFailure.o
+[COMPILE] NGAP_RANNodeName.o
+[COMPILE] NGAP_RANPagingPriority.o
+[COMPILE] NGAP_RANStatusTransfer-TransparentContainer.o
+[COMPILE] NGAP_RATRestrictionInformation.o
+[COMPILE] NGAP_RATRestrictions-Item.o
+[COMPILE] NGAP_RATRestrictions.o
+[COMPILE] NGAP_RRCContainer.o
+[COMPILE] NGAP_RRCEstablishmentCause.o
+[COMPILE] NGAP_RRCInactiveTransitionReport.o
+[COMPILE] NGAP_RRCInactiveTransitionReportRequest.o
+[COMPILE] NGAP_RRCState.o
+[COMPILE] NGAP_RecommendedCellItem.o
+[COMPILE] NGAP_RecommendedCellList.o
+[COMPILE] NGAP_RecommendedCellsForPaging.o
+[COMPILE] NGAP_RecommendedRANNodeItem.o
+[COMPILE] NGAP_RecommendedRANNodeList.o
+[COMPILE] NGAP_RecommendedRANNodesForPaging.o
+[COMPILE] NGAP_ReferenceID.o
+[COMPILE] NGAP_ReflectiveQosAttribute.o
+[COMPILE] NGAP_RelativeAMFCapacity.o
+[COMPILE] NGAP_RepetitionPeriod.o
+[COMPILE] NGAP_ReportArea.o
+[COMPILE] NGAP_RerouteNASRequest.o
+[COMPILE] NGAP_ResetAll.o
+[COMPILE] NGAP_ResetType.o
+[COMPILE] NGAP_RoutingID.o
+[COMPILE] NGAP_S-NSSAI.o
+[COMPILE] NGAP_SD.o
+[COMPILE] NGAP_SONConfigurationTransfer.o
+[COMPILE] NGAP_SONInformation.o
+[COMPILE] NGAP_SONInformationReply.o
+[COMPILE] NGAP_SONInformationRequest.o
+[COMPILE] NGAP_SST.o
+[COMPILE] NGAP_SecurityContext.o
+[COMPILE] NGAP_SecurityIndication.o
+[COMPILE] NGAP_SecurityKey.o
+[COMPILE] NGAP_SecurityResult.o
+[COMPILE] NGAP_SerialNumber.o
+[COMPILE] NGAP_ServedGUAMIItem.o
+[COMPILE] NGAP_ServedGUAMIList.o
+[COMPILE] NGAP_ServiceAreaInformation-Item.o
+[COMPILE] NGAP_ServiceAreaInformation.o
+[COMPILE] NGAP_SingleTNLInformation.o
+[COMPILE] NGAP_SliceOverloadItem.o
+[COMPILE] NGAP_SliceOverloadList.o
+[COMPILE] NGAP_SliceSupportItem.o
+[COMPILE] NGAP_SliceSupportList.o
+[COMPILE] NGAP_SourceNGRANNode-ToTargetNGRANNode-TransparentContainer.o
+[COMPILE] NGAP_SourceOfUEActivityBehaviourInformation.o
+[COMPILE] NGAP_SourceRANNodeID.o
+[COMPILE] NGAP_SourceToTarget-TransparentContainer.o
+[COMPILE] NGAP_SuccessfulOutcome.o
+[COMPILE] NGAP_SupportedTAItem.o
+[COMPILE] NGAP_SupportedTAList.o
+[COMPILE] NGAP_TAC.o
+[COMPILE] NGAP_TAI.o
+[COMPILE] NGAP_TAIBroadcastEUTRA-Item.o
+[COMPILE] NGAP_TAIBroadcastEUTRA.o
+[COMPILE] NGAP_TAIBroadcastNR-Item.o
+[COMPILE] NGAP_TAIBroadcastNR.o
+[COMPILE] NGAP_TAICancelledEUTRA-Item.o
+[COMPILE] NGAP_TAICancelledEUTRA.o
+[COMPILE] NGAP_TAICancelledNR-Item.o
+[COMPILE] NGAP_TAICancelledNR.o
+[COMPILE] NGAP_TAIListForInactive.o
+[COMPILE] NGAP_TAIListForInactiveItem.o
+[COMPILE] NGAP_TAIListForPaging.o
+[COMPILE] NGAP_TAIListForPagingItem.o
+[COMPILE] NGAP_TAIListForRestart.o
+[COMPILE] NGAP_TAIListForWarning.o
+[COMPILE] NGAP_TNLAddressWeightFactor.o
+[COMPILE] NGAP_TNLAssociationItem.o
+[COMPILE] NGAP_TNLAssociationList.o
+[COMPILE] NGAP_TNLAssociationUsage.o
+[COMPILE] NGAP_TNLInformationItem.o
+[COMPILE] NGAP_TNLInformationList.o
+[COMPILE] NGAP_TNLMappingItem.o
+[COMPILE] NGAP_TNLMappingList.o
+[COMPILE] NGAP_TargetID.o
+[COMPILE] NGAP_TargetNGRANNode-ToSourceNGRANNode-TransparentContainer.o
+[COMPILE] NGAP_TargetRANNodeID.o
+[COMPILE] NGAP_TargetToSource-TransparentContainer.o
+[COMPILE] NGAP_TargeteNB-ID.o
+[COMPILE] NGAP_TimeStamp.o
+[COMPILE] NGAP_TimeToWait.o
+[COMPILE] NGAP_TimeUEStayedInCell.o
+[COMPILE] NGAP_TimeUEStayedInCellEnhancedGranularity.o
+[COMPILE] NGAP_TimerApproachForGUAMIRemoval.o
+[COMPILE] NGAP_TraceActivation.o
+[COMPILE] NGAP_TraceDepth.o
+[COMPILE] NGAP_TraceFailureIndication.o
+[COMPILE] NGAP_TraceStart.o
+[COMPILE] NGAP_TrafficLoadReductionIndication.o
+[COMPILE] NGAP_TransportLayerAddress.o
+[COMPILE] NGAP_TriggeringMessage.o
+[COMPILE] NGAP_TypeOfError.o
+[COMPILE] NGAP_UE-NGAP-ID-pair.o
+[COMPILE] NGAP_UE-NGAP-IDs.o
+[COMPILE] NGAP_UE-associatedLogicalNG-connectionItem.o
+[COMPILE] NGAP_UE-associatedLogicalNG-connectionList.o
+[COMPILE] NGAP_UEAggregateMaximumBitRate.o
+[COMPILE] NGAP_UEContextModificationFailure.o
+[COMPILE] NGAP_UEContextModificationRequest.o
+[COMPILE] NGAP_UEContextModificationResponse.o
+[COMPILE] NGAP_UEContextReleaseCommand.o
+[COMPILE] NGAP_UEContextReleaseComplete.o
+[COMPILE] NGAP_UEContextReleaseRequest.o
+[COMPILE] NGAP_UEContextRequest.o
+[COMPILE] NGAP_UEHistoryInformation.o
+[COMPILE] NGAP_UEIdentityIndexValue.o
+[COMPILE] NGAP_UEPagingIdentity.o
+[COMPILE] NGAP_UEPresence.o
+[COMPILE] NGAP_UEPresenceInAreaOfInterestItem.o
+[COMPILE] NGAP_UEPresenceInAreaOfInterestList.o
+[COMPILE] NGAP_UERadioCapability.o
+[COMPILE] NGAP_UERadioCapabilityCheckRequest.o
+[COMPILE] NGAP_UERadioCapabilityCheckResponse.o
+[COMPILE] NGAP_UERadioCapabilityForPaging.o
+[COMPILE] NGAP_UERadioCapabilityForPagingOfEUTRA.o
+[COMPILE] NGAP_UERadioCapabilityForPagingOfNR.o
+[COMPILE] NGAP_UERadioCapabilityInfoIndication.o
+[COMPILE] NGAP_UESecurityCapabilities.o
+[COMPILE] NGAP_UETNLABindingReleaseRequest.o
+[COMPILE] NGAP_UL-NGU-UP-TNLModifyItem.o
+[COMPILE] NGAP_UL-NGU-UP-TNLModifyList.o
+[COMPILE] NGAP_UP-TNLInformation.o
+[COMPILE] NGAP_UPTransportLayerInformation.o
+[COMPILE] NGAP_UnavailableGUAMIItem.o
+[COMPILE] NGAP_UnavailableGUAMIList.o
+[COMPILE] NGAP_UnsuccessfulOutcome.o
+[COMPILE] NGAP_UplinkNASTransport.o
+[COMPILE] NGAP_UplinkNonUEAssociatedNRPPaTransport.o
+[COMPILE] NGAP_UplinkRANConfigurationTransfer.o
+[COMPILE] NGAP_UplinkRANStatusTransfer.o
+[COMPILE] NGAP_UplinkUEAssociatedNRPPaTransport.o
+[COMPILE] NGAP_UserLocationInformation.o
+[COMPILE] NGAP_UserLocationInformationEUTRA.o
+[COMPILE] NGAP_UserLocationInformationN3IWF.o
+[COMPILE] NGAP_UserLocationInformationNR.o
+[COMPILE] NGAP_UserPlaneSecurityInformation.o
+[COMPILE] NGAP_WarningAreaCoordinates.o
+[COMPILE] NGAP_WarningAreaList.o
+[COMPILE] NGAP_WarningMessageContents.o
+[COMPILE] NGAP_WarningSecurityInfo.o
+[COMPILE] NGAP_WarningType.o
+[COMPILE] NGAP_WriteReplaceWarningRequest.o
+[COMPILE] NGAP_WriteReplaceWarningResponse.o
+[COMPILE] NGAP_XnExtTLA-Item.o
+[COMPILE] NGAP_XnExtTLAs.o
+[COMPILE] NGAP_XnGTP-TLAs.o
+[COMPILE] NGAP_XnTLAs.o
+[COMPILE] NGAP_XnTNLConfigurationInfo.o
+[COMPILE] S1ap-AllocationAndRetentionPriority.o
+[COMPILE] S1ap-AreaScopeOfMDT.o
+[COMPILE] S1ap-BPLMNs.o
+[COMPILE] S1ap-Bearers-SubjectToStatusTransfer-Item.o
+[COMPILE] S1ap-Bearers-SubjectToStatusTransfer-List.o
+[COMPILE] S1ap-BitRate.o
+[COMPILE] S1ap-BroadcastCancelledAreaList.o
+[COMPILE] S1ap-BroadcastCompletedAreaList.o
+[COMPILE] S1ap-CGI.o
+[COMPILE] S1ap-CI.o
+[COMPILE] S1ap-CNDomain.o
+[COMPILE] S1ap-COUNTvalue.o
+[COMPILE] S1ap-CSFallbackIndicator.o
+[COMPILE] S1ap-CSG-Id.o
+[COMPILE] S1ap-CSG-IdList-Item.o
+[COMPILE] S1ap-CSG-IdList.o
+[COMPILE] S1ap-CSGMembershipStatus.o
+[COMPILE] S1ap-CancelledCellinEAI-Item.o
+[COMPILE] S1ap-CancelledCellinEAI.o
+[COMPILE] S1ap-CancelledCellinTAI-Item.o
+[COMPILE] S1ap-CancelledCellinTAI.o
+[COMPILE] S1ap-Cause.o
+[COMPILE] S1ap-CauseMisc.o
+[COMPILE] S1ap-CauseNas.o
+[COMPILE] S1ap-CauseProtocol.o
+[COMPILE] S1ap-CauseRadioNetwork.o
+[COMPILE] S1ap-CauseTransport.o
+[COMPILE] S1ap-Cdma2000HORequiredIndication.o
+[COMPILE] S1ap-Cdma2000HOStatus.o
+[COMPILE] S1ap-Cdma2000OneXMEID.o
+[COMPILE] S1ap-Cdma2000OneXMSI.o
+[COMPILE] S1ap-Cdma2000OneXPilot.o
+[COMPILE] S1ap-Cdma2000OneXRAND.o
+[COMPILE] S1ap-Cdma2000OneXSRVCCInfo.o
+[COMPILE] S1ap-Cdma2000PDU.o
+[COMPILE] S1ap-Cdma2000RATType.o
+[COMPILE] S1ap-Cdma2000SectorID.o
+[COMPILE] S1ap-Cell-Size.o
+[COMPILE] S1ap-CellAccessMode.o
+[COMPILE] S1ap-CellBasedMDT.o
+[COMPILE] S1ap-CellID-Broadcast-Item.o
+[COMPILE] S1ap-CellID-Broadcast.o
+[COMPILE] S1ap-CellID-Cancelled-Item.o
+[COMPILE] S1ap-CellID-Cancelled.o
+[COMPILE] S1ap-CellIdListforMDT.o
+[COMPILE] S1ap-CellIdentity.o
+[COMPILE] S1ap-CellTrafficTrace.o
+[COMPILE] S1ap-CellType.o
+[COMPILE] S1ap-CompletedCellinEAI-Item.o
+[COMPILE] S1ap-CompletedCellinEAI.o
+[COMPILE] S1ap-CompletedCellinTAI-Item.o
+[COMPILE] S1ap-CompletedCellinTAI.o
+[COMPILE] S1ap-ConcurrentWarningMessageIndicator.o
+[COMPILE] S1ap-Correlation-ID.o
+[COMPILE] S1ap-Criticality.o
+[COMPILE] S1ap-CriticalityDiagnostics-IE-Item.o
+[COMPILE] S1ap-CriticalityDiagnostics-IE-List.o
+[COMPILE] S1ap-CriticalityDiagnostics.o
+[COMPILE] S1ap-DL-Forwarding.o
+[COMPILE] S1ap-Data-Forwarding-Not-Possible.o
+[COMPILE] S1ap-DataCodingScheme.o
+[COMPILE] S1ap-DeactivateTrace.o
+[COMPILE] S1ap-Direct-Forwarding-Path-Availability.o
+[COMPILE] S1ap-DownlinkNASTransport.o
+[COMPILE] S1ap-DownlinkNonUEAssociatedLPPaTransport.o
+[COMPILE] S1ap-DownlinkS1cdma2000tunneling.o
+[COMPILE] S1ap-DownlinkUEAssociatedLPPaTransport.o
+[COMPILE] S1ap-E-RAB-ID.o
+[COMPILE] S1ap-E-RABAdmittedItem.o
+[COMPILE] S1ap-E-RABAdmittedList.o
+[COMPILE] S1ap-E-RABDataForwardingItem.o
+[COMPILE] S1ap-E-RABDataForwardingList.o
+[COMPILE] S1ap-E-RABFailedToSetupItemHOReqAck.o
+[COMPILE] S1ap-E-RABFailedToSetupListHOReqAck.o
+[COMPILE] S1ap-E-RABInformationList.o
+[COMPILE] S1ap-E-RABInformationListItem.o
+[COMPILE] S1ap-E-RABItem.o
+[COMPILE] S1ap-E-RABLevelQoSParameters.o
+[COMPILE] S1ap-E-RABList.o
+[COMPILE] S1ap-E-RABModifyItemBearerModRes.o
+[COMPILE] S1ap-E-RABModifyListBearerModRes.o
+[COMPILE] S1ap-E-RABModifyRequest.o
+[COMPILE] S1ap-E-RABModifyResponse.o
+[COMPILE] S1ap-E-RABReleaseCommand.o
+[COMPILE] S1ap-E-RABReleaseIndication.o
+[COMPILE] S1ap-E-RABReleaseItemBearerRelComp.o
+[COMPILE] S1ap-E-RABReleaseListBearerRelComp.o
+[COMPILE] S1ap-E-RABReleaseResponse.o
+[COMPILE] S1ap-E-RABSetupItemBearerSURes.o
+[COMPILE] S1ap-E-RABSetupItemCtxtSURes.o
+[COMPILE] S1ap-E-RABSetupListBearerSURes.o
+[COMPILE] S1ap-E-RABSetupListCtxtSURes.o
+[COMPILE] S1ap-E-RABSetupRequest.o
+[COMPILE] S1ap-E-RABSetupResponse.o
+[COMPILE] S1ap-E-RABToBeModifiedItemBearerModReq.o
+[COMPILE] S1ap-E-RABToBeModifiedListBearerModReq.o
+[COMPILE] S1ap-E-RABToBeSetupItemBearerSUReq.o
+[COMPILE] S1ap-E-RABToBeSetupItemCtxtSUReq.o
+[COMPILE] S1ap-E-RABToBeSetupItemHOReq.o
+[COMPILE] S1ap-E-RABToBeSetupListBearerSUReq.o
+[COMPILE] S1ap-E-RABToBeSetupListCtxtSUReq.o
+[COMPILE] S1ap-E-RABToBeSetupListHOReq.o
+[COMPILE] S1ap-E-RABToBeSwitchedDLItem.o
+[COMPILE] S1ap-E-RABToBeSwitchedDLList.o
+[COMPILE] S1ap-E-RABToBeSwitchedULItem.o
+[COMPILE] S1ap-E-RABToBeSwitchedULList.o
+[COMPILE] S1ap-E-UTRAN-Trace-ID.o
+[COMPILE] S1ap-ECGIList.o
+[COMPILE] S1ap-ENB-ID.o
+[COMPILE] S1ap-ENB-StatusTransfer-TransparentContainer.o
+[COMPILE] S1ap-ENB-UE-S1AP-ID.o
+[COMPILE] S1ap-ENBConfigurationTransfer.o
+[COMPILE] S1ap-ENBConfigurationUpdate.o
+[COMPILE] S1ap-ENBConfigurationUpdateAcknowledge.o
+[COMPILE] S1ap-ENBConfigurationUpdateFailure.o
+[COMPILE] S1ap-ENBDirectInformationTransfer.o
+[COMPILE] S1ap-ENBStatusTransfer.o
+[COMPILE] S1ap-ENBX2ExtTLA.o
+[COMPILE] S1ap-ENBX2ExtTLAs.o
+[COMPILE] S1ap-ENBX2GTPTLAs.o
+[COMPILE] S1ap-ENBX2TLAs.o
+[COMPILE] S1ap-ENBname.o
+[COMPILE] S1ap-EPLMNs.o
+[COMPILE] S1ap-EUTRAN-CGI.o
+[COMPILE] S1ap-EUTRANRoundTripDelayEstimationInfo.o
+[COMPILE] S1ap-EmergencyAreaID-Broadcast-Item.o
+[COMPILE] S1ap-EmergencyAreaID-Broadcast.o
+[COMPILE] S1ap-EmergencyAreaID-Cancelled-Item.o
+[COMPILE] S1ap-EmergencyAreaID-Cancelled.o
+[COMPILE] S1ap-EmergencyAreaID.o
+[COMPILE] S1ap-EmergencyAreaIDList.o
+[COMPILE] S1ap-EncryptionAlgorithms.o
+[COMPILE] S1ap-ErrorIndication.o
+[COMPILE] S1ap-EventType.o
+[COMPILE] S1ap-ExtendedRNC-ID.o
+[COMPILE] S1ap-ExtendedRepetitionPeriod.o
+[COMPILE] S1ap-ForbiddenInterRATs.o
+[COMPILE] S1ap-ForbiddenLACs.o
+[COMPILE] S1ap-ForbiddenLAs-Item.o
+[COMPILE] S1ap-ForbiddenLAs.o
+[COMPILE] S1ap-ForbiddenTACs.o
+[COMPILE] S1ap-ForbiddenTAs-Item.o
+[COMPILE] S1ap-ForbiddenTAs.o
+[COMPILE] S1ap-GBR-QosInformation.o
+[COMPILE] S1ap-GERAN-Cell-ID.o
+[COMPILE] S1ap-GTP-TEID.o
+[COMPILE] S1ap-GUMMEI.o
+[COMPILE] S1ap-GUMMEIList.o
+[COMPILE] S1ap-GWContextReleaseIndication.o
+[COMPILE] S1ap-Global-ENB-ID.o
+[COMPILE] S1ap-HFN.o
+[COMPILE] S1ap-HandoverCancel.o
+[COMPILE] S1ap-HandoverCancelAcknowledge.o
+[COMPILE] S1ap-HandoverCommand.o
+[COMPILE] S1ap-HandoverFailure.o
+[COMPILE] S1ap-HandoverNotify.o
+[COMPILE] S1ap-HandoverPreparationFailure.o
+[COMPILE] S1ap-HandoverRequest.o
+[COMPILE] S1ap-HandoverRequestAcknowledge.o
+[COMPILE] S1ap-HandoverRequired.o
+[COMPILE] S1ap-HandoverRestrictionList.o
+[COMPILE] S1ap-HandoverType.o
+[COMPILE] S1ap-IE-Extensions.o
+[COMPILE] S1ap-IE.o
+[COMPILE] S1ap-IMSI.o
+[COMPILE] S1ap-ImmediateMDT.o
+[COMPILE] S1ap-InitialContextSetupFailure.o
+[COMPILE] S1ap-InitialContextSetupRequest.o
+[COMPILE] S1ap-InitialContextSetupResponse.o
+[COMPILE] S1ap-InitialUEMessage.o
+[COMPILE] S1ap-InitiatingMessage.o
+[COMPILE] S1ap-IntegrityProtectionAlgorithms.o
+[COMPILE] S1ap-Inter-SystemInformationTransferType.o
+[COMPILE] S1ap-InterfacesToTrace.o
+[COMPILE] S1ap-KillRequest.o
+[COMPILE] S1ap-KillResponse.o
+[COMPILE] S1ap-L3-Information.o
+[COMPILE] S1ap-LAC.o
+[COMPILE] S1ap-LAI.o
+[COMPILE] S1ap-LPPa-PDU.o
+[COMPILE] S1ap-LastVisitedCell-Item.o
+[COMPILE] S1ap-LastVisitedEUTRANCellInformation.o
+[COMPILE] S1ap-LastVisitedGERANCellInformation.o
+[COMPILE] S1ap-LastVisitedUTRANCellInformation.o
+[COMPILE] S1ap-LocationReport.o
+[COMPILE] S1ap-LocationReportingControl.o
+[COMPILE] S1ap-LocationReportingFailureIndication.o
+[COMPILE] S1ap-LoggedMDT.o
+[COMPILE] S1ap-LoggingDuration.o
+[COMPILE] S1ap-LoggingInterval.o
+[COMPILE] S1ap-M-TMSI.o
+[COMPILE] S1ap-MDT-Activation.o
+[COMPILE] S1ap-MDT-Configuration.o
+[COMPILE] S1ap-MDTMode.o
+[COMPILE] S1ap-MME-Code.o
+[COMPILE] S1ap-MME-Group-ID.o
+[COMPILE] S1ap-MME-UE-S1AP-ID.o
+[COMPILE] S1ap-MMEConfigurationTransfer.o
+[COMPILE] S1ap-MMEConfigurationUpdate.o
+[COMPILE] S1ap-MMEConfigurationUpdateAcknowledge.o
+[COMPILE] S1ap-MMEConfigurationUpdateFailure.o
+[COMPILE] S1ap-MMEDirectInformationTransfer.o
+[COMPILE] S1ap-MMERelaySupportIndicator.o
+[COMPILE] S1ap-MMEStatusTransfer.o
+[COMPILE] S1ap-MMEname.o
+[COMPILE] S1ap-MSClassmark2.o
+[COMPILE] S1ap-MSClassmark3.o
+[COMPILE] S1ap-ManagementBasedMDTAllowed.o
+[COMPILE] S1ap-MeasurementThresholdA2.o
+[COMPILE] S1ap-MeasurementsToActivate.o
+[COMPILE] S1ap-MessageIdentifier.o
+[COMPILE] S1ap-NAS-PDU.o
+[COMPILE] S1ap-NASNonDeliveryIndication.o
+[COMPILE] S1ap-NASSecurityParametersfromE-UTRAN.o
+[COMPILE] S1ap-NASSecurityParameterstoE-UTRAN.o
+[COMPILE] S1ap-NumberOfBroadcasts.o
+[COMPILE] S1ap-NumberofBroadcastRequest.o
+[COMPILE] S1ap-OldBSS-ToNewBSS-Information.o
+[COMPILE] S1ap-OverloadAction.o
+[COMPILE] S1ap-OverloadResponse.o
+[COMPILE] S1ap-OverloadStart.o
+[COMPILE] S1ap-OverloadStop.o
+[COMPILE] S1ap-PDCP-SN.o
+[COMPILE] S1ap-PLMNidentity.o
+[COMPILE] S1ap-PS-ServiceNotAvailable.o
+[COMPILE] S1ap-Paging.o
+[COMPILE] S1ap-PagingDRX.o
+[COMPILE] S1ap-PagingPriority.o
+[COMPILE] S1ap-PathSwitchRequest.o
+[COMPILE] S1ap-PathSwitchRequestAcknowledge.o
+[COMPILE] S1ap-PathSwitchRequestFailure.o
+[COMPILE] S1ap-PeriodicReportingMDT.o
+[COMPILE] S1ap-Pre-emptionCapability.o
+[COMPILE] S1ap-Pre-emptionVulnerability.o
+[COMPILE] S1ap-Presence.o
+[COMPILE] S1ap-PriorityLevel.o
+[COMPILE] S1ap-PrivacyIndicator.o
+[COMPILE] S1ap-PrivateIE-ID.o
+[COMPILE] S1ap-PrivateMessage.o
+[COMPILE] S1ap-ProcedureCode.o
+[COMPILE] S1ap-ProtocolExtensionID.o
+[COMPILE] S1ap-ProtocolIE-ID.o
+[COMPILE] S1ap-QCI.o
+[COMPILE] S1ap-RAC.o
+[COMPILE] S1ap-RIMInformation.o
+[COMPILE] S1ap-RIMRoutingAddress.o
+[COMPILE] S1ap-RIMTransfer.o
+[COMPILE] S1ap-RNC-ID.o
+[COMPILE] S1ap-RRC-Container.o
+[COMPILE] S1ap-RRC-Establishment-Cause.o
+[COMPILE] S1ap-ReceiveStatusofULPDCPSDUs.o
+[COMPILE] S1ap-RelativeMMECapacity.o
+[COMPILE] S1ap-RelayNode-Indicator.o
+[COMPILE] S1ap-RepetitionPeriod.o
+[COMPILE] S1ap-ReportAmountMDT.o
+[COMPILE] S1ap-ReportArea.o
+[COMPILE] S1ap-ReportIntervalMDT.o
+[COMPILE] S1ap-ReportingTriggerMDT.o
+[COMPILE] S1ap-RequestType.o
+[COMPILE] S1ap-Reset.o
+[COMPILE] S1ap-ResetAcknowledge.o
+[COMPILE] S1ap-ResetAll.o
+[COMPILE] S1ap-ResetType.o
+[COMPILE] S1ap-Routing-ID.o
+[COMPILE] S1ap-S-TMSI.o
+[COMPILE] S1ap-S1SetupFailure.o
+[COMPILE] S1ap-S1SetupRequest.o
+[COMPILE] S1ap-S1SetupResponse.o
+[COMPILE] S1ap-SONConfigurationTransfer.o
+[COMPILE] S1ap-SONInformation.o
+[COMPILE] S1ap-SONInformationReply.o
+[COMPILE] S1ap-SONInformationRequest.o
+[COMPILE] S1ap-SRVCCHOIndication.o
+[COMPILE] S1ap-SRVCCOperationPossible.o
+[COMPILE] S1ap-SecurityContext.o
+[COMPILE] S1ap-SecurityKey.o
+[COMPILE] S1ap-SerialNumber.o
+[COMPILE] S1ap-ServedGUMMEIs.o
+[COMPILE] S1ap-ServedGUMMEIsItem.o
+[COMPILE] S1ap-ServedGroupIDs.o
+[COMPILE] S1ap-ServedMMECs.o
+[COMPILE] S1ap-ServedPLMNs.o
+[COMPILE] S1ap-Source-ToTarget-TransparentContainer.o
+[COMPILE] S1ap-SourceBSS-ToTargetBSS-TransparentContainer.o
+[COMPILE] S1ap-SourceRNC-ToTargetRNC-TransparentContainer.o
+[COMPILE] S1ap-SourceeNB-ID.o
+[COMPILE] S1ap-SourceeNB-ToTargeteNB-TransparentContainer.o
+[COMPILE] S1ap-StratumLevel.o
+[COMPILE] S1ap-SubscriberProfileIDforRFP.o
+[COMPILE] S1ap-SuccessfulOutcome.o
+[COMPILE] S1ap-SupportedTAs-Item.o
+[COMPILE] S1ap-SupportedTAs.o
+[COMPILE] S1ap-SynchronizationStatus.o
+[COMPILE] S1ap-TABasedMDT.o
+[COMPILE] S1ap-TAC.o
+[COMPILE] S1ap-TAI-Broadcast-Item.o
+[COMPILE] S1ap-TAI-Broadcast.o
+[COMPILE] S1ap-TAI-Cancelled-Item.o
+[COMPILE] S1ap-TAI-Cancelled.o
+[COMPILE] S1ap-TAI.o
+[COMPILE] S1ap-TAIItem.o
+[COMPILE] S1ap-TAIList.o
+[COMPILE] S1ap-TAIListforWarning.o
+[COMPILE] S1ap-TAListforMDT.o
+[COMPILE] S1ap-TBCD-STRING.o
+[COMPILE] S1ap-Target-ToSource-TransparentContainer.o
+[COMPILE] S1ap-TargetBSS-ToSourceBSS-TransparentContainer.o
+[COMPILE] S1ap-TargetID.o
+[COMPILE] S1ap-TargetRNC-ID.o
+[COMPILE] S1ap-TargetRNC-ToSourceRNC-TransparentContainer.o
+[COMPILE] S1ap-TargeteNB-ID.o
+[COMPILE] S1ap-TargeteNB-ToSourceeNB-TransparentContainer.o
+[COMPILE] S1ap-Threshold-RSRP.o
+[COMPILE] S1ap-Threshold-RSRQ.o
+[COMPILE] S1ap-ThresholdEventA2.o
+[COMPILE] S1ap-Time-UE-StayedInCell.o
+[COMPILE] S1ap-TimeSynchronizationInfo.o
+[COMPILE] S1ap-TimeToWait.o
+[COMPILE] S1ap-TraceActivation.o
+[COMPILE] S1ap-TraceDepth.o
+[COMPILE] S1ap-TraceFailureIndication.o
+[COMPILE] S1ap-TraceStart.o
+[COMPILE] S1ap-TrafficLoadReductionIndication.o
+[COMPILE] S1ap-TransportLayerAddress.o
+[COMPILE] S1ap-TriggeringMessage.o
+[COMPILE] S1ap-TypeOfError.o
+[COMPILE] S1ap-UE-HistoryInformation.o
+[COMPILE] S1ap-UE-S1AP-ID-pair.o
+[COMPILE] S1ap-UE-S1AP-IDs.o
+[COMPILE] S1ap-UE-associatedLogicalS1-ConnectionItem.o
+[COMPILE] S1ap-UE-associatedLogicalS1-ConnectionListRes.o
+[COMPILE] S1ap-UE-associatedLogicalS1-ConnectionListResAck.o
+[COMPILE] S1ap-UEAggregateMaximumBitrate.o
+[COMPILE] S1ap-UECapabilityInfoIndication.o
+[COMPILE] S1ap-UEContextModificationFailure.o
+[COMPILE] S1ap-UEContextModificationRequest.o
+[COMPILE] S1ap-UEContextModificationResponse.o
+[COMPILE] S1ap-UEContextReleaseCommand.o
+[COMPILE] S1ap-UEContextReleaseComplete.o
+[COMPILE] S1ap-UEContextReleaseRequest.o
+[COMPILE] S1ap-UEIdentityIndexValue.o
+[COMPILE] S1ap-UEPagingID.o
+[COMPILE] S1ap-UERadioCapability.o
+[COMPILE] S1ap-UESecurityCapabilities.o
+[COMPILE] S1ap-UnsuccessfulOutcome.o
+[COMPILE] S1ap-UplinkNASTransport.o
+[COMPILE] S1ap-UplinkNonUEAssociatedLPPaTransport.o
+[COMPILE] S1ap-UplinkS1cdma2000tunneling.o
+[COMPILE] S1ap-UplinkUEAssociatedLPPaTransport.o
+[COMPILE] S1ap-WarningAreaList.o
+[COMPILE] S1ap-WarningMessageContents.o
+[COMPILE] S1ap-WarningSecurityInfo.o
+[COMPILE] S1ap-WarningType.o
+[COMPILE] S1ap-WriteReplaceWarningRequest.o
+[COMPILE] S1ap-WriteReplaceWarningResponse.o
+[COMPILE] S1ap-X2TNLConfigurationInfo.o
+[COMPILE] nas_emm_attach_accept.o
+[COMPILE] nas_emm_attach_request.o
+[COMPILE] nas_emm_msg.o
+[COMPILE] nas_esm_activate_default_eps_bearer_context_request.o
+[COMPILE] nas_esm_msg.o
+[COMPILE] eps_quality_of_service.o
+[COMPILE] esp_mobile_identity.o
+[COMPILE] nas_tracking_area_identity.o
+[COMPILE] pdn_address.o
+[COMPILE] tracking_area_identity_list.o
+[COMPILE] decoder.o
+[COMPILE] octet_string.o
+[COMPILE] mmt_business_app.o
+[COMPILE] proto_ips_data.o
+[INCLUDE] http2.h
+[INCLUDE] mmt_contents_defs.h
+[INCLUDE] mmt_tcpip.h
+[INCLUDE] mmt_tcpip_attributes.h
+[INCLUDE] mmt_tcpip_plugin.h
+[INCLUDE] mmt_tcpip_protocols.h
+[INCLUDE] mmt_mobile.h
+[INCLUDE] proto_diameter.h
+[INCLUDE] proto_gtpv2.h
+[INCLUDE] proto_nas_5g.h
+[INCLUDE] proto_ngap.h
+[INCLUDE] proto_s1ap.h
+[ARCHIVE] libmmt_core.a
+[ARCHIVE] libmmt_tcpip.a
+[INCLUDE] data_defs.h
+[INCLUDE] dbg.h
+[INCLUDE] extraction_lib.h
+[INCLUDE] mempool.h
+[INCLUDE] mmt_core.h
+[INCLUDE] mmt_exports.h
+[INCLUDE] mmt_safe_access.h
+[INCLUDE] mmt_safe_math.h
+[INCLUDE] mmt_safe_string.h
+[INCLUDE] mmt_utils.h
+[INCLUDE] plugin_defs.h
+[INCLUDE] proto_meta.h
+[INCLUDE] types_defs.h
+[EXAMPLE] attribute_handler_session_counter.c
+[EXAMPLE] extract_all.c
+[EXAMPLE] MAC_extraction.c
+[EXAMPLE] packet_handler.c
+[EXAMPLE] proto_attributes_iterator.c
+[EXAMPLE] simple_traffic_reporting.c
+[LIBRARY] libmmt_core.so.1.7.10
+[ARCHIVE] libmmt_tmobile.a
+[ARCHIVE] libmmt_business_app.a
+[LIBRARY] libmmt_business_app.so.1.7.10
+[LIBRARY] libmmt_tcpip.so.1.7.10
+[LIBRARY] libmmt_tmobile.so.1.7.10
+=== Build successful ===
+✓ libmmt_core library created: lib/libmmt_core.so.1.7.10
+✓ libmmt_tcpip library created: lib/libmmt_tcpip.so.1.7.10
+=== All libraries built successfully ===
