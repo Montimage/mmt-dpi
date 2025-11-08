@@ -1233,6 +1233,9 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
         new_handler->configured_protocols[i].sessions_map = NULL;
         new_handler->configured_protocols[i].args = NULL;
 
+        /* Phase 3: Initialize session lock for thread safety */
+        pthread_rwlock_init(&new_handler->configured_protocols[i].session_lock, NULL);
+
         // Initialize the sessions context if the protocol has such context
         if (new_handler->configured_protocols[i].protocol->has_session == HAS_SESSION_CONTEXT) {
             new_handler->configured_protocols[i].sessions_map = init_map_space(new_handler->configured_protocols[i].protocol->session_key_compare);
@@ -1337,6 +1340,12 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
 
     //Remove the handler from the registered handlers in the global context
     delete_key_value(mmt_configured_handlers_map, mmt_handler);
+
+    /* Phase 3: Destroy session locks for thread safety */
+    int i;
+    for (i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
+        pthread_rwlock_destroy(&mmt_handler->configured_protocols[i].session_lock);
+    }
 
     mmt_free(mmt_handler);
 }

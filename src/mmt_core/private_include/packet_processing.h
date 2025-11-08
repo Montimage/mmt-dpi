@@ -20,6 +20,7 @@ extern "C" {
 #include "memory.h"
 #include "plugin_defs.h"
 #include "cfg_defaults.h"
+#include <pthread.h>  /* Phase 3: For thread safety primitives */
 
 #define PROTO_CLASSIFICATION_DONE       0 /**< defines that processing is done with the classification process.
                                         * This is to acknowledge that the core took the necessary actions following the
@@ -390,6 +391,7 @@ struct protocol_instance_struct {
     protocol_t * protocol; /**< pointer to the protocol model */
     proto_statistics_internal_t * proto_stats; /**< pointer to the protocol stats (linked list) */
     void * sessions_map; /**< For internal use. MUST not be changed. */
+    pthread_rwlock_t session_lock; /**< Phase 3: Thread safety for session map operations */
     void * args; /**< For internal use. MUST not be changed. */
 };
 
