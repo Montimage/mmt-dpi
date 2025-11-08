@@ -24,7 +24,6 @@
 [COMPILE] proto_163.o
 [COMPILE] proto_20minutes.o
 [COMPILE] proto_360.o
-[COMPILE] proto_3pc.o
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c: In function 'get_child_protocol_stats':
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c:2700:31: warning: infinite recursion detected [-Winfinite-recursion]
  2700 | proto_statistics_internal_t * get_child_protocol_stats(proto_statistics_internal_t * proto_stats, uint32_t child_proto_id) {
@@ -32,6 +31,7 @@
 /home/user/mmt-dpi/src/mmt_core/src/packet_processing.c:2701:16: note: recursive call
  2701 |         return get_child_protocol_stats( proto_stats, child_proto_id);
       |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[COMPILE] proto_3pc.o
 /home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c: In function 'request_url_cb':
 /home/user/mmt-dpi/src/mmt_tcpip/lib/http_parser_integration.c:83:24: warning: unused variable 'sp' [-Wunused-variable]
    83 |   stream_processor_t * sp = (stream_processor_t *) p->data;
@@ -197,9 +197,6 @@
 [COMPILE] proto_eksisozluk.o
 [COMPILE] proto_electronicsarts.o
 [COMPILE] proto_emcon.o
-[COMPILE] proto_encap.o
-[COMPILE] proto_engagemedia.o
-[COMPILE] proto_esp.o
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
                  from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_dtls.c:11:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_dtls.c: In function 'classify_dtls_from_udp':
@@ -221,6 +218,9 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
+[COMPILE] proto_encap.o
+[COMPILE] proto_engagemedia.o
+[COMPILE] proto_esp.o
 [COMPILE] proto_espn.o
 [COMPILE] proto_etherip.o
 [COMPILE] proto_ethernet.o
@@ -275,13 +275,13 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 [COMPILE] proto_grooveshark.o
 [COMPILE] proto_groupon.o
 [COMPILE] proto_gtalk.o
-[COMPILE] proto_gtp.o
-[COMPILE] proto_guardian.o
 In function 'ftp_set_command_id',
     inlined from 'ftp_get_command' at /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:795:5:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c:564:19: warning: '*cmd.str_cmd' may be used uninitialized [-Wmaybe-uninitialized]
   564 |     if (strlen(cmd->str_cmd) == 3) {
       |                ~~~^~~~~~~~~
+[COMPILE] proto_gtp.o
+[COMPILE] proto_guardian.o
 [COMPILE] proto_guildwars.o
 [COMPILE] proto_haberturk.o
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_ftp.c: In function 'ftp_request_packet':
@@ -338,6 +338,10 @@ In function 'sprintf',
 [COMPILE] proto_hotmail.o
 [COMPILE] proto_http.o
 [COMPILE] proto_http_application_activesync.o
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_gtp.c: In function 'gtp_classify_next_proto':
+/home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_gtp.c:95:39: warning: unused variable 'next_ext_header_length' [-Wunused-variable]
+   95 |         int next_ext_header_type = 0, next_ext_header_length = 0;
+      |                                       ^~~~~~~~~~~~~~~~~~~~~~
 [COMPILE] proto_http_application_veohtv.o
 [COMPILE] proto_http_proxy.o
 [COMPILE] proto_huffington_post.o
@@ -380,11 +384,11 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int.c
    87 | int_report_v10_t;
       | ^~~~~~~~~~~~~~~~
 [COMPILE] proto_ipcv.o
+[COMPILE] proto_iplt.o
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.c:8:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_int_report.h:87:1: note: offset of packed bit-field 'report_metadata_bits' has changed in GCC 4.4
    87 | int_report_v10_t;
       | ^~~~~~~~~~~~~~~~
-[COMPILE] proto_iplt.o
 [COMPILE] proto_ipp.o
 [COMPILE] proto_ippc.o
 [COMPILE] proto_ipsec.o
@@ -691,7 +695,6 @@ In function '_extraction_quic_ietf_att',
   271 |         attribute_t extracted_data;
       |                     ^~~~~~~~~~~~~~
 [COMPILE] proto_rsvp.o
-[COMPILE] proto_rsvp_e2e_ignore.o
 In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_common_internal_include.h:16,
                  from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c:10:
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/proto_quic_ietf.c: In function '_init_bitmask':
@@ -713,6 +716,7 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_tcpip_internal_defs_macros.h:85:18: note: while referencing 'bitmask'
    85 |         uint64_t bitmask[10];
       |                  ^~~~~~~
+[COMPILE] proto_rsvp_e2e_ignore.o
 [COMPILE] proto_rtp.o
 [COMPILE] proto_rtsp.o
 [COMPILE] proto_rutube.o
@@ -931,6 +935,8 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 [COMPILE] OCTET_STRING_oer.o
 [COMPILE] OPEN_TYPE.o
 [COMPILE] OPEN_TYPE_oer.o
+[COMPILE] PrintableString.o
+[COMPILE] S1AP-PDU.o
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c: In function 'asn_imax2INTEGER':
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1280:29: warning: array subscript 0 is outside array bounds of 'intmax_t[1]' {aka 'long int[1]'} [-Warray-bounds=]
  1280 |         for(bp = buf, pend1 += add; p != pend1; p += add)
@@ -938,8 +944,6 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1236:42: note: at offset -1 into object 'value' of size 8
  1236 | asn_imax2INTEGER(INTEGER_t *st, intmax_t value) {
       |                                 ~~~~~~~~~^~~~~
-[COMPILE] PrintableString.o
-[COMPILE] S1AP-PDU.o
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c: In function 'asn_int642INTEGER':
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/INTEGER.c:1280:29: warning: array subscript 0 is outside array bounds of 'intmax_t[1]' {aka 'long int[1]'} [-Warray-bounds=]
  1280 |         for(bp = buf, pend1 += add; p != pend1; p += add)
@@ -985,6 +989,7 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 [COMPILE] NGAP_AMF-TNLAssociationToRemoveList.o
 [COMPILE] NGAP_AMF-TNLAssociationToUpdateItem.o
 [COMPILE] NGAP_AMF-TNLAssociationToUpdateList.o
+[COMPILE] NGAP_AMF-UE-NGAP-ID.o
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c: In function 'aper_decode':
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c:169:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
   169 |         if(!td->op->aper_decoder)
@@ -992,7 +997,6 @@ In file included from /home/user/mmt-dpi/src/mmt_tcpip/lib/protocols/../mmt_comm
 /home/user/mmt-dpi/src/mmt_mobile/asn1c/common/per_decoder.c:171:17: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
   171 |                 rval = td->op->aper_decoder(opt_codec_ctx, td, 0, sptr, &pd);
       |                 ^~~~
-[COMPILE] NGAP_AMF-UE-NGAP-ID.o
 [COMPILE] NGAP_AMFConfigurationUpdate.o
 [COMPILE] NGAP_AMFConfigurationUpdateAcknowledge.o
 [COMPILE] NGAP_AMFConfigurationUpdateFailure.o
