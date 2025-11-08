@@ -54,3 +54,7 @@ test/validation/test_validation_framework
 test/unit/test_error_handling
 test/unit/test_logging
 test/performance/bench_*
+
+# ignore test build logs
+test/*.log
+test/**/*.log
