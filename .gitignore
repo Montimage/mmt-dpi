@@ -48,3 +48,8 @@ sftp-config.json
 .vscode
 .pydevproject
 rsync.sh
+
+# ignore test binaries
+test/validation/test_validation_framework
+test/unit/test_*
+test/performance/bench_*
