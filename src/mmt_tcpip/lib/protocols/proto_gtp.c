@@ -115,8 +115,17 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		while( next_ext_header_type != 0 ){
 			//the first byte of extension indicate its length in 4 bytes
 			next_ext_header_length = 4 * gtp_binary[ gtp_offset ];
+
+			//no next header
+			if( next_ext_header_length == 0 )
+				break;
+
 			//jump over the current ext header
 			gtp_offset += next_ext_header_length;
+
+			// not enough room
+			if( gtp_offset + offset > ipacket->p_hdr->caplen )
+				return MMT_SKIP;
 
 			//check the next ext header
 			next_ext_header_type = gtp_binary[gtp_offset - 1]; //last byte indicate whether the next ext is present
