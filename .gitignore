@@ -70,3 +70,11 @@ test/performance/bench_*
 # ignore test build logs
 test/*.log
 test/**/*.log
+
+# Benchmark output files
+*.perf
+bench_*.txt
+bench_*.out
+bench_*.err
+results_*.out
+results_*.perf
