@@ -14,7 +14,7 @@ static void mmt_int_fasttrack_add_connection(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_fasttrack_tcp(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -63,7 +63,7 @@ int mmt_check_fasttrack(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
+
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         if (packet->payload_packet_len > 6 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
@@ -125,5 +125,3 @@ int init_proto_fasttrack_struct() {
         return 0;
     }
 }
-
-

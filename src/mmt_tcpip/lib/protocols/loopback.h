@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   loopback.h
  * Author: montimage
  *
@@ -30,4 +30,3 @@ extern "C" {
 #endif
 
 #endif	/* LOOPBACK_H */
-

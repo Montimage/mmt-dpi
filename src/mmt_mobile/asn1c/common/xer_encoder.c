@@ -234,4 +234,3 @@ xer_equivalent(const struct asn_TYPE_descriptor_s *td, const void *struct1,
 	FREEMEM(xb2.buffer);
 	return XEQ_SUCCESS;
 }
-

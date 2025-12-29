@@ -2,15 +2,15 @@
 
 ## Overview
 
-** Working branch: ** feature/http2
+**Working branch:** feature/http2
 
-** Started date: ** 03/04/2017
+**Started date:** 03/04/2017
 
-** Deadline: ** 05/04/2017 
+**Deadline:** 05/04/2017
 
-** Developer: ** @luongnv89 
+**Developer:** @luongnv89
 
-** Probe example **: extract all attributes value ,... more detail after studying 
+**Probe example**: extract all attributes value ,... more detail after studying
 
 ## List of tasks
 
@@ -28,19 +28,17 @@
 
 * Merge to MMT-SDK
 
-
 ## HTTP2 experiments
 
 Install HTTP2 : [https://github.com/nghttp2/nghttp2](https://github.com/nghttp2/nghttp2)
 
-
 ## HTTP2 identification
 
-- Over TCP
-- http and https
-- default port: 80 (http) and 443 (https)
-- String `h2` identifies the protocol where HTTP/2 uses TLS
-- String `h2c` identifies the protocol where HTTP/2 is run over cleartext TCP - used in the HTTP/1.1 Upgrade header field
+* Over TCP
+* http and https
+* default port: 80 (http) and 443 (https)
+* String `h2` identifies the protocol where HTTP/2 uses TLS
+* String `h2c` identifies the protocol where HTTP/2 is run over cleartext TCP - used in the HTTP/1.1 Upgrade header field
 
 ### HTTP/2 for 'http'
 
@@ -55,7 +53,6 @@ HTTP2-Settings: <base64url encoding of HTTP/2 SETTINGS payload>
 
 ```
 
-
 Response from a non supported HTTP/2 server:
 
 ```
@@ -67,7 +64,6 @@ Content-Type: text/html
 
 ```
 
-
 Response from a supported HTTP/2 server with `101 Switching Protocols`:
 
 ```
@@ -77,9 +73,6 @@ Upgrade: h2c
 
 [ HTTP/2 connection ...
 ```
-
-
-
 
 ## HTTP2 frame format
 
@@ -117,7 +110,6 @@ The 9 octets of the frame header are not included in this value.
 
 **Type**: `0x0`
 
-
 DATA Frame Payload
 
 ```
@@ -135,15 +127,13 @@ _Pad Length_: An 8-bit field containing the length of the frame padding in units
 
 _Data_: Application data. The amount of data is the remainder of the frame payload after subtracting the length of the other fields that are present.
 
-_Padding_: Padding octets that contain no application semantic value. Padding octets MUST be set to zero when sending. A receiver is not obligated to verify padding but MAY treat non-zero padding as a connection error 
-
+_Padding_: Padding octets that contain no application semantic value. Padding octets MUST be set to zero when sending. A receiver is not obligated to verify padding but MAY treat non-zero padding as a connection error
 
 **Flag**: `0x1` or `0x8`
 
 _END_STREAM (0x1)_: When set, bit 0 indicates that this frame is the last that the endpoint will send for the identified stream. Setting this flag causes the stream to enter one of the "half-closed" states or the "closed" state
 
 _PADDED (0x8)_: When set, bit 3 indicates that the Pad Length field and any padding that it describes are present.
-
 
 ### Headers
 
@@ -164,8 +154,6 @@ _PADDED (0x8)_: When set, bit 3 indicates that the Pad Length field and any padd
 
 ```
 
-
-
 ## Documents
 
 [HTTP/2 - Wikipedia](https://en.wikipedia.org/wiki/HTTP/2)
@@ -175,7 +163,6 @@ _PADDED (0x8)_: When set, bit 3 indicates that the Pad Length field and any padd
 [HTTP2 - FAQ](https://http2.github.io/faq/)
 
 [RFC7540 - IETF](https://tools.ietf.org/html/rfc7540)
-
 
 ## Notes
 
@@ -187,7 +174,6 @@ The biggest difference between HTTP/1.1 and SPDY was that each user action in SP
 
 Although the standard itself does not require usage of encryption,[26] most client implementations (Firefox,[27] Chrome, Safari, Opera, IE, Edge) have stated that they will only support HTTP/2 over TLS, which makes encryption de facto mandatory.[28]
 
-
 ## Question?
 
-- Integrate into tcpip plugin or a separate plugin?
+* Integrate into tcpip plugin or a separate plugin?

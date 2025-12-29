@@ -108,5 +108,3 @@ application_quality_estimation_t * init_application_quality_estimation_structure
     application_quality_estimation_t * new_struct = application_quality_estimation_xml_parser(model);
     return new_struct;
 }
-
-

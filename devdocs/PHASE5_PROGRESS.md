@@ -28,6 +28,7 @@ Phase 5 establishes a comprehensive error handling and logging framework for MMT
 **File:** `src/mmt_core/public_include/mmt_errors.h` (200+ lines)
 
 **Error Code System:**
+
 - 1000+ standardized error codes organized by category
 - Error code ranges for easy identification:
   - General Errors: 1-99
@@ -42,6 +43,7 @@ Phase 5 establishes a comprehensive error handling and logging framework for MMT
   - Thread Safety: 900-999
 
 **Error Context Structure:**
+
 ```c
 typedef struct mmt_error_context {
     mmt_error_t code;           /* Error code */
@@ -54,6 +56,7 @@ typedef struct mmt_error_context {
 ```
 
 **Convenience Macros:**
+
 - `MMT_SET_ERROR(code, msg)` - Set error with context
 - `MMT_RETURN_ERROR(code, msg)` - Set error and return
 - `MMT_CHECK(condition, error_code, msg)` - Conditional error check
@@ -63,6 +66,7 @@ typedef struct mmt_error_context {
 - `MMT_PROPAGATE_ERROR(result)` - Error propagation
 
 **Example Usage:**
+
 ```c
 int process_packet(packet_t *pkt) {
     MMT_CHECK_NOT_NULL(pkt, "Packet is NULL");
@@ -79,12 +83,14 @@ int process_packet(packet_t *pkt) {
 **File:** `src/mmt_core/src/mmt_errors.c` (162 lines)
 
 **Implementation Features:**
+
 - **Thread-Local Storage:** Each thread has independent error state using `__thread`
 - **Error Message Lookup:** Fast array-based error message retrieval
 - **Context Capture:** Automatic capture of file, line, function, and errno
 - **Clear API:** Simple get/set/clear interface
 
 **Functions Implemented:**
+
 ```c
 const char* mmt_error_to_string(mmt_error_t error);
 void mmt_set_error(mmt_error_t code, const char *file, int line,
@@ -95,6 +101,7 @@ int mmt_has_error(void);
 ```
 
 **Thread Safety:**
+
 - Thread-local error storage prevents race conditions
 - No locking needed for error get/set operations
 - Each thread maintains independent error state
@@ -104,6 +111,7 @@ int mmt_has_error(void);
 **File:** `test/unit/test_error_handling.c` (433 lines)
 
 **Test Coverage:**
+
 ```
 ================================================
  Error Handling Framework Test Suite
@@ -145,6 +153,7 @@ Tests failed: 0
 ```
 
 **Test Categories:**
+
 1. Error message string conversion
 2. Error context set/get/clear operations
 3. Error macro functionality (MMT_CHECK, MMT_SET_ERROR, etc.)
@@ -166,6 +175,7 @@ Tests failed: 0
 **File:** `src/mmt_core/public_include/mmt_logging.h` (337 lines)
 
 **Log Levels:**
+
 ```c
 typedef enum {
     MMT_LOG_NONE = 0,     /* No logging */
@@ -178,6 +188,7 @@ typedef enum {
 ```
 
 **Log Categories:**
+
 ```c
 typedef enum {
     MMT_LOG_CAT_GENERAL = 0,    /* General/uncategorized */
@@ -195,6 +206,7 @@ typedef enum {
 ```
 
 **Output Modes:**
+
 - `MMT_LOG_OUTPUT_STDOUT` - Standard output
 - `MMT_LOG_OUTPUT_STDERR` - Standard error (default)
 - `MMT_LOG_OUTPUT_FILE` - File output with path
@@ -202,6 +214,7 @@ typedef enum {
 - `MMT_LOG_OUTPUT_SYSLOG` - System log (planned)
 
 **Logging Macros:**
+
 ```c
 /* Basic logging */
 MMT_LOG_ERROR("Error message: %s", error_msg);
@@ -233,6 +246,7 @@ MMT_LOG_PERF(MMT_LOG_CAT_PACKET, "Packet processing: %ldns", ns);
 ```
 
 **Configuration API:**
+
 ```c
 void mmt_log_init(void);
 void mmt_log_set_level(mmt_log_level_t level);
@@ -274,6 +288,7 @@ void mmt_log_flush(void);
    - Formatted message
 
 **Example Output:**
+
 ```
 [2025-11-08 14:23:45.123] [ERROR] [PROTOCOL] proto_tcp.c:142:classify_tcp() - Invalid TCP header length
 [2025-11-08 14:23:45.124] [WARN] [SESSION] session_mgr.c:87:create_session() - Session table 90% full
@@ -297,6 +312,7 @@ void mmt_log_flush(void);
 **File:** `test/unit/test_logging.c` (502 lines)
 
 **Test Results:**
+
 ```
 ================================================
  Logging Framework Test Suite
@@ -348,6 +364,7 @@ Tests failed: 0
 ```
 
 **Test Categories:**
+
 1. Initialization and default settings
 2. Log level setting (global and per-category)
 3. Category management (enable/disable)
@@ -363,19 +380,22 @@ Tests failed: 0
 
 ## 📁 Files Created/Modified
 
-### Created Files:
+### Created Files
 
 **Error Handling:**
+
 - `src/mmt_core/public_include/mmt_errors.h` (200 lines)
 - `src/mmt_core/src/mmt_errors.c` (162 lines)
 - `test/unit/test_error_handling.c` (433 lines)
 
 **Logging Framework:**
+
 - `src/mmt_core/public_include/mmt_logging.h` (337 lines)
 - `src/mmt_core/src/mmt_logging.c` (464 lines)
 - `test/unit/test_logging.c` (502 lines)
 
 **Documentation:**
+
 - `PHASE5_PLAN.md` (Complete roadmap)
 - `PHASE5_PROGRESS.md` (This document)
 
@@ -453,6 +473,7 @@ Tests failed: 0
 **Decision:** Use `__thread` storage class for error context
 
 **Rationale:**
+
 1. **No Locking:** Thread-local variables don't require synchronization
 2. **Independent State:** Each thread has its own error state
 3. **Fast Access:** Direct access without indirection
@@ -465,12 +486,14 @@ Tests failed: 0
 **Decision:** Implement log categories in addition to levels
 
 **Rationale:**
+
 1. **Targeted Debugging:** Enable logging for specific components
 2. **Reduced Noise:** Disable verbose categories in production
 3. **Performance:** Skip expensive computations for disabled categories
 4. **Flexibility:** Different log levels for different components
 
 **Example:**
+
 ```c
 /* Enable DEBUG for protocol, but only ERROR for everything else */
 mmt_log_set_level(MMT_LOG_ERROR);
@@ -482,8 +505,9 @@ mmt_log_set_category_level(MMT_LOG_CAT_PROTOCOL, MMT_LOG_DEBUG);
 **Decision:** Provide macro wrappers around core logging function
 
 **Rationale:**
-1. **Automatic Context:** __FILE__, __LINE__, __func__ captured automatically
-2. **Type Safety:** __attribute__((format)) for printf checking
+
+1. **Automatic Context:** **FILE**, **LINE**, **func** captured automatically
+2. **Type Safety:** **attribute**((format)) for printf checking
 3. **Convenience:** Simple, readable logging calls
 4. **Consistency:** Uniform logging style across codebase
 
@@ -492,6 +516,7 @@ mmt_log_set_category_level(MMT_LOG_CAT_PROTOCOL, MMT_LOG_DEBUG);
 **Decision:** Use pthread_mutex for all logging operations
 
 **Rationale:**
+
 1. **Output Integrity:** Prevents interleaved log messages
 2. **State Protection:** Guards shared logging configuration
 3. **File Safety:** Protects file handle operations
@@ -503,7 +528,8 @@ mmt_log_set_category_level(MMT_LOG_CAT_PROTOCOL, MMT_LOG_DEBUG);
 
 ## 🚀 Impact Assessment
 
-### Before Phase 5:
+### Before Phase 5
+
 ```c
 // Inconsistent error handling
 if (ptr == NULL) return -1;  // What does -1 mean?
@@ -515,7 +541,8 @@ printf("Error processing packet\n");  // Where? Why?
 printf("DEBUG: value = %d\n", value);  // No filtering, always on
 ```
 
-### After Phase 5:
+### After Phase 5
+
 ```c
 // Standardized error handling
 MMT_CHECK_NOT_NULL(ptr, "Buffer is NULL");
@@ -528,26 +555,30 @@ const mmt_error_context_t *err = mmt_get_last_error();
 MMT_LOG_DEBUG_CAT(MMT_LOG_CAT_PACKET, "Processing packet: length=%d", len);
 ```
 
-### Benefits:
+### Benefits
 
 **Security:**
+
 - ✅ Better error handling prevents silent failures
 - ✅ Security event logging (MMT_LOG_SECURITY)
 - ✅ Audit trail with timestamps and context
 
 **Debugging:**
+
 - ✅ Rich error context (file, line, function)
 - ✅ Structured logging with filtering
 - ✅ Function entry/exit tracing
 - ✅ Category-based debugging
 
 **Maintainability:**
+
 - ✅ Consistent error handling patterns
 - ✅ Self-documenting error codes
 - ✅ Clear logging categories
 - ✅ Easy to add new errors/logs
 
 **Performance:**
+
 - ✅ Zero overhead for disabled logs
 - ✅ No locking for error get/set
 - ✅ Early exit optimizations
@@ -563,6 +594,7 @@ MMT_LOG_DEBUG_CAT(MMT_LOG_CAT_PACKET, "Processing packet: length=%d", len);
 **Priority:** P2 - MEDIUM
 
 **Subtask 5.3.1: Protocol Fallback (4h)**
+
 - When protocol classification fails:
   - Try alternative parsers
   - Fall back to generic handler
@@ -570,6 +602,7 @@ MMT_LOG_DEBUG_CAT(MMT_LOG_CAT_PACKET, "Processing packet: length=%d", len);
   - Log fallback events
 
 **Subtask 5.3.2: Session Recovery (4h)**
+
 - When session operations fail:
   - Retry with exponential backoff
   - Create new session if possible
@@ -582,12 +615,14 @@ MMT_LOG_DEBUG_CAT(MMT_LOG_CAT_PACKET, "Processing packet: length=%d", len);
 **Priority:** P2 - MEDIUM
 
 **Subtask 5.4.1: Packet Dump Utility (4h)**
+
 - Hexdump with protocol annotations
 - ASCII representation
 - Field value extraction
 - Export to PCAP
 
 **Subtask 5.4.2: Error Statistics (4h)**
+
 - Error frequency tracking
 - Top error locations
 - Error trends over time
@@ -600,6 +635,7 @@ MMT_LOG_DEBUG_CAT(MMT_LOG_CAT_PACKET, "Processing packet: length=%d", len);
 **Phase 5 Status:** 50% Complete
 
 **Completed:**
+
 - ✅ Task 5.1: Error handling framework (100%)
   - Error code definitions
   - Error handling functions
@@ -610,10 +646,12 @@ MMT_LOG_DEBUG_CAT(MMT_LOG_CAT_PACKET, "Processing packet: length=%d", len);
   - Logging tests (14/14 passing)
 
 **Remaining:**
+
 - ⏳ Task 5.3: Error recovery strategies (0%)
 - ⏳ Task 5.4: Debug and diagnostic tools (0%)
 
 **Total Estimated Time:**
+
 - Completed: 14 hours
 - Remaining: 16 hours
 - Total: 30 hours (vs. planned 32-40 hours)
@@ -627,18 +665,21 @@ MMT_LOG_DEBUG_CAT(MMT_LOG_CAT_PACKET, "Processing packet: length=%d", len);
 ## 🧪 Testing Summary
 
 **Error Handling Tests:**
+
 - Total: 12 tests
 - Pass: 12 (100%)
 - Fail: 0
 - Coverage: Error codes, context, macros, thread-safety, errno capture
 
 **Logging Tests:**
+
 - Total: 14 tests
 - Pass: 14 (100%)
 - Fail: 0
 - Coverage: Levels, categories, filtering, callbacks, thread-safety, performance
 
 **Overall:**
+
 - Total: 26 tests
 - Pass: 26 (100%)
 - Fail: 0
@@ -647,7 +688,7 @@ MMT_LOG_DEBUG_CAT(MMT_LOG_CAT_PACKET, "Processing packet: length=%d", len);
 
 ## 💡 Usage Examples
 
-### Error Handling Example:
+### Error Handling Example
 
 ```c
 #include "mmt_errors.h"
@@ -686,7 +727,7 @@ if (result != MMT_SUCCESS) {
 }
 ```
 
-### Logging Example:
+### Logging Example
 
 ```c
 #include "mmt_logging.h"
@@ -740,17 +781,20 @@ void init_logging(void) {
 
 ## 🔮 Next Steps
 
-### Immediate (This Session):
+### Immediate (This Session)
+
 1. ✅ Document Phase 5 progress
 2. ⏳ Commit and push Phase 5 changes
 3. ⏳ Update .gitignore for test binaries
 
-### Short Term (Next Session):
+### Short Term (Next Session)
+
 1. Implement error recovery strategies (Task 5.3)
 2. Create diagnostic tools (Task 5.4)
 3. Integrate error/logging into existing code
 
-### Long Term:
+### Long Term
+
 1. Replace printf() calls with MMT_LOG_*
 2. Replace return -1 with MMT_RETURN_ERROR
 3. Add recovery strategies to critical paths
@@ -761,18 +805,21 @@ void init_logging(void) {
 ## 📚 References
 
 **Phase 5 Documents:**
+
 - `PHASE5_PLAN.md` - Complete implementation plan
 - `PHASE5_PROGRESS.md` - This document
 - `mmt_errors.h` - Error handling API
 - `mmt_logging.h` - Logging API
 
 **Related Phases:**
+
 - Phase 1: Security fixes (117+ vulnerabilities)
 - Phase 2: Performance (hash tables, memory pools)
 - Phase 3: Thread safety (protocol registry, session maps)
 - Phase 4: Validation framework (input validation macros)
 
 **Testing:**
+
 - `test/unit/test_error_handling.c` - Error handling tests (12 tests)
 - `test/unit/test_logging.c` - Logging tests (14 tests)
 

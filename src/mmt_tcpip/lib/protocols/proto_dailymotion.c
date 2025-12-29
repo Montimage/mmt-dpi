@@ -10,11 +10,9 @@
 
 int init_proto_dailymotion_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_DAILYMOTION, PROTO_DAILYMOTION_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_DAILYMOTION);
     } else {
         return 0;
     }
 }
-
-

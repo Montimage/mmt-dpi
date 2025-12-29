@@ -10,11 +10,9 @@
 
 int init_proto_the_pirate_bay_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_THE_PIRATE_BAY, PROTO_THE_PIRATE_BAY_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_THE_PIRATE_BAY);
     } else {
         return 0;
     }
 }
-
-

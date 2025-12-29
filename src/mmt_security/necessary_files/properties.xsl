@@ -56,7 +56,7 @@ executed against a recorded packet trace file or live on a network interface for
 	  </td>
 	  <td colspan="3"><xsl:value-of select="@description"/></td>
 	</tr>
-	
+
 	<xsl:for-each select="event">
 	<tr>
 	  <td width="5%"></td>
@@ -71,9 +71,9 @@ executed against a recorded packet trace file or live on a network interface for
 	</xsl:for-each>
     </xsl:for-each>
   </table>
-  	
- 
-  
+
+
+
   </body>
   </html>
 </xsl:template>

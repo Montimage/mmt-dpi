@@ -26,7 +26,7 @@ typedef enum S1ap_UEPagingID_PR {
 	S1ap_UEPagingID_PR_s_TMSI,
 	S1ap_UEPagingID_PR_iMSI
 	/* Extensions may appear below */
-	
+
 } S1ap_UEPagingID_PR;
 
 /* S1ap-UEPagingID */
@@ -40,7 +40,7 @@ typedef struct S1ap_UEPagingID {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_UEPagingID_t;

@@ -39,7 +39,7 @@ typedef struct NGAP_DRBStatusDL {
 		struct NGAP_DRBStatusDL18	*dRBStatusDL18;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DRBStatusDL_t;

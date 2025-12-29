@@ -115,7 +115,7 @@ typedef struct RULE_struct{
   int repeat_times_found; //couter of times detected
 
   long nb_satisfied;    //Only used by ROOT to keep statistics per rule
-  long nb_not_satisfied;//Only used by ROOT to keep statistics per rule  
+  long nb_not_satisfied;//Only used by ROOT to keep statistics per rule
 
   double delay_max; //default is 0, if value is < 0 then event needs to be satisfied before, if = 0 then in same packet, if > 0 then after
   double delay_min; //idem
@@ -139,7 +139,7 @@ typedef struct RULE_struct{
                                                  //to printout when the rule is satisfied or not.
   struct TUPLE_struct *list_of_tuples;           //Used by a ROOT_INSTANCE to store all the values with a reference attribute in a EVENT.
                                                  //and by FUNCT to store information on return value and parameters
-  
+
   struct RULE_struct *root; //Only used by non-ROOT and non-ROOT_INSTANCE
   struct RULE_struct  *list_of_sons;             //For all, creates hierarchy
   struct RULE_struct  *list_of_instances;        //Only if ROOT node
@@ -220,4 +220,3 @@ static father *bot_father = NULL;
 #endif
 
 #endif	/* STRUCT_DEFS_H */
-

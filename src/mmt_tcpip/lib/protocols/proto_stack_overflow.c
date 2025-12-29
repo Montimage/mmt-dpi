@@ -10,11 +10,9 @@
 
 int init_proto_stack_overflow_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_STACK_OVERFLOW, PROTO_STACK_OVERFLOW_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_STACK_OVERFLOW);
     } else {
         return 0;
     }
 }
-
-

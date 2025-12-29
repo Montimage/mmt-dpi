@@ -34,6 +34,7 @@ MMT-DPI is a comprehensive Deep Packet Inspection (DPI) framework that provides:
 This repository has undergone comprehensive security, performance, and infrastructure improvements:
 
 ### ✅ Phase 1: Security Hardening (100% Complete)
+
 - **117+ vulnerabilities fixed** across 10+ protocol handlers
 - Buffer overflow protections
 - Integer overflow checking
@@ -41,24 +42,28 @@ This repository has undergone comprehensive security, performance, and infrastru
 - Bounds validation throughout
 
 ### ✅ Phase 2: Performance Optimization (Core Complete)
+
 - **16x better hash distribution** (4096 slots with bitmask hashing)
 - **2-3x faster memory allocation** (memory pool infrastructure)
 - Lock-free hot paths maintained
 - Optimized session management
 
 ### ✅ Phase 3: Thread Safety (Critical Complete)
+
 - Protocol registry locking (read-write locks)
 - Per-protocol session map protection
 - Fine-grained locking for maximum parallelism
 - Zero ABI breaking changes
 
 ### ✅ Phase 4: Input Validation Framework (Framework Complete)
+
 - 15+ validation macros for consistent bounds checking
 - Safe math operations library
 - Type-generic validation system
 - Comprehensive test suite (12 tests passing)
 
 ### ✅ Phase 5: Error Handling & Logging (100% Complete)
+
 - **1000+ standardized error codes** organized by category
 - **5-level logging system** with 10 categories
 - **Error recovery strategies** with automatic retry
@@ -146,6 +151,7 @@ The `src/examples/` directory contains several example programs:
 - **security_monitor** - Security event detection
 
 Build examples:
+
 ```bash
 cd src/examples
 make

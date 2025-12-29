@@ -39,7 +39,7 @@ typedef struct NGAP_UP_TNLInformation {
 		struct NGAP_MultipleTNLInformation	*multipleTNLInformation;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UP_TNLInformation_t;

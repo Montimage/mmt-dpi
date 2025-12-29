@@ -112,5 +112,3 @@ int init_proto_dropbox_struct()
         return 0;
     }
 }
-
-

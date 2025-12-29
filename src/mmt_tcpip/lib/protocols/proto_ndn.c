@@ -42,7 +42,7 @@ static attribute_metadata_t ndn_attributes_metadata[NDN_ATTRIBUTES_NB] = {
     {NDN_DATA_FINAL_BLOCK_ID,NDN_DATA_FINAL_BLOCK_ID_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_final_block_id_extraction},
     {NDN_DATA_SIGNATURE_TYPE,NDN_DATA_SIGNATURE_TYPE_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_signature_type_extraction},
     {NDN_DATA_KEY_LOCATOR,NDN_DATA_KEY_LOCATOR_ALIAS,MMT_STRING_DATA_POINTER,sizeof(char*),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_locator_extraction},
-    
+
     // // {NDN_DATA_KEY_DIGEST,NDN_DATA_KEY_DIGEST_ALIAS,MMT_U8_DATA,sizeof(char),POSITION_NOT_KNOWN,SCOPE_PACKET,ndn_data_key_digest_extraction},
 };
 
@@ -57,7 +57,7 @@ int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-            
+
             // debug("NDN: checking ndn payload %lu",ipacket->packet_id);
             int offset = get_packet_offset_at_index(ipacket, index + 1);
             char * payload = (char*)&ipacket->data[offset];
@@ -73,7 +73,7 @@ int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
                 // debug("NDN: found ndn packet %lu",ipacket->packet_id);
                 if(mmt_check_payload_ndn_http(payload,payload_len)==0){
                     mmt_int_ndn_add_connection(ipacket);
-                    return 1;    
+                    return 1;
                 }
             }
     }
@@ -91,7 +91,7 @@ void mmt_init_classify_me_ndn() {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_ndn_struct() {
-    
+
     debug("[PROTO_NDN] init_proto_ndn_struct");
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_NDN, PROTO_NDN_ALIAS);
@@ -110,5 +110,3 @@ int init_proto_ndn_struct() {
         return 0;
     }
 }
-
-

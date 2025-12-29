@@ -25,7 +25,7 @@ typedef enum NGAP_NGAP_PDU_PR {
 	NGAP_NGAP_PDU_PR_successfulOutcome,
 	NGAP_NGAP_PDU_PR_unsuccessfulOutcome
 	/* Extensions may appear below */
-	
+
 } NGAP_NGAP_PDU_PR;
 
 /* Forward declarations */
@@ -45,7 +45,7 @@ typedef struct NGAP_NGAP_PDU {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NGAP_PDU_t;

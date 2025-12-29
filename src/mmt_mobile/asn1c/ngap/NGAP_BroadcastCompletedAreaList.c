@@ -119,4 +119,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_BroadcastCompletedAreaList = {
 	7,	/* Elements count */
 	&asn_SPC_NGAP_BroadcastCompletedAreaList_specs_1	/* Additional specs */
 };
-

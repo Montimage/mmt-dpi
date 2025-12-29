@@ -21,4 +21,3 @@ typedef struct {
 int nas_decode_tracking_area_identity(nas_tracking_area_identity_t *trackingareaidentity, uint8_t iei, uint8_t *buffer, uint32_t len);
 
 #endif /* TRACKING AREA IDENTITY_H_ */
-

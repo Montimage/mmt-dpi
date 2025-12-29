@@ -279,6 +279,3 @@ int init_proto_sctp_struct()
 
 	return 1;
 }
-
-
-

@@ -1,4 +1,4 @@
-# FTP protocol documents:
+# FTP protocol documents
 
 * [rfc959](https://tools.ietf.org/html/rfc959)
 
@@ -6,7 +6,7 @@
 
 * [List of FTP command send to server- wikipedia](https://en.wikipedia.org/wiki/List_of_FTP_commands)
 
-* [List of FTP server response code - wikipedia ](https://en.wikipedia.org/wiki/List_of_FTP_server_return_codes)
+* [List of FTP server response code - wikipedia](https://en.wikipedia.org/wiki/List_of_FTP_server_return_codes)
 
 * [rfc3569 - extends to FTP](https://tools.ietf.org/html/rfc3659)
 

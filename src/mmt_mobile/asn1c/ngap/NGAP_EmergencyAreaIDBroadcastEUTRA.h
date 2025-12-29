@@ -25,7 +25,7 @@ struct NGAP_EmergencyAreaIDBroadcastEUTRA_Item;
 /* NGAP_EmergencyAreaIDBroadcastEUTRA */
 typedef struct NGAP_EmergencyAreaIDBroadcastEUTRA {
 	A_SEQUENCE_OF(struct NGAP_EmergencyAreaIDBroadcastEUTRA_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_EmergencyAreaIDBroadcastEUTRA_t;

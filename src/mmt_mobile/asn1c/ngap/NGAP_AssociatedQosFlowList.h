@@ -25,7 +25,7 @@ struct NGAP_AssociatedQosFlowItem;
 /* NGAP_AssociatedQosFlowList */
 typedef struct NGAP_AssociatedQosFlowList {
 	A_SEQUENCE_OF(struct NGAP_AssociatedQosFlowItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AssociatedQosFlowList_t;

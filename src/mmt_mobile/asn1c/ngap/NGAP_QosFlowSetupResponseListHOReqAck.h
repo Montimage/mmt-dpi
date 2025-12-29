@@ -25,7 +25,7 @@ struct NGAP_QosFlowSetupResponseItemHOReqAck;
 /* NGAP_QosFlowSetupResponseListHOReqAck */
 typedef struct NGAP_QosFlowSetupResponseListHOReqAck {
 	A_SEQUENCE_OF(struct NGAP_QosFlowSetupResponseItemHOReqAck) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowSetupResponseListHOReqAck_t;

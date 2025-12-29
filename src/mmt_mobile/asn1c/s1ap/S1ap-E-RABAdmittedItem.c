@@ -120,4 +120,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_E_RABAdmittedItem = {
 	8,	/* Elements count */
 	&asn_SPC_S1ap_E_RABAdmittedItem_specs_1	/* Additional specs */
 };
-

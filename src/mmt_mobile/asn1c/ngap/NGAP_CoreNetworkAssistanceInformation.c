@@ -111,4 +111,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_CoreNetworkAssistanceInformation = {
 	7,	/* Elements count */
 	&asn_SPC_NGAP_CoreNetworkAssistanceInformation_specs_1	/* Additional specs */
 };
-

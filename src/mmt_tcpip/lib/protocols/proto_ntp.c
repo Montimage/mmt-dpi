@@ -18,7 +18,7 @@ static void mmt_int_ntp_add_connection(ipacket_t * ipacket) {
 void mmt_classify_me_ntp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    
+
 
 
     if (!(packet->udp->dest == htons(123) || packet->udp->source == htons(123)))
@@ -52,7 +52,7 @@ int mmt_check_ntp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-        
+
 
         if (!(packet->udp->dest == htons(123) || packet->udp->source == htons(123)))
             goto exclude_ntp;
@@ -94,5 +94,3 @@ int init_proto_ntp_struct() {
         return 0;
     }
 }
-
-

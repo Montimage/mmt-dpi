@@ -49,4 +49,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_ENBX2GTPTLAs = {
 	1,	/* Single element */
 	&asn_SPC_S1ap_ENBX2GTPTLAs_specs_1	/* Additional specs */
 };
-

@@ -22,7 +22,7 @@ static void mmt_int_direct_download_link_add_connection(ipacket_t * ipacket) {
   return 1 if it is a megaupload packet
  */
 uint8_t search_ddl_domains(ipacket_t * ipacket) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
@@ -58,7 +58,7 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
 
     if (packet->line[0].len < 9 + filename_start
             || mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) != 0) {
-        MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, 
+        MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK,
                 MMT_LOG_DEBUG, "DDL: PACKET NOT HTTP CONFORM.\nXXX%.*sXXX\n",
                 8, &packet->line[0].ptr[packet->line[0].len - 9]);
         goto end_ddl_nothing_found;
@@ -676,7 +676,7 @@ end_ddl_found:
 }
 
 void mmt_classify_me_ddl(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -715,11 +715,9 @@ int init_proto_direct_download_link_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_direct_download_link();
-        
+
         return register_protocol(protocol_struct, PROTO_DIRECT_DOWNLOAD_LINK);
     } else {
         return 0;
     }
 }
-
-

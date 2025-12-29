@@ -29,7 +29,7 @@ static void mmt_int_mail_smtp_add_connection(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_smtp(ipacket_t * ipacket, unsigned index) {
-    
+
 
   struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
   struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -180,11 +180,9 @@ int init_proto_smtp_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_smtp();
-        
+
         return register_protocol(protocol_struct, PROTO_SMTP);
     } else {
         return 0;
     }
 }
-
-

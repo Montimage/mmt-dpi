@@ -4,7 +4,7 @@ set -e
 echo "=== Building MMT-DPI ==="
 cd sdk
 make clean
-make -j$(nproc) 2>&1 | tee ../test/build.log
+make -j"$(nproc)" 2>&1 | tee ../test/build.log
 
 echo "=== Build successful ==="
 

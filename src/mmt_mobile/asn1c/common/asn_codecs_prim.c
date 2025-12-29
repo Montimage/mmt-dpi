@@ -314,4 +314,3 @@ xer_decode_primitive(const asn_codec_ctx_t *opt_codec_ctx,
 	}
 	return rc;
 }
-

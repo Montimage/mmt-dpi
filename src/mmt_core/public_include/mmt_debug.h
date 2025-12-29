@@ -27,12 +27,12 @@
  * Dump format options
  */
 typedef enum {
-    MMT_DUMP_HEX = 0x01,          /* Hexadecimal dump */
-    MMT_DUMP_ASCII = 0x02,        /* ASCII representation */
-    MMT_DUMP_ANNOTATE = 0x04,     /* Add protocol annotations */
-    MMT_DUMP_OFFSETS = 0x08,      /* Show byte offsets */
-    MMT_DUMP_COLORS = 0x10,       /* Use ANSI colors */
-    MMT_DUMP_FULL = 0xFF          /* All options */
+	MMT_DUMP_HEX = 0x01,      /* Hexadecimal dump */
+	MMT_DUMP_ASCII = 0x02,    /* ASCII representation */
+	MMT_DUMP_ANNOTATE = 0x04, /* Add protocol annotations */
+	MMT_DUMP_OFFSETS = 0x08,  /* Show byte offsets */
+	MMT_DUMP_COLORS = 0x10,   /* Use ANSI colors */
+	MMT_DUMP_FULL = 0xFF      /* All options */
 } mmt_dump_flags_t;
 
 /**
@@ -44,13 +44,7 @@ typedef enum {
  * @param flags Dump flags
  * @param output Output file (NULL for stdout)
  */
-void mmt_dump_packet(
-    const uint8_t *data,
-    size_t length,
-    size_t offset,
-    uint32_t flags,
-    FILE *output
-);
+void mmt_dump_packet(const uint8_t *data, size_t length, size_t offset, uint32_t flags, FILE *output);
 
 /**
  * Dump packet with protocol annotation
@@ -60,12 +54,7 @@ void mmt_dump_packet(
  * @param protocol_name Protocol name
  * @param output Output file (NULL for stdout)
  */
-void mmt_dump_packet_annotated(
-    const uint8_t *data,
-    size_t length,
-    const char *protocol_name,
-    FILE *output
-);
+void mmt_dump_packet_annotated(const uint8_t *data, size_t length, const char *protocol_name, FILE *output);
 
 /**
  * Dump specific packet range
@@ -76,13 +65,7 @@ void mmt_dump_packet_annotated(
  * @param label Label for this range
  * @param output Output file (NULL for stdout)
  */
-void mmt_dump_packet_range(
-    const uint8_t *data,
-    size_t start,
-    size_t end,
-    const char *label,
-    FILE *output
-);
+void mmt_dump_packet_range(const uint8_t *data, size_t start, size_t end, const char *label, FILE *output);
 
 /**
  * Dump packet to string buffer
@@ -94,13 +77,7 @@ void mmt_dump_packet_range(
  * @param flags Dump flags
  * @return Number of bytes written
  */
-size_t mmt_dump_packet_to_string(
-    const uint8_t *data,
-    size_t length,
-    char *buffer,
-    size_t buffer_size,
-    uint32_t flags
-);
+size_t mmt_dump_packet_to_string(const uint8_t *data, size_t length, char *buffer, size_t buffer_size, uint32_t flags);
 
 /**
  * Save packet dump to file
@@ -111,12 +88,7 @@ size_t mmt_dump_packet_to_string(
  * @param flags Dump flags
  * @return MMT_SUCCESS on success, error code otherwise
  */
-mmt_error_t mmt_dump_packet_to_file(
-    const uint8_t *data,
-    size_t length,
-    const char *filename,
-    uint32_t flags
-);
+mmt_error_t mmt_dump_packet_to_file(const uint8_t *data, size_t length, const char *filename, uint32_t flags);
 
 /*
  * ============================================================================
@@ -128,22 +100,22 @@ mmt_error_t mmt_dump_packet_to_file(
  * Error statistics entry
  */
 typedef struct {
-    mmt_error_t error_code;           /* Error code */
-    uint64_t count;                   /* Occurrence count */
-    const char *last_file;            /* Last file where error occurred */
-    int last_line;                    /* Last line number */
-    const char *last_function;        /* Last function name */
-    const char *last_message;         /* Last error message */
+	mmt_error_t error_code;    /* Error code */
+	uint64_t count;            /* Occurrence count */
+	const char *last_file;     /* Last file where error occurred */
+	int last_line;             /* Last line number */
+	const char *last_function; /* Last function name */
+	const char *last_message;  /* Last error message */
 } mmt_error_stat_entry_t;
 
 /**
  * Error statistics summary
  */
 typedef struct {
-    uint64_t total_errors;            /* Total error count */
-    uint64_t unique_errors;           /* Unique error types */
-    mmt_error_t most_frequent_error;  /* Most common error */
-    uint64_t most_frequent_count;     /* Count of most common */
+	uint64_t total_errors;           /* Total error count */
+	uint64_t unique_errors;          /* Unique error types */
+	mmt_error_t most_frequent_error; /* Most common error */
+	uint64_t most_frequent_count;    /* Count of most common */
 } mmt_error_stats_summary_t;
 
 /**
@@ -169,13 +141,8 @@ bool mmt_error_stats_is_enabled(void);
  * @param function Function name
  * @param message Error message
  */
-void mmt_error_stats_record(
-    mmt_error_t error_code,
-    const char *file,
-    int line,
-    const char *function,
-    const char *message
-);
+void mmt_error_stats_record(mmt_error_t error_code, const char *file, int line, const char *function,
+							const char *message);
 
 /**
  * Get error statistics for specific error
@@ -184,10 +151,7 @@ void mmt_error_stats_record(
  * @param entry Output entry (can be NULL to just get count)
  * @return Error occurrence count
  */
-uint64_t mmt_error_stats_get(
-    mmt_error_t error_code,
-    mmt_error_stat_entry_t *entry
-);
+uint64_t mmt_error_stats_get(mmt_error_t error_code, mmt_error_stat_entry_t *entry);
 
 /**
  * Get overall error statistics summary
@@ -203,10 +167,7 @@ void mmt_error_stats_get_summary(mmt_error_stats_summary_t *summary);
  * @param max_entries Maximum entries to return
  * @return Number of entries filled
  */
-size_t mmt_error_stats_get_top_errors(
-    mmt_error_stat_entry_t *entries,
-    size_t max_entries
-);
+size_t mmt_error_stats_get_top_errors(mmt_error_stat_entry_t *entries, size_t max_entries);
 
 /**
  * Print error statistics report
@@ -239,24 +200,24 @@ mmt_error_t mmt_error_stats_save(const char *filename);
  * Memory allocation tracking entry
  */
 typedef struct {
-    void *address;                    /* Allocation address */
-    size_t size;                      /* Allocation size */
-    const char *file;                 /* Source file */
-    int line;                         /* Line number */
-    const char *function;             /* Function name */
+	void *address;        /* Allocation address */
+	size_t size;          /* Allocation size */
+	const char *file;     /* Source file */
+	int line;             /* Line number */
+	const char *function; /* Function name */
 } mmt_mem_alloc_entry_t;
 
 /**
  * Memory statistics
  */
 typedef struct {
-    uint64_t total_allocations;       /* Total allocations */
-    uint64_t total_deallocations;     /* Total deallocations */
-    uint64_t current_allocations;     /* Current active allocations */
-    uint64_t peak_allocations;        /* Peak allocation count */
-    uint64_t total_bytes_allocated;   /* Total bytes allocated */
-    uint64_t current_bytes_allocated; /* Current bytes allocated */
-    uint64_t peak_bytes_allocated;    /* Peak bytes allocated */
+	uint64_t total_allocations;       /* Total allocations */
+	uint64_t total_deallocations;     /* Total deallocations */
+	uint64_t current_allocations;     /* Current active allocations */
+	uint64_t peak_allocations;        /* Peak allocation count */
+	uint64_t total_bytes_allocated;   /* Total bytes allocated */
+	uint64_t current_bytes_allocated; /* Current bytes allocated */
+	uint64_t peak_bytes_allocated;    /* Peak bytes allocated */
 } mmt_mem_stats_t;
 
 /**
@@ -312,7 +273,7 @@ typedef struct mmt_profile_point mmt_profile_point_t;
  * @param name Profile point name
  * @return Profile point handle
  */
-mmt_profile_point_t* mmt_profile_start(const char *name);
+mmt_profile_point_t *mmt_profile_start(const char *name);
 
 /**
  * End profiling for a code section
@@ -351,32 +312,28 @@ void mmt_profile_reset(void);
  * Quick hexdump to stdout
  */
 #define MMT_HEXDUMP(data, len) \
-    mmt_dump_packet((const uint8_t*)(data), (len), 0, \
-                   MMT_DUMP_HEX | MMT_DUMP_ASCII | MMT_DUMP_OFFSETS, NULL)
+	mmt_dump_packet((const uint8_t *)(data), (len), 0, MMT_DUMP_HEX | MMT_DUMP_ASCII | MMT_DUMP_OFFSETS, NULL)
 
 /**
  * Annotated packet dump
  */
-#define MMT_DUMP_PROTOCOL(data, len, proto) \
-    mmt_dump_packet_annotated((const uint8_t*)(data), (len), (proto), NULL)
+#define MMT_DUMP_PROTOCOL(data, len, proto) mmt_dump_packet_annotated((const uint8_t *)(data), (len), (proto), NULL)
 
 /**
  * Profile code section
  */
-#define MMT_PROFILE_BEGIN(name) \
-    mmt_profile_point_t *_profile_##name = mmt_profile_start(#name)
+#define MMT_PROFILE_BEGIN(name) mmt_profile_point_t *_profile_##name = mmt_profile_start(#name)
 
-#define MMT_PROFILE_END(name) \
-    mmt_profile_end(_profile_##name)
+#define MMT_PROFILE_END(name) mmt_profile_end(_profile_##name)
 
 /**
  * Record error for statistics (if enabled)
  */
-#define MMT_ERROR_STATS_RECORD(code, msg) \
-    do { \
-        if (mmt_error_stats_is_enabled()) { \
-            mmt_error_stats_record(code, __FILE__, __LINE__, __func__, msg); \
-        } \
-    } while(0)
+#define MMT_ERROR_STATS_RECORD(code, msg)                                    \
+	do {                                                                     \
+		if (mmt_error_stats_is_enabled()) {                                  \
+			mmt_error_stats_record(code, __FILE__, __LINE__, __func__, msg); \
+		}                                                                    \
+	} while (0)
 
 #endif /* MMT_DEBUG_H */

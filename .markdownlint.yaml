@@ -1,0 +1,23 @@
+# Markdownlint configuration for MMT-DPI
+# Relaxed rules to accommodate legacy documentation
+
+default: true
+
+# Disable problematic rules for legacy docs
+MD001: false  # Heading increment
+MD003: false  # Heading style consistency
+MD009: false  # Trailing spaces
+MD010: false  # Hard tabs
+MD013: false  # Line length
+MD024: false  # Duplicate headings
+MD025: false  # Multiple top-level headings
+MD026: false  # Trailing punctuation in headers
+MD029: false  # Ordered list prefix style
+MD033: false  # Inline HTML
+MD034: false  # Bare URLs
+MD035: false  # Horizontal rule style
+MD036: false  # Emphasis instead of heading
+MD040: false  # Fenced code language
+MD041: false  # First line heading
+MD046: false  # Code block style
+MD051: false  # Link fragments

@@ -25,7 +25,7 @@ struct NGAP_DRBsToQosFlowsMappingItem;
 /* NGAP_DRBsToQosFlowsMappingList */
 typedef struct NGAP_DRBsToQosFlowsMappingList {
 	A_SEQUENCE_OF(struct NGAP_DRBsToQosFlowsMappingItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DRBsToQosFlowsMappingList_t;

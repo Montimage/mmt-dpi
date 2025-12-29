@@ -546,5 +546,3 @@ uint32_t encode_ngap( void *buffer, uint32_t buffer_size, const ngap_message_t *
 	ASN_STRUCT_FREE( asn_DEF_NGAP_NGAP_PDU, pdu_p );
 	return ret;
 }
-
-

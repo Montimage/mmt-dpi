@@ -52,4 +52,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_LastVisitedGERANCellInformation = {
 	1,	/* Elements count */
 	&asn_SPC_S1ap_LastVisitedGERANCellInformation_specs_1	/* Additional specs */
 };
-

@@ -96,5 +96,3 @@ int init_proto_ssh_struct() {
         return 0;
     }
 }
-
-

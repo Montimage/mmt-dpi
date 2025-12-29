@@ -80,4 +80,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_MDT_Configuration = {
 	4,	/* Elements count */
 	&asn_SPC_S1ap_MDT_Configuration_specs_1	/* Additional specs */
 };
-

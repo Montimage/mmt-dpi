@@ -28,7 +28,7 @@ typedef struct S1ap_SourceeNB_ID {
 	S1ap_Global_ENB_ID_t	 global_ENB_ID;
 	S1ap_TAI_t	 selected_TAI;
 	struct S1ap_IE_Extensions	*iE_Extensions;	/* OPTIONAL */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_SourceeNB_ID_t;

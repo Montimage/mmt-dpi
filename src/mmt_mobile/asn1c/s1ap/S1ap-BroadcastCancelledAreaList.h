@@ -28,7 +28,7 @@ typedef enum S1ap_BroadcastCancelledAreaList_PR {
 	S1ap_BroadcastCancelledAreaList_PR_tAI_Cancelled,
 	S1ap_BroadcastCancelledAreaList_PR_emergencyAreaID_Cancelled
 	/* Extensions may appear below */
-	
+
 } S1ap_BroadcastCancelledAreaList_PR;
 
 /* S1ap-BroadcastCancelledAreaList */
@@ -43,7 +43,7 @@ typedef struct S1ap_BroadcastCancelledAreaList {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_BroadcastCancelledAreaList_t;

@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceInformationItem;
 /* NGAP_PDUSessionResourceInformationList */
 typedef struct NGAP_PDUSessionResourceInformationList {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceInformationItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceInformationList_t;

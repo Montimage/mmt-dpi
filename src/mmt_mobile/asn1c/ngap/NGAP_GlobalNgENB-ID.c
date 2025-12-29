@@ -70,4 +70,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_GlobalNgENB_ID = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_GlobalNgENB_ID_specs_1	/* Additional specs */
 };
-

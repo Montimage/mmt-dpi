@@ -50,4 +50,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_CellIDCancelledNR = {
 	1,	/* Single element */
 	&asn_SPC_NGAP_CellIDCancelledNR_specs_1	/* Additional specs */
 };
-

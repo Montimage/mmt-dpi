@@ -25,7 +25,7 @@ struct NGAP_QosFlowAddOrModifyRequestItem;
 /* NGAP_QosFlowAddOrModifyRequestList */
 typedef struct NGAP_QosFlowAddOrModifyRequestList {
 	A_SEQUENCE_OF(struct NGAP_QosFlowAddOrModifyRequestItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowAddOrModifyRequestList_t;

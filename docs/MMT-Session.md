@@ -4,7 +4,6 @@
 
 ------------------
 
-
 ## Definition ##
 
 `MMT session` is an abstract concept which binds all the packets passing through a particular data flow. It defines the operations and generic structure of a data flow. MMT does not define any specific session (such as: IP session, RTP session...) instead it provides the generic operation and structure. For example, MMT provide generic operation and structure which can be used by IP protocol to define IP session. MMT defines the session by `session_id` but for some specific protocol session is defined by `mmt_session_key`. As `mmt session` only have a `void` pointer pointed to the address of `mmt_session_key`, this design make the session key very flexible. For example, IP session and RTP session can have different structure of `mmt_session_key`.
@@ -15,7 +14,8 @@
 
 ## API ##
 
-** Session structure **
+**Session structure**
+
 ```c
 /**
  * Defines the structure of a session.
@@ -87,9 +87,11 @@ struct mmt_session_struct {
     struct mmt_session_struct * previous;    /**< pointer to the previous session in the expiry list --- for internal use must not be changed */
 };
 ```
-** IP session key - An example of `mmt_session_key` structure **
+
+**IP session key - An example of `mmt_session_key` structure**
 
 Session key is very flexible.
+
 ```c
     /**
      * Defines the structure of the key of a session.
@@ -109,12 +111,15 @@ Session key is very flexible.
         void * higher_ip; /**< identifier of the IP address (IPv4 or IPv6) with the higher numerical value */
     } mmt_session_key_t;
 ```
+
 ### User API ###
+
 ```c
 MMTAPI mmt_session_t* MMTCALL get_session_from_packet(
     const ipacket_t *ipacket
 );
 ```
+
 This function returns a pointer to the session struct associated to ipacket
 
 ```c
@@ -122,6 +127,7 @@ MMTAPI mmt_session_t* MMTCALL get_session_parent(
     const mmt_session_t *session
 );
 ```
+
 This function returns pointer to the parent session struct.
 
 ```c
@@ -129,38 +135,50 @@ MMTAPI mmt_handler_t* MMTCALL get_session_handler(
     const mmt_session_t *session
 );
 ```
+
 This function returns the pointer to the mmt handler that is processing the given session.
+
 ```c
 MMTAPI uint32_t MMTCALL get_session_protocol_index(
     const mmt_session_t *session
 );
 ```
+
 This function returns the index in the protocol hierarchy of the protocol session it belongs to.
+
 ```c
 MMTAPI const proto_hierarchy_t* MMTCALL get_session_protocol_hierarchy(
     const mmt_session_t *session
 );
 ```
+
 This function returns the pointer to the protocol hierarchy of the session.
+
 ```c
 MMTAPI uint64_t MMTCALL get_session_id(
     const mmt_session_t *session
 );
 ```
+
 This function returns the associated session identifier.
+
 ```c
 MMTAPI void* MMTCALL get_user_session_context(
     const mmt_session_t *session
 );
 ```
+
 This function returns the associated session context
+
 ```c
 MMTAPI void* MMTCALL get_proto_session_data(
     const mmt_session_t *session,
     unsigned index
 );
 ```
+
 This function returns pointer to the initialized session data of the protocol at the given index. It returns NULL if the protocol has no registered session data.
+
 ```c
 MMTAPI void MMTCALL set_proto_session_data(
     mmt_session_t *session,
@@ -168,6 +186,7 @@ MMTAPI void MMTCALL set_proto_session_data(
     unsigned index
 );
 ```
+
 This function sets the protocol session data.
 
 ```c
@@ -176,6 +195,7 @@ MMTAPI void MMTCALL set_user_session_context(
     void *user_data
 );
 ```
+
 This function sets the user session context
 
 ```c
@@ -183,6 +203,7 @@ MMTAPI uint64_t MMTCALL get_session_packet_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns the number of packets transmitted in a particular session.
 
 ```c
@@ -190,28 +211,31 @@ MMTAPI uint64_t MMTCALL get_session_packet_cap_count(
     const mmt_session_t *session
 );
 ```
-This function returns the number of packets transmitted in a particular session (include fragmented packets).
 
+This function returns the number of packets transmitted in a particular session (include fragmented packets).
 
 ```c
 MMTAPI uint64_t MMTCALL get_session_ul_packet_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns the uplink number of packets transmitted in a particular session.
+
 ```c
 MMTAPI uint64_t MMTCALL get_session_dl_packet_count(
     const mmt_session_t *session
 );
 ```
-This function return the downlink number of packets transmitted in a particular session.
 
+This function return the downlink number of packets transmitted in a particular session.
 
 ```c
 MMTAPI uint64_t MMTCALL get_session_ul_cap_packet_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns the uplink number of packets transmitted in a particular session (include fragmented packets).
 
 ```c
@@ -219,15 +243,15 @@ MMTAPI uint64_t MMTCALL get_session_dl_cap_packet_count(
     const mmt_session_t *session
 );
 ```
+
 This function return the downlink number of packets transmitted in a particular session (include fragmented packets).
-
-
 
 ```c
 MMTAPI uint64_t MMTCALL get_session_byte_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns total volume in bytes transmitted in a particular session.
 
 ```c
@@ -235,6 +259,7 @@ MMTAPI uint64_t MMTCALL get_session_ul_byte_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns total uplink volume in bytes transmitted in a particular session.
 
 ```c
@@ -242,13 +267,15 @@ MMTAPI uint64_t MMTCALL get_session_dl_byte_count(
     const mmt_session_t *session
 );
 ```
-This function returns total downlink volume in bytes transmitted in a particular session. 
+
+This function returns total downlink volume in bytes transmitted in a particular session.
 
 ```c
 MMTAPI uint64_t MMTCALL get_session_ul_cap_byte_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns total uplink volume in bytes transmitted in a particular session (include fragmented packets).
 
 ```c
@@ -256,14 +283,15 @@ MMTAPI uint64_t MMTCALL get_session_dl_cap_byte_count(
     const mmt_session_t *session
 );
 ```
-This function returns total downlink volume in bytes transmitted in a particular session (include fragmented packets). 
 
+This function returns total downlink volume in bytes transmitted in a particular session (include fragmented packets).
 
 ```c
 MMTAPI uint64_t MMTCALL get_session_data_packet_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns the number of data packets transmitted in a particular session.
 
 ```c
@@ -271,6 +299,7 @@ MMTAPI uint64_t MMTCALL get_session_ul_data_packet_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns the uplink number of data packets transmitted in a particular session.
 
 ```c
@@ -278,6 +307,7 @@ MMTAPI uint64_t MMTCALL get_session_dl_data_packet_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns the downlink number of data packets transmitted in a particular session.
 
 ```c
@@ -285,6 +315,7 @@ MMTAPI uint64_t MMTCALL get_session_data_byte_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns total data volume in bytes transmitted in a particular session.
 
 ```c
@@ -292,6 +323,7 @@ MMTAPI uint64_t MMTCALL get_session_ul_data_byte_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns total uplink data volume in bytes transmitted in a particular session.
 
 ```c
@@ -299,24 +331,31 @@ MMTAPI uint64_t MMTCALL get_session_dl_data_byte_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns total downlink data volume in bytes transmitted in a particular session.
+
 ```c
 MMTAPI struct timeval MMTCALL get_session_init_time(
     const mmt_session_t *session
 );
 ```
+
 This function gets the session initialization time.
+
 ```c
 MMTAPI struct timeval MMTCALL get_session_last_activity_time(
     const mmt_session_t *session
 );
 ```
+
 This function gets the session last activity time.
+
 ```c
 MMTAPI struct timeval MMTCALL get_session_rtt(
     const mmt_session_t *session
 );
 ```
+
 This function gets the session establishment round trip time.
 
 ```c
@@ -324,6 +363,7 @@ MMTAPI uint16_t MMTCALL get_session_content_class_id(
     const mmt_session_t *session
 );
 ```
+
 This function returns the session content class id.
 
 ```c
@@ -331,12 +371,15 @@ MMTAPI uint16_t MMTCALL get_session_content_type_id(
     const mmt_session_t *session
 );
 ```
+
 This function returns the session content type id.
+
 ```c
 MMTAPI uint32_t MMTCALL get_session_content_flags(
     const mmt_session_t *session
 );
 ```
+
 This function returns the session content flags.
 
 ```c
@@ -344,19 +387,23 @@ MMTAPI uint32_t MMTCALL get_session_retransmission_count(
     const mmt_session_t *session
 );
 ```
+
 This function returns the number of retransmitted packets seen by the given session.
+
 ```c
 MMTAPI mmt_session_t MMTCALL get_session_next(
     const mmt_session_t *session
 );
 ```
+
 This function returns the next session of the given session. NULL if the given session does not have next session
+
 ```c
 MMTAPI mmt_session_t MMTCALL get_session_previous(
     const mmt_session_t *session
 );
 ```
+
 This function returns the previous session of the given. NULL if the given session does not have previous session
+
 ## Open Issues ##
-
-

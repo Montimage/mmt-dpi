@@ -27,7 +27,7 @@ struct S1ap_IE;
 typedef struct S1ap_MMEDirectInformationTransfer {
 	struct S1ap_MMEDirectInformationTransfer__s1ap_MMEDirectInformationTransfer_ies {
 		A_SEQUENCE_OF(struct S1ap_IE) list;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} s1ap_MMEDirectInformationTransfer_ies;
@@ -35,7 +35,7 @@ typedef struct S1ap_MMEDirectInformationTransfer {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_MMEDirectInformationTransfer_t;

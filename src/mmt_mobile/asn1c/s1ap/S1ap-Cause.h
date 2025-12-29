@@ -32,7 +32,7 @@ typedef enum S1ap_Cause_PR {
 	S1ap_Cause_PR_protocol,
 	S1ap_Cause_PR_misc
 	/* Extensions may appear below */
-	
+
 } S1ap_Cause_PR;
 
 /* S1ap-Cause */
@@ -49,7 +49,7 @@ typedef struct S1ap_Cause {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_Cause_t;

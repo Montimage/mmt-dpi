@@ -567,4 +567,3 @@ uint16_t _mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
     }
     return 0;
 }
-

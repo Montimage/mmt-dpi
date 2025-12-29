@@ -30,7 +30,7 @@ static void mmt_int_rtsp_add_connection(ipacket_t * ipacket, mmt_protocol_type_t
 
 /* this function searches for a rtsp-"handshake" over tcp or udp. */
 int mmt_classify_me_rtsp(ipacket_t * ipacket, unsigned index) {
-    
+
 
   struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
   struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -120,12 +120,10 @@ void mmt_init_classify_me_rtsp() {
 
 int init_proto_rtsp_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_RTSP, PROTO_RTSP_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         mmt_init_classify_me_rtsp();
         return register_protocol(protocol_struct, PROTO_RTSP);
     } else {
         return 0;
     }
 }
-
-

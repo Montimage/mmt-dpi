@@ -205,7 +205,7 @@ int check_viber_udp(ipacket_t * ipacket) {
              * 176.34.0.0/16
              * These are not the only ranges but the most consequent ones
              */
-            
+
             if (((ntohl(packet->iph->saddr) & 0xFFFFFFE0 /* 255.255.255.224 */) == 0x36A93FA0 /* 54.169.63.160 */)
                     || ((ntohl(packet->iph->daddr) & 0xFFFFFFE0 /* 255.255.255.224 */) == 0x36A93FA0 /* 54.169.63.160 */)) {
                 mmt_internal_add_connection(ipacket, PROTO_VIBER, MMT_REAL_PROTOCOL);
@@ -305,7 +305,7 @@ int check_tango_udp(ipacket_t * ipacket) {
         }
     }
 
-    uint32_t proto; 
+    uint32_t proto;
     proto = check_local_proto_by_port_nb(packet->udp->dest, &dst->local_protos);
     if (proto == PROTO_TANGO) {
         mmt_internal_add_connection(ipacket, PROTO_TANGO, MMT_CORRELATED_PROTOCOL);
@@ -436,5 +436,3 @@ int init_proto_stun_struct() {
         return 0;
     }
 }
-
-

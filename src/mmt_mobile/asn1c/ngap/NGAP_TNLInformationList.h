@@ -25,7 +25,7 @@ struct NGAP_TNLInformationItem;
 /* NGAP_TNLInformationList */
 typedef struct NGAP_TNLInformationList {
 	A_SEQUENCE_OF(struct NGAP_TNLInformationItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TNLInformationList_t;

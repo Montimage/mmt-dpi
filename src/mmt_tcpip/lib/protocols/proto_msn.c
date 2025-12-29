@@ -31,7 +31,7 @@ static uint8_t mmt_int_find_xmsn(ipacket_t * ipacket) {
 }
 
 static void mmt_search_msn_tcp(ipacket_t * ipacket) {
-    
+
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -100,7 +100,7 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
             mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
             /**
              * @brief V523 The 'then' statement is equivalent to the 'else' statement.
-             * 
+             *
              */
             // if (packet->payload_packet_len > 101 && packet->payload[101] == 0x02) {
             //     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -245,7 +245,7 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
                                 4) == 0 || mmt_memcmp(packet->line[a].ptr, "ANS ", 4) == 0)) {
                             MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
                                     "found MSN with pattern text/sml; charset0utf-8.\n");
-                            MMT_LOG(PROTO_MSN, 
+                            MMT_LOG(PROTO_MSN,
                                     MMT_LOG_TRACE, "MSN xml CVS / VER / ANS found\n");
                             mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                             return;
@@ -482,7 +482,7 @@ mmt_msn_exclude:
 }
 
 static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
-    
+
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -511,7 +511,7 @@ static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_msn(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -604,5 +604,3 @@ int init_proto_msn_struct() {
         return 0;
     }
 }
-
-

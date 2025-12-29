@@ -70,4 +70,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_UserLocationInformationN3IWF = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_UserLocationInformationN3IWF_specs_1	/* Additional specs */
 };
-

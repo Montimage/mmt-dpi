@@ -25,7 +25,7 @@ struct NGAP_CellIDCancelledEUTRA_Item;
 /* NGAP_CellIDCancelledEUTRA */
 typedef struct NGAP_CellIDCancelledEUTRA {
 	A_SEQUENCE_OF(struct NGAP_CellIDCancelledEUTRA_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CellIDCancelledEUTRA_t;

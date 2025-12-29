@@ -2,8 +2,8 @@
 #ifndef _MMT_MEMORY_H
 #define _MMT_MEMORY_H
 
-#include <stdlib.h> // size_t
-#include <stdint.h> // uint64_t
+#include <stdlib.h>  // size_t
+#include <stdint.h>  // uint64_t
 
 
 //  - - - - - - - - - - - - - - - -  //
@@ -11,8 +11,8 @@
 //  - - - - - - - - - - - - - - - -  //
 
 struct mmt_meminfo {
-   uint64_t allocated;
-   uint64_t freed;
+	uint64_t allocated;
+	uint64_t freed;
 };
 
 typedef struct mmt_meminfo mmt_meminfo_t;
@@ -22,7 +22,7 @@ typedef struct mmt_meminfo mmt_meminfo_t;
 //  P U B L I C   I N T E R F A C E  //
 //  - - - - - - - - - - - - - - - -  //
 
-extern void mmt_meminfo( mmt_meminfo_t * );
+extern void mmt_meminfo(mmt_meminfo_t *);
 
 
 #endif /*_MMT_MEMORY_H*/

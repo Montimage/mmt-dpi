@@ -17,6 +17,7 @@ Converting statistics counters to atomic operations is a high-impact improvement
 ## Statistics Fields Requiring Atomic Operations
 
 ### Location: `src/mmt_core/public_include/data_defs.h`
+
 ### Structure: `proto_statistics_struct` (lines 185-202)
 
 **Fields to convert from `uint64_t` to atomic:**
@@ -46,6 +47,7 @@ Converting statistics counters to atomic operations is a high-impact improvement
 
 1. **Lines 2824**: `proto_stats->timedout_sessions_count += 1;`
 2. **Lines 2895-2897**: Main packet processing path
+
    ```c
    proto_stats->packets_count  += 1;
    proto_stats->data_volume    += ipacket->p_hdr->original_len;
@@ -53,6 +55,7 @@ Converting statistics counters to atomic operations is a high-impact improvement
    ```
 
 3. **Lines 2911-2918**: IP fragmentation statistics
+
    ```c
    proto_stats->ip_frag_packets_count ++;
    proto_stats->ip_frag_data_volume += ipacket->p_hdr->original_caplen;
@@ -61,6 +64,7 @@ Converting statistics counters to atomic operations is a high-impact improvement
    ```
 
 4. **Lines 2946-2950**: New session path
+
    ```c
    proto_stats->sessions_count += 1;
    proto_stats->packets_count  += 1;
@@ -71,6 +75,7 @@ Converting statistics counters to atomic operations is a high-impact improvement
 5. **Lines 2964-2971**: IP fragmentation (second location)
 
 **Read locations:**
+
 - Lines 927, 944, 961: Aggregation in getter functions
 - Line 2784: Print statistics
 - Lines 2830-2835: Reset statistics
@@ -84,6 +89,7 @@ Converting statistics counters to atomic operations is a high-impact improvement
 ### 1. ABI Compatibility Break
 
 **Problem:** Changing `uint64_t` to `atomic_uint_fast64_t` changes structure layout
+
 - Structure size may change
 - Field offsets may change
 - All compiled code using this structure must be recompiled
@@ -96,18 +102,21 @@ Converting statistics counters to atomic operations is a high-impact improvement
 **All code must change:**
 
 **Before:**
+
 ```c
 proto_stats->packets_count++;
 uint64_t count = proto_stats->packets_count;
 ```
 
 **After (C11 atomics):**
+
 ```c
 atomic_fetch_add(&proto_stats->packets_count, 1);
 uint64_t count = atomic_load(&proto_stats->packets_count);
 ```
 
 **After (GCC builtins):**
+
 ```c
 __atomic_fetch_add(&proto_stats->packets_count, 1, __ATOMIC_RELAXED);
 uint64_t count = __atomic_load_n(&proto_stats->packets_count, __ATOMIC_RELAXED);
@@ -118,6 +127,7 @@ uint64_t count = __atomic_load_n(&proto_stats->packets_count, __ATOMIC_RELAXED);
 **Options:**
 
 **Option A: C11 `<stdatomic.h>`**
+
 - Requires: `-std=c11` or `-std=gnu11`
 - Type: `_Atomic uint64_t` or `atomic_uint_fast64_t`
 - Functions: `atomic_fetch_add()`, `atomic_load()`, `atomic_store()`
@@ -125,6 +135,7 @@ uint64_t count = __atomic_load_n(&proto_stats->packets_count, __ATOMIC_RELAXED);
 - Issue: Not all compilers fully support C11 atomics
 
 **Option B: GCC builtins**
+
 - Requires: GCC 4.7+ or Clang
 - Type: `uint64_t` (no type change needed for storage)
 - Functions: `__atomic_fetch_add()`, `__atomic_load_n()`, `__atomic_store_n()`
@@ -132,6 +143,7 @@ uint64_t count = __atomic_load_n(&proto_stats->packets_count, __ATOMIC_RELAXED);
 - Issue: Not portable to other compilers
 
 **Option C: `<stdatomic.h>` with fallback**
+
 - Use C11 atomics if available
 - Fallback to GCC builtins
 - Fallback to mutex-protected operations
@@ -141,6 +153,7 @@ uint64_t count = __atomic_load_n(&proto_stats->packets_count, __ATOMIC_RELAXED);
 ### 4. Memory Ordering
 
 **Consideration:** Which memory order to use?
+
 - `__ATOMIC_RELAXED`: Fastest, no ordering guarantees
 - `__ATOMIC_ACQUIRE/RELEASE`: Ordering guarantees
 - `__ATOMIC_SEQ_CST`: Strongest guarantees, slowest
@@ -150,6 +163,7 @@ uint64_t count = __atomic_load_n(&proto_stats->packets_count, __ATOMIC_RELAXED);
 ### 5. Reset Operations
 
 **Current implementation (line 2830-2835):**
+
 ```c
 void reset_statistics(proto_statistics_t * stats) {
     stats->data_volume = 0;
@@ -160,6 +174,7 @@ void reset_statistics(proto_statistics_t * stats) {
 ```
 
 **With atomics:**
+
 ```c
 void reset_statistics(proto_statistics_t * stats) {
     atomic_store(&stats->data_volume, 0);
@@ -174,6 +189,7 @@ void reset_statistics(proto_statistics_t * stats) {
 ### 6. Aggregation Operations
 
 **Current implementation (lines 925-930):**
+
 ```c
 uint64_t count = 0;
 while (proto_stats) {
@@ -183,6 +199,7 @@ while (proto_stats) {
 ```
 
 **With atomics:**
+
 ```c
 uint64_t count = 0;
 while (proto_stats) {
@@ -196,11 +213,13 @@ while (proto_stats) {
 ### 7. Performance Impact
 
 **Atomic operations are slower than regular operations:**
+
 - Regular increment: 1 CPU cycle
 - Atomic increment: 10-50 CPU cycles (depending on architecture and contention)
 - Hot path: Lines 2895-2897 are executed for EVERY packet
 
 **Critical path analysis:**
+
 - Packet processing is the hottest path in the codebase
 - 3-4 atomic operations per packet (packets_count, data_volume, payload_volume)
 - At 10Gbps: ~14M packets/sec
@@ -211,6 +230,7 @@ while (proto_stats) {
 ### 8. Testing Requirements
 
 **Required testing:**
+
 - Unit tests for atomic operations
 - Multi-threaded stress tests
 - Performance benchmarks (before/after)
@@ -227,6 +247,7 @@ while (proto_stats) {
 ### Option 1: Full Atomic Conversion (ABI-breaking)
 
 **Approach:**
+
 1. Change structure fields to `_Atomic uint64_t` or `atomic_uint_fast64_t`
 2. Update all 18+ update sites to use `atomic_fetch_add()`
 3. Update all read sites to use `atomic_load()`
@@ -235,11 +256,13 @@ while (proto_stats) {
 6. Extensive testing
 
 **Pros:**
+
 - True thread safety for statistics
 - Standard C11 approach
 - Clean implementation
 
 **Cons:**
+
 - **BREAKS ABI COMPATIBILITY**
 - All existing binaries must be recompiled
 - All external plugins must be updated
@@ -251,17 +274,20 @@ while (proto_stats) {
 ### Option 2: Per-Thread Statistics with Aggregation
 
 **Approach:**
+
 1. Keep current structure unchanged (ABI compatible)
 2. Add per-thread statistics buffers
 3. Aggregate on demand
 4. No atomic operations needed
 
 **Pros:**
+
 - ABI compatible
 - Better performance (no atomic overhead)
 - Simpler implementation
 
 **Cons:**
+
 - More complex memory management
 - Aggregation overhead
 - Not real-time statistics
@@ -271,16 +297,19 @@ while (proto_stats) {
 ### Option 3: Lock-Based Protection
 
 **Approach:**
+
 1. Keep current structure unchanged (ABI compatible)
 2. Add rwlock to protect statistics structure
 3. Use write lock for updates, read lock for reads
 
 **Pros:**
+
 - ABI compatible
 - Simple implementation
 - True thread safety
 
 **Cons:**
+
 - Lock contention on hot path
 - Significant performance overhead
 - Deadlock risk if not careful
@@ -290,17 +319,20 @@ while (proto_stats) {
 ### Option 4: Deferred Implementation
 
 **Approach:**
+
 1. Document the requirement
 2. Plan for major version release
 3. Focus on higher-priority thread safety issues first
 4. Gather performance data to justify overhead
 
 **Pros:**
+
 - No immediate ABI break
 - Time to plan properly
 - Data-driven decision making
 
 **Cons:**
+
 - Statistics remain non-thread-safe
 
 **Recommendation:** ✅ RECOMMENDED for current phase
@@ -316,6 +348,7 @@ while (proto_stats) {
 ⏸️ **Task 3.3:** Atomic statistics - DEFER
 
 **Rationale:**
+
 - Tasks 3.1 and 3.2 address critical race conditions in control path
 - Statistics are data path only, non-critical for correctness
 - Incorrect statistics don't cause crashes or data corruption
@@ -324,6 +357,7 @@ while (proto_stats) {
 ### Future Work (v2.0.0): Atomic Statistics
 
 **Requirements:**
+
 1. Announce ABI-breaking change in advance
 2. Provide migration guide for users
 3. Implement with C11 atomics + GCC builtin fallback
@@ -332,6 +366,7 @@ while (proto_stats) {
 6. Provide compile-time option to disable atomics if needed
 
 **Implementation Plan:**
+
 1. Create feature branch
 2. Implement atomic operations with `__ATOMIC_RELAXED`
 3. Benchmark: compare performance with/without atomics
@@ -363,12 +398,14 @@ while (proto_stats) {
 **Impact:** LOW (cosmetic only)
 
 **Risks:**
+
 - Statistics may be slightly inaccurate
 - Race condition in increment can cause lost updates
 - No crashes or data corruption
 - User-facing impact: minor (monitoring/logging affected)
 
 **Mitigation:**
+
 - Document known limitation
 - Recommend single-threaded usage for critical monitoring
 - Plan for v2.0 with atomic statistics
@@ -392,4 +429,3 @@ This approach balances thread safety improvements with stability and compatibili
 **Date:** 2025-11-08
 **Status:** Analysis Complete
 **Next Steps:** Update Phase 3 documentation and commit
-

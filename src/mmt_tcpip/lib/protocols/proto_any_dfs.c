@@ -10,11 +10,9 @@
 
 int init_proto_any_dfs_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ANY_DFS, PROTO_ANY_DFS_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_ANY_DFS);
     } else {
         return 0;
     }
 }
-
-

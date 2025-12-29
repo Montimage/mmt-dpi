@@ -10,11 +10,9 @@
 
 int init_proto_mobile_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_MOBILE, PROTO_MOBILE_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_MOBILE);
     } else {
         return 0;
     }
 }
-
-

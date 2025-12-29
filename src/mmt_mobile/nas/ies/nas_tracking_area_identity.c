@@ -31,4 +31,3 @@ int nas_decode_tracking_area_identity(nas_tracking_area_identity_t *trackingarea
 #endif
   return decoded;
 }
-

@@ -21,6 +21,7 @@ You also can uninstall MMT-Extract by following command:
 You can go to examples/ folder to test some examples of using MMT-Extract library
 
 ## proto_attributes_iterator.c
+
 This example is intended to provide the list of available protocols and for each protocol, the list of its attributes.
 
 Compile:
@@ -31,11 +32,12 @@ Execute:
 `$ ./proto_attributes_iterator`
 
 ## extract_all.c
+
 This example is intended to extract everything that means all the attributes of all registed protocols will be registered for extraction. When a packet is processed, the attributes found in the packet will be printed out.
 
 Compile:
 
-`$ gcc -g -o extract_all extract_all.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core `-ldl -lpcap
+`$ gcc -g -o extract_all extract_all.c -I /opt/mmt/include -L /opt/mmt/lib -lmmt_core`-ldl -lpcap
 
 Execute:
 Extract from a .pcap file:
@@ -46,5 +48,4 @@ Extract from live stream:
 
 `$ sudo ./extract_all -i eth0`
 
-You can check more our API document at http://mmtlib.montimage.com/api
-
+You can check more our API document at <http://mmtlib.montimage.com/api>

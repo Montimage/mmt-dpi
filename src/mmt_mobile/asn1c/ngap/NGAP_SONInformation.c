@@ -74,4 +74,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_SONInformation = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_SONInformation_specs_1	/* Additional specs */
 };
-

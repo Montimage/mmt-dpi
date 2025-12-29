@@ -74,5 +74,3 @@ int init_proto_vnc_struct() {
         return 0;
     }
 }
-
-

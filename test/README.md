@@ -26,6 +26,7 @@ Run the baseline build and verification:
 ```
 
 This will:
+
 1. Clean build the entire project
 2. Verify all libraries are created
 3. Log output to `test/build.log`
@@ -45,12 +46,14 @@ Test with example packet captures:
 Performs a clean build and validates that all required libraries are created.
 
 **Usage:**
+
 ```bash
 cd /home/user/mmt-dpi
 ./test/scripts/build_and_test.sh
 ```
 
 **Expected Output:**
+
 ```
 === Building MMT-DPI ===
 ...compilation messages...
@@ -65,6 +68,7 @@ cd /home/user/mmt-dpi
 Runs example programs as integration tests.
 
 **Usage:**
+
 ```bash
 ./test/scripts/run_tests.sh
 ```
@@ -94,6 +98,7 @@ int main() {
 ```
 
 Compile and run:
+
 ```bash
 gcc -o test/unit/test_my_feature test/unit/test_my_feature.c \
     -I src/mmt_core/public_include
@@ -120,6 +125,7 @@ Performance tests should:
 4. Compare and report improvement
 
 Example benchmark structure:
+
 ```c
 double baseline = benchmark_baseline();
 double optimized = benchmark_optimized();
@@ -190,6 +196,7 @@ The existing sample is available at `src/examples/google-fr.pcap`.
 ### Build Failures
 
 Check the build log:
+
 ```bash
 cat test/build.log | grep -i "error:"
 ```
@@ -197,6 +204,7 @@ cat test/build.log | grep -i "error:"
 ### Library Not Found
 
 Ensure LD_LIBRARY_PATH includes the library directory:
+
 ```bash
 export LD_LIBRARY_PATH=/home/user/mmt-dpi/sdk/lib:$LD_LIBRARY_PATH
 ```
@@ -204,6 +212,7 @@ export LD_LIBRARY_PATH=/home/user/mmt-dpi/sdk/lib:$LD_LIBRARY_PATH
 ### Test Failures
 
 Run tests with verbose output:
+
 ```bash
 bash -x ./test/scripts/run_tests.sh
 ```
@@ -211,5 +220,6 @@ bash -x ./test/scripts/run_tests.sh
 ## Contact
 
 For questions about the test infrastructure, refer to:
+
 - Implementation Plan: `IMPLEMENTATION_PLAN.md`
 - Analysis Report: `MMT-DPI_COMPREHENSIVE_ANALYSIS_REPORT.md`

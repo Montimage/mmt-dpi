@@ -129,4 +129,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_CauseRadioNetwork = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_S1ap_CauseRadioNetwork_specs_1	/* Additional specs */
 };
-

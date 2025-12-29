@@ -90,4 +90,3 @@ asn_check_constraints(const asn_TYPE_descriptor_t *type_descriptor,
 
     return ret;
 }
-

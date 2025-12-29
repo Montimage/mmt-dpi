@@ -25,7 +25,7 @@ struct S1ap_CellID_Broadcast_Item;
 /* S1ap-CellID-Broadcast */
 typedef struct S1ap_CellID_Broadcast {
 	A_SEQUENCE_OF(struct S1ap_CellID_Broadcast_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_CellID_Broadcast_t;

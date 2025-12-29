@@ -50,4 +50,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_CellIDCancelledEUTRA = {
 	1,	/* Single element */
 	&asn_SPC_NGAP_CellIDCancelledEUTRA_specs_1	/* Additional specs */
 };
-

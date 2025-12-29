@@ -41,7 +41,7 @@ int nfs_is_file_operation(int opcode) {
 }
 
 nfs_opcode_t * nfs_extract_opcode(const ipacket_t *ipacket, int opcode_data_offset) {
-    
+
     if(opcode_data_offset > ipacket->p_hdr->caplen){
         debug("NFS: nfs_extract_opcode(%lu,%d): Invalid opcode data offset",ipacket->packet_id,opcode_data_offset);
         return NULL;
@@ -99,29 +99,29 @@ int nfs_extract_file_name_from_opcode_open(const ipacket_t * ipacket, int data_o
     file_name_offset  += 4; // share_deny
     file_name_offset  += 8; // client id
     owner_length = ntohl(*((unsigned int *) &ipacket->data[file_name_offset]));
-    file_name_offset += owner_length + 4; // owner    
+    file_name_offset += owner_length + 4; // owner
     open_type = ntohl(*((unsigned int *) &ipacket->data[file_name_offset]));
     file_name_offset += 4; // open_type code
     if (open_type == 0) {
         // Not create 4
-        file_name_offset += 0; // Not create 
+        file_name_offset += 0; // Not create
     } else if (open_type == 1) {
         // Check create mode
         create_mode = ntohl(*((unsigned int *) &ipacket->data[file_name_offset]));
-        file_name_offset += 4; // create_mode code        
+        file_name_offset += 4; // create_mode code
         if (create_mode == 2) {
             file_name_offset += 8;// verifier
             // Exclusive
             // 4 + 4 + 8
         } else if (create_mode == 0) {
             file_name_offset += 4; // status
-            // uncheck            
+            // uncheck
             int attr_size = ntohl(*((unsigned int *) &ipacket->data[file_name_offset]));
             file_name_offset += 4; // mask - 1
             file_name_offset += 4; // mask - 2 code
-            file_name_offset += 4; // beetwen mask 1 - 2      
+            file_name_offset += 4; // beetwen mask 1 - 2
             if(attr_size!=0){
-                file_name_offset += 8; // mask - 1     
+                file_name_offset += 8; // mask - 1
             }
             file_name_offset += 4; // mask - 2 value
         } else {
@@ -188,13 +188,13 @@ int nfs_xid_extraction(const ipacket_t * ipacket, unsigned proto_index,
     if (ipacket->internal_packet->payload_packet_len <= 0) {
         return 0;
     }
-    
+
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
     if(ipacket->data[nfs_payload_offset] >= 0x80 ){
         general_int_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
         return 1;
     }
-    return 0; 
+    return 0;
 }
 
 int nfs_message_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
@@ -202,13 +202,13 @@ int nfs_message_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
     if (ipacket->internal_packet->payload_packet_len <= 0) {
         return 0;
     }
-    
+
     int nfs_payload_offset = get_packet_offset_at_index(ipacket, proto_index);
     if(ipacket->data[nfs_payload_offset] >= 0x80 ){
         general_int_extraction_with_ordering_change(ipacket,proto_index,extracted_data);
         return 1;
     }
-    return 0; 
+    return 0;
 }
 
 
@@ -224,7 +224,7 @@ int nfs_rpc_version_extraction(const ipacket_t * ipacket, unsigned proto_index,
             // Call message
             *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) &ipacket->data[nfs_payload_offset + 12]));
             return 1;
-        }    
+        }
     }
     return 0;
 }
@@ -332,7 +332,7 @@ int nfs_tag_extraction(const ipacket_t * ipacket, unsigned proto_index,
             }
             extracted_data->data_len = tag_length;
             if(tag_length == 0){
-                extracted_data->data = NULL;    
+                extracted_data->data = NULL;
             }else{
                 if(nfs_data_offset + 4 <= ipacket->p_hdr->caplen)
                 extracted_data->data = (void*)&ipacket->data[nfs_data_offset + 4];
@@ -573,7 +573,7 @@ int nfs_file_new_name_extraction(const ipacket_t * ipacket, unsigned proto_index
                     return 0; // Only focus on call relates to file operations
                 }
                 nfs_opcode_free(putfh_opcode);
-                
+
                 if(current_offset + 4 >= ipacket->p_hdr->caplen){
                     debug("NFS: nfs_tag_extraction(%lu, %d,..): invalid offset",ipacket->packet_id, proto_index);
                     return 0;
@@ -696,5 +696,3 @@ int init_proto_nfs_struct() {
         return 0;
     }
 }
-
-

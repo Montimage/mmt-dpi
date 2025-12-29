@@ -671,5 +671,3 @@ int init_proto_qq_struct() {
         return 0;
     }
 }
-
-

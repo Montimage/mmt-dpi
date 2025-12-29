@@ -12,17 +12,17 @@ static int
 memb_s1ap_ENBConfigurationUpdate_ies_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	size_t size;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	/* Determine the number of elements */
 	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
+
 	if((size <= 65535)) {
 		/* Perform validation of the inner elements */
 		return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
@@ -127,4 +127,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_ENBConfigurationUpdate = {
 	1,	/* Elements count */
 	&asn_SPC_S1ap_ENBConfigurationUpdate_specs_1	/* Additional specs */
 };
-

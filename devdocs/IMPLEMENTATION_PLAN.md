@@ -1,4 +1,5 @@
 # MMT-DPI Implementation Plan
+
 ## Detailed Tasks with Testing and Validation
 
 **Project:** MMT-DPI Security and Performance Improvements
@@ -27,6 +28,7 @@
 **Steps:**
 
 1. **Create test directory structure**
+
 ```bash
 mkdir -p test/{unit,integration,security,performance}
 mkdir -p test/pcap_samples
@@ -34,6 +36,7 @@ mkdir -p test/scripts
 ```
 
 2. **Create baseline build script**
+
 ```bash
 cat > test/scripts/build_and_test.sh << 'EOF'
 #!/bin/bash
@@ -69,6 +72,7 @@ chmod +x test/scripts/build_and_test.sh
 ```
 
 3. **Create test runner script**
+
 ```bash
 cat > test/scripts/run_tests.sh << 'EOF'
 #!/bin/bash
@@ -101,11 +105,13 @@ chmod +x test/scripts/run_tests.sh
 ```
 
 4. **Verify baseline build**
+
 ```bash
 ./test/scripts/build_and_test.sh
 ```
 
 **Expected Output:**
+
 ```
 === Building MMT-DPI ===
 ...compilation messages...
@@ -115,12 +121,14 @@ chmod +x test/scripts/run_tests.sh
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Build completes without errors
 - [ ] All core libraries are created
 - [ ] Examples compile successfully
 - [ ] Test scripts are executable
 
 **Validation:**
+
 ```bash
 # Verify libraries exist
 ls -lh sdk/lib/libmmt_*.so
@@ -143,6 +151,7 @@ ls -lh examples/
 **Steps:**
 
 1. **Create safe packet access header**
+
 ```bash
 cat > src/mmt_core/public_include/mmt_safe_access.h << 'EOF'
 #ifndef MMT_SAFE_ACCESS_H
@@ -197,6 +206,7 @@ EOF
 ```
 
 2. **Create safe string operations header**
+
 ```bash
 cat > src/mmt_core/public_include/mmt_safe_string.h << 'EOF'
 #ifndef MMT_SAFE_STRING_H
@@ -243,6 +253,7 @@ EOF
 ```
 
 3. **Create safe math operations header**
+
 ```bash
 cat > src/mmt_core/public_include/mmt_safe_math.h << 'EOF'
 #ifndef MMT_SAFE_MATH_H
@@ -301,6 +312,7 @@ EOF
 ```
 
 4. **Test compilation with new headers**
+
 ```bash
 cd sdk
 make clean
@@ -308,17 +320,20 @@ make -j$(nproc)
 ```
 
 **Expected Output:**
+
 ```
 Compilation successful with no errors
 ```
 
 **Acceptance Criteria:**
+
 - [ ] All three header files created
 - [ ] Headers are syntactically correct
 - [ ] Project compiles without errors
 - [ ] No warnings introduced
 
 **Validation:**
+
 ```bash
 # Check headers exist
 ls -l src/mmt_core/public_include/mmt_safe_*.h
@@ -345,6 +360,7 @@ grep -i "warning.*mmt_safe" test/build.log || echo "No warnings found"
 **Steps:**
 
 1. **Create backup of original file**
+
 ```bash
 cp src/mmt_security/tips.c src/mmt_security/tips.c.backup
 ```
@@ -356,6 +372,7 @@ cp src/mmt_security/tips.c src/mmt_security/tips.c.backup
 ```
 
 **Before (Line 294-301):**
+
 ```c
 (void)sprintf(*pszMACAddress, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x",
              szMACAddress[0], cMACAddressDelimiter,
@@ -367,6 +384,7 @@ cp src/mmt_security/tips.c src/mmt_security/tips.c.backup
 ```
 
 **After:**
+
 ```c
 snprintf(*pszMACAddress, 18, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x",
          szMACAddress[0], cMACAddressDelimiter,
@@ -381,6 +399,7 @@ snprintf(*pszMACAddress, 18, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x",
 3. **Fix strcpy/strcat chain (lines 480-483)**
 
 **Before:**
+
 ```c
 strcpy(buff1, buff0);
 strcat(buff1, ".");
@@ -388,6 +407,7 @@ strcat(buff1, buff0);
 ```
 
 **After:**
+
 ```c
 #include "../mmt_core/public_include/mmt_safe_string.h"
 
@@ -399,18 +419,21 @@ mmt_strlcat(buff1, buff0, sizeof(buff1));
 4. **Fix JSON buffer concatenation (lines 2092-2093)**
 
 **Before:**
+
 ```c
 (void)strcat(json_buff, json_buff1);
 (void)strcat(json_buff, ",\"attributes\":[");
 ```
 
 **After:**
+
 ```c
 mmt_strlcat(json_buff, json_buff1, sizeof(json_buff));
 mmt_strlcat(json_buff, ",\"attributes\":[", sizeof(json_buff));
 ```
 
 5. **Compile and test**
+
 ```bash
 cd sdk
 make clean
@@ -426,6 +449,7 @@ fi
 ```
 
 6. **Create unit test for TIPS functions**
+
 ```bash
 cat > test/unit/test_tips_safety.c << 'EOF'
 #include <stdio.h>
@@ -458,12 +482,14 @@ gcc -o test/unit/test_tips_safety test/unit/test_tips_safety.c
 ```
 
 **Expected Output:**
+
 ```
 ✓ MAC format test passed
 All TIPS safety tests passed
 ```
 
 **Acceptance Criteria:**
+
 - [ ] All sprintf replaced with snprintf
 - [ ] All strcpy replaced with mmt_strlcpy
 - [ ] All strcat replaced with mmt_strlcat
@@ -472,6 +498,7 @@ All TIPS safety tests passed
 - [ ] Unit tests pass
 
 **Validation:**
+
 ```bash
 # Count remaining unsafe functions
 grep -n "sprintf\s*(" src/mmt_security/tips.c || echo "No sprintf found"
@@ -483,6 +510,7 @@ grep -n "strcat\s*(" src/mmt_security/tips.c || echo "No strcat found"
 ```
 
 **Rollback Plan:**
+
 ```bash
 # If issues occur:
 cp src/mmt_security/tips.c.backup src/mmt_security/tips.c
@@ -502,6 +530,7 @@ cd sdk && make clean && make
 **Steps:**
 
 1. **Create backup**
+
 ```bash
 cp src/mmt_tcpip/lib/protocols/proto_dns.c src/mmt_tcpip/lib/protocols/proto_dns.c.backup
 ```
@@ -509,6 +538,7 @@ cp src/mmt_tcpip/lib/protocols/proto_dns.c src/mmt_tcpip/lib/protocols/proto_dns
 2. **Add recursion depth limit constant**
 
 Add at the top of proto_dns.c (after includes):
+
 ```c
 #define MAX_DNS_RECURSION_DEPTH 10
 #define MAX_DNS_NAME_LENGTH 255
@@ -517,11 +547,13 @@ Add at the top of proto_dns.c (after includes):
 3. **Modify dns_extract_name function signature**
 
 **Before (Line 218):**
+
 ```c
 dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_payload)
 ```
 
 **After:**
+
 ```c
 dns_name_t * dns_extract_name_internal(const u_char* dns_name_payload,
                                        const u_char* dns_payload,
@@ -532,6 +564,7 @@ dns_name_t * dns_extract_name_internal(const u_char* dns_name_payload,
 4. **Add depth checking logic**
 
 **After (Line 220-225):**
+
 ```c
 {
     // Check recursion depth
@@ -557,6 +590,7 @@ dns_name_t * dns_extract_name_internal(const u_char* dns_name_payload,
 5. **Update recursive calls with depth + 1**
 
 **Line 224 (compression pointer case):**
+
 ```c
 if(str_length == 192){
     // Validate we can read offset byte
@@ -578,6 +612,7 @@ if(str_length == 192){
 ```
 
 **Line 248 (next label case):**
+
 ```c
 dns_name->next = dns_extract_name_internal(dns_name_payload + str_length + 1,
                                           dns_payload,
@@ -588,6 +623,7 @@ dns_name->next = dns_extract_name_internal(dns_name_payload + str_length + 1,
 6. **Create wrapper function for backward compatibility**
 
 Add at the end of the file:
+
 ```c
 /**
  * Wrapper function that maintains original API
@@ -606,6 +642,7 @@ dns_name_t * dns_extract_name(const u_char* dns_name_payload,
 Find all calls to dns_extract_name and update to pass packet_end where available.
 
 8. **Compile and test**
+
 ```bash
 cd sdk
 make clean
@@ -620,6 +657,7 @@ fi
 ```
 
 9. **Create DNS recursion test**
+
 ```bash
 cat > test/unit/test_dns_recursion.c << 'EOF'
 #include <stdio.h>
@@ -658,6 +696,7 @@ gcc -o test/unit/test_dns_recursion test/unit/test_dns_recursion.c
 ```
 
 **Expected Output:**
+
 ```
 Testing DNS recursion depth limiting...
 ✓ Recursion blocked at depth 11
@@ -665,6 +704,7 @@ Testing DNS recursion depth limiting...
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Recursion depth limit enforced
 - [ ] Packet bounds checking added
 - [ ] All recursive calls pass depth parameter
@@ -673,6 +713,7 @@ Testing DNS recursion depth limiting...
 - [ ] Unit tests pass
 
 **Validation:**
+
 ```bash
 # Verify depth checking is in place
 grep -n "MAX_DNS_RECURSION_DEPTH" src/mmt_tcpip/lib/protocols/proto_dns.c
@@ -690,6 +731,7 @@ fi
 ```
 
 **Rollback Plan:**
+
 ```bash
 cp src/mmt_tcpip/lib/protocols/proto_dns.c.backup src/mmt_tcpip/lib/protocols/proto_dns.c
 cd sdk && make clean && make
@@ -708,6 +750,7 @@ cd sdk && make clean && make
 **Steps:**
 
 1. **Create backup**
+
 ```bash
 cp src/mmt_tcpip/lib/protocols/http.c src/mmt_tcpip/lib/protocols/http.c.backup
 ```
@@ -715,6 +758,7 @@ cp src/mmt_tcpip/lib/protocols/http.c src/mmt_tcpip/lib/protocols/http.c.backup
 2. **Add safety header include**
 
 At the top of http.c, add:
+
 ```c
 #include "../../mmt_core/public_include/mmt_safe_access.h"
 #include "../../mmt_core/public_include/mmt_safe_math.h"
@@ -723,6 +767,7 @@ At the top of http.c, add:
 3. **Fix URI parsing (lines 373-375)**
 
 **Before:**
+
 ```c
 http->requested_uri = (char *) mmt_malloc(uri_len + 1);
 memcpy(http->requested_uri, &ipacket->data[offset + line_first_element_offset], uri_len);
@@ -730,6 +775,7 @@ http->requested_uri[uri_len] = '\0';
 ```
 
 **After:**
+
 ```c
 // Validate URI length is reasonable
 #define MAX_URI_LENGTH 8192
@@ -766,6 +812,7 @@ http->requested_uri[uri_len] = '\0';
 4. **Fix header value parsing (lines 412-415)**
 
 **Before:**
+
 ```c
 http->session_field_values[header_index].value = (char *) mmt_malloc(value_len + 1);
 memcpy(http->session_field_values[header_index].value,
@@ -774,6 +821,7 @@ http->session_field_values[header_index].value[value_len] = '\0';
 ```
 
 **After:**
+
 ```c
 // Validate header value length
 #define MAX_HEADER_VALUE_LENGTH 16384
@@ -812,6 +860,7 @@ http->session_field_values[header_index].value[value_len] = '\0';
 ```
 
 5. **Add constants at top of file**
+
 ```c
 #define MAX_URI_LENGTH 8192
 #define MAX_HEADER_VALUE_LENGTH 16384
@@ -819,6 +868,7 @@ http->session_field_values[header_index].value[value_len] = '\0';
 ```
 
 6. **Compile and test**
+
 ```bash
 cd sdk
 make clean
@@ -834,6 +884,7 @@ fi
 ```
 
 7. **Create HTTP safety test**
+
 ```bash
 cat > test/unit/test_http_safety.c << 'EOF'
 #include <stdio.h>
@@ -886,6 +937,7 @@ gcc -o test/unit/test_http_safety test/unit/test_http_safety.c
 ```
 
 **Expected Output:**
+
 ```
 Testing HTTP safety features...
 ✓ URI length limit enforced
@@ -894,6 +946,7 @@ Testing HTTP safety features...
 ```
 
 **Acceptance Criteria:**
+
 - [ ] URI length validated and limited
 - [ ] Header value length validated and limited
 - [ ] Integer overflow checks added
@@ -903,6 +956,7 @@ Testing HTTP safety features...
 - [ ] Unit tests pass
 
 **Validation:**
+
 ```bash
 # Verify safety checks are in place
 grep -n "mmt_validate_offset" src/mmt_tcpip/lib/protocols/http.c
@@ -921,6 +975,7 @@ fi
 ```
 
 **Rollback Plan:**
+
 ```bash
 cp src/mmt_tcpip/lib/protocols/http.c.backup src/mmt_tcpip/lib/protocols/http.c
 cd sdk && make clean && make
@@ -939,11 +994,13 @@ cd sdk && make clean && make
 **Steps:**
 
 1. **Create backup**
+
 ```bash
 cp src/mmt_tcpip/lib/protocols/proto_gtp.c src/mmt_tcpip/lib/protocols/proto_gtp.c.backup
 ```
 
 2. **Add safety header include**
+
 ```c
 #include "../../mmt_core/public_include/mmt_safe_access.h"
 #include "../../mmt_core/public_include/mmt_safe_math.h"
@@ -952,6 +1009,7 @@ cp src/mmt_tcpip/lib/protocols/proto_gtp.c src/mmt_tcpip/lib/protocols/proto_gtp
 3. **Fix extension header loop (lines 110-122)**
 
 **Before:**
+
 ```c
 while( next_ext_header_type != 0 ){
     //the first byte of extension indicate its length in 4 bytes
@@ -966,6 +1024,7 @@ if( gtp_offset + offset > ipacket->p_hdr->caplen )
 ```
 
 **After:**
+
 ```c
 #define MAX_GTP_EXTENSION_HEADERS 10
 int ext_header_count = 0;
@@ -1041,11 +1100,13 @@ while( next_ext_header_type != 0 ){
 ```
 
 4. **Add constant at top of file**
+
 ```c
 #define MAX_GTP_EXTENSION_HEADERS 10
 ```
 
 5. **Compile and test**
+
 ```bash
 cd sdk
 make clean
@@ -1061,6 +1122,7 @@ fi
 ```
 
 6. **Create GTP safety test**
+
 ```bash
 cat > test/unit/test_gtp_safety.c << 'EOF'
 #include <stdio.h>
@@ -1111,6 +1173,7 @@ gcc -o test/unit/test_gtp_safety test/unit/test_gtp_safety.c
 ```
 
 **Expected Output:**
+
 ```
 Testing GTP safety features...
 ✓ Extension header loop terminated at 11
@@ -1119,6 +1182,7 @@ Testing GTP safety features...
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Bounds checking inside extension header loop
 - [ ] Maximum extension header count enforced
 - [ ] Zero-length extension detected
@@ -1127,6 +1191,7 @@ Testing GTP safety features...
 - [ ] Unit tests pass
 
 **Validation:**
+
 ```bash
 # Verify safety checks
 grep -n "MAX_GTP_EXTENSION_HEADERS" src/mmt_tcpip/lib/protocols/proto_gtp.c
@@ -1140,6 +1205,7 @@ grep -i "gtp\|error" test/build.log | grep -i "error" || echo "No GTP errors"
 ```
 
 **Rollback Plan:**
+
 ```bash
 cp src/mmt_tcpip/lib/protocols/proto_gtp.c.backup src/mmt_tcpip/lib/protocols/proto_gtp.c
 cd sdk && make clean && make
@@ -1158,11 +1224,13 @@ cd sdk && make clean && make
 **Steps:**
 
 1. **Create backup**
+
 ```bash
 cp src/mmt_tcpip/lib/protocols/proto_ip.c src/mmt_tcpip/lib/protocols/proto_ip.c.backup
 ```
 
 2. **Add safety includes**
+
 ```c
 #include "../../mmt_core/public_include/mmt_safe_math.h"
 ```
@@ -1170,12 +1238,14 @@ cp src/mmt_tcpip/lib/protocols/proto_ip.c src/mmt_tcpip/lib/protocols/proto_ip.c
 3. **Fix fragment offset calculation (line 169)**
 
 **Before:**
+
 ```c
 *((unsigned short *) extracted_data->data) =
     (ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff)<<3;
 ```
 
 **After:**
+
 ```c
 uint16_t frag_offset_raw = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset]));
 uint16_t frag_offset_13bit = frag_offset_raw & 0x1fff;
@@ -1195,12 +1265,14 @@ if (!mmt_safe_shl_u16(frag_offset_13bit, 3, &frag_offset_bytes)) {
 4. **Fix addition overflow (line 178)**
 
 **Before:**
+
 ```c
 if((ntohs(ipacket->internal_packet->iph->tot_len) +
     ipacket->internal_packet->payload_packet_len + 14 != 60)){
 ```
 
 **After:**
+
 ```c
 uint16_t ip_tot_len = ntohs(ipacket->internal_packet->iph->tot_len);
 uint32_t combined_len;
@@ -1214,6 +1286,7 @@ if (!mmt_safe_add_u32(ip_tot_len, ipacket->internal_packet->payload_packet_len, 
 ```
 
 5. **Compile and test**
+
 ```bash
 cd sdk
 make clean
@@ -1229,6 +1302,7 @@ fi
 ```
 
 6. **Create IP safety test**
+
 ```bash
 cat > test/unit/test_ip_safety.c << 'EOF'
 #include <stdio.h>
@@ -1282,6 +1356,7 @@ gcc -o test/unit/test_ip_safety test/unit/test_ip_safety.c
 ```
 
 **Expected Output:**
+
 ```
 Testing IP safety features...
 ✓ Valid fragment offset shift: 0x1fff -> 0xfff8
@@ -1290,6 +1365,7 @@ Testing IP safety features...
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Fragment offset shift uses safe math
 - [ ] Length addition uses overflow checking
 - [ ] Compilation successful
@@ -1297,6 +1373,7 @@ Testing IP safety features...
 - [ ] Unit tests pass
 
 **Validation:**
+
 ```bash
 # Verify safe math usage
 grep -n "mmt_safe_shl_u16\|mmt_safe_add_u32" src/mmt_tcpip/lib/protocols/proto_ip.c
@@ -1309,6 +1386,7 @@ grep -i "shift\|overflow" test/build.log | grep -i "warning\|error" || echo "No 
 ```
 
 **Rollback Plan:**
+
 ```bash
 cp src/mmt_tcpip/lib/protocols/proto_ip.c.backup src/mmt_tcpip/lib/protocols/proto_ip.c
 cd sdk && make clean && make
@@ -1394,12 +1472,14 @@ echo "All critical security fixes applied and tested successfully!"
 ```
 
 Save as `test/scripts/validate_phase1.sh` and run:
+
 ```bash
 chmod +x test/scripts/validate_phase1.sh
 ./test/scripts/validate_phase1.sh
 ```
 
 **Phase 1 Acceptance Criteria:**
+
 - [ ] All unsafe string functions replaced
 - [ ] DNS recursion depth limited
 - [ ] HTTP bounds checking added
@@ -1631,12 +1711,14 @@ if (mmt_handler->session_pool) {
 7. **Replace ipacket allocation in packet_processing.c:3330**
 
 **Before:**
+
 ```c
 ipacket = mmt_malloc(sizeof(ipacket_t));
 ipacket->data = mmt_malloc(header->caplen);
 ```
 
 **After:**
+
 ```c
 ipacket = mempool_alloc(mmt_handler->ipacket_pool);
 if (!ipacket) {
@@ -1743,6 +1825,7 @@ gcc -o test/performance/bench_mempool test/performance/bench_mempool.c \
 ```
 
 **Expected Output:**
+
 ```
 Memory Pool Benchmark (1000000 iterations)
 =====================================
@@ -1751,6 +1834,7 @@ mempool:     0.82 seconds, 1219512 ops/sec
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Memory pool implementation complete
 - [ ] Integrated into mmt_handler_t
 - [ ] ipacket allocation uses pool
@@ -1759,6 +1843,7 @@ mempool:     0.82 seconds, 1219512 ops/sec
 - [ ] No memory leaks (verify with valgrind)
 
 **Validation:**
+
 ```bash
 # Run benchmark
 ./test/performance/bench_mempool
@@ -1779,42 +1864,51 @@ valgrind --leak-check=full ./test/performance/bench_mempool 2>&1 | grep "definit
 ### Remaining Tasks Summary
 
 **Task 2.2: Optimize Hash Table** (8h)
+
 - Increase NSLOTS to 4096
 - Use bitmask instead of modulo
 - Implement better hash function
 
 **Task 2.3: Replace std::map with unordered_map** (12h)
+
 - Update hash_utils.cpp
 - Change session storage
 - Benchmark improvements
 
 **Task 2.4: Optimize Session Initialization** (4h)
+
 - Replace individual assignments with memset
 - Only set non-zero fields
 
 **Task 2.5: Add Function Inlining** (8h)
+
 - Mark hot path functions with `__always_inline`
 - Verify with profiling
 
 **Phase 2 Validation Script** (4h)
+
 - Performance benchmarks
 - Throughput testing
 - Regression testing
 
 **Task 3.1-3.3: Thread Safety** (48h)
+
 - Add protocol registry locks
 - Session map protection
 - Atomic statistics counters
 
 **Task 4.1-4.2: Input Validation** (80h)
+
 - Systematic bounds checking
 - Fuzzing infrastructure setup
 
 **Task 5.1-5.2: Error Handling** (32h)
+
 - Standardized error framework
 - Logging infrastructure
 
 Each task will follow the same pattern:
+
 1. Backup files
 2. Make changes
 3. Compile and test

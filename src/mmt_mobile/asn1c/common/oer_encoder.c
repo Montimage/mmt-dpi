@@ -138,4 +138,3 @@ oer_open_type_put(const asn_TYPE_descriptor_t *td,
 
     return len_len + er.encoded;
 }
-

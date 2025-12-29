@@ -11,14 +11,14 @@ typedef struct mempool_struct mempool_t;
  * @param num_blocks Number of blocks to allocate
  * @return Pointer to pool, or NULL on failure
  */
-mempool_t* mempool_create(size_t block_size, size_t num_blocks);
+mempool_t *mempool_create(size_t block_size, size_t num_blocks);
 
 /**
  * Allocate a block from the pool
  * @param pool The memory pool
  * @return Pointer to block, or NULL if pool is exhausted
  */
-void* mempool_alloc(mempool_t *pool);
+void *mempool_alloc(mempool_t *pool);
 
 /**
  * Free a block back to the pool

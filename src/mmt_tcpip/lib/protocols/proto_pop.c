@@ -104,7 +104,7 @@ static int mmt_int_mail_pop_check_for_client_commands(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_pop(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -279,5 +279,3 @@ int init_proto_pop_struct() {
         return 0;
     }
 }
-
-

@@ -10,11 +10,9 @@
 
 int init_proto_compaq_peer_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_COMPAQ_PEER, PROTO_COMPAQ_PEER_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_COMPAQ_PEER);
     } else {
         return 0;
     }
 }
-
-

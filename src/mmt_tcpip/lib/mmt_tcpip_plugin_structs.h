@@ -650,10 +650,10 @@ struct mmt_tcpip_internal_packet_struct {
     uint8_t packet_lines_parsed_complete;
     uint8_t packet_unix_lines_parsed_complete;
     uint8_t empty_line_position_set;
-    
-    //TODO: BW temporary solution waiting the TCP segmentation 
+
+    //TODO: BW temporary solution waiting the TCP segmentation
     uint32_t tcp_outoforder;
-    
+
     // uint8_t packet_direction:1;
     uint64_t packet_id;
 

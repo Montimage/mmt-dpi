@@ -280,7 +280,7 @@ int gtp_seq_num_extraction(const ipacket_t * packet, unsigned proto_index,
 		int attribute_offset = extracted_data->position_in_packet;
 		*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset]));
 		return 1;
-	} 
+	}
 	return 0;
 }
 
@@ -291,7 +291,7 @@ int gtp_imsi_mmc_extraction(const ipacket_t * packet, unsigned proto_index,
 	if(packet->data[proto_offset + 1] == 0x10){
 		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
 		return 1;
-	} 
+	}
 	extracted_data->data = NULL;
 	return 0;
 }
@@ -303,7 +303,7 @@ int gtp_imsi_mnc_extraction(const ipacket_t * packet, unsigned proto_index,
 	if(packet->data[proto_offset + 1] == 0x10){
 		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
 		return 1;
-	} 
+	}
 	extracted_data->data = NULL;
 	return 0;
 }
@@ -396,5 +396,3 @@ int init_proto_gtp_struct() {
 		return 0;
 	}
 }
-
-

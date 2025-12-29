@@ -25,7 +25,7 @@ struct NGAP_QosFlowInformationItem;
 /* NGAP_QosFlowInformationList */
 typedef struct NGAP_QosFlowInformationList {
 	A_SEQUENCE_OF(struct NGAP_QosFlowInformationItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowInformationList_t;

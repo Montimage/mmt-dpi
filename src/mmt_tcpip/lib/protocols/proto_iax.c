@@ -104,5 +104,3 @@ int init_proto_iax_struct() {
         return 0;
     }
 }
-
-

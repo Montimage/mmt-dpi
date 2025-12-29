@@ -25,7 +25,7 @@ struct NGAP_XnExtTLA_Item;
 /* NGAP_XnExtTLAs */
 typedef struct NGAP_XnExtTLAs {
 	A_SEQUENCE_OF(struct NGAP_XnExtTLA_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_XnExtTLAs_t;

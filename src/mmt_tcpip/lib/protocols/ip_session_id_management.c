@@ -248,7 +248,7 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
     internal_ip_proto_context_t * tcpip_context = (internal_ip_proto_context_t *) ((protocol_instance_t *) protocol_context)->args;
 
     retval = (mmt_session_t *) get_session_from_protocol_context_by_session_key(protocol_context, (void *) session_key);
-    
+
     if (retval == NULL) {
         *is_new = 1;
 
@@ -374,7 +374,7 @@ int proto_ip_frag_packet_count_extraction(const ipacket_t * packet, unsigned pro
 int proto_ip_frag_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
                                  attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    
+
     // if(configured_protocol->protocol->proto_id != PROTO_ID){
     //     return 0;
     // }
@@ -409,7 +409,7 @@ int proto_ip_df_packet_count_extraction(const ipacket_t * packet, unsigned proto
 int proto_ip_df_data_volume_extraction(const ipacket_t * packet, unsigned proto_index,
                                  attribute_t * extracted_data) {
     protocol_instance_t * configured_protocol = &(packet->mmt_handler)->configured_protocols[packet->proto_hierarchy->proto_path[proto_index]];
-    
+
     // if(configured_protocol->protocol->proto_id != PROTO_ID){
     //     return 0;
     // }

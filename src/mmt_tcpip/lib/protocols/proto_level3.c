@@ -10,11 +10,9 @@
 
 int init_proto_level3_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_LEVEL3, PROTO_LEVEL3_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_LEVEL3);
     } else {
         return 0;
     }
 }
-
-

@@ -100,4 +100,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_E_RABToBeSetupItemBearerSUReq = {
 	6,	/* Elements count */
 	&asn_SPC_S1ap_E_RABToBeSetupItemBearerSUReq_specs_1	/* Additional specs */
 };
-

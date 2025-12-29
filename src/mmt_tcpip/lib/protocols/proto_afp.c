@@ -111,5 +111,3 @@ int init_proto_afp_struct() {
         return 0;
     }
 }
-
-

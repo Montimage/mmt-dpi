@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceReleasedItemPSFail;
 /* NGAP_PDUSessionResourceReleasedListPSFail */
 typedef struct NGAP_PDUSessionResourceReleasedListPSFail {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceReleasedItemPSFail) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceReleasedListPSFail_t;

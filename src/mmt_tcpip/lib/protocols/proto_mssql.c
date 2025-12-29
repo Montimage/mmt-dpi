@@ -57,7 +57,7 @@ int mmt_check_mssql(ipacket_t * ipacket, unsigned index) {
         if(ntohs(packet->tcp->dest)!=102 && ntohs(packet->tcp->source)!=102){ // port 102: for TPKT protocol (COTP protocols)
             // LN: Detect PROTO_MSSQL
             if(packet->payload_packet_len > sizeof(struct tds_packet_header)){
-            
+
                 struct tds_packet_header *h = (struct tds_packet_header*) packet->payload;
 
                 if ((h->type >= 1 && h->type <= 8) || (h->type >= 14 && h->type <= 18)) {
@@ -69,7 +69,7 @@ int mmt_check_mssql(ipacket_t * ipacket, unsigned index) {
                         }
                     }
                 }
-            // end of LN: Detect PROTO_MSSQL            
+            // end of LN: Detect PROTO_MSSQL
             // if (packet->payload_packet_len > 51 && ntohs(get_u32(packet->payload, 0)) == 0x1201
             //         && ntohs(get_u16(packet->payload, 2)) == packet->payload_packet_len
             //         && ntohl(get_u32(packet->payload, 4)) == 0x00000100 && mmt_memcmp(&packet->payload[41], "sqlexpress", 10) == 0) {
@@ -104,5 +104,3 @@ int init_proto_mssql_struct() {
         return 0;
     }
 }
-
-

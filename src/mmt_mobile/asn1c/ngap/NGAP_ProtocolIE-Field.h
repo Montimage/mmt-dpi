@@ -158,111 +158,111 @@ extern "C" {
 /* Dependencies */
 typedef enum NGAP_AMFPagingTarget_ExtIEs__value_PR {
 	NGAP_AMFPagingTarget_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_AMFPagingTarget_ExtIEs__value_PR;
 typedef enum NGAP_BroadcastCancelledAreaList_ExtIEs__value_PR {
 	NGAP_BroadcastCancelledAreaList_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_BroadcastCancelledAreaList_ExtIEs__value_PR;
 typedef enum NGAP_BroadcastCompletedAreaList_ExtIEs__value_PR {
 	NGAP_BroadcastCompletedAreaList_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_BroadcastCompletedAreaList_ExtIEs__value_PR;
 typedef enum NGAP_Cause_ExtIEs__value_PR {
 	NGAP_Cause_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_Cause_ExtIEs__value_PR;
 typedef enum NGAP_CellIDListForRestart_ExtIEs__value_PR {
 	NGAP_CellIDListForRestart_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_CellIDListForRestart_ExtIEs__value_PR;
 typedef enum NGAP_CPTransportLayerInformation_ExtIEs__value_PR {
 	NGAP_CPTransportLayerInformation_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_CPTransportLayerInformation_ExtIEs__value_PR;
 typedef enum NGAP_DRBStatusDL_ExtIEs__value_PR {
 	NGAP_DRBStatusDL_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_DRBStatusDL_ExtIEs__value_PR;
 typedef enum NGAP_DRBStatusUL_ExtIEs__value_PR {
 	NGAP_DRBStatusUL_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_DRBStatusUL_ExtIEs__value_PR;
 typedef enum NGAP_GlobalRANNodeID_ExtIEs__value_PR {
 	NGAP_GlobalRANNodeID_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_GlobalRANNodeID_ExtIEs__value_PR;
 typedef enum NGAP_GNB_ID_ExtIEs__value_PR {
 	NGAP_GNB_ID_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_GNB_ID_ExtIEs__value_PR;
 typedef enum NGAP_LastVisitedCellInformation_ExtIEs__value_PR {
 	NGAP_LastVisitedCellInformation_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_LastVisitedCellInformation_ExtIEs__value_PR;
 typedef enum NGAP_N3IWF_ID_ExtIEs__value_PR {
 	NGAP_N3IWF_ID_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_N3IWF_ID_ExtIEs__value_PR;
 typedef enum NGAP_NgENB_ID_ExtIEs__value_PR {
 	NGAP_NgENB_ID_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_NgENB_ID_ExtIEs__value_PR;
 typedef enum NGAP_NGRAN_CGI_ExtIEs__value_PR {
 	NGAP_NGRAN_CGI_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_NGRAN_CGI_ExtIEs__value_PR;
 typedef enum NGAP_OverloadResponse_ExtIEs__value_PR {
 	NGAP_OverloadResponse_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_OverloadResponse_ExtIEs__value_PR;
 typedef enum NGAP_PWSFailedCellIDList_ExtIEs__value_PR {
 	NGAP_PWSFailedCellIDList_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_PWSFailedCellIDList_ExtIEs__value_PR;
 typedef enum NGAP_QosCharacteristics_ExtIEs__value_PR {
 	NGAP_QosCharacteristics_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_QosCharacteristics_ExtIEs__value_PR;
 typedef enum NGAP_ResetType_ExtIEs__value_PR {
 	NGAP_ResetType_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_ResetType_ExtIEs__value_PR;
 typedef enum NGAP_SONInformation_ExtIEs__value_PR {
 	NGAP_SONInformation_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_SONInformation_ExtIEs__value_PR;
 typedef enum NGAP_TargetID_ExtIEs__value_PR {
 	NGAP_TargetID_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_TargetID_ExtIEs__value_PR;
 typedef enum NGAP_UEIdentityIndexValue_ExtIEs__value_PR {
 	NGAP_UEIdentityIndexValue_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_UEIdentityIndexValue_ExtIEs__value_PR;
 typedef enum NGAP_UE_NGAP_IDs_ExtIEs__value_PR {
 	NGAP_UE_NGAP_IDs_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_UE_NGAP_IDs_ExtIEs__value_PR;
 typedef enum NGAP_UEPagingIdentity_ExtIEs__value_PR {
 	NGAP_UEPagingIdentity_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_UEPagingIdentity_ExtIEs__value_PR;
 typedef enum NGAP_UP_TNLInformation_ExtIEs__value_PR {
 	NGAP_UP_TNLInformation_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_UP_TNLInformation_ExtIEs__value_PR;
 typedef enum NGAP_UPTransportLayerInformation_ExtIEs__value_PR {
 	NGAP_UPTransportLayerInformation_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_UPTransportLayerInformation_ExtIEs__value_PR;
 typedef enum NGAP_UserLocationInformation_ExtIEs__value_PR {
 	NGAP_UserLocationInformation_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_UserLocationInformation_ExtIEs__value_PR;
 typedef enum NGAP_WarningAreaList_ExtIEs__value_PR {
 	NGAP_WarningAreaList_ExtIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_WarningAreaList_ExtIEs__value_PR;
 typedef enum NGAP_PDUSessionResourceModifyRequestTransferIEs__value_PR {
 	NGAP_PDUSessionResourceModifyRequestTransferIEs__value_PR_NOTHING,	/* No components present */
@@ -717,7 +717,7 @@ typedef enum NGAP_OverloadStartIEs__value_PR {
 } NGAP_OverloadStartIEs__value_PR;
 typedef enum NGAP_OverloadStopIEs__value_PR {
 	NGAP_OverloadStopIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_OverloadStopIEs__value_PR;
 typedef enum NGAP_UplinkRANConfigurationTransferIEs__value_PR {
 	NGAP_UplinkRANConfigurationTransferIEs__value_PR_NOTHING,	/* No components present */
@@ -879,11 +879,11 @@ typedef struct NGAP_AMFPagingTarget_ExtIEs {
 		NGAP_AMFPagingTarget_ExtIEs__value_PR present;
 		union NGAP_AMFPagingTarget_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AMFPagingTarget_ExtIEs_t;
@@ -894,11 +894,11 @@ typedef struct NGAP_BroadcastCancelledAreaList_ExtIEs {
 		NGAP_BroadcastCancelledAreaList_ExtIEs__value_PR present;
 		union NGAP_BroadcastCancelledAreaList_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_BroadcastCancelledAreaList_ExtIEs_t;
@@ -909,11 +909,11 @@ typedef struct NGAP_BroadcastCompletedAreaList_ExtIEs {
 		NGAP_BroadcastCompletedAreaList_ExtIEs__value_PR present;
 		union NGAP_BroadcastCompletedAreaList_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_BroadcastCompletedAreaList_ExtIEs_t;
@@ -924,11 +924,11 @@ typedef struct NGAP_Cause_ExtIEs {
 		NGAP_Cause_ExtIEs__value_PR present;
 		union NGAP_Cause_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_Cause_ExtIEs_t;
@@ -939,11 +939,11 @@ typedef struct NGAP_CellIDListForRestart_ExtIEs {
 		NGAP_CellIDListForRestart_ExtIEs__value_PR present;
 		union NGAP_CellIDListForRestart_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CellIDListForRestart_ExtIEs_t;
@@ -954,11 +954,11 @@ typedef struct NGAP_CPTransportLayerInformation_ExtIEs {
 		NGAP_CPTransportLayerInformation_ExtIEs__value_PR present;
 		union NGAP_CPTransportLayerInformation_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CPTransportLayerInformation_ExtIEs_t;
@@ -969,11 +969,11 @@ typedef struct NGAP_DRBStatusDL_ExtIEs {
 		NGAP_DRBStatusDL_ExtIEs__value_PR present;
 		union NGAP_DRBStatusDL_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DRBStatusDL_ExtIEs_t;
@@ -984,11 +984,11 @@ typedef struct NGAP_DRBStatusUL_ExtIEs {
 		NGAP_DRBStatusUL_ExtIEs__value_PR present;
 		union NGAP_DRBStatusUL_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DRBStatusUL_ExtIEs_t;
@@ -999,11 +999,11 @@ typedef struct NGAP_GlobalRANNodeID_ExtIEs {
 		NGAP_GlobalRANNodeID_ExtIEs__value_PR present;
 		union NGAP_GlobalRANNodeID_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_GlobalRANNodeID_ExtIEs_t;
@@ -1014,11 +1014,11 @@ typedef struct NGAP_GNB_ID_ExtIEs {
 		NGAP_GNB_ID_ExtIEs__value_PR present;
 		union NGAP_GNB_ID_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_GNB_ID_ExtIEs_t;
@@ -1029,11 +1029,11 @@ typedef struct NGAP_LastVisitedCellInformation_ExtIEs {
 		NGAP_LastVisitedCellInformation_ExtIEs__value_PR present;
 		union NGAP_LastVisitedCellInformation_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_LastVisitedCellInformation_ExtIEs_t;
@@ -1044,11 +1044,11 @@ typedef struct NGAP_N3IWF_ID_ExtIEs {
 		NGAP_N3IWF_ID_ExtIEs__value_PR present;
 		union NGAP_N3IWF_ID_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_N3IWF_ID_ExtIEs_t;
@@ -1059,11 +1059,11 @@ typedef struct NGAP_NgENB_ID_ExtIEs {
 		NGAP_NgENB_ID_ExtIEs__value_PR present;
 		union NGAP_NgENB_ID_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NgENB_ID_ExtIEs_t;
@@ -1074,11 +1074,11 @@ typedef struct NGAP_NGRAN_CGI_ExtIEs {
 		NGAP_NGRAN_CGI_ExtIEs__value_PR present;
 		union NGAP_NGRAN_CGI_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NGRAN_CGI_ExtIEs_t;
@@ -1089,11 +1089,11 @@ typedef struct NGAP_OverloadResponse_ExtIEs {
 		NGAP_OverloadResponse_ExtIEs__value_PR present;
 		union NGAP_OverloadResponse_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_OverloadResponse_ExtIEs_t;
@@ -1104,11 +1104,11 @@ typedef struct NGAP_PWSFailedCellIDList_ExtIEs {
 		NGAP_PWSFailedCellIDList_ExtIEs__value_PR present;
 		union NGAP_PWSFailedCellIDList_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PWSFailedCellIDList_ExtIEs_t;
@@ -1119,11 +1119,11 @@ typedef struct NGAP_QosCharacteristics_ExtIEs {
 		NGAP_QosCharacteristics_ExtIEs__value_PR present;
 		union NGAP_QosCharacteristics_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosCharacteristics_ExtIEs_t;
@@ -1134,11 +1134,11 @@ typedef struct NGAP_ResetType_ExtIEs {
 		NGAP_ResetType_ExtIEs__value_PR present;
 		union NGAP_ResetType_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_ResetType_ExtIEs_t;
@@ -1149,11 +1149,11 @@ typedef struct NGAP_SONInformation_ExtIEs {
 		NGAP_SONInformation_ExtIEs__value_PR present;
 		union NGAP_SONInformation_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_SONInformation_ExtIEs_t;
@@ -1164,11 +1164,11 @@ typedef struct NGAP_TargetID_ExtIEs {
 		NGAP_TargetID_ExtIEs__value_PR present;
 		union NGAP_TargetID_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TargetID_ExtIEs_t;
@@ -1179,11 +1179,11 @@ typedef struct NGAP_UEIdentityIndexValue_ExtIEs {
 		NGAP_UEIdentityIndexValue_ExtIEs__value_PR present;
 		union NGAP_UEIdentityIndexValue_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEIdentityIndexValue_ExtIEs_t;
@@ -1194,11 +1194,11 @@ typedef struct NGAP_UE_NGAP_IDs_ExtIEs {
 		NGAP_UE_NGAP_IDs_ExtIEs__value_PR present;
 		union NGAP_UE_NGAP_IDs_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UE_NGAP_IDs_ExtIEs_t;
@@ -1209,11 +1209,11 @@ typedef struct NGAP_UEPagingIdentity_ExtIEs {
 		NGAP_UEPagingIdentity_ExtIEs__value_PR present;
 		union NGAP_UEPagingIdentity_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEPagingIdentity_ExtIEs_t;
@@ -1224,11 +1224,11 @@ typedef struct NGAP_UP_TNLInformation_ExtIEs {
 		NGAP_UP_TNLInformation_ExtIEs__value_PR present;
 		union NGAP_UP_TNLInformation_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UP_TNLInformation_ExtIEs_t;
@@ -1239,11 +1239,11 @@ typedef struct NGAP_UPTransportLayerInformation_ExtIEs {
 		NGAP_UPTransportLayerInformation_ExtIEs__value_PR present;
 		union NGAP_UPTransportLayerInformation_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UPTransportLayerInformation_ExtIEs_t;
@@ -1254,11 +1254,11 @@ typedef struct NGAP_UserLocationInformation_ExtIEs {
 		NGAP_UserLocationInformation_ExtIEs__value_PR present;
 		union NGAP_UserLocationInformation_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UserLocationInformation_ExtIEs_t;
@@ -1269,11 +1269,11 @@ typedef struct NGAP_WarningAreaList_ExtIEs {
 		NGAP_WarningAreaList_ExtIEs__value_PR present;
 		union NGAP_WarningAreaList_ExtIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_WarningAreaList_ExtIEs_t;
@@ -1290,11 +1290,11 @@ typedef struct NGAP_PDUSessionResourceModifyRequestTransferIEs {
 			NGAP_QosFlowList_t	 QosFlowList;
 			NGAP_UPTransportLayerInformation_t	 UPTransportLayerInformation;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceModifyRequestTransferIEs_t;
@@ -1313,11 +1313,11 @@ typedef struct NGAP_PDUSessionResourceSetupRequestTransferIEs {
 			NGAP_NetworkInstance_t	 NetworkInstance;
 			NGAP_QosFlowSetupRequestList_t	 QosFlowSetupRequestList;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceSetupRequestTransferIEs_t;
@@ -1333,11 +1333,11 @@ typedef struct NGAP_PDUSessionResourceSetupRequestIEs {
 			NGAP_NAS_PDU_t	 NAS_PDU;
 			NGAP_PDUSessionResourceSetupListSUReq_t	 PDUSessionResourceSetupListSUReq;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceSetupRequestIEs_t;
@@ -1353,11 +1353,11 @@ typedef struct NGAP_PDUSessionResourceSetupResponseIEs {
 			NGAP_PDUSessionResourceFailedToSetupListSURes_t	 PDUSessionResourceFailedToSetupListSURes;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceSetupResponseIEs_t;
@@ -1373,11 +1373,11 @@ typedef struct NGAP_PDUSessionResourceReleaseCommandIEs {
 			NGAP_NAS_PDU_t	 NAS_PDU;
 			NGAP_PDUSessionResourceToReleaseListRelCmd_t	 PDUSessionResourceToReleaseListRelCmd;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceReleaseCommandIEs_t;
@@ -1393,11 +1393,11 @@ typedef struct NGAP_PDUSessionResourceReleaseResponseIEs {
 			NGAP_UserLocationInformation_t	 UserLocationInformation;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceReleaseResponseIEs_t;
@@ -1412,11 +1412,11 @@ typedef struct NGAP_PDUSessionResourceModifyRequestIEs {
 			NGAP_RANPagingPriority_t	 RANPagingPriority;
 			NGAP_PDUSessionResourceModifyListModReq_t	 PDUSessionResourceModifyListModReq;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceModifyRequestIEs_t;
@@ -1433,11 +1433,11 @@ typedef struct NGAP_PDUSessionResourceModifyResponseIEs {
 			NGAP_UserLocationInformation_t	 UserLocationInformation;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceModifyResponseIEs_t;
@@ -1453,11 +1453,11 @@ typedef struct NGAP_PDUSessionResourceNotifyIEs {
 			NGAP_PDUSessionResourceReleasedListNot_t	 PDUSessionResourceReleasedListNot;
 			NGAP_UserLocationInformation_t	 UserLocationInformation;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceNotifyIEs_t;
@@ -1471,11 +1471,11 @@ typedef struct NGAP_PDUSessionResourceModifyIndicationIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_PDUSessionResourceModifyListModInd_t	 PDUSessionResourceModifyListModInd;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceModifyIndicationIEs_t;
@@ -1491,11 +1491,11 @@ typedef struct NGAP_PDUSessionResourceModifyConfirmIEs {
 			NGAP_PDUSessionResourceFailedToModifyListModCfm_t	 PDUSessionResourceFailedToModifyListModCfm;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceModifyConfirmIEs_t;
@@ -1525,11 +1525,11 @@ typedef struct NGAP_InitialContextSetupRequestIEs {
 			NGAP_RRCInactiveTransitionReportRequest_t	 RRCInactiveTransitionReportRequest;
 			NGAP_UERadioCapabilityForPaging_t	 UERadioCapabilityForPaging;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_InitialContextSetupRequestIEs_t;
@@ -1545,11 +1545,11 @@ typedef struct NGAP_InitialContextSetupResponseIEs {
 			NGAP_PDUSessionResourceFailedToSetupListCxtRes_t	 PDUSessionResourceFailedToSetupListCxtRes;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_InitialContextSetupResponseIEs_t;
@@ -1565,11 +1565,11 @@ typedef struct NGAP_InitialContextSetupFailureIEs {
 			NGAP_Cause_t	 Cause;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_InitialContextSetupFailureIEs_t;
@@ -1584,11 +1584,11 @@ typedef struct NGAP_UEContextReleaseRequest_IEs {
 			NGAP_PDUSessionResourceListCxtRelReq_t	 PDUSessionResourceListCxtRelReq;
 			NGAP_Cause_t	 Cause;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEContextReleaseRequest_IEs_t;
@@ -1601,11 +1601,11 @@ typedef struct NGAP_UEContextReleaseCommand_IEs {
 			NGAP_UE_NGAP_IDs_t	 UE_NGAP_IDs;
 			NGAP_Cause_t	 Cause;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEContextReleaseCommand_IEs_t;
@@ -1622,11 +1622,11 @@ typedef struct NGAP_UEContextReleaseComplete_IEs {
 			NGAP_PDUSessionResourceListCxtRelCpl_t	 PDUSessionResourceListCxtRelCpl;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEContextReleaseComplete_IEs_t;
@@ -1648,11 +1648,11 @@ typedef struct NGAP_UEContextModificationRequestIEs {
 			NGAP_AMF_UE_NGAP_ID_t	 AMF_UE_NGAP_ID_1;
 			NGAP_RRCInactiveTransitionReportRequest_t	 RRCInactiveTransitionReportRequest;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEContextModificationRequestIEs_t;
@@ -1668,11 +1668,11 @@ typedef struct NGAP_UEContextModificationResponseIEs {
 			NGAP_UserLocationInformation_t	 UserLocationInformation;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEContextModificationResponseIEs_t;
@@ -1687,11 +1687,11 @@ typedef struct NGAP_UEContextModificationFailureIEs {
 			NGAP_Cause_t	 Cause;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEContextModificationFailureIEs_t;
@@ -1706,11 +1706,11 @@ typedef struct NGAP_RRCInactiveTransitionReportIEs {
 			NGAP_RRCState_t	 RRCState;
 			NGAP_UserLocationInformation_t	 UserLocationInformation;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_RRCInactiveTransitionReportIEs_t;
@@ -1729,11 +1729,11 @@ typedef struct NGAP_HandoverRequiredIEs {
 			NGAP_PDUSessionResourceListHORqd_t	 PDUSessionResourceListHORqd;
 			NGAP_SourceToTarget_TransparentContainer_t	 SourceToTarget_TransparentContainer;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverRequiredIEs_t;
@@ -1752,11 +1752,11 @@ typedef struct NGAP_HandoverCommandIEs {
 			NGAP_TargetToSource_TransparentContainer_t	 TargetToSource_TransparentContainer;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverCommandIEs_t;
@@ -1771,11 +1771,11 @@ typedef struct NGAP_HandoverPreparationFailureIEs {
 			NGAP_Cause_t	 Cause;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverPreparationFailureIEs_t;
@@ -1804,11 +1804,11 @@ typedef struct NGAP_HandoverRequestIEs {
 			NGAP_RRCInactiveTransitionReportRequest_t	 RRCInactiveTransitionReportRequest;
 			NGAP_GUAMI_t	 GUAMI;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverRequestIEs_t;
@@ -1825,11 +1825,11 @@ typedef struct NGAP_HandoverRequestAcknowledgeIEs {
 			NGAP_TargetToSource_TransparentContainer_t	 TargetToSource_TransparentContainer;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverRequestAcknowledgeIEs_t;
@@ -1843,11 +1843,11 @@ typedef struct NGAP_HandoverFailureIEs {
 			NGAP_Cause_t	 Cause;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverFailureIEs_t;
@@ -1861,11 +1861,11 @@ typedef struct NGAP_HandoverNotifyIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_UserLocationInformation_t	 UserLocationInformation;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverNotifyIEs_t;
@@ -1882,11 +1882,11 @@ typedef struct NGAP_PathSwitchRequestIEs {
 			NGAP_PDUSessionResourceToBeSwitchedDLList_t	 PDUSessionResourceToBeSwitchedDLList;
 			NGAP_PDUSessionResourceFailedToSetupListPSReq_t	 PDUSessionResourceFailedToSetupListPSReq;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PathSwitchRequestIEs_t;
@@ -1908,11 +1908,11 @@ typedef struct NGAP_PathSwitchRequestAcknowledgeIEs {
 			NGAP_RRCInactiveTransitionReportRequest_t	 RRCInactiveTransitionReportRequest;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PathSwitchRequestAcknowledgeIEs_t;
@@ -1927,11 +1927,11 @@ typedef struct NGAP_PathSwitchRequestFailureIEs {
 			NGAP_PDUSessionResourceReleasedListPSFail_t	 PDUSessionResourceReleasedListPSFail;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PathSwitchRequestFailureIEs_t;
@@ -1945,11 +1945,11 @@ typedef struct NGAP_HandoverCancelIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_Cause_t	 Cause;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverCancelIEs_t;
@@ -1963,11 +1963,11 @@ typedef struct NGAP_HandoverCancelAcknowledgeIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_HandoverCancelAcknowledgeIEs_t;
@@ -1981,11 +1981,11 @@ typedef struct NGAP_UplinkRANStatusTransferIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_RANStatusTransfer_TransparentContainer_t	 RANStatusTransfer_TransparentContainer;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UplinkRANStatusTransferIEs_t;
@@ -1999,11 +1999,11 @@ typedef struct NGAP_DownlinkRANStatusTransferIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_RANStatusTransfer_TransparentContainer_t	 RANStatusTransfer_TransparentContainer;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DownlinkRANStatusTransferIEs_t;
@@ -2021,11 +2021,11 @@ typedef struct NGAP_PagingIEs {
 			NGAP_PagingOrigin_t	 PagingOrigin;
 			NGAP_AssistanceDataForPaging_t	 AssistanceDataForPaging;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PagingIEs_t;
@@ -2044,11 +2044,11 @@ typedef struct NGAP_InitialUEMessage_IEs {
 			NGAP_UEContextRequest_t	 UEContextRequest;
 			NGAP_AllowedNSSAI_t	 AllowedNSSAI;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_InitialUEMessage_IEs_t;
@@ -2068,11 +2068,11 @@ typedef struct NGAP_DownlinkNASTransport_IEs {
 			NGAP_UEAggregateMaximumBitRate_t	 UEAggregateMaximumBitRate;
 			NGAP_AllowedNSSAI_t	 AllowedNSSAI;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DownlinkNASTransport_IEs_t;
@@ -2087,11 +2087,11 @@ typedef struct NGAP_UplinkNASTransport_IEs {
 			NGAP_NAS_PDU_t	 NAS_PDU;
 			NGAP_UserLocationInformation_t	 UserLocationInformation;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UplinkNASTransport_IEs_t;
@@ -2106,11 +2106,11 @@ typedef struct NGAP_NASNonDeliveryIndication_IEs {
 			NGAP_NAS_PDU_t	 NAS_PDU;
 			NGAP_Cause_t	 Cause;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NASNonDeliveryIndication_IEs_t;
@@ -2126,11 +2126,11 @@ typedef struct NGAP_RerouteNASRequest_IEs {
 			NGAP_AMFSetID_t	 AMFSetID;
 			NGAP_AllowedNSSAI_t	 AllowedNSSAI;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_RerouteNASRequest_IEs_t;
@@ -2145,11 +2145,11 @@ typedef struct NGAP_NGSetupRequestIEs {
 			NGAP_SupportedTAList_t	 SupportedTAList;
 			NGAP_PagingDRX_t	 PagingDRX;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NGSetupRequestIEs_t;
@@ -2165,11 +2165,11 @@ typedef struct NGAP_NGSetupResponseIEs {
 			NGAP_PLMNSupportList_t	 PLMNSupportList;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NGSetupResponseIEs_t;
@@ -2183,11 +2183,11 @@ typedef struct NGAP_NGSetupFailureIEs {
 			NGAP_TimeToWait_t	 TimeToWait;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NGSetupFailureIEs_t;
@@ -2201,11 +2201,11 @@ typedef struct NGAP_RANConfigurationUpdateIEs {
 			NGAP_SupportedTAList_t	 SupportedTAList;
 			NGAP_PagingDRX_t	 PagingDRX;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_RANConfigurationUpdateIEs_t;
@@ -2217,11 +2217,11 @@ typedef struct NGAP_RANConfigurationUpdateAcknowledgeIEs {
 		union NGAP_RANConfigurationUpdateAcknowledgeIEs__NGAP_value_u {
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_RANConfigurationUpdateAcknowledgeIEs_t;
@@ -2235,11 +2235,11 @@ typedef struct NGAP_RANConfigurationUpdateFailureIEs {
 			NGAP_TimeToWait_t	 TimeToWait;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_RANConfigurationUpdateFailureIEs_t;
@@ -2257,11 +2257,11 @@ typedef struct NGAP_AMFConfigurationUpdateIEs {
 			NGAP_AMF_TNLAssociationToRemoveList_t	 AMF_TNLAssociationToRemoveList;
 			NGAP_AMF_TNLAssociationToUpdateList_t	 AMF_TNLAssociationToUpdateList;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AMFConfigurationUpdateIEs_t;
@@ -2275,11 +2275,11 @@ typedef struct NGAP_AMFConfigurationUpdateAcknowledgeIEs {
 			NGAP_TNLAssociationList_t	 TNLAssociationList;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AMFConfigurationUpdateAcknowledgeIEs_t;
@@ -2293,11 +2293,11 @@ typedef struct NGAP_AMFConfigurationUpdateFailureIEs {
 			NGAP_TimeToWait_t	 TimeToWait;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AMFConfigurationUpdateFailureIEs_t;
@@ -2309,11 +2309,11 @@ typedef struct NGAP_AMFStatusIndicationIEs {
 		union NGAP_AMFStatusIndicationIEs__NGAP_value_u {
 			NGAP_UnavailableGUAMIList_t	 UnavailableGUAMIList;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AMFStatusIndicationIEs_t;
@@ -2326,11 +2326,11 @@ typedef struct NGAP_NGResetIEs {
 			NGAP_Cause_t	 Cause;
 			NGAP_ResetType_t	 ResetType;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NGResetIEs_t;
@@ -2343,11 +2343,11 @@ typedef struct NGAP_NGResetAcknowledgeIEs {
 			NGAP_UE_associatedLogicalNG_connectionList_t	 UE_associatedLogicalNG_connectionList;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NGResetAcknowledgeIEs_t;
@@ -2362,11 +2362,11 @@ typedef struct NGAP_ErrorIndicationIEs {
 			NGAP_Cause_t	 Cause;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_ErrorIndicationIEs_t;
@@ -2380,11 +2380,11 @@ typedef struct NGAP_OverloadStartIEs {
 			NGAP_TrafficLoadReductionIndication_t	 TrafficLoadReductionIndication;
 			NGAP_OverloadStartNSSAIList_t	 OverloadStartNSSAIList;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_OverloadStartIEs_t;
@@ -2395,11 +2395,11 @@ typedef struct NGAP_OverloadStopIEs {
 		NGAP_OverloadStopIEs__value_PR present;
 		union NGAP_OverloadStopIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_OverloadStopIEs_t;
@@ -2411,11 +2411,11 @@ typedef struct NGAP_UplinkRANConfigurationTransferIEs {
 		union NGAP_UplinkRANConfigurationTransferIEs__NGAP_value_u {
 			NGAP_SONConfigurationTransfer_t	 SONConfigurationTransfer;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UplinkRANConfigurationTransferIEs_t;
@@ -2427,11 +2427,11 @@ typedef struct NGAP_DownlinkRANConfigurationTransferIEs {
 		union NGAP_DownlinkRANConfigurationTransferIEs__NGAP_value_u {
 			NGAP_SONConfigurationTransfer_t	 SONConfigurationTransfer;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DownlinkRANConfigurationTransferIEs_t;
@@ -2453,11 +2453,11 @@ typedef struct NGAP_WriteReplaceWarningRequestIEs {
 			NGAP_ConcurrentWarningMessageInd_t	 ConcurrentWarningMessageInd;
 			NGAP_WarningAreaCoordinates_t	 WarningAreaCoordinates;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_WriteReplaceWarningRequestIEs_t;
@@ -2472,11 +2472,11 @@ typedef struct NGAP_WriteReplaceWarningResponseIEs {
 			NGAP_BroadcastCompletedAreaList_t	 BroadcastCompletedAreaList;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_WriteReplaceWarningResponseIEs_t;
@@ -2491,11 +2491,11 @@ typedef struct NGAP_PWSCancelRequestIEs {
 			NGAP_WarningAreaList_t	 WarningAreaList;
 			NGAP_CancelAllWarningMessages_t	 CancelAllWarningMessages;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PWSCancelRequestIEs_t;
@@ -2510,11 +2510,11 @@ typedef struct NGAP_PWSCancelResponseIEs {
 			NGAP_BroadcastCancelledAreaList_t	 BroadcastCancelledAreaList;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PWSCancelResponseIEs_t;
@@ -2529,11 +2529,11 @@ typedef struct NGAP_PWSRestartIndicationIEs {
 			NGAP_TAIListForRestart_t	 TAIListForRestart;
 			NGAP_EmergencyAreaIDListForRestart_t	 EmergencyAreaIDListForRestart;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PWSRestartIndicationIEs_t;
@@ -2546,11 +2546,11 @@ typedef struct NGAP_PWSFailureIndicationIEs {
 			NGAP_PWSFailedCellIDList_t	 PWSFailedCellIDList;
 			NGAP_GlobalRANNodeID_t	 GlobalRANNodeID;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PWSFailureIndicationIEs_t;
@@ -2565,11 +2565,11 @@ typedef struct NGAP_DownlinkUEAssociatedNRPPaTransportIEs {
 			NGAP_RoutingID_t	 RoutingID;
 			NGAP_NRPPa_PDU_t	 NRPPa_PDU;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DownlinkUEAssociatedNRPPaTransportIEs_t;
@@ -2584,11 +2584,11 @@ typedef struct NGAP_UplinkUEAssociatedNRPPaTransportIEs {
 			NGAP_RoutingID_t	 RoutingID;
 			NGAP_NRPPa_PDU_t	 NRPPa_PDU;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UplinkUEAssociatedNRPPaTransportIEs_t;
@@ -2601,11 +2601,11 @@ typedef struct NGAP_DownlinkNonUEAssociatedNRPPaTransportIEs {
 			NGAP_RoutingID_t	 RoutingID;
 			NGAP_NRPPa_PDU_t	 NRPPa_PDU;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DownlinkNonUEAssociatedNRPPaTransportIEs_t;
@@ -2618,11 +2618,11 @@ typedef struct NGAP_UplinkNonUEAssociatedNRPPaTransportIEs {
 			NGAP_RoutingID_t	 RoutingID;
 			NGAP_NRPPa_PDU_t	 NRPPa_PDU;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UplinkNonUEAssociatedNRPPaTransportIEs_t;
@@ -2636,11 +2636,11 @@ typedef struct NGAP_TraceStartIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_TraceActivation_t	 TraceActivation;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TraceStartIEs_t;
@@ -2655,11 +2655,11 @@ typedef struct NGAP_TraceFailureIndicationIEs {
 			NGAP_NGRANTraceID_t	 NGRANTraceID;
 			NGAP_Cause_t	 Cause;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TraceFailureIndicationIEs_t;
@@ -2673,11 +2673,11 @@ typedef struct NGAP_DeactivateTraceIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_NGRANTraceID_t	 NGRANTraceID;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_DeactivateTraceIEs_t;
@@ -2693,11 +2693,11 @@ typedef struct NGAP_CellTrafficTraceIEs {
 			NGAP_NGRAN_CGI_t	 NGRAN_CGI;
 			NGAP_TransportLayerAddress_t	 TransportLayerAddress;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CellTrafficTraceIEs_t;
@@ -2711,11 +2711,11 @@ typedef struct NGAP_LocationReportingControlIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_LocationReportingRequestType_t	 LocationReportingRequestType;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_LocationReportingControlIEs_t;
@@ -2729,11 +2729,11 @@ typedef struct NGAP_LocationReportingFailureIndicationIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_Cause_t	 Cause;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_LocationReportingFailureIndicationIEs_t;
@@ -2749,11 +2749,11 @@ typedef struct NGAP_LocationReportIEs {
 			NGAP_UEPresenceInAreaOfInterestList_t	 UEPresenceInAreaOfInterestList;
 			NGAP_LocationReportingRequestType_t	 LocationReportingRequestType;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_LocationReportIEs_t;
@@ -2766,11 +2766,11 @@ typedef struct NGAP_UETNLABindingReleaseRequestIEs {
 			NGAP_AMF_UE_NGAP_ID_t	 AMF_UE_NGAP_ID;
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UETNLABindingReleaseRequestIEs_t;
@@ -2785,11 +2785,11 @@ typedef struct NGAP_UERadioCapabilityInfoIndicationIEs {
 			NGAP_UERadioCapability_t	 UERadioCapability;
 			NGAP_UERadioCapabilityForPaging_t	 UERadioCapabilityForPaging;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UERadioCapabilityInfoIndicationIEs_t;
@@ -2803,11 +2803,11 @@ typedef struct NGAP_UERadioCapabilityCheckRequestIEs {
 			NGAP_RAN_UE_NGAP_ID_t	 RAN_UE_NGAP_ID;
 			NGAP_UERadioCapability_t	 UERadioCapability;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UERadioCapabilityCheckRequestIEs_t;
@@ -2822,11 +2822,11 @@ typedef struct NGAP_UERadioCapabilityCheckResponseIEs {
 			NGAP_IMSVoiceSupportIndicator_t	 IMSVoiceSupportIndicator;
 			NGAP_CriticalityDiagnostics_t	 CriticalityDiagnostics;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UERadioCapabilityCheckResponseIEs_t;

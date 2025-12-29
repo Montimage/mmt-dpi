@@ -127,7 +127,7 @@ static attribute_metadata_t attributes_metadata[] = {
 int init_proto_8021q_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_8021Q, PROTO_8021Q_ALIAS);
     if (protocol_struct != NULL) {
-    
+
     	//register attributes
     	int i,
 		//number of attributes
@@ -142,5 +142,3 @@ int init_proto_8021q_struct() {
         return 0;
     }
 }
-
-

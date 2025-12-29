@@ -40,7 +40,7 @@ int mmt_check_s7comm(ipacket_t * ipacket, unsigned index) {
     struct cotphdr * cotp_header = (struct cotphdr *)&ipacket->data[l5_offset];
     if(cotp_header->length == 2 || cotp_header->length == 17){
         s7comm_proto.offset = cotp_header->length + 1;
-        int s7comm_offset = l5_offset + cotp_header->length + 1; // 1 - for length  
+        int s7comm_offset = l5_offset + cotp_header->length + 1; // 1 - for length
         char payload_len = ipacket->p_hdr->caplen - s7comm_offset;
         if(payload_len == 0){
             return 0;
@@ -76,4 +76,3 @@ int init_proto_s7comm_struct() {
         return -1;
     }
 }
-

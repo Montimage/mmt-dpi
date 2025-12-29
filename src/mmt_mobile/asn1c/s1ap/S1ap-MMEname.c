@@ -31,7 +31,7 @@ static int check_permitted_alphabet_1(const void *sptr) {
 	const PrintableString_t *st = (const PrintableString_t *)sptr;
 	const uint8_t *ch = st->buf;
 	const uint8_t *end = ch + st->size;
-	
+
 	for(; ch < end; ch++) {
 		uint8_t cv = *ch;
 		if(!table[cv]) return -1;
@@ -44,16 +44,16 @@ S1ap_MMEname_constraint(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	const PrintableString_t *st = (const PrintableString_t *)sptr;
 	size_t size;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	size = st->size;
-	
+
 	if((size >= 1 && size <= 150)
 		 && !check_permitted_alphabet_1(st)) {
 		/* Constraint check succeeded */
@@ -106,4 +106,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_MMEname = {
 	0, 0,	/* No members */
 	0	/* No specifics */
 };
-

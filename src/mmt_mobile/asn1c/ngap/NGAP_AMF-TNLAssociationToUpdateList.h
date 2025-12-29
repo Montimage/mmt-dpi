@@ -25,7 +25,7 @@ struct NGAP_AMF_TNLAssociationToUpdateItem;
 /* NGAP_AMF-TNLAssociationToUpdateList */
 typedef struct NGAP_AMF_TNLAssociationToUpdateList {
 	A_SEQUENCE_OF(struct NGAP_AMF_TNLAssociationToUpdateItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AMF_TNLAssociationToUpdateList_t;

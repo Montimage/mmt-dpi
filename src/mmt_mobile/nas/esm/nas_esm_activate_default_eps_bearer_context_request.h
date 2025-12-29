@@ -45,4 +45,3 @@ typedef struct {
 int nas_esm_decode_activate_default_eps_bearer_context_request(nas_esm_activate_default_eps_bearer_context_request_t *msg, const uint8_t *buffer, uint32_t len);
 
 #endif
-

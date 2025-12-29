@@ -39,7 +39,7 @@ typedef struct NGAP_ResetType {
 		struct NGAP_UE_associatedLogicalNG_connectionList	*partOfNG_Interface;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_ResetType_t;

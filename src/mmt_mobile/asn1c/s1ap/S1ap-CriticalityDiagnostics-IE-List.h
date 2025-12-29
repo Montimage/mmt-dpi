@@ -25,7 +25,7 @@ struct S1ap_CriticalityDiagnostics_IE_Item;
 /* S1ap-CriticalityDiagnostics-IE-List */
 typedef struct S1ap_CriticalityDiagnostics_IE_List {
 	A_SEQUENCE_OF(struct S1ap_CriticalityDiagnostics_IE_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_CriticalityDiagnostics_IE_List_t;

@@ -119,4 +119,3 @@ oer_serialize_length(size_t length, asn_app_consume_bytes_f *cb,
 
     return sp - scratch;
 }
-

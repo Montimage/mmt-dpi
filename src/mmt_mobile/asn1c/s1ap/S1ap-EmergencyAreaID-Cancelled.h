@@ -25,7 +25,7 @@ struct S1ap_EmergencyAreaID_Cancelled_Item;
 /* S1ap-EmergencyAreaID-Cancelled */
 typedef struct S1ap_EmergencyAreaID_Cancelled {
 	A_SEQUENCE_OF(struct S1ap_EmergencyAreaID_Cancelled_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_EmergencyAreaID_Cancelled_t;

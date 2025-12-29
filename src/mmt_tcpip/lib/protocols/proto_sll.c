@@ -130,4 +130,3 @@ int init_proto_sll_struct() {
         return 0;
     }
 }
-

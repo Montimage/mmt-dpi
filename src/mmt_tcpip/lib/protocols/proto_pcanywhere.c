@@ -73,5 +73,3 @@ int init_proto_pcanywhere_struct() {
         return 0;
     }
 }
-
-

@@ -129,7 +129,7 @@ int ip_dgram_update( ip_dgram_t *dg, const struct iphdr *ip, unsigned len ,unsig
    dg->nb_packets ++;
    dg->caplen += caplen;
    dg->max_packet_size = dg->max_packet_size > (ip_off + ip_len - ip_hl)?dg->max_packet_size:(ip_off + ip_len - ip_hl);
-   
+
    int i=0;
    for(i=0;i < MMT_MAX_NUMBER_FRAGMENT - 1;i++){
       if(dg->packet_offsets[i] == -1) break;
@@ -277,7 +277,7 @@ void ip_dgram_dump_holes( ip_dgram_t *dg )
  * @param off payload offset in the datagram (bytes)
  * @param len payload length in the datagram (bytes)
  * @param mf  true if more fragments are expected
- * @return 
+ * @return
  *          3 - overlapped data on the left side of the hole
  *          4 - overlapped data on the right side of the hole
  *          5 - overlapped data on both left and right side of the hole
@@ -335,7 +335,7 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
             }
             // -> resize it
             hole->roff = loff - 1;
-            unused_fragment = 0;            
+            unused_fragment = 0;
          }
       } else if( mf && ( hole->roff > roff )) {
          // hole is trimmed only from the left

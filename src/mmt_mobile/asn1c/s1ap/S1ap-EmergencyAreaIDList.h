@@ -23,7 +23,7 @@ extern "C" {
 /* S1ap-EmergencyAreaIDList */
 typedef struct S1ap_EmergencyAreaIDList {
 	A_SEQUENCE_OF(S1ap_EmergencyAreaID_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_EmergencyAreaIDList_t;

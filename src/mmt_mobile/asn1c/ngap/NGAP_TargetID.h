@@ -39,7 +39,7 @@ typedef struct NGAP_TargetID {
 		struct NGAP_TargeteNB_ID	*targeteNB_ID;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TargetID_t;

@@ -73,7 +73,7 @@ executed against a recorded packet trace file or live on a network interface for
  </xsl:if>
       <hr />
 
-  
+
   <h3>Results Details</h3>
   <table id="box-table-a" width="90%" >
     <tr>
@@ -106,7 +106,7 @@ executed against a recorded packet trace file or live on a network interface for
 	  </td>
 	  <td colspan="3"><xsl:value-of select="description"/></td>
 	</tr>
-	
+
 	<xsl:for-each select="event">
 	<tr>
 	  <td></td>
@@ -124,9 +124,9 @@ executed against a recorded packet trace file or live on a network interface for
 	</xsl:for-each>
     </xsl:for-each>
   </table>
-  	
- 
-  
+
+
+
   </body>
   </html>
 </xsl:template>

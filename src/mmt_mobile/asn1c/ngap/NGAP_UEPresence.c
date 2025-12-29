@@ -57,4 +57,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_UEPresence = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_NGAP_UEPresence_specs_1	/* Additional specs */
 };
-

@@ -36,7 +36,7 @@ typedef struct NGAP_LocationReportingRequestType {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_LocationReportingRequestType_t;

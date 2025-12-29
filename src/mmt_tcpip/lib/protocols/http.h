@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   http.h
  * Author: montimage
  *
@@ -220,4 +220,3 @@ int init_http_proto_struct_new();
 #endif
 
 #endif	/* MMT_HTTP_H */
-

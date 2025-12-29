@@ -25,7 +25,7 @@ struct S1ap_SupportedTAs_Item;
 /* S1ap-SupportedTAs */
 typedef struct S1ap_SupportedTAs {
 	A_SEQUENCE_OF(struct S1ap_SupportedTAs_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_SupportedTAs_t;

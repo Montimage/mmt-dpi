@@ -24,11 +24,7 @@ extern "C" {
  * @param extracted_data pointer to attribute structure where the extracted data will be stored
  * @return Will always succeed, returns a positive value.
  */
-MMTAPI int MMTCALL silent_extraction(
-    const ipacket_t *packet,
-    unsigned         proto_index,
-    attribute_t     *extracted_data
-);
+MMTAPI int MMTCALL silent_extraction(const ipacket_t *packet, unsigned proto_index, attribute_t *extracted_data);
 
 /* ************************************* */
 /* **** General Extraction Functions *** */
@@ -42,41 +38,20 @@ MMTAPI int MMTCALL silent_extraction(
  * @return Positive value if the extraction succeeded, a negative value otherwise.
  */
 
-MMTAPI int MMTCALL general_byte_to_byte_extraction(
-    const ipacket_t *packet,
-    unsigned         proto_index,
-    attribute_t     *extracted_data
-);
+MMTAPI int MMTCALL general_byte_to_byte_extraction(const ipacket_t *packet, unsigned proto_index,
+												   attribute_t *extracted_data);
 
-MMTAPI int MMTCALL general_short_extraction_with_ordering_change(
-    const ipacket_t *packet,
-    unsigned         proto_index,
-    attribute_t     *extracted_data
-);
+MMTAPI int MMTCALL general_short_extraction_with_ordering_change(const ipacket_t *packet, unsigned proto_index,
+																 attribute_t *extracted_data);
 
-MMTAPI int MMTCALL general_int_extraction_with_ordering_change(
-    const ipacket_t *packet,
-    unsigned         proto_index,
-    attribute_t     *extracted_data
-);
+MMTAPI int MMTCALL general_int_extraction_with_ordering_change(const ipacket_t *packet, unsigned proto_index,
+															   attribute_t *extracted_data);
 
-MMTAPI int MMTCALL general_char_extraction(
-    const ipacket_t *packet,
-    unsigned         proto_index,
-    attribute_t     *extracted_data
-);
+MMTAPI int MMTCALL general_char_extraction(const ipacket_t *packet, unsigned proto_index, attribute_t *extracted_data);
 
-MMTAPI int MMTCALL general_short_extraction(
-    const ipacket_t *packet,
-    unsigned         proto_index,
-    attribute_t     *extracted_data
-);
+MMTAPI int MMTCALL general_short_extraction(const ipacket_t *packet, unsigned proto_index, attribute_t *extracted_data);
 
-MMTAPI int MMTCALL general_int_extraction(
-    const ipacket_t *packet,
-    unsigned         proto_index,
-    attribute_t     *extracted_data
-);
+MMTAPI int MMTCALL general_int_extraction(const ipacket_t *packet, unsigned proto_index, attribute_t *extracted_data);
 
 #ifdef __cplusplus
 }

@@ -25,7 +25,7 @@ struct S1ap_IE;
 /* S1ap-IE-Extensions */
 typedef struct S1ap_IE_Extensions {
 	A_SEQUENCE_OF(struct S1ap_IE) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_IE_Extensions_t;

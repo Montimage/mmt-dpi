@@ -12,21 +12,21 @@ NGAP_AMF_UE_NGAP_ID_constraint(const asn_TYPE_descriptor_t *td, const void *sptr
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	const INTEGER_t *st = (const INTEGER_t *)sptr;
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	if(asn_INTEGER2long(st, &value)) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value too large (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	if((value >= 0 && value <= 1099511627775)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -67,4 +67,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_AMF_UE_NGAP_ID = {
 	0, 0,	/* No members */
 	0	/* No specifics */
 };
-

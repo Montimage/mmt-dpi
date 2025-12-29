@@ -551,11 +551,9 @@ int init_proto_imesh_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_imesh();
-        
+
         return register_protocol(protocol_struct, PROTO_IMESH);
     } else {
         return 0;
     }
 }
-
-

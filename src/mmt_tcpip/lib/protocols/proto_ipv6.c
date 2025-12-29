@@ -1486,5 +1486,3 @@ int init_proto_ipv6_struct() {
         return 0;
     }
 }
-
-

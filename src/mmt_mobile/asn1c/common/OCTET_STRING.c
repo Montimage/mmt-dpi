@@ -157,7 +157,7 @@ OS__add_stack_el(struct _stack *st) {
 		nel = (struct _stack_el *)CALLOC(1, sizeof(struct _stack_el));
 		if(nel == NULL)
 			return NULL;
-	
+
 		if(st->tail) {
 			/* Increase a subcontainment depth */
 			nel->cont_level = st->tail->cont_level + 1;
@@ -745,7 +745,7 @@ OCTET_STRING__handle_control_chars(void *struct_ptr, const void *chunk_buf, size
 			return 0;
 		}
 	}
-	
+
 	return -1;	/* No, it's not */
 }
 

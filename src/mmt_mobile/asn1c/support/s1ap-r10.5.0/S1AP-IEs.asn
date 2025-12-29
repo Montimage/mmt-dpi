@@ -4,11 +4,11 @@
 --
 -- **************************************************************
 
-S1AP-IEs { 
-itu-t (0) identified-organization (4) etsi (0) mobileDomain (0) 
+S1AP-IEs {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
 eps-Access (21) modules (3) s1ap (1) version1 (1) s1ap-IEs (2) }
 
-DEFINITIONS AUTOMATIC TAGS ::= 
+DEFINITIONS AUTOMATIC TAGS ::=
 
 BEGIN
 
@@ -318,7 +318,7 @@ S1ap-ConcurrentWarningMessageIndicator ::= ENUMERATED {
 
 S1ap-Correlation-ID        ::= OCTET STRING (SIZE (4))
 
-S1ap-CSFallbackIndicator ::= ENUMERATED { 
+S1ap-CSFallbackIndicator ::= ENUMERATED {
     cs-fallback-required,
     ...,
     cs-fallback-high-priority
@@ -335,7 +335,7 @@ S1ap-CSG-IdList-Item ::= SEQUENCE {
     ...
 }
 
-S1ap-CSGMembershipStatus ::= ENUMERATED { 
+S1ap-CSGMembershipStatus ::= ENUMERATED {
     member,
     not-member
 }
@@ -741,7 +741,7 @@ S1ap-HFN ::= INTEGER (0..1048575)
 
 -- I
 
-S1ap-ImmediateMDT ::= SEQUENCE { 
+S1ap-ImmediateMDT ::= SEQUENCE {
     measurementsToActivate         S1ap-MeasurementsToActivate,
     reportingTriggerMDT            S1ap-ReportingTriggerMDT,
     thresholdeventA2               S1ap-ThresholdEventA2                OPTIONAL,
@@ -853,7 +853,7 @@ S1ap-MDTMode ::= CHOICE {
 
 S1ap-MeasurementsToActivate ::= BIT STRING (SIZE (8))
 
-S1ap-MeasurementThresholdA2 ::= CHOICE { 
+S1ap-MeasurementThresholdA2 ::= CHOICE {
     threshold-RSRP                S1ap-Threshold-RSRP,
     threshold-RSRQ                S1ap-Threshold-RSRQ,
     ...
@@ -928,9 +928,9 @@ S1ap-PagingPriority ::= ENUMERATED {
     ...
 }
 
-S1ap-PDCP-SN ::= INTEGER (0..4095) 
+S1ap-PDCP-SN ::= INTEGER (0..4095)
 
-S1ap-PeriodicReportingMDT ::= SEQUENCE { 
+S1ap-PeriodicReportingMDT ::= SEQUENCE {
     reportInterval                S1ap-ReportIntervalMDT,
     reportAmount                  S1ap-ReportAmountMDT,
  -- iE-Extensions               ProtocolExtensionContainer { { PeriodicReportingMDT-ExtIEs} } OPTIONAL,
@@ -987,7 +987,7 @@ S1ap-RAC                    ::= OCTET STRING (SIZE (1))
 
 S1ap-ReportAmountMDT ::= ENUMERATED{r1, r2, r4, r8, r16, r32, r64, rinfinity}
 
-S1ap-ReportIntervalMDT ::= ENUMERATED {ms120, ms240, ms480, ms640, ms1024, ms2048, ms5120, ms10240, min1, min6, min12, min30, min60} 
+S1ap-ReportIntervalMDT ::= ENUMERATED {ms120, ms240, ms480, ms640, ms1024, ms2048, ms5120, ms10240, min1, min6, min12, min30, min60}
 
 S1ap-ReportingTriggerMDT ::= ENUMERATED{
     periodic,
@@ -1063,7 +1063,7 @@ S1ap-SONInformation ::= CHOICE{
     ...
 }
 
-S1ap-SONInformationRequest ::= ENUMERATED { 
+S1ap-SONInformationRequest ::= ENUMERATED {
     x2TNL-Configuration-Info,
     ...,
     time-Synchronization-Info
@@ -1086,7 +1086,7 @@ S1ap-SONConfigurationTransfer ::= SEQUENCE {
 }
 
 S1ap-Source-ToTarget-TransparentContainer ::= OCTET STRING
--- This IE includes a transparent container from the source RAN node to the target RAN node. 
+-- This IE includes a transparent container from the source RAN node to the target RAN node.
 -- The octets of the OCTET STRING are encoded according to the specifications of the target system.
 
 S1ap-SourceBSS-ToTargetBSS-TransparentContainer        ::= OCTET STRING
@@ -1141,7 +1141,7 @@ S1ap-ServedMMECs ::= SEQUENCE (SIZE(1.. s1ap-maxnoofMMECs)) OF S1ap-MME-Code
 
 S1ap-ServedPLMNs ::= SEQUENCE (SIZE(1.. s1ap-maxnoofPLMNsPerMME)) OF S1ap-PLMNidentity
 
-S1ap-SubscriberProfileIDforRFP ::= INTEGER (1..256) 
+S1ap-SubscriberProfileIDforRFP ::= INTEGER (1..256)
 
 S1ap-SupportedTAs ::= SEQUENCE (SIZE(1.. s1ap-maxnoofTACs)) OF S1ap-SupportedTAs-Item
 
@@ -1267,7 +1267,7 @@ S1ap-TargeteNB-ToSourceeNB-TransparentContainer        ::= SEQUENCE {
 }
 
 S1ap-Target-ToSource-TransparentContainer ::= OCTET STRING
--- This IE includes a transparent container from the target RAN node to the source RAN node. 
+-- This IE includes a transparent container from the target RAN node to the source RAN node.
 -- The octets of the OCTET STRING are coded according to the specifications of the target system.
 
 S1ap-TargetRNC-ToSourceRNC-TransparentContainer        ::= OCTET STRING
@@ -1276,7 +1276,7 @@ S1ap-TargetRNC-ToSourceRNC-TransparentContainer        ::= OCTET STRING
 S1ap-TargetBSS-ToSourceBSS-TransparentContainer        ::= OCTET STRING
 -- This is a dummy IE used only as a reference to the actual definition in relevant specification.
 
-S1ap-ThresholdEventA2 ::= SEQUENCE { 
+S1ap-ThresholdEventA2 ::= SEQUENCE {
     measurementThreshold        S1ap-MeasurementThresholdA2,
  -- iE-Extensions               ProtocolExtensionContainer { { ThresholdEventA2-ExtIEs} } OPTIONAL,
     iE-Extensions   S1ap-IE-Extensions OPTIONAL,
@@ -1303,7 +1303,7 @@ S1ap-TraceActivation ::= SEQUENCE {
     ...
 }
 
-S1ap-TraceDepth ::= ENUMERATED { 
+S1ap-TraceDepth ::= ENUMERATED {
     minimum,
     medium,
     s1ap-maximum,

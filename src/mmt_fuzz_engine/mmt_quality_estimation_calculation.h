@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   mmt_quality_estimation_calculation.h
  * Author: montimage
  *
@@ -51,7 +51,7 @@ extern "C" {
 
     double estimate_quality_index(application_quality_estimation_internal_t * app_internal_struct);
 
-    
+
     double dummy_quality_index_estimation(application_quality_estimation_internal_t * app_internal_struct);
      /*
     This function should give membership value corresponding to KPI and its corresponding grades according to the function type .
@@ -65,4 +65,3 @@ extern "C" {
 #endif
 
 #endif	/* MMT_QUALITY_ESTIMATION_CALCULATION_H */
-

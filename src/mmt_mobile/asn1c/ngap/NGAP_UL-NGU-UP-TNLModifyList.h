@@ -25,7 +25,7 @@ struct NGAP_UL_NGU_UP_TNLModifyItem;
 /* NGAP_UL-NGU-UP-TNLModifyList */
 typedef struct NGAP_UL_NGU_UP_TNLModifyList {
 	A_SEQUENCE_OF(struct NGAP_UL_NGU_UP_TNLModifyItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UL_NGU_UP_TNLModifyList_t;

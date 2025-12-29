@@ -25,7 +25,7 @@ struct NGAP_CellIDBroadcastEUTRA_Item;
 /* NGAP_CellIDBroadcastEUTRA */
 typedef struct NGAP_CellIDBroadcastEUTRA {
 	A_SEQUENCE_OF(struct NGAP_CellIDBroadcastEUTRA_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CellIDBroadcastEUTRA_t;

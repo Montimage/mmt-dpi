@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   batman.h
  * Author: montimage
  *
@@ -167,4 +167,3 @@ extern "C" {
 #endif
 
 #endif	/* BATMAN_H */
-

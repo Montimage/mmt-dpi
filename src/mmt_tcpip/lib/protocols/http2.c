@@ -31,14 +31,14 @@ int http2_header_length_extraction(const ipacket_t *packet,
 		unsigned proto_index, attribute_t *extracted_data) {
 	// [ETH][IP][TCP][HTTP2][xxx]
 	//=================^
-	
+
 	int http2_offset = get_packet_offset_at_index(packet, proto_index );
 	//not enough room
 	//if (http2_offset >= packet->p_hdr->caplen)
 	//	return 0;
 	// printf("http2_offset %d \n", http2_offset);
 
-	
+
 	char *payload = (char*) &packet->data[http2_offset];
 	char signature_http2[] = { 0x0D, 0x0A, 0x0D, 0x0A, 0x53, 0x4D, 0x0D, 0x0A, 0x0D, 0x0A }; 	//PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
 	if (strncmp(payload , signature_http2,
@@ -73,7 +73,7 @@ int http2_payload_stream_id_extraction(const ipacket_t *packet,
 	//===============^
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	//Go to method field
-	//9 header characters: 
+	//9 header characters:
 	// - 3 bytes for length
 	// - 1 byte for type
 	// - 1 byte for flag
@@ -175,7 +175,7 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 				*((unsigned int* ) &packet->data[offset_header_length]));
 		header_length = header_length & 0x00FFFFFF;
 		// printf("header_length %d\n",header_length );
-		int payload_offset = header_length + 9 + proto_offset - 1;//In order to get to http2 payload you need to get the header length, adding the 9 bytes of the header. 
+		int payload_offset = header_length + 9 + proto_offset - 1;//In order to get to http2 payload you need to get the header length, adding the 9 bytes of the header.
 		//Payload length is three bytes, while an integer is 4 bytes, so here we start from one byte before and and bitwise with 0x00FFFFFF that integer to remove last byte.
 		int payload_length = ntohl(
 				*((unsigned int* ) &packet->data[payload_offset]));
@@ -361,7 +361,7 @@ uint32_t update_window_update(char *data_out,int proto_offset,uint32_t modify){
 		data_out[window_size_offset] = 0x00;
 		data_out[window_size_offset+1] = 0x00;
 		data_out[window_size_offset+2] = 0x00;
-		data_out[window_size_offset+3] = 0xFF;	
+		data_out[window_size_offset+3] = 0xFF;
 		int difference_size = -9;
 		return difference_size;
 	}
@@ -472,33 +472,33 @@ int update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *pack
 		case(HTTP2_HEADER_STREAM_ID):
 			update_stream_id(data_out,proto_offset,new_val);
 			break;
-		
+
 		case(HTTP2_WINDOW_UPDATE):
 			difference_size = update_window_update(data_out,proto_offset,new_val);
-			return difference_size; 
+			return difference_size;
 			break;
-			
+
 		case(HTTP2_DISCARD_SETTINGS):
 			difference_size = -9;
-			return difference_size; 
+			return difference_size;
 
 		case(HTTP2_PAYLOAD_FUZZ):
 			fuzz_payload((uint8_t*)data_out,packet,proto_offset);
 			//printf("[update_http2_data]data_size %d\n",data_size);
 			update_stream_id(data_out,proto_offset,new_val);
 			break;
-			
+
 		case(HTTP2_GET_MODIFY):
 			update_stream_id(data_out,proto_offset,new_val);
 			difference_size = modify_get((uint8_t*)data_out, proto_offset,data_size);
 			return difference_size;
 			break;
-			
+
 		case(HTTP2_INJECT_WIN_UPDATE):
 			difference_size = inject_http2_packet((uint8_t*)data_out,window_update_frame,proto_offset,win_len,data_size);
 			return difference_size;
 			break;
-			
+
 		case (HTTP2_RESTORE_PACKET):
 			difference_size = restore_http2_packet((uint8_t*)data_out,packet,proto_offset,data_size);
 			return difference_size;
@@ -507,11 +507,10 @@ int update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *pack
 		default:
 			//printf("update_http2_data  INSERT A VALID ATT_ID  \n");
 			break;
-	
+
 	}
 
 	return 0;
-	
+
 
 }
-

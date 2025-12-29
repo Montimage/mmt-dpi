@@ -271,4 +271,3 @@ int init_proto_batman_struct() {
 */
     return 1;
 }
-

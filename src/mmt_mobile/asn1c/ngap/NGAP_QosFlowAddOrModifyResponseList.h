@@ -25,7 +25,7 @@ struct NGAP_QosFlowAddOrModifyResponseItem;
 /* NGAP_QosFlowAddOrModifyResponseList */
 typedef struct NGAP_QosFlowAddOrModifyResponseList {
 	A_SEQUENCE_OF(struct NGAP_QosFlowAddOrModifyResponseItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowAddOrModifyResponseList_t;

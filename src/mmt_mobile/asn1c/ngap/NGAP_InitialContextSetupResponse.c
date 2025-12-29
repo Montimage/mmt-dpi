@@ -47,4 +47,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_InitialContextSetupResponse = {
 	1,	/* Elements count */
 	&asn_SPC_NGAP_InitialContextSetupResponse_specs_1	/* Additional specs */
 };
-

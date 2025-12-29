@@ -407,4 +407,3 @@ unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
     }
     return (proto_id);
 }
-

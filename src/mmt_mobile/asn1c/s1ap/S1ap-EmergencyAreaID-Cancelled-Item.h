@@ -32,7 +32,7 @@ typedef struct S1ap_EmergencyAreaID_Cancelled_Item {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_EmergencyAreaID_Cancelled_Item_t;

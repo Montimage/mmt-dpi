@@ -32,7 +32,7 @@ typedef struct NGAP_QosFlowNotifyItem {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowNotifyItem_t;

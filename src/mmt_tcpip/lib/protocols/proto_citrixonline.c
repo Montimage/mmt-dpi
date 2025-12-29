@@ -10,11 +10,9 @@
 
 int init_proto_citrixonline_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_CITRIXONLINE, PROTO_CITRIXONLINE_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_CITRIXONLINE);
     } else {
         return 0;
     }
 }
-
-

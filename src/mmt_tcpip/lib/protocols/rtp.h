@@ -110,7 +110,7 @@ extern "C" {
     struct rtp_session_data_struct {
         generic_session_data_analysis_function rtp_data_analysis; //for performance reasons! this will point to the function to be called for processing session data
         generic_session_quality_index_estimation_function rtp_quality_index_estimation;
-        
+
         uint8_t payload_type;
         rtp_payload_mime_type_t * mime_type;
         multimedia_session_context_t rtp_media_session_context;
@@ -144,7 +144,7 @@ extern "C" {
 #define VIDEO           2
 #define AUDIO_VIDEO     3
 
-    enum {//Internal format codes; non zero values! sould not mix with Payload_type values 
+    enum {//Internal format codes; non zero values! sould not mix with Payload_type values
         MMT_RTP_FORMAT_PCMU = 1,
         MMT_RTP_FORMAT_GSM,
         MMT_RTP_FORMAT_G723,
@@ -186,4 +186,3 @@ extern "C" {
 #endif
 
 #endif	/* RTP_H */
-

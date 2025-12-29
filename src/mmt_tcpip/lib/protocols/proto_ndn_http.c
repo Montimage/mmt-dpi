@@ -46,14 +46,14 @@ int ndn_http_url_extraction(const ipacket_t * ipacket, unsigned proto_index,
             extracted_data->data = (void*)ret_v2;
             free(ret_v);
             return 1;
-        }    
+        }
     }else{
         char *ret_v2 = ndn_name_components_at_index(payload,payload_len,2);
         if(ret_v2 != NULL){
             free(ret_v);
             extracted_data->data = (void*)ret_v2;
             return 1;
-        }    
+        }
     }
     //             *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->c_port;
     return 0;
@@ -88,14 +88,14 @@ int ndn_http_method_extraction(const ipacket_t * ipacket, unsigned proto_index,
             extracted_data->data = (void*)ret_v2;
             free(ret_v);
             return 1;
-        }    
+        }
     }else{
         char *ret_v2 = ndn_name_components_at_index(payload,payload_len,1);
         if(ret_v2 != NULL){
             extracted_data->data = (void*)ret_v2;
             free(ret_v);
             return 1;
-        }    
+        }
     }
     //             *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->c_port;
     return 0;
@@ -158,7 +158,7 @@ int ndn_http_second_gw_extraction(const ipacket_t * ipacket, unsigned proto_inde
             extracted_data->data = (void*)ret_v2;
             free(ret_v);
             return 1;
-        }    
+        }
     }
     free(ret_v);
     //             *((uint16_t*)extracted_data->data) = ftp_control->contrl_conn->c_port;
@@ -209,7 +209,7 @@ int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-            
+
             // debug("NDN_HTTP: checking ndn payload %lu",ipacket->packet_id);
             int offset = get_packet_offset_at_index(ipacket, index + 1);
             char * payload = (char*)&ipacket->data[offset];
@@ -225,7 +225,7 @@ int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
                 // debug("NDN_HTTP: found ndn packet %lu",ipacket->packet_id);
                 // if(mmt_check_payload_ndn_http(payload,payload_len)==1){
                     mmt_int_ndn_http_add_connection(ipacket);
-                    return 1;    
+                    return 1;
                 // }
             }
     }
@@ -243,7 +243,7 @@ void mmt_init_classify_me_ndn_http() {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_ndn_http_struct() {
-    
+
     debug("NDN_HTTP: init_proto_ndn_http_struct");
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_NDN_HTTP, PROTO_NDN_HTTP_ALIAS);
@@ -262,5 +262,3 @@ int init_proto_ndn_http_struct() {
         return 0;
     }
 }
-
-

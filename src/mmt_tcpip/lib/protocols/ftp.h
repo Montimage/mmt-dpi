@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   http.h
  * Author: montimage
  *
@@ -30,7 +30,7 @@ static uint32_t ftp_connection_timeout = MMT_FTP_TIMEOUT * MMT_MICRO_IN_SEC;
 #define MMT_FTP_STATUS_DATA_CLOSED          4 // A data connection closed
 #define MMT_FTP_STATUS_CLOSED               5 // A control session closed
 
-// TYPE OF CONNECTION 
+// TYPE OF CONNECTION
 #define MMT_FTP_CONTROL_CONNECTION          1 // Control connection on ftp server control port 21
 #define MMT_FTP_DATA_CONNECTION             2 // Data connection on ftp server data port
 
@@ -101,9 +101,9 @@ enum {
     MMT_FTP_MLSD_CMD, // Lists the contents of a directory if a directory is named
     MMT_FTP_MLST_CMD, // Provides data about exactly the object named on its command line and no others
     MMT_FTP_MODE_CMD, // Sets the transfer mode(Stream, Block or compressed)
-    MMT_FTP_NLST_CMD, // Return a list of file names in a specified directory 
+    MMT_FTP_NLST_CMD, // Return a list of file names in a specified directory
     MMT_FTP_NOOP_CMD, // No operation (dummy packet, used mostly as keepalives)
-    MMT_FTP_OPTS_CMD, // Select options for a feature 
+    MMT_FTP_OPTS_CMD, // Select options for a feature
     MMT_FTP_PASS_CMD, // Authentication password
     MMT_FTP_PASV_CMD, // Enter passive mode
     MMT_FTP_PBSZ_CMD, // RFC2228 Protection Buffer Size
@@ -147,7 +147,7 @@ enum{
     MMT_FTP_211_CODE = 211, // Features
     MMT_FTP_213_CODE = 213, // Response file status: size, last_modified
     MMT_FTP_215_CODE = 215, // Response for SYST command
-    MMT_FTP_220_CODE = 220, // Version of FTP server 
+    MMT_FTP_220_CODE = 220, // Version of FTP server
     MMT_FTP_221_CODE = 221, // Close the control connection
     MMT_FTP_226_CODE = 226, // Completed sending data and close data connection
     MMT_FTP_227_CODE = 227, // Enter active mode
@@ -234,7 +234,7 @@ typedef struct ftp_data_session_struct{
 
     // struct ftp_data_session_struct * next; // Next ftp data session in the same ftp_control_session
     ftp_control_session_t *control_session;
-    
+
 }ftp_data_session_t;
 
 
@@ -242,7 +242,7 @@ typedef struct ftp_data_session_struct{
  * A FTP control session
  */
 typedef struct ftp_control_session_struct{
-    
+
     ftp_tuple6_t * contrl_conn;
 
     ftp_command_t *last_command;
@@ -258,7 +258,7 @@ typedef struct ftp_control_session_struct{
     char * current_dir;
 
     uint16_t status;
-    
+
     ftp_data_session_t * current_data_session;
 
     ftp_control_session_t *next;

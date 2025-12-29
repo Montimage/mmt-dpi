@@ -27,7 +27,7 @@ struct S1ap_IE;
 typedef struct S1ap_MMEConfigurationUpdateFailure {
 	struct S1ap_MMEConfigurationUpdateFailure__s1ap_MMEConfigurationUpdateFailure_ies {
 		A_SEQUENCE_OF(struct S1ap_IE) list;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} s1ap_MMEConfigurationUpdateFailure_ies;
@@ -35,7 +35,7 @@ typedef struct S1ap_MMEConfigurationUpdateFailure {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_MMEConfigurationUpdateFailure_t;

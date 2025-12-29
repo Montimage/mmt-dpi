@@ -303,4 +303,3 @@ extern "C" {
 #endif
 
 #endif	/* MMT_TCPIP_INTERNAL_DEFS_MACROS_H */
-

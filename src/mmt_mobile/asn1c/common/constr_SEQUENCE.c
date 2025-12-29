@@ -131,7 +131,7 @@ SEQUENCE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 	size_t edx;			/* SEQUENCE element's index */
 
 	ASN_DEBUG("Decoding %s as SEQUENCE", td->name);
-	
+
 	/*
 	 * Create the target structure if it is not present already.
 	 */
@@ -146,7 +146,7 @@ SEQUENCE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 	 * Restore parsing context.
 	 */
 	ctx = (asn_struct_ctx_t *)((char *)st + specs->ctx_offset);
-	
+
 	/*
 	 * Start to parse where left previously
 	 */
@@ -382,7 +382,7 @@ SEQUENCE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 		ctx->step |= 1;		/* Confirm entering next microphase */
 	microphase2:
 		ASN_DEBUG("Inside SEQUENCE %s MF2", td->name);
-		
+
 		/*
 		 * Compute the position of the member inside a structure,
 		 * and also a type of containment (it may be contained
@@ -428,7 +428,7 @@ SEQUENCE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 		case RC_FAIL: /* Fatal error */
 			RETURN(RC_FAIL);
 		} /* switch(rval) */
-		
+
 		ADVANCE(rval.consumed);
 	  }	/* for(all structure members) */
 
@@ -499,7 +499,7 @@ SEQUENCE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 
 		PHASE_OUT(ctx);
 	}
-	
+
 	RETURN(RC_OK);
 }
 
@@ -2056,4 +2056,3 @@ SEQUENCE_random_fill(const asn_TYPE_descriptor_t *td, void **sptr,
 
     return result_ok;
 }
-

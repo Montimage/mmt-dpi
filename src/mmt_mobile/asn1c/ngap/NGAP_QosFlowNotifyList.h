@@ -25,7 +25,7 @@ struct NGAP_QosFlowNotifyItem;
 /* NGAP_QosFlowNotifyList */
 typedef struct NGAP_QosFlowNotifyList {
 	A_SEQUENCE_OF(struct NGAP_QosFlowNotifyItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowNotifyList_t;

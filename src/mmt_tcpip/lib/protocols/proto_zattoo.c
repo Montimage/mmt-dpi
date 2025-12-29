@@ -428,5 +428,3 @@ int init_proto_zattoo_struct() {
         return 0;
     }
 }
-
-

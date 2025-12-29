@@ -63,4 +63,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_CauseMisc = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_NGAP_CauseMisc_specs_1	/* Additional specs */
 };
-

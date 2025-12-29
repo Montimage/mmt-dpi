@@ -67,4 +67,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_SuccessfulOutcome = {
 	3,	/* Elements count */
 	&asn_SPC_S1ap_SuccessfulOutcome_specs_1	/* Additional specs */
 };
-

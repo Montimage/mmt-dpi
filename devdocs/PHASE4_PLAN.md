@@ -12,6 +12,7 @@
 Phase 4 builds on Phase 1 security fixes by creating a systematic input validation framework. While Phase 1 fixed specific vulnerabilities reactively, Phase 4 establishes proactive validation infrastructure to prevent future issues.
 
 **Goals:**
+
 1. Create reusable validation framework
 2. Add systematic bounds checking across all protocols
 3. Establish fuzzing infrastructure
@@ -161,6 +162,7 @@ static inline bool mmt_validate_index(
 ```
 
 **Testing:**
+
 ```bash
 cat > test/unit/test_safe_access.c << 'EOF'
 #include <stdio.h>
@@ -195,6 +197,7 @@ EOF
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Header compiles without errors
 - [ ] All validation functions implemented
 - [ ] Unit tests pass
@@ -317,6 +320,7 @@ static inline uint32_t mmt_align_up_pow2(uint32_t value, uint32_t alignment) {
 ```
 
 **Testing:**
+
 ```bash
 cat > test/unit/test_safe_math.c << 'EOF'
 #include <stdio.h>
@@ -482,6 +486,7 @@ EOF
 ```
 
 **Usage Example:**
+
 ```c
 // In proto_example.c
 #include "mmt_protocol_validation.h"
@@ -661,6 +666,7 @@ int main() {
 ```
 
 **Compile and run:**
+
 ```bash
 gcc -o test/validation/test_validation_framework \
     test/validation/test_validation_framework.c \
@@ -725,9 +731,13 @@ int classify_tcp(ipacket_t *ipacket, unsigned index) {
 ---
 
 ### Subtask 4.2.2: UDP Protocol Validation (4h)
+
 ### Subtask 4.2.3: IP Protocol Validation (4h)
+
 ### Subtask 4.2.4: HTTP Protocol Validation (4h)
+
 ### Subtask 4.2.5: DNS Protocol Validation (4h)
+
 ### Subtask 4.2.6: TLS/SSL Protocol Validation (4h)
 
 *(Implementation follows same pattern as TCP)*
@@ -776,6 +786,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 ```
 
 **Build with AFL:**
+
 ```bash
 afl-gcc -o test/fuzzing/protocol_fuzzer \
     test/fuzzing/protocol_fuzzer.c \
@@ -783,6 +794,7 @@ afl-gcc -o test/fuzzing/protocol_fuzzer \
 ```
 
 **Run fuzzing:**
+
 ```bash
 afl-fuzz -i test/pcap_samples -o findings test/fuzzing/protocol_fuzzer
 ```
@@ -813,6 +825,7 @@ Create test cases for known edge cases:
 **File:** `VALIDATION_GUIDELINES.md`
 
 Contents:
+
 - How to use validation framework
 - Common validation patterns
 - Examples for new protocols
@@ -828,16 +841,19 @@ Contents:
 **Priority:** HIGH (builds on Phase 1)
 
 **Key Deliverables:**
+
 1. ✅ Validation framework headers (safe_access, safe_math, protocol_validation)
 2. ⏳ Applied to top 6 protocols (TCP, UDP, IP, HTTP, DNS, TLS)
 3. ⏳ Fuzzing infrastructure
 4. ⏳ Developer documentation
 
 **Dependencies:**
+
 - Phase 1 security fixes (completed)
 - Phase 3 thread safety (completed for locking, assists validation)
 
 **Success Metrics:**
+
 - Zero crashes on malformed packets
 - 100% validation coverage on top protocols
 - Fuzzing runs for 24+ hours without crashes
@@ -846,4 +862,3 @@ Contents:
 ---
 
 **Ready to begin implementation. Starting with Task 4.1.1: Safe Access Header...**
-

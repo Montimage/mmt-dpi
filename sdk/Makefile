@@ -17,7 +17,7 @@ default: sdk
 
 include $(RULESDIR)/arch-$(ARCH).mk
 
-# This target is to deal with the issue when user uses 
+# This target is to deal with the issue when user uses
 #   2 differrent values of INSTALL_DIR for "make" and "make install"
 # Ex: make; sudo make install INSTALL_DIR=/tmp/mmt
 #   - the first "make" will set in the codes PLUGINS_REPOSITORY_OPT to /opt/mmt/plugins
@@ -27,7 +27,7 @@ include $(RULESDIR)/arch-$(ARCH).mk
 # So, in the example above, the PLUGINS_REPOSITORY_OPT will be update to /tmp/mmt/plugins.
 --refresh-plugin-engine:
 	$(QUIET) $(RM) $(SRCDIR)/mmt_core/src/plugins_engine.o
-	
+
 #  - - -
 #  S D K
 #  - - -
@@ -48,7 +48,7 @@ install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT
 	@ln -sf $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(MMT_LIB)/libmmt_tcpip.so
 	@ln -sf $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(MMT_LIB)/$(LIBMOBILE).so
 	@ln -sf $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)      $(MMT_LIB)/$(LIBBAPP).so
-	
+
 	@ echo "[MMT-]> Installed  "$(SDKLIB)" at "$(MMT_LIB)
 	@ cp -R $(SDKINC)/* $(MMT_INC)
 	@ echo "[MMT-]> Installed  "$(SDKINC)" at "$(MMT_INC)
@@ -56,10 +56,10 @@ install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT
 	@ echo "[MMT-]> Installed  "$(SDKXAM)" at "$(MMT_EXAMS)
 	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(MMT_PLUGINS)/libmmt_tcpip.so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/libmmt_tcpip.so
-	
+
 	@ cp $(SDKLIB)/$(LIBMOBILE).so.$(VERSION) $(MMT_PLUGINS)/$(LIBMOBILE).so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBMOBILE).so
-	
+
 	@ cp $(SDKLIB)/$(LIBBAPP).so.$(VERSION) $(MMT_PLUGINS)/$(LIBBAPP).so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBBAPP).so
 ifdef NEED_ROOT_PERMISSION
@@ -101,10 +101,10 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/libmmt_tcpip.so
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBMOBILE).so
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBBAPP).so
-	
+
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
 	echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
-	
+
 deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/DEBIAN
 	$(QUIET) echo "Package: mmt-dpi \

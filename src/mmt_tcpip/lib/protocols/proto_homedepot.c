@@ -10,11 +10,9 @@
 
 int init_proto_homedepot_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_HOMEDEPOT, PROTO_HOMEDEPOT_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_HOMEDEPOT);
     } else {
         return 0;
     }
 }
-
-

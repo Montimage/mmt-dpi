@@ -2,15 +2,15 @@
 
 ## Overview
 
-** Working branch: ** ndn
+**Working branch:** ndn
 
-** Started date: ** ---
+**Started date:** ---
 
-** Deadline: ** ---
+**Deadline:** ---
 
-** Developer: ** @luongnv89
+**Developer:** @luongnv89
 
-** Probe example **: 
+**Probe example**:
 
 ## List of tasks
 
@@ -18,7 +18,7 @@
 
 * Create data struct for extracting protocol attributes  - **DONE**
 
-* Study some open-source library (if it exists) to see how do they do  - ** NO NEED** 
+* Study some open-source library (if it exists) to see how do they do  - **NO NEED**
 
 * Implement classify NDN packet  - **DONE**
 
@@ -26,8 +26,7 @@
 
 * Test NDN plugin  - **DONE**
 
-* Merge to MMT-SDK - ** DONE **
-
+* Merge to MMT-SDK - **DONE**
 
 ## View NDN packet in Wireshark
 
@@ -36,7 +35,6 @@ To view NDN packet in Wireshark application:
 * Download script to ndn: `mmt-test/scripts/ndn.lua`
 
 * Run wireshark from terminal with command: `wireshark -X lua_script:ndn.lua`
-
 
 ## Contents
 

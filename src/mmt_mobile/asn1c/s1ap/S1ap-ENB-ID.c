@@ -12,21 +12,21 @@ memb_macroENB_ID_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	const BIT_STRING_t *st = (const BIT_STRING_t *)sptr;
 	size_t size;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	if(st->size > 0) {
 		/* Size in bits */
 		size = 8 * st->size - (st->bits_unused & 0x07);
 	} else {
 		size = 0;
 	}
-	
+
 	if((size == 20)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -43,21 +43,21 @@ memb_homeENB_ID_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	const BIT_STRING_t *st = (const BIT_STRING_t *)sptr;
 	size_t size;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	if(st->size > 0) {
 		/* Size in bits */
 		size = 8 * st->size - (st->bits_unused & 0x07);
 	} else {
 		size = 0;
 	}
-	
+
 	if((size == 28)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -140,4 +140,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_ENB_ID = {
 	2,	/* Elements count */
 	&asn_SPC_S1ap_ENB_ID_specs_1	/* Additional specs */
 };
-

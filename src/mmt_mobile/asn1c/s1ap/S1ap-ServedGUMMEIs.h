@@ -25,7 +25,7 @@ struct S1ap_ServedGUMMEIsItem;
 /* S1ap-ServedGUMMEIs */
 typedef struct S1ap_ServedGUMMEIs {
 	A_SEQUENCE_OF(struct S1ap_ServedGUMMEIsItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_ServedGUMMEIs_t;

@@ -25,7 +25,7 @@ struct NGAP_ForbiddenAreaInformation_Item;
 /* NGAP_ForbiddenAreaInformation */
 typedef struct NGAP_ForbiddenAreaInformation {
 	A_SEQUENCE_OF(struct NGAP_ForbiddenAreaInformation_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_ForbiddenAreaInformation_t;

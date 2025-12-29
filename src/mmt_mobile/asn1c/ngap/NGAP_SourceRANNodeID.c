@@ -70,4 +70,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_SourceRANNodeID = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_SourceRANNodeID_specs_1	/* Additional specs */
 };
-

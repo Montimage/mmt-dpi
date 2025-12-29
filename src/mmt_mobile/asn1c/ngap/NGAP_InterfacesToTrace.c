@@ -12,21 +12,21 @@ NGAP_InterfacesToTrace_constraint(const asn_TYPE_descriptor_t *td, const void *s
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	const BIT_STRING_t *st = (const BIT_STRING_t *)sptr;
 	size_t size;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	if(st->size > 0) {
 		/* Size in bits */
 		size = 8 * st->size - (st->bits_unused & 0x07);
 	} else {
 		size = 0;
 	}
-	
+
 	if((size == 8)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -67,4 +67,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_InterfacesToTrace = {
 	0, 0,	/* No members */
 	&asn_SPC_BIT_STRING_specs	/* Additional specs */
 };
-

@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   rtsp.h
  * Author: montimage
  *
@@ -72,4 +72,3 @@ extern "C" {
 #endif
 
 #endif	/* RTSP_H */
-

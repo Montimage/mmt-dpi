@@ -2,15 +2,15 @@
 
 ## Overview
 
-** Working branch: ** ftp
+**Working branch:** ftp
 
-** Started date: ** 21/09/2015 
+**Started date:** 21/09/2015
 
-** Deadline: ** 26/10/2015 
+**Deadline:** 26/10/2015
 
-** Developer: ** @luongnv89 
+**Developer:** @luongnv89
 
-** Probe example **: reconstruct file content and extract file information such as: MIME/Type, size, name, ...
+**Probe example**: reconstruct file content and extract file information such as: MIME/Type, size, name, ...
 
 ## List of tasks
 

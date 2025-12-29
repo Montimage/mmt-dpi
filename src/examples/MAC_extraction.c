@@ -1,10 +1,10 @@
 /**
- * 
+ *
  * Compile this example with:
- * 
+ *
  * Linux:
  * $ gcc -g -o MAC_extraction MAC_extraction.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
- * 
+ *
  * macOS (from MMT-DPI root directory):
  * $ clang -o MAC_extraction src/examples/MAC_extraction.c \
  *     -I sdk/include -I sdk/include/tcpip \
@@ -12,29 +12,29 @@
  *     -L sdk/lib -L /opt/homebrew/opt/libpcap/lib \
  *     -lmmt_core -lpcap -ldl \
  *     -Wl,-rpath,sdk/lib
- * 
+ *
  * macOS (if installed in /opt/mmt):
  * $ clang -o MAC_extraction MAC_extraction.c \
  *     -I /opt/mmt/dpi/include -I /opt/mmt/dpi/include/tcpip \
  *     -L /opt/mmt/dpi/lib -lmmt_core -lpcap -ldl \
  *     -Wl,-rpath,/opt/mmt/dpi/lib
- * 
+ *
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
- * 
+ *
  * Then execute the program:
- * 
+ *
  * IMPORTANT for macOS: Set the environment before running:
  * $ export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
  * $ export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
- * 
+ *
  * $ ./MAC_extraction -t ftp_trace.pcap > output.xls
- * 
+ *
  * The example output result in the file: output.xls
- * 
+ *
  * That is it!
- * 
+ *
  */
- 
+
  #include <stdio.h>
  #include <stdlib.h>
  #include <pcap.h>
@@ -68,14 +68,14 @@
  * @param user_args user data
  */
  int packet_handler(const ipacket_t * ipacket, void * user_args){
-	
+
 	uint8_t *src_mac = (uint8_t *) get_attribute_extracted_data(ipacket, PROTO_ETHERNET, ETH_SRC);
 	uint8_t *dst_mac = (uint8_t *) get_attribute_extracted_data(ipacket, PROTO_ETHERNET, ETH_DST);
 
  	char src_mac_pretty [18], dst_mac_pretty [18];
-		
+
 	snprintf(src_mac_pretty , 18, "%02x:%02x:%02x:%02x:%02x:%02x", src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5] );
-		
+
 	snprintf(dst_mac_pretty , 18, "%02x:%02x:%02x:%02x:%02x:%02x", dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5] );
 
 	printf("%lu,", ipacket->packet_id);
@@ -187,15 +187,15 @@ int main(int argc, char ** argv){
 		return EXIT_FAILURE;
 	}
 
-	
+
 	// ETHERNET PROTOCOL META DATA
 	register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_SRC);
 	register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_DST);
 	register_extraction_attribute(mmt_handler,PROTO_ETHERNET,ETH_PROTOCOL);
-	
-	
+
+
 	register_packet_handler(mmt_handler,1,packet_handler, NULL);
-		
+
 	printf("Packet_id, MAC source, MAC destination\n");
 	if (type == TRACE_FILE) {
         pcap = pcap_open_offline(filename, errbuf); // open offline trace

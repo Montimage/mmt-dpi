@@ -320,7 +320,7 @@ void *get_xdata(long type, int size, void *str)
                 xfree(data);
                 return NULL;
             }
-                
+
             //str+4 to skip size of mmt_string_data_t structure
             convert_mac_string_to_byte((const char *) (str + 4), &temp_MAC);
             memcpy(data, (void *) temp_MAC, size);
@@ -415,7 +415,7 @@ char *get_my_data(void *data1, short size, long type) {
         xfree(buff1);
         return NULL;
     }
-        
+
     void * data2 = NULL;
     struct timeval t1;
     unsigned long L1=0,L2=0,L3=0,L4=0;
@@ -545,7 +545,7 @@ char *get_my_data(void *data1, short size, long type) {
             // TODO verify if OK
             //if(type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:5\n");
             break;
-             
+
         default:
             (void)fprintf(stderr, "Error 15.1: Type not implemented yet. Data type unknown.\n");
             exit(-1);
@@ -627,7 +627,7 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                     data = temp_tuple2->data + sizeof (int);
                 }
                 else if( type == MMT_HEADER_LINE ){
-                    data  = (void*)(((mmt_header_line_t *)data)->ptr); 
+                    data  = (void*)(((mmt_header_line_t *)data)->ptr);
                     *size = ((mmt_header_line_t *)data)->len;
                 }
                 //Copy (data, size, type) to output
@@ -656,7 +656,7 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                 data = data + sizeof (int);
             }
             else if( type == MMT_HEADER_LINE ){
-                data  = (void*)(((mmt_header_line_t *)data)->ptr); 
+                data  = (void*)(((mmt_header_line_t *)data)->ptr);
                 *size = ((mmt_header_line_t *)data)->len;
             }
             //Copy (data, size, type) to output
@@ -2107,7 +2107,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
               continue;
             }
             num_attr ++;
-            
+
             data_size  = get_data_size_by_proto_and_field_ids(temp->protocol_id, temp->field_id);
             proto_name = get_protocol_name_by_id(temp->protocol_id);
             att_name   = get_attribute_name_by_protocol_and_attribute_ids(temp->protocol_id, temp->field_id);
@@ -2967,9 +2967,9 @@ void * compute(compare_value v1, compare_value v2, short operator)
     return NULL;
 }
 
-int exists_or_not (const ipacket_t *pkt, short operator, rule *r) { 
+int exists_or_not (const ipacket_t *pkt, short operator, rule *r) {
     void *data = get_attribute_extracted_data( pkt, r->t.protocol_id, r->t.field_id );
-    if (operator == DE && data != NULL) return VALID; 
+    if (operator == DE && data != NULL) return VALID;
     else if (operator == DNE && data == NULL) return VALID;
     return NOT_VALID;
 }
@@ -3274,7 +3274,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 				(void)strcpy(type, "attack");
 				break;
 	}
-	*str_verdict = xmalloc (strlen(verdict) + 1); 
+	*str_verdict = xmalloc (strlen(verdict) + 1);
 	strcpy( *str_verdict, verdict );
 
 	*str_type = xmalloc(strlen(type) +1);
@@ -3567,7 +3567,7 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     //Copy input to output, replacing the variables with the values recovered below
     // use malloc to allocate output
     // if a value is not available then print an error and return NULL!
-    
+
 
     strcpy(output, "/opt/mmt/probe/conf/");
 
@@ -3662,7 +3662,7 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     pythonDataFile = open_file(pythonDataFileName, "w+");
     if(r->root != NULL) rr = r->root;
     else rr = r;
-    if(rr->type_rule == ATTACK)             fprintf(pythonDataFile,"attack\n"); 
+    if(rr->type_rule == ATTACK)             fprintf(pythonDataFile,"attack\n");
     else if(rr->type_rule == EVASION)       fprintf(pythonDataFile,"evasion\n");
     else if(rr->type_rule == SECURITY_RULE) fprintf(pythonDataFile,"security rule\n");
     else                                    fprintf(pythonDataFile,"type\n");
@@ -3759,7 +3759,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                 ((op->callback_funct))(prop_id, verdict, type, des, temp, pkt->p_hdr->ts, (void *)op->user_args);
                 xfree(temp);
             }
-           
+
         }
 		xfree( verdict );
 		xfree( type );
@@ -4226,7 +4226,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                         result = check_time(r, current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
                         if (result != SKIP2) {
                             //We have a timeout condition
-                            
+
                             //EDMO:Eliminated since not correct
                             if (r->list_of_sons->value == NOT) {
                                 r->valid = VALID;

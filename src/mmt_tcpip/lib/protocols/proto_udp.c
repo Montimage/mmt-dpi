@@ -93,13 +93,13 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_UDP){
             return new_retval;
         }
-        //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.  
+        //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         if (ipacket->mmt_handler->ip_address_classify == 1)
         {
             retval.proto_id = get_proto_id_from_address(ipacket);
         }
-        
+
         if (retval.proto_id == PROTO_UNKNOWN && ipacket->mmt_handler->port_classify != 0) {
             retval.proto_id = mmt_guess_protocol_by_port_number(ipacket);
         }
@@ -150,5 +150,3 @@ int init_proto_udp_struct() {
         return 0;
     }
 }
-
-

@@ -25,7 +25,7 @@ struct NGAP_QosFlowModifyConfirmItem;
 /* NGAP_QosFlowModifyConfirmList */
 typedef struct NGAP_QosFlowModifyConfirmList {
 	A_SEQUENCE_OF(struct NGAP_QosFlowModifyConfirmItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowModifyConfirmList_t;

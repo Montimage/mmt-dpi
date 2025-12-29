@@ -96,7 +96,7 @@ int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
                     return 1;
                 }
 
-                
+
             } else if (payload_len > 4) {
                 char citrix_header[] = {0x1a, 0x43, 0x47, 0x50, 0x2f, 0x30, 0x31};
 
@@ -107,7 +107,7 @@ int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
                     return 1;
                 }
 
-                
+
             }
 
             MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_CITRIX);
@@ -139,5 +139,3 @@ int init_proto_citrix_struct() {
         return 0;
     }
 }
-
-

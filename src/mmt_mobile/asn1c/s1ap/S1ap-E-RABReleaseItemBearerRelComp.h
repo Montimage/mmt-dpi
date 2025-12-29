@@ -30,7 +30,7 @@ typedef struct S1ap_E_RABReleaseItemBearerRelComp {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_E_RABReleaseItemBearerRelComp_t;

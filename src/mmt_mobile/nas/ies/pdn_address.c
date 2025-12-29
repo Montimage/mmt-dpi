@@ -27,4 +27,3 @@ int nas_decode_pdn_address(nas_pdn_address_t *addr, uint8_t iei, const uint8_t *
 
   return decoded;
 }
-

@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceAdmittedItem;
 /* NGAP_PDUSessionResourceAdmittedList */
 typedef struct NGAP_PDUSessionResourceAdmittedList {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceAdmittedItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceAdmittedList_t;

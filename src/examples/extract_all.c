@@ -1,43 +1,43 @@
 /**
- * This example is intended to extract everything from a pcap file (or from an interface)! 
- * This means all the attributes of all registered protocols will be registed for extraction. 
+ * This example is intended to extract everything from a pcap file (or from an interface)!
+ * This means all the attributes of all registered protocols will be registed for extraction.
  * When a packet is processed, the attributes found in the packet will be print out.
- * 
+ *
  * Compile this example with:
- * 
+ *
  * Linux:
  * $ gcc -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
- * 
+ *
  * macOS:
  * $ clang -g -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap -Wl,-rpath,/opt/mmt/dpi/lib
- * 
+ *
  * Or from MMT-DPI build directory:
  * $ clang -g -o extract_all src/examples/extract_all.c -I sdk/include -L sdk/lib -lmmt_core -ldl -lpcap -Wl,-rpath,sdk/lib
- * 
+ *
  * Before running on macOS, set:
  * $ export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib  # or path to your sdk/lib
  * $ export DYLD_LIBRARY_PATH=/opt/mmt/dpi/lib:$DYLD_LIBRARY_PATH  # if needed
- *   
+ *
  * Then execute the program:
- * 
+ *
  * macOS runtime environment (important):
  *   export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
  *   export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
- * 
+ *
  * -> Extract from a pcap file
  * $ ./extract_all -t sample.pcap > extract_output.txt
  *
  * -> Extract from an interface
  * Linux: $ ./extract_all -i eth0 > extract_output.txt
  * macOS: $ ./extract_all -i en0 > extract_output.txt
- * 
+ *
  * -> Test with valgrind tool:
  * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./extract_all -t tcp_plugin_image.pcap 2> valgrind_test_.txt
  * You can see the example result in file: exta_output.txt
  *
  * You can see the example result in file: exta_live_output.txt
  * That is it!
- * 
+ *
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,7 +142,7 @@ void parseOptions(int argc, char ** argv, char * filename, int * type) {
             strncpy((char *) filename, optarg, MAX_FILENAME_SIZE);
             *type = LIVE_INTERFACE;
             break;
-            
+
             case 'b':
             optcount++;
             if (optcount > 5) {
@@ -213,11 +213,11 @@ void live_capture_callback( u_char *user, const struct pcap_pkthdr *p_pkthdr, co
  */
 void clean() {
     printf("\n[info] Cleaning....\n");
-    
+
     //Close the MMT handler
     mmt_close_handler(mmt_handler);
     printf("[info] Closed mmt_handler\n");
-    
+
     //Close MMT
     close_extraction();
     printf("[info] Closed extraction \n");
@@ -232,7 +232,7 @@ void clean() {
         (void) printf("[info] %12d packets dropped by driver (%3.2f%%)\n", pcs.ps_ifdrop, pcs.ps_ifdrop * 100.0 / pcs.ps_recv);
         fflush(stderr);
     }
-    
+
     printf("[info] Closing pcaps...!\n");
     if (pcap != NULL) pcap_close(pcap);
     printf("[info] Finished cleaning....\n");
@@ -255,12 +255,12 @@ void signal_handler(int type) {
  * @return      [description]
  */
 int main(int argc, char ** argv) {
-    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     printf("|\t\t MONTIMAGE\n");
     printf("|\t MMT-SDK version: %s\n",mmt_version());
     printf("|\t %s: built %s %s\n", argv[0], __DATE__, __TIME__);
     printf("|\t http://montimage.com\n");
-    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     sigset_t signal_set;
 
     char mmt_errbuf[1024];

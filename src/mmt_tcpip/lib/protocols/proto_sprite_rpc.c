@@ -10,11 +10,9 @@
 
 int init_proto_sprite_rpc_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_SPRITE_RPC, PROTO_SPRITE_RPC_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_SPRITE_RPC);
     } else {
         return 0;
     }
 }
-
-

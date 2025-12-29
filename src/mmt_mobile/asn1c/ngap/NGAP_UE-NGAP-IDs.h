@@ -39,7 +39,7 @@ typedef struct NGAP_UE_NGAP_IDs {
 		NGAP_AMF_UE_NGAP_ID_t	 aMF_UE_NGAP_ID;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UE_NGAP_IDs_t;

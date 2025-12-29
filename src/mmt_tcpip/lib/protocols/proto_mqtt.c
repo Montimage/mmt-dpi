@@ -108,5 +108,3 @@ int init_proto_mqtt_struct() {
         return 0;
     }
 }
-
-

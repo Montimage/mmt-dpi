@@ -25,7 +25,7 @@ struct NGAP_QosFlowAcceptedItem;
 /* NGAP_QosFlowAcceptedList */
 typedef struct NGAP_QosFlowAcceptedList {
 	A_SEQUENCE_OF(struct NGAP_QosFlowAcceptedItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowAcceptedList_t;

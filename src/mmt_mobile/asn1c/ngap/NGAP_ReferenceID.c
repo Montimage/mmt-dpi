@@ -11,16 +11,16 @@ int
 NGAP_ReferenceID_constraint(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 1 && value <= 64)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -61,4 +61,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_ReferenceID = {
 	0, 0,	/* No members */
 	0	/* No specifics */
 };
-

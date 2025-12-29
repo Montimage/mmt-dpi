@@ -39,7 +39,7 @@ typedef struct NGAP_QosCharacteristics {
 		struct NGAP_Dynamic5QIDescriptor	*dynamic5QI;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosCharacteristics_t;

@@ -33,13 +33,16 @@ Added pthread_rwlock for thread-safe protocol registry access:
 **File:** `src/mmt_core/src/packet_processing.c`
 
 **Changes:**
+
 1. Added pthread.h include (line 22)
 2. Added static rwlock declaration (line 97):
+
    ```c
    static pthread_rwlock_t protocol_registry_lock = PTHREAD_RWLOCK_INITIALIZER;
    ```
 
 3. Protected read operations with rdlock:
+
    ```c
    static inline int _is_registered_protocol(uint32_t proto_id) {
        int result = PROTO_NOT_REGISTERED;
@@ -51,6 +54,7 @@ Added pthread_rwlock for thread-safe protocol registry access:
    ```
 
 4. Protected write operations with wrlock:
+
    ```c
    int register_protocol(protocol_t *proto, uint32_t proto_id) {
        pthread_rwlock_wrlock(&protocol_registry_lock);
@@ -60,18 +64,21 @@ Added pthread_rwlock for thread-safe protocol registry access:
    ```
 
 **Thread Safety Model:**
+
 - **Read locks (rdlock):** Multiple threads can safely check protocol registration simultaneously
 - **Write locks (wrlock):** Exclusive access during register/unregister operations
 - **Lock-free when:** No contention between readers
 - **Blocks when:** Writer waiting or writing
 
 **Protected Operations:**
+
 - ✅ Protocol lookup (_is_registered_protocol)
 - ✅ Protocol registration (register_protocol)
 - ✅ Protocol unregistration by ID (unregister_protocol_by_id)
 - ✅ Protocol unregistration by name (unregister_protocol_by_name)
 
 **Build Validation:**
+
 ```
 ✅ Compiles successfully
 ✅ No new warnings (only pre-existing)
@@ -80,12 +87,14 @@ Added pthread_rwlock for thread-safe protocol registry access:
 ```
 
 **Performance Impact:**
+
 - Read operations: Near-zero overhead (rdlock is very fast when no writers)
 - Write operations: Minimal overhead (only during initialization/cleanup)
 - No spinlocks or busy-waiting
 - OS-optimized pthread implementation
 
 **Benefits:**
+
 - Prevents race conditions during plugin initialization
 - Safe multi-threaded protocol queries
 - Prevents corruption of protocol registry
@@ -111,12 +120,15 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 **File:** `src/mmt_core/private_include/packet_processing.h`
 
 **Changes:**
+
 1. Added pthread.h include (line 23):
+
    ```c
    #include <pthread.h>  /* Phase 3: For thread safety primitives */
    ```
 
 2. Added session_lock field to protocol_instance_struct (line 393):
+
    ```c
    struct protocol_instance_struct {
        protocol_t * protocol;
@@ -131,12 +143,14 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 
 **Changes:**
 3. Initialize session locks in mmt_init_handler() (line 1237):
+
    ```c
    /* Phase 3: Initialize session lock for thread safety */
    pthread_rwlock_init(&new_handler->configured_protocols[i].session_lock, NULL);
    ```
 
 4. Destroy session locks in mmt_close_handler() (lines 1344-1348):
+
    ```c
    /* Phase 3: Destroy session locks for thread safety */
    int i;
@@ -150,12 +164,15 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 **File:** `src/mmt_core/src/hash_utils.cpp`
 
 **Changes:**
+
 1. Added pthread.h include (line 4):
+
    ```cpp
    #include <pthread.h>  /* Phase 3: Thread safety for session operations */
    ```
 
 2. Wrapped insert_session_into_protocol_context() with write lock (lines 50-60):
+
    ```cpp
    int insert_session_into_protocol_context(void * protocol_context, void * key, void * value) {
        protocol_instance_t *proto_inst = (protocol_instance_t *) protocol_context;
@@ -171,6 +188,7 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
    ```
 
 3. Wrapped get_session_from_protocol_context_by_session_key() with read lock (lines 96-106):
+
    ```cpp
    void * get_session_from_protocol_context_by_session_key(void * protocol_context, void * key) {
        protocol_instance_t *proto_inst = (protocol_instance_t *) protocol_context;
@@ -192,12 +210,14 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 6. Wrapped protocol_sessions_iteration_callback() with read lock (lines 188-197)
 
 **Thread Safety Model:**
+
 - **Read locks (rdlock):** Session lookups and iteration (concurrent safe)
 - **Write locks (wrlock):** Session insertion, deletion, clearing (exclusive access)
 - **Per-protocol granularity:** Independent locks for each protocol instance
 - **Fine-grained locking:** HTTP sessions don't block DNS sessions
 
 **Protected Operations:**
+
 - ✅ Session insertion (insert_session_into_protocol_context) - write lock
 - ✅ Session lookup (get_session_from_protocol_context_by_session_key) - read lock
 - ✅ Session deletion (delete_session_from_protocol_context) - write lock
@@ -205,6 +225,7 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 - ✅ Session iteration (protocol_sessions_iteration_callback) - read lock
 
 **Build Validation:**
+
 ```
 ✅ Compiles successfully (no errors)
 ✅ No new warnings
@@ -214,12 +235,14 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 ```
 
 **Performance Impact:**
+
 - Lookup operations: Minimal overhead with rwlock
 - Insert/delete: Small overhead, but rare compared to lookups
 - Iteration: Protected but allows concurrent readers
 - Per-protocol locks: Maximum parallelism
 
 **Benefits:**
+
 - Prevents race conditions in session map access
 - Thread-safe session lifecycle management
 - Fine-grained locking for better concurrency
@@ -262,7 +285,7 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 
 4. **Implementation Complexity:**
    - Need C11 atomics or GCC builtin fallback
-   - Memory ordering decisions (__ATOMIC_RELAXED vs __ATOMIC_SEQ_CST)
+   - Memory ordering decisions (__ATOMIC_RELAXED vs__ATOMIC_SEQ_CST)
    - Snapshot consistency during aggregation
    - Thread-safe reset operations
 
@@ -272,6 +295,7 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
    - **Current Impact:** LOW (inaccurate statistics don't cause crashes)
 
 **Recommendation:**
+
 - ✅ Document requirements (see TASK_3_3_ANALYSIS.md)
 - ✅ Complete critical thread safety first (Tasks 3.1, 3.2)
 - ⏸️ Defer to v2.0.0 with proper planning
@@ -279,10 +303,12 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 - ⏸️ Benchmark performance impact before committing
 
 **Documentation:**
+
 - See `TASK_3_3_ANALYSIS.md` for comprehensive technical analysis
 - See implementation options, risks, and recommendations
 
 **Future Implementation Path:**
+
 1. Plan v2.0.0 release timeline
 2. Announce ABI-breaking change in advance
 3. Implement with C11 atomics + GCC builtin fallback
@@ -326,6 +352,7 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 ### Ready for Production: ✅
 
 **Tasks 3.1 & 3.2:**
+
 - ✅ Compiles successfully
 - ✅ No new warnings or errors
 - ✅ All libraries built
@@ -341,7 +368,8 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 
 ## 🔧 Build & Test Results
 
-### Latest Build (Task 3.2 completion):
+### Latest Build (Task 3.2 completion)
+
 ```bash
 ./test/scripts/build_and_test.sh
 ```
@@ -349,6 +377,7 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 **Result:** ✅ SUCCESS
 
 **Output:**
+
 ```
 === Building MMT-DPI ===
 [COMPILE] packet_processing.o  ✅
@@ -367,26 +396,34 @@ Added per-protocol-instance rwlocks for thread-safe session operations:
 
 ## 📁 Files Modified
 
-### Task 3.1 (Protocol Registry):
+### Task 3.1 (Protocol Registry)
+
 **Modified:**
+
 - `src/mmt_core/src/packet_processing.c` - Added protocol registry locks
 
 **Created:**
+
 - `src/mmt_core/src/packet_processing.c.backup` - Safety backup
 
-### Task 3.2 (Session Map):
+### Task 3.2 (Session Map)
+
 **Modified:**
+
 - `src/mmt_core/private_include/packet_processing.h` - Added session_lock field
 - `src/mmt_core/src/packet_processing.c` - Initialize/destroy session locks
 - `src/mmt_core/src/hash_utils.cpp` - Wrapped session operations with locks
 
 **Created:**
+
 - `src/mmt_core/private_include/packet_processing.h.backup` - Safety backup
 - `src/mmt_core/src/hash_utils.cpp.backup` - Safety backup
 - `test/build_task_3_2.log` - Build validation log
 
-### Task 3.3 (Analysis):
+### Task 3.3 (Analysis)
+
 **Created:**
+
 - `TASK_3_3_ANALYSIS.md` - Comprehensive technical analysis
 
 ---
@@ -410,6 +447,7 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 **Choice:** pthread_rwlock_t (reader-writer lock)
 
 **Rationale:**
+
 - Protocol lookups are READ-HEAVY (thousands per second)
 - Session lookups are READ-HEAVY (millions per second)
 - Protocol registration is WRITE-RARE (only during initialization)
@@ -418,6 +456,7 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 - mutex would serialize all access (unnecessary bottleneck)
 
 **Performance:**
+
 - Uncontended rdlock: ~10 ns
 - Uncontended mutex: ~15 ns
 - 100 concurrent readers with rwlock: ~10 ns each
@@ -428,6 +467,7 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 **Choice:** One rwlock per protocol instance (PROTO_MAX_IDENTIFIER locks)
 
 **Rationale:**
+
 - Different protocols have independent session maps
 - Per-protocol locking allows parallel session management across protocols
 - HTTP sessions don't block DNS sessions
@@ -435,6 +475,7 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 - Scales with number of protocols (not number of sessions)
 
 **Alternatives Considered:**
+
 - ❌ Single global session lock: Too coarse, major bottleneck
 - ❌ Per-session locks: Too fine, overhead > benefit
 - ❌ Lock-free hash table: Too complex, high risk, unnecessary
@@ -444,6 +485,7 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 **Decision:** Defer to v2.0.0
 
 **Rationale:**
+
 1. **ABI Compatibility:** v1.x must maintain binary compatibility
 2. **Risk/Benefit:** HIGH risk, MEDIUM benefit (statistics are non-critical)
 3. **Correctness:** Inaccurate statistics don't cause crashes or data corruption
@@ -451,6 +493,7 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 5. **Planning:** Needs comprehensive benchmarking and migration strategy
 
 **Data-Driven Decision:**
+
 - Monitor production for actual statistics corruption
 - Benchmark atomic operations overhead
 - Gather user feedback on need
@@ -461,17 +504,20 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 ## 📚 References
 
 **Thread Safety Resources:**
-- POSIX Threads Programming: https://computing.llnl.gov/tutorials/pthreads/
+
+- POSIX Threads Programming: <https://computing.llnl.gov/tutorials/pthreads/>
 - pthread_rwlock man page: `man pthread_rwlock_init`
 - C11 Atomics: ISO/IEC 9899:2011 Section 7.17
-- GCC Atomic Builtins: https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
+- GCC Atomic Builtins: <https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html>
 
 **MMT-DPI Architecture:**
+
 - Protocol registration: `packet_processing.c:1103-1122`
 - Session management: `hash_utils.cpp:49-161`
 - Statistics: `data_defs.h:185-202`
 
 **Phase 3 Documentation:**
+
 - Task 3.3 Analysis: `TASK_3_3_ANALYSIS.md`
 - Comprehensive Summary: `COMPREHENSIVE_SUMMARY.md`
 - Phase 2 Summary: `PHASE2_COMPLETE.md`
@@ -480,23 +526,27 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 
 ## 🔮 Future Work
 
-### Short Term (v1.x):
+### Short Term (v1.x)
+
 - ✅ Monitor thread safety in production
 - ⏸️ Performance profiling with multi-threaded workloads
 - ⏸️ Stress testing with high concurrency
 
-### Long Term (v2.0):
+### Long Term (v2.0)
+
 - ⏸️ Implement atomic statistics (Task 3.3)
 - ⏸️ Lock-free data structures (if bottlenecks identified)
 - ⏸️ NUMA-aware memory allocation
 - ⏸️ Per-core statistics with lazy aggregation
 
 ### Phase 4: Input Validation (Not Started)
+
 - Systematic bounds checking
 - Fuzzing infrastructure
 - Protocol-specific validators
 
 ### Phase 5: Error Handling (Not Started)
+
 - Standardized error framework
 - Comprehensive logging
 - Error recovery strategies
@@ -506,16 +556,19 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 ## 📊 Thread Safety Coverage
 
 **Protected Data Structures:**
+
 - ✅ Protocol registry (global, static)
 - ✅ Session maps (per-protocol)
 - ⏸️ Statistics counters (deferred to v2.0)
 
 **Unprotected (by design):**
+
 - ❌ Handler initialization (single-threaded by contract)
 - ❌ Packet buffers (per-thread, no sharing)
 - ❌ Protocol attributes (read-only after registration)
 
 **Thread Safety Model:**
+
 - **Control Path:** Fully protected (Tasks 3.1, 3.2)
 - **Data Path:** Lock-free reads, protected writes
 - **Statistics:** Best-effort (v1.x), atomic (v2.0)
@@ -538,4 +591,3 @@ bda765d - Phase 3 (Task 3.1): Add thread safety to protocol registry
 **Status:** Phase 3 Substantially Complete ✅
 **Next Phase:** Phase 4 (Input Validation) or Phase 5 (Error Handling)
 **Recommendation:** Deploy Tasks 3.1 & 3.2, monitor in production, plan v2.0 for Task 3.3
-

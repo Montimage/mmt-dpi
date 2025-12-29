@@ -20,7 +20,7 @@ struct asn_TYPE_descriptor_s;		/* Forward declaration */
  * they could be passed as NULL's. If constraints validation fails,
  * errlen will contain the actual number of bytes taken from the errbuf
  * to encode an error message (properly 0-terminated).
- * 
+ *
  * RETURN VALUES:
  * This function returns 0 in case all ASN.1 constraints are met
  * and -1 if one or more constraints were failed.

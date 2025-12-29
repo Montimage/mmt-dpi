@@ -10,11 +10,9 @@
 
 int init_proto_4story_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_4STORY, PROTO_4STORY_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_4STORY);
     } else {
         return 0;
     }
 }
-
-

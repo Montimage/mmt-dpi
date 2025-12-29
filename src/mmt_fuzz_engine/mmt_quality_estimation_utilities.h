@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   mmt_quality_estimation_utilities.h
  * Author: montimage
  *
@@ -99,4 +99,3 @@ extern "C" {
 #endif
 
 #endif	/* MMT_QUALITY_ESTIMATION_UTILITIES_H */
-

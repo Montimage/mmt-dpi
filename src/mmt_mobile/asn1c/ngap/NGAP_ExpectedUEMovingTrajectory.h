@@ -25,7 +25,7 @@ struct NGAP_ExpectedUEMovingTrajectoryItem;
 /* NGAP_ExpectedUEMovingTrajectory */
 typedef struct NGAP_ExpectedUEMovingTrajectory {
 	A_SEQUENCE_OF(struct NGAP_ExpectedUEMovingTrajectoryItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_ExpectedUEMovingTrajectory_t;

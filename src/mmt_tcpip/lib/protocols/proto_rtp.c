@@ -598,7 +598,7 @@ static void mmt_int_rtp_add_connection(ipacket_t * ipacket) {
     {
         proto = get_proto_id_from_address(ipacket);
     }
-    
+
     if (proto != PROTO_UNKNOWN) {
         switch (proto) {
             case PROTO_GOOGLE:
@@ -967,5 +967,3 @@ int init_proto_rtp_struct() {
     }
 
 }
-
-

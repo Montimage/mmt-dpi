@@ -6,48 +6,47 @@
  */
 
 #ifndef PROTO_META_H
-#define	PROTO_META_H
+#define PROTO_META_H
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
 #define PROTO_UNKNOWN 0
-#define PROTO_META    1
+#define PROTO_META 1
 
 enum {
-    META_PACKET_DIRECTION = 1,
-    META_UARGS,
-    META_UTIME,
-    META_P_LEN,
-    META_PROTO_H,
-    META_SESSION,
-    META_CLASSIFIED,
-    META_PROBE_ID,
-    META_SOURCE_ID,
+	META_PACKET_DIRECTION = 1,
+	META_UARGS,
+	META_UTIME,
+	META_P_LEN,
+	META_PROTO_H,
+	META_SESSION,
+	META_CLASSIFIED,
+	META_PROBE_ID,
+	META_SOURCE_ID,
 	META_PACKET_INDEX,
-    META_ATTRIBUTES_NB = META_PACKET_INDEX
+	META_ATTRIBUTES_NB = META_PACKET_INDEX
 };
 
 // #define META_ATTRIBUTES_NB 7 /* To be updated with whenever necessary */
 
-#define PROTO_META_ALIAS        "meta"
-#define PROTO_UNKNOWN_ALIAS     "unknown"
+#define PROTO_META_ALIAS "meta"
+#define PROTO_UNKNOWN_ALIAS "unknown"
 
-#define META_UARGS_ALIAS        "args"
-#define META_UTIME_ALIAS        "utime"
-#define META_P_LEN_ALIAS        "packet_len"
-#define META_PROTO_H_ALIAS      "proto_hierarchy"
-#define META_SESSION_ALIAS      "session"
-#define META_CLASSIFIED_ALIAS   "classified"
-#define META_PROBE_ID_ALIAS   "probe_id"
-#define META_SOURCE_ID_ALIAS   "source_id"
+#define META_UARGS_ALIAS "args"
+#define META_UTIME_ALIAS "utime"
+#define META_P_LEN_ALIAS "packet_len"
+#define META_PROTO_H_ALIAS "proto_hierarchy"
+#define META_SESSION_ALIAS "session"
+#define META_CLASSIFIED_ALIAS "classified"
+#define META_PROBE_ID_ALIAS "probe_id"
+#define META_SOURCE_ID_ALIAS "source_id"
 #define META_PACKET_DIRECTION_ALIAS "direction"
 #define META_PACKET_INDEX_ALIAS "packet_index"
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
-#endif	/* PROTO_META_H */
-
+#endif /* PROTO_META_H */

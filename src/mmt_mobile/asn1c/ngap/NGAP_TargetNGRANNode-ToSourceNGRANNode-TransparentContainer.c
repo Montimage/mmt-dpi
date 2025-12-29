@@ -60,4 +60,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_TargetNGRANNode_ToSourceNGRANNode_Transparent
 	2,	/* Elements count */
 	&asn_SPC_NGAP_TargetNGRANNode_ToSourceNGRANNode_TransparentContainer_specs_1	/* Additional specs */
 };
-

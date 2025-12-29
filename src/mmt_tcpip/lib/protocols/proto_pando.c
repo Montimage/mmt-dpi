@@ -94,11 +94,9 @@ int init_proto_pando_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_pando();
-        
+
         return register_protocol(protocol_struct, PROTO_PANDO);
     } else {
         return 0;
     }
 }
-
-

@@ -26,7 +26,7 @@ typedef struct S1ap_UnsuccessfulOutcome {
 	S1ap_ProcedureCode_t	 procedureCode;
 	S1ap_Criticality_t	 criticality;
 	ANY_t	 value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_UnsuccessfulOutcome_t;

@@ -25,7 +25,7 @@ struct NGAP_TAICancelledNR_Item;
 /* NGAP_TAICancelledNR */
 typedef struct NGAP_TAICancelledNR {
 	A_SEQUENCE_OF(struct NGAP_TAICancelledNR_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TAICancelledNR_t;

@@ -42,7 +42,7 @@ static void check_content_type_and_change_protocol(ipacket_t * ipacket, uint16_t
 }
 
 void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -64,7 +64,7 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
                     ntohs(src->jabber_file_transfer_port[1]));
             if (((MMT_INTERNAL_TIMESTAMP_TYPE)
                     (packet->tick_timestamp - src->jabber_stun_or_ft_ts)) >= jabber_file_transfer_timeout) {
-                MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                MMT_LOG(PROTO_UNENCRYPED_JABBER,
                         MMT_LOG_DEBUG, "JABBER src stun timeout %u %u\n", src->jabber_stun_or_ft_ts,
                         packet->tick_timestamp);
                 src->jabber_file_transfer_port[0] = 0;
@@ -85,7 +85,7 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
                     ntohs(dst->jabber_file_transfer_port[1]));
             if (((MMT_INTERNAL_TIMESTAMP_TYPE)
                     (packet->tick_timestamp - dst->jabber_stun_or_ft_ts)) >= jabber_file_transfer_timeout) {
-                MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                MMT_LOG(PROTO_UNENCRYPED_JABBER,
                         MMT_LOG_DEBUG, "JABBER dst stun timeout %u %u\n", dst->jabber_stun_or_ft_ts,
                         packet->tick_timestamp);
                 dst->jabber_file_transfer_port[0] = 0;
@@ -147,16 +147,16 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
                         }
                         x += 6;
                         j_port = ntohs_mmt_bytestream_to_number(&packet->payload[x], packet->payload_packet_len, &x);
-                        MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                        MMT_LOG(PROTO_UNENCRYPED_JABBER,
                                 MMT_LOG_DEBUG, "JABBER port : %u\n", ntohs(j_port));
                         if (src != NULL) {
                             if (src->jabber_file_transfer_port[0] == 0 || src->jabber_file_transfer_port[0] == j_port) {
-                                MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                                MMT_LOG(PROTO_UNENCRYPED_JABBER,
                                         MMT_LOG_DEBUG, "src->jabber_file_transfer_port[0] = j_port = %u;\n",
                                         ntohs(j_port));
                                 src->jabber_file_transfer_port[0] = j_port;
                             } else {
-                                MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                                MMT_LOG(PROTO_UNENCRYPED_JABBER,
                                         MMT_LOG_DEBUG, "src->jabber_file_transfer_port[1] = j_port = %u;\n",
                                         ntohs(j_port));
                                 src->jabber_file_transfer_port[1] = j_port;
@@ -164,12 +164,12 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
                         }
                         if (dst != NULL) {
                             if (dst->jabber_file_transfer_port[0] == 0 || dst->jabber_file_transfer_port[0] == j_port) {
-                                MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                                MMT_LOG(PROTO_UNENCRYPED_JABBER,
                                         MMT_LOG_DEBUG, "dst->jabber_file_transfer_port[0] = j_port = %u;\n",
                                         ntohs(j_port));
                                 dst->jabber_file_transfer_port[0] = j_port;
                             } else {
-                                MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                                MMT_LOG(PROTO_UNENCRYPED_JABBER,
                                         MMT_LOG_DEBUG, "dst->jabber_file_transfer_port[1] = j_port = %u;\n",
                                         ntohs(j_port));
                                 dst->jabber_file_transfer_port[1] = j_port;
@@ -214,7 +214,7 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
 
                         x += 6;
                         j_port = ntohs_mmt_bytestream_to_number(&packet->payload[x], packet->payload_packet_len, &x);
-                        MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                        MMT_LOG(PROTO_UNENCRYPED_JABBER,
                                 MMT_LOG_DEBUG, "JABBER port : %u\n", ntohs(j_port));
 
                         if (src != NULL && src->jabber_voice_stun_used_ports < JABBER_MAX_STUN_PORTS - 1) {
@@ -228,7 +228,7 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
                                             "src->jabber_file_transfer_port[0] = j_port = %u;\n", ntohs(j_port));
                                     src->jabber_file_transfer_port[0] = j_port;
                                 } else {
-                                    MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                                    MMT_LOG(PROTO_UNENCRYPED_JABBER,
                                             MMT_LOG_DEBUG, "src->jabber_file_transfer_port[1] = j_port = %u;\n",
                                             ntohs(j_port));
                                     src->jabber_file_transfer_port[1] = j_port;
@@ -247,7 +247,7 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
                                             "dst->jabber_file_transfer_port[0] = j_port = %u;\n", ntohs(j_port));
                                     dst->jabber_file_transfer_port[0] = j_port;
                                 } else {
-                                    MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+                                    MMT_LOG(PROTO_UNENCRYPED_JABBER,
                                             MMT_LOG_DEBUG, "dst->jabber_file_transfer_port[1] = j_port = %u;\n",
                                             ntohs(j_port));
                                     dst->jabber_file_transfer_port[1] = j_port;
@@ -294,7 +294,7 @@ void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
     }
 
     if (ipacket->session->data_packet_count < 3) {
-        MMT_LOG(PROTO_UNENCRYPED_JABBER, 
+        MMT_LOG(PROTO_UNENCRYPED_JABBER,
                 MMT_LOG_TRACE, "packet_counter: %u\n", flow->data_packet_count);
         return;
     }
@@ -335,11 +335,9 @@ int init_proto_unencryped_jabber_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_jabber();
-        
+
         return register_protocol(protocol_struct, PROTO_UNENCRYPED_JABBER);
     } else {
         return 0;
     }
 }
-
-

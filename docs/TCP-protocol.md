@@ -2,15 +2,15 @@
 
 ## Overview
 
-** Working branch: ** dev-libntoh-integrated
+**Working branch:** dev-libntoh-integrated
 
-** Started date: ** ---
+**Started date:** ---
 
-** Deadline: ** ---
+**Deadline:** ---
 
-** Developer: ** @luongnv89 
+**Developer:** @luongnv89
 
-** Probe example **: reconstruct data payload content and extract all attribute
+**Probe example**: reconstruct data payload content and extract all attribute
 
 ## List of tasks
 

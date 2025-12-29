@@ -578,4 +578,3 @@ void clean_packet_with_reassembly(ipacket_t * ipacket);
 #endif
 
 #endif /* PACKET_PROCESSING_H */
-

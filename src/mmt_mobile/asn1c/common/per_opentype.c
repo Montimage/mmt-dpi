@@ -529,5 +529,3 @@ aper_open_type_skip(const asn_codec_ctx_t *ctx, asn_per_data_t *pd) {
 	else
 		return 0;
 }
-
-

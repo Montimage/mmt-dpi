@@ -62,4 +62,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_UE_S1AP_IDs = {
 	2,	/* Elements count */
 	&asn_SPC_S1ap_UE_S1AP_IDs_specs_1	/* Additional specs */
 };
-

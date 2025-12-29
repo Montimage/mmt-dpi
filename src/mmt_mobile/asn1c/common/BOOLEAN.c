@@ -115,7 +115,7 @@ BOOLEAN_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 	ASN_DEBUG("Took %ld/%ld bytes to encode %s, value=%d",
 		(long)rval.consumed, (long)length,
 		td->name, *st);
-	
+
 	return rval;
 }
 

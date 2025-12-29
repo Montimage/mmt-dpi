@@ -12,6 +12,7 @@
 Phase 5 creates a comprehensive error handling and logging framework for MMT-DPI. Currently, errors are handled inconsistently across the codebase. This phase standardizes error reporting, adds structured logging, and implements recovery strategies.
 
 **Goals:**
+
 1. Standardized error code framework
 2. Comprehensive logging infrastructure
 3. Error recovery strategies
@@ -434,6 +435,7 @@ void mmt_log(mmt_log_level_t level, mmt_log_category_t category,
 **File:** `src/mmt_core/src/mmt_logging.c`
 
 Features:
+
 - Thread-safe logging
 - File output support
 - Syslog support
@@ -458,6 +460,7 @@ Test log levels, categories, filtering, callbacks.
 ### Subtask 5.3.1: Protocol Fallback (4h)
 
 When protocol classification fails:
+
 - Try alternative parsers
 - Fall back to generic handler
 - Continue with next protocol
@@ -465,6 +468,7 @@ When protocol classification fails:
 ### Subtask 5.3.2: Session Recovery (4h)
 
 When session operations fail:
+
 - Retry with backoff
 - Create new session
 - Mark session as degraded
@@ -520,4 +524,3 @@ Track error frequencies, common failure points.
 ---
 
 **Ready to begin Phase 5 implementation!**
-

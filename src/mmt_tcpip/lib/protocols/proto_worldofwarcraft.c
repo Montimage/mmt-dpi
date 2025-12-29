@@ -207,5 +207,3 @@ int init_proto_worldofwarcraft_struct() {
         return 0;
     }
 }
-
-

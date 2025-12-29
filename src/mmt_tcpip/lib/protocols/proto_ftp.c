@@ -34,7 +34,7 @@ inline static char * str_replace_all_char(char *str, int c1, int c2) {
     return new_str;
 }
 
- 
+
 //////////// FTP - FUNCTION    /////////////////////////
 
 /**
@@ -153,7 +153,7 @@ ftp_tuple6_t *ftp_copy_tupl6(ftp_tuple6_t *tuple6) {
             memcpy(t->c_addr_v6, tuple6->c_addr_v6, 32);
             t->c_addr_v6[32] = '\0';
             t->s_addr_v6[32] = '\0';
-        }            
+        }
     }
     t->ip_session_id = tuple6->ip_session_id;
     return t;
@@ -187,7 +187,7 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
             t6->direction = MMT_FTP_PACKET_SERVER;
             if(t6->is_ipv6==0){
                 t6->s_addr = ipacket->internal_packet->iph->saddr;
-                t6->c_addr = ipacket->internal_packet->iph->daddr;    
+                t6->c_addr = ipacket->internal_packet->iph->daddr;
             }else{
                 t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
                 t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
@@ -197,7 +197,7 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
                     t6->s_addr_v6[16] = '\0';
                     t6->c_addr_v6[16] = '\0';
                 }
-            }            
+            }
             t6->s_port = ipacket->internal_packet->tcp->source;
             t6->c_port = ipacket->internal_packet->tcp->dest;
             return t6;
@@ -206,7 +206,7 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
             t6->direction = MMT_FTP_PACKET_CLIENT;
             if(t6->is_ipv6==0){
                 t6->s_addr = ipacket->internal_packet->iph->daddr;
-                t6->c_addr = ipacket->internal_packet->iph->saddr;    
+                t6->c_addr = ipacket->internal_packet->iph->saddr;
             }else{
                 t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
                 t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
@@ -226,7 +226,7 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
             t6->direction = MMT_FTP_PACKET_UNKNOWN_DIRECTION;
             if(t6->is_ipv6==0){
                 t6->s_addr = ipacket->internal_packet->iph->saddr;
-                t6->c_addr = ipacket->internal_packet->iph->daddr;    
+                t6->c_addr = ipacket->internal_packet->iph->daddr;
             }else{
                 t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
                 t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
@@ -456,7 +456,7 @@ int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2) {
     } else {
         if(t1->is_ipv6==1){
             if (mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t1->c_port == t2->c_port && mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t1->s_port == t2->s_port) return 2;
-            if (mmt_memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && t1->c_port == t2->s_port && mmt_memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->s_port == t2->c_port) return 3; 
+            if (mmt_memcmp(t1->c_addr_v6,t2->s_addr_v6,32)==0 && t1->c_port == t2->s_port && mmt_memcmp(t1->s_addr_v6,t2->c_addr_v6,32)==0 && t1->s_port == t2->c_port) return 3;
 
             // Extended passive mode - 229 and 227 code
             if (mmt_memcmp(t1->c_addr_v6,t2->c_addr_v6,32)==0 && t2->c_port == 0 && mmt_memcmp(t1->s_addr_v6,t2->s_addr_v6,32)==0 && t1->s_port == t2->s_port) return 4;
@@ -539,7 +539,7 @@ void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6, ftp_tuple6_t *conn, int comp
         }
         conn->s_port = tuple6->c_port;
         conn->s_addr = tuple6->c_addr;
-        break;        
+        break;
     }
 }
 
@@ -890,7 +890,7 @@ char * ftp_get_command_str(char* payload, int payload_len){
                 }
                 memcpy(command, payload, 4);
                 command[4] = '\0';
-            }    
+            }
         }
     }
     return command;
@@ -944,7 +944,7 @@ ftp_response_t * ftp_get_response(char* payload, int payload_len) {
             code = MMT_FTP_CONTINUE_CODE;
             str_value = (char*)malloc(payload_len - 1);
             if (str_value == NULL)
-            {                
+            {
                 free(res);
                 return NULL;
             }
@@ -1125,7 +1125,7 @@ inline static uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
             return 0;
         }
         memcpy(str_addr, payload + indexes[2] + 1, len - 1);
-        str_addr[len - 1] = '\0';    
+        str_addr[len - 1] = '\0';
     }else{
         int len = strlen(payload) - indexes[2]-2;
         str_addr = (char*)malloc(len);
@@ -1137,7 +1137,7 @@ inline static uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
         memcpy(str_addr, payload + indexes[2] + 1, len - 1);
         str_addr[len - 1] = '\0';
     }
-    
+
     uint16_t c_port = atoi(str_addr);
     free(str_addr);
     free(indexes);
@@ -1181,9 +1181,9 @@ inline static uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payl
 /**
  * Get an address IPv6 from a string
  *     LPRT <protocol>,<addr-length>,<address...>,<port-length>,<port...>
- *  
+ *
  *     LPRT <SP> <long-host-port> <CRLF>
- *     
+ *
  *     The <long-host-port> argument is the concatenation of the following
        fields;
 
@@ -1197,9 +1197,9 @@ inline static uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payl
 
        o  a <port-address> of <port-address-length> (p1, p2, ...)
  *     LPRT af,hal,h1,h2,h3,h4...,pal,p1,p2...
- * Ref: http://www.networksorcery.com/enp/rfc/rfc1639.txt    
+ * Ref: http://www.networksorcery.com/enp/rfc/rfc1639.txt
  * @param  payload     string
- * Example: LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7 -> 
+ * Example: LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7 ->
  * address family: 6
  * host address length: 16
  * host address of host address length: 32 (=2x16->20),2(02) ,81(51),131(83), 67(43),131(83), 0,0, 0,0 ,0,0 ,81,131 ,67,131
@@ -1220,10 +1220,10 @@ inline static char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
     int host_address_length = 0;
     int found_address = 0;
     while(temp!=NULL){
-        
+
         if(index == 1){
             host_address_length = atoi(temp);
-            found_address = 1;            
+            found_address = 1;
             temp = strtok(NULL,",");
             index++;
             continue;
@@ -1261,7 +1261,7 @@ inline static char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
                             hvalue[2] = '\0';
                         }
                     }
-                    
+
                 }
                 if(hvalue!=NULL){
                     if (index == 2)
@@ -1526,8 +1526,8 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
                     flow->l4.tcp.ftp_codes_seen |= MMT_FTP_UNKNOWN_CMD;
                     current_ftp_code = MMT_FTP_UNKNOWN_CMD;
                 }
-            }  
-        } 
+            }
+        }
     } else {
         if (packet->payload_packet_len > 4 &&
                 (mmt_memcmp(packet->payload, "220 ", 4) == 0 ||
@@ -1870,7 +1870,7 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
 
 
         if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");       
+            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");
             return 4;
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);
@@ -2764,7 +2764,7 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
         }else{
             current_data_session->data_conn->c_addr = ftp_get_data_client_addr_from_EPRT(payload);
         }
-        current_data_session->data_conn->c_port = ftp_get_data_client_port_from_EPRT(payload);    
+        current_data_session->data_conn->c_port = ftp_get_data_client_port_from_EPRT(payload);
         break;
     case MMT_FTP_PORT_CMD:
         current_data_session->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
@@ -3138,5 +3138,3 @@ int init_proto_ftp_struct() {
         return 0;
     }
 }
-
-

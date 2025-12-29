@@ -4,7 +4,6 @@
 
 ------------------
 
-
 This is an overview of the memory management features implemented in [memory.c](/montimage/mmt/src/mmt_core/src/memory.c).
 
 ## Scope ##

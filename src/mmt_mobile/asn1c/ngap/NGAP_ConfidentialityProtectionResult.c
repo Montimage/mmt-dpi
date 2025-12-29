@@ -55,4 +55,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_ConfidentialityProtectionResult = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_NGAP_ConfidentialityProtectionResult_specs_1	/* Additional specs */
 };
-

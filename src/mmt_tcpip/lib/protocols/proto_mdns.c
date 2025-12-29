@@ -41,7 +41,7 @@ static int mmt_int_check_mdns_payload(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_mdns(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -91,7 +91,7 @@ void mmt_classify_me_mdns(ipacket_t * ipacket, unsigned index) {
 
             if (packet->iph != NULL && ntohl(packet->iph->daddr) == 0xe00000fb) {
 
-                MMT_LOG(PROTO_MDNS, 
+                MMT_LOG(PROTO_MDNS,
                         MMT_LOG_DEBUG, "found MDNS with destination address 224.0.0.251 (=0xe00000fb)\n");
 
                 if (mmt_int_check_mdns_payload(ipacket) == 1) {
@@ -104,7 +104,7 @@ void mmt_classify_me_mdns(ipacket_t * ipacket, unsigned index) {
                 const uint32_t *daddr = packet->iphv6->daddr.mmt_v6_u.u6_addr32;
                 if (daddr[0] == htonl(0xff020000) && daddr[1] == 0 && daddr[2] == 0 && daddr[3] == htonl(0xfb)) {
 
-                    MMT_LOG(PROTO_MDNS, 
+                    MMT_LOG(PROTO_MDNS,
                             MMT_LOG_DEBUG, "found MDNS with destination address ff02::fb\n");
 
                     if (mmt_int_check_mdns_payload(ipacket) == 1) {
@@ -126,7 +126,7 @@ int mmt_check_mdns(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
+
         struct mmt_internal_tcpip_session_struct * flow = packet->flow;
 
         uint16_t dport;
@@ -167,7 +167,7 @@ int mmt_check_mdns(ipacket_t * ipacket, unsigned index) {
 
             if (packet->iph != NULL && ntohl(packet->iph->daddr) == 0xe00000fb) {
 
-                MMT_LOG(PROTO_MDNS, 
+                MMT_LOG(PROTO_MDNS,
                         MMT_LOG_DEBUG, "found MDNS with destination address 224.0.0.251 (=0xe00000fb)\n");
 
                 if (mmt_int_check_mdns_payload(ipacket) == 1) {
@@ -179,7 +179,7 @@ int mmt_check_mdns(ipacket_t * ipacket, unsigned index) {
                 const uint32_t *daddr = packet->iphv6->daddr.mmt_v6_u.u6_addr32;
                 if (daddr[0] == htonl(0xff020000) && daddr[1] == 0 && daddr[2] == 0 && daddr[3] == htonl(0xfb)) {
 
-                    MMT_LOG(PROTO_MDNS, 
+                    MMT_LOG(PROTO_MDNS,
                             MMT_LOG_DEBUG, "found MDNS with destination address ff02::fb\n");
 
                     if (mmt_int_check_mdns_payload(ipacket) == 1) {
@@ -213,5 +213,3 @@ int init_proto_mdns_struct() {
         return 0;
     }
 }
-
-

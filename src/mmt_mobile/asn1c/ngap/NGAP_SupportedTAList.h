@@ -25,7 +25,7 @@ struct NGAP_SupportedTAItem;
 /* NGAP_SupportedTAList */
 typedef struct NGAP_SupportedTAList {
 	A_SEQUENCE_OF(struct NGAP_SupportedTAItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_SupportedTAList_t;

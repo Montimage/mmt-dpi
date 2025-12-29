@@ -18,7 +18,7 @@ static void mmt_int_gadugadu_add_connection(ipacket_t * ipacket, mmt_protocol_ty
 }
 
 static void parse_gg_foneno(ipacket_t * ipacket) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -65,7 +65,7 @@ static void parse_gg_foneno(ipacket_t * ipacket) {
 }
 
 static uint8_t check_for_gadugadu_payload_pattern(ipacket_t * ipacket) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -91,7 +91,7 @@ static uint8_t check_for_gadugadu_payload_pattern(ipacket_t * ipacket) {
 }
 
 static uint8_t check_for_http(ipacket_t * ipacket) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
@@ -180,7 +180,7 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
 }
 
 static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -297,7 +297,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                     if (dst != NULL) {
 
                         memcpy(dst->gg_call_id[dst->gg_next_id], &packet->payload[8], 4);
-                        MMT_LOG(PROTO_GADUGADU, 
+                        MMT_LOG(PROTO_GADUGADU,
                                 MMT_LOG_DEBUG, "call id parsed %d\n", packet->payload[8]);
 
                         dst->gg_ft_ip_address = get_u32(packet->payload, 86);
@@ -329,7 +329,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, 
+                MMT_LOG(PROTO_GADUGADU,
                         MMT_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
                 return;
             } else {
@@ -370,7 +370,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, 
+                MMT_LOG(PROTO_GADUGADU,
                         MMT_LOG_DEBUG, "file transfer detetced %d\n", htons(packet->tcp->dest));
                 return;
             } else {
@@ -388,7 +388,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, 
+                MMT_LOG(PROTO_GADUGADU,
                         MMT_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
                 return;
             } else {
@@ -429,7 +429,7 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
                 mmt_int_gadugadu_add_connection(ipacket, MMT_REAL_PROTOCOL);
 
-                MMT_LOG(PROTO_GADUGADU, 
+                MMT_LOG(PROTO_GADUGADU,
                         MMT_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
                 return;
             } else {
@@ -479,11 +479,9 @@ int init_proto_gadugadu_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_gadugadu();
-        
+
         return register_protocol(protocol_struct, PROTO_GADUGADU);
     } else {
         return 0;
     }
 }
-
-

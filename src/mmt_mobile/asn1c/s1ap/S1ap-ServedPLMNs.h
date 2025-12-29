@@ -23,7 +23,7 @@ extern "C" {
 /* S1ap-ServedPLMNs */
 typedef struct S1ap_ServedPLMNs {
 	A_SEQUENCE_OF(S1ap_PLMNidentity_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_ServedPLMNs_t;

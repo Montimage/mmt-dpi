@@ -90,4 +90,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_TargetRNC_ID = {
 	5,	/* Elements count */
 	&asn_SPC_S1ap_TargetRNC_ID_specs_1	/* Additional specs */
 };
-

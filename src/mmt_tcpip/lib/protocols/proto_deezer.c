@@ -10,11 +10,9 @@
 
 int init_proto_deezer_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_DEEZER, PROTO_DEEZER_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_DEEZER);
     } else {
         return 0;
     }
 }
-
-

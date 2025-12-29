@@ -31,7 +31,7 @@ int mmt_check_skype_tcp(ipacket_t * ipacket, unsigned index) {
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         uint32_t payload_len = packet->payload_packet_len;
         // int l4_offset = get_packet_offset_at_index(ipacket, index);
-        
+
         /* skip marked packets */
         if (packet->detected_protocol_stack[0] != PROTO_UNKNOWN)
             return 0;
@@ -74,14 +74,14 @@ int mmt_check_skype_udp(ipacket_t * ipacket, unsigned index) { //BW: TODO: Check
         /* skip marked packets */
         if (packet->detected_protocol_stack[0] != PROTO_UNKNOWN)
             return 0;
-        
+
         if(packet->udp == NULL) return 0;
 
         flow->l4.udp.skype_packet_id++;
 
         if (flow->l4.udp.skype_packet_id < 5) {
             uint16_t dport = ntohs(packet->udp->dest);
-            
+
             /* skype-to-skype */
             if(dport!=1119){
                 if (((payload_len == 3) && ((packet->payload[2] & 0x0F) == 0x0d))
@@ -95,7 +95,7 @@ int mmt_check_skype_udp(ipacket_t * ipacket, unsigned index) { //BW: TODO: Check
                     return 1;
                 }
             }
-            
+
 
             // /* Third payload octet is always 0x*d (something - d); interpret it as skype */
             // if ((payload_len >= 16) && ((packet->payload[2] & 0x0F) == 0x0d)) {
@@ -109,7 +109,7 @@ int mmt_check_skype_udp(ipacket_t * ipacket, unsigned index) { //BW: TODO: Check
         //     mmt_internal_add_connection(ipacket, PROTO_SKYPE, MMT_REAL_PROTOCOL);
         //     return 1;
         // }
-        
+
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SKYPE);
 
     }
@@ -137,5 +137,3 @@ int init_proto_skype_struct() {
         return 0;
     }
 }
-
-

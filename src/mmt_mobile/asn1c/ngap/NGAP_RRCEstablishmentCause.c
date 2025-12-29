@@ -71,4 +71,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_RRCEstablishmentCause = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_NGAP_RRCEstablishmentCause_specs_1	/* Additional specs */
 };
-

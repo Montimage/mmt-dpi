@@ -20,16 +20,16 @@ static uint32_t edonkey_safe_mode = MMT_PROTOCOL_PLAIN_DETECTION; //BW TODO: Che
 */
 
 static int mmt_edonkey_payload_check(const u_int8_t *data, u_int32_t len) {
-  
+
   if ((len >= 4) && (data[0] == 0xe3) && (data[2] == 0x00) && (data[3] == 0x00))
     return 1;
-  
+
   if ((len >= 4) && (data[0] == 0xc5) && (data[2] == 0x00) && (data[3] == 0x00))
-    return 1;  
-  
+    return 1;
+
   if ((len >= 2) && (data[0] == 0xe5) && (data[1] == 0x43))
     return 1;
-  
+
   if ((len >= 4) && (data[0] == 0xe5) && (data[1] == 0x08) && (data[2] == 0x78) && (data[3] == 0xda))
     return 1;
 
@@ -156,7 +156,7 @@ static void mmt_add_connection_as_edonkey(ipacket_t * ipacket, const uint8_t sav
         {
             if (get_proto_id_from_address(ipacket) != PROTO_UNKNOWN)
                 return;
-        }        
+        }
 
         uint16_t sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);
         /* for source and dst port 80 & 443 avoid inserting eDonkey as local proto! avoid false positives */
@@ -244,7 +244,7 @@ int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
     app = check_local_proto_by_port_nb(packet->tcp->dest, &dst->local_protos);
     if (app == PROTO_EDONKEY) {
         mmt_add_connection_as_edonkey(ipacket, MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION);
-        return 1; 
+        return 1;
     }
     app = check_local_proto_by_port_nb(packet->tcp->source, &src->local_protos);
     if (app == PROTO_EDONKEY) {
@@ -438,5 +438,3 @@ int init_proto_edonkey_struct() {
         return 0;
     }
 }
-
-

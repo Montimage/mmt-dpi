@@ -230,5 +230,3 @@ int init_proto_sopcast_struct() {
         return 0;
     }
 }
-
-

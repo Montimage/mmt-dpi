@@ -2279,8 +2279,8 @@ extern "C" {
     int init_proto_int_struct();
     int init_proto_dtls_struct();
     int init_proto_quic_ietf_struct();
-    
-    
+
+
     int init_http2_proto_struct() ;
     ////////// END OF GENERATED CODE ////////////////
 
@@ -2289,4 +2289,3 @@ extern "C" {
 #endif
 
 #endif	/* MMT_COMMON_INTERNAL_INCLUDE_H */
-

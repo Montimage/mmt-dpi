@@ -4179,4 +4179,3 @@ int mmt_attr_format(FILE * f, attribute_t * a) {
 char * mmt_version() {
     return MMT_VERSION;
 }
-

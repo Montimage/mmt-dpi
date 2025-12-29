@@ -20,44 +20,44 @@
  * Recovery action result
  */
 typedef enum {
-    MMT_RECOVERY_SUCCESS = 0,      /* Recovery succeeded */
-    MMT_RECOVERY_FAILED,           /* Recovery failed */
-    MMT_RECOVERY_RETRY,            /* Should retry operation */
-    MMT_RECOVERY_SKIP,             /* Skip and continue */
-    MMT_RECOVERY_ABORT             /* Abort processing */
+	MMT_RECOVERY_SUCCESS = 0, /* Recovery succeeded */
+	MMT_RECOVERY_FAILED,      /* Recovery failed */
+	MMT_RECOVERY_RETRY,       /* Should retry operation */
+	MMT_RECOVERY_SKIP,        /* Skip and continue */
+	MMT_RECOVERY_ABORT        /* Abort processing */
 } mmt_recovery_result_t;
 
 /**
  * Protocol fallback options
  */
 typedef enum {
-    MMT_FALLBACK_NONE = 0,         /* No fallback */
-    MMT_FALLBACK_GENERIC,          /* Use generic parser */
-    MMT_FALLBACK_NEXT_LAYER,       /* Try next protocol layer */
-    MMT_FALLBACK_ALTERNATIVE,      /* Try alternative parser */
-    MMT_FALLBACK_RAW               /* Treat as raw data */
+	MMT_FALLBACK_NONE = 0,    /* No fallback */
+	MMT_FALLBACK_GENERIC,     /* Use generic parser */
+	MMT_FALLBACK_NEXT_LAYER,  /* Try next protocol layer */
+	MMT_FALLBACK_ALTERNATIVE, /* Try alternative parser */
+	MMT_FALLBACK_RAW          /* Treat as raw data */
 } mmt_fallback_strategy_t;
 
 /**
  * Session recovery options
  */
 typedef enum {
-    MMT_SESSION_RECOVERY_NONE = 0, /* No recovery */
-    MMT_SESSION_RECOVERY_RETRY,    /* Retry operation */
-    MMT_SESSION_RECOVERY_CREATE,   /* Create new session */
-    MMT_SESSION_RECOVERY_DEGRADE,  /* Mark as degraded */
-    MMT_SESSION_RECOVERY_SKIP      /* Skip session operation */
+	MMT_SESSION_RECOVERY_NONE = 0, /* No recovery */
+	MMT_SESSION_RECOVERY_RETRY,    /* Retry operation */
+	MMT_SESSION_RECOVERY_CREATE,   /* Create new session */
+	MMT_SESSION_RECOVERY_DEGRADE,  /* Mark as degraded */
+	MMT_SESSION_RECOVERY_SKIP      /* Skip session operation */
 } mmt_session_recovery_t;
 
 /**
  * Recovery statistics
  */
 typedef struct {
-    uint64_t protocol_fallbacks;         /* Protocol fallback count */
-    uint64_t session_recoveries;         /* Session recovery count */
-    uint64_t successful_recoveries;      /* Successful recovery count */
-    uint64_t failed_recoveries;          /* Failed recovery count */
-    uint64_t retry_attempts;             /* Total retry attempts */
+	uint64_t protocol_fallbacks;    /* Protocol fallback count */
+	uint64_t session_recoveries;    /* Session recovery count */
+	uint64_t successful_recoveries; /* Successful recovery count */
+	uint64_t failed_recoveries;     /* Failed recovery count */
+	uint64_t retry_attempts;        /* Total retry attempts */
 } mmt_recovery_stats_t;
 
 /*
@@ -75,12 +75,8 @@ typedef struct {
  * @param strategy Fallback strategy to use
  * @return Recovery result
  */
-mmt_recovery_result_t mmt_protocol_fallback(
-    uint32_t protocol_id,
-    const void *packet,
-    uint32_t offset,
-    mmt_fallback_strategy_t strategy
-);
+mmt_recovery_result_t mmt_protocol_fallback(uint32_t protocol_id, const void *packet, uint32_t offset,
+											mmt_fallback_strategy_t strategy);
 
 /**
  * Check if protocol has fallback available
@@ -105,15 +101,9 @@ mmt_fallback_strategy_t mmt_protocol_get_fallback_strategy(uint32_t protocol_id)
  * @param handler Fallback handler function
  * @return MMT_SUCCESS on success, error code otherwise
  */
-typedef mmt_recovery_result_t (*mmt_fallback_handler_t)(
-    const void *packet,
-    uint32_t offset
-);
+typedef mmt_recovery_result_t (*mmt_fallback_handler_t)(const void *packet, uint32_t offset);
 
-mmt_error_t mmt_protocol_register_fallback(
-    uint32_t protocol_id,
-    mmt_fallback_handler_t handler
-);
+mmt_error_t mmt_protocol_register_fallback(uint32_t protocol_id, mmt_fallback_handler_t handler);
 
 /*
  * ============================================================================
@@ -125,10 +115,10 @@ mmt_error_t mmt_protocol_register_fallback(
  * Retry configuration for session operations
  */
 typedef struct {
-    uint32_t max_retries;           /* Maximum retry attempts */
-    uint32_t base_delay_ms;         /* Base delay in milliseconds */
-    bool exponential_backoff;       /* Use exponential backoff */
-    uint32_t max_delay_ms;          /* Maximum delay between retries */
+	uint32_t max_retries;     /* Maximum retry attempts */
+	uint32_t base_delay_ms;   /* Base delay in milliseconds */
+	bool exponential_backoff; /* Use exponential backoff */
+	uint32_t max_delay_ms;    /* Maximum delay between retries */
 } mmt_retry_config_t;
 
 /**
@@ -140,12 +130,8 @@ typedef struct {
  * @param retry_config Retry configuration (can be NULL for defaults)
  * @return Recovery result
  */
-mmt_recovery_result_t mmt_session_recover(
-    const void *session_key,
-    mmt_error_t error,
-    mmt_session_recovery_t strategy,
-    const mmt_retry_config_t *retry_config
-);
+mmt_recovery_result_t mmt_session_recover(const void *session_key, mmt_error_t error, mmt_session_recovery_t strategy,
+										  const mmt_retry_config_t *retry_config);
 
 /**
  * Execute operation with automatic retry
@@ -157,11 +143,8 @@ mmt_recovery_result_t mmt_session_recover(
  */
 typedef mmt_error_t (*mmt_retryable_operation_t)(void *context);
 
-mmt_error_t mmt_execute_with_retry(
-    mmt_retryable_operation_t operation,
-    void *context,
-    const mmt_retry_config_t *retry_config
-);
+mmt_error_t mmt_execute_with_retry(mmt_retryable_operation_t operation, void *context,
+								   const mmt_retry_config_t *retry_config);
 
 /**
  * Mark session as degraded
@@ -236,13 +219,13 @@ extern const mmt_retry_config_t MMT_DEFAULT_RETRY_CONFIG;
  *       mmt_protocol_fallback(proto_id, packet, offset, MMT_FALLBACK_GENERIC)
  *   );
  */
-#define MMT_TRY_WITH_FALLBACK(operation, fallback) \
-    do { \
-        if (!(operation)) { \
-            MMT_LOG_WARN("Operation failed, attempting fallback"); \
-            fallback; \
-        } \
-    } while(0)
+#define MMT_TRY_WITH_FALLBACK(operation, fallback)                 \
+	do {                                                           \
+		if (!(operation)) {                                        \
+			MMT_LOG_WARN("Operation failed, attempting fallback"); \
+			fallback;                                              \
+		}                                                          \
+	} while (0)
 
 /**
  * Execute with automatic retry on error
@@ -251,14 +234,11 @@ extern const mmt_retry_config_t MMT_DEFAULT_RETRY_CONFIG;
  *   mmt_error_t result;
  *   MMT_RETRY_ON_ERROR(result, create_session(key), NULL);
  */
-#define MMT_RETRY_ON_ERROR(result_var, operation, retry_cfg) \
-    do { \
-        result_var = mmt_execute_with_retry( \
-            (mmt_retryable_operation_t)operation, \
-            NULL, \
-            retry_cfg ? retry_cfg : &MMT_DEFAULT_RETRY_CONFIG \
-        ); \
-    } while(0)
+#define MMT_RETRY_ON_ERROR(result_var, operation, retry_cfg)                                    \
+	do {                                                                                        \
+		result_var = mmt_execute_with_retry((mmt_retryable_operation_t)operation, NULL,         \
+											retry_cfg ? retry_cfg : &MMT_DEFAULT_RETRY_CONFIG); \
+	} while (0)
 
 /**
  * Continue processing on non-fatal error
@@ -266,14 +246,13 @@ extern const mmt_retry_config_t MMT_DEFAULT_RETRY_CONFIG;
  * Usage:
  *   MMT_CONTINUE_ON_ERROR(result, MMT_ERROR_SESSION_NOT_FOUND);
  */
-#define MMT_CONTINUE_ON_ERROR(result, expected_error) \
-    do { \
-        if ((result) == (expected_error)) { \
-            MMT_LOG_DEBUG("Non-fatal error, continuing: %s", \
-                         mmt_error_to_string(result)); \
-            result = MMT_SUCCESS; \
-        } \
-    } while(0)
+#define MMT_CONTINUE_ON_ERROR(result, expected_error)                                      \
+	do {                                                                                   \
+		if ((result) == (expected_error)) {                                                \
+			MMT_LOG_DEBUG("Non-fatal error, continuing: %s", mmt_error_to_string(result)); \
+			result = MMT_SUCCESS;                                                          \
+		}                                                                                  \
+	} while (0)
 
 /**
  * Skip operation if session is degraded
@@ -281,12 +260,12 @@ extern const mmt_retry_config_t MMT_DEFAULT_RETRY_CONFIG;
  * Usage:
  *   MMT_SKIP_IF_DEGRADED(session_key, return MMT_SUCCESS);
  */
-#define MMT_SKIP_IF_DEGRADED(session_key, skip_action) \
-    do { \
-        if (mmt_session_is_degraded(session_key)) { \
-            MMT_LOG_DEBUG("Skipping operation for degraded session"); \
-            skip_action; \
-        } \
-    } while(0)
+#define MMT_SKIP_IF_DEGRADED(session_key, skip_action)                \
+	do {                                                              \
+		if (mmt_session_is_degraded(session_key)) {                   \
+			MMT_LOG_DEBUG("Skipping operation for degraded session"); \
+			skip_action;                                              \
+		}                                                             \
+	} while (0)
 
 #endif /* MMT_RECOVERY_H */

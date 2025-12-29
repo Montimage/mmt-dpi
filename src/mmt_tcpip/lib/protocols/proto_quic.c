@@ -110,7 +110,7 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			     {
 			       if (sequence(packet->payload) < 1)
 			       {
-			         
+
 			         MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "exclude quic.\n");
 			         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_QUIC);
 			       }
@@ -126,12 +126,12 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			     {
 				  // Skip CID length.
 			       ver_offs = connect_id(packet->payload[0]);
-			       
+
 			       if (ver_offs >= 0)
 			       {
 			         unsigned char vers[] = {packet->payload[ver_offs], packet->payload[ver_offs + 1],
 			          packet->payload[ver_offs + 2], packet->payload[ver_offs + 3]};
-			          
+
 				    // Version Match.
 			          if ((vers[0] == 'Q' && vers[1] == '0') &&
 			            ((vers[2] == '2' && (vers[3] == '5' || vers[3] == '4' || vers[3] == '3' || vers[3] == '2' ||
@@ -140,7 +140,7 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			             vers[3] == '5' || vers[3] == '4' || vers[3] == '3' || vers[3] == '2' ||
 			             vers[3] == '1' || vers[3] == '0')) ||
 			            (vers[2] == '0' && vers[3] == '9')))
-			           
+
 			          {
 			           MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "found quic.\n");
 			           // debug("QUIC: Found QUIC");
@@ -149,7 +149,7 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
 			         }
 			       }
 			     }
-			   } 
+			   }
 			   else
 			   {
 			     MMT_LOG(PROTO_QUIC,MMT_LOG_DEBUG, "exclude quic.\n");
@@ -173,7 +173,7 @@ void mmt_init_classify_me_quic() {
 
 
 int init_proto_quic_struct() {
-    
+
     // debug("QUIC: init_proto_quic_struct");
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_QUIC, PROTO_QUIC_ALIAS);

@@ -134,19 +134,19 @@ int gre_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             //ipacket->session->tcp_udp_index = index + 1;
             retval.status = Classified;
             break;
-        // IEEE1588           
+        // IEEE1588
         case GRE_P_PPP:
             retval.proto_id = PROTO_PPP;
             retval.offset = 4 + nb_lignes * 4;
             retval.status = Classified;
-            break; 
+            break;
         default:
             retval.proto_id = PROTO_UNKNOWN;
             retval.offset = 4 + nb_lignes * 4;
             retval.status = Classified;
             break;
     }
-    
+
     return set_classified_proto(ipacket, index + 1, retval);
     //return retval;
 }
@@ -181,11 +181,9 @@ int init_proto_gre_struct() {
         }
 
         register_classification_function(protocol_struct, gre_classify_next_proto);
-        
+
         return register_protocol(protocol_struct, PROTO_GRE);
     } else {
         return 0;
     }
 }
-
-

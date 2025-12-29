@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   ospf.h
  * Author: montimage
  *
@@ -14,7 +14,7 @@ extern "C" {
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
-    
+
     int init_ospf_proto_struct();
 
 #ifdef	__cplusplus
@@ -22,4 +22,3 @@ extern "C" {
 #endif
 
 #endif	/* OSPF_H */
-

@@ -28,7 +28,7 @@ typedef enum S1ap_AreaScopeOfMDT_PR {
 	S1ap_AreaScopeOfMDT_PR_tABased,
 	S1ap_AreaScopeOfMDT_PR_pLMNWide
 	/* Extensions may appear below */
-	
+
 } S1ap_AreaScopeOfMDT_PR;
 
 /* S1ap-AreaScopeOfMDT */
@@ -43,7 +43,7 @@ typedef struct S1ap_AreaScopeOfMDT {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_AreaScopeOfMDT_t;

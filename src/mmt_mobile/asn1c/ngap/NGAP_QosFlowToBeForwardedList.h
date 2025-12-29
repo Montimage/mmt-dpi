@@ -25,7 +25,7 @@ struct NGAP_QosFlowToBeForwardedItem;
 /* NGAP_QosFlowToBeForwardedList */
 typedef struct NGAP_QosFlowToBeForwardedList {
 	A_SEQUENCE_OF(struct NGAP_QosFlowToBeForwardedItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_QosFlowToBeForwardedList_t;

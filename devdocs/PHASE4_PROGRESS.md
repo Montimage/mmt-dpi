@@ -47,6 +47,7 @@ MMT_SAFE_ADD_OR_FAIL(offset, length, new_offset, PROTO_GTP);
 ```
 
 **Macros Provided:**
+
 - `MMT_VALIDATE_MIN_HEADER` - Check minimum header size
 - `MMT_GET_HEADER_PTR` - Safe header pointer extraction
 - `MMT_VALIDATE_RANGE` - Value range validation
@@ -75,6 +76,7 @@ bool mmt_safe_sub_u32(uint32_t a, uint32_t b, uint32_t *result);
 ```
 
 **Complete Safe Math Functions:**
+
 - `mmt_safe_add_u32()` - Safe addition (uint32_t)
 - `mmt_safe_mul_u32()` - Safe multiplication (uint32_t)
 - `mmt_safe_sub_u32()` - Safe subtraction (uint32_t) ← NEW
@@ -92,6 +94,7 @@ bool mmt_safe_sub_u32(uint32_t a, uint32_t b, uint32_t *result);
 **File:** `test/validation/test_validation_framework.c`
 
 **Test Coverage:**
+
 - Bounds checking validation
 - Overflow detection
 - Underflow detection
@@ -101,6 +104,7 @@ bool mmt_safe_sub_u32(uint32_t a, uint32_t b, uint32_t *result);
 - All safe math operations
 
 **Test Results:**
+
 ```
 ================================================
  Validation Framework Test Suite
@@ -138,6 +142,7 @@ Tests failed: 0
 ```
 
 **Test Statistics:**
+
 - 12 test cases
 - 12/12 passed (100%)
 - 0 failures
@@ -148,6 +153,7 @@ Tests failed: 0
 **File:** `PHASE4_PLAN.md`
 
 **Contents:**
+
 - Complete Phase 4 roadmap
 - Framework design and rationale
 - Usage examples for each macro
@@ -183,6 +189,7 @@ static inline bool mmt_validate_offset(
 All protocols use the same validation patterns:
 
 **Before Phase 4 (inconsistent):**
+
 ```c
 // Protocol A
 if (offset + len > caplen) return 0;
@@ -195,6 +202,7 @@ if (offset >= caplen || len > caplen - offset) return 0;
 ```
 
 **After Phase 4 (consistent):**
+
 ```c
 // All protocols
 MMT_VALIDATE_MIN_HEADER(ipacket, offset, header_type, proto_id);
@@ -215,6 +223,7 @@ Multiple validation layers:
 ## 🎯 Usage Example
 
 **Before Phase 4 (proto_tcp.c):**
+
 ```c
 int classify_tcp(ipacket_t *ipacket, unsigned index) {
     int offset = get_packet_offset_at_index(ipacket, index);
@@ -232,6 +241,7 @@ int classify_tcp(ipacket_t *ipacket, unsigned index) {
 ```
 
 **After Phase 4 (with framework):**
+
 ```c
 #include "../../mmt_core/public_include/mmt_protocol_validation.h"
 
@@ -259,6 +269,7 @@ int classify_tcp(ipacket_t *ipacket, unsigned index) {
 ```
 
 **Benefits:**
+
 - ✅ Consistent validation across all protocols
 - ✅ Clear, readable code
 - ✅ Comprehensive error checking
@@ -283,6 +294,7 @@ Apply validation framework to most-used protocols:
 6. **TLS/SSL** (4h) - Record layer, handshake messages
 
 **Pattern for each protocol:**
+
 1. Add `#include "mmt_protocol_validation.h"`
 2. Replace manual checks with validation macros
 3. Add comprehensive field validation
@@ -308,6 +320,7 @@ Apply validation framework to most-used protocols:
 **Estimated Time:** 8 hours
 
 Create `VALIDATION_GUIDELINES.md`:
+
 - Validation best practices
 - Pattern library
 - Protocol checklist
@@ -317,16 +330,19 @@ Create `VALIDATION_GUIDELINES.md`:
 
 ## 📁 Files Created/Modified
 
-### Created:
+### Created
+
 - `src/mmt_core/public_include/mmt_protocol_validation.h` (239 lines)
 - `test/validation/test_validation_framework.c` (371 lines)
 - `PHASE4_PLAN.md` (Complete roadmap)
 - `PHASE4_PROGRESS.md` (This document)
 
-### Modified:
+### Modified
+
 - `src/mmt_core/public_include/mmt_safe_math.h` (+13 lines, added mmt_safe_sub_u32)
 
-### Existing (from prerequisites):
+### Existing (from prerequisites)
+
 - `src/mmt_core/public_include/mmt_safe_access.h`
 - `src/mmt_core/public_include/mmt_safe_string.h`
 
@@ -353,6 +369,7 @@ Create `VALIDATION_GUIDELINES.md`:
 **Decision:** Use C preprocessor macros for protocol validation
 
 **Rationale:**
+
 1. **Context-Aware:** Macros can access surrounding context (e.g., return 0)
 2. **Type-Generic:** Work with any header type
 3. **Zero Overhead:** Expand at compile-time
@@ -366,6 +383,7 @@ Create `VALIDATION_GUIDELINES.md`:
 **Decision:** Dedicated safe math functions instead of inline checks
 
 **Rationale:**
+
 1. **Reusable:** Same checks across protocols
 2. **Testable:** Can unit test math operations
 3. **Portable:** Works on all platforms
@@ -377,6 +395,7 @@ Create `VALIDATION_GUIDELINES.md`:
 **Decision:** Validation macros return 0 (standard protocol return value)
 
 **Rationale:**
+
 1. **Convention:** MMT-DPI protocols return 0 for "not classified"
 2. **Simple:** No need for error codes or exceptions
 3. **Fast:** Early return prevents further processing
@@ -387,6 +406,7 @@ Create `VALIDATION_GUIDELINES.md`:
 ## 📊 Impact Assessment
 
 **Security:**
+
 - ✅ Prevents buffer overflows
 - ✅ Prevents integer overflows/underflows
 - ✅ Prevents out-of-bounds reads
@@ -394,6 +414,7 @@ Create `VALIDATION_GUIDELINES.md`:
 - ✅ Prevents infinite loops
 
 **Code Quality:**
+
 - ✅ Consistent validation patterns
 - ✅ Self-documenting code
 - ✅ Easier maintenance
@@ -401,12 +422,14 @@ Create `VALIDATION_GUIDELINES.md`:
 - ✅ Clear error conditions
 
 **Performance:**
+
 - ✅ Zero-cost abstractions
 - ✅ Compiler-optimized checks
 - ✅ No runtime overhead
 - ✅ Early returns on invalid data
 
 **Development:**
+
 - ✅ Faster protocol development
 - ✅ Fewer validation bugs
 - ✅ Clear best practices
@@ -416,7 +439,7 @@ Create `VALIDATION_GUIDELINES.md`:
 
 ## 🔮 Next Steps
 
-### Immediate (Next Session):
+### Immediate (Next Session)
 
 1. **Apply to TCP Protocol** (4h)
    - Add validation macros to proto_tcp.c
@@ -431,13 +454,13 @@ Create `VALIDATION_GUIDELINES.md`:
    - Add validation macros to proto_ip.c
    - Test fragmentation edge cases
 
-### Short Term:
+### Short Term
 
 4. **HTTP, DNS, TLS** (12h)
 5. **Fuzzing Infrastructure** (16h)
 6. **Developer Documentation** (8h)
 
-### Long Term:
+### Long Term
 
 7. **Apply to all 686+ protocols** (systematic rollout)
 8. **Continuous fuzzing** (ongoing)
@@ -448,16 +471,19 @@ Create `VALIDATION_GUIDELINES.md`:
 ## 📚 References
 
 **Phase 4 Documents:**
+
 - `PHASE4_PLAN.md` - Complete implementation plan
 - `PHASE4_PROGRESS.md` - This document
 - `mmt_protocol_validation.h` - API reference (inline documentation)
 
 **Related Phases:**
+
 - Phase 1: Security fixes (117+ vulnerabilities fixed)
 - Phase 2: Performance (hash table optimization, memory pool)
 - Phase 3: Thread safety (protocol registry, session maps)
 
 **Testing:**
+
 - `test/validation/test_validation_framework.c` - Framework tests
 
 ---
@@ -467,17 +493,20 @@ Create `VALIDATION_GUIDELINES.md`:
 **Phase 4 Status:** Framework Complete (30%)
 
 **Completed:**
+
 - ✅ Validation framework (15+ macros)
 - ✅ Safe math enhancements
 - ✅ Comprehensive tests (12/12 passing)
 - ✅ Documentation and planning
 
 **Remaining:**
+
 - ⏳ Apply to top 6 protocols (24h)
 - ⏳ Fuzzing infrastructure (16h)
 - ⏳ Developer guidelines (8h)
 
 **Total Estimated Time:**
+
 - Completed: 6 hours
 - Remaining: 48 hours
 - Total: 54 hours
@@ -493,4 +522,3 @@ Create `VALIDATION_GUIDELINES.md`:
 **Last Updated:** 2025-11-08
 **Next Milestone:** Apply validation to TCP protocol
 **Status:** Phase 4 - 30% Complete, On Track ✅
-

@@ -70,4 +70,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_InfoOnRecommendedCellsAndRANNodesForPaging = 
 	3,	/* Elements count */
 	&asn_SPC_NGAP_InfoOnRecommendedCellsAndRANNodesForPaging_specs_1	/* Additional specs */
 };
-

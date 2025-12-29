@@ -8,7 +8,7 @@ echo "=== Running Examples as Tests ==="
 # Test 1: Basic packet processing
 if [ -f "$EXAMPLES_DIR/google-fr.pcap" ]; then
     echo "Running packet_handler example..."
-    cd "$TEST_DIR/../sdk/lib"
+    cd "$TEST_DIR/../sdk/lib" || exit 1
     export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 
     if [ -f "../../examples/packet_handler" ]; then
