@@ -4,7 +4,6 @@
 
 ------------------
 
-
 ## Overview
 
 MMT_QoE is a software component for rtp video traffic analysis and quality estimation.
@@ -13,17 +12,17 @@ MMT_QoE operates with mmtprobe to analyse the video traffic (live or trace) and 
 
 mmtprobe listens to configuration commands from the MMT_operator on port number 4567.
 
-## Install MMT_QoE 
+## Install MMT_QoE
 
-** Environment **: Ubuntu 12.04 - 32 bits
+**Environment**: Ubuntu 12.04 - 32 bits
 
-** Install dependencies **
+**Install dependencies**
 
 ```sh
 sudo sudo apt-get install libmicrohttpd5 tomcat7 postgresql sqlite3 libpcap libxml2 pgadmin3 default-jdk
 ```
 
-** Download and install MMT_QoE **
+**Download and install MMT_QoE**
 
 ```sh
 wget  http://www.montimage.com/mmt-probe/downloads/vestel/mmt_pkg.tar.gz
@@ -37,18 +36,22 @@ sudo -u postgres psql postgres
      pgadmin # (create mmtdb under localhost server)
 sudo mv MMT_Operator_QoE.war /var/lib/tomcat7/webapps
 ```
+
 ## Use MMT_QoE
 
 Go to the directory where mmtprobe was installed `/var/mmt_probe` and run mmtprobe with super user privileges.
+
 ```sh
 cd /var/mmt_probe
 sudo ./mmtprobe
 ```
 
-Start Tomcat if it is not the case. 
+Start Tomcat if it is not the case.
+
 ```sh
 /etc/init.d/tomcat7 restart
 ```
+
 After every Tomcat startup you need to initialize MMT DB by following the instructions at: [http://localhost:8080/MMT_Operator_QoE/init-mmtdb.htm](http://localhost:8080/MMT_Operator_QoE/init-mmtdb.htm)
 
 Open a firefox and go to: [http://localhost:8080/MMT_Operator_QoE/operator.htm](http://localhost:8080/MMT_Operator_QoE/operator.htm)

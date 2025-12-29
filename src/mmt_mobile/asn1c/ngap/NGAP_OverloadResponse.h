@@ -36,7 +36,7 @@ typedef struct NGAP_OverloadResponse {
 		NGAP_OverloadAction_t	 overloadAction;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_OverloadResponse_t;

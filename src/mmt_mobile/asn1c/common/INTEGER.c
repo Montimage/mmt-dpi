@@ -575,7 +575,7 @@ INTEGER_encode_xer(const asn_TYPE_descriptor_t *td, const void *sptr,
 
 	(void)ilevel;
 	(void)flags;
-	
+
 	if(!st || !st->buf)
 		ASN__ENCODE_FAILED;
 

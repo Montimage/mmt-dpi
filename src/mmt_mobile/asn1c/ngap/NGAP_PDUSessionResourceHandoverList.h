@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceHandoverItem;
 /* NGAP_PDUSessionResourceHandoverList */
 typedef struct NGAP_PDUSessionResourceHandoverList {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceHandoverItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceHandoverList_t;

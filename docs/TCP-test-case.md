@@ -8,7 +8,7 @@ To get a pcap file to test offline, follow the process:
 
 * Prepare the test script (choose a test case)
 
-* Open Wireshark application 
+* Open Wireshark application
 
 * Start a new capturing
 
@@ -24,21 +24,21 @@ Each test case will correspond with a trace file.
 
 ### What do we need to monitor
 
-* TCP session status: OPEN (3 handshakes), ESTABLISHED (After handshaking), CLOSED(Terminate) 
+* TCP session status: OPEN (3 handshakes), ESTABLISHED (After handshaking), CLOSED(Terminate)
 
-* TCP data stream: 
+* TCP data stream:
 
-- Order
+* Order
 
-- Retransmission of lost packets
+* Retransmission of lost packets
 
-- Error-free data transfer
+* Error-free data transfer
 
-- Flow control
+* Flow control
 
-- Congestion control
+* Congestion control
 
-### Test case possible:
+### Test case possible
 
 * TCP normal: All the packet in order and there is no retransmission ....
 
@@ -54,7 +54,7 @@ Each test case will correspond with a trace file.
 
 * `extract_all.c` -> Extract all attributes of all protocol stack of packet: extract everything
 
--> Expect to see all attributes of TCP protocol of every TCP packet i.e tcp.p_payload, tcp.p_data,.... 
+-> Expect to see all attributes of TCP protocol of every TCP packet i.e tcp.p_payload, tcp.p_data,....
 
 * `tcp_reconstruct.c` -> Reconstruct the payload of TCP packet
 

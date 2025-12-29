@@ -1,10 +1,16 @@
 #include "mmt_common_internal_include.h"
+// HTTP Parser Safety Limits
+#define MAX_URI_LENGTH 8192
+#define MAX_HEADER_VALUE_LENGTH 16384
+#define MAX_HEADER_NAME_LENGTH 256
 
 #ifdef PROTO_HTTP
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../../mmt_core/public_include/mmt_safe_access.h"
+#include "../../mmt_core/public_include/mmt_safe_math.h"
 #include <ctype.h>
 #include "http.h"
 #include "rfc2822utils.h"
@@ -371,8 +377,33 @@ parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //
         if (line_first_element_offset) {
             int uri_len = get_next_white_space_offset_no_limit((const char*)&ipacket->data[offset + line_first_element_offset]);
             http->http_method   = method;
+
+            // Validate URI length is reasonable
+            if (uri_len > MAX_URI_LENGTH) {
+                MMT_LOG(PROTO_HTTP, MMT_LOG_WARNING,
+                        "URI length %d exceeds maximum %d, truncating", uri_len, MAX_URI_LENGTH);
+                uri_len = MAX_URI_LENGTH;
+            }
+
+            // Validate offset and length are within packet bounds
+            uint32_t safe_offset;
+            if (!mmt_safe_add_u32(offset, line_first_element_offset, &safe_offset)) {
+                MMT_LOG(PROTO_HTTP, MMT_LOG_ERROR, "Integer overflow in URI offset");
+                return 0;
+            }
+
+            if (!mmt_validate_offset(ipacket, safe_offset, uri_len)) {
+                MMT_LOG(PROTO_HTTP, MMT_LOG_ERROR, "URI extends beyond packet boundary");
+                return 0;
+            }
+
             http->requested_uri = (char *) mmt_malloc(uri_len + 1);
-            memcpy(http->requested_uri, &ipacket->data[offset + line_first_element_offset], uri_len);
+            if (http->requested_uri == NULL) {
+                MMT_LOG(PROTO_HTTP, MMT_LOG_ERROR, "Failed to allocate URI buffer");
+                return 0;
+            }
+
+            memcpy(http->requested_uri, &ipacket->data[safe_offset], uri_len);
             http->requested_uri[uri_len] = '\0';
 
             //printf("Method %i --- URI %s \n", http->http_method,
@@ -410,9 +441,37 @@ parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //
                 http->session_field_values[header_index].header_len = hlen;
                 http->session_field_values[header_index].value_len  = value_len;
 
+                // Validate header value length
+                if (value_len > MAX_HEADER_VALUE_LENGTH) {
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_WARNING,
+                            "Header value length %d exceeds maximum %d, truncating",
+                            value_len, MAX_HEADER_VALUE_LENGTH);
+                    value_len = MAX_HEADER_VALUE_LENGTH;
+                }
+
+                // Validate offset and length
+                uint32_t safe_offset_hdr;
+                if (!mmt_safe_add_u32(offset, value_offset, &safe_offset_hdr)) {
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_ERROR,
+                            "Integer overflow in header value offset");
+                    return 0;
+                }
+
+                if (!mmt_validate_offset(ipacket, safe_offset_hdr, value_len)) {
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_ERROR,
+                            "Header value extends beyond packet boundary");
+                    return 0;
+                }
+
                 http->session_field_values[header_index].value = (char *) mmt_malloc(value_len + 1);
+                if (http->session_field_values[header_index].value == NULL) {
+                    MMT_LOG(PROTO_HTTP, MMT_LOG_ERROR,
+                            "Failed to allocate header value buffer");
+                    return 0;
+                }
+
                 memcpy(http->session_field_values[header_index].value,
-                        &ipacket->data[offset + value_offset], value_len);
+                        &ipacket->data[safe_offset_hdr], value_len);
                 http->session_field_values[header_index].value[value_len] = '\0';
 
                 //printf("Hlen %i --- F_id %i --- Fval %s --- Vlen %i --- Fval %s\n",

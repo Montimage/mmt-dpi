@@ -16,31 +16,31 @@
 
 /**
  * Defines an HTTP parser structure. Two seperate parsers are needed.
- * One parser for Client -> Server communication and the second for 
+ * One parser for Client -> Server communication and the second for
  * Server -> Client communications.
  **/
-typedef struct 
+typedef struct
 {
   http_parser parser[2]; /** Array of two HTTP parsers. **/
 } stream_parser_t;
 
 /**
  * Defines an internal temporary HTTP parsing processing store.
- * This structure ill be attached to the HTTP parser and serves 
- * to hold extracted header field/value. 
- * New header/field will flush the older one. This MUST not be 
+ * This structure ill be attached to the HTTP parser and serves
+ * to hold extracted header field/value.
+ * New header/field will flush the older one. This MUST not be
  * used for any other reason than holding temporary data. The data
  * should be considered stale when the corresponding event (header value)
- * is fired. 
+ * is fired.
  **/
-typedef struct 
+typedef struct
 {
   // char hfield[1024]; /**> temporary store for header field **/
   // char hvalue[16 * 1024]; /**> temporary store for header value **/
   char *hfield; /**> temporary store for header field **/
   char *hvalue; /**> temporary store for header value **/
   int index; /**> index of the current protocol in the protocol path **/
-  ipacket_t * ipacket; /**> pointer to the ipacket under processing **/ 
+  ipacket_t * ipacket; /**> pointer to the ipacket under processing **/
 } stream_processor_t;
 
 /**
@@ -96,4 +96,3 @@ inline static void * close_http_parser(stream_parser_t * sp) {
   mmt_free( sp );
   return NULL;
 }
-

@@ -151,11 +151,11 @@ typedef struct NGAP_SuccessfulOutcome {
 			NGAP_UERadioCapabilityCheckResponse_t	 UERadioCapabilityCheckResponse;
 			NGAP_WriteReplaceWarningResponse_t	 WriteReplaceWarningResponse;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_SuccessfulOutcome_t;

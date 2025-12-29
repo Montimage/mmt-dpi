@@ -27,7 +27,7 @@ body  {
 	height: auto;
 }
 
-/* Tips for Elastic layouts 
+/* Tips for Elastic layouts
 1. Since the elastic layouts overall sizing is based on the user's default fonts size, they are more unpredictable. Used correctly, they are also more accessible for those that need larger fonts size since the line length remains proportionate.
 2. Sizing of divs in this layout are based on the 100% font size in the body element. If you decrease the text size overall by using a font-size: 80% on the body element or the #container, remember that the entire layout will downsize proportionately. You may want to increase the widths of the various divs to compensate for this.
 3. If font sizing is changed in differing amounts on each div instead of on the overall design (ie: #sidebar1 is given a 70% font size and #mainContent is given an 85% font size), this will proportionately change each of the divs overall size. You may want to adjust based on your final font sizing.
@@ -42,12 +42,12 @@ body  {
 	display: marker;
 	margin: auto;
 	list-style-type: none;
-} 
+}
 .thrColElsHdr #header {
 	background:#d0dafd;
 	height: 80px;
 	padding: 0 10px;  /* this padding matches the left alignment of the elements in the divs that appear beneath it. If an image is used in the #header instead of text, you may want to remove the padding. */
-} 
+}
 .thrColElsHdr #header h1 {
 	margin: 0; /* zeroing the margin of the last element in the #header div will avoid margin collapse - an unexplainable space between divs. If the div has a border around it, this is not necessary as that also avoids the margin collapse */
 	FONT: 3em "Times New Roman", Times, serif;
@@ -56,7 +56,7 @@ body  {
 
 /* Tips for sidebar1:
 1. Be aware that if you set a font-size value on this div, the overall width of the div will be adjusted accordingly.
-2. Since we are working in ems, it's best not to use padding on the sidebar itself. It will be added to the width for standards compliant browsers creating an unknown actual width. 
+2. Since we are working in ems, it's best not to use padding on the sidebar itself. It will be added to the width for standards compliant browsers creating an unknown actual width.
 3. Space between the side of the div and the elements within it can be created by placing a left and right margin on those elements as seen in the ".thrColElsHdr #sidebar1 p" rule.
 */
 .thrColElsHdr #sidebar1 {
@@ -102,15 +102,15 @@ body  {
 	margin-buttom: 5px;
 }
 
-.thrColElsHdr #footer { 
-	
+.thrColElsHdr #footer {
+
 	position:relative;
-	bottom:0px;	
+	bottom:0px;
 	padding: 0px; /* this padding matches the left alignment of the elements in the divs that appear above it. */
 	background:#d0dafd;
 	height: 60px;
 	width:inherit;
-} 
+}
 .thrColElsHdr #footer p {
 	margin: 0; /* zeroing the margins of the first element in the footer will avoid the possibility of margin collapse - a space between divs */
 	padding: 5px 0; /* padding on this element will create space, just as the the margin would have, without the margin collapse issue */
@@ -136,7 +136,7 @@ body  {
 
 .sup {
 	style="
-	font-weight: bold; 
+	font-weight: bold;
 	cursor: help;
 	color: #777777;
     font-size: 0.8em;
@@ -166,7 +166,7 @@ body  {
 #box-table-a td
 {
 	padding: 8px;
-	background: #e8edff; 
+	background: #e8edff;
 	border-bottom: 1px solid #fff;
 	color: #669;
 	border-top: 1px solid transparent;
@@ -197,7 +197,7 @@ body  {
 }
 #pattern-style-b td
 {
-	padding: 3px; 
+	padding: 3px;
 	border-bottom: 1px solid #fff;
 	color: #669;
 	border-top: 1px solid transparent;
@@ -241,7 +241,7 @@ body  {
 	background: #d0dafd;
 }
 
-div.tooltip { 
+div.tooltip {
   width: 340px;
   color: white;
   font-size: 12px;
@@ -252,7 +252,7 @@ div.tooltip {
   display: none;
 }
 
-div.tooltip div.content { 
+div.tooltip div.content {
   -moz-border-radius: 1em;
   -webkit-border-radius: 1em;
   background-color: #002F8C;

@@ -478,4 +478,3 @@ asn_decode(const asn_codec_ctx_t *opt_codec_ctx,
         return xer_decode(opt_codec_ctx, td, sptr, buffer, size);
     }
 }
-

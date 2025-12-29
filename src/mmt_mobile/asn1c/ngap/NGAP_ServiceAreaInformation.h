@@ -25,7 +25,7 @@ struct NGAP_ServiceAreaInformation_Item;
 /* NGAP_ServiceAreaInformation */
 typedef struct NGAP_ServiceAreaInformation {
 	A_SEQUENCE_OF(struct NGAP_ServiceAreaInformation_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_ServiceAreaInformation_t;

@@ -25,7 +25,7 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-    	 
+
         MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Redis detection...\n");
         /* skip marked packets */
         if (packet->detected_protocol_stack[0] != PROTO_REDIS) {
@@ -45,9 +45,9 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
               flow->redis_d2s_first_char = packet->payload[0];
 
             if((flow->redis_s2d_first_char != '\0') && (flow->redis_d2s_first_char != '\0')) {
-                if(((flow->redis_s2d_first_char == '*') 
+                if(((flow->redis_s2d_first_char == '*')
                    && ((flow->redis_d2s_first_char == '+') || (flow->redis_d2s_first_char == ':')))
-                   || ((flow->redis_d2s_first_char == '*') 
+                   || ((flow->redis_d2s_first_char == '*')
                    && ((flow->redis_s2d_first_char == '+') || (flow->redis_s2d_first_char == ':')))) {
                     MMT_LOG(PROTO_REDIS, MMT_LOG_DEBUG,"Found Redis.\n");
                     mmt_int_redis_add_connection(ipacket);
@@ -74,7 +74,7 @@ void mmt_init_classify_me_redis() {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_redis_struct() {
-    
+
     debug("REDIS: init_proto_REDIS_struct");
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_REDIS, PROTO_REDIS_ALIAS);

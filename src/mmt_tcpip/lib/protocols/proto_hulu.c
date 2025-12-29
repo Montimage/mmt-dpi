@@ -10,11 +10,9 @@
 
 int init_proto_hulu_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_HULU, PROTO_HULU_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_HULU);
     } else {
         return 0;
     }
 }
-
-

@@ -40,11 +40,11 @@ else
 	ln -s $MMT_LIB/libmmt_fuzz.so.* $MMT_LIB/libmmt_fuzz.so
 	ln -s $MMT_LIB/libmmt_security.so.* $MMT_LIB/libmmt_security.so
 	ln -s $MMT_LIB/libmmt_tcpip.so.* $MMT_LIB/libmmt_tcpip.so
-	echo "[MMT-]> Installed  "$SDKLIB" at "$MMT_LIB
-	cp -R $SDKINC/* $MMT_INC
-	echo "[MMT-]> Installed  "$SDKINC" at "$MMT_INC
-	cp -R $SDKXAM/* $MMT_EXAMS
-	echo "[MMT-]> Installed  "$SDKXAM" at "$MMT_EXAMS
+	echo "[MMT-]> Installed  $SDKLIB at $MMT_LIB"
+	cp -R "$SDKINC"/* "$MMT_INC"
+	echo "[MMT-]> Installed  $SDKINC at $MMT_INC"
+	cp -R "$SDKXAM"/* "$MMT_EXAMS"
+	echo "[MMT-]> Installed  $SDKXAM at $MMT_EXAMS"
 	cp $SDKLIB/libmmt_tcpip.so.* $MMT_PLUGINS/libmmt_tcpip.so
 	echo "[MMT-]> Installed "$MMT_PLUGINS/libmmt_tcpip.so
 	echo $MMT_DPI"/lib" >> /etc/ld.so.conf.d/mmt.conf
@@ -52,4 +52,3 @@ else
 	echo "[MMT-]> Done! "
 	echo "Thanks you for installing mmt-sdk, you can learn more about mmt-sdk at: http://www.montimage.com"
 fi
-

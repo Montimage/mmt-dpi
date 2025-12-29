@@ -34,7 +34,7 @@ typedef struct NGAP_PrivateIE_ID {
 		long	 local;
 		OBJECT_IDENTIFIER_t	 global;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PrivateIE_ID_t;

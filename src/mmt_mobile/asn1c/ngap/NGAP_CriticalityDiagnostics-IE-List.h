@@ -25,7 +25,7 @@ struct NGAP_CriticalityDiagnostics_IE_Item;
 /* NGAP_CriticalityDiagnostics-IE-List */
 typedef struct NGAP_CriticalityDiagnostics_IE_List {
 	A_SEQUENCE_OF(struct NGAP_CriticalityDiagnostics_IE_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CriticalityDiagnostics_IE_List_t;

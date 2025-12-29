@@ -28,4 +28,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_Target_ToSource_TransparentContainer = {
 	0, 0,	/* No members */
 	&asn_SPC_OCTET_STRING_specs	/* Additional specs */
 };
-

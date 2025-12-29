@@ -266,4 +266,3 @@ int init_proto_arp_struct()
         return -1;
     }
 }
-

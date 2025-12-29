@@ -10,11 +10,9 @@
 
 int init_proto_xns_idp_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_XNS_IDP, PROTO_XNS_IDP_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_XNS_IDP);
     } else {
         return 0;
     }
 }
-
-

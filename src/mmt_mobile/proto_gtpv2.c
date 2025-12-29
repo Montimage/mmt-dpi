@@ -121,4 +121,3 @@ int init_proto_gtpv2_struct() {
 	return register_protocol(protocol_struct, PROTO_GTPV2);
 
 }
-

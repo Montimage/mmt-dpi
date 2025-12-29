@@ -25,7 +25,7 @@ struct NGAP_RecommendedCellItem;
 /* NGAP_RecommendedCellList */
 typedef struct NGAP_RecommendedCellList {
 	A_SEQUENCE_OF(struct NGAP_RecommendedCellItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_RecommendedCellList_t;

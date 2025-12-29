@@ -269,7 +269,7 @@ avltree_t * avltree_insert(avltree_t * root, avltree_t * node) {
     if (root == NULL) {
 #ifdef DEBUG
         printf("[debug] First node of the tree\n");
-#endif        
+#endif
         return node;
     }
     if (root->key > node->key) {
@@ -284,7 +284,7 @@ avltree_t * avltree_insert(avltree_t * root, avltree_t * node) {
             while (parent != NULL) {
 #ifdef DEBUG
                 printf("[debug] Checking balance of tree: %u\n",parent->key);
-#endif        
+#endif
                 int balance_factor = avltree_get_balance_factor(parent);
 #ifdef DEBUG
                 printf("[debug] balance_factor of node %u: %d\n", parent->key, balance_factor);
@@ -321,7 +321,7 @@ avltree_t * avltree_insert(avltree_t * root, avltree_t * node) {
                     }
                 }
                 parent = parent->parent;
-            }            
+            }
         } else {
             avltree_insert(root->left_child, node);
         }
@@ -448,9 +448,9 @@ int avltree_valid(avltree_t * node){
  */
 int avltree_size(avltree_t * node){
     int ret = 0;
-    
+
     if (node == NULL) return 0;
-    
+
     ret = 1;
 
     if (node->left_child != NULL){

@@ -75,4 +75,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_ReportIntervalMDT = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_S1ap_ReportIntervalMDT_specs_1	/* Additional specs */
 };
-

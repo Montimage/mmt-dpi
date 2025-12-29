@@ -26,7 +26,7 @@ typedef enum S1ap_ResetType_PR {
 	S1ap_ResetType_PR_s1_Interface,
 	S1ap_ResetType_PR_partOfS1_Interface
 	/* Extensions may appear below */
-	
+
 } S1ap_ResetType_PR;
 
 /* S1ap-ResetType */
@@ -40,7 +40,7 @@ typedef struct S1ap_ResetType {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_ResetType_t;

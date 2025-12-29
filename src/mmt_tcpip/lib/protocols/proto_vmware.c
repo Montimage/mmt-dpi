@@ -25,14 +25,14 @@ int mmt_check_vmware(ipacket_t * ipacket, unsigned index)
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-    	
+
         if((packet->payload_packet_len == 66)
            && (ntohs(packet->udp->dest) == 902)
            && ((packet->payload[0] & 0xFF) == 0xA4)) {
             MMT_LOG(PROTO_VMWARE, MMT_LOG_DEBUG,"Found vmware.\n");
             mmt_int_vmware_add_connection(ipacket);
             return 1;
-        } 
+        }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VMWARE);
         MMT_LOG(PROTO_VMWARE, MMT_LOG_DEBUG, "exclude vmware.\n");
         return 0;
@@ -51,7 +51,7 @@ void mmt_init_classify_me_vmware() {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_vmware_struct() {
-    
+
     debug("VMWARE: init_proto_vmware_struct");
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_VMWARE, PROTO_VMWARE_ALIAS);

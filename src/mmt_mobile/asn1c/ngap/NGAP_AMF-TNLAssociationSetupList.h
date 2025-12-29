@@ -25,7 +25,7 @@ struct NGAP_AMF_TNLAssociationSetupItem;
 /* NGAP_AMF-TNLAssociationSetupList */
 typedef struct NGAP_AMF_TNLAssociationSetupList {
 	A_SEQUENCE_OF(struct NGAP_AMF_TNLAssociationSetupItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AMF_TNLAssociationSetupList_t;

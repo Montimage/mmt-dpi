@@ -7962,4 +7962,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_ProtocolExtensionContainer_175P184 = {
 	1,	/* Single element */
 	&asn_SPC_NGAP_ProtocolExtensionContainer_175P184_specs_369	/* Additional specs */
 };
-

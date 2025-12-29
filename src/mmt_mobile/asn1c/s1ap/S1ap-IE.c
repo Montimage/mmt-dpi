@@ -67,4 +67,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_IE = {
 	3,	/* Elements count */
 	&asn_SPC_S1ap_IE_specs_1	/* Additional specs */
 };
-

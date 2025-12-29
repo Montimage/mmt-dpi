@@ -83,4 +83,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_HandoverCommandTransfer = {
 	4,	/* Elements count */
 	&asn_SPC_NGAP_HandoverCommandTransfer_specs_1	/* Additional specs */
 };
-

@@ -74,5 +74,3 @@ int init_proto_applejuice_struct() {
         return 0;
     }
 }
-
-

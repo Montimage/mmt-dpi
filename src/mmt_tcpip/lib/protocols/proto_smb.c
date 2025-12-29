@@ -707,5 +707,3 @@ int init_proto_smb_struct() {
         return 0;
     }
 }
-
-

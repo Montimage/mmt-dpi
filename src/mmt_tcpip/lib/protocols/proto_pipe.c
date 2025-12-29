@@ -10,11 +10,9 @@
 
 int init_proto_pipe_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_PIPE, PROTO_PIPE_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_PIPE);
     } else {
         return 0;
     }
 }
-
-

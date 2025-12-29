@@ -86,5 +86,3 @@ int init_proto_tpkt_struct() {
         return -1;
     }
 }
-
-

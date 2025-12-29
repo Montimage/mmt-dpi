@@ -163,5 +163,3 @@ int init_proto_armagetron_struct() {
         return 0;
     }
 }
-
-

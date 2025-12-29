@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   gre.h
  * Author: montimage
  *
@@ -44,10 +44,9 @@ extern "C" {
     };
 
     int init_gre_proto_struct();
-    
+
 #ifdef	__cplusplus
 }
 #endif
 
 #endif	/* GRE_H */
-

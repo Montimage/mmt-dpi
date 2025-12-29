@@ -16,5 +16,3 @@ int init_proto_free_struct() {
         return 0;
     }
 }
-
-

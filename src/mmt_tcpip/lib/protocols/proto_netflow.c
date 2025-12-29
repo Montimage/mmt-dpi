@@ -92,5 +92,3 @@ int init_proto_netflow_struct() {
         return 0;
     }
 }
-
-

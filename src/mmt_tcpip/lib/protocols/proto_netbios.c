@@ -478,5 +478,3 @@ int init_proto_netbios_struct() {
         return 0;
     }
 }
-
-

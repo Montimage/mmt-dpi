@@ -1,41 +1,41 @@
 /**
  * This example is intended to show a simple packet handler - show the size of received packets. That is a callback function that will be called after the processing of every packet by the MMT core
- * 
- * 
+ *
+ *
  * Compile this example with:
- * 
+ *
  * Linux:
  * $ gcc -g -o packet_handler packet_handler.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
- * 
+ *
  * macOS (from MMT-DPI root directory):
  * $ clang -o packet_handler src/examples/packet_handler.c \
  *     -I sdk/include -I /opt/homebrew/opt/libpcap/include \
  *     -L sdk/lib -L /opt/homebrew/opt/libpcap/lib \
  *     -lmmt_core -lpcap -ldl \
  *     -Wl,-rpath,sdk/lib
- * 
+ *
  * macOS (if installed in /opt/mmt):
  * $ clang -o packet_handler packet_handler.c \
  *     -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib \
  *     -lmmt_core -lpcap -ldl \
  *     -Wl,-rpath,/opt/mmt/dpi/lib
- * 
+ *
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
- * 
+ *
  * Then execute the program:
- * 
+ *
  * IMPORTANT for macOS: Set the environment before running:
  * $ export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
  * $ export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
- * 
+ *
  * $ ./packet_handler tcp_plugin_image.pcap > packhdler_output.txt
- * 
+ *
  * The example output result in the file: packhdler_output.txt
- * 
+ *
  * That is it!
- * 
+ *
  */
- 
+
  #include <stdio.h>
  #include <stdlib.h>
  #include <pcap.h>

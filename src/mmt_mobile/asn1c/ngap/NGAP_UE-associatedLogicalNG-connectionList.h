@@ -25,7 +25,7 @@ struct NGAP_UE_associatedLogicalNG_connectionItem;
 /* NGAP_UE-associatedLogicalNG-connectionList */
 typedef struct NGAP_UE_associatedLogicalNG_connectionList {
 	A_SEQUENCE_OF(struct NGAP_UE_associatedLogicalNG_connectionItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UE_associatedLogicalNG_connectionList_t;

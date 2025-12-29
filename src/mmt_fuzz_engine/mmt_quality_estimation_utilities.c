@@ -448,12 +448,12 @@ metric_grade_membership_function_t * init_trapez_left_grade_membership_function(
 
 /**
  *    __
- * __/  
+ * __/
  * param1 is the value at the lower level of the slope and param2 is the distance between the upper and lower levels of the slope
  * @param grade_value
  * @param param1
  * @param param2
- * @return 
+ * @return
  */
 metric_grade_membership_function_t * init_trapez_right_grade_membership_function(int grade_value, double param1, double param2) {
     metric_grade_membership_function_t * grade_membership_function = init_new_grade_membership_function(MMT_TRAPEZ_RIGHT, grade_value, 2);

@@ -23,7 +23,7 @@ extern "C" {
 /* S1ap-ENBX2GTPTLAs */
 typedef struct S1ap_ENBX2GTPTLAs {
 	A_SEQUENCE_OF(S1ap_TransportLayerAddress_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_ENBX2GTPTLAs_t;

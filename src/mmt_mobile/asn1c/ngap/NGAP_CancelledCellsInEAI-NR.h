@@ -25,7 +25,7 @@ struct NGAP_CancelledCellsInEAI_NR_Item;
 /* NGAP_CancelledCellsInEAI-NR */
 typedef struct NGAP_CancelledCellsInEAI_NR {
 	A_SEQUENCE_OF(struct NGAP_CancelledCellsInEAI_NR_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CancelledCellsInEAI_NR_t;

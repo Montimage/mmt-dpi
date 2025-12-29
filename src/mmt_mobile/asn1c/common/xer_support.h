@@ -19,7 +19,7 @@ typedef enum {
 	PXML_TEXT,	/* Plain text between XML tags. */
 	PXML_TAG,	/* A tag, starting with '<'. */
 	PXML_COMMENT,	/* An XML comment, including "<!--" and "-->". */
-	/* 
+	/*
 	 * The following chunk types are reported if the chunk
 	 * terminates the specified XML element.
 	 */
@@ -29,10 +29,10 @@ typedef enum {
 
 /*
  * Callback function that is called by the parser when parsed data is
- * available. The _opaque is the pointer to a field containing opaque user 
- * data specified in pxml_create() call. The chunk type is _type and the text 
+ * available. The _opaque is the pointer to a field containing opaque user
+ * data specified in pxml_create() call. The chunk type is _type and the text
  * data is the piece of buffer identified by _bufid (as supplied to
- * pxml_feed() call) starting at offset _offset and of _size bytes size. 
+ * pxml_feed() call) starting at offset _offset and of _size bytes size.
  * The chunk is NOT '\0'-terminated.
  */
 typedef int (pxml_callback_f)(pxml_chunk_type_e _type,

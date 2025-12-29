@@ -2977,16 +2977,16 @@ static int
 memb_NGAP_id_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3001,38 +3001,38 @@ memb_NGAP_id_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3040,16 +3040,16 @@ static int
 memb_NGAP_id_constraint_5(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3064,38 +3064,38 @@ memb_NGAP_id_constraint_5(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_5(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_5(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3103,16 +3103,16 @@ static int
 memb_NGAP_id_constraint_9(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3127,38 +3127,38 @@ memb_NGAP_id_constraint_9(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_9(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_9(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3166,16 +3166,16 @@ static int
 memb_NGAP_id_constraint_13(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3190,38 +3190,38 @@ memb_NGAP_id_constraint_13(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_13(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_13(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3229,16 +3229,16 @@ static int
 memb_NGAP_id_constraint_17(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3253,38 +3253,38 @@ memb_NGAP_id_constraint_17(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_17(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_17(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3292,16 +3292,16 @@ static int
 memb_NGAP_id_constraint_21(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3316,38 +3316,38 @@ memb_NGAP_id_constraint_21(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_21(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_21(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3355,16 +3355,16 @@ static int
 memb_NGAP_id_constraint_25(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3379,38 +3379,38 @@ memb_NGAP_id_constraint_25(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_25(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_25(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3418,16 +3418,16 @@ static int
 memb_NGAP_id_constraint_29(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3442,38 +3442,38 @@ memb_NGAP_id_constraint_29(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_29(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_29(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3481,16 +3481,16 @@ static int
 memb_NGAP_id_constraint_33(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3505,38 +3505,38 @@ memb_NGAP_id_constraint_33(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_33(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_33(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3544,16 +3544,16 @@ static int
 memb_NGAP_id_constraint_37(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3568,38 +3568,38 @@ memb_NGAP_id_constraint_37(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_37(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_37(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3607,16 +3607,16 @@ static int
 memb_NGAP_id_constraint_41(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3631,38 +3631,38 @@ memb_NGAP_id_constraint_41(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_41(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_41(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3670,16 +3670,16 @@ static int
 memb_NGAP_id_constraint_45(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3694,38 +3694,38 @@ memb_NGAP_id_constraint_45(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_45(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_45(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3733,16 +3733,16 @@ static int
 memb_NGAP_id_constraint_49(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3757,38 +3757,38 @@ memb_NGAP_id_constraint_49(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_49(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_49(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3796,16 +3796,16 @@ static int
 memb_NGAP_id_constraint_53(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3820,38 +3820,38 @@ memb_NGAP_id_constraint_53(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_53(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_53(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3859,16 +3859,16 @@ static int
 memb_NGAP_id_constraint_57(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3883,38 +3883,38 @@ memb_NGAP_id_constraint_57(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_57(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_57(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3922,16 +3922,16 @@ static int
 memb_NGAP_id_constraint_61(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3946,38 +3946,38 @@ memb_NGAP_id_constraint_61(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_61(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_61(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3985,16 +3985,16 @@ static int
 memb_NGAP_id_constraint_65(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4009,38 +4009,38 @@ memb_NGAP_id_constraint_65(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_65(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_65(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4048,16 +4048,16 @@ static int
 memb_NGAP_id_constraint_69(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4072,38 +4072,38 @@ memb_NGAP_id_constraint_69(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_69(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_69(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4111,16 +4111,16 @@ static int
 memb_NGAP_id_constraint_73(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4135,38 +4135,38 @@ memb_NGAP_id_constraint_73(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_73(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_73(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4174,16 +4174,16 @@ static int
 memb_NGAP_id_constraint_77(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4198,38 +4198,38 @@ memb_NGAP_id_constraint_77(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_77(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_77(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4237,16 +4237,16 @@ static int
 memb_NGAP_id_constraint_81(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4261,38 +4261,38 @@ memb_NGAP_id_constraint_81(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_81(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_81(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4300,16 +4300,16 @@ static int
 memb_NGAP_id_constraint_85(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4324,38 +4324,38 @@ memb_NGAP_id_constraint_85(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_85(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_85(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4363,16 +4363,16 @@ static int
 memb_NGAP_id_constraint_89(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4387,38 +4387,38 @@ memb_NGAP_id_constraint_89(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_89(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_89(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4426,16 +4426,16 @@ static int
 memb_NGAP_id_constraint_93(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4450,38 +4450,38 @@ memb_NGAP_id_constraint_93(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_93(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_93(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4489,16 +4489,16 @@ static int
 memb_NGAP_id_constraint_97(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4513,38 +4513,38 @@ memb_NGAP_id_constraint_97(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_97(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_97(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4552,16 +4552,16 @@ static int
 memb_NGAP_id_constraint_101(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4576,38 +4576,38 @@ memb_NGAP_id_constraint_101(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_101(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_101(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4615,16 +4615,16 @@ static int
 memb_NGAP_id_constraint_105(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4639,38 +4639,38 @@ memb_NGAP_id_constraint_105(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_105(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_105(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4678,16 +4678,16 @@ static int
 memb_NGAP_id_constraint_109(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4707,14 +4707,14 @@ select_PDUSessionResourceModifyRequestTransferIEs_NGAP_criticality_type(const as
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyRequestTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -4722,26 +4722,26 @@ select_PDUSessionResourceModifyRequestTransferIEs_NGAP_criticality_type(const as
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_109(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4753,14 +4753,14 @@ select_PDUSessionResourceModifyRequestTransferIEs_NGAP_value_type(const asn_TYPE
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyRequestTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -4768,26 +4768,26 @@ select_PDUSessionResourceModifyRequestTransferIEs_NGAP_value_type(const asn_TYPE
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_109(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4795,16 +4795,16 @@ static int
 memb_NGAP_id_constraint_113(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4824,14 +4824,14 @@ select_PDUSessionResourceSetupRequestTransferIEs_NGAP_criticality_type(const asn
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceSetupRequestTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -4839,26 +4839,26 @@ select_PDUSessionResourceSetupRequestTransferIEs_NGAP_criticality_type(const asn
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_113(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4870,14 +4870,14 @@ select_PDUSessionResourceSetupRequestTransferIEs_NGAP_value_type(const asn_TYPE_
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceSetupRequestTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -4885,26 +4885,26 @@ select_PDUSessionResourceSetupRequestTransferIEs_NGAP_value_type(const asn_TYPE_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_113(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4912,16 +4912,16 @@ static int
 memb_NGAP_id_constraint_117(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4941,14 +4941,14 @@ select_PDUSessionResourceSetupRequestIEs_NGAP_criticality_type(const asn_TYPE_de
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceSetupRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -4956,26 +4956,26 @@ select_PDUSessionResourceSetupRequestIEs_NGAP_criticality_type(const asn_TYPE_de
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_117(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4987,14 +4987,14 @@ select_PDUSessionResourceSetupRequestIEs_NGAP_value_type(const asn_TYPE_descript
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceSetupRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5002,26 +5002,26 @@ select_PDUSessionResourceSetupRequestIEs_NGAP_value_type(const asn_TYPE_descript
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_117(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5029,16 +5029,16 @@ static int
 memb_NGAP_id_constraint_121(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5058,14 +5058,14 @@ select_PDUSessionResourceSetupResponseIEs_NGAP_criticality_type(const asn_TYPE_d
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceSetupResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5073,26 +5073,26 @@ select_PDUSessionResourceSetupResponseIEs_NGAP_criticality_type(const asn_TYPE_d
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_121(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5104,14 +5104,14 @@ select_PDUSessionResourceSetupResponseIEs_NGAP_value_type(const asn_TYPE_descrip
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceSetupResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5119,26 +5119,26 @@ select_PDUSessionResourceSetupResponseIEs_NGAP_value_type(const asn_TYPE_descrip
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_121(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5146,16 +5146,16 @@ static int
 memb_NGAP_id_constraint_125(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5175,14 +5175,14 @@ select_PDUSessionResourceReleaseCommandIEs_NGAP_criticality_type(const asn_TYPE_
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceReleaseCommandIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5190,26 +5190,26 @@ select_PDUSessionResourceReleaseCommandIEs_NGAP_criticality_type(const asn_TYPE_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_125(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5221,14 +5221,14 @@ select_PDUSessionResourceReleaseCommandIEs_NGAP_value_type(const asn_TYPE_descri
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceReleaseCommandIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5236,26 +5236,26 @@ select_PDUSessionResourceReleaseCommandIEs_NGAP_value_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_125(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5263,16 +5263,16 @@ static int
 memb_NGAP_id_constraint_129(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5292,14 +5292,14 @@ select_PDUSessionResourceReleaseResponseIEs_NGAP_criticality_type(const asn_TYPE
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceReleaseResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5307,26 +5307,26 @@ select_PDUSessionResourceReleaseResponseIEs_NGAP_criticality_type(const asn_TYPE
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_129(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5338,14 +5338,14 @@ select_PDUSessionResourceReleaseResponseIEs_NGAP_value_type(const asn_TYPE_descr
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceReleaseResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5353,26 +5353,26 @@ select_PDUSessionResourceReleaseResponseIEs_NGAP_value_type(const asn_TYPE_descr
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_129(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5380,16 +5380,16 @@ static int
 memb_NGAP_id_constraint_133(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5409,14 +5409,14 @@ select_PDUSessionResourceModifyRequestIEs_NGAP_criticality_type(const asn_TYPE_d
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5424,26 +5424,26 @@ select_PDUSessionResourceModifyRequestIEs_NGAP_criticality_type(const asn_TYPE_d
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_133(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5455,14 +5455,14 @@ select_PDUSessionResourceModifyRequestIEs_NGAP_value_type(const asn_TYPE_descrip
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5470,26 +5470,26 @@ select_PDUSessionResourceModifyRequestIEs_NGAP_value_type(const asn_TYPE_descrip
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_133(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5497,16 +5497,16 @@ static int
 memb_NGAP_id_constraint_137(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5526,14 +5526,14 @@ select_PDUSessionResourceModifyResponseIEs_NGAP_criticality_type(const asn_TYPE_
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5541,26 +5541,26 @@ select_PDUSessionResourceModifyResponseIEs_NGAP_criticality_type(const asn_TYPE_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_137(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5572,14 +5572,14 @@ select_PDUSessionResourceModifyResponseIEs_NGAP_value_type(const asn_TYPE_descri
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5587,26 +5587,26 @@ select_PDUSessionResourceModifyResponseIEs_NGAP_value_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_137(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5614,16 +5614,16 @@ static int
 memb_NGAP_id_constraint_141(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5643,14 +5643,14 @@ select_PDUSessionResourceNotifyIEs_NGAP_criticality_type(const asn_TYPE_descript
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceNotifyIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5658,26 +5658,26 @@ select_PDUSessionResourceNotifyIEs_NGAP_criticality_type(const asn_TYPE_descript
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_141(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5689,14 +5689,14 @@ select_PDUSessionResourceNotifyIEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceNotifyIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5704,26 +5704,26 @@ select_PDUSessionResourceNotifyIEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_141(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5731,16 +5731,16 @@ static int
 memb_NGAP_id_constraint_145(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5760,14 +5760,14 @@ select_PDUSessionResourceModifyIndicationIEs_NGAP_criticality_type(const asn_TYP
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5775,26 +5775,26 @@ select_PDUSessionResourceModifyIndicationIEs_NGAP_criticality_type(const asn_TYP
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_145(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5806,14 +5806,14 @@ select_PDUSessionResourceModifyIndicationIEs_NGAP_value_type(const asn_TYPE_desc
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5821,26 +5821,26 @@ select_PDUSessionResourceModifyIndicationIEs_NGAP_value_type(const asn_TYPE_desc
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_145(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5848,16 +5848,16 @@ static int
 memb_NGAP_id_constraint_149(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5877,14 +5877,14 @@ select_PDUSessionResourceModifyConfirmIEs_NGAP_criticality_type(const asn_TYPE_d
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyConfirmIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5892,26 +5892,26 @@ select_PDUSessionResourceModifyConfirmIEs_NGAP_criticality_type(const asn_TYPE_d
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_149(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5923,14 +5923,14 @@ select_PDUSessionResourceModifyConfirmIEs_NGAP_value_type(const asn_TYPE_descrip
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PDUSessionResourceModifyConfirmIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -5938,26 +5938,26 @@ select_PDUSessionResourceModifyConfirmIEs_NGAP_value_type(const asn_TYPE_descrip
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_149(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5965,16 +5965,16 @@ static int
 memb_NGAP_id_constraint_153(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5994,14 +5994,14 @@ select_InitialContextSetupRequestIEs_NGAP_criticality_type(const asn_TYPE_descri
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitialContextSetupRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6009,26 +6009,26 @@ select_InitialContextSetupRequestIEs_NGAP_criticality_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_153(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6040,14 +6040,14 @@ select_InitialContextSetupRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitialContextSetupRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6055,26 +6055,26 @@ select_InitialContextSetupRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_153(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6082,16 +6082,16 @@ static int
 memb_NGAP_id_constraint_157(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6111,14 +6111,14 @@ select_InitialContextSetupResponseIEs_NGAP_criticality_type(const asn_TYPE_descr
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitialContextSetupResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6126,26 +6126,26 @@ select_InitialContextSetupResponseIEs_NGAP_criticality_type(const asn_TYPE_descr
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_157(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6157,14 +6157,14 @@ select_InitialContextSetupResponseIEs_NGAP_value_type(const asn_TYPE_descriptor_
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitialContextSetupResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6172,26 +6172,26 @@ select_InitialContextSetupResponseIEs_NGAP_value_type(const asn_TYPE_descriptor_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_157(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6199,16 +6199,16 @@ static int
 memb_NGAP_id_constraint_161(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6228,14 +6228,14 @@ select_InitialContextSetupFailureIEs_NGAP_criticality_type(const asn_TYPE_descri
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitialContextSetupFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6243,26 +6243,26 @@ select_InitialContextSetupFailureIEs_NGAP_criticality_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_161(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6274,14 +6274,14 @@ select_InitialContextSetupFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitialContextSetupFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6289,26 +6289,26 @@ select_InitialContextSetupFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_161(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6316,16 +6316,16 @@ static int
 memb_NGAP_id_constraint_165(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6345,14 +6345,14 @@ select_UEContextReleaseRequest_IEs_NGAP_criticality_type(const asn_TYPE_descript
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextReleaseRequest_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6360,26 +6360,26 @@ select_UEContextReleaseRequest_IEs_NGAP_criticality_type(const asn_TYPE_descript
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_165(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6391,14 +6391,14 @@ select_UEContextReleaseRequest_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextReleaseRequest_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6406,26 +6406,26 @@ select_UEContextReleaseRequest_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_165(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6433,16 +6433,16 @@ static int
 memb_NGAP_id_constraint_169(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6462,14 +6462,14 @@ select_UEContextReleaseCommand_IEs_NGAP_criticality_type(const asn_TYPE_descript
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextReleaseCommand_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6477,26 +6477,26 @@ select_UEContextReleaseCommand_IEs_NGAP_criticality_type(const asn_TYPE_descript
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_169(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6508,14 +6508,14 @@ select_UEContextReleaseCommand_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextReleaseCommand_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6523,26 +6523,26 @@ select_UEContextReleaseCommand_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_169(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6550,16 +6550,16 @@ static int
 memb_NGAP_id_constraint_173(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6579,14 +6579,14 @@ select_UEContextReleaseComplete_IEs_NGAP_criticality_type(const asn_TYPE_descrip
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextReleaseComplete_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6594,26 +6594,26 @@ select_UEContextReleaseComplete_IEs_NGAP_criticality_type(const asn_TYPE_descrip
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_173(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6625,14 +6625,14 @@ select_UEContextReleaseComplete_IEs_NGAP_value_type(const asn_TYPE_descriptor_t 
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextReleaseComplete_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6640,26 +6640,26 @@ select_UEContextReleaseComplete_IEs_NGAP_value_type(const asn_TYPE_descriptor_t 
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_173(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6667,16 +6667,16 @@ static int
 memb_NGAP_id_constraint_177(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6696,14 +6696,14 @@ select_UEContextModificationRequestIEs_NGAP_criticality_type(const asn_TYPE_desc
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextModificationRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6711,26 +6711,26 @@ select_UEContextModificationRequestIEs_NGAP_criticality_type(const asn_TYPE_desc
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_177(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6742,14 +6742,14 @@ select_UEContextModificationRequestIEs_NGAP_value_type(const asn_TYPE_descriptor
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextModificationRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6757,26 +6757,26 @@ select_UEContextModificationRequestIEs_NGAP_value_type(const asn_TYPE_descriptor
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_177(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6784,16 +6784,16 @@ static int
 memb_NGAP_id_constraint_181(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6813,14 +6813,14 @@ select_UEContextModificationResponseIEs_NGAP_criticality_type(const asn_TYPE_des
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextModificationResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6828,26 +6828,26 @@ select_UEContextModificationResponseIEs_NGAP_criticality_type(const asn_TYPE_des
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_181(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6859,14 +6859,14 @@ select_UEContextModificationResponseIEs_NGAP_value_type(const asn_TYPE_descripto
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextModificationResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6874,26 +6874,26 @@ select_UEContextModificationResponseIEs_NGAP_value_type(const asn_TYPE_descripto
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_181(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6901,16 +6901,16 @@ static int
 memb_NGAP_id_constraint_185(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6930,14 +6930,14 @@ select_UEContextModificationFailureIEs_NGAP_criticality_type(const asn_TYPE_desc
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextModificationFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6945,26 +6945,26 @@ select_UEContextModificationFailureIEs_NGAP_criticality_type(const asn_TYPE_desc
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_185(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6976,14 +6976,14 @@ select_UEContextModificationFailureIEs_NGAP_value_type(const asn_TYPE_descriptor
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UEContextModificationFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -6991,26 +6991,26 @@ select_UEContextModificationFailureIEs_NGAP_value_type(const asn_TYPE_descriptor
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_185(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7018,16 +7018,16 @@ static int
 memb_NGAP_id_constraint_189(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7047,14 +7047,14 @@ select_RRCInactiveTransitionReportIEs_NGAP_criticality_type(const asn_TYPE_descr
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RRCInactiveTransitionReportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7062,26 +7062,26 @@ select_RRCInactiveTransitionReportIEs_NGAP_criticality_type(const asn_TYPE_descr
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_189(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7093,14 +7093,14 @@ select_RRCInactiveTransitionReportIEs_NGAP_value_type(const asn_TYPE_descriptor_
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RRCInactiveTransitionReportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7108,26 +7108,26 @@ select_RRCInactiveTransitionReportIEs_NGAP_value_type(const asn_TYPE_descriptor_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_189(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7135,16 +7135,16 @@ static int
 memb_NGAP_id_constraint_193(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7164,14 +7164,14 @@ select_HandoverRequiredIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pa
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverRequiredIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7179,26 +7179,26 @@ select_HandoverRequiredIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pa
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_193(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7210,14 +7210,14 @@ select_HandoverRequiredIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_t
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverRequiredIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7225,26 +7225,26 @@ select_HandoverRequiredIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_193(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7252,16 +7252,16 @@ static int
 memb_NGAP_id_constraint_197(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7281,14 +7281,14 @@ select_HandoverCommandIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverCommandIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7296,26 +7296,26 @@ select_HandoverCommandIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_197(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7327,14 +7327,14 @@ select_HandoverCommandIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverCommandIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7342,26 +7342,26 @@ select_HandoverCommandIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_197(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7369,16 +7369,16 @@ static int
 memb_NGAP_id_constraint_201(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7398,14 +7398,14 @@ select_HandoverPreparationFailureIEs_NGAP_criticality_type(const asn_TYPE_descri
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverPreparationFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7413,26 +7413,26 @@ select_HandoverPreparationFailureIEs_NGAP_criticality_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_201(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7444,14 +7444,14 @@ select_HandoverPreparationFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverPreparationFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7459,26 +7459,26 @@ select_HandoverPreparationFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_201(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7486,16 +7486,16 @@ static int
 memb_NGAP_id_constraint_205(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7515,14 +7515,14 @@ select_HandoverRequestIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7530,26 +7530,26 @@ select_HandoverRequestIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_205(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7561,14 +7561,14 @@ select_HandoverRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7576,26 +7576,26 @@ select_HandoverRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_205(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7603,16 +7603,16 @@ static int
 memb_NGAP_id_constraint_209(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7632,14 +7632,14 @@ select_HandoverRequestAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE_descri
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverRequestAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7647,26 +7647,26 @@ select_HandoverRequestAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_209(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7678,14 +7678,14 @@ select_HandoverRequestAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverRequestAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7693,26 +7693,26 @@ select_HandoverRequestAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_209(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7720,16 +7720,16 @@ static int
 memb_NGAP_id_constraint_213(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7749,14 +7749,14 @@ select_HandoverFailureIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7764,26 +7764,26 @@ select_HandoverFailureIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_213(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7795,14 +7795,14 @@ select_HandoverFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7810,26 +7810,26 @@ select_HandoverFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_213(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7837,16 +7837,16 @@ static int
 memb_NGAP_id_constraint_217(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7866,14 +7866,14 @@ select_HandoverNotifyIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverNotifyIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7881,26 +7881,26 @@ select_HandoverNotifyIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_217(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7912,14 +7912,14 @@ select_HandoverNotifyIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverNotifyIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7927,26 +7927,26 @@ select_HandoverNotifyIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_217(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7954,16 +7954,16 @@ static int
 memb_NGAP_id_constraint_221(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7983,14 +7983,14 @@ select_PathSwitchRequestIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *p
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PathSwitchRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -7998,26 +7998,26 @@ select_PathSwitchRequestIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *p
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_221(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8029,14 +8029,14 @@ select_PathSwitchRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PathSwitchRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8044,26 +8044,26 @@ select_PathSwitchRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_221(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8071,16 +8071,16 @@ static int
 memb_NGAP_id_constraint_225(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8100,14 +8100,14 @@ select_PathSwitchRequestAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE_desc
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PathSwitchRequestAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8115,26 +8115,26 @@ select_PathSwitchRequestAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE_desc
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_225(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8146,14 +8146,14 @@ select_PathSwitchRequestAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descriptor
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PathSwitchRequestAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8161,26 +8161,26 @@ select_PathSwitchRequestAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descriptor
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_225(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8188,16 +8188,16 @@ static int
 memb_NGAP_id_constraint_229(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8217,14 +8217,14 @@ select_PathSwitchRequestFailureIEs_NGAP_criticality_type(const asn_TYPE_descript
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PathSwitchRequestFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8232,26 +8232,26 @@ select_PathSwitchRequestFailureIEs_NGAP_criticality_type(const asn_TYPE_descript
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_229(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8263,14 +8263,14 @@ select_PathSwitchRequestFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PathSwitchRequestFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8278,26 +8278,26 @@ select_PathSwitchRequestFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_229(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8305,16 +8305,16 @@ static int
 memb_NGAP_id_constraint_233(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8334,14 +8334,14 @@ select_HandoverCancelIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverCancelIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8349,26 +8349,26 @@ select_HandoverCancelIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_233(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8380,14 +8380,14 @@ select_HandoverCancelIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverCancelIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8395,26 +8395,26 @@ select_HandoverCancelIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_233(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8422,16 +8422,16 @@ static int
 memb_NGAP_id_constraint_237(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8451,14 +8451,14 @@ select_HandoverCancelAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE_descrip
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverCancelAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8466,26 +8466,26 @@ select_HandoverCancelAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE_descrip
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_237(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8497,14 +8497,14 @@ select_HandoverCancelAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descriptor_t 
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_HandoverCancelAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8512,26 +8512,26 @@ select_HandoverCancelAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descriptor_t 
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_237(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8539,16 +8539,16 @@ static int
 memb_NGAP_id_constraint_241(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8568,14 +8568,14 @@ select_UplinkRANStatusTransferIEs_NGAP_criticality_type(const asn_TYPE_descripto
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkRANStatusTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8583,26 +8583,26 @@ select_UplinkRANStatusTransferIEs_NGAP_criticality_type(const asn_TYPE_descripto
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_241(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8614,14 +8614,14 @@ select_UplinkRANStatusTransferIEs_NGAP_value_type(const asn_TYPE_descriptor_t *p
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkRANStatusTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8629,26 +8629,26 @@ select_UplinkRANStatusTransferIEs_NGAP_value_type(const asn_TYPE_descriptor_t *p
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_241(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8656,16 +8656,16 @@ static int
 memb_NGAP_id_constraint_245(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8685,14 +8685,14 @@ select_DownlinkRANStatusTransferIEs_NGAP_criticality_type(const asn_TYPE_descrip
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkRANStatusTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8700,26 +8700,26 @@ select_DownlinkRANStatusTransferIEs_NGAP_criticality_type(const asn_TYPE_descrip
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_245(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8731,14 +8731,14 @@ select_DownlinkRANStatusTransferIEs_NGAP_value_type(const asn_TYPE_descriptor_t 
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkRANStatusTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8746,26 +8746,26 @@ select_DownlinkRANStatusTransferIEs_NGAP_value_type(const asn_TYPE_descriptor_t 
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_245(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8773,16 +8773,16 @@ static int
 memb_NGAP_id_constraint_249(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8802,14 +8802,14 @@ select_PagingIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *parent_type,
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PagingIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8817,26 +8817,26 @@ select_PagingIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *parent_type,
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_249(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8848,14 +8848,14 @@ select_PagingIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_type, const
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PagingIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8863,26 +8863,26 @@ select_PagingIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_type, const
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_249(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8890,16 +8890,16 @@ static int
 memb_NGAP_id_constraint_253(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8919,14 +8919,14 @@ select_InitialUEMessage_IEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *p
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitialUEMessage_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8934,26 +8934,26 @@ select_InitialUEMessage_IEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *p
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_253(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8965,14 +8965,14 @@ select_InitialUEMessage_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitialUEMessage_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -8980,26 +8980,26 @@ select_InitialUEMessage_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_253(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9007,16 +9007,16 @@ static int
 memb_NGAP_id_constraint_257(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9036,14 +9036,14 @@ select_DownlinkNASTransport_IEs_NGAP_criticality_type(const asn_TYPE_descriptor_
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkNASTransport_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9051,26 +9051,26 @@ select_DownlinkNASTransport_IEs_NGAP_criticality_type(const asn_TYPE_descriptor_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_257(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9082,14 +9082,14 @@ select_DownlinkNASTransport_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *par
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkNASTransport_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9097,26 +9097,26 @@ select_DownlinkNASTransport_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *par
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_257(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9124,16 +9124,16 @@ static int
 memb_NGAP_id_constraint_261(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9153,14 +9153,14 @@ select_UplinkNASTransport_IEs_NGAP_criticality_type(const asn_TYPE_descriptor_t 
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkNASTransport_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9168,26 +9168,26 @@ select_UplinkNASTransport_IEs_NGAP_criticality_type(const asn_TYPE_descriptor_t 
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_261(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9199,14 +9199,14 @@ select_UplinkNASTransport_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *paren
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkNASTransport_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9214,26 +9214,26 @@ select_UplinkNASTransport_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *paren
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_261(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9241,16 +9241,16 @@ static int
 memb_NGAP_id_constraint_265(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9270,14 +9270,14 @@ select_NASNonDeliveryIndication_IEs_NGAP_criticality_type(const asn_TYPE_descrip
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NASNonDeliveryIndication_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9285,26 +9285,26 @@ select_NASNonDeliveryIndication_IEs_NGAP_criticality_type(const asn_TYPE_descrip
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_265(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9316,14 +9316,14 @@ select_NASNonDeliveryIndication_IEs_NGAP_value_type(const asn_TYPE_descriptor_t 
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NASNonDeliveryIndication_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9331,26 +9331,26 @@ select_NASNonDeliveryIndication_IEs_NGAP_value_type(const asn_TYPE_descriptor_t 
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_265(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9358,16 +9358,16 @@ static int
 memb_NGAP_id_constraint_269(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9387,14 +9387,14 @@ select_RerouteNASRequest_IEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RerouteNASRequest_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9402,26 +9402,26 @@ select_RerouteNASRequest_IEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_269(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9433,14 +9433,14 @@ select_RerouteNASRequest_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RerouteNASRequest_IEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9448,26 +9448,26 @@ select_RerouteNASRequest_IEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_269(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9475,16 +9475,16 @@ static int
 memb_NGAP_id_constraint_273(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9504,14 +9504,14 @@ select_NGSetupRequestIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGSetupRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9519,26 +9519,26 @@ select_NGSetupRequestIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_273(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9550,14 +9550,14 @@ select_NGSetupRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGSetupRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9565,26 +9565,26 @@ select_NGSetupRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_273(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9592,16 +9592,16 @@ static int
 memb_NGAP_id_constraint_277(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9621,14 +9621,14 @@ select_NGSetupResponseIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGSetupResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9636,26 +9636,26 @@ select_NGSetupResponseIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_277(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9667,14 +9667,14 @@ select_NGSetupResponseIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGSetupResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9682,26 +9682,26 @@ select_NGSetupResponseIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_277(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9709,16 +9709,16 @@ static int
 memb_NGAP_id_constraint_281(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9738,14 +9738,14 @@ select_NGSetupFailureIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGSetupFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9753,26 +9753,26 @@ select_NGSetupFailureIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_281(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9784,14 +9784,14 @@ select_NGSetupFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGSetupFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9799,26 +9799,26 @@ select_NGSetupFailureIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_281(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9826,16 +9826,16 @@ static int
 memb_NGAP_id_constraint_285(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9855,14 +9855,14 @@ select_RANConfigurationUpdateIEs_NGAP_criticality_type(const asn_TYPE_descriptor
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RANConfigurationUpdateIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9870,26 +9870,26 @@ select_RANConfigurationUpdateIEs_NGAP_criticality_type(const asn_TYPE_descriptor
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_285(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9901,14 +9901,14 @@ select_RANConfigurationUpdateIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pa
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RANConfigurationUpdateIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9916,26 +9916,26 @@ select_RANConfigurationUpdateIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pa
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_285(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9943,16 +9943,16 @@ static int
 memb_NGAP_id_constraint_289(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9972,14 +9972,14 @@ select_RANConfigurationUpdateAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RANConfigurationUpdateAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -9987,26 +9987,26 @@ select_RANConfigurationUpdateAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_289(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10018,14 +10018,14 @@ select_RANConfigurationUpdateAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descr
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RANConfigurationUpdateAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10033,26 +10033,26 @@ select_RANConfigurationUpdateAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descr
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_289(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10060,16 +10060,16 @@ static int
 memb_NGAP_id_constraint_293(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10089,14 +10089,14 @@ select_RANConfigurationUpdateFailureIEs_NGAP_criticality_type(const asn_TYPE_des
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RANConfigurationUpdateFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10104,26 +10104,26 @@ select_RANConfigurationUpdateFailureIEs_NGAP_criticality_type(const asn_TYPE_des
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_293(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10135,14 +10135,14 @@ select_RANConfigurationUpdateFailureIEs_NGAP_value_type(const asn_TYPE_descripto
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_RANConfigurationUpdateFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10150,26 +10150,26 @@ select_RANConfigurationUpdateFailureIEs_NGAP_value_type(const asn_TYPE_descripto
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_293(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10177,16 +10177,16 @@ static int
 memb_NGAP_id_constraint_297(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10206,14 +10206,14 @@ select_AMFConfigurationUpdateIEs_NGAP_criticality_type(const asn_TYPE_descriptor
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_AMFConfigurationUpdateIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10221,26 +10221,26 @@ select_AMFConfigurationUpdateIEs_NGAP_criticality_type(const asn_TYPE_descriptor
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_297(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10252,14 +10252,14 @@ select_AMFConfigurationUpdateIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pa
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_AMFConfigurationUpdateIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10267,26 +10267,26 @@ select_AMFConfigurationUpdateIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pa
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_297(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10294,16 +10294,16 @@ static int
 memb_NGAP_id_constraint_301(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10323,14 +10323,14 @@ select_AMFConfigurationUpdateAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_AMFConfigurationUpdateAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10338,26 +10338,26 @@ select_AMFConfigurationUpdateAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_301(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10369,14 +10369,14 @@ select_AMFConfigurationUpdateAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descr
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_AMFConfigurationUpdateAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10384,26 +10384,26 @@ select_AMFConfigurationUpdateAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descr
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_301(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10411,16 +10411,16 @@ static int
 memb_NGAP_id_constraint_305(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10440,14 +10440,14 @@ select_AMFConfigurationUpdateFailureIEs_NGAP_criticality_type(const asn_TYPE_des
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_AMFConfigurationUpdateFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10455,26 +10455,26 @@ select_AMFConfigurationUpdateFailureIEs_NGAP_criticality_type(const asn_TYPE_des
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_305(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10486,14 +10486,14 @@ select_AMFConfigurationUpdateFailureIEs_NGAP_value_type(const asn_TYPE_descripto
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_AMFConfigurationUpdateFailureIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10501,26 +10501,26 @@ select_AMFConfigurationUpdateFailureIEs_NGAP_value_type(const asn_TYPE_descripto
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_305(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10528,16 +10528,16 @@ static int
 memb_NGAP_id_constraint_309(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10557,14 +10557,14 @@ select_AMFStatusIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t 
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_AMFStatusIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10572,26 +10572,26 @@ select_AMFStatusIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t 
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_309(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10603,14 +10603,14 @@ select_AMFStatusIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *paren
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_AMFStatusIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10618,26 +10618,26 @@ select_AMFStatusIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *paren
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_309(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10645,16 +10645,16 @@ static int
 memb_NGAP_id_constraint_313(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10674,14 +10674,14 @@ select_NGResetIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *parent_type
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGResetIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10689,26 +10689,26 @@ select_NGResetIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *parent_type
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_313(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10720,14 +10720,14 @@ select_NGResetIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_type, cons
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGResetIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10735,26 +10735,26 @@ select_NGResetIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_type, cons
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_313(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10762,16 +10762,16 @@ static int
 memb_NGAP_id_constraint_317(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10791,14 +10791,14 @@ select_NGResetAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGResetAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10806,26 +10806,26 @@ select_NGResetAcknowledgeIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_317(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10837,14 +10837,14 @@ select_NGResetAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_NGResetAcknowledgeIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10852,26 +10852,26 @@ select_NGResetAcknowledgeIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_317(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10879,16 +10879,16 @@ static int
 memb_NGAP_id_constraint_321(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10908,14 +10908,14 @@ select_ErrorIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_ErrorIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10923,26 +10923,26 @@ select_ErrorIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_321(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10954,14 +10954,14 @@ select_ErrorIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_ErrorIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -10969,26 +10969,26 @@ select_ErrorIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_321(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10996,16 +10996,16 @@ static int
 memb_NGAP_id_constraint_325(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11025,14 +11025,14 @@ select_OverloadStartIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *paren
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_OverloadStartIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11040,26 +11040,26 @@ select_OverloadStartIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *paren
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_325(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11071,14 +11071,14 @@ select_OverloadStartIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_type
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_OverloadStartIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11086,26 +11086,26 @@ select_OverloadStartIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_type
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_325(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11113,16 +11113,16 @@ static int
 memb_NGAP_id_constraint_329(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11137,38 +11137,38 @@ memb_NGAP_id_constraint_329(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_329(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_value_constraint_329(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11176,16 +11176,16 @@ static int
 memb_NGAP_id_constraint_333(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11205,14 +11205,14 @@ select_UplinkRANConfigurationTransferIEs_NGAP_criticality_type(const asn_TYPE_de
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkRANConfigurationTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11220,26 +11220,26 @@ select_UplinkRANConfigurationTransferIEs_NGAP_criticality_type(const asn_TYPE_de
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_333(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11251,14 +11251,14 @@ select_UplinkRANConfigurationTransferIEs_NGAP_value_type(const asn_TYPE_descript
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkRANConfigurationTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11266,26 +11266,26 @@ select_UplinkRANConfigurationTransferIEs_NGAP_value_type(const asn_TYPE_descript
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_333(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11293,16 +11293,16 @@ static int
 memb_NGAP_id_constraint_337(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11322,14 +11322,14 @@ select_DownlinkRANConfigurationTransferIEs_NGAP_criticality_type(const asn_TYPE_
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkRANConfigurationTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11337,26 +11337,26 @@ select_DownlinkRANConfigurationTransferIEs_NGAP_criticality_type(const asn_TYPE_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_337(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11368,14 +11368,14 @@ select_DownlinkRANConfigurationTransferIEs_NGAP_value_type(const asn_TYPE_descri
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkRANConfigurationTransferIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11383,26 +11383,26 @@ select_DownlinkRANConfigurationTransferIEs_NGAP_value_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_337(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11410,16 +11410,16 @@ static int
 memb_NGAP_id_constraint_341(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11439,14 +11439,14 @@ select_WriteReplaceWarningRequestIEs_NGAP_criticality_type(const asn_TYPE_descri
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_WriteReplaceWarningRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11454,26 +11454,26 @@ select_WriteReplaceWarningRequestIEs_NGAP_criticality_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_341(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11485,14 +11485,14 @@ select_WriteReplaceWarningRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_WriteReplaceWarningRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11500,26 +11500,26 @@ select_WriteReplaceWarningRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_341(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11527,16 +11527,16 @@ static int
 memb_NGAP_id_constraint_345(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11556,14 +11556,14 @@ select_WriteReplaceWarningResponseIEs_NGAP_criticality_type(const asn_TYPE_descr
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_WriteReplaceWarningResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11571,26 +11571,26 @@ select_WriteReplaceWarningResponseIEs_NGAP_criticality_type(const asn_TYPE_descr
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_345(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11602,14 +11602,14 @@ select_WriteReplaceWarningResponseIEs_NGAP_value_type(const asn_TYPE_descriptor_
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_WriteReplaceWarningResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11617,26 +11617,26 @@ select_WriteReplaceWarningResponseIEs_NGAP_value_type(const asn_TYPE_descriptor_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_345(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11644,16 +11644,16 @@ static int
 memb_NGAP_id_constraint_349(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11673,14 +11673,14 @@ select_PWSCancelRequestIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pa
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PWSCancelRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11688,26 +11688,26 @@ select_PWSCancelRequestIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pa
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_349(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11719,14 +11719,14 @@ select_PWSCancelRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_t
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PWSCancelRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11734,26 +11734,26 @@ select_PWSCancelRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_349(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11761,16 +11761,16 @@ static int
 memb_NGAP_id_constraint_353(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11790,14 +11790,14 @@ select_PWSCancelResponseIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *p
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PWSCancelResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11805,26 +11805,26 @@ select_PWSCancelResponseIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *p
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_353(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11836,14 +11836,14 @@ select_PWSCancelResponseIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PWSCancelResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11851,26 +11851,26 @@ select_PWSCancelResponseIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_353(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11878,16 +11878,16 @@ static int
 memb_NGAP_id_constraint_357(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11907,14 +11907,14 @@ select_PWSRestartIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PWSRestartIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11922,26 +11922,26 @@ select_PWSRestartIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_357(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11953,14 +11953,14 @@ select_PWSRestartIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pare
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PWSRestartIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -11968,26 +11968,26 @@ select_PWSRestartIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pare
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_357(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11995,16 +11995,16 @@ static int
 memb_NGAP_id_constraint_361(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12024,14 +12024,14 @@ select_PWSFailureIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PWSFailureIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12039,26 +12039,26 @@ select_PWSFailureIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_361(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12070,14 +12070,14 @@ select_PWSFailureIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pare
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_PWSFailureIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12085,26 +12085,26 @@ select_PWSFailureIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pare
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_361(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12112,16 +12112,16 @@ static int
 memb_NGAP_id_constraint_365(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12141,14 +12141,14 @@ select_DownlinkUEAssociatedNRPPaTransportIEs_NGAP_criticality_type(const asn_TYP
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkUEAssociatedNRPPaTransportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12156,26 +12156,26 @@ select_DownlinkUEAssociatedNRPPaTransportIEs_NGAP_criticality_type(const asn_TYP
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_365(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12187,14 +12187,14 @@ select_DownlinkUEAssociatedNRPPaTransportIEs_NGAP_value_type(const asn_TYPE_desc
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkUEAssociatedNRPPaTransportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12202,26 +12202,26 @@ select_DownlinkUEAssociatedNRPPaTransportIEs_NGAP_value_type(const asn_TYPE_desc
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_365(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12229,16 +12229,16 @@ static int
 memb_NGAP_id_constraint_369(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12258,14 +12258,14 @@ select_UplinkUEAssociatedNRPPaTransportIEs_NGAP_criticality_type(const asn_TYPE_
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkUEAssociatedNRPPaTransportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12273,26 +12273,26 @@ select_UplinkUEAssociatedNRPPaTransportIEs_NGAP_criticality_type(const asn_TYPE_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_369(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12304,14 +12304,14 @@ select_UplinkUEAssociatedNRPPaTransportIEs_NGAP_value_type(const asn_TYPE_descri
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkUEAssociatedNRPPaTransportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12319,26 +12319,26 @@ select_UplinkUEAssociatedNRPPaTransportIEs_NGAP_value_type(const asn_TYPE_descri
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_369(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12346,16 +12346,16 @@ static int
 memb_NGAP_id_constraint_373(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12375,14 +12375,14 @@ select_DownlinkNonUEAssociatedNRPPaTransportIEs_NGAP_criticality_type(const asn_
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkNonUEAssociatedNRPPaTransportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12390,26 +12390,26 @@ select_DownlinkNonUEAssociatedNRPPaTransportIEs_NGAP_criticality_type(const asn_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_373(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12421,14 +12421,14 @@ select_DownlinkNonUEAssociatedNRPPaTransportIEs_NGAP_value_type(const asn_TYPE_d
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DownlinkNonUEAssociatedNRPPaTransportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12436,26 +12436,26 @@ select_DownlinkNonUEAssociatedNRPPaTransportIEs_NGAP_value_type(const asn_TYPE_d
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_373(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12463,16 +12463,16 @@ static int
 memb_NGAP_id_constraint_377(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12492,14 +12492,14 @@ select_UplinkNonUEAssociatedNRPPaTransportIEs_NGAP_criticality_type(const asn_TY
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkNonUEAssociatedNRPPaTransportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12507,26 +12507,26 @@ select_UplinkNonUEAssociatedNRPPaTransportIEs_NGAP_criticality_type(const asn_TY
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_377(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12538,14 +12538,14 @@ select_UplinkNonUEAssociatedNRPPaTransportIEs_NGAP_value_type(const asn_TYPE_des
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UplinkNonUEAssociatedNRPPaTransportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12553,26 +12553,26 @@ select_UplinkNonUEAssociatedNRPPaTransportIEs_NGAP_value_type(const asn_TYPE_des
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_377(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12580,16 +12580,16 @@ static int
 memb_NGAP_id_constraint_381(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12609,14 +12609,14 @@ select_TraceStartIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *parent_t
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_TraceStartIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12624,26 +12624,26 @@ select_TraceStartIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *parent_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_381(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12655,14 +12655,14 @@ select_TraceStartIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_type, c
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_TraceStartIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12670,26 +12670,26 @@ select_TraceStartIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_type, c
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_381(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12697,16 +12697,16 @@ static int
 memb_NGAP_id_constraint_385(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12726,14 +12726,14 @@ select_TraceFailureIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_TraceFailureIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12741,26 +12741,26 @@ select_TraceFailureIndicationIEs_NGAP_criticality_type(const asn_TYPE_descriptor
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_385(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12772,14 +12772,14 @@ select_TraceFailureIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pa
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_TraceFailureIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12787,26 +12787,26 @@ select_TraceFailureIndicationIEs_NGAP_value_type(const asn_TYPE_descriptor_t *pa
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_385(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12814,16 +12814,16 @@ static int
 memb_NGAP_id_constraint_389(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12843,14 +12843,14 @@ select_DeactivateTraceIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DeactivateTraceIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12858,26 +12858,26 @@ select_DeactivateTraceIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *par
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_389(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12889,14 +12889,14 @@ select_DeactivateTraceIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_DeactivateTraceIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12904,26 +12904,26 @@ select_DeactivateTraceIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_ty
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_389(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -12931,16 +12931,16 @@ static int
 memb_NGAP_id_constraint_393(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -12960,14 +12960,14 @@ select_CellTrafficTraceIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pa
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_CellTrafficTraceIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -12975,26 +12975,26 @@ select_CellTrafficTraceIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pa
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_393(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13006,14 +13006,14 @@ select_CellTrafficTraceIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_t
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_CellTrafficTraceIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13021,26 +13021,26 @@ select_CellTrafficTraceIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_t
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_393(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13048,16 +13048,16 @@ static int
 memb_NGAP_id_constraint_397(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -13077,14 +13077,14 @@ select_LocationReportingControlIEs_NGAP_criticality_type(const asn_TYPE_descript
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_LocationReportingControlIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13092,26 +13092,26 @@ select_LocationReportingControlIEs_NGAP_criticality_type(const asn_TYPE_descript
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_397(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13123,14 +13123,14 @@ select_LocationReportingControlIEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_LocationReportingControlIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13138,26 +13138,26 @@ select_LocationReportingControlIEs_NGAP_value_type(const asn_TYPE_descriptor_t *
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_397(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13165,16 +13165,16 @@ static int
 memb_NGAP_id_constraint_401(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -13194,14 +13194,14 @@ select_LocationReportingFailureIndicationIEs_NGAP_criticality_type(const asn_TYP
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_LocationReportingFailureIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13209,26 +13209,26 @@ select_LocationReportingFailureIndicationIEs_NGAP_criticality_type(const asn_TYP
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_401(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13240,14 +13240,14 @@ select_LocationReportingFailureIndicationIEs_NGAP_value_type(const asn_TYPE_desc
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_LocationReportingFailureIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13255,26 +13255,26 @@ select_LocationReportingFailureIndicationIEs_NGAP_value_type(const asn_TYPE_desc
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_401(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13282,16 +13282,16 @@ static int
 memb_NGAP_id_constraint_405(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -13311,14 +13311,14 @@ select_LocationReportIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_LocationReportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13326,26 +13326,26 @@ select_LocationReportIEs_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_405(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13357,14 +13357,14 @@ select_LocationReportIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_LocationReportIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13372,26 +13372,26 @@ select_LocationReportIEs_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_405(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13399,16 +13399,16 @@ static int
 memb_NGAP_id_constraint_409(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -13428,14 +13428,14 @@ select_UETNLABindingReleaseRequestIEs_NGAP_criticality_type(const asn_TYPE_descr
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UETNLABindingReleaseRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13443,26 +13443,26 @@ select_UETNLABindingReleaseRequestIEs_NGAP_criticality_type(const asn_TYPE_descr
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_409(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13474,14 +13474,14 @@ select_UETNLABindingReleaseRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UETNLABindingReleaseRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13489,26 +13489,26 @@ select_UETNLABindingReleaseRequestIEs_NGAP_value_type(const asn_TYPE_descriptor_
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_409(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13516,16 +13516,16 @@ static int
 memb_NGAP_id_constraint_413(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -13545,14 +13545,14 @@ select_UERadioCapabilityInfoIndicationIEs_NGAP_criticality_type(const asn_TYPE_d
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UERadioCapabilityInfoIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13560,26 +13560,26 @@ select_UERadioCapabilityInfoIndicationIEs_NGAP_criticality_type(const asn_TYPE_d
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_413(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13591,14 +13591,14 @@ select_UERadioCapabilityInfoIndicationIEs_NGAP_value_type(const asn_TYPE_descrip
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UERadioCapabilityInfoIndicationIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13606,26 +13606,26 @@ select_UERadioCapabilityInfoIndicationIEs_NGAP_value_type(const asn_TYPE_descrip
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_413(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13633,16 +13633,16 @@ static int
 memb_NGAP_id_constraint_417(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -13662,14 +13662,14 @@ select_UERadioCapabilityCheckRequestIEs_NGAP_criticality_type(const asn_TYPE_des
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UERadioCapabilityCheckRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13677,26 +13677,26 @@ select_UERadioCapabilityCheckRequestIEs_NGAP_criticality_type(const asn_TYPE_des
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_417(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13708,14 +13708,14 @@ select_UERadioCapabilityCheckRequestIEs_NGAP_value_type(const asn_TYPE_descripto
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UERadioCapabilityCheckRequestIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13723,26 +13723,26 @@ select_UERadioCapabilityCheckRequestIEs_NGAP_value_type(const asn_TYPE_descripto
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_417(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13750,16 +13750,16 @@ static int
 memb_NGAP_id_constraint_421(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -13779,14 +13779,14 @@ select_UERadioCapabilityCheckResponseIEs_NGAP_criticality_type(const asn_TYPE_de
 	size_t for_column = 1; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UERadioCapabilityCheckResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13794,26 +13794,26 @@ select_UERadioCapabilityCheckResponseIEs_NGAP_criticality_type(const asn_TYPE_de
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_421(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -13825,14 +13825,14 @@ select_UERadioCapabilityCheckResponseIEs_NGAP_value_type(const asn_TYPE_descript
 	size_t for_column = 2; /* &Value */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_UERadioCapabilityCheckResponseIEs, id));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -13840,26 +13840,26 @@ select_UERadioCapabilityCheckResponseIEs_NGAP_value_type(const asn_TYPE_descript
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_421(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -29658,4 +29658,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_UERadioCapabilityCheckResponseIEs = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_UERadioCapabilityCheckResponseIEs_specs_421	/* Additional specs */
 };
-

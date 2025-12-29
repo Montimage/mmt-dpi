@@ -117,7 +117,7 @@ static uint8_t mmt_check_for_IRC_traces(const uint8_t * ptr, uint16_t len) {
 }
 
 uint8_t mmt_search_irc_ssl_detect_ninty_percent_but_very_fast(ipacket_t * ipacket) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -337,7 +337,7 @@ uint8_t mmt_search_irc_ssl_detect_ninty_percent_but_very_fast(ipacket_t * ipacke
 }
 
 void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -524,7 +524,7 @@ void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
                         for (c = 1; c < packet->parsed_lines; c++) {
                             if (packet->line[c].len > 4 && (mmt_memcmp(packet->line[c].ptr, "NICK ", 5) == 0
                                     || mmt_memcmp(packet->line[c].ptr, "USER ", 5) == 0)) {
-                                MMT_LOG(PROTO_IRC, 
+                                MMT_LOG(PROTO_IRC,
                                         MMT_LOG_TRACE, "two icq signal words in the same packet");
                                 mmt_int_irc_add_connection(ipacket);
                                 flow->l4.tcp.irc_stage = 3;
@@ -705,7 +705,7 @@ read_privmsg:
                                                     src->irc_number_of_port++;
                                                     MMT_LOG
                                                             (PROTO_IRC,
-                                                            
+
                                                             MMT_LOG_DEBUG, "found port=%d",
                                                             ntohs(get_u16(src->irc_port, 0)));
                                                     MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG,
@@ -719,7 +719,7 @@ read_privmsg:
                                                     src->irc_port[less] = port;
                                                     MMT_LOG
                                                             (PROTO_IRC,
-                                                            
+
                                                             MMT_LOG_DEBUG, "found port=%d",
                                                             ntohs(get_u16(src->irc_port, 0)));
                                                 }
@@ -746,7 +746,7 @@ read_privmsg:
                                                     dst->irc_number_of_port++;
                                                     MMT_LOG
                                                             (PROTO_IRC,
-                                                            
+
                                                             MMT_LOG_DEBUG, "found port=%d",
                                                             ntohs(get_u16(dst->irc_port, 0)));
                                                     MMT_LOG(PROTO_IRC, MMT_LOG_DEBUG,
@@ -761,7 +761,7 @@ read_privmsg:
 
                                                     MMT_LOG
                                                             (PROTO_IRC,
-                                                            
+
                                                             MMT_LOG_DEBUG, "found port=%d",
                                                             ntohs(get_u16(dst->irc_port, 0)));
                                                 }
@@ -818,5 +818,3 @@ int init_proto_irc_struct() {
         return 0;
     }
 }
-
-

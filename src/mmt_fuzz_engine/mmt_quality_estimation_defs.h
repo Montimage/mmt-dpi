@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   mmt_quality_estimation_defs.h
  * Author: montimage
  *
@@ -84,7 +84,7 @@ extern "C" {
         struct application_quality_estimation_rules_struct * quality_estimation_rules;
         struct metric_struct * next;
     } metric_t;
-    
+
 
     /* Defines the elements of the rule structure  */
     typedef struct metric_grade_rule_element_struct {
@@ -156,4 +156,3 @@ extern "C" {
 #endif
 
 #endif	/* MMT_QUALITY_ESTIMATION_DEFS_H */
-

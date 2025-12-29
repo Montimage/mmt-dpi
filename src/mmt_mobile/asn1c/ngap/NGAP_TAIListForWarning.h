@@ -25,7 +25,7 @@ struct NGAP_TAI;
 /* NGAP_TAIListForWarning */
 typedef struct NGAP_TAIListForWarning {
 	A_SEQUENCE_OF(struct NGAP_TAI) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TAIListForWarning_t;

@@ -110,5 +110,3 @@ typedef struct dns_answer_struct{
 }
 #endif
 #endif	/* DNS_H */
-
-

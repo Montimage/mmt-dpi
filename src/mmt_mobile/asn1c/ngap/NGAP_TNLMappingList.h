@@ -25,7 +25,7 @@ struct NGAP_TNLMappingItem;
 /* NGAP_TNLMappingList */
 typedef struct NGAP_TNLMappingList {
 	A_SEQUENCE_OF(struct NGAP_TNLMappingItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TNLMappingList_t;

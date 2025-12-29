@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceModifyItemModInd;
 /* NGAP_PDUSessionResourceModifyListModInd */
 typedef struct NGAP_PDUSessionResourceModifyListModInd {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceModifyItemModInd) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceModifyListModInd_t;

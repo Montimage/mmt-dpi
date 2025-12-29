@@ -63,4 +63,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_EventType = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_NGAP_EventType_specs_1	/* Additional specs */
 };
-

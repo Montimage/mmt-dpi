@@ -71,5 +71,3 @@ int init_proto_sflow_struct() {
         return 0;
     }
 }
-
-

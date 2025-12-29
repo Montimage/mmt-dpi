@@ -1,6 +1,7 @@
 
 #include <string.h> // memcpy()
 
+#include "../../mmt_core/public_include/mmt_safe_math.h"
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "extraction_lib.h"
@@ -167,7 +168,20 @@ int ip_frag_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 
-    *((unsigned short *) extracted_data->data) = (ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff)<<3;
+    // Safe fragment offset extraction with overflow checking
+    uint16_t frag_offset_raw = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset]));
+    uint16_t frag_offset_13bit = frag_offset_raw & 0x1fff;
+    uint16_t frag_offset_bytes;
+
+    // Safe left shift by 3 (multiply by 8)
+    if (!mmt_safe_shl_u16(frag_offset_13bit, 3, &frag_offset_bytes)) {
+        // Overflow detected - this should not happen with 13-bit value shifted by 3
+        // but we check anyway for safety
+        MMT_LOG(PROTO_IP, MMT_LOG_ERROR, "Fragment offset overflow detected");
+        frag_offset_bytes = 0xFFFF;  // Max value
+    }
+
+    *((unsigned short *) extracted_data->data) = frag_offset_bytes;
     return 1;
 }
 

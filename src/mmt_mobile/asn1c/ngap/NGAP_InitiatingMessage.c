@@ -380,16 +380,16 @@ static int
 memb_NGAP_procedureCode_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 255)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -409,14 +409,14 @@ select_InitiatingMessage_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	size_t for_column = 4; /* &criticality */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitiatingMessage, procedureCode));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -424,26 +424,26 @@ select_InitiatingMessage_NGAP_criticality_type(const asn_TYPE_descriptor_t *pare
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_criticality_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -455,14 +455,14 @@ select_InitiatingMessage_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	size_t for_column = 0; /* &InitiatingMessage */
 	size_t row, presence_index = 0;
 	const long *constraining_value = (const long *)((const char *)parent_sptr + offsetof(struct NGAP_InitiatingMessage, procedureCode));
-	
+
 	for(row=0; row < itable->rows_count; row++) {
 	    const asn_ioc_cell_t *constraining_cell = &itable->rows[row * itable->columns_count + constraining_column];
 	    const asn_ioc_cell_t *type_cell = &itable->rows[row * itable->columns_count + for_column];
-	
+
 	    if(type_cell->cell_kind == aioc__undefined)
 	        continue;
-	
+
 	    presence_index++;
 	    if(constraining_cell->type_descriptor->op->compare_struct(constraining_cell->type_descriptor, constraining_value, constraining_cell->value_sptr) == 0) {
 	        result.type_descriptor = type_cell->type_descriptor;
@@ -470,26 +470,26 @@ select_InitiatingMessage_NGAP_value_type(const asn_TYPE_descriptor_t *parent_typ
 	        break;
 	    }
 	}
-	
+
 	return result;
 }
 
 static int
 memb_NGAP_value_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1126,4 +1126,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_InitiatingMessage = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_InitiatingMessage_specs_1	/* Additional specs */
 };
-

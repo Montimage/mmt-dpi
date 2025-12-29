@@ -10,11 +10,9 @@
 
 int init_proto_nordstrom_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_NORDSTROM, PROTO_NORDSTROM_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_NORDSTROM);
     } else {
         return 0;
     }
 }
-
-

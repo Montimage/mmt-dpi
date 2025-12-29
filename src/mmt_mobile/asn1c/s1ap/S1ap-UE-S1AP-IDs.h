@@ -26,7 +26,7 @@ typedef enum S1ap_UE_S1AP_IDs_PR {
 	S1ap_UE_S1AP_IDs_PR_uE_S1AP_ID_pair,
 	S1ap_UE_S1AP_IDs_PR_mME_UE_S1AP_ID
 	/* Extensions may appear below */
-	
+
 } S1ap_UE_S1AP_IDs_PR;
 
 /* S1ap-UE-S1AP-IDs */
@@ -40,7 +40,7 @@ typedef struct S1ap_UE_S1AP_IDs {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_UE_S1AP_IDs_t;

@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   rfc2822utils.h
  * Author: montimage
  *
@@ -138,4 +138,3 @@ extern "C" {
 #endif
 
 #endif	/* RFC2822UTILS_H */
-

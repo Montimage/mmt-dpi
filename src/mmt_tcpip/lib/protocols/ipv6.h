@@ -96,4 +96,3 @@ extern "C" {
 #endif
 
 #endif	/* IPV6_H */
-

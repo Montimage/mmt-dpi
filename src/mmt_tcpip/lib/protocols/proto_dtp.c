@@ -10,11 +10,9 @@
 
 int init_proto_dtp_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_DTP, PROTO_DTP_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_DTP);
     } else {
         return 0;
     }
 }
-
-

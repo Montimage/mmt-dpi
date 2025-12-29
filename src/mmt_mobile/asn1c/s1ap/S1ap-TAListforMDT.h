@@ -23,7 +23,7 @@ extern "C" {
 /* S1ap-TAListforMDT */
 typedef struct S1ap_TAListforMDT {
 	A_SEQUENCE_OF(S1ap_TAC_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_TAListforMDT_t;

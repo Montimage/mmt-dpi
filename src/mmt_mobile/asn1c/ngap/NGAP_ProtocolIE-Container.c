@@ -3404,4 +3404,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_ProtocolIE_Container_124P78 = {
 	1,	/* Single element */
 	&asn_SPC_NGAP_ProtocolIE_Container_124P78_specs_157	/* Additional specs */
 };
-

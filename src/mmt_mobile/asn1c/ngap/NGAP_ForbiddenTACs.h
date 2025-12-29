@@ -23,7 +23,7 @@ extern "C" {
 /* NGAP_ForbiddenTACs */
 typedef struct NGAP_ForbiddenTACs {
 	A_SEQUENCE_OF(NGAP_TAC_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_ForbiddenTACs_t;

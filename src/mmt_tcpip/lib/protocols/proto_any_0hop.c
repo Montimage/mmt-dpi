@@ -10,11 +10,9 @@
 
 int init_proto_any_0hop_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ANY_0HOP, PROTO_ANY_0HOP_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_ANY_0HOP);
     } else {
         return 0;
     }
 }
-
-

@@ -25,7 +25,7 @@ struct NGAP_TAIListForPagingItem;
 /* NGAP_TAIListForPaging */
 typedef struct NGAP_TAIListForPaging {
 	A_SEQUENCE_OF(struct NGAP_TAIListForPagingItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TAIListForPaging_t;

@@ -50,4 +50,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_OverloadStartNSSAIList = {
 	1,	/* Single element */
 	&asn_SPC_NGAP_OverloadStartNSSAIList_specs_1	/* Additional specs */
 };
-

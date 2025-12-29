@@ -183,7 +183,7 @@ int mmt_check_thunder_tcp(ipacket_t * ipacket, unsigned index) {
         int over_http = mmt_int_search_thunder_http(ipacket);
         if(over_http == 1){
             return over_http;
-            
+
         }; //BW: TODO: avoid this double classification, if Thunder is detected in HTTP avoid checking in tcp
         return mmt_int_search_thunder_tcp(ipacket);
     }
@@ -221,5 +221,3 @@ int init_proto_thunder_struct() {
         return 0;
     }
 }
-
-

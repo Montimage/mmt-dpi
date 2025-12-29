@@ -4,8 +4,7 @@
 
 ------------------
 
-
-In order to add a new protocol to the TCP/IP plugins you can follow the following methodology. 
+In order to add a new protocol to the TCP/IP plugins you can follow the following methodology.
 
 In the next sections we will describe the procedure to add a new Web Protocol. For this we will consider the French newspaper **lemonde.fr**.
 
@@ -39,13 +38,14 @@ In the TCP/IP protocols folder **lib/protocols/** add the following filename **p
 
 int init_proto_lemonde_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_LEMONDE, PROTO_LEMONDE_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_LEMONDE);
     } else {
         return 0;
     }
 }
 ```
+
 ## 2- Initialize the Protocol
 
 In the TCP/IP internal include header file **lib/mmt_common_internal_include.h** add **lemonde** protocol intialization definition at the end of the protocol initialization definitions block:
@@ -55,12 +55,13 @@ In the TCP/IP internal include header file **lib/mmt_common_internal_include.h**
     int init_proto_lemonde_struct();
     /////////////////////////////////////////////////
 ```
+
 If a protocol needs a classification for example protocol rtp, we need to add a function
 
 ```c
-    
+
     int mmt_check_rtp_udp(ipacket * ipacket, unsigned index);
-   
+
 ```
 
 In the TCP/IP configured protocols library file **lib/configured_protocols.c** add **lemonde** protocol initialization at the end of protocold initialization block:
@@ -73,13 +74,15 @@ In the TCP/IP configured protocols library file **lib/configured_protocols.c** a
     }
     /////////////////////////////////////////////
 ```
+
 If a protocol needs a classification for example protocol rtp, we need to add a classification function
 
 ```c
-    
+
   register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_rtp_udp, 50);
-   
+
 ```
+
 In the same file, update function **get_application_class_by_protocol_id** to include **lemonde** as a WEB protocol.
 
 ## 3- Add Classification for the Protocol

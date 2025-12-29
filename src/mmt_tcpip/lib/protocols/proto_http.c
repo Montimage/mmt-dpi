@@ -414,5 +414,3 @@ int init_proto_http_struct() {
         return 0;
     }
 }
-
-

@@ -131,11 +131,11 @@ typedef struct NGAP_UnsuccessfulOutcome {
 			NGAP_RANConfigurationUpdateFailure_t	 RANConfigurationUpdateFailure;
 			NGAP_UEContextModificationFailure_t	 UEContextModificationFailure;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UnsuccessfulOutcome_t;

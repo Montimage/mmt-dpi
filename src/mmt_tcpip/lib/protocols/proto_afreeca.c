@@ -16,5 +16,3 @@ int init_proto_afreeca_struct() {
         return 0;
     }
 }
-
-

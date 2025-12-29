@@ -25,7 +25,7 @@ struct NGAP_CompletedCellsInTAI_NR_Item;
 /* NGAP_CompletedCellsInTAI-NR */
 typedef struct NGAP_CompletedCellsInTAI_NR {
 	A_SEQUENCE_OF(struct NGAP_CompletedCellsInTAI_NR_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CompletedCellsInTAI_NR_t;

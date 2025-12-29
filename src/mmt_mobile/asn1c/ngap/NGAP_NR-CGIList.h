@@ -25,7 +25,7 @@ struct NGAP_NR_CGI;
 /* NGAP_NR-CGIList */
 typedef struct NGAP_NR_CGIList {
 	A_SEQUENCE_OF(struct NGAP_NR_CGI) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NR_CGIList_t;

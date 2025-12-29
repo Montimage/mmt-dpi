@@ -11,16 +11,16 @@ static int
 memb_NGAP_id_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -35,38 +35,38 @@ memb_NGAP_id_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -74,16 +74,16 @@ static int
 memb_NGAP_id_constraint_5(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -98,38 +98,38 @@ memb_NGAP_id_constraint_5(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_5(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_5(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -137,16 +137,16 @@ static int
 memb_NGAP_id_constraint_9(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -161,38 +161,38 @@ memb_NGAP_id_constraint_9(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_9(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_9(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -200,16 +200,16 @@ static int
 memb_NGAP_id_constraint_13(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -224,38 +224,38 @@ memb_NGAP_id_constraint_13(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_13(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_13(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -263,16 +263,16 @@ static int
 memb_NGAP_id_constraint_17(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -287,38 +287,38 @@ memb_NGAP_id_constraint_17(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_17(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_17(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -326,16 +326,16 @@ static int
 memb_NGAP_id_constraint_21(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -350,38 +350,38 @@ memb_NGAP_id_constraint_21(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_21(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_21(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -389,16 +389,16 @@ static int
 memb_NGAP_id_constraint_25(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -413,38 +413,38 @@ memb_NGAP_id_constraint_25(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_25(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_25(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -452,16 +452,16 @@ static int
 memb_NGAP_id_constraint_29(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -476,38 +476,38 @@ memb_NGAP_id_constraint_29(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_29(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_29(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -515,16 +515,16 @@ static int
 memb_NGAP_id_constraint_33(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -539,38 +539,38 @@ memb_NGAP_id_constraint_33(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_33(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_33(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -578,16 +578,16 @@ static int
 memb_NGAP_id_constraint_37(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -602,38 +602,38 @@ memb_NGAP_id_constraint_37(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_37(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_37(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -641,16 +641,16 @@ static int
 memb_NGAP_id_constraint_41(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -665,38 +665,38 @@ memb_NGAP_id_constraint_41(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_41(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_41(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -704,16 +704,16 @@ static int
 memb_NGAP_id_constraint_45(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -728,38 +728,38 @@ memb_NGAP_id_constraint_45(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_45(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_45(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -767,16 +767,16 @@ static int
 memb_NGAP_id_constraint_49(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -791,38 +791,38 @@ memb_NGAP_id_constraint_49(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_49(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_49(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -830,16 +830,16 @@ static int
 memb_NGAP_id_constraint_53(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -854,38 +854,38 @@ memb_NGAP_id_constraint_53(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_53(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_53(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -893,16 +893,16 @@ static int
 memb_NGAP_id_constraint_57(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -917,38 +917,38 @@ memb_NGAP_id_constraint_57(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_57(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_57(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -956,16 +956,16 @@ static int
 memb_NGAP_id_constraint_61(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -980,38 +980,38 @@ memb_NGAP_id_constraint_61(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_61(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_61(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1019,16 +1019,16 @@ static int
 memb_NGAP_id_constraint_65(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1043,38 +1043,38 @@ memb_NGAP_id_constraint_65(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_65(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_65(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1082,16 +1082,16 @@ static int
 memb_NGAP_id_constraint_69(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1106,38 +1106,38 @@ memb_NGAP_id_constraint_69(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_69(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_69(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1145,16 +1145,16 @@ static int
 memb_NGAP_id_constraint_73(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1169,38 +1169,38 @@ memb_NGAP_id_constraint_73(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_73(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_73(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1208,16 +1208,16 @@ static int
 memb_NGAP_id_constraint_77(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1232,38 +1232,38 @@ memb_NGAP_id_constraint_77(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_77(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_77(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1271,16 +1271,16 @@ static int
 memb_NGAP_id_constraint_81(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1295,38 +1295,38 @@ memb_NGAP_id_constraint_81(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_81(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_81(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1334,16 +1334,16 @@ static int
 memb_NGAP_id_constraint_85(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1358,38 +1358,38 @@ memb_NGAP_id_constraint_85(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_85(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_85(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1397,16 +1397,16 @@ static int
 memb_NGAP_id_constraint_89(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1421,38 +1421,38 @@ memb_NGAP_id_constraint_89(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_89(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_89(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1460,16 +1460,16 @@ static int
 memb_NGAP_id_constraint_93(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1484,38 +1484,38 @@ memb_NGAP_id_constraint_93(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_93(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_93(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1523,16 +1523,16 @@ static int
 memb_NGAP_id_constraint_97(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1547,38 +1547,38 @@ memb_NGAP_id_constraint_97(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_97(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_97(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1586,16 +1586,16 @@ static int
 memb_NGAP_id_constraint_101(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1610,38 +1610,38 @@ memb_NGAP_id_constraint_101(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_101(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_101(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1649,16 +1649,16 @@ static int
 memb_NGAP_id_constraint_105(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1673,38 +1673,38 @@ memb_NGAP_id_constraint_105(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_105(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_105(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1712,16 +1712,16 @@ static int
 memb_NGAP_id_constraint_109(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1736,38 +1736,38 @@ memb_NGAP_id_constraint_109(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_109(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_109(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1775,16 +1775,16 @@ static int
 memb_NGAP_id_constraint_113(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1799,38 +1799,38 @@ memb_NGAP_id_constraint_113(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_113(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_113(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1838,16 +1838,16 @@ static int
 memb_NGAP_id_constraint_117(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1862,38 +1862,38 @@ memb_NGAP_id_constraint_117(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_117(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_117(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1901,16 +1901,16 @@ static int
 memb_NGAP_id_constraint_121(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1925,38 +1925,38 @@ memb_NGAP_id_constraint_121(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_121(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_121(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -1964,16 +1964,16 @@ static int
 memb_NGAP_id_constraint_125(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -1988,38 +1988,38 @@ memb_NGAP_id_constraint_125(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_125(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_125(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2027,16 +2027,16 @@ static int
 memb_NGAP_id_constraint_129(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2051,38 +2051,38 @@ memb_NGAP_id_constraint_129(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_129(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_129(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2090,16 +2090,16 @@ static int
 memb_NGAP_id_constraint_133(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2114,38 +2114,38 @@ memb_NGAP_id_constraint_133(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_133(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_133(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2153,16 +2153,16 @@ static int
 memb_NGAP_id_constraint_137(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2177,38 +2177,38 @@ memb_NGAP_id_constraint_137(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_137(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_137(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2216,16 +2216,16 @@ static int
 memb_NGAP_id_constraint_141(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2240,38 +2240,38 @@ memb_NGAP_id_constraint_141(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_141(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_141(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2279,16 +2279,16 @@ static int
 memb_NGAP_id_constraint_145(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2303,38 +2303,38 @@ memb_NGAP_id_constraint_145(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_145(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_145(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2342,16 +2342,16 @@ static int
 memb_NGAP_id_constraint_149(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2366,38 +2366,38 @@ memb_NGAP_id_constraint_149(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_149(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_149(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2405,16 +2405,16 @@ static int
 memb_NGAP_id_constraint_153(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2429,38 +2429,38 @@ memb_NGAP_id_constraint_153(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_153(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_153(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2468,16 +2468,16 @@ static int
 memb_NGAP_id_constraint_157(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2492,38 +2492,38 @@ memb_NGAP_id_constraint_157(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_157(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_157(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2531,16 +2531,16 @@ static int
 memb_NGAP_id_constraint_161(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2555,38 +2555,38 @@ memb_NGAP_id_constraint_161(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_161(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_161(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2594,16 +2594,16 @@ static int
 memb_NGAP_id_constraint_165(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2618,38 +2618,38 @@ memb_NGAP_id_constraint_165(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_165(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_165(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2657,16 +2657,16 @@ static int
 memb_NGAP_id_constraint_169(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2681,38 +2681,38 @@ memb_NGAP_id_constraint_169(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_169(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_169(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2720,16 +2720,16 @@ static int
 memb_NGAP_id_constraint_173(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2744,38 +2744,38 @@ memb_NGAP_id_constraint_173(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_173(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_173(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2783,16 +2783,16 @@ static int
 memb_NGAP_id_constraint_177(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2807,38 +2807,38 @@ memb_NGAP_id_constraint_177(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_177(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_177(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2846,16 +2846,16 @@ static int
 memb_NGAP_id_constraint_181(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2870,38 +2870,38 @@ memb_NGAP_id_constraint_181(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_181(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_181(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2909,16 +2909,16 @@ static int
 memb_NGAP_id_constraint_185(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2933,38 +2933,38 @@ memb_NGAP_id_constraint_185(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_185(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_185(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -2972,16 +2972,16 @@ static int
 memb_NGAP_id_constraint_189(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -2996,38 +2996,38 @@ memb_NGAP_id_constraint_189(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_189(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_189(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3035,16 +3035,16 @@ static int
 memb_NGAP_id_constraint_193(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3059,38 +3059,38 @@ memb_NGAP_id_constraint_193(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_193(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_193(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3098,16 +3098,16 @@ static int
 memb_NGAP_id_constraint_197(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3122,38 +3122,38 @@ memb_NGAP_id_constraint_197(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_197(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_197(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3161,16 +3161,16 @@ static int
 memb_NGAP_id_constraint_201(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3185,38 +3185,38 @@ memb_NGAP_id_constraint_201(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_201(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_201(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3224,16 +3224,16 @@ static int
 memb_NGAP_id_constraint_205(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3248,38 +3248,38 @@ memb_NGAP_id_constraint_205(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_205(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_205(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3287,16 +3287,16 @@ static int
 memb_NGAP_id_constraint_209(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3311,38 +3311,38 @@ memb_NGAP_id_constraint_209(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_209(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_209(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3350,16 +3350,16 @@ static int
 memb_NGAP_id_constraint_213(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3374,38 +3374,38 @@ memb_NGAP_id_constraint_213(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_213(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_213(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3413,16 +3413,16 @@ static int
 memb_NGAP_id_constraint_217(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3437,38 +3437,38 @@ memb_NGAP_id_constraint_217(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_217(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_217(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3476,16 +3476,16 @@ static int
 memb_NGAP_id_constraint_221(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3500,38 +3500,38 @@ memb_NGAP_id_constraint_221(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_221(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_221(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3539,16 +3539,16 @@ static int
 memb_NGAP_id_constraint_225(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3563,38 +3563,38 @@ memb_NGAP_id_constraint_225(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_225(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_225(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3602,16 +3602,16 @@ static int
 memb_NGAP_id_constraint_229(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3626,38 +3626,38 @@ memb_NGAP_id_constraint_229(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_229(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_229(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3665,16 +3665,16 @@ static int
 memb_NGAP_id_constraint_233(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3689,38 +3689,38 @@ memb_NGAP_id_constraint_233(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_233(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_233(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3728,16 +3728,16 @@ static int
 memb_NGAP_id_constraint_237(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3752,38 +3752,38 @@ memb_NGAP_id_constraint_237(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_237(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_237(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3791,16 +3791,16 @@ static int
 memb_NGAP_id_constraint_241(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3815,38 +3815,38 @@ memb_NGAP_id_constraint_241(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_241(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_241(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3854,16 +3854,16 @@ static int
 memb_NGAP_id_constraint_245(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3878,38 +3878,38 @@ memb_NGAP_id_constraint_245(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_245(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_245(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3917,16 +3917,16 @@ static int
 memb_NGAP_id_constraint_249(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -3941,38 +3941,38 @@ memb_NGAP_id_constraint_249(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_249(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_249(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -3980,16 +3980,16 @@ static int
 memb_NGAP_id_constraint_253(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4004,38 +4004,38 @@ memb_NGAP_id_constraint_253(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_253(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_253(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4043,16 +4043,16 @@ static int
 memb_NGAP_id_constraint_257(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4067,38 +4067,38 @@ memb_NGAP_id_constraint_257(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_257(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_257(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4106,16 +4106,16 @@ static int
 memb_NGAP_id_constraint_261(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4130,38 +4130,38 @@ memb_NGAP_id_constraint_261(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_261(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_261(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4169,16 +4169,16 @@ static int
 memb_NGAP_id_constraint_265(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4193,38 +4193,38 @@ memb_NGAP_id_constraint_265(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_265(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_265(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4232,16 +4232,16 @@ static int
 memb_NGAP_id_constraint_269(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4256,38 +4256,38 @@ memb_NGAP_id_constraint_269(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_269(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_269(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4295,16 +4295,16 @@ static int
 memb_NGAP_id_constraint_273(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4319,38 +4319,38 @@ memb_NGAP_id_constraint_273(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_273(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_273(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4358,16 +4358,16 @@ static int
 memb_NGAP_id_constraint_277(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4382,38 +4382,38 @@ memb_NGAP_id_constraint_277(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_277(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_277(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4421,16 +4421,16 @@ static int
 memb_NGAP_id_constraint_281(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4445,38 +4445,38 @@ memb_NGAP_id_constraint_281(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_281(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_281(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4484,16 +4484,16 @@ static int
 memb_NGAP_id_constraint_285(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4508,38 +4508,38 @@ memb_NGAP_id_constraint_285(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_285(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_285(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4547,16 +4547,16 @@ static int
 memb_NGAP_id_constraint_289(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4571,38 +4571,38 @@ memb_NGAP_id_constraint_289(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_289(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_289(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4610,16 +4610,16 @@ static int
 memb_NGAP_id_constraint_293(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4634,38 +4634,38 @@ memb_NGAP_id_constraint_293(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_293(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_293(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4673,16 +4673,16 @@ static int
 memb_NGAP_id_constraint_297(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4697,38 +4697,38 @@ memb_NGAP_id_constraint_297(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_297(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_297(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4736,16 +4736,16 @@ static int
 memb_NGAP_id_constraint_301(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4760,38 +4760,38 @@ memb_NGAP_id_constraint_301(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_301(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_301(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4799,16 +4799,16 @@ static int
 memb_NGAP_id_constraint_305(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4823,38 +4823,38 @@ memb_NGAP_id_constraint_305(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_305(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_305(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4862,16 +4862,16 @@ static int
 memb_NGAP_id_constraint_309(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4886,38 +4886,38 @@ memb_NGAP_id_constraint_309(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_309(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_309(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4925,16 +4925,16 @@ static int
 memb_NGAP_id_constraint_313(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -4949,38 +4949,38 @@ memb_NGAP_id_constraint_313(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_313(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_313(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -4988,16 +4988,16 @@ static int
 memb_NGAP_id_constraint_317(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5012,38 +5012,38 @@ memb_NGAP_id_constraint_317(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_317(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_317(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5051,16 +5051,16 @@ static int
 memb_NGAP_id_constraint_321(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5075,38 +5075,38 @@ memb_NGAP_id_constraint_321(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_321(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_321(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5114,16 +5114,16 @@ static int
 memb_NGAP_id_constraint_325(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5138,38 +5138,38 @@ memb_NGAP_id_constraint_325(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_325(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_325(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5177,16 +5177,16 @@ static int
 memb_NGAP_id_constraint_329(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5201,38 +5201,38 @@ memb_NGAP_id_constraint_329(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_329(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_329(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5240,16 +5240,16 @@ static int
 memb_NGAP_id_constraint_333(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5264,38 +5264,38 @@ memb_NGAP_id_constraint_333(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_333(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_333(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5303,16 +5303,16 @@ static int
 memb_NGAP_id_constraint_337(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5327,38 +5327,38 @@ memb_NGAP_id_constraint_337(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_337(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_337(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5366,16 +5366,16 @@ static int
 memb_NGAP_id_constraint_341(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5390,38 +5390,38 @@ memb_NGAP_id_constraint_341(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_341(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_341(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5429,16 +5429,16 @@ static int
 memb_NGAP_id_constraint_345(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5453,38 +5453,38 @@ memb_NGAP_id_constraint_345(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_345(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_345(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5492,16 +5492,16 @@ static int
 memb_NGAP_id_constraint_349(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5516,38 +5516,38 @@ memb_NGAP_id_constraint_349(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_349(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_349(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5555,16 +5555,16 @@ static int
 memb_NGAP_id_constraint_353(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5579,38 +5579,38 @@ memb_NGAP_id_constraint_353(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_353(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_353(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5618,16 +5618,16 @@ static int
 memb_NGAP_id_constraint_357(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5642,38 +5642,38 @@ memb_NGAP_id_constraint_357(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_357(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_357(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5681,16 +5681,16 @@ static int
 memb_NGAP_id_constraint_361(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5705,38 +5705,38 @@ memb_NGAP_id_constraint_361(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_361(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_361(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5744,16 +5744,16 @@ static int
 memb_NGAP_id_constraint_365(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5768,38 +5768,38 @@ memb_NGAP_id_constraint_365(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_365(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_365(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5807,16 +5807,16 @@ static int
 memb_NGAP_id_constraint_369(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5831,38 +5831,38 @@ memb_NGAP_id_constraint_369(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_369(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_369(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5870,16 +5870,16 @@ static int
 memb_NGAP_id_constraint_373(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5894,38 +5894,38 @@ memb_NGAP_id_constraint_373(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_373(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_373(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5933,16 +5933,16 @@ static int
 memb_NGAP_id_constraint_377(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -5957,38 +5957,38 @@ memb_NGAP_id_constraint_377(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_377(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_377(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -5996,16 +5996,16 @@ static int
 memb_NGAP_id_constraint_381(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6020,38 +6020,38 @@ memb_NGAP_id_constraint_381(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_381(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_381(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6059,16 +6059,16 @@ static int
 memb_NGAP_id_constraint_385(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6083,38 +6083,38 @@ memb_NGAP_id_constraint_385(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_385(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_385(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6122,16 +6122,16 @@ static int
 memb_NGAP_id_constraint_389(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6146,38 +6146,38 @@ memb_NGAP_id_constraint_389(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_389(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_389(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6185,16 +6185,16 @@ static int
 memb_NGAP_id_constraint_393(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6209,38 +6209,38 @@ memb_NGAP_id_constraint_393(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_393(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_393(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6248,16 +6248,16 @@ static int
 memb_NGAP_id_constraint_397(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6272,38 +6272,38 @@ memb_NGAP_id_constraint_397(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_397(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_397(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6311,16 +6311,16 @@ static int
 memb_NGAP_id_constraint_401(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6335,38 +6335,38 @@ memb_NGAP_id_constraint_401(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_401(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_401(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6374,16 +6374,16 @@ static int
 memb_NGAP_id_constraint_405(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6398,38 +6398,38 @@ memb_NGAP_id_constraint_405(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_405(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_405(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6437,16 +6437,16 @@ static int
 memb_NGAP_id_constraint_409(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6461,38 +6461,38 @@ memb_NGAP_id_constraint_409(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_409(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_409(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6500,16 +6500,16 @@ static int
 memb_NGAP_id_constraint_413(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6524,38 +6524,38 @@ memb_NGAP_id_constraint_413(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_413(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_413(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6563,16 +6563,16 @@ static int
 memb_NGAP_id_constraint_417(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6587,38 +6587,38 @@ memb_NGAP_id_constraint_417(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_417(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_417(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6626,16 +6626,16 @@ static int
 memb_NGAP_id_constraint_421(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6650,38 +6650,38 @@ memb_NGAP_id_constraint_421(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_421(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_421(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6689,16 +6689,16 @@ static int
 memb_NGAP_id_constraint_425(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6713,38 +6713,38 @@ memb_NGAP_id_constraint_425(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_425(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_425(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6752,16 +6752,16 @@ static int
 memb_NGAP_id_constraint_429(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6776,38 +6776,38 @@ memb_NGAP_id_constraint_429(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_429(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_429(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6815,16 +6815,16 @@ static int
 memb_NGAP_id_constraint_433(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6839,38 +6839,38 @@ memb_NGAP_id_constraint_433(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_433(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_433(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6878,16 +6878,16 @@ static int
 memb_NGAP_id_constraint_437(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6902,38 +6902,38 @@ memb_NGAP_id_constraint_437(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_437(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_437(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -6941,16 +6941,16 @@ static int
 memb_NGAP_id_constraint_441(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -6965,38 +6965,38 @@ memb_NGAP_id_constraint_441(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_441(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_441(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7004,16 +7004,16 @@ static int
 memb_NGAP_id_constraint_445(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7028,38 +7028,38 @@ memb_NGAP_id_constraint_445(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_445(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_445(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7067,16 +7067,16 @@ static int
 memb_NGAP_id_constraint_449(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7091,38 +7091,38 @@ memb_NGAP_id_constraint_449(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_449(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_449(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7130,16 +7130,16 @@ static int
 memb_NGAP_id_constraint_453(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7154,38 +7154,38 @@ memb_NGAP_id_constraint_453(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_453(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_453(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7193,16 +7193,16 @@ static int
 memb_NGAP_id_constraint_457(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7217,38 +7217,38 @@ memb_NGAP_id_constraint_457(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_457(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_457(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7256,16 +7256,16 @@ static int
 memb_NGAP_id_constraint_461(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7280,38 +7280,38 @@ memb_NGAP_id_constraint_461(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_461(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_461(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7319,16 +7319,16 @@ static int
 memb_NGAP_id_constraint_465(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7343,38 +7343,38 @@ memb_NGAP_id_constraint_465(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_465(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_465(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7382,16 +7382,16 @@ static int
 memb_NGAP_id_constraint_469(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7406,38 +7406,38 @@ memb_NGAP_id_constraint_469(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_469(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_469(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7445,16 +7445,16 @@ static int
 memb_NGAP_id_constraint_473(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7469,38 +7469,38 @@ memb_NGAP_id_constraint_473(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_473(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_473(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7508,16 +7508,16 @@ static int
 memb_NGAP_id_constraint_477(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7532,38 +7532,38 @@ memb_NGAP_id_constraint_477(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_477(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_477(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7571,16 +7571,16 @@ static int
 memb_NGAP_id_constraint_481(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7595,38 +7595,38 @@ memb_NGAP_id_constraint_481(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_481(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_481(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7634,16 +7634,16 @@ static int
 memb_NGAP_id_constraint_485(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7658,38 +7658,38 @@ memb_NGAP_id_constraint_485(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_485(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_485(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7697,16 +7697,16 @@ static int
 memb_NGAP_id_constraint_489(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7721,38 +7721,38 @@ memb_NGAP_id_constraint_489(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_489(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_489(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7760,16 +7760,16 @@ static int
 memb_NGAP_id_constraint_493(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7784,38 +7784,38 @@ memb_NGAP_id_constraint_493(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_493(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_493(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7823,16 +7823,16 @@ static int
 memb_NGAP_id_constraint_497(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7847,38 +7847,38 @@ memb_NGAP_id_constraint_497(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_497(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_497(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7886,16 +7886,16 @@ static int
 memb_NGAP_id_constraint_501(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7910,38 +7910,38 @@ memb_NGAP_id_constraint_501(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_501(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_501(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -7949,16 +7949,16 @@ static int
 memb_NGAP_id_constraint_505(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -7973,38 +7973,38 @@ memb_NGAP_id_constraint_505(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_505(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_505(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8012,16 +8012,16 @@ static int
 memb_NGAP_id_constraint_509(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8036,38 +8036,38 @@ memb_NGAP_id_constraint_509(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_509(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_509(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8075,16 +8075,16 @@ static int
 memb_NGAP_id_constraint_513(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8099,38 +8099,38 @@ memb_NGAP_id_constraint_513(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_513(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_513(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8138,16 +8138,16 @@ static int
 memb_NGAP_id_constraint_517(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8162,38 +8162,38 @@ memb_NGAP_id_constraint_517(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_517(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_517(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8201,16 +8201,16 @@ static int
 memb_NGAP_id_constraint_521(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8225,38 +8225,38 @@ memb_NGAP_id_constraint_521(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_521(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_521(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8264,16 +8264,16 @@ static int
 memb_NGAP_id_constraint_525(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8288,38 +8288,38 @@ memb_NGAP_id_constraint_525(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_525(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_525(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8327,16 +8327,16 @@ static int
 memb_NGAP_id_constraint_529(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8351,38 +8351,38 @@ memb_NGAP_id_constraint_529(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_529(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_529(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8390,16 +8390,16 @@ static int
 memb_NGAP_id_constraint_533(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8414,38 +8414,38 @@ memb_NGAP_id_constraint_533(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_533(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_533(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8453,16 +8453,16 @@ static int
 memb_NGAP_id_constraint_537(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8477,38 +8477,38 @@ memb_NGAP_id_constraint_537(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_537(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_537(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8516,16 +8516,16 @@ static int
 memb_NGAP_id_constraint_541(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8540,38 +8540,38 @@ memb_NGAP_id_constraint_541(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_541(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_541(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8579,16 +8579,16 @@ static int
 memb_NGAP_id_constraint_545(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8603,38 +8603,38 @@ memb_NGAP_id_constraint_545(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_545(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_545(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8642,16 +8642,16 @@ static int
 memb_NGAP_id_constraint_549(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8666,38 +8666,38 @@ memb_NGAP_id_constraint_549(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_549(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_549(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8705,16 +8705,16 @@ static int
 memb_NGAP_id_constraint_553(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8729,38 +8729,38 @@ memb_NGAP_id_constraint_553(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_553(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_553(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8768,16 +8768,16 @@ static int
 memb_NGAP_id_constraint_557(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8792,38 +8792,38 @@ memb_NGAP_id_constraint_557(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_557(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_557(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8831,16 +8831,16 @@ static int
 memb_NGAP_id_constraint_561(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8855,38 +8855,38 @@ memb_NGAP_id_constraint_561(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_561(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_561(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8894,16 +8894,16 @@ static int
 memb_NGAP_id_constraint_565(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8918,38 +8918,38 @@ memb_NGAP_id_constraint_565(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_565(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_565(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -8957,16 +8957,16 @@ static int
 memb_NGAP_id_constraint_569(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -8981,38 +8981,38 @@ memb_NGAP_id_constraint_569(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_569(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_569(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9020,16 +9020,16 @@ static int
 memb_NGAP_id_constraint_573(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9044,38 +9044,38 @@ memb_NGAP_id_constraint_573(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_573(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_573(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9083,16 +9083,16 @@ static int
 memb_NGAP_id_constraint_577(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9107,38 +9107,38 @@ memb_NGAP_id_constraint_577(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_577(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_577(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9146,16 +9146,16 @@ static int
 memb_NGAP_id_constraint_581(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9170,38 +9170,38 @@ memb_NGAP_id_constraint_581(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_581(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_581(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9209,16 +9209,16 @@ static int
 memb_NGAP_id_constraint_585(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9233,38 +9233,38 @@ memb_NGAP_id_constraint_585(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_585(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_585(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9272,16 +9272,16 @@ static int
 memb_NGAP_id_constraint_589(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9296,38 +9296,38 @@ memb_NGAP_id_constraint_589(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_589(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_589(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9335,16 +9335,16 @@ static int
 memb_NGAP_id_constraint_593(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9359,38 +9359,38 @@ memb_NGAP_id_constraint_593(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_593(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_593(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9398,16 +9398,16 @@ static int
 memb_NGAP_id_constraint_597(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9422,38 +9422,38 @@ memb_NGAP_id_constraint_597(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_597(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_597(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9461,16 +9461,16 @@ static int
 memb_NGAP_id_constraint_601(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9485,38 +9485,38 @@ memb_NGAP_id_constraint_601(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_601(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_601(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9524,16 +9524,16 @@ static int
 memb_NGAP_id_constraint_605(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9548,38 +9548,38 @@ memb_NGAP_id_constraint_605(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_605(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_605(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9587,16 +9587,16 @@ static int
 memb_NGAP_id_constraint_609(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9611,38 +9611,38 @@ memb_NGAP_id_constraint_609(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_609(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_609(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9650,16 +9650,16 @@ static int
 memb_NGAP_id_constraint_613(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9674,38 +9674,38 @@ memb_NGAP_id_constraint_613(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_613(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_613(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9713,16 +9713,16 @@ static int
 memb_NGAP_id_constraint_617(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9737,38 +9737,38 @@ memb_NGAP_id_constraint_617(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_617(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_617(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9776,16 +9776,16 @@ static int
 memb_NGAP_id_constraint_621(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9800,38 +9800,38 @@ memb_NGAP_id_constraint_621(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_621(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_621(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9839,16 +9839,16 @@ static int
 memb_NGAP_id_constraint_625(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9863,38 +9863,38 @@ memb_NGAP_id_constraint_625(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_625(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_625(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9902,16 +9902,16 @@ static int
 memb_NGAP_id_constraint_629(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9926,38 +9926,38 @@ memb_NGAP_id_constraint_629(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_629(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_629(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -9965,16 +9965,16 @@ static int
 memb_NGAP_id_constraint_633(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -9989,38 +9989,38 @@ memb_NGAP_id_constraint_633(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_633(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_633(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10028,16 +10028,16 @@ static int
 memb_NGAP_id_constraint_637(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10052,38 +10052,38 @@ memb_NGAP_id_constraint_637(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_637(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_637(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10091,16 +10091,16 @@ static int
 memb_NGAP_id_constraint_641(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10115,38 +10115,38 @@ memb_NGAP_id_constraint_641(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_641(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_641(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10154,16 +10154,16 @@ static int
 memb_NGAP_id_constraint_645(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10178,38 +10178,38 @@ memb_NGAP_id_constraint_645(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_645(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_645(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10217,16 +10217,16 @@ static int
 memb_NGAP_id_constraint_649(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10241,38 +10241,38 @@ memb_NGAP_id_constraint_649(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_649(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_649(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10280,16 +10280,16 @@ static int
 memb_NGAP_id_constraint_653(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10304,38 +10304,38 @@ memb_NGAP_id_constraint_653(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_653(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_653(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10343,16 +10343,16 @@ static int
 memb_NGAP_id_constraint_657(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10367,38 +10367,38 @@ memb_NGAP_id_constraint_657(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_657(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_657(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10406,16 +10406,16 @@ static int
 memb_NGAP_id_constraint_661(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10430,38 +10430,38 @@ memb_NGAP_id_constraint_661(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_661(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_661(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10469,16 +10469,16 @@ static int
 memb_NGAP_id_constraint_665(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10493,38 +10493,38 @@ memb_NGAP_id_constraint_665(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_665(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_665(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10532,16 +10532,16 @@ static int
 memb_NGAP_id_constraint_669(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10556,38 +10556,38 @@ memb_NGAP_id_constraint_669(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_669(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_669(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10595,16 +10595,16 @@ static int
 memb_NGAP_id_constraint_673(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10619,38 +10619,38 @@ memb_NGAP_id_constraint_673(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_673(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_673(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10658,16 +10658,16 @@ static int
 memb_NGAP_id_constraint_677(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10682,38 +10682,38 @@ memb_NGAP_id_constraint_677(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_677(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_677(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10721,16 +10721,16 @@ static int
 memb_NGAP_id_constraint_681(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10745,38 +10745,38 @@ memb_NGAP_id_constraint_681(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_681(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_681(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10784,16 +10784,16 @@ static int
 memb_NGAP_id_constraint_685(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10808,38 +10808,38 @@ memb_NGAP_id_constraint_685(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_685(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_685(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10847,16 +10847,16 @@ static int
 memb_NGAP_id_constraint_689(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10871,38 +10871,38 @@ memb_NGAP_id_constraint_689(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_689(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_689(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10910,16 +10910,16 @@ static int
 memb_NGAP_id_constraint_693(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10934,38 +10934,38 @@ memb_NGAP_id_constraint_693(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_693(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_693(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -10973,16 +10973,16 @@ static int
 memb_NGAP_id_constraint_697(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -10997,38 +10997,38 @@ memb_NGAP_id_constraint_697(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_697(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_697(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11036,16 +11036,16 @@ static int
 memb_NGAP_id_constraint_701(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11060,38 +11060,38 @@ memb_NGAP_id_constraint_701(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_701(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_701(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11099,16 +11099,16 @@ static int
 memb_NGAP_id_constraint_705(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11123,38 +11123,38 @@ memb_NGAP_id_constraint_705(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_705(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_705(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11162,16 +11162,16 @@ static int
 memb_NGAP_id_constraint_709(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11186,38 +11186,38 @@ memb_NGAP_id_constraint_709(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_709(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_709(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11225,16 +11225,16 @@ static int
 memb_NGAP_id_constraint_713(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11249,38 +11249,38 @@ memb_NGAP_id_constraint_713(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_713(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_713(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11288,16 +11288,16 @@ static int
 memb_NGAP_id_constraint_717(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11312,38 +11312,38 @@ memb_NGAP_id_constraint_717(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_717(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_717(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11351,16 +11351,16 @@ static int
 memb_NGAP_id_constraint_721(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11375,38 +11375,38 @@ memb_NGAP_id_constraint_721(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_721(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_721(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11414,16 +11414,16 @@ static int
 memb_NGAP_id_constraint_725(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11438,38 +11438,38 @@ memb_NGAP_id_constraint_725(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_725(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_725(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11477,16 +11477,16 @@ static int
 memb_NGAP_id_constraint_729(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11501,38 +11501,38 @@ memb_NGAP_id_constraint_729(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_729(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_729(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11540,16 +11540,16 @@ static int
 memb_NGAP_id_constraint_733(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11564,38 +11564,38 @@ memb_NGAP_id_constraint_733(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_733(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_733(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -11603,16 +11603,16 @@ static int
 memb_NGAP_id_constraint_737(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -11627,38 +11627,38 @@ memb_NGAP_id_constraint_737(const asn_TYPE_descriptor_t *td, const void *sptr,
 static int
 memb_NGAP_criticality_constraint_737(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
 static int
 memb_NGAP_extensionValue_constraint_737(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	if(1 /* No applicable constraints whatsoever */) {
 		/* Nothing is here. See below */
 	}
-	
+
 	return td->encoding_constraints.general_constraints(td, sptr, ctfailcb, app_key);
 }
 
@@ -31641,4 +31641,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_XnTNLConfigurationInfo_ExtIEs = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_XnTNLConfigurationInfo_ExtIEs_specs_737	/* Additional specs */
 };
-

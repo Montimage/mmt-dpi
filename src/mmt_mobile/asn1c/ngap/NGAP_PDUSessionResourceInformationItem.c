@@ -81,4 +81,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_PDUSessionResourceInformationItem = {
 	4,	/* Elements count */
 	&asn_SPC_NGAP_PDUSessionResourceInformationItem_specs_1	/* Additional specs */
 };
-

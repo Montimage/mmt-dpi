@@ -101,4 +101,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_LastVisitedNGRANCellInformation = {
 	6,	/* Elements count */
 	&asn_SPC_NGAP_LastVisitedNGRANCellInformation_specs_1	/* Additional specs */
 };
-

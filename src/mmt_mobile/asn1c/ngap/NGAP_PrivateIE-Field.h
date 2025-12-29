@@ -27,7 +27,7 @@ extern "C" {
 /* Dependencies */
 typedef enum NGAP_PrivateMessageIEs__value_PR {
 	NGAP_PrivateMessageIEs__value_PR_NOTHING	/* No components present */
-	
+
 } NGAP_PrivateMessageIEs__value_PR;
 
 /* NGAP_PrivateIE-Field */
@@ -38,11 +38,11 @@ typedef struct NGAP_PrivateMessageIEs {
 		NGAP_PrivateMessageIEs__value_PR present;
 		union NGAP_PrivateMessageIEs__NGAP_value_u {
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PrivateMessageIEs_t;

@@ -146,7 +146,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
                 || (get_l16(packet->payload, 0) == 0x22 && !get_l16(packet->payload, 28)))) {
             if (dst != NULL) {
                 dst->pplive_vod_cli_port = packet->udp->dest;
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: VOD Port marked %u.\n", ntohs(packet->udp->dest));
                 dst->pplive_last_packet_time = packet->tick_timestamp;
                 dst->pplive_last_packet_time_set = 1;
@@ -278,7 +278,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
                 if ((packet->payload[9] == packet->payload[10]) && (packet->payload[9] == packet->payload[11])) {
                     if ((packet->payload[16] == packet->payload[17]) &&
                             (packet->payload[16] == packet->payload[18]) && (packet->payload[16] == packet->payload[19])) {
-                        MMT_LOG(PROTO_PPLIVE, 
+                        MMT_LOG(PROTO_PPLIVE,
                                 MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                         mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return;
@@ -292,7 +292,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
                 if (packet->payload[5] == packet->payload[6] && packet->payload[5] == packet->payload[7]) {
                     if (packet->payload[12] == packet->payload[13] && packet->payload[14] == packet->payload[15]
                             && packet->payload[12] == packet->payload[14]) {
-                        MMT_LOG(PROTO_PPLIVE, 
+                        MMT_LOG(PROTO_PPLIVE,
                                 MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                         mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return;
@@ -304,7 +304,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
         if (packet->payload_packet_len > 11 && ntohl(get_u32(packet->payload, 0)) == packet->payload_packet_len - 4) {
             if (packet->payload[4] == 0xe9 && packet->payload[5] == 0x03 &&
                     ((packet->payload[7] == packet->payload[10]) || (packet->payload[7] == packet->payload[11]))) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
@@ -314,7 +314,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
         if (packet->payload_packet_len > 10 && flow->pplive_stage) {
             if (packet->payload[0] == 0xe9 && packet->payload[1] == 0x03 &&
                     ((packet->payload[3] == packet->payload[6]) || (packet->payload[3] == packet->payload[7]))) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
@@ -338,7 +338,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
                     && ((packet->payload[8] == 0x98 && packet->payload[9] == 0xab
                     && packet->payload[10] == 0x01 && packet->payload[11] == 0x02)
                     )) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
@@ -349,7 +349,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
                 while (a < 20) {
                     if (packet->payload[a] >= '0' && packet->payload[a] <= '9') {
                         if (a == 19) {
-                            MMT_LOG(PROTO_PPLIVE, 
+                            MMT_LOG(PROTO_PPLIVE,
                                     MMT_LOG_DEBUG, "PPLIVE: direct new header format found\n");
                             mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                             return;
@@ -368,7 +368,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
         if (flow->pplive_stage == 0) {
             if (packet->payload_packet_len == 4 && packet->payload[0] > 0x04
                     && packet->payload[1] == 0x00 && packet->payload[2] == 0x00 && packet->payload[3] == 0x00) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: 4Byte TCP Packet Request found \n");
 
                 /* go to the 2nd Client Packet */
@@ -380,7 +380,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
         } else if (flow->pplive_stage == 2 - ipacket->session->last_packet_direction) {
             if (packet->payload_packet_len == 4 && packet->payload[0] > 0x04
                     && packet->payload[1] == 0x00 && packet->payload[2] == 0x00 && packet->payload[3] == 0x00) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: 4Byte TCP Packet Response found \n");
 
                 /* go to the 2nd Client Packet */
@@ -397,7 +397,7 @@ void mmt_classify_me_pplive(ipacket_t * ipacket, unsigned index)
                             && ((packet->payload[4] == 0x98
                             && packet->payload[5] == 0xab && packet->payload[6] == 0x01 && packet->payload[7] == 0x02)
                             )) {
-                        MMT_LOG(PROTO_PPLIVE, 
+                        MMT_LOG(PROTO_PPLIVE,
                                 MMT_LOG_DEBUG, "PPLIVE: two packet response found\n");
 
                         MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG,
@@ -484,7 +484,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
+
 
         struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -602,7 +602,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
                 if ((packet->payload[9] == packet->payload[10]) && (packet->payload[9] == packet->payload[11])) {
                     if ((packet->payload[16] == packet->payload[17]) &&
                             (packet->payload[16] == packet->payload[18]) && (packet->payload[16] == packet->payload[19])) {
-                        MMT_LOG(PROTO_PPLIVE, 
+                        MMT_LOG(PROTO_PPLIVE,
                                 MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                         mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return 1;
@@ -616,7 +616,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
                 if (packet->payload[5] == packet->payload[6] && packet->payload[5] == packet->payload[7]) {
                     if (packet->payload[12] == packet->payload[13] && packet->payload[14] == packet->payload[15]
                             && packet->payload[12] == packet->payload[14]) {
-                        MMT_LOG(PROTO_PPLIVE, 
+                        MMT_LOG(PROTO_PPLIVE,
                                 MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                         mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return 1;
@@ -628,7 +628,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len > 11 && ntohl(get_u32(packet->payload, 0)) == packet->payload_packet_len - 4) {
             if (packet->payload[4] == 0xe9 && packet->payload[5] == 0x03 &&
                     ((packet->payload[7] == packet->payload[10]) || (packet->payload[7] == packet->payload[11]))) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return 1;
@@ -638,7 +638,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len > 10 && flow->pplive_stage) {
             if (packet->payload[0] == 0xe9 && packet->payload[1] == 0x03 &&
                     ((packet->payload[3] == packet->payload[6]) || (packet->payload[3] == packet->payload[7]))) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return 1;
@@ -662,7 +662,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
                     && ((packet->payload[8] == 0x98 && packet->payload[9] == 0xab
                     && packet->payload[10] == 0x01 && packet->payload[11] == 0x02)
                     )) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: direct server request or response found\n");
                 mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return 1;
@@ -673,7 +673,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
                 while (a < 20) {
                     if (packet->payload[a] >= '0' && packet->payload[a] <= '9') {
                         if (a == 19) {
-                            MMT_LOG(PROTO_PPLIVE, 
+                            MMT_LOG(PROTO_PPLIVE,
                                     MMT_LOG_DEBUG, "PPLIVE: direct new header format found\n");
                             mmt_int_pplive_add_connection(ipacket, MMT_REAL_PROTOCOL);
                             return 1;
@@ -692,7 +692,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
         if (flow->pplive_stage == 0) {
             if (packet->payload_packet_len == 4 && packet->payload[0] > 0x04
                     && packet->payload[1] == 0x00 && packet->payload[2] == 0x00 && packet->payload[3] == 0x00) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: 4Byte TCP Packet Request found \n");
 
                 /* go to the 2nd Client Packet */
@@ -704,7 +704,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
         } else if (flow->pplive_stage == 2 - ipacket->session->last_packet_direction) {
             if (packet->payload_packet_len == 4 && packet->payload[0] > 0x04
                     && packet->payload[1] == 0x00 && packet->payload[2] == 0x00 && packet->payload[3] == 0x00) {
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: 4Byte TCP Packet Response found \n");
 
                 /* go to the 2nd Client Packet */
@@ -721,7 +721,7 @@ int mmt_check_pplive_tcp(ipacket_t * ipacket, unsigned index) {
                             && ((packet->payload[4] == 0x98
                             && packet->payload[5] == 0xab && packet->payload[6] == 0x01 && packet->payload[7] == 0x02)
                             )) {
-                        MMT_LOG(PROTO_PPLIVE, 
+                        MMT_LOG(PROTO_PPLIVE,
                                 MMT_LOG_DEBUG, "PPLIVE: two packet response found\n");
 
                         MMT_LOG(PROTO_PPLIVE, MMT_LOG_DEBUG,
@@ -927,7 +927,7 @@ int mmt_check_pplive_udp(ipacket_t * ipacket, unsigned index) {
                 || (get_l16(packet->payload, 0) == 0x22 && !get_l16(packet->payload, 28)))) {
             if (dst != NULL) {
                 dst->pplive_vod_cli_port = packet->udp->dest;
-                MMT_LOG(PROTO_PPLIVE, 
+                MMT_LOG(PROTO_PPLIVE,
                         MMT_LOG_DEBUG, "PPLIVE: VOD Port marked %u.\n", ntohs(packet->udp->dest));
                 dst->pplive_last_packet_time = packet->tick_timestamp;
                 dst->pplive_last_packet_time_set = 1;
@@ -979,5 +979,3 @@ int init_proto_pplive_struct() {
         return 0;
     }
 }
-
-

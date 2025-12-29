@@ -36,7 +36,7 @@ static uint16_t parse_binf_message(const uint8_t * payload, int payload_len) {
             if (mmt_memcmp(&payload[i], "DCTM", 4) == 0) {
                 if (mmt_memcmp(&payload[i + 15], "ADCS", 4) == 0) {
                     ssl_port = ntohs_mmt_bytestream_to_number(&payload[i + 25], 5, &bytes_read);
-                    MMT_LOG(PROTO_DIRECTCONNECT, 
+                    MMT_LOG(PROTO_DIRECTCONNECT,
                             MMT_LOG_DEBUG, "directconnect ssl port parsed %d", ssl_port);
 
                 }
@@ -50,7 +50,7 @@ static uint16_t parse_binf_message(const uint8_t * payload, int payload_len) {
 }
 
 static void mmt_int_directconnect_add_connection(ipacket_t * ipacket, const uint8_t connection_type) {
-    
+
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *src = packet->src;
     struct mmt_internal_tcpip_id_struct *dst = packet->dst;
@@ -63,12 +63,12 @@ static void mmt_int_directconnect_add_connection(ipacket_t * ipacket, const uint
             if (packet->tcp != NULL
                     && ipacket->session->setup_packet_direction != ipacket->session->last_packet_direction && src->detected_directconnect_port == 0) {
                 src->detected_directconnect_port = packet->tcp->source;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "directconnect tcp PORT %u for src\n", ntohs(src->detected_directconnect_port));
             }
             if (packet->udp != NULL && src->detected_directconnect_udp_port == 0) {
                 src->detected_directconnect_udp_port = packet->udp->source;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "directconnect udp PORT %u for src\n", ntohs(src->detected_directconnect_port));
 
             }
@@ -94,7 +94,7 @@ static void mmt_int_directconnect_add_connection(ipacket_t * ipacket, const uint
 }
 
 int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
-    
+
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     struct mmt_internal_tcpip_id_struct *src = packet->src;
@@ -119,13 +119,13 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
             if (dst != NULL) {
                 dst->detected_directconnect_ssl_port =
                         ntohs_mmt_bytestream_to_number(&packet->payload[25], 5, &bytes_read);
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "directconnect ssl port parsed %d", ntohs(dst->detected_directconnect_ssl_port));
             }
             if (src != NULL) {
                 src->detected_directconnect_ssl_port =
                         ntohs_mmt_bytestream_to_number(&packet->payload[25], 5, &bytes_read);
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "directconnect ssl port parsed %d", ntohs(src->detected_directconnect_ssl_port));
             }
 
@@ -141,12 +141,12 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                     src->directconnect_last_safe_access_time) < directconnect_connection_ip_tick_timeout) {
                 mmt_change_internal_flow_packet_protocol(ipacket, PROTO_DIRECTCONNECT, MMT_REAL_PROTOCOL);
                 src->directconnect_last_safe_access_time = packet->tick_timestamp;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "marking using dc port\n %d", ntohs(src->detected_directconnect_port));
                 return 4;
             } else {
                 src->detected_directconnect_port = 0;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "resetting src port due to timeout");
                 return 4;
             }
@@ -157,12 +157,12 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                     src->directconnect_last_safe_access_time) < directconnect_connection_ip_tick_timeout) {
                 mmt_change_internal_flow_packet_protocol(ipacket, PROTO_DIRECTCONNECT, MMT_REAL_PROTOCOL);
                 src->directconnect_last_safe_access_time = packet->tick_timestamp;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "marking using dc port\n %d", ntohs(src->detected_directconnect_ssl_port));
                 return 4;
             } else {
                 src->detected_directconnect_ssl_port = 0;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "resetting src port due to timeout");
                 return 4;
             }
@@ -177,12 +177,12 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                     dst->directconnect_last_safe_access_time) < directconnect_connection_ip_tick_timeout) {
                 mmt_internal_add_connection(ipacket, PROTO_DIRECTCONNECT, MMT_REAL_PROTOCOL);
                 dst->directconnect_last_safe_access_time = packet->tick_timestamp;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "marking using dc port\n %d", ntohs(dst->detected_directconnect_port));
                 return 4;
             } else {
                 dst->detected_directconnect_port = 0;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "resetting dst port due to timeout");
                 return 4;
             }
@@ -193,13 +193,13 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                     dst->directconnect_last_safe_access_time) < directconnect_connection_ip_tick_timeout) {
                 mmt_internal_add_connection(ipacket, PROTO_DIRECTCONNECT, MMT_REAL_PROTOCOL);
                 dst->directconnect_last_safe_access_time = packet->tick_timestamp;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "marking using dc port\n %d", ntohs(dst->detected_directconnect_ssl_port));
 
                 return 4;
             } else {
                 dst->detected_directconnect_ssl_port = 0;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "resetting dst port due to timeout");
                 return 4;
             }
@@ -213,7 +213,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
             if (packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
                     && (mmt_memcmp(&packet->payload[1], "Lock ", 5) == 0)) {
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "maybe first dc connect to hub  detected\n");
                 flow->directconnect_stage = 1;
                 return 4;
@@ -222,7 +222,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                     && packet->payload[0] == '$'
                     && packet->payload[packet->payload_packet_len - 1] == '|'
                     && (mmt_memcmp(&packet->payload[1], "MyNick ", 7) == 0)) {
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "maybe first dc connect between peers  detected\n");
                 flow->directconnect_stage = 2;
                 return 4;
@@ -233,14 +233,14 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
             /* did not see this pattern in any trace */
             if (mmt_memcmp(&packet->payload[0], "HSUP ADBAS0", 11) == 0
                     || mmt_memcmp(&packet->payload[0], "HSUP ADBASE", 11) == 0) {
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS0 E\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_HUB);
                 return 1;
                 /* did not see this pattern in any trace */
             } else if (mmt_memcmp(&packet->payload[0], "CSUP ADBAS0", 11) == 0 ||
                     mmt_memcmp(&packet->payload[0], "CSUP ADBASE", 11) == 0) {
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "found directconnect CSUP ADBAS0 E\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_ADC_PEER);
                 return 1;
@@ -254,7 +254,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
             /* did not see this pattern in any trace */
             if (mmt_memcmp(&packet->payload[0], "HSUP ADBAS0", 11) == 0
                     || mmt_memcmp(&packet->payload[0], "HSUP ADBASE", 11) == 0) {
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS E in second packet\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_HUB);
 
@@ -262,7 +262,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 /* did not see this pattern in any trace */
             } else if (mmt_memcmp(&packet->payload[0], "CSUP ADBAS0", 11) == 0 ||
                     mmt_memcmp(&packet->payload[0], "CSUP ADBASE", 11) == 0) {
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS0 E in second packet\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_ADC_PEER);
 
@@ -288,7 +288,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
         /* get client hello answer or server message */
         if (packet->payload_packet_len > 6) {
             if (packet->payload[0] == '$' && packet->payload[packet->payload_packet_len - 1] == '|') {
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "second dc between peers detected\n");
 
 
@@ -296,7 +296,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
 
                 return 1;
             } else {
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "second dc between peers not detected\n");
             }
         }
@@ -309,7 +309,7 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
 }
 
 int mmt_search_directconnect_udp(ipacket_t * ipacket) {
-    
+
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     struct mmt_internal_tcpip_id_struct *src = packet->src;
@@ -324,12 +324,12 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
 
             mmt_internal_add_connection(ipacket, PROTO_DIRECTCONNECT, MMT_REAL_PROTOCOL);
             dst->directconnect_last_safe_access_time = packet->tick_timestamp;
-            MMT_LOG(PROTO_DIRECTCONNECT, 
+            MMT_LOG(PROTO_DIRECTCONNECT,
                     MMT_LOG_DEBUG, "marking using dc udp port\n %d", ntohs(dst->detected_directconnect_udp_port));
             return 4;
         } else {
             dst->detected_directconnect_udp_port = 0;
-            MMT_LOG(PROTO_DIRECTCONNECT, 
+            MMT_LOG(PROTO_DIRECTCONNECT,
                     MMT_LOG_DEBUG, "resetting dst udp  port due to timeout");
             return 4;
         }
@@ -404,7 +404,7 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_directconnect(ipacket_t * ipacket, unsigned index) {
-    
+
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
 
     struct mmt_internal_tcpip_id_struct *src = packet->src;
@@ -424,7 +424,7 @@ void mmt_classify_me_directconnect(ipacket_t * ipacket, unsigned index) {
             dst->directconnect_last_safe_access_time = packet->tick_timestamp;
         } else {
             packet->detected_protocol_stack[0] = PROTO_UNKNOWN;
-            MMT_LOG(PROTO_DIRECTCONNECT, 
+            MMT_LOG(PROTO_DIRECTCONNECT,
                     MMT_LOG_DEBUG, "directconnect: skipping as unknown due to timeout\n");
         }
         return;
@@ -444,7 +444,7 @@ int mmt_check_directconnect_tcp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
+
         struct mmt_internal_tcpip_id_struct *src = packet->src;
         struct mmt_internal_tcpip_id_struct *dst = packet->dst;
 
@@ -462,7 +462,7 @@ int mmt_check_directconnect_tcp(ipacket_t * ipacket, unsigned index) {
                 dst->directconnect_last_safe_access_time = packet->tick_timestamp;
             } else {
                 packet->detected_protocol_stack[0] = PROTO_UNKNOWN;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "directconnect: skipping as unknown due to timeout\n");
             }
             return 4;
@@ -479,7 +479,7 @@ int mmt_check_directconnect_udp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
+
         struct mmt_internal_tcpip_id_struct *src = packet->src;
         struct mmt_internal_tcpip_id_struct *dst = packet->dst;
 
@@ -497,7 +497,7 @@ int mmt_check_directconnect_udp(ipacket_t * ipacket, unsigned index) {
                 dst->directconnect_last_safe_access_time = packet->tick_timestamp;
             } else {
                 packet->detected_protocol_stack[0] = PROTO_UNKNOWN;
-                MMT_LOG(PROTO_DIRECTCONNECT, 
+                MMT_LOG(PROTO_DIRECTCONNECT,
                         MMT_LOG_DEBUG, "directconnect: skipping as unknown due to timeout\n");
             }
             return 4;
@@ -521,11 +521,9 @@ int init_proto_directconnect_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_directconnect();
-        
+
         return register_protocol(protocol_struct, PROTO_DIRECTCONNECT);
     } else {
         return 0;
     }
 }
-
-

@@ -75,4 +75,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_DRBStatusUL = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_DRBStatusUL_specs_1	/* Additional specs */
 };
-

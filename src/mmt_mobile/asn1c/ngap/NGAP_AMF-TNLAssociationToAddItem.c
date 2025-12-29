@@ -80,4 +80,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_AMF_TNLAssociationToAddItem = {
 	4,	/* Elements count */
 	&asn_SPC_NGAP_AMF_TNLAssociationToAddItem_specs_1	/* Additional specs */
 };
-

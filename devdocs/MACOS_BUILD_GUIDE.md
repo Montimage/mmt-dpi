@@ -1,6 +1,7 @@
 # MMT-DPI Build and Usage Guide for macOS
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Prerequisites](#prerequisites)
 3. [Key Differences from Linux](#key-differences-from-linux)
@@ -24,16 +25,19 @@ MMT-DPI (Montimage Monitoring Tool - Deep Packet Inspector) is a powerful networ
 ### Required Tools and Libraries
 
 #### 1. Xcode Command Line Tools
+
 ```bash
 xcode-select --install
 ```
 
 #### 2. Homebrew Package Manager
+
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 #### 3. Required Dependencies
+
 ```bash
 # Install required libraries
 brew install libxml2
@@ -118,21 +122,21 @@ libraries: \
 
 # CORE library
 $(SDKLIB)/$(LIBCORE).so: $(SDKLIB)/$(LIBCORE).so.$(VERSION)
-	@echo "[SYMLINK] $(notdir $@)"
-	$(QUIET) ln -sf $(notdir $<) $@
+ @echo "[SYMLINK] $(notdir $@)"
+ $(QUIET) ln -sf $(notdir $<) $@
 
 $(SDKLIB)/$(LIBCORE).so.$(VERSION): $(SDKLIB)/$(LIBCORE).a
-	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) -shared -o $@ -Wl,-force_load,$^ -Wl,-install_name,@rpath/$(LIBCORE).so.$(VERSION) -Wl,-rpath,@loader_path
+ @echo "[LIBRARY] $(notdir $@)"
+ $(QUIET) $(CXX) -shared -o $@ -Wl,-force_load,$^ -Wl,-install_name,@rpath/$(LIBCORE).so.$(VERSION) -Wl,-rpath,@loader_path
 
 # TCP/IP plugin
 $(SDKLIB)/$(LIBTCPIP).so: $(SDKLIB)/$(LIBTCPIP).so.$(VERSION)
-	@echo "[SYMLINK] $(notdir $@)"
-	$(QUIET) ln -sf $(notdir $<) $@
+ @echo "[SYMLINK] $(notdir $@)"
+ $(QUIET) ln -sf $(notdir $<) $@
 
 $(SDKLIB)/$(LIBTCPIP).so.$(VERSION): $(SDKLIB)/$(LIBTCPIP).a $(SDKLIB)/$(LIBCORE).so.$(VERSION)
-	@echo "[LIBRARY] $(notdir $@)"
-	$(QUIET) $(CXX) -shared -o $@ -Wl,-force_load,$(SDKLIB)/$(LIBTCPIP).a -L$(SDKLIB) -lmmt_core -Wl,-install_name,@rpath/$(LIBTCPIP).so.$(VERSION) -Wl,-rpath,@loader_path
+ @echo "[LIBRARY] $(notdir $@)"
+ $(QUIET) $(CXX) -shared -o $@ -Wl,-force_load,$(SDKLIB)/$(LIBTCPIP).a -L$(SDKLIB) -lmmt_core -Wl,-install_name,@rpath/$(LIBTCPIP).so.$(VERSION) -Wl,-rpath,@loader_path
 
 # Use Clang compilers
 CXX := clang++
@@ -288,6 +292,7 @@ sudo ./extract_all -i en0
 **Problem**: Plugin crashes with segmentation fault during initialization.
 
 **Solution**: Ensure the TCP/IP plugin is properly linked against the core library:
+
 ```bash
 # Check if libmmt_tcpip.so is linked to libmmt_core
 otool -L sdk/lib/libmmt_tcpip.so* | grep libmmt_core
@@ -300,6 +305,7 @@ otool -L sdk/lib/libmmt_tcpip.so* | grep libmmt_core
 **Problem**: Handler initialization fails with "Unsupported stack type 1".
 
 **Solution**: The TCP/IP plugin isn't loading. Check:
+
 - `MMT_PLUGINS_PATH` is set correctly
 - Plugin file exists and is readable
 - Plugin is properly linked (see issue #1)
@@ -308,7 +314,8 @@ otool -L sdk/lib/libmmt_tcpip.so* | grep libmmt_core
 
 **Problem**: "Library not loaded" error when running programs.
 
-**Solution**: 
+**Solution**:
+
 ```bash
 # Option 1: Set runtime library path
 export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
@@ -325,6 +332,7 @@ clang ... -Wl,-rpath,/path/to/mmt-dpi/sdk/lib
 **Problem**: "Undefined symbols" during linking.
 
 **Solution**: Ensure you're linking all required libraries:
+
 ```bash
 -lmmt_core  # Always required
 -lpcap      # For pcap file/interface handling
@@ -336,13 +344,15 @@ clang ... -Wl,-rpath,/path/to/mmt-dpi/sdk/lib
 
 **Problem**: DYLD_LIBRARY_PATH is ignored due to SIP.
 
-**Solution**: 
+**Solution**:
+
 - Use `-rpath` during compilation instead of relying on DYLD_LIBRARY_PATH
 - Or disable SIP (not recommended for production)
 
 ### Debug Tips
 
 1. **Enable Debug Output**:
+
 ```bash
 # Compile with debug symbols
 make DEBUG=1 libraries
@@ -353,6 +363,7 @@ lldb ./your_program
 ```
 
 2. **Check Plugin Loading**:
+
 ```bash
 # Set environment variable to see plugin loading
 export MMT_DEBUG=1
@@ -360,6 +371,7 @@ export MMT_DEBUG=1
 ```
 
 3. **Verify Library Architecture**:
+
 ```bash
 # Ensure libraries match your system architecture
 file sdk/lib/*.so*
@@ -384,13 +396,13 @@ int packet_handler(const struct ipacket_struct *ipacket, void *user_args) {
 int main() {
     // IMPORTANT: Set plugin path on macOS
     setenv("MMT_PLUGINS_PATH", "/path/to/mmt-dpi/sdk/lib", 1);
-    
+
     // Initialize extraction
     if (init_extraction() == 0) {
         fprintf(stderr, "Failed to initialize\n");
         return 1;
     }
-    
+
     // Create handler for Ethernet
     mmt_handler_t *handler = mmt_init_handler(DLT_EN10MB, 0, 0);
     if (!handler) {
@@ -398,17 +410,17 @@ int main() {
         close_extraction();
         return 1;
     }
-    
+
     // Register packet callback
     register_packet_handler(handler, 1, packet_handler, NULL);
-    
+
     // Process packets (from pcap or live)
     // ... packet processing code ...
-    
+
     // Cleanup
     mmt_close_handler(handler);
     close_extraction();
-    
+
     return 0;
 }
 ```

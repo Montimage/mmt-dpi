@@ -6,12 +6,12 @@
 --
 -- **************************************************************
 
-S1AP-PDU-Contents { 
-itu-t (0) identified-organization (4) etsi (0) mobileDomain (0) 
+S1AP-PDU-Contents {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
 eps-Access (21) modules (3) s1ap (1) version1 (1) s1ap-PDU-Contents (1) }
 
 
-DEFINITIONS AUTOMATIC TAGS ::= 
+DEFINITIONS AUTOMATIC TAGS ::=
 
 BEGIN
 
@@ -1362,7 +1362,7 @@ S1ap-UEContextReleaseCommand ::= SEQUENCE {
 
 S1ap-UEContextReleaseCommandIEs S1AP-PROTOCOL-IES ::= {
     { ID id-UE-S1AP-IDs                CRITICALITY reject    TYPE S1ap-UE-S1AP-IDs                    PRESENCE mandatory} |
-    
+
     { ID id-Cause                    CRITICALITY ignore    TYPE S1ap-Cause                        PRESENCE mandatory} ,
     ...
 }
@@ -1696,7 +1696,7 @@ S1ap-S1SetupFailureIEs S1AP-PROTOCOL-IES ::= {
 
 -- **************************************************************
 --
--- eNB Configuration Update 
+-- eNB Configuration Update
 --
 -- **************************************************************
 
@@ -1757,7 +1757,7 @@ S1ap-ENBConfigurationUpdateFailureIEs S1AP-PROTOCOL-IES ::= {
 
 -- **************************************************************
 --
--- MME Configuration Update 
+-- MME Configuration Update
 --
 -- **************************************************************
 
@@ -2078,7 +2078,7 @@ S1ap-LocationReportingFailureIndicationIEs S1AP-PROTOCOL-IES ::= {
 
 -- **************************************************************
 --
--- Location Report 
+-- Location Report
 --
 -- **************************************************************
 
@@ -2136,7 +2136,7 @@ S1ap-OverloadStopIEs S1AP-PROTOCOL-IES ::= {
 }
 -- **************************************************************
 --
--- WRITE-REPLACE WARNING ELEMENTARY PROCEDURE 
+-- WRITE-REPLACE WARNING ELEMENTARY PROCEDURE
 --
 -- **************************************************************
 

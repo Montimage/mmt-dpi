@@ -60,4 +60,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_TAIListForPagingItem = {
 	2,	/* Elements count */
 	&asn_SPC_NGAP_TAIListForPagingItem_specs_1	/* Additional specs */
 };
-

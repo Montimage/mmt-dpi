@@ -10,11 +10,9 @@
 
 int init_proto_mubi_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_MUBI, PROTO_MUBI_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_MUBI);
     } else {
         return 0;
     }
 }
-
-

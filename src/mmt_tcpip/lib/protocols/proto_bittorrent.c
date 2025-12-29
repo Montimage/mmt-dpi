@@ -544,5 +544,3 @@ int init_proto_bittorrent_struct() {
         return 0;
     }
 }
-
-

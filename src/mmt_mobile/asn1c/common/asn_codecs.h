@@ -72,7 +72,7 @@ typedef struct asn_enc_rval_s {
 
 /*
  * Type of the return value of the decoding functions (ber_decode, xer_decode)
- * 
+ *
  * Please note that the number of consumed bytes is ALWAYS meaningful,
  * even if code==RC_FAIL. This is to indicate the number of successfully
  * decoded bytes, hence providing a possibility to fail with more diagnostics

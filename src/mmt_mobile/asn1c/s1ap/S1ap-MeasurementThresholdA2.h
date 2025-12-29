@@ -26,7 +26,7 @@ typedef enum S1ap_MeasurementThresholdA2_PR {
 	S1ap_MeasurementThresholdA2_PR_threshold_RSRP,
 	S1ap_MeasurementThresholdA2_PR_threshold_RSRQ
 	/* Extensions may appear below */
-	
+
 } S1ap_MeasurementThresholdA2_PR;
 
 /* S1ap-MeasurementThresholdA2 */
@@ -40,7 +40,7 @@ typedef struct S1ap_MeasurementThresholdA2 {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_MeasurementThresholdA2_t;

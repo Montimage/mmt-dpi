@@ -26,7 +26,7 @@ typedef struct S1ap_IE {
 	S1ap_ProtocolIE_ID_t	 id;
 	S1ap_Criticality_t	 criticality;
 	ANY_t	 value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_IE_t;

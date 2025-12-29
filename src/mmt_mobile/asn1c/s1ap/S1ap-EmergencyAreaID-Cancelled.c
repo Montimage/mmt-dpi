@@ -50,4 +50,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_EmergencyAreaID_Cancelled = {
 	1,	/* Single element */
 	&asn_SPC_S1ap_EmergencyAreaID_Cancelled_specs_1	/* Additional specs */
 };
-

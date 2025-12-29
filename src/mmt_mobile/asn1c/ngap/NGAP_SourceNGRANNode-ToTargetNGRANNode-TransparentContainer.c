@@ -112,4 +112,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_SourceNGRANNode_ToTargetNGRANNode_Transparent
 	7,	/* Elements count */
 	&asn_SPC_NGAP_SourceNGRANNode_ToTargetNGRANNode_TransparentContainer_specs_1	/* Additional specs */
 };
-

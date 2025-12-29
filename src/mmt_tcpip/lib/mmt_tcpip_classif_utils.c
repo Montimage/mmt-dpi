@@ -21784,7 +21784,7 @@ void _init_proto_avltrees() {
             printf("%d\t %d \t %d\n",i,avltree_get_height(proto_avltrees[i],1),avltree_size(proto_avltrees[i]));
         }
     }
-#endif    
+#endif
 }
 
 int _find_proto_id_by_address(uint32_t ip_src,uint32_t ip_dest){
@@ -21793,7 +21793,7 @@ int _find_proto_id_by_address(uint32_t ip_src,uint32_t ip_dest){
         if (proto_avltrees[i] != NULL) {
             proto_based_ip_t * proto = (proto_based_ip_t * ) avltree_get_data(proto_avltrees[i]);
             // Check the source address
-            uint32_t key_src = ip_src & proto->netmask_address;            
+            uint32_t key_src = ip_src & proto->netmask_address;
             avltree_t * node_src = avltree_find(proto_avltrees[i],key_src);
             if(node_src != NULL){
                 proto_based_ip_t * found_proto = (proto_based_ip_t * ) avltree_get_data(node_src);

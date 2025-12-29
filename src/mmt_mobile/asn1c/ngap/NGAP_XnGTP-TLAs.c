@@ -49,4 +49,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_XnGTP_TLAs = {
 	1,	/* Single element */
 	&asn_SPC_NGAP_XnGTP_TLAs_specs_1	/* Additional specs */
 };
-

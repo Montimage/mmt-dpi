@@ -28,7 +28,7 @@ typedef enum S1ap_BroadcastCompletedAreaList_PR {
 	S1ap_BroadcastCompletedAreaList_PR_tAI_Broadcast,
 	S1ap_BroadcastCompletedAreaList_PR_emergencyAreaID_Broadcast
 	/* Extensions may appear below */
-	
+
 } S1ap_BroadcastCompletedAreaList_PR;
 
 /* S1ap-BroadcastCompletedAreaList */
@@ -43,7 +43,7 @@ typedef struct S1ap_BroadcastCompletedAreaList {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_BroadcastCompletedAreaList_t;

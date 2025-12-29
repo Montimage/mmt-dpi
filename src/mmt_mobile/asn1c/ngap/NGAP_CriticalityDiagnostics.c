@@ -91,4 +91,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_CriticalityDiagnostics = {
 	5,	/* Elements count */
 	&asn_SPC_NGAP_CriticalityDiagnostics_specs_1	/* Additional specs */
 };
-

@@ -47,5 +47,3 @@ int init_proto_8021ad_struct() {
         return 0;
     }
 }
-
-

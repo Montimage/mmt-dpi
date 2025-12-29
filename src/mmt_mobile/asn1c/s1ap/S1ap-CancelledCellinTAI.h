@@ -25,7 +25,7 @@ struct S1ap_CancelledCellinTAI_Item;
 /* S1ap-CancelledCellinTAI */
 typedef struct S1ap_CancelledCellinTAI {
 	A_SEQUENCE_OF(struct S1ap_CancelledCellinTAI_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_CancelledCellinTAI_t;

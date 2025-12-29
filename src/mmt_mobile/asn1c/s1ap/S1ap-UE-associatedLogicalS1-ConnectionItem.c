@@ -70,4 +70,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_UE_associatedLogicalS1_ConnectionItem = {
 	3,	/* Elements count */
 	&asn_SPC_S1ap_UE_associatedLogicalS1_ConnectionItem_specs_1	/* Additional specs */
 };
-

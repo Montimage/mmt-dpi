@@ -93,7 +93,7 @@ ssize_t pxml_parse(int *stateContext, const void *xmlbuf, size_t size, pxml_call
 		 * Initial state: we're in the middle of some text,
 		 * or just have started.
 		 */
-		if (C == LANGLE) 
+		if (C == LANGLE)
 			/* We're now in the tag, probably */
 			TOKEN_CB(PXML_TEXT, ST_TAG_START, 0);
 		break;
@@ -102,7 +102,7 @@ ssize_t pxml_parse(int *stateContext, const void *xmlbuf, size_t size, pxml_call
 			state = ST_TAG_BODY;
 		else if (C == EXCLAM)
 			state = ST_COMMENT_WAIT_DASH1;
-		else 
+		else
 			/*
 			 * Not characters and not whitespace.
 			 * Must be something like "3 < 4".
@@ -120,7 +120,7 @@ ssize_t pxml_parse(int *stateContext, const void *xmlbuf, size_t size, pxml_call
 			 * The previous tag wasn't completed, but still
 			 * recognized as valid. (Mozilla-compatible)
 			 */
-			TOKEN_CB_FINAL(PXML_TAG, ST_TAG_START, 0);	
+			TOKEN_CB_FINAL(PXML_TAG, ST_TAG_START, 0);
 			break;
 		case CEQUAL:
 			state = ST_TAG_QUOTE_WAIT;
@@ -224,4 +224,3 @@ finish:
 	*stateContext = (int)state;
 	return chunk_start - (const char *)xmlbuf;
 }
-

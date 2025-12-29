@@ -26,14 +26,14 @@ int mmt_check_oracle(ipacket_t * ipacket, unsigned index)
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-    	
+
         if(packet->tcp != NULL){
-        	uint16_t sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);                  
+        	uint16_t sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);
 
         	/* Oracle Database 9g,10g,11g */
             if ((dport == 1521 || sport == 1521)
             &&  (((packet->payload[0] == 0x07) && (packet->payload[1] == 0xff) && (packet->payload[2] == 0x00))
-                 || ((packet->payload_packet_len >= 232) && ((packet->payload[0] == 0x00) || (packet->payload[0] == 0x01)) 
+                 || ((packet->payload_packet_len >= 232) && ((packet->payload[0] == 0x00) || (packet->payload[0] == 0x01))
                  && (packet->payload[1] != 0x00)
                  && (packet->payload[2] == 0x00)
                  && (packet->payload[3] == 0x00)))) {
@@ -66,7 +66,7 @@ void mmt_init_classify_me_oracle() {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_oracle_struct() {
-    
+
     debug("ORACLE: init_proto_ORACLE_struct");
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ORACLE, PROTO_ORACLE_ALIAS);

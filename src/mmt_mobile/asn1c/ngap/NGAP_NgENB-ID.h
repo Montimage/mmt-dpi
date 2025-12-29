@@ -40,7 +40,7 @@ typedef struct NGAP_NgENB_ID {
 		BIT_STRING_t	 longMacroNgENB_ID;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_NgENB_ID_t;

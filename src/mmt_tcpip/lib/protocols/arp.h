@@ -30,5 +30,3 @@ extern "C" {
 }
 #endif
 #endif	/* ARP_H */
-
-

@@ -14,7 +14,7 @@ static void mmt_int_mms_add_connection(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_mms(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -114,5 +114,3 @@ int init_proto_mms_struct() {
         return 0;
     }
 }
-
-

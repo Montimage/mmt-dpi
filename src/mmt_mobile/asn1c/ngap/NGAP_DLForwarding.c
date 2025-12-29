@@ -53,4 +53,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_DLForwarding = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_NGAP_DLForwarding_specs_1	/* Additional specs */
 };
-

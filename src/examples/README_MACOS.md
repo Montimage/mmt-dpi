@@ -1,9 +1,11 @@
 # MMT-DPI Examples - macOS Compilation Guide
 
 ## Overview
+
 All example files in this directory have been updated with macOS-specific compilation and execution instructions. Each file now contains both Linux and macOS commands in its header comments.
 
 ## Files Updated
+
 1. **extract_all.c** - Extract all protocol attributes from packets
 2. **proto_attributes_iterator.c** - List available protocols and their attributes
 3. **packet_handler.c** - Simple packet handler showing packet sizes
@@ -14,6 +16,7 @@ All example files in this directory have been updated with macOS-specific compil
 ## General Compilation Pattern
 
 ### From MMT-DPI Root Directory
+
 ```bash
 clang -o <program_name> src/examples/<source_file>.c \
     -I sdk/include \
@@ -26,6 +29,7 @@ clang -o <program_name> src/examples/<source_file>.c \
 ```
 
 ### If MMT-DPI is Installed in /opt/mmt
+
 ```bash
 clang -o <program_name> <source_file>.c \
     -I /opt/mmt/dpi/include \
@@ -38,12 +42,14 @@ clang -o <program_name> <source_file>.c \
 ## CRITICAL: Environment Setup Before Running
 
 **Every example requires these environment variables on macOS (set these before running):**
+
 ```bash
 export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
 export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
 ```
 
 **Why both variables are needed:**
+
 - `MMT_PLUGINS_PATH`: Tells MMT where to find protocol plugins
 - `DYLD_LIBRARY_PATH`: Tells macOS where to find dynamic libraries at runtime
 
@@ -78,7 +84,7 @@ sudo env MMT_PLUGINS_PATH=$MMT_PLUGINS_PATH DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH
 ## Key Differences from Linux
 
 1. **Compiler**: Use `clang` instead of `gcc`
-2. **Library Paths**: 
+2. **Library Paths**:
    - Apple Silicon: Libraries in `/opt/homebrew/`
    - Intel Macs: Libraries in `/usr/local/`
 3. **Network Interface**: Use `en0` instead of `eth0`
@@ -88,12 +94,14 @@ sudo env MMT_PLUGINS_PATH=$MMT_PLUGINS_PATH DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH
 ## Troubleshooting
 
 ### "Unsupported stack type 1" Error
+
 ```bash
 # Solution: Set plugin path
 export MMT_PLUGINS_PATH=/full/path/to/sdk/lib
 ```
 
 ### "Library not loaded" Error
+
 ```bash
 # Solution 1: Add rpath when compiling
 clang ... -Wl,-rpath,/path/to/sdk/lib
@@ -106,6 +114,7 @@ sudo env MMT_PLUGINS_PATH=/path DYLD_LIBRARY_PATH=/path ./program
 ```
 
 ### Permission Denied for Live Capture
+
 ```bash
 # Solution: Use sudo
 sudo ./your_program -i en0
@@ -114,6 +123,7 @@ sudo ./your_program -i en0
 ## Quick Test Script
 
 Create a test script `test_examples.sh`:
+
 ```bash
 #!/bin/bash
 
@@ -150,13 +160,15 @@ echo "Done!"
 ## Recent Updates (September 2025)
 
 **Enhanced macOS Support:**
+
 - ✅ Updated `extract_all.c` with comprehensive macOS compilation instructions
 - ✅ Fixed pcap timeout issues on macOS (now uses 1-second timeout)
-- ✅ Added proper `DYLD_LIBRARY_PATH` setup instructions 
+- ✅ Added proper `DYLD_LIBRARY_PATH` setup instructions
 - ✅ Enhanced troubleshooting section with environment variable solutions
 - ✅ Updated all example commands to use `env` with `sudo` for proper variable passing
 
 ## Notes
+
 - All examples now work correctly on macOS with the fixed TCP/IP plugin
 - The compilation commands are embedded in each source file's header
 - **IMPORTANT**: Both `MMT_PLUGINS_PATH` and `DYLD_LIBRARY_PATH` must be set on macOS

@@ -104,4 +104,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_MobilityRestrictionList = {
 	6,	/* Elements count */
 	&asn_SPC_NGAP_MobilityRestrictionList_specs_1	/* Additional specs */
 };
-

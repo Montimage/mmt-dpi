@@ -329,8 +329,8 @@ xer_whitespace_span(const void *chunk_buf, size_t chunk_size) {
 		switch(*p) {
 		/* X.693, #8.1.4
 		 * HORISONTAL TAB (9)
-		 * LINE FEED (10) 
-		 * CARRIAGE RETURN (13) 
+		 * LINE FEED (10)
+		 * CARRIAGE RETURN (13)
 		 * SPACE (32)
 		 */
 		case 0x09: case 0x0a: case 0x0d: case 0x20:

@@ -23,7 +23,7 @@ extern "C" {
 /* S1ap-ServedGroupIDs */
 typedef struct S1ap_ServedGroupIDs {
 	A_SEQUENCE_OF(S1ap_MME_Group_ID_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_ServedGroupIDs_t;

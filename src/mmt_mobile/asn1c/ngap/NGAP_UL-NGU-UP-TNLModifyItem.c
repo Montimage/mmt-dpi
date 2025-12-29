@@ -70,4 +70,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_UL_NGU_UP_TNLModifyItem = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_UL_NGU_UP_TNLModifyItem_specs_1	/* Additional specs */
 };
-

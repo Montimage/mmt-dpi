@@ -23,7 +23,7 @@ extern "C" {
 /* S1ap-ServedMMECs */
 typedef struct S1ap_ServedMMECs {
 	A_SEQUENCE_OF(S1ap_MME_Code_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_ServedMMECs_t;

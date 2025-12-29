@@ -90,4 +90,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_E_RABToBeSetupItemHOReq = {
 	5,	/* Elements count */
 	&asn_SPC_S1ap_E_RABToBeSetupItemHOReq_specs_1	/* Additional specs */
 };
-

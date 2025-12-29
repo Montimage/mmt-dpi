@@ -60,4 +60,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_PDUSessionResourceModifyIndicationUnsuccessfu
 	2,	/* Elements count */
 	&asn_SPC_NGAP_PDUSessionResourceModifyIndicationUnsuccessfulTransfer_specs_1	/* Additional specs */
 };
-

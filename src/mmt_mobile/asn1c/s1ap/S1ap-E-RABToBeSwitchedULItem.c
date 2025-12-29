@@ -80,4 +80,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_E_RABToBeSwitchedULItem = {
 	4,	/* Elements count */
 	&asn_SPC_S1ap_E_RABToBeSwitchedULItem_specs_1	/* Additional specs */
 };
-

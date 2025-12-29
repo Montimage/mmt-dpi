@@ -14,7 +14,7 @@ static void mmt_int_fiesta_add_connection(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_fiesta(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -79,7 +79,7 @@ int mmt_check_fiesta(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
+
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         MMT_LOG(PROTO_FIESTA, MMT_LOG_DEBUG, "search fiesta.\n");
@@ -157,5 +157,3 @@ int init_proto_fiesta_struct() {
         return 0;
     }
 }
-
-

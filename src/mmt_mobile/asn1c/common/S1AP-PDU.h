@@ -28,7 +28,7 @@ typedef enum S1AP_PDU_PR {
 	S1AP_PDU_PR_successfulOutcome,
 	S1AP_PDU_PR_unsuccessfulOutcome
 	/* Extensions may appear below */
-	
+
 } S1AP_PDU_PR;
 
 /* S1AP-PDU */
@@ -43,7 +43,7 @@ typedef struct S1AP_PDU {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1AP_PDU_t;

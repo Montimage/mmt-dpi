@@ -82,7 +82,7 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 case 'N':
                     if ((mmt_memcmp(packet_payload + 1, "OTIFY ", 6) == 0)
                         && (mmt_memcmp(&packet_payload[7], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[7], "sip:", 4) == 0)) {
-                        
+
                         MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip NOTIFY.\n");
                         mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                         check_sip_internal(ipacket);
@@ -287,5 +287,3 @@ int init_proto_sip_struct() {
         return 0;
     }
 }
-
-

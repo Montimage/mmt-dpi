@@ -71,4 +71,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_HandoverResourceAllocationUnsuccessfulTransfe
 	3,	/* Elements count */
 	&asn_SPC_NGAP_HandoverResourceAllocationUnsuccessfulTransfer_specs_1	/* Additional specs */
 };
-

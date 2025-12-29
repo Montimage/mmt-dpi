@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceSwitchedItem;
 /* NGAP_PDUSessionResourceSwitchedList */
 typedef struct NGAP_PDUSessionResourceSwitchedList {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceSwitchedItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceSwitchedList_t;

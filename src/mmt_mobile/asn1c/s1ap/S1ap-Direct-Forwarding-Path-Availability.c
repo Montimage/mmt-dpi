@@ -53,4 +53,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_Direct_Forwarding_Path_Availability = {
 	0, 0,	/* Defined elsewhere */
 	&asn_SPC_S1ap_Direct_Forwarding_Path_Availability_specs_1	/* Additional specs */
 };
-

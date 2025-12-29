@@ -122,4 +122,3 @@ mmt_get_destination_ip_from_packet(const struct mmt_tcpip_internal_packet_struct
 #endif
 
 #endif	/* MMT_TCPIP_UTILS_H */
-

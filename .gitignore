@@ -48,10 +48,36 @@ sftp-config.json
 .vscode
 .pydevproject
 rsync.sh
-WARP.md# Build artifacts
-extract_all
+
+# macOS specific
 *.dSYM/
+smallFlows.pcap
+
+# AI/Development setup files (user-specific)
+WARP.md
+CLAUDE.md
+
+# Build artifacts
+extract_all
 proto_attributes_iterator
 test_simple
-smallFlows.pcap
 tcpip/
+
+# ignore test binaries (but not source files)
+test/validation/test_validation_framework
+test/unit/test_error_handling
+test/unit/test_logging
+test/unit/test_recovery_debug
+test/performance/bench_*
+
+# ignore test build logs
+test/*.log
+test/**/*.log
+
+# Benchmark output files
+*.perf
+bench_*.txt
+bench_*.out
+bench_*.err
+results_*.out
+results_*.perf

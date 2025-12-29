@@ -421,7 +421,7 @@ void parseNoderule(xmlNodePtr cur, application_quality_estimation_t * applicatio
 
     }
 */
-    cur = cur->xmlChildrenNode;    
+    cur = cur->xmlChildrenNode;
 
     while (cur != NULL) {
         if (xmlStrcmp(cur->name, (const xmlChar *) "rules_elements") == 0) {
@@ -543,9 +543,3 @@ application_quality_estimation_t * application_quality_estimation_xml_parser(cha
 
     return application;
 }
-
-
-
-
-
-

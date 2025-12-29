@@ -1,5 +1,9 @@
 #include "mmt_core.h"
+// GTP Extension Header Safety Limits
+#define MAX_GTP_EXTENSION_HEADERS 10
 #include "plugin_defs.h"
+#include "../../mmt_core/public_include/mmt_safe_access.h"
+#include "../../mmt_core/public_include/mmt_safe_math.h"
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
@@ -112,11 +116,74 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		//last byte indicate whether the next ext is present
 		next_ext_header_type = gtp_binary[gtp_offset-1];
 		//jump over each extension header
+		int ext_header_count = 0;
+
 		while( next_ext_header_type != 0 ){
-			//the first byte of extension indicate its length in 4 bytes
-			next_ext_header_length = 4 * gtp_binary[ gtp_offset ];
+			// Prevent infinite loops
+			if (++ext_header_count > MAX_GTP_EXTENSION_HEADERS) {
+				MMT_LOG(PROTO_GTP, MMT_LOG_WARNING,
+				        "Too many GTP extension headers, possible malformed packet");
+				return MMT_SKIP;
+			}
+
+			// Check we can read extension length byte
+			uint32_t check_offset;
+			if (!mmt_safe_add_u32(gtp_offset, offset, &check_offset)) {
+				MMT_LOG(PROTO_GTP, MMT_LOG_ERROR, "Integer overflow in GTP offset");
+				return MMT_SKIP;
+			}
+
+			if (check_offset >= ipacket->p_hdr->caplen) {
+				MMT_LOG(PROTO_GTP, MMT_LOG_ERROR,
+				        "GTP extension header beyond packet boundary");
+				return MMT_SKIP;
+			}
+
+			//the first byte of extension indicate its length in 4-byte units
+			uint8_t ext_len_units = gtp_binary[gtp_offset];
+
+			// Validate extension length is reasonable
+			if (ext_len_units == 0) {
+				MMT_LOG(PROTO_GTP, MMT_LOG_WARNING,
+				        "GTP extension header with zero length");
+				return MMT_SKIP;
+			}
+
+			uint32_t next_ext_header_length;
+			if (!mmt_safe_mul_u32(4, ext_len_units, &next_ext_header_length)) {
+				MMT_LOG(PROTO_GTP, MMT_LOG_ERROR,
+				        "Integer overflow in GTP extension length");
+				return MMT_SKIP;
+			}
+
+			// Check if adding length overflows
+			uint32_t new_offset;
+			if (!mmt_safe_add_u32(gtp_offset, next_ext_header_length, &new_offset)) {
+				MMT_LOG(PROTO_GTP, MMT_LOG_ERROR,
+				        "Integer overflow adding GTP extension length");
+				return MMT_SKIP;
+			}
+
+			// Check if new offset would exceed packet
+			if (!mmt_safe_add_u32(new_offset, offset, &check_offset)) {
+				return MMT_SKIP;
+			}
+
+			if (check_offset > ipacket->p_hdr->caplen) {
+				MMT_LOG(PROTO_GTP, MMT_LOG_ERROR,
+				        "GTP extension would extend beyond packet");
+				return MMT_SKIP;
+			}
+
 			//jump over the current ext header
-			gtp_offset += next_ext_header_length;
+			gtp_offset = new_offset;
+
+			// Check we can read next extension type (at offset - 1)
+			if (gtp_offset == 0 || gtp_offset - 1 + offset >= ipacket->p_hdr->caplen) {
+				MMT_LOG(PROTO_GTP, MMT_LOG_ERROR,
+				        "Cannot read GTP next extension type");
+				return MMT_SKIP;
+			}
 
 			//check the next ext header
 			next_ext_header_type = gtp_binary[gtp_offset - 1]; //last byte indicate whether the next ext is present
@@ -213,7 +280,7 @@ int gtp_seq_num_extraction(const ipacket_t * packet, unsigned proto_index,
 		int attribute_offset = extracted_data->position_in_packet;
 		*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset]));
 		return 1;
-	} 
+	}
 	return 0;
 }
 
@@ -224,7 +291,7 @@ int gtp_imsi_mmc_extraction(const ipacket_t * packet, unsigned proto_index,
 	if(packet->data[proto_offset + 1] == 0x10){
 		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
 		return 1;
-	} 
+	}
 	extracted_data->data = NULL;
 	return 0;
 }
@@ -236,7 +303,7 @@ int gtp_imsi_mnc_extraction(const ipacket_t * packet, unsigned proto_index,
 	if(packet->data[proto_offset + 1] == 0x10){
 		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
 		return 1;
-	} 
+	}
 	extracted_data->data = NULL;
 	return 0;
 }
@@ -329,5 +396,3 @@ int init_proto_gtp_struct() {
 		return 0;
 	}
 }
-
-

@@ -10,11 +10,9 @@
 
 int init_proto_mevio_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_MEVIO, PROTO_MEVIO_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_MEVIO);
     } else {
         return 0;
     }
 }
-
-

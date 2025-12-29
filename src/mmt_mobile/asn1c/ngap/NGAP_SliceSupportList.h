@@ -25,7 +25,7 @@ struct NGAP_SliceSupportItem;
 /* NGAP_SliceSupportList */
 typedef struct NGAP_SliceSupportList {
 	A_SEQUENCE_OF(struct NGAP_SliceSupportItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_SliceSupportList_t;

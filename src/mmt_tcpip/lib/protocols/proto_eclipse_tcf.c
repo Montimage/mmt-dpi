@@ -21,7 +21,7 @@ int mmt_check_eclipse_tcf(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
+
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         MMT_LOG(PROTO_ECLIPSE_TCF, MMT_LOG_DEBUG, "search eclipse_tcf.\n");
@@ -58,5 +58,3 @@ int init_proto_eclipse_tcf_struct() {
         return 0;
     }
 }
-
-

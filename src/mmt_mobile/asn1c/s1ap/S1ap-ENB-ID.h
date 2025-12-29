@@ -25,7 +25,7 @@ typedef enum S1ap_ENB_ID_PR {
 	S1ap_ENB_ID_PR_macroENB_ID,
 	S1ap_ENB_ID_PR_homeENB_ID
 	/* Extensions may appear below */
-	
+
 } S1ap_ENB_ID_PR;
 
 /* S1ap-ENB-ID */
@@ -39,7 +39,7 @@ typedef struct S1ap_ENB_ID {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_ENB_ID_t;

@@ -14,7 +14,7 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 static uint32_t gnutella_timeout = MMT_GNUTELLA_TIMEOUT * MMT_MICRO_IN_SEC;
 
 static void mmt_int_gnutella_add_connection(ipacket_t * ipacket, mmt_protocol_type_t protocol_type) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -27,14 +27,14 @@ static void mmt_int_gnutella_add_connection(ipacket_t * ipacket, mmt_protocol_ty
         if (packet->udp != NULL) {
             if (!src->detected_gnutella_udp_port1) {
                 src->detected_gnutella_udp_port1 = (packet->udp->source);
-                MMT_LOG_GNUTELLA(PROTO_GNUTELLA, 
+                MMT_LOG_GNUTELLA(PROTO_GNUTELLA,
                         MMT_LOG_DEBUG, "GNUTELLA UDP PORT1 DETECTED as %u\n",
                         src->detected_gnutella_udp_port1);
 
             } else if ((ntohs(packet->udp->source) != src->detected_gnutella_udp_port1)
                     && !src->detected_gnutella_udp_port2) {
                 src->detected_gnutella_udp_port2 = (packet->udp->source);
-                MMT_LOG_GNUTELLA(PROTO_GNUTELLA, 
+                MMT_LOG_GNUTELLA(PROTO_GNUTELLA,
                         MMT_LOG_DEBUG, "GNUTELLA UDP PORT2 DETECTED as %u\n",
                         src->detected_gnutella_udp_port2);
 
@@ -47,7 +47,7 @@ static void mmt_int_gnutella_add_connection(ipacket_t * ipacket, mmt_protocol_ty
 }
 
 void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -58,12 +58,12 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
     if (packet->detected_protocol_stack[0] == PROTO_GNUTELLA) {
         if (src != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
                 (packet->tick_timestamp - src->gnutella_ts) < gnutella_timeout)) {
-            MMT_LOG_GNUTELLA(PROTO_GNUTELLA, 
+            MMT_LOG_GNUTELLA(PROTO_GNUTELLA,
                     MMT_LOG_DEBUG, "gnutella : save src connection packet detected\n");
             src->gnutella_ts = packet->tick_timestamp;
         } else if (dst != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
                 (packet->tick_timestamp - dst->gnutella_ts) < gnutella_timeout)) {
-            MMT_LOG_GNUTELLA(PROTO_GNUTELLA, 
+            MMT_LOG_GNUTELLA(PROTO_GNUTELLA,
                     MMT_LOG_DEBUG, "gnutella : save dst connection packet detected\n");
             dst->gnutella_ts = packet->tick_timestamp;
         }
@@ -334,7 +334,7 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
                     && flow->l4.tcp.gnutella_msg_id[1] == packet->payload[2]
                     && flow->l4.tcp.gnutella_msg_id[2] == packet->payload[4]
                     && MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_GNUTELLA)) {
-                MMT_LOG_GNUTELLA(PROTO_GNUTELLA, 
+                MMT_LOG_GNUTELLA(PROTO_GNUTELLA,
                         MMT_LOG_TRACE, "GNUTELLA DETECTED due to message ID match (NEONet protocol)\n");
                 mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
@@ -345,7 +345,7 @@ void mmt_classify_me_gnutella(ipacket_t * ipacket, unsigned index) {
                     && flow->l4.tcp.gnutella_msg_id[1] == packet->payload[2]
                     && flow->l4.tcp.gnutella_msg_id[2] == packet->payload[4]
                     && MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_GNUTELLA)) {
-                MMT_LOG_GNUTELLA(PROTO_GNUTELLA, 
+                MMT_LOG_GNUTELLA(PROTO_GNUTELLA,
                         MMT_LOG_TRACE, "GNUTELLA DETECTED due to message ID match (NEONet protocol)\n");
                 mmt_int_gnutella_add_connection(ipacket, MMT_REAL_PROTOCOL);
                 return;
@@ -383,11 +383,9 @@ int init_proto_gnutella_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_gnutella();
-        
+
         return register_protocol(protocol_struct, PROTO_GNUTELLA);
     } else {
         return 0;
     }
 }
-
-

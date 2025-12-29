@@ -25,7 +25,7 @@ struct NGAP_AllowedNSSAI_Item;
 /* NGAP_AllowedNSSAI */
 typedef struct NGAP_AllowedNSSAI {
 	A_SEQUENCE_OF(struct NGAP_AllowedNSSAI_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AllowedNSSAI_t;

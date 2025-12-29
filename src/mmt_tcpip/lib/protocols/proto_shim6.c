@@ -10,11 +10,9 @@
 
 int init_proto_shim6_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_SHIM6, PROTO_SHIM6_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_SHIM6);
     } else {
         return 0;
     }
 }
-
-

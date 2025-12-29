@@ -25,7 +25,7 @@ struct NGAP_AreaOfInterestItem;
 /* NGAP_AreaOfInterestList */
 typedef struct NGAP_AreaOfInterestList {
 	A_SEQUENCE_OF(struct NGAP_AreaOfInterestItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AreaOfInterestList_t;

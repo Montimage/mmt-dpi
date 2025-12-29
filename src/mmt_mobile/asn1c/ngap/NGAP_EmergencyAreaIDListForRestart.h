@@ -23,7 +23,7 @@ extern "C" {
 /* NGAP_EmergencyAreaIDListForRestart */
 typedef struct NGAP_EmergencyAreaIDListForRestart {
 	A_SEQUENCE_OF(NGAP_EmergencyAreaID_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_EmergencyAreaIDListForRestart_t;

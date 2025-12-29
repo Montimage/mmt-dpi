@@ -10,11 +10,9 @@
 
 int init_proto_secureserver_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_SECURESERVER, PROTO_SECURESERVER_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_SECURESERVER);
     } else {
         return 0;
     }
 }
-
-

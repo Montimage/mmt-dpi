@@ -25,7 +25,7 @@ struct S1ap_LastVisitedCell_Item;
 /* S1ap-UE-HistoryInformation */
 typedef struct S1ap_UE_HistoryInformation {
 	A_SEQUENCE_OF(struct S1ap_LastVisitedCell_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_UE_HistoryInformation_t;

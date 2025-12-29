@@ -475,5 +475,3 @@ int init_proto_yahoo_struct() {
         return 0;
     }
 }
-
-

@@ -50,4 +50,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_TAIList = {
 	1,	/* Single element */
 	&asn_SPC_S1ap_TAIList_specs_1	/* Additional specs */
 };
-

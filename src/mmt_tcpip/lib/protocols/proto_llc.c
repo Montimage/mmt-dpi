@@ -17,13 +17,13 @@ int llc_classify_next_proto(ipacket_t *ipacket, unsigned index)
     retval.status = NonClassified;
 
     if (llc->dsap == 0x00 && llc->ssap == 0x01 && llc->cf == 0xAF)
-    {        
+    {
         retval.offset = offset + 3;
         retval.proto_id = PROTO_XID;
         retval.status = Classified;
     }
     else if (llc->dsap == 0x42 && llc->ssap == 0x42 && llc->cf == 0x03)
-    {        
+    {
         retval.offset = offset + 3;
         retval.proto_id = PROTO_STP;
         retval.status = Classified;
@@ -33,17 +33,17 @@ int llc_classify_next_proto(ipacket_t *ipacket, unsigned index)
         uint16_t * pid = (uint16_t *)&ipacket->data[offset + 1 + 1 + 1 + 3];
         switch (ntohs(*pid)) // Layer 3 protocol identifier
         {
-        case 0x2000:            
+        case 0x2000:
             retval.offset = offset + 8;
             retval.proto_id = PROTO_CDP;
             retval.status = Classified;
             break;
-        case 0x2004:            
+        case 0x2004:
             retval.offset = offset + 8;
             retval.proto_id = PROTO_DTP;
             retval.status = Classified;
             break;
-        default:            
+        default:
             retval.offset = offset + 8;
             retval.proto_id = PROTO_UNKNOWN;
             retval.status = Classified;

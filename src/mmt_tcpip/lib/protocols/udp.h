@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   udp.h
  * Author: Gerardo
  *
@@ -31,4 +31,3 @@ extern "C" {
 #endif
 
 #endif	/* UDP_H */
-

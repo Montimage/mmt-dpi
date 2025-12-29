@@ -14,7 +14,7 @@ static void mmt_int_usenet_add_connection(ipacket_t * ipacket) {
 }
 
 void mmt_classify_me_usenet(ipacket_t * ipacket, unsigned index) {
-    
+
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -73,7 +73,7 @@ int mmt_check_usenet(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
+
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: search usenet.\n");
@@ -140,11 +140,9 @@ int init_proto_usenet_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_usenet();
-        
+
         return register_protocol(protocol_struct, PROTO_USENET);
     } else {
         return 0;
     }
 }
-
-

@@ -39,7 +39,7 @@ typedef struct S1ap_RIMRoutingAddress {
 		 */
 		S1ap_TargetRNC_ID_t	 targetRNC_ID;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_RIMRoutingAddress_t;

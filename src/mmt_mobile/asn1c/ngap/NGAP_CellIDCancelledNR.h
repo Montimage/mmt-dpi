@@ -25,7 +25,7 @@ struct NGAP_CellIDCancelledNR_Item;
 /* NGAP_CellIDCancelledNR */
 typedef struct NGAP_CellIDCancelledNR {
 	A_SEQUENCE_OF(struct NGAP_CellIDCancelledNR_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_CellIDCancelledNR_t;

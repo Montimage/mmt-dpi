@@ -90,4 +90,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_NonDynamic5QIDescriptor = {
 	5,	/* Elements count */
 	&asn_SPC_NGAP_NonDynamic5QIDescriptor_specs_1	/* Additional specs */
 };
-

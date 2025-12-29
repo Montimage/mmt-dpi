@@ -10,11 +10,9 @@
 
 int init_proto_ancestry_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ANCESTRY, PROTO_ANCESTRY_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_ANCESTRY);
     } else {
         return 0;
     }
 }
-
-

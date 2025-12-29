@@ -3,6 +3,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites Installation
+
 ```bash
 # Install Xcode tools
 xcode-select --install
@@ -20,6 +21,7 @@ export LDFLAGS="-L/usr/local/opt/libxml2/lib -L/usr/local/opt/libpcap/lib"
 ```
 
 ### Build Commands
+
 ```bash
 # Quick build
 make libraries
@@ -35,6 +37,7 @@ make ENABLESEC=1 libraries
 ```
 
 ### Run Example
+
 ```bash
 # ALWAYS set plugin path first!
 export MMT_PLUGINS_PATH=$(pwd)/sdk/lib
@@ -68,6 +71,7 @@ clang -o extract_all sdk/examples/extract_all.c \
 ## 🔧 Essential Files to Modify
 
 ### 1. `rules/arch-osx.mk`
+
 ```makefile
 # Key changes needed:
 CXX := clang++
@@ -82,6 +86,7 @@ $(QUIET) $(CXX) -shared -o $@ -Wl,-force_load,$(SDKLIB)/$(LIBTCPIP).a \
 ```
 
 ### 2. Root `Makefile`
+
 ```makefile
 ARCH     ?= osx  # Change from linux to osx
 TOPDIR   ?= $(realpath $(CURDIR))  # Fix path
@@ -90,6 +95,7 @@ TOPDIR   ?= $(realpath $(CURDIR))  # Fix path
 ## 🐛 Troubleshooting Commands
 
 ### Check Library Linking
+
 ```bash
 # Verify TCP/IP plugin links to core
 otool -L sdk/lib/libmmt_tcpip.so* | grep libmmt_core
@@ -105,6 +111,7 @@ nm -u sdk/lib/libmmt_tcpip.so
 ```
 
 ### Debug Runtime Issues
+
 ```bash
 # Enable debug output
 export MMT_DEBUG=1
@@ -125,12 +132,14 @@ ls -la $MMT_PLUGINS_PATH/libmmt_tcpip.so*
 ## ⚠️ Common Errors & Fixes
 
 ### Error: "Unsupported stack type 1"
+
 ```bash
 # Fix: Set plugin path
 export MMT_PLUGINS_PATH=/full/path/to/sdk/lib
 ```
 
 ### Error: Segmentation fault in plugin
+
 ```bash
 # Fix: Rebuild with proper linking
 # Check arch-osx.mk has:
@@ -138,6 +147,7 @@ export MMT_PLUGINS_PATH=/full/path/to/sdk/lib
 ```
 
 ### Error: "Library not loaded"
+
 ```bash
 # Fix: Use rpath when compiling
 clang ... -Wl,-rpath,/path/to/sdk/lib
@@ -147,6 +157,7 @@ export DYLD_LIBRARY_PATH=/path/to/sdk/lib:$DYLD_LIBRARY_PATH
 ```
 
 ### Error: SIP blocks DYLD_LIBRARY_PATH
+
 ```bash
 # Fix: Use rpath instead
 clang ... -Wl,-rpath,@executable_path/../lib
@@ -157,12 +168,14 @@ clang ... -Wl,-rpath,/absolute/path/to/lib
 ## 📦 Installation Paths
 
 ### Development (Recommended)
+
 ```bash
 # Use from build directory
 export MMT_PLUGINS_PATH=$(pwd)/sdk/lib
 ```
 
 ### System Installation
+
 ```bash
 # Standard paths
 /opt/mmt/dpi/lib/      # Libraries
@@ -184,13 +197,13 @@ echo 'export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib' >> ~/.zshrc
 int main() {
     // CRITICAL: Set plugin path on macOS!
     setenv("MMT_PLUGINS_PATH", "/path/to/sdk/lib", 1);
-    
+
     // Initialize
     if (!init_extraction()) {
         fprintf(stderr, "Init failed\n");
         return 1;
     }
-    
+
     // Create handler
     mmt_handler_t *handler = mmt_init_handler(DLT_EN10MB, 0, 0);
     if (!handler) {
@@ -198,9 +211,9 @@ int main() {
         close_extraction();
         return 1;
     }
-    
+
     // Your code here...
-    
+
     // Cleanup
     mmt_close_handler(handler);
     close_extraction();
@@ -209,6 +222,7 @@ int main() {
 ```
 
 ### Compile Template
+
 ```bash
 clang -o program program.c \
     -I /path/to/sdk/include \

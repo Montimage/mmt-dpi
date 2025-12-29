@@ -29,12 +29,12 @@ static attribute_metadata_t cotp_attributes_metadata[COTP_ATTRIBUTES_NB] = {
 int mmt_check_cotp(ipacket_t * ipacket, unsigned index) {
     int l4_offset = get_packet_offset_at_index(ipacket, index);
     int cotp_offset = l4_offset + 4;
-    
+
     classified_proto_t cotp_proto = cotp_stack_classification(ipacket);
     cotp_proto.offset = 4;
 
     char payload_len = ipacket->p_hdr->caplen - cotp_offset;
-    
+
     if(payload_len == 0){
         return 0;
     }
@@ -42,7 +42,7 @@ int mmt_check_cotp(ipacket_t * ipacket, unsigned index) {
     struct cotphdr * cotp_header = (struct cotphdr *)&ipacket->data[cotp_offset];
 
     if(cotp_header->length == 2 || cotp_header->length == 17 ){
-        
+
         // printf("COTP: found COTP packet %lu\n",ipacket->packet_id);
         return set_classified_proto(ipacket, index + 1, cotp_proto);
     }
@@ -71,5 +71,3 @@ int init_proto_cotp_struct() {
         return -1;
     }
 }
-
-

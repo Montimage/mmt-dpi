@@ -10,11 +10,9 @@
 
 int init_proto_bbc_online_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_BBC_ONLINE, PROTO_BBC_ONLINE_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_BBC_ONLINE);
     } else {
         return 0;
     }
 }
-
-

@@ -10,11 +10,9 @@
 
 int init_proto_merit_inp_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_MERIT_INP, PROTO_MERIT_INP_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_MERIT_INP);
     } else {
         return 0;
     }
 }
-
-

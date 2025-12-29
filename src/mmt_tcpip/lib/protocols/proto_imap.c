@@ -307,11 +307,9 @@ int init_proto_imap_struct() {
     if (protocol_struct != NULL) {
 
         mmt_init_classify_me_imap();
-        
+
         return register_protocol(protocol_struct, PROTO_IMAP);
     } else {
         return 0;
     }
 }
-
-

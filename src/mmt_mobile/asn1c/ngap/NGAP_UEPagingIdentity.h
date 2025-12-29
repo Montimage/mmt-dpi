@@ -36,7 +36,7 @@ typedef struct NGAP_UEPagingIdentity {
 		struct NGAP_FiveG_S_TMSI	*fiveG_S_TMSI;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_UEPagingIdentity_t;

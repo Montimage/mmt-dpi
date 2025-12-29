@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   sctp.h
  * Author: JP
  *
@@ -14,7 +14,7 @@ extern "C" {
 
 #include "plugin_defs.h"
 #include "mmt_core.h"
-    
+
     enum sctp_attributes {
         SCTP_SCR_PORT = 1,
         SCTP_DEST_PORT,
@@ -28,7 +28,7 @@ extern "C" {
         //SCTP_DATA_STREAM,
         //SCTP_DATA_SSN,
        // SCTP_DATA_PPID,
-        
+
     };
 
     /*
@@ -63,7 +63,7 @@ extern "C" {
         SCTP_DATA_PPID,
 
     };
-    
+
 #define SCTP_DATA_ATTRIBUTES_NB  SCTP_DATA_PPID
 #define SCTP_DATA_CH_TYPE_ALIAS      "ch_type"
 #define SCTP_DATA_CH_FLAGS_ALIAS     "ch_flags"
@@ -72,7 +72,7 @@ extern "C" {
 #define SCTP_DATA_STREAM_ALIAS       "data_stream"
 #define SCTP_DATA_SSN_ALIAS          "data_ssn"
 #define SCTP_DATA_PPID_ALIAS         "data_ppid"
-    
+
  enum sctp_sack_attributes {
         SCTP_SACK_CH_TYPE = 1,
         SCTP_SACK_CH_FLAGS,
@@ -224,4 +224,3 @@ extern "C" {
 #endif
 
 #endif	/* SCTP_H */
-

@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceToReleaseItemHOCmd;
 /* NGAP_PDUSessionResourceToReleaseListHOCmd */
 typedef struct NGAP_PDUSessionResourceToReleaseListHOCmd {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceToReleaseItemHOCmd) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceToReleaseListHOCmd_t;

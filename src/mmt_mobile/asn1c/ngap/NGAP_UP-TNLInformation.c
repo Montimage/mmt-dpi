@@ -75,4 +75,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_UP_TNLInformation = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_UP_TNLInformation_specs_1	/* Additional specs */
 };
-

@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   http.h
  * Author: montimage
  *
@@ -34,7 +34,7 @@ enum signature_type
 	Unassigned = 200,
 };
 
-// #define 
+// #define
 /**
  * A NDN TLV node structre
  */
@@ -92,7 +92,7 @@ int ndn_TLV_get_int(ndn_tlv_t *ndn, char *payload, int payload_len);
  *                          @ndn is NULL
  *                          @payload is NULL
  *                          @ndn->data_offset + ndn->length > payload_len
- */	
+ */
 char *ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len);
 
 /**
@@ -108,7 +108,7 @@ char *ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len);
  *                      	The value of first octet is 0 but the total length of the node bigger than 4
  *                      	Total length of the node is smaller than the length is calculated:
  *                      		total_length < 4 + 2*nb_octets + length
- */	
+ */
 ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length);
 
 /**
@@ -210,7 +210,7 @@ char* ndn_name_components_extraction_payload(char *payload,int payload_len);
 //  *                        nonce node in the packet is NULL
 //  *                        nonce node in the packet has value is NULL
 //  *                        The value of nonce node is cannot convert to hexa
-//  *                     The value unsigned long 
+//  *                     The value unsigned long
 //  *                     The combination of nonce and name uniquely identify an interest packet
 //  */
 // int ndn_interest_nonce_extraction_payload(char *payload,int payload_len);
@@ -223,7 +223,7 @@ char* ndn_name_components_extraction_payload(char *payload,int payload_len);
 //  *                        lifetime node in the packet is NULL
 //  *                        lifetime node in the packet has value is NULL
 //  *                        The value of lifetime node is cannot convert to hexa
-//  *                     The value int 
+//  *                     The value int
 //  */
 // int ndn_interest_lifetime_extraction_payload(char *payload,int payload_len);
 
@@ -240,7 +240,7 @@ char* ndn_name_components_extraction_payload(char *payload,int payload_len);
 //  * @param  payload     [description]
 //  * @param  payload_len [description]
 //  * @return             [description]
- 
+
 // int ndn_interest_max_suffix_component_extraction_payload(char *payload,int payload_len);
 
 // ////////////////////// EXTRACT DATA PACKET //////////////////////
@@ -288,7 +288,7 @@ char * ndn_data_content_extraction_payload(char *payload,int payload_len);
  * The tuple of 3 parameter to identify a NDN session
  */
 typedef struct ndn_tuple3_struct{
-	uint8_t packet_type; // The type of packet which we get the tuple3 from 
+	uint8_t packet_type; // The type of packet which we get the tuple3 from
 	uint32_t ip_src;
 	uint32_t ip_dst;
 	uint16_t port_src;
@@ -324,7 +324,7 @@ typedef struct ndn_session_struct{
     struct timeval * last_reported_time;
     struct timeval * last_interest_packet_time_0;
     struct timeval * last_interest_packet_time_1;
-    struct ndn_session_struct *next; 
+    struct ndn_session_struct *next;
 	void * user_arg; // User argument pointer
 }ndn_session_t;
 
@@ -360,7 +360,7 @@ void ndn_free_tuple3(ndn_tuple3_t * t3);
  * @return    0 if they have :
  *              	different name
  *               	t1 is NULL but t2 is not NULL
- *               	t2 is NULL but t1 is not NULL 	
+ *               	t2 is NULL but t1 is not NULL
  *               	same name, same src_MAC but different dst_MAC
  *               	same name, same dst_MAC but different src_MAC
  *               	same name, different MAC address
@@ -460,8 +460,8 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
 int ndn_session_data_analysis(ipacket_t * ipacket, unsigned index) ;
 void cleanup_ndn_context(void * proto_context, void * args);
 void * setup_ndn_context(void * proto_context, void * args);
-uint8_t mmt_check_payload_ndn_http(char * payload, int payload_len);       
-char * ndn_name_components_at_index(char *payload,int total_length , int nc_index);                     
+uint8_t mmt_check_payload_ndn_http(char * payload, int payload_len);
+char * ndn_name_components_at_index(char *payload,int total_length , int nc_index);
 #ifdef  __cplusplus
 }
 #endif

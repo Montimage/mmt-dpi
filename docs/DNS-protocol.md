@@ -2,15 +2,15 @@
 
 ## Overview
 
-** Working branch: ** `feature/dns`
+**Working branch:** `feature/dns`
 
-** Started date: ** `13/07/2016`
+**Started date:** `13/07/2016`
 
-** Deadline: ** `18/07/2016`
+**Deadline:** `18/07/2016`
 
-** Developer: ** @luongnv89
+**Developer:** @luongnv89
 
-** Probe example **: extract file information such as: Transaction Id, ...
+**Probe example**: extract file information such as: Transaction Id, ...
 
 ## List of tasks
 
@@ -29,7 +29,6 @@
 **DNS General Message Format**
 
 ![dnsgenformat.png](images/1765138158-dnsgenformat.png)
-
 
 **DNS Message Header Format**
 
@@ -128,7 +127,7 @@ The string is separated by `.` or `@`
 
 ![dnsnameformat.png](images/772490498-dnsnameformat.png)
 
-**DNS Electronic Mail Address Notation: ** `[6] j o h n n y [9] s o m e w h e r e [3] o r g [0]`
+**DNS Electronic Mail Address Notation:** `[6] j o h n n y [9] s o m e w h e r e [3] o r g [0]`
 
 **DNS Message Compression**: `[4] m a i l [13] x y z i n d u s t r i e s [3] c o m [0]`
 
@@ -144,9 +143,7 @@ The string is separated by `.` or `@`
 
 [RFC 1035 - DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION](https://www.ietf.org/rfc/rfc1035.txt)
 
-[DNS Message Header and Question Section Format ](http://www.tcpipguide.com/free/t_DNSMessageHeaderandQuestionSectionFormat.htm)
-
-
+[DNS Message Header and Question Section Format](http://www.tcpipguide.com/free/t_DNSMessageHeaderandQuestionSectionFormat.htm)
 
 ---
 Created by @luongnv89 on 13 July 2017

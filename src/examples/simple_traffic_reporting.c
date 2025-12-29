@@ -1,11 +1,11 @@
 /**
  * This example is intended to extract everything from a pcap file! This means all the attributes of all registered protocols will be registed for extraction. When a packet is processed, the attributes found in the packet will be print out.
- * 
+ *
  * Compile this example with:
- * 
+ *
  * Linux:
  * $ gcc -g -o simple_traffic_reporting simple_traffic_reporting.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
- * 
+ *
  * macOS (from MMT-DPI root directory):
  * $ clang -o simple_traffic_reporting src/examples/simple_traffic_reporting.c \
  *     -I sdk/include -I sdk/include/tcpip \
@@ -13,30 +13,30 @@
  *     -L sdk/lib -L /opt/homebrew/opt/libpcap/lib \
  *     -lmmt_core -lpcap -ldl \
  *     -Wl,-rpath,sdk/lib
- * 
+ *
  * macOS (if installed in /opt/mmt):
  * $ clang -o simple_traffic_reporting simple_traffic_reporting.c \
  *     -I /opt/mmt/dpi/include -I /opt/mmt/dpi/include/tcpip \
  *     -L /opt/mmt/dpi/lib -lmmt_core -lpcap -ldl \
  *     -Wl,-rpath,/opt/mmt/dpi/lib
- *   
+ *
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
- * 
+ *
  * Then execute the program:
- * 
+ *
  * IMPORTANT for macOS: Set the environment before running:
  * $ export MMT_PLUGINS_PATH=/path/to/mmt-dpi/sdk/lib
  * $ export DYLD_LIBRARY_PATH=/path/to/mmt-dpi/sdk/lib:$DYLD_LIBRARY_PATH
- * 
+ *
  * $ ./simple_traffic_reporting tcp_plugin_image.pcap > simple_traffic_reporting.txt
- * 
+ *
  * You can see the example result in file: simple_traffic_reporting.txt
  * Debug with Valgrind:
  * valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./simple_traffic_reporting tcp_plugin_image.pcap 2> simple_valgrind.txt
  * That is it!
- * 
+ *
  */
- 
+
 #include <pcap.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -180,7 +180,7 @@ void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
     fprintf(out_file, "%"PRIu64",%lu.%lu,%lu.%lu,"
             "%u,%s,%s,%hu,%hu,%hu,"
             "%"PRIu64",%"PRIu64",%"PRIu64",%"PRIu64",%u,%u,%s,%s"
-            "\n", 
+            "\n",
             get_session_id(expired_session),
             (get_session_last_activity_time(expired_session)).tv_sec, (get_session_last_activity_time(expired_session)).tv_usec,
             (get_session_init_time(expired_session)).tv_sec, (get_session_init_time(expired_session)).tv_usec,

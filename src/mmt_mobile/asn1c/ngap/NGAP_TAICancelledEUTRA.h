@@ -25,7 +25,7 @@ struct NGAP_TAICancelledEUTRA_Item;
 /* NGAP_TAICancelledEUTRA */
 typedef struct NGAP_TAICancelledEUTRA {
 	A_SEQUENCE_OF(struct NGAP_TAICancelledEUTRA_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TAICancelledEUTRA_t;

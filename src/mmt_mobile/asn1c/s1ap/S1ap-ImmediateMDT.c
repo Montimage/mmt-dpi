@@ -92,4 +92,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_ImmediateMDT = {
 	5,	/* Elements count */
 	&asn_SPC_S1ap_ImmediateMDT_specs_1	/* Additional specs */
 };
-

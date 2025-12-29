@@ -174,7 +174,7 @@ NativeInteger_encode_der(const asn_TYPE_descriptor_t *sd, const void *ptr,
 	tmp.buf = buf;
 	tmp.size = sizeof(buf);
 #endif	/* WORDS_BIGENDIAN */
-	
+
 	/* Encode fake INTEGER */
 	erval = INTEGER_encode_der(sd, &tmp, tag_mode, tag, cb, app_key);
     if(erval.structure_ptr == &tmp) {
@@ -204,7 +204,7 @@ NativeInteger_decode_xer(const asn_codec_ctx_t *opt_codec_ctx,
 	}
 
 	memset(&st, 0, sizeof(st));
-	rval = INTEGER_decode_xer(opt_codec_ctx, td, &st_ptr, 
+	rval = INTEGER_decode_xer(opt_codec_ctx, td, &st_ptr,
 		opt_mname, buf_ptr, size);
 	if(rval.code == RC_OK) {
 		long l;

@@ -219,11 +219,11 @@ typedef struct NGAP_InitiatingMessage {
 			NGAP_UplinkRANStatusTransfer_t	 UplinkRANStatusTransfer;
 			NGAP_UplinkUEAssociatedNRPPaTransport_t	 UplinkUEAssociatedNRPPaTransport;
 		} choice;
-		
+
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;
 	} value;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_InitiatingMessage_t;

@@ -10,11 +10,9 @@
 
 int init_proto_rsvp_e2e_ignore_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_RSVP_E2E_IGNORE, PROTO_RSVP_E2E_IGNORE_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_RSVP_E2E_IGNORE);
     } else {
         return 0;
     }
 }
-
-

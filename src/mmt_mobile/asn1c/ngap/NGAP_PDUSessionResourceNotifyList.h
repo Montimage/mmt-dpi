@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceNotifyItem;
 /* NGAP_PDUSessionResourceNotifyList */
 typedef struct NGAP_PDUSessionResourceNotifyList {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceNotifyItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceNotifyList_t;

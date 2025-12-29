@@ -10,7 +10,6 @@ To test the FTP plugin, we need to setup the environment for testing FTP protoco
 
 [Basic FTP Commands](https://www.cs.colostate.edu/helpdocs/ftp.html)
 
-
 ## Get `.pcap` file
 
 To get a pcap file to test offline, follow the process:
@@ -21,7 +20,7 @@ To get a pcap file to test offline, follow the process:
 
 * Open terminal
 
-* Open Wireshark application 
+* Open Wireshark application
 
 * Start a new capturing
 
@@ -45,7 +44,7 @@ Each test case will correspond with a trace file.
 
 * Data transfer processing
 
-### Test case possible:
+### Test case possible
 
 * Download a single file - **Passed**
 

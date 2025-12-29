@@ -120,4 +120,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_GBR_QosInformation = {
 	8,	/* Elements count */
 	&asn_SPC_NGAP_GBR_QosInformation_specs_1	/* Additional specs */
 };
-

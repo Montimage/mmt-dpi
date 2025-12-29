@@ -75,4 +75,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_AMFPagingTarget = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_AMFPagingTarget_specs_1	/* Additional specs */
 };
-

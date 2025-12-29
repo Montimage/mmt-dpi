@@ -81,4 +81,3 @@ extern "C" {
 #endif
 
 #endif	/* IP_H */
-

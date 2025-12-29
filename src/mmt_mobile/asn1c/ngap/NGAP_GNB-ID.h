@@ -36,7 +36,7 @@ typedef struct NGAP_GNB_ID {
 		BIT_STRING_t	 gNB_ID;
 		struct NGAP_ProtocolIE_SingleContainer	*choice_Extensions;
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_GNB_ID_t;

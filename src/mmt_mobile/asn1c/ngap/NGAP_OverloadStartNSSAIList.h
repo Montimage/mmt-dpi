@@ -25,7 +25,7 @@ struct NGAP_OverloadStartNSSAIItem;
 /* NGAP_OverloadStartNSSAIList */
 typedef struct NGAP_OverloadStartNSSAIList {
 	A_SEQUENCE_OF(struct NGAP_OverloadStartNSSAIItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_OverloadStartNSSAIList_t;

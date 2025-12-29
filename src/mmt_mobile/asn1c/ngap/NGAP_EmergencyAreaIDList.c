@@ -49,4 +49,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_EmergencyAreaIDList = {
 	1,	/* Single element */
 	&asn_SPC_NGAP_EmergencyAreaIDList_specs_1	/* Additional specs */
 };
-

@@ -71,4 +71,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_PDUSessionResourceModifyUnsuccessfulTransfer 
 	3,	/* Elements count */
 	&asn_SPC_NGAP_PDUSessionResourceModifyUnsuccessfulTransfer_specs_1	/* Additional specs */
 };
-

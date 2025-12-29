@@ -10,11 +10,9 @@
 
 int init_proto_cdn77_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_CDN77, PROTO_CDN77_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_CDN77);
     } else {
         return 0;
     }
 }
-
-

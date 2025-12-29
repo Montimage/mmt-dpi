@@ -23,7 +23,7 @@ extern "C" {
 /* NGAP_EquivalentPLMNs */
 typedef struct NGAP_EquivalentPLMNs {
 	A_SEQUENCE_OF(NGAP_PLMNIdentity_t) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_EquivalentPLMNs_t;

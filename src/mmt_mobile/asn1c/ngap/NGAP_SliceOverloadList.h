@@ -25,7 +25,7 @@ struct NGAP_SliceOverloadItem;
 /* NGAP_SliceOverloadList */
 typedef struct NGAP_SliceOverloadList {
 	A_SEQUENCE_OF(struct NGAP_SliceOverloadItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_SliceOverloadList_t;

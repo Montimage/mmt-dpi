@@ -7,10 +7,12 @@ After thorough review, **all modifications maintain 100% backward compatibility 
 ## Changes Made
 
 ### 1. ✅ **Platform-Specific Files Only**
+
 - `rules/arch-osx.mk` - Only used when building on macOS
 - Linux files (`arch-linux.mk`, `arch-linux-gcc.mk`, `common-linux.mk`) - **Untouched**
 
 ### 2. ✅ **Improved Root Makefile**
+
 ```makefile
 # Automatically detects OS
 UNAME_S := $(shell uname -s)
@@ -19,15 +21,18 @@ ifeq ($(UNAME_S),Linux)
 else ifeq ($(UNAME_S),Darwin)
     ARCH ?= osx      # Auto-selects macOS on Darwin
 ```
+
 - **Linux Impact**: Positive - automatically uses Linux configuration
 
-### 3. ✅ **Simplified Dependencies** 
+### 3. ✅ **Simplified Dependencies**
+
 - Removed unused `nghttp2` dependency from:
   - `rules/common.mk`
   - `src/examples/extract_all.c`
 - **Linux Impact**: Positive - fewer dependencies to install
 
 ### 4. ✅ **Documentation Only**
+
 - Added macOS instructions to example file comments
 - Original Linux commands remain **unchanged** and appear first
 - New documentation files don't affect build
@@ -35,6 +40,7 @@ else ifeq ($(UNAME_S),Darwin)
 ## Linux Build Commands (Unchanged)
 
 ### Standard Build
+
 ```bash
 # Auto-detects Linux and builds correctly
 make libraries
@@ -48,6 +54,7 @@ make -f rules/project.mk ARCH=linux libraries
 ```
 
 ### Compile Examples (Unchanged)
+
 ```bash
 # All original Linux commands still work
 gcc -o extract_all extract_all.c \
@@ -94,6 +101,7 @@ make ARCH=linux libraries  # Explicit Linux build still works
 ✅ **The library is now truly cross-platform**
 
 The changes follow best practices for cross-platform development:
+
 - Platform-specific code isolated in platform-specific files
 - Automatic OS detection for convenience
 - Documentation additions don't affect functionality

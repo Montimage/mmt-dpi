@@ -82,4 +82,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_ServiceAreaInformation_Item = {
 	4,	/* Elements count */
 	&asn_SPC_NGAP_ServiceAreaInformation_Item_specs_1	/* Additional specs */
 };
-

@@ -10,11 +10,9 @@
 
 int init_proto_iso_ip_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ISO_IP, PROTO_ISO_IP_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_ISO_IP);
     } else {
         return 0;
     }
 }
-
-

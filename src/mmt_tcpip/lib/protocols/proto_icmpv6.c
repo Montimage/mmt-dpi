@@ -27,5 +27,3 @@ int init_proto_icmpv6_struct() {
         return 0;
     }
 }
-
-

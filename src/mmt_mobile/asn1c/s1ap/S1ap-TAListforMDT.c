@@ -49,4 +49,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_TAListforMDT = {
 	1,	/* Single element */
 	&asn_SPC_S1ap_TAListforMDT_specs_1	/* Additional specs */
 };
-

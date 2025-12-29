@@ -33,7 +33,7 @@ static uint8_t search_iac(ipacket_t * ipacket) {
     while (a < packet->payload_packet_len - 2) {
         // commands start with a 0xff byte followed by a command byte >= 0xf0 and < 0xff
         // command bytes 0xfb to 0xfe are followed by an option byte <= 0x28
-        if (!(     packet->payload[a] != 0xff 
+        if (!(     packet->payload[a] != 0xff
                 || ((packet->payload[a + 1] >= 0xf0) && (packet->payload[a + 1] <= 0xfa))
                 || ((packet->payload[a + 1] >= 0xfb) && (packet->payload[a + 1] != 0xff) && (packet->payload[a + 2] <= 0x28))
             )) {
@@ -127,5 +127,3 @@ int init_proto_telnet_struct() {
         return 0;
     }
 }
-
-

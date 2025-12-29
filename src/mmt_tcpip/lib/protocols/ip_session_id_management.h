@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   ip_session_id_management.h
  * Author: montimage
  *
@@ -162,4 +162,3 @@ int proto_timedout_sessions_count_extraction(const ipacket_t * packet, unsigned 
 #endif
 
 #endif	/* IP_SESSION_ID_MANAGEMENT_H */
-

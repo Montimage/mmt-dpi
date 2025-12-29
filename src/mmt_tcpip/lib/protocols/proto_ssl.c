@@ -53,7 +53,7 @@ int ssl_is_tls_record_header(const uint8_t * payload, int payload_len){
         // Incorrect version: 3.0 (768), 1.0 (769), 1.1 (770), 1.2 (771)
         return 0;
     }
-    
+
     uint16_t length = ntohs(get_u16(payload, 3));
     if(payload_len < length){
         // Invalid payload length
@@ -85,7 +85,7 @@ int tls_get_number_records(const ipacket_t * ipacket){
 
 /**
  * Check if a message_type value is a valid one
- * 
+ *
     Message types
     Code    Description
     0   HelloRequest
@@ -103,8 +103,8 @@ int tls_get_number_records(const ipacket_t * ipacket){
  * @return              [description]
  */
 int ssl_is_tls_message_type(int message_type){
-    return !(message_type < 0 
-        || message_type > 20 
+    return !(message_type < 0
+        || message_type > 20
         || (message_type > 4 && message_type < 11)
         || (message_type > 16 && message_type < 20));
 }
@@ -864,4 +864,3 @@ int init_proto_ssl_struct() {
         return 0;
     }
 }
-

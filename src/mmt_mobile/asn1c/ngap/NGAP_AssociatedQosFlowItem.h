@@ -41,7 +41,7 @@ typedef struct NGAP_AssociatedQosFlowItem {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AssociatedQosFlowItem_t;

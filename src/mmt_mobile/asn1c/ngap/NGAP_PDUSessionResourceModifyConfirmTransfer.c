@@ -82,4 +82,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_PDUSessionResourceModifyConfirmTransfer = {
 	4,	/* Elements count */
 	&asn_SPC_NGAP_PDUSessionResourceModifyConfirmTransfer_specs_1	/* Additional specs */
 };
-

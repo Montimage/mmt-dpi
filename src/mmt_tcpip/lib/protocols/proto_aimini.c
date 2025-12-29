@@ -529,5 +529,3 @@ int init_proto_aimini_struct() {
         return 0;
     }
 }
-
-

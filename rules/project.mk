@@ -18,4 +18,3 @@ LDFLAGS_win32   := $(LDFLAGS_windows)
 LDFLAGS_win64   := $(LDFLAGS_windows)
 
 LDFLAGS += $(LDFLAGS_$(ARCH))
-

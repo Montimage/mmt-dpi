@@ -10,11 +10,9 @@
 
 int init_proto_google_maps_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_GOOGLE_MAPS, PROTO_GOOGLE_MAPS_ALIAS);
-    if (protocol_struct != NULL) { 
+    if (protocol_struct != NULL) {
         return register_protocol(protocol_struct, PROTO_GOOGLE_MAPS);
     } else {
         return 0;
     }
 }
-
-

@@ -11,16 +11,16 @@ int
 S1ap_ExtendedRNC_ID_constraint(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 4096 && value <= 65535)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -61,4 +61,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_ExtendedRNC_ID = {
 	0, 0,	/* No members */
 	0	/* No specifics */
 };
-

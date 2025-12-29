@@ -627,4 +627,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_ProtocolIE_SingleContainer_127P26 = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_WarningAreaList_ExtIEs_specs_105	/* Additional specs */
 };
-

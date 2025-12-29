@@ -10,15 +10,15 @@
 //  D E C L A R A T I O N S  //
 //  - - - - - - - - - - - -  //
 
-static void        hslot_init  ( mmt_hslot_t *slot );
-static void        hslot_free  ( mmt_hslot_t *slot );
+static void hslot_init(mmt_hslot_t *slot);
+static void hslot_free(mmt_hslot_t *slot);
 
-static mmt_hent_t* hent_new    ( void );
-static void        hent_free   ( mmt_hent_t *he );
+static mmt_hent_t *hent_new(void);
+static void hent_free(mmt_hent_t *he);
 
-static mmt_hent_t *hmap_lookup ( mmt_hashmap_t *map, mmt_key_t key );
+static mmt_hent_t *hmap_lookup(mmt_hashmap_t *map, mmt_key_t key);
 
-static void hmap_dump_entry( mmt_hashmap_t *map, mmt_hent_t *he, void *arg );
+static void hmap_dump_entry(mmt_hashmap_t *map, mmt_hent_t *he, void *arg);
 
 
 //  - - - - - - - - - - - - - -  //
@@ -33,10 +33,10 @@ static void hmap_dump_entry( mmt_hashmap_t *map, mmt_hent_t *he, void *arg );
 
 mmt_hashmap_t *hashmap_alloc()
 {
-   mmt_hashmap_t *map = (mmt_hashmap_t*)mmt_malloc( sizeof( mmt_hashmap_t ));
-   hashmap_init( map );
+	mmt_hashmap_t *map = (mmt_hashmap_t *)mmt_malloc(sizeof(mmt_hashmap_t));
+	hashmap_init(map);
 
-   return map;
+	return map;
 }
 
 /**
@@ -45,10 +45,10 @@ mmt_hashmap_t *hashmap_alloc()
  * @param map a pointer to a mmt_hashmap_t previously allocated with hashmap_alloc()
  */
 
-void hashmap_free( mmt_hashmap_t *map )
+void hashmap_free(mmt_hashmap_t *map)
 {
-   hashmap_cleanup( map );
-   mmt_free( map->slots );
+	hashmap_cleanup(map);
+	mmt_free(map->slots);
 }
 
 /**
@@ -57,18 +57,18 @@ void hashmap_free( mmt_hashmap_t *map )
  * @param map a pointer to an uninitialized mmt_hashmap_t
  */
 
-void hashmap_init( mmt_hashmap_t *map )
+void hashmap_init(mmt_hashmap_t *map)
 {
-   int i;
+	int i;
 
-   mmt_hslot_t *slots = (mmt_hslot_t*)mmt_malloc( MMT_HASHMAP_NSLOTS * sizeof( mmt_hslot_t ));
+	mmt_hslot_t *slots = (mmt_hslot_t *)mmt_malloc(MMT_HASHMAP_NSLOTS * sizeof(mmt_hslot_t));
 
-   for( i = 0 ; i < MMT_HASHMAP_NSLOTS ; ++i )
-      hslot_init( &slots[i] );
+	for (i = 0; i < MMT_HASHMAP_NSLOTS; ++i)
+		hslot_init(&slots[i]);
 
-   map->slots  = slots;
-   map->nslots = MMT_HASHMAP_NSLOTS;
-   map->nkeys  = 0;
+	map->slots = slots;
+	map->nslots = MMT_HASHMAP_NSLOTS;
+	map->nkeys = 0;
 }
 
 /**
@@ -77,12 +77,12 @@ void hashmap_init( mmt_hashmap_t *map )
  * @param map a pointer to mmt_hashmap_t previously initialized with hashmap_init()
  */
 
-void hashmap_cleanup( mmt_hashmap_t *map )
+void hashmap_cleanup(mmt_hashmap_t *map)
 {
-   int i;
+	int i;
 
-   for( i = 0 ; i < MMT_HASHMAP_NSLOTS ; ++i )
-      hslot_free( &map->slots[i] );
+	for (i = 0; i < MMT_HASHMAP_NSLOTS; ++i)
+		hslot_free(&map->slots[i]);
 }
 
 /**
@@ -93,16 +93,16 @@ void hashmap_cleanup( mmt_hashmap_t *map )
  * @param val the value (pointer)
  */
 
-void hashmap_insert_kv( mmt_hashmap_t *map, mmt_key_t key, void *val )
+void hashmap_insert_kv(mmt_hashmap_t *map, mmt_key_t key, void *val)
 {
-   mmt_hslot_t *slot = &map->slots[ key % MMT_HASHMAP_NSLOTS ];
-   mmt_hent_t  *he   = hent_new();
+	mmt_hslot_t *slot = &map->slots[key & MMT_HASHMAP_MASK]; /* Use bitmask instead of modulo */
+	mmt_hent_t *he = hent_new();
 
-   he->key  = key;
-   he->val  = val;
+	he->key = key;
+	he->val = val;
 
-   LIST_INSERT_HEAD( slot, he, entries );
-   //++map->nkeys;
+	LIST_INSERT_HEAD(slot, he, entries);
+	//++map->nkeys;
 }
 
 /**
@@ -115,16 +115,16 @@ void hashmap_insert_kv( mmt_hashmap_t *map, mmt_key_t key, void *val )
  * @return 1 if the key was succesfully maped, 0 otherwise
  */
 
-int hashmap_get( mmt_hashmap_t *map, mmt_key_t key, void **val )
+int hashmap_get(mmt_hashmap_t *map, mmt_key_t key, void **val)
 {
-   mmt_hent_t *he = hmap_lookup( map, key );
+	mmt_hent_t *he = hmap_lookup(map, key);
 
-   if( he == NULL )
-      return 0; /* not found */
+	if (he == NULL)
+		return 0; /* not found */
 
-   *val = he->val;
+	*val = he->val;
 
-   return 1;
+	return 1;
 }
 
 /**
@@ -135,17 +135,17 @@ int hashmap_get( mmt_hashmap_t *map, mmt_key_t key, void **val )
  * @param arg user data
  */
 
-void hashmap_walk( mmt_hashmap_t *map, mmt_hashmap_walker_t walker, void *arg )
+void hashmap_walk(mmt_hashmap_t *map, mmt_hashmap_walker_t walker, void *arg)
 {
-   mmt_hslot_t *slot;
-   mmt_hent_t  *he;
-   int i;
+	mmt_hslot_t *slot;
+	mmt_hent_t *he;
+	int i;
 
-   for( i = 0 ; i < MMT_HASHMAP_NSLOTS ; ++i ) {
-      slot = &map->slots[i];
-      for( he = slot->lh_first ; he != NULL ; he = he->entries.le_next )
-         walker( map, he, arg );
-   }
+	for (i = 0; i < MMT_HASHMAP_NSLOTS; ++i) {
+		slot = &map->slots[i];
+		for (he = slot->lh_first; he != NULL; he = he->entries.le_next)
+			walker(map, he, arg);
+	}
 }
 
 /**
@@ -154,28 +154,28 @@ void hashmap_walk( mmt_hashmap_t *map, mmt_hashmap_walker_t walker, void *arg )
  * @param map a pointer to a mmt_hashmap_t previously initialized with hashmap_init()
  */
 
-void hashmap_dump( mmt_hashmap_t *map )
+void hashmap_dump(mmt_hashmap_t *map)
 {
-   (void)printf( "*** DUMPING HASHMAP %p\n", map );
-   hashmap_walk( map, hmap_dump_entry, 0 );
+	(void)printf("*** DUMPING HASHMAP %p\n", map);
+	hashmap_walk(map, hmap_dump_entry, 0);
 }
 
 /**
  * Remove the mapping for the specified key from this map
  */
 
-int hashmap_remove( mmt_hashmap_t *map, mmt_key_t key )
+int hashmap_remove(mmt_hashmap_t *map, mmt_key_t key)
 {
-   mmt_hent_t *he = hmap_lookup( map, key );
+	mmt_hent_t *he = hmap_lookup(map, key);
 
-   if( he == NULL )
-      return 0; /* not found */
+	if (he == NULL)
+		return 0; /* not found */
 
-   LIST_REMOVE( he, entries );
-   //BW: now free the hash entry (it was allocated in @method hashmap_insert_kv)
-   hent_free( he );
+	LIST_REMOVE(he, entries);
+	// BW: now free the hash entry (it was allocated in @method hashmap_insert_kv)
+	hent_free(he);
 
-   return 1;
+	return 1;
 }
 
 
@@ -183,53 +183,57 @@ int hashmap_remove( mmt_hashmap_t *map, mmt_key_t key )
 //  P R I V A T E   M E T H O D S  //
 //  - - - - - - - - - - - - - - -  //
 
-mmt_hent_t *hmap_lookup( mmt_hashmap_t *map, mmt_key_t key )
+mmt_hent_t *hmap_lookup(mmt_hashmap_t *map, mmt_key_t key)
 {
-   mmt_hslot_t *slot = &map->slots[ key % MMT_HASHMAP_NSLOTS ];
-   mmt_hent_t  *he   = slot->lh_first;
+	mmt_hslot_t *slot = &map->slots[key & MMT_HASHMAP_MASK]; /* Use bitmask instead of modulo */
+	mmt_hent_t *he = slot->lh_first;
 
-   while(( he != NULL ) && ( he->key != key ))
-      he = he->entries.le_next;
+	while ((he != NULL) && (he->key != key))
+		he = he->entries.le_next;
 
-   return he;
+	return he;
 }
 
 
-void hmap_dump_entry( mmt_hashmap_t *map, mmt_hent_t *he, void *arg )
+void hmap_dump_entry(mmt_hashmap_t *map, mmt_hent_t *he, void *arg)
 {
-   (void)printf( "KEY: 0x%p\n", (void*)he->key );
-   (void)printf( "VAL: *(%p)\n",    he->val );
+	(void)printf("KEY: 0x%p\n", (void *)he->key);
+	(void)printf("VAL: *(%p)\n", he->val);
 }
 
 
 mmt_hent_t *hent_new()
 {
-   mmt_hent_t *he = (mmt_hent_t*)mmt_malloc( sizeof( mmt_hent_t ));
+	mmt_hent_t *he = (mmt_hent_t *)mmt_malloc(sizeof(mmt_hent_t));
 
-   he->key = 0;
-   he->val = (void*)0;
+	he->key = 0;
+	he->val = (void *)0;
 
-   return he;
+	return he;
 }
 
 
-void hent_free( mmt_hent_t *he )
-{ mmt_free( he ); }
-
-
-void hslot_init( mmt_hslot_t *slot )
-{ LIST_INIT( slot ); }
-
-
-void hslot_free( mmt_hslot_t *slot )
+void hent_free(mmt_hent_t *he)
 {
-   mmt_hent_t *he = slot->lh_first;
+	mmt_free(he);
+}
 
-   while( he != NULL ) {
-      LIST_REMOVE( he, entries );
-      hent_free( he );
-      he = slot->lh_first;
-   }
+
+void hslot_init(mmt_hslot_t *slot)
+{
+	LIST_INIT(slot);
+}
+
+
+void hslot_free(mmt_hslot_t *slot)
+{
+	mmt_hent_t *he = slot->lh_first;
+
+	while (he != NULL) {
+		LIST_REMOVE(he, entries);
+		hent_free(he);
+		he = slot->lh_first;
+	}
 }
 
 /*EoF*/

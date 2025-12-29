@@ -86,4 +86,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_GlobalRANNodeID = {
 	4,	/* Elements count */
 	&asn_SPC_NGAP_GlobalRANNodeID_specs_1	/* Additional specs */
 };
-

@@ -28,7 +28,7 @@ typedef enum S1ap_TargetID_PR {
 	S1ap_TargetID_PR_targetRNC_ID,
 	S1ap_TargetID_PR_cGI
 	/* Extensions may appear below */
-	
+
 } S1ap_TargetID_PR;
 
 /* S1ap-TargetID */
@@ -43,7 +43,7 @@ typedef struct S1ap_TargetID {
 		 * possible extensions are below.
 		 */
 	} choice;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } S1ap_TargetID_t;

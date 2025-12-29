@@ -12,16 +12,16 @@ static int
 memb_NGAP_pERScalar_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 9)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -37,16 +37,16 @@ static int
 memb_NGAP_pERExponent_constraint_1(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	long value;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	value = *(const long *)sptr;
-	
+
 	if((value >= 0 && value <= 9)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -136,4 +136,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_PacketErrorRate = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_PacketErrorRate_specs_1	/* Additional specs */
 };
-

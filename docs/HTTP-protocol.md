@@ -16,7 +16,7 @@ The HTTP generic message format is as follows:
 
 ```
 <request-line>: <METHOD> <request-uri> <HTTP-VERSION>
-<general-headers>: 
+<general-headers>:
 <request-headers>
 <entity-headers>
 <empty-line>
@@ -42,12 +42,11 @@ To know more about `METHOD`, [link](http://www.tcpipguide.com/free/t_HTTPMethods
 
 ![http response message format](http://www.tcpipguide.com/free/diagrams/httpresponse.png)
 
-
 To know more about `status-code : reason-phrase`, [link](http://www.tcpipguide.com/free/t_HTTPStatusCodeFormatStatusCodesandReasonPhrases-2.htm)
 
 ### Multiple HTTP request over one TCP session
 
-- [HTTP Data Length Issues, "Chunked" Transfers and Message Trailers ](http://www.tcpipguide.com/free/t_HTTPDataLengthIssuesChunkedTransfersandMessageTrai.htm)
+- [HTTP Data Length Issues, "Chunked" Transfers and Message Trailers](http://www.tcpipguide.com/free/t_HTTPDataLengthIssuesChunkedTransfersandMessageTrai.htm)
 
 **Chunked transfer**
 
@@ -83,11 +82,11 @@ Transfer-Encoding: chunked
 Trailer: Expires
 
 29
-<html><body><p>The file you requested is 
+<html><body><p>The file you requested is
 5
 3,400
 23
-bytes long and was last modified: 
+bytes long and was last modified:
 1d
 Sat, 20 Mar 2004 21:12:00 GMT
 13

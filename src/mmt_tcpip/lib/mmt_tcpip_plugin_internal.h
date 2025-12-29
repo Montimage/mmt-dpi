@@ -338,4 +338,3 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
 #endif
 
 #endif  /* MMT_TCPIP_PLUGIN_INTERNAL_H */
-

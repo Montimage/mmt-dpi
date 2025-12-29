@@ -32,6 +32,3 @@ extern "C" {
 }
 #endif
 #endif    /* SLL_H */
-
-
-

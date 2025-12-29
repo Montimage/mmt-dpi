@@ -25,7 +25,7 @@ struct NGAP_TAIListForInactiveItem;
 /* NGAP_TAIListForInactive */
 typedef struct NGAP_TAIListForInactive {
 	A_SEQUENCE_OF(struct NGAP_TAIListForInactiveItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TAIListForInactive_t;

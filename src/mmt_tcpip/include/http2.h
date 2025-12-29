@@ -93,7 +93,7 @@ typedef struct  http2_header_struct{
 		HTTP2_PAYLOAD_LENGTH,
 		HTTP2_PAYLOAD_DATA,
 		HTTP2_ATTRIBUTES_NB = HTTP2_PAYLOAD_DATA,
-		
+
 	};
 
 
@@ -137,5 +137,3 @@ struct http2_session_data_struct {
 }
 #endif
 #endif	/* HTTP2_H */
-
-

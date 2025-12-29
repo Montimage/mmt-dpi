@@ -140,7 +140,7 @@ CHOICE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 	 * Restore parsing context.
 	 */
 	ctx = (asn_struct_ctx_t *)((char *)st + specs->ctx_offset);
-	
+
 	/*
 	 * Start to parse where left previously
 	 */
@@ -279,7 +279,7 @@ CHOICE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 		case RC_FAIL: /* Fatal error */
 			RETURN(rval.code);
 		} /* switch(rval) */
-		
+
 		ADVANCE(rval.consumed);
 	  } while(0);
 
@@ -355,7 +355,7 @@ CHOICE_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
 		/* No meaningful work here */
 		break;
 	}
-	
+
 	RETURN(RC_OK);
 }
 

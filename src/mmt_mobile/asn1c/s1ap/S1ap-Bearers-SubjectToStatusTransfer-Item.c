@@ -90,4 +90,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_Bearers_SubjectToStatusTransfer_Item = {
 	5,	/* Elements count */
 	&asn_SPC_S1ap_Bearers_SubjectToStatusTransfer_Item_specs_1	/* Additional specs */
 };
-

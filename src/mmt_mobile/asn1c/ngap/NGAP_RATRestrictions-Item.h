@@ -32,7 +32,7 @@ typedef struct NGAP_RATRestrictions_Item {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_RATRestrictions_Item_t;

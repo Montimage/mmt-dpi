@@ -8,7 +8,6 @@ nm -gC --defined-only ./src/mmt_tcpip/.libs/libmmt_extract.so.1.0.0 | grep ' T '
 
 Symbol table
 
-
 | #   | symbol | public |
 |-:|:-|:-:|
 |1|`getmapsize(void*)`|**Y**|

@@ -13,21 +13,21 @@ memb_NGAP_receiveStatusOfUL_PDCP_SDUs_constraint_1(const asn_TYPE_descriptor_t *
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	const BIT_STRING_t *st = (const BIT_STRING_t *)sptr;
 	size_t size;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	if(st->size > 0) {
 		/* Size in bits */
 		size = 8 * st->size - (st->bits_unused & 0x07);
 	} else {
 		size = 0;
 	}
-	
+
 	if((size >= 1 && size <= 2048)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -109,4 +109,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_DRBStatusUL12 = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_DRBStatusUL12_specs_1	/* Additional specs */
 };
-

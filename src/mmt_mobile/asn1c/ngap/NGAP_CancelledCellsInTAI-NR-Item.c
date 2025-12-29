@@ -70,4 +70,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_CancelledCellsInTAI_NR_Item = {
 	3,	/* Elements count */
 	&asn_SPC_NGAP_CancelledCellsInTAI_NR_Item_specs_1	/* Additional specs */
 };
-

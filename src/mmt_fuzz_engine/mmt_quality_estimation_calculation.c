@@ -31,9 +31,9 @@ void set_metric_grades_values_matrix(application_quality_estimation_internal_t *
 
 
 /*
- This function evaluates each rules of the fuzzy logic to get rule index array and 
+ This function evaluates each rules of the fuzzy logic to get rule index array and
  calculates the aggregation index according to aggregation type.
- * Rule index array is the array that represents the result from the each rule. 
+ * Rule index array is the array that represents the result from the each rule.
  * Aggregation index array is the array that represents the result calculated from each rule index array.
  */
 
@@ -67,7 +67,7 @@ void get_index_value(application_quality_estimation_internal_t * app_internal_st
 
 /*
  This function evaluates each rules of the fuzzy logic to get rule index array,
- the rule index array is calculated for each rule. It contains the sample values 
+ the rule index array is calculated for each rule. It contains the sample values
  of each rule quality index with a quality index membership function.
  */
 void calculate_index_array(metric_grade_rule_element_t * output_element,

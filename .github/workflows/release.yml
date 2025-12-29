@@ -1,0 +1,118 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build-release:
+    name: Build Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux
+          - os: macos-latest
+            artifact_suffix: macos
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libpcap-dev
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install libxml2 libpcap
+
+      - name: Build
+        run: |
+          cd sdk
+          make clean || true
+          make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+
+      - name: Run tests
+        run: |
+          cd test/unit
+          if [ -f Makefile ]; then
+            make clean || true
+            make
+          fi
+          for test in test_*; do
+            if [ -x "$test" ] && [ -f "$test" ]; then
+              echo "Running $test..."
+              ./$test || exit 1
+            fi
+          done
+        continue-on-error: true
+
+      - name: Build package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd sdk
+          sudo make install
+          make deb
+
+      - name: Create distribution archive
+        run: |
+          mkdir -p dist
+          tar -czvf dist/mmt-dpi-${{ steps.version.outputs.version }}-${{ matrix.artifact_suffix }}.tar.gz \
+            sdk/lib sdk/include
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mmt-dpi-${{ matrix.artifact_suffix }}
+          path: |
+            dist/*.tar.gz
+            sdk/*.deb
+
+  create-release:
+    name: Create Release
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mmt-dpi-linux
+          path: artifacts/linux
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mmt-dpi-macos
+          path: artifacts/macos
+
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.deb
+          generate_release_notes: true

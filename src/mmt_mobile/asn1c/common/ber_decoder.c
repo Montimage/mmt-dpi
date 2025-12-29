@@ -90,7 +90,7 @@ ber_check_tags(const asn_codec_ctx_t *opt_codec_ctx,
 	 * 	B ::= [2] EXPLICIT	T
 	 * Where T is defined as
 	 *	T ::= [4] IMPLICIT SEQUENCE { ... }
-	 * 
+	 *
 	 * Let's say, we are starting to decode type A, given the
 	 * following TLV stream: <5> <0>. What does this mean?
 	 * It means that the type A contains type T which is,

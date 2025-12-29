@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceFailedToSetupItemHOAck;
 /* NGAP_PDUSessionResourceFailedToSetupListHOAck */
 typedef struct NGAP_PDUSessionResourceFailedToSetupListHOAck {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceFailedToSetupItemHOAck) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceFailedToSetupListHOAck_t;

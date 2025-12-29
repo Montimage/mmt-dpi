@@ -10,15 +10,15 @@
 int
 S1ap_MME_UE_S1AP_ID_constraint(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
-	
+
+
 	/* Constraint check succeeded */
 	return 0;
 }
@@ -57,4 +57,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_MME_UE_S1AP_ID = {
 	0, 0,	/* No members */
 	&asn_SPC_S1ap_MME_UE_S1AP_ID_specs_1	/* Additional specs */
 };
-

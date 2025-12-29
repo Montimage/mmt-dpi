@@ -25,7 +25,7 @@ struct NGAP_TAIBroadcastEUTRA_Item;
 /* NGAP_TAIBroadcastEUTRA */
 typedef struct NGAP_TAIBroadcastEUTRA {
 	A_SEQUENCE_OF(struct NGAP_TAIBroadcastEUTRA_Item) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_TAIBroadcastEUTRA_t;

@@ -29,7 +29,7 @@ ftp_control_session_struct{
     char* session_feats;
     char * current_dir;
     uint16_t status;
-   ftp_data_session_t * current_data_conn; 
+   ftp_data_session_t * current_data_conn;
 }ftp_control_session_t;
 ```
 
@@ -61,6 +61,7 @@ ftp_command_struct{
 ```
 
 ## FTP response
+
 `ftp_response_struct` presents a FTP response which is sent by server to client (server port number is 21)
 
 ```c
@@ -91,7 +92,7 @@ ftp_file_struct{
 ```c
 ftp_user_struct{
     char * username;
-    char * password; 
+    char * password;
 }ftp_user_t;
 ```
 
@@ -137,7 +138,6 @@ ftp_user_struct{
 | FTP_FILE_SIZE |  |  | Size of the file which is going to be transferred |
 | FTP_FILE_LAST_MODIFIED |  |  | The last modified date of the file |
 
-
 ## FTP packet attributes
 
 | Attribute | MMT value | Value | Notes |
@@ -153,7 +153,6 @@ ftp_user_struct{
 | PROTO_PAYLOAD |  |  | The pointer to the data payload of FTP packet |
 | PROTO_DATA_VOLUME |  |  | Data volume of protocol |
 | PROTO_PAYLOAD_VOLUME |  |  | Payload volume of protocol |
-
 
 ### FTP commands value
 
@@ -188,9 +187,9 @@ enum {
     MMT_FTP_MLSD_CMD, // Lists the contents of a directory if a directory is named
     MMT_FTP_MLST_CMD, // Provides data about exactly the object named on its command line and no others
     MMT_FTP_MODE_CMD, // Sets the transfer mode(Stream, Block or compressed)
-    MMT_FTP_NLST_CMD, // Return a list of file names in a specified directory 
+    MMT_FTP_NLST_CMD, // Return a list of file names in a specified directory
     MMT_FTP_NOOP_CMD, // No operation (dummy packet, used mostly as keepalives)
-    MMT_FTP_OPTS_CMD, // Select options for a feature 
+    MMT_FTP_OPTS_CMD, // Select options for a feature
     MMT_FTP_PASS_CMD, // Authentication password
     MMT_FTP_PASV_CMD, // Enter passive mode
     MMT_FTP_PBSZ_CMD, // RFC2228 Protection Buffer Size
@@ -238,7 +237,7 @@ enum{
     MMT_FTP_211_CODE = 211, // Features
     MMT_FTP_213_CODE = 213, // Response file status: size, last_modified
     MMT_FTP_215_CODE = 215, // Response for SYST command
-    MMT_FTP_220_CODE = 220, // Version of FTP server 
+    MMT_FTP_220_CODE = 220, // Version of FTP server
     MMT_FTP_226_CODE = 226, // Completed sending data and close data connection
     MMT_FTP_227_CODE = 227, // Enter active mode
     MMT_FTP_228_CODE = 228, // Enter long address passive mode

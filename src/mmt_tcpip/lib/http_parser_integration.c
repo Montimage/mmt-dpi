@@ -171,4 +171,3 @@ static http_parser_settings settings =
 http_parser_settings * get_settings() {
   return & settings;
 }
-

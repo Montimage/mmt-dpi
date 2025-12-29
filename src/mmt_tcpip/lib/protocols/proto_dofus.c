@@ -15,7 +15,7 @@ static void mmt_dofus_add_connection(ipacket_t * ipacket)
 }
 
 void mmt_classify_me_dofus(ipacket_t * ipacket, unsigned index) {
-    
+
 
   struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
   struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -156,5 +156,3 @@ int init_proto_dofus_struct() {
         return 0;
     }
 }
-
-

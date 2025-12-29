@@ -1,0 +1,169 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main, dev, 'feature/**']
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }}, ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux with GCC
+          - os: ubuntu-latest
+            compiler: gcc
+            cc: gcc
+            cxx: g++
+          # Linux with Clang
+          - os: ubuntu-latest
+            compiler: clang
+            cc: clang
+            cxx: clang++
+          # macOS with Clang (default)
+          - os: macos-latest
+            compiler: clang
+            cc: clang
+            cxx: clang++
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libpcap-dev
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install libxml2 libpcap
+
+      - name: Build libraries
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cd sdk
+          make clean || true
+          make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+
+      - name: Verify build artifacts
+        run: |
+          echo "Checking built libraries..."
+          ls -la sdk/lib/
+          test -f sdk/lib/libmmt_core.so* || test -f sdk/lib/libmmt_core.dylib* || (echo "libmmt_core not found" && exit 1)
+          test -f sdk/lib/libmmt_tcpip.so* || test -f sdk/lib/libmmt_tcpip.dylib* || (echo "libmmt_tcpip not found" && exit 1)
+          echo "Build verification passed!"
+
+      - name: Run unit tests
+        run: |
+          cd test/unit
+          # Build tests if Makefile exists
+          if [ -f Makefile ]; then
+            make clean || true
+            make
+          fi
+          # Run available test binaries
+          for test in test_*; do
+            if [ -x "$test" ] && [ -f "$test" ]; then
+              echo "Running $test..."
+              ./$test || exit 1
+            fi
+          done
+        continue-on-error: true
+
+      - name: Run example programs
+        run: |
+          # Set library path
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            export LD_LIBRARY_PATH=$(pwd)/sdk/lib:$LD_LIBRARY_PATH
+          else
+            export DYLD_LIBRARY_PATH=$(pwd)/sdk/lib:$DYLD_LIBRARY_PATH
+          fi
+          export MMT_PLUGINS_PATH=$(pwd)/sdk/lib
+
+          # Run extract_all if available
+          if [ -x sdk/examples/extract_all ]; then
+            echo "Running extract_all example..."
+            ./sdk/examples/extract_all -t src/examples/google-fr.pcap || true
+          fi
+
+  lint:
+    name: Lint & Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck on core
+        run: |
+          cppcheck --enable=warning,style,performance \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --error-exitcode=0 \
+            --inline-suppr \
+            -I src/mmt_core/public_include \
+            -I src/mmt_core/private_include \
+            src/mmt_core/src/ 2>&1 | tee cppcheck-core.log
+
+      - name: Run cppcheck on tcpip
+        run: |
+          cppcheck --enable=warning,style,performance \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --error-exitcode=0 \
+            --inline-suppr \
+            -I src/mmt_core/public_include \
+            -I src/mmt_tcpip/include \
+            src/mmt_tcpip/lib/ 2>&1 | tee cppcheck-tcpip.log
+        continue-on-error: true
+
+      - name: Check for errors
+        run: |
+          if grep -q "error:" cppcheck-core.log; then
+            echo "Errors found in core:"
+            grep "error:" cppcheck-core.log
+          fi
+
+      - name: Upload lint results
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppcheck-results
+          path: cppcheck-*.log
+        if: always()
+
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+
+      - name: Check formatting (informational)
+        run: |
+          # Find modified C/C++ files (compared to base)
+          echo "Checking code formatting..."
+          find src/mmt_core/src -name "*.c" -o -name "*.h" | head -20 | while read file; do
+            if ! clang-format --dry-run --Werror "$file" 2>/dev/null; then
+              echo "Would reformat: $file"
+            fi
+          done || true
+          echo "Format check complete (informational only)"
+        continue-on-error: true

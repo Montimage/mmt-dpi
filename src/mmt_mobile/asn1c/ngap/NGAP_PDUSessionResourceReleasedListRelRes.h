@@ -25,7 +25,7 @@ struct NGAP_PDUSessionResourceReleasedItemRelRes;
 /* NGAP_PDUSessionResourceReleasedListRelRes */
 typedef struct NGAP_PDUSessionResourceReleasedListRelRes {
 	A_SEQUENCE_OF(struct NGAP_PDUSessionResourceReleasedItemRelRes) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_PDUSessionResourceReleasedListRelRes_t;

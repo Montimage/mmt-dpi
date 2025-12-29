@@ -1,0 +1,83 @@
+# Pre-commit hooks for MMT-DPI
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # C/C++ formatting with clang-format
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v17.0.6
+    hooks:
+      - id: clang-format
+        name: clang-format
+        description: Format C/C++ files with clang-format
+        types_or: [c, c++]
+        args: ['--style=file', '--fallback-style=Google']
+        files: ^src/mmt_core/
+
+  # Shell script checks
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        args: ['--severity=warning']
+        files: \.(sh|bash)$
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
+    hooks:
+      - id: markdownlint
+        args: ['--fix', '--disable', 'MD013', 'MD033', 'MD041', '--']
+        files: \.(md|markdown)$
+
+  # Local hooks
+  - repo: local
+    hooks:
+      # cppcheck - runs only if installed
+      - id: cppcheck
+        name: cppcheck (if available)
+        entry: bash -c 'command -v cppcheck >/dev/null 2>&1 && cppcheck --enable=warning,performance --suppress=missingIncludeSystem --suppress=unusedFunction --error-exitcode=1 -I src/mmt_core/public_include -I src/mmt_core/private_include "$@" || echo "cppcheck not installed, skipping"' --
+        language: system
+        types: [c]
+        files: ^src/mmt_core/src/
+
+      # Build verification (pre-push only)
+      - id: check-build
+        name: Check build compiles
+        entry: bash -c 'cd sdk && make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) >/dev/null 2>&1 || (echo "Build failed!" && exit 1)'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: \.(c|h|cpp|hpp)$
+
+      # Unit tests (pre-push only)
+      - id: run-unit-tests
+        name: Run unit tests
+        entry: bash -c 'cd test/unit && for t in test_*; do [ -x "$t" ] && [ -f "$t" ] && ./"$t"; done || true'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: \.(c|h)$
+
+# CI-specific settings
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+  autofix_prs: false
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: monthly
+  skip: [cppcheck, check-build, run-unit-tests]

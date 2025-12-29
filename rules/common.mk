@@ -143,10 +143,10 @@ LIBMOBILE_INC := $(SRCINC)          \
 	$(SRCDIR)/mmt_mobile/nas/emm     \
 	$(SRCDIR)/mmt_mobile/asn1c/common\
 	$(SRCDIR)/mmt_mobile/asn1c/s1ap  \
-	$(SRCDIR)/mmt_mobile/asn1c/ngap 
+	$(SRCDIR)/mmt_mobile/asn1c/ngap
 
 $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -lm -Wno-unused-variable -fPIC -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
-	
+
 $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK
 ifdef ENABLESEC
 FUZZ_OBJECTS := \
@@ -176,7 +176,7 @@ $(SDKLIB)/$(LIBTCPIP).a: $(SDKLIB) $(TCPIP_OBJECTS)
 $(SDKLIB)/$(LIBMOBILE).a: $(SDKLIB) $(LIBMOBILE_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
 	$(QUIET) $(AR) $@ $(LIBMOBILE_OBJECTS)
-	
+
 # BUSINESS APP/PROTOCOL
 $(SDKLIB)/$(LIBBAPP).a: $(SDKLIB) $(LIBBAPP_OBJECTS)
 	@echo "[ARCHIVE] $(notdir $@)"
@@ -230,11 +230,11 @@ $(SDKINC_TCPIP)/%.h: $(SRCDIR)/mmt_tcpip/include/%.h
 $(SDKINC_MOBILE)/%.h: $(SRCDIR)/mmt_mobile/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
-	
+
 $(SDKINC_B_APP)/%.h: $(SRCDIR)/mmt_business_app/include/%.h
 	@echo "[INCLUDE] $(notdir $@)"
 	$(QUIET) cp -f $< $@
-	
+
 $(SDK_HEADERS): $(SDKINC) $(SDKINC_TCPIP) $(SDKINC_MOBILE) $(SDKINC_B_APP)
 
 ifdef ENABLESEC
@@ -294,4 +294,3 @@ $(SDK_EXAMPLES_SRC): $(SDKXAM)
 %.o: %.cpp
 	@echo "[COMPILE] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -I. -o $@ -c $<
-

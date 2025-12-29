@@ -12,16 +12,16 @@ S1ap_PLMNidentity_constraint(const asn_TYPE_descriptor_t *td, const void *sptr,
 			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
 	const S1ap_TBCD_STRING_t *st = (const S1ap_TBCD_STRING_t *)sptr;
 	size_t size;
-	
+
 	if(!sptr) {
 		ASN__CTFAIL(app_key, td, sptr,
 			"%s: value not given (%s:%d)",
 			td->name, __FILE__, __LINE__);
 		return -1;
 	}
-	
+
 	size = st->size;
-	
+
 	if((size == 3)) {
 		/* Constraint check succeeded */
 		return 0;
@@ -62,4 +62,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_PLMNidentity = {
 	0, 0,	/* No members */
 	&asn_SPC_OCTET_STRING_specs	/* Additional specs */
 };
-

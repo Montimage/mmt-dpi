@@ -161,4 +161,3 @@ int init_proto_diameter_struct() {
 	return register_protocol(protocol_struct, PROTO_DIAMETER);
 
 }
-

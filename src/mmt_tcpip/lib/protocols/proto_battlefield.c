@@ -201,5 +201,3 @@ int init_proto_battlefield_struct() {
         return 0;
     }
 }
-
-

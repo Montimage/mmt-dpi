@@ -60,4 +60,3 @@ asn_TYPE_descriptor_t asn_DEF_NGAP_RANStatusTransfer_TransparentContainer = {
 	2,	/* Elements count */
 	&asn_SPC_NGAP_RANStatusTransfer_TransparentContainer_specs_1	/* Additional specs */
 };
-

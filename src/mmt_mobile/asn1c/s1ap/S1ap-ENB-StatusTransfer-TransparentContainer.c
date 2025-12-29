@@ -60,4 +60,3 @@ asn_TYPE_descriptor_t asn_DEF_S1ap_ENB_StatusTransfer_TransparentContainer = {
 	2,	/* Elements count */
 	&asn_SPC_S1ap_ENB_StatusTransfer_TransparentContainer_specs_1	/* Additional specs */
 };
-

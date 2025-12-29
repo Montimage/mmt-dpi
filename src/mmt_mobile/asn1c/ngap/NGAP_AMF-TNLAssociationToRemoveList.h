@@ -25,7 +25,7 @@ struct NGAP_AMF_TNLAssociationToRemoveItem;
 /* NGAP_AMF-TNLAssociationToRemoveList */
 typedef struct NGAP_AMF_TNLAssociationToRemoveList {
 	A_SEQUENCE_OF(struct NGAP_AMF_TNLAssociationToRemoveItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_AMF_TNLAssociationToRemoveList_t;

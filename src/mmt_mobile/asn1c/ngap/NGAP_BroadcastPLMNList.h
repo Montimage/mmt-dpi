@@ -25,7 +25,7 @@ struct NGAP_BroadcastPLMNItem;
 /* NGAP_BroadcastPLMNList */
 typedef struct NGAP_BroadcastPLMNList {
 	A_SEQUENCE_OF(struct NGAP_BroadcastPLMNItem) list;
-	
+
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } NGAP_BroadcastPLMNList_t;

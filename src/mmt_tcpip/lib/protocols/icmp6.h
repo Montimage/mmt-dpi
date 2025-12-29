@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   icmp6.h
  * Author: montimage
  *
@@ -23,4 +23,3 @@ extern "C" {
 #endif
 
 #endif	/* ICMP6_H */
-

@@ -117,4 +117,3 @@ int init_proto_icmp_struct() {
         return 0;
     }
 }
-
