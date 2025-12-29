@@ -16,6 +16,7 @@ Guide for developing and contributing to MMT-DPI.
 
 ### Clone and Build
 
+**Linux:**
 ```bash
 git clone https://github.com/Montimage/mmt-dpi.git
 cd mmt-dpi
@@ -23,12 +24,28 @@ cd sdk
 make DEBUG=1 -j$(nproc)
 ```
 
+**macOS:**
+```bash
+git clone https://github.com/Montimage/mmt-dpi.git
+cd mmt-dpi
+cd sdk
+make ARCH=osx DEBUG=1 -j$(sysctl -n hw.ncpu)
+```
+
 ### Development Build
 
+**Linux:**
 ```bash
 # Clean build with debug symbols
 make clean
 make DEBUG=1 -j$(nproc)
+```
+
+**macOS:**
+```bash
+# Clean build with debug symbols
+make clean
+make ARCH=osx DEBUG=1 -j$(sysctl -n hw.ncpu)
 ```
 
 ## Project Structure
@@ -80,17 +97,47 @@ cd sdk && make clean
 
 ### Running Unit Tests
 
+**Linux:**
 ```bash
 cd test/unit
 
 # Build tests
 make
 
+# Set environment
+export LD_LIBRARY_PATH=../../sdk/lib:$LD_LIBRARY_PATH
+
 # Run individual tests
 ./test_error_handling      # Error handling framework
 ./test_logging             # Logging system
 ./test_recovery_debug      # Recovery and debug tools
 ./test_safe_headers        # Safe packet access
+```
+
+**macOS:**
+```bash
+cd test/unit
+
+# Build tests with rpath
+clang -o test_error_handling test_error_handling.c \
+    -I../../sdk/include -L../../sdk/lib -lmmt_core \
+    -Wl,-rpath,@loader_path/../../sdk/lib
+
+clang -o test_logging test_logging.c \
+    -I../../sdk/include -L../../sdk/lib -lmmt_core \
+    -Wl,-rpath,@loader_path/../../sdk/lib
+
+clang -o test_recovery_debug test_recovery_debug.c \
+    -I../../sdk/include -L../../sdk/lib -lmmt_core \
+    -Wl,-rpath,@loader_path/../../sdk/lib
+
+# Set environment (REQUIRED to avoid segfault)
+export DYLD_LIBRARY_PATH=../../sdk/lib:$DYLD_LIBRARY_PATH
+
+# Run individual tests
+./test_error_handling      # Error handling framework (12 tests)
+./test_logging             # Logging system (14 tests)
+./test_recovery_debug      # Recovery and debug tools (15 tests)
 ```
 
 ### Running Validation Tests
@@ -112,15 +159,35 @@ make
 
 ## Debugging
 
-### GDB Debugging
+### GDB Debugging (Linux)
 
 ```bash
 # Build with debug symbols
 make DEBUG=1
 
+# Set environment
+export LD_LIBRARY_PATH=sdk/lib:$LD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=sdk/lib
+
 # Run with GDB
 gdb ./sdk/examples/extract_all
-(gdb) run -t test/pcap_samples/google-fr.pcap
+(gdb) run -t src/examples/google-fr.pcap
+```
+
+### LLDB Debugging (macOS)
+
+```bash
+# Build with debug symbols
+make ARCH=osx DEBUG=1
+
+# Set environment (REQUIRED to avoid segfault)
+export DYLD_LIBRARY_PATH=sdk/lib:$DYLD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=sdk/lib
+
+# Run with LLDB
+lldb ./sdk/examples/extract_all
+(lldb) run -t src/examples/google-fr.pcap
+(lldb) bt    # Backtrace on crash
 ```
 
 ### Valgrind Memory Check
@@ -245,8 +312,21 @@ make -j$(nproc)
 
 ### Run Quick Smoke Test
 
+**Linux:**
 ```bash
-./sdk/examples/extract_all -t test/pcap_samples/google-fr.pcap
+export LD_LIBRARY_PATH=sdk/lib:$LD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=sdk/lib
+./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
+**macOS:**
+```bash
+export DYLD_LIBRARY_PATH=sdk/lib:$DYLD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=sdk/lib
+./sdk/examples/extract_all -t src/examples/google-fr.pcap
+
+# Or single-line:
+MMT_PLUGINS_PATH=sdk/lib DYLD_LIBRARY_PATH=sdk/lib ./sdk/examples/extract_all -t src/examples/google-fr.pcap
 ```
 
 ### Check for Memory Leaks

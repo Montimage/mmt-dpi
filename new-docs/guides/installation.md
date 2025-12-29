@@ -37,6 +37,8 @@ xcode-select --install
 brew install libpcap libxml2
 ```
 
+**Important:** On macOS, you must use `ARCH=osx` when building (see [Platform-Specific Builds](#platform-specific-builds)).
+
 ### Windows (Cross-compilation)
 
 Cross-compile from Linux using MinGW:
@@ -86,13 +88,15 @@ make ARCH=linux -j$(nproc)
 
 ```bash
 cd sdk
-make ARCH=osx -j$(nproc)
+make ARCH=osx -j$(sysctl -n hw.ncpu)
 ```
 
 **macOS Notes:**
 - Uses Clang instead of GCC
 - libxml2 path: `/opt/homebrew/opt/libxml2/include/libxml2/` (Apple Silicon)
+- libxml2 path: `/usr/local/opt/libxml2/include/libxml2/` (Intel Mac)
 - Uses `@rpath` for dynamic library loading
+- **CRITICAL:** You must set both `MMT_PLUGINS_PATH` and `DYLD_LIBRARY_PATH` environment variables before running any MMT-DPI application (see [macOS Runtime Environment](#macos-runtime-environment))
 
 ### Windows (Cross-compile)
 
@@ -170,11 +174,43 @@ echo "/opt/mmt/dpi/lib" | sudo tee /etc/ld.so.conf.d/mmt-dpi.conf
 sudo ldconfig
 ```
 
-### Library Path Configuration (macOS)
+### macOS Runtime Environment
+
+On macOS, you **must** set both `DYLD_LIBRARY_PATH` and `MMT_PLUGINS_PATH` environment variables before running any MMT-DPI application. Failure to set these will result in a **segmentation fault** at runtime.
 
 ```bash
-# Set DYLD_LIBRARY_PATH
+# REQUIRED: Set library path for dynamic linker
 export DYLD_LIBRARY_PATH=/opt/mmt/dpi/lib:$DYLD_LIBRARY_PATH
+
+# REQUIRED: Set plugin path for protocol handlers
+export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib
+```
+
+**For development (using SDK directory):**
+
+```bash
+# From project root directory
+export DYLD_LIBRARY_PATH=$(pwd)/sdk/lib:$DYLD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=$(pwd)/sdk/lib
+```
+
+**Single-line execution (alternative):**
+
+```bash
+MMT_PLUGINS_PATH=sdk/lib DYLD_LIBRARY_PATH=sdk/lib ./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
+**Create a helper script (`setup-env.sh`):**
+
+```bash
+#!/bin/bash
+# Source this file: source setup-env.sh
+export MMT_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export MMT_SDK_DIR="${MMT_PROJECT_ROOT}/sdk"
+export MMT_LIB_DIR="${MMT_SDK_DIR}/lib"
+export MMT_PLUGINS_PATH="${MMT_LIB_DIR}"
+export DYLD_LIBRARY_PATH="${MMT_LIB_DIR}:${DYLD_LIBRARY_PATH}"
+echo "MMT-DPI environment configured for macOS"
 ```
 
 ## Building Examples
@@ -186,12 +222,29 @@ make
 
 ### Run Example
 
+**Linux:**
 ```bash
 # Set library path
 export LD_LIBRARY_PATH=/path/to/sdk/lib:$LD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=/path/to/sdk/lib
 
 # Run example
-./sdk/examples/extract_all -t test/pcap_samples/google-fr.pcap
+./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
+**macOS:**
+```bash
+# Set BOTH environment variables (REQUIRED to avoid segfault)
+export DYLD_LIBRARY_PATH=/path/to/sdk/lib:$DYLD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=/path/to/sdk/lib
+
+# Run example
+./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
+**Or use single-line execution (macOS):**
+```bash
+MMT_PLUGINS_PATH=sdk/lib DYLD_LIBRARY_PATH=sdk/lib ./sdk/examples/extract_all -t src/examples/google-fr.pcap
 ```
 
 ## Package Building
@@ -224,13 +277,39 @@ make zip
 
 ### Unit Tests
 
+**Linux:**
 ```bash
 cd test/unit
 
 # Build tests
 make
 
-# Run tests
+# Set environment and run tests
+export LD_LIBRARY_PATH=../../sdk/lib:$LD_LIBRARY_PATH
+./test_error_handling      # 12 tests
+./test_logging             # 14 tests
+./test_recovery_debug      # 15 tests
+```
+
+**macOS:**
+```bash
+cd test/unit
+
+# Build tests (compile with rpath)
+clang -o test_error_handling test_error_handling.c \
+    -I../../sdk/include -L../../sdk/lib -lmmt_core \
+    -Wl,-rpath,@loader_path/../../sdk/lib
+
+clang -o test_logging test_logging.c \
+    -I../../sdk/include -L../../sdk/lib -lmmt_core \
+    -Wl,-rpath,@loader_path/../../sdk/lib
+
+clang -o test_recovery_debug test_recovery_debug.c \
+    -I../../sdk/include -L../../sdk/lib -lmmt_core \
+    -Wl,-rpath,@loader_path/../../sdk/lib
+
+# Set environment and run tests
+export DYLD_LIBRARY_PATH=../../sdk/lib:$DYLD_LIBRARY_PATH
 ./test_error_handling      # 12 tests
 ./test_logging             # 14 tests
 ./test_recovery_debug      # 15 tests
@@ -245,6 +324,29 @@ cd test/scripts
 
 ## Troubleshooting
 
+### Segmentation Fault on macOS
+
+```
+[1]    12345 segmentation fault  ./sdk/examples/extract_all -t file.pcap
+```
+
+This occurs when `DYLD_LIBRARY_PATH` or `MMT_PLUGINS_PATH` is not set correctly.
+
+**Solution:**
+```bash
+# BOTH variables must be set
+export DYLD_LIBRARY_PATH=/path/to/sdk/lib:$DYLD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=/path/to/sdk/lib
+
+# Then run the application
+./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
+**Alternative (single-line):**
+```bash
+MMT_PLUGINS_PATH=sdk/lib DYLD_LIBRARY_PATH=sdk/lib ./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
 ### Library Not Found
 
 ```
@@ -255,9 +357,11 @@ error while loading shared libraries: libmmt_core.so: cannot open shared object 
 ```bash
 # Linux
 export LD_LIBRARY_PATH=/opt/mmt/dpi/lib:$LD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib
 
 # macOS
 export DYLD_LIBRARY_PATH=/opt/mmt/dpi/lib:$DYLD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib
 ```
 
 ### libxml2 Not Found (macOS)

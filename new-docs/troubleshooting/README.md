@@ -69,6 +69,50 @@ make ARCH=osx -j$(nproc)     # For macOS
 
 ## Runtime Issues
 
+### Segmentation Fault on macOS
+
+```
+[1]    12345 segmentation fault  ./sdk/examples/extract_all -t file.pcap
+```
+
+This is the most common issue on macOS. It occurs when the application starts but crashes immediately because the plugin libraries cannot be found.
+
+**Root Cause:**
+On macOS, you must set **both** `DYLD_LIBRARY_PATH` and `MMT_PLUGINS_PATH` environment variables. Unlike Linux, macOS does not inherit these from subshells in the same way.
+
+**Solution:**
+```bash
+# BOTH variables must be set in the SAME shell session
+export DYLD_LIBRARY_PATH=/path/to/sdk/lib:$DYLD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=/path/to/sdk/lib
+
+# Now run the application
+./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
+**Alternative - Single-line execution:**
+```bash
+MMT_PLUGINS_PATH=sdk/lib DYLD_LIBRARY_PATH=sdk/lib ./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
+**Recommended - Create environment script:**
+```bash
+# Create setup-env.sh in project root
+cat > setup-env.sh << 'EOF'
+#!/bin/bash
+export MMT_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export MMT_LIB_DIR="${MMT_PROJECT_ROOT}/sdk/lib"
+export MMT_PLUGINS_PATH="${MMT_LIB_DIR}"
+export DYLD_LIBRARY_PATH="${MMT_LIB_DIR}:${DYLD_LIBRARY_PATH}"
+echo "MMT-DPI environment configured"
+EOF
+chmod +x setup-env.sh
+
+# Then source it before running
+source setup-env.sh
+./sdk/examples/extract_all -t src/examples/google-fr.pcap
+```
+
 ### Library Not Found at Runtime
 
 ```
@@ -79,6 +123,7 @@ error while loading shared libraries: libmmt_core.so: cannot open shared object 
 ```bash
 # Option 1: Set LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/opt/mmt/dpi/lib:$LD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib
 
 # Option 2: Add to ldconfig
 echo "/opt/mmt/dpi/lib" | sudo tee /etc/ld.so.conf.d/mmt-dpi.conf
@@ -87,7 +132,9 @@ sudo ldconfig
 
 **Solution (macOS):**
 ```bash
+# BOTH must be set
 export DYLD_LIBRARY_PATH=/opt/mmt/dpi/lib:$DYLD_LIBRARY_PATH
+export MMT_PLUGINS_PATH=/opt/mmt/dpi/lib
 ```
 
 ### Permission Denied (Packet Capture)
