@@ -50,9 +50,14 @@ sftp-config.json
 rsync.sh
 
 # macOS specific
-WARP.md
 *.dSYM/
 smallFlows.pcap
+
+# AI/Development setup files (user-specific)
+WARP.md
+CLAUDE.md
+agents-instructions.md
+new-docs/
 
 # Build artifacts
 extract_all
