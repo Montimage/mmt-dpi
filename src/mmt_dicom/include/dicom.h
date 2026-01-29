@@ -68,7 +68,14 @@ enum dicom_attributes {
     DICOM_COMMAND_GROUP_LENGTH,
     DICOM_COMMAND_FIELD,
     DICOM_PATIENT_NAME,
-    DICOM_ATTRIBUTES_NB = DICOM_PATIENT_NAME,
+    // New attributes
+    DICOM_STATUS,
+    DICOM_AFFECTED_SOP_CLASS_UID,
+    DICOM_MESSAGE_ID,
+    DICOM_ABSTRACT_SYNTAX,
+    DICOM_TRANSFER_SYNTAX,
+    DICOM_DATA_SET_TYPE,
+    DICOM_ATTRIBUTES_NB = DICOM_DATA_SET_TYPE,
 };
 
 #define DICOM_PDU_TYPE_ALIAS "pdu_type"
@@ -87,8 +94,15 @@ enum dicom_attributes {
 #define DICOM_COMMAND_GROUP_LENGTH_ALIAS "command_group_length"
 #define DICOM_COMMAND_FIELD_ALIAS "command_field"
 #define DICOM_PATIENT_NAME_ALIAS "patient_name"
+// New attribute aliases
+#define DICOM_STATUS_ALIAS "status"
+#define DICOM_AFFECTED_SOP_CLASS_UID_ALIAS "affected_sop_class_uid"
+#define DICOM_MESSAGE_ID_ALIAS "message_id"
+#define DICOM_ABSTRACT_SYNTAX_ALIAS "abstract_syntax"
+#define DICOM_TRANSFER_SYNTAX_ALIAS "transfer_syntax"
+#define DICOM_DATA_SET_TYPE_ALIAS "data_set_type"
 
-struct dicomhdr {
+struct __attribute__((packed)) dicomhdr {
     uint8_t pdu_type ;
     uint8_t reserved ;
     uint32_t pdu_len ;
@@ -104,6 +118,7 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 
 #ifndef CORE
 	int init_proto();
+	int cleanup_proto();
 #endif //CORE
 
 #ifdef	__cplusplus

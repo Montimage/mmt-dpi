@@ -14,18 +14,59 @@ static attribute_metadata_t dicom_attributes_metadata[DICOM_ATTRIBUTES_NB] = {
 	{DICOM_PROTO_VERSION, DICOM_PROTO_VERSION_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 6, SCOPE_PACKET, _extraction_att},
 	{DICOM_CALLED_AE_TITLE, DICOM_CALLED_AE_TITLE_ALIAS, MMT_STRING_DATA, 16, 10, SCOPE_PACKET, _extraction_att},
 	{DICOM_CALLING_AE_TITLE, DICOM_CALLING_AE_TITLE_ALIAS, MMT_STRING_DATA, 16, 26, SCOPE_PACKET, _extraction_att},
-	{DICOM_APPLICATION_CONTEXT, DICOM_APPLICATION_CONTEXT_ALIAS, MMT_STRING_DATA, 21, 78, SCOPE_PACKET, _extraction_att},
-	{DICOM_PRESENTATION_CONTEXT, DICOM_PRESENTATION_CONTEXT_ALIAS, MMT_STRING_DATA, 17, 111, SCOPE_PACKET, _extraction_att},
+	{DICOM_APPLICATION_CONTEXT, DICOM_APPLICATION_CONTEXT_ALIAS, MMT_STRING_DATA, 64, 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_PRESENTATION_CONTEXT, DICOM_PRESENTATION_CONTEXT_ALIAS, MMT_STRING_DATA, 64, 0, SCOPE_PACKET, _extraction_att},
 	{DICOM_MAX_PDU_LENGTH, DICOM_MAX_PDU_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 0, SCOPE_PACKET, _extraction_att},
-	{DICOM_IMPLEMENTATION_CLASS_UID, DICOM_IMPLEMENTATION_CLASS_UID_ALIAS, MMT_STRING_DATA, 32, 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_IMPLEMENTATION_CLASS_UID, DICOM_IMPLEMENTATION_CLASS_UID_ALIAS, MMT_STRING_DATA, 64, 0, SCOPE_PACKET, _extraction_att},
 	// P-DATA-TF attributes
 	{DICOM_PDV_LENGTH, DICOM_PDV_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 6, SCOPE_PACKET, _extraction_att},
 	{DICOM_PDV_CONTEXT, DICOM_PDV_CONTEXT_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 10, SCOPE_PACKET, _extraction_att},
 	{DICOM_PDV_FLAGS, DICOM_PDV_FLAGS_ALIAS, MMT_U8_DATA, sizeof(uint8_t), 11, SCOPE_PACKET, _extraction_att},
-	{DICOM_COMMAND_GROUP_LENGTH, DICOM_COMMAND_GROUP_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 20, SCOPE_PACKET, _extraction_att},
-	{DICOM_COMMAND_FIELD, DICOM_COMMAND_FIELD_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 68, SCOPE_PACKET, _extraction_att},
+	{DICOM_COMMAND_GROUP_LENGTH, DICOM_COMMAND_GROUP_LENGTH_ALIAS, MMT_U32_DATA, sizeof(uint32_t), 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_COMMAND_FIELD, DICOM_COMMAND_FIELD_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 0, SCOPE_PACKET, _extraction_att},
 	{DICOM_PATIENT_NAME, DICOM_PATIENT_NAME_ALIAS, MMT_STRING_DATA, 64, 0, SCOPE_PACKET, _extraction_att},
+	// New attributes
+	{DICOM_STATUS, DICOM_STATUS_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_AFFECTED_SOP_CLASS_UID, DICOM_AFFECTED_SOP_CLASS_UID_ALIAS, MMT_STRING_DATA, 64, 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_MESSAGE_ID, DICOM_MESSAGE_ID_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_ABSTRACT_SYNTAX, DICOM_ABSTRACT_SYNTAX_ALIAS, MMT_STRING_DATA, 64, 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_TRANSFER_SYNTAX, DICOM_TRANSFER_SYNTAX_ALIAS, MMT_STRING_DATA, 64, 0, SCOPE_PACKET, _extraction_att},
+	{DICOM_DATA_SET_TYPE, DICOM_DATA_SET_TYPE_ALIAS, MMT_U16_DATA, sizeof(uint16_t), 0, SCOPE_PACKET, _extraction_att},
 };
+
+/*
+ * Helper: search for a DICOM tag in DIMSE command data (little-endian).
+ * DIMSE tags are: group(2 bytes LE) + element(2 bytes LE).
+ * Returns byte offset of the tag, or -1 if not found.
+ */
+static int find_dimse_tag(const uint8_t *data, int start, int end,
+                          uint16_t group, uint16_t element) {
+	for (int i = start; i <= end - 4; i++) {
+		if (data[i]   == (group & 0xFF)   && data[i+1] == (group >> 8) &&
+		    data[i+2] == (element & 0xFF) && data[i+3] == (element >> 8)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/*
+ * Helper: search for a sub-item by type in A-ASSOCIATE variable items area.
+ * Each item: type(1) + reserved(1) + length(2 BE) + value(length bytes).
+ * Returns byte offset of the item, or -1 if not found.
+ */
+static int find_assoc_subitem(const uint8_t *data, int start, int end,
+                              uint8_t item_type) {
+	int pos = start;
+	while (pos <= end - 4) {
+		uint8_t type = data[pos];
+		uint16_t len = (data[pos+2] << 8) | data[pos+3];
+		if (type == item_type)
+			return pos;
+		pos += 4 + len;
+	}
+	return -1;
+}
 
 /*
  * DICOM data extraction routines
@@ -56,258 +97,385 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 	case DICOM_PROTO_VERSION:
 		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC)
 			*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & ipacket->data[dicom_offset + attribute_offset]));
+		else return 0;
 		break;
 	case DICOM_CALLED_AE_TITLE:
 		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
 			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
 			int start_offset = dicom_offset + attribute_offset;
-			int length = dicom_attributes_metadata[DICOM_CALLED_AE_TITLE].data_len;
+			int length = dicom_attributes_metadata[DICOM_CALLED_AE_TITLE - 1].data_len;
+			if (start_offset + length > (int)ipacket->p_hdr->caplen) return 0;
 			memcpy(binary_data->data, &ipacket->data[start_offset], length);
 			binary_data->len = length;
 			binary_data->data[length] = '\0';
-			//printf("Extracted Called AE Title: %s\n", binary_data->data);
-		}
+		} else return 0;
 		break;
 	case DICOM_CALLING_AE_TITLE:
 		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
 			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
 			int start_offset = dicom_offset + attribute_offset;
-			int length = dicom_attributes_metadata[DICOM_CALLING_AE_TITLE].data_len;
+			int length = dicom_attributes_metadata[DICOM_CALLING_AE_TITLE - 1].data_len;
+			if (start_offset + length > (int)ipacket->p_hdr->caplen) return 0;
 			memcpy(binary_data->data, &ipacket->data[start_offset], length);
 			binary_data->len = length;
 			binary_data->data[length] = '\0';
-			//printf("Extracted Calling AE Title: %s\n", binary_data->data);
-		}
+		} else return 0;
 		break;
 	case DICOM_APPLICATION_CONTEXT:
 		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			// Scan variable items area (starts at offset 74) for item type 0x10
+			int var_start = dicom_offset + 74;
+			int var_end = dicom_offset + packet_len;
+			if (var_start >= var_end) return 0;
+
+			int item_pos = find_assoc_subitem(ipacket->data, var_start, var_end, 0x10);
+			if (item_pos < 0) return 0;
+
+			uint16_t item_len = (ipacket->data[item_pos + 2] << 8) | ipacket->data[item_pos + 3];
+			int value_offset = item_pos + 4;
+			if (value_offset + item_len > (int)ipacket->p_hdr->caplen) return 0;
+			if (item_len > 63) item_len = 63;
+
 			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
-			int start_offset = dicom_offset + attribute_offset;
-			int length = dicom_attributes_metadata[DICOM_APPLICATION_CONTEXT].data_len;
-			memcpy(binary_data->data, &ipacket->data[start_offset], length);
-			binary_data->len = length;
-			binary_data->data[length] = '\0';
-			//printf("Extracted Application Context Item: %s\n", binary_data->data);
-		}
+			memcpy(binary_data->data, &ipacket->data[value_offset], item_len);
+			binary_data->len = item_len;
+			binary_data->data[item_len] = '\0';
+		} else return 0;
 		break;
 	case DICOM_PRESENTATION_CONTEXT:
 		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			// Scan variable items area (starts at offset 74) for item type 0x20 (RQ) or 0x21 (AC)
+			int var_start = dicom_offset + 74;
+			int var_end = dicom_offset + packet_len;
+			if (var_start >= var_end) return 0;
+
+			uint8_t pres_type = (hdr->pdu_type == A_ASSOCIATE_RQ) ? 0x20 : 0x21;
+			int item_pos = find_assoc_subitem(ipacket->data, var_start, var_end, pres_type);
+			if (item_pos < 0) return 0;
+
+			uint16_t item_len = (ipacket->data[item_pos + 2] << 8) | ipacket->data[item_pos + 3];
+			int value_offset = item_pos + 4;
+			if (value_offset + item_len > (int)ipacket->p_hdr->caplen) return 0;
+
+			// Inside the Presentation Context item, find the Abstract Syntax sub-item (type 0x30)
+			int sub_pos = find_assoc_subitem(ipacket->data, value_offset + 4, value_offset + item_len, 0x30);
+			if (sub_pos < 0) return 0;
+
+			uint16_t sub_len = (ipacket->data[sub_pos + 2] << 8) | ipacket->data[sub_pos + 3];
+			int sub_value_offset = sub_pos + 4;
+			if (sub_value_offset + sub_len > (int)ipacket->p_hdr->caplen) return 0;
+			if (sub_len > 63) sub_len = 63;
+
 			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
-			int start_offset = dicom_offset + attribute_offset;
-			int length = dicom_attributes_metadata[DICOM_PRESENTATION_CONTEXT].data_len;
-			memcpy(binary_data->data, &ipacket->data[start_offset], length);
-			binary_data->len = length;
-			binary_data->data[length] = '\0';
-			//printf("Extracted Presentation Context Item: %s\n", binary_data->data);
-		}
+			memcpy(binary_data->data, &ipacket->data[sub_value_offset], sub_len);
+			binary_data->len = sub_len;
+			binary_data->data[sub_len] = '\0';
+		} else return 0;
 		break;
 	case DICOM_MAX_PDU_LENGTH:
 	case DICOM_IMPLEMENTATION_CLASS_UID:
 		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
-			// First search for User Info Field
-			const uint8_t user_info_tag_rq[] = {0x50, 0x00, 0x00, 0x3e}; // For A_ASSOCIATE_RQ
-			const uint8_t user_info_tag_ac[] = {0x50, 0x00, 0x00, 0x3a}; // For A_ASSOCIATE_AC
-			const uint8_t *user_info_tag = (hdr->pdu_type == A_ASSOCIATE_RQ) ? user_info_tag_rq : user_info_tag_ac;
-			int user_info_found = 0;
-			int user_info_offset = 0;
+			// Scan variable items area for User Info item (type 0x50)
+			int var_start = dicom_offset + 74;
+			int var_end = dicom_offset + packet_len;
+			if (var_start >= var_end) return 0;
 
-			// Search for User Info tag
-			for(int i = 0; i < packet_len - 8; i++) {
-				if(memcmp(&ipacket->data[dicom_offset + i], user_info_tag, 4) == 0) {
-					user_info_found = 1;
-					user_info_offset = i;
-					break;
-				}
-			}
+			int user_info_pos = find_assoc_subitem(ipacket->data, var_start, var_end, 0x50);
+			if (user_info_pos < 0) return 0;
 
-			if(!user_info_found) {
-				// Can't find User Info, so can't extract fields
-				return 0;
-			}
+			uint16_t user_info_len = (ipacket->data[user_info_pos + 2] << 8) | ipacket->data[user_info_pos + 3];
+			int ui_value_start = user_info_pos + 4;
+			int ui_value_end = ui_value_start + user_info_len;
+			if (ui_value_end > (int)ipacket->p_hdr->caplen) ui_value_end = ipacket->p_hdr->caplen;
 
-			// Now that we found User Info, use fixed offsets for each attribute
 			if(extracted_data->field_id == DICOM_MAX_PDU_LENGTH) {
-				// Max PDU Length is at offset user_info + 8
-				int max_pdu_offset = user_info_offset + 8;
+				// Search for Max PDU Length sub-item (type 0x51) inside User Info
+				int sub_pos = find_assoc_subitem(ipacket->data, ui_value_start, ui_value_end, 0x51);
+				if (sub_pos < 0) return 0;
 
-				if(dicom_offset + max_pdu_offset + 4 <= ipacket->p_hdr->caplen) {
-					*((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) & ipacket->data[dicom_offset + max_pdu_offset]));
-				} else {
-					return 0; // Not enough data
-				}
+				// Sub-item: type(1) + reserved(1) + length(2 BE) + value(4 bytes BE)
+				int val_offset = sub_pos + 4;
+				if (val_offset + 4 > (int)ipacket->p_hdr->caplen) return 0;
+				*((uint32_t *)extracted_data->data) = ntohl(*((uint32_t *)&ipacket->data[val_offset]));
 			}
 			else if(extracted_data->field_id == DICOM_IMPLEMENTATION_CLASS_UID) {
-				// Implementation Class UID is at offset user_info + 16
-				int uid_offset = user_info_offset + 16;
+				// Search for Implementation Class UID sub-item (type 0x52) inside User Info
+				int sub_pos = find_assoc_subitem(ipacket->data, ui_value_start, ui_value_end, 0x52);
+				if (sub_pos < 0) return 0;
+
+				uint16_t sub_len = (ipacket->data[sub_pos + 2] << 8) | ipacket->data[sub_pos + 3];
+				int sub_value_offset = sub_pos + 4;
+				if (sub_value_offset + sub_len > (int)ipacket->p_hdr->caplen) return 0;
+				if (sub_len > 63) sub_len = 63;
+
 				mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
-
-				const int rq_len = 32;  // A_ASSOCIATE_RQ length
-				const int ac_len = 27;  // A_ASSOCIATE_AC length
-				int extract_len = (hdr->pdu_type == A_ASSOCIATE_RQ) ? rq_len : ac_len;
-
-				if(dicom_offset + uid_offset + extract_len > ipacket->p_hdr->caplen) {
-					extract_len = ipacket->p_hdr->caplen - (dicom_offset + uid_offset);
-					if(extract_len <= 0) return 0; // Not enough data
-				}
-
-				// Copy printable characters only
-				int valid_len = 0;
-				for(int j = 0; j < extract_len; j++) {
-					char c = ipacket->data[dicom_offset + uid_offset + j];
-					if(c >= 32 && c <= 126) {
-						valid_len = j + 1;
-					} else {
-						break;
-					}
-				}
-
-				if(valid_len > 0) {
-					memcpy(binary_data->data, &ipacket->data[dicom_offset + uid_offset], valid_len);
-					binary_data->len = valid_len;
-					binary_data->data[valid_len] = '\0';
-				} else {
-					return 0; // No valid characters
-				}
+				memcpy(binary_data->data, &ipacket->data[sub_value_offset], sub_len);
+				binary_data->len = sub_len;
+				binary_data->data[sub_len] = '\0';
 			}
-		}
+		} else return 0;
 		break;
 	case DICOM_PDV_LENGTH:
 		if(hdr->pdu_type == P_DATA_TF) {
-			*((unsigned int *)extracted_data->data) = ntohl(*((unsigned int *)&ipacket->data[dicom_offset + attribute_offset]));
-		}
+			int off = dicom_offset + 6;
+			if (off + 4 > (int)ipacket->p_hdr->caplen) return 0;
+			*((unsigned int *)extracted_data->data) = ntohl(*((unsigned int *)&ipacket->data[off]));
+		} else return 0;
 		break;
 	case DICOM_PDV_CONTEXT:
 		if(hdr->pdu_type == P_DATA_TF) {
-			*((unsigned char *)extracted_data->data) = *((unsigned char *)&ipacket->data[dicom_offset + attribute_offset]);
-		}
+			int off = dicom_offset + 10;
+			if (off + 1 > (int)ipacket->p_hdr->caplen) return 0;
+			*((unsigned char *)extracted_data->data) = ipacket->data[off];
+		} else return 0;
 		break;
 	case DICOM_PDV_FLAGS:
 		if(hdr->pdu_type == P_DATA_TF) {
-			*((unsigned char *)extracted_data->data) = *((unsigned char *)&ipacket->data[dicom_offset + attribute_offset]);
-		}
+			int off = dicom_offset + 11;
+			if (off + 1 > (int)ipacket->p_hdr->caplen) return 0;
+			*((unsigned char *)extracted_data->data) = ipacket->data[off];
+		} else return 0;
 		break;
 	case DICOM_COMMAND_GROUP_LENGTH:
 		if (hdr->pdu_type == P_DATA_TF) {
-			// Print hex values for debugging
-			printf("Command Group Length bytes: ");
-			for(int i = 0; i < 4; i++) {
-				printf("%02x ", ipacket->data[dicom_offset + attribute_offset + i]);
-			}
-			printf("\n");
+			// DIMSE command data starts at dicom_offset + 12
+			int dimse_start = dicom_offset + 12;
+			int dimse_end = dicom_offset + packet_len;
+			if (dimse_start >= dimse_end) return 0;
 
-			uint32_t group_length = ipacket->data[dicom_offset + attribute_offset];
+			// Search for tag (0000,0000) = Command Group Length
+			int tag_pos = find_dimse_tag(ipacket->data, dimse_start, dimse_end, 0x0000, 0x0000);
+			if (tag_pos < 0) return 0;
+
+			// Tag(4) + VR/Length(4) + value(4) — implicit VR: tag(4) + length(4) + value(4)
+			int val_offset = tag_pos + 8;
+			if (val_offset + 4 > (int)ipacket->p_hdr->caplen) return 0;
+
+			// Little-endian 4-byte value
+			uint32_t group_length = ipacket->data[val_offset] |
+			                        (ipacket->data[val_offset + 1] << 8) |
+			                        (ipacket->data[val_offset + 2] << 16) |
+			                        (ipacket->data[val_offset + 3] << 24);
 			*((uint32_t *)extracted_data->data) = group_length;
-		}
+		} else return 0;
 		break;
 	case DICOM_COMMAND_FIELD:
 		if (hdr->pdu_type == P_DATA_TF) {
-			// Print hex values for debugging
-			printf("Command Field bytes: ");
-			for(int i = 0; i < 2; i++) {
-				printf("%02x ", ipacket->data[dicom_offset + attribute_offset + i]);
-			}
-			printf("\n");
+			// DIMSE command data starts at dicom_offset + 12
+			int dimse_start = dicom_offset + 12;
+			int dimse_end = dicom_offset + packet_len;
+			if (dimse_start >= dimse_end) return 0;
 
-			// Command Field is 2 bytes in little-endian, manually construct the value
-			uint16_t command_field = (ipacket->data[dicom_offset + attribute_offset + 1] << 8) |
-			                         ipacket->data[dicom_offset + attribute_offset];
+			// Search for tag (0000,0100) = Command Field
+			int tag_pos = find_dimse_tag(ipacket->data, dimse_start, dimse_end, 0x0000, 0x0100);
+			if (tag_pos < 0) return 0;
+
+			// Tag(4) + length(4) + value(2) — implicit VR uses 4-byte length
+			int val_offset = tag_pos + 8;
+			if (val_offset + 2 > (int)ipacket->p_hdr->caplen) return 0;
+
+			uint16_t command_field = ipacket->data[val_offset] |
+			                         (ipacket->data[val_offset + 1] << 8);
 			*((uint16_t *)extracted_data->data) = command_field;
-
-			// Print the command type for debugging
-			printf("Command Field value: 0x%04X - ", command_field);
-			switch(command_field) {
-				case DICOM_C_STORE_RQ:         printf("C-STORE-RQ\n"); break;
-				case DICOM_C_STORE_RSP:        printf("C-STORE-RSP\n"); break;
-				case DICOM_C_GET_RQ:           printf("C-GET-RQ\n"); break;
-				case DICOM_C_GET_RSP:          printf("C-GET-RSP\n"); break;
-				case DICOM_C_FIND_RQ:          printf("C-FIND-RQ\n"); break;
-				case DICOM_C_FIND_RSP:         printf("C-FIND-RSP\n"); break;
-				case DICOM_C_MOVE_RQ:          printf("C-MOVE-RQ\n"); break;
-				case DICOM_C_MOVE_RSP:         printf("C-MOVE-RSP\n"); break;
-				case DICOM_C_ECHO_RQ:          printf("C-ECHO-RQ\n"); break;
-				case DICOM_C_ECHO_RSP:         printf("C-ECHO-RSP\n"); break;
-				case DICOM_N_EVENT_REPORT_RQ:  printf("N-EVENT-REPORT-RQ\n"); break;
-				case DICOM_N_EVENT_REPORT_RSP: printf("N-EVENT-REPORT-RSP\n"); break;
-				case DICOM_N_GET_RQ:           printf("N-GET-RQ\n"); break;
-				case DICOM_N_GET_RSP:          printf("N-GET-RSP\n"); break;
-				case DICOM_N_SET_RQ:           printf("N-SET-RQ\n"); break;
-				case DICOM_N_SET_RSP:          printf("N-SET-RSP\n"); break;
-				case DICOM_N_ACTION_RQ:        printf("N-ACTION-RQ\n"); break;
-				case DICOM_N_ACTION_RSP:       printf("N-ACTION-RSP\n"); break;
-				case DICOM_N_CREATE_RQ:        printf("N-CREATE-RQ\n"); break;
-				case DICOM_N_CREATE_RSP:       printf("N-CREATE-RSP\n"); break;
-				case DICOM_N_DELETE_RQ:        printf("N-DELETE-RQ\n"); break;
-				case DICOM_N_DELETE_RSP:       printf("N-DELETE-RSP\n"); break;
-				case DICOM_C_CANCEL_RQ:        printf("C-CANCEL-RQ\n"); break;
-				default:                       printf("Unknown Command\n"); break;
-			}
-		}
+		} else return 0;
 		break;
 	case DICOM_PATIENT_NAME:
 		if(hdr->pdu_type == P_DATA_TF) {
-			int patient_name_offset = dicom_offset + 46;
+			// Check PDV flags: bit 1 = 0 means dataset content
+			int flags_off = dicom_offset + 11;
+			if (flags_off >= (int)ipacket->p_hdr->caplen) return 0;
+			uint8_t pdv_flags = ipacket->data[flags_off];
+			if (pdv_flags & 0x01) return 0; // This is command data, not dataset
 
-			// Check if we have enough data
-			if(patient_name_offset + 4 <= ipacket->p_hdr->caplen) {
-				printf("DICOM: Checking Patient's Name tag at offset %d\n", patient_name_offset);
+			// Scan P-DATA payload for Patient Name tag (0010,0010)
+			int data_start = dicom_offset + 12;
+			int data_end = dicom_offset + packet_len;
+			if (data_start >= data_end) return 0;
 
-				// Verify the tag is (0010,0010)
-				uint8_t tag[4];
-				memcpy(tag, &ipacket->data[patient_name_offset], 4);
-				printf("DICOM: Tag bytes: %02x %02x %02x %02x\n", tag[0], tag[1], tag[2], tag[3]);
+			int tag_pos = find_dimse_tag(ipacket->data, data_start, data_end, 0x0010, 0x0010);
+			if (tag_pos < 0) return 0;
 
-				if(tag[0] == 0x10 && tag[1] == 0x00 && tag[2] == 0x10 && tag[3] == 0x00) {
-					printf("DICOM: Found Patient's Name tag\n");
+			// Parse VR and length
+			int vr_offset = tag_pos + 4;
+			if (vr_offset + 2 > (int)ipacket->p_hdr->caplen) return 0;
 
-					// Skip the tag and get the VR
-					int vr_offset = patient_name_offset + 4;
-					char vr[3] = {0};
-					memcpy(vr, &ipacket->data[vr_offset], 2);
-					printf("DICOM: VR: %c%c\n", vr[0], vr[1]);
+			char vr0 = ipacket->data[vr_offset];
+			char vr1 = ipacket->data[vr_offset + 1];
+			int length_offset;
+			uint16_t length;
 
-					// Skip the VR and get the length
-					int length_offset = vr_offset + 2;
-					uint16_t length = 0;
-
-					// For explicit VR, the length is 2 bytes
-					if(vr[0] == 'P' && vr[1] == 'N') {
-						// Fix: Interpret length as little-endian (swap bytes)
-						length = (ipacket->data[length_offset + 1] << 8) | ipacket->data[length_offset];
-						length_offset += 2;
-						printf("DICOM: Explicit VR, length: %d\n", length);
-					} else {
-						// For implicit VR, the length is 4 bytes
-						length = (ipacket->data[length_offset] << 24) |
-						         (ipacket->data[length_offset + 1] << 16) |
-						         (ipacket->data[length_offset + 2] << 8) |
-						         ipacket->data[length_offset + 3];
-						length_offset += 4;
-						printf("DICOM: Implicit VR, length: %d\n", length);
-					}
-
-					// Now extract the patient name
-					if(length_offset + length <= ipacket->p_hdr->caplen) {
-						mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
-						memcpy(binary_data->data, &ipacket->data[length_offset], length);
-						binary_data->len = length;
-						binary_data->data[length] = '\0';
-						printf("DICOM: Extracted Patient's Name: %s\n", binary_data->data);
-						return 1;
-					} else {
-						printf("DICOM: Not enough data for Patient's Name value\n");
-					}
-				} else {
-					printf("DICOM: Patient's Name tag not found at expected offset\n");
-				}
+			if (vr0 == 'P' && vr1 == 'N') {
+				// Explicit VR PN: tag(4) + VR(2) + length(2 LE)
+				length_offset = vr_offset + 2;
+				if (length_offset + 2 > (int)ipacket->p_hdr->caplen) return 0;
+				length = ipacket->data[length_offset] | (ipacket->data[length_offset + 1] << 8);
+				length_offset += 2;
 			} else {
-				printf("DICOM: Not enough data to check Patient's Name tag\n");
+				// Implicit VR: tag(4) + length(4 LE)
+				length_offset = tag_pos + 4;
+				if (length_offset + 4 > (int)ipacket->p_hdr->caplen) return 0;
+				length = ipacket->data[length_offset] | (ipacket->data[length_offset + 1] << 8);
+				length_offset += 4;
 			}
-		} else {
-			printf("DICOM: Not a P-DATA-TF packet (PDU type: %d)\n", hdr->pdu_type);
-		}
+
+			if (length == 0 || length > 63) {
+				if (length > 63) length = 63;
+				if (length == 0) return 0;
+			}
+			if (length_offset + length > (int)ipacket->p_hdr->caplen) return 0;
+
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+			memcpy(binary_data->data, &ipacket->data[length_offset], length);
+			binary_data->len = length;
+			binary_data->data[length] = '\0';
+		} else return 0;
+		break;
+	case DICOM_STATUS:
+		if (hdr->pdu_type == P_DATA_TF) {
+			int dimse_start = dicom_offset + 12;
+			int dimse_end = dicom_offset + packet_len;
+			if (dimse_start >= dimse_end) return 0;
+
+			// Search for tag (0000,0900) = Status
+			int tag_pos = find_dimse_tag(ipacket->data, dimse_start, dimse_end, 0x0000, 0x0900);
+			if (tag_pos < 0) return 0;
+
+			int val_offset = tag_pos + 8; // tag(4) + length(4)
+			if (val_offset + 2 > (int)ipacket->p_hdr->caplen) return 0;
+
+			uint16_t status = ipacket->data[val_offset] | (ipacket->data[val_offset + 1] << 8);
+			*((uint16_t *)extracted_data->data) = status;
+		} else return 0;
+		break;
+	case DICOM_AFFECTED_SOP_CLASS_UID:
+		if (hdr->pdu_type == P_DATA_TF) {
+			int dimse_start = dicom_offset + 12;
+			int dimse_end = dicom_offset + packet_len;
+			if (dimse_start >= dimse_end) return 0;
+
+			// Search for tag (0000,0002) = Affected SOP Class UID
+			int tag_pos = find_dimse_tag(ipacket->data, dimse_start, dimse_end, 0x0000, 0x0002);
+			if (tag_pos < 0) return 0;
+
+			// Implicit VR: tag(4) + length(4 LE) + value
+			int len_offset = tag_pos + 4;
+			if (len_offset + 4 > (int)ipacket->p_hdr->caplen) return 0;
+			uint32_t val_len = ipacket->data[len_offset] |
+			                   (ipacket->data[len_offset + 1] << 8) |
+			                   (ipacket->data[len_offset + 2] << 16) |
+			                   (ipacket->data[len_offset + 3] << 24);
+			int val_offset = len_offset + 4;
+			if (val_len == 0 || val_offset + (int)val_len > (int)ipacket->p_hdr->caplen) return 0;
+			if (val_len > 63) val_len = 63;
+
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+			memcpy(binary_data->data, &ipacket->data[val_offset], val_len);
+			binary_data->len = val_len;
+			binary_data->data[val_len] = '\0';
+		} else return 0;
+		break;
+	case DICOM_MESSAGE_ID:
+		if (hdr->pdu_type == P_DATA_TF) {
+			int dimse_start = dicom_offset + 12;
+			int dimse_end = dicom_offset + packet_len;
+			if (dimse_start >= dimse_end) return 0;
+
+			// Search for tag (0000,0110) = Message ID
+			int tag_pos = find_dimse_tag(ipacket->data, dimse_start, dimse_end, 0x0000, 0x0110);
+			if (tag_pos < 0) return 0;
+
+			int val_offset = tag_pos + 8; // tag(4) + length(4)
+			if (val_offset + 2 > (int)ipacket->p_hdr->caplen) return 0;
+
+			uint16_t message_id = ipacket->data[val_offset] | (ipacket->data[val_offset + 1] << 8);
+			*((uint16_t *)extracted_data->data) = message_id;
+		} else return 0;
+		break;
+	case DICOM_ABSTRACT_SYNTAX:
+		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			// Scan variable items area for Abstract Syntax sub-item (type 0x30)
+			// This can appear inside Presentation Context items, but also directly
+			// First find a Presentation Context item, then find 0x30 inside it
+			int var_start = dicom_offset + 74;
+			int var_end = dicom_offset + packet_len;
+			if (var_start >= var_end) return 0;
+
+			uint8_t pres_type = (hdr->pdu_type == A_ASSOCIATE_RQ) ? 0x20 : 0x21;
+			int pres_pos = find_assoc_subitem(ipacket->data, var_start, var_end, pres_type);
+			if (pres_pos < 0) return 0;
+
+			uint16_t pres_len = (ipacket->data[pres_pos + 2] << 8) | ipacket->data[pres_pos + 3];
+			int pres_value_start = pres_pos + 4;
+			int pres_value_end = pres_value_start + pres_len;
+			if (pres_value_end > (int)ipacket->p_hdr->caplen) pres_value_end = ipacket->p_hdr->caplen;
+
+			// Skip Presentation Context ID (1 byte) + reserved (3 bytes) = 4 bytes
+			int sub_start = pres_value_start + 4;
+			int sub_pos = find_assoc_subitem(ipacket->data, sub_start, pres_value_end, 0x30);
+			if (sub_pos < 0) return 0;
+
+			uint16_t sub_len = (ipacket->data[sub_pos + 2] << 8) | ipacket->data[sub_pos + 3];
+			int sub_val = sub_pos + 4;
+			if (sub_val + sub_len > (int)ipacket->p_hdr->caplen) return 0;
+			if (sub_len > 63) sub_len = 63;
+
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+			memcpy(binary_data->data, &ipacket->data[sub_val], sub_len);
+			binary_data->len = sub_len;
+			binary_data->data[sub_len] = '\0';
+		} else return 0;
+		break;
+	case DICOM_TRANSFER_SYNTAX:
+		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			// Find Presentation Context item, then find Transfer Syntax sub-item (type 0x40)
+			int var_start = dicom_offset + 74;
+			int var_end = dicom_offset + packet_len;
+			if (var_start >= var_end) return 0;
+
+			uint8_t pres_type = (hdr->pdu_type == A_ASSOCIATE_RQ) ? 0x20 : 0x21;
+			int pres_pos = find_assoc_subitem(ipacket->data, var_start, var_end, pres_type);
+			if (pres_pos < 0) return 0;
+
+			uint16_t pres_len = (ipacket->data[pres_pos + 2] << 8) | ipacket->data[pres_pos + 3];
+			int pres_value_start = pres_pos + 4;
+			int pres_value_end = pres_value_start + pres_len;
+			if (pres_value_end > (int)ipacket->p_hdr->caplen) pres_value_end = ipacket->p_hdr->caplen;
+
+			// Skip Presentation Context ID (1 byte) + reserved (3 bytes) = 4 bytes
+			int sub_start = pres_value_start + 4;
+			int sub_pos = find_assoc_subitem(ipacket->data, sub_start, pres_value_end, 0x40);
+			if (sub_pos < 0) return 0;
+
+			uint16_t sub_len = (ipacket->data[sub_pos + 2] << 8) | ipacket->data[sub_pos + 3];
+			int sub_val = sub_pos + 4;
+			if (sub_val + sub_len > (int)ipacket->p_hdr->caplen) return 0;
+			if (sub_len > 63) sub_len = 63;
+
+			mmt_binary_var_data_t *binary_data = (mmt_binary_var_data_t *)extracted_data->data;
+			memcpy(binary_data->data, &ipacket->data[sub_val], sub_len);
+			binary_data->len = sub_len;
+			binary_data->data[sub_len] = '\0';
+		} else return 0;
+		break;
+	case DICOM_DATA_SET_TYPE:
+		if (hdr->pdu_type == P_DATA_TF) {
+			int dimse_start = dicom_offset + 12;
+			int dimse_end = dicom_offset + packet_len;
+			if (dimse_start >= dimse_end) return 0;
+
+			// Search for tag (0000,0800) = Data Set Type
+			int tag_pos = find_dimse_tag(ipacket->data, dimse_start, dimse_end, 0x0000, 0x0800);
+			if (tag_pos < 0) return 0;
+
+			int val_offset = tag_pos + 8; // tag(4) + length(4)
+			if (val_offset + 2 > (int)ipacket->p_hdr->caplen) return 0;
+
+			uint16_t ds_type = ipacket->data[val_offset] | (ipacket->data[val_offset + 1] << 8);
+			*((uint16_t *)extracted_data->data) = ds_type;
+		} else return 0;
 		break;
 	default:
-		printf("Unknown attribute id %d.%d", extracted_data->proto_id, extracted_data->field_id );
+		break;
 	}
 	return 1;
 }
@@ -324,24 +492,18 @@ classified_proto_t dicom_stack_classification(ipacket_t * ipacket) {
  * DICOM classification routine
  */
 int mmt_check_dicom_hdr(struct dicomhdr* header) {
-	// Accept any PDU type for now to debug
 	if (header->pdu_type < 1 || header->pdu_type > 7) {
-		//printf("Invalid PDU type: %d\n", header->pdu_type);
 		return 0;
 	}
 	if (header->reserved != 0) {
-		//printf("Invalid reserved byte: %d\n", header->reserved);
 		return 0;
 	}
 	return 1;
 }
 
 int mmt_check_dicom_payload(struct dicomhdr* header, unsigned int packet_len) {
-	//printf("DICOM: TYPE= %u LEN= %u\n", header->pdu_type, packet_len);
-	// Dicom packets have at least a payload of size 4
 	if(packet_len < PROTO_DICOM_HDRLEN + DICOM_PAYLOAD_MIN_LEN) return 0;
-	// Check the second condition: PDU length
-	if(ntohs(header->pdu_len) != packet_len - PROTO_DICOM_HDRLEN) return 0;
+	if(ntohl(header->pdu_len) != packet_len - PROTO_DICOM_HDRLEN) return 0;
 	return 1;
 }
 
@@ -361,7 +523,6 @@ int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index) {
 
 	classified_proto_t dicom_proto = dicom_stack_classification(ipacket);
 	dicom_proto.offset = dicom_offset - l3_offset;
-	//printf("DICOM: found DICOM packet %lu\n",ipacket->packet_id);
 	return set_classified_proto(ipacket, index + 1, dicom_proto);
 }
 
@@ -376,7 +537,6 @@ int init_dicom_proto_struct() {
 		}
 
 		// Register classification function of DICOM protocol after TCP
-		// DICOM can be classified after HTTP -> HTTP 10 DICOM 50
 		if(!register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dicom_tcp, 50)){
 			fprintf(stderr, "\n[err] init_dicom_proto_struct - cannot register_classification_function_with_parent_protocol: PROTO_TCP\n");
 			return -1;
@@ -390,5 +550,8 @@ int init_dicom_proto_struct() {
 #ifndef CORE
 int init_proto() {
 	return init_dicom_proto_struct();
+}
+int cleanup_proto() {
+	return 0;
 }
 #endif //CORE
