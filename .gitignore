@@ -58,3 +58,17 @@ build/
 # IDE
 .idea/
 *.code-workspace
+
+# AI dev tools
+.claude/
+.claude*
+CLAUDE.md
+.agent/
+AGENTS.md
+WARP.md
+.cursor/
+.copilot/
+.aider*
+.continue/
+agent-instructions.md
+agents-instructions.md
