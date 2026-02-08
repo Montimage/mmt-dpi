@@ -1,7 +1,7 @@
 #include "smb.h"
 
 /////////////// IMPLEMENTATION OF smb.h ///////////////////
-smb_file_t * smb_file_new () {
+smb_file_t * smb_file_new(void) {
   smb_file_t * file = (smb_file_t * ) malloc(sizeof(smb_file_t));
   if (file) {
     file->file_id = 0;

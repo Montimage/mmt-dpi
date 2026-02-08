@@ -58,6 +58,7 @@ error()   { printf "${RED}[ERROR]${NC}   %s\n" "$*" >&2; }
 fatal()   { error "$@"; cleanup; exit 1; }
 step()    { printf "\n${BOLD}==> %s${NC}\n" "$*"; }
 
+
 cleanup() {
     if [ -n "$BUILD_DIR" ] && [ -d "$BUILD_DIR" ]; then
         info "Cleaning up temporary build directory..."
@@ -101,13 +102,23 @@ check_command() {
     command -v "$1" &>/dev/null
 }
 
+# Use sudo only when not running as root
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+    if check_command sudo; then
+        SUDO="sudo"
+    else
+        warn "Not running as root and sudo not found. Privilege escalation may fail."
+    fi
+fi
+
 install_deps_linux() {
     step "Installing build dependencies (Linux)"
 
     if check_command apt-get; then
         info "Detected Debian/Ubuntu (apt)"
-        sudo apt-get update -qq
-        sudo apt-get install -y -qq \
+        $SUDO apt-get update -qq
+        $SUDO apt-get install -y -qq \
             build-essential \
             gcc \
             g++ \
@@ -118,7 +129,7 @@ install_deps_linux() {
             libnghttp2-dev
     elif check_command dnf; then
         info "Detected Fedora/RHEL (dnf)"
-        sudo dnf install -y \
+        $SUDO dnf install -y \
             gcc \
             gcc-c++ \
             make \
@@ -128,7 +139,7 @@ install_deps_linux() {
             libnghttp2-devel
     elif check_command yum; then
         info "Detected CentOS/RHEL (yum)"
-        sudo yum install -y \
+        $SUDO yum install -y \
             gcc \
             gcc-c++ \
             make \
@@ -138,7 +149,7 @@ install_deps_linux() {
             libnghttp2-devel
     elif check_command pacman; then
         info "Detected Arch Linux (pacman)"
-        sudo pacman -Sy --noconfirm \
+        $SUDO pacman -Sy --noconfirm \
             base-devel \
             git \
             libxml2 \
@@ -146,7 +157,7 @@ install_deps_linux() {
             nghttp2
     elif check_command apk; then
         info "Detected Alpine Linux (apk)"
-        sudo apk add --no-cache \
+        $SUDO apk add --no-cache \
             build-base \
             gcc \
             g++ \
@@ -157,7 +168,7 @@ install_deps_linux() {
             nghttp2-dev
     elif check_command zypper; then
         info "Detected openSUSE (zypper)"
-        sudo zypper install -y \
+        $SUDO zypper install -y \
             gcc \
             gcc-c++ \
             make \
@@ -263,11 +274,11 @@ install_mmt() {
 
     cd "$BUILD_DIR/mmt-dpi/sdk"
 
-    if [ "$MMT_BASE" = "/opt/mmt" ]; then
+    if [ "$MMT_BASE" = "/opt/mmt" ] && [ -n "$SUDO" ]; then
         info "Installing to default path (requires sudo)..."
-        sudo make ARCH="$make_arch" MMT_BASE="$MMT_BASE" install
+        $SUDO make ARCH="$make_arch" MMT_BASE="$MMT_BASE" install
     else
-        info "Installing to custom path: $MMT_BASE"
+        info "Installing to $MMT_BASE"
         make ARCH="$make_arch" MMT_BASE="$MMT_BASE" install
     fi
 
@@ -282,7 +293,7 @@ post_install() {
 
     # Refresh shared library cache on Linux
     if [ "$OS" = "linux" ] && check_command ldconfig; then
-        sudo ldconfig 2>/dev/null || true
+        $SUDO ldconfig 2>/dev/null || true
     fi
 
     # Verify installation
