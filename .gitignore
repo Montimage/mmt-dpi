@@ -48,3 +48,13 @@ sftp-config.json
 .vscode
 .pydevproject
 rsync.sh
+
+# Build output
+build/
+*.dylib
+*.dll
+*.exe
+
+# IDE
+.idea/
+*.code-workspace
