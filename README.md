@@ -17,21 +17,45 @@ A high-performance C library for deep packet inspection (DPI), designed to extra
 
 ## Quick Start
 
-### Prerequisites
+### One-Line Install
 
-- GCC (4.9 to 9.x) or compatible C compiler
-- GNU Make
-- `libxml2-dev`
-- `libpcap-dev` (for examples)
+Install MMT-DPI with a single command (installs dependencies, builds, and installs automatically):
 
-### Build and Install
+```bash
+curl -sSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
+```
+
+or using `wget`:
+
+```bash
+wget -qO- https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
+```
+
+**Custom options** (via environment variables):
+
+```bash
+# Install to a custom directory
+curl -sSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
+
+# Use a specific branch
+curl -sSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | BRANCH=dev bash
+
+# Skip automatic dependency installation
+curl -sSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
+```
+
+Supports **Linux** (Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, openSUSE) and **macOS** (via Homebrew).
+
+### Manual Build and Install
+
+If you prefer to build manually:
 
 ```bash
 git clone https://github.com/Montimage/mmt-dpi.git
 cd mmt-dpi
 
 # Install dependencies (Debian/Ubuntu)
-sudo apt-get install build-essential gcc make cmake libxml2-dev libpcap-dev
+sudo apt-get install build-essential gcc make libxml2-dev libpcap-dev libnghttp2-dev
 
 # Build
 cd sdk
