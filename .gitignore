@@ -48,3 +48,26 @@ sftp-config.json
 .vscode
 .pydevproject
 rsync.sh
+
+# Build output
+build/
+*.dylib
+*.dll
+*.exe
+
+# IDE
+.idea/
+*.code-workspace
+
+# AI dev tools
+.claude/
+.claude*
+CLAUDE.md
+.agent/
+AGENTS.md
+WARP.md
+.cursor/
+.copilot/
+.aider*
+.continue/
+agent-instructions.md
