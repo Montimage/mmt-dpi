@@ -62,7 +62,10 @@ sudo ./extract_all -i eth0
 
 ---------------------------------
 
-# Mac OSX **(Need update)**
+> **Note:** macOS and Windows are **not currently supported**. The instructions below are retained for historical reference only and may not work with the current codebase.
+
+<details>
+<summary>Mac OSX (unsupported)</summary>
 
 ## Install required tools
 
@@ -70,15 +73,15 @@ sudo ./extract_all -i eth0
 * Install Hombrew
 ```bash
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew install/master/install)"
-``` 
+```
 * Git: See [Install Git for Mac OSX](http://git-scm.com/download/mac)
 
 ## Install some required packages
 ```bash
 brew install gcc48
-brew install cmake libpth-dev ldconfig 
+brew install cmake libpth-dev ldconfig
 brew install libxml2 hiredis confuse libpcap
-```    
+```
 
 ## Compile and install
 
@@ -89,8 +92,10 @@ make -j4 ARCH=osx
 sudo make ARCH=osx install
 ```
 
----------------------------------
-# Build on Linux for Windows (cross-compilation)**(Need update)**
+</details>
+
+<details>
+<summary>Windows cross-compilation (unsupported)</summary>
 
 ## Install some required tools
 * Git: See [Install Git for Window](http://git-scm.com/download/win)
@@ -119,10 +124,12 @@ sudo cp -R /mnt/share/windows /opt/
 Then build either a 32-bit version of the MMT-DPI:
 ```sh
 make -j4 ARCH=win32
-make install  
+make install
 ```
 ... or a 64-bit version:
 ```sh
 make -j4 ARCH=win64
-make install  
+make install
 ```
+
+</details>

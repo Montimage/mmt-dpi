@@ -84,13 +84,7 @@ sudo dpkg -i ./mmt_sdk_x.x-x_xx_xx.deb
 
 ```
 
-### 2.1.2 For Mac OSX user
-
-Coming soon
-
-### 2.1.2 For Window user
-
-Coming soon
+> **Note:** Only Linux is currently supported. macOS and Windows are not supported.
 
 ## 2.2 Using MMT-Extract in your project
 

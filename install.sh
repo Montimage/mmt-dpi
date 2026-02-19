@@ -76,8 +76,9 @@ detect_os() {
     os="$(uname -s)"
     case "$os" in
         Linux*)  echo "linux" ;;
-        Darwin*) echo "macos" ;;
-        *)       fatal "Unsupported operating system: $os" ;;
+        Darwin*) fatal "macOS is not currently supported. MMT-DPI only supports Linux." ;;
+        CYGWIN*|MINGW*|MSYS*) fatal "Windows is not currently supported. MMT-DPI only supports Linux." ;;
+        *)       fatal "Unsupported operating system: $os. MMT-DPI only supports Linux." ;;
     esac
 }
 
@@ -185,30 +186,13 @@ install_deps_linux() {
     success "Dependencies installed"
 }
 
-install_deps_macos() {
-    step "Installing build dependencies (macOS)"
-
-    if ! check_command brew; then
-        info "Homebrew not found. Installing Homebrew..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    fi
-
-    info "Installing packages via Homebrew..."
-    brew install libxml2 libpcap nghttp2 gcc 2>/dev/null || true
-
-    success "Dependencies installed"
-}
-
 install_dependencies() {
     if [ "$SKIP_DEPS" = "1" ]; then
         warn "Skipping dependency installation (SKIP_DEPS=1)"
         return
     fi
 
-    case "$OS" in
-        linux) install_deps_linux ;;
-        macos) install_deps_macos ;;
-    esac
+    install_deps_linux
 }
 
 # ---------------------------------------------------------------------------
@@ -249,16 +233,10 @@ clone_repo() {
 build() {
     step "Building mmt-dpi"
 
-    local make_arch
-    case "$OS" in
-        linux) make_arch="linux" ;;
-        macos) make_arch="osx" ;;
-    esac
-
     cd "$BUILD_DIR/mmt-dpi/sdk"
 
-    info "Running: make ARCH=$make_arch MMT_BASE=$MMT_BASE -j$JOBS"
-    make ARCH="$make_arch" MMT_BASE="$MMT_BASE" -j"$JOBS"
+    info "Running: make ARCH=linux MMT_BASE=$MMT_BASE -j$JOBS"
+    make ARCH="linux" MMT_BASE="$MMT_BASE" -j"$JOBS"
 
     success "Build completed"
 }
@@ -266,20 +244,14 @@ build() {
 install_mmt() {
     step "Installing mmt-dpi to $MMT_BASE"
 
-    local make_arch
-    case "$OS" in
-        linux) make_arch="linux" ;;
-        macos) make_arch="osx" ;;
-    esac
-
     cd "$BUILD_DIR/mmt-dpi/sdk"
 
     if [ "$MMT_BASE" = "/opt/mmt" ] && [ -n "$SUDO" ]; then
         info "Installing to default path (requires sudo)..."
-        $SUDO make ARCH="$make_arch" MMT_BASE="$MMT_BASE" install
+        $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" install
     else
         info "Installing to $MMT_BASE"
-        make ARCH="$make_arch" MMT_BASE="$MMT_BASE" install
+        make ARCH="linux" MMT_BASE="$MMT_BASE" install
     fi
 
     success "Installation completed"
@@ -298,7 +270,7 @@ post_install() {
 
     # Verify installation
     local lib_dir="$MMT_BASE/dpi/lib"
-    if [ -f "$lib_dir/libmmt_core.so" ] || [ -f "$lib_dir/libmmt_core.dylib" ]; then
+    if [ -f "$lib_dir/libmmt_core.so" ]; then
         success "Libraries found in $lib_dir"
     else
         # Check for versioned .so files
@@ -325,11 +297,7 @@ post_install() {
     printf "      -I %s/dpi/include -L %s/dpi/lib -lmmt_core -ldl -lpcap\n" "$MMT_BASE" "$MMT_BASE"
     printf "\n"
     printf "${BOLD}Add to your linker path:${NC}\n"
-    if [ "$OS" = "linux" ]; then
-        printf "  export LD_LIBRARY_PATH=%s/dpi/lib:\$LD_LIBRARY_PATH\n" "$MMT_BASE"
-    else
-        printf "  export DYLD_LIBRARY_PATH=%s/dpi/lib:\$DYLD_LIBRARY_PATH\n" "$MMT_BASE"
-    fi
+    printf "  export LD_LIBRARY_PATH=%s/dpi/lib:\$LD_LIBRARY_PATH\n" "$MMT_BASE"
     printf "\n"
     printf "To uninstall:  cd mmt-dpi/sdk && sudo make dist-clean\n"
     printf "\n"

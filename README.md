@@ -13,7 +13,7 @@ A high-performance C library for deep packet inspection (DPI), designed to extra
 - **Extensible Plugin Architecture** - Add new protocol support via modular plugins
 - **Wide Protocol Coverage** - TCP/IP stack, HTTP/HTTP2, QUIC (RFC 9000), DNS, FTP, DTLS, GTP, MQTT, OSPF, RADIUS, and more
 - **5G/LTE Mobile Protocols** - NAS, S1AP, NGAP, GTPv2, Diameter for mobile network monitoring
-- **Cross-Platform** - Linux, macOS, and Windows (cross-compilation)
+- **Linux-Based** - Supports major Linux distributions (Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, openSUSE)
 
 ## Quick Start
 
@@ -44,7 +44,7 @@ curl -sSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | 
 curl -sSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
 ```
 
-Supports **Linux** (Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, openSUSE) and **macOS** (via Homebrew).
+Supports **Linux** distributions: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, and openSUSE.
 
 ### Manual Build and Install
 
@@ -138,10 +138,9 @@ mmt-dpi/
 |----------|--------------|
 | Linux (GCC) | `make` |
 | Linux (Clang) | `make ARCH=linux-clang` |
-| macOS | `make ARCH=osx` |
-| Windows 32-bit | `make ARCH=win32` (cross-compilation) |
-| Windows 64-bit | `make ARCH=win64` (cross-compilation) |
-| ARM | [Cross-compilation guide](docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md) |
+| ARM (cross-compilation) | [Cross-compilation guide](docs/Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md) |
+
+> **Note:** macOS and Windows are not currently supported.
 
 ## Documentation
 

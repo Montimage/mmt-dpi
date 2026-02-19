@@ -28,7 +28,7 @@ Protocol implementations are organized into shared libraries loaded at runtime:
 
 ### Build System (`rules/`, `sdk/`)
 
-Platform-specific build rules supporting Linux (GCC, Clang, ICC), macOS, and Windows cross-compilation.
+Platform-specific build rules supporting Linux (GCC, Clang, ICC) and ARM cross-compilation.
 
 ## Packet Processing Flow
 

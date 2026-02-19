@@ -17,11 +17,7 @@ sudo apt-get update
 sudo apt-get install build-essential gcc make cmake libxml2-dev libpcap-dev valgrind
 ```
 
-### macOS
-
-```bash
-brew install gcc cmake libxml2 libpcap
-```
+> **Note:** Only Linux is currently supported. macOS and Windows are not supported.
 
 ## Building
 

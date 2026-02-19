@@ -27,7 +27,7 @@ What actually happened instead.
 
 ## Environment
 
-- OS: [e.g., Ubuntu 22.04, macOS 14.0]
+- OS: [e.g., Ubuntu 22.04, Fedora 39]
 - Compiler: [e.g., GCC 9.4]
 - MMT-DPI Version: [e.g., 1.7.10]
 - Architecture: [e.g., x86_64, ARM]

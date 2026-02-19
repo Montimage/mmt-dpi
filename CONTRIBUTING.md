@@ -80,7 +80,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 feat: Add QUIC IETF RFC 9000 classification
 fix: Resolve memory leak in FTP protocol handler
-docs: Update compilation instructions for macOS
+docs: Update compilation instructions for ARM
 ```
 
 ## Pull Request Process

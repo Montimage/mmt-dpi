@@ -53,12 +53,7 @@ sudo dnf install -y git cmake
 sudo dnf install -y libxml2-devel libpcap-devel libnghttp2-devel
 ```
 
-#### macOS
-
-```bash
-xcode-select --install
-brew install libxml2 libpcap libnghttp2
-```
+> **Note:** Only Linux is currently supported. macOS and Windows are not supported.
 
 #### Verification
 
@@ -80,7 +75,7 @@ pkg-config --modversion libxml-2.0
 | Value | Detection Command | Used For |
 |-------|------------------|----------|
 | OS type | `uname -s` | Selecting ARCH build flag |
-| CPU count | `nproc` (Linux) / `sysctl -n hw.ncpu` (macOS) | Parallel compilation |
+| CPU count | `nproc` | Parallel compilation |
 | Architecture | `uname -m` | Build configuration |
 | GCC version | `gcc -dumpversion` | Compatibility check |
 
@@ -88,7 +83,7 @@ pkg-config --modversion libxml-2.0
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ARCH` | `linux` | Build target: `linux`, `linux-clang`, `osx`, `win32`, `win64` |
+| `ARCH` | `linux` | Build target: `linux`, `linux-clang` |
 | `MMT_BASE` | `/opt/mmt` | Installation base directory |
 | `DEBUG` | `0` | Set to `1` for debug symbols |
 | `ENABLESEC` | `0` | Set to `1` for security/fuzz modules |
@@ -151,13 +146,6 @@ ls src/mmt_core/public_include/mmt_core.h && echo "OK: Core headers found"
 cd sdk
 make clean
 make -j$(nproc)
-```
-
-**macOS:**
-```bash
-cd sdk
-make clean
-make -j$(sysctl -n hw.ncpu) ARCH=osx
 ```
 
 **With optional security modules:**
@@ -243,14 +231,6 @@ ldconfig -p | grep libmmt
 
 **Expected output**: List of `libmmt_*.so` libraries.
 
-#### macOS
-
-```bash
-export DYLD_LIBRARY_PATH=/opt/mmt/dpi/lib:$DYLD_LIBRARY_PATH
-# Add to shell profile for persistence
-echo 'export DYLD_LIBRARY_PATH=/opt/mmt/dpi/lib:$DYLD_LIBRARY_PATH' >> ~/.zshrc
-```
-
 ---
 
 ### 7. Verification Steps
@@ -302,9 +282,9 @@ gcc -o /tmp/test_mmt_proto src/examples/proto_attributes_iterator.c \
 | `rules/common-linux.mk` | Linux-specific flags and library rules |
 | `rules/arch-linux-gcc.mk` | GCC toolchain config |
 | `rules/arch-linux-clang.mk` | Clang toolchain config |
-| `rules/arch-osx.mk` | macOS toolchain config |
-| `rules/arch-win32.mk` | Windows 32-bit cross-compilation |
-| `rules/arch-win64.mk` | Windows 64-bit cross-compilation |
+| `rules/arch-osx.mk` | macOS toolchain config (unsupported) |
+| `rules/arch-win32.mk` | Windows 32-bit cross-compilation (unsupported) |
+| `rules/arch-win64.mk` | Windows 64-bit cross-compilation (unsupported) |
 
 ### Runtime configuration
 
@@ -321,7 +301,7 @@ gcc -o /tmp/test_mmt_proto src/examples/proto_attributes_iterator.c \
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | Installation path | Base directory for installed files | No | `/opt/mmt` |
-| Architecture | Build target platform | No | Auto-detected (`linux` or `osx`) |
+| Architecture | Build target platform | No | `linux` |
 | Security modules | Build fuzz/security libraries | No | Disabled |
 | Debug mode | Include debug symbols | No | Disabled |
 
@@ -346,7 +326,7 @@ Document all steps requiring explicit user permission:
 | `libxml/parser.h: No such file` | libxml2-dev not installed | `sudo apt-get install libxml2-dev` |
 | `multiple definition of` errors | GCC 10+ default behavior change | Use GCC 9 or compile with `CFLAGS=-fcommon make` |
 | `error while loading shared libraries` | Plugin/library not found at runtime | Check `/etc/ld.so.conf.d/mmt-dpi.conf` and run `ldconfig` |
-| Build fails on macOS | Wrong compiler referenced | Ensure `gcc` points to a compatible version, use `ARCH=osx` |
+| Build fails on macOS | macOS is not supported | MMT-DPI only supports Linux |
 | `undefined reference to nghttp2_*` | libnghttp2-dev missing | `sudo apt-get install libnghttp2-dev` |
 | Permission denied during install | Not using sudo | Use `sudo make install` or set custom `MMT_BASE` |
 | Test fails with segfault | Library version mismatch | Run `make clean && make` then reinstall |
