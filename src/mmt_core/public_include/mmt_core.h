@@ -69,7 +69,7 @@ extern "C" {
 #define MMT_SKIP        -2 /**< Defines the code for skipping further processing of the packet.
                             This means that processing at the current protocol will continue, but
                             the packet will be skipped afterwards. */
-#define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.com\n\tContact: contact@montimage.com\n\n\n"
+#define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.eu\n\tContact: contact@montimage.eu\n\n\n"
 #ifndef VERSION
 #define VERSION "1.7.0.0"
 #endif

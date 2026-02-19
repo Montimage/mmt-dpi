@@ -46,7 +46,7 @@ an individual is officially representing the community in public spaces.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-[contact@montimage.com](mailto:contact@montimage.com).
+[contact@montimage.eu](mailto:contact@montimage.eu).
 
 All complaints will be reviewed and investigated promptly and fairly.
 

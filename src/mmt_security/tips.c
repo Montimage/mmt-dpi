@@ -18,7 +18,7 @@
     Montimage
     39 rue Bobillot
     75013 Paris
-    contact@montimage.com
+    contact@montimage.eu
 
     This program comes with ABSOLUTELY NO WARRANTY; for details type 'mmt_security --warning'.
     This is free software, and you are welcome to redistribute it
@@ -33,7 +33,7 @@
  *        Created:  12/June/2013 13:08:57
  *       Revision:  none
  *       Compiler:  gcc
- *         Author:  Edmo, contact@montimage.com
+ *         Author:  Edmo, contact@montimage.eu
  *   Organization:  Montimage
  ======================================================================================
 */

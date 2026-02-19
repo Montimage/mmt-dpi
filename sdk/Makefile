@@ -112,11 +112,11 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
         \nSection: base \
         \nPriority: standard \
         \nArchitecture: all \
-        \nMaintainer: Montimage <contact@montimage.com> \
+        \nMaintainer: Montimage <contact@montimage.eu> \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
         \n A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis \
-        \n Homepage: http://www.montimage.com" \
+        \n Homepage: http://www.montimage.eu" \
 		> $(BUILD_DIR)/DEBIAN/control
 
 	$(QUIET) dpkg-deb -b $(BUILD_DIR)
@@ -137,7 +137,7 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	    \nRelease: $(VERSION)\
 	    \nLicense: proprietary\
 	    \nGroup: Development/Libraries\
-	    \nURL: http://montimage.com/\
+	    \nURL: http://montimage.eu/\
 	    \n\
 	    \nBuildRoot: %{_topdir}/BUILD/$(BUILD_DIR)\
 	    \n\

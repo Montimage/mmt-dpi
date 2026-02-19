@@ -164,8 +164,8 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 ## About
 
-Developed and maintained by [Montimage](https://www.montimage.com) - 39 rue Bobillot, 75013 Paris, France.
+Developed and maintained by [Montimage](https://www.montimage.eu) - 39 rue Bobillot, 75013 Paris, France.
 
-Contact: [contact@montimage.com](mailto:contact@montimage.com)
+Contact: [contact@montimage.eu](mailto:contact@montimage.eu)
 
 ![](https://komarev.com/ghpvc/?username=montimage-dpi&style=flat-square&label=Page+Views)
