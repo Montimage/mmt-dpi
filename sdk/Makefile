@@ -105,15 +105,17 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
 	echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
 	
+DEB_ARCH ?= $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/;s/i686/i386/;s/armv7l/armhf/'))
+
 deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/DEBIAN
 	$(QUIET) echo "Package: mmt-dpi \
         \nVersion: $(VERSION)-$(GIT_VERSION)\
         \nSection: base \
         \nPriority: standard \
-        \nArchitecture: $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/;s/i686/i386/'))\
+        \nArchitecture: $(DEB_ARCH)\
         \nMaintainer: Montimage <contact@montimage.eu> \
-        \nDepends: libc6 (>= 2.17) \
+        \nDepends: libc6 (>= 2.17), libpcap0.8 \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
         \n A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis \
@@ -126,8 +128,10 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/postinst
 	$(QUIET) echo '#!/bin/bash' > $(BUILD_DIR)/DEBIAN/postrm
 	$(QUIET) echo 'set -e' >> $(BUILD_DIR)/DEBIAN/postrm
-	$(QUIET) echo "echo 'Updating ldconfig after mmt-dpi removal...'" >> $(BUILD_DIR)/DEBIAN/postrm
-	$(QUIET) echo 'ldconfig' >> $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) echo 'if [ "$$1" = "remove" ] || [ "$$1" = "purge" ]; then' >> $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) echo "    echo 'Updating ldconfig after mmt-dpi removal...'" >> $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) echo '    ldconfig' >> $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) echo 'fi' >> $(BUILD_DIR)/DEBIAN/postrm
 	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/postrm
 
 	$(QUIET) dpkg-deb -b $(BUILD_DIR)
