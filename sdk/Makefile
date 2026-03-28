@@ -111,7 +111,7 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
         \nVersion: $(VERSION)-$(GIT_VERSION)\
         \nSection: base \
         \nPriority: standard \
-        \nArchitecture: $(shell uname -m)\
+        \nArchitecture: $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/;s/i686/i386/'))\
         \nMaintainer: Montimage <contact@montimage.eu> \
         \nDepends: libc6 (>= 2.17) \
         \nDescription: MMT-DPI:  \
@@ -124,12 +124,11 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) echo "echo 'Running ldconfig for mmt-dpi...'" >> $(BUILD_DIR)/DEBIAN/postinst
 	$(QUIET) echo 'ldconfig' >> $(BUILD_DIR)/DEBIAN/postinst
 	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/postinst
-	$(QUIET) echo '#!/bin/bash' > $(BUILD_DIR)/DEBIAN/prerm
-	$(QUIET) echo 'set -e' >> $(BUILD_DIR)/DEBIAN/prerm
-	$(QUIET) echo "echo 'Removing mmt-dpi ldconfig entry...'" >> $(BUILD_DIR)/DEBIAN/prerm
-	$(QUIET) echo 'rm -f /etc/ld.so.conf.d/mmt-dpi.conf' >> $(BUILD_DIR)/DEBIAN/prerm
-	$(QUIET) echo 'ldconfig' >> $(BUILD_DIR)/DEBIAN/prerm
-	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/prerm
+	$(QUIET) echo '#!/bin/bash' > $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) echo 'set -e' >> $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) echo "echo 'Updating ldconfig after mmt-dpi removal...'" >> $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) echo 'ldconfig' >> $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/postrm
 
 	$(QUIET) dpkg-deb -b $(BUILD_DIR)
 	$(QUIET) $(RM) $(BUILD_DIR)
