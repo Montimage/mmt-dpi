@@ -73,6 +73,8 @@ endif
 #  - - - - - - -
 SYS_NAME    = $(shell uname -s)
 SYS_VERSION = $(shell uname -p)
+# Debian architecture: use dpkg if available, otherwise map uname -m to Debian arch names
+DEB_ARCH ?= $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/;s/i686/i386/;s/armv7l/armhf/;s/ppc64le/ppc64el/'))
 
 BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 
@@ -104,8 +106,6 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
 	echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
-	
-DEB_ARCH ?= $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/;s/i686/i386/;s/armv7l/armhf/'))
 
 deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/DEBIAN
@@ -115,18 +115,18 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
         \nPriority: standard \
         \nArchitecture: $(DEB_ARCH)\
         \nMaintainer: Montimage <contact@montimage.eu> \
-        \nDepends: libc6 (>= 2.17), libpcap0.8 \
+        \nDepends: libc6 (>= 2.17), libpcap0.8 | libpcap0.8t64 \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
         \n A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis \
         \n Homepage: http://www.montimage.eu" \
 		> $(BUILD_DIR)/DEBIAN/control
-	$(QUIET) echo '#!/bin/bash' > $(BUILD_DIR)/DEBIAN/postinst
+	$(QUIET) echo '#!/bin/sh' > $(BUILD_DIR)/DEBIAN/postinst
 	$(QUIET) echo 'set -e' >> $(BUILD_DIR)/DEBIAN/postinst
 	$(QUIET) echo "echo 'Running ldconfig for mmt-dpi...'" >> $(BUILD_DIR)/DEBIAN/postinst
 	$(QUIET) echo 'ldconfig' >> $(BUILD_DIR)/DEBIAN/postinst
 	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/postinst
-	$(QUIET) echo '#!/bin/bash' > $(BUILD_DIR)/DEBIAN/postrm
+	$(QUIET) echo '#!/bin/sh' > $(BUILD_DIR)/DEBIAN/postrm
 	$(QUIET) echo 'set -e' >> $(BUILD_DIR)/DEBIAN/postrm
 	$(QUIET) echo 'if [ "$$1" = "remove" ] || [ "$$1" = "purge" ]; then' >> $(BUILD_DIR)/DEBIAN/postrm
 	$(QUIET) echo "    echo 'Updating ldconfig after mmt-dpi removal...'" >> $(BUILD_DIR)/DEBIAN/postrm
