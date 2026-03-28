@@ -67,8 +67,8 @@ struct smb_session_struct {
   struct smb_session_struct * prev;
 };
 
-smb_session_t * smb_session_new();
-void smb_session_free();
+smb_session_t * smb_session_new(uint64_t session_id);
+void smb_session_free(smb_session_t * node);
 
 int smb_insert_session(smb_session_t * root, smb_session_t * new_session);
 
@@ -76,7 +76,7 @@ smb_session_t * smb_find_session_by_id(smb_session_t * root, uint64_t session_id
 
 smb_session_t * smb_remove_session_by_id(smb_session_t * root, uint64_t session_id);
 
-smb_file_t * smb_file_new ();
+smb_file_t * smb_file_new(void);
 void smb_file_free(smb_file_t * file);
 int smb_session_insert_file(smb_session_t * smb_ss, smb_file_t * file);
 smb_file_t * smb_session_find_file_by_id(smb_session_t * smb_ss, uint16_t file_id);

@@ -28,11 +28,11 @@ Before installing MMT-Extract, you need to install some libraries/applications: 
 ** Download **
 For debian 32 bits:
 
-[mmt_sdk_0.1-0_x32_all.zip](http://www.montimage.com/download/mmt_sdk_0.1-0_x32_all.zip)
+[mmt_sdk_0.1-0_x32_all.zip](http://www.montimage.eu/download/mmt_sdk_0.1-0_x32_all.zip)
 
 For debian 64 bits:
 
-[mmt_sdk_0.1-0_x64_all.zip](http://www.montimage.com/download/mmt_sdk_0.1-0_x64_all.zip)
+[mmt_sdk_0.1-0_x64_all.zip](http://www.montimage.eu/download/mmt_sdk_0.1-0_x64_all.zip)
 
 ** Install **
 Install some required packages:
@@ -69,11 +69,11 @@ sudo make uninstall
 
 For debian 32 bits:
 
-[mmt_sdk_0.1-0_x32_all.deb](http://www.montimage.com/download/mmt_sdk_0.1-0_x32_all.deb)
+[mmt_sdk_0.1-0_x32_all.deb](http://www.montimage.eu/download/mmt_sdk_0.1-0_x32_all.deb)
 
 For debian 64 bits:
 
-[mmt_sdk_0.1-0_x64_all.deb](http://www.montimage.com/download/mmt_sdk_0.1-0_x64_all.deb)
+[mmt_sdk_0.1-0_x64_all.deb](http://www.montimage.eu/download/mmt_sdk_0.1-0_x64_all.deb)
 
 ** Install **
 
@@ -84,13 +84,7 @@ sudo dpkg -i ./mmt_sdk_x.x-x_xx_xx.deb
 
 ```
 
-### 2.1.2 For Mac OSX user
-
-Coming soon
-
-### 2.1.2 For Window user
-
-Coming soon
+> **Note:** Only Linux is currently supported. macOS and Windows are not supported.
 
 ## 2.2 Using MMT-Extract in your project
 

@@ -13,5 +13,5 @@ else
 	rm /etc/ld.so.conf.d/mmt.conf
 	ldconfig
 	echo "[MMT-]> mmt-sdk has been removed from the system! "
-	echo "You can learn more about mmt-sdk at: http://www.montimage.com"
+	echo "You can learn more about mmt-sdk at: http://www.montimage.eu"
 fi

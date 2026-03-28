@@ -26,7 +26,7 @@ sudo sudo apt-get install libmicrohttpd5 tomcat7 postgresql sqlite3 libpcap libx
 ** Download and install MMT_QoE **
 
 ```sh
-wget  http://www.montimage.com/mmt-probe/downloads/vestel/mmt_pkg.tar.gz
+wget  http://www.montimage.eu/mmt-probe/downloads/vestel/mmt_pkg.tar.gz
 tar -zxvf mmt_pkg.tar.gz
 cd mmt_pkg
 ./install

@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
 	printf("|\t\t MONTIMAGE\n");
 	printf("|\t MMT-SDK version: %s\n",mmt_version());
 	printf("|\t %s: built %s %s\n", argv[0], __DATE__, __TIME__);
-	printf("|\t http://montimage.com\n");
+	printf("|\t http://montimage.eu\n");
 	printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  	
 	
 	init_extraction();

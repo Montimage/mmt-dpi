@@ -429,7 +429,7 @@ uint16_t mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     bool is_exist = false;
 
-    //a.Nghia8.Nguyen@montimage.com.fr
+    //a.Nghia8.Nguyen@montimage.eu.fr
     MMT_LOG(PROTO_MSN, MMT_LOG_DEBUG, "called mmt_check_for_email_address\n");
     //a
     if ( packet->payload_packet_len && is_letter( packet->payload[counter] ) ) {

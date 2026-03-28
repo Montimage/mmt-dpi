@@ -50,6 +50,6 @@ else
 	echo $MMT_DPI"/lib" >> /etc/ld.so.conf.d/mmt.conf
 	ldconfig
 	echo "[MMT-]> Done! "
-	echo "Thanks you for installing mmt-sdk, you can learn more about mmt-sdk at: http://www.montimage.com"
+	echo "Thanks you for installing mmt-sdk, you can learn more about mmt-sdk at: http://www.montimage.eu"
 fi
 

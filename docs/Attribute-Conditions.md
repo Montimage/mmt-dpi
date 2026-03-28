@@ -38,7 +38,7 @@ Attribute conditions are mainly designed to work with attribute handlers. The us
 
    HTTP.HOST_NAME contains "pipo"
 
-   HTTP.HOST_NAME == "montimage.com"
+   HTTP.HOST_NAME == "montimage.eu"
 
    IP.PROTO_ID == 6
 
