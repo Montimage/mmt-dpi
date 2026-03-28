@@ -74,7 +74,10 @@ endif
 SYS_NAME    = $(shell uname -s)
 SYS_VERSION = $(shell uname -p)
 # Debian architecture: use dpkg if available, otherwise map uname -m to Debian arch names
+# Only evaluate when the deb target is invoked to avoid unnecessary shell calls
+ifneq ($(filter deb,$(MAKECMDGOALS)),)
 DEB_ARCH ?= $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/;s/i686/i386/;s/armv7l/armhf/;s/ppc64le/ppc64el/'))
+endif
 
 BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 
@@ -115,7 +118,7 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
         \nPriority: standard \
         \nArchitecture: $(DEB_ARCH)\
         \nMaintainer: Montimage <contact@montimage.eu> \
-        \nDepends: libc6 (>= 2.17), libpcap0.8 | libpcap0.8t64 \
+        \nDepends: libc6 (>= 2.17), libpcap0.8 | libpcap0.8t64, libnghttp2-14 \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
         \n A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis \
