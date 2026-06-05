@@ -154,7 +154,7 @@ void parseOptions(int argc, char ** argv, char * filename, int * type) {
  * @param args     user argument
  */
 void attributes_iterator(attribute_metadata_t * attribute, uint32_t proto_id, void * args) {
-    register_extraction_attribute(args, proto_id, attribute->id);
+    register_extraction_attribute((mmt_handler_t *)args, proto_id, attribute->id);
 }
 
 /**
