@@ -1,4 +1,20 @@
+MMT-DPI is developed and maintained by Montimage and contributors.
+
+Maintainers
+-----------
+- luongnv89  (https://github.com/luongnv89)
+- nhnghia    (https://github.com/nhnghia)
+
+Organization
+------------
 Montimage
 Address: 39 rue Bobillot, 75013 Paris, France
 Website: http://www.montimage.eu
-Email: contact@montimage.eu
+Email:   contact@montimage.eu
+
+Acknowledgements
+----------------
+Thanks to all the contributors who have reported issues, sent pull
+requests, and helped shape MMT-DPI. See the GitHub contributors page
+for the full list:
+https://github.com/Montimage/mmt-dpi/graphs/contributors
