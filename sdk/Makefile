@@ -48,6 +48,7 @@ install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT
 	@ln -sf $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(MMT_LIB)/libmmt_tcpip.so
 	@ln -sf $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(MMT_LIB)/$(LIBMOBILE).so
 	@ln -sf $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)      $(MMT_LIB)/$(LIBBAPP).so
+	@ln -sf $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)      $(MMT_LIB)/$(LIBDICOM).so
 
 	@ echo "[MMT-]> Installed  "$(SDKLIB)" at "$(MMT_LIB)
 	@ cp -R $(SDKINC)/* $(MMT_INC)
@@ -59,6 +60,9 @@ install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT
 
 	@ cp $(SDKLIB)/$(LIBMOBILE).so.$(VERSION) $(MMT_PLUGINS)/$(LIBMOBILE).so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBMOBILE).so
+
+	@ cp $(SDKLIB)/$(LIBDICOM).so.$(VERSION) $(MMT_PLUGINS)/$(LIBDICOM).so
+	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBDICOM).so
 
 	@ cp $(SDKLIB)/$(LIBBAPP).so.$(VERSION) $(MMT_PLUGINS)/$(LIBBAPP).so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBBAPP).so
@@ -73,11 +77,6 @@ endif
 #  - - - - - - -
 SYS_NAME    = $(shell uname -s)
 SYS_VERSION = $(shell uname -p)
-# Debian architecture: use dpkg if available, otherwise map uname -m to Debian arch names
-# Only evaluate when the deb target is invoked to avoid unnecessary shell calls
-ifneq ($(filter deb,$(MAKECMDGOALS)),)
-DEB_ARCH ?= $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/;s/i686/i386/;s/armv7l/armhf/;s/ppc64le/ppc64el/'))
-endif
 
 BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 
@@ -99,6 +98,7 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
 	$(QUIET) $(CP) $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBMOBILE).so
 	$(QUIET) $(CP) $(SDKLIB)/$(LIBBAPP).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBBAPP).so
+	$(QUIET) $(CP) $(SDKLIB)/$(LIBDICOM).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBDICOM).so
 	# Make links
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_core.so
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so
@@ -106,6 +106,7 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_tcpip.so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/libmmt_tcpip.so
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBMOBILE).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBMOBILE).so
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBBAPP).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBBAPP).so
+	$(QUIET) ln -s $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBDICOM).so
 
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
 	echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
@@ -116,26 +117,13 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
         \nVersion: $(VERSION)-$(GIT_VERSION)\
         \nSection: base \
         \nPriority: standard \
-        \nArchitecture: $(DEB_ARCH)\
+        \nArchitecture: all \
         \nMaintainer: Montimage <contact@montimage.eu> \
-        \nDepends: libc6 (>= 2.17), libpcap0.8 | libpcap0.8t64, libnghttp2-14 \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
-        \n A software C library designed to extract data attributes from network packets, server logs, and from structured events in general, in order to make them available for analysis \
+        \n A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in odrder to make them available for analysis \
         \n Homepage: http://www.montimage.eu" \
 		> $(BUILD_DIR)/DEBIAN/control
-	$(QUIET) echo '#!/bin/sh' > $(BUILD_DIR)/DEBIAN/postinst
-	$(QUIET) echo 'set -e' >> $(BUILD_DIR)/DEBIAN/postinst
-	$(QUIET) echo "echo 'Running ldconfig for mmt-dpi...'" >> $(BUILD_DIR)/DEBIAN/postinst
-	$(QUIET) echo 'ldconfig' >> $(BUILD_DIR)/DEBIAN/postinst
-	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/postinst
-	$(QUIET) echo '#!/bin/sh' > $(BUILD_DIR)/DEBIAN/postrm
-	$(QUIET) echo 'set -e' >> $(BUILD_DIR)/DEBIAN/postrm
-	$(QUIET) echo 'if [ "$$1" = "remove" ] || [ "$$1" = "purge" ]; then' >> $(BUILD_DIR)/DEBIAN/postrm
-	$(QUIET) echo "    echo 'Updating ldconfig after mmt-dpi removal...'" >> $(BUILD_DIR)/DEBIAN/postrm
-	$(QUIET) echo '    ldconfig' >> $(BUILD_DIR)/DEBIAN/postrm
-	$(QUIET) echo 'fi' >> $(BUILD_DIR)/DEBIAN/postrm
-	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/postrm
 
 	$(QUIET) dpkg-deb -b $(BUILD_DIR)
 	$(QUIET) $(RM) $(BUILD_DIR)
@@ -210,7 +198,7 @@ zip: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 #  - - - - -
 
 clean:
-	$(QUIET) $(RM) $(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS)
+	$(QUIET) $(RM) $(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS)
 	$(QUIET) $(RM) $(SDKLIB) $(SDKBIN) $(SDKINC) $(SDKDOC) $(SDKXAM) $(BUILD_DIR) rpmbuild mmt-dpi.spec
 
 
