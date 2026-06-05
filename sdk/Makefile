@@ -121,7 +121,7 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
         \nDepends: libc6 (>= 2.17), libpcap0.8 | libpcap0.8t64, libnghttp2-14 \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
-        \n A software C library desinged to extract data attributes from network packets, server logs, and from structured events in general, in order to make them available for analysis \
+        \n A software C library designed to extract data attributes from network packets, server logs, and from structured events in general, in order to make them available for analysis \
         \n Homepage: http://www.montimage.eu" \
 		> $(BUILD_DIR)/DEBIAN/control
 	$(QUIET) echo '#!/bin/sh' > $(BUILD_DIR)/DEBIAN/postinst
