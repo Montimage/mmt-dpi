@@ -612,8 +612,11 @@ MMTAPI int MMTCALL packet_process(
 /**
  * Print out pretty list all attributes of all protocol
  * @return [description]
+ * @deprecated Debug helper with 0 callers in src/sdk/tests/examples
+ *             (exported via nm -D but never used); prefer
+ *             iterate_through_protocols(). Will be removed in a future version.
  */
-MMTAPI void MMTCALL mmt_print_all_protocols();
+MMTAPI void MMTCALL mmt_print_all_protocols() __attribute__((deprecated("debug helper; prefer iterate_through_protocols")));
 /**
  * This will be call from probe when probe want to do something from library
  * @param  mmt_handler pointer to the mmt_handler we want to do the action
@@ -758,13 +761,16 @@ MMTAPI void* MMTCALL get_attribute_extracted_data(
  * @param attribute_id the identifier of the attribute itself.
  * @param encap_index   The index of the encapsulation layer: for example, if we have: ETH.IP.IP.IP, then encap_index of IP can be: 0, 1, 2
  * @return a pointer to the extracted data if it exists, NULL otherwise.
+ * @deprecated Prefer get_attribute_extracted_data_at_index(); this encap_index
+ *             variant is uncalled (nm -D shows export, grep -r shows 0 callers
+ *             outside definition/headers) and will be removed in a future version.
  */
 MMTAPI void* MMTCALL get_attribute_extracted_data_encap_index(
     const ipacket_t *ipacket,
     uint32_t proto_id,
     uint32_t attribute_id,
     unsigned encap_index
-);
+) __attribute__((deprecated("use get_attribute_extracted_data_at_index instead")));
 
 /**
  * Returns a pointer to the extracted data of the attribute identified by its protocol and field names. The extracted
@@ -914,12 +920,15 @@ MMTAPI void MMTCALL reset_statistics(proto_statistics_t * stats);
  * Sets the link type to indicate the nature of the lower layer protocol.
  * @param mmt_handler pointer to the mmt handler we want to register its data link type
  * @param dltype identifier of the data link type.
- * @obsolete: this function should never be used! it is maintained for backward compatibility reasons. It will not exist in future versions.
+ * @deprecated This function is obsolete and should not be used; maintained only for
+ *             backward compatibility and will be removed in a future version.
+ *             Evidence: exported in libmmt_core.so (nm -D) but 0 callers in
+ *             src/sdk/tests/examples (grep -r "setDataLinkType" shows only definition + headers).
  */
 MMTAPI void MMTCALL setDataLinkType(
     mmt_handler_t *mmt_handler,
     int dltype
-);
+) __attribute__((deprecated("obsolete - do not use; will be removed in a future version")));
 
 /**
  * Returns the data link type of the given mmt handler.

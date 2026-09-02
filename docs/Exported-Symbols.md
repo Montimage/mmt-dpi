@@ -5,6 +5,15 @@ As a basis for a future specification for the public API, here's a comprehensive
 
 We should probably trim it down to ~30 symbols.
 
+> **Deprecation note (2026-09, #149):** The following 3 public ABI symbols are exported
+> (`nm -D local_install/dpi/lib/libmmt_core.so | grep ' T '` confirms) but have **0 callers**
+> outside their definition/headers (`grep -r <symbol> src sdk/tests sdk/examples tests examples`
+> shows only declaration+definition). They are now marked
+> `__attribute__((deprecated))` in `src/mmt_core/public_include/mmt_core.h:931,773,619`
+> (and mirrored in `sdk/include/mmt_core.h`) and will be removed in a future major version:
+> `setDataLinkType` (obsolete, @obsolete since long), `get_attribute_extracted_data_encap_index`
+> (redundant with `get_attribute_extracted_data_at_index`), `mmt_print_all_protocols` (debug helper, prefer `iterate_through_protocols`).
+
 Symbol table
 
 
