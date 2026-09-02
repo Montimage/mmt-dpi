@@ -32,7 +32,7 @@ echo "=== Prepare-for-a-new-released-version.md validation ==="
 
 # Check 1: Version locations exist and are consistent
 check "rules/common.mk has VERSION" "grep -q '^VERSION' $ROOT/rules/common.mk"
-check "dist/ZIP/install.sh has VERSION" "grep -q 'VERSION=' $ROOT/dist/ZIP/install.sh"
+check "dist/ZIP/mmt-install-common.sh has VERSION" "grep -q 'VERSION=' $ROOT/dist/ZIP/mmt-install-common.sh"
 check "sdk/include/mmt_core.h has VERSION" "grep -q '#define VERSION' $ROOT/sdk/include/mmt_core.h"
 
 # Check 2: mmt-test directory does NOT exist (doc should note this)
@@ -55,6 +55,7 @@ check "CHANGELOG.md exists" "test -f $ROOT/CHANGELOG.md"
 # Check 6: dist/ZIP/ directory exists
 check "dist/ZIP/install.sh exists" "test -f $ROOT/dist/ZIP/install.sh"
 check "dist/ZIP/uninstall.sh exists" "test -f $ROOT/dist/ZIP/uninstall.sh"
+check "dist/ZIP/mmt-install-common.sh exists" "test -f $ROOT/dist/ZIP/mmt-install-common.sh"
 
 # Check 7: CI workflows exist
 check ".github/workflows/c-cpp.yml exists" "test -f $ROOT/.github/workflows/c-cpp.yml"

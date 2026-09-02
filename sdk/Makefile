@@ -201,8 +201,12 @@ zip: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	# Remove old build
 	$(QUIET) $(RM) $(BUILD_DIR)
 	$(QUIET) $(MKDIR) $(BUILD_DIR)
-	# Copy make file
+	# Copy installer scripts (common + install/uninstall) and README
 	$(QUIET) $(CP) ../dist/ZIP/* $(BUILD_DIR)
+	# Stamp VERSION from the single source of truth (rules/common.mk) into
+	# the bundled common file so the ZIP never drifts from the build.
+	$(QUIET) sed -i 's/^VERSION="$${VERSION:-.*}"/VERSION="$(VERSION)"/' $(BUILD_DIR)/mmt-install-common.sh 2>/dev/null || \
+	         sed -i 's/^VERSION="$${VERSION:-.*}"/VERSION="$(VERSION)"/' $(BUILD_DIR)/mmt-install-common.sh
 	# Copy source to zip file
 	$(QUIET) $(CP) -R $(SDKLIB) $(BUILD_DIR)
 	$(QUIET) $(CP) -R $(SDKINC) $(BUILD_DIR)
@@ -233,7 +237,7 @@ dist-clean:
 	@ echo "[MMT-]> Going to remove MMT"
 	$(QUIET) $(RM) $(MMT_DPI)
 ifdef NEED_ROOT_PERMISSION
-	$(QUIET) $(RM) /etc/ld.so.conf.d/mmt.conf
+	$(QUIET) $(RM) /etc/ld.so.conf.d/mmt-dpi.conf /etc/ld.so.conf.d/mmt.conf 2>/dev/null; true
 endif
 	@ echo "[MMT-]> Done!"
 
