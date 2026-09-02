@@ -1,0 +1,15 @@
+title = "mmt-dpi gitleaks config"
+
+[allowlist]
+description = "false positives and non-secret fixtures"
+paths = [
+    '''docs/DOCTOR/.*''',
+    '''docs/images/.*\.ep$''',
+    '''.*\.ep$''',
+    '''.*\.pcap$''',
+    '''.*\.pcapng$''',
+    '''src/mmt_mobile/asn1c/.*''',
+]
+regexes = [
+    '''s1apUES1APIDs_p->choice''',
+]

@@ -114,11 +114,17 @@ See the [Add New Protocol](docs/Add-New-Protocol.md) guide for detailed instruct
 - Verify with Valgrind for memory leaks: `valgrind --leak-check=full ./your_test`
 - Ensure no regressions in existing protocol classification
 
+## Security and Secret Scanning
+
+- **Never commit secrets** (API keys, tokens, private keys, credentials). CI runs [Gitleaks](https://github.com/gitleaks/gitleaks) on every push/PR (`.github/workflows/c-cpp.yml:secret-scan` with config `.gitleaks.toml`); the same check runs locally via `pre-commit` (`.pre-commit-config.yaml:gitleaks` → `gitleaks protect --staged`). Install hooks with `pre-commit install` and run `pre-commit run --all-files` before pushing.
+- If you suspect a secret was committed, follow [SECURITY.md](SECURITY.md) and notify maintainers **privately** (GitHub Security Advisory or `contact@montimage.eu`) — do not open a public issue — and rotate the credential immediately.
+
 ## Reporting Issues
 
 - Use the [Bug Report](https://github.com/Montimage/mmt-dpi/issues/new?template=bug_report.md) template for bugs
 - Use the [Feature Request](https://github.com/Montimage/mmt-dpi/issues/new?template=feature_request.md) template for enhancements
 - Include pcap samples (if possible) when reporting classification issues
+- For security vulnerabilities, see [SECURITY.md](SECURITY.md) — use **private** disclosure (Security → Report a vulnerability or `contact@montimage.eu`), never a public issue
 
 ## License
 

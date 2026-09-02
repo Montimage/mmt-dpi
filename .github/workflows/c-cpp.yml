@@ -136,3 +136,18 @@ jobs:
       run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
     - name: Build & test the security rule engine (ENABLESEC=1)
       run: bash tests/run_all_tests.sh rule_engine
+
+  secret-scan:
+    # Secret scanning gate (issue #160 / F-SEC-006): fail the workflow if
+    # gitleaks detects a committed secret. Runs `gitleaks detect` over the
+    # full git history so a secret introduced on any branch is caught before
+    # merge. Suppressions go in `.gitleaksignore` at the repo root; path/regex
+    # allowlists live in `.gitleaks.toml`.
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+    - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
