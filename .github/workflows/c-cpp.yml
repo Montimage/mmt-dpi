@@ -29,7 +29,7 @@ jobs:
           - extra_cflags: "-fsigned-char"
             suites: "hashmap memory hexdump mmt_utils mmt_inet_ntop"
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Install dependencies
       run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
     - name: Run unit test suites
@@ -53,7 +53,7 @@ jobs:
           - profile: BUILD=tsan
             sanitize: tsan
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Install dependencies
       run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
     - name: Run unit test suites under sanitizers (${{ matrix.profile }})
@@ -67,13 +67,13 @@ jobs:
     # the overall line percentage; publish the report as a CI artifact.
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Install dependencies
       run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev jq
     - name: Run unit test suites with coverage
       run: bash tests/run_all_tests.sh --coverage
     - name: Upload coverage report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: unit-suite-coverage
         path: tests/coverage/
@@ -85,7 +85,7 @@ jobs:
     # ASN.1 tree (src/mmt_mobile/asn1c) is excluded from the scan.
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Install lint tools
       run: sudo apt-get update -y && sudo apt-get install -y shellcheck cppcheck
     - name: shellcheck (all tracked shell scripts, blocking)
@@ -106,7 +106,7 @@ jobs:
         echo "cppcheck findings: $(grep -c '<error' cppcheck-report.xml || true)"
     - name: Upload cppcheck findings report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: cppcheck-findings-report
         path: cppcheck-report.xml
@@ -117,7 +117,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: build-from-source
       run: |
          sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
@@ -131,7 +131,7 @@ jobs:
     # engines compile in the shipped configuration and that the suite runs.
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Install dependencies
       run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
     - name: Build & test the security rule engine (ENABLESEC=1)
