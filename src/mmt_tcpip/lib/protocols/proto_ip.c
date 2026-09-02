@@ -1578,8 +1578,6 @@ void ip_context_cleanup(void * proto_context, void * args) {
 
 void * setup_ip_context(void * proto_context, void * args) {
     return (void *) setup_ipv4_internal_context();
-    //setup_application_detection();
-    //setup_session_id_lists();
 }
 
 static attribute_metadata_t ip_attributes_metadata[IP_ATTRIBUTES_NB] = {

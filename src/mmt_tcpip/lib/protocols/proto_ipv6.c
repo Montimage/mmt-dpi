@@ -1369,8 +1369,6 @@ void ipv6_context_cleanup(void * proto_context, void * args) {
 
 void * setup_ipv6_context(void * proto_context, void * args) {
     return (void *) setup_ipv6_internal_context();
-    //setup_application_detection();
-    //setup_session_id_lists();
 }
 
 int proto_ext_headers_count_extraction(const ipacket_t * ipacket, unsigned proto_index,
