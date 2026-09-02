@@ -355,7 +355,10 @@ int smb_transfer_payload_extraction(const ipacket_t * ipacket, unsigned proto_in
   }
 
   if (payload_offset > 0) {
-    uint32_t payload_len = ipacket->p_hdr->caplen - offset - 32 - payload_offset;
+    size_t need = (size_t)offset + 32 + (size_t)payload_offset;
+    if( need > ipacket->p_hdr->caplen )
+        return 0;
+    uint32_t payload_len = (uint32_t)(ipacket->p_hdr->caplen - need);
     mmt_header_line_t * padding = (mmt_header_line_t *)malloc(sizeof(mmt_header_line_t));
     padding->len = payload_len;
     padding->ptr = (const char *)&cmd_payload[payload_offset];

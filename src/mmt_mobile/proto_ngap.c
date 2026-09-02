@@ -40,13 +40,17 @@ static bool _get_ngap_offset_and_length( const ipacket_t *ipacket, unsigned *off
 		return false;
 
 	int sctp_data_index  = get_protocol_index_by_id( ipacket, PROTO_SCTP_DATA );
+	if( sctp_data_index < 0 )
+		return false;
 	int sctp_data_offset = get_packet_offset_at_index(ipacket, sctp_data_index);
+	if( sctp_data_offset < 0 || (size_t)sctp_data_offset + sizeof(struct sctp_datahdr) > ipacket->p_hdr->caplen )
+		return false;
 
 	const int SCTP_DATA_HEADER_SIZE = sizeof(struct sctp_datahdr);
 	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
 	int ngap_offset = sctp_data_offset + SCTP_DATA_HEADER_SIZE;
 	//not enought room for NGAP
-	if( ngap_offset >= ipacket->p_hdr->len )
+	if( ngap_offset < 0 || (size_t)ngap_offset >= ipacket->p_hdr->caplen )
 		return false;
 	//sctp data Packet payload ID
 	switch( ntohl( hdr->ppid )){
@@ -75,6 +79,8 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 		return 0;
 	int sctp_data_index  = index; //get_protocol_index_by_id( ipacket, PROTO_SCTP_DATA );
 	int sctp_data_offset = get_packet_offset_at_index(ipacket, sctp_data_index);
+	if( sctp_data_offset < 0 || (size_t)sctp_data_offset + sizeof(struct sctp_datahdr) > ipacket->p_hdr->caplen )
+		return 0;
 
 	classified_proto_t retval;
 	retval.proto_id = PROTO_UNKNOWN;
@@ -82,7 +88,7 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
 	int ngap_offset = sctp_data_offset + SCTP_DATA_HEADER_SIZE;
 	//not enought room for NGAP
-	if( ngap_offset >= ipacket->p_hdr->len )
+	if( ngap_offset < 0 || (size_t)ngap_offset >= ipacket->p_hdr->caplen )
 		return 0;
 	//sctp data Packet payload ID
 	switch( ntohl( hdr->ppid )){
@@ -147,7 +153,9 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 int ngap_classify_next_proto(ipacket_t *packet, unsigned index) {
 	ngap_message_t msg;
 	int offset = get_packet_offset_at_index(packet, index);
-	const int data_len = packet->p_hdr->caplen - offset;
+	if( offset < 0 || (size_t)offset >= packet->p_hdr->caplen )
+		return 0;
+	const int data_len = (int)(packet->p_hdr->caplen - (size_t)offset);
 	if( data_len <= 0 )
 		return 0;
 	if( ! decode_ngap(&msg, & packet->data[offset], data_len ) )

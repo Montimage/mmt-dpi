@@ -285,7 +285,7 @@ static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * pac
 	//=> this is the case of PROTO_SCTP_SHUTDOWN and  PROTO_SCTP_SHUTDOWN_COMPLETE protocols
 	//   that are used to add a dummy S1AP protocol after them.
 	//   The reason is these two protocols are used to detach eNodeB
-	if( unlikely( packet->p_hdr->caplen <= offset + 1 )){
+	if( packet->p_hdr->caplen <= (size_t)offset + 1 || offset < 0 ){
 		//This block will be called as we are processing S1AP protocol and
 		//_classify_s1ap_from_sctp_shutdown will attach S1AP after SCTP_SHUTDOWN and SCTP_SHUTDOWN_COMPLETE
 		//
@@ -296,7 +296,7 @@ static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * pac
 			//need to check shutdown or shutdown_ack
 			//not enough room
 			offset = get_packet_offset_at_index(packet, proto_index);
-			if( offset > packet->p_hdr->caplen + sizeof(struct sctp_datahdr) )
+			if( offset < 0 || (size_t)offset + sizeof(struct sctp_datahdr) > packet->p_hdr->caplen )
 				return 0;
 
 			classified_proto_t retval;
@@ -321,10 +321,13 @@ static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * pac
 		return 0;
 	}
 
-	const uint16_t data_len = packet->p_hdr->caplen - offset;
+	if( offset < 0 || (size_t)offset > packet->p_hdr->caplen )
+		return 0;
+	const uint32_t data_len = packet->p_hdr->caplen - (size_t)offset;
 
 //	printf("ipacket id %lu, proto_index: %d, offset: %d, data_len: %d\n", packet->packet_id, proto_index, offset, data_len );
-
+	if( data_len == 0 )
+		return 0;
 
 	//decode S1AP packet
 	int ret = s1ap_decode( msg, & packet->data[offset], data_len );
@@ -573,7 +576,7 @@ static attribute_metadata_t s1ap_attributes_metadata[] = {
 static int _classify_s1ap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	int offset = get_packet_offset_at_index(ipacket, index);
 	//not enough room
-	if( offset > ipacket->p_hdr->caplen + sizeof(struct sctp_datahdr) )
+	if( offset < 0 || (size_t)offset + sizeof(struct sctp_datahdr) > ipacket->p_hdr->caplen )
 		return 0;
 
 	classified_proto_t retval;
@@ -598,7 +601,7 @@ static int _classify_s1ap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 
 static int _classify_s1ap_from_sctp_shutdown( ipacket_t * ipacket, unsigned index ){
 	int offset = get_packet_offset_at_index(ipacket, index);
-	if( offset > ipacket->p_hdr->caplen )
+	if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
 		return 0;
 
 	classified_proto_t retval;
@@ -607,7 +610,10 @@ static int _classify_s1ap_from_sctp_shutdown( ipacket_t * ipacket, unsigned inde
 	//at the end of the packet: 0 bytes for S1AP
 	//Reality, there is no S1AP protocol after SCTP_SHUTDOWN or SCTP_SHUTDOWN_COMPLETE
 	//We add a dummy S1AP after these protocols as they are  related to detach eNodeB
-	retval.offset = ipacket->p_hdr->caplen - offset - 1;
+	if( ipacket->p_hdr->caplen <= (size_t)offset )
+		retval.offset = 0;
+	else
+		retval.offset = ipacket->p_hdr->caplen - (size_t)offset - 1;
 	retval.status = Classified;
 
 	//fix length

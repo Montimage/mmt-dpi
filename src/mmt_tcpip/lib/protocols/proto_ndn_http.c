@@ -20,11 +20,15 @@ static void mmt_int_ndn_http_add_connection(ipacket_t * ipacket) {
 int ndn_http_url_extraction(const ipacket_t * ipacket, unsigned proto_index,
         attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -62,11 +66,15 @@ int ndn_http_url_extraction(const ipacket_t * ipacket, unsigned proto_index,
 int ndn_http_method_extraction(const ipacket_t * ipacket, unsigned proto_index,
         attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -105,11 +113,15 @@ int ndn_http_method_extraction(const ipacket_t * ipacket, unsigned proto_index,
 int ndn_http_first_gw_extraction(const ipacket_t * ipacket, unsigned proto_index,
         attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -132,11 +144,15 @@ int ndn_http_first_gw_extraction(const ipacket_t * ipacket, unsigned proto_index
 int ndn_http_second_gw_extraction(const ipacket_t * ipacket, unsigned proto_index,
         attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;

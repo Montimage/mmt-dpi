@@ -71,7 +71,9 @@ int classify_dtls_from_udp(ipacket_t * ipacket, unsigned index) {
 		offset = get_packet_offset_at_index(ipacket, index);
 		offset += 8; //8 bytes of UDP header
 		//not enough room for the DTLS header and its payload
-		if( ipacket->p_hdr->len - offset <= sizeof( dtls_header_t))
+		if( offset < 0 || (size_t)offset + sizeof( dtls_header_t) >= ipacket->p_hdr->caplen )
+			goto _not_found_dtls;
+		if( ipacket->p_hdr->caplen - (size_t)offset <= sizeof( dtls_header_t))
 			goto _not_found_dtls;
 
 		dtls = (dtls_header_t *) &ipacket->data[ offset ];
@@ -132,22 +134,41 @@ static int _dtls_client_hello_extract_attribute(const uint8_t *data, size_t data
 			return 0;
 		//jump over session id
 		data_index += sizeof( dtls_client_hello_t ); //session ID length
-		data_index += 1 + data[ data_index ]; //1 byte of session length, then session id content
-		//jump over cookie
-		data_index += 1 + data[ data_index ]; //1 byte of cookie length, then cookie content
 		if( data_index >= data_len )
+			return 0;
+		{
+			uint8_t sess_len = data[ data_index ];
+			if( data_index + 1 + sess_len > data_len )
+				return 0;
+			data_index += 1 + sess_len; //1 byte of session length, then session id content
+		}
+		//jump over cookie
+		if( data_index >= data_len )
+			return 0;
+		{
+			uint8_t cookie_len = data[ data_index ];
+			if( data_index + 1 + cookie_len > data_len )
+				return 0;
+			data_index += 1 + cookie_len; //1 byte of cookie length, then cookie content
+		}
+		if( data_index + 2 > data_len )
 			return 0;
 		//here, we are in cipher suites section
 		u16_arr = (mmt_u16_array_t *) extracted_data->data;
-		u16_arr->len = _get_u16( &data[data_index] ) / 2; //each cipher is a number of 2 bytes
+		{
+			uint16_t cipher_bytes = _get_u16( &data[data_index] );
+			if( cipher_bytes > data_len - data_index - 2 )
+				cipher_bytes = (uint16_t)(data_len - data_index - 2);
+			u16_arr->len = cipher_bytes / 2; //each cipher is a number of 2 bytes
+		}
 		data_index += 2;
-		if( data_index >= data_len )
+		if( data_index > data_len )
 			return 0;
 		for( i=0; i<u16_arr->len && i<BINARY_64DATA_LEN; i++){
+			if( data_index + 2 > data_len )
+				break;
 			u16_arr->data[i] = _get_u16( &data[data_index]);
 			data_index += 2;
-			if( data_index > data_len )
-				return 0;
 		}
 		return 1;
 	}
@@ -155,7 +176,10 @@ static int _dtls_client_hello_extract_attribute(const uint8_t *data, size_t data
 }
 
 static int _dtls_extract_attribute(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data){
-	size_t offset = get_packet_offset_at_index(ipacket, proto_index);
+	int ioffset = get_packet_offset_at_index(ipacket, proto_index);
+	if( ioffset < 0 || (size_t)ioffset + sizeof(dtls_header_t) > ipacket->p_hdr->caplen )
+		return 0;
+	size_t offset = (size_t)ioffset;
 	dtls_header_t *dtls = (dtls_header_t *) &ipacket->data[ offset ];
 	uint64_t u64;
 	uint8_t *p;
@@ -182,9 +206,11 @@ static int _dtls_extract_attribute(const ipacket_t * ipacket, unsigned proto_ind
 	case DTLS_CLIENT_HELLO_CIPHER_SUITE:
 		if( dtls->content_type != DTLS_CONTENT_TYPE_HANDSHAKE )
 			return 0;
+		if( ipacket->p_hdr->caplen <= offset + sizeof(dtls_header_t) )
+			return 0;
 		return _dtls_client_hello_extract_attribute(
 				&ipacket->data[ offset + sizeof(dtls_header_t) ],
-				ipacket->p_hdr->len - offset - sizeof( dtls_header_t),
+				ipacket->p_hdr->caplen - offset - sizeof( dtls_header_t),
 				extracted_data );
 	}
 	return 0;

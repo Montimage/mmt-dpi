@@ -460,11 +460,15 @@ ndn_proto_context_t * ndn_get_proto_context(ipacket_t *ipacket, unsigned index){
 int ndn_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -506,11 +510,15 @@ uint32_t ndn_packet_length_extraction_payload(char* payload, int total_length){
 int ndn_packet_length_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -673,11 +681,15 @@ char* ndn_name_components_extraction_payload(char *payload,int total_length){
 int ndn_name_components_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -718,11 +730,15 @@ int ndn_interest_nonce_extraction_payload(char *payload,int payload_len){
 int ndn_interest_nonce_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -761,11 +777,15 @@ int ndn_interest_lifetime_extraction_payload(char *payload,int payload_len){
 int ndn_interest_lifetime_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -807,11 +827,15 @@ int ndn_interest_min_suffix_component_extraction_payload(char *payload,int paylo
 int ndn_interest_min_suffix_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -854,11 +878,15 @@ int ndn_interest_max_suffix_component_extraction_payload(char *payload,int paylo
 int ndn_interest_max_suffix_component_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -875,11 +903,15 @@ int ndn_interest_max_suffix_component_extraction(const ipacket_t * ipacket, unsi
 int ndn_interest_publisher_publickey_locator_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -929,11 +961,15 @@ int ndn_interest_publisher_publickey_locator_extraction(const ipacket_t * ipacke
 int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -989,11 +1025,15 @@ int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_in
 int ndn_interest_child_selector_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1034,11 +1074,15 @@ int ndn_interest_child_selector_extraction(const ipacket_t * ipacket, unsigned p
 int ndn_interest_must_be_fresh_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1083,11 +1127,15 @@ int ndn_interest_must_be_fresh_extraction(const ipacket_t * ipacket, unsigned pr
 int ndn_interest_any_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1192,11 +1240,15 @@ char* ndn_data_content_extraction_payload(char *payload,int total_length){
 int ndn_data_content_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1242,11 +1294,15 @@ int ndn_data_content_type_extraction_payload(char *payload,int payload_len){
 int ndn_data_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1290,11 +1346,15 @@ int ndn_data_freshness_period_extraction_payload(char *payload,int payload_len){
 int ndn_data_freshness_period_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1311,11 +1371,15 @@ int ndn_data_freshness_period_extraction(const ipacket_t * ipacket, unsigned pro
 int ndn_data_final_block_id_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1404,11 +1468,15 @@ int ndn_data_signature_type_extraction_payload(char *payload,int payload_len){
 int ndn_data_signature_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1457,11 +1525,15 @@ char* ndn_data_key_locator_extraction_payload(char *payload,int total_length){
 int ndn_data_key_locator_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1506,11 +1578,15 @@ char* ndn_data_signature_value_extraction_payload(char *payload,int payload_len)
 int ndn_data_signature_value_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1528,11 +1604,15 @@ int ndn_data_signature_value_extraction(const ipacket_t * ipacket, unsigned prot
 int ndn_list_sessions_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(proto_index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
@@ -1627,7 +1707,10 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
     // NDN over Ethernet
     uint32_t payload_len = 0;
     if(index == 2){
-        payload_len = ipacket->p_hdr->caplen - offset;
+        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
+            payload_len = 0;
+        else
+            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
