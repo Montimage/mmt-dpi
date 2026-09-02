@@ -133,3 +133,11 @@ Append-only log of ambiguities resolved during doc-manager runs.
     - `src/mmt_tcpip/lib/protocols/proto_oscar.c:253` + `configured_protocols.c:4101-4102,4114` — `calssification` → `classification` (4 sites)
   No large refactors; fingerprint-affecting TODOs explicitly NOT changed. Next steps are tracked as deferred issues above.
   Source: `grep -rn "TODO\\|FIXME" src/ --include="*.c" --include="*.h"` (218→213), `docs/Phase2-Heuristics.md` (H1-H8 catalogue), `src/mmt_mobile/asn1c/` (generated, excluded), `src/mmt_tcpip/lib/http_parser.c` (vendored, #142), git diff `e8257c60` (#145) and `10afc854` (#146), issues #148/#154/#155/#156.
+<<<<<<< HEAD
+=======
+
+- Q: Issue #158 — repo-root report hygiene: which artifacts should be gitignored and does `make -C sdk clean` remove them?
+  A (chore): Harden `.gitignore` for report hygiene: generalized `classification.actual.txt` (`tools/phase0/baseline/` + `**/classification.actual.txt`), global gcov/coverage patterns (`*.gcda/*.gcno/*.gcov/coverage.info/coverage.json/lcov.info/htmlcov/`), static-analysis reports (`cppcheck*.xml/cppcheck-report.xml/PVS-Studio.log/pvs.log`), generic `*.log/*.tmp/*.bak/compile_commands.json/gmon.out/perf.data.*`, and keep the existing `accuracy_comparison_report.md`/`benchmark_comparison.md`/`CODE_REVIEW_2026.md`/`MASTER_IMPROVEMENT_PLAN.md`/`REVIEW_REPORT.md` entries. Extended `sdk/Makefile:clean` to also remove repo-root `*.log/*.tmp/coverage.*/cppcheck*.xml/PVS-Studio.log` and package leftovers (`mmt-dpi_*.deb/.rpm/.zip` at root and `sdk/`). No tracked files removed; `changelog.html` remains tracked (served asset, not a CI artifact). Verified `git check-ignore` and `make -C sdk clean` dry-run.
+  Source: `.gitignore:73-129`, `sdk/Makefile:222-229`, `tools/phase0/capture_baseline.sh:9-15`, `cppcheck.sh`, `pvs-studio.sh`.
+
+>>>>>>> chore/158-report-hygiene

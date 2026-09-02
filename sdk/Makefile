@@ -218,6 +218,11 @@ zip: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 clean:
 	$(QUIET) $(RM) $(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS)
 	$(QUIET) $(RM) $(SDKLIB) $(SDKBIN) $(SDKINC) $(SDKDOC) $(SDKXAM) $(BUILD_DIR) rpmbuild mmt-dpi.spec
+	$(QUIET) $(RM) $(TOPDIR)/*.log $(TOPDIR)/*.tmp $(TOPDIR)/*.bak $(TOPDIR)/coverage.info $(TOPDIR)/coverage.json $(TOPDIR)/lcov.info
+	$(QUIET) $(RM) $(TOPDIR)/cppcheck*.xml $(TOPDIR)/cppcheck_output.xml $(TOPDIR)/cppcheck-report.xml $(TOPDIR)/PVS-Studio.log $(TOPDIR)/pvs.log
+	$(QUIET) $(RM) $(TOPDIR)/mmt-dpi_*.deb $(TOPDIR)/mmt-dpi_*.rpm $(TOPDIR)/mmt-dpi_*.zip
+	$(QUIET) $(RM) $(TOPDIR)/sdk/mmt-dpi_*.deb $(TOPDIR)/sdk/mmt-dpi_*.rpm $(TOPDIR)/sdk/mmt-dpi_*.zip 2>/dev/null || true
+	$(QUIET) $(RM) mmt-dpi_*.deb mmt-dpi_*.rpm mmt-dpi_*.zip *.gcda *.gcno *.gcov 2>/dev/null || true
 
 
 # - - - - - - - - - -

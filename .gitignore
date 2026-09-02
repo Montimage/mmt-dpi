@@ -72,6 +72,8 @@ agent-instructions.md
 
 # Phase 0 CI gate: freshly-captured fingerprint written only on mismatch
 tools/phase0/ci/baseline/classification.actual.txt
+tools/phase0/baseline/classification.actual.txt
+**/classification.actual.txt
 
 # Compiled unit-test binaries — rebuilt by each suite's run_tests.sh
 tests/*/test_*
@@ -79,9 +81,18 @@ tests/*/test_*
 !tests/*/test_*.h
 
 # gcov intermediate data + generated coverage reports (--coverage mode)
+*.gcda
+*.gcno
+*.gcov
+*.cover
+coverage.info
+coverage.json
+lcov.info
 tests/*/*.gcda
 tests/*/*.gcno
 tests/coverage/
+htmlcov/
+cov/
 
 # --- OSS-readiness flow additions ---
 # Package build artifacts
@@ -93,9 +104,26 @@ local_install/
 # IDD / tooling state
 .gitissue/
 .oss-ready/
-# Throwaway analysis reports
+# Throwaway analysis reports (repo-root hygiene, #158)
 accuracy_comparison_report.md
 benchmark_comparison.md
 CODE_REVIEW_2026.md
 MASTER_IMPROVEMENT_PLAN.md
 REVIEW_REPORT.md
+changelog.html.tmp
+*.log
+*.tmp
+*.bak
+*.orig
+compile_commands.json
+gmon.out
+perf.data.*
+# Static-analysis / coverage report artifacts
+cppcheck*.xml
+cppcheck_output.xml
+cppcheck-report.xml
+PVS-Studio.log
+pvs.log
+pvs_*/
+report.xml
+report.html
