@@ -37,12 +37,29 @@ extern "C" {
 
 #define POSITION_NOT_KNOWN      -1      /**< Attribute position not known code. */
 
-#define SCOPE_PACKET            1 /**< Code of packet scope attribute. Packet scope attributes may change with each packet. */
-#define SCOPE_SESSION           2 /**< Code of session scope attribute. Session scope attributes will not change during the session lifetime. */
-#define SCOPE_SESSION_CHANGING  4 /**< Code indicating a session scope attribute that might change during the lifetime of the session. */
-
-#define SCOPE_ON_DEMAND         ( SCOPE_PACKET | SCOPE_SESSION | SCOPE_SESSION_CHANGING ) /* (1 | 2 | 4) = 7 */
+typedef enum {
+    SCOPE_PACKET = 1,          /**< Packet scope attribute. May change with each packet. */
+    SCOPE_SESSION = 2,         /**< Session scope attribute. Will not change during the session lifetime. */
+    SCOPE_SESSION_CHANGING = 4,/**< Session scope attribute that might change during the session lifetime. */
+    SCOPE_ON_DEMAND = 7,       /**< (SCOPE_PACKET | SCOPE_SESSION | SCOPE_SESSION_CHANGING) */
+    SCOPE_EVENT = 0x10         /**< Event scope attribute. */
+} mmt_attr_scope_t;
+/* Macro aliases for ABI/source compatibility: keep #define for #ifdef checks */
+#ifndef SCOPE_PACKET
+#define SCOPE_PACKET            1
+#endif
+#ifndef SCOPE_SESSION
+#define SCOPE_SESSION           2
+#endif
+#ifndef SCOPE_SESSION_CHANGING
+#define SCOPE_SESSION_CHANGING  4
+#endif
+#ifndef SCOPE_ON_DEMAND
+#define SCOPE_ON_DEMAND         7
+#endif
+#ifndef SCOPE_EVENT
 #define SCOPE_EVENT             0x10
+#endif
 
 #define ATTRIBUTE_UNSET         0 /**< Code indicating the attribute is not set. */
 #define ATTRIBUTE_SET           1 /**< Code indicating the attribute is set. */
@@ -1175,6 +1192,24 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
  * Print Montimage information
  */
 void mmt_print_info();
+
+/* Typed inline accessors for weak-type scope (ABI-compatible wrappers, file:line mmt_core.h) */
+static inline mmt_attr_scope_t mmt_attr_get_scope_typed(const attribute_t *attr) {
+    return (mmt_attr_scope_t)get_attr_scope((attribute_t*)attr);
+}
+static inline enum data_types mmt_attr_get_data_type_typed(const attribute_t *attr) {
+    return (enum data_types)get_attr_data_type((attribute_t*)attr);
+}
+static inline mmt_attr_scope_t mmt_attribute_get_scope_typed(mmt_proto_id_t proto_id, uint32_t attribute_id) {
+    return (mmt_attr_scope_t)get_attribute_scope((mmt_proto_id_t)proto_id, attribute_id);
+}
+static inline enum data_types mmt_attribute_get_data_type_typed(mmt_proto_id_t proto_id, uint32_t attribute_id) {
+    return (enum data_types)get_attribute_data_type((mmt_proto_id_t)proto_id, attribute_id);
+}
+static inline mmt_proto_id_t mmt_attr_get_proto_id_typed(const attribute_t *attr) {
+    return (mmt_proto_id_t)get_attr_protocol_id((attribute_t*)attr);
+}
+
 #ifdef  __cplusplus
 }
 #endif
