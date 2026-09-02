@@ -22,8 +22,7 @@
 extern "C" {
 #endif
 
-    //TODO: add documentation
-    // API for session management
+    /** Session management API — per-protocol session store helpers. */
     void * get_session_from_protocol_context_by_session_key(void * protocol_context, void * key);
     int insert_session_into_protocol_context(void * protocol_context, void * key, void * value);
     int delete_session_from_protocol_context(void * protocol_context, void * key);

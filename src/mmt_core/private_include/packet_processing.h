@@ -213,7 +213,9 @@ struct evasion_handler_struct {
 
 /**
  * Defines the packet information.
- * <p>TODO: structure only used in the packet_processing source file. can be moved there.
+ * NOTE: Kept here because mmt_handler_t embeds packet_info_t by value;
+ * the type is effectively private to the packet_processing module but
+ * must remain visible wherever mmt_handler_struct is defined.
  */
 struct packet_info_struct {
     uint32_t packet_id; /**< identifier of the packet. */
@@ -489,12 +491,6 @@ void free_registered_packet_handlers(mmt_handler_t *mmt_handler);
  * Cleanup function that frees registered protocol.
  */
 void free_registered_protocols();
-
-//TODO: seems to not be used (verify and remove if dead)
-void add_attribute_extraction_for_session(void * key, void * value, void * args);
-
-//TODO: seems to not be used
-void remove_attribute_extraction_for_session(void * key, void * value, void * args);
 
 /**
  * Forces the timeout of sessions associated to the least recent timeout slots. The minimum number

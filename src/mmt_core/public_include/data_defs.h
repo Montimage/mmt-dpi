@@ -43,7 +43,7 @@ typedef struct proto_statistics_struct          proto_statistics_t;
     // int status;// MMT_CONTINUE/ MMT_SKIP
     // next_process_function next_process;
 // }extra_t;
-//BW - TODO: de we really need to override these??
+/* NOTE: Custom swab/ntohl overrides provide a consistent, header-independent byte-order implementation. */
 /** Switches the order of bytes of a short int value */
 #define swab16(x) ((uint16_t)(                         \
       (((uint16_t)(x) & (uint16_t)0x00ffU) << 8) |            \

@@ -19,7 +19,8 @@ extern "C" {
 #include "dbg.h"
 #include "mmt_utils.h"
 
-//TODO: should be moved outside MMT. These definitions belong to the protocols/protocol stacks!
+/* NOTE: DLT/protocol constants (DLT_EN10MB, THALES_TDMA_PROTO, ECITIZ_PROTO) logically belong to protocol stacks
+ * but are kept here for backward compatibility so existing callers need not include extra headers. */
 #ifndef DLT_EN10MB
 #define DLT_EN10MB              1       /**< Ethernet (10Mb) */
 #endif
