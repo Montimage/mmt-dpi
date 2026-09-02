@@ -40,3 +40,8 @@ overview and quick start, see the [root README](../README.md).
 * [Preparing a New Release](./Prepare-for-a-new-released-version.md)
 * [Discussion Points](./Discussion-Points.md) — design notes and open questions
 * [Exported Symbols](./Exported-Symbols.md) — full public API symbol reference
+* [Troubleshooting](./troubleshooting.md)
+
+## Additional References ##
+* [ChronoChat](./ChronoChat.md) — ChronoChat protocol notes
+* [External Attribution](./External-Attribution.md) — third-party attributions

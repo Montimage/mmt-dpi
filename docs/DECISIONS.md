@@ -88,3 +88,15 @@ Append-only log of ambiguities resolved during doc-manager runs.
 - Q: Issue #124 suggests gcov+lcov (or gcovr), but neither lcov nor gcovr is installed in the dev environment and the acceptance criteria only require a machine-readable report plus a printed line percentage.
   A (issue-resolver): Implemented with gcov alone (`gcov --json-format` + jq, both shipped with gcc/standard images); the runner emits a genuine lcov-format tracefile at tests/coverage/coverage.info, so lcov tooling can still consume it. System headers outside the repo are excluded from the report.
   Source: `tests/run_all_tests.sh:166-249`.
+- Q: docs/AGENT_ENVIRONMENT.md, DEVELOPMENT.md and CONTRIBUTING.md claim 8 suites / `make test` as the test command, but code now has 12 suites and `make test` is an install-dependent trap.
+  A (doc-manager): Update suite count to 12 (`tests/run_all_tests.sh:141-154`) and replace `make test` docs with `bash tests/run_all_tests.sh`; add trap note citing `sdk/Makefile:239-242`, `rules/common.mk:4-8`. Fix `NDEBUG=1` description — it suppresses `-DNDEBUG` (keeps debug active) per `rules/common.mk:38-43`.
+  Source: `tests/run_all_tests.sh:141-154`, `sdk/Makefile:8-13,239-242`, `rules/common.mk:38-43`.
+- Q: CONTRIBUTING.md and Compilation-and-Installation-Instructions.md list `cmake` as a prerequisite and unconditional `libxml2-dev`, and use stale git URL `montimage/mmt-dpi`.
+  A (doc-manager): Remove `cmake`; make `libxml2-dev` conditional on `ENABLESEC=1` (`rules/common.mk:76-84`); note `libnghttp2-dev` optional (`rules/common.mk:56-74`); fix URL to `montimage-projects/mmt-dpi.git`.
+  Source: `rules/common.mk:56-84`, `install.sh:122-130`.
+- Q: docs/DEPLOYMENT.md shows installed plugins under `/opt/mmt/dpi/plugins/` and omits examples path.
+  A (doc-manager): Fix to `/opt/mmt/plugins/` and add `/opt/mmt/examples/` per `rules/common.mk:7-8`; plugin load path at `rules/common.mk:30`.
+  Source: `rules/common.mk:4-8,30`.
+- Q: docs/README.md navigation omits `troubleshooting.md`, `ChronoChat.md`, `External-Attribution.md` and several protocol docs.
+  A (doc-manager): Add Troubleshooting, ChronoChat, External-Attribution links; per-protocol docs remain reachable via `Developer.md`.
+  Source: `docs/` directory listing.
