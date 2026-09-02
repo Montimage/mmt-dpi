@@ -250,7 +250,7 @@ int mmt_check_oscar(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_me_oscar(ipacket, index); //BW: TODO: the calssification of oscar seems to be for TCP only
+        mmt_classify_me_oscar(ipacket, index); //BW: TODO: the classification of oscar seems to be for TCP only
     }
     return 4;
 }

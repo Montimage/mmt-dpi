@@ -26,7 +26,7 @@ int batman_packet_format_extraction(const ipacket_t * packet, unsigned proto_ind
     struct batman_packet * b_packet = (struct batman_packet *) &packet->data[proto_offset];
     */
 
-    //TODO: teste si le packet est bien formatte
+    //TODO: check if packet is well formatted
 
     *((unsigned int *) extracted_data->data) = 1;
 

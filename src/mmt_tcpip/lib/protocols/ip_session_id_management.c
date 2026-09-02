@@ -111,7 +111,7 @@ int cleanup_ipv6_internal_context(internal_ip_proto_context_t * tcpip_context) {
     return 1;
 }
 
-int close_session_id_lists(void * proto_context) { //TODO: change the name of this function tor emove the "id" from it
+int close_session_id_lists(void * proto_context) { //TODO: rename to remove "id" from function name
     //clear_timeout_milestones(); // This is performed in the core in the function "close_extraction"! This is not the right place to do this.
 
     protocol_sessions_iteration_callback(proto_context, free_session_data, ((protocol_instance_t *) proto_context)->args);

@@ -23,7 +23,6 @@ extern "C" {
         SCTP_CH_TYPE,
         SCTP_CH_FLAGS,
         SCTP_CH_LENGTH,
-        //SCTP_NUM_CH, //TODO:delete this later
        // SCTP_DATA_TSN,
         //SCTP_DATA_STREAM,
         //SCTP_DATA_SSN,
@@ -47,7 +46,6 @@ extern "C" {
 #define SCTP_CH_TYPE_ALIAS      "ch_type"
 #define SCTP_CH_FLAGS_ALIAS     "ch_flags"
 #define SCTP_CH_LENGTH_ALIAS    "ch_length"
-//#define SCTP_NUM_CH_ALIAS       "numchunk" //TODO:delete this later
 //#define SCTP_DATA_TSN_ALIAS     "data_tsn"
 //#define SCTP_DATA_STREAM_ALIAS  "data_stream"
 //#define SCTP_DATA_SSN_ALIAS     "data_ssn"

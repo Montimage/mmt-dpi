@@ -490,7 +490,7 @@ void free_registered_packet_handlers(mmt_handler_t *mmt_handler);
  */
 void free_registered_protocols();
 
-//TODO: seems to net be used
+//TODO: seems to not be used (verify and remove if dead)
 void add_attribute_extraction_for_session(void * key, void * value, void * args);
 
 //TODO: seems to not be used

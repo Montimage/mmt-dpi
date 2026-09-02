@@ -4098,8 +4098,8 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_directconnect_udp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_msn_udp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_yahoo_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_oscar, 50); //BW: TODO: the calssification of oscar seems to be for TCP only
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_jabber, 50); //BW: TODO: the calssification of jabber seems to be for TCP only
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_oscar, 50); //BW: TODO: the classification of oscar seems to be for TCP only
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_jabber, 50); //BW: TODO: the classification of jabber seems to be for TCP only
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_gtp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_manolito_udp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_imesh_udp, 50);
@@ -4111,7 +4111,7 @@ int init_tcpip_plugin() {
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_pplive_udp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_iax, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_mgcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_gadugadu, 50); //BW: TODO: the calssification of gadugadu seems to be for TCP only
+    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_gadugadu, 50); //BW: TODO: the classification of gadugadu seems to be for TCP only
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_zattoo_udp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_qq_udp, 50);
     register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_feidian_udp, 50);

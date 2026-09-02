@@ -366,7 +366,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		}
 
 		if( is_lv2_in_e_port_ids ){
-			//TODO: somewho no LV2 Egress Port in
+			//TODO: somehow no LV2 Egress Port in
 			//4.7 INT Hop-by-Hop Metadata Header Format (page 15)
 			//Level 2 Ingress Port ID + Egress Port ID (4 bytes each)
 			//
