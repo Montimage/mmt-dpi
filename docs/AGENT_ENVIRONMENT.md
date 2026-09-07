@@ -10,7 +10,7 @@ repository itself; the authoritative sources are:
 | `rules/common.mk` | Compiler flags, `MMT_BASE`, `BUILD=asan`/`tsan`, `ENABLESEC`, debug/valgrind toggles |
 | `rules/common-linux.mk` | Linux link rules, release hardening, `ENABLESEC` engines |
 | `sdk/Makefile` | Build entry point, `install`/`test` targets, default `MMT_BASE` |
-| `tests/run_all_tests.sh` | Master test runner and the 8 standalone suites |
+| `tests/run_all_tests.sh` | Master test runner and the 12 standalone suites |
 
 ## 1. Toolchain Requirements
 
@@ -70,7 +70,7 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 | Flag | Effect | Source |
 |------|--------|--------|
 | `DEBUG=1` | `-g` instead of `-O3`; asserts/debug() stay active | `rules/common.mk:87-93` |
-| `NDEBUG=1` | Default behavior kept explicit (`-DNDEBUG`) | `rules/common.mk:38-43` |
+| `NDEBUG=1` | Keep debug/assert active (suppress `-DNDEBUG`; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
 | `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`) | `rules/common.mk:159-166` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
 | `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:89-97` |
@@ -82,11 +82,12 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **8/8 suites pass**, total runtime roughly 20–30 s on a
+Expected result: **12/12 suites pass**, total runtime roughly 20–30 s on a
 typical development machine. Exit code `0` on success, `1` on any failure.
-The suite list lives in `DEFAULT_SUITES` (`tests/run_all_tests.sh:141-150`):
+The suite list lives in `DEFAULT_SUITES` (`tests/run_all_tests.sh:141-154`):
 `hashmap`, `memory`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`, `avltree`,
-`citrix_ica_detection`, `http_header_case`.
+`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`, `rule_engine`,
+`radius_hardening`, `nas_ies_tail`.
 
 Key property for agents: these suites are **standalone**. Each suite's
 `run_tests.sh` compiles its test directly against sources under `src/` with
@@ -242,7 +243,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 8/8 suites PASSED, exit 0 (~25 s)
+bash tests/run_all_tests.sh     # 12/12 suites PASSED, exit 0 (~25 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

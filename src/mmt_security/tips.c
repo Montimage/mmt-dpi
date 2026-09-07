@@ -485,11 +485,15 @@ char *get_my_data(void *data1, short size, long type) {
               }
             }
             break;
-        case MMT_HEADER_LINE:
+        case MMT_HEADER_LINE: {
         	//parse_mmt_header_line( &data1, &data_size );
-            strncpy(buff1, ((mmt_header_line_t *)data1)->ptr, ((mmt_header_line_t *)data1)->len);
-            buff1[((mmt_header_line_t *)data1)->len + 1] ='\0';
+            int hl_len = ((mmt_header_line_t *)data1)->len;
+            if (hl_len < 0) hl_len = 0;
+            if (hl_len > 99) hl_len = 99;
+            memcpy(buff1, ((mmt_header_line_t *)data1)->ptr, hl_len);
+            buff1[hl_len] = '\0';
         	break;
+        }
         case MMT_STRING_LONG_DATA:
         case MMT_STRING_DATA:
             (void)sprintf(buff1, "%s", (char*) (data1 + sizeof (int)));
@@ -580,33 +584,37 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     temp2 = input;
     *jump = 0;
 
-    while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) {
+    while ((isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) && i < (int)sizeof(token1)-1) {
         token1[i] = *temp2;
         i++;
         temp2++;
     }
     token1[i] = '\0';
+    // Skip remaining identifier chars beyond buffer to stay in sync
+    while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) temp2++;
     if (*temp2 != '.') {
         (void)fprintf(stderr, "Error 22x: Incorrect name in: %s", input);
         return NULL;
     }
     temp2++; //skip the point
     i = 0;
-    while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) {
+    while ((isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) && i < (int)sizeof(token2)-1) {
         token2[i] = *temp2;
         temp2++;
         i++;
     }
     token2[i] = '\0';
+    while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) temp2++;
     if (*temp2 == '.') {//we have a reference to an event (event_id)
         temp2++;
         i = 0;
-        while (isdigit(*temp2)) {
+        while (isdigit(*temp2) && i < (int)sizeof(token3)-1) {
             token3[i] = *temp2;
             temp2++;
             i++;
         }
         token3[i] = '\0';
+        while (isdigit(*temp2)) temp2++;
     }
     //Got variable identifiers: token1.token2.token3 (e.g., META.PROTO.3)
     protocol_id = get_protocol_id_by_name(token1);
@@ -1408,10 +1416,11 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
     int i;
     int count;
     count = xmlTextReaderAttributeCount(reader);
+    if (count > 100) count = 100;
     for (i = 0; i < count; i++) {
         attribute_value[i] = xmlTextReaderGetAttributeNo(reader, i);
     }
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count && i < 100; i++) {
         xmlTextReaderMoveToAttributeNo(reader, i);
         attribute_name = xmlTextReaderConstName(reader);
         if (xmlStrcmp(attribute_name, (const xmlChar*)"value") == 0) {
@@ -1479,7 +1488,7 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
             a_rule->repeat_times = atoi((const char*)attribute_value[i]);
         }
     }
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count && i < 100; i++) {
         if (attribute_value[i] != NULL) {
             xfree((char *) attribute_value[i]);
             attribute_value[i] = NULL;
@@ -2054,6 +2063,20 @@ char * convert_string_to_json_compatible (char * p, int size){
 
 
 
+static void json_grow_append(char **buf, size_t *cap, const char *src) {
+    if (!buf || !cap || !src) return;
+    size_t cur = strlen(*buf);
+    size_t add = strlen(src);
+    if (cur + add + 1 > *cap) {
+        size_t newcap = *cap * 2;
+        while (newcap < cur + add + 1) newcap *= 2;
+        char *nb = realloc(*buf, newcap);
+        if (!nb) return;
+        *buf = nb;
+        *cap = newcap;
+    }
+    strcat(*buf, src);
+}
 void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *curr_rule, char *cause, short event_id)
 {
     unsigned long L1=0,L2=0,L3=0,L4=0;
@@ -2067,9 +2090,10 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     char * data_pointer = NULL;
     char * new_data_pointer = NULL;
     struct timeval tvp;
-    char *json_buff=xcalloc(7000,1);
+    size_t json_cap = 65536, json_cap1 = 8192;
+    char *json_buff=xcalloc(json_cap,1);
     if(json_buff == NULL) return;
-    char *json_buff1=xcalloc(7000,1);
+    char *json_buff1=xcalloc(json_cap1,1);
     if (json_buff1 == NULL) {
         xfree(json_buff);
         return;
@@ -2082,15 +2106,15 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     tvp.tv_usec=0;
     tvp = *(struct timeval *) get_attribute_extracted_data(pkt, PROTO_META, META_UTIME);
 
-    (void)sprintf(json_buff, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (long) tvp.tv_usec);
+    snprintf(json_buff, json_cap, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (long) tvp.tv_usec);
 
     int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
     const char *proto_name, *att_name;
 
     if (cause != NULL && *cause != '\0') {
-        (void)sprintf(json_buff1, ",\"description\":\"%s\"", cause);
-        (void)strcat(json_buff, json_buff1);
-        (void)strcat(json_buff, ",\"attributes\":[");
+        snprintf(json_buff1, json_cap1, ",\"description\":\"%s\"", cause);
+        json_grow_append(&json_buff, &json_cap, json_buff1);
+        json_grow_append(&json_buff, &json_cap, ",\"attributes\":[");
 
         int num_attr = 0;
         unsigned long tmp_lu=0;
@@ -2151,8 +2175,8 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
                     convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
-                    (void)strcat(json_buff, json_buff1);
+                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     xfree(temp_MAC);
                     break;
                 case MMT_DATA_TIMEVAL:
@@ -2164,52 +2188,63 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                        L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
                        L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
                        L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
-                       (void)sprintf(json_buff1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
+                       snprintf(json_buff1, json_cap1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
                     }else
-                       (void)sprintf(json_buff1,"{\"x.x\":\"0.0.0.0\"},");
-                    (void)strcat(json_buff, json_buff1);
+                       snprintf(json_buff1, json_cap1,"{\"x.x\":\"0.0.0.0\"},");
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 case MMT_U16_DATA:
-                    (void)sprintf(json_buff1, "{\"%s.%s\":%u},", proto_name,
+                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":%u},", proto_name,
                             att_name, *(unsigned short*) (data1));
-                    (void)strcat(json_buff, json_buff1);
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 case MMT_U32_DATA:
                     tmp_lu=*(uint32_t*) data1;
-                    (void)sprintf(json_buff1, "{\"%s.%s\":%lu},", proto_name,
+                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":%lu},", proto_name,
                             att_name, tmp_lu);
-                    (void)strcat(json_buff, json_buff1);
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 case MMT_U64_DATA:
                     // TODO
                     break;
                 case MMT_U8_DATA:
                 case MMT_DATA_CHAR:
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%u\"},", proto_name,
+                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%u\"},", proto_name,
                             att_name, *(unsigned char*) (data1));
-                    (void)strcat(json_buff, json_buff1);
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
-                case MMT_HEADER_LINE:
+                case MMT_HEADER_LINE: {
                 	//parse_mmt_header_line( &data1, & data_size );
-                    buff = xmalloc ((((mmt_header_line_t *)data1)->len) + 1);
+                    int hl_len = ((mmt_header_line_t *)data1)->len;
+                    if (hl_len < 0) hl_len = 0;
+                    if (hl_len > 512) hl_len = 512;
+                    buff = xmalloc (hl_len + 1);
                     if(buff == NULL){
                         xfree(json_buff);
                         xfree(json_buff1);
                         break;
                     }
-                    strncpy(buff, ((mmt_header_line_t *)data1)->ptr, ((mmt_header_line_t *)data1)->len);
-                    buff[((mmt_header_line_t *)data1)->len] ='\0';
-					(void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name,
+                    memcpy(buff, ((mmt_header_line_t *)data1)->ptr, hl_len);
+                    buff[hl_len] ='\0';
+					snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name,
 							att_name, (char *)buff);
                     xfree(buff);
-					(void)strcat(json_buff, json_buff1);
+					json_grow_append(&json_buff, &json_cap, json_buff1);
 					break;
+                }
                 case MMT_DATA_PATH:
                 case MMT_STRING_LONG_DATA:
-                case MMT_STRING_DATA:
-                    (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (data1 + sizeof (int)));
-                    (void)strcat(json_buff, json_buff1);
+                case MMT_STRING_DATA: {
+                    int slen = *(int*)(data1);
+                    if (slen < 0) slen = 0;
+                    if (slen > 512) slen = 512;
+                    char tmp_str[513];
+                    memcpy(tmp_str, (char*)(data1 + sizeof(int)), slen);
+                    tmp_str[slen]='\0';
+                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, tmp_str);
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
+                }
                 case MMT_BINARY_DATA:
                 case MMT_BINARY_VAR_DATA:
                     // TODO
@@ -2221,33 +2256,33 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                         L2 = (*(unsigned long*)(data2)&0x0000ff00)>>8;
                         L3 = (*(unsigned long*)(data2)&0x00ff0000)>>16;
                         L4 = (*(unsigned long*)(data2)&0xff000000)>>24;
-                        (void)sprintf(json_buff1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
-                        (void)strcat(json_buff, json_buff1);
+                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
+                        json_grow_append(&json_buff, &json_cap, json_buff1);
                     } else if (data_size == 6) {
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                (void)sprintf(json_buff1, "{\"%s.%s\":%2.2X", proto_name,
+                                snprintf(json_buff1, json_cap1, "{\"%s.%s\":%2.2X", proto_name,
                                         att_name, *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
-                                (void)sprintf(json_buff1, ":%2.2X", *(unsigned char*) (data2 + j));
+                                snprintf(json_buff1, json_cap1, ":%2.2X", *(unsigned char*) (data2 + j));
                             }
-                            (void)strcat(json_buff, json_buff1);
+                            json_grow_append(&json_buff, &json_cap, json_buff1);
                         }
                         if(close_tag==YES)
-                          (void)strcat(json_buff, "},");
+                          json_grow_append(&json_buff, &json_cap, "},");
                     } else {
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                (void)sprintf(json_buff1, "{\"%s.%s\":\"%02X", proto_name,
+                                snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%02X", proto_name,
                                         att_name, *(unsigned char*) (data2 + j));
                                 close_tag=YES;
                             } else {
-                                (void)sprintf(json_buff1, ":%02X", *(unsigned char*) (data2 + j));
+                                snprintf(json_buff1, json_cap1, ":%02X", *(unsigned char*) (data2 + j));
                             }
-                            (void)strcat(json_buff, json_buff1);
+                            json_grow_append(&json_buff, &json_cap, json_buff1);
                         }
                         //end attribute
                         if(close_tag==YES)
@@ -2271,8 +2306,8 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 								  data_pointer = get_attribute_extracted_data_by_name(pkt, "tcp","p_payload");
 								  if( data_pointer != NULL ){
 									  new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
-									  (void)sprintf(json_buff1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
-									  (void)strcat(json_buff, json_buff1);
+									  snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
+									  json_grow_append(&json_buff, &json_cap, json_buff1);
 									  xfree (new_data_pointer);
 								  }
 							  }
@@ -2307,14 +2342,14 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
                 L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
                 L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
-        		(void)sprintf(json_buff1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
-        	    (void)strcat(json_buff, json_buff1);
+        		snprintf(json_buff1, json_cap1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
+        	    json_grow_append(&json_buff, &json_cap, json_buff1);
        	   }else if( having_mac_src == 0 ){
         		data1 = get_attribute_extracted_data(pkt, 99, 3);
         		temp_MAC = xmalloc(22);
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-        		(void)sprintf(json_buff1,"{\"eth.src\":\"%s\"},", temp_MAC );
-        		(void)strcat(json_buff, json_buff1);
+        		snprintf(json_buff1, json_cap1,"{\"eth.src\":\"%s\"},", temp_MAC );
+        		json_grow_append(&json_buff, &json_cap, json_buff1);
         		xfree( temp_MAC );
         	}
         	num_attr ++;
@@ -2329,14 +2364,14 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
                 L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
                 L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
-				(void)sprintf(json_buff1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
-			    (void)strcat(json_buff, json_buff1);
+				snprintf(json_buff1, json_cap1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
+			    json_grow_append(&json_buff, &json_cap, json_buff1);
 		    }else if( having_mac_dst == 0 ){
 				data1 = get_attribute_extracted_data(pkt, 99, 2);
 				temp_MAC = xmalloc(22);
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
-				(void)sprintf(json_buff1,"{\"eth.dst\":\"%s\"},", temp_MAC);
-				(void)strcat(json_buff, json_buff1);
+				snprintf(json_buff1, json_cap1,"{\"eth.dst\":\"%s\"},", temp_MAC);
+				json_grow_append(&json_buff, &json_cap, json_buff1);
 				xfree( temp_MAC );
 			}
 			num_attr ++;
@@ -2347,9 +2382,18 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         	//remove the last comma in "event: [{...},...,{..},"
         	json_buff[ strlen(json_buff) - 1 ] = '\0';
         }
-        (void)strcat(json_buff, "]");
-        sprintf( json_buff1, "\"event_%d\":{%s},", event_id, json_buff );
-        strcpy(json_buff, json_buff1);
+        json_grow_append(&json_buff, &json_cap, "]");
+        {
+            size_t ev_len = strlen(json_buff) + 64;
+            char *ev_buf = xmalloc(ev_len);
+            if (ev_buf) {
+                snprintf(ev_buf, ev_len, "\"event_%d\":{%s},", event_id, json_buff );
+                size_t _l = strlen(ev_buf);
+                if (_l + 1 > json_cap) { char *nb = realloc(json_buff, _l+1); if (nb) { json_buff=nb; json_cap=_l+1; } }
+                if (_l + 1 <= json_cap) strcpy(json_buff, ev_buf);
+                xfree(ev_buf);
+            }
+        }
 
         short c = 0;
         if (context == BEFORE || context == AFTER || context == SAME) c = 1;
@@ -2808,16 +2852,17 @@ void * compute(compare_value v1, compare_value v2, short operator)
       if(ull0 == NULL){
           return NULL;
       }
-      if (operator == ADD)
-         *ull0 = ull1 + ull2;
-      else if (operator == SUB)
-         *ull0 = ull1 - ull2;
-      else if (operator == DIV)
-          *ull0 = ull1 / ull2;
-      else if (operator == MUL)
-          *ull0 = ull1 * ull2;
-      return (void *)ull0;
-    }
+       if (operator == ADD)
+          *ull0 = ull1 + ull2;
+       else if (operator == SUB)
+          *ull0 = ull1 - ull2;
+       else if (operator == DIV) {
+           if (ull2 == 0) { xfree(ull0); return NULL; }
+           *ull0 = ull1 / ull2;
+       } else if (operator == MUL)
+           *ull0 = ull1 * ull2;
+       return (void *)ull0;
+     }
 
     if (v1.type != v2.type) {
         return NULL;
@@ -2855,9 +2900,10 @@ void * compute(compare_value v1, compare_value v2, short operator)
                 *us0 = us1 + us2;
             else if (operator == SUB)
                 *us0 = us1 - us2;
-            else if (operator == DIV)
+            else if (operator == DIV) {
+                if (us2 == 0) { xfree(us0); xfree(ull0); return NULL; }
                 *us0 = us1 / us2;
-            else if (operator == MUL)
+            } else if (operator == MUL)
                 *us0 = us1 * us2;
             return (void *)us0;
             break;
@@ -2875,9 +2921,10 @@ void * compute(compare_value v1, compare_value v2, short operator)
                 *ul0 = ul1 + ul2;
             else if (operator == SUB)
                 *ul0 = ul1 - ul2;
-            else if (operator == DIV)
+            else if (operator == DIV) {
+                if (ul2 == 0) { xfree(ul0); xfree(ull0); return NULL; }
                 *ul0 = ul1 / ul2;
-            else if (operator == MUL)
+            } else if (operator == MUL)
                 *ul0 = ul1 * ul2;
             return (void *)ul0;
             break;
@@ -2896,9 +2943,10 @@ void * compute(compare_value v1, compare_value v2, short operator)
                 *ull0 = ull1 + ull2;
             else if (operator == SUB)
                 *ull0 = ull1 - ull2;
-            else if (operator == DIV)
+            else if (operator == DIV) {
+                if (ull2 == 0) { xfree(ull0); return NULL; }
                 *ull0 = ull1 / ull2;
-            else if (operator == MUL)
+            } else if (operator == MUL)
                 *ull0 = ull1 * ull2;
             return (void *)ull0;
             break;
@@ -3111,8 +3159,8 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         tmp_v = &v1;
     }
     if (r2->value == XFUNCT) {
-        tmp_r = r1;
-        tmp_v = &v1;
+        tmp_r = r2;
+        tmp_v = &v2;
     }
     if (r1->value == XFUNCT || r2->value == XFUNCT) {
        short found = 0;
@@ -3760,14 +3808,18 @@ void get_time_value(char * history, char *a_time, short reverse, short direct)
           }
         }
         if(pt_i != NULL){
-            while(*pt_i != '=') pt_i++;
+            while(*pt_i != '\0' && *pt_i != '=') pt_i++;
             if (*pt_i != '='){
               (void)fprintf(stderr, "Error 22yyy: '=' not found: %s\n", pt_i);
               return;
             }
             pt_i++;
             pt_j = pt_i;
-            while(*pt_j != '<') pt_j++;
+            while(*pt_j != '\0' && *pt_j != '<') pt_j++;
+            if (*pt_j == '\0') {
+              (void)fprintf(stderr, "Error 22yyy: '<' not found: %s\n", pt_i);
+              return;
+            }
             len = pt_j - pt_i;
             if (len<1 || len>99){
               (void)fprintf(stderr, "Error 22yyy1: length out of bounds in: %s\n", pt_i);
@@ -4130,6 +4182,7 @@ int verify_left(const ipacket_t *pkt, char *cause, rule *r, rule *root)
                 } else {
                     (void)fprintf(stderr, "Error 26: Encoutered incorrect sequence of events.\n");
                 }
+                break;
         case XFUNCT:
         case XAND:
         case XOR:
@@ -4761,7 +4814,7 @@ void init_sec_lib( mmt_handler_t *mmt, char * property_file,
     op->RuleFile = open_file(op->RuleFileName, "r");
     op->user_args = (void *)user_args;
     if (op->RuleFile == NULL) {
-        (void)fprintf(stderr, "Error 104: Input rule file not found or incorrect file name: %s.\n", op->TraceFileName);
+        (void)fprintf(stderr, "Error 104: Input rule file not found or incorrect file name: %s.\n", op->RuleFileName);
         exit(1);
     }
     init_options( mmt );

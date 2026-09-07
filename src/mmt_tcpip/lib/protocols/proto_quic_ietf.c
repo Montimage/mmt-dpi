@@ -21,7 +21,10 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
 static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
-	size_t offset = get_packet_offset_at_index(ipacket, index);
+	int ioff = get_packet_offset_at_index(ipacket, index);
+	if( ioff < 0 || (size_t)ioff >= ipacket->p_hdr->caplen )
+		return ATTRIBUTE_UNSET;
+	size_t offset = (size_t)ioff;
 	// get the first bit in the UDP payload
 	uint8_t first_bit = ipacket->data[ offset ] & 0b10000000;
 	const uint8_t *p;
@@ -141,7 +144,9 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 }
 
 static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned parent_proto_index, size_t offset) {
-	size_t payload_len = ipacket->p_hdr->len - offset;
+	if( offset >= ipacket->p_hdr->caplen )
+		return NOT_FOUND;
+	size_t payload_len = ipacket->p_hdr->caplen - offset;
 	// get the first bit in the UDP payload
 	uint8_t first_bit = ipacket->data[ offset ] & 0b10000000;
 	if( first_bit != 0 ){
@@ -216,9 +221,10 @@ static int _classified_quic_ietf(ipacket_t *ipacket, unsigned index, size_t offs
 	return set_classified_proto(ipacket, index+1, retval);
 }
 static int _classify_quic_ietf_from_udp(ipacket_t *ipacket, unsigned index) {
-	size_t offset = get_packet_offset_at_index(ipacket, index);
-	//const struct udphdr *udp = (struct udphdr *) &ipacket->data[ offset ];
-	offset += 8; //8 bytes of UDP header
+	int base = get_packet_offset_at_index(ipacket, index);
+	if( base < 0 || (size_t)base + 8 > ipacket->p_hdr->caplen )
+		return NOT_FOUND;
+	size_t offset = (size_t)base + 8; //8 bytes of UDP header
 	if( _classify_quic_ietf_from_data_offset( ipacket, index, offset ) == FOUND )
 		return _classified_quic_ietf( ipacket, index, 8 );
 	return NOT_FOUND;
@@ -232,9 +238,10 @@ static int _classify_quic_ietf_from_int(ipacket_t *ipacket, unsigned index) {
 	if( index >=1 && ipacket->proto_hierarchy->proto_path[index-1] != PROTO_UDP )
 		return NOT_FOUND;
 
-	size_t offset = get_packet_offset_at_index(ipacket, index);
-	//FIXME: need to adapt to INT size
-	offset += 56; //56 bytes of INT
+	int base = get_packet_offset_at_index(ipacket, index);
+	if( base < 0 || (size_t)base + 56 > ipacket->p_hdr->caplen )
+		return NOT_FOUND;
+	size_t offset = (size_t)base + 56; //56 bytes of INT
 	if( offset >= ipacket->p_hdr->caplen )
 		return NOT_FOUND;
 

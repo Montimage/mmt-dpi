@@ -1,0 +1,7 @@
+# Gitleaks allowlist — one fingerprint per line.
+# Add entries here only after triage confirms a false positive.
+# Format examples:
+#   generic-api-key:src/mmt_mobile/s1ap/s1ap_common.c:687
+#   linear-client-secret:docs/DOCTOR/system_architecture.ep:203
+# Path/regex allowlists live in .gitleaks.toml; use this file for
+# historical fingerprint suppressions that cannot be expressed as a path/regex.

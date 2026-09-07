@@ -27,7 +27,9 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 	if( ngap_index < 0 )
 		return 0;
 	const int offset = get_packet_offset_at_index(packet, ngap_index);
-	const int data_len = packet->p_hdr->caplen - offset;
+	if( offset < 0 || (size_t)offset >= packet->p_hdr->caplen )
+		return 0;
+	const int data_len = (int)(packet->p_hdr->caplen - (size_t)offset);
 	if( data_len <= 0 )
 		return 0;
 	//get length of NGAP payload
@@ -35,10 +37,19 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 	if( sctp_data_index < 0 )
 		return 0;
 	int sctp_data_offset = get_packet_offset_at_index(packet, sctp_data_index);
+	if( sctp_data_offset < 0 || (size_t)sctp_data_offset + sizeof(struct sctp_datahdr) > packet->p_hdr->caplen )
+		return 0;
 	const int SCTP_DATA_HEADER_SIZE = sizeof(struct sctp_datahdr);
 	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &packet->data[ sctp_data_offset ];
 	int ngap_offset = sctp_data_offset + SCTP_DATA_HEADER_SIZE;
-	uint16_t ngap_length = ntohs(hdr->length) - SCTP_DATA_HEADER_SIZE;
+	if( ngap_offset < 0 || (size_t)ngap_offset > packet->p_hdr->caplen )
+		return 0;
+	uint16_t hdr_len = ntohs(hdr->length);
+	if( hdr_len < SCTP_DATA_HEADER_SIZE )
+		return 0;
+	uint16_t ngap_length = hdr_len - SCTP_DATA_HEADER_SIZE;
+	if( (size_t)ngap_offset + ngap_length > packet->p_hdr->caplen )
+		ngap_length = (uint16_t)(packet->p_hdr->caplen - (size_t)ngap_offset);
 
 	const uint32_t MAX_NAS_PDU_SIZE = 0xFFFF;
 	uint8_t nas_pdu[MAX_NAS_PDU_SIZE];

@@ -908,7 +908,7 @@ int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 	/* BW:
 	 * TLS application: 0x15 (encrypted alert) followed by version (3.0 or 3.1 or 3.2) followed by len
 	 * TLS encrypted alert! This is SSL
-	 * TODO: can we detect the encrypeted alert in stage 0? I don't think so!!!
+	 * TODO: can we detect the encrypted alert in stage 0? I don't think so!!!
 	 */
 	if (packet->payload[0] == 0x15 && packet->payload[1] == 0x03
 			&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)

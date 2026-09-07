@@ -50,8 +50,7 @@ int init_proto_loopback_struct() {
         register_classification_function(protocol_struct, loopback_classify_next_proto);
 
         // LOOPBACK is a major encapsulating protocol, register it as a stack
-        // register_protocol_stack(DLT_EN10MB, PROTO_LOOPBACK_ALIAS, loopback_stack_classification); //TODO: check the return value of this
-        //register_protocol_stack_full(DLT_EN10MB, PROTO_LOOPBACK_ALIAS, loopback_stack_classification, ehternet_stack_internal_cleanup, (void *) setup_tcpip_internal_packet(), (void *) setup_tcpip_internal_context()); //TODO: check the return value of this
+        // Note: loopback stack registration intentionally disabled (DLT_EN10MB already used by Ethernet)
 
         return register_protocol(protocol_struct, PROTO_LOOPBACK);
     } else {

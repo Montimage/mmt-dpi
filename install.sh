@@ -30,6 +30,64 @@ MMT_BASE="${MMT_BASE:-/opt/mmt}"
 SKIP_DEPS="${SKIP_DEPS:-0}"
 BUILD_DIR=""
 
+# ---------------------------------------------------------------------------
+# Input validation (hardening: reject injection / path-traversal via env vars)
+# ---------------------------------------------------------------------------
+validate_branch() {
+    local b="$1"
+    if [ -z "$b" ] || [ ${#b} -gt 100 ]; then
+        printf 'ERROR: BRANCH must be 1-100 characters\n' >&2; exit 1
+    fi
+    if [[ ! "$b" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+        printf 'ERROR: BRANCH contains invalid characters: %s\n' "$b" >&2; exit 1
+    fi
+    if [[ "$b" == *".."* ]] || [[ "$b" == "-"* ]] || [[ "$b" == *"--"* ]]; then
+        printf 'ERROR: BRANCH contains forbidden sequence: %s\n' "$b" >&2; exit 1
+    fi
+}
+
+validate_mmt_base() {
+    local p="$1"
+    if [ -z "$p" ] || [ ${#p} -gt 256 ]; then
+        printf 'ERROR: MMT_BASE must be 1-256 characters\n' >&2; exit 1
+    fi
+    if [[ "$p" != /* ]]; then
+        printf 'ERROR: MMT_BASE must be an absolute path: %s\n' "$p" >&2; exit 1
+    fi
+    if [ "$p" = "/" ]; then
+        printf 'ERROR: MMT_BASE must not be /\n' >&2; exit 1
+    fi
+    if [[ "$p" == *".."* ]]; then
+        printf 'ERROR: MMT_BASE must not contain .. : %s\n' "$p" >&2; exit 1
+    fi
+    # shellcheck disable=SC1003  # single-quote pattern $'\'' is intentional
+    if [[ "$p" == *';'* || "$p" == *'|'* || "$p" == *'&'* || "$p" == *'$'* || "$p" == *'`'* \
+        || "$p" == *'!'* || "$p" == *'*'* || "$p" == *'?'* || "$p" == *'<'* || "$p" == *'>'* \
+        || "$p" == *'"'* || "$p" == *$'\''* || "$p" == *'\\'* || "$p" == *$'\n'* ]]; then
+        printf 'ERROR: MMT_BASE contains shell metacharacters: %s\n' "$p" >&2; exit 1
+    fi
+    if [[ "$p" == */ ]]; then
+        printf 'ERROR: MMT_BASE must not have trailing slash: %s\n' "$p" >&2; exit 1
+    fi
+}
+
+validate_jobs() {
+    local j="$1"
+    if [[ ! "$j" =~ ^[0-9]+$ ]] || [ "$j" -lt 1 ] || [ "$j" -gt 256 ]; then
+        printf 'ERROR: JOBS must be an integer 1-256: %s\n' "$j" >&2; exit 1
+    fi
+}
+
+validate_skip_deps() {
+    if [[ "$1" != "0" && "$1" != "1" ]]; then
+        printf 'ERROR: SKIP_DEPS must be 0 or 1: %s\n' "$1" >&2; exit 1
+    fi
+}
+
+validate_branch "$BRANCH"
+validate_mmt_base "$MMT_BASE"
+validate_skip_deps "$SKIP_DEPS"
+
 # Auto-detect parallelism
 if [ -z "${JOBS:-}" ]; then
     if command -v nproc &>/dev/null; then
@@ -40,6 +98,7 @@ if [ -z "${JOBS:-}" ]; then
         JOBS=2
     fi
 fi
+validate_jobs "$JOBS"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -61,8 +120,15 @@ step()    { printf "\n${BOLD}==> %s${NC}\n" "$*"; }
 
 cleanup() {
     if [ -n "$BUILD_DIR" ] && [ -d "$BUILD_DIR" ]; then
-        info "Cleaning up temporary build directory..."
-        rm -rf "$BUILD_DIR"
+        case "$BUILD_DIR" in
+            /tmp/*|/var/tmp/*)
+                info "Cleaning up temporary build directory..."
+                rm -rf "$BUILD_DIR"
+                ;;
+            *)
+                warn "Skipping cleanup of unexpected BUILD_DIR: $BUILD_DIR"
+                ;;
+        esac
     fi
 }
 
@@ -226,7 +292,7 @@ clone_repo() {
     BUILD_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t 'mmt-dpi')"
     info "Build directory: $BUILD_DIR"
 
-    git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$BUILD_DIR/mmt-dpi"
+    git clone --depth 1 --branch "$BRANCH" -- "$REPO_URL" "$BUILD_DIR/mmt-dpi"
     success "Repository cloned"
 }
 

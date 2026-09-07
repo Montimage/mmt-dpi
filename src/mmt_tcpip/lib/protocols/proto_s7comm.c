@@ -36,15 +36,17 @@ static attribute_metadata_t s7comm_attributes_metadata[S7COMM_ATTRIBUTES_NB] = {
 
 int mmt_check_s7comm(ipacket_t * ipacket, unsigned index) {
     int l5_offset = get_packet_offset_at_index(ipacket, index);
+    if( l5_offset < 0 || (size_t)l5_offset + 1 >= ipacket->p_hdr->caplen )
+        return 0;
     classified_proto_t s7comm_proto = s7comm_stack_classification(ipacket);
     mmt_una_cotphdr_t * cotp_header = (mmt_una_cotphdr_t *)&ipacket->data[l5_offset];
     if(cotp_header->length == 2 || cotp_header->length == 17){
+        if( (size_t)l5_offset + (size_t)cotp_header->length + 1 >= ipacket->p_hdr->caplen )
+            return 0;
         s7comm_proto.offset = cotp_header->length + 1;
         int s7comm_offset = l5_offset + cotp_header->length + 1; // 1 - for length  
-        char payload_len = ipacket->p_hdr->caplen - s7comm_offset;
-        if(payload_len == 0){
+        if( s7comm_offset < 0 || (size_t)s7comm_offset >= ipacket->p_hdr->caplen )
             return 0;
-        }
         mmt_una_s7commphdr_t * s7comm_header = (mmt_una_s7commphdr_t *)&ipacket->data[s7comm_offset];
         if(s7comm_header->proto_id == 50){
             // printf("S7COMM: found S7COMM packet %lu\n",ipacket->packet_id);

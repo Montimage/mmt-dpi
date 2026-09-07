@@ -62,9 +62,9 @@ fi
 
 # Check 6: Version consistency
 version_common=$(grep '^VERSION' "$ROOT/rules/common.mk" 2>/dev/null | head -1 || echo "")
-version_zip=$(grep 'VERSION=' "$ROOT/dist/ZIP/install.sh" 2>/dev/null | head -1 || echo "")
+version_zip=$(grep 'VERSION=' "$ROOT/dist/ZIP/mmt-install-common.sh" 2>/dev/null | head -1 || echo "")
 if [ -n "$version_common" ] && [ -n "$version_zip" ]; then
-    echo "  ✓ Version defined in rules/common.mk and dist/ZIP/install.sh"
+    echo "  ✓ Version defined in rules/common.mk and dist/ZIP/mmt-install-common.sh"
 else
     echo "  ✗ Version definition missing from expected locations"
     ERRORS=$((ERRORS + 1))

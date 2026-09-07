@@ -25,6 +25,10 @@ extern "C" {
 #define Max_Alias_Len 64  /**< Max length of an alias name.
                                Applies to all alias names (protocol, attribute, etc..) .*/
 
+/* Typed aliases for weak int/uint32_t types (ABI-compatible, underlying representation stays uint32_t/int) */
+typedef uint32_t mmt_proto_id_t;
+typedef uint32_t mmt_attribute_id_t;
+
 typedef struct mmt_handler_struct               mmt_handler_t;
 typedef struct mmt_session_struct               mmt_session_t;
 typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
@@ -39,7 +43,7 @@ typedef struct proto_statistics_struct          proto_statistics_t;
     // int status;// MMT_CONTINUE/ MMT_SKIP
     // next_process_function next_process;
 // }extra_t;
-//BW - TODO: de we really need to override these??
+/* NOTE: Custom swab/ntohl overrides provide a consistent, header-independent byte-order implementation. */
 /** Switches the order of bytes of a short int value */
 #define swab16(x) ((uint16_t)(                         \
       (((uint16_t)(x) & (uint16_t)0x00ffU) << 8) |            \
@@ -182,8 +186,8 @@ static inline void invalidate_packet_offset_cache(ipacket_t * ipacket) {
  * @obsolete this structure should never be used! It is maintained for backward compatibility. It will be removed from future versions.
  */
 struct attribute_description_struct {
-    uint32_t proto_id;                       /**< identifier of the protocol */
-    uint32_t field_id;                          /**< identifier of the attribute */
+    mmt_proto_id_t proto_id;                       /**< identifier of the protocol */
+    mmt_attribute_id_t field_id;                          /**< identifier of the attribute */
     struct attribute_description_struct * next; /**< next attribute description */
 };
 
@@ -194,12 +198,12 @@ struct attribute_description_struct {
 typedef struct attribute_struct {
     unsigned protocol_index; /**< index of the protocol */
     int status;              /**< status of the attribute. Indicates if it is unset, set or consumed. */
-    int data_type;           /**< the data type of the attribute */
+    enum data_types data_type;           /**< the data type of the attribute */
     int data_len;            /**< the data length of the attribute */
     int position_in_packet;  /**< the position in the packet of the attribute. */
     int scope;               /**< the scope of the attribute (packet, session, ...). */
-    uint32_t proto_id;    /**< identifier of the protocol */
-    uint32_t field_id;       /**< identifier of the attribute */
+    mmt_proto_id_t proto_id;    /**< identifier of the protocol */
+    mmt_attribute_id_t field_id;       /**< identifier of the attribute */
     void *data;              /**< pointer to the attribute data */
 } attribute_t;
 

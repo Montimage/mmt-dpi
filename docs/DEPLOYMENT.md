@@ -38,10 +38,12 @@ sudo make dist-clean
 After installation, the following files are placed:
 
 ```
-/opt/mmt/dpi/
-├── include/     # Header files for development
-├── lib/         # Shared libraries (libmmt_core.so, etc.)
-└── plugins/     # Protocol plugin libraries
+/opt/mmt/
+├── dpi/
+│   ├── include/     # Header files for development
+│   └── lib/         # Shared libraries (libmmt_core.so, etc.)
+├── plugins/         # Protocol plugin libraries (rules/common.mk:7)
+└── examples/        # Example sources (rules/common.mk:8)
 ```
 
 The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:70,117`).
@@ -67,7 +69,7 @@ gcc -o myapp myapp.c \
 
 ### Plugin Loading
 
-By default, plugins are loaded from `/opt/mmt/dpi/plugins/`. You can also place plugins in a `plugins/` directory relative to your application binary.
+By default, plugins are loaded from `/opt/mmt/plugins/` (`rules/common.mk:7`). You can also place plugins in a `plugins/` directory relative to your application binary.
 
 ### Environment Variables
 

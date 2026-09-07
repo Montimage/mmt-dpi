@@ -25,7 +25,7 @@ jobs:
     name: ASan/UBSan profile compiles
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Build with BUILD=asan
@@ -44,7 +44,7 @@ jobs:
     name: Multi-threaded TSan thread-safety harness
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev python3
       - name: Run the multi-threaded harness under ThreadSanitizer
@@ -54,7 +54,7 @@ jobs:
     name: External IP-range / port attribution loaders (M9, issue #26 / #74)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Run the external attribution loader unit test under ASan/UBSan
@@ -64,7 +64,7 @@ jobs:
     name: Payload-confirmed port-only demotion predicate (M9, issue #75)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Run the payload-confirm predicate unit test under ASan/UBSan
@@ -74,7 +74,7 @@ jobs:
     name: TLS/SSL record-version regression tests (issues #5, #100)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Run the TLS/SSL record-walk hardening test under ASan/UBSan
@@ -86,7 +86,7 @@ jobs:
     name: SNI extension TLV-parse hardening (issue #103)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Run the SNI TLV-parse test under ASan/UBSan
@@ -96,7 +96,7 @@ jobs:
     name: HTTP method table regression (issue #101, ACC-16)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Run the HTTP method classification test under ASan/UBSan
@@ -106,7 +106,7 @@ jobs:
     name: proto_http.c method table regression (issue #113)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Run the proto_http.c method classification test under ASan/UBSan
@@ -116,7 +116,7 @@ jobs:
     name: DTLS classifier bitmask guards (issue #104)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Run the DTLS classifier guard regression test under ASan/UBSan
@@ -126,7 +126,7 @@ jobs:
     name: Skype false-positive heuristic removed (issue #102)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Run the Skype false-positive removal regression test under ASan/UBSan
@@ -136,14 +136,14 @@ jobs:
     name: Golden classification fingerprint unchanged
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Check classification against the Phase 0 baseline
         run: tools/phase0/ci/check_classification.sh
       - name: Upload freshly captured fingerprint on mismatch
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase0-classification-actual
           path: tools/phase0/ci/baseline/classification.actual.txt
@@ -153,14 +153,14 @@ jobs:
     name: Labelled-pcap precision/recall holds or improves (M9, issue #74)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
       - name: Check precision/recall against the committed baseline
         run: tools/phase0/ci/check_precision.sh
       - name: Upload freshly captured metrics on mismatch
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase0-precision-actual
           path: tools/phase0/ci/baseline/precision.actual.txt

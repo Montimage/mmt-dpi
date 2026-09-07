@@ -28,16 +28,17 @@ static attribute_metadata_t cotp_attributes_metadata[COTP_ATTRIBUTES_NB] = {
 
 int mmt_check_cotp(ipacket_t * ipacket, unsigned index) {
     int l4_offset = get_packet_offset_at_index(ipacket, index);
+    if( l4_offset < 0 || (size_t)l4_offset + 4 >= ipacket->p_hdr->caplen )
+        return 0;
     int cotp_offset = l4_offset + 4;
+    if( cotp_offset < 0 || (size_t)cotp_offset >= ipacket->p_hdr->caplen )
+        return 0;
     
     classified_proto_t cotp_proto = cotp_stack_classification(ipacket);
     cotp_proto.offset = 4;
 
-    char payload_len = ipacket->p_hdr->caplen - cotp_offset;
-    
-    if(payload_len == 0){
+    if( ipacket->p_hdr->caplen <= (size_t)cotp_offset )
         return 0;
-    }
 
     mmt_una_cotphdr_t * cotp_header = (mmt_una_cotphdr_t *)&ipacket->data[cotp_offset];
 

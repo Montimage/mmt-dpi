@@ -110,6 +110,7 @@ void parseOptions(int argc, char ** argv, char * filename, int * type) {
                 usage(argv[0]);
             }
             strncpy((char *) filename, optarg, MAX_FILENAME_SIZE);
+            filename[MAX_FILENAME_SIZE] = '\0';
             *type = TRACE_FILE;
             break;
             case 'i':
@@ -118,6 +119,7 @@ void parseOptions(int argc, char ** argv, char * filename, int * type) {
                 usage(argv[0]);
             }
             strncpy((char *) filename, optarg, MAX_FILENAME_SIZE);
+            filename[MAX_FILENAME_SIZE] = '\0';
             *type = LIVE_INTERFACE;
             break;
             

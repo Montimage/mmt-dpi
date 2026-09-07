@@ -19,7 +19,8 @@ extern "C" {
 #include "dbg.h"
 #include "mmt_utils.h"
 
-//TODO: should be moved outside MMT. These definitions belong to the protocols/protocol stacks!
+/* NOTE: DLT/protocol constants (DLT_EN10MB, THALES_TDMA_PROTO, ECITIZ_PROTO) logically belong to protocol stacks
+ * but are kept here for backward compatibility so existing callers need not include extra headers. */
 #ifndef DLT_EN10MB
 #define DLT_EN10MB              1       /**< Ethernet (10Mb) */
 #endif
@@ -37,12 +38,29 @@ extern "C" {
 
 #define POSITION_NOT_KNOWN      -1      /**< Attribute position not known code. */
 
-#define SCOPE_PACKET            1 /**< Code of packet scope attribute. Packet scope attributes may change with each packet. */
-#define SCOPE_SESSION           2 /**< Code of session scope attribute. Session scope attributes will not change during the session lifetime. */
-#define SCOPE_SESSION_CHANGING  4 /**< Code indicating a session scope attribute that might change during the lifetime of the session. */
-
-#define SCOPE_ON_DEMAND         ( SCOPE_PACKET | SCOPE_SESSION | SCOPE_SESSION_CHANGING ) /* (1 | 2 | 4) = 7 */
+typedef enum {
+    SCOPE_PACKET = 1,          /**< Packet scope attribute. May change with each packet. */
+    SCOPE_SESSION = 2,         /**< Session scope attribute. Will not change during the session lifetime. */
+    SCOPE_SESSION_CHANGING = 4,/**< Session scope attribute that might change during the session lifetime. */
+    SCOPE_ON_DEMAND = 7,       /**< (SCOPE_PACKET | SCOPE_SESSION | SCOPE_SESSION_CHANGING) */
+    SCOPE_EVENT = 0x10         /**< Event scope attribute. */
+} mmt_attr_scope_t;
+/* Macro aliases for ABI/source compatibility: keep #define for #ifdef checks */
+#ifndef SCOPE_PACKET
+#define SCOPE_PACKET            1
+#endif
+#ifndef SCOPE_SESSION
+#define SCOPE_SESSION           2
+#endif
+#ifndef SCOPE_SESSION_CHANGING
+#define SCOPE_SESSION_CHANGING  4
+#endif
+#ifndef SCOPE_ON_DEMAND
+#define SCOPE_ON_DEMAND         7
+#endif
+#ifndef SCOPE_EVENT
 #define SCOPE_EVENT             0x10
+#endif
 
 #define ATTRIBUTE_UNSET         0 /**< Code indicating the attribute is not set. */
 #define ATTRIBUTE_SET           1 /**< Code indicating the attribute is set. */
@@ -612,8 +630,11 @@ MMTAPI int MMTCALL packet_process(
 /**
  * Print out pretty list all attributes of all protocol
  * @return [description]
+ * @deprecated Debug helper with 0 callers in src/sdk/tests/examples
+ *             (exported via nm -D but never used); prefer
+ *             iterate_through_protocols(). Will be removed in a future version.
  */
-MMTAPI void MMTCALL mmt_print_all_protocols();
+MMTAPI void MMTCALL mmt_print_all_protocols() __attribute__((deprecated("debug helper; prefer iterate_through_protocols")));
 /**
  * This will be call from probe when probe want to do something from library
  * @param  mmt_handler pointer to the mmt_handler we want to do the action
@@ -758,13 +779,16 @@ MMTAPI void* MMTCALL get_attribute_extracted_data(
  * @param attribute_id the identifier of the attribute itself.
  * @param encap_index   The index of the encapsulation layer: for example, if we have: ETH.IP.IP.IP, then encap_index of IP can be: 0, 1, 2
  * @return a pointer to the extracted data if it exists, NULL otherwise.
+ * @deprecated Prefer get_attribute_extracted_data_at_index(); this encap_index
+ *             variant is uncalled (nm -D shows export, grep -r shows 0 callers
+ *             outside definition/headers) and will be removed in a future version.
  */
 MMTAPI void* MMTCALL get_attribute_extracted_data_encap_index(
     const ipacket_t *ipacket,
     uint32_t proto_id,
     uint32_t attribute_id,
     unsigned encap_index
-);
+) __attribute__((deprecated("use get_attribute_extracted_data_at_index instead")));
 
 /**
  * Returns a pointer to the extracted data of the attribute identified by its protocol and field names. The extracted
@@ -914,12 +938,15 @@ MMTAPI void MMTCALL reset_statistics(proto_statistics_t * stats);
  * Sets the link type to indicate the nature of the lower layer protocol.
  * @param mmt_handler pointer to the mmt handler we want to register its data link type
  * @param dltype identifier of the data link type.
- * @obsolete: this function should never be used! it is maintained for backward compatibility reasons. It will not exist in future versions.
+ * @deprecated This function is obsolete and should not be used; maintained only for
+ *             backward compatibility and will be removed in a future version.
+ *             Evidence: exported in libmmt_core.so (nm -D) but 0 callers in
+ *             src/sdk/tests/examples (grep -r "setDataLinkType" shows only definition + headers).
  */
 MMTAPI void MMTCALL setDataLinkType(
     mmt_handler_t *mmt_handler,
     int dltype
-);
+) __attribute__((deprecated("obsolete - do not use; will be removed in a future version")));
 
 /**
  * Returns the data link type of the given mmt handler.
@@ -1166,6 +1193,24 @@ static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
  * Print Montimage information
  */
 void mmt_print_info();
+
+/* Typed inline accessors for weak-type scope (ABI-compatible wrappers, file:line mmt_core.h) */
+static inline mmt_attr_scope_t mmt_attr_get_scope_typed(const attribute_t *attr) {
+    return (mmt_attr_scope_t)get_attr_scope((attribute_t*)attr);
+}
+static inline enum data_types mmt_attr_get_data_type_typed(const attribute_t *attr) {
+    return (enum data_types)get_attr_data_type((attribute_t*)attr);
+}
+static inline mmt_attr_scope_t mmt_attribute_get_scope_typed(mmt_proto_id_t proto_id, uint32_t attribute_id) {
+    return (mmt_attr_scope_t)get_attribute_scope((mmt_proto_id_t)proto_id, attribute_id);
+}
+static inline enum data_types mmt_attribute_get_data_type_typed(mmt_proto_id_t proto_id, uint32_t attribute_id) {
+    return (enum data_types)get_attribute_data_type((mmt_proto_id_t)proto_id, attribute_id);
+}
+static inline mmt_proto_id_t mmt_attr_get_proto_id_typed(const attribute_t *attr) {
+    return (mmt_proto_id_t)get_attr_protocol_id((attribute_t*)attr);
+}
+
 #ifdef  __cplusplus
 }
 #endif
