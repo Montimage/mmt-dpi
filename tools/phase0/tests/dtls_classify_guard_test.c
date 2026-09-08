@@ -146,6 +146,7 @@ static int run_classify_dtls(struct mmt_internal_tcpip_session_struct *flow,
     pkt.internal_cumulative_offset_valid = 0;
 
     p_hdr.len = (unsigned int)len;
+    p_hdr.caplen = (unsigned int)len; /* the datagram buffer is exactly len bytes (#146 bounds by caplen) */
     pkt.p_hdr = &p_hdr;
     pkt.data = (const u_char *)datagram;
 
