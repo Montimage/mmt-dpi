@@ -11,7 +11,12 @@
 #   1. a valid ruleset parses end-to-end and every attribute referenced by
 #      its boolean_expression attributes gets registered for extraction;
 #   2. a missing rule file and malformed XML hit the documented error paths
-#      (Error 13/14 in read_rules).
+#      (Error 13/14 in read_rules);
+#   3. the tips.c overflow family (#137) stays fixed: a packet-forced divisor
+#      of 0 on the u16/u32/u64 COMPUTE paths returns NULL instead of SIGFPE
+#      (F-BUG-212) and a >99-byte header line is clamped inside
+#      get_my_data()'s 100-byte buffer (F-BUG-208) — test_overflow_family.c,
+#      which under SANITIZE=asan also fences the copy.
 #
 # Usage: tests/rule_engine/run_tests.sh
 set -euo pipefail
@@ -62,7 +67,7 @@ echo "  repo root      : ${REPO_ROOT}"
 echo "  install prefix : ${PREFIX}"
 
 # --- 1. build + install the SDK with the security engine --------------------
-echo "  [1/4] building + installing SDK (ENABLESEC=1) ..."
+echo "  [1/6] building + installing SDK (ENABLESEC=1) ..."
 make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
 if ! make -C "${REPO_ROOT}/sdk" "$@" ENABLESEC=1 -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
     echo "✗ ENABLESEC SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
@@ -93,7 +98,7 @@ for libname in libmmt_security libmmt_fuzz; do
 done
 
 # --- 2. compile the test ----------------------------------------------------
-echo "  [2/4] compiling test ..."
+echo "  [2/6] compiling test ..."
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 ${CC} "${extra_cflags[@]}" -O2 -Wall \
     -I "${INC}" -o "${SCRIPT_DIR}/test_rule_engine" \
@@ -138,20 +143,30 @@ LD_ENV=(env "LD_LIBRARY_PATH=${LIB}:${LD_LIBRARY_PATH:-}")
 BIN="${SCRIPT_DIR}/test_rule_engine"
 
 # --- 2b. compile metacharacter injection test (F-BUG-207 / #136) --------------
-echo "  [2b/4] compiling injection test ..."
+echo "  [2b/6] compiling injection test ..."
 INJECTION_SRC="${SCRIPT_DIR}/test_injection.c"
 INJECTION_BIN="${SCRIPT_DIR}/test_injection"
 ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${INJECTION_BIN}" "${INJECTION_SRC}"
 
+# --- 2c. compile the overflow-family regression test (F-BUG-208/212, #137) --
+# Drives compute() and get_my_data() (exported by libmmt_security) directly.
+echo "  [2c/6] compiling overflow-family test ..."
+OVERFLOW_SRC="${SCRIPT_DIR}/test_overflow_family.c"
+OVERFLOW_BIN="${SCRIPT_DIR}/test_overflow_family"
+${CC} "${extra_cflags[@]}" -O2 -Wall \
+    -I "${INC}" -o "${OVERFLOW_BIN}" \
+    "${OVERFLOW_SRC}" -L "${LIB}" \
+    -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm
+
 # --- 3. run ------------------------------------------------------------------
-echo "  [3/5] loading valid rule set through init_sec_lib() ..."
+echo "  [3/6] loading valid rule set through init_sec_lib() ..."
 POSITIVE_LOG="${WORK}/positive.log"
 run_expect_ok "valid ruleset load+assertions" "${POSITIVE_LOG}" \
     "${LD_ENV[@]}" "${BIN}" parse "${RULES_XML}"
 grep '^ok - ' "${POSITIVE_LOG}" | sed 's/^/  /'
 echo "  $(grep -c '^ok - ' "${POSITIVE_LOG}") assertions passed (valid ruleset)"
 
-echo "  [4/5] parser error paths ..."
+echo "  [4/6] parser error paths ..."
 NEGATIVE_LOG="${WORK}/negative.log"
 : > "${NEGATIVE_LOG}"
 # Missing file -> init_sec_lib() fails to open it and raises Error 100
@@ -163,11 +178,18 @@ run_expect_fail "malformed rule XML" "Error 13" "${NEGATIVE_LOG}" \
     "${LD_ENV[@]}" "${BIN}" parse "${MALFORMED_XML}"
 echo "  2 error paths verified"
 
-echo "  [5/5] metacharacter injection test (F-BUG-207 / #136) ..."
+echo "  [5/6] metacharacter injection test (F-BUG-207 / #136) ..."
 INJECTION_LOG="${WORK}/injection.log"
 run_expect_ok "metacharacter injection (no shell interpretation)" "${INJECTION_LOG}" "${INJECTION_BIN}"
 grep '^ok - ' "${INJECTION_LOG}" | sed 's/^/  /'
 echo "  injection test passed (packet-derived metachars treated literally)"
+
+echo "  [6/6] tips.c overflow family (F-BUG-208 / F-BUG-212, #137) ..."
+OVERFLOW_LOG="${WORK}/overflow.log"
+run_expect_ok "overflow-family regression (zero divisor, >99-byte header line)" "${OVERFLOW_LOG}" \
+    "${LD_ENV[@]}" "${OVERFLOW_BIN}"
+grep '^ok - ' "${OVERFLOW_LOG}" | sed 's/^/  /'
+echo "  $(grep -c '^ok - ' "${OVERFLOW_LOG}") assertions passed (overflow family)"
 
 echo
 echo "✓ Rule-engine tests passed"
