@@ -470,7 +470,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // so reject the packet before deriving any offsets from it.
     if (packet->tcp->doff < 5) {
         MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp data offset < 5)\n" );
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
     uint16_t tcphdr_len = packet->tcp->doff * 4; //TCP header length
 
@@ -478,7 +478,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 
     if( packet->l4_packet_len < tcphdr_len ) {
         MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp length mismatch)\n" );
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
 
     packet->payload_packet_len = packet->l4_packet_len - tcphdr_len;
@@ -508,7 +508,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     mmt_connection_tracking(ipacket, index);
 
     if (packet->flow == NULL && packet->tcp != NULL) {
-        return 0; //TODO: replace with a definition
+        return MMT_CLASSIFY_SKIP;
     }
 
     //Set the offset for the next proto anyway! we might not get there
@@ -540,10 +540,10 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     if (packet->flow != NULL
         && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN
         && ipacket->session->packet_count > (CFG_CLASSIFICATION_THRESHOLD * 2)) {
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
 
-    return 1;
+    return MMT_CLASSIFY_CONTINUE;
 }
 
 int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigned index) {
@@ -572,7 +572,7 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     // so reject the packet before deriving any offsets from it.
     if (packet->tcp->doff < 5) {
         MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp data offset < 5)\n" );
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
     uint16_t tcphdr_len = packet->tcp->doff * 4; //TCP header length
 
@@ -580,7 +580,7 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
 
     if( packet->l4_packet_len < tcphdr_len ) {
         MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp length mismatch)\n" );
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
 
     packet->payload_packet_len = packet->l4_packet_len - tcphdr_len;
@@ -610,7 +610,7 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     mmt_connection_tracking(ipacket, index);
 
     if (packet->flow == NULL && packet->tcp != NULL) {
-        return 0; //TODO: replace with a definition
+        return MMT_CLASSIFY_SKIP;
     }
     // Update segment list
     if (packet->payload_packet_len > 0) {
@@ -673,10 +673,10 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     if (packet->flow != NULL
         && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN
         && ipacket->session->packet_count > (CFG_CLASSIFICATION_THRESHOLD * 2)) {
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
 
-    return 1;
+    return MMT_CLASSIFY_CONTINUE;
 }
 
 

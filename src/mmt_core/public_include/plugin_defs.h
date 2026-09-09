@@ -122,6 +122,24 @@ typedef void (*generic_session_data_cleanup_function)(mmt_session_t * session, u
 typedef int (*generic_classification_function)(ipacket_t * ipacket, unsigned previous_index);
 
 /**
+ * Named verdicts of the classification pipeline (issue #150, F-DEAD-010).
+ * Pre-classification and classification callbacks (generic_classification_function)
+ * have always exchanged these integers with the core; the enum only names them.
+ * Additive and ABI-safe: int-sized, values unchanged, existing binary plugins
+ * keep working.
+ */
+typedef enum mmt_classify_verdict_enum {
+    MMT_CLASSIFY_SKIP     = 0, /**< Pre-classifier: do not run the classifier chain for this packet.
+                                    Classifier: protocol not recognised, try the next classifier. */
+    MMT_CLASSIFY_CONTINUE = 1, /**< Pre-classifier: run the classifier chain. */
+    MMT_CLASSIFY_MATCHED  = 1, /**< Classifier: protocol recognised, stop walking the chain
+                                    (a positive verdict shares the value of MMT_CLASSIFY_CONTINUE). */
+} mmt_classify_verdict_t;
+
+/** A classifier verdict with any bit of this mask set (1, 2 or 3) counts as recognised: the chain stops. */
+#define MMT_CLASSIFY_MATCHED_MASK 3
+
+/**
  * Signature of the function for sessionizing a packet. That is, associating a packet to its communication session.
  */
 typedef void * (*generic_sessionizer_function)(void * protocol_context, ipacket_t * ipacket, unsigned previous_index, int * is_new);

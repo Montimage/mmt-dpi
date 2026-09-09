@@ -712,9 +712,13 @@ int register_classification_function_with_parent_protocol(uint32_t proto_id, gen
  * @return                    0 if failed
  *                            go to #register_classification_function_internal
  */
+/* Default weight for callbacks registered without an explicit one: the middle
+ * of the 10..80 range register_classification_function_full() documents. */
+#define MMT_DEFAULT_CALLBACK_WEIGHT 50
+
 int register_classification_function(protocol_t *proto, generic_classification_function classification_fct) {
     if (classification_fct != NULL) {
-        return register_classification_function_internal(proto, classification_fct, 50); //TODO: replace with a definition
+        return register_classification_function_internal(proto, classification_fct, MMT_DEFAULT_CALLBACK_WEIGHT);
     }
     return 0;
 }
@@ -837,7 +841,7 @@ int register_session_data_analysis_function_with_protocol(uint32_t proto_id,
 int register_session_data_analysis_function(protocol_t *proto,
         generic_session_data_analysis_function session_data_analysis_fct) {
     if (session_data_analysis_fct != NULL) {
-        return register_data_analysis_function_internal(proto, session_data_analysis_fct, 50); //TODO: replace with a definition
+        return register_data_analysis_function_internal(proto, session_data_analysis_fct, MMT_DEFAULT_CALLBACK_WEIGHT);
     }
     return 0;
 }
@@ -3220,19 +3224,19 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
     //Verify that classification is not disabled for this protocol
     // Issue #69: lock-free atomic read (relaxed); compiles to a plain load.
     if (proto_status_load(&configured_protocol->protocol->classify_next.status)) {
-        int classif_status = 1; //TODO: replace with a definition: CONTINUE, SKIP
+        mmt_classify_verdict_t classif_status = MMT_CLASSIFY_CONTINUE;
         //Pre-classification
         if (configured_protocol->protocol->classify_next.pre_classify) {
             classif_status = configured_protocol->protocol->classify_next.pre_classify(ipacket, index);
         }
         //Classify next protocol
-        if (configured_protocol->protocol->classify_next.classify_protos && classif_status) { // Classify next proto only when such a function exists!
+        if (configured_protocol->protocol->classify_next.classify_protos && classif_status != MMT_CLASSIFY_SKIP) { // Classify next proto only when such a function exists!
             mmt_classify_me_t * temp = configured_protocol->protocol->classify_next.classify_protos;
             // Checking for the port number ??????
             for (; temp != NULL; temp = temp->next) {
                 classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
                 // // LN: check if the classify return 1-> do not need to go to check other protocol
-                if(classif_status & 3){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
+                if(classif_status & MMT_CLASSIFY_MATCHED_MASK){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
                     // printf("\n-]> Classified for protocol %d: %"PRIu64" - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
                     break;
                 }

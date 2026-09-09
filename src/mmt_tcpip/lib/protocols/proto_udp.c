@@ -39,7 +39,7 @@ int udp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 
     if( packet->l4_packet_len < sizeof( struct udphdr )) {
         MMT_LOG( PROTO_UDP, MMT_LOG_DEBUG, "*** Warning: malformed packet (udp length mismatch)\n" );
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
 
     packet->payload_packet_len = packet->l4_packet_len - sizeof( struct udphdr );
@@ -48,7 +48,7 @@ int udp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     mmt_connection_tracking(ipacket, index);
 
     if (packet->flow == NULL && packet->udp != NULL) {
-        return (PROTO_UNKNOWN); //TODO: check this out
+        return MMT_CLASSIFY_SKIP; // was PROTO_UNKNOWN (0): a protocol id used as a verdict
     }
 
     //Set the offset for the next proto anyway! we might not get there
@@ -69,10 +69,10 @@ int udp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     }
 
     if (ipacket->session->packet_count > (CFG_CLASSIFICATION_THRESHOLD * 2)) {
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
 
-    return 1;
+    return MMT_CLASSIFY_CONTINUE;
 }
 
 int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {

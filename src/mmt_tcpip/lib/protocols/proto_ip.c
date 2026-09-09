@@ -1624,9 +1624,9 @@ int ip_pre_classification_function(ipacket_t * ipacket, unsigned index) {
      * stop the classification procedure by returning zero. This can happen if the packet is fragmented.
      */
     if (ipacket->session == NULL) {
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
-    return 1;
+    return MMT_CLASSIFY_CONTINUE;
 }
 
 int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {

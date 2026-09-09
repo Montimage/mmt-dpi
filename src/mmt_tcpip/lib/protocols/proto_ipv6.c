@@ -1468,9 +1468,9 @@ int ipv6_pre_classification_function(ipacket_t * ipacket, unsigned index) {
      * (fragmentation in IPv6 is different than IPv4).
      */
     if (ipacket->session == NULL) {
-        return 0;
+        return MMT_CLASSIFY_SKIP;
     }
-    return 1;
+    return MMT_CLASSIFY_CONTINUE;
 }
 
 int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
