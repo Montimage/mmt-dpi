@@ -107,10 +107,13 @@ sequentially. The suite list lives in `DEFAULT_SUITES`
 `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`, `rule_engine`,
 `radius_hardening`, `nas_ies_tail`.
 
-Key property for agents: these suites are **standalone**. Each suite's
-`run_tests.sh` compiles its test directly against sources under `src/` with
-plain `gcc` — no prior build, no install, no `sudo` needed. You can run one
-suite by passing its directory name:
+Key property for agents: these suites are **standalone** — no prior build, no
+install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
+directly against sources under `src/` with plain `gcc`; the five that need the
+built SDK (`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
+`rule_engine`, `nas_ies_tail`) run `make -C sdk clean` and build it themselves
+into a throwaway prefix, so running them discards an existing `sdk/` build. You
+can run one suite by passing its directory name:
 
 ```bash
 bash tests/run_all_tests.sh hashmap memory   # subset
@@ -123,9 +126,8 @@ bash tests/run_all_tests.sh hashmap memory   # subset
 - `SANITIZE=asan bash tests/run_all_tests.sh` — compiles every suite with
   ASan + UBSan (same flag set as the SDK's `BUILD=asan`,
   `rules/common.mk:120-127`) and sets `ASAN_OPTIONS=detect_leaks=0`
-  (leak detection stays with Valgrind). Suites that build the SDK internally
-  (`citrix_ica_detection`, `http_header_case`) inherit `BUILD=asan` for their
-  internal SDK build.
+  (leak detection stays with Valgrind). The five SDK-building suites named
+  above inherit `BUILD=asan` for their internal SDK build.
 - `SANITIZE=tsan bash tests/run_all_tests.sh` — same with TSan
   (`rules/common.mk:150-157`). On kernels with high-entropy ASLR the runner
   re-execs itself once under `setarch -R`

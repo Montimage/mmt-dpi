@@ -6,7 +6,7 @@ GCC is the supported toolchain. Environment details: @docs/AGENT_ENVIRONMENT.md
 ## Critical commands
 
 - Build (there is no top-level Makefile): `make -C sdk -j$(nproc)` — exit 0 = green; warnings are informational (never `-Werror`)
-- Test: `bash tests/run_all_tests.sh` — suites compile standalone against `src/`, no prior build or install needed; expected result (suite count, runtime band, exit codes): [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing)
+- Test: `bash tests/run_all_tests.sh` — the 12 suites are standalone: no prior build or install needed; the ones that need the built SDK build it themselves into a throwaway prefix, running `make -C sdk clean` first (so a suite run discards an existing `sdk/` build); [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing) is authoritative for that count, the runtime band and the exit codes
 - Run a subset: `bash tests/run_all_tests.sh hashmap memory`
 - Sanitized suites: `SANITIZE=asan|tsan bash tests/run_all_tests.sh` (mirrors `BUILD=asan`/`BUILD=tsan`; tsan re-execs under `setarch -R`)
 - Coverage: `bash tests/run_all_tests.sh --coverage` — writes `tests/coverage/coverage.info` (lcov tracefile) and prints the overall line percentage
@@ -32,7 +32,7 @@ GCC is the supported toolchain. Environment details: @docs/AGENT_ENVIRONMENT.md
 - IMPORTANT: never hand-edit asn1c-generated sources under `src/mmt_mobile/asn1c/` — they are regenerated from ASN.1 specs, so manual edits are silently lost.
 - YOU MUST follow the profile-switch clean rule stated in [docs/AGENT_ENVIRONMENT.md §5](docs/AGENT_ENVIRONMENT.md#5-sanitizer-build-profiles) before building `BUILD=asan` / `BUILD=tsan`.
 - NEVER use `make -C sdk test` as a smoke test: it compiles examples from the installed prefix and fails without a prior `sudo make install`. Use `bash tests/run_all_tests.sh`.
-- Classification logic changes must keep the phase0 golden-pcap fingerprint unchanged — CI blocks the PR otherwise (`.github/workflows/phase0-baseline.yml`). An intentional behavior change requires regenerating baselines per `tools/phase0/README.md`.
+- Classification logic changes must keep the phase0 golden-pcap fingerprint unchanged. The `classification-gate` job ("Golden classification fingerprint unchanged", `.github/workflows/phase0-baseline.yml`) runs on every PR into `main` and fails visibly on any diff, but it is **advisory today**: `main`'s required status checks are `build` and `unit-tests` only, so a mismatch does not block the merge — treat a red fingerprint as a stop signal yourself. An intentional behavior change requires regenerating baselines per `tools/phase0/README.md`.
 - YOU MUST follow the `MMT_BASE` prefix contract stated in [docs/AGENT_ENVIRONMENT.md §4](docs/AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior) when building and installing.
 - Never commit generated artifacts: `sdk/lib/`, `sdk/include/`, `sdk/examples/`, `sdk/bin/`, `build/`, `dist/`.
 
