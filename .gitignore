@@ -127,3 +127,7 @@ pvs.log
 pvs_*/
 report.xml
 report.html
+
+# gitleaks scan artifacts (tools/ci/run-gitleaks.sh)
+gitleaks-report.json
+.gitleaks-scan-ran

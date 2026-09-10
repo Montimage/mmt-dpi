@@ -139,15 +139,40 @@ jobs:
 
   secret-scan:
     # Secret scanning gate (issue #160 / F-SEC-006): fail the workflow if
-    # gitleaks detects a committed secret. Runs `gitleaks detect` over the
-    # full git history so a secret introduced on any branch is caught before
-    # merge. Suppressions go in `.gitleaksignore` at the repo root; path/regex
-    # allowlists live in `.gitleaks.toml`.
+    # gitleaks detects a committed secret. Scans the full git history so a
+    # secret introduced on any branch is caught before merge. Suppressions go
+    # in `.gitleaksignore` at the repo root; path/regex allowlists live in
+    # `.gitleaks.toml`.
+    #
+    # Two scanners, one gate (issue #191, F-DEP-001/F-SEC-001). The action was
+    # pinned to v2.3.9, which runs on Node 20 — removed from hosted runners on
+    # 2026-09-16 — so it is repinned to v3.0.0 here. v3 still requires a licence
+    # key on organization accounts, so on a repo without the GITLEAKS_LICENSE
+    # secret the action fails and scans nothing; the pinned binary has no such
+    # requirement and takes over. The last step asserts one of them actually
+    # ran, so a scan that silently did not happen fails the job instead of
+    # reporting clean.
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
-    - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+
+    # A stale allowlist entry silently widens or narrows the scan (F-SEC-013).
+    - name: Check the gitleaks allowlist for drift
+      run: bash tools/ci/check-gitleaks-allowlist.sh
+
+    - name: Secret scan (gitleaks-action)
+      id: action-scan
+      continue-on-error: true
+      uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+    - name: Secret scan (pinned gitleaks binary, fallback)
+      if: steps.action-scan.outcome != 'success'
+      run: bash tools/ci/run-gitleaks.sh
+
+    - name: Assert a secret scan actually ran
+      run: bash tools/ci/assert-gitleaks-ran.sh '${{ steps.action-scan.outcome }}'

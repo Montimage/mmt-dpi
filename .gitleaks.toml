@@ -1,15 +1,25 @@
 title = "mmt-dpi gitleaks config"
 
+# Every pattern below is asserted to match at least one tracked file by
+# tools/ci/check-gitleaks-allowlist.sh, which runs in the secret-scan job.
+# A pattern that stops matching is drift: it silently widens or narrows the
+# scan without anyone noticing. Anchor paths with `^` so a rule cannot grow
+# to cover the whole tree — an unanchored `.*\.ep$` allowlisted every file
+# with that extension anywhere in the repository (issue #191, F-SEC-013).
+
 [allowlist]
 description = "false positives and non-secret fixtures"
 paths = [
-    '''docs/DOCTOR/.*''',
-    '''docs/images/.*\.ep$''',
-    '''.*\.ep$''',
-    '''.*\.pcap$''',
-    '''.*\.pcapng$''',
-    '''src/mmt_mobile/asn1c/.*''',
+    # Generated ASN.1 codecs: high-entropy constant tables, no secrets.
+    '''^src/mmt_mobile/asn1c/''',
+    # Packet captures used as test fixtures: binary, not source.
+    '''^src/examples/.*\.pcap$''',
+    '''^tools/phase0/ci/pcaps/.*\.pcap$''',
+    # Encapsulated PostScript diagrams: binary drawing data.
+    '''^docs/docs/.*\.ep$''',
+    '''^docs/images/.*\.ep$''',
 ]
 regexes = [
+    # S1AP field access that trips the generic-api-key heuristic.
     '''s1apUES1APIDs_p->choice''',
 ]
