@@ -40,7 +40,7 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 	if( sctp_data_offset < 0 || (size_t)sctp_data_offset + sizeof(struct sctp_datahdr) > packet->p_hdr->caplen )
 		return 0;
 	const int SCTP_DATA_HEADER_SIZE = sizeof(struct sctp_datahdr);
-	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &packet->data[ sctp_data_offset ];
+	const mmt_una_sctp_datahdr_t *hdr = (const mmt_una_sctp_datahdr_t *) &packet->data[ sctp_data_offset ];
 	int ngap_offset = sctp_data_offset + SCTP_DATA_HEADER_SIZE;
 	if( ngap_offset < 0 || (size_t)ngap_offset > packet->p_hdr->caplen )
 		return 0;

@@ -16,7 +16,7 @@ static bool _is_valid_by_sctp_ports( const ipacket_t *ipacket ){
 		return false;
 	//offset of sctp in packet
 	int sctp_offset = get_packet_offset_at_index(ipacket, sctp_index);
-	const struct sctphdr *sctp_hdr = (struct sctphdr *) &ipacket->data[ sctp_offset ];
+	const mmt_una_sctphdr_t *sctp_hdr = (const mmt_una_sctphdr_t *) &ipacket->data[ sctp_offset ];
 
 	//https://www.etsi.org/deliver/etsi_ts/138400_138499/138412/15.00.00_60/ts_138412v150000p.pdf
 	//The SCTP Destination Port number value assigned by IANA to be used for NGAP is 38412.
@@ -47,7 +47,7 @@ static bool _get_ngap_offset_and_length( const ipacket_t *ipacket, unsigned *off
 		return false;
 
 	const int SCTP_DATA_HEADER_SIZE = sizeof(struct sctp_datahdr);
-	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
+	const mmt_una_sctp_datahdr_t *hdr = (const mmt_una_sctp_datahdr_t *) &ipacket->data[ sctp_data_offset ];
 	int ngap_offset = sctp_data_offset + SCTP_DATA_HEADER_SIZE;
 	//not enought room for NGAP
 	if( ngap_offset < 0 || (size_t)ngap_offset >= ipacket->p_hdr->caplen )
@@ -85,7 +85,7 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	classified_proto_t retval;
 	retval.proto_id = PROTO_UNKNOWN;
 	const int SCTP_DATA_HEADER_SIZE = sizeof(struct sctp_datahdr);
-	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
+	const mmt_una_sctp_datahdr_t *hdr = (const mmt_una_sctp_datahdr_t *) &ipacket->data[ sctp_data_offset ];
 	int ngap_offset = sctp_data_offset + SCTP_DATA_HEADER_SIZE;
 	//not enought room for NGAP
 	if( ngap_offset < 0 || (size_t)ngap_offset >= ipacket->p_hdr->caplen )

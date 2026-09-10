@@ -40,6 +40,36 @@ jobs:
             && echo "OK: library is ASan-instrumented" \
             || { echo "FAIL: no ASan symbols in ${lib}"; exit 1; }
 
+  tcpip-pcap-harness:
+    # Issue #181 (F-TEST-001): the harness from #143 was fully implemented but
+    # referenced by no workflow, so no job fed real packet bytes through HTTP,
+    # FTP, DNS, TLS, HTTP/2 or QUIC under the sanitizers. The script builds and
+    # installs the SDK with BUILD=asan itself, compiles the harness with
+    # -fsanitize=address,undefined -fno-sanitize-recover=all against it, and
+    # replays every pcap twice, so a clean exit plus matching fingerprints is
+    # the pass condition. It exits non-zero on any failure, which fails the job.
+    name: TCP/IP-stack pcap harness (ASan/UBSan, issue #143)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install build dependencies
+        run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev python3
+      - name: Replay TCP/IP pcaps through the instrumented library
+        run: bash tools/phase0/tests/run_tcpip_pcap_harness_test.sh
+
+  mobile-pcap-harness:
+    # Issue #181 (F-TEST-001): the mobile/security counterpart from #144 —
+    # S1AP, NGAP, GTPv2, NAS-5G, Diameter, RADIUS. Same build-and-replay shape
+    # as the TCP/IP job above.
+    name: Mobile/security pcap harness (ASan/UBSan, issue #144)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install build dependencies
+        run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev python3
+      - name: Replay mobile/security pcaps through the instrumented library
+        run: bash tools/phase0/tests/run_mobile_pcap_harness_test.sh
+
   tsan-mt-harness:
     name: Multi-threaded TSan thread-safety harness
     runs-on: ubuntu-24.04

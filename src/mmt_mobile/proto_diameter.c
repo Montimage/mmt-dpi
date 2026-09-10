@@ -63,7 +63,7 @@ static uint32_t _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uin
 		return PROTO_UNKNOWN;
 	//offset of sctp in packet
 	int sctp_offset = get_packet_offset_at_index(ipacket, sctp_index);
-	const struct sctphdr *sctp_hdr = (struct sctphdr *) &ipacket->data[ sctp_offset ];
+	const mmt_una_sctphdr_t *sctp_hdr = (const mmt_una_sctphdr_t *) &ipacket->data[ sctp_offset ];
 
 	/*
 	 * Issue #59: sctp_hdr points into the byte-aligned capture buffer, so read
@@ -109,7 +109,7 @@ static int _classify_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	classified_proto_t retval;
 	retval.proto_id = PROTO_UNKNOWN;
 
-	const struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ sctp_data_offset ];
+	const mmt_una_sctp_datahdr_t *hdr = (const mmt_una_sctp_datahdr_t *) &ipacket->data[ sctp_data_offset ];
 	//sctp data Packet payload ID
 	switch( ntohl( hdr->ppid )){
 	case 46: //DIAMETER

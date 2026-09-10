@@ -222,6 +222,15 @@ struct ipv4_hdr{
 	uint32_t daddr;
 };
 
+/*
+ * Issue #181 (F-BUG-119): ipv4_hdr overlays &packet->data[offset] at an
+ * arbitrary capture offset, and saddr/daddr require 4-byte alignment, so
+ * reading them through a strict cast is UB and aborts the mobile pcap harness
+ * under BUILD=asan -fsanitize=alignment. Same remedy as the mmt_una_* views in
+ * sctp.h and mmt_tcpip_internal_defs_macros.h.
+ */
+typedef struct ipv4_hdr __attribute__((aligned(1))) mmt_una_ipv4_hdr_t;
+
 /**
  * In some case, e.g., eNodeB detaches MME, no message of S1AP protocol is sent but the one of SCTP_SHUTDOWN,
  * we need to get IP src/dst of the current packet.
@@ -245,7 +254,7 @@ static inline bool _get_ip_src_dst( const ipacket_t *packet, uint32_t *ip_src, u
     }
 
 	int offset = get_packet_offset_at_index(packet, proto_session_index );
-	const struct ipv4_hdr *ip_hdr = (struct ipv4_hdr *) &packet->data[offset];
+	const mmt_una_ipv4_hdr_t *ip_hdr = (const mmt_una_ipv4_hdr_t *) &packet->data[offset];
 
 	*ip_src = ip_hdr->saddr;
 	*ip_dst = ip_hdr->daddr;
@@ -301,7 +310,7 @@ static inline int _parse_s1ap_packet( s1ap_message_t *msg, const ipacket_t * pac
 
 			classified_proto_t retval;
 
-			struct sctp_datahdr *hdr = (struct sctp_datahdr *) &packet->data[ offset ];
+			const mmt_una_sctp_datahdr_t *hdr = (const mmt_una_sctp_datahdr_t *) &packet->data[ offset ];
 			switch( hdr->type ){
 			case 7: //SHUTDOWN
 				_assign_enb_mme_ip( msg, packet, true );
@@ -581,7 +590,7 @@ static int _classify_s1ap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 
 	classified_proto_t retval;
 
-	struct sctp_datahdr *hdr = (struct sctp_datahdr *) &ipacket->data[ offset ];
+	const mmt_una_sctp_datahdr_t *hdr = (const mmt_una_sctp_datahdr_t *) &ipacket->data[ offset ];
 	switch( ntohl( hdr->ppid )){
 	case 18: //S1AP
 		retval.proto_id = PROTO_S1AP;

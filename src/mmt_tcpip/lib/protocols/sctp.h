@@ -177,6 +177,15 @@ extern "C" {
         uint32_t ppid;
         //uint8_t payload[0];
     };
+
+    /*
+     * Issue #181: sctp_datahdr overlays the capture buffer at an arbitrary
+     * offset exactly as sctphdr and sctp_chunkhdr above do, but was missed when
+     * #59 added their views. Reading ppid/length/tsn through a strict cast is a
+     * misaligned access — UB, and it aborts the mobile pcap harness under
+     * BUILD=asan -fsanitize=alignment. Same remedy, same reasoning.
+     */
+    typedef struct sctp_datahdr __attribute__((aligned(1))) mmt_una_sctp_datahdr_t;
  /*
  typedef struct sctp_gap_ack_block {
  uint16_t start;
