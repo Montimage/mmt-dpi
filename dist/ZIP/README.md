@@ -4,7 +4,9 @@ MMT-Extract is a software C library designed to extract data attributes from net
 
 # Installing MMT-Extract
 
-Before installing MMT-Extract, you need to install some required packages:
+Before installing MMT-Extract, you need to install some required packages
+(this ZIP ships prebuilt libraries, so it needs the runtime packages only —
+not the source-build toolchain):
 
 `$ sudo apt-get install libxml2-dev libpcap-dev make`
 

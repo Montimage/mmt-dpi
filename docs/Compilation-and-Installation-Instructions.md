@@ -21,21 +21,12 @@ cd mmt-dpi
  
 # Linux 
 
-## Install required tools
+## Install required tools and packages
 
-```bash
-sudo apt-get install gcc make build-essential git
-```
-
-## Install required packages
-
-This chain of tools depends on the following packages:
-```bash
-sudo apt-get update
-sudo apt-get install libxml2-dev libpcap-dev libnghttp2-dev
-# libxml2-dev is only needed for ENABLESEC=1 (rules/common.mk:76-84);
-# libnghttp2-dev is optional — the build auto-detects its absence (rules/common.mk:56-74).
-```
+The toolchain and package list are maintained in one place — install them with
+the `apt-get` line in
+[Agent Environment Notes §1 Toolchain Requirements](./AGENT_ENVIRONMENT.md#1-toolchain-requirements),
+which also records why each package is needed.
 
 ## Compile and install/uninstall
 

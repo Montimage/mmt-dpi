@@ -68,14 +68,15 @@ Rocky Linux 9, and CentOS Stream 9.
 
 ### Manual Build and Install
 
-If you prefer to build manually:
+If you prefer to build manually, install the build dependencies first — the
+`apt-get` line is maintained in one place,
+[Agent Environment Notes §1 Toolchain Requirements](docs/AGENT_ENVIRONMENT.md#1-toolchain-requirements).
+The install prefix is configurable; see
+[§4 `MMT_BASE` Install-Prefix Behavior](docs/AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 
 ```bash
 git clone https://github.com/montimage-projects/mmt-dpi.git
 cd mmt-dpi
-
-# Install dependencies (Debian/Ubuntu)
-sudo apt-get install build-essential gcc make libxml2-dev libpcap-dev libnghttp2-dev
 
 # Build
 cd sdk

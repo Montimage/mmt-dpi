@@ -4,18 +4,13 @@
 
 ### Prerequisites
 
-- GCC 13 (tested in CI on ubuntu-24.04)
-- GNU Make
-- `libpcap-dev` (for examples and testing)
-- `libxml2-dev` (only for `ENABLESEC=1` — `rules/common.mk:76-84`)
-- `libnghttp2-dev` (optional; build auto-detects absence — `rules/common.mk:56-74`)
-- Valgrind (for memory leak detection, optional)
-
-### Ubuntu/Debian
+The reference toolchain, the package list and the `apt-get` line are maintained
+in one place:
+[Agent Environment Notes §1 Toolchain Requirements](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).
+Development additionally uses Valgrind (optional, for memory-leak runs):
 
 ```bash
-sudo apt-get update
-sudo apt-get install build-essential gcc make libxml2-dev libpcap-dev libnghttp2-dev valgrind
+sudo apt-get install valgrind
 ```
 
 > **Note:** Only Linux is currently supported. macOS and Windows are not supported.
@@ -57,6 +52,9 @@ make -j$(nproc) SHOWLOG=1
 | `BUILD=tsan` | ThreadSanitizer profile | `rules/common.mk:129-157` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
 
+Before switching between `BUILD=` profiles, follow the clean rule in
+[Agent Environment Notes §5 Sanitizer Build Profiles](./AGENT_ENVIRONMENT.md#5-sanitizer-build-profiles).
+
 <!-- FLAG: unverified — TCP_SEGMENT=1 and STATIC_LINK=1 were previously documented
      but no Makefile rule or code reference was found. -->
 
@@ -66,16 +64,15 @@ make -j$(nproc) SHOWLOG=1
 
 ```bash
 bash tests/run_all_tests.sh
-# Expected: 12/12 suites PASSED (tests/run_all_tests.sh:141-154)
 # Subset:   bash tests/run_all_tests.sh hashmap memory
 # Sanitizers: SANITIZE=asan bash tests/run_all_tests.sh
 # Coverage: bash tests/run_all_tests.sh --coverage
 ```
 
-> `make -C sdk test` (`sdk/Makefile:239-242`) compiles from the installed prefix
-> (`$(MMT_BASE)/examples/`, `$(MMT_BASE)/dpi/{include,lib}`) and fails without a
-> prior `sudo make install`. Use `bash tests/run_all_tests.sh` — suites compile
-> standalone against `src/` with no install needed.
+> The expected result (suite count, runtime band, exit codes) and the
+> `make -C sdk test` trap are stated once, in
+> [Agent Environment Notes §3 Testing](./AGENT_ENVIRONMENT.md#3-testing) and
+> [§4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 
 ### Test with a Pcap File
 

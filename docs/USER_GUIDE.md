@@ -20,8 +20,9 @@ curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/inst
 ```
 
 This script (`install.sh`):
-1. Detects your distribution and installs build dependencies
-   (`build-essential`, `libxml2-dev`, `libpcap-dev`).
+1. Detects your distribution and installs an equivalent distro-specific build
+   dependency set (`install.sh:182-253`); the reference list is
+   [Agent Environment Notes §1 Toolchain Requirements](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).
 2. Clones the `main` branch into a temporary directory.
 3. Runs `make ARCH=linux MMT_BASE=/opt/mmt -jN`.
 4. Installs to `/opt/mmt/dpi/` (override with `MMT_BASE=/custom/path`).

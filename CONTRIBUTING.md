@@ -14,20 +14,15 @@ Thank you for your interest in contributing to MMT-DPI! This guide will help you
 
 ### Prerequisites
 
-- GCC 13 (tested in CI on ubuntu-24.04)
-- GNU Make
-- `libpcap-dev` (for examples)
-- `libxml2-dev` (only for `ENABLESEC=1` — `rules/common.mk:76-84`)
-- `libnghttp2-dev` (optional; auto-detected — `rules/common.mk:56-74`)
+Linux only, with GCC and GNU Make. The reference toolchain, the package list
+and the `apt-get` line are maintained in one place:
+[Agent Environment Notes §1 Toolchain Requirements](docs/AGENT_ENVIRONMENT.md#1-toolchain-requirements).
 
 ### Build from Source
 
 ```bash
 git clone https://github.com/montimage-projects/mmt-dpi.git
 cd mmt-dpi
-
-# Install dependencies (Debian/Ubuntu)
-sudo apt-get install build-essential gcc make libxml2-dev libpcap-dev libnghttp2-dev
 
 # Build
 cd sdk
@@ -88,7 +83,7 @@ docs: Update compilation instructions for ARM
 ## Pull Request Process
 
 1. Ensure your code compiles without warnings on Linux (`make -C sdk`)
-2. Run the test suite (`bash tests/run_all_tests.sh` — 12/12 suites, `tests/run_all_tests.sh:141-154`)
+2. Run the test suite: `bash tests/run_all_tests.sh` (expected result: [Agent Environment Notes §3 Testing](docs/AGENT_ENVIRONMENT.md#3-testing))
 3. Update documentation if you changed APIs or added protocols
 4. Fill out the PR template completely
 5. Request review from at least one maintainer

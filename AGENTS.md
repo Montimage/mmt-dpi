@@ -50,7 +50,7 @@ tools: Read, Grep, Glob, Bash
 
 You are a sanitizer verification engineer for MMT-DPI.
 
-- Always `make -C sdk clean` before building a new profile (`BUILD=asan`, `BUILD=tsan`); keep `MMT_BASE` identical across build/install of one experiment.
+- Follow the profile-switch clean rule and the `MMT_BASE` prefix contract in `docs/AGENT_ENVIRONMENT.md` §4–§5; this guide states neither of its own.
 - Use the recipes in `docs/AGENT_ENVIRONMENT.md` §5–§7 and the TSan harness `tools/phase0/tests/run_mt_tsan_test.sh`.
 - Report: profile built, commands run, findings with reproducer input. Restore the default tree (`make -C sdk clean && make -C sdk -j$(nproc)`) when done.
 

@@ -16,6 +16,13 @@ repository itself; the authoritative sources are:
 
 Only **Linux** is supported (macOS/Windows are not).
 
+This is the **single source** for the toolchain install line: other documents
+link here instead of repeating it. Two kinds of apt line elsewhere in the
+repository are deliberately not copies of it — executable package lists, which
+have to be runnable (`install.sh`, `tools/ci/build-package.sh`, the CI
+workflows), and package sets for a different job (the CubieBoard/ARM notes,
+the QoE demo, the prebuilt ZIP, the Debian packaging checklist).
+
 ```bash
 sudo apt-get update
 sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnghttp2-dev bash git pkg-config
@@ -28,6 +35,9 @@ sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnght
 | `libxml2-dev` | Only needed with `ENABLESEC=1` (`rules/common.mk:76-84`) |
 | `libnghttp2-dev` | Optional at build time — the Makefile auto-detects its absence and keeps building (`rules/common.mk:56-74`) |
 | `bash` | Test scripts are bash (`tests/run_all_tests.sh`) |
+
+CI builds and tests on `ubuntu-24.04` (GCC 13) — see
+`.github/workflows/c-cpp.yml`. That is the reference toolchain.
 
 Notes:
 
@@ -78,13 +88,21 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 
 ## 3. Testing
 
+This section is the **single source** for the test-runner contract — the command,
+the suite count and the runtime band. Other documents name the command and link
+here for the expected result.
+
 ```bash
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **12/12 suites pass**, total runtime roughly 20–30 s on a
-typical development machine. Exit code `0` on success, `1` on any failure.
-The suite list lives in `DEFAULT_SUITES` (`tests/run_all_tests.sh:141-154`):
+Expected result: **12/12 suites pass**, total runtime roughly **45–65 s** on a
+typical development machine (measured: 52 s and 57 s on a 20-core host, 53 s on
+the September 2026 audit machine — the suites compile their own sources, so the
+wall clock is dominated by `gcc`, not by the assertions). Exit code `0` on
+success, `1` on any failure. The runner has no `-j` option: the 12 suites run
+sequentially. The suite list lives in `DEFAULT_SUITES`
+(`tests/run_all_tests.sh:141-154`):
 `hashmap`, `memory`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`, `avltree`,
 `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`, `rule_engine`,
 `radius_hardening`, `nas_ies_tail`.
@@ -100,22 +118,22 @@ bash tests/run_all_tests.sh hashmap memory   # subset
 
 ### Suite modes: sanitizers and coverage
 
-`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-84`):
+`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-87`):
 
 - `SANITIZE=asan bash tests/run_all_tests.sh` — compiles every suite with
   ASan + UBSan (same flag set as the SDK's `BUILD=asan`,
-  `rules/common.mk:113-118`) and sets `ASAN_OPTIONS=detect_leaks=0`
+  `rules/common.mk:120-127`) and sets `ASAN_OPTIONS=detect_leaks=0`
   (leak detection stays with Valgrind). Suites that build the SDK internally
   (`citrix_ica_detection`, `http_header_case`) inherit `BUILD=asan` for their
   internal SDK build.
 - `SANITIZE=tsan bash tests/run_all_tests.sh` — same with TSan
-  (`rules/common.mk:140-145`). On kernels with high-entropy ASLR the runner
+  (`rules/common.mk:150-157`). On kernels with high-entropy ASLR the runner
   re-execs itself once under `setarch -R`
   (`tests/run_all_tests.sh:75-78`).
 - `bash tests/run_all_tests.sh --coverage` — instruments the suites with gcov,
   aggregates all `.gcda`, and writes an lcov-format tracefile to
   `tests/coverage/coverage.info` plus the overall line percentage in stdout
-  (`tests/run_all_tests.sh:166-249`). Requires `gcov` (shipped with gcc) and
+  (`tests/run_all_tests.sh:167-260`). Requires `gcov` (shipped with gcc) and
   `jq`; no lcov install needed.
 
 CI runs both modes on every push/PR to main (`.github/workflows/c-cpp.yml`,
@@ -123,6 +141,9 @@ jobs `sanitizer-tests` and `coverage`); the coverage job uploads
 `tests/coverage/` as a workflow artifact.
 
 ## 4. `MMT_BASE` Install-Prefix Behavior
+
+This section is the **single source** for the `MMT_BASE` prefix contract; other
+documents link here.
 
 `MMT_BASE` is the install prefix. Defaults:
 
@@ -133,7 +154,7 @@ jobs `sanitizer-tests` and `coverage`); the coverage job uploads
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:239-242`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:248-251`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -174,6 +195,7 @@ Two verification profiles exist in `rules/common.mk` (both add flags to
 `CFLAGS` and `CXXFLAGS` so they reach the shared-library link lines):
 
 > **⚠ Always `make -C sdk clean` before switching build profiles.**
+> *(This warning is the single source for the rule; other documents link here.)*
 > Object rules depend on source timestamps only (`rules/common.mk:426-428`) —
 > changing `BUILD=` does *not* invalidate existing `.o` files, so building
 > `BUILD=asan` on top of a plain tree relinks sanitized `.so` files from
@@ -243,7 +265,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 12/12 suites PASSED, exit 0 (~25 s)
+bash tests/run_all_tests.sh     # 12/12 suites PASSED, exit 0 (45–65 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

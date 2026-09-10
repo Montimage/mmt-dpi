@@ -28,6 +28,10 @@ Added to `rules/common.mk`. Builds the libraries with
 verification vehicle for Phase 2 (run crafted edge-case pcaps through an
 ASan-built library to catch OOB reads/writes and UB).
 
+The leading `clean` is mandatory — see
+[Agent Environment Notes §5 Sanitizer Build Profiles](../../docs/AGENT_ENVIRONMENT.md#5-sanitizer-build-profiles)
+for why.
+
 ```bash
 make -C sdk clean
 make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan

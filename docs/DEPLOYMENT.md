@@ -74,8 +74,9 @@ By default, plugins are loaded from `/opt/mmt/plugins/` (`rules/common.mk:7`). Y
 ### Environment Variables
 
 No environment variables are documented in the codebase for runtime configuration.
-The plugin load path is compiled in at build time via `PLUGINS_REPOSITORY_OPT`
-(`rules/common.mk:30`).
+The plugin load path is compiled in at build time from `MMT_BASE`; the contract is
+stated once, in
+[Agent Environment Notes §4 `MMT_BASE` Install-Prefix Behavior](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 
 <!-- FLAG: unverified — MMT_SEC_DTLS_CIPHER_ALLOWLIST was previously documented
      but no code reference was found (grep across sdk/ and src/). -->
