@@ -54,18 +54,18 @@ grep -q 'mmt-dpi.conf' "$ROOT/sdk/Makefile" && echo "  ✓ ldconfig file is mmt-
 # Check 4: Plugin path compiled in
 grep -q 'PLUGINS_REPOSITORY_OPT' "$ROOT/rules/common.mk" && echo "  ✓ PLUGINS_REPOSITORY_OPT defined" || { echo "  ✗ PLUGINS_REPOSITORY_OPT missing"; ERRORS=$((ERRORS + 1)); }
 
-# Check 5: Shared libraries exist in sdk/lib/
+# Check 5: the build knows the shared libraries the doc says are installed —
+# sdk/lib/ is a gitignored build artifact that does not exist on a clean
+# checkout, so assert each library in the Makefile instead (issue #187 — the
+# doc-validators CI job runs on a clean checkout).
 for lib in libmmt_core libmmt_tcpip; do
-    if ls "$ROOT/sdk/lib/$lib"* >/dev/null 2>&1; then
-        echo "  ✓ sdk/lib/$lib (or versioned) exists"
-    else
-        echo "  ✗ sdk/lib/$lib missing"
-        ERRORS=$((ERRORS + 1))
-    fi
+    check "sdk/Makefile builds $lib" "grep -q '$lib' $ROOT/sdk/Makefile"
 done
 
-# Check 6: Headers exist
-check "sdk/include/mmt_core.h exists" "test -f $ROOT/sdk/include/mmt_core.h"
+# Check 6: public headers exist at their source — sdk/include/ is a
+# gitignored build copy populated by make; the tracked originals live in
+# src/mmt_core/public_include/ (same issue #187 constraint as Check 5).
+check "src/mmt_core/public_include/mmt_core.h exists" "test -f $ROOT/src/mmt_core/public_include/mmt_core.h"
 
 # Check 7: No MMT_SEC_DTLS_CIPHER_ALLOWLIST in code (doc should not list it)
 count=$(grep -r 'MMT_SEC_DTLS_CIPHER_ALLOWLIST' "$ROOT/sdk/" "$ROOT/src/" 2>/dev/null | wc -l || true)

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # MMT-DPI Installation Script
-# https://github.com/Montimage/mmt-dpi
+# https://github.com/montimage-projects/mmt-dpi
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
-#   wget -qO- https://raw.githubusercontent.com/Montimage/mmt-dpi/main/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+#   wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 #
 # Options (via environment variables):
 #   MMT_BASE=/custom/path  - Install to a custom directory (default: /opt/mmt)
@@ -24,7 +24,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-REPO_URL="https://github.com/Montimage/mmt-dpi.git"
+REPO_URL="https://github.com/montimage-projects/mmt-dpi.git"
 BRANCH="${BRANCH:-main}"
 MMT_BASE="${MMT_BASE:-/opt/mmt}"
 SKIP_DEPS="${SKIP_DEPS:-0}"
@@ -376,7 +376,7 @@ main() {
     printf "\n"
     printf '%b\n' "${BOLD}MMT-DPI Installer${NC}"
     printf "Deep Packet Inspection Library by Montimage\n"
-    printf "https://github.com/Montimage/mmt-dpi\n"
+    printf "https://github.com/montimage-projects/mmt-dpi\n"
     printf "\n"
 
     install_dependencies

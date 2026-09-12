@@ -1,0 +1,41 @@
+name: Bootstrap build dependencies
+description: >-
+  Install the apt packages every CI job needs (libxml2-dev, libpcap-dev) plus
+  any job-specific extras via the extra-packages input. The downloaded .deb
+  archives are cached between runs so a clean checkout does not re-download
+  them (issue #188, F-CI-008).
+inputs:
+  extra-packages:
+    description: >-
+      Space-separated list of additional apt packages to install on top of the
+      base set (libxml2-dev libpcap-dev)
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    # actions/cache extracts as the runner user; the archives directory is
+    # root-owned on a fresh runner, so hand it over before the restore.
+    - name: Make the apt archives directory cache-writable
+      shell: bash
+      run: |
+        sudo mkdir -p /var/cache/apt/archives
+        sudo chown -R "$(id -un)" /var/cache/apt/archives
+
+    - name: Cache apt archives
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: /var/cache/apt/archives
+        key: apt-${{ runner.os }}-bootstrap-${{ inputs.extra-packages }}-${{ hashFiles('.github/actions/bootstrap-deps/action.yml') }}
+        restore-keys: |
+          apt-${{ runner.os }}-bootstrap-${{ inputs.extra-packages }}-
+          apt-${{ runner.os }}-bootstrap-
+
+    - name: Install build dependencies
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update -y
+        # extra-packages is a space-separated word list by contract — word
+        # splitting is intended here.
+        sudo apt-get install -y libxml2-dev libpcap-dev ${{ inputs.extra-packages }}

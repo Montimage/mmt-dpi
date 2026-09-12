@@ -78,9 +78,12 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
-# Check 6: Public headers path
-check "sdk/include/ has headers" "test -d $ROOT/sdk/include"
-check "sdk/include/mmt_core.h exists" "test -f $ROOT/sdk/include/mmt_core.h"
+# Check 6: Public headers path — DEVELOPMENT.md points at the tracked source
+# directory src/mmt_core/public_include/; sdk/include/ is a gitignored build
+# copy that does not exist on a clean checkout (issue #187 — the
+# doc-validators CI job runs on a clean checkout).
+check "src/mmt_core/public_include/ has headers" "test -d $ROOT/src/mmt_core/public_include"
+check "src/mmt_core/public_include/mmt_core.h exists" "test -f $ROOT/src/mmt_core/public_include/mmt_core.h"
 
 echo ""
 if [ $ERRORS -eq 0 ]; then

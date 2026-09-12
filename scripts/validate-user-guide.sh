@@ -63,11 +63,14 @@ check "src/examples/google-fr.pcap exists" "test -f $ROOT/src/examples/google-fr
 grep -q 'mmt-dpi.conf' "$ROOT/sdk/Makefile" && echo "  ✓ ldconfig file is mmt-dpi.conf" || { echo "  ✗ ldconfig file name mismatch"; ERRORS=$((ERRORS + 1)); }
 
 # Check 7: mmt_core.h has expected API functions
-grep -q 'mmt_init_handler' "$ROOT/sdk/include/mmt_core.h" && echo "  ✓ mmt_init_handler() declared" || { echo "  ✗ mmt_init_handler() missing"; ERRORS=$((ERRORS + 1)); }
-grep -q 'mmt_close_handler' "$ROOT/sdk/include/mmt_core.h" && echo "  ✓ mmt_close_handler() declared" || { echo "  ✗ mmt_close_handler() missing"; ERRORS=$((ERRORS + 1)); }
-grep -q 'init_extraction' "$ROOT/sdk/include/mmt_core.h" && echo "  ✓ init_extraction() declared" || { echo "  ✗ init_extraction() missing"; ERRORS=$((ERRORS + 1)); }
-grep -q 'close_extraction' "$ROOT/sdk/include/mmt_core.h" && echo "  ✓ close_extraction() declared" || { echo "  ✗ close_extraction() missing"; ERRORS=$((ERRORS + 1)); }
-grep -q 'packet_process' "$ROOT/sdk/include/mmt_core.h" && echo "  ✓ packet_process() declared" || { echo "  ✗ packet_process() missing"; ERRORS=$((ERRORS + 1)); }
+# The tracked source of the installed mmt_core.h lives in
+# src/mmt_core/public_include/; sdk/include/ is a gitignored build copy that
+# does not exist on a clean checkout (issue #187 — doc-validators CI job).
+grep -q 'mmt_init_handler' "$ROOT/src/mmt_core/public_include/mmt_core.h" && echo "  ✓ mmt_init_handler() declared" || { echo "  ✗ mmt_init_handler() missing"; ERRORS=$((ERRORS + 1)); }
+grep -q 'mmt_close_handler' "$ROOT/src/mmt_core/public_include/mmt_core.h" && echo "  ✓ mmt_close_handler() declared" || { echo "  ✗ mmt_close_handler() missing"; ERRORS=$((ERRORS + 1)); }
+grep -q 'init_extraction' "$ROOT/src/mmt_core/public_include/mmt_core.h" && echo "  ✓ init_extraction() declared" || { echo "  ✗ init_extraction() missing"; ERRORS=$((ERRORS + 1)); }
+grep -q 'close_extraction' "$ROOT/src/mmt_core/public_include/mmt_core.h" && echo "  ✓ close_extraction() declared" || { echo "  ✗ close_extraction() missing"; ERRORS=$((ERRORS + 1)); }
+grep -q 'packet_process' "$ROOT/src/mmt_core/public_include/mmt_core.h" && echo "  ✓ packet_process() declared" || { echo "  ✗ packet_process() missing"; ERRORS=$((ERRORS + 1)); }
 
 # Check 8: rules/common.mk has expected build options
 grep -q 'DEBUG' "$ROOT/rules/common.mk" && echo "  ✓ DEBUG build option" || { echo "  ✗ DEBUG build option missing"; ERRORS=$((ERRORS + 1)); }

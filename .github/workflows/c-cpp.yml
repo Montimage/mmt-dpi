@@ -6,6 +6,17 @@ on:
     tags: ["v*"] # Push events to matching v*, i.e. v1.0, v20.15.10
   pull_request:
     branches: [ main ]
+  # Weekly drift check (issue #188, F-CI-015): environment deprecations and
+  # upstream changes surface here instead of on a contributor's next PR.
+  schedule:
+    - cron: '17 4 * * 1'
+
+# A newer push cancels the superseded run of the same ref (issue #188,
+# F-CI-007): stale matrix jobs no longer burn runner time alongside their
+# replacement.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 # Least-privilege default (F-SEC-005): every job gets a read-only token unless
 # it declares its own elevated permissions block.
@@ -20,6 +31,7 @@ jobs:
     # `char` is signed on x86, unsigned on ARM) are caught in CI rather than
     # only on the developer's machine.
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -30,8 +42,7 @@ jobs:
             suites: "hashmap memory hexdump mmt_utils mmt_inet_ntop"
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - name: Install dependencies
-      run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
+    - uses: ./.github/actions/bootstrap-deps
     - name: Run unit test suites
       env:
         EXTRA_CFLAGS: ${{ matrix.extra_cflags }}
@@ -44,6 +55,7 @@ jobs:
     # them into per-suite instrumentation via SANITIZE=asan|tsan, and suites
     # that build the SDK internally inherit the matching BUILD= profile.
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -54,8 +66,7 @@ jobs:
             sanitize: tsan
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - name: Install dependencies
-      run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
+    - uses: ./.github/actions/bootstrap-deps
     - name: Run unit test suites under sanitizers (${{ matrix.profile }})
       env:
         SANITIZE: ${{ matrix.sanitize }}
@@ -70,10 +81,12 @@ jobs:
     # committed floor (tests/coverage/floor.json), and publish the report as
     # a CI artifact.
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - name: Install dependencies
-      run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev jq
+    - uses: ./.github/actions/bootstrap-deps
+      with:
+        extra-packages: jq
     - name: Run unit test suites with coverage
       run: bash tests/run_all_tests.sh --coverage
     - name: Enforce the committed coverage floor
@@ -91,6 +104,7 @@ jobs:
       with:
         name: unit-suite-coverage
         path: tests/coverage/
+        retention-days: 14
 
   lint:
     # Lint/static-analysis gate (issues #125, #189): shellcheck runs blocking
@@ -99,10 +113,14 @@ jobs:
     # publishes its findings as a report artifact. The generated ASN.1 tree
     # (src/mmt_mobile/asn1c) is excluded from the scan.
     runs-on: ubuntu-24.04
+    # cppcheck scans the whole tree single-threaded; measured at ~65-90 min on
+    # a hosted runner.
+    timeout-minutes: 120
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - name: Install lint tools
-      run: sudo apt-get update -y && sudo apt-get install -y shellcheck cppcheck
+    - uses: ./.github/actions/bootstrap-deps
+      with:
+        extra-packages: shellcheck cppcheck
     - name: shellcheck (all tracked shell scripts, blocking)
       run: shellcheck $(git ls-files '*.sh')
     - name: cppcheck (error-severity gate + findings ratchet)
@@ -118,12 +136,14 @@ jobs:
         name: cppcheck-findings-report
         path: cppcheck-report.xml
         if-no-files-found: error
+        retention-days: 14
 
   verify-helpers:
-    # Verification-helper machinery gate (issue #190). Every tools/ci/*.sh and
-    # scripts/validate-*.sh helper the modernization plan's Verify lines name
-    # is exercised here, so a missing file, a lost executable bit or a
-    # crashing script fails CI instead of rotting unrun.
+    # Verification-helper machinery gate (issue #190). Every tools/ci/*.sh
+    # helper the modernization plan's Verify lines name is exercised here, so
+    # a missing file, a lost executable bit or a crashing script fails CI
+    # instead of rotting unrun. The scripts/validate-*.sh family moved to the
+    # doc-validators job below (issue #187).
     #
     # Exit-code contract shared by every helper: 0 = condition holds,
     # 1 = condition violated, >=2 = helper broken. Helpers whose gate
@@ -132,6 +152,7 @@ jobs:
     # a missing file or a non-executable bit fails the job. Helpers whose
     # condition already holds run as ordinary blocking steps.
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Ratchet counters (blocking — a rise above baseline fails)
@@ -141,7 +162,6 @@ jobs:
         bash tools/ci/lint-markers.sh
     - name: Documentation checks (blocking)
       run: |
-        bash scripts/validate-agent-environment.sh
         bash tools/ci/check-site-links.sh docs
         bash tools/phase0/ci/check_readme_gates.sh
     - name: Advisory helpers (gate condition still open — owning task flips it)
@@ -156,7 +176,6 @@ jobs:
           tools/ci/lint-commented-code.sh
           tools/ci/lint-packet-path-io.sh
           "tools/ci/report-function-shape.sh src/mmt_tcpip/lib/protocols/proto_irc.c"
-          scripts/validate-install-origin.sh
         )
         for spec in "${helpers[@]}"; do
           read -ra argv <<< "$spec"
@@ -177,15 +196,56 @@ jobs:
         done
         exit "$fail"
 
+  pre-commit:
+    # Pre-commit framework gate (issue #187, F-CI-003). Contributor and
+    # security docs describe the local pre-commit hook as the safety net, but
+    # no clone installs it — running the framework over all files here is what
+    # keeps .pre-commit-config.yaml exercised instead of rotting. The
+    # shellcheck hook is language: system (provided by bootstrap-deps); the
+    # gitleaks hook is language: golang, which pre-commit builds from source
+    # with the runner's Go toolchain. The full-history scan is the
+    # secret-scan job's — the hook only re-verifies the configured gate runs.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+      with:
+        extra-packages: shellcheck
+    - name: Install the pre-commit framework
+      run: pipx install pre-commit
+    - name: Run all hooks over all files
+      run: pre-commit run --all-files --show-diff-on-failure
+
+  doc-validators:
+    # Documentation validators gate (issue #187, F-DOCS-005). Every
+    # check-only scripts/validate-*.sh script runs blocking — the harness
+    # built to stop documentation drift is exercised so a stale doc citation
+    # fails CI instead of accumulating silently. The glob picks up newly
+    # added validators with no workflow edit.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+    - name: Run every scripts/validate-*.sh validator
+      run: |
+        set -euo pipefail
+        for s in scripts/validate-*.sh; do
+          echo "=== $s"
+          bash "$s"
+        done
+
   build:
 
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
     - name: build-from-source
       run: |
-         sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
          cd sdk/ && make -j2 && sudo make install && make test
 
   enablesec:
@@ -195,10 +255,10 @@ jobs:
     # ENABLESEC=1 internally, but this job is the CI gate that proves the
     # engines compile in the shipped configuration and that the suite runs.
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - name: Install dependencies
-      run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
+    - uses: ./.github/actions/bootstrap-deps
     - name: Build & test the security rule engine (ENABLESEC=1)
       run: bash tests/run_all_tests.sh rule_engine
 
@@ -218,6 +278,7 @@ jobs:
     # ran, so a scan that silently did not happen fails the job instead of
     # reporting clean.
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:

@@ -14,6 +14,16 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  # Weekly drift check (issue #188, F-CI-015): the phase0 gates also run on a
+  # schedule so toolchain/image deprecations surface before a contributor's PR.
+  schedule:
+    - cron: '17 4 * * 1'
+
+# A newer push cancels the superseded run of the same ref (issue #188,
+# F-CI-007).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 # Least-privilege default (F-SEC-005): every job gets a read-only token; no job
 # in this workflow needs write access (artifact upload works with read).
@@ -24,10 +34,10 @@ jobs:
   asan-build:
     name: ASan/UBSan profile compiles
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install build dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
+      - uses: ./.github/actions/bootstrap-deps
       - name: Build with BUILD=asan
         run: |
           make -C sdk clean
@@ -48,6 +58,7 @@ jobs:
     # gated automatically with no workflow edit.
     name: Enumerate phase0 harnesses
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       harnesses: ${{ steps.list.outputs.harnesses }}
     steps:
@@ -73,24 +84,26 @@ jobs:
     name: harness-${{ matrix.harness }}
     needs: list-harnesses
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         harness: ${{ fromJSON(needs.list-harnesses.outputs.harnesses) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install build dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev python3
+      - uses: ./.github/actions/bootstrap-deps
+        with:
+          extra-packages: python3
       - name: Run ${{ matrix.harness }}
         run: bash "tools/phase0/tests/${{ matrix.harness }}"
 
   classification-gate:
     name: Golden classification fingerprint unchanged
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install build dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
+      - uses: ./.github/actions/bootstrap-deps
       - name: Check classification against the Phase 0 baseline
         run: tools/phase0/ci/check_classification.sh
       - name: Upload freshly captured fingerprint on mismatch
@@ -100,14 +113,15 @@ jobs:
           name: phase0-classification-actual
           path: tools/phase0/ci/baseline/classification.actual.txt
           if-no-files-found: ignore
+          retention-days: 7
 
   precision-gate:
     name: Labelled-pcap precision/recall holds or improves (M9, issue #74)
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install build dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev
+      - uses: ./.github/actions/bootstrap-deps
       - name: Check precision/recall against the committed baseline
         run: tools/phase0/ci/check_precision.sh
       - name: Upload freshly captured metrics on mismatch
@@ -117,3 +131,4 @@ jobs:
           name: phase0-precision-actual
           path: tools/phase0/ci/baseline/precision.actual.txt
           if-no-files-found: ignore
+          retention-days: 7

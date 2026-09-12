@@ -21,10 +21,7 @@ Fixes #(issue number)
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
-- [ ] My changes compile without warnings
 - [ ] I have tested with relevant pcap files
-- [ ] I have checked for memory leaks (Valgrind)
-- [ ] Existing tests pass locally with my changes
 
 ## Testing
 

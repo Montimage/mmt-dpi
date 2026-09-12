@@ -33,7 +33,10 @@ echo "=== Prepare-for-a-new-released-version.md validation ==="
 # Check 1: Version locations exist and are consistent
 check "rules/common.mk has VERSION" "grep -q '^VERSION' $ROOT/rules/common.mk"
 check "dist/ZIP/mmt-install-common.sh has VERSION" "grep -q 'VERSION=' $ROOT/dist/ZIP/mmt-install-common.sh"
-check "sdk/include/mmt_core.h has VERSION" "grep -q '#define VERSION' $ROOT/sdk/include/mmt_core.h"
+# The doc lists the source header src/mmt_core/public_include/mmt_core.h;
+# sdk/include/ is a gitignored build copy that does not exist on a clean
+# checkout (issue #187 — the doc-validators CI job surfaced this).
+check "src/mmt_core/public_include/mmt_core.h has VERSION" "grep -q '#define VERSION' $ROOT/src/mmt_core/public_include/mmt_core.h"
 
 # Check 2: mmt-test directory does NOT exist (doc should note this)
 if [ -d "$ROOT/mmt-test" ]; then
