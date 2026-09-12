@@ -1,0 +1,6 @@
+# cppcheck findings ratchet (issue #189, F-CI-004).
+# Total findings in cppcheck-report.xml must not exceed this count; the
+# lint job fails the step when it does. Lower the number when findings are
+# fixed — never raise it without a recorded justification.
+# Re-measure: bash tools/ci/run-cppcheck.sh
+24

@@ -33,8 +33,11 @@ void mmt_classify_me_popo(ipacket_t * ipacket, unsigned index) {
         }
 
         if (MMT_SRC_OR_DST_HAS_PROTOCOL(src, dst, PROTO_POPO) != 0) {
-#define MMT_POPO_IP_SUBNET_START ( (220 << 24) + (181 << 16) + (28 << 8) + 220)
-#define MMT_POPO_IP_SUBNET_END ( (220 << 24) + (181 << 16) + (28 << 8) + 238)
+            /* 220 << 24 exceeds INT_MAX: the shifts must be unsigned or the
+               subnet constant is signed-overflow UB (cppcheck integerOverflow).
+               The value is bit-identical either way — 0xDCB51CDC/0xDCB51CEE. */
+#define MMT_POPO_IP_SUBNET_START ( (220u << 24) + (181u << 16) + (28u << 8) + 220u)
+#define MMT_POPO_IP_SUBNET_END ( (220u << 24) + (181u << 16) + (28u << 8) + 238u)
 
             /* may match the first payload ip packet only ... */
 

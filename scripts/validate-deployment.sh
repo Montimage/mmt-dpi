@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # validate-deployment.sh — Check-only validation for DEPLOYMENT.md install/linking steps.
 # Usage: ./validate-deployment.sh [--check] [--run-destructive]
+# shellcheck disable=SC2015
+#  The A && B || C idiom below is used exclusively as
+#  `check && echo "  ✓ ..." || { echo "  ✗ ..."; ERRORS+=1; }`, where the
+#  middle command is a plain echo that cannot fail — the hazard SC2015
+#  warns about (C running when A is true) cannot occur here. Scoped to
+#  this file rather than .shellcheckrc (issue #189, F-CI-019).
+
 set -euo pipefail
 
 MODE="${1:---check}"

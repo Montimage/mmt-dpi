@@ -1,0 +1,7 @@
+# Ratchet baseline for tools/ci/count-init-wrappers.sh (issues #190/#226).
+#
+# Number of `mmt_init_classify_me_*` function definitions under src/ at the
+# commit that introduced the gate. Tasks 5.2/5.3 fold these per-protocol
+# wrappers into one generic function — lower this number as they land.
+# The gate fails only when the count RISES above this value.
+119

@@ -1,0 +1,8 @@
+# Ratchet baseline for tools/ci/count-weak-types.sh (issues #190/#230).
+#
+# Number of raw-integer protocol-id parameters in src/mmt_core/public_include/
+# at the commit that introduced the gate — parameters named proto*/protocol*
+# typed as int/uintN_t/unsigned/short/long/char, excluding pointers and
+# *_name strings. Tasks 5.6/5.7 convert them to the protocol-id typedef —
+# lower this number as they land. The gate fails only when the count RISES.
+48

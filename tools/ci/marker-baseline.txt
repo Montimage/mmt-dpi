@@ -1,0 +1,7 @@
+# Ratchet baseline for tools/ci/lint-markers.sh (issues #190/#232).
+#
+# Number of TODO/FIXME/XXX/HACK marker lines in tracked C/C++ sources outside
+# the generated src/mmt_mobile/asn1c/ tree, at the commit that introduced the
+# gate. Task 5.8 triages the backlog — lower this number as it lands.
+# The gate fails only when the count RISES above this value.
+199

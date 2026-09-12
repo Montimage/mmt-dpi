@@ -43,8 +43,8 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
    int zr[8];
    size_t len;
    int32_t i, j, k, skip;
-   uint8_t x8, hx8;
-   uint16_t x16;
+   uint8_t x8 = 0, hx8 = 0;
+   uint16_t x16 = 0;
    struct in_addr a4;
 
    if (addr == NULL) return NULL;
@@ -82,7 +82,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 #ifdef _WIN32
       x8 = addr->u.Byte[i];
 #elif _OSX
-
+      x8 = addr->s6_addr[i];      /* POSIX member name on OSX/BSD */
 #else
       x8 = addr->__in6_u.__u6_addr8[i];
 #endif
@@ -104,7 +104,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 #ifdef _WIN32
       x8 = addr->u.Byte[i + 1];
 #elif _OSX
-
+      x8 = addr->s6_addr[i + 1];
 #else
       x8 = addr->__in6_u.__u6_addr8[i + 1];
 #endif
@@ -129,7 +129,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 #ifdef _WIN32
       x16 = addr->u.Word[i];
 #elif _OSX
-
+      x16 = addr->s6_addr16[i];   /* POSIX member name on OSX/BSD */
 #else
       x16 = addr->__in6_u.__u6_addr16[i];
 #endif

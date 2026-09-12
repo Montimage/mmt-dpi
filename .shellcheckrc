@@ -1,5 +1,4 @@
-# SC2015 (A && B || C is not if-then-else): scripts/validate-*.sh use this
-# shape exclusively as `grep -q PATTERN FILE && echo PASS || { echo FAIL; ERRORS+=1; }`,
-# where B is always a plain `echo` that cannot fail — the hazard this rule
-# warns about (C running when A is true) cannot occur here.
-disable=SC2015
+# No global rule disables — each suppression is scoped to the file that needs
+# it via a `# shellcheck disable=SCxxxx` directive with a justification
+# comment (issue #189, F-CI-019). A global disable would silence the rule for
+# every future script, not just the ones the justification covers.
