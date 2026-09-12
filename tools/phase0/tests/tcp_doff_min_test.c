@@ -54,9 +54,10 @@
 
 /*
  * Entry point under test. tcp_pre_classification_function() is exported but not
- * declared in any installed public header; declare it here.
+ * declared in any installed public header; it comes from the shared internal
+ * header (issue #186).
  */
-extern int tcp_pre_classification_function(ipacket_t *ipacket, unsigned index);
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

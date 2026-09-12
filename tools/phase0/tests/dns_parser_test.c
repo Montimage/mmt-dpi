@@ -28,24 +28,9 @@
 #include <string.h>
 #include <stdint.h>
 
-typedef unsigned char u_char;
-
-/* Mirror of dns_name_t from src/mmt_tcpip/lib/protocols/dns.h. The layout must
- * match the library's so we can read the parsed value back. */
-typedef struct dns_name_struct {
-    char *value;
-    uint16_t length;
-    uint8_t is_ref;
-    uint16_t real_length;
-    struct dns_name_struct *next;
-} dns_name_t;
-
-/* Internal (non-static, exported) entry points under test. */
-extern int dns_check_payload(const u_char *payload, int payload_packet_len);
-extern dns_name_t *dns_extract_name_value(const u_char *dns_name_payload,
-                                          const u_char *dns_payload,
-                                          const u_char *payload_end);
-extern void dns_free_name(dns_name_t *dns_name);
+/* dns_name_t and the internal entry points under test are declared in the
+ * shared internal header (issue #186). */
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

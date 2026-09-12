@@ -1,0 +1,5 @@
+{
+  "library_line_pct": 85.0,
+  "instrumented_files": 6,
+  "note": "Floor enforced by tools/ci/check-coverage-floor.sh in the coverage CI job (issue #185). Current measurement: 87.1% over 6 instrumented src/ files; the percentage floor carries a small margin for gcov attribution differences between gcc versions. Raise the floor as coverage improves — never lower it to silence a failure."
+}

@@ -43,11 +43,9 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-/* Parsers under test — exported from proto_ftp.c (no public header). */
-extern char *ftp_get_data_client_addr_v6_from_LPRT(char *payload);
-extern char *ftp_get_data_client_addr_v6_from_EPRT(char *payload);
-extern unsigned short ftp_get_data_client_port_from_EPRT(char *payload);
-extern unsigned int ftp_get_addr_from_parameter(char *payload, unsigned int payload_len);
+/* Parsers under test — exported from proto_ftp.c, declared in the shared
+ * internal header (issue #186). */
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

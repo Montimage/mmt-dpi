@@ -36,24 +36,11 @@
 #include "mmt_core.h"
 
 /*
- * HTTP/2 parser entry points under test. They are non-static (exported) in
- * src/mmt_tcpip/lib/protocols/http2.c but not declared in any public header,
- * so we declare them here.
+ * HTTP/2 parser entry points under test — non-static in
+ * src/mmt_tcpip/lib/protocols/http2.c, declared in the shared internal
+ * header (issue #186).
  */
-extern int http2_header_length_extraction(const ipacket_t *packet,
-        unsigned proto_index, attribute_t *extracted_data);
-extern int http2_header_method_extraction(const ipacket_t *packet,
-        unsigned proto_index, attribute_t *extracted_data);
-extern int http2_payload_stream_id_extraction(const ipacket_t *packet,
-        unsigned proto_index, attribute_t *extracted_data);
-extern int http2_payload_length_extraction(const ipacket_t *packet,
-        unsigned proto_index, attribute_t *extracted_data);
-extern int http2_payload_data_extraction(const ipacket_t *packet,
-        unsigned proto_index, attribute_t *extracted_data);
-extern int http2_stream_id_extraction(const ipacket_t *packet,
-        unsigned proto_index, attribute_t *extracted_data);
-extern int _http2_classify_next_proto(ipacket_t *ipacket, unsigned index);
-extern int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index);
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

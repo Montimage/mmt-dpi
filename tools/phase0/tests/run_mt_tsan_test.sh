@@ -29,14 +29,14 @@ set -euo pipefail
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PHASE0_DIR="$(cd "${TEST_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${PHASE0_DIR}/../.." && pwd)"
-PREFIX="${MMT_TSAN_PREFIX:-/tmp/mmt-tsan-mt}"
+PREFIX="${MMT_TSAN_PREFIX:-$(mktemp -d "${TMPDIR:-/tmp}/tsan.XXXXXX")}"
 WORK="$(mktemp -d)"
 BIN="${WORK}/mt_tsan_harness"
 RADIUS_PCAP="${WORK}/radius.pcap"
 SUPP="${TEST_DIR}/mt_tsan_suppressions.txt"
 NUM_THREADS="${MT_TSAN_THREADS:-8}"
 
-trap 'rm -rf "${WORK}"; [ "${MMT_SDK_PREBUILT:-0}" = "1" ] || rm -rf "${PREFIX}"' EXIT
+trap 'rm -rf "${WORK}"; [ -n "${MMT_TSAN_PREFIX:-}" ] || rm -rf "${PREFIX}"' EXIT
 
 CC="${CC:-gcc}"
 
@@ -44,8 +44,31 @@ if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
     echo "[1/4] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
 else
     echo "[1/4] building + installing SDK with BUILD=tsan -> ${PREFIX}"
+    # Profile-switch clean rule (docs/AGENT_ENVIRONMENT.md §5, issue #186 /
+    # F-TEST-011): without it, a BUILD=tsan make can relink the .so files from
+    # stale non-instrumented objects and this harness would "pass" while
+    # exercising a plain build.
+    make -C "${REPO_ROOT}/sdk" clean >/dev/null
     make -C "${REPO_ROOT}/sdk" BUILD=tsan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
     make -C "${REPO_ROOT}/sdk" BUILD=tsan MMT_BASE="${PREFIX}" install >/dev/null
+fi
+
+# Assert the SDK really is TSan-instrumented (F-TEST-011): the build above can
+# report success yet ship a non-instrumented library, so a clean exit would be
+# a false pass. A TSan object keeps undefined __tsan_* runtime references.
+tsan_ok=0
+for lib in "${PREFIX}"/dpi/lib/libmmt_core.so* "${PREFIX}"/plugins/libmmt_tcpip.so*; do
+    [ -e "${lib}" ] || continue
+    if nm -D "${lib}" 2>/dev/null | grep -q '__tsan_'; then
+        tsan_ok=1
+        echo "       ${lib##*/}: __tsan_* symbols present"
+    else
+        echo "       ${lib##*/}: no __tsan_* symbols"
+    fi
+done
+if [ "${tsan_ok}" -ne 1 ]; then
+    echo "✗ installed SDK is not TSan-instrumented — refusing a false pass" >&2
+    exit 1
 fi
 
 echo "[2/4] generating multi-flow RADIUS pcap"

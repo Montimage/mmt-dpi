@@ -40,9 +40,9 @@
 #include "mmt_tcpip_plugin_structs.h"   /* struct mmt_tcpip_internal_packet_struct */
 
 /* Function under test — non-static (exported) in
- * src/mmt_tcpip/lib/protocols/proto_http.c but not declared in any public
- * header, so we declare it here (same convention as http_scanner_test.c). */
-extern uint16_t http_request_url_offset(ipacket_t *ipacket);
+ * src/mmt_tcpip/lib/protocols/proto_http.c, declared in the shared internal
+ * header (issue #186). */
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

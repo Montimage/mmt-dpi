@@ -63,8 +63,12 @@ jobs:
 
   coverage:
     # Measure unit-suite coverage (gcov): run every suite instrumented with
-    # --coverage, emit tests/coverage/coverage.info (lcov tracefile) and print
-    # the overall line percentage; publish the report as a CI artifact.
+    # --coverage, emit tests/coverage/coverage.info (lcov tracefile of src/
+    # sources only — test sources are excluded so the number means the
+    # library, issue #185) plus tests/coverage/summary.json, print the
+    # library line percentage and instrumented-file count, enforce the
+    # committed floor (tests/coverage/floor.json), and publish the report as
+    # a CI artifact.
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -72,6 +76,10 @@ jobs:
       run: sudo apt-get update -y && sudo apt-get install -y libxml2-dev libpcap-dev jq
     - name: Run unit test suites with coverage
       run: bash tests/run_all_tests.sh --coverage
+    - name: Enforce the committed coverage floor
+      # Issue #185 (F-CI-014): the job fails when the library line percentage
+      # or the instrumented-file count drops below tests/coverage/floor.json.
+      run: bash tools/ci/check-coverage-floor.sh
     - name: Report contiguous uncovered runs
       # Issue #190 helper wiring (consumed by #243): lists contiguous runs of
       # uncovered lines from the lcov tracefile. Report-only today — the gate
@@ -135,6 +143,7 @@ jobs:
       run: |
         bash scripts/validate-agent-environment.sh
         bash tools/ci/check-site-links.sh docs
+        bash tools/phase0/ci/check_readme_gates.sh
     - name: Advisory helpers (gate condition still open — owning task flips it)
       run: |
         fail=0

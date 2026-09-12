@@ -33,12 +33,9 @@
 
 #include "mmt_core.h"
 
-/* Loaders / lookup under test — exported from libmmt_tcpip. */
-extern int mmt_tcpip_load_ip_ranges_file(const char *path);
-extern int mmt_tcpip_load_port_map_file(const char *path);
-extern int _find_proto_id_by_address(uint32_t ip_src, uint32_t ip_dst);
-extern int _find_proto_id_by_address6(const uint8_t ip_src[16],
-                                      const uint8_t ip_dst[16]);
+/* Loaders / lookup under test — exported from libmmt_tcpip, declared in the
+ * shared internal header (issue #186). */
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

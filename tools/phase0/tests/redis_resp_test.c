@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-/* Decision helpers under test — exported from proto_redis.c. */
-extern int redis_is_resp_opener(uint8_t c);
-extern int redis_resp_exchange_match(uint8_t a, uint8_t b);
+/* Decision helpers under test — exported from proto_redis.c, declared in the
+ * shared internal header (issue #186). */
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

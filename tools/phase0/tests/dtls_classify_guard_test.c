@@ -24,9 +24,10 @@
  * "already classified" early return, and drops the 0x0100 branch from
  * _is_dtls_version().
  *
- * Each test drives classify_dtls_from_udp() directly (declared extern, since
- * it is exported non-static but not declared in any public header — same
- * convention as quic_min_len_test.c / ssl_tls12_version_test.c) with a
+ * Each test drives classify_dtls_from_udp() directly (declared in the shared
+ * internal_decls.h, since it is exported non-static but not declared in any
+ * public header — same convention as quic_min_len_test.c /
+ * ssl_tls12_version_test.c) with a
  * heap-allocated, exactly-sized datagram buffer, so AddressSanitizer brackets
  * it tightly. The runner (run_dtls_classify_guard_test.sh) builds the library
  * and this test with -fsanitize=address,undefined -fno-sanitize-recover=all.
@@ -63,11 +64,10 @@
 /*
  * classify_dtls_from_udp() and mmt_init_classify_me_dtls() are exported
  * (non-static) in src/mmt_tcpip/lib/protocols/proto_dtls.c but not declared
- * in any public header; declare them here (same convention as
- * quic_min_len_test.c / ssl_tls12_version_test.c).
+ * in any public header; they come from the shared internal header
+ * (issue #186).
  */
-extern int classify_dtls_from_udp(ipacket_t *ipacket, unsigned index);
-extern void mmt_init_classify_me_dtls(void);
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

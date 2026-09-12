@@ -178,11 +178,11 @@ sdk/Makefile:45-51	ln -sf .*libmmt_core\.so	ln -sf .*LIBDICOM	make install creat
 sdk/Makefile:46-47	ln -sf .*libmmt_fuzz\.so	ln -sf .*libmmt_security\.so	install symlinks both ENABLESEC engines
 sdk/Makefile:109-110	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dist tree symlinks both ENABLESEC engines
 sdk/Makefile:248-251	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
-tests/run_all_tests.sh:8-95	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
-tests/run_all_tests.sh:83-86	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled
-tests/run_all_tests.sh:149-162	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	nas_ies_tail
-tests/run_all_tests.sh:175-268	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
-tests/run_all_tests.sh:270-286	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
+tests/run_all_tests.sh:8-98	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
+tests/run_all_tests.sh:86-89	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled
+tests/run_all_tests.sh:155-168	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	nas_ies_tail
+tests/run_all_tests.sh:181-283	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
+tests/run_all_tests.sh:285-301	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
 CITATIONS
 
 registered="$(printf '%s' "$registered" | grep -v '^$' | sort -u)"

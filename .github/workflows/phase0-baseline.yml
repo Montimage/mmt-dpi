@@ -65,7 +65,8 @@ jobs:
     # One matrix job per enumerated run_*.sh script (job names start with
     # "harness-" so `gh run view --json jobs` counts one job per script).
     # Each harness script builds+installs the SDK itself into its own
-    # MMT_*_PREFIX (default /tmp/mmt-*), compiles its test/harness against
+    # MMT_*_PREFIX (default: a fresh mktemp -d, removed by an exit trap —
+    # issue #186), compiles its test/harness against
     # that library under the sanitizer it declares, and exits non-zero on any
     # failure — a clean exit plus matching fingerprints is the pass condition.
     # fail-fast: false keeps sibling harnesses running when one fails.

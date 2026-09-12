@@ -29,18 +29,19 @@ set -euo pipefail
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PHASE0_DIR="$(cd "${TEST_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${PHASE0_DIR}/../.." && pwd)"
-PREFIX="${MMT_ASAN_PREFIX:-/tmp/mmt-asan-mobile-harness}"
+PREFIX="${MMT_ASAN_PREFIX:-$(mktemp -d "${TMPDIR:-/tmp}/asan.XXXXXX")}"
 WORK="$(mktemp -d)"
 BIN="${WORK}/mobile_pcap_harness"
 SYNTH_DIR="${WORK}/synth"
 PCAP_CI_DIR="${PHASE0_DIR}/ci/pcaps"
 
-trap 'rm -rf "${WORK}"; [ "${MMT_SDK_PREBUILT:-0}" = "1" ] || rm -rf "${PREFIX}"' EXIT
+trap 'rm -rf "${WORK}"; [ -n "${MMT_ASAN_PREFIX:-}" ] || rm -rf "${PREFIX}"' EXIT
 
 if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
     echo "[1/4] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
 else
     echo "[1/4] building + installing SDK with BUILD=asan -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" clean >/dev/null
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
 fi

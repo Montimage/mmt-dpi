@@ -90,30 +90,63 @@ git diff tools/phase0/baseline/classification.txt   # must be empty for phases 1
 ## CI gate
 
 `.github/workflows/phase0-baseline.yml` enforces these gates on every push
-and PR to `main`:
+and PR to `main`. The job list below is **generated from the workflow** —
+run `bash tools/phase0/ci/check_readme_gates.sh --write` after editing the
+workflow (the check mode runs in the `verify-helpers` CI job, so a stale
+list fails the build):
 
-1. **`asan-build`** — `make BUILD=asan` must compile and the resulting library
-   must carry ASan instrumentation (`__asan_init`). Architecture-independent;
-   protects the Phase 2 verification vehicle.
-2. **`classification-gate`** — runs `tools/phase0/ci/check_classification.sh`,
-   which builds+installs the library, classifies a small **self-contained** pcap
-   subset (vendored under `ci/pcaps/`, ~0.6 MB, no dependency on the mmt-test
-   repo) and diffs the fingerprint against the committed
-   `ci/baseline/classification.txt`. Any diff fails the job.
-3. **`precision-gate`** — runs `tools/phase0/ci/check_precision.sh`, which runs
-   the labelled-pcap precision/recall harness (`phase0_precision`) over the
-   labelled subset (`ci/labels.txt`) and diffs the micro-averaged metrics
-   against the committed `ci/baseline/precision.txt`. Enforces the Phase 7 (M9,
-   issue #74) acceptance criterion that precision/recall **holds or improves**.
-   Refresh `ci/baseline/precision.txt` (artifact: `phase0-precision-actual`) in
-   the same PR when an improvement is intentional.
-4. **`harness-*` matrix** — a `list-harnesses` setup job enumerates
-   `tools/phase0/tests/run_*.sh` and fans out one `harness-<script>` job per
-   file (issue #182), so a newly added harness is gated with no workflow
-   edit. Each script builds+installs the SDK under its declared profile and
-   fails the job on a non-zero exit. Locally the same enumeration is driven
-   by `run_all_harnesses.sh` (or `tests/run_all_tests.sh --with-harnesses`),
-   sharing one SDK build per profile instead of one per harness.
+<!-- begin-generated: ci-gates -->
+- `asan-build` — ASan/UBSan profile compiles
+- `list-harnesses` — Enumerate phase0 harnesses
+- `harness-*` — harness-${{ matrix.harness }}
+- `classification-gate` — Golden classification fingerprint unchanged
+- `precision-gate` — Labelled-pcap precision/recall holds or improves (M9, issue #74)
+- matrix expansion: `harness-*` fans out to 24 jobs, one per `tools/phase0/tests/run_*.sh`
+<!-- end-generated: ci-gates -->
+
+What each gate asserts:
+
+- **`asan-build`** — `make BUILD=asan` must compile and the resulting library
+  must carry ASan instrumentation (`__asan_init`). Architecture-independent;
+  protects the Phase 2 verification vehicle.
+- **`classification-gate`** — runs `tools/phase0/ci/check_classification.sh`,
+  which builds+installs the library, classifies a small **self-contained** pcap
+  subset (vendored under `ci/pcaps/`, ~0.6 MB, no dependency on the mmt-test
+  repo) and diffs the fingerprint against the committed
+  `ci/baseline/classification.txt`. Any diff fails the job.
+- **`precision-gate`** — runs `tools/phase0/ci/check_precision.sh`, which runs
+  the labelled-pcap precision/recall harness (`phase0_precision`) over the
+  labelled subset (`ci/labels.txt`) and diffs the micro-averaged metrics
+  against the committed `ci/baseline/precision.txt`. Enforces the Phase 7 (M9,
+  issue #74) acceptance criterion that precision/recall **holds or improves**.
+  Refresh `ci/baseline/precision.txt` (artifact: `phase0-precision-actual`) in
+  the same PR when an improvement is intentional.
+- **`list-harnesses` / `harness-*` matrix** — the setup job enumerates
+  `tools/phase0/tests/run_*.sh` and fans out one `harness-<script>` job per
+  file (issue #182), so a newly added harness is gated with no workflow
+  edit. Each script builds+installs the SDK under its declared profile into
+  a fresh `mktemp -d` prefix (removed by an exit trap) and fails the job on
+  a non-zero exit. Locally the same enumeration is driven by
+  `run_all_harnesses.sh` (or `tests/run_all_tests.sh --with-harnesses`),
+  sharing one SDK build per profile instead of one per harness.
+
+### Not enforced by CI
+
+Equally deliberate — these signals exist but nothing fails on them
+(issue #186, F-TEST-017):
+
+- `baseline/` (the full all-golden-pcaps tree under `tools/phase0/baseline/`)
+  — needs the external mmt-test data-sets; only the `ci/baseline/` subset is
+  gated. Re-run `capture_baseline.sh` manually to refresh it.
+- `baseline/throughput.txt` — informational trend, environment-dependent.
+- `baseline/valgrind.txt` — asserted only where valgrind is installed; the
+  capture records SKIPPED otherwise.
+- `tools/phase0/run_all_harnesses.sh` and
+  `tests/run_all_tests.sh --with-harnesses` — local aggregate runners; the
+  CI gate is the per-harness `harness-*` matrix, not these.
+- The `tests/run_all_tests.sh` suites themselves are gated by the
+  `unit-tests`/`sanitizer-tests`/`coverage` jobs in `c-cpp.yml`, not by this
+  workflow.
 
 When a phase **intentionally** changes classification, refresh the CI baseline in
 the same PR. The failing job uploads the freshly-captured fingerprint as the

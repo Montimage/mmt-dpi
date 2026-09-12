@@ -57,8 +57,7 @@
  * detection / excluded bitmasks the gate at the top of mmt_check_quic() reads;
  * it is non-static but undeclared in any public header.
  */
-extern int mmt_check_quic(ipacket_t *ipacket, unsigned index);
-extern void mmt_init_classify_me_quic(void);
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

@@ -88,12 +88,9 @@
  * mmt_check_skype_tcp(), mmt_check_skype_udp() and
  * mmt_init_classify_me_skype() are exported (non-static) in
  * src/mmt_tcpip/lib/protocols/proto_skype.c but not declared in any public
- * header; declare them here (same convention as quic_min_len_test.c /
- * dtls_classify_guard_test.c).
+ * header; they come from the shared internal header (issue #186).
  */
-extern int mmt_check_skype_tcp(ipacket_t *ipacket, unsigned index);
-extern int mmt_check_skype_udp(ipacket_t *ipacket, unsigned index);
-extern void mmt_init_classify_me_skype(void);
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

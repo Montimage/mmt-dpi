@@ -33,13 +33,9 @@
 #include "mmt_core.h"
 #include "mmt_tcpip_plugin_structs.h"   /* struct mmt_tcpip_internal_packet_struct */
 
-/* Bounded scanners under test — declared in rfc2822utils.h, but that header is
- * not installed, so re-declare the exported symbols here. */
-extern int get_next_white_space_offset_no_limit(const char *str, int max);
-extern int get_next_non_white_space_offset_no_limit(const char *str, int max);
-
-/* HTTP header-line parser under test (exported, not in any public header). */
-extern void _mmt_parse_packet_line_info(ipacket_t *ipacket);
+/* Bounded scanners (rfc2822utils.c) and the HTTP header-line parser under
+ * test — declared in the shared internal header (issue #186). */
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

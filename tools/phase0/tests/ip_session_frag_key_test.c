@@ -46,17 +46,10 @@
 #include "ip_session_id_management.h" /* mmt_session_key_t */
 
 /*
- * Entry points under test. They are non-static (exported) in proto_ip.c /
- * proto_ipv6.c but not declared in any installed public header, so declare
- * them here.
+ * Entry points under test — non-static in proto_ip.c / proto_ipv6.c,
+ * declared in the shared internal header (issue #186).
  */
-extern uint8_t build_ipv4_session_key(u_char *ip_packet, unsigned ip_packet_len,
-        mmt_session_key_t *ipv4_session);
-extern int build_ipv6_session_key(ipacket_t *ipacket, int offset,
-        mmt_session_key_t *ipv6_session);
-extern mmt_key_t ip_fragment_key(const struct iphdr *ip);
-extern mmt_key_t ip6_fragment_key(const struct ipv6hdr *ip6h,
-        const struct ext_hdr_fragment *frag_header);
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

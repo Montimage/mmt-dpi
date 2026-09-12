@@ -102,7 +102,7 @@ the September 2026 audit machine — the suites compile their own sources, so th
 wall clock is dominated by `gcc`, not by the assertions). Exit code `0` on
 success, `1` on any failure. The runner has no `-j` option: the 12 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:149-162`):
+(`tests/run_all_tests.sh:155-168`):
 `hashmap`, `memory`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`, `avltree`,
 `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`, `rule_engine`,
 `radius_hardening`, `nas_ies_tail`.
@@ -119,9 +119,12 @@ can run one suite by passing its directory name:
 bash tests/run_all_tests.sh hashmap memory   # subset
 ```
 
+A listed suite whose `run_tests.sh` is absent counts as **failed**, not
+skipped — the runner exits non-zero (issue #186).
+
 ### Suite modes: sanitizers and coverage
 
-`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-95`):
+`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-98`):
 
 - `SANITIZE=asan bash tests/run_all_tests.sh` — compiles every suite with
   ASan + UBSan (same flag set as the SDK's `BUILD=asan`,
@@ -131,17 +134,20 @@ bash tests/run_all_tests.sh hashmap memory   # subset
 - `SANITIZE=tsan bash tests/run_all_tests.sh` — same with TSan
   (`rules/common.mk:150-157`). On kernels with high-entropy ASLR the runner
   re-execs itself once under `setarch -R`
-  (`tests/run_all_tests.sh:83-86`).
+  (`tests/run_all_tests.sh:86-89`).
 - `bash tests/run_all_tests.sh --coverage` — instruments the suites with gcov,
-  aggregates all `.gcda`, and writes an lcov-format tracefile to
-  `tests/coverage/coverage.info` plus the overall line percentage in stdout
-  (`tests/run_all_tests.sh:175-268`). Requires `gcov` (shipped with gcc) and
-  `jq`; no lcov install needed.
+  aggregates all `.gcda`, and writes an lcov-format tracefile of **library
+  (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
+  line percentage, instrumented-file count and `tests/coverage/summary.json`
+  in stdout (`tests/run_all_tests.sh:181-283`). Requires `gcov` (shipped with
+  gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
+  committed floor `tests/coverage/floor.json` via
+  `tools/ci/check-coverage-floor.sh`.
 - `bash tests/run_all_tests.sh --with-harnesses` — after the suites, runs
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:270-286`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:285-301`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.

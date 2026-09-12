@@ -17,14 +17,15 @@ set -euo pipefail
 
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${TEST_DIR}/../../.." && pwd)"
-PREFIX="${MMT_OOM_PREFIX:-/tmp/mmt-oom}"
+PREFIX="${MMT_OOM_PREFIX:-$(mktemp -d "${TMPDIR:-/tmp}/oom.XXXXXX")}"
 BIN="$(mktemp -d)/oom_no_abort_test"
-trap 'rm -rf "$(dirname "${BIN}")"' EXIT
+trap 'rm -rf "$(dirname "${BIN}")"; [ -n "${MMT_OOM_PREFIX:-}" ] || rm -rf "${PREFIX}"' EXIT
 
 if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
     echo "[1/4] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
 else
     echo "[1/4] building + installing SDK -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" clean >/dev/null
     make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
     make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" install >/dev/null
 fi

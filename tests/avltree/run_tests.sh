@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
-# run_tests.sh — verify the issue #21 AVL height-cache change:
-#   1. correctness suite passes on the NEW (post-fix) avltree.c
-#   2. tree SHAPE is byte-identical between the OLD (pre-fix) and NEW sources
-#      across several sizes  => balancing/ordering behaviour is unchanged
-#   3. micro-benchmark: build time of the AVL construction, OLD vs NEW, over a
-#      range of N => demonstrates the O(n^2)->O(n log n) startup win.
+# run_tests.sh — run the AVL correctness suite against the working-tree
+# avltree.c (issue #21 height-cache change, now merged).
 #
-# The OLD source is pulled from git (origin/main, or main) so the comparison is
-# against the exact pre-fix implementation.
+# This suite used to also diff the tree shape and build time against a pre-fix
+# avltree.c pulled from a git ref. Once the fix merged, no ref carries a
+# *distinct* pre-fix source (and a shallow CI checkout fetches none at all), so
+# that arm exited 0 having asserted nothing — a false pass (issue #186,
+# F-TEST-010). It is deleted: the script now cannot exit 0 without the
+# correctness assertions in test_avltree.c actually running.
 #
 # Usage: tests/avltree/run_tests.sh
 set -euo pipefail
@@ -17,8 +17,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LIB_DIR="${REPO_ROOT}/src/mmt_tcpip/lib"
 TEST_SRC="${SCRIPT_DIR}/test_avltree.c"
-WORK="$(mktemp -d)"
-trap 'rm -rf "${WORK}"' EXIT
 
 CC="${CC:-gcc}"
 # EXTRA_CFLAGS carries sanitizer/coverage instrumentation requested by
@@ -26,77 +24,13 @@ CC="${CC:-gcc}"
 CFLAGS="-O2 -Wall -g ${EXTRA_CFLAGS:-}"
 read -r -a cflags <<< "${CFLAGS}"
 
-# --- build NEW (working tree) ---------------------------------------------
-# The correctness suite always runs, so build the working-tree binary first.
-echo "  building NEW (working tree) ..."
-${CC} "${cflags[@]}" -I "${LIB_DIR}" -o "${SCRIPT_DIR}/test_new" \
+echo "  building correctness binary ..."
+${CC} "${cflags[@]}" -I "${LIB_DIR}" -o "${SCRIPT_DIR}/test_avltree" \
     "${TEST_SRC}" "${LIB_DIR}/avltree.c"
 
-# Pick a git ref that holds a *distinct* pre-fix source. The issue #21 fix is
-# merged on main, so once this branch is merged the baseline becomes byte-
-# identical to the working tree; and in a shallow CI checkout (actions/checkout
-# without full history) the base refs are not fetched at all. In either case
-# there is no meaningful OLD-vs-NEW comparison to make, so fall back to running
-# the correctness suite alone instead of hard-failing.
-OLD_REF=""
-for ref in origin/main main origin/master master; do
-    git -C "${REPO_ROOT}" cat-file -e "${ref}:src/mmt_tcpip/lib/avltree.c" 2>/dev/null || continue
-    if ! git -C "${REPO_ROOT}" show "${ref}:src/mmt_tcpip/lib/avltree.c" \
-         | diff -q - "${LIB_DIR}/avltree.c" >/dev/null 2>&1; then
-        OLD_REF="${ref}"; break
-    fi
-done
-
-if [ -z "${OLD_REF}" ]; then
-    echo "  no distinct pre-fix avltree.c in git — running correctness suite only"
-    echo
-    echo "== correctness suite (NEW) =="
-    "${SCRIPT_DIR}/test_new"
-    echo
-    echo "✓ avltree correctness suite passed (pre-fix baseline unavailable — OLD-vs-NEW comparison skipped)"
-    exit 0
-fi
-echo "  pre-fix source ref : ${OLD_REF}"
-
-# --- build OLD (from git) --------------------------------------------------
-echo "  building OLD (${OLD_REF}) ..."
-mkdir -p "${WORK}/old"
-git -C "${REPO_ROOT}" show "${OLD_REF}:src/mmt_tcpip/lib/avltree.c" > "${WORK}/old/avltree.c"
-git -C "${REPO_ROOT}" show "${OLD_REF}:src/mmt_tcpip/lib/avltree.h" > "${WORK}/old/avltree.h"
-${CC} "${cflags[@]}" -I "${WORK}/old" -o "${WORK}/test_old" \
-    "${TEST_SRC}" "${WORK}/old/avltree.c"
-
-# --- 1. correctness on NEW -------------------------------------------------
 echo
-echo "== [1/3] correctness suite (NEW) =="
-"${SCRIPT_DIR}/test_new"
-
-# --- 2. shape equivalence OLD vs NEW --------------------------------------
-echo
-echo "== [2/3] tree-shape equivalence OLD vs NEW =="
-shape_ok=1
-for n in 1 2 3 8 64 1000 5000; do
-    "${WORK}/test_old" --fingerprint "$n" > "${WORK}/fp_old_${n}.txt"
-    "${WORK}/test_new" --fingerprint "$n" > "${WORK}/fp_new_${n}.txt"
-    if diff -q "${WORK}/fp_old_${n}.txt" "${WORK}/fp_new_${n}.txt" >/dev/null; then
-        echo "  n=${n}: shape IDENTICAL ($(wc -l < "${WORK}/fp_new_${n}.txt") nodes)"
-    else
-        echo "  n=${n}: SHAPE DIFFERS"; shape_ok=0
-    fi
-done
-[ "${shape_ok}" -eq 1 ] || { echo "✗ tree shape changed — classification regression risk" >&2; exit 1; }
-
-# --- 3. build-time benchmark OLD vs NEW -----------------------------------
-echo
-echo "== [3/3] AVL build-time micro-benchmark (lower is better) =="
-printf "  %-10s %14s %14s %10s\n" "N" "OLD_ms" "NEW_ms" "speedup"
-for n in 2000 5000 10000 20000; do
-    reps=5
-    old_ms=$("${WORK}/test_old" --bench "$n" "$reps" | sed 's/.*time_ms=//')
-    new_ms=$("${WORK}/test_new" --bench "$n" "$reps" | sed 's/.*time_ms=//')
-    speed=$(awk -v o="$old_ms" -v n="$new_ms" 'BEGIN{ if(n>0) printf "%.1fx", o/n; else print "n/a" }')
-    printf "  %-10s %14s %14s %10s\n" "$n" "$old_ms" "$new_ms" "$speed"
-done
+echo "== correctness suite =="
+"${SCRIPT_DIR}/test_avltree"
 
 echo
-echo "✓ all AVL tests passed (correctness + identical shape + faster build)"
+echo "✓ avltree correctness suite passed"

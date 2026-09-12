@@ -51,8 +51,7 @@
  * ipacket->internal_packet->{payload,payload_packet_len}, so we build a minimal
  * internal packet for it.
  */
-extern int ssl_is_tls_record_header(const uint8_t *payload, int payload_len);
-extern int tls_get_number_records(const ipacket_t *ipacket);
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

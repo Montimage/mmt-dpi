@@ -58,10 +58,11 @@
 /*
  * Entry point under test. getServerNameFromClientHello() is exported
  * (non-static) in src/mmt_tcpip/lib/protocols/proto_ssl.c but not declared in
- * any public header, so declare it here. Returns 2 when a hostname was
+ * any public header — it comes from the shared internal header
+ * (issue #186). Returns 2 when a hostname was
  * extracted, 0 otherwise.
  */
-extern int getServerNameFromClientHello(ipacket_t *ipacket, char *buffer, int buffer_len);
+#include "internal_decls.h"
 
 /* Matches MMT_SSL_CERTIFICATE_BUF_LEN in proto_ssl.c after the fix: the
  * production callers now feed a 256-byte thread-local buffer. */

@@ -19,14 +19,15 @@ set -euo pipefail
 
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${TEST_DIR}/../../.." && pwd)"
-PREFIX="${MMT_ASAN_PREFIX:-/tmp/mmt-asan-http-scanner}"
+PREFIX="${MMT_ASAN_PREFIX:-$(mktemp -d "${TMPDIR:-/tmp}/asan.XXXXXX")}"
 BIN="$(mktemp -d)/http_scanner_test"
-trap 'rm -rf "$(dirname "${BIN}")"' EXIT
+trap 'rm -rf "$(dirname "${BIN}")"; [ -n "${MMT_ASAN_PREFIX:-}" ] || rm -rf "${PREFIX}"' EXIT
 
 if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
     echo "[1/3] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
 else
     echo "[1/3] building + installing SDK with BUILD=asan -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" clean >/dev/null
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
 fi

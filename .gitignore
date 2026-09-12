@@ -90,7 +90,10 @@ coverage.json
 lcov.info
 tests/*/*.gcda
 tests/*/*.gcno
-tests/coverage/
+# coverage outputs are artifacts; the committed floor is a baseline (#185) —
+# ignore the directory's contents, not the directory, so the negation works
+tests/coverage/*
+!tests/coverage/floor.json
 htmlcov/
 cov/
 

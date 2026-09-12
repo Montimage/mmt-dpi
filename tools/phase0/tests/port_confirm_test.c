@@ -25,10 +25,9 @@
 #include "mmt_core.h"
 #include "tcpip/mmt_tcpip_protocols.h"   /* PROTO_HTTP, PROTO_SSL, ... */
 
-/* Predicate under test — exported from libmmt_tcpip. */
-extern int mmt_payload_confirms_proto(uint32_t proto_id,
-                                      const unsigned char *payload,
-                                      int payload_packet_len);
+/* Predicate under test — exported from libmmt_tcpip, declared in the shared
+ * internal header (issue #186). */
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

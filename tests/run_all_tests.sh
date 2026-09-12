@@ -8,9 +8,12 @@
 # Modes:
 #   --coverage      Compile the suites with gcov instrumentation, then emit a
 #                   machine-readable lcov-format tracefile at
-#                   tests/coverage/coverage.info and print the overall
-#                   line-coverage percentage. Needs gcov (shipped with gcc)
-#                   and jq.
+#                   tests/coverage/coverage.info restricted to library sources
+#                   (src/ — test files under tests/ are excluded so the number
+#                   means the library, issue #185), print the library-only
+#                   line-coverage percentage and instrumented-file count, and
+#                   write both to tests/coverage/summary.json. Needs gcov
+#                   (shipped with gcc) and jq.
 #   SANITIZE=asan   Compile the suites with AddressSanitizer + UBSan, mirroring
 #                   the SDK's BUILD=asan profile (rules/common.mk). Suites that
 #                   build the SDK internally (citrix_ica_detection,
@@ -113,8 +116,8 @@ if [ "$COVERAGE" -eq 1 ]; then
             exit 2
         fi
     done
-    rm -rf "$COVERAGE_DIR"
-    mkdir -p "$COVERAGE_DIR"
+    # Keep the committed floor (issue #185): wipe reports, not the baseline.
+    mkdir -p "$COVERAGE_DIR" && find "$COVERAGE_DIR" -mindepth 1 ! -name floor.json -delete
     # Drop stale gcov data from previous runs/profiles so the report only
     # reflects this invocation's binaries.
     find "$SCRIPT_DIR" \( -name '*.gcda' -o -name '*.gcno' \) -delete
@@ -129,8 +132,11 @@ run_test_suite() {
 
     TOTAL=$((TOTAL + 1))
 
+    # A listed suite whose script is absent is a failure, not a skip (issue
+    # #186, F-TEST-019): silently passing hides a renamed/deleted suite.
     if [ ! -f "$test_script" ]; then
-        echo "  [SKIP] $suite_name: run_tests.sh not found"
+        echo "  ✗ $suite_name: FAILED (run_tests.sh not found)"
+        FAIL=$((FAIL + 1))
         return
     fi
 
@@ -200,7 +206,7 @@ write_coverage_report() {
         zcat "$json_file" \
             | jq -r --arg repo "$REPO_ROOT" '.files[]
             | .file as $f
-            | select($f | startswith($repo))
+            | select($f | startswith($repo + "/src/"))
             | .lines[]
             | select(.line_number > 0)
             | [$f, (.line_number | tostring), (.count | tostring)]
@@ -256,8 +262,17 @@ write_coverage_report() {
         return 1
     fi
     pct="$(awk -v h="$lines_hit" -v t="$lines_total" 'BEGIN { printf "%.1f", 100 * h / t }')"
-    echo "Overall line coverage: ${pct}% (${lines_hit}/${lines_total} executable lines)"
+    # Instrumented files == SF: records in the tracefile (all under src/).
+    local instrumented
+    instrumented="$(grep -c '^SF:' "$trace")"
+    jq -n --argjson pct "$pct" --argjson files "$instrumented" \
+        --argjson hit "$lines_hit" --argjson total "$lines_total" \
+        '{library_line_pct: $pct, instrumented_files: $files,
+          library_lines_hit: $hit, library_lines_total: $total,
+          scope: "src/"}' > "$COVERAGE_DIR/summary.json"
+    echo "Library line coverage: ${pct}% (${lines_hit}/${lines_total} executable lines, ${instrumented} instrumented files under src/)"
     echo "Coverage report: ${trace#"$REPO_ROOT"/} (lcov tracefile format)"
+    echo "Coverage summary: ${COVERAGE_DIR#"$REPO_ROOT"/}/summary.json"
 }
 
 if [ "$COVERAGE" -eq 1 ]; then

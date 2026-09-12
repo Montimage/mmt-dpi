@@ -59,7 +59,7 @@
  * to; calling it directly skips only the selection/detection bitmask gate,
  * which is unrelated to the record-version checks under test.
  */
-extern int mmt_classify_me_ssl(ipacket_t *ipacket, unsigned index);
+#include "internal_decls.h"
 
 static int g_failures = 0;
 static int g_checks = 0;

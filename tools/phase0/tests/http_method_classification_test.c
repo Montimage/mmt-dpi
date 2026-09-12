@@ -37,9 +37,9 @@
 /*
  * Method-table lookup under test — non-static (exported) in
  * src/mmt_tcpip/lib/protocols/http.c but not declared in any public header,
- * so we declare it here (same convention as http2_parser_test.c).
+ * so it is declared in the shared internal header (issue #186).
  */
-extern int get_request_method_uri_offset(const char *msg, int msg_len, int *method);
+#include "internal_decls.h"
 
 /* Mirrors the MMT_HTTP_*_CODE constants in http.h (not a public header). */
 #define MMT_HTTP_GET_CODE       1
