@@ -198,4 +198,4 @@ bash tools/phase0/tests/run_mt_tsan_test.sh
 The script builds + installs the `BUILD=tsan` SDK into a temporary prefix,
 synthesizes the RADIUS pcap, compiles the harness, and runs it under TSan
 (`-fno-sanitize-recover=all`, so any detected race aborts). CI runs the same
-script in the `tsan-mt-harness` job of `.github/workflows/phase0-baseline.yml`.
+script in the `harness-run_mt_tsan_test.sh` job of `.github/workflows/phase0-baseline.yml`.

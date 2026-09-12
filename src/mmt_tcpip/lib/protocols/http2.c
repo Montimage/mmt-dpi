@@ -74,8 +74,7 @@ int http2_header_length_extraction(const ipacket_t *packet,
 		return 0;
 
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
-	*((unsigned int*) extracted_data->data) = ntohl(
-			*((unsigned int* ) &packet->data[http2_offset + attribute_offset]));
+	*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, http2_offset + attribute_offset));
 	*((unsigned int*) extracted_data->data) =
 			*((unsigned int*) extracted_data->data) & (0x00FFFFFF);
 	if ((*((unsigned int*) extracted_data->data)) > 2000) {
@@ -117,8 +116,7 @@ int http2_payload_stream_id_extraction(const ipacket_t *packet,
 		//(offset_header_length underflow)
 		if (!http2_can_read(offset_header_length, sizeof(unsigned int), packet->p_hdr->caplen))
 			return 0;
-		int header_length = ntohl(
-				*((unsigned int* ) &packet->data[offset_header_length]));
+		int header_length = ntohl(get_u32(packet->data, offset_header_length));
 		header_length = header_length & 0x00FFFFFF;
 		// printf("header_length %d\n",header_length );
 		int payload_offset = header_length + 9 + proto_offset;
@@ -128,8 +126,7 @@ int http2_payload_stream_id_extraction(const ipacket_t *packet,
 		if( !http2_can_read(stream_id_payload_offset, sizeof(unsigned int), packet->p_hdr->caplen) )
 			return 0;
 
-		*((unsigned int*) extracted_data->data) = ntohl(
-				*((unsigned int* ) &packet->data[stream_id_payload_offset]));
+		*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, stream_id_payload_offset));
 		//printf("payload stream id %d\n",  *((unsigned int*) extracted_data->data));
 		return 1;
 	}
@@ -160,8 +157,7 @@ int http2_payload_length_extraction(const ipacket_t *packet,
 		//(offset_header_length underflow)
 		if (!http2_can_read(offset_header_length, sizeof(unsigned int), packet->p_hdr->caplen))
 			return 0;
-		int header_length = ntohl(
-				*((unsigned int* ) &packet->data[offset_header_length]));
+		int header_length = ntohl(get_u32(packet->data, offset_header_length));
 		header_length = header_length & 0x00FFFFFF;
 		// printf("header_length %d\n",header_length );
 		int payload_offset = header_length + 9 + proto_offset - 1;//In order to get to http2 payload you need to get the header length, adding the 9 bytes of the header.
@@ -171,8 +167,7 @@ int http2_payload_length_extraction(const ipacket_t *packet,
 			return 0;
 
 		//Payload length is three bytes, while an integer is 4 bytes, so here we start from one byte before and and bitwise with 0x00FFFFFF that integer to remove last byte.
-		*((unsigned int*) extracted_data->data) = ntohl(
-				*((unsigned int* ) &packet->data[payload_offset]));
+		*((unsigned int*) extracted_data->data) = ntohl(get_u32(packet->data, payload_offset));
 		*((unsigned int*) extracted_data->data) &= 0x00FFFFFF;
 		//printf("payload stream id %d\n",  *((unsigned int*) extracted_data->data));
 		return 1;
@@ -202,8 +197,7 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 		//(offset_header_length underflow)
 		if (!http2_can_read(offset_header_length, sizeof(unsigned int), packet->p_hdr->caplen))
 			return 0;
-		int header_length = ntohl(
-				*((unsigned int* ) &packet->data[offset_header_length]));
+		int header_length = ntohl(get_u32(packet->data, offset_header_length));
 		header_length = header_length & 0x00FFFFFF;
 		// printf("header_length %d\n",header_length );
 		int payload_offset = header_length + 9 + proto_offset - 1;//In order to get to http2 payload you need to get the header length, adding the 9 bytes of the header.
@@ -211,8 +205,7 @@ int http2_payload_data_extraction(const ipacket_t *packet, unsigned proto_index,
 		//bounds-check the 4-byte payload-length read
 		if (!http2_can_read(payload_offset, sizeof(unsigned int), packet->p_hdr->caplen))
 			return 0;
-		int payload_length = ntohl(
-				*((unsigned int* ) &packet->data[payload_offset]));
+		int payload_length = ntohl(get_u32(packet->data, payload_offset));
 		payload_length &= 0x00FFFFFF;
 
 		payload_offset += 9 + 1; //why?
@@ -238,7 +231,7 @@ int http2_stream_id_extraction(const ipacket_t *packet, unsigned proto_index,
 	//ensure the whole 4-byte stream id is inside the packet
 	if( !http2_can_read(proto_offset, sizeof(unsigned int), packet->p_hdr->caplen) )
 		return 0;
-	*((unsigned int*) extracted_data->data) = (ntohl( *((unsigned int* ) &packet->data[proto_offset])));
+	*((unsigned int*) extracted_data->data) = (ntohl(get_u32(packet->data, proto_offset)));
 	return 1;
 }
 
@@ -261,7 +254,7 @@ int _http2_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		if (!http2_can_read(proto_offset - 1, sizeof(unsigned int), ipacket->p_hdr->caplen))
 			return 0;
 		const char *payload = (char*) &ipacket->data[proto_offset - 1];
-		http2_header_size = ntohl(*((unsigned int* ) payload));
+		http2_header_size = ntohl(get_u32(payload, 0));
 		http2_header_size &= 0x00FFFFFF;
 		http2_header_size = http2_header_size + 9;
 

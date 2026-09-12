@@ -16,6 +16,7 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 | `phase0_precision.c` | Labelled-pcap precision/recall harness (Phase 7, M9, issue #74). Given a pcap and the application protocol it is known to carry, prints `label<TAB>total<TAB>tp<TAB>fp<TAB>app_unknown` from the classifier's deterministic decisions. The unlabelled fingerprint proves decisions don't *change*; this measures whether they are *correct*. |
 | `golden_pcaps.txt` | The fixed golden pcap set (paths relative to the mmt-test `data-sets/` root). |
 | `capture_baseline.sh` | Orchestrator: build+install at `-O3`, compile the drivers, capture all baselines into `baseline/`. |
+| `run_all_harnesses.sh` | Aggregate runner (issue #183): enumerates `tests/run_*.sh`, builds the SDK once per required profile into a shared prefix, and replays every harness against it. Reachable from the suite runner via `bash tests/run_all_tests.sh --with-harnesses`. |
 | `baseline/classification.txt` | **The golden classification baseline.** The asserted regression oracle. |
 | `baseline/classification/` | Per-pcap fingerprints (one file each), for granular diffs. |
 | `baseline/throughput.txt` | Throughput reference snapshot (environment-dependent — compare relative deltas). |
@@ -106,6 +107,13 @@ and PR to `main`:
    issue #74) acceptance criterion that precision/recall **holds or improves**.
    Refresh `ci/baseline/precision.txt` (artifact: `phase0-precision-actual`) in
    the same PR when an improvement is intentional.
+4. **`harness-*` matrix** — a `list-harnesses` setup job enumerates
+   `tools/phase0/tests/run_*.sh` and fans out one `harness-<script>` job per
+   file (issue #182), so a newly added harness is gated with no workflow
+   edit. Each script builds+installs the SDK under its declared profile and
+   fails the job on a non-zero exit. Locally the same enumeration is driven
+   by `run_all_harnesses.sh` (or `tests/run_all_tests.sh --with-harnesses`),
+   sharing one SDK build per profile instead of one per harness.
 
 When a phase **intentionally** changes classification, refresh the CI baseline in
 the same PR. The failing job uploads the freshly-captured fingerprint as the

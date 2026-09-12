@@ -20,9 +20,13 @@ PREFIX="${MMT_ASAN_PREFIX:-/tmp/mmt-asan-ip-session-frag-key}"
 BIN="$(mktemp -d)/ip_session_frag_key_test"
 trap 'rm -rf "$(dirname "${BIN}")"' EXIT
 
-echo "[1/3] building + installing SDK with BUILD=asan -> ${PREFIX}"
-make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
-make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    echo "[1/3] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
+else
+    echo "[1/3] building + installing SDK with BUILD=asan -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
+    make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
+fi
 
 echo "[2/3] compiling ip_session_frag_key_test (ASan/UBSan)"
 # The IPv6 header struct (struct ipv6hdr / ext_hdr_fragment) and the session-key

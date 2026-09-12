@@ -1,6 +1,6 @@
 #!/bin/bash
 # Master test runner for all test suites
-# Usage: ./run_all_tests.sh [--coverage] [suite ...]
+# Usage: ./run_all_tests.sh [--coverage] [--with-harnesses] [suite ...]
 #   With no arguments, runs every suite below. Pass one or more suite names
 #   (directory names under tests/) to run only those — e.g. CI runs just the
 #   core suites under EXTRA_CFLAGS=-fsigned-char.
@@ -16,6 +16,10 @@
 #                   build the SDK internally (citrix_ica_detection,
 #                   http_header_case) inherit BUILD=asan via SDK_BUILD_PROFILE.
 #   SANITIZE=tsan   Same for the SDK's BUILD=tsan profile (ThreadSanitizer).
+#   --with-harnesses  After the suites, run every phase0 harness
+#                   (tools/phase0/tests/run_*.sh) via the aggregate runner
+#                   tools/phase0/run_all_harnesses.sh — one shared SDK build
+#                   per sanitizer profile, not one per harness (issue #183).
 
 set -e
 
@@ -33,15 +37,19 @@ echo ""
 
 # --- argument parsing --------------------------------------------------------
 COVERAGE=0
+WITH_HARNESSES=0
 SUITES=()
 for arg in "$@"; do
     case "$arg" in
         --coverage)
             COVERAGE=1
             ;;
+        --with-harnesses)
+            WITH_HARNESSES=1
+            ;;
         -*)
             echo "Unknown option: $arg" >&2
-            echo "Usage: $0 [--coverage] [suite ...]" >&2
+            echo "Usage: $0 [--coverage] [--with-harnesses] [suite ...]" >&2
             exit 2
             ;;
         *)
@@ -255,6 +263,24 @@ write_coverage_report() {
 if [ "$COVERAGE" -eq 1 ]; then
     if ! write_coverage_report; then
         exit 1
+    fi
+    echo ""
+fi
+
+# --- phase0 harnesses ---------------------------------------------------------
+# --with-harnesses: one aggregate pass over tools/phase0/tests/run_*.sh sharing
+# a single SDK build per required profile (issue #183, F-TEST-016). The
+# aggregate prints the per-harness detail; it counts here as one arm so a
+# harness failure still fails the whole invocation.
+if [ "$WITH_HARNESSES" -eq 1 ]; then
+    echo "--- Running: phase0 harnesses (tools/phase0/run_all_harnesses.sh) ---"
+    TOTAL=$((TOTAL + 1))
+    if bash "${REPO_ROOT}/tools/phase0/run_all_harnesses.sh"; then
+        echo "  ✓ phase0-harnesses: PASSED"
+        PASS=$((PASS + 1))
+    else
+        echo "  ✗ phase0-harnesses: FAILED"
+        FAIL=$((FAIL + 1))
     fi
     echo ""
 fi

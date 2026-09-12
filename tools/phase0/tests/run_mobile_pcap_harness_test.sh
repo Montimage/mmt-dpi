@@ -35,11 +35,15 @@ BIN="${WORK}/mobile_pcap_harness"
 SYNTH_DIR="${WORK}/synth"
 PCAP_CI_DIR="${PHASE0_DIR}/ci/pcaps"
 
-trap 'rm -rf "${WORK}" "${PREFIX}"' EXIT
+trap 'rm -rf "${WORK}"; [ "${MMT_SDK_PREBUILT:-0}" = "1" ] || rm -rf "${PREFIX}"' EXIT
 
-echo "[1/4] building + installing SDK with BUILD=asan -> ${PREFIX}"
-make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
-make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    echo "[1/4] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
+else
+    echo "[1/4] building + installing SDK with BUILD=asan -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
+    make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
+fi
 
 echo "[2/4] compiling mobile_pcap_harness (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \

@@ -36,13 +36,17 @@ RADIUS_PCAP="${WORK}/radius.pcap"
 SUPP="${TEST_DIR}/mt_tsan_suppressions.txt"
 NUM_THREADS="${MT_TSAN_THREADS:-8}"
 
-trap 'rm -rf "${WORK}" "${PREFIX}"' EXIT
+trap 'rm -rf "${WORK}"; [ "${MMT_SDK_PREBUILT:-0}" = "1" ] || rm -rf "${PREFIX}"' EXIT
 
 CC="${CC:-gcc}"
 
-echo "[1/4] building + installing SDK with BUILD=tsan -> ${PREFIX}"
-make -C "${REPO_ROOT}/sdk" BUILD=tsan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
-make -C "${REPO_ROOT}/sdk" BUILD=tsan MMT_BASE="${PREFIX}" install >/dev/null
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    echo "[1/4] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
+else
+    echo "[1/4] building + installing SDK with BUILD=tsan -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" BUILD=tsan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
+    make -C "${REPO_ROOT}/sdk" BUILD=tsan MMT_BASE="${PREFIX}" install >/dev/null
+fi
 
 echo "[2/4] generating multi-flow RADIUS pcap"
 python3 "${PHASE0_DIR}/gen_radius_pcap.py" "${RADIUS_PCAP}"

@@ -21,9 +21,13 @@ PREFIX="${MMT_OOM_PREFIX:-/tmp/mmt-oom}"
 BIN="$(mktemp -d)/oom_no_abort_test"
 trap 'rm -rf "$(dirname "${BIN}")"' EXIT
 
-echo "[1/4] building + installing SDK -> ${PREFIX}"
-make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
-make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" install >/dev/null
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    echo "[1/4] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
+else
+    echo "[1/4] building + installing SDK -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
+    make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" install >/dev/null
+fi
 
 echo "[2/4] compiling oom_no_abort_test"
 gcc -g -O1 -o "${BIN}" "${TEST_DIR}/oom_no_abort_test.c" \

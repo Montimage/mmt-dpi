@@ -21,9 +21,13 @@ PREFIX="${MMT_ASAN_PREFIX:-/tmp/mmt-asan-ftp-lprt-eprt}"
 BIN="$(mktemp -d)/ftp_lprt_eprt_test"
 trap 'rm -rf "$(dirname "${BIN}")"' EXIT
 
-echo "[1/3] building + installing SDK with BUILD=asan -> ${PREFIX}"
-make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
-make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    echo "[1/3] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
+else
+    echo "[1/3] building + installing SDK with BUILD=asan -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
+    make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
+fi
 
 echo "[2/3] compiling ftp_lprt_eprt_test (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
