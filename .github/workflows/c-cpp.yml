@@ -246,7 +246,16 @@ jobs:
     - uses: ./.github/actions/bootstrap-deps
     - name: build-from-source
       run: |
-         cd sdk/ && make -j2 && sudo make install && make test
+         cd sdk/ && make -j2 && sudo make install
+    - name: Install-prefix example link check (not a test suite)
+      # Issue #184 (F-CI-006, F-TEST-020): `make test` compiles the bundled
+      # examples against the installed SDK prefix — it is a link check that
+      # needs the `sudo make install` above, not a unit suite (the suites
+      # run in the unit-tests job via tests/run_all_tests.sh). Its old home
+      # at the tail of `build-from-source` made a required job read as
+      # "tests passed"; the project rules forbid it as a smoke test, so it
+      # is kept and named for what it actually verifies.
+      run: cd sdk/ && make test
 
   enablesec:
     # Compile-and-test the optional security/fuzz engines, which are only

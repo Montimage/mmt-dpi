@@ -97,6 +97,26 @@ jobs:
       - name: Run ${{ matrix.harness }}
         run: bash "tools/phase0/tests/${{ matrix.harness }}"
 
+  harness-gate:
+    # Issue #184 (F-CI-001): the harness matrix enumerates
+    # tools/phase0/tests/run_*.sh dynamically, so its check contexts
+    # (harness-run_*.sh) shift as scripts are added or renamed — pinning
+    # them in branch protection would soft-lock merges on the first change.
+    # This aggregate fails whenever the matrix fails, is cancelled, or is
+    # skipped (e.g. a broken list-harnesses), giving branch protection one
+    # stable context to require: `harness-gate`.
+    name: harness-gate
+    needs: harness
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Harness matrix must succeed
+        run: |
+          result="${{ needs.harness.result }}"
+          echo "harness matrix result: ${result}"
+          [ "${result}" = "success" ]
+
   classification-gate:
     name: Golden classification fingerprint unchanged
     runs-on: ubuntu-24.04

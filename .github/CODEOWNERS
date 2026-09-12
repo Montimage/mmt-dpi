@@ -1,0 +1,13 @@
+# Code owners — merge governance (issue #184, F-CI-005).
+#
+# Branch protection on main requires one approving review from a matching
+# code owner (require_code_owner_reviews), so an entry here is a review
+# gate, not just an auto-request list. Keep owner lists to active
+# maintainers with admin/maintain access to the repository.
+
+# Core engine and TCP/IP protocol detection — the classifier-critical trees.
+src/mmt_core/   @luongnv89 @dev-montimage @nhnghia
+src/mmt_tcpip/  @luongnv89 @dev-montimage @nhnghia
+
+# Workflows, templates, actions and this file — CI/governance changes.
+.github/        @luongnv89 @dev-montimage @nhnghia

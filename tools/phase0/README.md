@@ -99,6 +99,7 @@ list fails the build):
 - `asan-build` — ASan/UBSan profile compiles
 - `list-harnesses` — Enumerate phase0 harnesses
 - `harness-*` — harness-${{ matrix.harness }}
+- `harness-gate` — harness-gate
 - `classification-gate` — Golden classification fingerprint unchanged
 - `precision-gate` — Labelled-pcap precision/recall holds or improves (M9, issue #74)
 - matrix expansion: `harness-*` fans out to 24 jobs, one per `tools/phase0/tests/run_*.sh`

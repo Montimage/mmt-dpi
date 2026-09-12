@@ -11,7 +11,7 @@ them lives in the two documents above. Quote them from there, never from here.
 - Branches `<type>/<issue>-<short-desc>`; commits follow Conventional Commits with a trailing `(#N)`.
 - Docs are reconciled to code: cite `file:line` when documenting behavior; record resolved ambiguities append-only in `docs/DECISIONS.md`.
 - Never edit generated trees (`src/mmt_mobile/asn1c/`) or commit build outputs (`sdk/lib/`, `sdk/include/`, `build/`, `dist/`).
-- Classification changes must keep the phase0 golden-pcap fingerprint unchanged (`tools/phase0/README.md`). The `classification-gate` job ("Golden classification fingerprint unchanged", `.github/workflows/phase0-baseline.yml`) runs on every PR into `main` and fails visibly on a diff, but `main` requires only the `build` and `unit-tests` contexts, so a mismatch does **not** block the merge — treat a red fingerprint as your own stop signal.
+- Classification changes must keep the phase0 golden-pcap fingerprint unchanged (`tools/phase0/README.md`). The `classification-gate` job ("Golden classification fingerprint unchanged", `.github/workflows/phase0-baseline.yml`) runs on every PR into `main` and — since issue #184 made the phase0 gates required status checks on `main` — a mismatch blocks the merge.
 
 ## Roles
 
