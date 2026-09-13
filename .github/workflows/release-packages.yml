@@ -9,6 +9,13 @@ name: Build & release packages
 # runners only provide Ubuntu/macOS/Windows), for both amd64 and arm64
 # (arm64 via QEMU emulation). Every run uploads the packages as CI artifacts;
 # pushing a `v*` tag additionally attaches them all to a GitHub Release.
+#
+# Every published asset is verifiable (issue #198, F-SEC-005/F-SEC-015):
+# the build job writes a SPDX-JSON SBOM next to each package, and the
+# release job adds a SHA256SUMS manifest over the whole asset set and a
+# build-provenance attestation covering every published file, so users can
+# run `sha256sum --check SHA256SUMS` and `gh attestation verify <pkg>`
+# before installing the package as root.
 
 on:
   push:
@@ -67,6 +74,40 @@ jobs:
             "${{ matrix.distro.image }}" \
             bash tools/ci/build-package.sh "${{ matrix.distro.name }}" "${{ matrix.distro.pkg }}"
 
+      - name: Locate the built package
+        id: pkg
+        run: |
+          set -euo pipefail
+          # build-package.sh produces exactly one package per matrix cell —
+          # fail loudly if that ever changes so the SBOM mapping stays 1:1.
+          mapfile -t pkgs < <(find dist/packages -maxdepth 1 -type f \
+            \( -name '*.deb' -o -name '*.rpm' \) | LC_ALL=C sort)
+          if [ "${#pkgs[@]}" -ne 1 ]; then
+            echo "expected exactly 1 package in dist/packages," \
+              "found ${#pkgs[@]}" >&2
+            exit 1
+          fi
+          {
+            echo "file=${pkgs[0]}"
+            echo "sbom=${pkgs[0]}.sbom.json"
+          } >> "$GITHUB_OUTPUT"
+
+      # Per-package SBOM (F-SEC-015): scanned from the package file itself so
+      # the manifest records exactly what the artifact ships. Generated here —
+      # not in the tag-only release job — so the pull_request trigger exercises
+      # it on every packaging change. upload-* are off: the package artifact
+      # upload below ships the .sbom.json, and action-gh-release stays the
+      # single publisher.
+      - name: Generate SBOM for the package
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          file: ${{ steps.pkg.outputs.file }}
+          format: spdx-json
+          output-file: ${{ steps.pkg.outputs.sbom }}
+          artifact-name: sbom-${{ matrix.distro.name }}-${{ matrix.arch }}
+          upload-artifact: false
+          upload-release-assets: false
+
       - name: Upload package artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -82,20 +123,41 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
-      contents: write   # required to create/update the release
+      contents: write      # required to create/update the release
+      id-token: write      # Sigstore OIDC identity for provenance signing
+      attestations: write  # publish attestations to the repo attestation store
     steps:
       - name: Download all package artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: artifacts
 
-      - name: Collect packages
+      - name: Collect packages and SBOMs
         run: |
           mkdir -p release
-          find artifacts -type f \( -name '*.deb' -o -name '*.rpm' \) \
+          find artifacts -type f \
+            \( -name '*.deb' -o -name '*.rpm' -o -name '*.sbom.json' \) \
             -exec cp -v {} release/ \;
-          echo "Packages to publish:"
+          echo "Assets to publish:"
           ls -l release
+
+      # The manifest covers every asset that will be attached — packages and
+      # SBOMs — so `sha256sum --check SHA256SUMS` verifies the whole download.
+      - name: Generate SHA256SUMS manifest
+        run: |
+          cd release
+          find . -maxdepth 1 -type f ! -name 'SHA256SUMS' -printf '%f\n' \
+            | LC_ALL=C sort | xargs -r sha256sum -- > SHA256SUMS
+          cat SHA256SUMS
+
+      # One attestation whose subjects are every published file — including
+      # SHA256SUMS itself — so `gh attestation verify <asset>` works for any
+      # release asset (issue #198, F-SEC-005). Attest-before-publish keeps a
+      # failed attestation from shipping unverifiable assets.
+      - name: Attest build provenance for every release asset
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/*
 
       - name: Create / update GitHub Release
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1

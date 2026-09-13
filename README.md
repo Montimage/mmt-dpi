@@ -72,6 +72,27 @@ Packages are produced by the `Build & release packages` workflow
 (`.github/workflows/release-packages.yml`) for Ubuntu 22.04/24.04, Debian 12,
 Rocky Linux 9, and CentOS Stream 9.
 
+#### Verify a package before installing it
+
+Installing a package runs its maintainer scripts as root, so authenticate the
+download first. Every release asset is verifiable: a `SHA256SUMS` manifest
+covers all published files, each package ships an SPDX SBOM
+(`<package>.sbom.json` listing what it was built and linked against), and the
+workflow records a build-provenance attestation for every asset.
+
+Download `SHA256SUMS` and the package from the same release, then:
+
+```bash
+# Integrity — the package must match the release manifest
+sha256sum --check SHA256SUMS --ignore-missing
+
+# Provenance — the package must have been built by this repo's release workflow
+gh attestation verify mmt-dpi_*_ubuntu-24.04_x86_64.deb \
+  --repo montimage-projects/mmt-dpi
+```
+
+Install only after both checks pass.
+
 ### Manual Build and Install
 
 If you prefer to build manually, install the build dependencies first — the
