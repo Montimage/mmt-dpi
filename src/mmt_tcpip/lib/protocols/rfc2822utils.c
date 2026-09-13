@@ -47,16 +47,16 @@ int get_next_non_white_space_offset_no_limit(const char * str, int max) {
  */
 const char * mmt_find_char_instance(const char * str, char char_to_find, int max) {
     const char *temp_str = str;
-    while ((*temp_str != char_to_find) && max) {
+    /* issue #204 (F-BUG-047): test the budget before dereferencing so a
+     * zero-length window never reads *str at all, and a char-free window
+     * never reads past the budgeted end. */
+    while (max > 0) {
+        if (*temp_str == char_to_find)
+            return temp_str;
         max--;
         temp_str++;
     }
-
-    // Know we check if we found the char
-    if (*temp_str == char_to_find)
-        return temp_str;
-    else
-        return NULL; // this means we reached max, NULL should be returned
+    return NULL; // this means we reached max, NULL should be returned
 }
 
 /**
@@ -133,15 +133,22 @@ int get_next_header_line_length(const char * msg, int msg_len, int * code) {
         header_len++;
     }
 
-    //If if we exited the while loop because of reaching the end of the message
-    if (header_len == (msg_len - 1) && (msg[header_len + 1] != LF)) {
+    /* If we exited the while loop because of reaching the end of the message,
+     * the line is not provably terminated: even when the last byte is LF the
+     * fold lookahead (msg[header_len + 1] != SP/HT) cannot be evaluated, so
+     * the line may still continue on the next segment. issue #204
+     * (F-BUG-046): the old code probed msg[header_len + 1] here, i.e.
+     * msg[msg_len], one byte past the buffer. */
+    if (header_len == (msg_len - 1)) {
         //We reached the end of the message and there is no new line characters, the message is truncated
         *code = TRUNCATED;
         return 0;
     }
 
     /* found, check if we have proper CRLF */
-    if (msg[header_len] == LF && msg[header_len - 1] == CR) {
+    /* issue #204 (F-BUG-046): guard with header_len > 0 — when the message
+     * begins with LF the old check read msg[-1]. */
+    if (msg[header_len] == LF && header_len > 0 && msg[header_len - 1] == CR) {
         nb_termination = 2; /* Normally, we should get here every time there is a non truncated header.
                              */
     }
