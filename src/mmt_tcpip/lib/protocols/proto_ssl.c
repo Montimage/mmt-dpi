@@ -161,10 +161,21 @@ int ssl_server_name_extraction(const ipacket_t * ipacket, unsigned proto_index, 
 
 int tls_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
     int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    /* get_packet_offset_at_index() returns -1 for an invalid index and may
+     * return an offset beyond the capture — reject both before touching data
+     * (F-BUG-073). */
+    if( tcp_index < 0 )
+        return 0;
     int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( tcp_offset < 0 || ssl_offset < 0
+            || (size_t)ssl_offset + 5 > ipacket->p_hdr->caplen )
+        return 0;
     int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    /* never claim more than the captured bytes past ssl_offset */
+    if( ssl_payload_len > (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset) )
+        ssl_payload_len = (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset);
     if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
         return 0;
     }
@@ -173,10 +184,17 @@ int tls_content_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
 
 int tls_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
     int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    if( tcp_index < 0 )
+        return 0;
     int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( tcp_offset < 0 || ssl_offset < 0
+            || (size_t)ssl_offset + 5 > ipacket->p_hdr->caplen )
+        return 0;
     int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if( ssl_payload_len > (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset) )
+        ssl_payload_len = (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset);
     if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
         return 0;
     }
@@ -186,10 +204,17 @@ int tls_version_extraction(const ipacket_t * ipacket, unsigned proto_index, attr
 
 int tls_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
     int tcp_index = get_protocol_index_by_id(ipacket,PROTO_TCP);
+    if( tcp_index < 0 )
+        return 0;
     int tcp_offset = get_packet_offset_at_index(ipacket,tcp_index + 1);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     int ssl_offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( tcp_offset < 0 || ssl_offset < 0
+            || (size_t)ssl_offset + 5 > ipacket->p_hdr->caplen )
+        return 0;
     int ssl_payload_len = tcp_offset + packet->payload_packet_len - ssl_offset;
+    if( ssl_payload_len > (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset) )
+        ssl_payload_len = (int)(ipacket->p_hdr->caplen - (size_t)ssl_offset);
     if(ssl_is_tls_record_header(&ipacket->data[ssl_offset],ssl_payload_len)!=1){
         return 0;
     }
@@ -507,7 +532,9 @@ int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_l
         if (offset + 2 /* 2 for the extensions len */ < total_len && offset + 2 < cap_total_len) {
             extensions_len = ntohs(*((uint16_t *) & packet->payload[offset]));
             if ((extensions_len + offset) <= total_len && (extensions_len + offset) <= cap_total_len) {
-                uint16_t extension_offset = 2; /* Move to the first extension */
+                /* 32-bit cursor: a declared extension_len must not be able to
+                 * wrap it back onto an already-visited header (F-BUG-064). */
+                uint32_t extension_offset = 2; /* Move to the first extension */
 
                 while (extension_offset + 4 < extensions_len) {
                     if(offset + extension_offset > cap_total_len) {
@@ -520,6 +547,17 @@ int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_l
                     extension_id = ntohs(ext->type);
                     extension_len = ntohs(ext->len);
                     extension_offset += 4;
+                    /* extension_offset counts from `offset`, i.e. it includes
+                     * the 2 bytes of the extensions_len field itself; the
+                     * extension body must end inside
+                     * [offset+2, offset+2+extensions_len). A declared length
+                     * that does not fit is malformed — stop the walk rather
+                     * than trusting it (F-BUG-064). The loop guard already
+                     * ensures extension_offset + 4 < extensions_len, so the
+                     * subtraction below cannot underflow. */
+                    if (extension_len > extensions_len + 2 - extension_offset) {
+                        break;
+                    }
                     if (extension_id == 0) {
                         if(offset + extension_offset + extension_len > cap_total_len) {
                             return 0;

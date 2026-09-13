@@ -31,32 +31,27 @@ Long Header Packet {
   Type-Specific Payload (..),
 }
 */
+/*
+ * Local parsed view of a QUIC long header — a descriptor only, NEVER overlaid
+ * on packet bytes. The previous packed layout held real pointers that the
+ * parser wrote back into the capture buffer (corrupting 24 bytes of the
+ * packet) while its cursor advanced on wire-declared lengths without checking
+ * them against caplen (issue #203, F-BUG-063).
+ *
+ * Variable-length members are described as (offset, length) pairs relative to
+ * the start of the QUIC packet inside ipacket->data. The parse fills every
+ * field only after validating each one against the captured length.
+ */
 typedef struct quic_ietf_long_header {
-#ifdef __BIG_ENDIAN_BITFIELD
-	uint8_t header_form       : 1; //is set to 1 for long headers
-	uint8_t fixed_bit         : 1; //is set to 1, unless the packet is a Version Negotiation packet.
-	                               //Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded
-	uint8_t long_packet_type  : 2; //
-	uint8_t types_pecific_bits: 4; // being determined by the packet type
-#else
-	uint8_t types_pecific_bits: 4; // being determined by the packet type
-	uint8_t long_packet_type  : 2; //
-	uint8_t fixed_bit         : 1; //is set to 1, unless the packet is a Version Negotiation packet.
-	                               //Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded
-	uint8_t header_form       : 1; //is set to 1 for long headers
-#endif
-
-	uint32_t version;
-
+	uint8_t flags; /* first octet: header_form bit7, fixed_bit bit6,
+	                  long_packet_type bits5-4, type_specific bits3-0 */
+	uint32_t version; /* host byte order */
 	uint8_t destination_connection_id_length;
-	const uint8_t *destination_connection_id; //0 up to 160 bytes.
-	                                     // In QUIC version 1, this MUST NOT exceed 20 bytes, MUST drop the packet if so
+	size_t destination_connection_id_offset;
 	uint8_t source_connection_id_length;
-	const uint8_t *source_connection_id;  //0 up to 160 bytes
-
-	const uint8_t *types_pecific_payload; //The remainder of the packet, if any, is type specific.
-}  __attribute__((packed))
-quic_ietf_long_header_t;
+	size_t source_connection_id_offset;
+	size_t types_pecific_payload_offset;
+} quic_ietf_long_header_t;
 
 //https://datatracker.ietf.org/doc/html/rfc9000#section-17.2.2
 typedef struct quic_ietf_initial_packet {

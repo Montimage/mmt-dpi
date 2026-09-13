@@ -258,10 +258,12 @@ dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_
     uint16_t str_length = hex2int(dns_name_payload[0]);
     if(str_length == 0){
         return NULL;
-    }else if(str_length == 192){
-        /* Compression pointer: the second byte holds the target offset. */
+    }else if((str_length & 0xC0) == 0xC0){
+        /* Compression pointer (RFC 1035 §4.1.4): the top two bits are set;
+           the target offset is the remaining 14 bits — high 6 bits of the
+           first byte, then the whole second byte (F-BUG-072). */
         if(!dns_can_read(dns_name_payload, 2, payload_end)) return NULL;
-        int offset_name = hex2int(dns_name_payload[1]);
+        int offset_name = ((str_length & 0x3F) << 8) | hex2int(dns_name_payload[1]);
         const u_char * target = dns_payload + offset_name;
         /* Target must be inside the payload AND strictly before the current
            position; otherwise it is a forward/self reference (malformed) that
