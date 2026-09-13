@@ -39,6 +39,11 @@ typedef struct
   // char hvalue[16 * 1024]; /**> temporary store for header value **/
   char *hfield; /**> temporary store for header field **/
   char *hvalue; /**> temporary store for header value **/
+  int hfield_valid; /**> 0 when hfield does not hold the name of the value being
+                    parsed — set by header_field_cb, cleared when the pair is
+                    consumed or when storing the field failed, so a stale field
+                    name is never paired with a new value (issue #204,
+                    F-BUG-056) **/
   int index; /**> index of the current protocol in the protocol path **/
   ipacket_t * ipacket; /**> pointer to the ipacket under processing **/ 
 } stream_processor_t;
@@ -59,6 +64,7 @@ inline static void * init_stream_processor()
   if(sp!=NULL){
     sp->hvalue = NULL;
     sp->hfield = NULL;
+    sp->hfield_valid = 0;
   }
   return (void *) sp;
 }

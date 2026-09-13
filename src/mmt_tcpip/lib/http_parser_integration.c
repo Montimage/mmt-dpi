@@ -32,10 +32,14 @@ int header_field_cb (http_parser *p, const char *buf, size_t len)
   // allocation in place whenever it is already large enough (no allocator call),
   // and grows it only when a longer field arrives. Reconciled malloc -> mmt_*.
   char * nf = (char *) mmt_realloc(sp->hfield, len + 1);
-  if(nf == NULL) return 0; // old buffer left intact, freed at teardown
+  /* issue #204 (F-BUG-056): on realloc failure the old buffer still holds the
+   * previous header's name — mark it invalid so the next header_value_cb does
+   * not fire an event pairing that stale field with the new value. */
+  if(nf == NULL) { sp->hfield_valid = 0; return 0; } // old buffer left intact, freed at teardown
   sp->hfield = nf;
   memcpy(sp->hfield, buf, len);
   sp->hfield[len] = '\0';
+  sp->hfield_valid = 1;
   //fprintf(stdout, "Header: %s : ", sp->hfield);
   return 0;
 }
@@ -55,6 +59,14 @@ int header_value_cb (http_parser *p, const char *buf, size_t len)
   sp->hvalue = nv;
   memcpy(sp->hvalue, buf, len);
   sp->hvalue[len] = '\0';
+
+  /* issue #204 (F-BUG-056): never emit a header event whose field name is
+   * stale (e.g. the preceding header_field_cb could not store its name).
+   * The flag is deliberately left set after firing — a value split across
+   * TCP segments invokes this callback once per chunk and every chunk still
+   * belongs to the same, still-valid field. The next header_field_cb
+   * refreshes or clears it. */
+  if (!sp->hfield_valid) return 0;
 
   mmt_generic_header_line_t hdr; // Just to return a positive value :)
   hdr.hfield = sp->hfield;

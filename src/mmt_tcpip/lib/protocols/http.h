@@ -222,6 +222,13 @@ void mmt_init_classify_me_http();
 int init_http_proto_struct();
 int init_http_proto_struct_new();
 
+/* issue #204: session lifecycle hooks and the MIME-table invariant check,
+ * non-static so the phase0 regression harnesses can link them directly. */
+void http_session_data_init(ipacket_t * ipacket, unsigned index);
+void http_session_data_cleanup(mmt_session_t * session, unsigned index);
+int http_session_data_analysis(ipacket_t * ipacket, unsigned index);
+int mmt_http_content_tables_check(void);
+
 #ifdef	__cplusplus
 }
 #endif

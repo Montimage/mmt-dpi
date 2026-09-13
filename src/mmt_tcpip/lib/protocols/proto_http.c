@@ -387,7 +387,14 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         // Handle error. Usually just close the connection.
         //TODO: LN uncomment the next line please :p
         debug("[PROTO_HTTP-]> Error while parsing this HTTP message -Error %s\n", http_errno_description(HTTP_PARSER_ERRNO(parser)));
-        ipacket->session->session_data[index] = close_http_parser(ipacket->session->session_data[index]);
+        /* issue #204 (F-BUG-058): reset only the failing direction's parser.
+         * The session holds one parser per direction inside stream_parser_t;
+         * destroying the whole structure on a one-sided error also killed the
+         * opposite direction's in-flight parse state and left session_data
+         * NULL, disabling HTTP parsing for the rest of the session.
+         * http_parser_init() preserves parser->data (the stream processor). */
+        http_parser_init(parser, HTTP_BOTH);
+        ((stream_processor_t *) parser->data)->hfield_valid = 0;
       }
     }
     return MMT_CONTINUE;
@@ -410,6 +417,13 @@ int init_proto_http_struct() {
 
     if (protocol_struct != NULL) {
         int i = 0;
+
+        /* issue #204 (F-BUG-048): assert the MIME tables' min_len >= cmp_len
+         * invariant at protocol init — an inverted row reads past the
+         * captured Content-Type value at match time. */
+        if (mmt_http_content_tables_check() != 0) {
+            return 0;
+        }
 
         for (; i < RFC2822_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &http_new_attributes_metadata[i]);
