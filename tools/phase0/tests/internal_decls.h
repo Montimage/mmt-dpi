@@ -137,6 +137,78 @@ int mmt_classify_me_ssl(ipacket_t *ipacket, unsigned index);
 /* --- protocols/proto_tcp.c ----------------------------------------------------- */
 int tcp_pre_classification_function(ipacket_t *ipacket, unsigned index);
 
+/* --- hand-written extraction callbacks (issue #202, F-BUG-033) -------------
+ * Every non-static *_extraction callback in proto_{ip,tcp,gre,gtp,icmp}.c is
+ * declared here so extraction_caplen_prologue_test.c can drive them directly
+ * on crafted truncated captures. (_extract_l4s_metrics and
+ * _gtp_extract_pdu_extension_header_field are TU-static — corpus-only.) */
+
+/* protocols/proto_ip.c */
+int ip_version_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_ihl_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_rf_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_df_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_mf_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_frag_offset_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_client_port_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_server_port_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_client_addr_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_server_addr_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_options_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_opts_type_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_padding_check_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int _extract_jitter(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
+/* protocols/proto_tcp.c */
+int tcp_data_offset_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_fin_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_syn_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_rst_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_psh_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_ack_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_urg_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_ece_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_cwr_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_established_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_connection_closed_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_flags_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_payload_len_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_retransmission_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_outoforder_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_retransmission_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_payload_up_len_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_payload_up_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_payload_down_len_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_payload_down_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_rtt_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
+/* protocols/proto_gre.c */
+int gre_c_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_k_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_s_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_version_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_csum_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_key_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_seqnb_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
+/* protocols/proto_gtp.c */
+int gtp_version_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_protocol_type_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_reserved_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_extension_header_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_seq_check_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_seq_num_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_imsi_mmc_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_imsi_mnc_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_npdu_number_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int _gtp_extract_next_extension_header_type(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
+/* protocols/proto_icmp.c */
+int icmp_identifier_and_seq_nb_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int icmp_gateway_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int icmp_data_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
 /* --- mmt_core/src/packet_processing.c (central caplen guard, issue #193) ----
  * internal_extract_attribute is exported non-static; the attribute struct tag
  * is forward-declared above and defined by the real private header
@@ -147,6 +219,9 @@ int tcp_pre_classification_function(ipacket_t *ipacket, unsigned index);
  * builds — in a plain release build they return 0. */
 int internal_extract_attribute(const ipacket_t *ipacket,
         struct attribute_internal_struct *tmp_attr_ref, unsigned index);
+/* Registry accessor exercised by extraction_caplen_prologue_test.c
+ * (issue #202, F-BUG-010): look up a registered protocol struct. */
+protocol_t *get_protocol_struct_by_protocol_id(uint32_t proto_id);
 uint64_t mmt_caplen_guard_total_count(void);
 uint64_t mmt_caplen_guard_refused_count(void);
 uint64_t mmt_caplen_guard_unvalidated_count(void);
