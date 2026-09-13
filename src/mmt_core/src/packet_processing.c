@@ -310,8 +310,22 @@ int validate_attribute_metadata(attribute_metadata_t * attribute_meta_data) {
     // Validate data_len against type size: inconsistent plugin metadata must not overflow generic extraction
     {
         uint32_t type_size = get_data_size_by_data_type(attribute_meta_data->data_type);
-        if (type_size != 0 && (uint32_t)attribute_meta_data->data_len > type_size) return false;
-        if (type_size == 0 && attribute_meta_data->data_len != 0) return false;
+        if (type_size != 0 && (uint32_t)attribute_meta_data->data_len > type_size) {
+            /* Issue #202 (F-BUG-010): name the offending attribute so a
+             * rejected registration is diagnosable. */
+            fprintf(stderr, "[error] validate_attribute_metadata - attribute '%s' (id=%u): declared data_len %d exceeds size %u of data type %u\n",
+                    attribute_meta_data->alias, (unsigned) attribute_meta_data->id,
+                    attribute_meta_data->data_len, (unsigned) type_size,
+                    (unsigned) attribute_meta_data->data_type);
+            return false;
+        }
+        if (type_size == 0 && attribute_meta_data->data_len != 0) {
+            fprintf(stderr, "[error] validate_attribute_metadata - attribute '%s' (id=%u): declared data_len %d but data type %u has no fixed size\n",
+                    attribute_meta_data->alias, (unsigned) attribute_meta_data->id,
+                    attribute_meta_data->data_len,
+                    (unsigned) attribute_meta_data->data_type);
+            return false;
+        }
     }
     return true;
 }
@@ -2420,7 +2434,13 @@ int register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id,
             int s0 = sizeof (struct attribute_internal_struct);
             int s1 = get_attribute_data_type(proto_id, field_id);
             int s2 = get_data_size_by_data_type(s1);
-            int size = s0 + s2;
+            /* Issue #202 (F-BUG-010): the scratch area must be at least
+             * data_len wide. validate_attribute_metadata() already rejects
+             * data_len > type size at protocol-registration time, but size
+             * defensively here as well so a metadata inconsistency can never
+             * turn into a heap overflow of the scratch buffer. */
+            int s3 = get_data_size_by_proto_and_field_ids(proto_id, field_id);
+            int size = s0 + ((s3 > s2) ? s3 : s2);
             //fprintf(stderr, "      size=%d\n",size);
             extract_attribute = (struct attribute_internal_struct *) mmt_malloc(size);
             if (extract_attribute == NULL) {
