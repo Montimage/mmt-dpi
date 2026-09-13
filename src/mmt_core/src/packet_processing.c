@@ -1619,6 +1619,12 @@ int init_extraction()
     // registered (init_proto_meta_struct/init_plugins below call
     // register_protocol, which populates this map).
     configured_protocols_names_map = init_map_space(protocol_names_comparison_fct);
+    if (configured_protocols_names_map == NULL) {
+        // Issue #200 (F-BUG-003): the map allocation failed — refuse to start
+        // instead of registering protocols into a NULL map.
+        fprintf(stderr, "Error during initialization (out of memory)\n");
+        return 0;
+    }
 
     /////////// INITILIZING PROTO_META & PROTO_UNKNOWN //////////////////
     if (!init_proto_meta_struct() || !init_proto_unknown_struct()) {
@@ -1638,6 +1644,11 @@ int init_extraction()
 
     init_plugins();
     mmt_configured_handlers_map = init_map_space(pointer_comp_fn_pt);
+    if (mmt_configured_handlers_map == NULL) {
+        // Issue #200 (F-BUG-003): same unchecked-nothrow-new guard as above.
+        fprintf(stderr, "Error during initialization (out of memory)\n");
+        return 0;
+    }
     return 1;
 }
 
@@ -2069,6 +2080,10 @@ void close_extraction() {
     iterate_through_mmt_handlers(mmt_close_handler_internal, NULL);
     //Delete the handlers map
     delete_map_space(mmt_configured_handlers_map);
+    // Issue #200 (F-BUG-005): NULL the global after deleting it — a second
+    // init_extraction()/close_extraction() cycle in one process must not
+    // dereference the dangling pointer.
+    mmt_configured_handlers_map = NULL;
     // Iterate over the registered protocol stacks
     iterate_through_protocol_stacks(protocol_stack_callback_fct, NULL);
     // Clear the protocol stacks map

@@ -39,6 +39,7 @@ extern "C" {
 
     void * init_map_space(generic_comparison_fct comp_fct);
     void * init_int_map_space(generic_int_comparison_fct comp_fct);
+    int getmapsize(void * maplist);
 
     int insert_key_value(void * maplist, void * key, void * value);
     int insert_int_key_value(void * maplist, uint32_t key, void * value);
