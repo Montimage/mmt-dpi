@@ -78,6 +78,10 @@ jobs:
         id: pkg
         run: |
           set -euo pipefail
+          # The build container ran as root, so dist/ is root-owned on the
+          # host. Hand it back to the runner user — the SBOM step below must
+          # create <pkg>.sbom.json inside dist/packages (CI verified EACCES).
+          sudo chown -R "$(id -u):$(id -g)" dist
           # build-package.sh produces exactly one package per matrix cell —
           # fail loudly if that ever changes so the SBOM mapping stays 1:1.
           mapfile -t pkgs < <(find dist/packages -maxdepth 1 -type f \
