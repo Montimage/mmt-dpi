@@ -164,6 +164,11 @@ jobs:
       run: |
         bash tools/ci/check-site-links.sh docs
         bash tools/phase0/ci/check_readme_gates.sh
+    - name: Release verification wiring (blocking — issue #198)
+      # The gate condition holds — released packages ship SBOM + SHA256SUMS +
+      # provenance attestation — so this helper runs as an ordinary blocking
+      # step, not in the advisory loop.
+      run: bash tools/ci/check-release-verification.sh
     - name: Advisory helpers (gate condition still open — owning task flips it)
       run: |
         fail=0
