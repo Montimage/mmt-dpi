@@ -4,7 +4,10 @@ uint32_t mmt_bytestream_to_number(const uint8_t * str, uint16_t max_chars_to_rea
     uint32_t val;
     val = 0;
     // cancel if eof, ' ' or line end chars are reached
-    while (*str >= '0' && *str <= '9' && max_chars_to_read > 0) {
+    /* Issue #201 (F-BUG-024): check the byte budget BEFORE dereferencing *str —
+     * the old order read one byte past the captured buffer when
+     * max_chars_to_read == 0. */
+    while (max_chars_to_read > 0 && *str >= '0' && *str <= '9') {
         val *= 10;
         val += *str - '0';
         str++;

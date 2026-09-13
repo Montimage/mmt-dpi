@@ -94,6 +94,11 @@ int mmt_check_gtp(ipacket_t * ipacket, unsigned index) {
 int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 
 	int offset = get_packet_offset_at_index(ipacket, index);
+	/* Issue #201 (F-BUG-021): validate the offset and the fixed GTP header
+	 * against caplen before any flag bit or payload byte is read. */
+	if (offset < 0
+	 || (uint64_t) offset + sizeof (struct gtp_header_generic) > ipacket->p_hdr->caplen)
+		return MMT_SKIP;
 	const u_char *gtp_binary = &ipacket->data[offset];
 	mmt_una_gtp_header_generic_t *gtp = (mmt_una_gtp_header_generic_t*)& ipacket->data[offset];
 	int gtp_offset = sizeof (struct gtp_header_generic);
@@ -116,12 +121,21 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		gtp_offset += 1; //n-pdu number
 		gtp_offset += 1; //next ext header
 	}
+	/* Issue #201 (F-BUG-021): the optional 4 bytes (seq + n-pdu + next-ext)
+	 * must be captured before gtp_binary[gtp_offset-1] is read below. */
+	if( bit_E_S_PN
+	 && (uint64_t) offset + gtp_offset > ipacket->p_hdr->caplen )
+		return MMT_SKIP;
 	//we check ext header only if its flag bit is on
 	if(gtp->extension_header == 1){
 		//last byte indicate whether the next ext is present
 		next_ext_header_type = gtp_binary[gtp_offset-1];
 		//jump over each extension header
 		while( next_ext_header_type != 0 ){
+			/* Issue #201 (F-BUG-021): the extension length byte at
+			 * gtp_binary[gtp_offset] must itself be inside the capture. */
+			if( (uint64_t) offset + gtp_offset + 1 > ipacket->p_hdr->caplen )
+				return MMT_SKIP;
 			//the first byte of extension indicate its length in 4 bytes
 			next_ext_header_length = 4 * gtp_binary[ gtp_offset ];
 
@@ -132,8 +146,10 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 			//jump over the current ext header
 			gtp_offset += next_ext_header_length;
 
-			// not enough room
-			if( gtp_offset + offset > ipacket->p_hdr->caplen )
+			/* Issue #201 (F-BUG-021): after jumping over the ext header, the
+			 * next-header-type byte gtp_binary[gtp_offset - 1] must stay
+			 * inside the capture — i.e. offset + gtp_offset <= caplen. */
+			if( (uint64_t) gtp_offset + offset > ipacket->p_hdr->caplen )
 				return MMT_SKIP;
 
 			//check the next ext header

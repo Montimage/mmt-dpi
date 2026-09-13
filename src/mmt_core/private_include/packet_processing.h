@@ -440,6 +440,15 @@ struct mmt_handler_struct {
     // uint32_t mmt_http_session_timed_out;
     mmt_hashmap_t *ip_streams;
     void * timeout_milestones_map; // Session timeout milestones map
+    /* Issue #201 (F-BUG-020): ip_streams holds in-flight IPv4/IPv6 fragment
+     * reassembly datagrams. The TCP/IP plugin arms these hooks the first time
+     * a fragment is processed; mmt_core invokes the sweep from the existing
+     * once-per-second session-expiry pass (process_timedout_sessions) and the
+     * drain from mmt_close_handler, so fragment datagrams cannot grow the map
+     * for the whole handler lifetime or leak at teardown. The signatures are
+     * plugin-agnostic on purpose. */
+    void (*frag_map_sweep_fct)(mmt_hashmap_t *map, uint32_t now);
+    void (*frag_map_drain_fct)(mmt_hashmap_t *map);
 };
 
 

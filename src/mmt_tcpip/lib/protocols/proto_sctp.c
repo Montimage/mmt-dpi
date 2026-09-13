@@ -112,6 +112,13 @@ static inline uint32_t _get_next_proto_id( uint8_t type ) {
 static int sctp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 	int offset = get_packet_offset_at_index(ipacket, index);
 
+	/* Issue #201 (F-BUG-034): validate the offset and the full SCTP common
+	 * header + first chunk header against the captured length BEFORE reading
+	 * hdr->type (offset 12 in the sctphdr overlay). */
+	if (offset < 0
+	 || (uint64_t) offset + sizeof( struct sctphdr ) > ipacket->p_hdr->caplen)
+		return 0;
+
 	const mmt_una_sctphdr_t *hdr = (const mmt_una_sctphdr_t *) & ipacket->data[offset];
 	uint32_t next_proto = _get_next_proto_id( hdr->type );
 	if( next_proto == PROTO_UNKNOWN )
@@ -134,13 +141,30 @@ static int sctp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 static int sctp_classify_next_chunk(ipacket_t * ipacket, unsigned index) {
 	int current_chunk_offset = get_packet_offset_at_index(ipacket, index);
 
+	/* Issue #201 (F-BUG-034): validate the chunk offset before reading the
+	 * chunk header — a stale offset used to index straight out of bounds. */
+	if (current_chunk_offset < 0
+	 || (uint64_t) current_chunk_offset + sizeof( struct sctp_chunkhdr ) > ipacket->p_hdr->caplen)
+		return 0;
+
 	const mmt_una_sctp_chunkhdr_t *current_chunk_hdr = (const mmt_una_sctp_chunkhdr_t *) & ipacket->data[current_chunk_offset];
-	const uint16_t current_chunk_len = ntohs(current_chunk_hdr->length);
+	const uint32_t current_chunk_len = ntohs(current_chunk_hdr->length);
+
+	/* A chunk length smaller than the chunk header is invalid — it would
+	 * either walk backwards or classify a chunk on top of itself forever. */
+	if (current_chunk_len < sizeof( struct sctp_chunkhdr ))
+		return 0;
+
+	/* RFC 4960 §3.2: chunks are padded to a 4-byte boundary; the padding is
+	 * NOT counted in the chunk length. Advance by the 4-aligned length so
+	 * the next chunk header is read at its real offset. The padded advance
+	 * cannot overflow a uint32: current_chunk_len is <= 0xffff. */
+	uint32_t next_chunk_advance = (current_chunk_len + 3u) & ~3u;
 
 	//ensure that we still have room for the next chunk
-	if( current_chunk_offset + current_chunk_len + sizeof( struct sctp_chunkhdr ) <= ipacket->p_hdr->caplen ){
-		//the next chunk is started after this chunk
-		const mmt_una_sctp_chunkhdr_t *next_chunk_hdr = (const mmt_una_sctp_chunkhdr_t *) & ipacket->data[current_chunk_offset + current_chunk_len];
+	if( (uint64_t) current_chunk_offset + next_chunk_advance + sizeof( struct sctp_chunkhdr ) <= ipacket->p_hdr->caplen ){
+		//the next chunk is started after this chunk (plus its padding)
+		const mmt_una_sctp_chunkhdr_t *next_chunk_hdr = (const mmt_una_sctp_chunkhdr_t *) & ipacket->data[current_chunk_offset + next_chunk_advance];
 
 		//padding
 		if( next_chunk_hdr->length == 0 )
@@ -151,7 +175,7 @@ static int sctp_classify_next_chunk(ipacket_t * ipacket, unsigned index) {
 		classified_proto_t retval;
 		retval.proto_id = next_proto;
 		retval.status   = Classified;
-		retval.offset   = current_chunk_len; //the next chunk is just after this one
+		retval.offset   = next_chunk_advance; //the next chunk is just after this one (padding included)
 
 		ipacket->proto_hierarchy->len = index + 1 + 1;
 

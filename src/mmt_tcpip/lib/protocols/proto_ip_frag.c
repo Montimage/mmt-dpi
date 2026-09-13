@@ -19,6 +19,11 @@ ip_frag_t *ip_frag_alloc( unsigned loff, unsigned roff )
 {
    ip_frag_t *frag = (ip_frag_t *)mmt_malloc( sizeof( ip_frag_t ));
 
+   /* Issue #201: unchecked mmt_malloc — a NULL frag must not reach
+    * ip_frag_init() (it would write through a NULL pointer). */
+   if( frag == NULL )
+      return (ip_frag_t*)0;
+
    if( !ip_frag_init( frag, loff, roff )) {
       (void)fprintf( stderr, "*** Warning: ip_frag_init() failed\n" );
       mmt_free( frag );

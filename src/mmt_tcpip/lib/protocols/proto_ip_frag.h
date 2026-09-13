@@ -10,8 +10,11 @@
 
 struct ip_frag {
    LIST_ENTRY(ip_frag) frags;  // sibling fragments
-   uint16_t loff;              // leftmost offset in reassembly buffer
-   uint16_t roff;              // rightmost offset in reassembly buffer
+   /* Issue #201 (F-BUG-040): hole boundaries were uint16_t — an attacker-
+    * controlled off+len could wrap past 65535 and corrupt hole tracking.
+    * 32-bit fields make the (bounded) arithmetic exact. */
+   uint32_t loff;              // leftmost offset in reassembly buffer
+   uint32_t roff;              // rightmost offset in reassembly buffer
 };
 
 

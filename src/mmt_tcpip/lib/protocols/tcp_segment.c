@@ -29,6 +29,7 @@ tcp_seg_t * tcp_seg_new(uint64_t packet_id, uint64_t seq, uint64_t next_seq, uin
 		new_seg->next_seq = next_seq;
 		new_seg->ack = ack;
 		new_seg->len = len;
+		new_seg->in_arena = 0; /* Issue #201: malloc-backed node */
 		new_seg->data = data;
 		new_seg->next = NULL;
 		new_seg->prev = NULL;
@@ -52,6 +53,9 @@ tcp_seg_t * tcp_seg_new_in_arena(struct mmt_arena_s * arena, uint64_t packet_id,
 	new_seg->next_seq = next_seq;
 	new_seg->ack = ack;
 	new_seg->len = len;
+	new_seg->in_arena = 1; /* Issue #201 (F-BUG-039): tag arena ownership so
+	                          tcp_seg_free()/tcp_seg_free_list() never call
+	                          free() on arena memory. */
 	new_seg->data = data;
 	new_seg->next = NULL;
 	new_seg->prev = NULL;
@@ -65,6 +69,15 @@ tcp_seg_t * tcp_seg_new_in_arena(struct mmt_arena_s * arena, uint64_t packet_id,
 void tcp_seg_free(tcp_seg_t * seg){
 	if (seg != NULL) {
 		// printf("[tcp_seg_free] Free segment of packet: %lu\n", seg->packet_id);
+		/* Issue #201 (F-BUG-039): arena-backed nodes must not reach free() —
+		 * the arena is released wholesale on session teardown. Skip the
+		 * frees so mixed lists and stray callers cannot trigger an
+		 * allocator mismatch. */
+		if (seg->in_arena) {
+			seg->next = NULL;
+			seg->prev = NULL;
+			return;
+		}
 		seg->packet_id = 0;
 		seg->seq = 0;
 		seg->next_seq = 0;
@@ -88,6 +101,9 @@ void tcp_seg_free_list(tcp_seg_t * head) {
 
 	while(current_seg){
 		tcp_seg_t * to_be_deleted = current_seg;
+		/* Issue #201 (F-BUG-039): cache the successor BEFORE the free —
+		 * tcp_seg_free() unlinks the node, and for arena nodes free() would
+		 * be an allocator mismatch (handled inside tcp_seg_free). */
 		current_seg = current_seg->next;
 		if (current_seg != NULL){
 			if (current_seg->seq != to_be_deleted->next_seq){
@@ -226,13 +242,21 @@ int tcp_seg_size(tcp_seg_t * seg) {
 
 int tcp_seg_reassembly(uint8_t * data, tcp_seg_t * root, uint32_t len){
 
-	int current_len = 0;
+	uint32_t current_len = 0;
 
 	tcp_seg_t * current_seg = root;
 
+	/* Issue #201 (F-BUG-019): the loop guard only compared current_len < len
+	 * but copied the FULL segment — a segment straddling the budget overflowed
+	 * `data`. Clamp every copy to the remaining space. */
 	while(current_seg && current_len < len) {
-		memcpy(data + current_len , current_seg->data, current_seg->len);
-		current_len +=  current_seg->len;
+		uint32_t chunk = current_seg->len;
+		uint32_t avail = len - current_len;
+		if (chunk > avail)
+			chunk = avail;
+		if (chunk > 0)
+			memcpy(data + current_len , current_seg->data, chunk);
+		current_len +=  chunk;
 		current_seg = current_seg->next;
 	}
 	return 1;

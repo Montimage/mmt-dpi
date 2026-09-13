@@ -626,6 +626,12 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
             //remove the timeout milestone from the hash
             delete_timeout_milestone(mmt_handler, counter);
         }
+        /* Issue #201 (F-BUG-020): piggyback the fragment-map expiry sweep on
+         * this existing once-per-second expiry pass — armed by the TCP/IP
+         * plugin the first time a fragment is reassembled. */
+        if (mmt_handler->frag_map_sweep_fct != NULL && mmt_handler->ip_streams != NULL) {
+            mmt_handler->frag_map_sweep_fct(mmt_handler->ip_streams, current_seconds);
+        }
     }
     mmt_handler->last_expiry_timeout = current_seconds;
 }
@@ -1375,6 +1381,10 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->session_timer_handler.session_timer_handler_fct = NULL;
     new_handler->session_timer_handler.args = NULL;
     new_handler->evasion_handler = NULL;
+    /* Issue #201 (F-BUG-020): armed lazily by the TCP/IP plugin on the first
+     * fragment seen (the ip_streams map exists but may stay empty forever). */
+    new_handler->frag_map_sweep_fct = NULL;
+    new_handler->frag_map_drain_fct = NULL;
     new_handler->fragment_in_packet = 0;
     new_handler->fragmented_packet_in_session = 0;
     new_handler->fragment_in_session = 0;
@@ -1453,6 +1463,12 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
     free_registered_packet_handlers(mmt_handler);
     // Free protocol statistics
     free_handler_protocols_statistics(mmt_handler);
+    /* Issue #201 (F-BUG-020): drain any in-flight fragment datagrams still
+     * parked in ip_streams before releasing the table — the values are
+     * heap objects owned by the map, not freed by hashmap_free itself. */
+    if (mmt_handler->frag_map_drain_fct != NULL && mmt_handler->ip_streams != NULL) {
+        mmt_handler->frag_map_drain_fct(mmt_handler->ip_streams);
+    }
     // Free IP streams hashtable
     hashmap_free(mmt_handler->ip_streams);
 

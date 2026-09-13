@@ -229,6 +229,10 @@ int tcp_session_payload_up_extraction(const ipacket_t * ipacket, unsigned proto_
                 free(ipacket->session->session_payload[up_direction]);
             }
             ipacket->session->session_payload[up_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
+            /* Issue #201: unchecked malloc — never pass NULL into
+             * tcp_seg_reassembly(). */
+            if (ipacket->session->session_payload[up_direction] == NULL)
+                return 0;
             tcp_seg_reassembly(
                 ipacket->session->session_payload[up_direction],
                 ipacket->session->tcp_segment_list[up_direction],
@@ -260,6 +264,10 @@ int tcp_session_payload_down_extraction(const ipacket_t * ipacket, unsigned prot
                 free(ipacket->session->session_payload[down_direction]);
             }
             ipacket->session->session_payload[down_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
+            /* Issue #201: unchecked malloc — never pass NULL into
+             * tcp_seg_reassembly(). */
+            if (ipacket->session->session_payload[down_direction] == NULL)
+                return 0;
             tcp_seg_reassembly(
                 ipacket->session->session_payload[down_direction],
                 ipacket->session->tcp_segment_list[down_direction],

@@ -144,7 +144,7 @@ struct ipacket_struct {
     uint8_t is_fragment[PROTO_PATH_SIZE];                      /**< 1 - yes, 0 - no: Indicate if the packet is a fragmented packet */
     // uint16_t is_outoforder[PROTO_PATH_SIZE];      /** out of order*/
     uint16_t ipv6_ext_headers_path[PROTO_PATH_SIZE]; /** IPv6 extension header path*/
-    uint16_t ipv6_ext_headers_offset[PROTO_PATH_SIZE]; /**IPv6 extension header offset*/
+    uint32_t ipv6_ext_headers_offset[PROTO_PATH_SIZE]; /**IPv6 extension header offset (Issue #201: widened — long chains exceed 16 bits)*/
     uint16_t ipv6_ext_headers_len; /* IPv6 header path length*/
     uint16_t ipv6_overlapping[PROTO_PATH_SIZE]; /** IPv6 fragment header overlaps another fragment*/
     uint16_t ipv6_outoforder[PROTO_PATH_SIZE]; /** IPv6 fragment header is out of order*/
