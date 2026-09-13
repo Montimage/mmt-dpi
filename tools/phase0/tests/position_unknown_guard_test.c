@@ -353,9 +353,10 @@ static int replay_dir(const char *dir) {
     int rc = 0;
     size_t i;
     for (i = 0; i < n; i++) {
-        char *path = (char *)malloc(strlen(dir) + strlen(names[i]) + 2);
+        size_t pathlen = strlen(dir) + strlen(names[i]) + 2;
+        char *path = (char *)malloc(pathlen);
         if (!path) { perror("malloc"); exit(2); }
-        sprintf(path, "%s/%s", dir, names[i]);
+        snprintf(path, pathlen, "%s/%s", dir, names[i]);
         if (replay_pcap(path) != 0) rc = -1;
         free(path);
         free(names[i]);
