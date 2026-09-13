@@ -8,7 +8,10 @@
 # repository, diverging silently. This validator asserts the organisation in
 # install.sh's repository constant agrees with the clone URL in README.md,
 # and that every `github.com/<org>/mmt-dpi` reference across the entry-point
-# documents names exactly one organisation.
+# documents names exactly one organisation. It also smoke-checks the
+# documented verify path: `install.sh --dry-run` must print the resolved
+# (pinned-tag) plan and exit 0, and a moving ref must be refused unless
+# `--unverified-branch` is passed (issue #197, F-SEC-006 / F-BUG-118).
 #
 # Same check-only contract as the other scripts/validate-*.sh: findings are
 # reported, the script exits non-zero when any check fails.
@@ -67,8 +70,8 @@ else:
              f"points at {readme_org}/{readme_repo}")
 
 # Every github.com/<org>/mmt-dpi reference across the entry-point docs must
-# name one organisation (the canonical one recorded in docs/DECISIONS.md by
-# issue #197 — until then, the README's clone URL is the reference).
+# name one organisation (the canonical one, `montimage-projects`, recorded in
+# docs/DECISIONS.md under 2026-09-12 and 2026-09-13 for issue #197).
 orgs = {}
 for doc in ("install.sh", "README.md", "CONTRIBUTING.md", "SECURITY.md",
             "docs/index.html"):
@@ -89,3 +92,22 @@ if errors:
     sys.exit(1)
 print("✓ one repository identity across installer, docs and site")
 PYEOF
+
+# The documented verify command must keep working (issue #197 Verify line):
+# `install.sh --dry-run` prints the resolved plan and exits 0; a moving ref is
+# refused unless --unverified-branch is passed explicitly.
+if ! bash install.sh --dry-run >/dev/null 2>&1; then
+    echo "✗ install.sh --dry-run failed" >&2
+    exit 1
+fi
+echo "  ✓ install.sh --dry-run prints the pinned-tag plan"
+if BRANCH=ci-check bash install.sh --dry-run >/dev/null 2>&1; then
+    echo "✗ install.sh accepted moving ref 'ci-check' without --unverified-branch" >&2
+    exit 1
+fi
+echo "  ✓ moving ref refused without --unverified-branch"
+if ! BRANCH=ci-check bash install.sh --dry-run --unverified-branch >/dev/null 2>&1; then
+    echo "✗ install.sh --unverified-branch did not admit the moving ref" >&2
+    exit 1
+fi
+echo "  ✓ moving ref admitted with --unverified-branch"
