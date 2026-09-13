@@ -78,6 +78,7 @@ tools/phase0/baseline/classification.actual.txt
 # Compiled unit-test binaries — rebuilt by each suite's run_tests.sh
 tests/*/test_*
 !tests/*/test_*.c
+!tests/*/test_*.cpp
 !tests/*/test_*.h
 
 # gcov intermediate data + generated coverage reports (--coverage mode)
