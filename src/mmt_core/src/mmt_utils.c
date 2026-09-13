@@ -8,6 +8,26 @@ int hex2int(char hc){
     return ret;
 }
 
+/* Bounded, NUL-free substring search over byte spans — the primitive the
+ * str_*_n family shares. Finds needle[0..needle_len) inside
+ * haystack[0..haystack_len) without relying on a NUL terminator on either
+ * side. Returns a pointer into haystack, or NULL when absent. */
+static const char * mmt_memmem(const char *haystack, size_t haystack_len,
+                               const char *needle, size_t needle_len){
+    if(needle_len == 0) return haystack;
+    if(haystack_len < needle_len) return NULL;
+
+    const char *last = haystack + haystack_len - needle_len;
+    const char *p = haystack;
+    while(p <= last){
+        p = (const char *)memchr(p, needle[0], (size_t)(last - p) + 1);
+        if(p == NULL) return NULL;
+        if(memcmp(p, needle, needle_len) == 0) return p;
+        p++;
+    }
+    return NULL;
+}
+
 char * str_hex2str(char *hstr, int start_index, int end_index){
 
     if(hstr == NULL) return NULL;
@@ -50,7 +70,7 @@ char * str_hex2str(char *hstr, int start_index, int end_index){
         empty[0] = '\0';
         return empty;
     }
-    char *str_str = str_sub(ret,0,current_index - 1);
+    char *str_str = str_sub_n(ret, (size_t)current_index, 0, current_index - 1);
     free(ret);
     return str_str;
 }
@@ -62,6 +82,30 @@ int str_hex2int(char *hstr, int start_index, int end_index){
     if(start_index < 0) return -1;
 
     if(end_index < start_index ) return -1;
+
+    int length = end_index - start_index + 1;
+    int i = length;
+    int ret = 0;
+
+    while(i >= 1){
+        ret += hex2int(hstr[start_index + length - i])*pow(16,2*(i-1));
+        i--;
+    }
+
+    return ret;
+}
+
+int str_hex2int_n(char *hstr, size_t hstr_len, int start_index, int end_index){
+
+    if(hstr == NULL) return -1;
+
+    if(start_index < 0) return -1;
+
+    if(end_index < start_index ) return -1;
+
+    /* end_index must stay inside the supplied buffer. The bound is hstr_len,
+     * never strlen(hstr), so non-NUL-terminated input is safe (F-BUG-023). */
+    if((size_t)end_index >= hstr_len) return -1;
 
     int length = end_index - start_index + 1;
     int i = length;
@@ -181,6 +225,28 @@ int str_compare(char * str1, char * str2){
     return sub;
  }
 
+ /* Length-bounded variant of str_sub(): the only bound is the supplied
+  * str_len, so str does not need to be NUL-terminated (F-BUG-023). */
+ char * str_sub_n(char * str, size_t str_len, int start_index, int end_index){
+    if(str == NULL) return NULL;
+
+    if(start_index < 0) return NULL;
+
+    if(end_index < 0) return NULL;
+
+    if((size_t)end_index >= str_len) return NULL;
+
+    if( start_index > end_index) return NULL;
+
+    int len = end_index - start_index + 1;
+    char * sub;
+    sub = (char *)malloc(len + 1);
+    if(sub == NULL) return NULL;
+    memcpy(sub,(str + start_index), len);
+    sub[len]='\0';
+    return sub;
+ }
+
  char * str_combine(char * str1, char * str2){
     char * comb;
     int len = 0;
@@ -283,6 +349,55 @@ int * str_get_indexes(char *str, char* str1){
     return res;
 }
 
+/* Length-bounded variant of str_get_indexes(): the scan never reads past
+ * str_len and the needle is matched over exactly str1_len bytes, so neither
+ * side needs a NUL terminator (F-BUG-023). */
+int * str_get_indexes_n(char *str, size_t str_len, char *str1, size_t str1_len){
+    if(str == NULL || str1 == NULL) return NULL;
+
+    if(str1_len == 0) return NULL;
+
+    /* A needle longer than the bounded haystack can never match — this also
+     * refuses a needle that would reach beyond the supplied buffer. */
+    if(str1_len > str_len) return NULL;
+
+    /* Indexes are reported as int, like str_get_indexes(); a haystack that
+     * cannot be indexed by int is refused instead of truncated. */
+    if(str_len > (size_t)INT32_MAX) return NULL;
+
+    int *indexes;
+    indexes = (int*)malloc((str_len + 1)*sizeof(int));
+    if(indexes == NULL) return NULL;
+
+    size_t start = 0;
+    int current_index = 0;
+    while(str_len - start >= str1_len){
+        const char *found = mmt_memmem(str + start, str_len - start, str1, str1_len);
+        if(found == NULL) break;
+        size_t hit = (size_t)(found - str);
+        indexes[current_index] = (int)hit;
+        start = hit + str1_len;
+        current_index++;
+    }
+
+    if(current_index == 0){
+        free(indexes);
+        return NULL;
+    }
+
+    indexes[current_index] = -1;
+
+    int *res;
+    res = (int*)malloc((current_index + 1)*sizeof(int));
+    if(res == NULL) {
+        free(indexes);
+        return NULL;
+    }
+    memcpy(res, indexes, (current_index + 1)*sizeof(int));
+    free(indexes);
+    return res;
+}
+
 
  char * str_replace(char * str, char * str1, char * rep){
 
@@ -292,7 +407,7 @@ int * str_get_indexes(char *str, char* str1){
         return str_copy(str);
     }
 
-    int * array_index = str_get_indexes(str,str1);
+    int * array_index = str_get_indexes_n(str,strlen(str),str1,strlen(str1));
 
     if(array_index == NULL) {
         return str_copy(str);
@@ -314,14 +429,14 @@ int * str_get_indexes(char *str, char* str1){
     new_string[0] = '\0';
 
     if(array_index[current_index] != 0){
-        char * str_substr = str_sub(str,0,array_index[current_index]-1);
+        char * str_substr = str_sub_n(str,strlen(str),0,array_index[current_index]-1);
         strcpy(new_string,str_substr);
         free(str_substr);
     }
 
     while(array_index[current_index + 1] != -1){
 
-        char * str_substr = str_sub(str,array_index[current_index] + strlen(str1),array_index[current_index + 1] -1);
+        char * str_substr = str_sub_n(str,strlen(str),array_index[current_index] + strlen(str1),array_index[current_index + 1] -1);
         
         if(strlen(new_string)==0){
             strcpy(new_string,rep);
@@ -335,7 +450,7 @@ int * str_get_indexes(char *str, char* str1){
 
     // The spliter is at the end of string
     if(strlen(str) >= array_index[current_index] + strlen(str1)){
-        char * str_substr = str_sub(str,array_index[current_index] + strlen(str1),strlen(str) -1);
+        char * str_substr = str_sub_n(str,strlen(str),array_index[current_index] + strlen(str1),strlen(str) -1);
         strcat(new_string,rep);    
         if(str_substr != NULL){
             strcat(new_string,str_substr);
@@ -360,11 +475,11 @@ int * str_get_indexes(char *str, char* str1){
     int end_index = str_index(str,end);
 
     if(begin == NULL){
-        return str_sub(str,0,end_index - 1);
+        return str_sub_n(str,strlen(str),0,end_index - 1);
     }
 
     if(end == NULL){
-        return str_sub(str,begin_index + strlen(begin),strlen(str)-1);
+        return str_sub_n(str,strlen(str),begin_index + strlen(begin),strlen(str)-1);
     }
     
 
@@ -377,7 +492,7 @@ int * str_get_indexes(char *str, char* str1){
 
     int start_index = begin_index + strlen(begin);
 
-    return str_sub(str,start_index,end_index - 1);
+    return str_sub_n(str,strlen(str),start_index,end_index - 1);
 }
 
 char * str_copy(char *str2){
