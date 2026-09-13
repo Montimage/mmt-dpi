@@ -158,6 +158,9 @@ void hashmap_walk( mmt_hashmap_t *map, mmt_hashmap_walker_t walker, void *arg )
    mmt_hent_t  *he;
    int i;
 
+   /* F-BUG-007 (issue #199): slots may be NULL after an OOM in hashmap_init(). */
+   if( map == NULL || map->slots == NULL || walker == NULL ) return;
+
    for( i = 0 ; i < MMT_HASHMAP_NSLOTS ; ++i ) {
       slot = &map->slots[i];
       for( he = slot->lh_first ; he != NULL ; he = he->entries.le_next )
@@ -202,6 +205,9 @@ int hashmap_remove( mmt_hashmap_t *map, mmt_key_t key )
 
 mmt_hent_t *hmap_lookup( mmt_hashmap_t *map, mmt_key_t key )
 {
+   /* F-BUG-007 (issue #199): hashmap_init() leaves slots == NULL after an OOM;
+      never index a missing slot array. */
+   if( map == NULL || map->slots == NULL ) return NULL;
    mmt_hslot_t *slot = &map->slots[ key % MMT_HASHMAP_NSLOTS ];
    mmt_hent_t  *he   = slot->lh_first;
 
