@@ -1,6 +1,7 @@
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "extraction_lib.h"
+#include "packet_processing.h" /* mmt_have_bytes() — issue #202 caplen prologues */
 #include "../mmt_common_internal_include.h"
 
 #include "icmp.h"
@@ -8,7 +9,13 @@
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 int icmp_identifier_and_seq_nb_extraction(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
+    /* Issue #202 (F-BUG-033): caplen prologue — every packet byte this
+     * callback dereferences must lie inside the captured data. The ICMP
+     * type byte gates the delegate extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
     char type = *(char *) & packet->data[proto_offset];
     switch (type) {
         case ICMP_ECHOREPLY:
@@ -25,7 +32,12 @@ int icmp_identifier_and_seq_nb_extraction(const ipacket_t * packet, unsigned pro
 
 int icmp_gateway_extraction(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
+    /* Issue #202 (F-BUG-033): caplen prologue — see
+     * icmp_identifier_and_seq_nb_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
     char type = *(char *) & packet->data[proto_offset];
     switch (type) {
         case ICMP_REDIRECT:
@@ -38,15 +50,25 @@ int icmp_gateway_extraction(const ipacket_t * packet, unsigned proto_index,
 int icmp_data_extraction(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — every packet byte this
+     * callback dereferences must lie inside the captured data. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     //protocol_t * protocol_struct = get_protocol_struct_by_id(extracted_data->proto_id);
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
-    int data_len = packet->p_hdr->len - (proto_offset + attribute_offset);
-    if( data_len < 0 ) {
+    if (proto_offset < 0 || attribute_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
+    /* Issue #202 (F-BUG-010): bound the payload by caplen (captured bytes),
+     * not p_hdr->len (wire length) — on truncated captures the wire length
+     * overstates what is mapped in packet->data and the memcpy below read
+     * past the capture buffer. */
+    size_t data_start = (size_t) proto_offset + (size_t) attribute_offset;
+    if (!mmt_have_bytes(packet, data_start, 0)) {
         MMT_LOG( PROTO_ICMP, MMT_LOG_DEBUG, "*** Warning: malformed packet (icmp length mismatch)\n" );
         return 0;
     }
+    int data_len = (int) (packet->p_hdr->caplen - data_start);
     char type = *(char *) & packet->data[proto_offset];
     switch (type) {
         case ICMP_ECHOREPLY:
@@ -66,6 +88,11 @@ classified_proto_t icmp_classify_next_proto(ipacket_t * ipacket, unsigned index,
     retval.offset = -1;
     retval.proto_id = -1;
     retval.status = NonClassified;
+
+    /* Issue #202 (F-BUG-033): the ICMP type byte must be captured before it
+     * is consulted. */
+    if (offset < 0 || !mmt_have_bytes(ipacket, (size_t) offset, sizeof(uint8_t)))
+        return retval;
 
     char type = *(char *) & ipacket->data[offset];
 
