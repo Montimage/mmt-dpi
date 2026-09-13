@@ -78,6 +78,12 @@ static int find_assoc_subitem(const uint8_t *data, int start, int end,
 
 static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
 	int dicom_offset = get_packet_offset_at_index(ipacket, proto_index);
+	/* Validate the offset before forming the header pointer: a negative or
+	 * out-of-capture offset would make the deref below and the
+	 * caplen - dicom_offset length computation read out of bounds (#195). */
+	if( dicom_offset < 0 || (size_t)dicom_offset + sizeof(struct dicomhdr) > ipacket->p_hdr->caplen ) {
+		return 0;
+	}
 	struct dicomhdr * hdr = (struct dicomhdr *)&ipacket->data[dicom_offset];
 	int attribute_offset = extracted_data->position_in_packet;
 	unsigned int packet_len = ipacket->p_hdr->caplen - dicom_offset;
@@ -538,6 +544,10 @@ int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index) {
 	int l3_offset = get_packet_offset_at_index(ipacket, index);
     int dicom_offset = get_packet_offset_at_index(ipacket, index + 1);
 
+	/* A DICOM PDU needs its fixed 6-byte header inside the captured frame:
+	 * reject negative/out-of-capture offsets before dereferencing (#195). */
+	if( dicom_offset < 0 || (size_t)dicom_offset + sizeof(struct dicomhdr) > ipacket->p_hdr->caplen )
+		return 0;
 	unsigned int packet_len = ipacket->p_hdr->caplen - dicom_offset;
 	struct dicomhdr * dicom_header = (struct dicomhdr *)&ipacket->data[dicom_offset];
 	if (!mmt_check_dicom(dicom_header, packet_len))
