@@ -71,7 +71,9 @@ int arp_ar_sip_extraction(const ipacket_t * packet, unsigned proto_index, attrib
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         int attribute_offset = 14;
         //int attribute_length = 4;
-        *((unsigned int *) extracted_data->data) = (*((unsigned int *) & packet->data[proto_offset + attribute_offset]));
+        // Issue #193: memcpy, not an aligned-type dereference — the sender
+        // protocol address can start at an unaligned packet offset.
+        memcpy(extracted_data->data, & packet->data[proto_offset + attribute_offset], sizeof(unsigned int));
 
         return 1;
     }
@@ -103,7 +105,10 @@ int arp_ar_tip_extraction(const ipacket_t * packet, unsigned proto_index, attrib
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         int attribute_offset = 24;
         //int attribute_length = 4;
-        *((unsigned int *) extracted_data->data) = (*((unsigned int *) & packet->data[proto_offset + attribute_offset]));
+        // Issue #193: memcpy, not an aligned-type dereference — the target
+        // protocol address starts at an unaligned packet offset (e.g. 38 on
+        // Ethernet), which UBSan flags and strict-arch builds fault on.
+        memcpy(extracted_data->data, & packet->data[proto_offset + attribute_offset], sizeof(unsigned int));
 
         return 1;
     }

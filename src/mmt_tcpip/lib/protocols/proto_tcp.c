@@ -319,18 +319,25 @@ int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attrib
      * Issue #59: these overlay "&ipacket->data[option_offset]" / opt_field->data
      * of the byte-aligned capture buffer; reading the 32-bit timestamp fields
      * (tsval/tserc) through a strict cast is a misaligned access (UB, aborts
-     * under BUILD=asan -fsanitize=alignment). aligned(1) lowers the alignment
-     * requirement to 1 for alignment-safe single-load reads. Mirrors PR #58 (#57).
+     * under BUILD=asan -fsanitize=alignment). Mirrors PR #58 (#57).
+     * Issue #193: 'packed', not 'aligned(1)', actually lowers a struct's
+     * alignment requirement — aligned() can only raise it, so the #59
+     * annotation was a no-op and the timestamp member loads still tripped
+     * UBSan.
      */
     struct tcp_option{
         uint8_t kind;
         uint8_t length; //indicates the total length of the option
         uint8_t data[];
-    } __attribute__((aligned(1))) *opt_field;
+    } __attribute__((packed)) *opt_field;
     struct timestamp_option_field{
         uint32_t tsval;
         uint32_t tserc;
-    } __attribute__((aligned(1))) *ts_field;
+        /* Issue #193: aligned(1) cannot lower a struct's alignment — only
+         * 'packed' does — so the timestamp member loads below were still
+         * compiled as 4-byte-aligned accesses and trip UBSan on option data
+         * at odd offsets. */
+    } __attribute__((packed)) *ts_field;
 
     while( option_offset < end_of_option ){
         if (option_offset >= (int)ipacket->p_hdr->caplen) break;
