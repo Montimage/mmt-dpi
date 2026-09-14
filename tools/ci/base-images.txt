@@ -1,0 +1,19 @@
+# Base container images that compile the shipped MMT-DPI packages
+# (issue #217, F-DEP-101/F-CI-012/F-SEC-007).
+#
+# Every non-comment line is the exact image reference consumed by the build
+# matrix in .github/workflows/release-packages.yml — the workflow greps this
+# file for its matrix pin before building, and tools/ci/check-image-digests.sh
+# gates on every workflow image being recorded here, so the two cannot drift
+# apart silently. The dependency bot and the weekly scheduled run diff this
+# file to flag upstream drift.
+#
+# Pins are name:tag@sha256:<index-digest>; the index digest must cover both
+# linux/amd64 and linux/arm64 (the arm64 matrix leg runs under QEMU).
+# Refresh a pin with:
+digest-source: docker buildx imagetools inspect <image>:<tag>
+ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
+ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254
+debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443
+rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6
+quay.io/centos/centos:stream9@sha256:7d3c87ab567add60d0153a6a17bc10d0f19cd982a2d533724298ebd1ee751eab

@@ -169,12 +169,17 @@ jobs:
       # provenance attestation — so this helper runs as an ordinary blocking
       # step, not in the advisory loop.
       run: bash tools/ci/check-release-verification.sh
+    - name: Image digest pinning (blocking — issue #217)
+      # The gate condition holds — all five release images are
+      # name:tag@sha256-pinned and recorded in tools/ci/base-images.txt — so
+      # this helper runs as an ordinary blocking step, not in the advisory
+      # loop.
+      run: bash tools/ci/check-image-digests.sh
     - name: Advisory helpers (gate condition still open — owning task flips it)
       run: |
         fail=0
         helpers=(
           tools/ci/check-hardening-flags.sh
-          tools/ci/check-image-digests.sh
           tools/ci/check-package-deps.sh
           tools/ci/check-protocol-count.sh
           tools/ci/check-public-decls.sh
