@@ -1996,8 +1996,9 @@ int mmt_check_radius(ipacket_t * ipacket, unsigned index) { //BW: TODO: check th
 
 void radius_vendor_specific_fields_analysis(ipacket_t * ipacket, uint8_t * v_field, size_t v_remaining, unsigned index) {
     if (v_remaining < 6) return; // need 4-byte vendor ID + 2-byte sub-TLV header
-    vendor_tlv_t * v_tlv = (vendor_tlv_t *) v_field;
-    if (ntohl(v_tlv->vendor_id) != VENDOR_3GPP_ID) return;
+    /* Issue #205 (F-BUG-074): read the vendor ID byte-wise — the field is
+     * not 4-byte aligned in the packet, so the uint32_t cast was UB. */
+    if (read_be32(v_field) != VENDOR_3GPP_ID) return;
     radius_session_context_t * radius_session_data = ipacket->session->session_data[index];
     if (radius_session_data == NULL) return;
     tlv_t * tlv = (tlv_t *) & v_field[4]; //Offset the vendor id (4 bytes)

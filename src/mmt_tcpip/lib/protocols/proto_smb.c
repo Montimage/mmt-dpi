@@ -1,4 +1,5 @@
 #include "smb.h"
+#include <stddef.h>
 
 /////////////// IMPLEMENTATION OF smb.h ///////////////////
 smb_file_t * smb_file_new(void) {
@@ -18,13 +19,21 @@ void smb_file_free(smb_file_t * file) {
     file->file_id = 0;
     file->current_len = 0;
     file->current_seg_len = 0;
-    free(file->file_path);
+    /* Issue #205 (F-BUG-113): file_path->ptr is a separately allocated string
+     * and the node itself was never freed — both leaked on session cleanup. */
+    if (file->file_path) {
+      free((void *) file->file_path->ptr);
+      free(file->file_path);
+      file->file_path = NULL;
+    }
     file->next = NULL;
+    free(file);
   }
 }
 
 smb_session_t * smb_session_new(uint64_t session_id) {
     smb_session_t * new_session = (smb_session_t *) malloc(sizeof(smb_session_t));
+    if (new_session == NULL) return NULL;
     new_session->session_id = session_id;
     new_session->smb1_cmd_nt_create = 0;
     new_session->smb1_cmd_nt_trans = 0;
@@ -66,13 +75,16 @@ void smb_session_free(smb_session_t * node) {
   }
 }
 
-int smb_insert_session(smb_session_t * root, smb_session_t * new_session) {
-  if (!new_session) return 0;
-  if (root == NULL) {
-    root = new_session;
+/* Issue #205 (F-BUG-113): the root list head is passed by reference so the
+ * "empty list" case actually links the new session for the caller — the old
+ * by-value signature wrote to a local copy and silently dropped it. */
+int smb_insert_session(smb_session_t ** root, smb_session_t * new_session) {
+  if (!root || !new_session) return 0;
+  if (*root == NULL) {
+    *root = new_session;
     return 1;
   }
-  smb_session_t * head = root;
+  smb_session_t * head = *root;
   while (head->next != NULL) {
     head = head->next;
   }
@@ -220,9 +232,20 @@ int mmt_check_smb(ipacket_t * ipacket, unsigned index) {
 const uint8_t * get_smb_payload(const ipacket_t * ipacket, unsigned proto_index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if (packet->payload_packet_len == 0) return NULL;
+    if (ipacket->p_hdr == NULL || ipacket->data == NULL) return NULL;
+    /* Issue #205 (F-BUG-111): every read is bounded by the captured length —
+     * the 4-byte signature compare needs offset + 4 <= caplen, including after
+     * the 4-byte NetBIOS skip. */
     int offset = get_packet_offset_at_index(ipacket, proto_index);
+    uint64_t caplen = ipacket->p_hdr->caplen;
+    if (offset < 0 || (uint64_t) offset + 4 > caplen) {
+        return NULL;
+    }
     if (*(uint8_t *)&ipacket->data[offset] == 0x00) {
         offset += 4;
+        if ((uint64_t) offset + 4 > caplen) {
+            return NULL;
+        }
     }
     if ((ipacket->data[offset]== 0xff || ipacket->data[offset]== 0xfd || ipacket->data[offset]== 0xfe )
         && ipacket->data[offset + 1] == 'S'
@@ -231,6 +254,20 @@ const uint8_t * get_smb_payload(const ipacket_t * ipacket, unsigned proto_index)
         return &ipacket->data[offset];
     }
     return NULL;
+}
+
+/* Issue #205 (F-BUG-112): number of captured bytes available from an
+ * smb_payload pointer returned by get_smb_payload() — the common bound for
+ * every command-field read in the extraction and session-analysis paths. */
+static size_t smb_payload_avail(const ipacket_t * ipacket, const uint8_t * smb_payload) {
+    if (ipacket->p_hdr == NULL || ipacket->data == NULL || smb_payload == NULL) {
+        return 0;
+    }
+    ptrdiff_t off = smb_payload - (const uint8_t *) ipacket->data;
+    if (off < 0 || (uint64_t) off >= ipacket->p_hdr->caplen) {
+        return 0;
+    }
+    return (size_t)(ipacket->p_hdr->caplen - (uint64_t) off);
 }
 
 uint8_t smb_version(const uint8_t *smb_payload)
@@ -279,11 +316,14 @@ int smb_command_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
     const uint8_t * smb_payload = get_smb_payload(ipacket, proto_index + 1);
     if (smb_payload != NULL) {
-        if (smb_payload[0] == SMB_VERSION_1) {
+        /* command byte sits at [4] for SMB1 and [12] for SMB2+ — both reads
+         * bounded by the captured remainder (issue #205). */
+        size_t avail = smb_payload_avail(ipacket, smb_payload);
+        if (smb_payload[0] == SMB_VERSION_1 && avail >= 5) {
             *(uint8_t *)extracted_data->data = *(uint8_t *)&smb_payload[4];
             return 1;
         }
-        if (smb_payload[0] == SMB_VERSION_2) {
+        if (smb_payload[0] == SMB_VERSION_2 && avail >= 13) {
             *(uint8_t *)extracted_data->data = *(uint8_t *)&smb_payload[12];
             return 1;
         }
@@ -296,10 +336,12 @@ int smb_transfer_payload_extraction(const ipacket_t * ipacket, unsigned proto_in
   struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
   if (packet->payload_packet_len == 0) return 0;
   int offset = get_packet_offset_at_index(ipacket, proto_index);
+  if (offset < 0) return 0;
   smb_session_t *smb_session = smb_get_session_from_packet(ipacket, proto_index);
   if (smb_session == NULL) return 0;
   if (smb_session->sm1_file_transferring == 1) {
     mmt_header_line_t * padding = (mmt_header_line_t *)malloc(sizeof(mmt_header_line_t));
+    if (padding == NULL) return 0;
     padding->len = packet->payload_packet_len;
     padding->ptr = (void *) packet->payload;
     extracted_data->data = (void *)padding;
@@ -310,6 +352,10 @@ int smb_transfer_payload_extraction(const ipacket_t * ipacket, unsigned proto_in
   if (!smb_payload) return 0;
   if (smb_version(smb_payload) != SMB_VERSION_1) return 0;// Only process SMB1 for now
 
+  /* Issue #205 (F-BUG-112): every command-field read is bounded by the
+   * captured remainder after the 32-byte SMB1 header. */
+  size_t avail = smb_payload_avail(ipacket, smb_payload);
+  if (avail < 32 + 5) return 0;
   const uint8_t * cmd_payload = &smb_payload[32];
   uint8_t cmd = smb_command(smb_payload);
   uint16_t padding_size = 0;
@@ -322,9 +368,10 @@ int smb_transfer_payload_extraction(const ipacket_t * ipacket, unsigned proto_in
   {
     case SMB1_CMD_READ:
       if (smb_session->smb1_cmd_read) return 0; // there is no padding in Read request
-      data_length_low = *(uint16_t *) &cmd_payload[12];
+      if (avail < 32 + 28) return 0;            // byte_count at cmd_payload[26..27]
+      data_length_low = get_u16(cmd_payload, 12);
       byte_count_offset = 26;
-      byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
+      byte_count = get_u16(cmd_payload, byte_count_offset);
       if (byte_count > data_length_low) {
         // there is some padding
         padding_size = byte_count - data_length_low;
@@ -337,9 +384,10 @@ int smb_transfer_payload_extraction(const ipacket_t * ipacket, unsigned proto_in
       break;
     case SMB1_CMD_WRITE:
       if (!smb_session->smb1_cmd_write) return 0; // there is no payload in write response
-      data_length_low = *(uint16_t *) &cmd_payload[21];
+      if (avail < 32 + 31) return 0;            // byte_count at cmd_payload[29..30]
+      data_length_low = get_u16(cmd_payload, 21);
       byte_count_offset = 29;
-      byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
+      byte_count = get_u16(cmd_payload, byte_count_offset);
       if (byte_count > data_length_low) {
         // there is some padding
         padding_size = byte_count - data_length_low;
@@ -360,6 +408,7 @@ int smb_transfer_payload_extraction(const ipacket_t * ipacket, unsigned proto_in
         return 0;
     uint32_t payload_len = (uint32_t)(ipacket->p_hdr->caplen - need);
     mmt_header_line_t * padding = (mmt_header_line_t *)malloc(sizeof(mmt_header_line_t));
+    if (padding == NULL) return 0;
     padding->len = payload_len;
     padding->ptr = (const char *)&cmd_payload[payload_offset];
     extracted_data->data = (void *)padding;
@@ -377,6 +426,11 @@ int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
   smb_session_t *smb_session = smb_get_session_from_packet(ipacket, proto_index);
   if (smb_session == NULL) return 0;
 
+  /* Issue #205 (F-BUG-112): the command-field reads below reach as far as
+   * cmd_payload[48] (smb_payload + 81) — bound each case by the captured
+   * remainder instead of trusting declared field offsets. */
+  size_t avail = smb_payload_avail(ipacket, smb_payload);
+  if (avail < 32 + 5) return 0;
   const uint8_t * cmd_payload = &smb_payload[32];
   uint8_t cmd = smb_command(smb_payload);
   uint16_t padding_size = 0;
@@ -390,9 +444,10 @@ int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
   {
   case SMB1_CMD_READ:
     if (!smb_session->smb1_cmd_read) return 0; // there is no padding in Read request
-    data_length_low = *(uint16_t *) &cmd_payload[12];
+    if (avail < 32 + 28) return 0;             // byte_count at cmd_payload[26..27]
+    data_length_low = get_u16(cmd_payload, 12);
     byte_count_offset = 26;
-    byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
+    byte_count = get_u16(cmd_payload, byte_count_offset);
     if (byte_count > data_length_low) {
       // there is some padding
       padding_size = byte_count - data_length_low;
@@ -401,9 +456,10 @@ int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
     break;
   case SMB1_CMD_WRITE:
     if (!smb_session->smb1_cmd_write) return 0; // there is no padding in write response
-    data_length_low = *(uint16_t *) &cmd_payload[21];
+    if (avail < 32 + 31) return 0;             // byte_count at cmd_payload[29..30]
+    data_length_low = get_u16(cmd_payload, 21);
     byte_count_offset = 29;
-    byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
+    byte_count = get_u16(cmd_payload, byte_count_offset);
     if (byte_count > data_length_low) {
       // there is some padding
       padding_size = byte_count - data_length_low;
@@ -411,19 +467,23 @@ int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
     }
     break;
   case SMB1_CMD_TRANS2:
-    // request
-    total_param_count = *(uint16_t *) &cmd_payload[1];
-    total_data_count = *(uint16_t *) &cmd_payload[3];
-    byte_count_offset = 31;
-    if (!smb_session->smb1_cmd_trans2) { // response
+    if (smb_session->smb1_cmd_trans2) {
+      // request: reads cmd_payload[19..22] and byte_count at [31..32]
+      if (avail < 32 + 33) return 0;
+      byte_count_offset = 31;
+    } else {
+      // response: byte_count at cmd_payload[21..22]
+      if (avail < 32 + 23) return 0;
       byte_count_offset = 21;
     }
-    byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
+    total_param_count = get_u16(cmd_payload, 1);
+    total_data_count = get_u16(cmd_payload, 3);
+    byte_count = get_u16(cmd_payload, byte_count_offset);
     if (byte_count > total_param_count + total_data_count ) {
       padding_size = byte_count - (total_param_count + total_data_count);
       if (smb_session->smb1_cmd_trans2) {
-        uint16_t param_count = *(uint16_t *) &cmd_payload[19];
-        uint16_t param_offset = *(uint16_t *) &cmd_payload[21];
+        uint16_t param_count = get_u16(cmd_payload, 19);
+        uint16_t param_offset = get_u16(cmd_payload, 21);
         if (param_offset > 32 + byte_count_offset + 2) {
           uint16_t first_padding_len = param_offset - (32 + byte_count_offset + 2);
           padding_size = first_padding_len;
@@ -437,19 +497,23 @@ int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
     }
     break;
   case SMB1_CMD_NT_TRANS:
-    // request
-    total_param_count = *(uint32_t *) &cmd_payload[4];
-    total_data_count = *(uint32_t *) &cmd_payload[8];
-    byte_count_offset = 37;
-    if (!smb_session->smb1_cmd_nt_trans) {
+    if (smb_session->smb1_cmd_nt_trans) {
+      // request: param fields at cmd_payload[4..19], byte_count at [37..38]
+      if (avail < 32 + 39) return 0;
+      byte_count_offset = 37;
+    } else {
+      // response: byte_count at cmd_payload[47..48]
+      if (avail < 32 + 49) return 0;
       byte_count_offset = 47;
     }
-    byte_count = *(uint16_t *) &cmd_payload[byte_count_offset];
+    total_param_count = get_u32(cmd_payload, 4);
+    total_data_count = get_u32(cmd_payload, 8);
+    byte_count = get_u16(cmd_payload, byte_count_offset);
     if (byte_count > total_param_count + total_data_count ) {
       padding_size = byte_count - (total_param_count + total_data_count);
       if (smb_session->smb1_cmd_nt_trans) {
-        uint32_t param_count = *(uint32_t *) &cmd_payload[12];
-        uint32_t param_offset = *(uint32_t *) &cmd_payload[16];
+        uint32_t param_count = get_u32(cmd_payload, 12);
+        uint32_t param_offset = get_u32(cmd_payload, 16);
         if (param_offset > 32 + byte_count_offset + 2) {
           uint16_t first_padding_len = param_offset - (32 + byte_count_offset + 2);
           padding_size = first_padding_len;
@@ -467,7 +531,9 @@ int smb_padding_extraction(const ipacket_t *ipacket, unsigned proto_index,
   }
 
   if (padding_size > 0) {
+    if (avail < 32 + (size_t)padding_offset + (size_t)padding_size) return 0;
     mmt_header_line_t * padding = (mmt_header_line_t *)malloc(sizeof(mmt_header_line_t));
+    if (padding == NULL) return 0;
     padding->len = padding_size;
     padding->ptr = (const char *)&cmd_payload[padding_offset];
     extracted_data->data = (void *)padding;
@@ -485,10 +551,11 @@ int smb_nt_create_file_name_extraction(const ipacket_t *ipacket, unsigned proto_
   if (!smb_session->smb1_cmd_nt_create)
     return 0;
   const uint8_t *smb_payload = get_smb_payload(ipacket, proto_index + 1);
-  if (smb_payload != NULL)
+  if (smb_payload != NULL && smb_payload_avail(ipacket, smb_payload) >= 5
+      && smb_payload[0] == SMB_VERSION_1)
   {
-    uint8_t smb_cmd = smb_command(smb_payload);
-    if (smb_payload[0] == SMB_VERSION_1 && smb_cmd == 0xa2)
+    uint8_t smb_cmd = smb_command(smb_payload); // SMB1: reads smb_payload[4]
+    if (smb_cmd == 0xa2)
     {
       if (smb_session->current_file)
       {
@@ -568,8 +635,14 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
   {
     // Create a new session
     current_session = smb_session_new(ipacket->session->session_id);
-    smb_insert_session(root, current_session);
+    smb_insert_session(&root, current_session);
+    if (root == current_session && smb_get_session_list(ipacket, index) == NULL) {
+      // the list head changed — publish it so the context cleanup owns it
+      smb_setup_session_context(ipacket, index, root);
+    }
   }
+  if (current_session == NULL)
+    return MMT_CONTINUE;
 
   // Start analysis the packet and update to the session
   const uint8_t *smb_payload = get_smb_payload(ipacket, index);
@@ -580,6 +653,11 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
   {
     return MMT_CONTINUE; // skip for now
   }
+  /* Issue #205 (F-BUG-110/F-BUG-112): every command_payload read is bounded
+   * by the captured remainder after the 32-byte SMB1 header. */
+  size_t avail = smb_payload_avail(ipacket, smb_payload);
+  if (avail < 32 + 5)
+    return MMT_CONTINUE;
   uint8_t smb_cmd = smb_command(smb_payload);
   current_session->last_cmd = smb_cmd;
   const uint8_t *command_payload = &smb_payload[32];
@@ -598,9 +676,11 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
     current_session->smb1_cmd_close = !current_session->smb1_cmd_close;
     if (current_session->smb1_cmd_close)
     {
+      if (avail < 32 + 3)
+        break; // no room for the file_id field
       current_session->sm1_file_transferring = 0;
       // Close request
-      uint16_t file_id = *(uint16_t *)&command_payload[1];
+      uint16_t file_id = get_u16(command_payload, 1);
       current_session->current_file_id = file_id;
     }
     break;
@@ -610,10 +690,12 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
     {
       // Write AndX request
       // Update file size
-      uint16_t file_id = *(uint16_t *)&command_payload[5];
+      if (avail < 32 + 23)
+        break; // reads command_payload[5..6], [7..10], [21..22]
+      uint16_t file_id = get_u16(command_payload, 5);
       current_session->current_file_id = file_id;
-      uint32_t seg_offset = *(uint32_t *)&command_payload[7];
-      uint16_t data_length_low = *(uint16_t *)&command_payload[21];
+      uint32_t seg_offset = get_u32(command_payload, 7);
+      uint16_t data_length_low = get_u16(command_payload, 21);
       smb_file_t *file = smb_session_find_file_by_id(current_session, file_id);
       if (file)
       {
@@ -632,8 +714,10 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
     else
     {
       // Write AndX response
+      if (avail < 32 + 7)
+        break; // reads command_payload[5..6]
       current_session->sm1_file_transferring = 0;
-      uint16_t count_low = *(uint16_t *)&command_payload[5];
+      uint16_t count_low = get_u16(command_payload, 5);
       if (current_session->current_file != NULL)
       {
         if (current_session->current_file->current_seg_len != count_low)
@@ -654,8 +738,19 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
     {
       // NT create AndX request
       // Update file path
-      uint16_t file_path_len = *(uint16_t *)&command_payload[6];
-      char *file_path = (char *)malloc((file_path_len / 2 + 1) * sizeof(char));
+      if (avail < 32 + 8)
+        break; // no room for the file_path_len field
+      uint16_t file_path_len = get_u16(command_payload, 6);
+      /* Issue #205 (F-BUG-110): the declared 16-bit filename length drives a
+       * walk of command_payload[52..52+len) — clamp it to the captured
+       * remainder, size the allocation for the odd-length case (the builder
+       * writes ceil(len/2) chars plus a NUL) and check it. */
+      size_t name_avail = avail > 32 + 52 ? avail - 32 - 52 : 0;
+      if ((size_t)file_path_len > name_avail)
+        file_path_len = (uint16_t)name_avail;
+      char *file_path = (char *)malloc((size_t)file_path_len / 2 + 2);
+      if (file_path == NULL)
+        break;
       int path_len = smb_path_builder((char* ) &command_payload[52], file_path, file_path_len);
       // memcpy(file_path, &command_payload[52], file_path_len );
       file_path[file_path_len / 2] = '\0';
@@ -671,8 +766,16 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
             file->file_path->len = path_len;
             file->file_path->ptr = file_path;
           }
+          else
+          {
+            free(file_path);
+          }
           current_session->current_file = file;
           smb_session_insert_file(current_session, file);
+        }
+        else
+        {
+          free(file_path);
         }
       } else {
         free(file_path);
@@ -681,7 +784,9 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index)
     else
     {
       // NT create AndX response
-      uint16_t file_id = *(uint16_t *)&command_payload[6];
+      if (avail < 32 + 8)
+        break; // no room for the file_id field
+      uint16_t file_id = get_u16(command_payload, 6);
       current_session->current_file_id = file_id;
       smb_session_update_last_file_id(current_session, file_id);
     }

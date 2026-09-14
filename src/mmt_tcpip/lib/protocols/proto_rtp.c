@@ -70,10 +70,18 @@ void update_multimedia_quality_index_context(multimedia_quality_index_context_t 
 }
 #endif /* _MMT_BUILD_SDK */
 
+/* Issue #205: the 2-byte RTP fixed-header bitfields may only be read when
+ * the captured frame actually contains them. */
+static int rtp_hdr_avail(const ipacket_t * packet, int proto_offset) {
+    return proto_offset >= 0 && packet->p_hdr != NULL && packet->data != NULL
+        && (uint64_t) proto_offset + 2 <= (uint64_t) packet->p_hdr->caplen;
+}
+
 int rtp_version_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (!rtp_hdr_avail(packet, proto_offset)) return 0;
 
     *(uint8_t *) extracted_data->data = ((mmt_una_rtphdr_t *) & packet->data[proto_offset])->version;
     return 1;
@@ -83,6 +91,7 @@ int rtp_padding_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (!rtp_hdr_avail(packet, proto_offset)) return 0;
 
     *(uint8_t *) extracted_data->data = ((mmt_una_rtphdr_t *) & packet->data[proto_offset])->padding;
     return 1;
@@ -92,6 +101,7 @@ int rtp_extension_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (!rtp_hdr_avail(packet, proto_offset)) return 0;
 
     *(uint8_t *) extracted_data->data = ((mmt_una_rtphdr_t *) & packet->data[proto_offset])->ext;
     return 1;
@@ -101,6 +111,7 @@ int rtp_cc_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (!rtp_hdr_avail(packet, proto_offset)) return 0;
 
     *(uint8_t *) extracted_data->data = ((mmt_una_rtphdr_t *) & packet->data[proto_offset])->cc;
     return 1;
@@ -110,6 +121,7 @@ int rtp_marker_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (!rtp_hdr_avail(packet, proto_offset)) return 0;
 
     *(uint8_t *) extracted_data->data = ((mmt_una_rtphdr_t *) & packet->data[proto_offset])->mark;
     return 1;
@@ -119,6 +131,7 @@ int rtp_payload_type_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (!rtp_hdr_avail(packet, proto_offset)) return 0;
 
     *(uint8_t *) extracted_data->data = ((mmt_una_rtphdr_t *) & packet->data[proto_offset])->pt;
     return 1;
@@ -129,12 +142,30 @@ int rtp_csrc_list_extraction(const ipacket_t * packet, unsigned proto_index,
 
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
+    if (proto_offset < 0 || attribute_offset < 0 || packet->p_hdr == NULL
+            || packet->data == NULL) {
+        return 0;
+    }
+
+    /* Issue #205 (F-BUG-108): cc is the CSRC element count (0-15); the CSRC
+     * list occupies cc*4 bytes at attribute_offset. Publishing cc*4 as the
+     * extracted length but iterating it as an element count wrote 4 bytes per
+     * element up to offset 243 of the 68-byte BINARY_64DATA buffer — a
+     * 176-byte heap overflow. Iterate elements instead: at cc = 15 the write
+     * ends at sizeof(int) + 15*4 = 64, inside the buffer. */
+    if ((uint64_t) proto_offset + 1 > (uint64_t) packet->p_hdr->caplen) {
+        return 0;
+    }
+    uint8_t cc = ((mmt_una_rtphdr_t *) & packet->data[proto_offset])->cc;
+    if ((uint64_t) proto_offset + (uint64_t) attribute_offset + (uint64_t) cc * 4u
+            > (uint64_t) packet->p_hdr->caplen) {
+        return 0;
+    }
 
     uint8_t i;
-    uint8_t cc = ((mmt_una_rtphdr_t *) & packet->data[proto_offset])->cc * 4; //TODO: shifting is more optimal no?
-    *((unsigned int *) extracted_data->data) = cc;
+    *((unsigned int *) extracted_data->data) = cc * 4;
     for (i = 0; i < cc; i++) {
-        *((unsigned int *) & ((u_char *) extracted_data->data)[sizeof (int) +i * 4]) = ntohl(*((unsigned int *) & packet->data[proto_offset + attribute_offset + i * 4]));
+        *((unsigned int *) & ((u_char *) extracted_data->data)[sizeof (int) +i * 4]) = ntohl(get_u32(packet->data, proto_offset + attribute_offset + i * 4));
     }
     i = (cc) ? 1 : 0;
     return i;
@@ -672,7 +703,9 @@ static void mmt_rtp_search(ipacket_t * ipacket, const uint8_t * payload, const u
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     uint8_t stage;
-    uint16_t seqnum = ntohs(get_u16(payload, 2));
+    /* Issue #205 (F-BUG-109): seqnum is read from payload[2..3] — only after
+     * the 12-byte minimum-length gate below, never before it. */
+    uint16_t seqnum;
 
     MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "search rtp.\n");
 
@@ -708,6 +741,8 @@ static void mmt_rtp_search(ipacket_t * ipacket, const uint8_t * payload, const u
         MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "skipping packet with len = 12 and only 0-bytes.\n");
         return;
     }
+
+    seqnum = ntohs(get_u16(payload, 2));
 
     if ((payload[0] & 0xc0) == 0xc0 || (payload[0] & 0xc0) == 0x40 || (payload[0] & 0xc0) == 0x00) {
         MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "version = 3 || 1 || 0, maybe first rtp packet.\n");

@@ -42,8 +42,8 @@ typedef struct ndn_tlv_struct{
 	uint16_t type;	// Type of node
 	uint8_t nb_octets; // number of octets to calculate the length of node
 	unsigned long length; // Length of node
-	uint16_t node_offset; // data offset of node in packet payload - count from type octet
-	uint16_t data_offset;
+	uint32_t node_offset; // data offset of node in packet payload - count from type octet (issue #205: uint16_t truncated offsets > 65535)
+	uint32_t data_offset;
 	struct ndn_tlv_struct *next; // sibling node - same root
 }ndn_tlv_t;
 

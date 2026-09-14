@@ -137,6 +137,27 @@ int mmt_classify_me_ssl(ipacket_t *ipacket, unsigned index);
 /* --- protocols/proto_tcp.c ----------------------------------------------------- */
 int tcp_pre_classification_function(ipacket_t *ipacket, unsigned index);
 
+/* --- protocols/proto_rtp.c (issue #205 harness) ------------------------------- */
+int rtp_csrc_list_extraction(const ipacket_t *packet, unsigned proto_index,
+        attribute_t *extracted_data);
+int mmt_check_rtp_udp(ipacket_t *ipacket, unsigned index);
+void mmt_init_classify_me_rtp(void);
+
+/* --- protocols/proto_smb.c (issue #205 harness) ------------------------------- */
+const uint8_t *get_smb_payload(const ipacket_t *ipacket, unsigned proto_index);
+int smb_session_data_analysis(ipacket_t *ipacket, unsigned index);
+
+/* --- protocols/proto_sip.c (issue #205 harness) ------------------------------- */
+int mmt_check_sip(ipacket_t *ipacket, unsigned index);
+void mmt_init_classify_me_sip(void);
+
+/* --- protocols/ndn.c (issue #205 harness) -------------------------------------- */
+struct ndn_tlv_struct;
+struct ndn_tlv_struct *ndn_TLV_parser(char *payload, int offset,
+        int total_length);
+void ndn_TLV_free(struct ndn_tlv_struct *ndn);
+int mmt_check_ndn_payload(char *payload, int packet_len);
+
 /* --- mmt_core/src/packet_processing.c (central caplen guard, issue #193) ----
  * internal_extract_attribute is exported non-static; the attribute struct tag
  * is forward-declared above and defined by the real private header

@@ -60,8 +60,19 @@ int mmt_check_ndn(ipacket_t * ipacket, unsigned index) {
             
             // debug("NDN: checking ndn payload %lu",ipacket->packet_id);
             int offset = get_packet_offset_at_index(ipacket, index + 1);
+            /* Issue #205: keep the parsed length inside the captured buffer —
+             * the TLV parser trusts total_length for every byte it reads. */
+            if (offset < 0 || ipacket->p_hdr == NULL || ipacket->data == NULL
+                    || (uint64_t) offset >= ipacket->p_hdr->caplen) {
+                MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_NDN);
+                return 0;
+            }
             char * payload = (char*)&ipacket->data[offset];
+            uint64_t avail = ipacket->p_hdr->caplen - (uint64_t) offset;
             uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+            if ((uint64_t) payload_len > avail) {
+                payload_len = (uint32_t) avail;
+            }
 
             if(payload_len==0){
                 // debug("NDN: payload_len == 0");

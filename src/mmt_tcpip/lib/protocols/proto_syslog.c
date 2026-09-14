@@ -48,7 +48,10 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
        - version digit '1'
        - space
        - ISO-8601 timestamp starting with a 4-digit year (first char is '2' or '1') */
-    if (!on_port_514 || i < payload_len) {
+    /* Issue #205 (F-BUG-055 residue): the byte read must be in-bounds in
+     * every case — the old condition skipped the check entirely off
+     * port 514. */
+    if (i < payload_len) {
         if (packet->payload[i] == '1') {
             i++;
             if (i < payload_len && packet->payload[i] == ' ') {
@@ -168,9 +171,11 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
  * Parse the PRI header: <PRI> where PRI is 1-3 digits.
  * Returns the index after the '>', or 0 if parsing fails.
  */
-static uint8_t mmt_int_parse_syslog_pri(struct mmt_tcpip_internal_packet_struct *packet,
+static uint32_t mmt_int_parse_syslog_pri(struct mmt_tcpip_internal_packet_struct *packet,
                                         uint32_t payload_len) {
-    uint8_t i = 1;
+    /* Issue #205 (F-BUG-055 residue): index into a payload of up to 1024
+     * bytes must not be a uint8_t. */
+    uint32_t i = 1;
 
     /* Read 1-3 digit PRI value */
     for (; i <= 3; i++) {
@@ -202,7 +207,7 @@ static uint8_t mmt_int_parse_syslog_pri(struct mmt_tcpip_internal_packet_struct 
 static void mmt_int_classify_syslog(ipacket_t * ipacket,
                                      struct mmt_tcpip_internal_packet_struct *packet,
                                      struct mmt_internal_tcpip_session_struct *flow) {
-    uint8_t i;
+    uint32_t i;
 
     MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "search syslog\n");
 

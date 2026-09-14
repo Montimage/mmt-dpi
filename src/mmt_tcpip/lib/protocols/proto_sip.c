@@ -133,7 +133,11 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                 break;
 
                 case 'i':
-                if ((mmt_memcmp(packet_payload + 1, "invite ", 7) == 0)
+                /* Issue #205 (F-BUG-115): the old "invite "/7 pattern
+                 * required payload[7] == ' ' while the next check required
+                 * payload[7] == 's'/'S' — lowercase invite could never match.
+                 * Compare "nvite " like the uppercase branch. */
+                if ((mmt_memcmp(packet_payload + 1, "nvite ", 6) == 0)
                     && (mmt_memcmp(&packet_payload[7], "SIP:", 4) == 0 || mmt_memcmp(&packet_payload[7], "sip:", 4) == 0)) {
                     MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip INVITE.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
@@ -160,7 +164,11 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
                  * maybe it could be deleted, if somebody sees it in the first direction,
                  * please delete this comment.
                  */
-                if (mmt_memcmp(packet_payload + 1, "sip/2.0 200 OK", 14) == 0) {
+                /* Issue #205 (F-BUG-114): 14 bytes at payload+1 would read
+                 * one byte past the payload_len >= 14 guarantee and also
+                 * re-matched payload[0]. Compare "ip/2.0 200 OK" (13) like
+                 * the uppercase branch. */
+                if (mmt_memcmp(packet_payload + 1, "ip/2.0 200 OK", 13) == 0) {
                     MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "found sip SIP/2.0 0K.\n");
                     mmt_int_sip_add_connection(ipacket, PROTO_SIP);
                     check_sip_internal(ipacket);

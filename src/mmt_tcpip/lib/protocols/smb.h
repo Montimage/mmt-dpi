@@ -70,7 +70,7 @@ struct smb_session_struct {
 smb_session_t * smb_session_new(uint64_t session_id);
 void smb_session_free(smb_session_t * node);
 
-int smb_insert_session(smb_session_t * root, smb_session_t * new_session);
+int smb_insert_session(smb_session_t ** root, smb_session_t * new_session);
 
 smb_session_t * smb_find_session_by_id(smb_session_t * root, uint64_t session_id);
 

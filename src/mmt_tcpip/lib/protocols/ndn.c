@@ -42,19 +42,42 @@ void ndn_TLV_free(ndn_tlv_t * ndn){
     // ndn = NULL;
 }
 
+/* Issue #205 (F-BUG-065): big-endian accumulate of up to 8 octets in checked
+ * uint64_t arithmetic — replaces str_hex2int()'s floating-point exponent
+ * accumulation, whose int result overflowed and whose range was never
+ * validated against the buffer. */
+static int ndn_tlv_read_uint(const char *payload, uint64_t start, uint64_t count,
+                             uint64_t total_length, uint64_t *out){
+    if(payload == NULL || out == NULL || count == 0 || count > 8) return 0;
+    if(start > total_length || count > total_length - start) return 0;
+    uint64_t value = 0;
+    uint64_t i;
+    for(i = 0; i < count; i++){
+        value = (value << 8) | (uint64_t)(uint8_t)payload[start + i];
+    }
+    *out = value;
+    return 1;
+}
+
 int ndn_TLV_get_int(ndn_tlv_t *ndn, char *payload, int payload_len){
 
     if(ndn == NULL) return -1;
 
     if(payload == NULL) return -1;
 
-    if(ndn->data_offset + ndn->length > payload_len){
+    if(payload_len < 0
+       || (uint64_t)ndn->data_offset + ndn->length > (uint64_t)payload_len){
         return -1;
     }
 
-    int ret = str_hex2int(payload,ndn->data_offset, ndn->data_offset + ndn->length -1 );
+    uint64_t value = 0;
+    if(!ndn_tlv_read_uint(payload, ndn->data_offset, ndn->length,
+                         (uint64_t)payload_len, &value)){
+        return -1;
+    }
+    if(value > 0x7fffffffUL) return -1;
 
-    return ret;
+    return (int)value;
 }
 
 
@@ -69,15 +92,20 @@ char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
 
     if(payload == NULL) return NULL;
 
-    if(ndn->data_offset + ndn->length > payload_len){
+    if(ndn->length == 0
+       || (uint64_t)ndn->data_offset + ndn->length > (uint64_t)payload_len){
         return NULL;
     }
 
     char * ret = str_sub(payload,ndn->data_offset, ndn->data_offset + ndn->length -1 );
 
+    /* Issue #205: str_sub() fails on embedded NULs (strlen-bounded) — a
+     * binary TLV value must not turn into a NULL dereference. */
+    if(ret == NULL) return NULL;
+
     int i = 0;
     // Replace all character which is not printable
-    for(i = 0 ;i < ndn->length;i++){
+    for(i = 0 ;i < (int)ndn->length;i++){
         if(is_json_special_character(ret[i])){
             // printf("Special character\n");
             ret[i]='_';
@@ -97,19 +125,30 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length){
 
     if(payload == NULL) return NULL;
 
+    /* Issue #205 (F-BUG-065): the TLV header needs offset and offset + 1 —
+     * prove both bytes are inside the buffer before reading them, and do all
+     * offset/length arithmetic in uint64_t. */
+    if(offset < 0 || total_length < 0
+       || (uint64_t)offset + 2 > (uint64_t)total_length){
+        return NULL;
+    }
+
     int type = ndn_TLV_check_type(payload[offset]);
 
     if(type == 0) {
         debug("Wrong type : %d\n",payload[offset]);
         return NULL;
     }
-    
-    int first_octet = hex2int(payload[offset + 1]);
+
+    uint64_t first_octet = (uint64_t)(uint8_t)payload[offset + 1];
 
     ndn_tlv_t * ndn_new_node = NULL;
-    
+
     if(first_octet == 0 ){
-        if(offset + 2 == total_length){
+        /* Zero-length value: only valid when the header ends exactly at the
+         * end of the buffer (F-BUG-076) — the caller must not read past
+         * data_offset. */
+        if((uint64_t)offset + 2 == (uint64_t)total_length){
             ndn_new_node = ndn_TLV_init();
             if(ndn_new_node == NULL) return NULL;
             ndn_new_node->type = hex2int(payload[offset]);
@@ -118,13 +157,14 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length){
             ndn_new_node->data_offset = offset + 2;
             return ndn_new_node;
         }else{
-            debug("First octet : %d\n",first_octet);
+            debug("First octet : %lu\n",(unsigned long)first_octet);
             // ndn_TLV_free(ndn_new_node);
             return NULL;
         }
     }
-    
+
     ndn_new_node = ndn_TLV_init();
+    if(ndn_new_node == NULL) return NULL;
     ndn_new_node->type = hex2int(payload[offset]);
     ndn_new_node->node_offset = offset;
     switch(first_octet){
@@ -150,11 +190,21 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length){
         break;
     }
     if(ndn_new_node->nb_octets>0){
-        ndn_new_node->length = str_hex2int(payload,offset + 2, offset + 2 + ndn_new_node->nb_octets-1);    
+        /* Extended length field: all nb_octets bytes must be captured. */
+        uint64_t length = 0;
+        if(!ndn_tlv_read_uint(payload, (uint64_t)offset + 2,
+                             ndn_new_node->nb_octets,
+                             (uint64_t)total_length, &length)){
+            ndn_TLV_free(ndn_new_node);
+            return NULL;
+        }
+        ndn_new_node->length = length;
     }
     ndn_new_node->data_offset = offset + 2 + ndn_new_node->nb_octets;
 
-    if(total_length < ndn_new_node->data_offset + ndn_new_node->length){
+    /* Compare as a difference — the sum could wrap for huge lengths. */
+    if((uint64_t)ndn_new_node->data_offset > (uint64_t)total_length
+       || ndn_new_node->length > (uint64_t)total_length - (uint64_t)ndn_new_node->data_offset){
         // log_err("Not correct length value : %d #  %lu\n",total_length,(ndn_new_node->data_offset + ndn_new_node->length));
         ndn_TLV_free(ndn_new_node);
         return NULL;
@@ -224,7 +274,9 @@ int mmt_check_ndn_payload(char* payload, int packet_len){
     }
 
     // Check the condition of the common fields: name '07'
-    if(payload[root->data_offset] != 7){
+    /* Issue #205 (F-BUG-076): a zero-length root TLV has
+     * data_offset == packet_len — do not read one byte past the buffer. */
+    if(root->data_offset >= (uint32_t)packet_len || payload[root->data_offset] != 7){
         ndn_TLV_free(root);
         return 0;
     }
@@ -472,6 +524,10 @@ int ndn_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     if(payload_len == 0){
@@ -522,6 +578,10 @@ int ndn_packet_length_extraction(const ipacket_t * ipacket, unsigned proto_index
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     uint32_t ret_v = ndn_packet_length_extraction_payload(payload,payload_len);
@@ -693,6 +753,10 @@ int ndn_name_components_extraction(const ipacket_t * ipacket, unsigned proto_ind
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     char *ret_v = ndn_name_components_extraction_payload(payload,payload_len);
@@ -742,6 +806,10 @@ int ndn_interest_nonce_extraction(const ipacket_t * ipacket, unsigned proto_inde
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     int ret_v = ndn_interest_nonce_extraction_payload(payload,payload_len);
@@ -789,6 +857,10 @@ int ndn_interest_lifetime_extraction(const ipacket_t * ipacket, unsigned proto_i
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     int ret_v = ndn_interest_lifetime_extraction_payload(payload,payload_len);
@@ -839,6 +911,10 @@ int ndn_interest_min_suffix_component_extraction(const ipacket_t * ipacket, unsi
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     int ret_v = ndn_interest_min_suffix_component_extraction_payload(payload,payload_len);
@@ -890,6 +966,10 @@ int ndn_interest_max_suffix_component_extraction(const ipacket_t * ipacket, unsi
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     int ret_v = ndn_interest_max_suffix_component_extraction_payload(payload,payload_len);
@@ -915,6 +995,10 @@ int ndn_interest_publisher_publickey_locator_extraction(const ipacket_t * ipacke
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
     if(payload_len == 0) return 0;
 
@@ -973,6 +1057,10 @@ int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_in
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
     if(payload_len == 0) return 0;
 
@@ -1037,6 +1125,10 @@ int ndn_interest_child_selector_extraction(const ipacket_t * ipacket, unsigned p
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
     if(payload_len == 0) return 0;
 
@@ -1086,6 +1178,10 @@ int ndn_interest_must_be_fresh_extraction(const ipacket_t * ipacket, unsigned pr
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
     if(payload_len == 0) return 0;
 
@@ -1139,6 +1235,10 @@ int ndn_interest_any_extraction(const ipacket_t * ipacket, unsigned proto_index,
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
     if(payload_len == 0) return 0;
 
@@ -1252,6 +1352,10 @@ int ndn_data_content_extraction(const ipacket_t * ipacket, unsigned proto_index,
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     char *ret_v = ndn_data_content_extraction_payload(payload,payload_len);
@@ -1306,6 +1410,10 @@ int ndn_data_content_type_extraction(const ipacket_t * ipacket, unsigned proto_i
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     int ret_v = ndn_data_content_type_extraction_payload(payload,payload_len);
@@ -1358,6 +1466,10 @@ int ndn_data_freshness_period_extraction(const ipacket_t * ipacket, unsigned pro
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     int ret_v = ndn_data_freshness_period_extraction_payload(payload,payload_len);
@@ -1383,6 +1495,10 @@ int ndn_data_final_block_id_extraction(const ipacket_t * ipacket, unsigned proto
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
     if(payload_len == 0) return 0;
     
@@ -1480,6 +1596,10 @@ int ndn_data_signature_type_extraction(const ipacket_t * ipacket, unsigned proto
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     int ret_v = ndn_data_signature_type_extraction_payload(payload,payload_len);
@@ -1537,6 +1657,10 @@ int ndn_data_key_locator_extraction(const ipacket_t * ipacket, unsigned proto_in
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     char *ret_v = ndn_data_key_locator_extraction_payload(payload,payload_len);
@@ -1590,6 +1714,10 @@ int ndn_data_signature_value_extraction(const ipacket_t * ipacket, unsigned prot
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     char *ret_v = ndn_data_signature_value_extraction_payload(payload,payload_len);
@@ -1616,6 +1744,10 @@ int ndn_list_sessions_extraction(const ipacket_t * ipacket, unsigned proto_index
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     if(payload_len == 0){
@@ -1703,6 +1835,7 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
 
     debug("NDN/NDN_HTTP: ndn_session_data_analysis");
     int offset = get_packet_offset_at_index(ipacket, index);
+    if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return MMT_CONTINUE;
     char *payload = (char*)&ipacket->data[offset];
     // NDN over Ethernet
     uint32_t payload_len = 0;
@@ -1714,6 +1847,10 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
     }else{
         // NDN over TCP
         payload_len = ipacket->internal_packet->payload_packet_len;
+        /* Issue #205: never let the TLV parser read beyond the captured
+         * buffer — it trusts total_length for every byte it touches. */
+        if ((uint64_t) offset + payload_len > ipacket->p_hdr->caplen)
+            payload_len = (uint32_t) (ipacket->p_hdr->caplen - (uint64_t) offset);
     }
 
     if(payload_len == 0) {
