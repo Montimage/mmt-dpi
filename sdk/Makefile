@@ -118,13 +118,19 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 
 deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/DEBIAN
-	$(QUIET) echo "Package: mmt-dpi \
+	# Depends is derived from the NEEDED entries of the shipped shared
+	# objects (issue #219, F-DEP-203/204): tools/ci/shlib-deps.sh maps each
+	# soname to the Debian package providing it and fails on an unmapped
+	# soname, so the declaration can never drift from the payload again.
+	# libpcap/libnghttp2 are deliberately absent — nothing shipped links them.
+	$(QUIET) deps=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' deb '$(BUILD_DIR)$(MMT_LIB)' '$(BUILD_DIR)$(MMT_PLUGINS)'` \
+	    && echo "Package: mmt-dpi \
         \nVersion: $(VERSION)-$(GIT_VERSION)\
         \nSection: base \
         \nPriority: standard \
         \nArchitecture: $(DEB_ARCH)\
         \nMaintainer: Montimage <contact@montimage.eu> \
-        \nDepends: libc6 (>= $(MMT_GLIBC_MIN)), libstdc++6 (>= $(MMT_LIBSTDCXX_MIN)), libpcap0.8 | libpcap0.8t64, libnghttp2-14 \
+        \nDepends: $$deps \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
         \n A software C library designed to extract data attributes from network packets, server logs, and from structured events in general, in order to make them available for analysis \
@@ -154,14 +160,24 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	# Build .rpm file ...
 	$(QUIET) $(MKDIR) ./rpmbuild/{RPMS,BUILD}
 
-	$(QUIET) echo -e\
+	# Version/Release are ordered as Debian does (issue #219, F-CI-013):
+	# Version: is the upstream $(VERSION) — `rpm -qp --qf '%{VERSION}'`
+	# reports it, not the git hash — and Release: carries $(GIT_VERSION).
+	# Requires: is derived from the shipped .so NEEDED entries through the
+	# same tools/ci/shlib-deps.sh mapping the deb Depends uses (F-DEP-206);
+	# BuildRequires: mirrors the packages install_build_deps_rhel()
+	# (tools/ci/build-package.sh) installs, floored at $(MMT_GCC_MIN).
+	$(QUIET) reqs=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' rpm '$(BUILD_DIR)$(MMT_LIB)' '$(BUILD_DIR)$(MMT_PLUGINS)'` \
+	    && echo -e\
 	    "Summary:  MMT-DPI\
 	    \nName: mmt-dpi\
-	    \nVersion: $(GIT_VERSION)\
-	    \nRelease: $(VERSION)\
+	    \nVersion: $(VERSION)\
+	    \nRelease: $(GIT_VERSION)\
 	    \nLicense: proprietary\
 	    \nGroup: Development/Libraries\
 	    \nURL: http://montimage.eu/\
+	    \nRequires: $$reqs\
+	    \nBuildRequires: gcc >= $(MMT_GCC_MIN), gcc-c++ >= $(MMT_GCC_MIN), make, git, file, findutils, which, binutils, libxml2-devel, libpcap-devel, rpm-build\
 	    \n\
 	    \nBuildRoot: %{_topdir}/BUILD/$(BUILD_DIR)\
 	    \n\

@@ -51,6 +51,16 @@ the `toolchain-floor` job in `c-cpp.yml` builds the SDK and runs the full
 suite on `ubuntu-22.04` (GCC 11.4) so the floor is exercised, not just
 asserted.
 
+**Package dependency declarations (issue #219):** the `.deb` `Depends:` and
+the `.rpm` `Requires:`/`BuildRequires:` are not hand-maintained lists —
+`tools/ci/shlib-deps.sh` derives them at package-build time from the NEEDED
+entries `objdump -p` reports for the shipped `.so` files (the floors above
+survive as the `libc6`/`glibc` and `libstdc++6`/`libstdc++` entries).
+`tools/ci/build-package.sh` builds with `ENABLESEC=1` and verifies each
+artifact with `tools/ci/check-package-deps.sh --verify-package`, which
+compares `dpkg-deb -f` / `rpm -qp` output against the derived set and fails
+on divergence.
+
 Notes:
 
 - Clang is available via `make ARCH=linux-clang`; icc via `ARCH=linux-icc`
@@ -182,7 +192,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:248-251`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:264-267`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```

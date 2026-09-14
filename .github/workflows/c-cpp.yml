@@ -185,13 +185,17 @@ jobs:
       run: |
         bash tools/ci/check-site-links.sh docs
         bash tools/phase0/ci/check_readme_gates.sh
+    - name: Package-declaration consistency (blocking — issue #219)
+      # Was advisory until the .deb/.rpm declarations were reconciled with
+      # the build; the contradictions it tracked are closed, so a regression
+      # now fails the job.
+      run: bash tools/ci/check-package-deps.sh
     - name: Advisory helpers (gate condition still open — owning task flips it)
       run: |
         fail=0
         helpers=(
           tools/ci/check-hardening-flags.sh
           tools/ci/check-image-digests.sh
-          tools/ci/check-package-deps.sh
           tools/ci/check-protocol-count.sh
           tools/ci/check-public-decls.sh
           tools/ci/lint-commented-code.sh
