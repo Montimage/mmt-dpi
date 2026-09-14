@@ -2813,7 +2813,10 @@ int comp2(compare_value v1, compare_value v2, short ope)
             if (ope == XC || ope == XCE) {
               j = atoi(data2);
               if(size>0 && size < 20){
-                for(i=1;i<size;i++){
+                /* i indexes int elements — bound the byte offset by the
+                 * operand buffer (size bytes): read complete ints only
+                 * (the old i<size bound read up to 4x past it, #209) */
+                for(i=1; i * (int)sizeof(int) + (int)sizeof(int) <= size; i++){
                   if(j == *(int*) (data1 + i*sizeof (int))) return VALID;
                 }
                 return NOT_VALID;
