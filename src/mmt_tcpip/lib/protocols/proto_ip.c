@@ -5,6 +5,7 @@
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "extraction_lib.h"
+#include "packet_processing.h" /* mmt_have_bytes() — issue #202 caplen prologues */
 #include "mmt_common_internal_include.h"
 
 #include "ip.h"
@@ -121,10 +122,12 @@ uint64_t ipv4_session_hash(void * key) {
 int ip_version_extraction(const ipacket_t * packet, unsigned proto_index,
                           attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — every packet byte this
+     * callback dereferences must lie inside the captured data. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 
     mmt_una_iphdr_t * ip_hdr = (mmt_una_iphdr_t *) (& packet->data[proto_offset]);
     *((unsigned char *) extracted_data->data) = ip_hdr->version;
@@ -134,10 +137,11 @@ int ip_version_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip_ihl_extraction(const ipacket_t * packet, unsigned proto_index,
                       attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see ip_version_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 
     mmt_una_iphdr_t * ip_hdr = (mmt_una_iphdr_t *) (& packet->data[proto_offset]);
     *((unsigned char *) extracted_data->data) = ip_hdr->ihl * 4;
@@ -147,9 +151,13 @@ int ip_ihl_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip_rf_extraction(const ipacket_t * packet, unsigned proto_index,
                      attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see ip_version_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
+    if (proto_offset < 0 || attribute_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, sizeof(uint8_t))) return 0;
 
     if (*((unsigned char *) & packet->data[proto_offset + attribute_offset]) & 0x80) {
         *((unsigned char *) extracted_data->data) = 1;
@@ -162,9 +170,13 @@ int ip_rf_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip_df_extraction(const ipacket_t * packet, unsigned proto_index,
                      attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see ip_version_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
+    if (proto_offset < 0 || attribute_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, sizeof(uint8_t))) return 0;
 
     if (*((unsigned char *) & packet->data[proto_offset + attribute_offset]) & 0x40) {
         *((unsigned char *) extracted_data->data) = 1;
@@ -178,9 +190,13 @@ int ip_df_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip_mf_extraction(const ipacket_t * packet, unsigned proto_index,
                      attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see ip_version_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
+    if (proto_offset < 0 || attribute_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, sizeof(uint8_t))) return 0;
 
     if (*((unsigned char *) & packet->data[proto_offset + attribute_offset]) & 0x20) {
         *((unsigned char *) extracted_data->data) = 1;
@@ -193,17 +209,29 @@ int ip_mf_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip_frag_offset_extraction(const ipacket_t * packet, unsigned proto_index,
                               attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see ip_version_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
+    if (proto_offset < 0 || attribute_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, sizeof(uint16_t))) return 0;
 
-    *((unsigned short *) extracted_data->data) = (ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset])) & 0x1fff)<<3;
+    /* Issue #202: the capture buffer is byte-aligned — memcpy is the
+     * alignment-safe u16 load (UBSan aborts on a strict-cast load at an odd
+     * offset); mirrors the issue #59 fixes. */
+    uint16_t frag_word;
+    memcpy(&frag_word, &packet->data[proto_offset + attribute_offset], sizeof(frag_word));
+    *((unsigned short *) extracted_data->data) = (ntohs(frag_word) & 0x1fff)<<3;
     return 1;
 }
 
 int ip_client_port_extraction(const ipacket_t * packet, unsigned proto_index,
                               attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — this extractor reads
+     * no packet bytes; the floor still validates the capture plumbing. */
+    if (!mmt_have_bytes(packet, 0, 0) || extracted_data == NULL) return 0;
     if (packet->session != NULL) {
         mmt_session_key_t * s_key = (mmt_session_key_t *) packet->session->session_key;
         *((unsigned short *) extracted_data->data) = (s_key->is_lower_client) ? s_key->lower_ip_port : s_key->higher_ip_port;
@@ -215,6 +243,9 @@ int ip_client_port_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip_server_port_extraction(const ipacket_t * packet, unsigned proto_index,
                               attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * ip_client_port_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(packet, 0, 0) || extracted_data == NULL) return 0;
     if (packet->session != NULL) {
         mmt_session_key_t * s_key = (mmt_session_key_t *) packet->session->session_key;
         *((unsigned short *) extracted_data->data) = (s_key->is_lower_client) ? s_key->higher_ip_port : s_key->lower_ip_port;
@@ -226,6 +257,9 @@ int ip_server_port_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip_client_addr_extraction(const ipacket_t * packet, unsigned proto_index,
                               attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * ip_client_port_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(packet, 0, 0) || extracted_data == NULL) return 0;
     if (packet->session != NULL) {
         mmt_session_key_t * s_key = (mmt_session_key_t *) packet->session->session_key;
         *((unsigned int *) extracted_data->data) = (s_key->is_lower_client) ? ((mmt_ip4_id_t *) s_key->lower_ip)->ip : ((mmt_ip4_id_t *) s_key->higher_ip)->ip;
@@ -237,6 +271,9 @@ int ip_client_addr_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip_server_addr_extraction(const ipacket_t * packet, unsigned proto_index,
                               attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * ip_client_port_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(packet, 0, 0) || extracted_data == NULL) return 0;
     if (packet->session != NULL) {
         mmt_session_key_t * s_key = (mmt_session_key_t *) packet->session->session_key;
         *((unsigned int *) extracted_data->data) = (s_key->is_lower_client) ? ((mmt_ip4_id_t *) s_key->higher_ip)->ip : ((mmt_ip4_id_t *) s_key->lower_ip)->ip;
@@ -251,15 +288,19 @@ int ip_server_addr_extraction(const ipacket_t * packet, unsigned proto_index,
 
 int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see ip_version_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 
     mmt_una_iphdr_t * ip_hdr = (mmt_una_iphdr_t *) (& packet->data[proto_offset]);
     int ihl = ip_hdr->ihl;
     extracted_data->data = NULL;
     if (ihl > 5) {
+        /* The returned pointer exposes (ihl-5)*4 option bytes — refuse when
+         * that whole area is not captured (ihl is 4 bits, so <= 40 bytes). */
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + 5 * 4, (size_t) (ihl - 5) * 4)) return 0;
         extracted_data->data = (unsigned char *) (& packet->data[proto_offset + 5 * 4]);
         return 1;
     }
@@ -269,36 +310,40 @@ int ip_options_extraction(const ipacket_t * packet, unsigned proto_index, attrib
 
 int ip_opts_type_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see ip_version_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 
     mmt_una_iphdr_t * ip_hdr = (mmt_una_iphdr_t *) (& packet->data[proto_offset]);
     int ihl = ip_hdr->ihl;
     if (ihl > 5) {
-        general_byte_to_byte_extraction(packet, proto_index, extracted_data);
-        return 1;
+        /* Propagate the delegate's verdict: a refused extraction must not be
+         * reported as a set attribute. */
+        return general_byte_to_byte_extraction(packet, proto_index, extracted_data);
     }
     return 0;
 }
 
 int ip_padding_check_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): route every bounds check through the shared
+     * caplen helper so the coverage stays greppable. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     if (proto_offset < 0) return 0;
-    if (packet->p_hdr->caplen < (unsigned)(proto_offset + (int)sizeof(struct iphdr))) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(struct iphdr))) return 0;
     mmt_una_iphdr_t * ip_hdr = (mmt_una_iphdr_t *) (& packet->data[proto_offset]);
     int ihl = ip_hdr->ihl;
     if (ihl <= 5 || ihl > 15) return 0;
     int ihl_bytes = ihl * 4;
-    if (packet->p_hdr->caplen < (unsigned)(proto_offset + ihl_bytes)) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, (size_t) ihl_bytes)) return 0;
     int total_opt_len = (ihl - 5) * 4;
     if (total_opt_len <= 0 || total_opt_len > 40) return 0;
     int checked_len = 0;
     while (checked_len < total_opt_len){
-        if (proto_offset + 5*4 + checked_len >= (int)packet->p_hdr->caplen) return 0;
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + 5*4 + checked_len, 1)) return 0;
         uint8_t kind = packet->data[proto_offset + 5*4 + checked_len];
         if (kind == 0x00){
             // EOL presents
@@ -320,7 +365,7 @@ int ip_padding_check_extraction(const ipacket_t * packet, unsigned proto_index, 
             checked_len += 1;
         } else {
             if (checked_len + 1 >= total_opt_len) return 0;
-            if (proto_offset + 5*4 + checked_len + 1 >= (int)packet->p_hdr->caplen) return 0;
+            if (!mmt_have_bytes(packet, (size_t) proto_offset + 5*4 + checked_len, 2)) return 0;
             uint8_t opt_len = packet->data[proto_offset + 5*4 + 1 + checked_len];
             if (opt_len < 2) return 0;
             if (opt_len > total_opt_len - checked_len) return 0;
@@ -361,10 +406,12 @@ static inline uint32_t fl2int(uint32_t fl, uint32_t m_b, uint32_t e_b)
 }
 static int _extract_l4s_metrics(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — this callback dereferences
+	 * the ihl/tos/id fields, i.e. the IP header up through the id field. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	//protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-	//int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-	//int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, offsetof(struct iphdr, id) + sizeof(uint16_t))) return 0;
 
 	mmt_una_iphdr_t * ip_hdr = (mmt_una_iphdr_t *) (& packet->data[proto_offset]);
 	int ihl = ip_hdr->ihl;
@@ -404,6 +451,10 @@ static int _extract_l4s_metrics(const ipacket_t * packet, unsigned proto_index, 
 }
 
 int _extract_jitter(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+
+	/* Issue #202 (F-BUG-033): uniform caplen prologue — this extractor reads
+	 * no packet bytes; the floor still validates the capture plumbing. */
+	if (!mmt_have_bytes(packet, 0, 0) || extracted_data == NULL) return 0;
 
 	//no session => no jitter
 	if (packet->session == NULL)

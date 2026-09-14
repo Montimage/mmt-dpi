@@ -1,6 +1,9 @@
+#include <string.h> // memcpy()
+
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "extraction_lib.h"
+#include "packet_processing.h" /* mmt_have_bytes() — issue #202 caplen prologues */
 #include "../mmt_common_internal_include.h"
 
 #include "gre.h"
@@ -24,6 +27,10 @@ static inline int gre_field_captured(const ipacket_t * packet, int proto_offset,
 int gre_c_flag_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — every packet byte this
+     * callback dereferences must lie inside the captured data. The flag
+     * bits all live in the first uint16_t of the GRE header. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     if (!gre_base_captured(packet, proto_offset))
         return 0;
@@ -36,6 +43,8 @@ int gre_c_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int gre_k_flag_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     if (!gre_base_captured(packet, proto_offset))
         return 0;
@@ -48,6 +57,8 @@ int gre_k_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int gre_s_flag_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     if (!gre_base_captured(packet, proto_offset))
         return 0;
@@ -60,6 +71,8 @@ int gre_s_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int gre_version_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     if (!gre_base_captured(packet, proto_offset))
         return 0;
@@ -72,6 +85,8 @@ int gre_version_extraction(const ipacket_t * packet, unsigned proto_index,
 int gre_csum_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     /* The checksum is the first optional 32-bit field — index 0. */
     if (!gre_field_captured(packet, proto_offset, 0))
@@ -79,6 +94,9 @@ int gre_csum_extraction(const ipacket_t * packet, unsigned proto_index,
     struct gre_hdr * grehdr = (struct gre_hdr *) & packet->data[proto_offset];
 
     if (grehdr->csum) {
+        /* The optional checksum field sits at offset 4 and is 4 bytes wide
+         * (this code reads its first byte via the 'data' member). */
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + 4, sizeof(uint32_t))) return 0;
         *((unsigned short *) extracted_data->data) = ntohs(grehdr->data);
         return 1;
     }
@@ -88,6 +106,8 @@ int gre_csum_extraction(const ipacket_t * packet, unsigned proto_index,
 int gre_key_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     if (!gre_base_captured(packet, proto_offset))
         return 0;
@@ -101,7 +121,12 @@ int gre_key_extraction(const ipacket_t * packet, unsigned proto_index,
         /* Issue #201 (F-BUG-035): the optional key word must be captured. */
         if (!gre_field_captured(packet, proto_offset, nb_lignes))
             return 0;
-        *((uint32_t *) extracted_data->data) = ntohl(*((uint32_t *) & ((uint8_t *) & grehdr->data)[nb_lignes * 4]));
+        /* Issue #202: the capture buffer is byte-aligned — a strict u32 load
+         * at an odd offset is a misaligned access (UBSan aborts). memcpy is
+         * alignment-safe; mirrors the issue #59 fixes. */
+        uint32_t key_word;
+        memcpy(&key_word, &((uint8_t *) & grehdr->data)[nb_lignes * 4], sizeof(key_word));
+        *((uint32_t *) extracted_data->data) = ntohl(key_word);
         return 1;
     }
     return 0;
@@ -110,6 +135,8 @@ int gre_key_extraction(const ipacket_t * packet, unsigned proto_index,
 int gre_seqnb_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     if (!gre_base_captured(packet, proto_offset))
         return 0;
@@ -126,13 +153,21 @@ int gre_seqnb_extraction(const ipacket_t * packet, unsigned proto_index,
         /* Issue #201 (F-BUG-035): the optional seq word must be captured. */
         if (!gre_field_captured(packet, proto_offset, nb_lignes))
             return 0;
-        *((uint32_t *) extracted_data->data) = ntohl(*((uint32_t *) & ((uint8_t *) & grehdr->data)[nb_lignes * 4]));
+        /* Issue #202: memcpy — alignment-safe, see gre_key_extraction. */
+        uint32_t seq_word;
+        memcpy(&seq_word, &((uint8_t *) & grehdr->data)[nb_lignes * 4], sizeof(seq_word));
+        *((uint32_t *) extracted_data->data) = ntohl(seq_word);
         return 1;
     }
     return 0;
 }
 
 int gre_classify_next_proto(ipacket_t * ipacket, unsigned index) {
+    classified_proto_t retval;
+    retval.offset = -1;
+    retval.proto_id = -1;
+    retval.status = NonClassified;
+
     int offset = get_packet_offset_at_index(ipacket, index);
 
     /* Issue #201 (F-BUG-035): the base GRE header (flags + protocol) must be
@@ -157,11 +192,6 @@ int gre_classify_next_proto(ipacket_t * ipacket, unsigned index) {
      * encapsulated protocol is classified at 4 + nb_lignes*4. */
     if (nb_lignes > 0 && !gre_field_captured(ipacket, offset, nb_lignes - 1))
         return 0;
-
-    classified_proto_t retval;
-    retval.offset = -1;
-    retval.proto_id = -1;
-    retval.status = NonClassified;
 
 
     switch (ntohs(grehdr->protocol)) // Encapsulated protocol identifier
