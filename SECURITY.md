@@ -19,7 +19,7 @@ We take security vulnerabilities seriously. Please use **private** disclosure so
 2. Fill in the advisory form (description, impact, reproduction steps). Only repository maintainers can see the draft advisory.
 3. We will triage the draft and respond within 48 hours.
 
-This is the preferred channel because it keeps the report encrypted at rest, auto-creates a draft GitHub Security Advisory, and lets us collaborate on a fix and CVE request in one place.
+This is the preferred channel because it auto-creates a draft GitHub Security Advisory and lets us collaborate on a fix and CVE request in one place.
 
 ### Alternative: Email
 
