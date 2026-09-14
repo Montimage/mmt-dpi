@@ -194,6 +194,29 @@ def gen_ftp_pcap(path):
                + tcp_header(sport, dport, seq=1000 + i * 100)
                + pl)
         pcap_write(f, pkt, ts_us=i * 1000)
+    # Second control session (client port 40001) exercising issue #206:
+    #  - the server's first control packet is "213 x\r\n" — F-BUG-067's crash
+    #    input (the 213 handler ran with last_command still NULL), and a bare
+    #    "213 \r\n" reply after SIZE covers the response->value == NULL branch;
+    #  - a bare 3-byte client payload and a 3-byte command with CRLF hit
+    #    F-BUG-068's terminal else / short-command paths;
+    #  - an LPRT with a forged port-address-length (2**30) — pre-fix,
+    #    port_length * 2 overflowed int in ftp_get_data_client_port_from_LPRT.
+    edge = [
+        ("srv", b"213 x\r\n"),
+        ("cli", b"SIZE f\r\n"),
+        ("srv", b"213 \r\n"),
+        ("cli", b"ABC\r\n"),
+        ("cli", b"ABC"),
+        ("cli", b"LPRT 6,4,10,0,0,1,1073741824,1,2\r\n"),
+    ]
+    for j, (side, pl) in enumerate(edge):
+        sport, dport = (21, 40001) if side == "srv" else (40001, 21)
+        pkt = (eth_header()
+               + ip_header(src_ip, dst_ip, 6, TCP_HLEN + len(pl), ident=100 + j)
+               + tcp_header(sport, dport, seq=5000 + j * 100)
+               + pl)
+        pcap_write(f, pkt, ts_us=(len(exchange) + j) * 1000)
     f.close()
     print("wrote %s (FTP control)" % path)
 

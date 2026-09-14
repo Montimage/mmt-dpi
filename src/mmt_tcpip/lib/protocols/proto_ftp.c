@@ -872,6 +872,21 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
             } else {
                 cmd->param = NULL;
             }
+        } else {
+            /* A payload that passed the sanity check but carries no 3- or
+             * 4-letter verb followed by a space (e.g. a bare 3- or 4-byte
+             * input such as "ABC") is an unknown command — report it
+             * explicitly instead of leaving str_cmd NULL (#206, F-BUG-068). */
+            command = (char*)malloc(12);
+            if (command == NULL)
+            {
+                free(cmd);
+                return NULL;
+            }
+            memcpy(command, "UNKNOWN_CMD", 11);
+            command[11]='\0';
+            cmd->str_cmd = command;
+            cmd->param = NULL;
         }
     }
 
@@ -973,7 +988,12 @@ char * ftp_get_command_str(char* payload, int payload_len){
                 }
                 memcpy(command, payload, 4);
                 command[4] = '\0';
-            }    
+            } else {
+                /* Possible command whose verb is not 3/4 letters + space
+                 * (e.g. a bare "ABC") — report it, mirroring the
+                 * not-a-command branch above (#206). */
+                command = "UNKNOWN_CMD";
+            }
         }
     }
     return command;
@@ -1375,6 +1395,11 @@ uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
 /* RFC 1639 IPv6 host-address-length is 16 octets; reject anything larger so a
  * forged length cannot drive unbounded growth of the address string. */
 #define FTP_V6_HOST_ADDR_MAX_OCTETS 16
+/* A TCP/UDP port is 16 bits: a declared LPRT port-address-length above 2
+ * octets is malformed, and would make port_length * 2 overflow int (or loop
+ * power_16() for billions of iterations) in ftp_get_data_client_port_from_LPRT
+ * (#206, F-BUG-075). */
+#define FTP_LPRT_PORT_ADDR_MAX_OCTETS 2
 
 char * ftp_get_data_client_addr_v6_from_LPRT(char * payload, uint32_t payload_len) {
     char * str_addr;
@@ -1394,7 +1419,10 @@ char * ftp_get_data_client_addr_v6_from_LPRT(char * payload, uint32_t payload_le
         free(str_addr);
         return NULL;
     }
-    char *temp = strtok(payload_copy,",");
+    /* strtok_r: the engine is documented thread-safe, so no shared
+     * static tokeniser state (#206, F-BUG-075). */
+    char *saveptr = NULL;
+    char *temp = strtok_r(payload_copy,",",&saveptr);
     int index = 0;
     int host_address_length = 0;
     int found_address = 0;
@@ -1412,7 +1440,7 @@ char * ftp_get_data_client_addr_v6_from_LPRT(char * payload, uint32_t payload_le
                 return str_addr;
             }
             found_address = 1;
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
             continue;
         }
@@ -1469,10 +1497,10 @@ char * ftp_get_data_client_addr_v6_from_LPRT(char * payload, uint32_t payload_le
                 free(payload_copy);
                 return str_addr;
             }
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
         }else{
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
         }
     }
@@ -1507,7 +1535,10 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
     char *payload_copy = ( payload_len > 0 && payload_len <= (uint32_t)INT32_MAX )
         ? str_sub_n(payload, payload_len, 0, (int)payload_len - 1) : NULL;
     if(payload_copy == NULL) return 0;
-    temp = strtok(payload_copy,",");
+    /* strtok_r: the engine is documented thread-safe, so no shared
+     * static tokeniser state (#206, F-BUG-075). */
+    char *saveptr = NULL;
+    temp = strtok_r(payload_copy,",",&saveptr);
     int index = 0;
     int host_address_length = 0;
     int port_length = 0;
@@ -1515,16 +1546,32 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
     while(temp!=NULL){
         if(index == 1 ){
             host_address_length = atoi(temp);
+            /* Validated as the sibling address parser does: RFC 1639 caps
+             * the host address at 16 octets — a forged value would otherwise
+             * make host_address_length + 2 below overflow int (#206). */
+            if(host_address_length <= 0 ||
+               host_address_length > FTP_V6_HOST_ADDR_MAX_OCTETS){
+                free(payload_copy);
+                return 0;
+            }
 
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
             continue;
         }
         if(index == host_address_length + 2){
             port_length = atoi(temp);
+            /* A port is 16 bits: at most FTP_LPRT_PORT_ADDR_MAX_OCTETS
+             * octets. A forged length would overflow int in port_length * 2
+             * below and drive power_16() for billions of iterations (#206). */
+            if(port_length <= 0 ||
+               port_length > FTP_LPRT_PORT_ADDR_MAX_OCTETS){
+                free(payload_copy);
+                return 0;
+            }
             found_port = 1;
 
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
             continue;
         }
@@ -1535,10 +1582,10 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
                 free(payload_copy);
                 return port_nb;
             }
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
         }else{
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
             continue;
         }
