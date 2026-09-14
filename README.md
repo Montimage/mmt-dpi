@@ -55,8 +55,9 @@ Supports **Linux** distributions: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, and 
 ### Pre-built packages
 
 Every tagged release publishes ready-to-install `.deb` and `.rpm` packages
-(amd64 and arm64) built in CI for the major Linux families. Download the one
-matching your distribution from the
+(amd64 and arm64) — one per distribution in the release matrix: **Ubuntu
+22.04, Ubuntu 24.04, Debian 12 (.deb), Rocky Linux 9, and CentOS Stream 9
+(.rpm)**. Download the one matching your distribution from the
 [Releases page](https://github.com/montimage-projects/mmt-dpi/releases) and
 install it with your native package manager:
 
@@ -64,13 +65,12 @@ install it with your native package manager:
 # Debian / Ubuntu (.deb)
 sudo apt install ./mmt-dpi_*_ubuntu-24.04_x86_64.deb
 
-# RedHat / Rocky / CentOS (.rpm)
+# Rocky Linux / CentOS Stream (.rpm)
 sudo dnf install ./mmt-dpi_*_rocky-9_x86_64.rpm
 ```
 
 Packages are produced by the `Build & release packages` workflow
-(`.github/workflows/release-packages.yml`) for Ubuntu 22.04/24.04, Debian 12,
-Rocky Linux 9, and CentOS Stream 9.
+(`.github/workflows/release-packages.yml`).
 
 #### Verify a package before installing it
 
