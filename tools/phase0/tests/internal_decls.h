@@ -35,6 +35,7 @@ struct iphdr;
 struct ipv6hdr;
 struct ext_hdr_fragment;
 struct mmt_session_key_struct;
+struct attribute_internal_struct;
 
 /* src/mmt_tcpip/lib/protocols/dns.h — result struct read back by
  * dns_parser_test.c. */
@@ -167,5 +168,20 @@ int mmt_classify_me_ssl(ipacket_t *ipacket, unsigned index);
 
 /* --- protocols/proto_tcp.c ----------------------------------------------------- */
 int tcp_pre_classification_function(ipacket_t *ipacket, unsigned index);
+
+/* --- mmt_core/src/packet_processing.c (central caplen guard, issue #193) ----
+ * internal_extract_attribute is exported non-static; the attribute struct tag
+ * is forward-declared above and defined by the real private header
+ * (src/mmt_core/private_include/packet_processing.h) which the harness
+ * includes for member access. The mmt_caplen_guard_* accessors are always
+ * exported; their counters only increment in assert-enabled (NDEBUG
+ * undefined) or sanitizer-instrumented (MMT_BUILD_ASAN/MMT_BUILD_TSAN)
+ * builds — in a plain release build they return 0. */
+int internal_extract_attribute(const ipacket_t *ipacket,
+        struct attribute_internal_struct *tmp_attr_ref, unsigned index);
+uint64_t mmt_caplen_guard_total_count(void);
+uint64_t mmt_caplen_guard_refused_count(void);
+uint64_t mmt_caplen_guard_unvalidated_count(void);
+void mmt_caplen_guard_stats_reset(void);
 
 #endif /* MMT_PHASE0_INTERNAL_DECLS_H */

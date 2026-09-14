@@ -1655,6 +1655,54 @@ struct attribute_internal_struct * get_registered_attribute_internal_struct(cons
     return NULL;
 }
 
+/* Issue #193 (F-BUG-032): debug-build tripwires for the central caplen guard
+ * in internal_extract_attribute(). They are compiled only in assert-enabled
+ * (NDEBUG undefined) or sanitizer-instrumented builds, so production hot paths
+ * pay nothing; the accessors below are always exported so test harnesses link
+ * regardless of the profile the library was built with. The increments use
+ * relaxed atomics, matching proto_status_load/proto_status_store above, so the
+ * counters stay race-free on the multi-threaded packet path. */
+#if !defined(NDEBUG) || defined(MMT_BUILD_ASAN) || defined(MMT_BUILD_TSAN)
+#define MMT_CAPLEN_GUARD_STATS 1
+static uint64_t mmt_caplen_guard_total = 0;        /* attributes that reached the guard */
+static uint64_t mmt_caplen_guard_refused = 0;      /* attributes the guard refused */
+static uint64_t mmt_caplen_guard_unvalidated = 0;  /* attributes that reached an extractor with no caplen validation (must stay 0) */
+#else
+#define MMT_CAPLEN_GUARD_STATS 0
+#endif
+
+uint64_t mmt_caplen_guard_total_count(void) {
+#if MMT_CAPLEN_GUARD_STATS
+    return __atomic_load_n(&mmt_caplen_guard_total, __ATOMIC_RELAXED);
+#else
+    return 0;
+#endif
+}
+
+uint64_t mmt_caplen_guard_refused_count(void) {
+#if MMT_CAPLEN_GUARD_STATS
+    return __atomic_load_n(&mmt_caplen_guard_refused, __ATOMIC_RELAXED);
+#else
+    return 0;
+#endif
+}
+
+uint64_t mmt_caplen_guard_unvalidated_count(void) {
+#if MMT_CAPLEN_GUARD_STATS
+    return __atomic_load_n(&mmt_caplen_guard_unvalidated, __ATOMIC_RELAXED);
+#else
+    return 0;
+#endif
+}
+
+void mmt_caplen_guard_stats_reset(void) {
+#if MMT_CAPLEN_GUARD_STATS
+    __atomic_store_n(&mmt_caplen_guard_total, 0, __ATOMIC_RELAXED);
+    __atomic_store_n(&mmt_caplen_guard_refused, 0, __ATOMIC_RELAXED);
+    __atomic_store_n(&mmt_caplen_guard_unvalidated, 0, __ATOMIC_RELAXED);
+#endif
+}
+
 /**
  * Internal function for extracting attribute data.
  * @param ipacket pointer to internal packet structure
@@ -1664,14 +1712,42 @@ struct attribute_internal_struct * get_registered_attribute_internal_struct(cons
  */
 int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_internal_struct * tmp_attr_ref, unsigned index) {
     if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL || tmp_attr_ref == NULL) return 0;
-    // Central caplen guard (F-BUG-001): reject fixed-offset attributes that would read past caplen
-    if (tmp_attr_ref->position_in_packet >= 0 && tmp_attr_ref->data_len > 0) {
-        int proto_offset = get_packet_offset_at_index(ipacket, index);
-        if (proto_offset < 0) return 0;
-        size_t needed = (size_t)proto_offset + (size_t)tmp_attr_ref->position_in_packet + (size_t)tmp_attr_ref->data_len;
-        if (needed > ipacket->p_hdr->caplen) return 0;
+#if MMT_CAPLEN_GUARD_STATS
+    __atomic_add_fetch(&mmt_caplen_guard_total, 1, __ATOMIC_RELAXED);
+    int caplen_validated = 0;
+#endif
+    /* Central caplen guard (F-BUG-001; issue #193 / F-BUG-032 extends the same
+     * floor to POSITION_NOT_KNOWN attributes): an extractor may only run when
+     * the extent it declares lies inside the captured bytes.
+     *   - fixed offset (position_in_packet >= 0):
+     *         proto_offset + position_in_packet + data_len <= caplen
+     *   - POSITION_NOT_KNOWN (position_in_packet < 0): the extractor computes
+     *     its own offset, so the floor is proto_offset + data_len <= caplen —
+     *     and with no declared data_len, the protocol's first captured byte
+     *     must at least exist. */
+    int proto_offset = get_packet_offset_at_index(ipacket, index);
+    if (proto_offset < 0) return 0;
+    size_t extent = (size_t) proto_offset;
+    if (tmp_attr_ref->position_in_packet > 0) {
+        extent += (size_t) tmp_attr_ref->position_in_packet;
     }
+    size_t need = (tmp_attr_ref->data_len > 0) ? (size_t) tmp_attr_ref->data_len : 0;
+    if (need == 0 && tmp_attr_ref->position_in_packet < 0) {
+        need = 1;
+    }
+    if (!mmt_have_bytes(ipacket, extent, need)) {
+#if MMT_CAPLEN_GUARD_STATS
+        __atomic_add_fetch(&mmt_caplen_guard_refused, 1, __ATOMIC_RELAXED);
+#endif
+        return 0;
+    }
+#if MMT_CAPLEN_GUARD_STATS
+    caplen_validated = 1;
+#endif
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
+#if MMT_CAPLEN_GUARD_STATS
+    if (!caplen_validated) __atomic_add_fetch(&mmt_caplen_guard_unvalidated, 1, __ATOMIC_RELAXED);
+#endif
     if (tmp_attr_ref->extraction_function(ipacket, index, (attribute_t *) tmp_attr_ref) > 0) {
         //We set the status of the protocol
         tmp_attr_ref->status = ATTRIBUTE_SET;
