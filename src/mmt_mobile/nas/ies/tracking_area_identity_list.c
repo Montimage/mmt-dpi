@@ -10,17 +10,21 @@ int nas_decode_tracking_area_identity_list(nas_tracking_area_identity_list_t *ls
   int decoded = 0;
   uint8_t ielen = 0;
 
+  /* F-BUG-083: validate pointer and length before the first read;
+   * remainders are computed in a checked signed form. */
   if (iei > 0) {
+    CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, 1, len);
     CHECK_IEI_DECODER(iei, *buffer);
     decoded++;
   }
 
+  CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, decoded + 1, len);
   ielen = *(buffer + decoded);
   decoded++;
-  CHECK_LENGTH_DECODER(len - decoded, ielen);
+  CHECK_LENGTH_DECODER((int32_t)len - decoded, ielen);
   // F-BUG-204: validate ielen>=6 (+IEI) for TAI lists (legal 0..5)
   CHECK_LENGTH_DECODER(ielen, 6);
-  CHECK_LENGTH_DECODER(len - decoded, 6);
+  CHECK_LENGTH_DECODER((int32_t)len - decoded, 6);
   lst->typeoflist = (*(buffer + decoded) >> 5) & 0x3;
   lst->numberofelements = *(buffer + decoded) & 0x1f;
   decoded++;

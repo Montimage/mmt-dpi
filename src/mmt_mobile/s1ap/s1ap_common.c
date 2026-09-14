@@ -6,21 +6,24 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include "s1ap_common.h"
 #include "nas/nas_msg.h"
 #include "proto_s1ap.h"
 
 static inline uint32_t _octet_string_to_uint32_t( const OCTET_STRING_t *t){
-	if( t->size != 4 )
+	if( t->size != 4 || t->buf == NULL )
 		return 0;
-	uint32_t val = *(uint32_t*) t->buf;
+	uint32_t val;
+	memcpy( &val, t->buf, sizeof( val ));
 	return val;
 }
 
 static inline uint32_t _bit_string_to_uint32_t( const BIT_STRING_t *t){
-	if( t->size != 4 )
+	if( t->size != 4 || t->buf == NULL )
 		return 0;
-	uint32_t val = *(uint32_t*) t->buf;
+	uint32_t val;
+	memcpy( &val, t->buf, sizeof( val ));
 	return val;
 }
 
@@ -177,7 +180,8 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 							if( pdn && pdn->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4
 									&& pdn->pdn_address_information.data != NULL
 									&& pdn->pdn_address_information.len >= 4 ){
-								message->ue_ipv4 = *(uint32_t *) pdn->pdn_address_information.data;
+								memcpy( &message->ue_ipv4, pdn->pdn_address_information.data,
+										sizeof( message->ue_ipv4 ));
 							}
 						}
 					}
