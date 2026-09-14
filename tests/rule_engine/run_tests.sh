@@ -23,7 +23,14 @@
 #      (F-BUG-095), the single-cleanup-exit allocation failure in
 #      store_history (F-BUG-096, via an interposed failing xmalloc),
 #      growable command substitution without leaks (F-BUG-102) and the
-#      bounded tokenize/xml_summary buffers (F-BUG-103).
+#      bounded tokenize/xml_summary buffers (F-BUG-103);
+#   5. the fuzz engine's quality-estimation fixes (#210) hold: the grade
+#      membership-function parameters live inside the allocation
+#      (F-BUG-094), the XML parser refuses missing app_id / empty
+#      documents instead of dereferencing NULL (F-BUG-100), and the
+#      parameter array is bounded + initialised with every
+#      children->content access NULL-checked (F-BUG-101) —
+#      test_fuzz_engine.c.
 #
 # Usage: tests/rule_engine/run_tests.sh
 set -euo pipefail
@@ -79,7 +86,7 @@ echo "  repo root      : ${REPO_ROOT}"
 echo "  install prefix : ${PREFIX}"
 
 # --- 1. build + install the SDK with the security engine --------------------
-echo "  [1/6] building + installing SDK (ENABLESEC=1) ..."
+echo "  [1/7] building + installing SDK (ENABLESEC=1) ..."
 make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
 if ! make -C "${REPO_ROOT}/sdk" "$@" ENABLESEC=1 -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
     echo "✗ ENABLESEC SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
@@ -110,7 +117,7 @@ for libname in libmmt_security libmmt_fuzz; do
 done
 
 # --- 2. compile the test ----------------------------------------------------
-echo "  [2/6] compiling test ..."
+echo "  [2/7] compiling test ..."
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 ${CC} "${extra_cflags[@]}" -O2 -Wall \
     -I "${INC}" -o "${SCRIPT_DIR}/test_rule_engine" \
@@ -158,7 +165,7 @@ fi
 BIN="${SCRIPT_DIR}/test_rule_engine"
 
 # --- 2b. compile metacharacter injection test (F-BUG-207 / #136) --------------
-echo "  [2b/6] compiling injection test ..."
+echo "  [2b/7] compiling injection test ..."
 INJECTION_SRC="${SCRIPT_DIR}/test_injection.c"
 INJECTION_BIN="${SCRIPT_DIR}/test_injection"
 ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${INJECTION_BIN}" "${INJECTION_SRC}"
@@ -174,7 +181,7 @@ ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${INJECTION_BIN}" "${INJECTION_SRC}"
 # instrumented (overflows in library code are still caught) while the test's
 # own shims keep forwarding through dlsym(RTLD_NEXT), which resolves to
 # libasan's allocator — so the fault-injection checks work in every profile.
-echo "  [2c/6] compiling overflow-family test ..."
+echo "  [2c/7] compiling overflow-family test ..."
 OVERFLOW_SRC="${SCRIPT_DIR}/test_overflow_family.c"
 OVERFLOW_BIN="${SCRIPT_DIR}/test_overflow_family"
 ${CC} -O2 -Wall \
@@ -183,14 +190,14 @@ ${CC} -O2 -Wall \
     -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm -ldl
 
 # --- 3. run ------------------------------------------------------------------
-echo "  [3/6] loading valid rule set through init_sec_lib() ..."
+echo "  [3/7] loading valid rule set through init_sec_lib() ..."
 POSITIVE_LOG="${WORK}/positive.log"
 run_expect_ok "valid ruleset load+assertions" "${POSITIVE_LOG}" \
     "${LD_ENV[@]}" "${BIN}" parse "${RULES_XML}"
 grep '^ok - ' "${POSITIVE_LOG}" | sed 's/^/  /'
 echo "  $(grep -c '^ok - ' "${POSITIVE_LOG}") assertions passed (valid ruleset)"
 
-echo "  [4/6] parser error paths ..."
+echo "  [4/7] parser error paths ..."
 NEGATIVE_LOG="${WORK}/negative.log"
 : > "${NEGATIVE_LOG}"
 # Missing file -> init_sec_lib() fails to open it and raises Error 100
@@ -202,18 +209,38 @@ run_expect_fail "malformed rule XML" "Error 13" "${NEGATIVE_LOG}" \
     "${LD_ENV[@]}" "${BIN}" parse "${MALFORMED_XML}"
 echo "  2 error paths verified"
 
-echo "  [5/6] metacharacter injection test (F-BUG-207 / #136) ..."
+echo "  [5/7] metacharacter injection test (F-BUG-207 / #136) ..."
 INJECTION_LOG="${WORK}/injection.log"
 run_expect_ok "metacharacter injection (no shell interpretation)" "${INJECTION_LOG}" "${INJECTION_BIN}"
 grep '^ok - ' "${INJECTION_LOG}" | sed 's/^/  /'
 echo "  injection test passed (packet-derived metachars treated literally)"
 
-echo "  [6/6] tips.c overflow family (F-BUG-208 / F-BUG-212, #137) ..."
+echo "  [6/7] tips.c overflow family (F-BUG-208 / F-BUG-212, #137) ..."
 OVERFLOW_LOG="${WORK}/overflow.log"
 run_expect_ok "overflow-family regression (zero divisor, >99-byte header line)" "${OVERFLOW_LOG}" \
     "${LD_ENV[@]}" "${OVERFLOW_BIN}"
 grep '^ok - ' "${OVERFLOW_LOG}" | sed 's/^/  /'
 echo "  $(grep -c '^ok - ' "${OVERFLOW_LOG}") assertions passed (overflow family)"
+
+# --- 7. fuzz-engine parser + parameter storage (F-BUG-094/100/101, #210)
+# Drives application_quality_estimation_xml_parser() and the init_trapez_*
+# entry points exported by libmmt_fuzz. Under SANITIZE=asan the binary and
+# the library are both instrumented, so the pre-fix past-the-allocation
+# writes and NULL children dereferences abort; unsanitised, the NULL-deref
+# cases still crash.
+echo "  [7/7] fuzz-engine quality-estimation fixes (F-BUG-094/100/101, #210) ..."
+FUZZ_SRC="${SCRIPT_DIR}/test_fuzz_engine.c"
+FUZZ_BIN="${SCRIPT_DIR}/test_fuzz_engine"
+${CC} "${extra_cflags[@]}" -O2 -Wall \
+    -I "${INC}" -o "${FUZZ_BIN}" \
+    "${FUZZ_SRC}" -L "${LIB}" \
+    -lmmt_fuzz -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm
+
+FUZZ_LOG="${WORK}/fuzz.log"
+run_expect_ok "fuzz-engine regression (trailing-storage params, XML NULL guards)" "${FUZZ_LOG}" \
+    "${LD_ENV[@]}" "${FUZZ_BIN}"
+grep '^ok - ' "${FUZZ_LOG}" | sed 's/^/  /'
+echo "  $(grep -c '^ok - ' "${FUZZ_LOG}") assertions passed (fuzz engine)"
 
 echo
 echo "✓ Rule-engine tests passed"

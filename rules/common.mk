@@ -285,13 +285,17 @@ LIBMOBILE_INC := $(SRCINC)          \
 $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC $(NGHTTP2_CFLAGS) -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
 
 $(TCPIP_OBJECTS): CFLAGS +=   $(NGHTTP2_CFLAGS)
-ifdef ENABLESEC
+# These object lists stay defined even without ENABLESEC so that
+# `make clean` removes stale optional-engine objects left behind by an
+# ENABLESEC build — otherwise e.g. instrumented BUILD=asan objects would
+# survive the profile-switch clean and get linked into a default build.
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))
 
 SECURITY_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_security/*.c))
 
+ifdef ENABLESEC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 endif
