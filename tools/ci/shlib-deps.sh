@@ -50,11 +50,14 @@ mk="$ROOT/rules/common.mk"
 GLIBC_MIN="$(sed -n 's/^MMT_GLIBC_MIN[[:space:]]*:=[[:space:]]*//p' "$mk" | head -1)"
 STDCXX_MIN="$(sed -n 's/^MMT_LIBSTDCXX_MIN[[:space:]]*:=[[:space:]]*//p' "$mk" | head -1)"
 # MMT_LIBSTDCXX_MIN is defined as $(MMT_GCC_MIN) — resolve the indirection.
+# shellcheck disable=SC2016  # the literal '$(MMT_GCC_MIN)' is what we compare against
 if [ "$STDCXX_MIN" = '$(MMT_GCC_MIN)' ]; then
     STDCXX_MIN="$(sed -n 's/^MMT_GCC_MIN[[:space:]]*:=[[:space:]]*//p' "$mk" | head -1)"
 fi
-[ -n "$GLIBC_MIN" ] && [ -n "$STDCXX_MIN" ] \
-    || { echo "✗ $0: could not read MMT_GLIBC_MIN/MMT_LIBSTDCXX_MIN from rules/common.mk" >&2; exit 2; }
+if [ -z "$GLIBC_MIN" ] || [ -z "$STDCXX_MIN" ]; then
+    echo "✗ $0: could not read MMT_GLIBC_MIN/MMT_LIBSTDCXX_MIN from rules/common.mk" >&2
+    exit 2
+fi
 
 # Collect the sorted unique NEEDED sonames across every shipped .so.
 sonames="$(

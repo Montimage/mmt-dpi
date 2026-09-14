@@ -223,7 +223,7 @@ load_common_defs() {
     COMMON_FILE="$f"
 }
 
-_INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
+_INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
 if [ -n "$_INSTALLER_DIR" ] && [ -f "$_INSTALLER_DIR/install.sh" ]; then
     load_common_defs "$_INSTALLER_DIR/dist/ZIP/mmt-install-common.sh" || true
 fi
