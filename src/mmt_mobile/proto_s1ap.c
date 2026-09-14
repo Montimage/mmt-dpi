@@ -15,20 +15,33 @@ typedef struct s1ap_entities_struct{
 }s1ap_entities_t;
 
 
-//global variables
-static s1ap_entities_t *list_head = NULL;
-//the access to list_head variable must be synchronized by this mutex
+/*
+ * Issue #207 (F-BUG-086): this store is process-global and fed by
+ * attacker-controlled S1AP packets, so it must be bounded. It is also
+ * indexed by entity type: the previous single list mixed UE/eNodeB/MME
+ * nodes, so each of the 3 lookups per packet walked every node ever
+ * created — an ever-growing linear scan.
+ *
+ * list_heads[t] holds only entities of type t; entities_count is the total
+ * across the lists and is bounded by S1AP_MAX_ENTITIES.
+ */
+static s1ap_entities_t *list_heads[ S1AP_ENTITY_TYPE_GW + 1 ] = { NULL };
+static uint32_t         entities_count = 0;
+//the access to list_heads and entities_count must be synchronized by this mutex
 static pthread_mutex_t      mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //this is called when mmt_dpi releasing to free memory
 static inline void _free_entities_list(){
 	pthread_mutex_lock( &mutex );
-	while( list_head != NULL ){
-		s1ap_entities_t *p = list_head;
-		list_head = list_head->next;
-
-		mmt_free( p );
+	int t;
+	for( t = 0; t <= S1AP_ENTITY_TYPE_GW; t++ ){
+		while( list_heads[ t ] != NULL ){
+			s1ap_entities_t *p = list_heads[ t ];
+			list_heads[ t ] = p->next;
+			mmt_free( p );
+		}
 	}
+	entities_count = 0;
 	pthread_mutex_unlock( &mutex );
 }
 
@@ -53,14 +66,16 @@ static inline void _free_entities_list(){
  * A msg represents information of only one entity
  */
 static inline s1ap_entities_t* _find_entity_node( s1ap_entity_type_t type, const s1ap_message_t *msg ){
-	s1ap_entities_t *p = list_head;
+	if( type <= S1AP_ENTITY_TYPE_UNKNOWN || type > S1AP_ENTITY_TYPE_GW )
+		return NULL;
+	//each list_heads[t] only holds entities of type t, so a lookup scans one
+	//short per-type chain instead of the whole store
+	s1ap_entities_t *head = list_heads[ type ];
+	s1ap_entities_t *p;
 
 	//find eNodeB
 	if( type == S1AP_ENTITY_TYPE_ENODEB && IS_CONTAIN_ENB( msg ) ){
-		for( p = list_head; p != NULL; p = p->next ){
-			if( p->entity.type != S1AP_ENTITY_TYPE_ENODEB )
-				continue;
-
+		for( p = head; p != NULL; p = p->next ){
 			//same ipv4
 			if( HAS_VAL( msg->enb_ipv4 ) && p->entity.ipv4 == msg->enb_ipv4 )
 				return p;
@@ -73,10 +88,7 @@ static inline s1ap_entities_t* _find_entity_node( s1ap_entity_type_t type, const
 
 	//find mme
 	if( type == S1AP_ENTITY_TYPE_MME && IS_CONTAIN_MME( msg ) ){
-		for( p = list_head; p != NULL; p = p->next ){
-			if( p->entity.type != S1AP_ENTITY_TYPE_MME )
-				continue;
-
+		for( p = head; p != NULL; p = p->next ){
 			//same ipv4
 			if( HAS_VAL( msg->mme_ipv4 ) && p->entity.ipv4 == msg->mme_ipv4 )
 				return p;
@@ -90,9 +102,7 @@ static inline s1ap_entities_t* _find_entity_node( s1ap_entity_type_t type, const
 	//find ue
 	if( type == S1AP_ENTITY_TYPE_UE && IS_CONTAIN_UE( msg )){
 
-		for( p = list_head; p != NULL; p = p->next ){
-			if( p->entity.type != S1AP_ENTITY_TYPE_UE )
-				continue;
+		for( p = head; p != NULL; p = p->next ){
 			//same m_tmsi
 			if( HAS_VAL( msg->m_tmsi) && msg->m_tmsi == p->entity.data.ue.m_tmsi )
 				return p;
@@ -184,22 +194,21 @@ static inline s1ap_entities_t* _update_entities_list( s1ap_entity_type_t type, c
 
 	//not found any entity
 	if( node == NULL ){
+		//bound the process-global, attacker-fed store (F-BUG-086):
+		//once the ceiling is reached, unknown entities are dropped
+		if( entities_count >= S1AP_MAX_ENTITIES )
+			return NULL;
 
 		//create a new empty node
 		node = mmt_malloc( sizeof(s1ap_entities_t) );
+		if( node == NULL )
+			return NULL;
 		memset( node, 0, sizeof(s1ap_entities_t) );
 
-		//if this is the first node of the linked-list
-		if( list_head == NULL ){
-			node->entity.id = 1;
-			list_head = node;
-		} else {
-			node->entity.id   = list_head->entity.id + 1;
-
-			//append to the head
-			node->next = list_head;
-			list_head  = node;
-		}
+		//append to the head of this type's list
+		node->next       = list_heads[ type ];
+		list_heads[ type ] = node;
+		node->entity.id  = ++entities_count;
 	}
 
 	//update information of the node in the linked-list with the information in msg
@@ -676,4 +685,30 @@ int init_proto_s1ap() {
 	register_proto_context_init_cleanup_function( protocol_struct, _on_init_protocol, _on_clean_protocol, NULL );
 
 	return register_protocol(protocol_struct, PROTO_S1AP);
+}
+
+/*
+ * Public, testable view of the entity store (F-BUG-086). The mutex is taken
+ * inside each function so callers do not have to care about the internal
+ * locking of _extraction_att.
+ */
+uint32_t s1ap_entities_update( s1ap_entity_type_t type, const s1ap_message_t *msg ){
+	uint32_t id = 0;
+	pthread_mutex_lock( &mutex );
+	s1ap_entities_t *node = _update_entities_list( type, msg );
+	if( node != NULL )
+		id = node->entity.id;
+	pthread_mutex_unlock( &mutex );
+	return id;
+}
+
+uint32_t s1ap_entities_count( void ){
+	pthread_mutex_lock( &mutex );
+	uint32_t n = entities_count;
+	pthread_mutex_unlock( &mutex );
+	return n;
+}
+
+void s1ap_entities_reset( void ){
+	_free_entities_list();
 }
