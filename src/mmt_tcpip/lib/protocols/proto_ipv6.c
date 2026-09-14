@@ -322,10 +322,9 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
 {
     if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL) return 0;
     mmt_handler_t *mmt = ipacket->mmt_handler;
-    mmt_hashmap_t *map = mmt->ip_streams;
+    mmt_hashmap_t *map = mmt->ip6_streams;
     mmt_key_t key;
     ipv6_dgram_t *dg;
-    int is_new = 0;
 
     if (map == NULL) return 0;
 
@@ -333,7 +332,6 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
      * time a fragment is seen (shared with the IPv4 path). */
     if (mmt->frag_map_sweep_fct == NULL) {
         mmt->frag_map_sweep_fct = mmt_ip_frag_map_sweep;
-        mmt->frag_map_drain_fct = mmt_ip_frag_map_drain;
     }
 
     int offset = get_packet_offset_at_index(ipacket, index);
@@ -373,8 +371,20 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
             return 0;
         dg = ipv6_dgram_alloc();
         if (dg == NULL)
+            return 0; /* OOM: treat like an incomplete datagram — drop the fragment */
+        hashmap_insert_kv(map, key, dg);
+        /* hashmap_insert_kv() is void and drops silently on OOM — verify the
+         * datagram actually landed, else it would be orphaned (issue #216). */
+        void *check = NULL;
+        hashmap_get(map, key, &check);
+        if (check != dg) {
+            ipv6_dgram_free(dg);
             return 0;
-        is_new = 1;
+        }
+        /* The handler owns the map, we own the value type: hand over the
+         * destructor once so mmt_close_handler() can drain datagrams that
+         * never completed (issue #216). */
+        mmt->ip6_streams_value_free = (void (*)(void *)) ipv6_dgram_free;
     }
 
     /* Captured bytes available from the IPv6 header onward. */
@@ -386,17 +396,11 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
          * map. Fresh datagrams go straight back to the heap; an existing one
          * is evicted too — a failed update may have left its hole list
          * partially mutated. */
-        if (is_new) {
-            ipv6_dgram_free(dg);
-        } else {
-            hashmap_remove(map, key);
-            ipv6_dgram_free(dg);
-        }
+        hashmap_remove(map, key);
+        ipv6_dgram_free(dg);
         return 0;
     }
     dg->last_activity = (uint32_t) ipacket->p_hdr->ts.tv_sec;
-    if (is_new)
-        hashmap_insert_kv(map, key, dg);
 
     if (dgram_update_result > 0)
     {
@@ -440,11 +444,10 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
     /* Issue #201: unchecked mmt_malloc — on failure the datagram must leave
      * the map with its buffer, not stay half-assembled. */
     uint8_t *x = (uint8_t*)mmt_malloc( ioff + dg->len );
-    if (x == NULL) {
-        hashmap_remove(map, key);
-        ipv6_dgram_free(dg);
+    /* Issue #216: on OOM the datagram stays in the map — still consistent —
+     * and drains at close via ip6_streams_value_free. */
+    if (x == NULL)
         return 0;
-    }
     // copy the original ipacket data + IP header
     (void)memcpy( x,        ipacket->data, ioff );
     // copy the IP payload

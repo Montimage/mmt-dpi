@@ -1329,6 +1329,14 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
         mmt_free(new_handler);
         return NULL;
     }
+    new_handler->ip6_streams = hashmap_alloc();
+    if (new_handler->ip6_streams == NULL) {
+        if ( errbuf )
+            strcpy(errbuf, "Error while initializing mmt extraction handler");
+        hashmap_free(new_handler->ip_streams);
+        mmt_free(new_handler);
+        return NULL;
+    }
 
     new_handler->last_received_packet.packet_id = 0;
     new_handler->last_received_packet.packet_len = 0;
@@ -1360,9 +1368,10 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     if (new_handler->timeout_milestones_map == NULL) {
         if ( errbuf )
             strcpy(errbuf, "Error while initializing mmt extraction handler");
-        // F-BUG-012 (issue #199): the IP fragment map was allocated above —
-        // release it before abandoning the handler.
+        // F-BUG-012 (issue #199): the IP fragment maps were allocated above —
+        // release them before abandoning the handler.
         hashmap_free(new_handler->ip_streams);
+        hashmap_free(new_handler->ip6_streams);
         mmt_free(new_handler);
         return NULL;
     }
@@ -1383,6 +1392,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
                     }
                 }
                 hashmap_free(new_handler->ip_streams);
+                hashmap_free(new_handler->ip6_streams);
                 delete_int_map_space(new_handler->timeout_milestones_map);
                 mmt_free(new_handler);
                 if (errbuf) strcpy(errbuf, "Error while initializing mmt extraction handler");
@@ -1475,6 +1485,15 @@ uint64_t get_active_session_count(mmt_handler_t *mmt_handler) {
 }
 
 
+/* hashmap_walk() callback draining an ip_streams value through the
+ * plugin-registered destructor — see mmt_close_handler() (issue #216). */
+static void free_ip_stream_value(mmt_hashmap_t * map, mmt_hent_t * he, void * arg) {
+    (void) map;
+    void (*value_free)(void *) = (void (*)(void *)) arg;
+    if (he->val != NULL)
+        value_free(he->val);
+}
+
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
@@ -1490,14 +1509,20 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
     free_registered_packet_handlers(mmt_handler);
     // Free protocol statistics
     free_handler_protocols_statistics(mmt_handler);
-    /* Issue #201 (F-BUG-020): drain any in-flight fragment datagrams still
-     * parked in ip_streams before releasing the table — the values are
-     * heap objects owned by the map, not freed by hashmap_free itself. */
-    if (mmt_handler->frag_map_drain_fct != NULL && mmt_handler->ip_streams != NULL) {
-        mmt_handler->frag_map_drain_fct(mmt_handler->ip_streams);
+    // Free IP streams hashtables — first drain any values still held in them
+    // (incomplete-fragment datagrams whose completion never arrived). The
+    // owning plugin registers the destructor on the handler (issue #216;
+    // supersedes the #201 frag_map_drain_fct hook, which stays disarmed).
+    if (mmt_handler->ip_streams != NULL && mmt_handler->ip_streams_value_free != NULL) {
+        hashmap_walk(mmt_handler->ip_streams, free_ip_stream_value,
+                     (void *) mmt_handler->ip_streams_value_free);
     }
-    // Free IP streams hashtable
     hashmap_free(mmt_handler->ip_streams);
+    if (mmt_handler->ip6_streams != NULL && mmt_handler->ip6_streams_value_free != NULL) {
+        hashmap_walk(mmt_handler->ip6_streams, free_ip_stream_value,
+                     (void *) mmt_handler->ip6_streams_value_free);
+    }
+    hashmap_free(mmt_handler->ip6_streams);
 
     // Free the registered evasion handler, if any
     if (mmt_handler->evasion_handler != NULL) {
@@ -3542,8 +3567,14 @@ void clean_packet_with_reassembly(ipacket_t *ipacket){
     }
 
     mmt_free(ipacket->internal_packet);
+    /* Fragment reassembly (ip_process_fragment) may have replaced data with a
+     * freshly allocated buffer — free it too, then free the heap copy that
+     * process_packet_with_reassembly() made (pointed by original_data).
+     * Without the original_data free every fragment-reassembled packet leaked
+     * its initial copy (issue #216). */
+    if ((void *) ipacket->data != (void *) ipacket->original_data)
 	mmt_free((void *) ipacket->data);
-        //ipacket->data = ipacket->original_data;
+    mmt_free((void *) ipacket->original_data);
     mmt_free( ipacket );
 
 }

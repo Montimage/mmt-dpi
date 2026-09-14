@@ -224,7 +224,12 @@ int tls_length_extraction(const ipacket_t * ipacket, unsigned proto_index, attri
 int tls_number_record_extraction(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
     int nb_record = tls_get_number_records(ipacket);
     if(nb_record){
-        *((uint16_t *) extracted_data->data) = nb_record;
+        /* extracted_data->data may be NULL (not-extracted branch taken on an
+         * earlier packet) and need not be 2-byte aligned — store via memcpy
+         * (issue #216). */
+        if (extracted_data->data == NULL)
+            return 0;
+        memcpy(extracted_data->data, &nb_record, sizeof(uint16_t));
         return 1;
     }
     return 0;
@@ -281,18 +286,21 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
         return PROTO_UNKNOWN;
     }
 
-    uint16_t offset = 0, total_len = ntohs(get_u16(packet->payload, 7)) + 9 /* SSL Header */;
+    /* payload is byte-aligned: ssl_read_u16_be, not ntohs(get_u16()) — the
+     * macro dereferences a uint16_t* on a possibly-odd offset, which is UB
+     * and trips UBSan (issue #216). */
+    uint16_t offset = 0, total_len = ssl_read_u16_be(packet->payload, 7) + 9 /* SSL Header */;
 
     if (((total_len + 15) < packet->payload_packet_len) && (packet->payload[total_len] == 0x16) && (packet->payload[total_len + 1] == 0x03)
             && (packet->payload[total_len + 2] == 0x00 || packet->payload[total_len + 2] == 0x01 || packet->payload[total_len + 2] == 0x02 || packet->payload[total_len + 2] == 0x03)
-            && (ntohs(get_u16(packet->payload, total_len + 3)) - ntohs(get_u16(packet->payload, total_len + 7)) == 4)
-            && (ntohs(get_u16(packet->payload, total_len + 7)) - ntohs(get_u16(packet->payload, total_len + 10)) == 3) /* Record len is 3 bytes longer than the certificates len */
+            && (ssl_read_u16_be(packet->payload, total_len + 3) - ssl_read_u16_be(packet->payload, total_len + 7) == 4)
+            && (ssl_read_u16_be(packet->payload, total_len + 7) - ssl_read_u16_be(packet->payload, total_len + 10) == 3) /* Record len is 3 bytes longer than the certificates len */
             && (packet->payload[total_len + 5] == 11 /* Server Certificate */)
             ) {
         //printf("Test from Get Server Name From Server Hello tolen = %i\n", total_len);
         offset = total_len + 15; //This is the offset of the beginning of the certificate.
 	}else if(((total_len + 15) < packet->payload_packet_len) && (packet->payload[total_len] == 0x11 /* Server certificate */)
-            && (ntohs(get_u16(packet->payload, total_len + 2)) - ntohs(get_u16(packet->payload, total_len + 5)) == 3) /* Record len is 3 bytes longer than the certificates len */
+            && (ssl_read_u16_be(packet->payload, total_len + 2) - ssl_read_u16_be(packet->payload, total_len + 5) == 3) /* Record len is 3 bytes longer than the certificates len */
             ) {
         //printf("Test from Get Server Name From Server Hello tolen = %i\n", total_len);
         offset = total_len + 10; //This is the offset of the beginning of the certificate.
@@ -363,7 +371,7 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
                     item_offset = packet->payload[offset + nb_offset - 1];
                 } else {
                     if (offset + nb_offset < 2 || offset + nb_offset - 2 + 1 >= packet->payload_packet_len) return PROTO_UNKNOWN;
-                    item_offset = ntohs(get_u16(packet->payload, offset + nb_offset - 2));
+                    item_offset = ssl_read_u16_be(packet->payload, offset + nb_offset - 2);
                 }
             } else {
                 if (offset + nb_offset >= packet->payload_packet_len) return PROTO_UNKNOWN;
@@ -395,7 +403,7 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
                             sub_item_offset = packet->payload[current_offset + nb_offset - 1];
                         } else {
                             if (current_offset + nb_offset < 2 || current_offset + nb_offset - 2 + 1 >= packet->payload_packet_len) return PROTO_UNKNOWN;
-                            sub_item_offset = ntohs(get_u16(packet->payload, current_offset + nb_offset - 2));
+                            sub_item_offset = ssl_read_u16_be(packet->payload, current_offset + nb_offset - 2);
                         }
                     } else {
                         if (current_offset + nb_offset >= packet->payload_packet_len) return PROTO_UNKNOWN;
@@ -505,7 +513,10 @@ int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_l
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     uint16_t cap_total_len = packet->payload_packet_len;
-    uint16_t total_len = ntohs(*((uint16_t *) & packet->payload[3])) + 5 /* SSL Header */;
+    /* payload is byte-aligned: ssl_read_u16_be, not an ntohs(*(uint16_t*))
+     * dereference — the latter is a misaligned load and trips UBSan
+     * (issue #216). */
+    uint16_t total_len = ssl_read_u16_be(packet->payload, 3) + 5 /* SSL Header */;
 
     memset(buffer, 0, buffer_len);
 
@@ -519,7 +530,7 @@ int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_l
     if((session_id_len + base_offset + 3) >= cap_total_len) {
         return 0;
     }
-    uint16_t cypher_len = ntohs(*((uint16_t *) & packet->payload[session_id_len + base_offset + 1]));
+    uint16_t cypher_len = ssl_read_u16_be(packet->payload, session_id_len + base_offset + 1);
 
     offset = base_offset + session_id_len + 1 + cypher_len + 2;
 
@@ -530,7 +541,7 @@ int getServerNameFromClientHello(ipacket_t * ipacket, char *buffer, int buffer_l
         compression_len = packet->payload[offset];
         offset += compression_len + 1;
         if (offset + 2 /* 2 for the extensions len */ < total_len && offset + 2 < cap_total_len) {
-            extensions_len = ntohs(*((uint16_t *) & packet->payload[offset]));
+            extensions_len = ssl_read_u16_be(packet->payload, offset);
             if ((extensions_len + offset) <= total_len && (extensions_len + offset) <= cap_total_len) {
                 /* 32-bit cursor: a declared extension_len must not be able to
                  * wrap it back onto an already-visited header (F-BUG-064). */
@@ -705,8 +716,8 @@ int check_whatsapp(ipacket_t * ipacket) {
             return 1;
         }
         if (((packet->payload[0] == 0x10 || packet->payload[0] == 0x80) && (packet->payload_packet_len > 3) &&
-                (ntohs(get_u16(packet->payload, 1)) == packet->payload_packet_len)) ||
-                (packet->payload[0] == 0x00 && (packet->payload_packet_len > 3) && (ntohs(get_u16(packet->payload, 0)) == packet->payload_packet_len))) {
+                (ssl_read_u16_be(packet->payload, 1) == packet->payload_packet_len)) ||
+                (packet->payload[0] == 0x00 && (packet->payload_packet_len > 3) && (ssl_read_u16_be(packet->payload, 0) == packet->payload_packet_len))) {
             flow->l4.tcp.whatsapp_stage += 1;
             return 1;
         }
@@ -853,10 +864,10 @@ int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 
     if (packet->payload[0] == 0x16 && packet->payload[1] == 0x03
             && (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)) {
-        if ((packet->payload_packet_len - ntohs(get_u16(packet->payload, 3)) == 5) /* Client Hello contains no other part in the message */
+        if ((packet->payload_packet_len - ssl_read_u16_be(packet->payload, 3) == 5) /* Client Hello contains no other part in the message */
                 && (packet->payload[5] == 1 /* Client Hello */) && packet->payload[9] == 0x03
                 && (packet->payload[10] == 0x00 || packet->payload[10] == 0x01 || packet->payload[10] == 0x02 || packet->payload[10] == 0x03)
-                && (packet->payload_packet_len - ntohs(get_u16(packet->payload, 7)) == 9)) {
+                && (packet->payload_packet_len - ssl_read_u16_be(packet->payload, 7) == 9)) {
             //This is a client hello! process it as so
             mmt_int_ssl_add_connection(ipacket, PROTO_SSL);
             //Now try to get the server from this packet
@@ -865,7 +876,7 @@ int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
             return 1;
-        } else if ((ntohs(get_u16(packet->payload, 3)) - ntohs(get_u16(packet->payload, 7)) == 4) /* Server Hello may contain different
+        } else if ((ssl_read_u16_be(packet->payload, 3) - ssl_read_u16_be(packet->payload, 7) == 4) /* Server Hello may contain different
 																									TLS records. compare the record length
 																									with the handshake protocol message len */
                 && (packet->payload[5] == 2 /* Server Hello */) && (packet->payload[9] == 0x03)
@@ -890,10 +901,10 @@ int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
                 //mmt_int_ssl_add_connection(ipacket, emb_proto);
             }
             return 1;
-        } else if ((ntohs(get_u16(packet->payload, 3)) - ntohs(get_u16(packet->payload, 7)) == 4) /* Certificate may contain different
+        } else if ((ssl_read_u16_be(packet->payload, 3) - ssl_read_u16_be(packet->payload, 7) == 4) /* Certificate may contain different
 																									TLS records. compare the record length
 																									with the handshake protocol message len */
-                && (ntohs(get_u16(packet->payload, 7)) - ntohs(get_u16(packet->payload, 10)) == 3) /* Record len is 3 bytes longer than the certificates len */
+                && (ssl_read_u16_be(packet->payload, 7) - ssl_read_u16_be(packet->payload, 10) == 3) /* Record len is 3 bytes longer than the certificates len */
                 && (packet->payload[5] == 11 /* Server Certificate */)
                 ) {
             //This is a server certificate! process it as so
@@ -936,7 +947,7 @@ int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 	 * TLS application: 0x17 followed by version (3.0 or 3.1 or 3.2) followed by len */
 	if (packet->payload[0] == 0x17 && packet->payload[1] == 0x03
 			&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)
-			&& (packet->payload_packet_len <= (ntohs(get_u16(packet->payload, 3)) + 5))) {
+			&& (packet->payload_packet_len <= (ssl_read_u16_be(packet->payload, 3) + 5))) {
 		// SSLv3 Record
 		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
 		flow->l4.tcp.ssl_stage += 1;
@@ -950,7 +961,7 @@ int mmt_classify_me_ssl(ipacket_t * ipacket, unsigned index) {
 	 */
 	if (packet->payload[0] == 0x15 && packet->payload[1] == 0x03
 			&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02 || packet->payload[2] == 0x03)
-			&& (packet->payload_packet_len - ntohs(get_u16(packet->payload, 3)) == 5)) {
+			&& (packet->payload_packet_len - ssl_read_u16_be(packet->payload, 3) == 5)) {
 		// SSLv3 Record
 		MMT_LOG(PROTO_SSL, MMT_LOG_DEBUG, "sslv3 len match\n");
 		flow->l4.tcp.ssl_stage += 1;

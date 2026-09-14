@@ -155,6 +155,7 @@ run_test_suite() {
 DEFAULT_SUITES=(
     hashmap
     memory
+    fault_injection
     hexdump
     mmt_utils
     mmt_inet_ntop

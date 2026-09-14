@@ -96,17 +96,17 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **13/13 suites pass**, total runtime roughly **45–75 s** on a
-typical development machine (measured: 52 s and 57 s on a 20-core host, 53 s on
-the September 2026 audit machine, 63 s on the same host after the `installer`
-suite was added — the suites compile their own sources, so the wall clock is
-dominated by `gcc`, not by the assertions). Exit code `0` on success, `1` on
-any failure. The runner has no `-j` option: the 13 suites run sequentially.
-The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:155-169`):
-`hashmap`, `memory`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`, `avltree`,
-`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`, `rule_engine`,
-`radius_hardening`, `nas_ies_tail`, `installer`.
+Expected result: **16/16 suites pass**, total runtime roughly **60–100 s** on
+a typical development machine (the suites compile their own sources, so the
+wall clock is dominated by `gcc`, not by the assertions; `fault_injection`
+also builds+installs the SDK once for its engine leg). Exit code `0` on
+success, `1` on any failure. The runner has no `-j` option: the 16 suites run
+sequentially. The suite list lives in `DEFAULT_SUITES`
+(`tests/run_all_tests.sh`):
+`hashmap`, `memory`, `fault_injection`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`,
+`avltree`, `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
+`rule_engine`, `radius_hardening`, `nas_ies_tail`, `installer`,
+`dicom_dissector`, `ndn_dissector`.
 
 Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
@@ -283,7 +283,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 12/12 suites PASSED, exit 0 (45–65 s)
+bash tests/run_all_tests.sh     # 13/13 suites PASSED, exit 0 (45–80 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

@@ -1414,7 +1414,6 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     mmt_hashmap_t *map = mmt->ip_streams;
     mmt_key_t     key;
     ip_dgram_t    *dg;
-    int            is_new = 0;
 
     if (map == NULL) return 0;
 
@@ -1425,7 +1424,6 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
      * map forever. */
     if (mmt->frag_map_sweep_fct == NULL) {
         mmt->frag_map_sweep_fct = mmt_ip_frag_map_sweep;
-        mmt->frag_map_drain_fct = mmt_ip_frag_map_drain;
     }
 
     /* Issue #201 (F-BUG-017): `off` comes from the protocol path and `len` is
@@ -1463,28 +1461,32 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
             return 0;
         dg = ip_dgram_alloc();
         if (dg == NULL)
+            return 0; /* OOM: treat like an incomplete datagram — drop the fragment */
+        hashmap_insert_kv( map, key, dg );
+        /* hashmap_insert_kv() is void and drops silently on OOM — verify the
+         * datagram actually landed, else it would be orphaned (issue #216). */
+        void *check = NULL;
+        hashmap_get( map, key, &check );
+        if (check != dg) {
+            ip_dgram_free( dg );
             return 0;
-        is_new = 1;
+        }
+        /* The handler owns the map, we own the value type: hand over the
+         * destructor once so mmt_close_handler() can drain datagrams that
+         * never completed (issue #216). */
+        mmt->ip_streams_value_free = (void (*)(void *)) ip_dgram_free;
     }
     int dgram_update_result = ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
     if (dgram_update_result == 1) {
         /* Issue #201 (F-BUG-017): malformed fragment — never park it in the
-         * map. A fresh datagram goes straight back to the heap; an existing
-         * one is evicted too — a failed update may have left its hole list
-         * partially mutated, and it must never reach is_complete in that
-         * state. */
-        if (is_new) {
-            ip_dgram_free( dg );
-        } else {
-            hashmap_remove( map, key );
-            ip_dgram_free( dg );
-        }
+         * map. A failed update may have left its hole list partially mutated,
+         * and it must never reach is_complete in that state. */
+        hashmap_remove( map, key );
+        ip_dgram_free( dg );
         return 0;
     }
     /* Track the most recent fragment for the age-based sweep. */
     dg->last_activity = (uint32_t) ipacket->p_hdr->ts.tv_sec;
-    if (is_new)
-        hashmap_insert_kv( map, key, dg );
     if(dgram_update_result == 2 || dgram_update_result == 6 ){
         fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_DUPLICATED,(void*)&(dgram_update_result));
     }else if (dgram_update_result > 0 ) {
@@ -1510,11 +1512,11 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     /* Issue #201: unchecked mmt_malloc — on failure the datagram must leave
      * the map with its buffer, not stay half-assembled. */
     uint8_t *x = (uint8_t*)mmt_malloc( ioff + dg->len );
-    if (x == NULL) {
-        hashmap_remove( map, key );
-        ip_dgram_free( dg );
+    /* Issue #201: unchecked mmt_malloc. Issue #216: on OOM the datagram stays
+     * in the map — still consistent — and drains at close via
+     * ip_streams_value_free. */
+    if (x == NULL)
         return 0;
-    }
     // copy the original ipacket data + IP header
     (void)memcpy( x,        ipacket->data, ioff );
     // copy the IP payload
