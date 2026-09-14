@@ -148,6 +148,74 @@ static int run_correctness(void) {
     return g_failures;
 }
 
+/* Issue #212 (F-BUG-027): inserting a node whose key already exists must not
+ * lose the existing subtree. The duplicate branch used to return
+ * avltree_get_root(node) — and an unlinked node is its own root — so the
+ * `tree = avltree_insert(tree, node)` idiom silently replaced the whole tree
+ * with the orphan node. This case pins both the tree preservation and the
+ * explicit duplicate signal added by avltree_insert_ex(). */
+static int run_duplicate_key_case(void) {
+    fprintf(stderr, "== duplicate-key case (issue #212 / F-BUG-027) ==\n");
+
+    uint32_t *keys = NULL;
+    int count = 0;
+    avltree_t *root = build_tree(256, &keys, &count);
+    int size_before = avltree_size(root);
+
+    /* 1. duplicate via the classic 2-arg API: must return the EXISTING root */
+    avltree_t *dup1 = avltree_create(keys[0], NULL);
+    avltree_t *ret1 = avltree_insert(root, dup1);
+    CHECK(ret1 == root, "duplicate insert (2-arg) must keep the existing root");
+    CHECK(avltree_size(root) == size_before, "duplicate insert must not change tree size");
+    for (int i = 0; i < count; i++)
+        CHECK(avltree_find(root, keys[i]) != NULL, "subtree lost after duplicate insert");
+    CHECK(avltree_valid(root) == 1, "tree invalid after duplicate insert");
+    CHECK(avltree_find(root, keys[0]) != dup1, "duplicate node must NOT be linked");
+    avltree_free_node(dup1); /* unlinked duplicate stays caller-owned */
+
+    /* 2. avltree_insert_ex signals the duplicate and still keeps the root */
+    int is_dup = 0;
+    avltree_t *dup2 = avltree_create(keys[count - 1], NULL);
+    avltree_t *ret2 = avltree_insert_ex(root, dup2, &is_dup);
+    CHECK(is_dup == 1, "avltree_insert_ex must flag the duplicate key");
+    CHECK(ret2 == root, "duplicate insert (_ex) must keep the existing root");
+    CHECK(avltree_size(root) == size_before, "duplicate insert (_ex) must not change tree size");
+    for (int i = 0; i < count; i++)
+        CHECK(avltree_find(root, keys[i]) != NULL, "subtree lost after duplicate _ex insert");
+    avltree_free_node(dup2);
+
+    /* 3. a non-duplicate _ex insert reports 0 and grows the tree */
+    uint32_t fresh_key = 0xDEADBEEFu;
+    while (avltree_find(root, fresh_key) != NULL) fresh_key++;
+    is_dup = 1;
+    avltree_t *fresh = avltree_create(fresh_key, NULL);
+    root = avltree_insert_ex(root, fresh, &is_dup);
+    CHECK(is_dup == 0, "avltree_insert_ex must not flag a fresh key");
+    CHECK(avltree_size(root) == size_before + 1, "fresh insert (_ex) must grow the tree");
+    CHECK(avltree_find(root, fresh_key) == fresh, "fresh key not found after _ex insert");
+    CHECK(avltree_valid(root) == 1, "tree invalid after _ex insert");
+
+    /* 4. duplicate at the ROOT key itself */
+    avltree_t *dup_root = avltree_create(root->key, NULL);
+    is_dup = 0;
+    avltree_t *ret4 = avltree_insert_ex(root, dup_root, &is_dup);
+    CHECK(is_dup == 1, "root-key duplicate must be flagged");
+    CHECK(ret4 == root, "root-key duplicate must keep the existing root");
+    avltree_free_node(dup_root);
+
+    /* 5. duplicate insert into an EMPTY tree is a plain insert */
+    is_dup = 1;
+    avltree_t *lone = avltree_create(42, NULL);
+    avltree_t *t5 = avltree_insert_ex(NULL, lone, &is_dup);
+    CHECK(is_dup == 0 && t5 == lone, "insert into empty tree must link the node");
+    avltree_free_tree(t5);
+
+    free(keys);
+    avltree_free_tree(root);
+    fprintf(stderr, "  ok: duplicate-key case done\n");
+    return g_failures;
+}
+
 int main(int argc, char **argv) {
     if (argc >= 3 && strcmp(argv[1], "--bench") == 0) {
         int n = atoi(argv[2]);
@@ -176,6 +244,7 @@ int main(int argc, char **argv) {
 
     fprintf(stderr, "AVL tree correctness suite\n");
     int fails = run_correctness();
+    fails += run_duplicate_key_case();
     if (fails == 0) {
         fprintf(stderr, "ALL CHECKS PASSED\n");
         return 0;

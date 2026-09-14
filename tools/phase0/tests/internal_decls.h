@@ -58,12 +58,27 @@ void dns_free_name(dns_name_t *dns_name);
 int classify_dtls_from_udp(ipacket_t *ipacket, unsigned index);
 void mmt_init_classify_me_dtls(void);
 
-/* --- mmt_tcpip_classif_utils.c (externally-updatable IP-range / port map) --- */
+/* --- mmt_tcpip_classif_utils.c (externally-updatable IP-range / port map,
+ *     hostname tables) ---
+ * mmt_case_sensitive_reverse_hostname_matching is the exported wrapper over
+ * the static inline worker; get_proto_id_by_hostname is declared by the
+ * private mmt_common_internal_include.h. */
 int mmt_tcpip_load_ip_ranges_file(const char *path);
 int mmt_tcpip_load_port_map_file(const char *path);
 int _find_proto_id_by_address(uint32_t ip_src, uint32_t ip_dst);
 int _find_proto_id_by_address6(const uint8_t ip_src[16],
                                const uint8_t ip_dst[16]);
+int mmt_case_sensitive_reverse_hostname_matching(const char *hostname,
+        const char *url, size_t hostname_len, size_t url_len);
+uint32_t get_proto_id_by_hostname(ipacket_t *ipacket, char *hostname,
+        u_int hostname_len);
+
+/* --- configured_protocols.c (checked inter-protocol registration, issue #212)
+ * Returns non-zero on success, 0 on failure (after printing a diagnostic that
+ * names the entry) — the signal init_app_classification() propagates. */
+int mmt_register_classifier(uint32_t parent_proto,
+        generic_classification_function classify_fn, int weight,
+        const char *name);
 
 /* --- protocols/proto_ftp.c -------------------------------------------------- */
 char *ftp_get_data_client_addr_v6_from_LPRT(char *payload);

@@ -85,6 +85,16 @@ static void test_h4_line_parser(void)
 
     printf("[H4] _mmt_parse_packet_line_info bounds + underflow\n");
 
+    /* Issue #212 (F-BUG-043): a zero-length payload made
+     * `end = payload_packet_len - 1` underflow to 65535 and the line loop
+     * walked out of bounds — this helper is exported, so the guard must live
+     * here, not only in the mmt_parse_packet_line_info() wrapper. Pre-fix this
+     * aborts under ASan; post-fix it returns early and marks nothing parsed. */
+    pkt = run_line_info("", 0, &payload);
+    CHECK(pkt->packet_lines_parsed_complete == 0 && pkt->parsed_lines == 0,
+          "zero-length payload is rejected without parsing (no OOB walk)");
+    free(pkt); free(payload);
+
     /* Truncated "C\r\n": a one-byte 'C' line. Pre-fix this dereferenced
      * str[8], 7 bytes past the 3-byte buffer. */
     pkt = run_line_info("C\r\n", 3, &payload);
