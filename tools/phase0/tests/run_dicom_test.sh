@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+#
+# run_dicom_test.sh — build the DICOM dissector crafted-input test against an
+# ASan/UBSan-instrumented build of the SDK and run it (issue #215).
+#
+# Steps:
+#   1. Build + install the SDK with BUILD=asan into an isolated prefix.
+#   2. Compile tools/phase0/tests/dicom_test.c against that library,
+#      itself instrumented with -fsanitize=address,undefined.
+#   3. Run it from the install prefix so the CWD-relative "plugins/" lookup
+#      resolves (the full-path section needs the DICOM protocol loaded).
+#      With -fno-sanitize-recover=all, any out-of-bounds read/write or
+#      misaligned load aborts with non-zero status; all assertions must pass.
+#
+# The crafted A-ASSOCIATE-RQ positive extraction is the fail-when-reverted
+# anchor for commit 396bc63a (AE-title copy bounded to 16 bytes): reverting
+# it turns that extraction into a 68-byte write into a 64-byte blob.
+#
+# Cases deferred to issue #210 (not yet merged) sit behind MMT_PENDING_FIXES=1
+# inside the test — see the file header for the rationale.
+#
+# Usage: tools/phase0/tests/run_dicom_test.sh
+set -euo pipefail
+
+TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${TEST_DIR}/../../.." && pwd)"
+PREFIX="${MMT_ASAN_PREFIX:-$(mktemp -d "${TMPDIR:-/tmp}/asan.XXXXXX")}"
+BIN="$(mktemp -d)/dicom_test"
+trap 'rm -rf "$(dirname "${BIN}")"; [ -n "${MMT_ASAN_PREFIX:-}" ] || rm -rf "${PREFIX}"' EXIT
+
+if [ "${MMT_SDK_PREBUILT:-0}" = "1" ]; then
+    echo "[1/3] reusing prebuilt SDK at ${PREFIX} (MMT_SDK_PREBUILT=1)"
+else
+    echo "[1/3] building + installing SDK with BUILD=asan -> ${PREFIX}"
+    make -C "${REPO_ROOT}/sdk" clean >/dev/null
+    make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" -j"$(nproc)" >/dev/null
+    make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
+fi
+
+echo "[2/3] compiling dicom_test (ASan/UBSan)"
+gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
+    -o "${BIN}" "${TEST_DIR}/dicom_test.c" \
+    -I"${PREFIX}/dpi/include" \
+    -I"${REPO_ROOT}/src/mmt_core/public_include" \
+    -I"${REPO_ROOT}/src/mmt_core/private_include" \
+    -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
+    -I"${TEST_DIR}" \
+    -L"${PREFIX}/dpi/lib" -lmmt_tdicom -lmmt_tcpip -lmmt_core -ldl -lpthread -lm -lpcap
+
+echo "[3/3] running dicom_test under ASan/UBSan"
+# Preload the ASan runtime: the SDK plugins are pulled in via dlopen, so the
+# runtime cannot be resolved from the executable alone.
+set +e
+( cd "${PREFIX}" && \
+  LD_PRELOAD="$(gcc -print-file-name=libasan.so)" \
+  ASAN_OPTIONS="detect_leaks=0" \
+  UBSAN_OPTIONS="print_stacktrace=1" \
+  LD_LIBRARY_PATH="${PREFIX}/dpi/lib:${LD_LIBRARY_PATH:-}" \
+      "${BIN}" )
+rc=$?
+set -e
+
+if [ "${rc}" -eq 0 ]; then
+    echo "✓ DICOM dissector crafted-input test (issue #215): PASS"
+else
+    echo "✗ DICOM dissector crafted-input test (issue #215): FAIL (rc=${rc})"
+fi
+exit "${rc}"
