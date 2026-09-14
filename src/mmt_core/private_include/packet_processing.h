@@ -53,6 +53,22 @@ typedef struct proto_statistics_internal_struct    proto_statistics_internal_t;
 typedef struct protocol_stack_struct               protocol_stack_t;
 
 /**
+ * Central bounds predicate for packet offsets (issue #193, F-BUG-032).
+ *
+ * Returns non-zero when `n` bytes starting at absolute packet offset `offset`
+ * lie entirely inside the captured data (offset + n <= caplen, evaluated
+ * without overflow). Extraction code — the central guard in
+ * internal_extract_attribute() and per-parser extractors that compute their
+ * own offsets — must route bounds checks through this helper so the coverage
+ * stays greppable.
+ */
+static inline int mmt_have_bytes(const ipacket_t *ipacket, size_t offset, size_t n) {
+    if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL) return 0;
+    const size_t caplen = (size_t) ipacket->p_hdr->caplen;
+    return (offset <= caplen) && (n <= caplen - offset);
+}
+
+/**
  * Defines the attribute information.
  * @deprecated use #attribute_metadata_t instead
  */
