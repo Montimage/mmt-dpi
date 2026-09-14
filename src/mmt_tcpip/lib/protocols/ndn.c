@@ -97,7 +97,7 @@ char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
         return NULL;
     }
 
-    char * ret = str_sub(payload,ndn->data_offset, ndn->data_offset + ndn->length -1 );
+    char * ret = str_sub_n(payload, (size_t)payload_len, ndn->data_offset, ndn->data_offset + ndn->length -1 );
 
     /* Issue #205: str_sub() fails on embedded NULs (strlen-bounded) — a
      * binary TLV value must not turn into a NULL dereference. */
@@ -597,7 +597,7 @@ char * ndn_TVL_get_name_components(ndn_tlv_t *name_com, char *payload, int total
 
     if(name_com != NULL) {
 
-        ret = str_sub(payload,name_com->data_offset,name_com->data_offset + name_com->length - 1);
+        ret = str_sub_n(payload, (size_t)total_length, name_com->data_offset, name_com->data_offset + name_com->length - 1);
 
         ndn_tlv_t *temp = name_com->next;
 

@@ -489,8 +489,19 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     }
 
     packet->payload_packet_len = packet->l4_packet_len - tcphdr_len;
-    packet->actual_payload_len = packet->payload_packet_len;
     packet->payload = ((uint8_t *) packet->tcp) + tcphdr_len;
+    /* F-BUG-107/#195: l4_packet_len derives from the IP total length and can
+     * exceed the captured bytes on truncated pcaps — clamp payload_packet_len
+     * to what data[] actually holds so every payload[] read stays in bounds. */
+    {
+        /* uintptr subtraction wraps huge when payload < data -> fails check */
+        uintptr_t poff = (uintptr_t)packet->payload - (uintptr_t)ipacket->data;
+        uint32_t avail = ( poff < ipacket->p_hdr->caplen )
+            ? (uint32_t)(ipacket->p_hdr->caplen - (uint32_t)poff) : 0;
+        if( packet->payload_packet_len > avail )
+            packet->payload_packet_len = avail;
+    }
+    packet->actual_payload_len = packet->payload_packet_len;
     packet->https_server_name.ptr = NULL;
     packet->https_server_name.len = 0;
 
@@ -591,8 +602,19 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     }
 
     packet->payload_packet_len = packet->l4_packet_len - tcphdr_len;
-    packet->actual_payload_len = packet->payload_packet_len;
     packet->payload = ((uint8_t *) packet->tcp) + tcphdr_len;
+    /* F-BUG-107/#195: l4_packet_len derives from the IP total length and can
+     * exceed the captured bytes on truncated pcaps — clamp payload_packet_len
+     * to what data[] actually holds so every payload[] read stays in bounds. */
+    {
+        /* uintptr subtraction wraps huge when payload < data -> fails check */
+        uintptr_t poff = (uintptr_t)packet->payload - (uintptr_t)ipacket->data;
+        uint32_t avail = ( poff < ipacket->p_hdr->caplen )
+            ? (uint32_t)(ipacket->p_hdr->caplen - (uint32_t)poff) : 0;
+        if( packet->payload_packet_len > avail )
+            packet->payload_packet_len = avail;
+    }
+    packet->actual_payload_len = packet->payload_packet_len;
     packet->https_server_name.ptr = NULL;
     packet->https_server_name.len = 0;
 

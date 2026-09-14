@@ -66,9 +66,9 @@ int _find_proto_id_by_address6(const uint8_t ip_src[16],
                                const uint8_t ip_dst[16]);
 
 /* --- protocols/proto_ftp.c -------------------------------------------------- */
-char *ftp_get_data_client_addr_v6_from_LPRT(char *payload);
-char *ftp_get_data_client_addr_v6_from_EPRT(char *payload);
-unsigned short ftp_get_data_client_port_from_EPRT(char *payload);
+char *ftp_get_data_client_addr_v6_from_LPRT(char *payload, uint32_t payload_len);
+char *ftp_get_data_client_addr_v6_from_EPRT(char *payload, uint32_t payload_len);
+unsigned short ftp_get_data_client_port_from_EPRT(char *payload, uint32_t payload_len);
 unsigned int ftp_get_addr_from_parameter(char *payload, unsigned int payload_len);
 
 /* --- protocols/http2.c ------------------------------------------------------ */

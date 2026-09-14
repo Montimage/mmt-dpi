@@ -8,9 +8,15 @@
  *   1. Opens the given pcap (DLT from the file, via pcap_open_offline).
  *   2. Creates an mmt_handler for that DLT and registers a packet handler that
  *      records the classified protocol path (proto_hierarchy -> dot-joined names,
- *      identical to tools/phase0/phase0_classify.c's fingerprint logic).
+ *      identical to tools/phase0/phase0_classify.c's fingerprint logic). It also
+ *      registers extraction attributes for the FTP / NDN(-HTTP) / IPS_DATA
+ *      dissectors hardened by issue #195 so attribute extractors run on the
+ *      replayed bytes, not just classification.
  *   3. Replays every packet through packet_process(), exercising the TCP/IP
- *      parsers on real captured bytes (not synthetic ipacket_t).
+ *      parsers on real captured bytes (not synthetic ipacket_t). Each record
+ *      is first memcpy'd into an exactly-sized, ASan-instrumented heap buffer
+ *      so a parser over-read past caplen lands in a redzone — the libpcap
+ *      buffers are not instrumented and would mask such reads.
  *   4. Prints a deterministic, sorted fingerprint: one line per distinct path,
  *      "<count>\\t<path>", free of timestamps/addresses so it diffs cleanly.
  *   5. Validates two invariants needed for the harness to be a trustworthy
@@ -107,6 +113,59 @@ static int cmp_path(const void *a, const void *b) {
     return strcmp(pa->path, pb->path);
 }
 
+/* Register the packet-scope extraction attributes of the dissectors hardened
+ * by issue #195 (FTP, NDN/NDN_HTTP, business-app IPS_DATA) so replaying a pcap
+ * runs the extractors — not only classification — on the captured bytes.
+ * Registration failures are ignored on purpose: an attribute whose protocol is
+ * absent from a handler's stack simply never fires. The IPS_DATA attributes
+ * are resolved by alias because the business-app headers are not installed
+ * (rules/common.mk B_APP_HEADERS misses the 'include/' path). */
+static void register_extraction_attributes(mmt_handler_t *mmt_handler) {
+    static const struct {
+        const char *proto;
+        const char *attr;
+    } by_name[] = {
+        {"lps_data", "trolley_pos"},   {"lps_data", "hoist_pos"},
+        {"lps_data", "no_of_marker"},  {"lps_data", "m1_x"},
+        {"lps_data", "m1_y"},          {"lps_data", "m2_x"},
+        {"lps_data", "m2_y"},          {"lps_data", "m3_x"},
+        {"lps_data", "m3_y"},          {"lps_data", "m4_x"},
+        {"lps_data", "m4_y"},          {"lps_data", "m5_x"},
+        {"lps_data", "m5_y"},          {"lps_data", "m6_x"},
+        {"lps_data", "m6_y"},          {"lps_data", "order"},
+    };
+    static const struct {
+        uint32_t proto;
+        uint32_t attr;
+    } by_id[] = {
+        {PROTO_FTP, FTP_PACKET_TYPE},
+        {PROTO_FTP, FTP_PACKET_REQUEST},
+        {PROTO_FTP, FTP_PACKET_REQUEST_PARAMETER},
+        {PROTO_FTP, FTP_PACKET_RESPONSE_CODE},
+        {PROTO_FTP, FTP_PACKET_RESPONSE_VALUE},
+        {PROTO_NDN, NDN_PACKET_TYPE},
+        {PROTO_NDN, NDN_PACKET_LENGTH},
+        {PROTO_NDN, NDN_NAME_COMPONENTS},
+        {PROTO_NDN_HTTP, NDN_NAME_COMPONENTS},
+        {PROTO_NDN_HTTP, NDN_INTEREST_NONCE},
+        {PROTO_NDN_HTTP, NDN_INTEREST_LIFETIME},
+        {PROTO_NDN_HTTP, NDN_DATA_CONTENT},
+        {PROTO_NDN_HTTP, NDN_HTTP_URL},
+        {PROTO_NDN_HTTP, NDN_HTTP_METHOD},
+        {PROTO_NDN_HTTP, NDN_HTTP_FIRST_GW},
+        {PROTO_NDN_HTTP, NDN_HTTP_SECOND_GW},
+    };
+    unsigned i;
+    for (i = 0; i < sizeof(by_name) / sizeof(by_name[0]); i++)
+        (void) register_extraction_attribute_by_name(mmt_handler,
+                                                     by_name[i].proto,
+                                                     by_name[i].attr);
+    for (i = 0; i < sizeof(by_id) / sizeof(by_id[0]); i++)
+        (void) register_extraction_attribute(mmt_handler,
+                                             by_id[i].proto,
+                                             by_id[i].attr);
+}
+
 /* Replay pcap_path through a fresh handler; caller must have called
  * init_extraction() once. do_print==1 prints fingerprint to stdout. */
 static int replay_pcap(const char *pcap_path, int do_print) {
@@ -136,13 +195,30 @@ static int replay_pcap(const char *pcap_path, int do_print) {
     }
 
     register_packet_handler(mmt_handler, 1, packet_handler, NULL);
+    register_extraction_attributes(mmt_handler);
 
     memset(&header, 0, sizeof(header));
     while ((data = pcap_next(pcap, &p_pkthdr)) != NULL) {
         header.ts = p_pkthdr.ts;
         header.caplen = p_pkthdr.caplen;
         header.len = p_pkthdr.len;
-        packet_process(mmt_handler, &header, data);
+        /* Copy into an exactly-sized ASan-instrumented heap buffer so parser
+         * over-reads past caplen abort instead of sliding through libpcap's
+         * uninstrumented allocation. */
+        if (p_pkthdr.caplen > 0) {
+            u_char *copy = (u_char *) malloc(p_pkthdr.caplen);
+            if (copy == NULL) {
+                fprintf(stderr, "tcpip_pcap_harness: out of memory\n");
+                mmt_close_handler(mmt_handler);
+                pcap_close(pcap);
+                return -1;
+            }
+            memcpy(copy, data, p_pkthdr.caplen);
+            packet_process(mmt_handler, &header, copy);
+            free(copy);
+        } else {
+            packet_process(mmt_handler, &header, data);
+        }
     }
 
     if (do_print) {

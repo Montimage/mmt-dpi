@@ -5,12 +5,17 @@ Covers the core TCP/IP parsers under src/mmt_tcpip/lib/protocols/:
   - HTTP (GET / POST over TCP)
   - DNS  (query over UDP, including a truncated edge case)
   - TLS/SSL (ClientHello over TCP)
-  - FTP  (control session over TCP)
+  - FTP  (control session over TCP, incl. PORT/EPRT commands and 227/228/229
+         responses — issue #195 hardened those parsers to length-bounded
+         helpers, so they are now emitted)
+  - NDN  (NDN-TLV Interest/Data over TCP + a truncated/malformed TLV)
   - ICMP (echo request over IP)
+  - IPS_DATA (business-app dissector, reached via a DLT 801 capture)
   - TCP/IP fragmentation-like boundary (small caplen)
 
 Each pcap is a classic little-endian DLT_EN10MB capture, built with stdlib
-``struct`` only so it is reproducible in CI without scapy.
+``struct`` only so it is reproducible in CI without scapy — except the
+IPS_DATA pcap which uses linktype 801 (PROTO_IPS_DATA's stack id).
 
 Usage:
     tools/phase0/gen_tcpip_pcap.py --out-dir /tmp/tcpip-pcaps
@@ -155,22 +160,35 @@ def gen_ftp_pcap(path):
     f = pcap_open(path)
     src_ip = struct.pack("!I", 0x0A000001)
     dst_ip = struct.pack("!I", 0x0A000002)
-    # FTP control: USER, PASS, PASV-like exchange.
-    # The 227 response path in proto_ftp.c:ftp_response_packet does a raw
-    # strlen() on a non-NUL-terminated payload (heap overflow under ASan); the
-    # harness therefore avoids emitting a 227 until that parser is hardened.
-    payloads = [
-        b"220 FTP server ready\r\n",
-        b"USER anonymous\r\n",
-        b"331 Please specify password\r\n",
-        b"PASS guest@\r\n",
-        b"230 Login successful\r\n",
-        b"PASV\r\n",
-        b"150 Opening data connection\r\n",
-        b"RETR file.txt\r\n",
+    # FTP control exchange exercising the parsers hardened for issue #195:
+    # 227/228/229 passive-mode responses (parsed by the bounded subvalue
+    # helpers) and PORT/EPRT/LPRT active-mode commands (delimiter scans over
+    # the non-NUL-terminated payload). ("srv" = sport 21, "cli" = dport 21.)
+    exchange = [
+        ("srv", b"220 FTP server ready\r\n"),
+        ("cli", b"USER anonymous\r\n"),
+        ("srv", b"331 Please specify password\r\n"),
+        ("cli", b"PASS guest@\r\n"),
+        ("srv", b"230 Login successful\r\n"),
+        ("cli", b"PORT 192,168,1,2,7,138\r\n"),
+        ("srv", b"200 PORT command successful\r\n"),
+        ("cli", b"EPRT |1|132.235.1.2|6275|\r\n"),
+        ("srv", b"200 EPRT command successful\r\n"),
+        ("cli", b"PASV\r\n"),
+        ("srv", b"227 Entering Passive Mode (192,168,1,2,7,138)\r\n"),
+        ("cli", b"EPSV\r\n"),
+        ("srv", b"229 Entering Extended Passive Mode (|||6275|)\r\n"),
+        ("srv", b"228 Entering Long Passive Mode (2002:5183:4383::5183:4383, 1031)\r\n"),
+        ("srv", b"150 Opening data connection\r\n"),
+        ("cli", b"RETR file.txt\r\n"),
+        ("srv", b"226 Transfer complete\r\n"),
+        # Malformed edge cases: truncated EPRT and a 227 without parentheses —
+        # must not crash the bounded parsers.
+        ("cli", b"EPRT |1|132\r\n"),
+        ("srv", b"227 Entering Passive Mode\r\n"),
     ]
-    for i, pl in enumerate(payloads):
-        sport, dport = (21, 40000) if i % 2 == 0 else (40000, 21)
+    for i, (side, pl) in enumerate(exchange):
+        sport, dport = (21, 40000) if side == "srv" else (40000, 21)
         pkt = (eth_header()
                + ip_header(src_ip, dst_ip, 6, TCP_HLEN + len(pl), ident=i)
                + tcp_header(sport, dport, seq=1000 + i * 100)
@@ -200,12 +218,103 @@ def gen_icmp_pcap(path):
     print("wrote %s (ICMP echo)" % path)
 
 
+def pcap_write_trunc(f, pkt, caplen, ts_us=0):
+    """Write a truncated capture: incl_len < wire len, so the L4 payload
+    length (IP tot_len) exceeds the captured bytes — the case the issue #195
+    payload-length clamps protect against."""
+    f.write(struct.pack("<IIII", ts_us // 1_000_000, ts_us % 1_000_000,
+                        caplen, len(pkt)))
+    f.write(pkt[:caplen])
+
+
+def gen_ndn_pcap(path):
+    f = pcap_open(path)
+    src_ip = struct.pack("!I", 0x0A000001)
+    dst_ip = struct.pack("!I", 0x0A000002)
+    # NDN-TLV over TCP (port 6363). Interest = 0x05, Data = 0x06, Name = 0x07,
+    # NameComponent = 0x08 — the TLV type bytes match the NDN_* enum values in
+    # mmt_tcpip_attributes.h, which is what ndn_TLV_parser() decodes.
+    def comp(s):
+        return b"\x08" + bytes([len(s)]) + s
+
+    name_tlv = lambda *cs: b"\x07" + bytes([sum(len(c) for c in cs)]) + b"".join(cs)
+    interest = lambda name: b"\x05" + bytes([len(name)]) + name
+    # Well-formed Interest: /ndn/GET — component index 1 is an HTTP method, so
+    # mmt_check_payload_ndn_http() and the NDN_HTTP extractors walk the
+    # component list through ndn_TLV_get_string().
+    pl_interest = interest(name_tlv(comp(b"ndn"), comp(b"GET")))
+    # Interest /a/req/x/POST — "req" at index 1, method at index 3 (the other
+    # branch of mmt_check_payload_ndn_http), and 4 components so
+    # ndn_TVL_get_name_components() iterates the ->next chain.
+    pl_interest_req = interest(
+        name_tlv(comp(b"a"), comp(b"req"), comp(b"x"), comp(b"POST")))
+    # Data packet carrying a Content TLV (0x15) so the data-side extractors run.
+    pl_data = (b"\x06" + bytes([len(name_tlv(comp(b"ndn"), comp(b"GET"))) + 6])
+               + name_tlv(comp(b"ndn"), comp(b"GET"))
+               + b"\x15\x04data")
+    # Malformed TLVs: 0xFF length octet needs 8 length bytes the packet does
+    # not have (pre-fix str_hex2int read past the buffer); a name component
+    # containing a NUL byte made strlen() stop early so str_sub() returned
+    # NULL and ndn_TLV_get_string() then wrote through it (F-BUG-066).
+    pl_trunc_tlv = b"\x05\xff\x00\x64"
+    pl_nul_comp = interest(name_tlv(comp(b"\x00dn"), comp(b"GET")))
+    payloads = [pl_interest, pl_interest_req, pl_data, pl_trunc_tlv, pl_nul_comp]
+    for i, pl in enumerate(payloads):
+        pkt = (eth_header()
+               + ip_header(src_ip, dst_ip, 6, TCP_HLEN + len(pl), ident=i)
+               + tcp_header(55000 + i, 6363, seq=1000 + i * 100)
+               + pl)
+        pcap_write(f, pkt, ts_us=i * 1000)
+    # Truncated capture: incl_len < wire len, cutting into the NDN payload —
+    # payload_packet_len (from IP tot_len) then exceeds the captured bytes.
+    pl = pl_interest
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 6, TCP_HLEN + len(pl), ident=100)
+           + tcp_header(55010, 6363, seq=2000)
+           + pl)
+    pcap_write_trunc(f, pkt, len(pkt) - 5, ts_us=6000)
+    f.close()
+    print("wrote %s (NDN Interest/Data over TCP + malformed)" % path)
+
+
+def gen_ips_data_pcap(path):
+    """Business-app (IPS_DATA) dissector. The protocol is registered as its own
+    protocol stack with id 801 (PROTO_IPS_DATA), so a capture whose global
+    linktype is 801 lands every record on _ips_data_classify_next_proto() /
+    _extraction_att() — the atol/atof/atoi sites hardened by issue #195."""
+    f = open(path, "wb")
+    # Classic LE pcap, network = 801 (PROTO_IPS_DATA stack id).
+    f.write(struct.pack("<IHHiIII", 0xa1b2c3d4, 2, 4, 0, 0, 65535, 801))
+    payloads = [
+        # Well-formed CSV line (all six markers) — no NUL terminator.
+        b"TrolleyPos: 32.981, Hoistpos: 38.042, NoOfMarkers: 3, "
+        b"m1: (58901,70912) , m2: (72175,70950) , m3: (65803,71939) , "
+        b"m4: (46930,65566) , m5: (65795,72047) , m6: (70644,58001)",
+        # Numeric token runs to the very end of the buffer — atol()/atof() on
+        # the raw pointer over-read the capture pre-fix (F-BUG-098).
+        b"TrolleyPos: 32.9",
+        # Key present but value empty — bounded copy of zero bytes.
+        b"TrolleyPos:",
+        # Shorter than the "TrolleyPos" marker — classify guard.
+        b"Trolley",
+        # Marker key but missing the "," the Y-coordinate search needs —
+        # exercises the NULL-pointer guard on the second _get_pos().
+        b"TrolleyPos: 1.0, m1: (12345",
+    ]
+    for i, pl in enumerate(payloads):
+        pcap_write(f, pl, ts_us=i * 1000)
+    f.close()
+    print("wrote %s (IPS_DATA linktype 801)" % path)
+
+
 GENS = {
     "http": gen_http_pcap,
     "dns": gen_dns_pcap,
     "tls": gen_tls_pcap,
     "ftp": gen_ftp_pcap,
+    "ndn": gen_ndn_pcap,
     "icmp": gen_icmp_pcap,
+    "ips_data": gen_ips_data_pcap,
 }
 
 

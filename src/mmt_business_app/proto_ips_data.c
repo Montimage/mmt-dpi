@@ -15,9 +15,13 @@ TrolleyPos: 32.978, Hoistpos: 38.124, NoOfMarkers: 3, m1: (58843,70948) , m2: (7
  */
 static int _ips_data_classify_next_proto(ipacket_t *packet, unsigned index) {
 	int offset = get_packet_offset_at_index(packet, index);
+	if( offset < 0 || (size_t)offset >= packet->p_hdr->caplen )
+		return 0;
 	const int data_len = packet->p_hdr->caplen - offset;
 	const char* data = (char *)&packet->data[offset];
-	if( data_len <= 0 )
+	/* strncmp(n=10) reads up to 10 bytes: a shorter capture would be
+	 * over-read even though the buffer is not NUL-terminated (#195). */
+	if( data_len < 10 )
 		return 0;
 	//started by "TrolleyPos" ??
 	if( strncmp("TrolleyPos", data, 10) != 0 )
@@ -48,23 +52,51 @@ static inline const char *_get_pos( int main_length, const char *main, const cha
 	return NULL;
 }
 
-static inline void _assign_uint32_t(const char* ptr, attribute_t * extracted_data){
-	if( ptr )
-		*((uint32_t *) extracted_data->data) = (uint32_t)atol( ptr );
-	else
+/* Number of packet bytes readable at `ptr` — ptr points into
+ * [data, data+data_len). Returns 0 for NULL so the numeric converters see an
+ * empty token instead of dereferencing a wild pointer (#195, F-BUG-098). */
+static inline size_t _avail_at( const char *data, int data_len, const char *ptr ){
+	if( ptr == NULL )
+		return 0;
+	long r = (long)data_len - (long)( ptr - data );
+	return ( r > 0 ) ? (size_t)r : 0;
+}
+
+/* Bound + NUL-terminate the raw packet bytes into a stack copy before calling
+ * the libc numeric converters: atol/atof/atoi require a C string and would
+ * otherwise scan past the end of the captured buffer (F-BUG-098). 63 bytes is
+ * far wider than any numeric token this protocol emits, so well-formed values
+ * convert exactly as before. */
+static inline size_t _copy_num_token( char *buf, size_t buf_len, const char *ptr, size_t avail ){
+	size_t n = avail < buf_len - 1 ? avail : buf_len - 1;
+	memcpy( buf, ptr, n );
+	buf[n] = '\0';
+	return n;
+}
+
+static inline void _assign_uint32_t(const char* ptr, size_t avail, attribute_t * extracted_data){
+	char buf[64];
+	if( ptr != NULL && avail > 0 ){
+		_copy_num_token( buf, sizeof(buf), ptr, avail );
+		*((uint32_t *) extracted_data->data) = (uint32_t)atol( buf );
+	}else
 		*((uint32_t *) extracted_data->data) = 0;
 }
 
-static inline void _assign_float(const char* ptr, attribute_t * extracted_data){
-	if( ptr )
-		*((float *) extracted_data->data) = atof( ptr );
-	else
+static inline void _assign_float(const char* ptr, size_t avail, attribute_t * extracted_data){
+	char buf[64];
+	if( ptr != NULL && avail > 0 ){
+		_copy_num_token( buf, sizeof(buf), ptr, avail );
+		*((float *) extracted_data->data) = atof( buf );
+	}else
 		*((float *) extracted_data->data) = 0;
 }
 
 static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
 	int offset = get_packet_offset_at_index(packet, proto_index);
+	if( offset < 0 || (size_t)offset > packet->p_hdr->caplen )
+		return 0;
 	const int data_len = packet->p_hdr->caplen - offset;
 	const char* data = (char *)&packet->data[offset];
 	const char* ptr;
@@ -73,85 +105,106 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	switch( extracted_data->field_id ){
 	case IPS_DATA_TROLLEY_POS:
 		ptr = _get_pos( data_len, data, "TrolleyPos:" );
-		_assign_float( ptr, extracted_data );
+		_assign_float( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_HOIST_POS:
 		ptr = _get_pos( data_len, data, "Hoistpos:" );
-		_assign_float( ptr, extracted_data );
+		_assign_float( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_NO_OF_MARKERS:
 		ptr = _get_pos( data_len, data, "NoOfMarkers:" );
-		if( ptr )
-			*((uint16_t *) extracted_data->data) = atoi( ptr );
+		if( ptr && _avail_at(data, data_len, ptr) > 0 ){
+			char buf[64];
+			_copy_num_token( buf, sizeof(buf), ptr, _avail_at(data, data_len, ptr) );
+			*((uint16_t *) extracted_data->data) = atoi( buf );
+		}
 		break;
 
 	case IPS_DATA_M1_X:
 		ptr = _get_pos( data_len, data, "m1: (" );
-		_assign_uint32_t( ptr, extracted_data );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M1_Y:
 		//goto x
 		ptr = _get_pos( data_len, data, "m1: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
-		_assign_uint32_t( ptr, extracted_data );
+		/* ptr may be NULL (key absent): the subtraction would then be a wild
+		 * length — guard before the second search (#195, F-BUG-107). */
+		if( ptr )
+			ptr = _get_pos( (int)_avail_at(data, data_len, ptr), ptr, "," );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M2_X:
 		ptr = _get_pos( data_len, data, "m2: (" );
-		_assign_uint32_t( ptr, extracted_data );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M2_Y:
 		ptr = _get_pos( data_len, data, "m2: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
-		_assign_uint32_t( ptr, extracted_data );
+		/* ptr may be NULL (key absent): the subtraction would then be a wild
+		 * length — guard before the second search (#195, F-BUG-107). */
+		if( ptr )
+			ptr = _get_pos( (int)_avail_at(data, data_len, ptr), ptr, "," );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M3_X:
 		ptr = _get_pos( data_len, data, "m3: (" );
-		_assign_uint32_t( ptr, extracted_data );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M3_Y:
 		ptr = _get_pos( data_len, data, "m3: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
-		_assign_uint32_t( ptr, extracted_data );
+		/* ptr may be NULL (key absent): the subtraction would then be a wild
+		 * length — guard before the second search (#195, F-BUG-107). */
+		if( ptr )
+			ptr = _get_pos( (int)_avail_at(data, data_len, ptr), ptr, "," );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M4_X:
 		ptr = _get_pos( data_len, data, "m4: (" );
-		_assign_uint32_t( ptr, extracted_data );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M4_Y:
 		ptr = _get_pos( data_len, data, "m4: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
-		_assign_uint32_t( ptr, extracted_data );
+		/* ptr may be NULL (key absent): the subtraction would then be a wild
+		 * length — guard before the second search (#195, F-BUG-107). */
+		if( ptr )
+			ptr = _get_pos( (int)_avail_at(data, data_len, ptr), ptr, "," );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M5_X:
 		ptr = _get_pos( data_len, data, "m5: (" );
-		_assign_uint32_t( ptr, extracted_data );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M5_Y:
 		ptr = _get_pos( data_len, data, "m5: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
-		_assign_uint32_t( ptr, extracted_data );
+		/* ptr may be NULL (key absent): the subtraction would then be a wild
+		 * length — guard before the second search (#195, F-BUG-107). */
+		if( ptr )
+			ptr = _get_pos( (int)_avail_at(data, data_len, ptr), ptr, "," );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M6_X:
 		ptr = _get_pos( data_len, data, "m6: (" );
-		_assign_uint32_t( ptr, extracted_data );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 
 	case IPS_DATA_M6_Y:
 		ptr = _get_pos( data_len, data, "m6: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
-		_assign_uint32_t( ptr, extracted_data );
+		/* ptr may be NULL (key absent): the subtraction would then be a wild
+		 * length — guard before the second search (#195, F-BUG-107). */
+		if( ptr )
+			ptr = _get_pos( (int)_avail_at(data, data_len, ptr), ptr, "," );
+		_assign_uint32_t( ptr, _avail_at(data, data_len, ptr), extracted_data );
 		break;
 	case IPS_DATA_ORDER:
 		*((uint64_t *) extracted_data->data) = packet->packet_id;
