@@ -21,7 +21,7 @@ curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/inst
 
 This script (`install.sh`):
 1. Detects your distribution and installs an equivalent distro-specific build
-   dependency set (`install.sh:283-342`); the reference list is
+   dependency set (`install.sh:325-396`); the reference list is
    [Agent Environment Notes §1 Toolchain Requirements](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).
 2. Clones the pinned release tag into a temporary directory and verifies it
    (commit pin, plus the tag signature when present — issue #197).
