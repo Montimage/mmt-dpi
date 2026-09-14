@@ -29,11 +29,26 @@ endif
 #                             instead of routing every call through the PLT.
 #
 # B2 - exploit hardening:
-#   -D_FORTIFY_SOURCE=2       run-time bounds checks on libc str/mem calls
-#                             (requires optimization; already -O3). Undefined
-#                             first so an explicit =2 never collides with a
-#                             toolchain that pre-defines it (Ubuntu's GCC default
-#                             is 3) and emits a "redefined" warning.
+#   -D_FORTIFY_SOURCE=3       run-time bounds checks on libc str/mem calls,
+#                             the stronger level (F-SEC-010): on top of the
+#                             =2 checks it uses __builtin_dynamic_object_size
+#                             so flexible/heap objects are covered too. The
+#                             level is picked by a compiler capability probe
+#                             (below) - GCC >= 12 / Clang >= 16 with a matching
+#                             libc - and falls back to =2 where =3 is not
+#                             implemented, so an older toolchain degrades
+#                             instead of erroring. The macro is undefined
+#                             first so a probe result never collides with a
+#                             toolchain that pre-defines it.
+#   -fcf-protection           control-flow protection (F-SEC-010): the compiler
+#                             emits endbr64 landing pads and sets the IBT/SHSTK
+#                             properties on the built objects, so the shipped
+#                             .so can run under IBT/Shadow-Stack kernels.
+#                             CET only exists on x86 — the flag is gated on a
+#                             compile probe (below); on AArch64 the probe
+#                             substitutes -mbranch-protection=standard
+#                             (PAC/BTI), the platform's control-flow
+#                             equivalent, so no shipped target goes without.
 #   -fstack-protector-strong
 #   -fstack-clash-protection  stack smashing / stack-clash hardening.
 #   -Wl,-z,relro -Wl,-z,now   full RELRO: GOT resolved at load then made
@@ -67,10 +82,47 @@ endif
 ifeq ($(MMT_RELEASE_BUILD),1)
 ifneq (,$(filter gcc clang,$(CC)))
 
+# _FORTIFY_SOURCE level probe (F-SEC-010, issue #214): the stronger level =3
+# needs a compiler that implements __builtin_dynamic_object_size-based
+# fortification (__GNUC__ >= 12 / GCC, or Clang >= 16) AND headers that accept
+# the level — a compiler capability check, not a version string parse.
+# Rather than keying on a version string, compile a sentinel once per make run
+# with -Werror: the probe source #errors out below the capability floor, and
+# -D_FORTIFY_SOURCE=3 itself is on the probe line so a libc/compiler that rejects the
+# level fails the compile too. Fallback is =2, never "no fortification".
+MMT_FORTIFY_SOURCE_LEVEL := $(shell printf '%s\n' \
+    '#if defined(__clang__)' \
+    '#  if __clang_major__ < 16' \
+    '#    error "clang < 16 lacks the _FORTIFY_SOURCE=3 runtime support"' \
+    '#  endif' \
+    '#elif !defined(__GNUC__) || __GNUC__ < 12' \
+    '#  error "compiler too old for _FORTIFY_SOURCE=3"' \
+    '#endif' \
+    'int main(void){return 0;}' \
+    | $(CC) -x c -O2 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -Werror - -o /dev/null >/dev/null 2>&1 \
+    && echo 3 || echo 2)
+
+# Control-flow-protection probe (F-SEC-010, issue #214): -fcf-protection is
+# Intel CET — GCC on non-x86 targets rejects it outright ("not supported for
+# this target"), so it cannot be emitted unconditionally. Probe once per make
+# run with -Werror (a warning-only rejection counts as unsupported). Where CET
+# is unavailable, retry with AArch64's -mbranch-protection=standard (PAC/BTI):
+# the same class of mitigation for that target. On targets with neither, the
+# variable stays empty rather than breaking the build.
+MMT_CF_PROTECTION := $(shell printf 'int main(void){return 0;}' \
+    | $(CC) -x c -fcf-protection -Werror - -o /dev/null >/dev/null 2>&1 \
+    && echo -fcf-protection)
+ifeq ($(MMT_CF_PROTECTION),)
+MMT_CF_PROTECTION := $(shell printf 'int main(void){return 0;}' \
+    | $(CC) -x c -mbranch-protection=standard -Werror - -o /dev/null >/dev/null 2>&1 \
+    && echo -mbranch-protection=standard)
+endif
+
 # Compile-time flags - applied to every C and C++ object.
 MMT_HARDEN_CFLAGS := \
     -ffunction-sections -fdata-sections -fno-semantic-interposition \
-    -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 \
+    -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=$(MMT_FORTIFY_SOURCE_LEVEL) \
+    $(MMT_CF_PROTECTION) \
     -fstack-protector-strong -fstack-clash-protection
 
 # Link-time flags. The .so recipes in this file link with $(CXXFLAGS) - the same
@@ -79,6 +131,14 @@ MMT_HARDEN_CFLAGS := \
 MMT_HARDEN_LDFLAGS := \
     -Wl,--gc-sections \
     -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
+
+# AArch64 note (F-SEC-010): -mbranch-protection=standard puts BTI landing pads
+# and PAC return-signing in every MMT object (real mitigation on PAC-capable
+# hardware). The .so deliberately does NOT get -Wl,-z,force-bti: the crti/crtn
+# stubs carry no GNU property note, and stamping BTI on the output anyway lets
+# a BTI-enforcing kernel/loader SIGILL the process the moment control flow
+# reaches those stubs (observed: every installed-tree suite dies at startup).
+# The protection is therefore in the codegen, not the merged ELF note.
 
 # LTO must be present at BOTH compile and link; -flto=auto is GCC-only.
 ifneq (,$(filter gcc,$(CC)))
@@ -101,6 +161,22 @@ CXXFLAGS += $(MMT_HARDEN_CFLAGS) $(MMT_HARDEN_LDFLAGS)
 
 endif   # gcc/clang only
 endif   # release builds only
+
+# F-SEC-010 (issue #214): a build with the hardening block off must SAY so.
+# DEBUG, VALGRIND and the sanitizer profiles all drop FORTIFY/stack-protector/
+# CF-protection/LTO, and before this warning the only way to notice was to
+# inspect the objects. Silent divergence between the tested and the shipped
+# configuration is exactly the failure mode the finding reports, so the switch
+# is loud. The warning is a BUILD warning: goals that never compile (clean,
+# dist-clean) keep quiet.
+ifeq (,$(MMT_RELEASE_BUILD))
+ifneq (,$(filter-out clean dist-clean,$(MAKECMDGOALS)))
+$(warning MMT-DPI: release hardening DISABLED for this build (DEBUG/VALGRIND/BUILD=$(BUILD)) - the libraries get no _FORTIFY_SOURCE, stack protector, -fcf-protection or LTO; do not ship this build)
+endif
+ifeq (,$(MAKECMDGOALS))
+$(warning MMT-DPI: release hardening DISABLED for this build (DEBUG/VALGRIND/BUILD=$(BUILD)) - the libraries get no _FORTIFY_SOURCE, stack protector, -fcf-protection or LTO; do not ship this build)
+endif
+endif
 
 #  - - - - - - - - - - - - - - -
 #  L I N U X   L I B R A R I E S

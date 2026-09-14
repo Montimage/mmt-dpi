@@ -256,6 +256,42 @@ jobs:
       # "tests passed"; the project rules forbid it as a smoke test, so it
       # is kept and named for what it actually verifies.
       run: cd sdk/ && make test
+    - name: Assert the hardening set on the built shared objects
+      # Issue #214 (F-SEC-010): the makefile grep half of this helper only
+      # proves the flags are written down; --built inspects the .so files the
+      # step above just produced and asserts control-flow protection (IBT/
+      # SHSTK here, BTI/PAC on AArch64), full RELRO and a non-executable
+      # stack actually landed on the binaries CI would ship.
+      run: bash tools/ci/check-hardening-flags.sh --built
+
+  assertions-live:
+    # Issue #214 (F-SEC-011): the default build defines -DNDEBUG, which
+    # compiles every assert() out — CI was green while exercising a library
+    # the shipped binary never contained. In this repo NDEBUG=1 is the knob
+    # that keeps assertions live (it suppresses -DNDEBUG, see rules/
+    # common.mk); the job builds with it, proves -DNDEBUG never reached a
+    # compile line, then runs the full unit-suite set with the variable in
+    # the environment so the SDK the suites build internally is the
+    # assertions-live one too.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+    - name: Build the SDK with assertions live (NDEBUG=1)
+      run: |
+        make -C sdk clean
+        make -C sdk NDEBUG=1 VERBOSE=1 -j"$(nproc)" 2>&1 | tee /tmp/ndebug-build.log
+        if grep -q -- '-DNDEBUG' /tmp/ndebug-build.log; then
+          echo "::error::-DNDEBUG reached a compile line under NDEBUG=1"
+          exit 1
+        fi
+    - name: Assert the hardening set on the assertions-live build
+      run: bash tools/ci/check-hardening-flags.sh --built
+    - name: Run unit test suites with assertions live
+      env:
+        NDEBUG: "1"
+      run: bash tests/run_all_tests.sh
 
   enablesec:
     # Compile-and-test the optional security/fuzz engines, which are only

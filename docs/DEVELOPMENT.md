@@ -39,15 +39,21 @@ cd sdk
 make -j$(nproc) SHOWLOG=1
 ```
 
+> ⚠ A `SHOWLOG=1` build prints decoded packet fields — several are
+> subscriber-identifying (IMSI, M-TMSI, UE/eNB IPs, eNB/MME names, URLs). Use it
+> only on captures you are allowed to expose and never ship the build where the
+> output is collected: the log stream *is* personal data (F-SEC-016, issue
+> #214, `rules/common.mk:159-174`).
+
 ### Build Options
 
 | Option | Description | Source |
 |--------|-------------|--------|
 | `DEBUG=1` | `-g` instead of `-O3`; asserts/debug() stay active | `rules/common.mk:87-93` |
 | `NDEBUG=1` | Suppress `-DNDEBUG` (keep debug/assert active; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
-| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`) | `rules/common.mk:159-166` |
+| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`) — emits subscriber-identifying decoded data (see caution above) | `rules/common.mk:159-174` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
-| `ENABLESEC=1` | Build `libmmt_security` + `libmmt_fuzz` (needs `libxml2-dev`) | `rules/common.mk:189-191` |
+| `ENABLESEC=1` | Build `libmmt_security` + `libmmt_fuzz` (needs `libxml2-dev`) | `rules/common.mk:197-199` |
 | `BUILD=asan` | AddressSanitizer + UBSan profile | `rules/common.mk:100-127` |
 | `BUILD=tsan` | ThreadSanitizer profile | `rules/common.mk:129-157` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
@@ -111,6 +117,6 @@ cd sdk
 make deb
 ```
 
-(`sdk/Makefile:119`)
+(`sdk/Makefile:153`)
 
 

@@ -79,7 +79,12 @@ do {                                                                 \
 /* Run the notify callback FOR, returning ER if it fails */
 #define CALLBACK_NOTIFY_(FOR, ER)                                    \
 do {                                                                 \
-  assert(HTTP_PARSER_ERRNO(parser) == HPE_OK);                       \
+  /* F-SEC-011 (issue #214): unconditional check, not an assert — the  \
+   * shipped build defines NDEBUG, and a parser already in an error  \
+   * state must stop here in BOTH configurations. */                 \
+  if (UNLIKELY(HTTP_PARSER_ERRNO(parser) != HPE_OK)) {               \
+    return (ER);                                                     \
+  }                                                                  \
                                                                      \
   if (LIKELY(settings->on_##FOR)) {                                  \
     parser->state = CURRENT_STATE();                                 \
@@ -104,7 +109,9 @@ do {                                                                 \
 /* Run data callback FOR with LEN bytes, returning ER if it fails */
 #define CALLBACK_DATA_(FOR, LEN, ER)                                 \
 do {                                                                 \
-  assert(HTTP_PARSER_ERRNO(parser) == HPE_OK);                       \
+  if (UNLIKELY(HTTP_PARSER_ERRNO(parser) != HPE_OK)) {               \
+    return (ER);                                                     \
+  }                                                                  \
                                                                      \
   if (FOR##_mark) {                                                  \
     if (LIKELY(settings->on_##FOR)) {                                \
@@ -1939,8 +1946,14 @@ reexecute:
         uint64_t to_read = MIN(parser->content_length,
                                (uint64_t) ((data + len) - p));
 
-        assert(parser->content_length != 0
-            && parser->content_length != ULLONG_MAX);
+        /* F-SEC-011 (issue #214): packet-derived parser state is checked
+         * unconditionally — under NDEBUG an assert() compiles out and a
+         * corrupt state would underflow content_length below. */
+        if (UNLIKELY(parser->content_length == 0
+            || parser->content_length == ULLONG_MAX)) {
+          SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+          goto error;
+        }
 
         /* The difference between advancing content_length and p is because
          * the latter will automaticaly advance on the next loop iteration.
@@ -1988,8 +2001,10 @@ reexecute:
 
       case s_chunk_size_start:
       {
-        assert(nread == 1);
-        assert(parser->flags & F_CHUNKED);
+        if (UNLIKELY(nread != 1 || !(parser->flags & F_CHUNKED))) {
+          SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+          goto error;
+        }
 
         unhex_val = unhex[(unsigned char)ch];
         if (UNLIKELY(unhex_val == -1)) {
@@ -2006,7 +2021,10 @@ reexecute:
       {
         uint64_t t;
 
-        assert(parser->flags & F_CHUNKED);
+        if (UNLIKELY(!(parser->flags & F_CHUNKED))) {
+          SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+          goto error;
+        }
 
         if (ch == CR) {
           UPDATE_STATE(s_chunk_size_almost_done);
@@ -2041,7 +2059,10 @@ reexecute:
 
       case s_chunk_parameters:
       {
-        assert(parser->flags & F_CHUNKED);
+        if (UNLIKELY(!(parser->flags & F_CHUNKED))) {
+          SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+          goto error;
+        }
         /* just ignore this shit. TODO check for overflow */
         if (ch == CR) {
           UPDATE_STATE(s_chunk_size_almost_done);
@@ -2052,7 +2073,10 @@ reexecute:
 
       case s_chunk_size_almost_done:
       {
-        assert(parser->flags & F_CHUNKED);
+        if (UNLIKELY(!(parser->flags & F_CHUNKED))) {
+          SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+          goto error;
+        }
         STRICT_CHECK(ch != LF);
 
         parser->nread = 0;
@@ -2073,9 +2097,12 @@ reexecute:
         uint64_t to_read = MIN(parser->content_length,
                                (uint64_t) ((data + len) - p));
 
-        assert(parser->flags & F_CHUNKED);
-        assert(parser->content_length != 0
-            && parser->content_length != ULLONG_MAX);
+        if (UNLIKELY(!(parser->flags & F_CHUNKED)
+            || parser->content_length == 0
+            || parser->content_length == ULLONG_MAX)) {
+          SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+          goto error;
+        }
 
         /* See the explanation in s_body_identity for why the content
          * length and data pointers are managed this way.
@@ -2092,15 +2119,21 @@ reexecute:
       }
 
       case s_chunk_data_almost_done:
-        assert(parser->flags & F_CHUNKED);
-        assert(parser->content_length == 0);
+        if (UNLIKELY(!(parser->flags & F_CHUNKED)
+            || parser->content_length != 0)) {
+          SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+          goto error;
+        }
         STRICT_CHECK(ch != CR);
         UPDATE_STATE(s_chunk_data_done);
         CALLBACK_DATA(body);
         break;
 
       case s_chunk_data_done:
-        assert(parser->flags & F_CHUNKED);
+        if (UNLIKELY(!(parser->flags & F_CHUNKED))) {
+          SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+          goto error;
+        }
         STRICT_CHECK(ch != LF);
         parser->nread = 0;
         nread = 0;
@@ -2125,11 +2158,17 @@ reexecute:
    * value that's in-bounds).
    */
 
-  assert(((header_field_mark ? 1 : 0) +
-          (header_value_mark ? 1 : 0) +
-          (url_mark ? 1 : 0)  +
-          (body_mark ? 1 : 0) +
-          (status_mark ? 1 : 0)) <= 1);
+  /* F-SEC-011 (issue #214): more than one live mark means corrupted
+   * packet-driven parser state — checked unconditionally, not via assert(),
+   * so the shipped NDEBUG build takes the same error path. */
+  if (UNLIKELY(((header_field_mark ? 1 : 0) +
+                (header_value_mark ? 1 : 0) +
+                (url_mark ? 1 : 0)  +
+                (body_mark ? 1 : 0) +
+                (status_mark ? 1 : 0)) > 1)) {
+    SET_ERRNO(HPE_INVALID_INTERNAL_STATE);
+    goto error;
+  }
 
   CALLBACK_DATA_NOADVANCE(header_field);
   CALLBACK_DATA_NOADVANCE(header_value);
@@ -2233,13 +2272,19 @@ http_parser_settings_init(http_parser_settings *settings)
 
 const char *
 http_errno_name(enum http_errno err) {
-  assert(((size_t) err) < ARRAY_SIZE(http_strerror_tab));
+  /* F-SEC-011 (issue #214): `err` is caller-controlled — an out-of-range
+   * value must not index past the table in the shipped NDEBUG build. */
+  if ((size_t) err >= ARRAY_SIZE(http_strerror_tab)) {
+    err = HPE_UNKNOWN;
+  }
   return http_strerror_tab[err].name;
 }
 
 const char *
 http_errno_description(enum http_errno err) {
-  assert(((size_t) err) < ARRAY_SIZE(http_strerror_tab));
+  if ((size_t) err >= ARRAY_SIZE(http_strerror_tab)) {
+    err = HPE_UNKNOWN;
+  }
   return http_strerror_tab[err].description;
 }
 
@@ -2332,7 +2377,11 @@ http_parse_host(const char * buf, struct http_parser_url *u, int found_at) {
   const char *p;
   size_t buflen = u->field_data[UF_HOST].off + u->field_data[UF_HOST].len;
 
-  assert(u->field_set & (1 << UF_HOST));
+  /* F-SEC-011 (issue #214): unconditional check — the field set is derived
+   * from the URL under parse, i.e. attacker-controlled bytes. */
+  if (!(u->field_set & (1 << UF_HOST))) {
+    return 1;
+  }
 
   u->field_data[UF_HOST].len = 0;
 
@@ -2514,10 +2563,16 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 
     off = u->field_data[UF_PORT].off;
     len = u->field_data[UF_PORT].len;
-    end = buf + off + len;
 
     /* NOTE: The characters are already validated and are in the [0-9] range */
-    assert(off + len <= buflen && "Port number overflow");
+    /* F-SEC-011 (issue #214): off/len come from URL field data — under NDEBUG
+     * the assert() compiled out and a bad pair would read past `buf`. The
+     * check runs before `end` is formed so the pointer arithmetic itself
+     * cannot step out of the object. */
+    if (UNLIKELY((size_t) off + (size_t) len > buflen)) {
+      return 1;
+    }
+    end = buf + off + len;
     v = 0;
     for (p = buf + off; p < end; p++) {
       v *= 10;
@@ -2546,7 +2601,10 @@ http_parser_pause(http_parser *parser, int paused) {
     uint32_t nread = parser->nread; /* used by the SET_ERRNO macro */
     SET_ERRNO((paused) ? HPE_PAUSED : HPE_OK);
   } else {
-    assert(0 && "Attempting to pause parser in error state");
+    /* F-SEC-011 (issue #214): pausing a parser in an error state is caller
+     * misuse. The documented release fallback is to ignore it — now
+     * unconditional, not via assert(), which compiles out under NDEBUG. */
+    return;
   }
 }
 

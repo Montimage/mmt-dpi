@@ -30,7 +30,7 @@ sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnght
 
 | Package | Why it is needed |
 |---------|------------------|
-| `gcc`, `make` | The whole build (`rules/common-linux.mk:47` enables LTO for GCC only) |
+| `gcc`, `make` | The whole build (`rules/common-linux.mk:62` enables LTO for GCC only) |
 | `libpcap-dev` | Examples that read pcap files (`src/examples/`) |
 | `libxml2-dev` | Only needed with `ENABLESEC=1` (`rules/common.mk:76-84`) |
 | `libnghttp2-dev` | Optional at build time — the Makefile auto-detects its absence and keeps building (`rules/common.mk:56-74`) |
@@ -44,7 +44,7 @@ Notes:
 - Clang is available via `make ARCH=linux-clang`; icc via `ARCH=linux-icc`
   (rule files in `rules/arch-*.mk`). GCC is the default and best-tested path.
 - A C++ compiler (`g++`, pulled in by `build-essential`) is required because
-  shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:161`).
+  shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:237`).
 
 ## 2. Building
 
@@ -56,13 +56,13 @@ make -C sdk -j$(nproc)
 
 Exit code `0` = green build. Warnings in the output (e.g. from vendored asn1c
 code) are informational; extra diagnostic warnings are deliberately not
-`-Werror` (`rules/common.mk:239-253`), so they never fail the build.
+`-Werror` (`rules/common.mk:247-261`), so they never fail the build.
 
 The build produces versioned shared libraries and static archives under
 `sdk/lib/` (`libmmt_core.so.$(VERSION)`, `libmmt_tcpip.so.$(VERSION)`,
 `libmmt_tmobile.so.$(VERSION)`, `libmmt_business_app.so.$(VERSION)`,
 `libmmt_tdicom.so.$(VERSION)`, plus matching `.a` files; the unversioned
-`.so` symlinks are created by `make install`, `sdk/Makefile:45-51`), copies
+`.so` symlinks are created by `make install`, `sdk/Makefile:53-59`), copies
 public headers under `sdk/include/` and example sources under
 `sdk/examples/` (`sdk/bin/` stays empty in a plain build). It does **not**
 require root and does **not** install anything.
@@ -81,9 +81,9 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 |------|--------|--------|
 | `DEBUG=1` | `-g` instead of `-O3`; asserts/debug() stay active | `rules/common.mk:87-93` |
 | `NDEBUG=1` | Keep debug/assert active (suppress `-DNDEBUG`; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
-| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`) | `rules/common.mk:159-166` |
+| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-174` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
-| `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:89-97` |
+| `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:149-157` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
 
 ## 3. Testing
@@ -170,7 +170,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:248-251`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:282-287`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -212,7 +212,7 @@ Two verification profiles exist in `rules/common.mk` (both add flags to
 
 > **⚠ Always `make -C sdk clean` before switching build profiles.**
 > *(This warning is the single source for the rule; other documents link here.)*
-> Object rules depend on source timestamps only (`rules/common.mk:426-428`) —
+> Object rules depend on source timestamps only (`rules/common.mk:443-445`) —
 > changing `BUILD=` does *not* invalidate existing `.o` files, so building
 > `BUILD=asan` on top of a plain tree relinks sanitized `.so` files from
 > non-instrumented objects and reports success. Clean first, then build the
@@ -253,18 +253,18 @@ make -C sdk BUILD=tsan MMT_BASE=/tmp/mmt-tsan install
 ```
 
 In both profiles the release-hardening block (LTO, FORTIFY, stack protector,
-RELRO — `rules/common-linux.mk:51-103`) is automatically disabled, and the
+RELRO — `rules/common-linux.mk:66-163`) is automatically disabled, and the
 `-Wl,-z,defs` self-containedness guard is skipped because sanitizer runtime
-symbols are intentionally left undefined (`rules/common-linux.mk:126-138`).
+symbols are intentionally left undefined (`rules/common-linux.mk:202-214`).
 
 ## 6. `ENABLESEC=1` Security Engines Flag
 
 `ENABLESEC` gates two optional libraries — `libmmt_security` and
 `libmmt_fuzz` — which are otherwise not built at all:
 
-- Object/header selection: `rules/common.mk:189-191, 213-216, 279-288`
-- Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 139-142, 150-154, 187-203`
-- Install symlinks for both engines: `sdk/Makefile:46-47, 109-110`
+- Object/header selection: `rules/common.mk:197-199, 221-224, 296-305`
+- Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 215-218, 226-230, 263-279`
+- Install symlinks for both engines: `sdk/Makefile:54-55, 137-138`
 
 Usage (requires `libxml2-dev`):
 

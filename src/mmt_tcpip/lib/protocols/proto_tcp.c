@@ -3,6 +3,8 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
+#include <inttypes.h> /* PRIu64 in debug() calls — only compiled when asserts live (issue #214) */
+
 #include "tcp.h"
 #include "tcp_segment.h"
 
