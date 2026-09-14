@@ -7,9 +7,20 @@
 #include "mmt_mobile_internal.h"
 
 static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
-	uint16_t seq_num;
+	uint32_t seq_num;
 	uint32_t teid;
 	int offset = get_packet_offset_at_index(ipacket, proto_index);
+	/*
+	 * F-BUG-082: the classifier validated only the 8 fixed+TEID bytes, but
+	 * the sequence number sits at octets 9-11. Bound every read against the
+	 * captured length instead of trusting the classification gate.
+	 */
+	if( offset < 0 || (size_t)offset >= ipacket->p_hdr->caplen )
+		return 0;
+	const size_t avail = ipacket->p_hdr->caplen - (size_t)offset;
+	/* fixed part: flags + type + length = 4 bytes */
+	if( avail < 4 )
+		return 0;
 	const struct gtpv2_header *hdr = (struct gtpv2_header *) &ipacket->data[offset];
 	switch( extracted_data->field_id ){
 	case GTPV2_VERSION:
@@ -31,20 +42,27 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 
 		// If T flag is set to 1, then TEID shall be placed into octets 5-8.
 		// Otherwise, TEID field is not present at all.
-		if( hdr->flag_t == 1 )
+		if( hdr->flag_t == 1 ){
+			if( avail < 8 )
+				return 0;
 			teid = copy_4bytes_order(hdr->teid, 4);
-		else
+		} else
 			teid = 0;
 		*((uint32_t *) extracted_data->data) = teid;
 		break;
 	case GTPV2_SEQUENCE_NUMBER:
 
-		//no TEID presents
-		if( hdr->flag_t == 0 )
+		//no TEID presents — the sequence number is then at octets 5-7
+		if( hdr->flag_t == 0 ){
+			if( avail < 8 )
+				return 0;
 			seq_num = copy_4bytes_order(hdr->teid, 3);
-		else
+		} else {
+			if( avail < sizeof( struct gtpv2_header ))
+				return 0;
 			seq_num = copy_4bytes_order(hdr->sequence_number, 3);
-		*((uint16_t *) extracted_data->data) = seq_num;
+		}
+		*((uint32_t *) extracted_data->data) = seq_num;
 		break;
 	}
 	return 1;

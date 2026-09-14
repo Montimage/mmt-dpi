@@ -47,6 +47,7 @@ INC="${PREFIX}/dpi/include"
 LIB="${PREFIX}/dpi/lib"
 
 SRC_INC=(
+    -I "${REPO_ROOT}/src/mmt_mobile"
     -I "${REPO_ROOT}/src/mmt_mobile/nas"
     -I "${REPO_ROOT}/src/mmt_mobile/s1ap"
     -I "${REPO_ROOT}/src/mmt_mobile/asn1c/common"

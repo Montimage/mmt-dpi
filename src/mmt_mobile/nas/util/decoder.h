@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <arpa/inet.h>
 #include "branch_optimization.h"
 
@@ -18,17 +19,33 @@
     value = *(uint8_t*)(buffer);                         \
     size += sizeof(uint8_t)
 
-#define DECODE_U16(buffer, value, size)                  \
-    value = ntohs(*(uint16_t*)(buffer));                 \
-    size += sizeof(uint16_t)
+/*
+ * F-BUG-090: multi-byte reads must not cast the wire pointer to a wider
+ * integer pointer — the buffer is arbitrarily aligned, so the cast
+ * dereference is undefined behaviour. Copy into a fixed-size local instead.
+ */
+#define DECODE_U16(buffer, value, size) do {             \
+    uint16_t _dec_u16;                                   \
+    memcpy( &_dec_u16, (buffer), sizeof( _dec_u16 ));    \
+    value = ntohs( _dec_u16 );                           \
+    size += sizeof(uint16_t);                            \
+} while (0)
 
-#define DECODE_U24(buffer, value, size)                  \
-    value = ntohl(*(uint32_t*)(buffer)) >> 8;            \
-    size += sizeof(uint8_t) + sizeof(uint16_t)
+#define DECODE_U24(buffer, value, size) do {             \
+    uint8_t _dec_u24[3];                                 \
+    memcpy( _dec_u24, (buffer), sizeof( _dec_u24 ));     \
+    value = ((uint32_t) _dec_u24[0] << 16)               \
+          | ((uint32_t) _dec_u24[1] <<  8)               \
+          |  (uint32_t) _dec_u24[2];                     \
+    size += sizeof(uint8_t) + sizeof(uint16_t);          \
+} while (0)
 
-#define DECODE_U32(buffer, value, size)                  \
-    value = ntohl(*(uint32_t*)(buffer));                 \
-    size += sizeof(uint32_t)
+#define DECODE_U32(buffer, value, size) do {             \
+    uint32_t _dec_u32;                                   \
+    memcpy( &_dec_u32, (buffer), sizeof( _dec_u32 ));    \
+    value = ntohl( _dec_u32 );                           \
+    size += sizeof(uint32_t);                            \
+} while (0)
 
 #if (BYTE_ORDER == LITTLE_ENDIAN)
 # define DECODE_LENGTH_U16(buffer, value, size)          \
