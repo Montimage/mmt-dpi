@@ -16,6 +16,11 @@ name: Build & release packages
 # build-provenance attestation covering every published file, so users can
 # run `sha256sum --check SHA256SUMS` and `gh attestation verify <pkg>`
 # before installing the package as root.
+#
+# The five build container images are pinned by index digest
+# (issue #217, F-DEP-101/F-CI-012/F-SEC-007) — the same digest resolves both
+# the amd64 and arm64 matrix legs — and mirrored in the tracked
+# tools/ci/base-images.txt, which the dependency bot diffs for drift.
 
 on:
   push:
@@ -27,6 +32,7 @@ on:
       - "src/**"
       - "rules/**"
       - "tools/ci/build-package.sh"
+      - "tools/ci/base-images.txt"
       - ".github/workflows/release-packages.yml"
 
 # Release builds must run to completion — a re-run of the same tag queues
@@ -51,15 +57,21 @@ jobs:
       matrix:
         arch: [amd64, arm64]
         distro:
-          - { name: ubuntu-22.04,   image: "ubuntu:22.04",                    pkg: deb }
-          - { name: ubuntu-24.04,   image: "ubuntu:24.04",                    pkg: deb }
-          - { name: debian-12,      image: "debian:12",                       pkg: deb }
-          - { name: rocky-9,        image: "rockylinux:9",                    pkg: rpm }
-          - { name: centos-stream9, image: "quay.io/centos/centos:stream9",   pkg: rpm }
+          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7",                    pkg: deb }
+          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254",                    pkg: deb }
+          - { name: debian-12,      image: "debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443",                       pkg: deb }
+          - { name: rocky-9,        image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                    pkg: rpm }
+          - { name: centos-stream9, image: "quay.io/centos/centos:stream9@sha256:7d3c87ab567add60d0153a6a17bc10d0f19cd982a2d533724298ebd1ee751eab",   pkg: rpm }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # GIT_VERSION (short hash) needs the git history
+
+      # The matrix pin above must be mirrored verbatim in the tracked
+      # tools/ci/base-images.txt — fail fast here rather than building on an
+      # unrecorded image (issue #217; check-image-digests.sh gates the same).
+      - name: Verify pinned base image is recorded
+        run: grep -Fx "${{ matrix.distro.image }}" tools/ci/base-images.txt
 
       - name: Set up QEMU
         if: matrix.arch == 'arm64'
