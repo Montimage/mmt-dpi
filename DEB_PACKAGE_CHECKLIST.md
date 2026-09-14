@@ -15,7 +15,7 @@
 
 1. **Architecture Detection**: Changed from `all` to dynamic `$(shell uname -m)` to properly detect the system architecture (arm64/aarch64, x86_64, etc.)
 
-2. **Dependencies**: Added `Depends: libc6 (>= 2.17)` to the control file
+2. **Dependencies**: `Depends:` declares the toolchain floor (issue #218): `libc6 (>= 2.34), libstdc++6 (>= 11)` — the constants come from `rules/common.mk` (`MMT_GLIBC_MIN`, `MMT_LIBSTDCXX_MIN`)
 
 3. **Post-install Script**: Added `postinst` to run `ldconfig` after installation
 
@@ -37,7 +37,7 @@
 ### Pre-Installation Checks
 
 - [ ] Verify system architecture compatibility (aarch64 vs x86_64)
-- [ ] Ensure `libc6 >= 2.17` is available: `dpkg -l libc6`
+- [ ] Ensure `libc6 >= 2.34` and `libstdc++6 >= 11` are available: `dpkg -l libc6 libstdc++6`
 - [ ] Check available disk space in `/opt/mmt` (requires ~50MB)
 
 ### Installation Testing

@@ -12,7 +12,8 @@
 # Static checks (no package build needed):
 #   - every library in the deb Depends line is actually linked by the build
 #     (a matching -l<lib> or pkg-config consumer in rules/*.mk/sdk/Makefile),
-#     except libc which needs none
+#     except libc which needs none and libstdc++6 which the $(CXX) link
+#     driver adds implicitly (issue #218)
 #   - the rpm spec stanza in sdk/Makefile emits Requires: and BuildRequires:
 #     matching the deb Depends set
 #   - the rpm spec's Version:/Release: fields are not inverted
@@ -76,6 +77,16 @@ for dep in depends:
     pkg = re.sub(r"-[0-9.]+$", "", dep)
     pkg = re.sub(r"(?<=[a-z])0[0-9.]*$", "", pkg)   # libpcap0.8 → libpcap
     stem = pkg[3:] if pkg.startswith("lib") else pkg
+    # The C++ runtime carries no -l flag: every shared library is linked by
+    # the $(CXX) driver (rules/common-linux.mk), which adds -lstdc++
+    # implicitly. Its Depends entry is satisfied by the link rule itself.
+    if pkg.startswith("libstdc++"):
+        if re.search(r"\$\(CXX\)", links):
+            ok(f"deb Depends {dep} is wired via the $(CXX) link driver")
+        else:
+            fail(f"deb Depends {dep} — shared libraries are not linked "
+                 "with $(CXX)")
+        continue
     if re.search(r"-l" + re.escape(stem) + r"\b|-l:?" + re.escape(pkg) + r"\b|"
                  r"pkg-config[^\n]*\b" + re.escape(pkg) + r"\b", links):
         ok(f"deb Depends {dep} is wired into the build (-l{stem}/pkg-config {pkg})")

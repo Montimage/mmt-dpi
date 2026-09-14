@@ -39,6 +39,18 @@ sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnght
 CI builds and tests on `ubuntu-24.04` (GCC 13) — see
 `.github/workflows/c-cpp.yml`. That is the reference toolchain.
 
+**Supported floor (issue #218, F-DEP-207):** GCC ≥ 11 with glibc ≥ 2.34 and
+libstdc++6 ≥ 11 — the oldest toolchain the release matrix
+(`.github/workflows/release-packages.yml`) still builds on, carried by
+Rocky 9 / CentOS Stream 9 and Ubuntu 22.04. The constants live in
+`rules/common.mk` (`MMT_GCC_MIN`, `MMT_GLIBC_MIN`, `MMT_LIBSTDCXX_MIN`):
+`rules/arch-linux.mk` fails the build below GCC 11 with a message naming
+the detected compiler, the generated `.deb` declares the same glibc and
+libstdc++ floors in its `Depends:` line (`sdk/Makefile` `deb` target), and
+the `toolchain-floor` job in `c-cpp.yml` builds the SDK and runs the full
+suite on `ubuntu-22.04` (GCC 11.4) so the floor is exercised, not just
+asserted.
+
 Notes:
 
 - Clang is available via `make ARCH=linux-clang`; icc via `ARCH=linux-icc`

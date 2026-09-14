@@ -48,6 +48,27 @@ jobs:
         EXTRA_CFLAGS: ${{ matrix.extra_cflags }}
       run: bash tests/run_all_tests.sh ${{ matrix.suites }}
 
+  toolchain-floor:
+    # Toolchain-floor gate (issue #218, F-DEP-207): the declared floor is
+    # GCC 11 / glibc 2.34 / libstdc++ 11 (rules/common.mk, enforced by
+    # rules/arch-linux.mk) — the oldest toolchain the release matrix builds
+    # on. ubuntu-22.04 is the oldest GitHub-hosted runner image and ships
+    # GCC 11.4, so this job proves the floor instead of merely asserting
+    # it: a change that silently requires a newer compiler fails here.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+    - name: Assert the runner sits at the declared floor
+      run: |
+        gcc --version | head -1
+        test "$(gcc -dumpfullversion | cut -d. -f1)" -eq 11
+    - name: Build the SDK on the floor toolchain
+      run: make -C sdk -j"$(nproc)"
+    - name: Run unit test suites
+      run: bash tests/run_all_tests.sh
+
   sanitizer-tests:
     # Run the unit suites (tests/run_all_tests.sh) under the sanitizer
     # profiles. The matrix entries name the SDK profiles they mirror

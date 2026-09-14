@@ -161,7 +161,7 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
         \nPriority: standard \
         \nArchitecture: $(DEB_ARCH)\
         \nMaintainer: Montimage <contact@montimage.eu> \
-        \nDepends: libc6 (>= 2.17), libpcap0.8 | libpcap0.8t64, libnghttp2-14 \
+        \nDepends: libc6 (>= $(MMT_GLIBC_MIN)), libstdc++6 (>= $(MMT_LIBSTDCXX_MIN)), libpcap0.8 | libpcap0.8t64, libnghttp2-14 \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
         \n A software C library designed to extract data attributes from network packets, server logs, and from structured events in general, in order to make them available for analysis \
