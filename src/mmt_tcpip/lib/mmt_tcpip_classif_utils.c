@@ -10,6 +10,16 @@
 /*
  */
 static inline int _mmt_case_sensitive_reverse_hostname_matching(const char *hostname, const char *url, size_t hostname_len, size_t url_len) {
+    /* Issue #212 (F-BUG-026): guard the zero-length cases first —
+     * `url_len - 1` underflows size_t when url_len == 0, and `hostname_len - 1`
+     * would place hnr one byte BEFORE the buffer, dereferenced by the loop.
+     * The hostname is packet-derived and may not be NUL-terminated, so the
+     * counters must be tested BEFORE dereferencing the cursors (the old order
+     * `*hnr && *hnr == *urlr && url_len && hostname_len` read one byte before
+     * both buffers once a counter reached 0). */
+    if (hostname_len == 0 || url_len == 0 || hostname == NULL || url == NULL) {
+        return 0; //No match
+    }
     if (hostname_len < url_len - 1) {
         return 0; //No match
     }
@@ -17,7 +27,7 @@ static inline int _mmt_case_sensitive_reverse_hostname_matching(const char *host
     const char * hnr  = &hostname[hostname_len - 1];
     const char * urlr = &url[url_len - 1];
 
-    while (*hnr && *hnr == *urlr && url_len && hostname_len) {
+    while (url_len && hostname_len && *hnr && *hnr == *urlr) {
         url_len--;
         hostname_len--;
         hnr--;
@@ -21882,11 +21892,13 @@ static int _insert_dynamic_ip_range(int netmask_nb, uint32_t netmask_address,
     avltree_t ** trees = is_override ? proto_avltrees_override : proto_avltrees;
 
     // A second rule for the same prefix+network in the same class would hit
-    // avltree_insert()'s duplicate-key branch, which returns the freshly-created
-    // (still-unlinked) node and would make the caller orphan the entire existing
-    // subtree for that prefix. Detect the duplicate and update the existing node
-    // in place instead (last rule wins); the superseded entry stays tracked in
-    // the cleanup list. avltree_find() is NULL-safe for an empty tree.
+    // avltree_insert()'s duplicate-key branch. Detect the duplicate and update
+    // the existing node in place instead (last rule wins); the superseded entry
+    // stays tracked in the cleanup list. avltree_find() is NULL-safe for an
+    // empty tree. (Issue #212 (F-BUG-027): the duplicate branch used to return
+    // the unlinked node, orphaning the whole subtree — avltree_insert() now
+    // returns the existing root, but the explicit in-place update is still
+    // required for the last-rule-wins semantics.)
     avltree_t * existing = avltree_find(trees[netmask_nb], dyn->entry.ip_address);
     if (existing != NULL) {
         // Per the extend/override contract (docs/External-Attribution.md): an
@@ -22042,11 +22054,29 @@ void _init_proto_avltrees() {
     while (proto_ip_address[i].netmask_nb != 0) {
         uint32_t key = proto_ip_address[i].ip_address;
         int tree_index = proto_ip_address[i].netmask_nb;
+        /* Issue #212 (F-BUG-028): the index came straight from the generated
+         * table — a malformed entry would index proto_avltrees[] out of bounds.
+         * Range-check it like the external-rule loader does. */
+        if (tree_index <= 0 || tree_index >= NETMASK_MAX_NB) {
+            fprintf(stderr, "[mmt-dpi] proto_ip_address[%d]: prefix length %d out of range [1,%d] - entry skipped\n",
+                    i, tree_index, NETMASK_MAX_NB - 1);
+            i++;
+            continue;
+        }
         // printf("[debug] %d new node key = %u, tree_index = %d\n", i, key, tree_index);
         avltree_t * node = avltree_create(key, (void*)&proto_ip_address[i]);
         if (node != NULL) {
-            proto_avltrees[tree_index] = avltree_insert(proto_avltrees[tree_index], node);
-            nb_nodes++;
+            int is_duplicate = 0;
+            proto_avltrees[tree_index] = avltree_insert_ex(proto_avltrees[tree_index], node, &is_duplicate);
+            if (is_duplicate) {
+                /* A duplicate table key must not silently orphan the subtree
+                 * (F-BUG-027); the unlinked node stays ours — free it. */
+                fprintf(stderr, "[mmt-dpi] proto_ip_address[%d]: duplicate key %u - entry skipped\n",
+                        i, key);
+                avltree_free_node(node);
+            } else {
+                nb_nodes++;
+            }
             // printf("[debug] new node has been added into tree: %d\n", tree_index);
             // avltree_show_node(node);
         }
@@ -22317,22 +22347,34 @@ static struct _host_name_by_tree_struct{
 static inline struct _host_name_by_tree_struct * _create_new_node(){
 	int i;
 	struct _host_name_by_tree_struct *ret = mmt_malloc( sizeof( struct _host_name_by_tree_struct ));
+	/* Issue #212 (F-BUG-029/030): the mmt_malloc result was written through
+	 * unchecked — a NULL ret crashed the trie builder. */
+	if( ret == NULL )
+		return NULL;
 	ret->protocol = NULL;
 	for( i=0; i<LEAVES_COUNT; i++ )
 		ret->leaves[i] = NULL;
 	return ret;
 }
 
-static void _init_tree(){
+static void _free_tree(void);
+
+/* Builds the reversed-hostname trie. Returns 1 on success, 0 on allocation
+ * failure — in that case the partial tree is released and _host_name_by_tree
+ * stays NULL so the lookup degrades to "no hostname match" instead of
+ * dereferencing a missing root (issue #212, F-BUG-029/030). */
+static int _init_tree(){
 	int i=0, j;
 	const protocol_match *proto_ptr;
 	struct _host_name_by_tree_struct *node_ptr;
 	uint8_t c;
 
 	if( _host_name_by_tree != NULL )
-		return;
+		return 1;
 
 	_host_name_by_tree = _create_new_node();
+	if( _host_name_by_tree == NULL )
+		return 0;
 
 	i = 0;
 	//for each host name
@@ -22345,8 +22387,14 @@ static void _init_tree(){
 			c = proto_ptr->string_to_match[j];
 
 			//if the branch corresponding to the character is not exist => create it
-			if( node_ptr->leaves[ c ] == NULL )
+			if( node_ptr->leaves[ c ] == NULL ){
 				node_ptr->leaves[ c ] = _create_new_node();
+				if( node_ptr->leaves[ c ] == NULL ){
+					// allocation failure: drop the partial tree, keep root NULL
+					_free_tree();
+					return 0;
+				}
+			}
 
 			//goto branch
 			node_ptr = node_ptr->leaves[ c ];
@@ -22362,6 +22410,7 @@ static void _init_tree(){
 		//goto to the next hostname
 		i++;
 	}
+	return 1;
 }
 
 static void _free_tree_node( struct _host_name_by_tree_struct *node_ptr ){
@@ -22375,7 +22424,7 @@ static void _free_tree_node( struct _host_name_by_tree_struct *node_ptr ){
 	mmt_free( node_ptr );
 }
 
-static void _free_tree(){
+static void _free_tree(void){
 	if( _host_name_by_tree == NULL ) return;
 	_free_tree_node( _host_name_by_tree );
 	_host_name_by_tree = NULL;
@@ -22383,7 +22432,8 @@ static void _free_tree(){
 
 
 __attribute__((constructor)) void _constructor () {
-	_init_tree();
+	if( !_init_tree() )
+		fprintf(stderr, "[mmt-dpi] hostname trie init failed (out of memory) - hostname classification disabled\n");
     _init_proto_avltrees();
 }
 
@@ -22397,7 +22447,13 @@ uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hos
 	int i;
 	uint8_t c;
 	struct _host_name_by_tree_struct *node_ptr = _host_name_by_tree;
-	const protocol_match *proto = node_ptr->protocol;
+	const protocol_match *proto;
+
+	/* Issue #212 (F-BUG-030): the trie root was dereferenced unguarded — when
+	 * _init_tree() fails (allocation), _host_name_by_tree is NULL. */
+	if( node_ptr == NULL )
+		return PROTO_UNKNOWN;
+	proto = node_ptr->protocol;
 
 	for( i=hostname_len-1; i>=0; i-- ){
 		c = hostname[i];
@@ -22421,7 +22477,13 @@ uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hos
 	//give one more chance
 	//we have .google.com
 	//need to match hostname = "google.com"
-	if( node_ptr->leaves['.'] != NULL && i==-1 )
+	/* Issue #212 (F-BUG-030): for an empty hostname i starts at -1 and this
+	 * fallback fired on the trie root — attributing whatever protocol a
+	 * degenerate entry might hold — and a NULL protocol on the '.' child used
+	 * to overwrite a longer match found during the walk. Require a non-empty
+	 * hostname and a real protocol on the fallback node. */
+	if( hostname_len > 0 && i == -1 && node_ptr->leaves['.'] != NULL
+			&& node_ptr->leaves['.']->protocol != NULL )
 		proto = node_ptr->leaves['.']->protocol;
 
 //	*p = proto;

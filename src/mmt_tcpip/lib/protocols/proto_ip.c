@@ -1379,7 +1379,6 @@ int ip_session_cleanup_on_timeout(void * protocol_context, mmt_session_t * timed
     // free session allocated memory. be careful about multiple free of the same data.
     // In the closup some session data are freed. These should not be the same as here.
     free_session_data(timedout_session->session_key, timedout_session, ((protocol_instance_t *) protocol_context)->args);
-//printf("timeout\n");
     return 0;
 }
 
@@ -1439,7 +1438,11 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     unsigned len = ipacket->p_hdr->caplen - (unsigned) off;
 
     if ( len < sizeof( struct iphdr )) {
-        (void)printf("*** Warning: malformed packet (not enough data): %"PRIu64"\n",ipacket->packet_id );
+        /* Issue #212 (F-BUG-042): this printf ran in the packet hot path, so a
+         * remote sender could flood stdout with one malformed datagram each.
+         * Routed through the (default-off) MMT_LOG macro like every other
+         * diagnostic in this file's peers. */
+        MMT_LOG(PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (not enough data): %"PRIu64"\n", ipacket->packet_id );
         return 0;
     }
 
@@ -1586,7 +1589,6 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
     if (session) {
         // TODO: Check if dg->nb_packets > 1 -> update number of fragmented packet in current session
         if(ipacket->nb_reassembled_packets[index] > 1){
-            // printf("\nNew fragmented packet: %lu\n",session->session_id);
             session->fragmented_packet_count++;
             session->fragment_count += ipacket->nb_reassembled_packets[index];
             // Detect too many fragmented packet in one session
@@ -1781,7 +1783,6 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
         return 0; //TODO
     }
 
-    // printf("[IP] not fragmented: %lu\n", ipacket->packet_id);
     packet->iph = ip_hdr;
     packet->iphv6 = NULL;
     uint32_t ihl_bytes = (uint32_t)ip_hdr->ihl * 4;
