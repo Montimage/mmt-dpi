@@ -102,8 +102,7 @@ list fails the build):
 - `harness-gate` — harness-gate
 - `classification-gate` — Golden classification fingerprint unchanged
 - `precision-gate` — Labelled-pcap precision/recall holds or improves (M9, issue #74)
-- matrix expansion: `harness-*` fans out to 25 jobs, one per `tools/phase0/tests/run_*.sh`
-- matrix expansion: `harness-*` fans out to 27 jobs, one per `tools/phase0/tests/run_*.sh`
+- matrix expansion: `harness-*` fans out to 28 jobs, one per `tools/phase0/tests/run_*.sh`
 <!-- end-generated: ci-gates -->
 
 What each gate asserts:
