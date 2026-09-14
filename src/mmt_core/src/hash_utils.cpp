@@ -97,6 +97,14 @@ static void mmt_session_resize(mmt_session_table * t, size_t new_cap) {
     mmt_session_slot * old = t->slots;
     size_t old_cap = t->cap;
     mmt_session_alloc_slots(t, new_cap);
+    // F-BUG-001 (issue #199): on allocation failure the table is left as it
+    // was — mmt_session_alloc_slots signals failure with slots == NULL/cap == 0
+    // and rehashing into it would index a NULL array at mask == SIZE_MAX.
+    if (t->slots == NULL) {
+        t->slots = old;
+        t->cap   = old_cap;
+        return;
+    }
     t->used = t->size; // tombstones dropped on rehash
     for (size_t i = 0; i < old_cap; i++) {
         void * k = old[i].key;
@@ -166,7 +174,12 @@ int insert_int_key_value(void * maplist, uint32_t key, void * value) {
 }
 
 int insert_session_into_protocol_context(void * protocol_context, void * key, void * value) {
+    // F-BUG-001 (issue #199): early-out on a missing or dead table — cap == 0
+    // means the slot allocation failed, and mask = cap - 1 would wrap to
+    // SIZE_MAX on a NULL slots array.
+    if (protocol_context == NULL) return 0;
     mmt_session_table * t = reinterpret_cast<mmt_session_table *>(((protocol_instance_t *) protocol_context)->sessions_map);
+    if (t == NULL || t->cap == 0 || t->slots == NULL) return 0;
 
     // Keep the load factor <= 0.7. Grow only when the live population is dense;
     // if the slots are mostly tombstones (delete-heavy churn from session
@@ -175,6 +188,10 @@ int insert_session_into_protocol_context(void * protocol_context, void * key, vo
         size_t new_cap = (t->size * 2 >= t->cap) ? (t->cap << 1) : t->cap;
         mmt_session_resize(t, new_cap);
     }
+
+    // A table with no EMPTY slot at all would loop forever below; this can only
+    // happen while the allocator keeps failing (the grow above is refused).
+    if (t->used >= t->cap) return 0;
 
     size_t mask = t->cap - 1;
     size_t i = (size_t) t->hash_of(key) & mask;
@@ -236,11 +253,18 @@ void * find_int_key_value(void * maplist, uint32_t key) {
 }
 
 void * get_session_from_protocol_context_by_session_key(void * protocol_context, void * key) {
+    // F-BUG-001 (issue #199): early-out on a missing or dead table (cap == 0).
+    if (protocol_context == NULL) return NULL;
     mmt_session_table * t = reinterpret_cast<mmt_session_table *>(((protocol_instance_t *) protocol_context)->sessions_map);
+    if (t == NULL || t->cap == 0 || t->slots == NULL) return NULL;
     size_t mask = t->cap - 1;
     size_t i = (size_t) t->hash_of(key) & mask;
     void * k;
-    while ((k = t->slots[i].key) != MMT_SLOT_EMPTY) {
+    // Bounded probe: a table with no EMPTY slot (full under sustained OOM)
+    // must not spin forever.
+    for (size_t n = 0; n < t->cap; n++) {
+        k = t->slots[i].key;
+        if (k == MMT_SLOT_EMPTY) break;
         if (k != MMT_SLOT_TOMB && t->key_equal(k, key)) {
             return t->slots[i].value;
         }
@@ -270,11 +294,17 @@ int delete_int_key_value(void * maplist, uint32_t key) {
 }
 
 int delete_session_from_protocol_context(void * protocol_context, void * key) {
+    // F-BUG-001 (issue #199): early-out on a missing or dead table (cap == 0).
+    if (protocol_context == NULL) return 1; // mirrors the not-found return
     mmt_session_table * t = reinterpret_cast<mmt_session_table *>(((protocol_instance_t *) protocol_context)->sessions_map);
+    if (t == NULL || t->cap == 0 || t->slots == NULL) return 1;
     size_t mask = t->cap - 1;
     size_t i = (size_t) t->hash_of(key) & mask;
     void * k;
-    while ((k = t->slots[i].key) != MMT_SLOT_EMPTY) {
+    // Bounded probe, same full-table safeguard as the lookup above.
+    for (size_t n = 0; n < t->cap; n++) {
+        k = t->slots[i].key;
+        if (k == MMT_SLOT_EMPTY) break;
         if (k != MMT_SLOT_TOMB && t->key_equal(k, key)) {
             // Tombstone the slot: a probe sequence may run through it, so it
             // cannot be reset to EMPTY (that would truncate later lookups).
@@ -388,7 +418,12 @@ int update_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t new_ti
                 session->next->previous = NULL;
             }
         } else {
-            session->previous->next = session->next;
+            // F-BUG-011 (issue #199): a session that is not the milestone head
+            // should be mid-list, but a session that was never linked has
+            // previous == NULL — never dereference it.
+            if (session->previous != NULL) {
+                session->previous->next = session->next;
+            }
             if (session->next != NULL) {
                 session->next->previous = session->previous;
             }
@@ -415,7 +450,11 @@ int force_session_timeout(mmt_handler_t *mmt_handler, mmt_session_t * session) {
                 session->next->previous = NULL;
             }
         } else {
-            session->previous->next = session->next;
+            // F-BUG-011 (issue #199): same unlink guard — previous may be NULL
+            // for a session that was never linked into this milestone's list.
+            if (session->previous != NULL) {
+                session->previous->next = session->next;
+            }
             if (session->next != NULL) {
                 session->next->previous = session->previous;
             }
@@ -435,7 +474,10 @@ int insert_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t timeou
         session_list = (mmt_session_t *) (*it).second;
         session->previous = NULL;
         session->next = session_list;
-        session_list->previous = session;
+        // F-BUG-011 (issue #199): the milestone may exist with a NULL head.
+        if (session_list != NULL) {
+            session_list->previous = session;
+        }
         (*it).second = (void *) session;
         return 1;
     } else {

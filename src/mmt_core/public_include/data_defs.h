@@ -166,6 +166,7 @@ struct ipacket_struct {
     int internal_cumulative_offset[PROTO_PATH_SIZE]; /**< internal: - never modify it. Issue #19: memoized prefix-sum of proto_headers_offset->proto_path, so get_packet_offset_at_index() is amortized O(1) instead of re-summing (O(N^2) per packet). */
     int internal_cumulative_offset_valid;     /**< internal: - never modify it. Issue #19: 0 when the cumulative-offset cache must be rebuilt. */
     int internal_cumulative_offset_hwm;       /**< internal: - never modify it. Issue #19: highest index whose prefix sum is cached (the cache is extended on demand, never beyond what is queried). */
+    int proto_headers_offset_owned;           /**< internal: - never modify it. Issue #199 (F-BUG-002): 1 when proto_headers_offset points to a heap buffer owned by this packet (set at its single mmt_malloc site in proto_session_management), 0 when it aliases storage embedded in the handler or the session. clean_packet_with_reassembly() frees the buffer only when this flag is set. */
 };
 
 /**

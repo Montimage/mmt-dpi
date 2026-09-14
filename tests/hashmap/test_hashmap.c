@@ -320,6 +320,44 @@ static void test_key_zero(void) {
     hashmap_free(map);
 }
 
+/* ---- F-BUG-007 (issue #199): a map whose slot array never allocated must not crash ---- */
+static void test_failed_init_map(void) {
+    fprintf(stderr, "  test: operations on a map with NULL slots\n");
+    mmt_hashmap_t map;
+    memset(&map, 0, sizeof(map));
+    /* This is exactly the state hashmap_init() leaves after an OOM:
+       slots == NULL, nslots == 0, nkeys == 0. */
+    map.slots  = NULL;
+    map.nslots = 0;
+    map.nkeys  = 0;
+
+    int v = 1;
+    void *val = (void*)0xdeadbeef;
+    CHECK(hashmap_get(&map, 7, &val) == 0, "get on NULL-slots map should return 0");
+    CHECK(val == (void*)0xdeadbeef, "get on NULL-slots map should not touch *val");
+    CHECK(hashmap_remove(&map, 7) == 0, "remove on NULL-slots map should return 0");
+
+    walk_count = 0;
+    hashmap_walk(&map, test_walker, NULL);
+    CHECK(walk_count == 0, "walk on NULL-slots map should visit nothing");
+
+    hashmap_insert_kv(&map, 7, &v);   /* must not crash; insert already guards */
+    hashmap_cleanup(&map);            /* must not crash; cleanup already guards */
+}
+
+/* ---- F-BUG-007 (issue #199): NULL map argument must not crash ---- */
+static void test_null_map_arg(void) {
+    fprintf(stderr, "  test: operations on a NULL map\n");
+    void *val = NULL;
+    CHECK(hashmap_get(NULL, 1, &val) == 0, "get on NULL map should return 0");
+    CHECK(hashmap_remove(NULL, 1) == 0, "remove on NULL map should return 0");
+    walk_count = 0;
+    hashmap_walk(NULL, test_walker, NULL);
+    CHECK(walk_count == 0, "walk on NULL map should visit nothing");
+    hashmap_insert_kv(NULL, 1, &val); /* must not crash */
+    hashmap_free(NULL);               /* must not crash */
+}
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
@@ -341,6 +379,8 @@ int main(int argc, char **argv) {
     test_reinit();
     test_null_value();
     test_key_zero();
+    test_failed_init_map();
+    test_null_map_arg();
 
     if (g_failures == 0) {
         fprintf(stderr, "ALL CHECKS PASSED\n");

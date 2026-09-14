@@ -28,6 +28,14 @@
 
 void *mmt_malloc( size_t size )
 {
+   // F-BUG-009 (issue #199): reject sizes whose header addition wraps around.
+   // A wrapped size would allocate a tiny block that the caller believes is
+   // huge -> heap overflow.
+   if( unlikely( size > SIZE_MAX - sizeof( size_t ))) {
+      (void)fprintf( stderr, "mmt_malloc: size overflow (%zu bytes)\n", size );
+      return NULL;
+   }
+
    uint8_t *x0 = (uint8_t*)malloc( size + sizeof( size_t ));
 
    if( unlikely( x0 == NULL )) {
@@ -66,6 +74,13 @@ void *mmt_realloc( void *x, size_t size )
    if( size <= psz ) return x; // nothing to do, existing block is large enough
 
    // ( x != NULL ) && ( size > psz )
+
+   // F-BUG-009 (issue #199): same wrap guard as mmt_malloc — a wrapped
+   // size + sizeof(size_t) would shrink the block the caller sees as grown.
+   if( unlikely( size > SIZE_MAX - sizeof( size_t ))) {
+      (void)fprintf( stderr, "mmt_realloc: size overflow (%zu bytes)\n", size );
+      return NULL; // original block left intact per realloc() semantics
+   }
 
    uint8_t *x1 = (uint8_t*)realloc( x0, size + sizeof( size_t ));
 
@@ -142,6 +157,12 @@ static inline uint8_t *mmt_arena_block_data( mmt_arena_block_t *b )
 
 mmt_arena_t *mmt_arena_create( size_t block_size )
 {
+   // F-BUG-009 (issue #199): the ALIGN_UP below adds MMT_ARENA_ALIGN-1; reject
+   // block sizes for which that addition wraps to a tiny/0 payload.
+   if( unlikely( block_size > SIZE_MAX - ( MMT_ARENA_ALIGN - 1u ))) {
+      (void)fprintf( stderr, "mmt_arena_create: block size overflow (%zu bytes)\n", block_size );
+      return NULL;
+   }
    mmt_arena_t *a = (mmt_arena_t*)malloc( sizeof( mmt_arena_t ) );
    if( unlikely( a == NULL )) {
       (void)fprintf( stderr, "mmt_arena_create: not enough memory\n" );
@@ -158,13 +179,28 @@ void *mmt_arena_alloc( mmt_arena_t *a, size_t size )
    if( unlikely( a == NULL )) return NULL;
    if( size == 0 ) size = 1;
 
+   // F-BUG-009 (issue #199): three unchecked additions lived here —
+   //   1. size + ALIGN-1 inside MMT_ARENA_ALIGN_UP (rejected below),
+   //   2. b->used + need in the capacity test (rewritten as a subtraction),
+   //   3. MMT_ARENA_HDR + cap in the grow malloc (rejected below).
+   if( unlikely( size > SIZE_MAX - ( MMT_ARENA_ALIGN - 1u ))) {
+      (void)fprintf( stderr, "mmt_arena_alloc: size overflow (%zu bytes)\n", size );
+      return NULL;
+   }
+
    size_t need = MMT_ARENA_ALIGN_UP( size );
    mmt_arena_block_t *b = a->current;
 
-   if( b == NULL || ( b->used + need ) > b->capacity ) {
+   // used <= capacity is the arena invariant, so capacity - used cannot wrap;
+   // a block violating it is grown around (treated as full), never carved from.
+   if( b == NULL || b->used > b->capacity || need > b->capacity - b->used ) {
       // Grow: a fresh block big enough for this request (oversized requests get
       // their own dedicated block sized exactly to the request).
       size_t cap = ( need > a->block_size ) ? need : a->block_size;
+      if( unlikely( cap > SIZE_MAX - MMT_ARENA_HDR )) {
+         (void)fprintf( stderr, "mmt_arena_alloc: size overflow (%zu bytes)\n", size );
+         return NULL;
+      }
       mmt_arena_block_t *nb = (mmt_arena_block_t*)malloc( MMT_ARENA_HDR + cap );
       if( unlikely( nb == NULL )) {
          (void)fprintf( stderr, "mmt_arena_alloc: not enough memory (%zu bytes)\n", size );

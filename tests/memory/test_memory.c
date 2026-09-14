@@ -330,6 +330,55 @@ static void test_arena_custom_block_size(void) {
     }
 }
 
+/* ---- F-BUG-009 (issue #199): size arithmetic must not wrap ---- */
+
+static void test_malloc_size_wrap(void) {
+    fprintf(stderr, "  test: mmt_malloc rejects size+header wrap\n");
+    /* size + sizeof(size_t) must not wrap; wrapped sizes used to allocate a
+       tiny block that the caller believes is huge (heap overflow). */
+    CHECK(mmt_malloc(SIZE_MAX) == NULL, "mmt_malloc(SIZE_MAX) must return NULL");
+    CHECK(mmt_malloc(SIZE_MAX - 4) == NULL, "mmt_malloc(SIZE_MAX-4) must return NULL");
+    /* Note: a just-below-the-limit size legitimately reaches real malloc(); under
+       ASan that aborts (allocation-size-too-big), so it is not probed here. */
+}
+
+static void test_realloc_size_wrap(void) {
+    fprintf(stderr, "  test: mmt_realloc rejects size+header wrap\n");
+    void *p = mmt_malloc(64);
+    CHECK(p != NULL, "initial malloc for realloc-wrap test");
+    if (p) {
+        ((uint8_t*)p)[0] = 0x5A;
+        CHECK(mmt_realloc(p, SIZE_MAX) == NULL, "mmt_realloc(p, SIZE_MAX) must return NULL");
+        /* Failed realloc leaves the original block untouched. */
+        CHECK(((uint8_t*)p)[0] == 0x5A, "original block intact after rejected realloc");
+        mmt_free(p);
+    }
+    CHECK(mmt_realloc(NULL, SIZE_MAX) == NULL, "mmt_realloc(NULL, SIZE_MAX) must return NULL");
+}
+
+static void test_arena_alloc_size_wrap(void) {
+    fprintf(stderr, "  test: mmt_arena_alloc rejects wrapped sizes\n");
+    mmt_arena_t *arena = mmt_arena_create(0);
+    CHECK(arena != NULL, "arena create");
+    if (arena) {
+        /* size + ALIGN-1 wraps to ~0 -> must be rejected, not silently succeed */
+        CHECK(mmt_arena_alloc(arena, SIZE_MAX) == NULL, "arena_alloc(SIZE_MAX) must return NULL");
+        CHECK(mmt_arena_alloc(arena, SIZE_MAX - 8) == NULL, "arena_alloc(SIZE_MAX-8) must return NULL");
+        /* Survives ALIGN_UP but wraps header+capacity -> must be rejected too */
+        CHECK(mmt_arena_alloc(arena, SIZE_MAX - 32) == NULL, "arena_alloc(SIZE_MAX-32) must return NULL");
+        /* The arena stays usable after rejected requests */
+        void *p = mmt_arena_alloc(arena, 64);
+        CHECK(p != NULL, "arena still services normal requests after rejected wraps");
+        mmt_arena_destroy(arena);
+    }
+}
+
+static void test_arena_create_size_wrap(void) {
+    fprintf(stderr, "  test: mmt_arena_create rejects wrapped block size\n");
+    CHECK(mmt_arena_create(SIZE_MAX) == NULL, "arena_create(SIZE_MAX) must return NULL");
+    CHECK(mmt_arena_create(SIZE_MAX - 8) == NULL, "arena_create(SIZE_MAX-8) must return NULL");
+}
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
@@ -356,6 +405,10 @@ int main(int argc, char **argv) {
     test_arena_oversized();
     test_arena_sequential();
     test_arena_custom_block_size();
+    test_malloc_size_wrap();
+    test_realloc_size_wrap();
+    test_arena_alloc_size_wrap();
+    test_arena_create_size_wrap();
 
     if (g_failures == 0) {
         fprintf(stderr, "ALL CHECKS PASSED\n");
