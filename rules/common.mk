@@ -157,6 +157,14 @@ CXXFLAGS += $(SANITIZE_FLAGS)
 endif
 
 # SHOWLOG = 1 to show all the log from MMT_LOG() ...
+#
+#   ⚠ CAUTION (F-SEC-016, issue #214): a SHOWLOG=1 build prints decoded packet
+#   fields to stdout, and several of them are subscriber-identifying — IMSI,
+#   M-TMSI, UE/eNB IPs, eNB/MME names, URLs and hostnames lifted straight out
+#   of the traffic under inspection. Build with SHOWLOG=1 only on captures you
+#   are allowed to expose, and never ship or deploy a SHOWLOG build where the
+#   output is collected: the log stream *is* personal data.
+#
 ifdef SHOWLOG
 CFLAGS   += -DDEBUG
 CXXFLAGS += -DDEBUG
@@ -260,6 +268,15 @@ $(LIBDICOM_OBJECTS): CFLAGS +=  -Wno-unused-variable -fPIC
 # To run that broad sweep again: make MMT_WARN_FLAGS='-Wextra -Wformat=2 -Wformat-security -Wnull-dereference -Wvla'
 # To silence all extra warnings: make MMT_WARN_FLAGS=
 MMT_WARN_FLAGS ?= -Wformat=2 -Wformat-security -Wnull-dereference -Wvla
+
+# Flags for compiling/linking the *installed examples* (F-SEC-010, issue #214).
+# The examples are executables end users build from the installed tree (the
+# `test` target in sdk/Makefile is the in-repo example of that flow), so they
+# get position-independent code + a PIE link plus the same RELRO/noexecstack
+# link hardening as the libraries — an executable processing untrusted pcaps
+# should not be the softest binary in the install.
+MMT_EXAMPLE_CFLAGS   ?= -fPIE
+MMT_EXAMPLE_LDFLAGS  ?= -pie -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
 
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(MMT_WARN_FLAGS) $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(MMT_WARN_FLAGS) $(patsubst %,-I%,$(SRCINC))

@@ -155,6 +155,15 @@ static void test_s1ap_valid_vectors(void) {
 	/* empty payload: documented early return */
 	CHECK("empty payload returns 0",
 			s1ap_decode(&msg, buf, 0) == 0);
+
+	/* F-SEC-011 (issue #214): NULL arguments are rejected unconditionally —
+	 * the assert()s that used to guard them compiled out under the shipped
+	 * -DNDEBUG build, leaving NULL dereferences. */
+	CHECK("NULL message pointer rejected (F-SEC-011)",
+			s1ap_decode(NULL, VECTOR_ATTACH_REQUEST_IMSI,
+				sizeof(VECTOR_ATTACH_REQUEST_IMSI)) == -1);
+	CHECK("NULL buffer rejected (F-SEC-011)",
+			s1ap_decode(&msg, NULL, sizeof(VECTOR_ATTACH_REQUEST_IMSI)) == -1);
 }
 
 /* ------------------------------------------------------------------ */
