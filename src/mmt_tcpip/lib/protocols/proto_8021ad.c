@@ -13,6 +13,12 @@ struct mmt_vlan_struct {
 int ad_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     int offset = get_packet_offset_at_index(ipacket, index);
 
+    /* Issue #201 (F-BUG-106): the 4-byte tag (code + h_proto) must be captured
+     * before h_proto is read. */
+    if (offset < 0
+     || (uint64_t) offset + sizeof (struct mmt_vlan_struct) > ipacket->p_hdr->caplen)
+        return 0;
+
     const struct mmt_vlan_struct *vl = (struct mmt_vlan_struct *) & ipacket->data[offset];
     classified_proto_t retval;
     retval.offset = -1;

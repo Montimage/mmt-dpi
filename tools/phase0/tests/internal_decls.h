@@ -119,6 +119,9 @@ int get_next_non_white_space_offset_no_limit(const char *str, int max);
 
 /* --- mmt_tcpip_utils.c ------------------------------------------------------- */
 void _mmt_parse_packet_line_info(ipacket_t *ipacket);
+uint32_t mmt_bytestream_to_number(const uint8_t *str,
+                                  uint16_t max_chars_to_read,
+                                  uint16_t *bytes_read);
 
 /* --- protocols/proto_ip.c / proto_ipv6.c (session & fragment keys) ---------- */
 uint8_t build_ipv4_session_key(u_char *ip_packet, unsigned ip_packet_len,

@@ -24,6 +24,11 @@ typedef struct tcp_seg_struct
   uint64_t next_seq;           // Next segment sequence number
   uint64_t ack;                // Acknowledgement number
   uint16_t len;                // Len of segment
+  /* Issue #201 (F-BUG-039): ownership tag — 1 when the node AND its data were
+   * carved from a per-flow arena (tcp_seg_new_in_arena). Arena memory is
+   * released wholesale on session teardown, so tcp_seg_free() must not
+   * free() it (allocator mismatch). */
+  uint8_t in_arena;            // 1 = arena-backed, 0 = malloc-backed
   uint8_t *data;               // data of segment
   struct tcp_seg_struct *next; // Next segment in link-list
   struct tcp_seg_struct *prev; // Previous segment in link-list

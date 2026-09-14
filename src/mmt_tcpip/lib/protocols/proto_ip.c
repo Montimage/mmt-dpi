@@ -1364,9 +1364,28 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     mmt_hashmap_t *map = mmt->ip_streams;
     mmt_key_t     key;
     ip_dgram_t    *dg;
+    int            is_new = 0;
 
-    unsigned off = get_packet_offset_at_index( ipacket, index );
-    unsigned len = ipacket->p_hdr->caplen - off;
+    if (map == NULL) return 0;
+
+    /* Issue #201 (F-BUG-020): arm the fragment-map maintenance hooks the first
+     * time a fragment is seen. The sweep runs from the existing session-expiry
+     * timer pass (process_timedout_sessions) and the drain runs from
+     * mmt_close_handler, so no datagram can outlive its handler or sit in the
+     * map forever. */
+    if (mmt->frag_map_sweep_fct == NULL) {
+        mmt->frag_map_sweep_fct = mmt_ip_frag_map_sweep;
+        mmt->frag_map_drain_fct = mmt_ip_frag_map_drain;
+    }
+
+    /* Issue #201 (F-BUG-017): `off` comes from the protocol path and `len` is
+     * derived from the CAPTURED length — validate both before touching the
+     * header. The old code computed `caplen - off` without checking off <=
+     * caplen, so a stale offset could wrap `len` to a huge value. */
+    int off = get_packet_offset_at_index( ipacket, index );
+    if (off < 0 || (unsigned) off >= ipacket->p_hdr->caplen)
+        return 0;
+    unsigned len = ipacket->p_hdr->caplen - (unsigned) off;
 
     if ( len < sizeof( struct iphdr )) {
         (void)printf("*** Warning: malformed packet (not enough data): %"PRIu64"\n",ipacket->packet_id );
@@ -1377,10 +1396,41 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
 
     key = ip_fragment_key( (const struct iphdr *) ip );
     if ( !hashmap_get( map, key, (void**)&dg )) {
+        /* Issue #201 (F-BUG-020): bound the map BEFORE allocating a new
+         * datagram — at the ceiling, evict the stalest entry instead of
+         * growing without bound for the handler's lifetime. */
+        while (map->nkeys >= MMT_IP_FRAG_MAP_MAX_ENTRIES) {
+            unsigned before = map->nkeys;
+            mmt_ip_frag_map_evict_oldest( map );
+            if (map->nkeys >= before)
+                break; /* nothing evictable left — refuse to grow */
+        }
+        if (map->nkeys >= MMT_IP_FRAG_MAP_MAX_ENTRIES)
+            return 0;
         dg = ip_dgram_alloc();
-        hashmap_insert_kv( map, key, dg );
+        if (dg == NULL)
+            return 0;
+        is_new = 1;
     }
     int dgram_update_result = ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
+    if (dgram_update_result == 1) {
+        /* Issue #201 (F-BUG-017): malformed fragment — never park it in the
+         * map. A fresh datagram goes straight back to the heap; an existing
+         * one is evicted too — a failed update may have left its hole list
+         * partially mutated, and it must never reach is_complete in that
+         * state. */
+        if (is_new) {
+            ip_dgram_free( dg );
+        } else {
+            hashmap_remove( map, key );
+            ip_dgram_free( dg );
+        }
+        return 0;
+    }
+    /* Track the most recent fragment for the age-based sweep. */
+    dg->last_activity = (uint32_t) ipacket->p_hdr->ts.tv_sec;
+    if (is_new)
+        hashmap_insert_kv( map, key, dg );
     if(dgram_update_result == 2 || dgram_update_result == 6 ){
         fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_DUPLICATED,(void*)&(dgram_update_result));
     }else if (dgram_update_result > 0 ) {
@@ -1402,8 +1452,15 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     // At this point, dg is a fully reassembled datagram.
     // -> reconstruct ipacket from dg, and pass it along
 
-    unsigned ioff = off + ( ip->ihl << 2 );
+    unsigned ioff = (unsigned) off + ( ip->ihl << 2 );
+    /* Issue #201: unchecked mmt_malloc — on failure the datagram must leave
+     * the map with its buffer, not stay half-assembled. */
     uint8_t *x = (uint8_t*)mmt_malloc( ioff + dg->len );
+    if (x == NULL) {
+        hashmap_remove( map, key );
+        ip_dgram_free( dg );
+        return 0;
+    }
     // copy the original ipacket data + IP header
     (void)memcpy( x,        ipacket->data, ioff );
     // copy the IP payload
@@ -1434,6 +1491,13 @@ static inline int mmt_iph_is_fragmented(const mmt_una_iphdr_t *iph)
 void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned index, int * is_new_session)
 {
     int offset = get_packet_offset_at_index(ipacket, index);
+    /* Issue #201 (F-BUG-017): the fixed IPv4 header must be captured before
+     * frag_off/ihl are read below — the sessionizer is invoked with no
+     * offset-vs-caplen guarantee. */
+    if (offset < 0 || (uint64_t) offset + sizeof(struct iphdr) > ipacket->p_hdr->caplen) {
+        *is_new_session = 0;
+        return NULL;
+    }
     const mmt_una_iphdr_t * ip_hdr = (mmt_una_iphdr_t *) & ipacket->data[offset];
     mmt_session_key_t ipv4_session_key;
     // ipv4_session_key.lower_ip = NULL;

@@ -42,8 +42,12 @@ int icmp_data_extraction(const ipacket_t * packet, unsigned proto_index,
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
-    int data_len = packet->p_hdr->len - (proto_offset + attribute_offset);
-    if( data_len < 0 ) {
+    /* Issue #201 (F-BUG-018): derive the copy length from the CAPTURED length
+     * (caplen), not the on-wire header length (len). With a truncated capture
+     * the old code memcpy'd bytes past the end of the buffer — copying
+     * adjacent heap data into the extracted attribute. */
+    int data_len = packet->p_hdr->caplen - (proto_offset + attribute_offset);
+    if( data_len < 0 || proto_offset < 0 ) {
         MMT_LOG( PROTO_ICMP, MMT_LOG_DEBUG, "*** Warning: malformed packet (icmp length mismatch)\n" );
         return 0;
     }

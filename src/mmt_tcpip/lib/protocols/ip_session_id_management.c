@@ -129,6 +129,8 @@ static inline mmt_ip4_id_t * _get_ip4_id(internal_ip_proto_context_t * tcpip_con
     if (retval == NULL) {
         /*Initialize the memory for the IPv4 IDs */
         retval = mmt_malloc(sizeof (mmt_ip4_id_t));
+        if (retval == NULL)
+            return NULL; /* Issue #201: unchecked allocation */
         memset(retval, 0, sizeof (mmt_ip4_id_t));
 
         retval->count = 0;
@@ -159,6 +161,8 @@ mmt_ip6_id_t * get_ip6_id(internal_ip_proto_context_t * tcpip_context, struct in
     if (retval == NULL) {
         /*Initialize the memory for the IPv6 IDs */
         retval = mmt_malloc(sizeof (mmt_ip6_id_t));
+        if (retval == NULL)
+            return NULL; /* Issue #201: unchecked allocation */
         memset(retval, 0, sizeof (mmt_ip6_id_t));
 
         retval->count = 0;
@@ -286,7 +290,13 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL AND check if lower_is is new, if yes free it
                 if (isl_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
+                    /* Issue #201 (F-BUG-025): the id object was inserted into
+                     * ips_map by _get_ip4_id — remove it from the map before
+                     * freeing so no dangling entry stays reachable. */
+                    mmt_ip4_id_t * id_low = (mmt_ip4_id_t *) ((mmt_session_key_t *) retval->session_key)->lower_ip;
+                    _deleteID4(tcpip_context, & id_low->ip);
+                    tcpip_context->ips_count -= 1;
+                    mmt_free(id_low);
                 }
                 // mmt_free(session_key->lower_ip);
                 // mmt_free(session_key->higher_ip);
@@ -310,7 +320,12 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
                 //If we get here, then a memalloc problem occurred
                 //free this session and return NULL AND check if lower_is is new, if yes free it
                 if (isl_new) {
-                    mmt_free(((mmt_session_key_t *) retval->session_key)->lower_ip);
+                    /* Issue #201 (F-BUG-025): remove the id from ips_map before
+                     * freeing — it was inserted by get_ip6_id. */
+                    mmt_ip6_id_t * id_low = (mmt_ip6_id_t *) ((mmt_session_key_t *) retval->session_key)->lower_ip;
+                    deleteID6(tcpip_context, & id_low->ip);
+                    tcpip_context->ips_count -= 1;
+                    mmt_free(id_low);
                 }
                 // mmt_free(session_key->lower_ip);
                 // mmt_free(session_key->higher_ip);
@@ -329,13 +344,34 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             fprintf(stderr, "[error] get_session: insert_session_into_protocol_context return 0\n");
             //The session failed to be inserted into the MAP.
             //Cleanup what was created for this
+            /* Issue #201 (F-BUG-025): these id objects were inserted into
+             * ips_map by _get_ip4_id/get_ip6_id — delete the map entries
+             * before freeing so no dangling pointer stays reachable. */
             if (isl_new)
             {
-                mmt_free(((mmt_session_key_t *)retval->session_key)->lower_ip);
+                if (session_key->ip_type == 4) {
+                    mmt_ip4_id_t * id_low = (mmt_ip4_id_t *) ((mmt_session_key_t *)retval->session_key)->lower_ip;
+                    _deleteID4(tcpip_context, & id_low->ip);
+                    mmt_free(id_low);
+                } else {
+                    mmt_ip6_id_t * id_low = (mmt_ip6_id_t *) ((mmt_session_key_t *)retval->session_key)->lower_ip;
+                    deleteID6(tcpip_context, & id_low->ip);
+                    mmt_free(id_low);
+                }
+                tcpip_context->ips_count -= 1;
             }
             if (ish_new)
             {
-                mmt_free(((mmt_session_key_t *)retval->session_key)->higher_ip);
+                if (session_key->ip_type == 4) {
+                    mmt_ip4_id_t * id_high = (mmt_ip4_id_t *) ((mmt_session_key_t *)retval->session_key)->higher_ip;
+                    _deleteID4(tcpip_context, & id_high->ip);
+                    mmt_free(id_high);
+                } else {
+                    mmt_ip6_id_t * id_high = (mmt_ip6_id_t *) ((mmt_session_key_t *)retval->session_key)->higher_ip;
+                    deleteID6(tcpip_context, & id_high->ip);
+                    mmt_free(id_high);
+                }
+                tcpip_context->ips_count -= 1;
             }
             // mmt_free(session_key->lower_ip);
             // mmt_free(session_key->higher_ip);

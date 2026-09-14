@@ -7,6 +7,7 @@
 #include "ipv6.h"
 #include "ip_session_id_management.h"
 #include "proto_ipv6_dgram.h"
+#include "proto_ip_dgram.h" /* Issue #201: frag-map sweep/evict helpers */
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 /** macro to compare 2 IPv6 addresses with each other to identify the "smaller" IPv6 address  */
@@ -130,7 +131,10 @@ int ip6_next_proto_extraction(const ipacket_t * packet, unsigned proto_index,
     mmt_una_ipv6hdr_t * ip6_hdr = (mmt_una_ipv6hdr_t *) & packet->data[proto_offset];
 
     uint8_t  next_hdr    = ip6_hdr->nexthdr;
-    uint16_t next_offset = sizeof (struct ipv6hdr);
+    /* Issue #201 (F-BUG-040): the extension-header offset accumulator must be
+     * 32-bit — a long chain pushes it past 65535 and uint16_t silently wraps
+     * back into captured data. */
+    uint32_t next_offset = sizeof (struct ipv6hdr);
 
     while (is_extention_header(next_hdr) && (packet->p_hdr->caplen >= (proto_offset + next_offset + 2))) {
         next_offset += get_next_header_offset(next_hdr, & packet->data[proto_offset + next_offset], & next_hdr);
@@ -202,7 +206,8 @@ int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * 
     mmt_una_ipv6hdr_t * ip6h = (mmt_una_ipv6hdr_t *) & ipacket->data[offset];
 
     uint8_t next_hdr = ip6h->nexthdr;
-    uint16_t next_offset = sizeof (struct ipv6hdr);
+    /* Issue #201 (F-BUG-040): 32-bit accumulator, see ip6_next_proto_extraction. */
+    uint32_t next_offset = sizeof (struct ipv6hdr);
 
     while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2))) {
         next_offset += get_next_header_offset(next_hdr, & ipacket->data[offset + next_offset], & next_hdr);
@@ -298,8 +303,14 @@ mmt_key_t ip6_fragment_key(const struct ipv6hdr *ip6h,
                            const struct ext_hdr_fragment *frag_header)
 {
     uint32_t saddr_low, daddr_low, ident;
-    memcpy(&saddr_low, &ip6h->saddr.s6_addr[12], sizeof(saddr_low));
-    memcpy(&daddr_low, &ip6h->daddr.s6_addr[12], sizeof(daddr_low));
+    /* Issue #201: callers pass a mmt_una_ipv6hdr_t view over the byte-aligned
+     * capture buffer — even `&ip6h->saddr` is a member access on a misaligned
+     * strict pointer (UB under -fsanitize=alignment). Reach the fields by
+     * byte offset instead; no member access is formed. */
+    memcpy(&saddr_low, (const uint8_t *) ip6h
+                       + offsetof(struct ipv6hdr, saddr) + 12, sizeof(saddr_low));
+    memcpy(&daddr_low, (const uint8_t *) ip6h
+                       + offsetof(struct ipv6hdr, daddr) + 12, sizeof(daddr_low));
     memcpy(&ident, (const uint8_t *) frag_header
                    + offsetof(struct ext_hdr_fragment, ident), sizeof(ident));
     mmt_key_t key = ((mmt_key_t) saddr_low << 32) | (mmt_key_t) daddr_low;
@@ -314,20 +325,34 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
     mmt_hashmap_t *map = mmt->ip_streams;
     mmt_key_t key;
     ipv6_dgram_t *dg;
+    int is_new = 0;
+
+    if (map == NULL) return 0;
+
+    /* Issue #201 (F-BUG-020): arm the fragment-map maintenance hooks the first
+     * time a fragment is seen (shared with the IPv4 path). */
+    if (mmt->frag_map_sweep_fct == NULL) {
+        mmt->frag_map_sweep_fct = mmt_ip_frag_map_sweep;
+        mmt->frag_map_drain_fct = mmt_ip_frag_map_drain;
+    }
+
     int offset = get_packet_offset_at_index(ipacket, index);
     if (offset < 0) return 0;
     if (ipacket->p_hdr->caplen < (unsigned)(offset + (int)sizeof(struct ipv6hdr))) return 0;
     mmt_una_ipv6hdr_t *ip6h = (mmt_una_ipv6hdr_t *)&ipacket->data[offset];
     uint8_t next_hdr = ip6h->nexthdr;
-    uint16_t next_offset = sizeof(struct ipv6hdr);
+    /* Issue #201 (F-BUG-040): 32-bit accumulator — a long extension-header
+     * chain pushes it past 65535 and uint16_t silently wraps. The loop
+     * condition bounds every read against caplen before it happens. */
+    uint32_t next_offset = sizeof(struct ipv6hdr);
     // Get offset of Fragment header
-    while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2)) && next_hdr != IPPROTO_FRAGMENT)
+    while (is_extention_header(next_hdr) && ((uint64_t) offset + next_offset + 2) <= ipacket->p_hdr->caplen && next_hdr != IPPROTO_FRAGMENT)
     {
         next_offset += get_next_header_offset(next_hdr, &ipacket->data[offset + next_offset], &next_hdr);
     }
     if (next_hdr != IPPROTO_FRAGMENT) return 0;
-    if (ipacket->p_hdr->caplen < (unsigned)(offset + next_offset + 8)) return 0;
-    uint16_t ext_header_len = next_offset + 8 - sizeof(struct ipv6hdr);
+    if ((uint64_t) offset + next_offset + sizeof(struct ext_hdr_fragment) > ipacket->p_hdr->caplen) return 0;
+    uint32_t ext_header_len = next_offset + sizeof(struct ext_hdr_fragment) - sizeof(struct ipv6hdr);
     mmt_una_ext_hdr_fragment_t *frag_header = (mmt_una_ext_hdr_fragment_t *)&ipacket->data[offset + next_offset];
     uint8_t more_fragment = ntohs(frag_header->flag) & 0x0001;
     uint16_t frag_offset = ntohs(frag_header->flag) >> 3;
@@ -336,19 +361,53 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
                            (const struct ext_hdr_fragment *) frag_header);
     if (!hashmap_get(map, key, (void **)&dg))
     {
+        /* Issue #201 (F-BUG-020): bound the map BEFORE allocating — at the
+         * ceiling, evict the stalest entry instead of growing without bound. */
+        while (map->nkeys >= MMT_IP_FRAG_MAP_MAX_ENTRIES) {
+            unsigned before = map->nkeys;
+            mmt_ip_frag_map_evict_oldest(map);
+            if (map->nkeys >= before)
+                break; /* nothing evictable left — refuse to grow */
+        }
+        if (map->nkeys >= MMT_IP_FRAG_MAP_MAX_ENTRIES)
+            return 0;
         dg = ipv6_dgram_alloc();
-        hashmap_insert_kv(map, key, dg);
+        if (dg == NULL)
+            return 0;
+        is_new = 1;
     }
 
-    int dgram_update_result = ipv6_dgram_update(dg, ip6h, ipacket->p_hdr->caplen, frag_offset, next_offset + 8, more_fragment, ext_header_len);
+    /* Captured bytes available from the IPv6 header onward. */
+    uint32_t avail = ipacket->p_hdr->caplen - (unsigned) offset;
+    int dgram_update_result = ipv6_dgram_update(dg, ip6h, avail, frag_offset, next_offset + 8, more_fragment, ext_header_len);
+    if (dgram_update_result == 1)
+    {
+        /* Issue #201 (F-BUG-037): malformed fragment — never park it in the
+         * map. Fresh datagrams go straight back to the heap; an existing one
+         * is evicted too — a failed update may have left its hole list
+         * partially mutated. */
+        if (is_new) {
+            ipv6_dgram_free(dg);
+        } else {
+            hashmap_remove(map, key);
+            ipv6_dgram_free(dg);
+        }
+        return 0;
+    }
+    dg->last_activity = (uint32_t) ipacket->p_hdr->ts.tv_sec;
+    if (is_new)
+        hashmap_insert_kv(map, key, dg);
 
     if (dgram_update_result > 0)
     {
         // Overlapping
         ipacket->ipv6_overlapping[index] = 1;
     }
-    // printf("%lu: %u, %d, %d, %d\n",ipacket->packet_id, dg->current_packet_size, frag_offset, ntohs(ip6h->payload_len), ext_header_len);
-    if (dg->current_packet_size != frag_offset * 8 + ntohs(ip6h->payload_len) - ext_header_len) {
+    /* Issue #201 (F-BUG-037): the subtraction below used to underflow when
+     * declared payload_len < ext_header_len; that is now rejected inside
+     * ipv6_dgram_update, so this is only reached with a sane extent. */
+    uint32_t frag_payload_len = (uint32_t) ntohs(ip6h->payload_len) - ext_header_len;
+    if (dg->current_packet_size != (unsigned) frag_offset * 8 + frag_payload_len) {
         ipacket->ipv6_outoforder[index] = 1;
     }
     // Check timed-out for all data gram
@@ -369,8 +428,23 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
     // -> reconstruct ipacket from dg, and pass it along
     // printf("Going to combine packet: %d, %d\n",offset, ext_header_len);
     // printf("Datagram: %d\n", dg->len);
-    unsigned ioff = offset + ext_header_len + sizeof(struct ipv6hdr);
+    uint64_t ioff = (uint64_t) offset + ext_header_len + sizeof(struct ipv6hdr);
+    /* ioff is the end of the extension-header chain — bounded by caplen since
+     * the fragment header itself was validated captured above. */
+    if (ioff > ipacket->p_hdr->caplen)
+    {
+        hashmap_remove(map, key);
+        ipv6_dgram_free(dg);
+        return 0;
+    }
+    /* Issue #201: unchecked mmt_malloc — on failure the datagram must leave
+     * the map with its buffer, not stay half-assembled. */
     uint8_t *x = (uint8_t*)mmt_malloc( ioff + dg->len );
+    if (x == NULL) {
+        hashmap_remove(map, key);
+        ipv6_dgram_free(dg);
+        return 0;
+    }
     // copy the original ipacket data + IP header
     (void)memcpy( x,        ipacket->data, ioff );
     // copy the IP payload
@@ -396,8 +470,9 @@ void ipv6_parse_extension_headers(ipacket_t *ipacket, unsigned index)
     if (ipacket->p_hdr->caplen < (unsigned)(offset + (int)sizeof(struct ipv6hdr))) return;
     mmt_una_ipv6hdr_t *ip6h = (mmt_una_ipv6hdr_t *)&ipacket->data[offset];
     uint8_t next_hdr = ip6h->nexthdr;
-    uint16_t next_offset = sizeof(struct ipv6hdr);
-    while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2))
+    /* Issue #201 (F-BUG-040): 32-bit accumulator. */
+    uint32_t next_offset = sizeof(struct ipv6hdr);
+    while (is_extention_header(next_hdr) && ((uint64_t) offset + next_offset + 2) <= ipacket->p_hdr->caplen
            && ipacket->ipv6_ext_headers_len < PROTO_PATH_SIZE)
     {
         ipacket->ipv6_ext_headers_path[ipacket->ipv6_ext_headers_len] = next_hdr;
@@ -406,7 +481,7 @@ void ipv6_parse_extension_headers(ipacket_t *ipacket, unsigned index)
         uint32_t hdr_len = get_next_header_offset(next_hdr, &ipacket->data[offset + next_offset], &next_hdr);
         if (hdr_len == 0) break;
         if (next_offset + hdr_len < next_offset) break; // overflow
-        if ((unsigned)(offset + next_offset + hdr_len) > ipacket->p_hdr->caplen && is_extention_header(next_hdr)) {
+        if ((uint64_t) offset + next_offset + hdr_len > ipacket->p_hdr->caplen && is_extention_header(next_hdr)) {
             // next extension would be truncated; stop walking but keep already recorded headers
             // still advance to avoid infinite loop, then loop condition will exit
         }
@@ -425,10 +500,11 @@ void *ip6_sessionizer(void *protocol_context, ipacket_t *ipacket, unsigned index
     // LN: Defragmentation
     mmt_una_ipv6hdr_t *ip6h = (mmt_una_ipv6hdr_t *)&ipacket->data[offset];
     uint8_t next_hdr = ip6h->nexthdr;
-    uint16_t next_offset = sizeof(struct ipv6hdr);
+    /* Issue #201 (F-BUG-040): 32-bit accumulator. */
+    uint32_t next_offset = sizeof(struct ipv6hdr);
 
     // Get offset of Fragment header
-    while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2)) && next_hdr != IPPROTO_FRAGMENT)
+    while (is_extention_header(next_hdr) && ((uint64_t) offset + next_offset + 2) <= ipacket->p_hdr->caplen && next_hdr != IPPROTO_FRAGMENT)
     {
         next_offset += get_next_header_offset(next_hdr, &ipacket->data[offset + next_offset], &next_hdr);
     }
@@ -549,9 +625,10 @@ int ip6_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     mmt_una_ipv6hdr_t * ip6_hdr = (mmt_una_ipv6hdr_t *) & ipacket->data[offset];
 
     uint8_t next_hdr = ip6_hdr->nexthdr;
-    uint16_t next_offset = sizeof (struct ipv6hdr);
+    /* Issue #201 (F-BUG-040): 32-bit accumulator. */
+    uint32_t next_offset = sizeof (struct ipv6hdr);
 
-    while (is_extention_header(next_hdr) && (ipacket->p_hdr->caplen >= (offset + next_offset + 2))) {
+    while (is_extention_header(next_hdr) && ((uint64_t) offset + next_offset + 2) <= ipacket->p_hdr->caplen) {
         // printf("[ip6_classify_next_proto] %d, %d\n", next_offset, next_hdr);
         next_offset += get_next_header_offset(next_hdr, & ipacket->data[offset + next_offset], & next_hdr);
     }
@@ -1475,9 +1552,16 @@ int ipv6_pre_classification_function(ipacket_t * ipacket, unsigned index) {
 
 int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     mmt_session_t * session = ipacket->session;
+    /* Issue #201 (F-BUG-036): validate the captured length before the IPv6
+     * header view is taken and before l3 lengths are subtracted below. */
+    int ip_offset = get_packet_offset_at_index(ipacket, index);
+    if (ip_offset < 0 || (uint64_t) ip_offset + sizeof(struct ipv6hdr) > ipacket->p_hdr->caplen)
+        return MMT_CLASSIFY_CONTINUE;
     if(ipacket->mmt_handler->has_reassembly){
         int s = sizeof(mmt_tcpip_internal_packet_t);
         ipacket->internal_packet = mmt_malloc (s);
+        if (ipacket->internal_packet == NULL)
+            return MMT_CLASSIFY_CONTINUE;
         memset(ipacket->internal_packet, 0, s);
         ipacket->internal_packet->udp = NULL;
         ipacket->internal_packet->tcp = NULL;
@@ -1487,7 +1571,6 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     }
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
 
-    int ip_offset = get_packet_offset_at_index(ipacket, index);
     struct mmt_ipv6hdr *ip6h = (struct mmt_ipv6hdr *) & ipacket->data[ip_offset];
 
     uint32_t time = ((uint64_t) ipacket->p_hdr->ts.tv_sec) * MMT_MICRO_IN_SEC + ipacket->p_hdr->ts.tv_usec;
