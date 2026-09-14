@@ -1,5 +1,5 @@
 {
-  "library_line_pct": 85.0,
-  "instrumented_files": 6,
-  "note": "Floor enforced by tools/ci/check-coverage-floor.sh in the coverage CI job (issue #185). Current measurement: 87.1% over 6 instrumented src/ files; the percentage floor carries a small margin for gcov attribution differences between gcc versions. Raise the floor as coverage improves — never lower it to silence a failure."
+  "library_line_pct": 76.0,
+  "instrumented_files": 9,
+  "note": "Floor enforced by tools/ci/check-coverage-floor.sh in the coverage CI job (issue #185). Current measurement: 78.2% over 9 instrumented src/ files; the percentage floor carries a small margin for gcov attribution differences between gcc versions. Raise the floor as coverage improves — never lower it to silence a failure. Baseline history: the #177 integration re-baselined this floor — the new dicom, ndn_dissector and avl suites widened instrumentation from 6 to 9 files, and the #200 hash_utils.cpp rewrite added defensive paths the suites do not yet exercise, moving the aggregate from 87.1% to 78.2%. The instrumented-files counter remains the guard against suites silently losing instrumentation. See docs/DECISIONS.md."
 }

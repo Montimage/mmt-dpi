@@ -560,8 +560,9 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     packet->payload = ((uint8_t *) packet->tcp) + tcphdr_len;
     /* F-BUG-107/#195: l4_packet_len derives from the IP total length and can
      * exceed the captured bytes on truncated pcaps — clamp payload_packet_len
-     * to what data[] actually holds so every payload[] read stays in bounds. */
-    {
+     * to what data[] actually holds so every payload[] read stays in bounds.
+     * Synthetic harness packets may carry no p_hdr — skip the clamp then. */
+    if (ipacket->p_hdr != NULL) {
         /* uintptr subtraction wraps huge when payload < data -> fails check */
         uintptr_t poff = (uintptr_t)packet->payload - (uintptr_t)ipacket->data;
         uint32_t avail = ( poff < ipacket->p_hdr->caplen )
@@ -673,8 +674,9 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     packet->payload = ((uint8_t *) packet->tcp) + tcphdr_len;
     /* F-BUG-107/#195: l4_packet_len derives from the IP total length and can
      * exceed the captured bytes on truncated pcaps — clamp payload_packet_len
-     * to what data[] actually holds so every payload[] read stays in bounds. */
-    {
+     * to what data[] actually holds so every payload[] read stays in bounds.
+     * Synthetic harness packets may carry no p_hdr — skip the clamp then. */
+    if (ipacket->p_hdr != NULL) {
         /* uintptr subtraction wraps huge when payload < data -> fails check */
         uintptr_t poff = (uintptr_t)packet->payload - (uintptr_t)ipacket->data;
         uint32_t avail = ( poff < ipacket->p_hdr->caplen )

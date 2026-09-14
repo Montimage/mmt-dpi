@@ -1,6 +1,9 @@
+#include <string.h> // memcpy()
+
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "extraction_lib.h"
+#include "packet_processing.h" /* mmt_have_bytes() — issue #202 caplen prologues */
 #include "../mmt_common_internal_include.h"
 
 
@@ -205,10 +208,16 @@ void mmt_init_classify_me_gtp() {
 int gtp_version_flag_extraction(const ipacket_t * packet, unsigned proto_index,
                                 attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — every packet byte this
+	 * callback dereferences must lie inside the captured data. The flag
+	 * bits all live in the first byte of the GTP header. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 	if (extracted_data->data == NULL)
 		return 0;
+	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	*((unsigned char *) extracted_data->data) = gtp->version;
 	return 1;
 }
@@ -217,10 +226,14 @@ int gtp_version_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int gtp_protocol_type_flag_extraction(const ipacket_t * packet, unsigned proto_index,
                                       attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_version_flag_extraction. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 	if (extracted_data->data == NULL)
 		return 0;
+	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	*((unsigned char *) extracted_data->data) = gtp->proto_type;
 	return 1;
 }
@@ -228,10 +241,14 @@ int gtp_protocol_type_flag_extraction(const ipacket_t * packet, unsigned proto_i
 int gtp_reserved_flag_extraction(const ipacket_t * packet, unsigned proto_index,
                                  attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_version_flag_extraction. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 	if (extracted_data->data == NULL)
 		return 0;
+	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	*((unsigned char *) extracted_data->data) = gtp->reserved;
 	return 1;
 }
@@ -239,10 +256,14 @@ int gtp_reserved_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int gtp_extension_header_flag_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_version_flag_extraction. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 	if (extracted_data->data == NULL)
 		return 0;
+	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	*((unsigned char *) extracted_data->data) = gtp->extension_header;
 	return 1;
 }
@@ -250,10 +271,14 @@ int gtp_extension_header_flag_extraction(const ipacket_t * packet, unsigned prot
 int gtp_seq_check_flag_extraction(const ipacket_t * packet, unsigned proto_index,
                                         attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_version_flag_extraction. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 	if (extracted_data->data == NULL)
 		return 0;
+	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	*((unsigned char *) extracted_data->data) = gtp->sequence_number;
 	return 1;
 }
@@ -261,68 +286,91 @@ int gtp_seq_check_flag_extraction(const ipacket_t * packet, unsigned proto_index
 int gtp_seq_num_extraction(const ipacket_t * packet, unsigned proto_index,
                                     attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_version_flag_extraction.
+	 * The message_type byte (offset 1) gates the attribute read. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, 2)) return 0;
 	if(packet->data[proto_offset + 1] == 0x10 || packet->data[proto_offset + 1] == 0x12){
 		int attribute_offset = extracted_data->position_in_packet;
-		unsigned short v;
-		if (extracted_data->data == NULL)
-			return 0;
+		if (attribute_offset < 0) return 0;
+		if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, sizeof(uint16_t))) return 0;
+	if (extracted_data->data == NULL)
+		return 0;
 		/* byte-aligned source and destination: memcpy, not an
 		 * (unsigned short *) dereference — the cast is a misaligned
-		 * load/store and trips UBSan (issue #216). */
-		memcpy(&v, &packet->data[proto_offset + attribute_offset], sizeof(v));
-		v = ntohs(v);
-		memcpy(extracted_data->data, &v, sizeof(v));
+		 * load/store and trips UBSan (issues #202, #216). */
+		uint16_t seq_word;
+		memcpy(&seq_word, &packet->data[proto_offset + attribute_offset], sizeof(seq_word));
+		seq_word = ntohs(seq_word);
+		memcpy(extracted_data->data, &seq_word, sizeof(seq_word));
 		return 1;
-	}
+	} 
 	return 0;
 }
 
 int gtp_imsi_mmc_extraction(const ipacket_t * packet, unsigned proto_index,
                                     attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_seq_num_extraction.
+	 * The delegate's verdict is propagated so a refused extraction is not
+	 * reported as a set attribute. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, 2)) return 0;
+	if (extracted_data->data == NULL)
+		return 0;
 	if(packet->data[proto_offset + 1] == 0x10){
-		/* extracted_data->data may be NULL when a previous packet already
-		 * took the not-extracted branch — general_*_extraction would then
-		 * memcpy into NULL (issue #216). */
-		if (extracted_data->data == NULL)
-			return 0;
-		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
-		return 1;
-	}
+		return general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
+	} 
+	extracted_data->data = NULL;
 	return 0;
 }
 
 int gtp_imsi_mnc_extraction(const ipacket_t * packet, unsigned proto_index,
                                     attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_imsi_mmc_extraction. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, 2)) return 0;
+	if (extracted_data->data == NULL)
+		return 0;
 	if(packet->data[proto_offset + 1] == 0x10){
-		if (extracted_data->data == NULL)
-			return 0;
-		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
-		return 1;
-	}
+		return general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
+	} 
+	extracted_data->data = NULL;
 	return 0;
 }
 
 int gtp_npdu_number_flag_extraction(const ipacket_t * packet, unsigned proto_index,
                                     attribute_t * extracted_data) {
 
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_version_flag_extraction. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
-	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 	if (extracted_data->data == NULL)
 		return 0;
+	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	*((unsigned char *) extracted_data->data) = gtp->ndpu_number;
 	return 1;
 }
 
 int _gtp_extract_next_extension_header_type(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+	/* Issue #202 (F-BUG-033): caplen prologue — see gtp_version_flag_extraction. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint8_t))) return 0;
 	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	if( gtp->extension_header == 0 ) //no extension
 		return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset + 11, sizeof(uint8_t))) return 0;
 	if (extracted_data->data == NULL)
 		return 0;
 	*((uint8_t *) extracted_data->data) = *(uint8_t *) &packet->data[ proto_offset + 11 ];
@@ -331,12 +379,20 @@ int _gtp_extract_next_extension_header_type(const ipacket_t * packet, unsigned p
 
 
 static int _gtp_extract_pdu_extension_header_field(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data) {
+	/* Issue #202 (F-BUG-033): caplen prologue — the flags byte and the
+	 * message_type byte are consulted before the extension area. */
+	if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
+	if (proto_offset < 0) return 0;
+	if (!mmt_have_bytes(packet, (size_t) proto_offset, 2)) return 0;
 	const mmt_una_gtp_header_generic_t * gtp = (const mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	if( gtp->message_type != GTP_MESSAGE_TYPE_T_PDU //not T-PDU
 			|| gtp->extension_header == 0 ) //no extension
 		return 0;
 
+	/* The next-extension-header byte (offset 11) plus the whole PDU
+	 * extension struct (offset 12) must be captured before either is read. */
+	if (!mmt_have_bytes(packet, (size_t) proto_offset + 11, 1 + sizeof(struct gtp_header_extension_pdu))) return 0;
 	//not PDU extension
 	const uint8_t next_extension_header = *(uint8_t *) &packet->data[ proto_offset + 11 ];
 	if( next_extension_header != GTP_NEXT_EXTENSION_HEADER_TYPE_PDU_SESSION )

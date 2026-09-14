@@ -32,8 +32,8 @@ int gre_c_flag_extraction(const ipacket_t * packet, unsigned proto_index,
      * bits all live in the first uint16_t of the GRE header. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    if (!gre_base_captured(packet, proto_offset))
-        return 0;
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint16_t))) return 0;
     struct gre_hdr * grehdr = (struct gre_hdr *) & packet->data[proto_offset];
 
     *((unsigned short *) extracted_data->data) = grehdr->csum;
@@ -46,8 +46,8 @@ int gre_k_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    if (!gre_base_captured(packet, proto_offset))
-        return 0;
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint16_t))) return 0;
     struct gre_hdr * grehdr = (struct gre_hdr *) & packet->data[proto_offset];
 
     *((unsigned short *) extracted_data->data) = grehdr->key;
@@ -60,8 +60,8 @@ int gre_s_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    if (!gre_base_captured(packet, proto_offset))
-        return 0;
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint16_t))) return 0;
     struct gre_hdr * grehdr = (struct gre_hdr *) & packet->data[proto_offset];
 
     *((unsigned short *) extracted_data->data) = grehdr->seq;
@@ -74,8 +74,8 @@ int gre_version_extraction(const ipacket_t * packet, unsigned proto_index,
     /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    if (!gre_base_captured(packet, proto_offset))
-        return 0;
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint16_t))) return 0;
     struct gre_hdr * grehdr = (struct gre_hdr *) & packet->data[proto_offset];
 
     *((unsigned short *) extracted_data->data) = grehdr->version;
@@ -109,8 +109,8 @@ int gre_key_extraction(const ipacket_t * packet, unsigned proto_index,
     /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    if (!gre_base_captured(packet, proto_offset))
-        return 0;
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint16_t))) return 0;
     struct gre_hdr * grehdr = (struct gre_hdr *) & packet->data[proto_offset];
 
     int nb_lignes = 0;
@@ -118,9 +118,8 @@ int gre_key_extraction(const ipacket_t * packet, unsigned proto_index,
         if (grehdr->csum) {
             nb_lignes++;
         }
-        /* Issue #201 (F-BUG-035): the optional key word must be captured. */
-        if (!gre_field_captured(packet, proto_offset, nb_lignes))
-            return 0;
+        /* The key field is a 4-byte optional word at offset 4 + nb_lignes*4. */
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + 4 + (size_t) nb_lignes * 4, sizeof(uint32_t))) return 0;
         /* Issue #202: the capture buffer is byte-aligned — a strict u32 load
          * at an odd offset is a misaligned access (UBSan aborts). memcpy is
          * alignment-safe; mirrors the issue #59 fixes. */
@@ -138,8 +137,8 @@ int gre_seqnb_extraction(const ipacket_t * packet, unsigned proto_index,
     /* Issue #202 (F-BUG-033): caplen prologue — see gre_c_flag_extraction. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    if (!gre_base_captured(packet, proto_offset))
-        return 0;
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, sizeof(uint16_t))) return 0;
     struct gre_hdr * grehdr = (struct gre_hdr *) & packet->data[proto_offset];
 
     int nb_lignes = 0;
@@ -150,9 +149,8 @@ int gre_seqnb_extraction(const ipacket_t * packet, unsigned proto_index,
         if (grehdr->key) {
             nb_lignes++;
         }
-        /* Issue #201 (F-BUG-035): the optional seq word must be captured. */
-        if (!gre_field_captured(packet, proto_offset, nb_lignes))
-            return 0;
+        /* The seq field is a 4-byte optional word at offset 4 + nb_lignes*4. */
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + 4 + (size_t) nb_lignes * 4, sizeof(uint32_t))) return 0;
         /* Issue #202: memcpy — alignment-safe, see gre_key_extraction. */
         uint32_t seq_word;
         memcpy(&seq_word, &((uint8_t *) & grehdr->data)[nb_lignes * 4], sizeof(seq_word));

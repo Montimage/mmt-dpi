@@ -56,9 +56,10 @@ install_build_deps_debian() {
   # binutils provides objdump for that derivation (tools/ci/shlib-deps.sh).
   # libnghttp2-dev is intentionally absent: no built library references any
   # nghttp2_* symbol, so the linker's --as-needed would drop it anyway.
+  # python3 runs the --verify-package leg of check-package-deps.sh below.
   apt-get install -y --no-install-recommends \
     build-essential g++ make git ca-certificates file binutils \
-    libxml2-dev libpcap-dev dpkg-dev
+    libxml2-dev libpcap-dev dpkg-dev python3
 }
 
 install_build_deps_rhel() {
@@ -72,9 +73,10 @@ install_build_deps_rhel() {
   "$pm" install -y dnf-plugins-core || true
   "$pm" config-manager --set-enabled crb 2>/dev/null \
     || "$pm" config-manager --set-enabled powertools 2>/dev/null || true
+  # python3 runs the --verify-package leg of check-package-deps.sh below.
   "$pm" install -y \
     gcc gcc-c++ make git file findutils which binutils \
-    libxml2-devel libpcap-devel rpm-build
+    libxml2-devel libpcap-devel rpm-build python3
 }
 
 case "$PKG_TYPE" in

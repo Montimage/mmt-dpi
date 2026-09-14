@@ -348,8 +348,8 @@ typedef struct ndn_tlv_struct {
     uint16_t type;
     uint8_t nb_octets;
     unsigned long length;
-    uint16_t node_offset;
-    uint16_t data_offset;
+    uint32_t node_offset;   /* matches ndn.h — #205 widened past uint16_t */
+    uint32_t data_offset;
     struct ndn_tlv_struct *next;
 } ndn_tlv_t;
 
