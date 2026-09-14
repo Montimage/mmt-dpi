@@ -42,8 +42,25 @@ int hex2int(char hc);
  *                   @hstr is NULL
  *                   @start_index <0
  *                   @end_index <  start_index
+ * @deprecated Use str_hex2int_n() — it takes the buffer length explicitly and
+ *             never reads past it, so it is safe on non-NUL-terminated input.
  */
-int str_hex2int(char *hstr, int start_index, int end_index);
+int str_hex2int(char *hstr, int start_index, int end_index)
+    __attribute__((deprecated("use str_hex2int_n")));
+
+/**
+ * Length-bounded variant of str_hex2int()
+ * @param  hstr        hexa buffer — does not need to be NUL-terminated
+ * @param  hstr_len    number of valid bytes at @hstr
+ * @param  start_index index to start calculation
+ * @param  end_index   index to finish calculation (inclusive)
+ * @return        -1 if:
+ *                   @hstr is NULL
+ *                   @start_index < 0
+ *                   @end_index < @start_index
+ *                   @end_index >= @hstr_len
+ */
+int str_hex2int_n(char *hstr, size_t hstr_len, int start_index, int end_index);
 
 /**
  * Get printable value of a hexa string
@@ -137,8 +154,25 @@ char * hex2str(char *h_str);
   *                           if @end_index >= length of @str
   *                           if @start_index >= @end_index
   *                     a new string which is the substring of @str from @start_index to @end_index (counts both 2 characters at index @start_index and @end_index)
+  * @deprecated Use str_sub_n() — it takes the buffer length explicitly and
+  *             never reads past it, so it is safe on non-NUL-terminated input.
   */		
- char * str_sub(char * str, int start_index, int end_index); // Passed
+ char * str_sub(char * str, int start_index, int end_index) // Passed
+    __attribute__((deprecated("use str_sub_n")));
+
+ /**
+  * Length-bounded variant of str_sub()
+  * @param  str         buffer to get substring from — does not need to be NUL-terminated
+  * @param  str_len     number of valid bytes at @str
+  * @param  start_index The starting index to get string (>=0)
+  * @param  end_index   The ending index of string (< @str_len)
+  * @return             NULL: if @str is NULL
+  *                           if @start_index <0
+  *                           if @end_index <0 or >= @str_len
+  *                           if @start_index > @end_index
+  *                     a new string which is the substring of @str from @start_index to @end_index (counts both 2 characters at index @start_index and @end_index)
+  */
+ char * str_sub_n(char * str, size_t str_len, int start_index, int end_index);
 
 /**
  * Get the combination of two strings
@@ -171,8 +205,26 @@ char * hex2str(char *h_str);
  *                  @str1 is NULL
  *                  @str1 does not belong to @str
  *             an array of indexes of @str1 in @str
+ * @deprecated Use str_get_indexes_n() — it bounds the scan by an explicit
+ *             buffer length and never reads past it, so it is safe on
+ *             non-NUL-terminated input.
  */
-int * str_get_indexes(char *str, char *str1); // Passed
+int * str_get_indexes(char *str, char *str1) // Passed
+    __attribute__((deprecated("use str_get_indexes_n")));
+
+/**
+ * Length-bounded variant of str_get_indexes()
+ * @param  str      haystack buffer — does not need to be NUL-terminated
+ * @param  str_len  number of valid bytes at @str
+ * @param  str1     needle buffer — does not need to be NUL-terminated
+ * @param  str1_len number of valid bytes at @str1
+ * @return     NULL if:
+ *                  @str or @str1 is NULL
+ *                  @str1_len is 0 or > @str_len
+ *                  @str1 does not occur in the first @str_len bytes of @str
+ *             an array of indexes of @str1 in @str, terminated by -1
+ */
+int * str_get_indexes_n(char *str, size_t str_len, char *str1, size_t str1_len);
 
 /**
  * Replace a substring by another substring in a string

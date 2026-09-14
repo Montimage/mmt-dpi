@@ -19,24 +19,14 @@
 #include <assert.h>
 #include <stdint.h>
 
-/* We need to include the public header for the function declarations.
- * Since mmt_utils.c is compiled standalone, we declare the functions. */
-extern int hex2int(char hc);
-extern char *str_hex2str(char *hstr, int start_index, int end_index);
-extern int str_hex2int(char *hstr, int start_index, int end_index);
-extern unsigned long hex2dec(char *str);
-extern int char2int(char x);
-extern char hex2char(char a, char b);
-extern char *hex2str(char *h_str);
-extern int str_compare(char *str1, char *str2);
-extern int str_index(char *str, char *substr);
-extern char *str_sub(char *str, int start_index, int end_index);
-extern char *str_combine(char *str1, char *str2);
-extern int *str_get_indexes(char *str, char *str1);
-extern char *str_replace(char *str, char *str1, char *rep);
-extern char *str_subvalue(char *str, char *begin, char *end);
-extern char *str_copy(char *str2);
-extern void str_print_array(char **array);
+/* Public declarations come from the real header so the prototypes — the new
+ * length-bounded _n variants included — are type-checked against it. */
+#include "mmt_utils.h"
+
+/* The deprecated strlen-based originals (str_sub, str_get_indexes,
+ * str_hex2int) remain under test on purpose: they still exist and must keep
+ * working until every call site is converted (issue #195). */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 static int g_failures = 0;
 #define CHECK(cond, msg) do { if (!(cond)) { \
@@ -472,6 +462,125 @@ static void test_str_sub_boundary(void) {
     free(result);
 }
 
+/* ---- str_sub_n (length-bounded, F-BUG-023) ---- */
+static void test_str_sub_n(void) {
+    fprintf(stderr, "  test: str_sub_n\n");
+    /* NULL / bad indices — same rejections as str_sub */
+    CHECK(str_sub_n(NULL, 5, 0, 4) == NULL, "str_sub_n(NULL) == NULL");
+    CHECK(str_sub_n("hello", 5, -1, 2) == NULL, "str_sub_n negative start == NULL");
+    CHECK(str_sub_n("hello", 5, 0, -1) == NULL, "str_sub_n negative end == NULL");
+    CHECK(str_sub_n("hello", 5, 4, 2) == NULL, "str_sub_n start > end == NULL");
+
+    /* end_index beyond the supplied length is refused — even though strlen
+     * would allow it on this NUL-terminated literal. */
+    CHECK(str_sub_n("hello", 5, 0, 5) == NULL, "str_sub_n end == len == NULL");
+    CHECK(str_sub_n("hello", 5, 0, 10) == NULL, "str_sub_n end > len == NULL");
+    /* A supplied length *below* strlen still binds: bytes past it are off-limits. */
+    CHECK(str_sub_n("hello world", 5, 0, 5) == NULL,
+          "str_sub_n end >= supplied len == NULL (strlen would allow)");
+
+    /* Non-NUL-terminated heap buffer: under ASan any strlen-style scan would
+     * report a heap-buffer-overflow here. */
+    char *buf = (char *)malloc(5);
+    CHECK(buf != NULL, "malloc for str_sub_n buffer");
+    if (buf) {
+        memcpy(buf, "ABCDE", 5);            /* no NUL anywhere */
+        char *r = str_sub_n(buf, 5, 0, 4);  /* end == len-1 boundary is OK */
+        CHECK_STR_EQ(r, "ABCDE", "str_sub_n(buf,5,0,4) == 'ABCDE' (no NUL needed)");
+        free(r);
+        CHECK(str_sub_n(buf, 5, 0, 5) == NULL,
+              "str_sub_n non-terminated buffer end==len refused");
+        free(buf);
+    }
+
+    /* Same result as str_sub on an ordinary C string */
+    char *r = str_sub_n("hello world", 11, 6, 10);
+    CHECK_STR_EQ(r, "world", "str_sub_n('hello world',11,6,10) == 'world'");
+    free(r);
+}
+
+/* ---- str_hex2int_n (length-bounded, F-BUG-023) ---- */
+static void test_str_hex2int_n(void) {
+    fprintf(stderr, "  test: str_hex2int_n\n");
+    /* NULL / bad indices — same rejections as str_hex2int */
+    CHECK(str_hex2int_n(NULL, 2, 0, 1) == -1, "str_hex2int_n(NULL) == -1");
+    CHECK(str_hex2int_n("FF", 2, -1, 1) == -1, "str_hex2int_n negative start == -1");
+    CHECK(str_hex2int_n("FF", 2, 5, 2) == -1, "str_hex2int_n end < start == -1");
+
+    /* The bound the original lacked: end_index must stay inside hstr_len. */
+    CHECK(str_hex2int_n("FF", 2, 0, 2) == -1, "str_hex2int_n end == len == -1");
+    CHECK(str_hex2int_n("FF", 2, 0, 100) == -1, "str_hex2int_n end >> len == -1");
+    /* A supplied length *below* strlen still binds. */
+    CHECK(str_hex2int_n("FFAA", 2, 2, 3) == -1,
+          "str_hex2int_n end beyond supplied len refused (strlen would allow)");
+
+    /* Same result as str_hex2int on an in-range span */
+    CHECK(str_hex2int_n("FF", 2, 0, 1) == str_hex2int("FF", 0, 1),
+          "str_hex2int_n == str_hex2int on the same span");
+
+    /* Non-NUL-terminated heap buffer — ASan catches any read past len. */
+    char *buf = (char *)malloc(2);
+    CHECK(buf != NULL, "malloc for str_hex2int_n buffer");
+    if (buf) {
+        memcpy(buf, "FF", 2);
+        CHECK(str_hex2int_n(buf, 2, 0, 1) == str_hex2int("FF", 0, 1),
+              "str_hex2int_n non-terminated buffer == str_hex2int('FF',0,1)");
+        CHECK(str_hex2int_n(buf, 2, 0, 2) == -1,
+              "str_hex2int_n non-terminated end==len refused");
+        free(buf);
+    }
+}
+
+/* ---- str_get_indexes_n (length-bounded, F-BUG-023) ---- */
+static void test_str_get_indexes_n(void) {
+    fprintf(stderr, "  test: str_get_indexes_n\n");
+    /* NULL / empty inputs — same rejections as str_get_indexes */
+    CHECK(str_get_indexes_n(NULL, 5, "a", 1) == NULL, "str_get_indexes_n(NULL, ...) == NULL");
+    CHECK(str_get_indexes_n("hello", 5, NULL, 0) == NULL, "str_get_indexes_n(..., NULL) == NULL");
+    CHECK(str_get_indexes_n("hello", 5, "", 0) == NULL, "str_get_indexes_n empty needle == NULL");
+    CHECK(str_get_indexes_n("", 0, "a", 1) == NULL, "str_get_indexes_n empty haystack == NULL");
+
+    /* A needle longer than the bounded haystack can never match — refused
+     * instead of read out of bounds. */
+    CHECK(str_get_indexes_n("ab", 2, "abc", 3) == NULL,
+          "str_get_indexes_n needle longer than haystack == NULL");
+
+    /* Matches inside the supplied length, same result as the original */
+    int *idx = str_get_indexes_n("a,b,c", 5, ",", 1);
+    CHECK(idx != NULL, "str_get_indexes_n('a,b,c',',') should find delimiters");
+    if (idx) {
+        CHECK(idx[0] == 1 && idx[1] == 3 && idx[2] == -1,
+              "str_get_indexes_n commas at 1 and 3, -1 terminated");
+        free(idx);
+    }
+
+    /* A match sitting beyond the supplied length is invisible: the comma at
+     * index 2 of "ab,c" is outside str_len == 2. */
+    CHECK(str_get_indexes_n("ab,c", 2, ",", 1) == NULL,
+          "str_get_indexes_n match past supplied len not found");
+
+    /* Non-NUL-terminated haystack AND needle — under ASan a strlen-based scan
+     * on either side would report a heap-buffer-overflow. */
+    char *hay = (char *)malloc(5);
+    char *ndl = (char *)malloc(1);
+    CHECK(hay != NULL && ndl != NULL, "malloc for str_get_indexes_n buffers");
+    if (hay && ndl) {
+        memcpy(hay, "aXbXc", 5);
+        ndl[0] = 'X';
+        idx = str_get_indexes_n(hay, 5, ndl, 1);
+        CHECK(idx != NULL, "str_get_indexes_n non-terminated buffers finds 'X'");
+        if (idx) {
+            CHECK(idx[0] == 1 && idx[1] == 3 && idx[2] == -1,
+                  "str_get_indexes_n non-terminated 'X' at 1 and 3");
+            free(idx);
+        }
+        CHECK(str_get_indexes_n(hay, 4, ndl, 1) != NULL,
+              "str_get_indexes_n last-byte needle invisible past len still finds first");
+    }
+    free(hay);
+    free(ndl);
+}
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
@@ -496,6 +605,9 @@ int main(int argc, char **argv) {
     test_hex2str_printable();
     test_str_combine_edge();
     test_str_sub_boundary();
+    test_str_sub_n();
+    test_str_hex2int_n();
+    test_str_get_indexes_n();
 
     if (g_failures == 0) {
         fprintf(stderr, "ALL CHECKS PASSED\n");
