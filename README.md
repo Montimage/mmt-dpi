@@ -31,14 +31,20 @@ or using `wget`:
 wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 ```
 
+The installer clones the pinned release tag (`v1.8.0`) and verifies it after
+checkout; moving branches are refused unless explicitly opted in.
+
 **Custom options** (via environment variables):
 
 ```bash
+# Preview the install plan without changing anything
+curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --dry-run
+
 # Install to a custom directory
 curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
 
-# Use a specific branch
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=dev bash
+# Build a development branch instead of the pinned release (unverified — explicit opt-in)
+curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=dev bash -s -- --unverified-branch
 
 # Skip automatic dependency installation
 curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
