@@ -62,7 +62,16 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
         /* skip marked packets */
         if (packet->detected_protocol_stack[0] != PROTO_REDIS) {
           if (packet->tcp_retransmission == 0) {
+            /* Issue #192 (F-BUG-054): bound reads by what was captured, not by
+             * payload_packet_len alone — it derives from the attacker-
+             * controlled IPv4 tot_len and may exceed the captured buffer.
+             * Same caplen-relative shape as http2_can_read() (F-BUG-059). */
             uint32_t payload_len = packet->payload_packet_len;
+            const uint8_t *payload_end = ipacket->data + ipacket->p_hdr->caplen;
+            if (packet->payload == NULL || packet->payload >= payload_end)
+              payload_len = 0;
+            else if (payload_len > (uint32_t)(payload_end - packet->payload))
+              payload_len = (uint32_t)(payload_end - packet->payload);
             if(payload_len == 0) return 0; /* Shouldn't happen */
             /* Break after 20 packets. */
             if(ipacket->session->packet_count > 20) {

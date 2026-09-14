@@ -1742,13 +1742,17 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     /* TODO: Check the padding -> allow only certain type of padding and inform other : if packet->l3_captured_packet_len != packet->l3_packet_len -> padding */
     //packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
     // packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
-    if (packet->l3_packet_len < ihl_bytes) {
+    /* Issue #192 (F-BUG-016): l3_packet_len derives from the attacker-
+     * controlled IPv4 tot_len and may exceed what was actually captured, so
+     * bound the L4 length by the captured length on every branch — not only
+     * on the reassembled one. usable = MIN(l3_packet_len, l3_captured_packet_len). */
+    uint32_t usable = packet->l3_packet_len;
+    if (packet->l3_captured_packet_len < usable)
+        usable = packet->l3_captured_packet_len;
+    if (usable < ihl_bytes) {
         packet->l4_packet_len = 0;
-    } else if(ipacket->nb_reassembled_packets[index] > 1){
-        if (packet->l3_captured_packet_len < ihl_bytes) packet->l4_packet_len = 0;
-        else packet->l4_packet_len = packet->l3_captured_packet_len - ihl_bytes;
-    }else{
-        packet->l4_packet_len = packet->l3_packet_len - ihl_bytes;
+    } else {
+        packet->l4_packet_len = usable - ihl_bytes;
     }
 
     if (mmt_memcmp(&((mmt_ip4_id_t *) ((mmt_session_key_t *) session->session_key)->higher_ip)->ip, &ip_hdr->saddr, IPv4_ALEN) == 0) {
