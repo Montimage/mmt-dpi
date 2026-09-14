@@ -22,7 +22,7 @@
 #
 # The build count is asserted in this log: every build emits a
 # "sdk_build <n>: profile=<p>" line and the summary prints "sdk_builds=<n>"
-# (one per profile group — 3 at time of writing: asan x20, tsan x1,
+# (one per profile group — 3 at time of writing: asan x23, tsan x1,
 # default x2; the "none" group builds nothing). mt_tsan cannot share the asan
 # prefix — its whole point is detecting races inside the SDK, which requires
 # BUILD=tsan instrumentation — and run_oom_no_abort_test must run against a

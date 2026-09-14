@@ -9,7 +9,8 @@ int silent_extraction(const ipacket_t * packet, unsigned proto_index,
 int general_byte_to_byte_extraction(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
 
-    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL
+        || extracted_data->data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     int attr_data_len = extracted_data->data_len;
@@ -23,7 +24,8 @@ int general_byte_to_byte_extraction(const ipacket_t * packet, unsigned proto_ind
 int general_short_extraction_with_ordering_change(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
 
-    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL
+        || extracted_data->data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = extracted_data->data_len;
@@ -43,7 +45,8 @@ int general_short_extraction_with_ordering_change(const ipacket_t * packet, unsi
 int general_int_extraction_with_ordering_change(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
 
-    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL
+        || extracted_data->data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = extracted_data->data_len;
@@ -61,7 +64,8 @@ int general_int_extraction_with_ordering_change(const ipacket_t * packet, unsign
 int general_char_extraction(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
 
-    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL
+        || extracted_data->data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = extracted_data->data_len;
@@ -75,7 +79,8 @@ int general_char_extraction(const ipacket_t * packet, unsigned proto_index,
 int general_short_extraction(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
 
-    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL
+        || extracted_data->data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = extracted_data->data_len;
@@ -92,7 +97,8 @@ int general_short_extraction(const ipacket_t * packet, unsigned proto_index,
 int general_int_extraction(const ipacket_t * packet, unsigned proto_index,
             attribute_t * extracted_data) {
 
-    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL
+        || extracted_data->data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
     //int attr_data_len = extracted_data->data_len;

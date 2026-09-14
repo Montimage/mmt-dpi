@@ -1378,7 +1378,21 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     key = ip_fragment_key( (const struct iphdr *) ip );
     if ( !hashmap_get( map, key, (void**)&dg )) {
         dg = ip_dgram_alloc();
+        if (dg == NULL)
+            return 0; /* OOM: treat like an incomplete datagram — drop the fragment */
         hashmap_insert_kv( map, key, dg );
+        /* hashmap_insert_kv() is void and drops silently on OOM — verify the
+         * datagram actually landed, else it would be orphaned (issue #216). */
+        void *check = NULL;
+        hashmap_get( map, key, &check );
+        if (check != dg) {
+            ip_dgram_free( dg );
+            return 0;
+        }
+        /* The handler owns the map, we own the value type: hand over the
+         * destructor once so mmt_close_handler() can drain datagrams that
+         * never completed (issue #216). */
+        mmt->ip_streams_value_free = (void (*)(void *)) ip_dgram_free;
     }
     int dgram_update_result = ip_dgram_update( dg, ip, len , ipacket->p_hdr->caplen);
     if(dgram_update_result == 2 || dgram_update_result == 6 ){
@@ -1404,6 +1418,8 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
 
     unsigned ioff = off + ( ip->ihl << 2 );
     uint8_t *x = (uint8_t*)mmt_malloc( ioff + dg->len );
+    if (x == NULL)
+        return 0; /* OOM: leave the datagram in the map; it drains at close */
     // copy the original ipacket data + IP header
     (void)memcpy( x,        ipacket->data, ioff );
     // copy the IP payload

@@ -311,7 +311,7 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
 {
     if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL) return 0;
     mmt_handler_t *mmt = ipacket->mmt_handler;
-    mmt_hashmap_t *map = mmt->ip_streams;
+    mmt_hashmap_t *map = mmt->ip6_streams;
     mmt_key_t key;
     ipv6_dgram_t *dg;
     int offset = get_packet_offset_at_index(ipacket, index);
@@ -337,7 +337,21 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
     if (!hashmap_get(map, key, (void **)&dg))
     {
         dg = ipv6_dgram_alloc();
+        if (dg == NULL)
+            return 0; /* OOM: treat like an incomplete datagram — drop the fragment */
         hashmap_insert_kv(map, key, dg);
+        /* hashmap_insert_kv() is void and drops silently on OOM — verify the
+         * datagram actually landed, else it would be orphaned (issue #216). */
+        void *check = NULL;
+        hashmap_get(map, key, &check);
+        if (check != dg) {
+            ipv6_dgram_free(dg);
+            return 0;
+        }
+        /* The handler owns the map, we own the value type: hand over the
+         * destructor once so mmt_close_handler() can drain datagrams that
+         * never completed (issue #216). */
+        mmt->ip6_streams_value_free = (void (*)(void *)) ipv6_dgram_free;
     }
 
     int dgram_update_result = ipv6_dgram_update(dg, ip6h, ipacket->p_hdr->caplen, frag_offset, next_offset + 8, more_fragment, ext_header_len);
@@ -371,6 +385,8 @@ static inline int ip6_process_fragment(ipacket_t *ipacket, unsigned index)
     // printf("Datagram: %d\n", dg->len);
     unsigned ioff = offset + ext_header_len + sizeof(struct ipv6hdr);
     uint8_t *x = (uint8_t*)mmt_malloc( ioff + dg->len );
+    if (x == NULL)
+        return 0; /* OOM: leave the datagram in the map; it drains at close */
     // copy the original ipacket data + IP header
     (void)memcpy( x,        ipacket->data, ioff );
     // copy the IP payload

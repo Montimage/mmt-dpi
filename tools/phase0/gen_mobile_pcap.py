@@ -146,9 +146,14 @@ def gen_gtp_pcap(path):
     f = pcap_open(path)
     src_ip = struct.pack("!I", 0x0A000001)
     dst_ip = struct.pack("!I", 0x0A000002)
-    # Valid GTPv1 T-PDU (PT=1, version=1, message_type 0xff per proto_gtp.c)
-    # Inner payload is 8 bytes of dummy user data
-    inner = b"\x45\x00\x00\x08" + b"\x00" * 4
+    # Valid GTPv1 T-PDU (PT=1, version=1, message_type 0xff per proto_gtp.c).
+    # The inner payload is a complete IPv4/UDP datagram so the GTP->IP
+    # decapsulation path is exercised end to end.
+    inner_ip_hdr = (b"\x45\x00" + struct.pack("!H", 36)
+                    + b"\x00\x01\x00\x00\x40\x11\x00\x00"
+                    + struct.pack("!I", 0xC0A80101) + struct.pack("!I", 0xC0A80201))
+    inner_udp = struct.pack("!HHHH", 1234, 5678, 16, 0) + b"\x00" * 8
+    inner = inner_ip_hdr + inner_udp
     hdr = gtp_header(version=1, pt=1, msg_type=0xff, length=len(inner), teid=0x01020304)
     payload = hdr + inner
     pkt = (eth_header()
@@ -171,8 +176,19 @@ def gen_gtp_pcap(path):
             + udp_header(40002, 2152, len(trunc))
             + trunc)
     pcap_write(f, pkt2, ts_us=2000)
+    # Fourth: G-PDU whose inner payload is shorter than an IPv4 header —
+    # exercises the inner-header bound guard in gtp_classify_next_proto()
+    # (issue #216); classifies as GTP only, no inner IP.
+    short_inner = b"\x45\x00\x00\x08" + b"\x00" * 4
+    hdr3 = gtp_header(version=1, pt=1, msg_type=0xff, length=len(short_inner), teid=0x05060708)
+    payload3 = hdr3 + short_inner
+    pkt3 = (eth_header()
+            + ip_header(src_ip, dst_ip, 17, UDP_HLEN + len(payload3))
+            + udp_header(40003, 2152, len(payload3))
+            + payload3)
+    pcap_write(f, pkt3, ts_us=3000)
     f.close()
-    print("wrote %s (GTP v1 T-PDU + v0 + truncated)" % path)
+    print("wrote %s (GTP v1 T-PDU + v0 + truncated + short-inner)" % path)
 
 
 # --- GTPv2 (UDP 2123, version=2) -------------------------------------------

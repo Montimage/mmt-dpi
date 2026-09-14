@@ -538,7 +538,13 @@ int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index) {
 	int l3_offset = get_packet_offset_at_index(ipacket, index);
     int dicom_offset = get_packet_offset_at_index(ipacket, index + 1);
 
-	unsigned int packet_len = ipacket->p_hdr->caplen - dicom_offset;
+	/* Guard: a truncated/absent payload must not let mmt_check_dicom_hdr()
+	 * dereference past the captured buffer (issue #216 — the header struct
+	 * is 6 bytes and is read unconditionally otherwise). */
+	if (dicom_offset < 0 || (unsigned)dicom_offset >= ipacket->p_hdr->caplen
+		|| ipacket->p_hdr->caplen - (unsigned)dicom_offset < PROTO_DICOM_HDRLEN)
+		return 0;
+	unsigned int packet_len = ipacket->p_hdr->caplen - (unsigned)dicom_offset;
 	struct dicomhdr * dicom_header = (struct dicomhdr *)&ipacket->data[dicom_offset];
 	if (!mmt_check_dicom(dicom_header, packet_len))
 		return 0;

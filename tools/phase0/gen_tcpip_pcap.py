@@ -3,14 +3,21 @@
 
 Covers the core TCP/IP parsers under src/mmt_tcpip/lib/protocols/:
   - HTTP (GET / POST over TCP)
-  - DNS  (query over UDP, including a truncated edge case)
+  - DNS  (query over UDP, including a truncated edge case; ``dns_query`` is
+    the clean single-query variant used by the golden corpus)
   - TLS/SSL (ClientHello over TCP)
+  - QUIC-IETF (long-header Initial over UDP)
+  - HTTP/2 (connection preface + SETTINGS over TCP)
+  - DICOM (A-ASSOCIATE-RQ over TCP/104)
+  - syslog (RFC3164 over UDP/514), PTPv2 (Announce over UDP/319)
   - FTP  (control session over TCP)
   - ICMP (echo request over IP)
   - TCP/IP fragmentation-like boundary (small caplen)
 
 Each pcap is a classic little-endian DLT_EN10MB capture, built with stdlib
-``struct`` only so it is reproducible in CI without scapy.
+``struct`` only so it is reproducible in CI without scapy. The protocol
+generators also feed the golden classification corpus via
+tools/phase0/ci/regen_pcaps.sh (issue #216).
 
 Usage:
     tools/phase0/gen_tcpip_pcap.py --out-dir /tmp/tcpip-pcaps
@@ -115,26 +122,48 @@ def gen_dns_pcap(path):
     print("wrote %s (DNS query + truncated)" % path)
 
 
+def gen_dns_query_pcap(path):
+    """Single clean DNS query — corpus entry for the DNS protocol."""
+    f = pcap_open(path)
+    src_ip = struct.pack("!I", 0x0A000001)
+    dst_ip = struct.pack("!I", 0x08080808)
+    dns_hdr = struct.pack("!HHHHHH", 0x1234, 0x0100, 1, 0, 0, 0)
+    qname = b"\x07example\x03com\x00"
+    qtail = struct.pack("!HH", 1, 1)
+    dns_payload = dns_hdr + qname + qtail
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 17, UDP_HLEN + len(dns_payload))
+           + udp_header(53000, 53, len(dns_payload))
+           + dns_payload)
+    pcap_write(f, pkt, ts_us=0)
+    f.close()
+    print("wrote %s (DNS query)" % path)
+
+
 def gen_tls_pcap(path):
     f = pcap_open(path)
     src_ip = struct.pack("!I", 0x0A000001)
     dst_ip = struct.pack("!I", 0x0A000002)
-    # Minimal TLS ClientHello record: type 22 (handshake), version 0x0303, length
-    # Use a tiny but structurally valid header so the parser enters the record walk.
-    # Record: type(1) + version(2) + length(2) + handshake payload
-    # Handshake: msg_type(1)=1 ClientHello, length(3), version(2), random(32), etc.
-    # Keep it short but enough for H2 guards (needs >=5 bytes).
+    # Minimal TLS ClientHello: the SSL classifier walks the record +
+    # handshake headers, so both length fields must be consistent.
+    # Handshake: type=1 ClientHello, length(3), version, random(32),
+    #   session-id len, cipher-suites len+suites, compression len+methods,
+    #   extensions len.
     client_hello_body = (
-        b"\x01"              # ClientHello
-        + b"\x00\x00\x20"    # length 32
-        + b"\x03\x03"        # version TLS 1.2
-        + b"\x00" * 32       # random
-        + b"\x00"            # session id len 0
-        + b"\x00\x02\x00\x2f" # cipher suites
-        + b"\x01\x00"        # compression
+        b"\x01"               # ClientHello
+        + b"\x00\x00\x00"     # length — patched below
+        + b"\x03\x03"         # version TLS 1.2
+        + b"\x00" * 32        # random
+        + b"\x00"             # session id len 0
+        + b"\x00\x02\x00\x2f" # cipher suites len=2, TLS_RSA_WITH_AES_128_CBC_SHA
+        + b"\x01\x00"         # compression methods len=1, null
+        + b"\x00\x00"         # extensions len 0
     )
-    rec_len = len(client_hello_body)
-    tls_record = struct.pack("!BHH", 22, 0x0303, rec_len) + client_hello_body
+    hs_len = len(client_hello_body) - 4
+    client_hello_body = (client_hello_body[:1]
+                         + struct.pack("!I", hs_len)[1:]
+                         + client_hello_body[4:])
+    tls_record = struct.pack("!BHH", 22, 0x0303, len(client_hello_body)) + client_hello_body
     pkt = (eth_header()
            + ip_header(src_ip, dst_ip, 6, TCP_HLEN + len(tls_record))
            + tcp_header(40000, 443, seq=1000)
@@ -149,6 +178,100 @@ def gen_tls_pcap(path):
     pcap_write(f, pkt2, ts_us=1000)
     f.close()
     print("wrote %s (TLS ClientHello + truncated)" % path)
+
+
+def gen_quic_pcap(path):
+    """QUIC-IETF long-header Initial on UDP/443 (version 1)."""
+    f = pcap_open(path)
+    src_ip = struct.pack("!I", 0x0A000001)
+    dst_ip = struct.pack("!I", 0x0A000002)
+    # byte0: header_form(1)|fixed_bit(1)|long-packet-type(Initial=0)<<4 -> 0xC0
+    payload = (b"\xc0" + struct.pack("!I", 1)     # long hdr, version 1
+               + b"\x08" + b"\x11" * 8          # DCID len + DCID
+               + b"\x04" + b"\x22" * 4          # SCID len + SCID
+               + b"\x00"                        # token length 0
+               + b"\x40\x40"                    # length varint (~64)
+               + b"\x00\x00\x00\x01"            # packet number
+               + b"\x00" * 32)                  # payload filler
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 17, UDP_HLEN + len(payload))
+           + udp_header(54321, 443, len(payload))
+           + payload)
+    pcap_write(f, pkt, ts_us=0)
+    f.close()
+    print("wrote %s (QUIC-IETF Initial)" % path)
+
+
+def gen_http2_pcap(path):
+    """HTTP/2 client connection preface + empty SETTINGS frame over TCP/80."""
+    f = pcap_open(path)
+    src_ip = struct.pack("!I", 0x0A000001)
+    dst_ip = struct.pack("!I", 0x0A000002)
+    preface = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+    settings = struct.pack("!I", 0)[1:] + b"\x04\x00" + b"\x00\x00\x00\x00"
+    payload = preface + settings
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 6, TCP_HLEN + len(payload))
+           + tcp_header(50000, 80, seq=1000)
+           + payload)
+    pcap_write(f, pkt, ts_us=0)
+    f.close()
+    print("wrote %s (HTTP/2 preface+SETTINGS)" % path)
+
+
+def gen_dicom_pcap(path):
+    """DICOM A-ASSOCIATE-RQ over TCP/104 (port 104 = DICOM/ACR-NEMA)."""
+    f = pcap_open(path)
+    src_ip = struct.pack("!I", 0x0A000001)
+    dst_ip = struct.pack("!I", 0x0A000002)
+    # fixed body: protocol-version(2) + reserved(2) + called-AE(16) +
+    #             calling-AE(16) + reserved(32) = 68 bytes
+    body = (struct.pack("!H", 1) + b"\x00\x00"
+            + b"CALLED-AE".ljust(16) + b"CALLING-AE".ljust(16) + b"\x00" * 32)
+    pdu = b"\x01\x00" + struct.pack("!I", len(body)) + body
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 6, TCP_HLEN + len(pdu))
+           + tcp_header(40000, 104, seq=1000)
+           + pdu)
+    pcap_write(f, pkt, ts_us=0)
+    f.close()
+    print("wrote %s (DICOM A-ASSOCIATE-RQ)" % path)
+
+
+def gen_syslog_pcap(path):
+    """RFC3164 syslog message on UDP/514."""
+    f = pcap_open(path)
+    src_ip = struct.pack("!I", 0x0A000001)
+    dst_ip = struct.pack("!I", 0x0A000002)
+    payload = (b"<134>Oct 11 22:14:15 myhost su[123]: "
+               b"'su root' failed for user on /dev/pts/0")
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 17, UDP_HLEN + len(payload))
+           + udp_header(40000, 514, len(payload))
+           + payload)
+    pcap_write(f, pkt, ts_us=0)
+    f.close()
+    print("wrote %s (syslog)" % path)
+
+
+def gen_ptp_pcap(path):
+    """PTPv2 Announce message on UDP/319 (IEEE 1588 event port)."""
+    f = pcap_open(path)
+    src_ip = struct.pack("!I", 0x0A000001)
+    dst_ip = struct.pack("!I", 0x0A000002)
+    # byte0 = transportSpecific(1)<<4 | messageType(Announce=0x0B) -> 0x1B;
+    # a low messageType byte would be misread as a RADIUS code by the
+    # detection order, so Announce is used rather than Sync (0x00).
+    ptp = (bytes([0x1B, 0x02])           # announce, PTP version 2
+           + struct.pack("!H", 44)       # messageLength
+           + b"\x00" * 40)               # rest of the announce header
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 17, UDP_HLEN + len(ptp))
+           + udp_header(40000, 319, len(ptp))
+           + ptp)
+    pcap_write(f, pkt, ts_us=0)
+    f.close()
+    print("wrote %s (PTPv2 Announce)" % path)
 
 
 def gen_ftp_pcap(path):
@@ -203,9 +326,15 @@ def gen_icmp_pcap(path):
 GENS = {
     "http": gen_http_pcap,
     "dns": gen_dns_pcap,
+    "dns_query": gen_dns_query_pcap,
     "tls": gen_tls_pcap,
     "ftp": gen_ftp_pcap,
     "icmp": gen_icmp_pcap,
+    "quic": gen_quic_pcap,
+    "http2": gen_http2_pcap,
+    "dicom": gen_dicom_pcap,
+    "syslog": gen_syslog_pcap,
+    "ptp": gen_ptp_pcap,
 }
 
 

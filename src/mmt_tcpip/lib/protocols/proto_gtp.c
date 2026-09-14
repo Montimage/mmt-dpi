@@ -147,6 +147,13 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 
 	switch (gtp->message_type) {
 	case 0xff: //G-PDU
+		/* The encapsulated datagram must hold at least a full IPv4 header:
+		 * the IP sessionizer and ip_classify_next_proto() dereference it
+		 * unconditionally once the next proto is declared IP (issue #216 —
+		 * a short inner payload was read past the packet buffer). */
+		if (gtp_offset + offset + (int) sizeof(mmt_una_iphdr_t)
+				> (int) ipacket->p_hdr->caplen)
+			return MMT_DROP;
 		retval.proto_id = PROTO_IP;
 		retval.offset = gtp_offset;
 		retval.status = Classified;
@@ -177,11 +184,15 @@ void mmt_init_classify_me_gtp() {
 	MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_GTP);
 }
 
+/* extracted_data->data is NULL once a packet took the not-extracted path —
+ * every extractor must bail before writing through it (issue #216). */
 int gtp_version_flag_extraction(const ipacket_t * packet, unsigned proto_index,
                                 attribute_t * extracted_data) {
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (extracted_data->data == NULL)
+		return 0;
 	*((unsigned char *) extracted_data->data) = gtp->version;
 	return 1;
 }
@@ -192,6 +203,8 @@ int gtp_protocol_type_flag_extraction(const ipacket_t * packet, unsigned proto_i
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (extracted_data->data == NULL)
+		return 0;
 	*((unsigned char *) extracted_data->data) = gtp->proto_type;
 	return 1;
 }
@@ -201,6 +214,8 @@ int gtp_reserved_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (extracted_data->data == NULL)
+		return 0;
 	*((unsigned char *) extracted_data->data) = gtp->reserved;
 	return 1;
 }
@@ -210,6 +225,8 @@ int gtp_extension_header_flag_extraction(const ipacket_t * packet, unsigned prot
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (extracted_data->data == NULL)
+		return 0;
 	*((unsigned char *) extracted_data->data) = gtp->extension_header;
 	return 1;
 }
@@ -219,6 +236,8 @@ int gtp_seq_check_flag_extraction(const ipacket_t * packet, unsigned proto_index
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (extracted_data->data == NULL)
+		return 0;
 	*((unsigned char *) extracted_data->data) = gtp->sequence_number;
 	return 1;
 }
@@ -229,9 +248,17 @@ int gtp_seq_num_extraction(const ipacket_t * packet, unsigned proto_index,
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	if(packet->data[proto_offset + 1] == 0x10 || packet->data[proto_offset + 1] == 0x12){
 		int attribute_offset = extracted_data->position_in_packet;
-		*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset]));
+		unsigned short v;
+		if (extracted_data->data == NULL)
+			return 0;
+		/* byte-aligned source and destination: memcpy, not an
+		 * (unsigned short *) dereference — the cast is a misaligned
+		 * load/store and trips UBSan (issue #216). */
+		memcpy(&v, &packet->data[proto_offset + attribute_offset], sizeof(v));
+		v = ntohs(v);
+		memcpy(extracted_data->data, &v, sizeof(v));
 		return 1;
-	} 
+	}
 	return 0;
 }
 
@@ -240,10 +267,14 @@ int gtp_imsi_mmc_extraction(const ipacket_t * packet, unsigned proto_index,
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	if(packet->data[proto_offset + 1] == 0x10){
+		/* extracted_data->data may be NULL when a previous packet already
+		 * took the not-extracted branch — general_*_extraction would then
+		 * memcpy into NULL (issue #216). */
+		if (extracted_data->data == NULL)
+			return 0;
 		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
 		return 1;
-	} 
-	extracted_data->data = NULL;
+	}
 	return 0;
 }
 
@@ -252,10 +283,11 @@ int gtp_imsi_mnc_extraction(const ipacket_t * packet, unsigned proto_index,
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	if(packet->data[proto_offset + 1] == 0x10){
+		if (extracted_data->data == NULL)
+			return 0;
 		general_short_extraction_with_ordering_change(packet,proto_index, extracted_data);
 		return 1;
-	} 
-	extracted_data->data = NULL;
+	}
 	return 0;
 }
 
@@ -264,6 +296,8 @@ int gtp_npdu_number_flag_extraction(const ipacket_t * packet, unsigned proto_ind
 
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
+	if (extracted_data->data == NULL)
+		return 0;
 	*((unsigned char *) extracted_data->data) = gtp->ndpu_number;
 	return 1;
 }
@@ -272,6 +306,8 @@ int _gtp_extract_next_extension_header_type(const ipacket_t * packet, unsigned p
 	int proto_offset = get_packet_offset_at_index(packet, proto_index);
 	mmt_una_gtp_header_generic_t * gtp = (mmt_una_gtp_header_generic_t *) & packet->data[proto_offset];
 	if( gtp->extension_header == 0 ) //no extension
+		return 0;
+	if (extracted_data->data == NULL)
 		return 0;
 	*((uint8_t *) extracted_data->data) = *(uint8_t *) &packet->data[ proto_offset + 11 ];
 	return 1;
@@ -290,6 +326,8 @@ static int _gtp_extract_pdu_extension_header_field(const ipacket_t * packet, uns
 	if( next_extension_header != GTP_NEXT_EXTENSION_HEADER_TYPE_PDU_SESSION )
 		return 0;
 
+	if (extracted_data->data == NULL)
+		return 0;
 	const struct gtp_header_extension_pdu *pdu = (struct gtp_header_extension_pdu *) & packet->data[proto_offset + 12];
 	switch( extracted_data->field_id ){
 	case GTP_EXTENSION_PDU__LENGTH:

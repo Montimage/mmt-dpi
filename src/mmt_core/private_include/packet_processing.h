@@ -455,6 +455,18 @@ struct mmt_handler_struct {
     // Specific session timedout value
     // uint32_t mmt_http_session_timed_out;
     mmt_hashmap_t *ip_streams;
+    /* Destructor for values stored in ip_streams (ip_dgram_t, registered by
+     * the IP plugin the first time it pushes an incomplete datagram). The
+     * handler owns the map but not the value type, so the plugin hands its
+     * destructor over and mmt_close_handler() drains the map before freeing
+     * it — otherwise datagrams that never complete leak (issue #216). */
+    void (*ip_streams_value_free)(void * value);
+    /* IPv6 fragment reassembly keeps its own map (issue #216): the v4/v6
+     * key builders share the same 64-bit key space, so a single map could
+     * collide a v4 datagram with a v6 one, and the two value types need
+     * different destructors — a shared map cannot drain both correctly. */
+    mmt_hashmap_t *ip6_streams;
+    void (*ip6_streams_value_free)(void * value);
     void * timeout_milestones_map; // Session timeout milestones map
 };
 

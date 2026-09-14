@@ -96,16 +96,18 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **12/12 suites pass**, total runtime roughly **45–65 s** on a
+Expected result: **13/13 suites pass**, total runtime roughly **45–80 s** on a
 typical development machine (measured: 52 s and 57 s on a 20-core host, 53 s on
 the September 2026 audit machine — the suites compile their own sources, so the
-wall clock is dominated by `gcc`, not by the assertions). Exit code `0` on
-success, `1` on any failure. The runner has no `-j` option: the 12 suites run
+wall clock is dominated by `gcc`, not by the assertions). The
+`fault_injection` suite also builds+installs the SDK once for its engine leg,
+which is why the band's top end moved up. Exit code `0` on
+success, `1` on any failure. The runner has no `-j` option: the 13 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:155-168`):
-`hashmap`, `memory`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`, `avltree`,
-`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`, `rule_engine`,
-`radius_hardening`, `nas_ies_tail`.
+(`tests/run_all_tests.sh:155-169`):
+`hashmap`, `memory`, `fault_injection`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`,
+`avltree`, `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
+`rule_engine`, `radius_hardening`, `nas_ies_tail`.
 
 Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
@@ -139,7 +141,7 @@ skipped — the runner exits non-zero (issue #186).
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count and `tests/coverage/summary.json`
-  in stdout (`tests/run_all_tests.sh:181-283`). Requires `gcov` (shipped with
+  in stdout (`tests/run_all_tests.sh:182-284`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` via
   `tools/ci/check-coverage-floor.sh`.
@@ -147,7 +149,7 @@ skipped — the runner exits non-zero (issue #186).
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:285-301`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:286-302`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -281,7 +283,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 12/12 suites PASSED, exit 0 (45–65 s)
+bash tests/run_all_tests.sh     # 13/13 suites PASSED, exit 0 (45–80 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

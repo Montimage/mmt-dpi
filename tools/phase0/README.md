@@ -68,6 +68,23 @@ If the mmt-test repo is not at `../mmt-test`, point the script at the data-sets:
 MMT_TEST_DATASETS=/path/to/mmt-test/data-sets tools/phase0/capture_baseline.sh
 ```
 
+### The CI subset and its synthetic corpus
+
+`ci/golden_pcaps.txt` lists the vendored subset. Alongside the real captures
+it carries one synthetic pcap per protocol for the corpus requirement of
+issue #216 (DNS, TLS, QUIC-IETF, HTTP/2, DICOM, syslog, PTP, RADIUS, GTP,
+S1AP, NGAP). Those files are generated — not hand-edited — so they stay
+reproducible:
+
+```bash
+tools/phase0/ci/regen_pcaps.sh     # rewrites the synthetic pcaps in ci/pcaps/
+tools/phase0/capture_baseline.sh --golden tools/phase0/ci/golden_pcaps.txt \
+    --datasets tools/phase0/ci/pcaps --out tools/phase0/ci/baseline --iterations 30
+```
+
+Commit the regenerated pcaps, `ci/golden_pcaps.txt` and the refreshed
+`ci/baseline/classification*.txt` together.
+
 ## Using the baseline to gate a later phase
 
 After implementing a phase, re-run the capture and diff the classification
@@ -101,8 +118,9 @@ list fails the build):
 - `harness-*` — harness-${{ matrix.harness }}
 - `harness-gate` — harness-gate
 - `classification-gate` — Golden classification fingerprint unchanged
+- `leak-gate` — Leak regression over the golden corpus (Valgrind)
 - `precision-gate` — Labelled-pcap precision/recall holds or improves (M9, issue #74)
-- matrix expansion: `harness-*` fans out to 25 jobs, one per `tools/phase0/tests/run_*.sh`
+- matrix expansion: `harness-*` fans out to 27 jobs, one per `tools/phase0/tests/run_*.sh`
 <!-- end-generated: ci-gates -->
 
 What each gate asserts:
@@ -115,6 +133,14 @@ What each gate asserts:
   subset (vendored under `ci/pcaps/`, ~0.6 MB, no dependency on the mmt-test
   repo) and diffs the fingerprint against the committed
   `ci/baseline/classification.txt`. Any diff fails the job.
+- **`leak-gate`** — runs `tools/phase0/tests/run_leak_regression_test.sh`
+  under Valgrind (issue #216, F-TEST-008): one named case per 1.8.0 leak fix
+  (`reassembly_drop_skip`, `embedded_session_offsets`,
+  `ftp_context_teardown`, `session_evasion_ownership`) plus a
+  `golden_corpus_teardown` pass over the whole `ci/pcaps/` corpus — any
+  definite leak fails the job. The same harness also runs inside the
+  `harness-*` matrix, where hosts without valgrind fall back to an ASan
+  `detect_leaks=1` build.
 - **`precision-gate`** — runs `tools/phase0/ci/check_precision.sh`, which runs
   the labelled-pcap precision/recall harness (`phase0_precision`) over the
   labelled subset (`ci/labels.txt`) and diffs the micro-averaged metrics
