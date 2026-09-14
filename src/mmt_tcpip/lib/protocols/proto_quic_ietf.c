@@ -134,7 +134,8 @@ int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 	} else {
 		//Short header — flag bits are in data[offset]; the fixed 8-byte
 		//destination connection id is at offset+1, the packet number at
-		//offset+9 (see quic_ietf_1_rtt_packet_t: "TODO: fixed 8 bytes").
+		//offset+9 (the quic_ietf_1_rtt_packet_t layout notes the field is
+		//fixed at 8 bytes).
 		switch( extracted_data->field_id ){
 		case QUIC_IETF_HEADER_FORM:
 			(*(uint8_t *) extracted_data->data) = (flags >> 7) & 1;

@@ -101,12 +101,19 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 	case DICOM_PDU_TYPE:
 		*((unsigned char *) extracted_data->data) = *((unsigned char *) &ipacket->data[dicom_offset + attribute_offset]);
 		break;
-	case DICOM_PDU_LEN:
-		*((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) & ipacket->data[dicom_offset + attribute_offset]));
+	case DICOM_PDU_LEN: {
+		// memcpy: the packet-data offset is not uint32-aligned (UBSan).
+		uint32_t pdu_len;
+		memcpy(&pdu_len, &ipacket->data[dicom_offset + attribute_offset], sizeof pdu_len);
+		*((unsigned int *) extracted_data->data) = ntohl(pdu_len);
 		break;
+	}
 	case DICOM_PROTO_VERSION:
-		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC)
-			*((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & ipacket->data[dicom_offset + attribute_offset]));
+		if(hdr->pdu_type == A_ASSOCIATE_RQ || hdr->pdu_type == A_ASSOCIATE_AC) {
+			uint16_t proto_ver;
+			memcpy(&proto_ver, &ipacket->data[dicom_offset + attribute_offset], sizeof proto_ver);
+			*((unsigned short *) extracted_data->data) = ntohs(proto_ver);
+		}
 		else return 0;
 		break;
 	case DICOM_CALLED_AE_TITLE:
@@ -206,7 +213,9 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 				// Sub-item: type(1) + reserved(1) + length(2 BE) + value(4 bytes BE)
 				int val_offset = sub_pos + 4;
 				if (val_offset + 4 > (int)ipacket->p_hdr->caplen) return 0;
-				*((uint32_t *)extracted_data->data) = ntohl(*((uint32_t *)&ipacket->data[val_offset]));
+				uint32_t max_pdu;
+				memcpy(&max_pdu, &ipacket->data[val_offset], sizeof max_pdu);
+				*((uint32_t *)extracted_data->data) = ntohl(max_pdu);
 			}
 			else if(extracted_data->field_id == DICOM_IMPLEMENTATION_CLASS_UID) {
 				// Search for Implementation Class UID sub-item (type 0x52) inside User Info
@@ -229,7 +238,9 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 		if(hdr->pdu_type == P_DATA_TF) {
 			int off = dicom_offset + 6;
 			if (off + 4 > (int)ipacket->p_hdr->caplen) return 0;
-			*((unsigned int *)extracted_data->data) = ntohl(*((unsigned int *)&ipacket->data[off]));
+			uint32_t pdv_len;
+			memcpy(&pdv_len, &ipacket->data[off], sizeof pdv_len);
+			*((unsigned int *)extracted_data->data) = ntohl(pdv_len);
 		} else return 0;
 		break;
 	case DICOM_PDV_CONTEXT:

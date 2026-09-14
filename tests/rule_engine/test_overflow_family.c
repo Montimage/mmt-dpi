@@ -17,6 +17,12 @@
  * SANITIZE=asan). Each check prints "ok - ..." on success; any failure is
  * reported and the process exits non-zero.
  */
+/* RTLD_NEXT (used by the fault-injection dlsym interposer below) is a GNU
+ * extension — the feature-test macro must precede every libc include or the
+ * floor toolchain (glibc 2.34/2.35) hides it. */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -429,7 +435,8 @@ static void test_data_path_bounded(void)
 }
 
 /* F-BUG-092: convert_string_to_json_compatible allocates size*6+1 (worst case
- * \uXXXX per byte), rejects non-positive sizes, and never writes past it. */
+ * \u + 4 hex digits per byte), rejects non-positive sizes, and never writes
+ * past it. */
 static void test_json_escape_bounded(void)
 {
     char raw[64];
@@ -687,7 +694,7 @@ static void test_tokenize_and_summary_bounded(void)
 {
     char *t2 = malloc(30), *t3 = malloc(30);
     short ref = 0;
-    char long_names[] = "PROTOCOLNAMEOVER30CHARSLONGXXXXXXXXXXXXXXXXX.FIELDNAMEOVER30CHARSLONGYYYYYYYYYYYYYYYY.12345";
+    char long_names[] = "PROTOCOLNAMEOVER30CHARSLONGZZZZZZZZZZZZZZZZZZZZZZZZZ.FIELDNAMEOVER30CHARSLONGYYYYYYYYYYYYYYYY.12345";
     char mega_digits[] = "a.b.9999999999999999999999999999999999999999";
     char *summary;
 

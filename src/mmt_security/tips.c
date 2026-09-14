@@ -2061,7 +2061,8 @@ int eliminate_instance(rule **r, rule **i, char *type)
 }
 
 
-/* F-BUG-092 (#209): control bytes escape as \uXXXX — up to 6 output bytes per
+/* F-BUG-092 (#209): control bytes escape as \u + 4 hex digits — up to 6
+ * output bytes per
  * input byte — so the destination is size*6+1, non-positive sizes are
  * rejected, and the loop tracks the remaining capacity. */
 char * convert_string_to_json_compatible (char * p, int size){
