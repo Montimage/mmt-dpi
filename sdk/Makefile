@@ -122,12 +122,15 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	echo $(SDKLIB)
 	$(QUIET) umask 022 && install -m 0755 $(SDKLIB)/*.so.* $(BUILD_DIR)$(MMT_BASE)/dpi/lib/ \
 	                  && install -m 0644 $(SDKLIB)/*.a    $(BUILD_DIR)$(MMT_BASE)/dpi/lib/
+	# Scope the mode-normalizing finds to the trees just copied: running them
+	# over dpi/ or $(MMT_BASE) would also hit dpi/lib/*.so.* and undo the
+	# install -m 0755 above, silently shipping the libraries at 0644.
 	$(QUIET) umask 022 && $(CP) -r $(SDKINC)   $(BUILD_DIR)$(MMT_BASE)/dpi \
-	                  && find $(BUILD_DIR)$(MMT_BASE)/dpi -type d -exec chmod 0755 {} + \
-	                  && find $(BUILD_DIR)$(MMT_BASE)/dpi -type f -exec chmod 0644 {} +
+	                  && find $(BUILD_DIR)$(MMT_BASE)/dpi/include -type d -exec chmod 0755 {} + \
+	                  && find $(BUILD_DIR)$(MMT_BASE)/dpi/include -type f -exec chmod 0644 {} +
 	$(QUIET) umask 022 && $(CP) -r $(SDKXAM)   $(BUILD_DIR)$(MMT_BASE) \
-	                  && find $(BUILD_DIR)$(MMT_BASE) -type d -exec chmod 0755 {} + \
-	                  && find $(BUILD_DIR)$(MMT_BASE) -type f -exec chmod 0644 {} +
+	                  && find $(BUILD_DIR)$(MMT_BASE)/examples -type d -exec chmod 0755 {} + \
+	                  && find $(BUILD_DIR)$(MMT_BASE)/examples -type f -exec chmod 0644 {} +
 	$(QUIET) install -m 0755 $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
 	$(QUIET) install -m 0755 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBMOBILE).so
 	$(QUIET) install -m 0755 $(SDKLIB)/$(LIBBAPP).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBBAPP).so
