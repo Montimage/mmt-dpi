@@ -435,3 +435,20 @@ $(SDK_EXAMPLES_SRC): $(SDKXAM)
 	@echo "[COMPILE] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -I. -o $@ -c $<
 
+#  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#  T O O L C H A I N   F L O O R   ( i s s u e   # 2 1 8 ,   F - D E P - 2 0 7 )
+#  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# Single source of truth for the minimum supported toolchain: the oldest
+# toolchain the release matrix (.github/workflows/release-packages.yml)
+# still builds on. Rocky 9 / CentOS Stream 9 ship GCC 11 on glibc 2.34 —
+# the oldest combination in the matrix (Ubuntu 22.04 has the same GCC on
+# glibc 2.35; Debian 12 GCC 12; Ubuntu 24.04 GCC 13). rules/arch-linux.mk
+# enforces the GCC floor at parse time and the generated .deb declares the
+# glibc and libstdc++ floors in its Depends: line (sdk/Makefile); the
+# toolchain-floor CI job exercises them on ubuntu-22.04. libstdc++6 package
+# versions track the GCC major, so its floor is pinned to MMT_GCC_MIN.
+MMT_GCC_MIN       := 11
+MMT_GLIBC_MIN     := 2.34
+MMT_LIBSTDCXX_MIN := $(MMT_GCC_MIN)
+
