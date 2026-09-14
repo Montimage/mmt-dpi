@@ -178,9 +178,70 @@ static void test_deep_label_chain(void)
     if (n) dns_free_name(n);
 }
 
+/* F-BUG-072 (issue #203): a compression pointer is two bytes with the top two
+ * bits set; the target offset is the remaining 14 bits — up to 16383. The old
+ * parser matched only the exact byte 0xC0 and read an 8-bit offset, so a
+ * pointer like 0xC1 0x00 (target 256) was misparsed as a 193-byte literal
+ * label. The pointer must sit AFTER its target (the strictly-backward rule),
+ * so the crafted message carries a real name at offset 256 and the pointer at
+ * offset 300. */
+static void test_pointer_far_target(void)
+{
+    printf("[F-BUG-072] compression pointer targeting offset >= 256\n");
+
+    u_char *buf = (u_char *)malloc(302);
+    if (!buf) { perror("malloc"); exit(2); }
+    memset(buf, 0, 302);
+    /* The pointed-to name at offset 256: "\x03www\x07example\x03com\x00". */
+    const u_char target_name[] = {0x03,'w','w','w',
+                                  0x07,'e','x','a','m','p','l','e',
+                                  0x03,'c','o','m',0x00};
+    memcpy(buf + 256, target_name, sizeof(target_name));
+    /* Pointer at offset 300: 0xC1 0x00 -> offset (0x01 << 8) | 0x00 = 256. */
+    buf[300] = 0xC1;
+    buf[301] = 0x00;
+
+    dns_name_t *n = dns_extract_name_value(buf + 300, buf, buf + 302);
+    CHECK(n != NULL && n->value != NULL &&
+          strcmp(n->value, "www.example.com") == 0,
+          "pointer with 14-bit offset 256 resolves to \"www.example.com\"");
+    if (n) dns_free_name(n);
+    free(buf);
+}
+
+/* F-BUG-072: every first byte with the top two bits set is a pointer —
+ * including 0xC1-0xFF, not just 0xC0. A 0xFF-marker pointer targets offset
+ * 0x3FFF (16383), far outside this payload: must be rejected without
+ * over-read. */
+static void test_pointer_marker_range(void)
+{
+    printf("[F-BUG-072] non-0xC0 pointer markers are treated as pointers\n");
+
+    u_char *buf = (u_char *)malloc(302);
+    if (!buf) { perror("malloc"); exit(2); }
+    memset(buf, 0, 302);
+    const u_char target_name[] = {0x01,'x',0x00};
+    memcpy(buf + 256, target_name, sizeof(target_name));
+
+    /* 0xC1 0x00 -> offset 256: resolves (target inside payload, backward). */
+    buf[300] = 0xC1; buf[301] = 0x00;
+    dns_name_t *n = dns_extract_name_value(buf + 300, buf, buf + 302);
+    CHECK(n != NULL && n->value != NULL && strcmp(n->value, "x") == 0,
+          "marker 0xC1 resolves target at offset 256");
+    if (n) dns_free_name(n);
+
+    /* 0xFF 0xFD -> offset 16381: out of range, must not over-read. */
+    buf[300] = 0xFF; buf[301] = 0xFD;
+    n = dns_extract_name_value(buf + 300, buf, buf + 302);
+    CHECK(1, "marker 0xFF with out-of-range target handled without over-read");
+    if (n) dns_free_name(n);
+
+    free(buf);
+}
+
 int main(void)
 {
-    printf("=== DNS parser hardening test (issue #3: K3 + M7) ===\n");
+    printf("=== DNS parser hardening test (issue #3: K3 + M7; issue #203: F-BUG-072) ===\n");
     test_check_payload_guard();
     test_valid_name();
     test_self_pointer();
@@ -188,6 +249,8 @@ int main(void)
     test_forward_pointer();
     test_truncated_label();
     test_deep_label_chain();
+    test_pointer_far_target();
+    test_pointer_marker_range();
     printf("=== %d checks, %d failure(s) ===\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }

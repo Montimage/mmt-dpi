@@ -155,6 +155,20 @@ int getServerNameFromClientHello(ipacket_t *ipacket, char *buffer, int buffer_le
 int ssl_is_tls_record_header(const uint8_t *payload, int payload_len);
 int tls_get_number_records(const ipacket_t *ipacket);
 int mmt_classify_me_ssl(ipacket_t *ipacket, unsigned index);
+int tls_content_type_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+int tls_version_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+int tls_length_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+
+/* --- protocols/proto_quic_ietf.c / proto_dtls.c extraction entry points ------
+ * Exported non-static solely so the crafted-input harnesses can drive them
+ * (issue #203). */
+int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
+        attribute_t *extracted_data);
+int _dtls_extract_attribute(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
 
 /* --- protocols/proto_tcp.c ----------------------------------------------------- */
 int tcp_pre_classification_function(ipacket_t *ipacket, unsigned index);
