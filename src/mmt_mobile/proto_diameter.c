@@ -14,6 +14,9 @@
  */
 static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
 	int offset = get_packet_offset_at_index(ipacket, proto_index);
+	//the cast below needs the whole 20-byte header to be captured
+	if( offset < 0 || (size_t)offset + sizeof(struct diameter_header) > ipacket->p_hdr->caplen )
+		return 0;
 	const struct diameter_header *hdr = (struct diameter_header *) &ipacket->data[offset];
 
 	//depending on id of attribute to be extracted
@@ -55,7 +58,7 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 	return 1;
 }
 
-static uint32_t _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uint16_t offset ){
+static uint32_t _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, unsigned offset ){
 	//first SCTP from the lattest proto in protocol hierarchy
 	int sctp_index = get_protocol_index_by_id( ipacket, PROTO_SCTP );
 	//not found SCTP
@@ -63,6 +66,8 @@ static uint32_t _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uin
 		return PROTO_UNKNOWN;
 	//offset of sctp in packet
 	int sctp_offset = get_packet_offset_at_index(ipacket, sctp_index);
+	if( sctp_offset < 0 || (size_t)sctp_offset + sizeof(mmt_una_sctphdr_t) > ipacket->p_hdr->caplen )
+		return PROTO_UNKNOWN;
 	const mmt_una_sctphdr_t *sctp_hdr = (const mmt_una_sctphdr_t *) &ipacket->data[ sctp_offset ];
 
 	/*
@@ -76,6 +81,9 @@ static uint32_t _classify_by_sctp_ports( ipacket_t *ipacket, unsigned index, uin
 	memcpy(&sctp_src, &sctp_hdr->source, sizeof(sctp_src));
 	memcpy(&sctp_dst, &sctp_hdr->dest,   sizeof(sctp_dst));
 	if( ntohs( sctp_src ) == 3868 && ntohs( sctp_dst ) == 3868 ){
+		//F-BUG-080: prove the full Diameter header is captured before touching it
+		if( (size_t)offset + sizeof(struct diameter_header) > ipacket->p_hdr->caplen )
+			return PROTO_UNKNOWN;
 		//need to confirm more by other signatures of diameter: version
 		const struct diameter_header *hdr = (struct diameter_header *) &ipacket->data[offset];
 		uint32_t length = copy_4bytes_order( hdr->length, 3 );
@@ -99,11 +107,16 @@ static int _classify_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 	//index: index of the parent protocol (SCTP_DATA)
 	int sctp_data_index  = index; //get_protocol_index_by_id( ipacket, PROTO_SCTP_DATA );
 	int sctp_data_offset = get_packet_offset_at_index(ipacket, sctp_data_index);
+	//the datahdr cast below needs the whole 16-byte chunk header to be captured
+	if( sctp_data_offset < 0 || (size_t)sctp_data_offset + sizeof(struct sctp_datahdr) > ipacket->p_hdr->caplen )
+		return 0;
 
 	//next porotocol is encapsulated inside payload of SCTP_DATA
-	uint16_t next_offset = sctp_data_offset + sizeof(struct sctp_datahdr);
-	//not enough room for other data
-	if( next_offset  >= ipacket->p_hdr->caplen )
+	size_t next_offset = (size_t)sctp_data_offset + sizeof(struct sctp_datahdr);
+	//F-BUG-080: a Diameter classification needs the whole 20-byte header to be
+	//captured — extraction casts next_offset to struct diameter_header. This
+	//applies to the PPID-46 path as much as to the port-based fallback.
+	if( next_offset + sizeof(struct diameter_header) > ipacket->p_hdr->caplen )
 		return 0;
 
 	classified_proto_t retval;
@@ -117,11 +130,7 @@ static int _classify_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 		break;
 	default:
 		//try to gues DIAMETER using sctp ports, then verified by other signatures (version, length, etc)
-		//printf("offset: %d, next: %d", offset, next_offset );
-		//the rest is not enough for diameter header
-		if( next_offset +  sizeof(struct diameter_header) > ipacket->p_hdr->caplen )
-			return 0;
-		retval.proto_id = _classify_by_sctp_ports( ipacket, index, next_offset );
+		retval.proto_id = _classify_by_sctp_ports( ipacket, index, (unsigned)next_offset );
 		break;
 	}
 	//we found something

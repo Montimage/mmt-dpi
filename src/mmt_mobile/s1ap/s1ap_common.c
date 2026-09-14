@@ -308,7 +308,10 @@ static inline int _decode_s1ap_initialContextSetupResponse(
 				S1AP_ERROR("Decoding of IE e_RABSetupListCtxtSURes failed\n");
 				if (s1apERABSetupListCtxtSURes_p)
 					ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
-				return -1;
+				/* must go through _finish to free the outer decoded tree
+				 * (F-BUG-087) */
+				decoded = -1;
+				goto _finish;
 			}
 
 			if (_decode_s1ap_e_rabsetuplistctxtsures( message, s1apERABSetupListCtxtSURes_p) < 0) {
@@ -875,6 +878,10 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 
 	if (dec_ret.code != RC_OK) {
 		fprintf(stderr, "[S1AP] Failed to decode S1AP, code %d, consumed: %zu\n", dec_ret.code, dec_ret.consumed);
+		/* aper_decode leaves the partially-decoded tree in pdu_p — free it
+		 * here or every malformed S1AP packet leaks it (F-BUG-078).
+		 * ASN_STRUCT_FREE is NULL-safe. */
+		ASN_STRUCT_FREE( asn_DEF_S1AP_PDU, pdu_p );
 		return -1;
 	}
 

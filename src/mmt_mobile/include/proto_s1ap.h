@@ -199,4 +199,24 @@ enum S1ap_PDU_Present {
 	S1AP_PDU_Present_unsuccessfulOutcome,
 };
 
+struct s1ap_message; /* defined in s1ap/s1ap_common.h (internal header) */
+
+/*
+ * Issue #207 (F-BUG-086): the S1AP entity store is process-global and fed by
+ * attacker-controlled packet data, so it is capped and indexed by entity
+ * type.
+ *
+ * s1ap_entities_update() inserts the entity described by msg, or refreshes
+ * it when it is already tracked. It returns the entity id (> 0), or 0 when
+ * msg carries nothing for the requested type, when the store already holds
+ * S1AP_MAX_ENTITIES entities, or when allocation fails.
+ * s1ap_entities_count() reports how many entities are currently tracked and
+ * s1ap_entities_reset() drops them all.
+ */
+#define S1AP_MAX_ENTITIES 4096
+
+uint32_t s1ap_entities_update( s1ap_entity_type_t type, const struct s1ap_message *msg );
+uint32_t s1ap_entities_count( void );
+void     s1ap_entities_reset( void );
+
 #endif /* SRC_MMT_MOBILE_PROTO_S1AP_H_ */

@@ -88,6 +88,17 @@ def sctp_data_chunk(payload, ppid, stream=1, ssn=1, tsn=1000, flags=0x03):
     return hdr + padded, hdr_len
 
 
+def sctp_data_chunk_raw(payload, ppid, declared_len, stream=1, ssn=1,
+                        tsn=1000, flags=0x03):
+    # DATA chunk whose declared length is caller-chosen — it may lie
+    # (smaller than the 16-byte header, or beyond the captured bytes).
+    # Issue #207 (F-BUG-079): the mobile classifiers must bound-check the
+    # declared length instead of trusting it.
+    return (struct.pack("!BBHIHHI",
+                        0x00, flags, declared_len, tsn, stream, ssn, ppid)
+            + payload)
+
+
 def pcap_open(path):
     f = open(path, "wb")
     f.write(struct.pack("<IHHiIII", 0xa1b2c3d4, 2, 4, 0, 0, 65535, 1))
@@ -264,8 +275,15 @@ def gen_diameter_pcap(path):
             + ip_header(src_ip, dst_ip, 132, len(sctp_common_header(3868, 3868) + chunk3))
             + sctp_common_header(3868, 3868, vtag=0x1234567a) + chunk3)
     pcap_write(f, pkt3, ts_us=2000)
+    # F-BUG-080: PPID 46 with a single payload byte — the pre-fix classifier
+    # accessed a 20-byte Diameter header after proving only this byte.
+    chunk4 = sctp_data_chunk_raw(b"\x01", ppid=46, declared_len=17, tsn=1003)
+    pkt4 = (eth_header()
+            + ip_header(src_ip, dst_ip, 132, len(sctp_common_header(3868, 3868, vtag=0x1234567b) + chunk4))
+            + sctp_common_header(3868, 3868, vtag=0x1234567b) + chunk4)
+    pcap_write(f, pkt4, ts_us=3000)
     f.close()
-    print("wrote %s (Diameter/SCTP PPID 46 + truncated + PPID 0 fallback)" % path)
+    print("wrote %s (Diameter/SCTP PPID 46 + truncated + 1-byte + PPID 0 fallback)" % path)
 
 
 # --- S1AP over SCTP (PPID 18) ------------------------------------------------
@@ -337,8 +355,32 @@ def gen_ngap_pcap(path):
             + ip_header(src_ip, dst_ip, 132, len(sctp_common_header(50000, 38412, vtag=0x1234567b) + chunk4))
             + sctp_common_header(50000, 38412, vtag=0x1234567b) + chunk4)
     pcap_write(f, pkt4, ts_us=3000)
+    # F-BUG-079: declared chunk length smaller than the 16-byte DATA header.
+    # The payload is a wire-valid NGAP initiatingMessage (library-encoded),
+    # so a classifier that subtracts without checking would wrap to ~64KiB
+    # and decode past the captured bytes.
+    ngap_wire = bytes([0x00, 0x0f, 0x00, 0x0a, 0x00, 0x00, 0x01, 0x00,
+                       0x55, 0x00, 0x03, 0x40, 0x30, 0x39])
+    chunk5 = sctp_data_chunk_raw(ngap_wire, ppid=0, declared_len=8, tsn=3004)
+    pkt5 = (eth_header()
+            + ip_header(src_ip, dst_ip, 132, len(sctp_common_header(50000, 38412, vtag=0x1234567c) + chunk5))
+            + sctp_common_header(50000, 38412, vtag=0x1234567c) + chunk5)
+    pcap_write(f, pkt5, ts_us=4000)
+    # F-BUG-079: declared chunk length of 1 — the acceptance-criterion case.
+    chunk6 = sctp_data_chunk_raw(ngap_wire, ppid=0, declared_len=1, tsn=3005)
+    pkt6 = (eth_header()
+            + ip_header(src_ip, dst_ip, 132, len(sctp_common_header(50000, 38412, vtag=0x1234567d) + chunk6))
+            + sctp_common_header(50000, 38412, vtag=0x1234567d) + chunk6)
+    pcap_write(f, pkt6, ts_us=5000)
+    # F-BUG-079: declared chunk length far beyond the captured bytes —
+    # must be clamped to caplen, then the truncated decode simply fails.
+    chunk7 = sctp_data_chunk_raw(ngap_wire[:8], ppid=0, declared_len=4000, tsn=3006)
+    pkt7 = (eth_header()
+            + ip_header(src_ip, dst_ip, 132, len(sctp_common_header(50000, 38412, vtag=0x1234567e) + chunk7))
+            + sctp_common_header(50000, 38412, vtag=0x1234567e) + chunk7)
+    pcap_write(f, pkt7, ts_us=6000)
     f.close()
-    print("wrote %s (NGAP/SCTP PPID 60 + PPID 0 fallback + truncated)" % path)
+    print("wrote %s (NGAP/SCTP PPID 60 + PPID 0 fallback + truncated + lying lengths)" % path)
 
 
 # --- SCTP control (INIT / SACK) — exercise SCTP sub-protocols ---------------

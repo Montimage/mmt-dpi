@@ -68,20 +68,42 @@ SRC_INC=(
     -I "${REPO_ROOT}/src/mmt_mobile/asn1c/ngap"
 )
 
-# --- 2. compile the test ---------------------------------------------------
+# --- 2. compile the tests ---------------------------------------------------
 # EXTRA_CFLAGS carries sanitizer/coverage instrumentation requested by
-# tests/run_all_tests.sh; the binary stays in the suite dir so gcov data
+# tests/run_all_tests.sh; the binaries stay in the suite dir so gcov data
 # (.gcno/.gcda) survives for the coverage report.
-echo "  [2/3] compiling test ..."
+echo "  [2/3] compiling tests ..."
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${SCRIPT_DIR}/test_s1ap_ngap_decode" \
     "${TEST_SRC}" "${SRC_INC[@]}" \
     -I "${INC}" -L "${LIB}" -lmmt_tmobile -lmmt_core
 
+# The packet-level test drives packet_process() with the real plugins, so it
+# links libmmt_core only — the mobile plugin is loaded via dlopen from the
+# installed prefix. Linking libmmt_tmobile here too would duplicate its
+# globals (once direct, once via dlopen).
+${CC} "${extra_cflags[@]}" -O2 -Wall -o "${SCRIPT_DIR}/test_s1ap_ngap_packets" \
+    "${SCRIPT_DIR}/test_s1ap_ngap_packets.c" \
+    -I "${INC}" -L "${LIB}" -lmmt_core -ldl -lpthread -lm
+
 # --- 3. run -----------------------------------------------------------------
-echo "  [3/3] running test ..."
+echo "  [3/3] running tests ..."
+# The malformed-S1AP loop is the F-BUG-078 regression; LSAN is its oracle.
+# run_all_tests.sh exports ASAN_OPTIONS=detect_leaks=0 for SANITIZE=asan
+# (project policy: leak detection via Valgrind) — this suite deliberately
+# opts back in: issue #207's acceptance criterion is a zero-leak report.
+# Appended last so it wins over any earlier detect_leaks= setting.
+ASAN_OPTIONS="${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_leaks=1" \
 LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \
     "${SCRIPT_DIR}/test_s1ap_ngap_decode"
+
+# Run the packet-level test from WORK: it has no plugins/ directory, so
+# load_plugins() falls back to PLUGINS_REPOSITORY_OPT = ${PREFIX}/plugins —
+# the just-installed, profile-matched plugins. A CWD-visible plugins/ (e.g.
+# the repo-root symlink to sdk/lib) would shadow them with the wrong build.
+(cd "${WORK}" && \
+LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \
+    "${SCRIPT_DIR}/test_s1ap_ngap_packets")
 
 echo
 echo "✓ S1AP/NGAP decode regression tests passed"

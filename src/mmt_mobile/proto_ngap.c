@@ -16,6 +16,8 @@ static bool _is_valid_by_sctp_ports( const ipacket_t *ipacket ){
 		return false;
 	//offset of sctp in packet
 	int sctp_offset = get_packet_offset_at_index(ipacket, sctp_index);
+	if( sctp_offset < 0 || (size_t)sctp_offset + sizeof(mmt_una_sctphdr_t) > ipacket->p_hdr->caplen )
+		return false;
 	const mmt_una_sctphdr_t *sctp_hdr = (const mmt_una_sctphdr_t *) &ipacket->data[ sctp_offset ];
 
 	//https://www.etsi.org/deliver/etsi_ts/138400_138499/138412/15.00.00_60/ts_138412v150000p.pdf
@@ -67,7 +69,15 @@ static bool _get_ngap_offset_and_length( const ipacket_t *ipacket, unsigned *off
 	}
 	//SCTP data chunk length: A 16-bit unsigned value specifying the total length of the chunk in bytes (excludes any padding)
 	// that includes chunk type, flags, length, and value fields.
-	uint16_t ngap_length = ntohs(hdr->length) - SCTP_DATA_HEADER_SIZE;
+	uint16_t hdr_len = ntohs(hdr->length);
+	//reject a declared length smaller than the DATA header itself (F-BUG-079:
+	//the subtraction below would otherwise wrap to ~64KiB)
+	if( hdr_len < SCTP_DATA_HEADER_SIZE )
+		return false;
+	uint16_t ngap_length = hdr_len - SCTP_DATA_HEADER_SIZE;
+	//clamp the declared payload length to the captured bytes
+	if( (size_t)ngap_offset + ngap_length > ipacket->p_hdr->caplen )
+		ngap_length = (uint16_t)(ipacket->p_hdr->caplen - (size_t)ngap_offset);
 	*offset = ngap_offset;
 	*length = ngap_length;
 	return true;
@@ -102,7 +112,14 @@ static int _classify_ngap_from_sctp_data( ipacket_t * ipacket, unsigned index ){
 			return 0;
 		//SCTP data chunk length: A 16-bit unsigned value specifying the total length of the chunk in bytes (excludes any padding)
 		// that includes chunk type, flags, length, and value fields.
-		uint16_t ngap_length = ntohs(hdr->length) - SCTP_DATA_HEADER_SIZE;
+		uint16_t hdr_len = ntohs(hdr->length);
+		//reject a declared length smaller than the DATA header itself and clamp
+		//to the captured bytes (F-BUG-079) — mirrors proto_nas_5g.c
+		if( hdr_len < SCTP_DATA_HEADER_SIZE )
+			return 0;
+		uint16_t ngap_length = hdr_len - SCTP_DATA_HEADER_SIZE;
+		if( (size_t)ngap_offset + ngap_length > ipacket->p_hdr->caplen )
+			ngap_length = (uint16_t)(ipacket->p_hdr->caplen - (size_t)ngap_offset);
 		//can we parse NGAP packet?
 		if( !try_decode_ngap(&ipacket->data[ ngap_offset ], ngap_length))
 			return 0;
@@ -221,6 +238,9 @@ uint32_t update_ngap_data( u_char *data, uint32_t data_size, const ipacket_t *ip
 	unsigned ngap_offset = 0;
 	unsigned ngap_length = 0;
 	if( !_get_ngap_offset_and_length(ipacket, &ngap_offset, &ngap_length))
+		return 0;
+	//the caller's output buffer must reach the NGAP payload
+	if( data_size <= ngap_offset )
 		return 0;
 
 	ngap_message_t msg;

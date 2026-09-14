@@ -19,8 +19,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "s1ap_common.h"
+#include "mobile/proto_s1ap.h"
 #include "ngap.h"
 #include "NGAP_ProtocolIE-Field.h"
 #include "NGAP_RRCEstablishmentCause.h"
@@ -276,10 +278,179 @@ static void test_ngap_get_nas_pdu(void) {
 	ASN_STRUCT_FREE(asn_DEF_NGAP_NGAP_PDU, pdu);
 }
 
+/* ------------------------------------------------------------------ */
+/* Issue #207: SCTP-carried mobile protocols — decode-failure leaks,   */
+/* bounded entity store, CHOICE discriminant integrity.                */
+/* ------------------------------------------------------------------ */
+
+/* F-BUG-078/087: every aper_decode() failure path must free the
+ * partially-decoded S1AP_PDU. The loop is the regression; LSAN
+ * (detect_leaks=1, forced by run_tests.sh under SANITIZE=asan) is the
+ * oracle — pre-fix, each failing call leaked the 112-byte CHOICE root
+ * allocated by CHOICE_decode_aper. stderr is muted during the loop:
+ * each failure path fprintf()s a diagnostic. */
+static void test_s1ap_decode_failure_no_leak(void) {
+	/* 0xFF first octet: CHOICE extension bit set + out-of-range index —
+	 * CHOICE_decode_aper allocates the S1AP_PDU then fails. */
+	static const uint8_t bad_choice[] = { 0xFF, 0xFF, 0xFF, 0xFF };
+	uint8_t inner_fail[5 + 200];
+	s1ap_message_t msg;
+	int i, rc1 = 0, rc2 = 0, rc3 = 0;
+	int saved_stdout = -1, saved_stderr = -1;
+
+	/* outer decode ok / inner IE-list ANY fails — walks the nested
+	 * cleanup path (F-BUG-087). Same construction as
+	 * craft_s1ap_inner_fail() for successfulOutcome/InitialContextSetup. */
+	inner_fail[0] = 0x20;                 /* successfulOutcome */
+	inner_fail[1] = 0x09;                 /* id-InitialContextSetup */
+	inner_fail[2] = 0x00;                 /* criticality reject */
+	inner_fail[3] = 0x80 | (200 >> 8);
+	inner_fail[4] = 200 & 0xFF;
+	memset(inner_fail + 5, 0xFF, sizeof(inner_fail) - 5);
+
+	printf("S1AP decode-failure cleanup, 10k iterations "
+			"(F-BUG-078/087 — leak oracle is LSAN):\n");
+
+	/* the decoder logs failures on both stderr ([S1AP] Failed...) and
+	 * stdout (S1AP_ERROR) — mute both for the 10k-iteration loop */
+	fflush(stdout);
+	fflush(stderr);
+	saved_stdout = dup(STDOUT_FILENO);
+	saved_stderr = dup(STDERR_FILENO);
+	if (saved_stdout >= 0) {
+		FILE *dn = freopen("/dev/null", "w", stdout);
+		(void)dn;
+	}
+	if (saved_stderr >= 0) {
+		FILE *dn = freopen("/dev/null", "w", stderr);
+		(void)dn;
+	}
+
+	for (i = 0; i < 10000; i++) {
+		memset(&msg, 0, sizeof(msg));
+		rc1 = s1ap_decode(&msg, bad_choice, sizeof(bad_choice));
+		memset(&msg, 0, sizeof(msg));
+		rc2 = s1ap_decode(&msg, VECTOR_ATTACH_REQUEST_IMSI, 10);
+		memset(&msg, 0, sizeof(msg));
+		rc3 = s1ap_decode(&msg, inner_fail, sizeof(inner_fail));
+	}
+
+	fflush(stdout);
+	fflush(stderr);
+	if (saved_stdout >= 0) {
+		dup2(saved_stdout, STDOUT_FILENO);
+		close(saved_stdout);
+		clearerr(stdout);
+	}
+	if (saved_stderr >= 0) {
+		dup2(saved_stderr, STDERR_FILENO);
+		close(saved_stderr);
+		clearerr(stderr);
+	}
+
+	CHECK("bad CHOICE index rejected", rc1 == -1);
+	CHECK("truncated PDU rejected", rc2 <= 0);
+	CHECK("inner-fail PDU rejected", rc3 == -1);
+}
+
+/* F-BUG-086: the process-global entity store is capped at
+ * S1AP_MAX_ENTITIES and indexed by entity type. */
+static void test_s1ap_entity_store_cap(void) {
+	s1ap_message_t msg;
+	uint32_t i, id, first = 0, second = 0, inserted = 0;
+
+	printf("S1AP entity store ceiling/index (F-BUG-086):\n");
+	s1ap_entities_reset();
+	CHECK("store empty after reset", s1ap_entities_count() == 0);
+
+	/* the same entity seen twice updates in place, no second node */
+	memset(&msg, 0, sizeof(msg));
+	msg.enb_ipv4 = 0x0a000001;
+	first  = s1ap_entities_update(S1AP_ENTITY_TYPE_ENODEB, &msg);
+	second = s1ap_entities_update(S1AP_ENTITY_TYPE_ENODEB, &msg);
+	CHECK("new entity got an id", first > 0);
+	CHECK("same eNB updates in place (same id)", second == first);
+	CHECK("in-place update did not grow the store",
+			s1ap_entities_count() == 1);
+	inserted = s1ap_entities_count();
+
+	/* fill past the ceiling with distinct attacker-controlled ipv4s */
+	for (i = 0; i < S1AP_MAX_ENTITIES + 500; i++) {
+		memset(&msg, 0, sizeof(msg));
+		msg.enb_ipv4 = 0x0b000000u + i;
+		id = s1ap_entities_update(S1AP_ENTITY_TYPE_ENODEB, &msg);
+		if (id != 0)
+			inserted++;
+	}
+	CHECK("store never exceeds the ceiling",
+			s1ap_entities_count() == S1AP_MAX_ENTITIES);
+	CHECK("inserts past the ceiling are refused",
+			inserted == S1AP_MAX_ENTITIES);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.enb_ipv4 = 0x7f000001u;
+	CHECK("update past ceiling returns 0",
+			s1ap_entities_update(S1AP_ENTITY_TYPE_ENODEB, &msg) == 0);
+
+	/* but a known entity still refreshes in place at the ceiling */
+	memset(&msg, 0, sizeof(msg));
+	msg.enb_ipv4 = 0x0a000001;
+	CHECK("existing entity still updates at the ceiling",
+			s1ap_entities_update(S1AP_ENTITY_TYPE_ENODEB, &msg) == first);
+
+	/* a message carrying nothing for the type inserts nothing */
+	memset(&msg, 0, sizeof(msg));
+	CHECK("empty message inserts nothing",
+			s1ap_entities_update(S1AP_ENTITY_TYPE_UE, &msg) == 0);
+
+	s1ap_entities_reset();
+	CHECK("store drains on reset", s1ap_entities_count() == 0);
+}
+
+/* F-BUG-089: encode must not let msg->pdu_present overwrite the decoded
+ * CHOICE discriminant — only the union arm the wire actually carried may
+ * be re-encoded and freed. */
+static void test_ngap_choice_discriminant(void) {
+	NGAP_NGAP_PDU_t *pdu;
+	uint8_t buf[256], out[512];
+	ssize_t len;
+	ngap_message_t msg, msg2;
+	long enc;
+
+	printf("NGAP CHOICE discriminant (F-BUG-089):\n");
+	pdu = build_ngap_initial_ue_message(0);
+	len = encode_ngap_pdu(pdu, buf, sizeof(buf));
+	CHECK("library-encoded initiatingMessage", len > 0);
+	ASN_STRUCT_FREE(asn_DEF_NGAP_NGAP_PDU, pdu);
+	if (len <= 0)
+		return;
+
+	memset(&msg, 0, sizeof(msg));
+	CHECK("decode_ngap sees initiatingMessage",
+			decode_ngap(&msg, buf, (uint32_t)len)
+			&& msg.pdu_present == NGAP_NGAP_PDU_PR_initiatingMessage);
+
+	/* a different discriminant in the message view must not morph the
+	 * decoded union arm on encode */
+	msg.pdu_present = NGAP_NGAP_PDU_PR_successfulOutcome;
+	enc = (long)encode_ngap(out, sizeof(out), &msg, buf, (uint32_t)len);
+	CHECK("encode_ngap re-encodes the decoded arm, not the overwritten "
+			"discriminant", enc > 0);
+	if (enc > 0) {
+		memset(&msg2, 0, sizeof(msg2));
+		CHECK("round-trip keeps the real union arm",
+				decode_ngap(&msg2, out, (uint32_t)((enc + 7) / 8))
+				&& msg2.pdu_present == NGAP_NGAP_PDU_PR_initiatingMessage);
+	}
+}
+
 int main(void) {
 	test_s1ap_outer_ok_inner_fail();
 	test_s1ap_valid_vectors();
 	test_ngap_get_nas_pdu();
+	test_s1ap_decode_failure_no_leak();
+	test_s1ap_entity_store_cap();
+	test_ngap_choice_discriminant();
 
 	printf("\n%d checks, %d failure(s)\n", checks, failures);
 	return failures ? 1 : 0;

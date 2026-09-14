@@ -480,7 +480,17 @@ static NGAP_NGAP_PDU_t * _visite_pdu(action_t act, ngap_message_t *msg, const ui
 		return NULL;
 	}
 
-	GET_SET( act, msg->pdu_present, pdu_p->present );
+	/*
+	 * F-BUG-089: the CHOICE discriminant must remain the one the decoder
+	 * stored. Under SET_ACTION the GET_SET macro would copy
+	 * msg->pdu_present back into pdu_p->present, after which the switch
+	 * below and ASN_STRUCT_FREE (CHOICE_free) would dereference/free a
+	 * union arm that was never decoded. The encode path may only patch
+	 * fields of the arm the wire actually carried; a mismatched
+	 * msg->pdu_present is therefore ignored on encode.
+	 */
+	if( act == GET_ACTION )
+		msg->pdu_present = pdu_p->present;
 	bool ret = false;
 	switch( pdu_p->present ){
 	case NGAP_NGAP_PDU_PR_initiatingMessage:
