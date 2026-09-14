@@ -16,9 +16,11 @@ TrolleyPos: 32.978, Hoistpos: 38.124, NoOfMarkers: 3, m1: (58843,70948) , m2: (7
 static int _ips_data_classify_next_proto(ipacket_t *packet, unsigned index) {
 	int offset = get_packet_offset_at_index(packet, index);
 	const int data_len = packet->p_hdr->caplen - offset;
-	const char* data = (char *)&packet->data[offset];
-	if( data_len <= 0 )
+	/* the 10-byte "TrolleyPos" signature requires the offset to be inside
+	 * the capture and at least 10 captured bytes to compare against */
+	if( offset < 0 || data_len < 10 )
 		return 0;
+	const char* data = (char *)&packet->data[offset];
 	//started by "TrolleyPos" ??
 	if( strncmp("TrolleyPos", data, 10) != 0 )
 		return 0;
@@ -66,10 +68,10 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
 	int offset = get_packet_offset_at_index(packet, proto_index);
 	const int data_len = packet->p_hdr->caplen - offset;
-	const char* data = (char *)&packet->data[offset];
 	const char* ptr;
-	if( data_len <= 0 )
+	if( offset < 0 || data_len <= 0 )
 		return 0;
+	const char* data = (char *)&packet->data[offset];
 	switch( extracted_data->field_id ){
 	case IPS_DATA_TROLLEY_POS:
 		ptr = _get_pos( data_len, data, "TrolleyPos:" );
@@ -95,7 +97,8 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 	case IPS_DATA_M1_Y:
 		//goto x
 		ptr = _get_pos( data_len, data, "m1: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
+		if( ptr )
+			ptr = _get_pos( data_len - (ptr-data), ptr, "," );
 		_assign_uint32_t( ptr, extracted_data );
 		break;
 
@@ -106,7 +109,8 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 	case IPS_DATA_M2_Y:
 		ptr = _get_pos( data_len, data, "m2: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
+		if( ptr )
+			ptr = _get_pos( data_len - (ptr-data), ptr, "," );
 		_assign_uint32_t( ptr, extracted_data );
 		break;
 
@@ -117,7 +121,8 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 	case IPS_DATA_M3_Y:
 		ptr = _get_pos( data_len, data, "m3: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
+		if( ptr )
+			ptr = _get_pos( data_len - (ptr-data), ptr, "," );
 		_assign_uint32_t( ptr, extracted_data );
 		break;
 
@@ -128,7 +133,8 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 	case IPS_DATA_M4_Y:
 		ptr = _get_pos( data_len, data, "m4: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
+		if( ptr )
+			ptr = _get_pos( data_len - (ptr-data), ptr, "," );
 		_assign_uint32_t( ptr, extracted_data );
 		break;
 
@@ -139,7 +145,8 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 	case IPS_DATA_M5_Y:
 		ptr = _get_pos( data_len, data, "m5: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
+		if( ptr )
+			ptr = _get_pos( data_len - (ptr-data), ptr, "," );
 		_assign_uint32_t( ptr, extracted_data );
 		break;
 
@@ -150,7 +157,8 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 	case IPS_DATA_M6_Y:
 		ptr = _get_pos( data_len, data, "m6: (" );
-		ptr = _get_pos( data_len - (ptr-data), ptr, "," );
+		if( ptr )
+			ptr = _get_pos( data_len - (ptr-data), ptr, "," );
 		_assign_uint32_t( ptr, extracted_data );
 		break;
 	case IPS_DATA_ORDER:
