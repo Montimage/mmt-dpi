@@ -69,7 +69,26 @@ int _find_proto_id_by_address6(const uint8_t ip_src[16],
 char *ftp_get_data_client_addr_v6_from_LPRT(char *payload, uint32_t payload_len);
 char *ftp_get_data_client_addr_v6_from_EPRT(char *payload, uint32_t payload_len);
 unsigned short ftp_get_data_client_port_from_EPRT(char *payload, uint32_t payload_len);
+unsigned short ftp_get_data_client_port_from_LPRT(char *payload, uint32_t payload_len);
 unsigned int ftp_get_addr_from_parameter(char *payload, unsigned int payload_len);
+/* src/mmt_tcpip/lib/protocols/ftp.h — result structs read back by
+ * ftp_lprt_eprt_test.c; mirrored here (like dns_name_t above) because ftp.h
+ * is not self-contained: it needs the internal bitmask types. Keep in step
+ * with that file (#206). */
+typedef struct ftp_command_struct {
+    uint16_t cmd;
+    char *str_cmd;
+    char *param;
+} ftp_command_t;
+typedef struct ftp_response_struct {
+    uint16_t code;
+    char *str_code;
+    char *value;
+} ftp_response_t;
+ftp_command_t *ftp_get_command(char *payload, int payload_len);
+void free_ftp_command(ftp_command_t *cmd);
+ftp_response_t *ftp_get_response(char *payload, int payload_len);
+void free_ftp_response(ftp_response_t *res);
 
 /* --- protocols/http2.c ------------------------------------------------------ */
 int http2_header_length_extraction(const ipacket_t *packet,

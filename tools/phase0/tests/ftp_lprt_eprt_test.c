@@ -53,6 +53,14 @@
  * internal header (issue #186). */
 #include "internal_decls.h"
 
+/* protocols/ftp.h is not self-contained (needs the internal bitmask types),
+ * so internal_decls.h mirrors ftp_command_t / ftp_response_t. The command
+ * enum values are not mirrored: UNKNOWN_CMD is 0 by definition, and the
+ * known-command checks assert cmd != 0 plus the decoded strings instead of
+ * hardcoding enum positions. */
+#define FTP_UNKNOWN_CMD 0       /* MMT_FTP_UNKNOWN_CMD */
+#define FTP_213_CODE    213     /* MMT_FTP_213_CODE */
+
 static int g_failures = 0;
 static int g_checks = 0;
 
@@ -370,15 +378,156 @@ static void test_bounded_buffers(void)
     }
 }
 
+static void test_lprt_port(void)
+{
+    printf("[#206] LPRT port parser: declared lengths validated, copy freed\n");
+
+    /* The RFC 1639 example — port_length=2, octets 4,7 -> 4*256+7 = 1031. */
+    {
+        char *in = dup_payload(
+            "LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7");
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(in));
+        CHECK(port == 1031, "well-formed LPRT extracts port 1031");
+        free(in);
+    }
+
+    /* Forged port-address-length: 1073741824 * 2 overflows int (UBSan abort)
+     * and power_16() would loop on the forged bound pre-fix. Rejected -> 0. */
+    {
+        char *in = dup_payload("LPRT 6,4,10,0,0,1,1073741824,1,2");
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(in));
+        CHECK(port == 0, "oversized port-address-length is rejected");
+        free(in);
+    }
+
+    /* Forged host-address-length: INT_MAX makes host_address_length + 2
+     * overflow int pre-fix (UBSan abort). Rejected -> 0. */
+    {
+        char *in = dup_payload("LPRT 6,2147483647,1,2,3,4,2,4,7");
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(in));
+        CHECK(port == 0, "oversized host-address-length is rejected");
+        free(in);
+    }
+
+    /* port_length == 0 is malformed too — must not drive the loop. */
+    {
+        char *in = dup_payload("LPRT 6,4,10,0,0,1,0,4,7");
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(in));
+        CHECK(port == 0, "zero port-address-length is rejected");
+        free(in);
+    }
+
+    /* Raw (no-NUL) LPRT — the parser's own bounded copy is NUL-terminated. */
+    {
+        const char *lit =
+            "LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7";
+        char *in = raw_payload(lit, strlen(lit));
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(lit));
+        CHECK(port == 1031, "raw LPRT (no NUL) extracts port 1031");
+        free(in);
+    }
+}
+
+static void test_command_parsing(void)
+{
+    printf("[#206] ftp_get_command: init, guarded reads, terminal else\n");
+
+    /* Bare 3-byte payload, no CRLF (F-BUG-068): passes
+     * mmt_int_check_possible_ftp_command() but neither the 3- nor the
+     * 4-letter-verb branch matches — the terminal else must yield
+     * UNKNOWN_CMD with a non-NULL str_cmd (pre-#195 str_cmd kept
+     * uninitialised heap contents for ftp_set_command_id's strcmp, and
+     * the payload[3]/payload[4] probes read out of bounds). */
+    {
+        char *in = raw_payload("ABC", 3);
+        ftp_command_t *cmd = ftp_get_command(in, 3);
+        CHECK(cmd != NULL && cmd->cmd == FTP_UNKNOWN_CMD &&
+              cmd->str_cmd != NULL && strcmp(cmd->str_cmd, "UNKNOWN_CMD") == 0,
+              "3-byte payload yields UNKNOWN_CMD with set str_cmd");
+        free_ftp_command(cmd);
+        free(in);
+    }
+
+    /* Bare 4-byte payload — same terminal-else path. */
+    {
+        char *in = raw_payload("ABCD", 4);
+        ftp_command_t *cmd = ftp_get_command(in, 4);
+        CHECK(cmd != NULL && cmd->cmd == FTP_UNKNOWN_CMD &&
+              cmd->str_cmd != NULL && strcmp(cmd->str_cmd, "UNKNOWN_CMD") == 0,
+              "4-byte payload yields UNKNOWN_CMD with set str_cmd");
+        free_ftp_command(cmd);
+        free(in);
+    }
+
+    /* Well-formed 3-byte command with CRLF (the payload_len == 5 branch). */
+    {
+        char *in = raw_payload("PWD\r\n", 5);
+        ftp_command_t *cmd = ftp_get_command(in, 5);
+        CHECK(cmd != NULL && cmd->cmd != FTP_UNKNOWN_CMD &&
+              cmd->str_cmd != NULL && strcmp(cmd->str_cmd, "PWD") == 0,
+              "PWD\\r\\n decodes to MMT_FTP_PWD_CMD");
+        free_ftp_command(cmd);
+        free(in);
+    }
+
+    /* Well-formed 3-byte command with a parameter. */
+    {
+        char *in = raw_payload("CWD /\r\n", 7);
+        ftp_command_t *cmd = ftp_get_command(in, 7);
+        CHECK(cmd != NULL && cmd->cmd != FTP_UNKNOWN_CMD &&
+              cmd->param != NULL && strcmp(cmd->param, "/") == 0,
+              "CWD / decodes command + parameter");
+        free_ftp_command(cmd);
+        free(in);
+    }
+}
+
+static void test_response_213(void)
+{
+    printf("[#206] ftp_get_response: 213 reply parsing (F-BUG-067 input)\n");
+
+    /* "213 x\r\n" — the reply that crashed the 213 session handler when it
+     * arrived before any client command (last_command still NULL). */
+    {
+        char *in = raw_payload("213 x\r\n", 7);
+        ftp_response_t *res = ftp_get_response(in, 7);
+        CHECK(res != NULL && res->code == FTP_213_CODE &&
+              res->value != NULL && strcmp(res->value, "x") == 0,
+              "213 x decodes to code 213, value \"x\"");
+        free_ftp_response(res);
+        free(in);
+    }
+
+    /* "213 \r\n" — a short reply leaves response->value NULL (the SIZE branch
+     * must not atoi(NULL)). */
+    {
+        char *in = raw_payload("213 \r\n", 6);
+        ftp_response_t *res = ftp_get_response(in, 6);
+        CHECK(res != NULL && res->code == FTP_213_CODE &&
+              res->value == NULL,
+              "213 with empty value decodes to code 213, NULL value");
+        free_ftp_response(res);
+        free(in);
+    }
+}
+
 int main(void)
 {
-    printf("== ftp_lprt_eprt_test (issue #8, K4; issue #35; #195) ==\n");
+    printf("== ftp_lprt_eprt_test (issue #8, K4; issue #35; #195; #206) ==\n");
     test_lprt_wellformed();
     test_lprt_overflow_inputs();
     test_eprt();
     test_eprt_port();
     test_port_addr();
     test_bounded_buffers();
+    test_lprt_port();
+    test_command_parsing();
+    test_response_213();
 
     printf("\n%d/%d checks passed\n", g_checks - g_failures, g_checks);
     if (g_failures) {
