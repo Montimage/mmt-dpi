@@ -51,6 +51,8 @@ mmt_handler_t *mmt_handler;// MMT handler
 pcap_t *pcap; // Pcap handler
 struct pcap_stat pcs; /* packet capture filter stats */
 int pcap_bs = 0;
+/* Set by the signal handler — the only work done there (issue #211). */
+static volatile sig_atomic_t stop_flag = 0;
 /**
  * Initialize a pcap handler
  * @param  iname       interface name
@@ -136,7 +138,13 @@ void parseOptions(int argc, char ** argv, char * filename, int * type) {
         }
     }
 
-    if (filename == NULL || strcmp(filename, "") == 0) {
+    /* Reject an unset mode instead of branching on uninitialised storage
+       later (issue #211, F-BUG-105). */
+    if (*type != TRACE_FILE && *type != LIVE_INTERFACE) {
+        fprintf(stderr, "Missing input: pass -t <trace file> or -i <interface>\n");
+        usage(argv[0]);
+    }
+    if (filename[0] == '\0') {
         if (*type == TRACE_FILE) {
             fprintf(stderr, "Missing trace file name\n");
         }
@@ -219,13 +227,20 @@ void clean() {
 }
 
 /**
- * Handler signals during excutation time
+ * Handler signals during excutation time.
+ * Async-signal-safe by design (issue #211, F-BUG-105): it only sets the stop
+ * flag and asks pcap to break its loop — printf-based cleanup is not
+ * signal-safe and running it here could also execute it twice (once from the
+ * handler, once at the end of main). The real cleanup runs once, in main,
+ * after the capture loop observes the flag.
  * @param type signal type
  */
 void signal_handler(int type) {
-    printf("\n[info] reception of signal %d\n", type);
-    fflush( stderr );
-    clean();
+    (void) type;
+    stop_flag = 1;
+    if (pcap != NULL) {
+        pcap_breakloop(pcap);
+    }
 }
 
 /**
@@ -241,11 +256,10 @@ int main(int argc, char ** argv) {
     printf("|\t %s: built %s %s\n", argv[0], __DATE__, __TIME__);
     printf("|\t http://montimage.eu\n");
     printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");  
-    sigset_t signal_set;
 
     char mmt_errbuf[1024];
-    char filename[MAX_FILENAME_SIZE + 1]; // interface name or path to pcap file
-    int type; // Online or offline mode
+    char filename[MAX_FILENAME_SIZE + 1] = {0}; // interface name or path to pcap file
+    int type = 0; // Online or offline mode — 0 means "unset"
 
     // Parse option
     parseOptions(argc, argv, filename, &type);
@@ -266,12 +280,12 @@ int main(int argc, char ** argv) {
     // Register packet handler function
     register_packet_handler(mmt_handler, 1, debug_extracted_attributes_printout_handler, NULL);
 
-    // Handle signal
-    sigfillset(&signal_set);
+    // Handle signals: the handler only flags the stop and breaks the pcap
+    // loop, so clean-up below runs exactly once (issue #211, F-BUG-105).
+    // SIGSEGV/SIGABRT keep their default action — unwinding a crash through
+    // printf/pcap cleanup is not async-signal-safe.
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
-    signal(SIGSEGV, signal_handler);
-    signal(SIGABRT, signal_handler);
 
     if (type == TRACE_FILE) {
         // OFFLINE mode
@@ -283,7 +297,7 @@ int main(int argc, char ** argv) {
             return EXIT_FAILURE;
         }
         const u_char *data = NULL;
-        while ((data = pcap_next(pcap, &p_pkthdr))) {
+        while (!stop_flag && (data = pcap_next(pcap, &p_pkthdr))) {
             header.ts = p_pkthdr.ts;
             header.caplen = p_pkthdr.caplen;
             header.len = p_pkthdr.len;

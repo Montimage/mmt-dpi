@@ -57,20 +57,10 @@ typedef int socklen_t;
 void usage(const char *prg_name) {
     fprintf(stderr, "%s <pcap file>\n", prg_name);
 }
-int proto_hierarchy_names_to_str(const proto_hierarchy_t * proto_hierarchy, char * dest) {
-    int offset = 0;
-    if (proto_hierarchy->len < 1) {
-        offset += sprintf(dest, ".");
-    } else {
-        int index = 1;
-        offset += sprintf(dest, "%s", get_protocol_name_by_id(proto_hierarchy->proto_path[index]));
-        index++;
-        for (; index < proto_hierarchy->len && index < 16; index++) {
-            offset += sprintf(&dest[offset], ".%s", get_protocol_name_by_id(proto_hierarchy->proto_path[index]));
-        }
-    }
-    return offset;
-}
+/* The hierarchy path is rendered with proto_hierarchy_to_str_with_size()
+   (public API, capacity-checked) — the local unbounded sprintf loop it
+   replaced could overflow the caller's buffer and mis-printed an empty
+   hierarchy (issue #211, F-BUG-104). */
 void new_flow_handle(const ipacket_t * ipacket, attribute_t * attribute, void * user_args) {
     if(ipacket->session == NULL) return;
     if (attribute->data == NULL) {
@@ -156,9 +146,15 @@ void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
     }
     uint32_t rtt_ms = TIMEVAL_2_MSEC(get_session_rtt(expired_session));
     char path[512];
-    proto_hierarchy_names_to_str(get_session_protocol_hierarchy(expired_session), path);
-    int proto_index = ((get_session_protocol_hierarchy(expired_session))->len <= 16) ? ((get_session_protocol_hierarchy(expired_session))->len - 1) : (16 - 1);
-    int proto_id = (get_session_protocol_hierarchy(expired_session))->proto_path[proto_index];
+    const proto_hierarchy_t *hier = get_session_protocol_hierarchy(expired_session);
+    proto_hierarchy_to_str_with_size(hier, path, sizeof(path));
+    /* get_application_name() returns the name of the last protocol in the
+       hierarchy, or NULL for an empty one — clamping what the old manual
+       `len - 1` index computed as proto_path[-1] (issue #211, F-BUG-104). */
+    const char *app_name = get_application_name(hier);
+    if (app_name == NULL) {
+        app_name = "unknown";
+    }
     fprintf(out_file, "%"PRIu64",%lu.%lu,%lu.%lu,"
             "%u,%s,%s,%hu,%hu,%hu,"
             "%"PRIu64",%"PRIu64",%"PRIu64",%"PRIu64",%u,%u,%s,%s"
@@ -175,7 +171,7 @@ void session_expiry_handle(const mmt_session_t * expired_session, void * args) {
             (keep_direction) ? get_session_dl_byte_count(expired_session) : get_session_ul_byte_count(expired_session),
             rtt_ms, get_session_retransmission_count(expired_session),
             // get_application_class_name_by_protocol_id(proto_id),
-            path, get_protocol_name_by_id(proto_id)
+            path, app_name
             );
 }
 int main(int argc, const char **argv) {

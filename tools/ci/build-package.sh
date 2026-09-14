@@ -18,6 +18,28 @@
 #
 set -euo pipefail
 
+# `--dry-run` prints the plan and exits — a cheap self-check usable outside a
+# container (issue #211: it is the documented verify path for this script).
+if [ "${1:-}" = "--dry-run" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  cat <<'EOF'
+build-package.sh — distro-aware native package builder for MMT-DPI.
+
+Usage:
+  build-package.sh --dry-run                 print this plan and exit
+  build-package.sh <distro-id> <deb|rpm>     build inside the distro container
+
+A real run performs, in order:
+  1. install distro build dependencies (apt-get, or dnf/yum with CRB enabled)
+  2. make -C sdk && make -C sdk <deb|rpm>    (GIT_VERSION pinned explicitly)
+  3. clear dist/packages/, then collect the freshly built artifact there —
+     the directory is bind-mounted from the host and shared across matrix
+     jobs, so a stale sibling artifact must never be picked up
+  4. smoke-test: install exactly the artifact just built (tracked path, not
+     a directory glob) and check /opt/mmt/dpi/lib/libmmt_core.so exists
+EOF
+  exit 0
+fi
+
 DISTRO_ID="${1:?usage: build-package.sh <distro-id> <deb|rpm>}"
 PKG_TYPE="${2:?usage: build-package.sh <distro-id> <deb|rpm>}"
 
@@ -87,30 +109,36 @@ arch="$(uname -m)"
 # <distro>_<arch> suffix — otherwise the arch appears twice and `uname -p`
 # (often "unknown" on minimal images) leaks into the filename.
 sys_suffix="_$(uname -s)_$(uname -p)"
+# dist/packages is bind-mounted from the host and shared across matrix jobs:
+# clear it before collecting so a stale artifact left by a sibling job can
+# never be picked up here or by the smoke test below (issue #211, F-BUG-117).
+rm -rf dist/packages
 mkdir -p dist/packages
 shopt -s nullglob
-built=0
+artifacts=()
 for f in sdk/*."$PKG_TYPE"; do
   base="$(basename "$f" ".$PKG_TYPE")"
   base="${base%"$sys_suffix"}"
-  dest="dist/packages/${base}_${DISTRO_ID}_${arch}.${PKG_TYPE}"
+  dest="./dist/packages/${base}_${DISTRO_ID}_${arch}.${PKG_TYPE}"
   mv "$f" "$dest"
   echo "  built: $dest"
-  built=$((built + 1))
+  artifacts+=("$dest")
 done
-if [ "$built" -eq 0 ]; then
+if [ "${#artifacts[@]}" -eq 0 ]; then
   echo "✗ No .$PKG_TYPE produced under sdk/" >&2
   exit 1
 fi
 
-# Smoke-test: the package must install on its own distro and expose the core lib.
+# Smoke-test: the package must install on its own distro and expose the core
+# lib. Install exactly the artifact paths collected above — never a glob over
+# the shared directory (issue #211, F-BUG-117).
 log "Verifying package installs"
 if [ "$PKG_TYPE" = "deb" ]; then
-  apt-get install -y ./dist/packages/*.deb
+  apt-get install -y "${artifacts[@]}"
   ldconfig
 else
   pm=dnf; command -v dnf >/dev/null 2>&1 || pm=yum
-  "$pm" install -y ./dist/packages/*.rpm
+  "$pm" install -y "${artifacts[@]}"
   ldconfig
 fi
 test -e /opt/mmt/dpi/lib/libmmt_core.so

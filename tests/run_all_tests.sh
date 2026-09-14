@@ -165,6 +165,7 @@ DEFAULT_SUITES=(
     rule_engine
     radius_hardening
     nas_ies_tail
+    installer
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

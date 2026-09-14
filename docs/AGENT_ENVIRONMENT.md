@@ -96,23 +96,25 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **12/12 suites pass**, total runtime roughly **45–65 s** on a
+Expected result: **13/13 suites pass**, total runtime roughly **45–75 s** on a
 typical development machine (measured: 52 s and 57 s on a 20-core host, 53 s on
-the September 2026 audit machine — the suites compile their own sources, so the
-wall clock is dominated by `gcc`, not by the assertions). Exit code `0` on
-success, `1` on any failure. The runner has no `-j` option: the 12 suites run
-sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:155-168`):
+the September 2026 audit machine, 63 s on the same host after the `installer`
+suite was added — the suites compile their own sources, so the wall clock is
+dominated by `gcc`, not by the assertions). Exit code `0` on success, `1` on
+any failure. The runner has no `-j` option: the 13 suites run sequentially.
+The suite list lives in `DEFAULT_SUITES`
+(`tests/run_all_tests.sh:155-169`):
 `hashmap`, `memory`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`, `avltree`,
 `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`, `rule_engine`,
-`radius_hardening`, `nas_ies_tail`.
+`radius_hardening`, `nas_ies_tail`, `installer`.
 
 Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
-directly against sources under `src/` with plain `gcc`; the five that need the
+directly against sources under `src/` with plain `gcc`; the six that need the
 built SDK (`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
-`rule_engine`, `nas_ies_tail`) run `make -C sdk clean` and build it themselves
-into a throwaway prefix, so running them discards an existing `sdk/` build. You
+`rule_engine`, `nas_ies_tail`, `installer`) run `make -C sdk clean` and build
+it themselves into a throwaway prefix, so running them discards an existing
+`sdk/` build. You
 can run one suite by passing its directory name:
 
 ```bash
@@ -139,7 +141,7 @@ skipped — the runner exits non-zero (issue #186).
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count and `tests/coverage/summary.json`
-  in stdout (`tests/run_all_tests.sh:181-283`). Requires `gcov` (shipped with
+  in stdout (`tests/run_all_tests.sh:182-284`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` via
   `tools/ci/check-coverage-floor.sh`.
@@ -147,7 +149,7 @@ skipped — the runner exits non-zero (issue #186).
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:285-301`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:286-302`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
