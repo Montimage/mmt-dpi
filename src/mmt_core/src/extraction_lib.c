@@ -30,7 +30,13 @@ int general_short_extraction_with_ordering_change(const ipacket_t * packet, unsi
     if (proto_offset < 0 || attribute_offset < 0) return 0;
     if ((size_t)proto_offset + (size_t)attribute_offset + sizeof(uint16_t) > packet->p_hdr->caplen) return 0;
 
-    *((unsigned short *) extracted_data->data) = ntohs(*((unsigned short *) & packet->data[proto_offset + attribute_offset]));
+    // Issue #193: memcpy, not an aligned-type dereference — attribute offsets
+    // are not guaranteed aligned (odd positions exist), which is UB and trips
+    // UBSan.
+    uint16_t v16;
+    memcpy(&v16, & packet->data[proto_offset + attribute_offset], sizeof(v16));
+    v16 = ntohs(v16);
+    memcpy(extracted_data->data, &v16, sizeof(v16));
     return 1;
 }
 
@@ -44,7 +50,11 @@ int general_int_extraction_with_ordering_change(const ipacket_t * packet, unsign
     if (proto_offset < 0 || attribute_offset < 0) return 0;
     if ((size_t)proto_offset + (size_t)attribute_offset + sizeof(uint32_t) > packet->p_hdr->caplen) return 0;
 
-    *((unsigned int *) extracted_data->data) = ntohl(*((unsigned int *) & packet->data[proto_offset + attribute_offset]));
+    // Issue #193: memcpy — see general_short_extraction_with_ordering_change.
+    uint32_t v32;
+    memcpy(&v32, & packet->data[proto_offset + attribute_offset], sizeof(v32));
+    v32 = ntohl(v32);
+    memcpy(extracted_data->data, &v32, sizeof(v32));
     return 1;
 }
 
@@ -72,7 +82,10 @@ int general_short_extraction(const ipacket_t * packet, unsigned proto_index,
     if (proto_offset < 0 || attribute_offset < 0) return 0;
     if ((size_t)proto_offset + (size_t)attribute_offset + sizeof(uint16_t) > packet->p_hdr->caplen) return 0;
 
-    *((unsigned short *) extracted_data->data) = *((unsigned short *) & packet->data[proto_offset + attribute_offset]);
+    // Issue #193: memcpy — see general_short_extraction_with_ordering_change.
+    uint16_t v16;
+    memcpy(&v16, & packet->data[proto_offset + attribute_offset], sizeof(v16));
+    memcpy(extracted_data->data, &v16, sizeof(v16));
     return 1;
 }
 
@@ -86,7 +99,10 @@ int general_int_extraction(const ipacket_t * packet, unsigned proto_index,
     if (proto_offset < 0 || attribute_offset < 0) return 0;
     if ((size_t)proto_offset + (size_t)attribute_offset + sizeof(uint32_t) > packet->p_hdr->caplen) return 0;
 
-    *((unsigned int *) extracted_data->data) = *((unsigned int *) & packet->data[proto_offset + attribute_offset]);
+    // Issue #193: memcpy — see general_short_extraction_with_ordering_change.
+    uint32_t v32;
+    memcpy(&v32, & packet->data[proto_offset + attribute_offset], sizeof(v32));
+    memcpy(extracted_data->data, &v32, sizeof(v32));
     return 1;
 }
 
