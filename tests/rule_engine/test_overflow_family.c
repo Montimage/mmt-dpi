@@ -620,6 +620,66 @@ static void test_generate_command_bounded(void)
     fi_tracking = 0;
 }
 
+/* compare_in_table (reached via comp2 when a rule uses XIN on a
+ * MMT_BINARY_VAR_DATA operand) used the byte offset i as the element index —
+ * reading up to 8x past the operand buffer for u64 and never comparing
+ * odd-indexed elements. Elements must be scanned by element number, and only
+ * complete elements inside v2.size. */
+extern int comp2(compare_value v1, compare_value v2, short ope);
+
+static void test_compare_in_table_bounded(void)
+{
+    compare_value v1, v2;
+    /* 3 complete u64 elements + a 4-byte partial tail (28-byte table). */
+    unsigned long long table[3] = {
+        0xAAAAAAAAAAAAAAAAULL, 0x1122334455667788ULL, 0xCCCCCCCCCCCCCCCCULL
+    };
+    unsigned long long needle = 0x1122334455667788ULL; /* at element index 1 */
+    unsigned long long absent = 0x8877665544332211ULL;
+    /* u16 table with the needle at element index 1 (skipped before the fix). */
+    unsigned short table16[4] = { 0x0001, 0xBEEF, 0x0003, 0x0004 };
+    unsigned short needle16 = 0xBEEF;
+    void *heap28 = malloc(28);
+
+    memset(&v1, 0, sizeof v1);
+    memset(&v2, 0, sizeof v2);
+    v1.type = MMT_U64_DATA;
+    v1.found = FOUND;
+    v1.size = (int)sizeof(unsigned long long);
+    v1.data = &needle;
+    v2.type = MMT_BINARY_VAR_DATA;
+    v2.found = FOUND;
+    v2.size = 28; /* 3 complete u64 elements + partial tail */
+    v2.data = heap28;
+    memcpy(heap28, table, sizeof table);
+    memcpy((char *)heap28 + 24, &absent, 4); /* partial tail: must not match */
+
+    CHECK(comp2(v1, v2, XIN) == VALID,
+          "XIN u64 finds the value at element index 1 (was skipped by the byte-offset index)");
+    v1.data = &absent;
+    CHECK(comp2(v1, v2, XIN) == NOT_VALID,
+          "XIN u64 does not match the partial 4-byte tail");
+    free(heap28);
+
+    memset(&v1, 0, sizeof v1);
+    memset(&v2, 0, sizeof v2);
+    v1.type = MMT_U16_DATA;
+    v1.found = FOUND;
+    v1.size = (int)sizeof(unsigned short);
+    v1.data = &needle16;
+    v2.type = MMT_BINARY_VAR_DATA;
+    v2.found = FOUND;
+    v2.size = (int)sizeof table16;
+    v2.data = malloc(sizeof table16);
+    memcpy(v2.data, table16, sizeof table16);
+    CHECK(comp2(v1, v2, XIN) == VALID,
+          "XIN u16 finds the value at element index 1 (was skipped by the byte-offset index)");
+    needle16 = 0xDEAD;
+    CHECK(comp2(v1, v2, XIN) == NOT_VALID,
+          "XIN u16 returns NOT_VALID for an absent value");
+    free(v2.data);
+}
+
 /* F-BUG-103: the 30-byte token buffers in tokenize() and the trailing-comma
  * reads on an empty history are fixed; exercise the token bounds plus the
  * rewritten bounded appends in xml_summary(). */
@@ -665,6 +725,7 @@ int main(void)
     test_get_value_header_line_length();
     test_store_history_alloc_failure();
     test_generate_command_bounded();
+    test_compare_in_table_bounded();
     test_tokenize_and_summary_bounded();
 
     if (failures) {

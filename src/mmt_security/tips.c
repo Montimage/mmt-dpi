@@ -2232,6 +2232,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     break;
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
+                    if (temp_MAC == NULL) goto cleanup; /* F-BUG-096: one exit frees both JSON buffers */
                     convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
                     snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
                     json_grow_append(&json_buff, &json_cap, json_buff1);
@@ -2313,7 +2314,13 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_BINARY_VAR_DATA:
                     // TODO
                     db1 = (mmt_binary_data_t *) (data1);
+                    /* db1->len is a packet-controlled record prefix — bound it
+                     * by the inline array the record actually carries, same
+                     * family as the int-prefix clamps above (F-BUG-091, #209) */
                     data_size = db1->len;
+                    if (data_size > (int)(type == MMT_BINARY_VAR_DATA ? BINARY_1024DATA_LEN : BINARY_64DATA_LEN))
+                        data_size = (int)(type == MMT_BINARY_VAR_DATA ? BINARY_1024DATA_LEN : BINARY_64DATA_LEN);
+                    if (data_size < 0) data_size = 0;
                     data2 = db1->data;
                     if (data_size == 4) {
                         L1 = (*(unsigned long*)(data2)&0x000000ff);
@@ -2370,9 +2377,13 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 								  data_pointer = get_attribute_extracted_data_by_name(pkt, "tcp","p_payload");
 								  if( data_pointer != NULL ){
 									  new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
-									  snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
-									  json_grow_append(&json_buff, &json_cap, json_buff1);
-									  xfree (new_data_pointer);
+									  /* NULL on non-positive size or OOM — a NULL %s
+									   * argument is undefined; skip the attribute */
+									  if (new_data_pointer != NULL) {
+										  snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
+										  json_grow_append(&json_buff, &json_cap, json_buff1);
+										  xfree (new_data_pointer);
+									  }
 								  }
 							  }
                	  }
@@ -2411,6 +2422,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
        	   }else if( having_mac_src == 0 ){
         		data1 = get_attribute_extracted_data(pkt, 99, 3);
         		temp_MAC = xmalloc(22);
+        		if (temp_MAC == NULL) goto cleanup;
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
         		snprintf(json_buff1, json_cap1,"{\"eth.src\":\"%s\"},", temp_MAC );
         		json_grow_append(&json_buff, &json_cap, json_buff1);
@@ -2433,6 +2445,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 		    }else if( having_mac_dst == 0 ){
 				data1 = get_attribute_extracted_data(pkt, 99, 2);
 				temp_MAC = xmalloc(22);
+				if (temp_MAC == NULL) goto cleanup;
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
 				snprintf(json_buff1, json_cap1,"{\"eth.dst\":\"%s\"},", temp_MAC);
 				json_grow_append(&json_buff, &json_cap, json_buff1);
@@ -2614,30 +2627,36 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
             break;
         case MMT_U16_DATA:
             s1 = *((unsigned short *) (v1.data));
-            for (i = 0; i < size; i = i + sizeof (unsigned short)) {
-                if (s1 == ((unsigned short *) (v2.data))[i])
+            /* i counts bytes — the table index must be the element number,
+             * and only complete elements may be read: indexing [i] read up to
+             * 2*size bytes past v2.data and skipped odd elements (#209) */
+            j = 0;
+            for (i = 0; i + (int)sizeof(unsigned short) <= size; i = i + sizeof (unsigned short)) {
+                if (s1 == ((unsigned short *) (v2.data))[j++])
                     return VALID;
             }
             break;
         case MMT_U32_DATA:
             l1 = *((unsigned long *) (v1.data));
             j = 0;
-            for (i = 0; i < size; i = i + sizeof (unsigned long)) {
+            for (i = 0; i + (int)sizeof(unsigned long) <= size; i = i + sizeof (unsigned long)) {
                 if (l1 == ((unsigned long *) (v2.data))[j++])
                     return VALID;
             }
             break;
         case MMT_U64_DATA:
             ll1 = *((unsigned long long *) (v1.data));
-            for (i = 0; i < size; i = i + sizeof (unsigned long long)) {
-                if (ll1 == ((unsigned long long*) (v2.data))[i])
+            j = 0;
+            for (i = 0; i + (int)sizeof(unsigned long long) <= size; i = i + sizeof (unsigned long long)) {
+                if (ll1 == ((unsigned long long*) (v2.data))[j++])
                     return VALID;
             }
             break;
         case MMT_DATA_FLOAT:
             f1 = *((float *) (v1.data));
-            for (i = 0; i < size; i = i + sizeof (float)) {
-                if (f1 == ((float *) (v2.data))[i])
+            j = 0;
+            for (i = 0; i + (int)sizeof(float) <= size; i = i + sizeof (float)) {
+                if (f1 == ((float *) (v2.data))[j++])
                     return VALID;
             }
             break;
@@ -3279,7 +3298,13 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             tmp_v->found = FOUND;
             tmp_v->size = get_data_size_by_proto_and_field_ids(tmp_r->t.protocol_id, tmp_r->t.field_id);
             if (tmp_v->type == MMT_STRING_DATA || tmp_v->type == MMT_STRING_LONG_DATA || tmp_v->type == MMT_BINARY_DATA || tmp_v->type == MMT_BINARY_VAR_DATA || tmp_v->type == MMT_DATA_PATH) {
-                tmp_v->size = *(int*) (data);
+                /* same clamps as the scalar/tuple paths: the record prefix is
+                 * packet-controlled — a forged value must not drive a giant
+                 * xcalloc or an over-reading memcpy (F-BUG-091/093, #209) */
+                if (tmp_v->type == MMT_DATA_PATH)
+                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size);
+                else
+                    tmp_v->size = clamp_prefixed_size(*(int*) (data), tmp_v->size);
                 data = data + sizeof (int);
             }
             else if (tmp_v->type == MMT_HEADER_LINE){
@@ -3289,10 +3314,12 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             }
             tmp_v->data = xcalloc(1, tmp_v->size);
             if(tmp_v->data == NULL){
-                xfree(data);
+                /* `data` is the attribute's internal storage — not ours to
+                 * free (the old xfree(data) here also hit an interior
+                 * pointer once the prefix was skipped) */
                 return 0;
             }
-            memcpy(tmp_v->data, data, tmp_v->size);
+            if (data != NULL && tmp_v->size > 0) memcpy(tmp_v->data, data, tmp_v->size);
         }
     }
     if (v2.found == NOT_FOUND) {
@@ -3304,7 +3331,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             tmp_v->found = FOUND;
             tmp_v->size = get_data_size_by_proto_and_field_ids(tmp_r->t.protocol_id, tmp_r->t.field_id);
             if (tmp_v->type == MMT_STRING_DATA || tmp_v->type == MMT_STRING_LONG_DATA || tmp_v->type == MMT_BINARY_DATA || tmp_v->type == MMT_BINARY_VAR_DATA || tmp_v->type == MMT_DATA_PATH) {
-                tmp_v->size = *(int*) (data);
+                /* same clamps as the scalar/tuple paths (F-BUG-091/093, #209) */
+                if (tmp_v->type == MMT_DATA_PATH)
+                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size);
+                else
+                    tmp_v->size = clamp_prefixed_size(*(int*) (data), tmp_v->size);
                 data = data + sizeof (int);
             }
             else if (tmp_v->type == MMT_HEADER_LINE){
@@ -3318,7 +3349,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                 xfree(v2.data);
                 return NOT_VALID;
             }
-            memcpy(tmp_v->data, data, tmp_v->size);
+            if (data != NULL && tmp_v->size > 0) memcpy(tmp_v->data, data, tmp_v->size);
         }
     }
 
