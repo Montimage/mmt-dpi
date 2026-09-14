@@ -78,13 +78,17 @@ static int find_assoc_subitem(const uint8_t *data, int start, int end,
 
 static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data) {
 	int dicom_offset = get_packet_offset_at_index(ipacket, proto_index);
-	struct dicomhdr * hdr = (struct dicomhdr *)&ipacket->data[dicom_offset];
 	int attribute_offset = extracted_data->position_in_packet;
-	unsigned int packet_len = ipacket->p_hdr->caplen - dicom_offset;
 
-	if((ipacket->p_hdr->caplen - dicom_offset) == 0) {
+	/* Validate the offset before computing the length: when the offset is
+	 * at or beyond the captured packet, the unsigned subtraction wraps to
+	 * a huge value and the fixed-header dereference reads out of bounds. */
+	if (dicom_offset < 0 || (unsigned int) dicom_offset + PROTO_DICOM_HDRLEN > ipacket->p_hdr->caplen) {
 		return 0;
 	}
+
+	struct dicomhdr * hdr = (struct dicomhdr *)&ipacket->data[dicom_offset];
+	unsigned int packet_len = ipacket->p_hdr->caplen - dicom_offset;
 
 	if (!mmt_check_dicom(hdr, packet_len)) {
 		return 0;
@@ -537,6 +541,12 @@ int mmt_check_dicom(struct dicomhdr * header, unsigned int packet_len) {
 int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index) {
 	int l3_offset = get_packet_offset_at_index(ipacket, index);
     int dicom_offset = get_packet_offset_at_index(ipacket, index + 1);
+
+	/* Validate the offset before computing the length: when the offset is
+	 * at or beyond the captured packet, the unsigned subtraction wraps to
+	 * a huge value and the fixed-header dereference reads out of bounds. */
+	if (dicom_offset < 0 || (unsigned int) dicom_offset + PROTO_DICOM_HDRLEN > ipacket->p_hdr->caplen)
+		return 0;
 
 	unsigned int packet_len = ipacket->p_hdr->caplen - dicom_offset;
 	struct dicomhdr * dicom_header = (struct dicomhdr *)&ipacket->data[dicom_offset];
