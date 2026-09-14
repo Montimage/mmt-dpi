@@ -16,7 +16,14 @@
 #      of 0 on the u16/u32/u64 COMPUTE paths returns NULL instead of SIGFPE
 #      (F-BUG-212) and a >99-byte header line is clamped inside
 #      get_my_data()'s 100-byte buffer (F-BUG-208) — test_overflow_family.c,
-#      which under SANITIZE=asan also fences the copy.
+#      which under SANITIZE=asan also fences the copy;
+#   4. the tips.c rule-engine overflow family (#209) stays fixed:
+#      MMT_STRING_LONG_DATA/MMT_DATA_PATH clamping (F-BUG-091/093),
+#      size*6+1 JSON escaping (F-BUG-092), header-line length ordering
+#      (F-BUG-095), the single-cleanup-exit allocation failure in
+#      store_history (F-BUG-096, via an interposed failing xmalloc),
+#      growable command substitution without leaks (F-BUG-102) and the
+#      bounded tokenize/xml_summary buffers (F-BUG-103).
 #
 # Usage: tests/rule_engine/run_tests.sh
 set -euo pipefail
@@ -58,6 +65,11 @@ if [ -n "${SDK_BUILD_PROFILE:-}" ]; then
     # symbol as a bug introduced here.
     if [[ "${SDK_BUILD_PROFILE}" == *asan* ]]; then
         export ASAN_OPTIONS="${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_odr_violation=0"
+        # test_overflow_family is built uninstrumented on purpose: its
+        # malloc/free/fopen shims forward through dlsym(RTLD_NEXT) into
+        # libasan's allocator. With an uninstrumented exe libasan must be
+        # preloaded so the runtime is first in the library list.
+        ASAN_RT="$(${CC} -print-file-name=libasan.so)"
     fi
 else
     set --
@@ -140,6 +152,9 @@ run_expect_fail() { # <label> <expected-error-substring> <logfile> <cmd...>
 }
 
 LD_ENV=(env "LD_LIBRARY_PATH=${LIB}:${LD_LIBRARY_PATH:-}")
+if [ -n "${ASAN_RT:-}" ]; then
+    LD_ENV+=("LD_PRELOAD=${ASAN_RT}")
+fi
 BIN="${SCRIPT_DIR}/test_rule_engine"
 
 # --- 2b. compile metacharacter injection test (F-BUG-207 / #136) --------------
@@ -148,15 +163,24 @@ INJECTION_SRC="${SCRIPT_DIR}/test_injection.c"
 INJECTION_BIN="${SCRIPT_DIR}/test_injection"
 ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${INJECTION_BIN}" "${INJECTION_SRC}"
 
-# --- 2c. compile the overflow-family regression test (F-BUG-208/212, #137) --
-# Drives compute() and get_my_data() (exported by libmmt_security) directly.
+# --- 2c. compile the overflow-family regression test (F-BUG-208/212, #137;
+#         F-BUG-091/092/093/095/096/102/103, #209) -------------------------
+# Drives compute()/get_my_data()/get_value()/store_history()/generate_command()
+# from libmmt_security directly. The #209 checks interpose the C-allocation
+# family (malloc/calloc/realloc/free/fopen) and get_attribute_extracted_data —
+# those stay PLT-preemptible even though the shared build uses -flto — for
+# fault injection and live-allocation tracking. The test is deliberately NOT
+# compiled with ${extra_cflags}: under SANITIZE=asan the .so stays ASan-
+# instrumented (overflows in library code are still caught) while the test's
+# own shims keep forwarding through dlsym(RTLD_NEXT), which resolves to
+# libasan's allocator — so the fault-injection checks work in every profile.
 echo "  [2c/6] compiling overflow-family test ..."
 OVERFLOW_SRC="${SCRIPT_DIR}/test_overflow_family.c"
 OVERFLOW_BIN="${SCRIPT_DIR}/test_overflow_family"
-${CC} "${extra_cflags[@]}" -O2 -Wall \
-    -I "${INC}" -o "${OVERFLOW_BIN}" \
+${CC} -O2 -Wall \
+    -I "${INC}" -I "${REPO_ROOT}/src/mmt_security" -o "${OVERFLOW_BIN}" \
     "${OVERFLOW_SRC}" -L "${LIB}" \
-    -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm
+    -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm -ldl
 
 # --- 3. run ------------------------------------------------------------------
 echo "  [3/6] loading valid rule set through init_sec_lib() ..."
