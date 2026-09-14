@@ -129,6 +129,15 @@ uint32_t mmt_bytestream_to_ipv4(const uint8_t * str, uint16_t max_chars_to_read,
 
 void _mmt_parse_packet_line_info(ipacket_t * ipacket){
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+
+    /* Issue #212 (F-BUG-043): this helper is exported and computes
+     * payload_packet_len - 1 below — on a zero-length payload that uint16
+     * underflowed to 65535 and the line loop read out of bounds. The only
+     * in-tree caller (mmt_parse_packet_line_info) already guards, but the
+     * guard belongs here for direct callers. */
+    if ( unlikely( packet->payload_packet_len == 0 ))
+        return;
+
     uint32_t a;
     uint16_t line_length;
     const uint8_t *str;

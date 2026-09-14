@@ -520,15 +520,19 @@ unsigned int mmt_guess_protocol_by_port_number(ipacket_t * ipacket) {
     uint64_t proto_id = PROTO_UNKNOWN;
     uint16_t sport, dport;
     if (packet->tcp) {
-        sport = htons(packet->tcp->source);
-        dport = htons(packet->tcp->dest);
+        /* Issue #212 (F-BUG-031): packet->tcp->source/dest are network byte
+         * order — converting FROM wire to host order is ntohs(), not the
+         * host-to-network direction. (Identical bit-swap on common platforms,
+         * but the wrong name.) */
+        sport = ntohs(packet->tcp->source);
+        dport = ntohs(packet->tcp->dest);
         proto_id = _get_proto_by_tcp_port_number(sport,packet->payload,packet->payload_packet_len);
         if(proto_id == PROTO_UNKNOWN){
              proto_id = _get_proto_by_tcp_port_number(dport,packet->payload,packet->payload_packet_len);
         }
     } else if(packet->udp) {
-        sport = htons(packet->udp->source);
-        dport = htons(packet->udp->dest);
+        sport = ntohs(packet->udp->source);
+        dport = ntohs(packet->udp->dest);
         proto_id = _get_proto_by_udp_port_number(sport,packet->payload,packet->payload_packet_len);
         if(proto_id == PROTO_UNKNOWN){
              proto_id = _get_proto_by_udp_port_number(dport,packet->payload,packet->payload_packet_len);

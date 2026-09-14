@@ -60,10 +60,18 @@ int deleteID6(internal_ip_proto_context_t * tcpip_context, struct in6_addr * ip)
 }
 
 internal_ip_proto_context_t * setup_ipv4_internal_context() {
+    /* Issue #212 (F-BUG-029): the mmt_malloc result was memset unchecked. */
     internal_ip_proto_context_t * tcpip_context = (internal_ip_proto_context_t *)mmt_malloc(sizeof (internal_ip_proto_context_t));
+    if (tcpip_context == NULL) {
+        return NULL;
+    }
     memset(tcpip_context, 0, sizeof (internal_ip_proto_context_t));
 
     tcpip_context->ips_map = init_map_space(ipv4_addr_comp);
+    if (tcpip_context->ips_map == NULL) {
+        mmt_free(tcpip_context);
+        return NULL;
+    }
 
     tcpip_context->ips_count = 0;
     tcpip_context->active_ips_count = 0;
@@ -74,10 +82,18 @@ internal_ip_proto_context_t * setup_ipv4_internal_context() {
 }
 
 internal_ip_proto_context_t * setup_ipv6_internal_context() {
+    /* Issue #212 (F-BUG-029): the mmt_malloc result was memset unchecked. */
     internal_ip_proto_context_t * tcpip_context = (internal_ip_proto_context_t *) mmt_malloc(sizeof (internal_ip_proto_context_t));
+    if (tcpip_context == NULL) {
+        return NULL;
+    }
     memset(tcpip_context, 0, sizeof (internal_ip_proto_context_t));
 
     tcpip_context->ips_map = init_map_space(ipv6_addr_comp);
+    if (tcpip_context->ips_map == NULL) {
+        mmt_free(tcpip_context);
+        return NULL;
+    }
 
     tcpip_context->ips_count = 0;
     tcpip_context->active_ips_count = 0;
@@ -89,23 +105,37 @@ internal_ip_proto_context_t * setup_ipv6_internal_context() {
 
 void close_ipv6_internal_context(protocol_instance_t * proto_context) {
     internal_ip_proto_context_t * tcpip_context = (internal_ip_proto_context_t *) proto_context->args;
-    delete_map_space(tcpip_context->ips_map);
-    mmt_free(proto_context->args);
+    /* Issue #212 (F-BUG-029): args is NULL when the context setup failed. */
+    if (tcpip_context != NULL) {
+        delete_map_space(tcpip_context->ips_map);
+        mmt_free(proto_context->args);
+    }
 }
 
 void close_ipv4_internal_context(protocol_instance_t * proto_context) {
     internal_ip_proto_context_t * tcpip_context = (internal_ip_proto_context_t *) proto_context->args;
-    delete_map_space(tcpip_context->ips_map);
-    mmt_free(proto_context->args);
+    /* Issue #212 (F-BUG-029): args is NULL when the context setup failed. */
+    if (tcpip_context != NULL) {
+        delete_map_space(tcpip_context->ips_map);
+        mmt_free(proto_context->args);
+    }
 }
 
 int cleanup_ipv4_internal_context(internal_ip_proto_context_t * tcpip_context) {
+    /* Issue #212 (F-BUG-029): NULL when the context setup failed. */
+    if (tcpip_context == NULL) {
+        return 0;
+    }
     mapspace_iteration_callback(tcpip_context->ips_map, free_ipv4_data, NULL);
     clear_map_space(tcpip_context->ips_map);
     return 1;
 }
 
 int cleanup_ipv6_internal_context(internal_ip_proto_context_t * tcpip_context) {
+    /* Issue #212 (F-BUG-029): NULL when the context setup failed. */
+    if (tcpip_context == NULL) {
+        return 0;
+    }
     mapspace_iteration_callback(tcpip_context->ips_map, free_ipv6_data, NULL);
     clear_map_space(tcpip_context->ips_map);
     return 1;
@@ -129,6 +159,11 @@ static inline mmt_ip4_id_t * _get_ip4_id(internal_ip_proto_context_t * tcpip_con
     if (retval == NULL) {
         /*Initialize the memory for the IPv4 IDs */
         retval = mmt_malloc(sizeof (mmt_ip4_id_t));
+        /* Issue #212 (F-BUG-029): mmt_malloc may return NULL — memset of NULL
+         * was UB; propagate failure so get_session() can clean up. */
+        if (retval == NULL) {
+            return NULL;
+        }
         memset(retval, 0, sizeof (mmt_ip4_id_t));
 
         retval->count = 0;
@@ -159,6 +194,11 @@ mmt_ip6_id_t * get_ip6_id(internal_ip_proto_context_t * tcpip_context, struct in
     if (retval == NULL) {
         /*Initialize the memory for the IPv6 IDs */
         retval = mmt_malloc(sizeof (mmt_ip6_id_t));
+        /* Issue #212 (F-BUG-029): mmt_malloc may return NULL — memset of NULL
+         * was UB; propagate failure so get_session() can clean up. */
+        if (retval == NULL) {
+            return NULL;
+        }
         memset(retval, 0, sizeof (mmt_ip6_id_t));
 
         retval->count = 0;
@@ -251,6 +291,12 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
 
     mmt_session_t * retval = NULL;
     internal_ip_proto_context_t * tcpip_context = (internal_ip_proto_context_t *) ((protocol_instance_t *) protocol_context)->args;
+
+    /* Issue #212 (F-BUG-029): context setup may have failed (NULL args) —
+     * propagate as "no session" instead of dereferencing a missing map. */
+    if (tcpip_context == NULL) {
+        return NULL;
+    }
 
     retval = (mmt_session_t *) get_session_from_protocol_context_by_session_key(protocol_context, (void *) session_key);
     
