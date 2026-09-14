@@ -41,7 +41,11 @@ MMT_PLUGIN_LIBS=(
     libmmt_business_app
 )
 
-# Validate install prefix — same hardening as root install.sh / issue #136.
+# Validate install prefix — the single definition shared by the root
+# install.sh (sourced at run time) and both ZIP scripts (issue #211,
+# F-BUG-121: the blacklist used to miss several shell-significant
+# characters — space, tab, ( ) { } [ ] # % = : ~ , ^ — so validation is now
+# an allowlist instead of an enumeration of bad characters).
 validate_mmt_base() {
     local p="$1"
     if [ -z "$p" ] || [ ${#p} -gt 256 ]; then
@@ -56,13 +60,25 @@ validate_mmt_base() {
     if [[ "$p" == *".."* ]]; then
         echo "ERROR: MMT_BASE must not contain .. : $p" >&2; return 1
     fi
-    # shellcheck disable=SC1003  # single-quote pattern $'\'' is intentional
-    if [[ "$p" == *';'* || "$p" == *'|'* || "$p" == *'&'* || "$p" == *'$'* || "$p" == *'`'* \
-        || "$p" == *'!'* || "$p" == *'*'* || "$p" == *'?'* || "$p" == *'<'* || "$p" == *'>'* \
-        || "$p" == *'"'* || "$p" == *$'\''* || "$p" == *'\\'* || "$p" == *$'\n'* ]]; then
-        echo "ERROR: MMT_BASE contains shell metacharacters: $p" >&2; return 1
+    # Allowlist: path components may only contain [A-Za-z0-9._-] — every
+    # metacharacter, whitespace and control character is rejected by
+    # construction rather than by an incomplete blacklist.
+    if [[ ! "$p" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+        echo "ERROR: MMT_BASE contains characters outside [A-Za-z0-9._/-]: $p" >&2; return 1
     fi
     if [[ "$p" == */ ]]; then
         echo "ERROR: MMT_BASE must not have trailing slash: $p" >&2; return 1
     fi
+}
+
+# True when the current user can create/write inside prefix "$1": walks up to
+# the nearest existing ancestor and tests its writability. The installers use
+# this to decide whether elevation is needed at all — a user-local prefix must
+# not escalate (issue #211, F-BUG-116).
+prefix_writable() {
+    local p="$1"
+    while [ ! -e "$p" ]; do
+        p="$(dirname -- "$p")"
+    done
+    [ -w "$p" ]
 }

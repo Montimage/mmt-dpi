@@ -14,6 +14,7 @@
 #
 # Options:
 #   --dry-run              - Print the install plan and exit without changes
+#   --prefix <dir>         - Install to <dir> (same as MMT_BASE=<dir>)
 #   --branch <ref>         - Build a specific branch instead of the release tag
 #   --unverified-branch    - Required to permit a moving ref (no verification)
 #   -h, --help             - Show usage
@@ -72,31 +73,6 @@ validate_branch() {
     fi
 }
 
-validate_mmt_base() {
-    local p="$1"
-    if [ -z "$p" ] || [ ${#p} -gt 256 ]; then
-        printf 'ERROR: MMT_BASE must be 1-256 characters\n' >&2; exit 1
-    fi
-    if [[ "$p" != /* ]]; then
-        printf 'ERROR: MMT_BASE must be an absolute path: %s\n' "$p" >&2; exit 1
-    fi
-    if [ "$p" = "/" ]; then
-        printf 'ERROR: MMT_BASE must not be /\n' >&2; exit 1
-    fi
-    if [[ "$p" == *".."* ]]; then
-        printf 'ERROR: MMT_BASE must not contain .. : %s\n' "$p" >&2; exit 1
-    fi
-    # shellcheck disable=SC1003  # single-quote pattern $'\'' is intentional
-    if [[ "$p" == *';'* || "$p" == *'|'* || "$p" == *'&'* || "$p" == *'$'* || "$p" == *'`'* \
-        || "$p" == *'!'* || "$p" == *'*'* || "$p" == *'?'* || "$p" == *'<'* || "$p" == *'>'* \
-        || "$p" == *'"'* || "$p" == *$'\''* || "$p" == *'\\'* || "$p" == *$'\n'* ]]; then
-        printf 'ERROR: MMT_BASE contains shell metacharacters: %s\n' "$p" >&2; exit 1
-    fi
-    if [[ "$p" == */ ]]; then
-        printf 'ERROR: MMT_BASE must not have trailing slash: %s\n' "$p" >&2; exit 1
-    fi
-}
-
 validate_jobs() {
     local j="$1"
     if [[ ! "$j" =~ ^[0-9]+$ ]] || [ "$j" -lt 1 ] || [ "$j" -gt 256 ]; then
@@ -119,6 +95,8 @@ Usage:
 
 Options:
   --dry-run              Print the install plan and exit without changes.
+  --prefix <dir>         Install to <dir> instead of /opt/mmt (same as
+                         setting MMT_BASE=<dir> in the environment).
   --branch <ref>         Build a specific branch instead of the pinned
                          release tag. Moving refs carry no integrity
                          guarantee and require --unverified-branch.
@@ -139,6 +117,12 @@ parse_args() {
         case "$1" in
             --dry-run)            DRY_RUN=1 ;;
             --unverified-branch)  UNVERIFIED_BRANCH=1 ;;
+            --prefix)
+                if [ $# -lt 2 ]; then
+                    printf 'ERROR: --prefix requires a directory\n' >&2; exit 1
+                fi
+                MMT_BASE="$2"; shift ;;
+            --prefix=*)           MMT_BASE="${1#*=}" ;;
             --branch)
                 if [ $# -lt 2 ]; then
                     printf 'ERROR: --branch requires a value\n' >&2; exit 1
@@ -174,8 +158,50 @@ resolve_ref() {
 parse_args "$@"
 resolve_ref
 validate_branch "$REF"
-validate_mmt_base "$MMT_BASE"
 validate_skip_deps "$SKIP_DEPS"
+
+# ---------------------------------------------------------------------------
+# Shared install definitions (single source of truth — issue #211, F-BUG-121)
+# ---------------------------------------------------------------------------
+# The prefix validator and the prefix-writability helper live in
+# dist/ZIP/mmt-install-common.sh, shared with the offline ZIP installer. This
+# script is designed for `curl | bash` where no repo file sits next to it, so:
+#   * run from a checkout  -> source the file right away and validate MMT_BASE
+#                             up front (fail fast, covers --dry-run too);
+#   * curl|bash            -> source it from the verified clone after
+#                             clone_repo(), before MMT_BASE is ever used.
+COMMON_FILE=""   # path of the sourced mmt-install-common.sh, empty until then
+ELEVATED=0       # set to 1 when the install step needed privilege escalation
+
+# prefix_writable(): true when the current user can create/write inside the
+# prefix — walks to the nearest existing ancestor and tests it. The canonical
+# copy lives in dist/ZIP/mmt-install-common.sh and overwrites this one when
+# sourced; a local copy is still needed because `curl | bash` has no repo
+# file beside the script, --dry-run never reaches the clone, and a clone of
+# the pinned release tag may predate the helper (issue #211).
+prefix_writable() {
+    local p="$1"
+    while [ ! -e "$p" ]; do
+        p="$(dirname -- "$p")"
+    done
+    [ -w "$p" ]
+}
+
+load_common_defs() {
+    local f="$1"
+    [ -f "$f" ] || return 1
+    # shellcheck disable=SC1090  # runtime-resolved path, checked just above
+    source "$f"
+    COMMON_FILE="$f"
+}
+
+_INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
+if [ -n "$_INSTALLER_DIR" ] && [ -f "$_INSTALLER_DIR/install.sh" ]; then
+    load_common_defs "$_INSTALLER_DIR/dist/ZIP/mmt-install-common.sh" || true
+fi
+if [ -n "$COMMON_FILE" ]; then
+    validate_mmt_base "$MMT_BASE" || exit 1
+fi
 
 # Auto-detect parallelism
 if [ -z "${JOBS:-}" ]; then
@@ -385,6 +411,11 @@ print_plan() {
         printf "  Ref        : %s (moving branch — UNVERIFIED, --unverified-branch given)\n" "$REF"
     fi
     printf "  Prefix     : %s\n" "$MMT_BASE"
+    if prefix_writable "$MMT_BASE"; then
+        printf "  Elevation  : not needed (prefix writable by this user)\n"
+    else
+        printf "  Elevation  : sudo (prefix not writable by this user)\n"
+    fi
     printf "  Jobs       : %s\n" "$JOBS"
     if [ "$SKIP_DEPS" = "1" ]; then
         printf "  Deps       : skipped (SKIP_DEPS=1)\n"
@@ -459,12 +490,20 @@ install_mmt() {
 
     cd "$BUILD_DIR/mmt-dpi/sdk"
 
-    if [ "$MMT_BASE" = "/opt/mmt" ] && [ -n "$SUDO" ]; then
-        info "Installing to default path (requires sudo)..."
-        $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" install
-    else
-        info "Installing to $MMT_BASE"
+    # Elevate by writability, not by a path literal (issue #211, F-BUG-116):
+    # /usr/local/mmt needs sudo exactly like /opt/mmt did, while a prefix the
+    # user can already write installs unprivileged — and must not trigger the
+    # post-install ldconfig escalation.
+    if prefix_writable "$MMT_BASE"; then
+        info "Installing to user-writable prefix $MMT_BASE"
         make ARCH="linux" MMT_BASE="$MMT_BASE" install
+    else
+        if [ -z "$SUDO" ]; then
+            fatal "Prefix $MMT_BASE is not writable by this user and sudo is unavailable — set MMT_BASE to a user-writable directory or re-run as root"
+        fi
+        ELEVATED=1
+        info "Prefix $MMT_BASE is not writable — installing via sudo"
+        $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" install
     fi
 
     success "Installation completed"
@@ -476,9 +515,15 @@ install_mmt() {
 post_install() {
     step "Post-installation setup"
 
-    # Refresh shared library cache on Linux
-    if [ "$OS" = "linux" ] && check_command ldconfig; then
-        $SUDO ldconfig 2>/dev/null || true
+    # Refresh the shared library cache only when the install escalated — a
+    # user-local prefix never wrote to system paths, so ldconfig would be a
+    # pointless privilege grab (issue #211, F-BUG-116).
+    if [ "$ELEVATED" = "1" ]; then
+        if [ "$OS" = "linux" ] && check_command ldconfig; then
+            $SUDO ldconfig 2>/dev/null || true
+        fi
+    else
+        info "User-local install: skipping ldconfig — use LD_LIBRARY_PATH=$MMT_BASE/dpi/lib"
     fi
 
     # Verify installation
@@ -539,6 +584,18 @@ main() {
     install_dependencies
     preflight_checks
     clone_repo
+
+    # curl|bash path: the shared definitions were not next to this script —
+    # take them from the clone (commit-pinned and signature-checked when
+    # REF_KIND=tag). Validate the prefix before it is ever used.
+    if [ -z "$COMMON_FILE" ]; then
+        load_common_defs "$BUILD_DIR/mmt-dpi/dist/ZIP/mmt-install-common.sh" \
+            || fatal "shared install definitions missing from clone: dist/ZIP/mmt-install-common.sh"
+    fi
+    declare -f validate_mmt_base >/dev/null 2>&1 \
+        || fatal "shared install file provides no MMT_BASE validator"
+    validate_mmt_base "$MMT_BASE" || exit 1
+
     build
     install_mmt
     post_install

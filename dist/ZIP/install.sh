@@ -14,12 +14,23 @@ source "$SCRIPT_DIR/mmt-install-common.sh"
 # ---------------------------------------------------------------------------
 # Pre-flight
 # ---------------------------------------------------------------------------
-if [[ $(id -u) -ne 0 ]]; then
-    echo "This script should be run using sudo or as the root user" >&2
-    exit 1
-fi
+validate_mmt_base "$MMT_BASE" || exit 1
 
-validate_mmt_base "$MMT_BASE"
+# Elevation is only required when the prefix is not writable by the current
+# user — a user-local prefix installs unprivileged and skips the linker-cache
+# steps (issue #211, F-BUG-116/F-BUG-121).
+ELEVATED=0
+if ! prefix_writable "$MMT_BASE"; then
+    if [[ $(id -u) -ne 0 ]]; then
+        echo "This script should be run using sudo or as the root user" >&2
+        echo "(prefix $MMT_BASE is not writable by $(id -un))" >&2
+        exit 1
+    fi
+    ELEVATED=1
+elif [[ $(id -u) -eq 0 ]]; then
+    # Root on a writable prefix can still refresh the linker cache below.
+    ELEVATED=1
+fi
 
 # Resolve source directories relative to this script (not $PWD).
 SDKINC="$SCRIPT_DIR/include"
@@ -94,17 +105,22 @@ for lib in "${MMT_PLUGIN_LIBS[@]}"; do
     echo "[MMT-]> Installed $MMT_PLUGINS/$lib.so"
 done
 
-if [ -f "$LD_CONF_LEGACY" ] && [ ! -f "$LD_CONF_CANONICAL" ]; then
-    mv "$LD_CONF_LEGACY" "$LD_CONF_CANONICAL"
-fi
-if [ ! -f "$LD_CONF_CANONICAL" ] || ! grep -qxF "$MMT_LIB" "$LD_CONF_CANONICAL" 2>/dev/null; then
-    echo "$MMT_LIB" >> "$LD_CONF_CANONICAL"
-fi
-if [ -f "$LD_CONF_LEGACY" ] && [ -f "$LD_CONF_CANONICAL" ]; then
-    rm -f "$LD_CONF_LEGACY"
-fi
+if [ "$ELEVATED" = "1" ]; then
+    if [ -f "$LD_CONF_LEGACY" ] && [ ! -f "$LD_CONF_CANONICAL" ]; then
+        mv "$LD_CONF_LEGACY" "$LD_CONF_CANONICAL"
+    fi
+    if [ ! -f "$LD_CONF_CANONICAL" ] || ! grep -qxF "$MMT_LIB" "$LD_CONF_CANONICAL" 2>/dev/null; then
+        echo "$MMT_LIB" >> "$LD_CONF_CANONICAL"
+    fi
+    if [ -f "$LD_CONF_LEGACY" ] && [ -f "$LD_CONF_CANONICAL" ]; then
+        rm -f "$LD_CONF_LEGACY"
+    fi
 
-ldconfig
+    ldconfig
+else
+    echo "[MMT-]> User-local prefix: skipped ld.so.conf/ldconfig — run with"
+    echo "        export LD_LIBRARY_PATH=$MMT_LIB"
+fi
 
 echo "[MMT-]> Done! "
 echo "Thanks you for installing mmt-sdk, you can learn more about mmt-sdk at: http://www.montimage.eu"
