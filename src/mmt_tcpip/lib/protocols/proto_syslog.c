@@ -27,17 +27,17 @@ static void mmt_int_syslog_add_connection(ipacket_t * ipacket) {
  * Off port 514, at least one of the above patterns must match.
  */
 static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *packet,
-                                     uint8_t i, int on_port_514) {
+                                     uint32_t i, int on_port_514, uint32_t payload_len) {
 
     /* --- "last message repeated" --- */
-    if (i + sizeof("last message") - 1 <= packet->payload_packet_len &&
+    if (i + sizeof("last message") - 1 <= payload_len &&
             mmt_memcmp(packet->payload + i, "last message", sizeof("last message") - 1) == 0) {
         MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by 'last message' string.\n");
         return 1;
     }
 
     /* --- "snort: " prefix --- */
-    if (i + sizeof("snort: ") - 1 <= packet->payload_packet_len &&
+    if (i + sizeof("snort: ") - 1 <= payload_len &&
             mmt_memcmp(packet->payload + i, "snort: ", sizeof("snort: ") - 1) == 0) {
         MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "found syslog by 'snort: ' string.\n");
         return 1;
@@ -48,13 +48,13 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
        - version digit '1'
        - space
        - ISO-8601 timestamp starting with a 4-digit year (first char is '2' or '1') */
-    if (!on_port_514 || i < packet->payload_packet_len) {
+    if (!on_port_514 || i < payload_len) {
         if (packet->payload[i] == '1') {
             i++;
-            if (i < packet->payload_packet_len && packet->payload[i] == ' ') {
+            if (i < payload_len && packet->payload[i] == ' ') {
                 i++;
                 /* Check for 4-digit year start: '2' or '1' followed by digit */
-                if (i + 3 < packet->payload_packet_len &&
+                if (i + 3 < payload_len &&
                         ((packet->payload[i] == '2' || packet->payload[i] == '1') &&
                          isdigit(packet->payload[i + 1]) &&
                          isdigit(packet->payload[i + 2]) &&
@@ -68,7 +68,7 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
     }
 
     /* --- RFC 3164: 3-letter month abbreviation --- */
-    if (i + 2 < packet->payload_packet_len &&
+    if (i + 2 < payload_len &&
             (mmt_mem_cmp(&packet->payload[i], "Jan", 3) == 0 ||
              mmt_mem_cmp(&packet->payload[i], "Feb", 3) == 0 ||
              mmt_mem_cmp(&packet->payload[i], "Mar", 3) == 0 ||
@@ -88,12 +88,12 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
     /* --- Hostname/tag pattern matching (nDPI-inspired) --- */
     /* Walk alphanumeric chars; stop on recognized delimiters:
        ' ', ':', '=', '[', '-' */
-    if (i < packet->payload_packet_len) {
+    if (i < payload_len) {
         if (packet->payload[i] == ' ') {
             /* Space after PRI: walk the next token as hostname/tag */
             i++;
-            if (i < packet->payload_packet_len && isalnum(packet->payload[i])) {
-                while (i < packet->payload_packet_len - 1) {
+            if (i < payload_len && isalnum(packet->payload[i])) {
+                while (i < payload_len - 1) {
                     if (isalnum(packet->payload[i])) {
                         i++;
                         continue;
@@ -112,9 +112,9 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
                 }
 
                 /* If we stopped on ':', the next character must be a space */
-                if (i < packet->payload_packet_len && packet->payload[i] == ':') {
+                if (i < payload_len && packet->payload[i] == ':') {
                     i++;
-                    if (i >= packet->payload_packet_len || packet->payload[i] != ' ') {
+                    if (i >= payload_len || packet->payload[i] != ' ') {
                         /* If not on port 514, strict: not syslog */
                         if (!on_port_514)
                             return 0;
@@ -126,7 +126,7 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
             }
         } else if (isalnum(packet->payload[i])) {
             /* No space after PRI — hostname starts immediately (non-standard but common) */
-            while (i < packet->payload_packet_len - 1) {
+            while (i < payload_len - 1) {
                 if (isalnum(packet->payload[i])) {
                     i++;
                     continue;
@@ -142,9 +142,9 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
                 return 1;
             }
 
-            if (i < packet->payload_packet_len && packet->payload[i] == ':') {
+            if (i < payload_len && packet->payload[i] == ':') {
                 i++;
-                if (i >= packet->payload_packet_len || packet->payload[i] != ' ') {
+                if (i >= payload_len || packet->payload[i] != ' ') {
                     if (!on_port_514)
                         return 0;
                 }
@@ -168,25 +168,26 @@ static int mmt_int_is_syslog_packet(struct mmt_tcpip_internal_packet_struct *pac
  * Parse the PRI header: <PRI> where PRI is 1-3 digits.
  * Returns the index after the '>', or 0 if parsing fails.
  */
-static uint8_t mmt_int_parse_syslog_pri(struct mmt_tcpip_internal_packet_struct *packet) {
+static uint8_t mmt_int_parse_syslog_pri(struct mmt_tcpip_internal_packet_struct *packet,
+                                        uint32_t payload_len) {
     uint8_t i = 1;
 
     /* Read 1-3 digit PRI value */
     for (; i <= 3; i++) {
-        if (i >= packet->payload_packet_len)
+        if (i >= payload_len)
             break;
         if (packet->payload[i] < '0' || packet->payload[i] > '9')
             break;
     }
 
     /* Must be followed by '>' */
-    if (i >= packet->payload_packet_len || packet->payload[i] != '>')
+    if (i >= payload_len || packet->payload[i] != '>')
         return 0;
 
     i++; /* skip '>' */
 
     /* Optional space after '>' */
-    if (i < packet->payload_packet_len && packet->payload[i] == 0x20)
+    if (i < payload_len && packet->payload[i] == 0x20)
         i++;
 
     return i;
@@ -205,8 +206,19 @@ static void mmt_int_classify_syslog(ipacket_t * ipacket,
 
     MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "search syslog\n");
 
+    /* Issue #192 (F-BUG-054): bound every payload read by what was actually
+     * captured, not by payload_packet_len alone — it derives from the
+     * attacker-controlled IPv4 tot_len and may exceed the captured buffer.
+     * Same caplen-relative shape as http2_can_read() (F-BUG-059). */
+    uint32_t payload_len = packet->payload_packet_len;
+    const uint8_t *payload_end = ipacket->data + ipacket->p_hdr->caplen;
+    if (packet->payload == NULL || packet->payload >= payload_end)
+        payload_len = 0;
+    else if (payload_len > (uint32_t)(payload_end - packet->payload))
+        payload_len = (uint32_t)(payload_end - packet->payload);
+
     /* Basic sanity: payload length and must start with '<' */
-    if (packet->payload_packet_len <= 20 || packet->payload_packet_len > 1024 ||
+    if (payload_len <= 20 || payload_len > 1024 ||
             packet->payload[0] != '<') {
         MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "no syslog detected.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
@@ -216,7 +228,7 @@ static void mmt_int_classify_syslog(ipacket_t * ipacket,
     MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "checked len>20 and <1024 and first symbol=<.\n");
 
     /* Parse PRI header: <PRI> */
-    i = mmt_int_parse_syslog_pri(packet);
+    i = mmt_int_parse_syslog_pri(packet, payload_len);
     if (i == 0) {
         MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "there is no > following the number.\n");
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
@@ -234,7 +246,7 @@ static void mmt_int_classify_syslog(ipacket_t * ipacket,
         }
     }
 
-    if (mmt_int_is_syslog_packet(packet, i, on_port_514)) {
+    if (mmt_int_is_syslog_packet(packet, i, on_port_514, payload_len)) {
         mmt_int_syslog_add_connection(ipacket);
         return;
     }

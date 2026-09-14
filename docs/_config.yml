@@ -3,7 +3,12 @@ description: >-
   High-performance C library for deep packet inspection — 200+ protocol
   classification, named attribute extraction, session tracking, and an
   extensible plugin architecture.
-theme: jekyll-theme-cayman
+# Pinned to the v0.2.0 commit of pages-themes/cayman (issue #213, F-DEP-202) —
+# remote_theme accepts a tag, branch or commit SHA; the SHA form matches the
+# repository's supply-chain convention for actions and container images.
+remote_theme: pages-themes/cayman@2f96786aaa4fce7ab3df07bd4a9f271b06584c0f # v0.2.0
+plugins:
+  - jekyll-remote-theme
 show_downloads: false
 
 # Build only the landing page and curated guides; exclude heavy/binary assets
