@@ -25,6 +25,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>   /* u_char */
+#include <sys/time.h>    /* struct timeval (ndn_session_t) */
 #include "mmt_core.h"    /* ipacket_t, mmt_key_t, attribute_t */
 
 /* Internal struct types used by the prototypes below. The including .c gets
@@ -319,15 +320,128 @@ int icmp_data_extraction(const ipacket_t *ipacket, unsigned proto_index, attribu
  * includes for member access. The mmt_caplen_guard_* accessors are always
  * exported; their counters only increment in assert-enabled (NDEBUG
  * undefined) or sanitizer-instrumented (MMT_BUILD_ASAN/MMT_BUILD_TSAN)
- * builds — in a plain release build they return 0. */
+ * builds — in a plain release build they return 0.
+ *
+ * get_registered_attribute_internal_struct() fetches the *registered* (hence
+ * real, plugin-wired) attribute for a protocol/field pair — the route a
+ * harness takes to reach a static extraction function (e.g. the DICOM
+ * dissector's _extraction_att) with the metadata the plugin registered. */
 int internal_extract_attribute(const ipacket_t *ipacket,
         struct attribute_internal_struct *tmp_attr_ref, unsigned index);
 /* Registry accessor exercised by extraction_caplen_prologue_test.c
  * (issue #202, F-BUG-010): look up a registered protocol struct. */
 protocol_t *get_protocol_struct_by_protocol_id(uint32_t proto_id);
+struct attribute_internal_struct *get_registered_attribute_internal_struct(
+        const ipacket_t *ipacket, uint32_t proto_id, uint32_t attribute_id,
+        unsigned index);
 uint64_t mmt_caplen_guard_total_count(void);
 uint64_t mmt_caplen_guard_refused_count(void);
 uint64_t mmt_caplen_guard_unvalidated_count(void);
 void mmt_caplen_guard_stats_reset(void);
+
+/* --- protocols/ndn.c (NDN dissector, issue #215) -----------------------------
+ * ndn_tlv_t / ndn_tuple3_t / ndn_session_t below mirror
+ * src/mmt_tcpip/lib/protocols/ndn.h — keep them in step with that file (the
+ * header is internal and not installed; the TLV node struct is the only
+ * result struct harnesses read back). */
+typedef struct ndn_tlv_struct {
+    uint16_t type;
+    uint8_t nb_octets;
+    unsigned long length;
+    uint16_t node_offset;
+    uint16_t data_offset;
+    struct ndn_tlv_struct *next;
+} ndn_tlv_t;
+
+typedef struct ndn_tuple3_struct {
+    uint8_t packet_type;
+    uint32_t ip_src;
+    uint32_t ip_dst;
+    uint16_t port_src;
+    uint16_t port_dst;
+    uint32_t proto_over;
+    char *src_MAC;
+    char *dst_MAC;
+    char *name;
+} ndn_tuple3_t;
+
+typedef struct ndn_session_struct {
+    uint64_t session_id;
+    uint32_t max_responsed_time[2];
+    uint32_t min_responsed_time[2];
+    uint32_t total_responsed_time[2];
+    uint32_t nb_responsed[2];
+    uint32_t interest_lifeTime[2];
+    uint32_t data_freshnessPeriod[2];
+    uint64_t nb_interest_packet[2];
+    uint64_t data_volume_interest_packet[2];
+    uint64_t ndn_volume_interest_packet[2];
+    uint64_t nb_data_packet[2];
+    uint64_t data_volume_data_packet[2];
+    uint64_t ndn_volume_data_packet[2];
+    uint8_t current_direction;
+    uint8_t is_expired;
+    ndn_tuple3_t *tuple3;
+    struct timeval *s_init_time;
+    struct timeval *s_last_activity_time;
+    struct timeval *last_reported_time;
+    struct timeval *last_interest_packet_time_0;
+    struct timeval *last_interest_packet_time_1;
+    struct ndn_session_struct *next;
+    void *user_arg;
+} ndn_session_t;
+
+int ndn_TLV_check_type(int type);
+ndn_tlv_t *ndn_TLV_init(void);
+void ndn_TLV_free(ndn_tlv_t *ndn);
+int ndn_TLV_get_int(ndn_tlv_t *ndn, char *payload, int payload_len);
+char *ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len);
+ndn_tlv_t *ndn_TLV_parser(char *payload, int offset, int total_length);
+ndn_tlv_t *ndn_find_node(char *payload, int total_length, ndn_tlv_t *root,
+        int node_type);
+int mmt_check_ndn_payload(char *payload, int payload_len);
+ndn_tlv_t *ndn_TLV_parser_name_comp(char *payload, int total_length,
+        int offset, int nc_length);
+uint8_t ndn_packet_type_extraction_payload(char *payload, int payload_len);
+uint32_t ndn_packet_length_extraction_payload(char *payload, int total_length);
+char *ndn_TVL_get_name_components(ndn_tlv_t *name_com, char *payload,
+        int total_length);
+char *ndn_name_components_at_index(char *payload, int total_length,
+        int nc_index);
+char *ndn_name_components_extraction_payload(char *payload, int total_length);
+int ndn_interest_nonce_extraction_payload(char *payload, int payload_len);
+int ndn_interest_lifetime_extraction_payload(char *payload, int payload_len);
+int ndn_interest_min_suffix_component_extraction_payload(char *payload,
+        int payload_len);
+int ndn_interest_max_suffix_component_extraction_payload(char *payload,
+        int payload_len);
+char *ndn_data_content_extraction_payload(char *payload, int total_length);
+int ndn_data_content_type_extraction_payload(char *payload, int payload_len);
+int ndn_data_freshness_period_extraction_payload(char *payload,
+        int payload_len);
+int ndn_data_signature_type_extraction_payload(char *payload, int payload_len);
+char *ndn_data_key_locator_extraction_payload(char *payload, int total_length);
+char *ndn_data_signature_value_extraction_payload(char *payload,
+        int total_length);
+uint8_t mmt_check_payload_ndn_http(char *payload, int payload_len);
+
+/* ipacket-typed extraction entry points — driven on a fabricated ipacket by
+ * ndn_test.c to reach the caplen guards added by issue #146 (10afc854). */
+int ndn_packet_type_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+int ndn_packet_length_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+int ndn_name_components_extraction(const ipacket_t *ipacket,
+        unsigned proto_index, attribute_t *extracted_data);
+int ndn_interest_nonce_extraction(const ipacket_t *ipacket,
+        unsigned proto_index, attribute_t *extracted_data);
+
+ndn_tuple3_t *ndn_new_tuple3(void);
+void ndn_free_tuple3(ndn_tuple3_t *t3);
+uint8_t ndn_compare_tupe3(ndn_tuple3_t *t1, ndn_tuple3_t *t2);
+ndn_session_t *ndn_new_session(void);
+void ndn_free_session(ndn_session_t *ndn_session);
+ndn_session_t *ndn_find_session_by_tuple3(ndn_tuple3_t *t3,
+        ndn_session_t *list_sessions);
 
 #endif /* MMT_PHASE0_INTERNAL_DECLS_H */

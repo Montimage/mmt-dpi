@@ -166,6 +166,8 @@ DEFAULT_SUITES=(
     radius_hardening
     nas_ies_tail
     installer
+    dicom_dissector
+    ndn_dissector
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.
