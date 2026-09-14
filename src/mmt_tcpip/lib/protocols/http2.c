@@ -21,6 +21,17 @@ static inline int http2_can_read(int offset, unsigned int n, unsigned int caplen
 	return ((uint64_t) offset + (uint64_t) n) <= (uint64_t) caplen;
 }
 
+/* issue #204 (F-BUG-057): mirror of http2_can_read() for the mutation side.
+ * Every helper that writes into data_out must prove the whole n-byte window
+ * starting at `offset` lies inside [0, data_out_size) before touching the
+ * buffer — offsets and lengths below are attacker controlled (the HTTP/2
+ * 24-bit frame length and the packet-derived proto_offset). */
+static inline int http2_can_write(int offset, unsigned int n, unsigned int caplen) {
+	if (offset < 0)
+		return 0;
+	return ((uint64_t) offset + (uint64_t) n) <= (uint64_t) caplen;
+}
+
 classified_proto_t http2_stack_classification(ipacket_t *ipacket) {
 
 	classified_proto_t retval;
@@ -344,29 +355,44 @@ int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index) {
 }
 
 int restore_http2_packet(uint8_t*data_out,const ipacket_t * packet,int proto_offset,uint32_t data_out_size){
-	int header_length = 0;
+	uint32_t header_length = 0;
 	int offset_header_length = proto_offset -1;
+	/* issue #204 (F-BUG-057): bound the length-field reads before touching
+	 * either buffer — proto_offset is packet-derived and may be negative. */
+	if (!http2_can_read(offset_header_length, 4, data_out_size)
+			|| !http2_can_read(offset_header_length, 4, packet->p_hdr->caplen))
+		return 0;
 	for (int i = offset_header_length; i < offset_header_length+4; i++) {
 		header_length = (header_length << 8) | data_out[i];
 	}
 	header_length=header_length & 0x00FFFFFF;
-	int new_length = 0;
+	uint32_t new_length = 0;
 	for (int i = offset_header_length; i < offset_header_length+4; i++) {
 		new_length = (new_length << 8) | packet->data[i];
 	}
 	new_length = new_length & 0x00FFFFFF;
 	// printf("new_length %d, header_length %d\n",new_length,header_length);
 	// printf("data_out %02X packet_data %02X \n",data_out[proto_offset],packet->data[proto_offset]);
-	if(new_length+9>data_out_size || proto_offset>(data_out_size))
+	/* The old check `new_length+9>data_out_size || proto_offset>data_out_size`
+	 * forgot the proto_offset term entirely and used `>` where `>=` was
+	 * required: the copy must satisfy proto_offset + new_length + 9 <= size
+	 * on the write side and <= caplen on the read side. */
+	if (!http2_can_write(proto_offset, (unsigned int)(new_length + 9), data_out_size)
+			|| !http2_can_read(proto_offset, (unsigned int)(new_length + 9), packet->p_hdr->caplen))
 		return 0;
 	memcpy((uint8_t*)data_out+proto_offset,packet->data+proto_offset,new_length+9);
 	return new_length-header_length;
 }
 int modify_get(uint8_t*data_out,int proto_offset,uint32_t data_out_size){
 	//Go to method field
-	int header_length = 0;
+	uint32_t header_length = 0;
 	// Get http2 protocol offset
 	int offset_header_length = proto_offset -1;
+	/* issue #204 (F-BUG-057): guard the 4-byte length read (offset may be
+	 * negative) — the same window is later rewritten, so it must also be
+	 * writable. */
+	if (!http2_can_write(offset_header_length, 4, data_out_size))
+		return 0;
 	for (int i = offset_header_length; i < offset_header_length+4; i++) {
 		header_length = (header_length << 8) | data_out[i];
 	}
@@ -374,7 +400,10 @@ int modify_get(uint8_t*data_out,int proto_offset,uint32_t data_out_size){
 	uint8_t authority_amf[] = {0x41,0x8d,0x0b,0xa2,0x5c,0x2e,0x2e,0xdb,0xeb,0xba,0xcd,0xc7,0x80,0xf0,0x3f,0x7a,0x03,0x61,0x6d,0x66};
 	int authority_amf_length = sizeof(authority_amf) ;
 	//printf("[modify_get]authority_amf_length %d\n",authority_amf_length);
-	if(authority_amf_length > data_out_size || proto_offset+9+header_length-2 > data_out_size)
+	/* The old check `proto_offset+9+header_length-2 > data_out_size` verified
+	 * only the write *start* (and with `>` instead of `>=`): bound the whole
+	 * authority_amf window instead. */
+	if (!http2_can_write(proto_offset + 9 + header_length - 2, authority_amf_length, data_out_size))
 		return 0;
 	memcpy(data_out+proto_offset+9+header_length-2,authority_amf,authority_amf_length);
 	//printf("modify get after update:\n");
@@ -388,10 +417,13 @@ int modify_get(uint8_t*data_out,int proto_offset,uint32_t data_out_size){
 	//printf("[modify_get]offset_header_length %02hhX %02hhX %02hhX \n",data_out[offset_header_length+1],data_out[offset_header_length+2],data_out[offset_header_length+3]);
 	return (int)(sizeof(authority_amf)-2);
 }
-uint32_t update_window_update(char *data_out,int proto_offset,uint32_t modify){
+uint32_t update_window_update(char *data_out,int proto_offset,uint32_t modify,uint32_t data_out_size){
 	int window_size_offset = proto_offset+9;
 	//int offset_header_length = proto_offset -1;
 	if(modify == 1){
+		/* issue #204 (F-BUG-057): the 4-byte window-size write had no bound. */
+		if (!http2_can_write(window_size_offset, 4, data_out_size))
+			return 0;
 		data_out[window_size_offset] = 0x00;
 		data_out[window_size_offset+1] = 0x00;
 		data_out[window_size_offset+2] = 0x00;
@@ -406,21 +438,30 @@ uint32_t update_window_update(char *data_out,int proto_offset,uint32_t modify){
 
 int inject_http2_packet(uint8_t*data_out, uint8_t*data_to_inject,int proto_offset,int data_to_inject_len, uint32_t data_out_size){
 	int offset_header_length = proto_offset -1;
-	int header_length = 0;
+	uint32_t header_length = 0;
+	/* issue #204 (F-BUG-057): guard the length-field read and bound the
+	 * injected copy against the space actually remaining at proto_offset. */
+	if (!http2_can_read(offset_header_length, 4, data_out_size))
+		return 0;
 	for (int i = offset_header_length; i < offset_header_length+4; i++) {
 		header_length = (header_length << 8) | data_out[i];
 	}
+	header_length = header_length & 0x00FFFFFF;
 	// printf("inject_http2_packet Header_length %d",header_length);
-	if(data_to_inject_len > data_out_size || proto_offset > data_out_size)
+	if (data_to_inject_len <= 0
+			|| !http2_can_write(proto_offset, (unsigned int) data_to_inject_len, data_out_size))
 		return 0;
 	memcpy(data_out + proto_offset,data_to_inject,data_to_inject_len);
 	return (data_to_inject_len - header_length-9);
 }
 
-int update_stream_id(char *data_out,int proto_offset,uint32_t new_val){
+int update_stream_id(char *data_out,int proto_offset,uint32_t new_val,uint32_t data_out_size){
 
 	int stream_id_offset = proto_offset+5;
-	//printf("update_stream_id  data_out[stream_id_offset] %02hhX \n",data_out[stream_id_offset]);
+	/* issue #204 (F-BUG-057): this helper took no buffer size at all; every
+	 * write/read window below is now checked against data_out_size. */
+	if (!http2_can_write(stream_id_offset, 4, data_out_size))
+		return 0;
 	data_out[stream_id_offset] = new_val>> 24;
 	data_out[stream_id_offset+1] = new_val>> 16;
 	data_out[stream_id_offset+2] = new_val>> 8;
@@ -428,17 +469,24 @@ int update_stream_id(char *data_out,int proto_offset,uint32_t new_val){
 	//printf("update_stream_id  data_out[stream_id_offset] after the modification %02hhX %02hhX %02hhX %02hhX  \n",data_out[stream_id_offset],data_out[stream_id_offset+1],data_out[stream_id_offset+2],data_out[stream_id_offset+3]);
 	int offset_header_length = proto_offset -1;
 	int method_offset = proto_offset+9;
+	if (!http2_can_read(method_offset, 1, data_out_size))
+		return 0;
 	uint8_t method_value = ((uint8_t )  data_out[method_offset]);
 	//int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
 	if(method_value == 131){
-		int header_length = 0;
+		uint32_t header_length = 0;
+		if (!http2_can_read(offset_header_length, 4, data_out_size))
+			return 0;
 		//int header_length =ntohl( *((unsigned int *) & packet->data[offset_header_length]));
 		for (int i = offset_header_length; i < offset_header_length+4; i++) {
 			header_length = (header_length << 8) | data_out[i];
 		}
+		header_length = header_length & 0x00FFFFFF;
 		//printf("update_stream_id header_length %d\n",header_length );
 		int payload_offset = header_length+9+proto_offset;
 		int stream_id_payload_offset = payload_offset+5;
+		if (!http2_can_write(stream_id_payload_offset, 4, data_out_size))
+			return 0;
 		data_out[stream_id_payload_offset]   = new_val >> 24;
 		data_out[stream_id_payload_offset+1] = new_val >> 16;
 		data_out[stream_id_payload_offset+2] = new_val >> 8;
@@ -448,20 +496,27 @@ int update_stream_id(char *data_out,int proto_offset,uint32_t new_val){
 	return 1;
 }
 
-int fuzz_payload(uint8_t*data_out,const ipacket_t*packet,int proto_offset){
+int fuzz_payload(uint8_t*data_out,const ipacket_t*packet,int proto_offset,uint32_t data_out_size){
 	//Go to method field
-	int header_length = 0;
-	int payload_length = 0;
+	uint32_t header_length = 0;
+	uint32_t payload_length = 0;
 	// Get http2 protocol offset
 	int offset_header_length = proto_offset -1;
 
 	const char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;\'///:,.<>/?\\";
+	/* issue #204 (F-BUG-057): both length fields are attacker controlled —
+	 * guard every read and bound the fuzzed write window. */
+	if (!http2_can_read(offset_header_length, 4, data_out_size))
+		return 0;
 	for (int i = offset_header_length; i < offset_header_length+4; i++) {
 		header_length = (header_length << 8) | data_out[i];
 	}
+	header_length = header_length & 0x00FFFFFF;
 	//printf("fuzz_payload header_length %d\n",header_length );
 	int payload_offset = header_length+9+proto_offset-1;
 	//printf("fuzz payload payload_pffset %d\n",payload_offset);
+	if (!http2_can_read(payload_offset, 4, data_out_size))
+		return 0;
 	for (int i = payload_offset; i < payload_offset+4; i++) {
 		payload_length = (payload_length << 8) | data_out[i];
 		//        printf(" data_out[payload_offset]%02hhX  ", data_out[i]);
@@ -470,6 +525,10 @@ int fuzz_payload(uint8_t*data_out,const ipacket_t*packet,int proto_offset){
 	payload_length = payload_length & mask; // put to 0 last byte
 	//printf("fuzz_payload payload_length %d\n",payload_length );
 	payload_offset = payload_offset+ 9+1;
+	/* The loop writes data_out[i] for i in (payload_offset+payload_length/2,
+	 * payload_offset+payload_length] — bound the whole window. */
+	if (!http2_can_write(payload_offset, (unsigned int) payload_length + 1, data_out_size))
+		return 0;
 	//printf("%d \n",data_out[payload_offset]);
 	for(int i = payload_offset+payload_length;i > (int)((payload_offset+(payload_length/2)));i--){
 		int r = rand() % (sizeof(characters)-1);
@@ -504,11 +563,11 @@ int update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *pack
 	switch(att_id){
 
 		case(HTTP2_HEADER_STREAM_ID):
-			update_stream_id(data_out,proto_offset,new_val);
+			update_stream_id(data_out,proto_offset,new_val,data_size);
 			break;
 		
 		case(HTTP2_WINDOW_UPDATE):
-			difference_size = update_window_update(data_out,proto_offset,new_val);
+			difference_size = update_window_update(data_out,proto_offset,new_val,data_size);
 			return difference_size; 
 			break;
 			
@@ -517,13 +576,13 @@ int update_http2_data( char *data_out, uint32_t data_size, const ipacket_t *pack
 			return difference_size; 
 
 		case(HTTP2_PAYLOAD_FUZZ):
-			fuzz_payload((uint8_t*)data_out,packet,proto_offset);
+			fuzz_payload((uint8_t*)data_out,packet,proto_offset,data_size);
 			//printf("[update_http2_data]data_size %d\n",data_size);
-			update_stream_id(data_out,proto_offset,new_val);
+			update_stream_id(data_out,proto_offset,new_val,data_size);
 			break;
 			
 		case(HTTP2_GET_MODIFY):
-			update_stream_id(data_out,proto_offset,new_val);
+			update_stream_id(data_out,proto_offset,new_val,data_size);
 			difference_size = modify_get((uint8_t*)data_out, proto_offset,data_size);
 			return difference_size;
 			break;

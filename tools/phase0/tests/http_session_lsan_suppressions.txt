@@ -1,0 +1,12 @@
+# LeakSanitizer suppressions for http_session_test (issue #204).
+#
+# The harness exists to prove the *HTTP session* allocation paths
+# (requested_uri, header values, session struct) are freed across
+# request replace + session teardown, per F-BUG-053.
+#
+# The only residual report is a pre-existing load-time singleton leak:
+# libmmt_tcpip's constructor _init_proto_avltrees() creates one avltree per
+# protocol and there is no matching destructor. It is independent of the
+# HTTP session path, fires once at library load, and is out of scope for
+# issue #204.
+leak:_init_proto_avltrees

@@ -106,6 +106,23 @@ int http2_stream_id_extraction(const ipacket_t *packet,
 int _http2_classify_next_proto(ipacket_t *ipacket, unsigned index);
 int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index);
 
+/* issue #204 (F-BUG-057): packet-mutation helpers — every one of them now
+ * takes the destination buffer size and refuses out-of-window writes. */
+int update_http2_data(char *data_out, uint32_t data_size,
+        const ipacket_t *packet, uint32_t proto_id, uint32_t att_id,
+        uint32_t new_val);
+int update_stream_id(char *data_out, int proto_offset, uint32_t new_val,
+        uint32_t data_out_size);
+int restore_http2_packet(uint8_t *data_out, const ipacket_t *packet,
+        int proto_offset, uint32_t data_out_size);
+int modify_get(uint8_t *data_out, int proto_offset, uint32_t data_out_size);
+uint32_t update_window_update(char *data_out, int proto_offset,
+        uint32_t modify, uint32_t data_out_size);
+int inject_http2_packet(uint8_t *data_out, uint8_t *data_to_inject,
+        int proto_offset, int data_to_inject_len, uint32_t data_out_size);
+int fuzz_payload(uint8_t *data_out, const ipacket_t *packet, int proto_offset,
+        uint32_t data_out_size);
+
 /* --- http parsing helpers ----------------------------------------------------
  * get_request_method_uri_offset is extern in protocols/http.c;
  * http_request_url_offset is extern in protocols/proto_http.c (http.c also
@@ -113,9 +130,24 @@ int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index);
 int get_request_method_uri_offset(const char *msg, int msg_len, int *method);
 uint16_t http_request_url_offset(ipacket_t *ipacket);
 
+/* issue #204: HTTP session lifecycle + MIME-table invariant (F-BUG-048,
+ * F-BUG-053) exercised by http_session_test.c. The session argument is the
+ * private struct mmt_session_struct — pull it from packet_processing.h. */
+void http_session_data_init(ipacket_t *ipacket, unsigned index);
+void http_session_data_cleanup(mmt_session_t *session, unsigned index);
+int http_session_data_analysis(ipacket_t *ipacket, unsigned index);
+int mmt_http_content_tables_check(void);
+int http_internal_session_data_analysis(ipacket_t *ipacket, unsigned index);
+
 /* --- protocols/rfc2822utils.c ------------------------------------------------ */
 int get_next_white_space_offset_no_limit(const char *str, int max);
 int get_next_non_white_space_offset_no_limit(const char *str, int max);
+/* issue #204: header-line scanner (F-BUG-046), bounded char search
+ * (F-BUG-047), field/value offset helpers feeding F-BUG-052. */
+int get_next_header_line_length(const char *msg, int msg_len, int *code);
+const char *mmt_find_char_instance(const char *str, char char_to_find, int max);
+int get_field_len(const char *str, int line_len);
+int get_value_offset(const char *msg, int line_len);
 
 /* --- mmt_tcpip_utils.c ------------------------------------------------------- */
 void _mmt_parse_packet_line_info(ipacket_t *ipacket);

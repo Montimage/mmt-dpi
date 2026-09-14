@@ -158,12 +158,21 @@ endif
 
 # SHOWLOG = 1 to show all the log from MMT_LOG() ...
 ifdef SHOWLOG
-CFLAGS   += -DDEBUG -DHTTP_PARSER_STRICT=1
-CXXFLAGS += -DDEBUG -DHTTP_PARSER_STRICT=1
-else
-CFLAGS   += -DHTTP_PARSER_STRICT=0
-CXXFLAGS += -DHTTP_PARSER_STRICT=0
+CFLAGS   += -DDEBUG
+CXXFLAGS += -DDEBUG
 endif
+
+# HTTP_PARSER_STRICT — strict-mode checks in the vendored HTTP parser
+# (issue #204, F-BUG-060). This used to be coupled to SHOWLOG, so every
+# release/CI build (no SHOWLOG) silently parsed leniently. It is now its own
+# knob and defaults to 1; pass HTTP_PARSER_STRICT=0 to explicitly opt back
+# into the lenient parser. http_parser.h defaults to 1 when the macro is
+# undefined — keep the two in agreement.
+ifndef HTTP_PARSER_STRICT
+HTTP_PARSER_STRICT := 1
+endif
+CFLAGS   += -DHTTP_PARSER_STRICT=$(HTTP_PARSER_STRICT)
+CXXFLAGS += -DHTTP_PARSER_STRICT=$(HTTP_PARSER_STRICT)
 
 .PHONY: libraries includes tools documentation examples
 

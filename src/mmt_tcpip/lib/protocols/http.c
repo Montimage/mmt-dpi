@@ -278,6 +278,27 @@ void http_session_data_init(ipacket_t * ipacket, unsigned index) {
     ipacket->session->session_data[index] = http_session_data;
 }
 
+/* issue #204 (F-BUG-053): session cleanup for HTTP session data. The struct
+ * owns requested_uri plus one malloc'd value per recognised header field —
+ * without this callback every HTTP session leaked all of them.
+ * session_field_values[].field points at the static http_header_fields[]
+ * strings and must NOT be freed; ->header and ->next are never allocated. */
+void http_session_data_cleanup(mmt_session_t * session, unsigned index) {
+    struct http_session_data_struct *http =
+        (struct http_session_data_struct *) session->session_data[index];
+    int i;
+    if (http == NULL) {
+        return;
+    }
+    mmt_free(http->requested_uri);
+    for (i = 0; i < HTTP_HEADERS_NB; i++) {
+        mmt_free(http->session_field_values[i].value);
+        http->session_field_values[i].value = NULL;
+    }
+    mmt_free(http);
+    session->session_data[index] = NULL;
+}
+
 /**
  * this functions checks whether the packet begins with a valid http request
  * @param msg the received message
@@ -398,6 +419,9 @@ parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //
             int uri_len = get_next_white_space_offset_no_limit((const char*)&ipacket->data[offset + line_first_element_offset], hlen - line_first_element_offset);
             if (uri_len < 0) uri_len = 0;
             http->http_method   = method;
+            /* issue #204 (F-BUG-053): free the previous request's URI before
+             * overwriting the pointer — one leak per request otherwise. */
+            mmt_free(http->requested_uri);
             http->requested_uri = (char *) mmt_malloc(uri_len + 1);
             if (!http->requested_uri) return 0;
             memcpy(http->requested_uri, &ipacket->data[offset + line_first_element_offset], uri_len);
@@ -430,6 +454,13 @@ parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //
 
             field_len = get_field_len((const char*)&ipacket->data[offset + line_first_element_offset], hlen - line_first_element_offset);
 
+            /* issue #204 (F-BUG-052): get_field_len() returns -1 when the
+             * line has no colon; passing that to get_header_id_by_field_name
+             * converted to SIZE_MAX inside mmt_strncasecmp and read past the
+             * field. A zero field length also yields a spurious max=0 match.
+             * Skip malformed lines, mirroring the value_offset validation. */
+            if (field_len <= 0) { offset += hlen; remaining = packet->payload_packet_len - (offset - base_offset); if (remaining < 0) remaining = 0; if (remaining > (int)ipacket->p_hdr->caplen - offset) remaining = (int)ipacket->p_hdr->caplen - offset; if (remaining < 0) remaining = 0; hlen = get_next_header_line_length((const char*)&ipacket->data[offset], remaining, &code); continue; }
+
             header_id = get_header_id_by_field_name((const char*)&ipacket->data[offset + line_first_element_offset], field_len);
 
             if (header_id && value_offset >= 0 && value_offset < hlen) {
@@ -444,6 +475,9 @@ parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //
                 http->session_field_values[header_index].header_len = hlen;
                 http->session_field_values[header_index].value_len  = value_len;
 
+                /* issue #204 (F-BUG-053): a repeated header overwrote the
+                 * previously malloc'd value — free it first. */
+                mmt_free(http->session_field_values[header_index].value);
                 http->session_field_values[header_index].value = (char *) mmt_malloc(value_len + 1);
                 if (!http->session_field_values[header_index].value) { offset += hlen; remaining = packet->payload_packet_len - (offset - base_offset); if (remaining < 0) remaining = 0; if (remaining > (int)ipacket->p_hdr->caplen - offset) remaining = (int)ipacket->p_hdr->caplen - offset; if (remaining < 0) remaining = 0; hlen = get_next_header_line_length((const char*)&ipacket->data[offset], remaining, &code); continue; }
                 memcpy(http->session_field_values[header_index].value,
@@ -493,6 +527,13 @@ int init_http_proto_struct() {
         register_classification_function(protocol_struct, NULL);
         register_session_data_initialization_function(protocol_struct, http_session_data_init);
         register_session_data_analysis_function(protocol_struct, http_session_data_analysis);
+        /* issue #204 (F-BUG-053): free HTTP session data at session teardown. */
+        register_session_data_cleanup_function(protocol_struct, http_session_data_cleanup);
+        /* issue #204 (F-BUG-048): assert the MIME tables' min_len >= cmp_len
+         * invariant before the protocol can be used. */
+        if (mmt_http_content_tables_check() != 0) {
+            return 0;
+        }
 
         return register_protocol(protocol_struct, PROTO_HTTP);
     } else {
@@ -671,7 +712,12 @@ static const struct mmt_content_type_entry mmt_text_table[] = {
     MMT_CT_ENTRY("text/csv", MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_CSV),
     MMT_CT_ENTRY("text/html", MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_HTML),
     MMT_CT_ENTRY("text/javascript", MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_JAVASCRIPT),
-    { "text/plain", 10, 9, MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_PLAIN },
+    /* issue #204 (F-BUG-048): this row used to be { "text/plain", 10, 9, ... }
+     * (min_len 9 < cmp_len 10), so a 9-byte Content-Type value passed the
+     * length guard and the 10-byte memcmp read one byte past it. Every row
+     * must satisfy min_len >= cmp_len — enforced at init by
+     * mmt_http_content_tables_check(). */
+    MMT_CT_ENTRY("text/plain", MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_PLAIN),
     MMT_CT_ENTRY("text/vcard", MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_VCARD),
     MMT_CT_ENTRY("text/xml", MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_XML),
     MMT_CT_ENTRY("text/x-gwt-rpc", MMT_CONTENT_FAMILY_TEXT, MMT_CONTENT_TYPE_X_GWT_RPC),
@@ -706,6 +752,60 @@ static const struct mmt_content_type_entry mmt_misc_table[] = {
     MMT_CT_ENTRY("flv-application/octet-stream", MMT_CONTENT_FAMILY_VIDEO, MMT_CONTENT_TYPE_X_FLV),
 };
 #endif
+
+/*
+ * issue #204 (F-BUG-048): the match loop only guarantees
+ * content_line.len >= min_len bytes before comparing cmp_len of them, so
+ * any row with min_len < cmp_len reads past the captured value. Verify the
+ * invariant for every row of every table; returns the number of offending
+ * rows (0 = tables are safe). Exposed (non-static) so the phase0 regression
+ * test can exercise it directly.
+ */
+static inline int mmt_http_check_table(const struct mmt_content_type_entry *table, size_t n) {
+    size_t i;
+    int bad = 0;
+    for (i = 0; i < n; i++) {
+        const struct mmt_content_type_entry *e = &table[i];
+        if (e->min_len < e->cmp_len || e->cmp_len > strlen(e->mime)) {
+            fprintf(stderr, "mmt_http: MIME table row '%s' has min_len=%u < cmp_len=%u (or cmp_len > mime length)\n",
+                    e->mime, (unsigned) e->min_len, (unsigned) e->cmp_len);
+            bad++;
+        }
+    }
+    return bad;
+}
+
+int mmt_http_content_tables_check(void) {
+    int bad = 0;
+#ifdef MMT_CONTENT_FAMILY_APPLICATION
+    bad += mmt_http_check_table(mmt_application_table, sizeof(mmt_application_table)/sizeof(mmt_application_table[0]));
+#endif
+#ifdef MMT_CONTENT_FAMILY_AUDIO
+    bad += mmt_http_check_table(mmt_audio_table, sizeof(mmt_audio_table)/sizeof(mmt_audio_table[0]));
+#endif
+#ifdef MMT_CONTENT_FAMILY_IMAGE
+    bad += mmt_http_check_table(mmt_image_table, sizeof(mmt_image_table)/sizeof(mmt_image_table[0]));
+#endif
+#ifdef MMT_CONTENT_FAMILY_MESSAGE
+    bad += mmt_http_check_table(mmt_message_table, sizeof(mmt_message_table)/sizeof(mmt_message_table[0]));
+#endif
+#ifdef MMT_CONTENT_FAMILY_MODEL
+    bad += mmt_http_check_table(mmt_model_table, sizeof(mmt_model_table)/sizeof(mmt_model_table[0]));
+#endif
+#ifdef MMT_CONTENT_FAMILY_MULTIPART
+    bad += mmt_http_check_table(mmt_multipart_table, sizeof(mmt_multipart_table)/sizeof(mmt_multipart_table[0]));
+#endif
+#ifdef MMT_CONTENT_FAMILY_TEXT
+    bad += mmt_http_check_table(mmt_text_table, sizeof(mmt_text_table)/sizeof(mmt_text_table[0]));
+#endif
+#ifdef MMT_CONTENT_FAMILY_VIDEO
+    bad += mmt_http_check_table(mmt_video_table, sizeof(mmt_video_table)/sizeof(mmt_video_table[0]));
+#endif
+#ifdef MMT_CONTENT_FAMILY_MISC
+    bad += mmt_http_check_table(mmt_misc_table, sizeof(mmt_misc_table)/sizeof(mmt_misc_table[0]));
+#endif
+    return bad;
+}
 
 static inline void check_packet_contents(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -814,8 +914,11 @@ static inline void qq_parse_packet_URL_and_hostname(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     uint32_t a;
 
+    /* issue #204 (F-BUG-050): host_line.len is uint16_t — subtracting 6 when
+     * len < 6 wraps to ~65530 and reads wild memory (and a NULL host ptr
+     * crashes). The length guard was commented out; restore it. */
     if (packet->payload_packet_len < 100 ||
-            /*mmt_memcmp(&packet->payload[4], "/qzone", 6) != 0 || packet->host_line.len < 7 || */
+            /*mmt_memcmp(&packet->payload[4], "/qzone", 6) != 0 ||*/ packet->host_line.len < 7 ||
             mmt_memcmp(&packet->host_line.ptr[packet->host_line.len - 6], "qq.com", 6) != 0) {
 
         MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "did not find QQ.\n");
@@ -902,7 +1005,11 @@ static inline void flash_check_http_payload(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     const uint8_t *pos;
 
-    if (packet->empty_line_position_set == 0 || (packet->empty_line_position + 10) > (packet->payload_packet_len))
+    /* issue #204 (F-BUG-051): pos = payload + empty_line_position + 2 and the
+     * signature reads pos[0..8], i.e. up to payload[empty_line_position+10].
+     * The old `+10 > len` guard admitted the exact-end case and read one
+     * byte past the payload. Require the full 11-byte window. */
+    if (packet->empty_line_position_set == 0 || (packet->empty_line_position + 10) >= (packet->payload_packet_len))
         return;
 
     pos = &packet->payload[packet->empty_line_position] + 2;
@@ -1014,10 +1121,12 @@ static inline void move_parse_packet_contentline(ipacket_t * ipacket) {
 static inline void ogg_parse_packet_contentline(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
-    if ((packet->content_line.len == 15 || packet->content_line.len == 9)
-            && (mmt_memcmp(packet->content_line.ptr, "application/ogg", 15) == 0
-            || mmt_memcmp(packet->content_line.ptr, "video/ogg", 9) == 0
-            || mmt_memcmp(packet->content_line.ptr, "audio/ogg", 9) == 0)) {
+    /* issue #204 (F-BUG-049): pair each accepted length with its own
+     * comparison — the old code ran the 15-byte "application/ogg" memcmp
+     * even when content_line.len was 9, reading 6 bytes past the value. */
+    if ((packet->content_line.len == 15 && mmt_memcmp(packet->content_line.ptr, "application/ogg", 15) == 0)
+            || (packet->content_line.len == 9 && mmt_memcmp(packet->content_line.ptr, "video/ogg", 9) == 0)
+            || (packet->content_line.len == 9 && mmt_memcmp(packet->content_line.ptr, "audio/ogg", 9) == 0)) {
         MMT_LOG(PROTO_OGG, MMT_LOG_DEBUG, "OGG application detected\n");
         mmt_int_http_add_connection(ipacket, PROTO_OGG);
     }
