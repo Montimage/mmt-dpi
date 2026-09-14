@@ -173,18 +173,46 @@ validate_skip_deps "$SKIP_DEPS"
 COMMON_FILE=""   # path of the sourced mmt-install-common.sh, empty until then
 ELEVATED=0       # set to 1 when the install step needed privilege escalation
 
-# prefix_writable(): true when the current user can create/write inside the
-# prefix — walks to the nearest existing ancestor and tests it. The canonical
-# copy lives in dist/ZIP/mmt-install-common.sh and overwrites this one when
-# sourced; a local copy is still needed because `curl | bash` has no repo
-# file beside the script, --dry-run never reaches the clone, and a clone of
-# the pinned release tag may predate the helper (issue #211).
+# prefix_writable() and validate_mmt_base() below are local fallbacks: the
+# canonical copies live in dist/ZIP/mmt-install-common.sh and overwrite these
+# when sourced — tests/installer asserts the two stay byte-identical. Local
+# copies are still needed because `curl | bash` has no repo file beside the
+# script, --dry-run never reaches the clone, and a clone of the pinned release
+# tag predates the common file entirely (v1.8.0 ships no
+# dist/ZIP/mmt-install-common.sh — issue #211).
 prefix_writable() {
     local p="$1"
     while [ ! -e "$p" ]; do
         p="$(dirname -- "$p")"
     done
     [ -w "$p" ]
+}
+
+# Fallback copy of dist/ZIP/mmt-install-common.sh's validator — keep identical
+# (the installer suite diffs the two definitions).
+validate_mmt_base() {
+    local p="$1"
+    if [ -z "$p" ] || [ ${#p} -gt 256 ]; then
+        echo "ERROR: MMT_BASE must be 1-256 characters" >&2; return 1
+    fi
+    if [[ "$p" != /* ]]; then
+        echo "ERROR: MMT_BASE must be an absolute path: $p" >&2; return 1
+    fi
+    if [ "$p" = "/" ]; then
+        echo "ERROR: MMT_BASE must not be /" >&2; return 1
+    fi
+    if [[ "$p" == *".."* ]]; then
+        echo "ERROR: MMT_BASE must not contain .. : $p" >&2; return 1
+    fi
+    # Allowlist: path components may only contain [A-Za-z0-9._-] — every
+    # metacharacter, whitespace and control character is rejected by
+    # construction rather than by an incomplete blacklist.
+    if [[ ! "$p" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+        echo "ERROR: MMT_BASE contains characters outside [A-Za-z0-9._/-]: $p" >&2; return 1
+    fi
+    if [[ "$p" == */ ]]; then
+        echo "ERROR: MMT_BASE must not have trailing slash: $p" >&2; return 1
+    fi
 }
 
 load_common_defs() {
@@ -199,9 +227,9 @@ _INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && p
 if [ -n "$_INSTALLER_DIR" ] && [ -f "$_INSTALLER_DIR/install.sh" ]; then
     load_common_defs "$_INSTALLER_DIR/dist/ZIP/mmt-install-common.sh" || true
 fi
-if [ -n "$COMMON_FILE" ]; then
-    validate_mmt_base "$MMT_BASE" || exit 1
-fi
+# Always validate the prefix up front — the local fallback exists even when no
+# common file was sourced, so this also covers `curl | bash -s -- --dry-run`.
+validate_mmt_base "$MMT_BASE" || exit 1
 
 # Auto-detect parallelism
 if [ -z "${JOBS:-}" ]; then
@@ -587,13 +615,12 @@ main() {
 
     # curl|bash path: the shared definitions were not next to this script —
     # take them from the clone (commit-pinned and signature-checked when
-    # REF_KIND=tag). Validate the prefix before it is ever used.
+    # REF_KIND=tag) when the file exists there. The pinned release tag
+    # predates dist/ZIP/mmt-install-common.sh entirely, so a missing file is
+    # not fatal — the identical local fallbacks defined above are used.
     if [ -z "$COMMON_FILE" ]; then
-        load_common_defs "$BUILD_DIR/mmt-dpi/dist/ZIP/mmt-install-common.sh" \
-            || fatal "shared install definitions missing from clone: dist/ZIP/mmt-install-common.sh"
+        load_common_defs "$BUILD_DIR/mmt-dpi/dist/ZIP/mmt-install-common.sh" || true
     fi
-    declare -f validate_mmt_base >/dev/null 2>&1 \
-        || fatal "shared install file provides no MMT_BASE validator"
     validate_mmt_base "$MMT_BASE" || exit 1
 
     build

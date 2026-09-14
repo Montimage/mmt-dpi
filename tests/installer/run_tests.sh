@@ -3,8 +3,10 @@
 # run_tests.sh — regression suite for issue #211
 # (F-BUG-104, F-BUG-105, F-BUG-116, F-BUG-117, F-BUG-121):
 #
-#   * the install prefix validator is a single allowlist definition in
-#     dist/ZIP/mmt-install-common.sh, sourced by the root install.sh too;
+#   * the install prefix validator is an allowlist defined canonically in
+#     dist/ZIP/mmt-install-common.sh; the root install.sh carries a
+#     byte-identical fallback for `curl | bash` runs whose pinned clone
+#     predates the common file (v1.8.0 ships none);
 #   * install.sh elevates by prefix writability (not the /opt/mmt literal)
 #     and only runs ldconfig when it installed with elevation;
 #   * tools/ci/build-package.sh supports --dry-run, clears dist/packages/
@@ -67,14 +69,20 @@ done
 check "validator is an allowlist (no blacklist glob left)" \
     bash -c "grep -q 'A-Za-z0-9._/-' '${REPO_ROOT}/dist/ZIP/mmt-install-common.sh'"
 
-# --- 2. One shared definition, sourced by the root installer ---------------
-echo "--- single validator definition (dedupe) ---"
-check "install.sh defines no validator of its own" \
-    bash -c "! grep -cE '^[[:space:]]*validate_mmt_base[[:space:]]*\(\)' '${REPO_ROOT}/install.sh' >/dev/null"
-check "install.sh sources mmt-install-common.sh" \
+# --- 2. Canonical definition in the shared file; install.sh carries an ------
+#      identical local fallback (sourced copy wins when present). The fallback
+#      exists because `curl | bash` clones the pinned v1.8.0 tag, which ships
+#      no dist/ZIP/mmt-install-common.sh at all — the diff check is what keeps
+#      the two copies from drifting (issue #211, F-BUG-121).
+echo "--- shared validator + install.sh fallback (dedupe) ---"
+check "shared file defines the canonical validator" \
+    bash -c "grep -q '^validate_mmt_base()' '${REPO_ROOT}/dist/ZIP/mmt-install-common.sh'"
+check "install.sh fallback is identical to the shared definition" \
+    bash -c "diff -q <(sed -n '/^validate_mmt_base()/,/^}/p' '${REPO_ROOT}/install.sh') <(sed -n '/^validate_mmt_base()/,/^}/p' '${REPO_ROOT}/dist/ZIP/mmt-install-common.sh') >/dev/null"
+check "install.sh sources mmt-install-common.sh when present" \
     grep -q 'mmt-install-common\.sh' "${REPO_ROOT}/install.sh"
-check "AC diff: only one definition exists" \
-    bash -c "diff -q <(sed -n '/validate_prefix/,/^}/p' '${REPO_ROOT}/install.sh') <(sed -n '/validate_prefix/,/^}/p' '${REPO_ROOT}/dist/ZIP/mmt-install-common.sh') >/dev/null"
+check "clone lacking the common file is not fatal (local fallback)" \
+    bash -c "grep -qF 'load_common_defs \"\$BUILD_DIR/mmt-dpi/dist/ZIP/mmt-install-common.sh\" || true' '${REPO_ROOT}/install.sh'"
 
 # --- 3. Root installer: --prefix, writability-based elevation --------------
 echo "--- install.sh CLI and elevation ---"
@@ -94,6 +102,14 @@ check_fail "install.sh rejects metachar prefix" \
     bash "${REPO_ROOT}/install.sh" --prefix '/tmp/x;id' --dry-run
 check "ldconfig gated on elevation" \
     bash -c "awk '/^post_install/,/^}/' '${REPO_ROOT}/install.sh' | grep -q 'ELEVATED.*=.*1'"
+# Standalone copy (no sibling repo files): exercises the `curl | bash` shape —
+# the local fallback validator must run even with no common file beside the
+# script, and a bad prefix must still be refused before any clone.
+SA="${WORK}/standalone"; mkdir -p "$SA"; cp "${REPO_ROOT}/install.sh" "$SA/"
+check "install.sh runs standalone (no sibling repo files)" \
+    bash -c "cd '${SA}' && bash install.sh --prefix '${WORK}/sa-prefix' --dry-run"
+check_fail "standalone run still rejects a metachar prefix" \
+    bash -c "cd '${SA}' && bash install.sh --prefix '/tmp/x;id' --dry-run"
 
 # --- 4. build-package.sh: --dry-run + tracked artifact ---------------------
 echo "--- build-package.sh ---"
