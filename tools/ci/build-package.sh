@@ -145,7 +145,7 @@ fi
 # objdump -p reports for the shipped .so files, and fail the build on any
 # divergence. This is the CI leg of that contract.
 log "Verifying declared dependencies match the shipped libraries"
-for f in dist/packages/*."$PKG_TYPE"; do
+for f in "${artifacts[@]}"; do
   bash tools/ci/check-package-deps.sh --verify-package "$f"
 done
 

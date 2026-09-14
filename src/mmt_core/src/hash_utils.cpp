@@ -362,13 +362,19 @@ extern "C" int delete_int_key_value(void * maplist, uint32_t key) {
 
 extern "C" int delete_session_from_protocol_context(void * protocol_context, void * key) {
     try {
-        if (protocol_context == NULL) return 0;
+        // F-BUG-001 (issue #199): early-out on a missing or dead table,
+        // mirroring the not-found return of the old delete_key_value.
+        if (protocol_context == NULL) return 1;
         mmt_session_table * t = reinterpret_cast<mmt_session_table *>(((protocol_instance_t *) protocol_context)->sessions_map);
-        if (t == NULL || t->slots == NULL || t->cap == 0) return 0;
+        if (t == NULL || t->slots == NULL || t->cap == 0) return 1;
         size_t mask = t->cap - 1;
         size_t i = (size_t) t->hash_of(key) & mask;
         void * k;
-        while ((k = t->slots[i].key) != MMT_SLOT_EMPTY) {
+        // Bounded probe: a table whose slots are all TOMB/non-empty must not
+        // loop forever looking for an EMPTY terminator.
+        for (size_t n = 0; n < t->cap; n++) {
+            k = t->slots[i].key;
+            if (k == MMT_SLOT_EMPTY) break;
             if (k != MMT_SLOT_TOMB && t->key_equal(k, key)) {
                 // Tombstone the slot: a probe sequence may run through it, so it
                 // cannot be reset to EMPTY (that would truncate later lookups).
@@ -572,7 +578,12 @@ extern "C" int update_session_timeout_milestone(mmt_handler_t *mmt_handler, uint
                     session->next->previous = NULL;
                 }
             } else {
-                session->previous->next = session->next;
+                // F-BUG-011 (issue #199): a session that is not the milestone
+                // head should be mid-list, but a session that was never linked
+                // has previous == NULL — never dereference it.
+                if (session->previous != NULL) {
+                    session->previous->next = session->next;
+                }
                 if (session->next != NULL) {
                     session->next->previous = session->previous;
                 }
@@ -604,7 +615,11 @@ extern "C" int force_session_timeout(mmt_handler_t *mmt_handler, mmt_session_t *
                     session->next->previous = NULL;
                 }
             } else {
-                session->previous->next = session->next;
+                // F-BUG-011 (issue #199): same unlink guard — previous may be
+                // NULL for a session never linked into this milestone's list.
+                if (session->previous != NULL) {
+                    session->previous->next = session->next;
+                }
                 if (session->next != NULL) {
                     session->next->previous = session->previous;
                 }

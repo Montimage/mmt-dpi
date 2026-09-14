@@ -5,6 +5,18 @@
 
 #include "ndn.h"
 
+uint32_t ndn_effective_payload_len(const ipacket_t *ipacket, unsigned proto_index, int offset){
+    uint32_t avail = 0;
+    if( offset >= 0 && (size_t)offset < ipacket->p_hdr->caplen )
+        avail = (uint32_t)(ipacket->p_hdr->caplen - (size_t)offset);
+    // NDN over Ethernet: payload runs to the end of the captured frame
+    if( proto_index == 2 )
+        return avail;
+    // NDN over TCP: IP-derived payload length clamped to captured bytes
+    uint32_t len = ipacket->internal_packet->payload_packet_len;
+    return ( len > avail ) ? avail : len;
+}
+
 int ndn_TLV_check_type(int type){
 
     // 01 - ImplicitSha256DigestComponent

@@ -166,23 +166,23 @@ rules/common.mk:100-127	^# BUILD=asan to compile with AddressSanitizer	^endif	th
 rules/common.mk:120-127	^ifeq \(\$\(BUILD\),asan\)	^endif	the ASan+UBSan flag set the suites mirror	\-fsanitize=address,undefined
 rules/common.mk:129-157	^# BUILD=tsan to compile with ThreadSanitizer	^endif	the BUILD=tsan profile is defined here	\-fsanitize=thread
 rules/common.mk:150-157	^ifeq \(\$\(BUILD\),tsan\)	^endif	the TSan flag set the suites mirror	\-fsanitize=thread
-rules/common.mk:159-174	^# SHOWLOG = 1	^endif	SHOWLOG=1 enables MMT_LOG() output
-rules/common.mk:197-199	^ifdef ENABLESEC	^endif	ENABLESEC selects the fuzz include directory	SDKINC_FUZZ
-rules/common.mk:221-224	^ifdef ENABLESEC	^endif	ENABLESEC names the two optional libraries	LIBSECURITY
-rules/common.mk:247-261	^# Extra diagnostic warnings	^MMT_WARN_FLAGS \?=	extra diagnostics are deliberately not -Werror	NOT -Werror
-rules/common.mk:296-305	^ifdef ENABLESEC	^endif	ENABLESEC selects the engine objects	SECURITY_OBJECTS
-rules/common.mk:443-445	^%\.o: %\.c	\$\(CC\) \$\(CFLAGS\)	object rules depend on source timestamps only
+rules/common.mk:159-171	^# SHOWLOG = 1	^endif	SHOWLOG=1 enables MMT_LOG() output
+rules/common.mk:206-208	^ifdef ENABLESEC	^endif	ENABLESEC selects the fuzz include directory	SDKINC_FUZZ
+rules/common.mk:230-233	^ifdef ENABLESEC	^endif	ENABLESEC names the two optional libraries	LIBSECURITY
+rules/common.mk:256-270	^# Extra diagnostic warnings	^MMT_WARN_FLAGS \?=	extra diagnostics are deliberately not -Werror	NOT -Werror
+rules/common.mk:315-318	^ifdef ENABLESEC	^endif	ENABLESEC selects the engine objects	SECURITY_OBJECTS
+rules/common.mk:456-458	^%\.o: %\.c	\$\(CC\) \$\(CFLAGS\)	object rules depend on source timestamps only
 sdk/Makefile:8-13	^ifdef MMT_BASE	^endif	an unset MMT_BASE targets /opt/mmt and needs root	NEED_ROOT_PERMISSION
 sdk/Makefile:28-29	^--refresh-plugin-engine:	plugins_engine\.o	changing MMT_BASE forces plugins_engine.o to recompile
 sdk/Makefile:53-59	ln -sf .*libmmt_core\.so	ln -sf .*LIBDICOM	make install creates the unversioned .so symlinks	LIBMOBILE
 sdk/Makefile:54-55	ln -sf .*libmmt_fuzz\.so	ln -sf .*libmmt_security\.so	install symlinks both ENABLESEC engines
 sdk/Makefile:140-141	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dist tree symlinks both ENABLESEC engines
-sdk/Makefile:301-307	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
+sdk/Makefile:301-306	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
 tests/run_all_tests.sh:8-98	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
 tests/run_all_tests.sh:86-89	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled
-tests/run_all_tests.sh:155-169	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	installer
-tests/run_all_tests.sh:182-284	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
-tests/run_all_tests.sh:286-302	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
+tests/run_all_tests.sh:155-172	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	installer
+tests/run_all_tests.sh:185-287	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
+tests/run_all_tests.sh:289-305	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
 CITATIONS
 
 registered="$(printf '%s' "$registered" | grep -v '^$' | sort -u)"

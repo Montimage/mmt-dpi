@@ -78,7 +78,7 @@ make -C sdk -j$(nproc)
 
 Exit code `0` = green build. Warnings in the output (e.g. from vendored asn1c
 code) are informational; extra diagnostic warnings are deliberately not
-`-Werror` (`rules/common.mk:247-261`), so they never fail the build.
+`-Werror` (`rules/common.mk:256-270`), so they never fail the build.
 
 The build produces versioned shared libraries and static archives under
 `sdk/lib/` (`libmmt_core.so.$(VERSION)`, `libmmt_tcpip.so.$(VERSION)`,
@@ -103,7 +103,7 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 |------|--------|--------|
 | `DEBUG=1` | `-g` instead of `-O3`; asserts/debug() stay active | `rules/common.mk:87-93` |
 | `NDEBUG=1` | Keep debug/assert active (suppress `-DNDEBUG`; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
-| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-174` |
+| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-171` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
 | `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:149-157` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
@@ -119,11 +119,13 @@ bash tests/run_all_tests.sh
 ```
 
 Expected result: **16/16 suites pass**, total runtime roughly **60–100 s** on
-a typical development machine (the suites compile their own sources, so the
+a typical development machine (measured: 77 s for the full run); the suites
+compile their own sources, so the
 wall clock is dominated by `gcc`, not by the assertions; `fault_injection`
 also builds+installs the SDK once for its engine leg). Exit code `0` on
 success, `1` on any failure. The runner has no `-j` option: the 16 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
+(`tests/run_all_tests.sh:155-172`)
 (`tests/run_all_tests.sh`):
 `hashmap`, `memory`, `fault_injection`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`,
 `avltree`, `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
@@ -163,7 +165,7 @@ skipped — the runner exits non-zero (issue #186).
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count and `tests/coverage/summary.json`
-  in stdout (`tests/run_all_tests.sh:182-284`). Requires `gcov` (shipped with
+  in stdout (`tests/run_all_tests.sh:185-287`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` via
   `tools/ci/check-coverage-floor.sh`.
@@ -171,7 +173,7 @@ skipped — the runner exits non-zero (issue #186).
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:286-302`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:289-305`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -194,7 +196,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:301-307`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:301-306`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -236,7 +238,7 @@ Two verification profiles exist in `rules/common.mk` (both add flags to
 
 > **⚠ Always `make -C sdk clean` before switching build profiles.**
 > *(This warning is the single source for the rule; other documents link here.)*
-> Object rules depend on source timestamps only (`rules/common.mk:443-445`) —
+> Object rules depend on source timestamps only (`rules/common.mk:456-458`) —
 > changing `BUILD=` does *not* invalidate existing `.o` files, so building
 > `BUILD=asan` on top of a plain tree relinks sanitized `.so` files from
 > non-instrumented objects and reports success. Clean first, then build the
@@ -286,9 +288,9 @@ symbols are intentionally left undefined (`rules/common-linux.mk:202-214`).
 `ENABLESEC` gates two optional libraries — `libmmt_security` and
 `libmmt_fuzz` — which are otherwise not built at all:
 
-- Object/header selection: `rules/common.mk:197-199, 221-224, 296-305`
+- Object/header selection: `rules/common.mk:206-208, 230-233, 315-318`
 - Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 215-218, 226-230, 263-279`
-- Install symlinks for both engines: `sdk/Makefile:54-55, 137-138`
+- Install symlinks for both engines: `sdk/Makefile:54-55, 140-141`
 
 Usage (requires `libxml2-dev`):
 
