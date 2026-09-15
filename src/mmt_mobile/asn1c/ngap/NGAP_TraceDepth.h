@@ -37,20 +37,20 @@ typedef long	 NGAP_TraceDepth_t;
 /* Implementation */
 extern asn_per_constraints_t asn_PER_type_NGAP_TraceDepth_constr_1;
 extern asn_TYPE_descriptor_t asn_DEF_NGAP_TraceDepth;
-extern const asn_INTEGER_specifics_t asn_SPC_NGAP_TraceDepth_specs_1;
-asn_struct_free_f NGAP_TraceDepth_free;
-asn_struct_print_f NGAP_TraceDepth_print;
-asn_constr_check_f NGAP_TraceDepth_constraint;
-ber_type_decoder_f NGAP_TraceDepth_decode_ber;
-der_type_encoder_f NGAP_TraceDepth_encode_der;
-xer_type_decoder_f NGAP_TraceDepth_decode_xer;
-xer_type_encoder_f NGAP_TraceDepth_encode_xer;
-oer_type_decoder_f NGAP_TraceDepth_decode_oer;
-oer_type_encoder_f NGAP_TraceDepth_encode_oer;
-per_type_decoder_f NGAP_TraceDepth_decode_uper;
-per_type_encoder_f NGAP_TraceDepth_encode_uper;
-per_type_decoder_f NGAP_TraceDepth_decode_aper;
-per_type_encoder_f NGAP_TraceDepth_encode_aper;
+extern const asn_INTEGER_specifics_t asn_SPC_TraceDepth_specs_1;
+asn_struct_free_f TraceDepth_free;
+asn_struct_print_f TraceDepth_print;
+asn_constr_check_f TraceDepth_constraint;
+ber_type_decoder_f TraceDepth_decode_ber;
+der_type_encoder_f TraceDepth_encode_der;
+xer_type_decoder_f TraceDepth_decode_xer;
+xer_type_encoder_f TraceDepth_encode_xer;
+oer_type_decoder_f TraceDepth_decode_oer;
+oer_type_encoder_f TraceDepth_encode_oer;
+per_type_decoder_f TraceDepth_decode_uper;
+per_type_encoder_f TraceDepth_encode_uper;
+per_type_decoder_f TraceDepth_decode_aper;
+per_type_encoder_f TraceDepth_encode_aper;
 
 #ifdef __cplusplus
 }

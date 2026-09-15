@@ -58,7 +58,7 @@ asn_TYPE_descriptor_t asn_DEF_NULL = {
 asn_enc_rval_t
 NULL_encode_der(const asn_TYPE_descriptor_t *td, const void *ptr, int tag_mode,
                 ber_tlv_tag_t tag, asn_app_consume_bytes_f *cb, void *app_key) {
-    asn_enc_rval_t erval;
+	asn_enc_rval_t erval = {0,0,0};
 
 	erval.encoded = der_write_tags(td, 0, tag_mode, 0, tag, cb, app_key);
 	if(erval.encoded == -1) {
@@ -73,7 +73,7 @@ asn_enc_rval_t
 NULL_encode_xer(const asn_TYPE_descriptor_t *td, const void *sptr, int ilevel,
                 enum xer_encoder_flags_e flags, asn_app_consume_bytes_f *cb,
                 void *app_key) {
-    asn_enc_rval_t er;
+	asn_enc_rval_t er = {0,0,0};
 
 	(void)td;
 	(void)sptr;
@@ -164,7 +164,7 @@ asn_enc_rval_t
 NULL_encode_oer(const asn_TYPE_descriptor_t *td,
                 const asn_oer_constraints_t *constraints, const void *sptr,
                 asn_app_consume_bytes_f *cb, void *app_key) {
-    asn_enc_rval_t er;
+    asn_enc_rval_t er = {0,0,0};
 
     (void)td;
     (void)sptr;
@@ -215,7 +215,7 @@ asn_enc_rval_t
 NULL_encode_uper(const asn_TYPE_descriptor_t *td,
                  const asn_per_constraints_t *constraints, const void *sptr,
                  asn_per_outp_t *po) {
-    asn_enc_rval_t er;
+	asn_enc_rval_t er = {0,0,0};
 
 	(void)td;
 	(void)constraints;
@@ -230,7 +230,7 @@ asn_dec_rval_t
 NULL_decode_aper(const asn_codec_ctx_t *opt_codec_ctx,
                  const asn_TYPE_descriptor_t *td,
                  const asn_per_constraints_t *constraints, void **sptr, asn_per_data_t *pd) {
-	asn_dec_rval_t rv;
+	asn_dec_rval_t rv = {RC_OK, 0};
 
 	(void)opt_codec_ctx;
 	(void)td;
@@ -260,7 +260,7 @@ asn_enc_rval_t
 NULL_encode_aper(const asn_TYPE_descriptor_t *td,
                  const asn_per_constraints_t *constraints,
                  const void *sptr, asn_per_outp_t *po) {
-	asn_enc_rval_t er;
+	asn_enc_rval_t er = {0,0,0};
 
 	(void)td;
 	(void)constraints;

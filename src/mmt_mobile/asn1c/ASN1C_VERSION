@@ -1,0 +1,19 @@
+# Pinned asn1c toolchain for regenerating this tree (issue #223).
+#
+# Single machine-readable source of truth for the generator version:
+# .github/workflows/asn1c-regen.yml sources this file, rebuilds the exact
+# toolchain below and re-runs the gen-s1ap/gen-ngap targets, failing the
+# job when the regenerated output drifts from the committed tree.
+#
+# The pin is mouse07410/asn1c @ dbd0ed09, which reports
+# "ASN.1 Compiler, v0.9.29" — the version string embedded in every
+# generated file header. It is the last first-parent commit on the
+# vlm_master branch before the 2020-07-07 upstream merge (8ac149d3):
+# the newest revision that still accepts the -gen-PER flag used by the
+# recipe (removed at b5ed2c1f when PER split into -gen-UPER/-gen-APER)
+# while emitting the ASN1C_PREFIX-based naming used by ngap/.
+ASN1C_REPO=mouse07410/asn1c
+ASN1C_REF=dbd0ed0983a7b412ada27cb279f7823dcb381e80
+ASN1C_REF_NAME=vlm_master
+ASN1C_VERSION=0.9.29
+ASN1C_TARBALL_SHA256=eb67ca6a2fab71d0be5d0be77e231c027c61119ba10a9ce7e6330c844dc17c28

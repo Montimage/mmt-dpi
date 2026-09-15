@@ -561,7 +561,8 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_UERadioCapabilityInfoIndication.c	\
 	./common/NGAP_UERadioCapabilityCheckRequest.c	\
 	./common/NGAP_UERadioCapabilityCheckResponse.c	\
-	./common/NGAP_PrivateMessage.c
+	./common/NGAP_PrivateMessage.c	\
+	./common/NGAP_EXTERNAL.c
 
 ASN_MODULE_HDRS=	\
 	./common/NGAP_Criticality.h	\
@@ -1126,7 +1127,8 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_UERadioCapabilityInfoIndication.h	\
 	./common/NGAP_UERadioCapabilityCheckRequest.h	\
 	./common/NGAP_UERadioCapabilityCheckResponse.h	\
-	./common/NGAP_PrivateMessage.h
+	./common/NGAP_PrivateMessage.h	\
+	./common/NGAP_EXTERNAL.h
 
 ASN_MODULE_HDRS+=./common/ANY.h
 ASN_MODULE_SRCS+=./common/ANY.c
@@ -1134,6 +1136,8 @@ ASN_MODULE_HDRS+=./common/OCTET_STRING.h
 ASN_MODULE_HDRS+=./common/OPEN_TYPE.h
 ASN_MODULE_SRCS+=./common/OPEN_TYPE.c
 ASN_MODULE_HDRS+=./common/constr_CHOICE.h
+ASN_MODULE_HDRS+=./common/GraphicString.h
+ASN_MODULE_SRCS+=./common/GraphicString.c
 ASN_MODULE_HDRS+=./common/INTEGER.h
 ASN_MODULE_SRCS+=./common/INTEGER.c
 ASN_MODULE_HDRS+=./common/NativeEnumerated.h
@@ -1142,6 +1146,8 @@ ASN_MODULE_HDRS+=./common/NativeInteger.h
 ASN_MODULE_SRCS+=./common/NativeInteger.c
 ASN_MODULE_HDRS+=./common/OBJECT_IDENTIFIER.h
 ASN_MODULE_SRCS+=./common/OBJECT_IDENTIFIER.c
+ASN_MODULE_HDRS+=./common/ObjectDescriptor.h
+ASN_MODULE_SRCS+=./common/ObjectDescriptor.c
 ASN_MODULE_HDRS+=./common/PrintableString.h
 ASN_MODULE_SRCS+=./common/PrintableString.c
 ASN_MODULE_HDRS+=./common/asn_SEQUENCE_OF.h

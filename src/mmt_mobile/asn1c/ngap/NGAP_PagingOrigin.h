@@ -32,20 +32,20 @@ typedef long	 NGAP_PagingOrigin_t;
 /* Implementation */
 extern asn_per_constraints_t asn_PER_type_NGAP_PagingOrigin_constr_1;
 extern asn_TYPE_descriptor_t asn_DEF_NGAP_PagingOrigin;
-extern const asn_INTEGER_specifics_t asn_SPC_NGAP_PagingOrigin_specs_1;
-asn_struct_free_f NGAP_PagingOrigin_free;
-asn_struct_print_f NGAP_PagingOrigin_print;
-asn_constr_check_f NGAP_PagingOrigin_constraint;
-ber_type_decoder_f NGAP_PagingOrigin_decode_ber;
-der_type_encoder_f NGAP_PagingOrigin_encode_der;
-xer_type_decoder_f NGAP_PagingOrigin_decode_xer;
-xer_type_encoder_f NGAP_PagingOrigin_encode_xer;
-oer_type_decoder_f NGAP_PagingOrigin_decode_oer;
-oer_type_encoder_f NGAP_PagingOrigin_encode_oer;
-per_type_decoder_f NGAP_PagingOrigin_decode_uper;
-per_type_encoder_f NGAP_PagingOrigin_encode_uper;
-per_type_decoder_f NGAP_PagingOrigin_decode_aper;
-per_type_encoder_f NGAP_PagingOrigin_encode_aper;
+extern const asn_INTEGER_specifics_t asn_SPC_PagingOrigin_specs_1;
+asn_struct_free_f PagingOrigin_free;
+asn_struct_print_f PagingOrigin_print;
+asn_constr_check_f PagingOrigin_constraint;
+ber_type_decoder_f PagingOrigin_decode_ber;
+der_type_encoder_f PagingOrigin_encode_der;
+xer_type_decoder_f PagingOrigin_decode_xer;
+xer_type_encoder_f PagingOrigin_encode_xer;
+oer_type_decoder_f PagingOrigin_decode_oer;
+oer_type_encoder_f PagingOrigin_encode_oer;
+per_type_decoder_f PagingOrigin_decode_uper;
+per_type_encoder_f PagingOrigin_encode_uper;
+per_type_decoder_f PagingOrigin_decode_aper;
+per_type_encoder_f PagingOrigin_encode_aper;
 
 #ifdef __cplusplus
 }

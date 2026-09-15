@@ -1,0 +1,99 @@
+name: asn1c reproducibility gate
+
+# Proves the generated ASN.1 tree under src/mmt_mobile/asn1c/ still
+# reproduces byte-for-byte from the pinned toolchain (issue #223, task 4.7).
+#
+# The job rebuilds the exact asn1c pinned in
+# src/mmt_mobile/asn1c/ASN1C_VERSION, re-runs the gen-s1ap and gen-ngap
+# targets and fails when `git diff --stat src/mmt_mobile/asn1c/` is
+# non-empty. Hand edits to that tree are forbidden and silently lost, so
+# this job is the only thing keeping the recipe proven instead of
+# assumed-working.
+
+on:
+  # Weekly drift check on the Task 0.8 schedule (issue #188, F-CI-015),
+  # shared with the other scheduled workflows.
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+  # Also guard the inputs themselves: recipe, pin and ASN.1 support files.
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/mmt_mobile/asn1c/Makefile'
+      - 'src/mmt_mobile/asn1c/ASN1C_VERSION'
+      - 'src/mmt_mobile/asn1c/support/**'
+      - '.github/workflows/asn1c-regen.yml'
+
+# A newer push cancels the superseded run of the same ref (issue #188,
+# F-CI-007).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default (F-SEC-005): the job only reads the tree.
+permissions:
+  contents: read
+
+jobs:
+  regen-check:
+    name: Regenerate asn1c tree and diff
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # buildpack-deps already ships git, curl, gcc, make and autotools;
+    # libtool/bison/flex (the yacc/lex aliases the asn1c build calls) are
+    # installed below.
+    container: buildpack-deps:bookworm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install asn1c build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends libtool bison flex
+          # The checkout is owned by the runner UID but the container runs
+          # as root; allow git to read it (fatal "dubious ownership"
+          # otherwise).
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+      - name: Build and install the pinned asn1c
+        run: |
+          set -eux
+          # shellcheck disable=SC1091
+          . src/mmt_mobile/asn1c/ASN1C_VERSION
+          curl -fsSL "https://github.com/${ASN1C_REPO}/archive/${ASN1C_REF}.tar.gz" \
+            -o /tmp/asn1c.tar.gz
+          echo "${ASN1C_TARBALL_SHA256}  /tmp/asn1c.tar.gz" | sha256sum -c -
+          mkdir -p /tmp/asn1c-src
+          tar xzf /tmp/asn1c.tar.gz -C /tmp/asn1c-src --strip-components=1
+          cd /tmp/asn1c-src
+          autoreconf -iv
+          ./configure
+          make -j"$(nproc)"
+          make install
+          asn1c -v 2>&1
+          # The reported version must match the pin (printed on stderr).
+          asn1c -v 2>&1 | grep -q "v${ASN1C_VERSION}"
+
+      - name: Re-run the generation targets
+        run: |
+          set -eux
+          make -C src/mmt_mobile/asn1c clean
+          make -C src/mmt_mobile/asn1c gen-s1ap gen-ngap
+
+      - name: Fail on generated-tree drift
+        run: |
+          set -eu
+          # shellcheck disable=SC1091
+          . src/mmt_mobile/asn1c/ASN1C_VERSION
+          # Stage the tree so the diff also covers added/removed generated
+          # files, not just modified ones.
+          git add -A src/mmt_mobile/asn1c/
+          diffstat="$(git diff --cached --stat -- src/mmt_mobile/asn1c/)"
+          if [ -n "${diffstat}" ]; then
+            echo "::error::src/mmt_mobile/asn1c/ does not reproduce under the pinned asn1c; regenerate it or update ASN1C_VERSION"
+            echo "${diffstat}"
+            git diff --cached -- src/mmt_mobile/asn1c/ | head -200
+            exit 1
+          fi
+          echo "asn1c tree reproduces byte-for-byte under asn1c v${ASN1C_VERSION} (${ASN1C_REPO}@${ASN1C_REF})"

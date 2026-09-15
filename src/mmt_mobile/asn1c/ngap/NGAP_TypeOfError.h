@@ -33,20 +33,20 @@ typedef long	 NGAP_TypeOfError_t;
 /* Implementation */
 extern asn_per_constraints_t asn_PER_type_NGAP_TypeOfError_constr_1;
 extern asn_TYPE_descriptor_t asn_DEF_NGAP_TypeOfError;
-extern const asn_INTEGER_specifics_t asn_SPC_NGAP_TypeOfError_specs_1;
-asn_struct_free_f NGAP_TypeOfError_free;
-asn_struct_print_f NGAP_TypeOfError_print;
-asn_constr_check_f NGAP_TypeOfError_constraint;
-ber_type_decoder_f NGAP_TypeOfError_decode_ber;
-der_type_encoder_f NGAP_TypeOfError_encode_der;
-xer_type_decoder_f NGAP_TypeOfError_decode_xer;
-xer_type_encoder_f NGAP_TypeOfError_encode_xer;
-oer_type_decoder_f NGAP_TypeOfError_decode_oer;
-oer_type_encoder_f NGAP_TypeOfError_encode_oer;
-per_type_decoder_f NGAP_TypeOfError_decode_uper;
-per_type_encoder_f NGAP_TypeOfError_encode_uper;
-per_type_decoder_f NGAP_TypeOfError_decode_aper;
-per_type_encoder_f NGAP_TypeOfError_encode_aper;
+extern const asn_INTEGER_specifics_t asn_SPC_TypeOfError_specs_1;
+asn_struct_free_f TypeOfError_free;
+asn_struct_print_f TypeOfError_print;
+asn_constr_check_f TypeOfError_constraint;
+ber_type_decoder_f TypeOfError_decode_ber;
+der_type_encoder_f TypeOfError_encode_der;
+xer_type_decoder_f TypeOfError_decode_xer;
+xer_type_encoder_f TypeOfError_encode_xer;
+oer_type_decoder_f TypeOfError_decode_oer;
+oer_type_encoder_f TypeOfError_encode_oer;
+per_type_decoder_f TypeOfError_decode_uper;
+per_type_encoder_f TypeOfError_encode_uper;
+per_type_decoder_f TypeOfError_decode_aper;
+per_type_encoder_f TypeOfError_encode_aper;
 
 #ifdef __cplusplus
 }

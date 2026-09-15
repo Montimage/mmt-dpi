@@ -32,20 +32,20 @@ typedef long	 NGAP_ReportArea_t;
 /* Implementation */
 extern asn_per_constraints_t asn_PER_type_NGAP_ReportArea_constr_1;
 extern asn_TYPE_descriptor_t asn_DEF_NGAP_ReportArea;
-extern const asn_INTEGER_specifics_t asn_SPC_NGAP_ReportArea_specs_1;
-asn_struct_free_f NGAP_ReportArea_free;
-asn_struct_print_f NGAP_ReportArea_print;
-asn_constr_check_f NGAP_ReportArea_constraint;
-ber_type_decoder_f NGAP_ReportArea_decode_ber;
-der_type_encoder_f NGAP_ReportArea_encode_der;
-xer_type_decoder_f NGAP_ReportArea_decode_xer;
-xer_type_encoder_f NGAP_ReportArea_encode_xer;
-oer_type_decoder_f NGAP_ReportArea_decode_oer;
-oer_type_encoder_f NGAP_ReportArea_encode_oer;
-per_type_decoder_f NGAP_ReportArea_decode_uper;
-per_type_encoder_f NGAP_ReportArea_encode_uper;
-per_type_decoder_f NGAP_ReportArea_decode_aper;
-per_type_encoder_f NGAP_ReportArea_encode_aper;
+extern const asn_INTEGER_specifics_t asn_SPC_ReportArea_specs_1;
+asn_struct_free_f ReportArea_free;
+asn_struct_print_f ReportArea_print;
+asn_constr_check_f ReportArea_constraint;
+ber_type_decoder_f ReportArea_decode_ber;
+der_type_encoder_f ReportArea_encode_der;
+xer_type_decoder_f ReportArea_decode_xer;
+xer_type_encoder_f ReportArea_encode_xer;
+oer_type_decoder_f ReportArea_decode_oer;
+oer_type_encoder_f ReportArea_encode_oer;
+per_type_decoder_f ReportArea_decode_uper;
+per_type_encoder_f ReportArea_encode_uper;
+per_type_decoder_f ReportArea_decode_aper;
+per_type_encoder_f ReportArea_encode_aper;
 
 #ifdef __cplusplus
 }

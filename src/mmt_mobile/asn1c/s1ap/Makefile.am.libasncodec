@@ -355,7 +355,8 @@ ASN_MODULE_SRCS=	\
 	./common/S1ap-UplinkUEAssociatedLPPaTransport.c	\
 	./common/S1ap-DownlinkNonUEAssociatedLPPaTransport.c	\
 	./common/S1ap-UplinkNonUEAssociatedLPPaTransport.c	\
-	./common/S1ap-IE.c
+	./common/S1ap-IE.c	\
+	./common/EXTERNAL.c
 
 ASN_MODULE_HDRS=	\
 	./common/S1ap-Criticality.h	\
@@ -714,7 +715,8 @@ ASN_MODULE_HDRS=	\
 	./common/S1ap-UplinkUEAssociatedLPPaTransport.h	\
 	./common/S1ap-DownlinkNonUEAssociatedLPPaTransport.h	\
 	./common/S1ap-UplinkNonUEAssociatedLPPaTransport.h	\
-	./common/S1ap-IE.h
+	./common/S1ap-IE.h	\
+	./common/EXTERNAL.h
 
 ASN_MODULE_HDRS+=./common/ANY.h
 ASN_MODULE_SRCS+=./common/ANY.c
@@ -724,6 +726,8 @@ ASN_MODULE_SRCS+=./common/OPEN_TYPE.c
 ASN_MODULE_HDRS+=./common/constr_CHOICE.h
 ASN_MODULE_HDRS+=./common/BOOLEAN.h
 ASN_MODULE_SRCS+=./common/BOOLEAN.c
+ASN_MODULE_HDRS+=./common/GraphicString.h
+ASN_MODULE_SRCS+=./common/GraphicString.c
 ASN_MODULE_HDRS+=./common/INTEGER.h
 ASN_MODULE_SRCS+=./common/INTEGER.c
 ASN_MODULE_HDRS+=./common/NULL.h
@@ -734,6 +738,8 @@ ASN_MODULE_HDRS+=./common/NativeInteger.h
 ASN_MODULE_SRCS+=./common/NativeInteger.c
 ASN_MODULE_HDRS+=./common/OBJECT_IDENTIFIER.h
 ASN_MODULE_SRCS+=./common/OBJECT_IDENTIFIER.c
+ASN_MODULE_HDRS+=./common/ObjectDescriptor.h
+ASN_MODULE_SRCS+=./common/ObjectDescriptor.c
 ASN_MODULE_HDRS+=./common/PrintableString.h
 ASN_MODULE_SRCS+=./common/PrintableString.c
 ASN_MODULE_HDRS+=./common/asn_SEQUENCE_OF.h
