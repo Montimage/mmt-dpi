@@ -4323,14 +4323,31 @@ int verify_left(const ipacket_t *pkt, char *cause, rule *r, rule *root)
     return NOT_VALID;
 }
 
-int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root, tuple *list_of_tuples, short *reference,
-        char *cause, rule *r, struct timeval current_packet_time)
+//Invariant arguments threaded through one verify() traversal: the packet
+//under test, the rule the instance belongs to, the instance's tuple list,
+//the caller's verdict scratch flag, the diagnostic buffer and the packet's
+//arrival time. leftleft rides along because it is constant for the whole
+//traversal except the single point where a THEN node drops to its right
+//branch; the recursion is the only writer and it restores the flag before
+//returning, so callers always observe the value they set.
+typedef struct {
+    const ipacket_t *pkt;
+    rule *curr_root;
+    tuple *list_of_tuples;
+    short *reference;
+    char *cause;
+    struct timeval current_packet_time;
+    short leftleft;
+} verify_ctx_t;
+
+int verify( verify_ctx_t *ctx, short context, rule *r )
 {
     short result = 0, situation = 0, this = 0;
+    const short leftleft = ctx->leftleft;
     rule *curr_r = NULL;
     rule *curr_r_NOT = NULL;
     rule *temp_rule = NULL;
-    *cause = '\0';
+    *ctx->cause = '\0';
     switch (r->value) {
         case THEN:
             situation = SAME;
@@ -4352,10 +4369,10 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
             if (situation == SAME) { //conditions to be tested on same packet
                 if (r->list_of_sons != NULL) {
                     r->list_of_sons->father = r;
-                    result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, r->list_of_sons, current_packet_time );
+                    result = verify( ctx, situation, r->list_of_sons );
                     if (result == VALID) {
                         r->list_of_sons->next->father = r;
-                        result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, r->list_of_sons->next, current_packet_time );
+                        result = verify( ctx, situation, r->list_of_sons->next );
                         if (result == NOT_VALID)r->list_of_sons->next->valid = NOT_VALID;
                     }
                     this = action(situation, leftleft, r);
@@ -4368,21 +4385,23 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                     if (r->list_of_sons->valid == NOT_YET) {
                         //Need to verify left branch
                         r->list_of_sons->father = r;
-                        result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, r->list_of_sons, current_packet_time );
+                        result = verify( ctx, situation, r->list_of_sons );
                         if (result == VALID) {
                             //Left branch was found valid so need to start timer
-                            result = init_time(&(r->timer), &(r->counter), current_packet_time);
+                            result = init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
                             if (r->delay_min == 0 && r->not_equal_min == NO) {
                                 //Since there is no delay_min set we need to verify, for the same packet, the right branch
                                 r->list_of_sons->next->father = r;
-                                result = verify( pkt, NO, situation, curr_root, list_of_tuples, reference, cause, r->list_of_sons->next, current_packet_time );
+                                ctx->leftleft = NO;
+                                result = verify( ctx, situation, r->list_of_sons->next );
+                                ctx->leftleft = leftleft;
                             }
                         }
                         this = action(situation, leftleft, r);
                         return this;
                     } else if (r->list_of_sons->valid == VALID) {
                         //Left branch already valid so need to check for timeout
-                        result = check_time(r, current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
+                        result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
                         if (result != SKIP2) {
                             //We have a timeout condition
                             if (result == TIMEIN){
@@ -4407,7 +4426,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                         }
                         //Need to verify right branch
                         r->list_of_sons->next->father = r;
-                        result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, r->list_of_sons->next, current_packet_time );
+                        result = verify( ctx, situation, r->list_of_sons->next );
                         this = action(situation, leftleft, r);
                         return this;
                     } else if (r->list_of_sons->valid == NOT_VALID) {
@@ -4423,22 +4442,22 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                     if (r->list_of_sons->next->valid == NOT_YET) {
                         //Need to verify right branch
                         r->list_of_sons->next->father = r;
-                        result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, r->list_of_sons->next, current_packet_time );
+                        result = verify( ctx, situation, r->list_of_sons->next );
                         r->list_of_sons->next->valid = result;
                         if (result == VALID) {
                             //Right branch was found valid so need to start timer
-                            result = init_time(&(r->timer), &(r->counter), current_packet_time);
+                            result = init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
                             if (r->delay_max == 0 && r->not_equal_max == NO) {
                                 //Since there is no delay_max set we need to verify, for the same packet, the left branch
                                 r->list_of_sons->father = r;
-                                result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, r->list_of_sons, current_packet_time );
+                                result = verify( ctx, situation, r->list_of_sons );
                             }
                         }
                         this = action(situation, leftleft, r);
                         return this;
                     } else if (r->list_of_sons->next->valid == VALID) {
                         //Right branch already valid so need to check for timeout
-                        result = check_time(r, current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
+                        result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
                         if (result != SKIP2) {
                             //We have a timeout condition
                             
@@ -4461,7 +4480,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                         }
                         //Need to verify left branch
                         r->list_of_sons->father = r;
-                        result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, r->list_of_sons, current_packet_time );
+                        result = verify( ctx, situation, r->list_of_sons );
                         this = action(situation, leftleft, r);
                         return this;
                     } else if (r->list_of_sons->valid == NOT_VALID) {
@@ -4480,7 +4499,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                 //assume none are valid
                 while (curr_r != NULL) {
                     curr_r->father = r;
-                    result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, curr_r, current_packet_time );
+                    result = verify( ctx, situation, curr_r );
                     if (result == VALID) {
                         //Found valid
                         curr_r->valid = VALID;
@@ -4510,7 +4529,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                 }
                 if (one_already_valid == 1) {
                     //Case timer already started so need to control timeout
-                    result = check_time(r, current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
+                    result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
                     if (result != SKIP2) {
                         //EDMO:Eliminated since not correct
                         if ((r->list_of_sons->valid == VALID && r->list_of_sons->next->value == NOT) ||
@@ -4528,11 +4547,11 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                 while (curr_r != NULL) {
                     if (curr_r->valid != VALID) {
                         curr_r->father = r;
-                        result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, curr_r, current_packet_time );
+                        result = verify( ctx, situation, curr_r );
                         if (one_already_valid == 0) {
                             if (result == VALID) {
                                 //Case found the first VALID son so timer needs to be started
-                                init_time(&(r->timer), &(r->counter), current_packet_time);
+                                init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
                                 one_already_valid = 1;
                             }
                         }
@@ -4569,7 +4588,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                 curr_r = r->list_of_sons;
                 if (r->timer.tv_usec != 0 || r->timer.tv_sec != 0) {
                     //Case timer already started so need to control timeout
-                    result = check_time(r, current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
+                    result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
                     if (result != SKIP2) {
                         //Son never found VALID so the NOT node is VALID
                         r->valid = VALID;
@@ -4577,10 +4596,10 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                     }
                 }
                 curr_r->father = r;
-                result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, curr_r, current_packet_time );
+                result = verify( ctx, situation, curr_r );
                 if (result == NOT_VALID && r->timer.tv_usec == 0 && r->timer.tv_sec == 0) {
                     //Case found the NOT_VALID son so NOT node is VALID and timer needs to be started (if not already started)
-                    init_time(&(r->timer), &(r->counter), current_packet_time);
+                    init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
                 }
                 if (result == VALID) {
                     //son of NOT is valid so NOT node is NOT_VALID
@@ -4603,7 +4622,7 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
                         if(curr_r != NULL && curr_r->next != NULL){
                             curr_r = curr_r->next;
                             curr_r->father = r;
-                            result = verify( pkt, leftleft, situation, curr_root, list_of_tuples, reference, cause, curr_r, current_packet_time );
+                            result = verify( ctx, situation, curr_r );
                             if (result == VALID) {
                                 //Found valid so NOT is valid also
                                 curr_r->valid = VALID;
@@ -4643,13 +4662,13 @@ int verify( const ipacket_t *pkt, short leftleft, short context, rule *curr_root
         case MUL:
         case DIV:
             temp_rule = r;
-            result = verify_segment( pkt, NO, list_of_tuples, temp_rule, curr_root );
+            result = verify_segment( ctx->pkt, NO, ctx->list_of_tuples, temp_rule, ctx->curr_root );
             if (result == VALID) {
                 if (temp_rule->description != NULL) {
-                    strncpy(cause, temp_rule->description, SIZE_CAUSE);
-                    cause[SIZE_CAUSE]='\0';
+                    strncpy(ctx->cause, temp_rule->description, SIZE_CAUSE);
+                    ctx->cause[SIZE_CAUSE]='\0';
                 }
-                store_tuples( pkt, context, curr_root, r->root, temp_rule->event_id, cause );
+                store_tuples( ctx->pkt, context, ctx->curr_root, r->root, temp_rule->event_id, ctx->cause );
             }
             return result;
             break;
@@ -4698,7 +4717,8 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
           *cause = '\0';
         }
         while (curr_rule_instance != NULL) {
-            result = verify(ipacket, NO, SAME, curr_rule, curr_rule_instance->list_of_tuples, &reference, cause, curr_rule_instance, current_packet_time);
+            verify_ctx_t vctx = { ipacket, curr_rule, curr_rule_instance->list_of_tuples, &reference, cause, current_packet_time, NO };
+            result = verify(&vctx, SAME, curr_rule_instance);
             if (result == NOT_VALID) {
                 (void)fprintf(stderr, "Error 41: Problem in packet number: %lld\n", packet_count);
                 continue;
@@ -4749,7 +4769,8 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
                 xfree(cause);
                 return 0;
             }
-            result = verify(ipacket, YES, SAME, curr_rule, curr_rule_instance->list_of_tuples, &reference, cause, curr_rule_instance, current_packet_time);
+            verify_ctx_t vctx = { ipacket, curr_rule, curr_rule_instance->list_of_tuples, &reference, cause, current_packet_time, YES };
+            result = verify(&vctx, SAME, curr_rule_instance);
             //if instance is VALID or NOT_VALID then eliminate it
             if (result != NOT_YET) {
                 if (result == COUNT_NOT_SATISFIED || result == COUNT_NOT_SATISFIED_ELIMINATE) {
