@@ -101,8 +101,6 @@ Indicates at what points during the packet journey in the core, the user registe
    void * get_attribute_extracted_data_by_name(const ipacket_t * ipacket, char * protocol_name, char * attribute_name);
 
    void * get_attribute_extracted_data_at_index(const ipacket_t * ipacket, uint32_t protocol_id, uint32_t attribute_id, unsigned index);
-
-   void * get_attribute_extracted_data_at_index_by_name(const ipacket_t * ipacket, char * protocol_name, char * attribute_name, unsigned index);
 ```
    Returns a pointer to the data corresponding to the attribute identified by its protocol and attribute ids or names if it was extracted in the last processed packet. NULL is returned otherwise. If the index is given, only the protocol at that index will be checked. Indicating the index is recommended. 
 

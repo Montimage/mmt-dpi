@@ -209,7 +209,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:312-317`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:316-321`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -251,7 +251,7 @@ Two verification profiles exist in `rules/common.mk` (both add flags to
 
 > **⚠ Always `make -C sdk clean` before switching build profiles.**
 > *(This warning is the single source for the rule; other documents link here.)*
-> Object rules depend on source timestamps only (`rules/common.mk:456-458`) —
+> Object rules depend on source timestamps only (`rules/common.mk:472-474`) —
 > changing `BUILD=` does *not* invalidate existing `.o` files, so building
 > `BUILD=asan` on top of a plain tree relinks sanitized `.so` files from
 > non-instrumented objects and reports success. Clean first, then build the

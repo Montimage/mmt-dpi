@@ -291,6 +291,10 @@ clean:
 	$(QUIET) $(RM) $(TOPDIR)/mmt-dpi_*.deb $(TOPDIR)/mmt-dpi_*.rpm $(TOPDIR)/mmt-dpi_*.zip
 	$(QUIET) $(RM) $(TOPDIR)/sdk/mmt-dpi_*.deb $(TOPDIR)/sdk/mmt-dpi_*.rpm $(TOPDIR)/sdk/mmt-dpi_*.zip 2>/dev/null || true
 	$(QUIET) $(RM) mmt-dpi_*.deb mmt-dpi_*.rpm mmt-dpi_*.zip *.gcda *.gcno *.gcov 2>/dev/null || true
+	# F-DEAD-016 (issue #229): stale example binaries compiled in-tree sit
+	# inside the source directory (gitignored, so a plain build never
+	# refreshes them) — sweep every binary name src/examples can produce.
+	$(QUIET) $(RM) $(addprefix $(SRCDIR)/examples/,extract_all proto_attribute_list proto_attributes_iterator sessions_count simple_packet_handler)
 
 
 # - - - - - - - - - -

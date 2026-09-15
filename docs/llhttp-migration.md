@@ -47,7 +47,7 @@ build.
 Task 4.2 (issue #218, `F-DEP-207`) declared and enforces the floor:
 
 - **GCC ≥ 11, glibc ≥ 2.34, libstdc++6 ≥ 11** — `MMT_GCC_MIN`, `MMT_GLIBC_MIN`,
-  `MMT_LIBSTDCXX_MIN` in `rules/common.mk:481-483`, enforced at parse time by
+  `MMT_LIBSTDCXX_MIN` in `rules/common.mk:497-499`, enforced at parse time by
   `rules/arch-linux-gcc.mk`, documented in `docs/AGENT_ENVIRONMENT.md` §1, and
   exercised by the `toolchain-floor` CI job on `ubuntu-22.04` (GCC 11.4).
 
@@ -276,5 +276,5 @@ if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {
 - nodejs/http-parser — archived upstream (https://github.com/nodejs/http-parser);
   vendored copy at 2.9.4 (`src/mmt_tcpip/lib/http_parser.h:28-30`).
 - In-repo: task 2.6 strict-mode fix (`rules/common.mk:173-183`, issue #204);
-  toolchain floor (`rules/common.mk:481-483`, `docs/AGENT_ENVIRONMENT.md` §1,
+  toolchain floor (`rules/common.mk:497-499`, `docs/AGENT_ENVIRONMENT.md` §1,
   issue #218); prior parser spike (`docs/DECISIONS.md`, issue #142 entry).

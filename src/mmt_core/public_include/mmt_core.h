@@ -821,22 +821,6 @@ MMTAPI void* MMTCALL get_attribute_extracted_data_at_index(
 );
 
 /**
- * Returns a pointer to the extracted data of the attribute identified by its protocol and field names. The extracted
- * data is not NULL if the attribute existed in the last processed message.
- * @param ipacket pointer to the internal from which to extract the attribute.
- * @param protocol_name the name of the protocol of the attribute.
- * @param attribute_name the name of the attribute itself.
- * @param index index of the protocol in the protocol path.
- * @return a pointer to the extracted data if it exists, NULL otherwise.
- */
-MMTAPI void* MMTCALL get_attribute_extracted_data_at_index_by_name(
-    const ipacket_t *ipacket,
-    const char *protocol_name,
-    const char *attribute_name,
-    unsigned index
-);
-
-/**
  * Returns a pointer to the extracted attribute structure. The attribute is identified by its protocol and field ids.
  * The returned value is not NULL if the attribute existed in the last processed message.
  * @param ipacket pointer to the internal from which to extract the attribute.

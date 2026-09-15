@@ -371,13 +371,29 @@ SDK_TCPIP_HEADERS = $(addprefix $(SDKINC_TCPIP)/,$(notdir $(MMT_TCPIP_HEADERS)))
 mmt_mobile_HEADERS = $(wildcard $(SRCDIR)/mmt_mobile/include/*.h)
 SDK_MOBILE_HEADERS = $(addprefix $(SDKINC_MOBILE)/,$(notdir $(mmt_mobile_HEADERS)))
 
-B_APP_HEADERS = $(wildcard $(SRCDIR)/mmt_business_appinclude/*.h)
+B_APP_HEADERS = $(wildcard $(SRCDIR)/mmt_business_app/include/*.h)
 SDK_B_APP_HEADERS = $(addprefix $(SDKINC_B_APP)/,$(notdir $(B_APP_HEADERS)))
 
 DICOM_HEADERS = $(wildcard $(SRCDIR)/mmt_dicom/include/*.h)
 SDK_DICOM_HEADERS = $(addprefix $(SDKINC_DICOM)/,$(notdir $(DICOM_HEADERS)))
 
+# F-DEAD-004 (issue #229): a missing path separator once made the
+# business-app wildcard expand empty, so the install shipped zero public
+# headers for that library while still creating its destination directory.
+# Assert every header set is non-empty so a broken wildcard fails the build
+# instead of silently under-shipping headers.
 includes: $(SDK_HEADERS) $(SDK_TCPIP_HEADERS) $(SDK_MOBILE_HEADERS) $(SDK_B_APP_HEADERS) $(SDK_DICOM_HEADERS)
+	@for pair in \
+		"core:$(MMT_HEADERS)" \
+		"tcpip:$(MMT_TCPIP_HEADERS)" \
+		"mobile:$(mmt_mobile_HEADERS)" \
+		"business_app:$(B_APP_HEADERS)" \
+		"dicom:$(DICOM_HEADERS)"; do \
+		if [ -z "$${pair#*:}" ]; then \
+			echo "ERROR: $${pair%%:*} header wildcard expanded empty — refusing to ship zero public headers" >&2; \
+			exit 1; \
+		fi; \
+	done
 
 ifdef ENABLESEC
 MMT_FUZZ_HEADERS = $(wildcard $(SRCDIR)/mmt_fuzz_engine/*.h)

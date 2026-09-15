@@ -273,13 +273,6 @@ char* str_copy(char *str2);
  */
 void str_print_array(char **array); // Passed
 
-/**
- * Executes a command in linux and return the output
- * @param  cmd command to be executed
- * @return     the output of command
- */
-char * cmd_run_command(char *cmd); // Passed
-
 #ifdef  __cplusplus
 }
 #endif

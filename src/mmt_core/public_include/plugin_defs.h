@@ -164,50 +164,6 @@ typedef int (*generic_session_context_cleanup_function)(void * protocol_context,
  */
 typedef void (*generic_session_data_initialization_function)(ipacket_t * ipacket, unsigned index);
 
-/*
-MMTAPI int MMTCALL get_attribute_id(
-    protocol_t *proto,
-    uint32_t proto_id,
-    const char *attr_name
-);
-
-MMTAPI int MMTCALL get_attribute_name(
-    protocol_t *proto,
-    uint32_t proto_id,
-    uint32_t attr_id
-);
-
-MMTAPI int MMTCALL get_attribute_type(
-    protocol_t *proto,
-    uint32_t proto_id,
-    uint32_t attr_id
-);
-
-MMTAPI int MMTCALL get_attribute_position(
-    protocol_t *proto,
-    uint32_t proto_id,
-    uint32_t attr_id
-);
-
-MMTAPI int MMTCALL get_attribute_length(
-    protocol_t *proto,
-    uint32_t proto_id,
-    uint32_t attr_id
-);
-
-MMTAPI int MMTCALL get_attribute_scope(
-    protocol_t *proto,
-    uint32_t proto_id,
-    uint32_t attr_id
-);
-
-MMTAPI int MMTCALL is_valid_attribute(
-    protocol_t *proto,
-    uint32_t proto_id,
-    uint32_t attr_id
-);
-*/
-
 MMTAPI int MMTCALL set_classified_proto(
     ipacket_t *ipacket,
     unsigned index,
