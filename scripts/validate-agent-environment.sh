@@ -145,15 +145,15 @@ while IFS=$'\t' read -r cite head tail claim body; do
     fi
     ok "$cite — $claim"
 done <<'CITATIONS'
-rules/common-linux.mk:47	^# -flto=auto is GCC-only	-	LTO is enabled for GCC only
+rules/common-linux.mk:62	^# -flto=auto is GCC-only	-	LTO is enabled for GCC only
 rules/common-linux.mk:6-12	^ifdef ENABLESEC	^endif	ENABLESEC objects get -fPIC and the libxml2 include path	LIBXML2_CFLAGS
-rules/common-linux.mk:51-103	^MMT_RELEASE_BUILD := 1	^endif +# release builds only	release hardening, disabled for sanitizer profiles	MMT_HARDEN_CFLAGS
-rules/common-linux.mk:89-97	^# TUNE=native \(opt-in, NEVER the default	^endif	TUNE=native is opt-in, never the default
-rules/common-linux.mk:126-138	^# -Wl,-z,defs	^endif	the self-containedness guard, skipped for sanitizers
-rules/common-linux.mk:139-142	^ifdef ENABLESEC	^endif	the ENABLESEC engines link against libxml2	LIBXML2_LIBS
-rules/common-linux.mk:150-154	^ifdef ENABLESEC	^endif	ENABLESEC adds both engines to the libraries target	LIBSECURITY
-rules/common-linux.mk:161	\$\(CXX\) .*-shared .*\$\(LIBCORE\)\.so	-	shared libraries are linked with $(CXX)
-rules/common-linux.mk:187-203	^ifdef ENABLESEC	^endif	the engine link rules are ENABLESEC-gated	LIBSECURITY
+rules/common-linux.mk:66-163	^MMT_RELEASE_BUILD := 1	^endif +# release builds only	release hardening, disabled for sanitizer profiles	MMT_HARDEN_CFLAGS
+rules/common-linux.mk:149-157	^# TUNE=native \(opt-in, NEVER the default	^endif	TUNE=native is opt-in, never the default
+rules/common-linux.mk:202-214	^# -Wl,-z,defs	^endif	the self-containedness guard, skipped for sanitizers
+rules/common-linux.mk:215-218	^ifdef ENABLESEC	^endif	the ENABLESEC engines link against libxml2	LIBXML2_LIBS
+rules/common-linux.mk:226-230	^ifdef ENABLESEC	^endif	ENABLESEC adds both engines to the libraries target	LIBSECURITY
+rules/common-linux.mk:237	\$\(CXX\) .*-shared .*\$\(LIBCORE\)\.so	-	shared libraries are linked with $(CXX)
+rules/common-linux.mk:263-279	^ifdef ENABLESEC	^endif	the engine link rules are ENABLESEC-gated	LIBSECURITY
 rules/common.mk:3	^MMT_BASE \?=/opt/mmt	-	MMT_BASE defaults to /opt/mmt
 rules/common.mk:21-24	^ifndef VERBOSE	^endif	VERBOSE=1 prints full compile commands
 rules/common.mk:30	^CFLAGS .*-DPLUGINS_REPOSITORY_OPT=	-	the plugin repository path is baked into the objects
@@ -166,23 +166,23 @@ rules/common.mk:100-127	^# BUILD=asan to compile with AddressSanitizer	^endif	th
 rules/common.mk:120-127	^ifeq \(\$\(BUILD\),asan\)	^endif	the ASan+UBSan flag set the suites mirror	\-fsanitize=address,undefined
 rules/common.mk:129-157	^# BUILD=tsan to compile with ThreadSanitizer	^endif	the BUILD=tsan profile is defined here	\-fsanitize=thread
 rules/common.mk:150-157	^ifeq \(\$\(BUILD\),tsan\)	^endif	the TSan flag set the suites mirror	\-fsanitize=thread
-rules/common.mk:159-166	^# SHOWLOG = 1	^endif	SHOWLOG=1 enables MMT_LOG() output
-rules/common.mk:189-191	^ifdef ENABLESEC	^endif	ENABLESEC selects the fuzz include directory	SDKINC_FUZZ
-rules/common.mk:213-216	^ifdef ENABLESEC	^endif	ENABLESEC names the two optional libraries	LIBSECURITY
-rules/common.mk:239-253	^# Extra diagnostic warnings	^MMT_WARN_FLAGS \?=	extra diagnostics are deliberately not -Werror	NOT -Werror
-rules/common.mk:279-288	^ifdef ENABLESEC	^endif	ENABLESEC selects the engine objects	SECURITY_OBJECTS
-rules/common.mk:426-428	^%\.o: %\.c	\$\(CC\) \$\(CFLAGS\)	object rules depend on source timestamps only
+rules/common.mk:159-171	^# SHOWLOG = 1	^endif	SHOWLOG=1 enables MMT_LOG() output
+rules/common.mk:206-208	^ifdef ENABLESEC	^endif	ENABLESEC selects the fuzz include directory	SDKINC_FUZZ
+rules/common.mk:230-233	^ifdef ENABLESEC	^endif	ENABLESEC names the two optional libraries	LIBSECURITY
+rules/common.mk:256-270	^# Extra diagnostic warnings	^MMT_WARN_FLAGS \?=	extra diagnostics are deliberately not -Werror	NOT -Werror
+rules/common.mk:315-318	^ifdef ENABLESEC	^endif	ENABLESEC selects the engine objects	SECURITY_OBJECTS
+rules/common.mk:456-458	^%\.o: %\.c	\$\(CC\) \$\(CFLAGS\)	object rules depend on source timestamps only
 sdk/Makefile:8-13	^ifdef MMT_BASE	^endif	an unset MMT_BASE targets /opt/mmt and needs root	NEED_ROOT_PERMISSION
 sdk/Makefile:28-29	^--refresh-plugin-engine:	plugins_engine\.o	changing MMT_BASE forces plugins_engine.o to recompile
-sdk/Makefile:45-51	ln -sf .*libmmt_core\.so	ln -sf .*LIBDICOM	make install creates the unversioned .so symlinks	LIBMOBILE
-sdk/Makefile:46-47	ln -sf .*libmmt_fuzz\.so	ln -sf .*libmmt_security\.so	install symlinks both ENABLESEC engines
-sdk/Makefile:109-110	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dist tree symlinks both ENABLESEC engines
-sdk/Makefile:248-251	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
+sdk/Makefile:53-59	ln -sf .*libmmt_core\.so	ln -sf .*LIBDICOM	make install creates the unversioned .so symlinks	LIBMOBILE
+sdk/Makefile:54-55	ln -sf .*libmmt_fuzz\.so	ln -sf .*libmmt_security\.so	install symlinks both ENABLESEC engines
+sdk/Makefile:140-141	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dist tree symlinks both ENABLESEC engines
+sdk/Makefile:301-306	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
 tests/run_all_tests.sh:8-98	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
 tests/run_all_tests.sh:86-89	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled
-tests/run_all_tests.sh:155-168	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	nas_ies_tail
-tests/run_all_tests.sh:181-283	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
-tests/run_all_tests.sh:285-301	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
+tests/run_all_tests.sh:155-172	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	installer
+tests/run_all_tests.sh:185-287	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
+tests/run_all_tests.sh:289-305	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
 CITATIONS
 
 registered="$(printf '%s' "$registered" | grep -v '^$' | sort -u)"

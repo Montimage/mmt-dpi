@@ -242,6 +242,42 @@ static void test_ipv6_ranges(void)
     if (fo) { unlink(fo); free(fo); }
 }
 
+/* Issue #212 (F-BUG-028): NETMASK_MAX_NB was 31, so external IPv4 /31 and /32
+ * attribution rules were rejected while IPv6 accepted up to /128. They must
+ * now load and match by longest-prefix, while /0 and /33 stay rejected. */
+static void test_host_bit_prefixes(void)
+{
+    printf("[5] IPv4 /31 and /32 external rules (issue #212)\n");
+
+    uint32_t dns_id  = get_protocol_id_by_name("DNS");
+    uint32_t http_id = get_protocol_id_by_name("HTTP");
+    CHECK(dns_id != 0 && http_id != 0 && dns_id != http_id,
+          "DNS and HTTP protocol ids resolve and differ");
+
+    /* 198.51.100.0/24 extend->HTTP was loaded by test_ip_ranges(); the /32 and
+     * /31 rules below are more specific and must win by longest-prefix. */
+    char *f = write_tmp(
+        "198.51.100.250/32  DNS    # host route\n"
+        "198.51.100.252/31  DNS    # pair route\n"
+        "198.51.100.0/33    DNS    # out of range -> skipped\n"
+        "198.51.100.0/0     DNS    # catch-all rejected -> skipped\n");
+    CHECK(f != NULL, "temp host-prefix file created");
+    int n = mmt_tcpip_load_ip_ranges_file(f);
+    CHECK(n == 2, "/32 and /31 rules loaded; /33 and /0 skipped");
+
+    CHECK((uint32_t) _find_proto_id_by_address(0xC63364FAu, 0) == dns_id,
+          "198.51.100.250 attributed via the /32 host route");
+    CHECK((uint32_t) _find_proto_id_by_address(0xC63364FCu, 0) == dns_id &&
+          (uint32_t) _find_proto_id_by_address(0xC63364FDu, 0) == dns_id,
+          "198.51.100.252 and .253 attributed via the /31 pair route");
+    CHECK((uint32_t) _find_proto_id_by_address(0xC63364FEu, 0) == http_id,
+          "198.51.100.254 (outside /31) still resolved by the broader /24");
+    CHECK((uint32_t) _find_proto_id_by_address(TESTNET2_HOST, 0) == http_id,
+          "198.51.100.5 still resolved by the broader /24 rule");
+
+    if (f) { unlink(f); free(f); }
+}
+
 static void test_port_map(void)
 {
     printf("[2] external port-map loading\n");
@@ -282,6 +318,7 @@ int main(void)
     test_ipv4_override();
     test_ipv6_ranges();
     test_port_map();
+    test_host_bit_prefixes();
 
     close_extraction();
 

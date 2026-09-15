@@ -94,6 +94,7 @@ void parseOptions(int argc, char ** argv, char * filename, int * type) {
 				usage(argv[0]);
 			}
 			strncpy((char *) filename, optarg, MAX_FILENAME_SIZE);
+			filename[MAX_FILENAME_SIZE] = '\0';
 			*type = TRACE_FILE;
 			break;
 			case 'i':
@@ -102,6 +103,7 @@ void parseOptions(int argc, char ** argv, char * filename, int * type) {
 				usage(argv[0]);
 			}
 			strncpy((char *) filename, optarg, MAX_FILENAME_SIZE);
+			filename[MAX_FILENAME_SIZE] = '\0';
 			*type = LIVE_INTERFACE;
 			break;
 			case 'q':
@@ -112,7 +114,13 @@ void parseOptions(int argc, char ** argv, char * filename, int * type) {
 		}
 	}
 
-	if (filename == NULL || strcmp(filename, "") == 0) {
+	/* Reject an unset mode instead of branching on uninitialised storage
+	   later (issue #211, F-BUG-105). */
+	if (*type != TRACE_FILE && *type != LIVE_INTERFACE) {
+		fprintf(stderr, "Missing input: pass -t <trace file> or -i <interface>\n");
+		usage(argv[0]);
+	}
+	if (filename[0] == '\0') {
 		if (*type == TRACE_FILE) {
 			fprintf(stderr, "Missing trace file name\n");
 		}
@@ -148,8 +156,8 @@ int main(int argc, char ** argv){
 	char mmt_errbuf[1024];
 	struct pkthdr header; // MMT packet header
 
-	char filename[MAX_FILENAME_SIZE + 1];
-    int type;
+	char filename[MAX_FILENAME_SIZE + 1] = {0};
+    int type = 0; /* 0 means "unset" — parseOptions rejects it */
 
 	pcap_t *pcap;
 	const unsigned char *data;

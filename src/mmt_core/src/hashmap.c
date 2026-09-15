@@ -98,6 +98,7 @@ void hashmap_cleanup( mmt_hashmap_t *map )
    if (map == NULL || map->slots == NULL) return;
    for( i = 0 ; i < MMT_HASHMAP_NSLOTS ; ++i )
       hslot_free( &map->slots[i] );
+   map->nkeys = 0;
 }
 
 /**
@@ -119,7 +120,9 @@ void hashmap_insert_kv( mmt_hashmap_t *map, mmt_key_t key, void *val )
    he->val  = val;
 
    LIST_INSERT_HEAD( slot, he, entries );
-   //++map->nkeys;
+   /* Issue #201 (F-BUG-020): nkeys must track live entries — the fragment-map
+    * ceiling in proto_ip.c relies on it. */
+   ++map->nkeys;
 }
 
 /**
@@ -158,10 +161,19 @@ void hashmap_walk( mmt_hashmap_t *map, mmt_hashmap_walker_t walker, void *arg )
    mmt_hent_t  *he;
    int i;
 
+   /* F-BUG-007 (issue #199): slots may be NULL after an OOM in hashmap_init(). */
+   if( map == NULL || map->slots == NULL || walker == NULL ) return;
+
+   /* Issue #201 (F-BUG-020): cache the successor before invoking the walker so
+    * the callback may remove the current entry (the fragment-map sweep/drain
+    * does exactly that). */
    for( i = 0 ; i < MMT_HASHMAP_NSLOTS ; ++i ) {
       slot = &map->slots[i];
-      for( he = slot->lh_first ; he != NULL ; he = he->entries.le_next )
+      for( he = slot->lh_first ; he != NULL ; ) {
+         mmt_hent_t *next = he->entries.le_next;
          walker( map, he, arg );
+         he = next;
+      }
    }
 }
 
@@ -191,6 +203,8 @@ int hashmap_remove( mmt_hashmap_t *map, mmt_key_t key )
    LIST_REMOVE( he, entries );
    //BW: now free the hash entry (it was allocated in @method hashmap_insert_kv)
    hent_free( he );
+   if (map->nkeys > 0)
+      --map->nkeys;
 
    return 1;
 }
@@ -202,6 +216,9 @@ int hashmap_remove( mmt_hashmap_t *map, mmt_key_t key )
 
 mmt_hent_t *hmap_lookup( mmt_hashmap_t *map, mmt_key_t key )
 {
+   /* F-BUG-007 (issue #199): hashmap_init() leaves slots == NULL after an OOM;
+      never index a missing slot array. */
+   if( map == NULL || map->slots == NULL ) return NULL;
    mmt_hslot_t *slot = &map->slots[ key % MMT_HASHMAP_NSLOTS ];
    mmt_hent_t  *he   = slot->lh_first;
 

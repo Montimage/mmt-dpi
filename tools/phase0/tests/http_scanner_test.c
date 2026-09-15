@@ -36,6 +36,8 @@
 /* Bounded scanners (rfc2822utils.c) and the HTTP header-line parser under
  * test — declared in the shared internal header (issue #186). */
 #include "internal_decls.h"
+/* TRUNCATED / CR / LF result codes for get_next_header_line_length. */
+#include "protocols/rfc2822utils.h"
 
 static int g_failures = 0;
 static int g_checks = 0;
@@ -84,6 +86,16 @@ static void test_h4_line_parser(void)
     struct mmt_tcpip_internal_packet_struct *pkt;
 
     printf("[H4] _mmt_parse_packet_line_info bounds + underflow\n");
+
+    /* Issue #212 (F-BUG-043): a zero-length payload made
+     * `end = payload_packet_len - 1` underflow to 65535 and the line loop
+     * walked out of bounds — this helper is exported, so the guard must live
+     * here, not only in the mmt_parse_packet_line_info() wrapper. Pre-fix this
+     * aborts under ASan; post-fix it returns early and marks nothing parsed. */
+    pkt = run_line_info("", 0, &payload);
+    CHECK(pkt->packet_lines_parsed_complete == 0 && pkt->parsed_lines == 0,
+          "zero-length payload is rejected without parsing (no OOB walk)");
+    free(pkt); free(payload);
 
     /* Truncated "C\r\n": a one-byte 'C' line. Pre-fix this dereferenced
      * str[8], 7 bytes past the 3-byte buffer. */
@@ -187,11 +199,148 @@ static void test_h5_scanners(void)
     }
 }
 
+/*
+ * issue #204 (F-BUG-046, F-BUG-047, F-BUG-052): the shared RFC2822
+ * header-line scanner read msg[header_len + 1] one past the buffer when the
+ * line ran to the end, and msg[header_len - 1] == msg[-1] when the message
+ * began with LF. mmt_find_char_instance() dereferenced before testing its
+ * budget. get_field_len()/get_value_offset() report -1 for colon-free lines
+ * (callers must skip such lines — http.c does, since this fix).
+ */
+static void test_204_header_line_length(void)
+{
+    int code;
+    printf("[204] get_next_header_line_length one-past/negative-index reads\n");
+
+    /* Message starting with LF: pre-fix evaluated msg[-1] in the CRLF check.
+     * A heap-tight buffer makes ASan flag the negative index. Expect a
+     * 1-byte bare-LF line (code 1). */
+    {
+        char *buf = (char *) malloc(4);
+        memcpy(buf, "\nXYZ", 4);
+        int r = get_next_header_line_length(buf, 4, &code);
+        CHECK(r == 1 && code == 1, "leading-LF line parsed without msg[-1] read");
+        free(buf);
+    }
+
+    /* Line terminated exactly at the buffer end ("A: b\r\n", 6 bytes):
+     * pre-fix read msg[6] (one past the end) deciding truncation. The
+     * terminator's fold lookahead cannot be resolved at the boundary, so the
+     * line must report TRUNCATED without the out-of-bounds read. */
+    {
+        char *buf = (char *) malloc(6);
+        memcpy(buf, "A: b\r\n", 6);
+        int r = get_next_header_line_length(buf, 6, &code);
+        CHECK(r == 0 && code == TRUNCATED,
+              "buffer ending exactly at CRLF reports TRUNCATED without msg[msg_len] read");
+        free(buf);
+    }
+
+    /* Unterminated line, no newline at all: TRUNCATED, no OOB. */
+    {
+        char *buf = (char *) malloc(5);
+        memcpy(buf, "Abcde", 5);
+        int r = get_next_header_line_length(buf, 5, &code);
+        CHECK(r == 0 && code == TRUNCATED, "newline-free buffer reports TRUNCATED");
+        free(buf);
+    }
+
+    /* Single byte: nothing to parse, TRUNCATED, no read past buf[0]. */
+    {
+        char *buf = (char *) malloc(1);
+        buf[0] = 'X';
+        int r = get_next_header_line_length(buf, 1, &code);
+        CHECK(r == 0 && code == TRUNCATED, "single-byte buffer reports TRUNCATED");
+        free(buf);
+    }
+
+    /* Well-formed line followed by more data: normal path still returns the
+     * line length and the 2-byte termination. */
+    {
+        char *buf = (char *) malloc(10);
+        memcpy(buf, "A: b\r\nXYZ", 9);
+        int r = get_next_header_line_length(buf, 9, &code);
+        CHECK(r == 6 && code == 2, "well-formed CRLF line returns len 6, code 2");
+        free(buf);
+    }
+
+    /* Folded continuation: "A: b\r\n c\r\nX" — the first LF is followed by SP,
+     * so the line continues; the LF before 'X' ends it. */
+    {
+        const char msg[] = "A: b\r\n c\r\nX";
+        int r = get_next_header_line_length(msg, (int) (sizeof(msg) - 1), &code);
+        CHECK(r == 10 && code == 2, "folded line scans to the real terminator");
+    }
+
+    /* Bare-LF-terminated line in the middle: code 1. */
+    {
+        const char msg[] = "A: b\n\nX";
+        int r = get_next_header_line_length(msg, (int) (sizeof(msg) - 1), &code);
+        CHECK(r == 5 && code == 1, "bare-LF line returns len 5, code 1");
+    }
+
+    /* Empty input: 0, no read at all. */
+    {
+        int r = get_next_header_line_length("", 0, &code);
+        CHECK(r == 0, "zero-length message reads nothing");
+    }
+}
+
+static void test_204_find_char_and_offsets(void)
+{
+    printf("[204] mmt_find_char_instance budget + field/value offset sentinels\n");
+
+    /* Budget 0: pre-fix dereferenced str before checking max. */
+    {
+        char *buf = (char *) malloc(1);
+        buf[0] = ':';
+        const char *r = mmt_find_char_instance(buf, ':', 0);
+        CHECK(r == NULL, "zero budget never dereferences");
+        free(buf);
+    }
+
+    /* Char just past the budget: must not find it (and not read it). */
+    {
+        char *buf = (char *) malloc(3);
+        memcpy(buf, "ab:", 3);
+        const char *r = mmt_find_char_instance(buf, ':', 2);
+        CHECK(r == NULL, "char beyond budget is not found");
+        free(buf);
+    }
+
+    /* Char inside the budget: returns its address. */
+    {
+        const char *s = "a:b";
+        const char *r = mmt_find_char_instance(s, ':', 3);
+        CHECK(r == s + 1, "char inside budget is found");
+    }
+
+    /* Colon-free line: both helpers return -1 — the sentinel callers must
+     * honour (F-BUG-052 regression coverage at the helper level). */
+    {
+        const char *s = "NoColonHere\r\n";
+        int fl = get_field_len(s, (int) strlen(s));
+        int vo = get_value_offset(s, (int) strlen(s));
+        CHECK(fl == -1 && vo == -1, "colon-free line yields -1 field len and value offset");
+    }
+
+    /* Normal header: field len is the colon position, value offset skips
+     * the colon and following LWS. */
+    {
+        const char *s = "Host:  example.com\r\n";
+        int fl = get_field_len(s, (int) strlen(s));
+        int vo = get_value_offset(s, (int) strlen(s));
+        CHECK(fl == 4 && vo == 7, "well-formed header yields field len 4, value offset 7");
+    }
+}
+
 int main(void)
 {
-    printf("== http_scanner_test (issue #7, H4 + H5) ==\n");
+    printf("== http_scanner_test (issue #7, H4 + H5; issue #204) ==\n");
     test_h4_line_parser();
     test_h5_scanners();
+    test_204_header_line_length();
+    test_204_find_char_and_offsets();
 
     printf("\n%d/%d checks passed\n", g_checks - g_failures, g_checks);
     if (g_failures) {

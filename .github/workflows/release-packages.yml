@@ -9,6 +9,18 @@ name: Build & release packages
 # runners only provide Ubuntu/macOS/Windows), for both amd64 and arm64
 # (arm64 via QEMU emulation). Every run uploads the packages as CI artifacts;
 # pushing a `v*` tag additionally attaches them all to a GitHub Release.
+#
+# Every published asset is verifiable (issue #198, F-SEC-005/F-SEC-015):
+# the build job writes a SPDX-JSON SBOM next to each package, and the
+# release job adds a SHA256SUMS manifest over the whole asset set and a
+# build-provenance attestation covering every published file, so users can
+# run `sha256sum --check SHA256SUMS` and `gh attestation verify <pkg>`
+# before installing the package as root.
+#
+# The five build container images are pinned by index digest
+# (issue #217, F-DEP-101/F-CI-012/F-SEC-007) — the same digest resolves both
+# the amd64 and arm64 matrix legs — and mirrored in the tracked
+# tools/ci/base-images.txt, which the dependency bot diffs for drift.
 
 on:
   push:
@@ -20,6 +32,7 @@ on:
       - "src/**"
       - "rules/**"
       - "tools/ci/build-package.sh"
+      - "tools/ci/base-images.txt"
       - ".github/workflows/release-packages.yml"
 
 # Release builds must run to completion — a re-run of the same tag queues
@@ -44,15 +57,21 @@ jobs:
       matrix:
         arch: [amd64, arm64]
         distro:
-          - { name: ubuntu-22.04,   image: "ubuntu:22.04",                    pkg: deb }
-          - { name: ubuntu-24.04,   image: "ubuntu:24.04",                    pkg: deb }
-          - { name: debian-12,      image: "debian:12",                       pkg: deb }
-          - { name: rocky-9,        image: "rockylinux:9",                    pkg: rpm }
-          - { name: centos-stream9, image: "quay.io/centos/centos:stream9",   pkg: rpm }
+          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7",                    pkg: deb }
+          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254",                    pkg: deb }
+          - { name: debian-12,      image: "debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443",                       pkg: deb }
+          - { name: rocky-9,        image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                    pkg: rpm }
+          - { name: centos-stream9, image: "quay.io/centos/centos:stream9@sha256:7d3c87ab567add60d0153a6a17bc10d0f19cd982a2d533724298ebd1ee751eab",   pkg: rpm }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # GIT_VERSION (short hash) needs the git history
+
+      # The matrix pin above must be mirrored verbatim in the tracked
+      # tools/ci/base-images.txt — fail fast here rather than building on an
+      # unrecorded image (issue #217; check-image-digests.sh gates the same).
+      - name: Verify pinned base image is recorded
+        run: grep -Fx "${{ matrix.distro.image }}" tools/ci/base-images.txt
 
       - name: Set up QEMU
         if: matrix.arch == 'arm64'
@@ -66,6 +85,44 @@ jobs:
             -v "$PWD":/work -w /work \
             "${{ matrix.distro.image }}" \
             bash tools/ci/build-package.sh "${{ matrix.distro.name }}" "${{ matrix.distro.pkg }}"
+
+      - name: Locate the built package
+        id: pkg
+        run: |
+          set -euo pipefail
+          # The build container ran as root, so dist/ is root-owned on the
+          # host. Hand it back to the runner user — the SBOM step below must
+          # create <pkg>.sbom.json inside dist/packages (CI verified EACCES).
+          sudo chown -R "$(id -u):$(id -g)" dist
+          # build-package.sh produces exactly one package per matrix cell —
+          # fail loudly if that ever changes so the SBOM mapping stays 1:1.
+          mapfile -t pkgs < <(find dist/packages -maxdepth 1 -type f \
+            \( -name '*.deb' -o -name '*.rpm' \) | LC_ALL=C sort)
+          if [ "${#pkgs[@]}" -ne 1 ]; then
+            echo "expected exactly 1 package in dist/packages," \
+              "found ${#pkgs[@]}" >&2
+            exit 1
+          fi
+          {
+            echo "file=${pkgs[0]}"
+            echo "sbom=${pkgs[0]}.sbom.json"
+          } >> "$GITHUB_OUTPUT"
+
+      # Per-package SBOM (F-SEC-015): scanned from the package file itself so
+      # the manifest records exactly what the artifact ships. Generated here —
+      # not in the tag-only release job — so the pull_request trigger exercises
+      # it on every packaging change. upload-* are off: the package artifact
+      # upload below ships the .sbom.json, and action-gh-release stays the
+      # single publisher.
+      - name: Generate SBOM for the package
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          file: ${{ steps.pkg.outputs.file }}
+          format: spdx-json
+          output-file: ${{ steps.pkg.outputs.sbom }}
+          artifact-name: sbom-${{ matrix.distro.name }}-${{ matrix.arch }}
+          upload-artifact: false
+          upload-release-assets: false
 
       - name: Upload package artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -82,20 +139,41 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
-      contents: write   # required to create/update the release
+      contents: write      # required to create/update the release
+      id-token: write      # Sigstore OIDC identity for provenance signing
+      attestations: write  # publish attestations to the repo attestation store
     steps:
       - name: Download all package artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: artifacts
 
-      - name: Collect packages
+      - name: Collect packages and SBOMs
         run: |
           mkdir -p release
-          find artifacts -type f \( -name '*.deb' -o -name '*.rpm' \) \
+          find artifacts -type f \
+            \( -name '*.deb' -o -name '*.rpm' -o -name '*.sbom.json' \) \
             -exec cp -v {} release/ \;
-          echo "Packages to publish:"
+          echo "Assets to publish:"
           ls -l release
+
+      # The manifest covers every asset that will be attached — packages and
+      # SBOMs — so `sha256sum --check SHA256SUMS` verifies the whole download.
+      - name: Generate SHA256SUMS manifest
+        run: |
+          cd release
+          find . -maxdepth 1 -type f ! -name 'SHA256SUMS' -printf '%f\n' \
+            | LC_ALL=C sort | xargs -r sha256sum -- > SHA256SUMS
+          cat SHA256SUMS
+
+      # One attestation whose subjects are every published file — including
+      # SHA256SUMS itself — so `gh attestation verify <asset>` works for any
+      # release asset (issue #198, F-SEC-005). Attest-before-publish keeps a
+      # failed attestation from shipping unverifiable assets.
+      - name: Attest build provenance for every release asset
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/*
 
       - name: Create / update GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3

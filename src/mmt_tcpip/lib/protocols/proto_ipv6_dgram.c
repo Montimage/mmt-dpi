@@ -2,6 +2,7 @@
 #include <string.h> // memcpy()
 
 #include "proto_ipv6_dgram.h"
+#include "proto_ip_dgram.h" /* Issue #201: MMT_IP_FRAG_MAX_DGRAM bound */
 
 //  - - - - - - - - - - - - - -  //
 //  P U B L I C   M E T H O D S  //
@@ -15,8 +16,17 @@
 
 ipv6_dgram_t *ipv6_dgram_alloc()
 {
+   /* Issue #201: unchecked mmt_malloc / ip_frag_alloc — a NULL dg would be
+    * written through by ipv6_dgram_init(), and a missing initial hole made a
+    * datagram look instantly "complete". */
    ipv6_dgram_t *dg = (ipv6_dgram_t *)mmt_malloc(sizeof(ipv6_dgram_t));
-   ipv6_dgram_init(dg);
+   if (dg == NULL)
+      return NULL;
+   if (!ipv6_dgram_init(dg))
+   {
+      mmt_free(dg);
+      return NULL;
+   }
 
    return dg;
 }
@@ -37,16 +47,22 @@ void ipv6_dgram_free(ipv6_dgram_t *dg)
  * Initialize a datagram (constructor)
  *
  * @param dg a pointer to an uninitialized ipv6_dgram_t
+ * @return 1 on success, 0 if the initial hole could not be allocated
  */
 
-void ipv6_dgram_init(ipv6_dgram_t *dg)
+int ipv6_dgram_init(ipv6_dgram_t *dg)
 {
+   /* Issue #201 (F-BUG-020): metadata used by the ip_streams sweep/drain
+    * hooks — must stay the leading layout shared with struct ip_dgram. */
+   dg->ip_version = 6;
+   dg->last_activity = 0;
    dg->x = 0;
    dg->len = 0;
    dg->nb_packets = 0;
    dg->caplen = 0;
    dg->max_packet_size = 0;
    dg->current_packet_size = 0;
+   dg->last_offset = 0;
    int i = 0;
    for (i = 0; i < MMT_MAX_NUMBER_FRAGMENT; i++)
    {
@@ -54,8 +70,11 @@ void ipv6_dgram_init(ipv6_dgram_t *dg)
    }
    LIST_INIT(&dg->holes);
 
-   ip_frag_t *hole = ip_frag_alloc(0, (uint16_t)-1);
+   ip_frag_t *hole = ip_frag_alloc(0, MMT_IP_FRAG_MAX_DGRAM);
+   if (hole == NULL)
+      return 0;
    LIST_INSERT_HEAD(&dg->holes, hole, frags);
+   return 1;
 }
 
 /**
@@ -114,13 +133,36 @@ void ipv6_dgram_cleanup(ipv6_dgram_t *dg)
 /* Issue #59: ip is an alignment-safe view (mmt_una_ipv6hdr_t) over the byte-
  * aligned capture buffer, mirroring ip_dgram_update() from PR #58 (#57), so the
  * ntohs(ip->payload_len) read below is a single alignment-safe load. */
-int ipv6_dgram_update(ipv6_dgram_t *dg, const mmt_una_ipv6hdr_t *ip, unsigned caplen, uint16_t fragment_offset, uint16_t payload_offset, uint8_t more_fragment, uint16_t ext_header_len)
+/* Issue #201 (F-BUG-037/040): `avail` is the number of captured bytes starting
+ * at the IPv6 header (caplen - ip_offset); payload_offset and ext_header_len
+ * are uint32_t because a long extension chain pushes them past 65535. Every
+ * subtraction below is guarded before it happens:
+ *   - payload_len = declared - ext_header_len would wrap to ~64 KiB when the
+ *     declared IPv6 payload is smaller than the walked extension chain,
+ *   - payload must lie entirely inside the captured window. */
+int ipv6_dgram_update(ipv6_dgram_t *dg, const mmt_una_ipv6hdr_t *ip, unsigned avail, uint16_t fragment_offset, uint32_t payload_offset, uint8_t more_fragment, uint32_t ext_header_len)
 {
+   uint32_t declared = ntohs(ip->payload_len);
+   if (ext_header_len >= declared || payload_offset > avail)
+   {
+      MMT_LOG( PROTO_IPV6, MMT_LOG_DEBUG, "*** Warning: malformed packet (ipv6 fragment length mismatch)\n" );
+      return 1;
+   }
+   uint32_t payload_len = declared - ext_header_len;
+   if ((uint64_t) payload_offset + payload_len > avail)
+   {
+      MMT_LOG( PROTO_IPV6, MMT_LOG_DEBUG, "*** Warning: malformed packet (ipv6 fragment beyond captured data)\n" );
+      return 1;
+   }
+   /* Bound the reassembled extent exactly like the IPv4 path. */
+   if ((uint64_t) fragment_offset * 8 + payload_len > MMT_IP_FRAG_MAX_DGRAM)
+   {
+      MMT_LOG( PROTO_IPV6, MMT_LOG_DEBUG, "*** Warning: malformed packet (ipv6 fragment extent out of range)\n" );
+      return 1;
+   }
    const uint8_t *payload = (const uint8_t *)ip + payload_offset;
-   uint16_t payload_len = ntohs(ip->payload_len) - ext_header_len;
-   // printf("payload len: %d", payload_len);
    dg->nb_packets++;
-   dg->caplen += caplen;
+   dg->caplen += avail;
    if (fragment_offset == 0)
    {
       dg->max_packet_size = payload_len;
@@ -158,7 +200,7 @@ int ipv6_dgram_update(ipv6_dgram_t *dg, const mmt_una_ipv6hdr_t *ip, unsigned ca
    // ipv6_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf);
    // LN: Using ip_len to remove the padding from IP payload
    // printf("Going to update holes: %d, %d, %d, %s\n",fragment_offset, payload_len, more_fragment, payload);
-   return ipv6_dgram_update_holes(dg, payload, fragment_offset * 8, payload_len, more_fragment);
+   return ipv6_dgram_update_holes(dg, payload, (unsigned) fragment_offset * 8, payload_len, more_fragment);
    // return 1;
 }
 
@@ -305,6 +347,14 @@ int ipv6_dgram_update_holes(ipv6_dgram_t *dg, const uint8_t *x, unsigned off, un
    ip_frags_t *holes = &dg->holes;
    ip_frag_t *hole = holes->lh_first;
 
+   /* Issue #201 (F-BUG-037): reject extents beyond the max datagram size —
+    * mirrors the IPv4 path. */
+   if ((uint64_t) off + len > MMT_IP_FRAG_MAX_DGRAM)
+   {
+      MMT_LOG( PROTO_IPV6, MMT_LOG_DEBUG, "*** Warning: malformed packet (ipv6 fragment extent out of range)\n" );
+      return 1;
+   }
+
    unsigned loff = off;
    unsigned roff = off + len;
    // printf("loff %d - roff %d\n", loff, roff );
@@ -344,6 +394,10 @@ int ipv6_dgram_update_holes(ipv6_dgram_t *dg, const uint8_t *x, unsigned off, un
             // -> resize current (left) hole
             // -> allocate a new (right) hole
             ip_frag_t *new = ip_frag_alloc(roff, hole->roff);
+            /* Issue #201: unchecked allocation — a NULL hole must not be
+             * inserted (LIST_INSERT_AFTER writes through it). */
+            if (new == NULL)
+               return 1;
             hole->roff = loff - 1;
             LIST_INSERT_AFTER(hole, new, frags);
             hole = new;
@@ -393,7 +447,11 @@ int ipv6_dgram_update_holes(ipv6_dgram_t *dg, const uint8_t *x, unsigned off, un
       // copy the payload, possibly growing the reassembly buffer
       if (roff > dg->len)
       {
+         /* Issue #201: unchecked realloc — keep the old buffer on failure
+          * instead of overwriting dg->x with NULL before the memcpy. */
          uint8_t *x0 = (uint8_t *)mmt_realloc(dg->x, roff);
+         if (x0 == NULL)
+            return 1;
          dg->x = x0;
          dg->len = roff;
       }

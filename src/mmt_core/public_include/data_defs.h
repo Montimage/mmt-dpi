@@ -144,7 +144,7 @@ struct ipacket_struct {
     uint8_t is_fragment[PROTO_PATH_SIZE];                      /**< 1 - yes, 0 - no: Indicate if the packet is a fragmented packet */
     // uint16_t is_outoforder[PROTO_PATH_SIZE];      /** out of order*/
     uint16_t ipv6_ext_headers_path[PROTO_PATH_SIZE]; /** IPv6 extension header path*/
-    uint16_t ipv6_ext_headers_offset[PROTO_PATH_SIZE]; /**IPv6 extension header offset*/
+    uint32_t ipv6_ext_headers_offset[PROTO_PATH_SIZE]; /**IPv6 extension header offset (Issue #201: widened — long chains exceed 16 bits)*/
     uint16_t ipv6_ext_headers_len; /* IPv6 header path length*/
     uint16_t ipv6_overlapping[PROTO_PATH_SIZE]; /** IPv6 fragment header overlaps another fragment*/
     uint16_t ipv6_outoforder[PROTO_PATH_SIZE]; /** IPv6 fragment header is out of order*/
@@ -166,6 +166,7 @@ struct ipacket_struct {
     int internal_cumulative_offset[PROTO_PATH_SIZE]; /**< internal: - never modify it. Issue #19: memoized prefix-sum of proto_headers_offset->proto_path, so get_packet_offset_at_index() is amortized O(1) instead of re-summing (O(N^2) per packet). */
     int internal_cumulative_offset_valid;     /**< internal: - never modify it. Issue #19: 0 when the cumulative-offset cache must be rebuilt. */
     int internal_cumulative_offset_hwm;       /**< internal: - never modify it. Issue #19: highest index whose prefix sum is cached (the cache is extended on demand, never beyond what is queried). */
+    int proto_headers_offset_owned;           /**< internal: - never modify it. Issue #199 (F-BUG-002): 1 when proto_headers_offset points to a heap buffer owned by this packet (set at its single mmt_malloc site in proto_session_management), 0 when it aliases storage embedded in the handler or the session. clean_packet_with_reassembly() frees the buffer only when this flag is set. */
 };
 
 /**

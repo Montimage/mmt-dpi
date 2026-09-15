@@ -44,3 +44,41 @@
 ### arp_padding.pcap
 98	meta.ethernet.arp
 
+### dns_query.pcap
+1	meta.ethernet.ip.udp.dns
+
+### tls.pcap
+1	meta.ethernet.ip.tcp.ssl
+1	meta.ethernet.ip.tcp.unknown
+
+### quic.pcap
+1	meta.ethernet.ip.udp.quic_ietf
+
+### http2.pcap
+1	meta.ethernet.ip.tcp.http2
+
+### dicom.pcap
+1	meta.ethernet.ip.tcp.dicom
+
+### syslog.pcap
+1	meta.ethernet.ip.udp.syslog
+
+### ptp.pcap
+1	meta.ethernet.ip.udp.ptp
+
+### radius.pcap
+1	meta.ethernet.ip.udp.radius
+1	meta.ethernet.ip.udp.unknown
+
+### gtp.pcap
+2	meta.ethernet.ip.udp.gtp
+1	meta.ethernet.ip.udp.gtp.ip.udp.unknown
+1	meta.ethernet.ip.udp.unknown
+
+### s1ap.pcap
+3	meta.ethernet.ip.sctp.sctp_data.s1ap
+
+### ngap.pcap
+1	meta.ethernet.ip.sctp.sctp_data
+3	meta.ethernet.ip.sctp.sctp_data.ngap
+

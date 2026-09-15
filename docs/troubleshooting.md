@@ -5,7 +5,7 @@ Append-only log of real fixes applied during doc-manager validation runs.
 ## 2026-07-21
 
 - **Fix**: `DEPLOYMENT.md` referenced wrong ldconfig file name (`mmt.conf` → `mmt-dpi.conf`).
-  Source: `sdk/Makefile:70,117`.
+  Source: `sdk/Makefile:89,145`.
   Impact: Users following the doc would look for a non-existent config file.
 
 - **Fix**: `DEVELOPMENT.md` listed `cmake` as a build prerequisite that doesn't exist in the build system.

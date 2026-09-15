@@ -295,6 +295,9 @@ int register_estimation_rules_with_quality_metric(application_quality_estimation
  */
 int register_metric_with_application_struct(application_quality_estimation_t * application, metric_t * metric, int metric_type) {
     int retval = 0;
+    if (application == NULL || metric == NULL) {
+        return retval;
+    }
     if (metric_type == QUALITY_INDEX) {
         if (QUALITY_ESTIMATION_MODE == MULTI_QUALITY_METRICS) {
             //We insert the element at the end of the list in order not to disturb the indexes of existing elements
@@ -413,7 +416,13 @@ int register_grade_membership_function_with_metric(metric_t * metric, metric_gra
  * @return
  */
 metric_grade_membership_function_t * init_new_grade_membership_function(int membership_function_type, int grade_value, int nb_parameters) {
-    metric_grade_membership_function_t * grade_membership_function = (metric_grade_membership_function_t *) malloc(sizeof (metric_grade_membership_function_t));
+    /* Allocate the trailing parameter storage in the same block: the
+     * membership_function_parameters member points just past the struct,
+     * so nb_parameters doubles must be reserved there or every caller
+     * writes past the allocation. */
+    if (nb_parameters < 0)
+        nb_parameters = 0;
+    metric_grade_membership_function_t * grade_membership_function = (metric_grade_membership_function_t *) malloc(sizeof (metric_grade_membership_function_t) + (size_t) nb_parameters * sizeof (double));
     if (grade_membership_function == NULL) {
         fprintf(stderr, "Memory allocation Error while initializing new grade_membership_function struct! Exiting\n");
         exit(-1);

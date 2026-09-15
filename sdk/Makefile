@@ -39,8 +39,16 @@ sdk: --refresh-plugin-engine libraries includes tools documentation examples
 #  I N S T A L L
 #  - - - - - - -
 
+# F-SEC-012 (issue #214): this target usually runs as root and adds $(MMT_LIB)
+# to the system library search path (ld.so.conf.d + ldconfig). Every file it
+# lays down therefore gets an EXPLICIT mode under an explicit umask — a
+# group/world-writable library in the loader path is a local
+# privilege-escalation primitive. The find(1) assertion at the end refuses to
+# leave a writable library behind.
 install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB)
-	@ cp $(SDKLIB)/* $(MMT_LIB)
+	@ install -d -m 0755 $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT_LIB)
+	@ install -m 0755 $(SDKLIB)/*.so.* $(MMT_LIB)/
+	@ install -m 0644 $(SDKLIB)/*.a    $(MMT_LIB)/
 # Make links
 	@ln -sf $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(MMT_LIB)/libmmt_core.so
 	@ln -sf $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(MMT_LIB)/libmmt_fuzz.so
@@ -51,23 +59,34 @@ install: sdk $(MMT_BASE) $(MMT_DPI) $(MMT_INC) $(MMT_PLUGINS) $(MMT_EXAMS) $(MMT
 	@ln -sf $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)      $(MMT_LIB)/$(LIBDICOM).so
 
 	@ echo "[MMT-]> Installed  "$(SDKLIB)" at "$(MMT_LIB)
-	@ cp -R $(SDKINC)/* $(MMT_INC)
+	@ umask 022 && cp -R $(SDKINC)/* $(MMT_INC) \
+		&& find $(MMT_INC) -type d -exec chmod 0755 {} + \
+		&& find $(MMT_INC) -type f -exec chmod 0644 {} +
 	@ echo "[MMT-]> Installed  "$(SDKINC)" at "$(MMT_INC)
-	@ cp -R $(SDKXAM)/* $(MMT_EXAMS)
+	@ umask 022 && cp -R $(SDKXAM)/* $(MMT_EXAMS) \
+		&& find $(MMT_EXAMS) -type d -exec chmod 0755 {} + \
+		&& find $(MMT_EXAMS) -type f -exec chmod 0644 {} +
 	@ echo "[MMT-]> Installed  "$(SDKXAM)" at "$(MMT_EXAMS)
-	@ cp $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(MMT_PLUGINS)/libmmt_tcpip.so
+	@ install -m 0755 $(SDKLIB)/libmmt_tcpip.so.$(VERSION) $(MMT_PLUGINS)/libmmt_tcpip.so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/libmmt_tcpip.so
 
-	@ cp $(SDKLIB)/$(LIBMOBILE).so.$(VERSION) $(MMT_PLUGINS)/$(LIBMOBILE).so
+	@ install -m 0755 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION) $(MMT_PLUGINS)/$(LIBMOBILE).so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBMOBILE).so
 
-	@ cp $(SDKLIB)/$(LIBDICOM).so.$(VERSION) $(MMT_PLUGINS)/$(LIBDICOM).so
+	@ install -m 0755 $(SDKLIB)/$(LIBDICOM).so.$(VERSION) $(MMT_PLUGINS)/$(LIBDICOM).so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBDICOM).so
 
-	@ cp $(SDKLIB)/$(LIBBAPP).so.$(VERSION) $(MMT_PLUGINS)/$(LIBBAPP).so
+	@ install -m 0755 $(SDKLIB)/$(LIBBAPP).so.$(VERSION) $(MMT_PLUGINS)/$(LIBBAPP).so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBBAPP).so
+# Assert nothing under the library directory is group- or world-writable —
+# the directory goes on the system search path below, so a permissive mode
+# here would hand any local user write access to code loaded by everyone.
+	@ if find $(MMT_LIB) -type f -perm /022 -print -quit | grep -q .; then \
+		echo "ERROR: group/world-writable file under $(MMT_LIB) — refusing to leave it in the loader path" >&2; \
+		exit 1; \
+	fi
 ifdef NEED_ROOT_PERMISSION
-	@ echo "$(MMT_LIB)" > /etc/ld.so.conf.d/mmt-dpi.conf
+	@ umask 022 && echo "$(MMT_LIB)" > /etc/ld.so.conf.d/mmt-dpi.conf && chmod 0644 /etc/ld.so.conf.d/mmt-dpi.conf
 	@ ldconfig
 endif
 	@ echo "[MMT-]> Done! "
@@ -85,25 +104,37 @@ endif
 
 BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 
+# F-SEC-012 (issue #214): this staging tree becomes a .deb/.rpm installed by
+# root, so it gets the same treatment as `install` — explicit umask, explicit
+# modes, and a group/world-writability assertion on the library directory
+# before the package is assembled.
 --private-prepare-build-dir:
 	echo $(BUILD_DIR)
 	# Remove old build
 	$(QUIET) $(RM) $(BUILD_DIR)
 	# Create new build location
-	$(QUIET) $(MKDIR) -p $(BUILD_DIR)$(MMT_LIB)
-	$(QUIET) $(MKDIR) -p $(BUILD_DIR)$(MMT_INCLUDE)
-	$(QUIET) $(MKDIR) -p $(BUILD_DIR)$(MMT_EXAMS)
-	$(QUIET) $(MKDIR) -p $(BUILD_DIR)$(MMT_PLUGINS)
-	$(QUIET) $(MKDIR) -p $(BUILD_DIR)/etc/ld.so.conf.d/
+	$(QUIET) install -d -m 0755 $(BUILD_DIR)$(MMT_LIB)
+	$(QUIET) install -d -m 0755 $(BUILD_DIR)$(MMT_INC)
+	$(QUIET) install -d -m 0755 $(BUILD_DIR)$(MMT_EXAMS)
+	$(QUIET) install -d -m 0755 $(BUILD_DIR)$(MMT_PLUGINS)
+	$(QUIET) install -d -m 0755 $(BUILD_DIR)/etc/ld.so.conf.d/
 	# Copy resources
 	echo $(SDKLIB)
-	$(QUIET) $(CP)    $(SDKLIB)/* $(BUILD_DIR)$(MMT_BASE)/dpi/lib
-	$(QUIET) $(CP) -r $(SDKINC)   $(BUILD_DIR)$(MMT_BASE)/dpi
-	$(QUIET) $(CP) -r $(SDKXAM)   $(BUILD_DIR)$(MMT_BASE)
-	$(QUIET) $(CP) $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
-	$(QUIET) $(CP) $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBMOBILE).so
-	$(QUIET) $(CP) $(SDKLIB)/$(LIBBAPP).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBBAPP).so
-	$(QUIET) $(CP) $(SDKLIB)/$(LIBDICOM).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBDICOM).so
+	$(QUIET) umask 022 && install -m 0755 $(SDKLIB)/*.so.* $(BUILD_DIR)$(MMT_BASE)/dpi/lib/ \
+	                  && install -m 0644 $(SDKLIB)/*.a    $(BUILD_DIR)$(MMT_BASE)/dpi/lib/
+	# Scope the mode-normalizing finds to the trees just copied: running them
+	# over dpi/ or $(MMT_BASE) would also hit dpi/lib/*.so.* and undo the
+	# install -m 0755 above, silently shipping the libraries at 0644.
+	$(QUIET) umask 022 && $(CP) -r $(SDKINC)   $(BUILD_DIR)$(MMT_BASE)/dpi \
+	                  && find $(BUILD_DIR)$(MMT_BASE)/dpi/include -type d -exec chmod 0755 {} + \
+	                  && find $(BUILD_DIR)$(MMT_BASE)/dpi/include -type f -exec chmod 0644 {} +
+	$(QUIET) umask 022 && $(CP) -r $(SDKXAM)   $(BUILD_DIR)$(MMT_BASE) \
+	                  && find $(BUILD_DIR)$(MMT_BASE)/examples -type d -exec chmod 0755 {} + \
+	                  && find $(BUILD_DIR)$(MMT_BASE)/examples -type f -exec chmod 0644 {} +
+	$(QUIET) install -m 0755 $(SDKLIB)/libmmt_tcpip.so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/libmmt_tcpip.so
+	$(QUIET) install -m 0755 $(SDKLIB)/$(LIBMOBILE).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBMOBILE).so
+	$(QUIET) install -m 0755 $(SDKLIB)/$(LIBBAPP).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBBAPP).so
+	$(QUIET) install -m 0755 $(SDKLIB)/$(LIBDICOM).so.$(VERSION)     $(BUILD_DIR)$(MMT_PLUGINS)/$(LIBDICOM).so
 	# Make links
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_core.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_core.so
 	$(QUIET) ln -s $(MMT_LIB)/libmmt_fuzz.so.$(VERSION)     $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so
@@ -114,17 +145,29 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	$(QUIET) ln -s $(MMT_LIB)/$(LIBDICOM).so.$(VERSION)    $(BUILD_DIR)$(MMT_LIB)/$(LIBDICOM).so
 
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
-	echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
+	umask 022 && echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf \
+	    && chmod 0644 $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
+	# The package is installed by root into the system search path — assert the
+	# staged library dir carries no group/world-writable file (F-SEC-012).
+	$(QUIET) if find $(BUILD_DIR)$(MMT_LIB) -type f -perm /022 -print -quit | grep -q .; then \
+		echo "ERROR: group/world-writable file under $(BUILD_DIR)$(MMT_LIB)" >&2; exit 1; \
+	fi
 
 deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/DEBIAN
-	$(QUIET) echo "Package: mmt-dpi \
+	# Depends is derived from the NEEDED entries of the shipped shared
+	# objects (issue #219, F-DEP-203/204): tools/ci/shlib-deps.sh maps each
+	# soname to the Debian package providing it and fails on an unmapped
+	# soname, so the declaration can never drift from the payload again.
+	# libpcap/libnghttp2 are deliberately absent — nothing shipped links them.
+	$(QUIET) deps=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' deb '$(BUILD_DIR)$(MMT_LIB)' '$(BUILD_DIR)$(MMT_PLUGINS)'` \
+	    && echo "Package: mmt-dpi \
         \nVersion: $(VERSION)-$(GIT_VERSION)\
         \nSection: base \
         \nPriority: standard \
         \nArchitecture: $(DEB_ARCH)\
         \nMaintainer: Montimage <contact@montimage.eu> \
-        \nDepends: libc6 (>= 2.17), libpcap0.8 | libpcap0.8t64, libnghttp2-14 \
+        \nDepends: $$deps \
         \nDescription: MMT-DPI:  \
         \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
         \n A software C library designed to extract data attributes from network packets, server logs, and from structured events in general, in order to make them available for analysis \
@@ -154,14 +197,24 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	# Build .rpm file ...
 	$(QUIET) $(MKDIR) ./rpmbuild/{RPMS,BUILD}
 
-	$(QUIET) echo -e\
+	# Version/Release are ordered as Debian does (issue #219, F-CI-013):
+	# Version: is the upstream $(VERSION) — `rpm -qp --qf '%{VERSION}'`
+	# reports it, not the git hash — and Release: carries $(GIT_VERSION).
+	# Requires: is derived from the shipped .so NEEDED entries through the
+	# same tools/ci/shlib-deps.sh mapping the deb Depends uses (F-DEP-206);
+	# BuildRequires: mirrors the packages install_build_deps_rhel()
+	# (tools/ci/build-package.sh) installs, floored at $(MMT_GCC_MIN).
+	$(QUIET) reqs=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' rpm '$(BUILD_DIR)$(MMT_LIB)' '$(BUILD_DIR)$(MMT_PLUGINS)'` \
+	    && echo -e\
 	    "Summary:  MMT-DPI\
 	    \nName: mmt-dpi\
-	    \nVersion: $(GIT_VERSION)\
-	    \nRelease: $(VERSION)\
+	    \nVersion: $(VERSION)\
+	    \nRelease: $(GIT_VERSION)\
 	    \nLicense: proprietary\
 	    \nGroup: Development/Libraries\
 	    \nURL: http://montimage.eu/\
+	    \nRequires: $$reqs\
+	    \nBuildRequires: gcc >= $(MMT_GCC_MIN), gcc-c++ >= $(MMT_GCC_MIN), make, git, file, findutils, which, binutils, libxml2-devel, libpcap-devel, rpm-build\
 	    \n\
 	    \nBuildRoot: %{_topdir}/BUILD/$(BUILD_DIR)\
 	    \n\
@@ -247,5 +300,7 @@ endif
 
 test:
 	@ echo "Start testing..."
-	gcc -o proto_attributes_iterator $(MMT_EXAMS)/proto_attributes_iterator.c -I $(MMT_INC) -L $(MMT_LIB) -lmmt_core -ldl
+	# F-SEC-010 (issue #214): the installed examples compile as PIE
+	# (-fPIE + -pie + RELRO/noexecstack via MMT_EXAMPLE_* in rules/common.mk).
+	$(CC) $(MMT_EXAMPLE_CFLAGS) -o proto_attributes_iterator $(MMT_EXAMS)/proto_attributes_iterator.c -I $(MMT_INC) -L $(MMT_LIB) $(MMT_EXAMPLE_LDFLAGS) -lmmt_core -ldl
 	./proto_attributes_iterator

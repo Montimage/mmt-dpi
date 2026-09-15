@@ -34,6 +34,43 @@ inline static char * str_replace_all_char(char *str, int c1, int c2) {
     return new_str;
 }
 
+/* Effective number of payload bytes that may be read at the protocol offset.
+ * payload_packet_len derives from the IP total length and can exceed the
+ * captured bytes on truncated pcaps, so it is clamped to caplen - offset
+ * (F-BUG-069/F-BUG-107, #195). Returns 0 — and stores -1 in offset_out — when
+ * the protocol offset is not inside the captured data. */
+static uint32_t ftp_effective_payload_len(const ipacket_t *ipacket, unsigned proto_index, int *offset_out){
+    int offset = get_packet_offset_at_index(ipacket, proto_index);
+    if( offset_out != NULL ) *offset_out = offset;
+    uint32_t avail = 0;
+    if( offset >= 0 && (size_t)offset < ipacket->p_hdr->caplen )
+        avail = (uint32_t)(ipacket->p_hdr->caplen - (size_t)offset);
+    uint32_t len = ipacket->internal_packet->payload_packet_len;
+    return ( len > avail ) ? avail : len;
+}
+
+/* Length-bounded equivalent of the classic subvalue extraction for raw
+ * packet buffers: the delimiters are located with str_get_indexes_n(...) so
+ * no read ever goes past str_len, and the value between them is returned as
+ * a fresh NUL-terminated string (or NULL) — same contract as before (#195).
+ * Only the begin != NULL / end != NULL form used by the FTP parsers is
+ * implemented. */
+static char * ftp_str_subvalue_n(char *str, size_t str_len, char *begin, char *end){
+    if(str == NULL || begin == NULL || end == NULL) return NULL;
+    if(str_len == 0) return NULL;
+    int * b_idx = str_get_indexes_n(str, str_len, begin, strlen(begin));
+    if(b_idx == NULL) return NULL;
+    int begin_index = b_idx[0];
+    free(b_idx);
+    int * e_idx = str_get_indexes_n(str, str_len, end, strlen(end));
+    if(e_idx == NULL) return NULL;
+    int end_index = e_idx[0];
+    free(e_idx);
+    int start_index = begin_index + (int)strlen(begin);
+    if(start_index >= end_index) return NULL;
+    return str_sub_n(str, str_len, start_index, end_index - 1);
+}
+
  
 //////////// FTP - FUNCTION    /////////////////////////
 
@@ -595,6 +632,10 @@ inline static int ftp_check_control_packet(const ipacket_t *ipacket) {
  * @param cmd command to set id
  */
 inline static void ftp_set_command_id(ftp_command_t* cmd) {
+    if (cmd->str_cmd == NULL) {
+        cmd->cmd = MMT_FTP_UNKNOWN_CMD;
+        return;
+    }
     if (strlen(cmd->str_cmd) == 3) {
         if (strcmp(cmd->str_cmd, "PWD") == 0 || strcmp(cmd->str_cmd, "pwd") == 0) {
             cmd->cmd = MMT_FTP_PWD_CMD;
@@ -732,6 +773,12 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
     ftp_command_t *cmd = NULL;
     cmd = (ftp_command_t*)malloc(sizeof(ftp_command_t));
     if(cmd == NULL) return NULL;
+    /* raw malloc — initialise all fields so a short/odd payload below can
+     * never leave str_cmd or param uninitialised for free_ftp_command() or
+     * ftp_set_command_id() (#195). */
+    cmd->cmd = MMT_FTP_UNKNOWN_CMD;
+    cmd->str_cmd = NULL;
+    cmd->param = NULL;
     char * command = NULL;
     char * params = NULL;
 
@@ -774,7 +821,9 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
             return cmd;
         }
 
-        if (payload[3] == ' ') {
+        /* payload_len < 4 reaches here for inputs such as "ABC" that pass
+         * mmt_int_check_possible_ftp_command(): bound each byte test (#195). */
+        if (payload_len >= 4 && payload[3] == ' ') {
             command = (char*)malloc(4);
             if (command == NULL)
             {
@@ -799,7 +848,7 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
             } else {
                 cmd->param = NULL;
             }
-        } else if (payload[4] == ' ') {
+        } else if (payload_len >= 5 && payload[4] == ' ') {
             command = (char*)malloc(5);
             if (command == NULL)
             {
@@ -823,6 +872,21 @@ ftp_command_t * ftp_get_command(char* payload, int payload_len) {
             } else {
                 cmd->param = NULL;
             }
+        } else {
+            /* A payload that passed the sanity check but carries no 3- or
+             * 4-letter verb followed by a space (e.g. a bare 3- or 4-byte
+             * input such as "ABC") is an unknown command — report it
+             * explicitly instead of leaving str_cmd NULL (#206, F-BUG-068). */
+            command = (char*)malloc(12);
+            if (command == NULL)
+            {
+                free(cmd);
+                return NULL;
+            }
+            memcpy(command, "UNKNOWN_CMD", 11);
+            command[11]='\0';
+            cmd->str_cmd = command;
+            cmd->param = NULL;
         }
     }
 
@@ -848,7 +912,7 @@ char * ftp_get_command_param(char* payload, int payload_len) {
             params[payload_len] = '\0';
             return params;
         }else{
-            if (payload[3] == ' ') {
+            if (payload_len >= 4 && payload[3] == ' ') {
                 if (payload_len - 6 > 0) {
                     char * params = NULL;
                     params = (char*)malloc(payload_len - 5);
@@ -862,7 +926,7 @@ char * ftp_get_command_param(char* payload, int payload_len) {
                 } else {
                     return NULL;
                 }
-            } else if (payload[4] == ' ') {
+            } else if (payload_len >= 5 && payload[4] == ' ') {
                 if (payload_len - 7 > 0) {
                     char * params = NULL;
                     params = (char*)malloc(payload_len - 6);
@@ -908,7 +972,7 @@ char * ftp_get_command_str(char* payload, int payload_len){
         if (!mmt_int_check_possible_ftp_command(payload, payload_len)) {
             command = "UNKNOWN_CMD";
         }else{
-            if (payload[3] == ' ') {
+            if (payload_len >= 4 && payload[3] == ' ') {
                 command = (char*)malloc(4);
                 if (command == NULL)
                 {
@@ -916,7 +980,7 @@ char * ftp_get_command_str(char* payload, int payload_len){
                 }
                 memcpy(command, payload, 3);
                 command[3] = '\0';
-            } else if (payload[4] == ' ') {
+            } else if (payload_len >= 5 && payload[4] == ' ') {
                 command = (char*)malloc(5);
                 if (command == NULL)
                 {
@@ -924,7 +988,12 @@ char * ftp_get_command_str(char* payload, int payload_len){
                 }
                 memcpy(command, payload, 4);
                 command[4] = '\0';
-            }    
+            } else {
+                /* Possible command whose verb is not 3/4 letters + space
+                 * (e.g. a bare "ABC") — report it, mirroring the
+                 * not-a-command branch above (#206). */
+                command = "UNKNOWN_CMD";
+            }
         }
     }
     return command;
@@ -988,16 +1057,23 @@ ftp_response_t * ftp_get_response(char* payload, int payload_len) {
             res->str_code = str_value;
         } else {
             code = MMT_FTP_UNKNOWN_CODE;
-            str_value = (char*)malloc(payload_len - 1);
-            if (str_value == NULL)
-            {
-                free(res);
-                return NULL;
+            /* This branch runs when payload_len < 5: a 0/1-byte payload makes
+             * payload_len - 2 negative — a huge malloc/memcpy size (#195). */
+            if (payload_len - 2 >= 0) {
+                str_value = (char*)malloc(payload_len - 1);
+                if (str_value == NULL)
+                {
+                    free(res);
+                    return NULL;
+                }
+                memcpy(str_value, payload, payload_len - 2);
+                str_value[payload_len - 2] = '\0';
+                res->value = str_value;
+                res->str_code = str_value;
+            } else {
+                res->value = NULL;
+                res->str_code = NULL;
             }
-            memcpy(str_value, payload, payload_len - 2);
-            str_value[payload_len - 2] = '\0';
-            res->value = str_value;
-            res->str_code = str_value;
         }
         res->code = code;
     }
@@ -1096,9 +1172,9 @@ int ftp_get_response_code(char* payload, int payload_len) {
  * Example: EPRT |1|132.235.1.2|6275|
  * @return             Client IP address
  */
-inline static uint32_t ftp_get_data_client_addr_from_EPRT(char * payload) {
-    // Get all the indexes of "|" in payload
-    int * indexes = str_get_indexes(payload, "|");
+inline static uint32_t ftp_get_data_client_addr_from_EPRT(char * payload, uint32_t payload_len) {
+    // Get all the indexes of "|" in payload — bounded by payload_len (#195)
+    int * indexes = str_get_indexes_n(payload, payload_len, "|", 1);
     if(indexes == NULL) return 0;
     if(indexes[0] == -1 || indexes[1] == -1 || indexes[2] == -1){
         free(indexes);
@@ -1131,11 +1207,11 @@ inline static uint32_t ftp_get_data_client_addr_from_EPRT(char * payload) {
  * Example: EPRT |2|2002:5183:4383::5183:4383|1031
  * @return             Client IP address
  */
-char * ftp_get_data_client_addr_v6_from_EPRT(char * payload) {
-    // Get all the indexes of "|" in payload
-    int * indexes = str_get_indexes(payload, "|");
+char * ftp_get_data_client_addr_v6_from_EPRT(char * payload, uint32_t payload_len) {
+    // Get all the indexes of "|" in payload — bounded by payload_len (#195)
+    int * indexes = str_get_indexes_n(payload, payload_len, "|", 1);
     /* Malformed EPRT (fewer than three "|" delimiters) must not be parsed:
-     * str_get_indexes returns NULL when no delimiter is present, and a short
+     * str_get_indexes_n(...) returns NULL when no delimiter is present, and a short
      * delimiter list leaves indexes[2] == -1, which would make `len` negative
      * (huge once cast for malloc/memcpy). */
     if(indexes == NULL) return NULL;
@@ -1167,13 +1243,13 @@ char * ftp_get_data_client_addr_v6_from_EPRT(char * payload) {
  * "EPRT |2|2002:5183:4383::5183:4383|1031\r\n"
  * @return             Client port number
  */
-uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
-    // Get all the indexes of "|" in payload
-    int * indexes = str_get_indexes(payload, "|");
+uint16_t ftp_get_data_client_port_from_EPRT(char *payload, uint32_t payload_len) {
+    // Get all the indexes of "|" in payload — bounded by payload_len (#195)
+    int * indexes = str_get_indexes_n(payload, payload_len, "|", 1);
     char * str_addr = NULL;
 
     /* Malformed EPRT (fewer than three "|" delimiters) must not be parsed:
-     * str_get_indexes returns NULL when no delimiter is present, and a short
+     * str_get_indexes_n(...) returns NULL when no delimiter is present, and a short
      * delimiter list leaves indexes[2] == -1. Requiring indexes[0..2] to be
      * real positions guarantees the array holds at least four ints, so the
      * indexes[3] read below is in-bounds (it is either the fourth delimiter
@@ -1200,7 +1276,9 @@ uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
         memcpy(str_addr, payload + indexes[2] + 1, len - 1);
         str_addr[len - 1] = '\0';
     }else{
-        int len = strlen(payload) - indexes[2]-2;
+        /* No fourth "|": the port runs to the end of the command minus the
+         * trailing CRLF — bounded by payload_len, never strlen() (#195). */
+        int len = (int)payload_len - indexes[2]-2;
         if(len <= 0){
             free(indexes);
             return 0;
@@ -1228,12 +1306,12 @@ uint16_t ftp_get_data_client_port_from_EPRT(char *payload) {
  * @return             an address
  */
 uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
-    // Get all the indexes of "," in payload
-    int * indexes = str_get_indexes(payload, ",");
+    // Get all the indexes of "," in payload — bounded by payload_len (#195)
+    int * indexes = str_get_indexes_n(payload, payload_len, ",", 1);
     char * str_addr = NULL;
 
     /* Malformed PORT parameter (fewer than three "," delimiters) must not be
-     * parsed: str_get_indexes returns NULL when no delimiter is present, and a
+     * parsed: str_get_indexes_n(...) returns NULL when no delimiter is present, and a
      * short delimiter list leaves indexes[2] == -1. Requiring indexes[0..2] to
      * be real positions guarantees the array holds at least four ints, so the
      * indexes[3] read below is in-bounds (it is either the fourth delimiter
@@ -1317,8 +1395,13 @@ uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
 /* RFC 1639 IPv6 host-address-length is 16 octets; reject anything larger so a
  * forged length cannot drive unbounded growth of the address string. */
 #define FTP_V6_HOST_ADDR_MAX_OCTETS 16
+/* A TCP/UDP port is 16 bits: a declared LPRT port-address-length above 2
+ * octets is malformed, and would make port_length * 2 overflow int (or loop
+ * power_16() for billions of iterations) in ftp_get_data_client_port_from_LPRT
+ * (#206, F-BUG-075). */
+#define FTP_LPRT_PORT_ADDR_MAX_OCTETS 2
 
-char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
+char * ftp_get_data_client_addr_v6_from_LPRT(char * payload, uint32_t payload_len) {
     char * str_addr;
 
     /* calloc so the buffer is NUL-terminated/zeroed before the first append —
@@ -1328,12 +1411,18 @@ char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
     if(str_addr == NULL) return NULL;
     size_t addr_len = 0; /* current length of str_addr, excluding the NUL */
 
-    char *payload_copy = str_copy(payload);
+    /* str_copy() would strlen() the raw, non-NUL-terminated packet buffer;
+     * make a bounded NUL-terminated copy instead (#195). */
+    char *payload_copy = ( payload_len > 0 && payload_len <= (uint32_t)INT32_MAX )
+        ? str_sub_n(payload, payload_len, 0, (int)payload_len - 1) : NULL;
     if(payload_copy == NULL){
         free(str_addr);
         return NULL;
     }
-    char *temp = strtok(payload_copy,",");
+    /* strtok_r: the engine is documented thread-safe, so no shared
+     * static tokeniser state (#206, F-BUG-075). */
+    char *saveptr = NULL;
+    char *temp = strtok_r(payload_copy,",",&saveptr);
     int index = 0;
     int host_address_length = 0;
     int found_address = 0;
@@ -1351,7 +1440,7 @@ char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
                 return str_addr;
             }
             found_address = 1;
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
             continue;
         }
@@ -1408,10 +1497,10 @@ char * ftp_get_data_client_addr_v6_from_LPRT(char * payload) {
                 free(payload_copy);
                 return str_addr;
             }
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
         }else{
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
         }
     }
@@ -1441,8 +1530,15 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
     // Get all the indexes of "|" in payload
     uint16_t port_nb = 0;
     char *temp = NULL;
-    char *payload_copy = str_copy(payload);
-    temp = strtok(payload_copy,",");
+    /* Bounded NUL-terminated copy — str_copy() would strlen() the raw packet
+     * buffer past its end (#195). */
+    char *payload_copy = ( payload_len > 0 && payload_len <= (uint32_t)INT32_MAX )
+        ? str_sub_n(payload, payload_len, 0, (int)payload_len - 1) : NULL;
+    if(payload_copy == NULL) return 0;
+    /* strtok_r: the engine is documented thread-safe, so no shared
+     * static tokeniser state (#206, F-BUG-075). */
+    char *saveptr = NULL;
+    temp = strtok_r(payload_copy,",",&saveptr);
     int index = 0;
     int host_address_length = 0;
     int port_length = 0;
@@ -1450,16 +1546,32 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
     while(temp!=NULL){
         if(index == 1 ){
             host_address_length = atoi(temp);
+            /* Validated as the sibling address parser does: RFC 1639 caps
+             * the host address at 16 octets — a forged value would otherwise
+             * make host_address_length + 2 below overflow int (#206). */
+            if(host_address_length <= 0 ||
+               host_address_length > FTP_V6_HOST_ADDR_MAX_OCTETS){
+                free(payload_copy);
+                return 0;
+            }
 
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
             continue;
         }
         if(index == host_address_length + 2){
             port_length = atoi(temp);
+            /* A port is 16 bits: at most FTP_LPRT_PORT_ADDR_MAX_OCTETS
+             * octets. A forged length would overflow int in port_length * 2
+             * below and drive power_16() for billions of iterations (#206). */
+            if(port_length <= 0 ||
+               port_length > FTP_LPRT_PORT_ADDR_MAX_OCTETS){
+                free(payload_copy);
+                return 0;
+            }
             found_port = 1;
 
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
             continue;
         }
@@ -1467,16 +1579,18 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
             port_length--;
             port_nb += power_16(atoi(temp),(port_length*2));
             if(port_length == 0){
+                free(payload_copy);
                 return port_nb;
             }
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
         }else{
-            temp = strtok(NULL,",");
+            temp = strtok_r(NULL,",",&saveptr);
             index++;
             continue;
         }
     }
+    free(payload_copy);
     return port_nb;
 }
 
@@ -1488,7 +1602,8 @@ uint16_t ftp_get_data_client_port_from_LPRT(char * payload, uint32_t payload_len
  */
 inline static uint16_t ftp_get_port_from_parameter(char *payload, uint32_t payload_len) {
     // Get all the indexes of "," in payload — PORT needs 5 commas (6 numbers)
-    int * indexes = str_get_indexes(payload, ",");
+    // Bounded by payload_len so a non-NUL-terminated buffer is safe (#195)
+    int * indexes = str_get_indexes_n(payload, payload_len, ",", 1);
     if(indexes == NULL) return 0;
     /* Need at least 5 delimiters; indexes[4] must be a real offset (not -1).
      * This mirrors the guard in ftp_get_addr_from_parameter (proto_ftp.c:1192). */
@@ -1498,7 +1613,7 @@ inline static uint16_t ftp_get_port_from_parameter(char *payload, uint32_t paylo
     }
 
     char * nb1;
-    nb1 = str_sub(payload, indexes[3]+1, indexes[4]-1);
+    nb1 = str_sub_n(payload, payload_len, indexes[3]+1, indexes[4]-1);
     if(nb1 == NULL){
         free(indexes);
         return 0;
@@ -1511,7 +1626,7 @@ inline static uint16_t ftp_get_port_from_parameter(char *payload, uint32_t paylo
         last_c_number++;
     }
 
-    nb2 = str_sub(payload, indexes[4]+1, last_c_number-1);
+    nb2 = str_sub_n(payload, payload_len, indexes[4]+1, last_c_number-1);
     if(nb2 == NULL){
         free(nb1);
         free(indexes);
@@ -1530,8 +1645,8 @@ inline static uint16_t ftp_get_port_from_parameter(char *payload, uint32_t paylo
  * @param  payload payload to extract server port
  * @return         server port
  */
-inline static uint16_t ftp_get_data_server_port_code_229(char *payload) {
-    char *ret = str_subvalue(payload, "(|||", "|)");
+inline static uint16_t ftp_get_data_server_port_code_229(char *payload, uint32_t payload_len) {
+    char *ret = ftp_str_subvalue_n(payload, payload_len, "(|||", "|)");
     if(ret == NULL) return 0;
     uint16_t s_port = htons(atoi(ret));
     free(ret);
@@ -1544,8 +1659,8 @@ inline static uint16_t ftp_get_data_server_port_code_229(char *payload) {
  * @param  payload payload
  * @return         server address
  */
-inline static uint32_t ftp_get_data_server_addr_code_227(char * payload) {
-    char * str = str_subvalue(payload, "(", ")");
+inline static uint32_t ftp_get_data_server_addr_code_227(char * payload, uint32_t payload_len) {
+    char * str = ftp_str_subvalue_n(payload, payload_len, "(", ")");
     if(str == NULL) return 0;
     uint32_t len = strlen(str);
     uint32_t address = ftp_get_addr_from_parameter(str, len);
@@ -1557,8 +1672,8 @@ inline static uint32_t ftp_get_data_server_addr_code_227(char * payload) {
  * @param  payload payload
  * @return         server address
  */
-inline static uint16_t ftp_get_data_server_port_code_227(char * payload) {
-    char * str = str_subvalue(payload, "(", ")");
+inline static uint16_t ftp_get_data_server_port_code_227(char * payload, uint32_t payload_len) {
+    char * str = ftp_str_subvalue_n(payload, payload_len, "(", ")");
     if(str == NULL) return 0;
     uint32_t len = strlen(str);
     uint16_t port = ftp_get_port_from_parameter(str, len);
@@ -1572,8 +1687,8 @@ inline static uint16_t ftp_get_data_server_port_code_227(char * payload) {
  * @param  payload Payload to extract
  * @return         port number
  */
-inline static uint16_t ftp_get_data_server_port_code_228(char *payload) {
-    char *ret = str_subvalue(payload, ", ", ")");
+inline static uint16_t ftp_get_data_server_port_code_228(char *payload, uint32_t payload_len) {
+    char *ret = ftp_str_subvalue_n(payload, payload_len, ", ", ")");
     if(ret == NULL) return 0;
     uint16_t s_addr = htons(atoi(ret));
     free(ret);
@@ -1586,8 +1701,8 @@ inline static uint16_t ftp_get_data_server_port_code_228(char *payload) {
  * @param  payload payload to extract
  * @return         server address
  */
-inline static uint32_t ftp_get_data_server_addr_code_228(char *payload) {
-    char *ret = str_subvalue(payload, "(", ",");
+inline static uint32_t ftp_get_data_server_addr_code_228(char *payload, uint32_t payload_len) {
+    char *ret = ftp_str_subvalue_n(payload, payload_len, "(", ",");
     if(ret == NULL) return 0;
     uint32_t s_addr = htons(atoi(ret));
     free(ret);
@@ -2691,11 +2806,16 @@ int ftp_packet_request_extraction(const ipacket_t * ipacket, unsigned proto_inde
     int packet_type = ftp_get_packet_type(ipacket, proto_index);
     if (packet_type == MMT_FTP_PACKET_COMMAND) {
         int offset = get_packet_offset_at_index(ipacket, proto_index);
+        /* Clamp the IP-derived length to the captured bytes and validate the
+         * offset before touching payload (F-BUG-069/F-BUG-107, #195). */
+        int payload_len = (int)ftp_effective_payload_len(ipacket, proto_index, NULL);
+        if (payload_len <= 0) {
+            return 0;
+        }
         char *payload = (char*)&ipacket->data[offset];
         if (payload[0] == '\0') {
             return 0;
         }
-        int payload_len = ipacket->internal_packet->payload_packet_len;
         char * ret = ftp_get_command_str(payload,payload_len);
         if(ret){
             extracted_data->data = (void*)ret;
@@ -2719,11 +2839,16 @@ int ftp_packet_request_parameter_extraction(const ipacket_t * ipacket, unsigned 
     int packet_type = ftp_get_packet_type(ipacket, proto_index);
     if (packet_type == MMT_FTP_PACKET_COMMAND) {
         int offset = get_packet_offset_at_index(ipacket, proto_index);
+        /* Clamp the IP-derived length to the captured bytes and validate the
+         * offset before touching payload (F-BUG-069/F-BUG-107, #195). */
+        int payload_len = (int)ftp_effective_payload_len(ipacket, proto_index, NULL);
+        if (payload_len <= 0) {
+            return 0;
+        }
         char *payload = (char*)&ipacket->data[offset];
         if (payload[0] == '\0') {
             return 0;
         }
-        int payload_len = ipacket->internal_packet->payload_packet_len;
         char * ret = ftp_get_command_param(payload,payload_len);
         if(ret){
             extracted_data->data = (void*)ret;
@@ -2739,11 +2864,16 @@ int ftp_packet_response_code_extraction(const ipacket_t * ipacket, unsigned prot
     int packet_type = ftp_get_packet_type(ipacket, proto_index);
     if (packet_type == MMT_FTP_PACKET_RESPONSE) {
         int offset = get_packet_offset_at_index(ipacket, proto_index);
+        /* Clamp the IP-derived length to the captured bytes and validate the
+         * offset before touching payload (F-BUG-069/F-BUG-107, #195). */
+        int payload_len = (int)ftp_effective_payload_len(ipacket, proto_index, NULL);
+        if (payload_len <= 0) {
+            return 0;
+        }
         char *payload = (char*)&ipacket->data[offset];
         if (payload[0] == '\0') {
             return 0;
         }
-        int payload_len = ipacket->internal_packet->payload_packet_len;
         *((uint16_t*)extracted_data->data) = ftp_get_response_code(payload,payload_len);
         return 1;
         // ftp_response_t * res = ftp_get_response(payload, payload_len);
@@ -2764,11 +2894,16 @@ int ftp_packet_response_value_extraction(const ipacket_t * ipacket, unsigned pro
     int packet_type = ftp_get_packet_type(ipacket, proto_index);
     if (packet_type == MMT_FTP_PACKET_RESPONSE) {
         int offset = get_packet_offset_at_index(ipacket, proto_index);
+        /* Clamp the IP-derived length to the captured bytes and validate the
+         * offset before touching payload (F-BUG-069/F-BUG-107, #195). */
+        int payload_len = (int)ftp_effective_payload_len(ipacket, proto_index, NULL);
+        if (payload_len <= 0) {
+            return 0;
+        }
         char *payload = (char*)&ipacket->data[offset];
         if (payload[0] == '\0') {
             return 0;
         }
-        int payload_len = ipacket->internal_packet->payload_packet_len;
         char * ret = ftp_get_response_value(payload,payload_len);
         if(ret){
             extracted_data->data = (void*)ret;
@@ -2879,13 +3014,21 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
 
     int offset = get_packet_offset_at_index(ipacket, index);
 
+    /* Clamp the IP-derived length to the captured bytes and validate the
+     * offset before touching payload (F-BUG-069/F-BUG-107, #195). */
+    uint32_t payload_len = ftp_effective_payload_len(ipacket, index, NULL);
+    if (payload_len == 0) {
+        return ;
+    }
     char *payload = (char*)&ipacket->data[offset];
     if (payload[0] == '\0') {
         return ;
     }
-    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
 
     ftp_command_t * command = ftp_get_command(payload, payload_len);
+    if (command == NULL) {
+        return ;
+    }
 
     if (ftp_control->last_command != NULL) {
         free_ftp_command(ftp_control->last_command);
@@ -2893,11 +3036,16 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
 
     ftp_control->last_command = command;
     ftp_data_session_t *current_data_session = ftp_control->current_data_session;
+    /* A previous 226-reset under OOM can leave this NULL — the switch below
+     * dereferences it unconditionally (#195). */
+    if (current_data_session == NULL) {
+        return ;
+    }
     switch (command->cmd) {
     case MMT_FTP_EPRT_CMD:
         current_data_session->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
         if(current_data_session->data_conn->is_ipv6==1){
-            char *ipv6_address_from_EPRT = ftp_get_data_client_addr_v6_from_EPRT(payload);
+            char *ipv6_address_from_EPRT = ftp_get_data_client_addr_v6_from_EPRT(payload, payload_len);
             current_data_session->data_conn->c_addr_v6 = (char*)malloc(33*sizeof(char));
             if (current_data_session->data_conn->c_addr_v6!=NULL){
                 /* Bounded copy into the fixed 33-byte buffer: an EPRT address
@@ -2908,9 +3056,9 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
             }
             free(ipv6_address_from_EPRT);
         }else{
-            current_data_session->data_conn->c_addr = ftp_get_data_client_addr_from_EPRT(payload);
+            current_data_session->data_conn->c_addr = ftp_get_data_client_addr_from_EPRT(payload, payload_len);
         }
-        current_data_session->data_conn->c_port = ftp_get_data_client_port_from_EPRT(payload);    
+        current_data_session->data_conn->c_port = ftp_get_data_client_port_from_EPRT(payload, payload_len);    
         break;
     case MMT_FTP_PORT_CMD:
         current_data_session->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
@@ -2918,14 +3066,17 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
             printf("[PROTO_FTP] ftp_request_packet: MMT_FTP_PORT_CMD for IPv6 is not implemented yet! %"PRIu64"\n",ipacket->packet_id);
             // strcpy(&current_data_session->data_conn->c_addr_v6,ftp_get_addr_v6_from_parameter(payload,payload_len));
         }else{
-            current_data_session->data_conn->c_addr = ftp_get_addr_from_parameter(payload + 5, payload_len);
+            /* payload + 5 skips the "PORT " prefix — the length must shrink
+             * by the same amount or the bounded scan over-reads (#195). */
+            current_data_session->data_conn->c_addr = ftp_get_addr_from_parameter(payload + 5,
+                    (payload_len > 5) ? payload_len - 5 : 0);
         }
         current_data_session->data_conn->c_port = ftp_get_port_from_parameter(payload, payload_len);
         break;
     case MMT_FTP_LPRT_CMD:
         current_data_session->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
         if(current_data_session->data_conn->is_ipv6==1){
-            char *ipv6_address_from_LPRT = ftp_get_data_client_addr_v6_from_LPRT(payload);
+            char *ipv6_address_from_LPRT = ftp_get_data_client_addr_v6_from_LPRT(payload, payload_len);
             debug("[PROTO_FTP] %lu ipv6_address_from_LPRT: %s",ipacket->packet_id,ipv6_address_from_LPRT);
             current_data_session->data_conn->c_addr_v6 = (char*)malloc(33*sizeof(char));
             if (current_data_session->data_conn->c_addr_v6 !=NULL){
@@ -3016,13 +3167,21 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
 
     int offset = get_packet_offset_at_index(ipacket, index);
 
+    /* Clamp the IP-derived length to the captured bytes and validate the
+     * offset before touching payload (F-BUG-069/F-BUG-107, #195). */
+    uint32_t payload_len = ftp_effective_payload_len(ipacket, index, NULL);
+    if (payload_len == 0) {
+        return ;
+    }
     char *payload = (char*)&ipacket->data[offset];
     if (payload[0] == '\0') {
         return ;
     }
-    uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
 
     ftp_response_t * response = ftp_get_response(payload, payload_len);
+    if (response == NULL) {
+        return ;
+    }
 
     if (ftp_control->last_response != NULL) {
         free_ftp_response(ftp_control->last_response);
@@ -3030,6 +3189,11 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
 
     ftp_control->last_response = response;
     ftp_data_session_t *current_data_session = ftp_control->current_data_session;
+    /* A previous 226-reset under OOM can leave this NULL — the switch below
+     * dereferences it unconditionally (#195). */
+    if (current_data_session == NULL) {
+        return ;
+    }
     char *mstr = NULL;
     if (response->code != MMT_FTP_UNKNOWN_CODE) {
         debug("FTP: %s", response->value);
@@ -3051,19 +3215,23 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
             ftp_control->current_dir = str_copy(response->value);
             break;
         case MMT_FTP_213_CODE:
-            if (ftp_control->last_command->cmd == MMT_FTP_MDTM_CMD) {
+            if (ftp_control->last_command != NULL && ftp_control->last_command->cmd == MMT_FTP_MDTM_CMD) {
                 if (current_data_session->file->last_modified != NULL) {
                     free(current_data_session->file->last_modified);
                 }
                 current_data_session->file->last_modified = str_copy(response->value);
-            } else if (ftp_control->last_command->cmd == MMT_FTP_SIZE_CMD) {
-                current_data_session->file->size = atoi(response->value);
+            } else if (ftp_control->last_command != NULL && ftp_control->last_command->cmd == MMT_FTP_SIZE_CMD) {
+                /* A short reply (e.g. "213 \r\n") leaves response->value NULL —
+                 * atoi(NULL) would dereference it (#195). */
+                current_data_session->file->size = (response->value != NULL) ? atoi(response->value) : 0;
             }
             break;
         case MMT_FTP_229_CODE:
             current_data_session->data_conn_mode = MMT_FTP_DATA_PASSIVE_MODE;
             ftp_tuple6_t * t6 = ftp_new_tuple6();
-            t6->s_port = ftp_get_data_server_port_code_229(response->value);
+            if (t6 == NULL) break;
+            t6->s_port = ftp_get_data_server_port_code_229(response->value,
+                    (response->value != NULL) ? (uint32_t)strlen(response->value) : 0);
             t6->s_addr = ftp_control->contrl_conn->s_addr;
             t6->c_addr = ftp_control->contrl_conn->c_addr;
             t6->conn_type = MMT_FTP_DATA_CONNECTION;
@@ -3075,15 +3243,18 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
             break;
         case MMT_FTP_227_CODE:
             current_data_session->data_conn_mode = MMT_FTP_DATA_PASSIVE_MODE;
-            current_data_session->data_conn->s_addr = ftp_get_data_server_addr_code_227(payload);
-            current_data_session->data_conn->s_port = ftp_get_data_server_port_code_227(payload);
+            current_data_session->data_conn->s_addr = ftp_get_data_server_addr_code_227(payload, payload_len);
+            current_data_session->data_conn->s_port = ftp_get_data_server_port_code_227(payload, payload_len);
             current_data_session->data_conn->c_addr = ftp_control->contrl_conn->c_addr;
             break;
         case MMT_FTP_228_CODE:
             current_data_session->data_conn_mode = MMT_FTP_DATA_PASSIVE_MODE;
             ftp_tuple6_t * t62 = ftp_new_tuple6();
-            t62->s_port = ftp_get_data_server_port_code_228(response->value);
-            t62->s_addr = ftp_get_data_server_addr_code_228(response->value);
+            if (t62 == NULL) break;
+            t62->s_port = ftp_get_data_server_port_code_228(response->value,
+                    (response->value != NULL) ? (uint32_t)strlen(response->value) : 0);
+            t62->s_addr = ftp_get_data_server_addr_code_228(response->value,
+                    (response->value != NULL) ? (uint32_t)strlen(response->value) : 0);
             t62->c_addr = ftp_control->contrl_conn->c_addr;
             t62->conn_type = MMT_FTP_DATA_CONNECTION;
             t62->direction = MMT_FTP_PACKET_UNKNOWN_DIRECTION;
@@ -3101,7 +3272,8 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
             if(ftp_control->current_data_session->data_conn!=NULL){
                 free_ftp_data_session(ftp_control->current_data_session);
                 ftp_control->current_data_session = ftp_new_data_connection();
-                ftp_control->current_data_session->control_session = ftp_control;
+                if (ftp_control->current_data_session != NULL)
+                    ftp_control->current_data_session->control_session = ftp_control;
             }
             break;
         case MMT_FTP_221_CODE:

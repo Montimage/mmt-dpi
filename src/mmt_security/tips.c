@@ -47,6 +47,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -204,6 +205,28 @@ typedef struct COMPARE_VALUE_struct {
     void *data;
 } compare_value;
 
+/* F-BUG-091 (#209): the int length prefix of an int-prefixed record
+ * (MMT_STRING_DATA, MMT_STRING_LONG_DATA, MMT_DATA_PATH, MMT_BINARY_*_DATA)
+ * is packet-controlled. Clamp it to the record's payload so a forged prefix
+ * cannot drive a giant allocation or an over-reading memcpy. */
+static int clamp_prefixed_size(int declared, int record_size) {
+    int max_payload = record_size - (int)sizeof(int);
+    if (declared < 0) return 0;
+    if (max_payload < 0) max_payload = 0;
+    if (declared > max_payload) return max_payload;
+    return declared;
+}
+
+/* F-BUG-093 (#209): for MMT_DATA_PATH the prefix is an element *count*, not
+ * a byte length — the record is [int count][count ints], so the count is
+ * bounded by (record_size - prefix) / sizeof(int). */
+static int clamp_path_count(int declared, int record_size) {
+    int max_elems = (record_size - (int)sizeof(int)) / (int)sizeof(int);
+    if (declared < 0 || max_elems < 0) return 0;
+    if (declared > max_elems) return max_elems;
+    return declared;
+}
+
 void create_father(rule *a_rule, short depth, short clean)
 {
     father *temp = top_father;
@@ -290,15 +313,19 @@ void convert_mac_string_to_byte(const char *pszMACAddress, unsigned char** pbyAd
 
 void convert_mac_bytes_to_string(char **pszMACAddress, unsigned char *pbyMacAddressInBytes)
 {
+    /* Callers hand buffers of at least 18 bytes (buff1[100] in get_my_data,
+     * temp_MAC[22] in store_history); the bound is enforced anyway so the
+     * write can never overflow a smaller destination. A MAC string is
+     * "xx:xx:xx:xx:xx:xx" = 17 chars + NUL. */
     if(pbyMacAddressInBytes != NULL)
-        (void)sprintf(*pszMACAddress, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", pbyMacAddressInBytes[0] & 0xff,
+        (void)snprintf(*pszMACAddress, 18, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", pbyMacAddressInBytes[0] & 0xff,
             cSep, pbyMacAddressInBytes[1]& 0xff,
             cSep, pbyMacAddressInBytes[2]& 0xff,
             cSep, pbyMacAddressInBytes[3]& 0xff,
             cSep, pbyMacAddressInBytes[4]& 0xff,
             cSep, pbyMacAddressInBytes[5]& 0xff);
     else
-        (void)sprintf(*pszMACAddress, "00:00:00:00:00");
+        (void)snprintf(*pszMACAddress, 18, "00:00:00:00:00");
 }
 
 void *get_xdata(long type, int size, void *str)
@@ -358,15 +385,23 @@ void *get_xdata(long type, int size, void *str)
             memcpy(data, (void *) str, size);
             return (void *) data;
             break;
-        case MMT_HEADER_LINE:
+        case MMT_HEADER_LINE: {
         	xfree (data);
         	//str is an instance of mmt_string_data_t
         	tmp = str;
+        	/* the struct must be large enough to hold ptr+len no matter what
+        	 * the caller-passed size is */
+        	if (size < (int)sizeof(mmt_header_line_t)) size = sizeof(mmt_header_line_t);
         	mmt_header_line_t *hl = (mmt_header_line_t *) xmalloc( size );
             if(hl == NULL){
                 return NULL;
             }
-        	hl->len = tmp->len;
+            /* the declared length is bounded by the source record so a bogus
+             * value cannot over-read tmp->data or underflow hl->len - 1 */
+            uint32_t hl_len = tmp->len;
+            if (hl_len == 0) hl_len = 1;
+            if (hl_len > STRING_DATA_LEN) hl_len = STRING_DATA_LEN;
+        	hl->len = (uint16_t) hl_len;
         	char *str = xmalloc( hl->len);
             if(str == NULL){
                 xfree(hl);
@@ -377,6 +412,7 @@ void *get_xdata(long type, int size, void *str)
         	hl->ptr = str;
         	return hl;
             break;
+        }
         case MMT_DATA_TIMEVAL:
         case MMT_DATA_IP_ADDR:
         case MMT_DATA_IP6_ADDR:
@@ -406,15 +442,15 @@ void *get_xdata(long type, int size, void *str)
     }//end of switch
 }
 
+/* F-BUG-091/093 (#209): every write into the 100-byte destination is bounded
+ * by the remaining capacity. For the int-prefixed records (MMT_STRING_DATA,
+ * MMT_STRING_LONG_DATA, MMT_DATA_PATH, MMT_BINARY_*_DATA) `size` carries the
+ * declared element/byte count and the copy is clamped to min(declared, 99) —
+ * packet data is never assumed NUL-terminated. */
 char *get_my_data(void *data1, short size, long type) {
     char *buff1 = xmalloc(100);
     if (buff1 == NULL)
         return NULL;
-    char *buff0 = xmalloc(10);
-    if (buff0 == NULL){
-        xfree(buff1);
-        return NULL;
-    }
         
     void * data2 = NULL;
     struct timeval t1;
@@ -422,6 +458,7 @@ char *get_my_data(void *data1, short size, long type) {
     mmt_binary_data_t *db1 = NULL;
     //mmt_header_line_t *t;
     int data_size=0, j=0, stop=0;
+    size_t off = 0;
     buff1[0] = '\0';
     switch (type) {
         case MMT_DATA_IP6_ADDR:
@@ -452,52 +489,63 @@ char *get_my_data(void *data1, short size, long type) {
         case MMT_DATA_TIMEVAL:
             // TODO
             t1 = *(struct timeval *) (data1);
-            (void)sprintf(buff1, "%lu.%06lu", t1.tv_sec, (long) t1.tv_usec);
+            (void)snprintf(buff1, 100, "%lu.%06lu", t1.tv_sec, (long) t1.tv_usec);
             break;
         case MMT_DATA_IP_ADDR:
             // TODO
-            (void)sprintf(buff1, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));
+            (void)snprintf(buff1, 100, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));
             break;
         case MMT_U16_DATA:
             // TODO
-            (void)sprintf(buff1, "%d", *(unsigned short*) (data1));
+            (void)snprintf(buff1, 100, "%d", *(unsigned short*) (data1));
             break;
         case MMT_U32_DATA:
-            (void)sprintf(buff1, "%lu", *(unsigned long*) (data1));
+            (void)snprintf(buff1, 100, "%lu", *(unsigned long*) (data1));
             break;
         case MMT_U64_DATA:
             // TODO
             break;
         case MMT_U8_DATA:
         case MMT_DATA_CHAR:
-            (void)sprintf(buff1, "%c", *(unsigned char*) (data1));
+            (void)snprintf(buff1, 100, "%c", *(unsigned char*) (data1));
             break;
         case MMT_DATA_PATH:
-            stop = *(int*) (data1 + j*sizeof (int));
-            if(stop>0 && stop < 20){
-              for(j=1;j<stop;j++){
-                (void)sprintf(buff0, "%d", *(int*) (data1 + j*sizeof (int)));
-                if(j==1)strcpy(buff1, buff0);
-                else {
-                  strcat(buff1, ".");
-                  strcat(buff1, buff0);
-                }
-              }
+            /* data1 is the record [int count][int elements] — a
+             * proto_hierarchy_t: proto_path[] holds PROTO_PATH_SIZE ints at
+             * most; `size` carries the declared element count (get_value
+             * already clamped it to the record). */
+            stop = (int) size;
+            if (stop > PROTO_PATH_SIZE) stop = PROTO_PATH_SIZE;
+            if (stop < 0) stop = 0;
+            for (j = 0; j < stop && off < 99; j++) {
+                int n = snprintf(buff1 + off, 100 - off, "%s%d",
+                        j ? "." : "", *(int*) (data1 + sizeof (int) + j * sizeof (int)));
+                if (n < 0) break;
+                off += ((size_t) n < 100 - off) ? (size_t) n : (99 - off);
             }
             break;
         case MMT_HEADER_LINE: {
         	//parse_mmt_header_line( &data1, &data_size );
-            int hl_len = ((mmt_header_line_t *)data1)->len;
-            if (hl_len < 0) hl_len = 0;
+            mmt_header_line_t *hl = (mmt_header_line_t *) data1;
+            int hl_len = (int) hl->len;
+            if (hl->ptr == NULL || hl_len < 0) hl_len = 0;
             if (hl_len > 99) hl_len = 99;
-            memcpy(buff1, ((mmt_header_line_t *)data1)->ptr, hl_len);
+            memcpy(buff1, hl->ptr, hl_len);
             buff1[hl_len] = '\0';
         	break;
         }
         case MMT_STRING_LONG_DATA:
-        case MMT_STRING_DATA:
-            (void)sprintf(buff1, "%s", (char*) (data1 + sizeof (int)));
+        case MMT_STRING_DATA: {
+            /* data1 is the record [int len][bytes]; `size` is the declared
+             * byte count, clamped to the destination capacity. The source is
+             * packet data — never assume it is NUL-terminated. */
+            int slen = (int) size;
+            if (slen < 0) slen = 0;
+            if (slen > 99) slen = 99;
+            memcpy(buff1, (char *) (data1 + sizeof (int)), slen);
+            buff1[slen] = '\0';
             break;
+        }
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
 
@@ -510,22 +558,17 @@ char *get_my_data(void *data1, short size, long type) {
                 L2 = (*(unsigned long*)(data2)&0x0000ff00)>>8;
                 L3 = (*(unsigned long*)(data2)&0x00ff0000)>>16;
                 L4 = (*(unsigned long*)(data2)&0xff000000)>>24;
-                (void)sprintf(buff1, "%lu.%lu.%lu.%lu", L1, L2, L3, L4);
-            } else if (data_size == 6) {
-                for (j = 0; j < data_size; j++) {
-                    if (j == 0) {
-                        (void)sprintf(buff1, "%2.2X", *(unsigned char*) (data2 + j));
-                    } else {
-                        (void)sprintf(buff1, ":%2.2X", *(unsigned char*) (data2 + j));
-                    }
-                }
+                (void)snprintf(buff1, 100, "%lu.%lu.%lu.%lu", L1, L2, L3, L4);
             } else {
-                for (j = 0; j < data_size; j++) {
-                    if (j == 0) {
-                        (void)sprintf(buff1, "%02X", *(unsigned char*) (data2 + j));
-                    } else {
-                        (void)sprintf(buff1, ":%02X", *(unsigned char*) (data2 + j));
-                    }
+                /* hex-dump into the remaining space: first element 2 chars,
+                 * each further one 3 — stop when the buffer is full. */
+                int max_elems = 1 + (99 - 2) / 3;
+                if (data_size > max_elems) data_size = max_elems;
+                for (j = 0; j < data_size && off < 99; j++) {
+                    int n = snprintf(buff1 + off, 100 - off, "%s%02X",
+                            j ? ":" : "", *(unsigned char*) (data2 + j));
+                    if (n < 0) break;
+                    off += ((size_t) n < 100 - off) ? (size_t) n : (99 - off);
                 }
             }
             break;
@@ -554,7 +597,6 @@ char *get_my_data(void *data1, short size, long type) {
             (void)fprintf(stderr, "Error 15.1: Type not implemented yet. Data type unknown.\n");
             exit(-1);
     }//end of switch
-    xfree(buff0);
     return buff1;
 }
 
@@ -564,7 +606,9 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     char * output = NULL;
     char * temp2 = NULL;
     char * tempo = NULL;
-    char token1[30];
+    /* F-BUG-103 (#209): local token buffers — the globals were only allocated
+     * by init_options() and sizeof(char*) capped them at 7 chars. */
+    char token1[30], ltoken2[30], ltoken3[30];
     long protocol_id = 0;
     long field_id = 0;
     long data_type_id = 0;
@@ -572,8 +616,8 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     tuple *temp_tuple2 = NULL;
 
     token1[0] = '\0';
-    token2[0] = '\0';
-    token3[0] = '\0';
+    ltoken2[0] = '\0';
+    ltoken3[0] = '\0';
 
     output = xmalloc(200);
     if(output == NULL){
@@ -594,33 +638,34 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) temp2++;
     if (*temp2 != '.') {
         (void)fprintf(stderr, "Error 22x: Incorrect name in: %s", input);
+        xfree(output);
         return NULL;
     }
     temp2++; //skip the point
     i = 0;
-    while ((isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) && i < (int)sizeof(token2)-1) {
-        token2[i] = *temp2;
+    while ((isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) && i < (int)sizeof(ltoken2)-1) {
+        ltoken2[i] = *temp2;
         temp2++;
         i++;
     }
-    token2[i] = '\0';
+    ltoken2[i] = '\0';
     while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) temp2++;
     if (*temp2 == '.') {//we have a reference to an event (event_id)
         temp2++;
         i = 0;
-        while (isdigit(*temp2) && i < (int)sizeof(token3)-1) {
-            token3[i] = *temp2;
+        while (isdigit(*temp2) && i < (int)sizeof(ltoken3)-1) {
+            ltoken3[i] = *temp2;
             temp2++;
             i++;
         }
-        token3[i] = '\0';
+        ltoken3[i] = '\0';
         while (isdigit(*temp2)) temp2++;
     }
-    //Got variable identifiers: token1.token2.token3 (e.g., META.PROTO.3)
+    //Got variable identifiers: token1.ltoken2.ltoken3 (e.g., META.PROTO.3)
     protocol_id = get_protocol_id_by_name(token1);
-    field_id = get_attribute_id_by_protocol_id_and_attribute_name(protocol_id, token2);
+    field_id = get_attribute_id_by_protocol_id_and_attribute_name(protocol_id, ltoken2);
     data_type_id = get_attribute_data_type(protocol_id, field_id);
-    if (token3[0] != '\0') event_id = atoi(token3);
+    if (ltoken3[0] != '\0') event_id = atoi(ltoken3);
     if (event_id != 0) {
         //case variable is stored in list_of_tuples
         temp_tuple2 = list_of_tuples;
@@ -630,25 +675,35 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                 long type = temp_tuple2->data_type_id;
                 *size = temp_tuple2->data_size;
                 void *data = temp_tuple2->data;
-                if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA || type == MMT_DATA_PATH ) {
-                    *size = *(int*) (data);
-                    data = temp_tuple2->data + sizeof (int);
+                if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA ) {
+                    /* declared byte count from the record prefix — clamp it
+                     * to the record's payload so a forged prefix cannot make
+                     * the copy over-read the record (F-BUG-091, #209) */
+                    *size = clamp_prefixed_size(*(int*) (data), temp_tuple2->data_size);
+                }
+                else if (type == MMT_DATA_PATH) {
+                    /* prefix is an element count, not bytes (F-BUG-093) */
+                    *size = clamp_path_count(*(int*) (data), temp_tuple2->data_size);
                 }
                 else if( type == MMT_HEADER_LINE ){
-                    data  = (void*)(((mmt_header_line_t *)data)->ptr); 
-                    *size = ((mmt_header_line_t *)data)->len;
+                    /* F-BUG-095: read the declared length from the struct —
+                     * the previous code overwrote `data` with ->ptr first and
+                     * then read ->len from the contents. */
+                    *size = (int) (((mmt_header_line_t *)data)->len);
                 }
                 //Copy (data, size, type) to output
                 char * d = NULL;
                 char * td = NULL;
                 d = get_my_data(data, *size, type);
-                td = d;
-                while (*td != '\0') {
-                    *tempo = *td;
-                    tempo++;
-                    td++;
+                if (d != NULL) {
+                    td = d;
+                    while (*td != '\0') {
+                        *tempo = *td;
+                        tempo++;
+                        td++;
+                    }
+                    xfree(d);
                 }
-                xfree(d);
                 break;
             }
             temp_tuple2 = temp_tuple2->next;
@@ -659,25 +714,30 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
         if (data != NULL) {
             long type = data_type_id;
             *size = get_data_size_by_proto_and_field_ids(protocol_id, field_id);
-            if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA || type == MMT_DATA_PATH ) {
-                *size = *(int*) (data);
-                data = data + sizeof (int);
+            if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA ) {
+                /* same clamp: declared prefix bounded by the record size */
+                *size = clamp_prefixed_size(*(int*) (data), *size);
+            }
+            else if (type == MMT_DATA_PATH) {
+                *size = clamp_path_count(*(int*) (data), *size);
             }
             else if( type == MMT_HEADER_LINE ){
-                data  = (void*)(((mmt_header_line_t *)data)->ptr); 
-                *size = ((mmt_header_line_t *)data)->len;
+                /* F-BUG-095: same ordering fix — length from the struct. */
+                *size = (int) (((mmt_header_line_t *)data)->len);
             }
             //Copy (data, size, type) to output
             char * d = NULL;
             char * td = NULL;
             d = get_my_data(data, *size, type);
-            td = d;
-            while (*td != '\0') {
-                *tempo = *td;
-                tempo++;
-                td++;
+            if (d != NULL) {
+                td = d;
+                while (*td != '\0') {
+                    *tempo = *td;
+                    tempo++;
+                    td++;
+                }
+                xfree(d);
             }
-            xfree(d);
         }
     }
     *jump = temp2 - input;
@@ -694,33 +754,38 @@ char *tokenize(char *temp, char **ltoken2, char **ltoken3, short *ref)
     char *temp2 = temp;
     short i = 0;
     while (*temp2 == ' ')temp2++;
-    while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) {
+    /* F-BUG-103 (#209): every token buffer is 30 bytes — stop at 29 and skip
+     * the rest of the identifier so parsing stays in sync. */
+    while ((isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) && i < (short)(sizeof(token_tmp) - 1)) {
         (*ltoken2)[i] = *temp2;
         i++;
         temp2++;
     }
     (*ltoken2)[i] = '\0';
+    while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) temp2++;
     if (*temp2 != '.') {
         (void)fprintf(stderr, "Error 3b: Incorrect name in PROTO.FIELD.EVENT: %s", temp);
         exit(-1);
     }
     temp2++; //skip the point
     i = 0;
-    while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) {
+    while ((isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) && i < (short)(sizeof(token_tmp) - 1)) {
         (*ltoken3)[i] = *temp2;
         temp2++;
         i++;
     }
     (*ltoken3)[i] = '\0';
+    while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) temp2++;
     if (*temp2 == '.') {//we have a reference to an event (event_id)
         temp2++;
         i = 0;
-        while (isdigit(*temp2)) {
+        while (isdigit(*temp2) && i < (short)(sizeof(token_tmp) - 1)) {
             token_tmp[i] = *temp2;
             temp2++;
             i++;
         }
         token_tmp[i] = '\0';
+        while (isdigit(*temp2)) temp2++;
         *ref = atoi(token_tmp);
     }
     return temp2;
@@ -1236,6 +1301,13 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         temp2 = temp;
         while (isxdigit(*temp2) || *temp2 == '.')temp2++;
         i = temp2 - temp;
+        /* F-BUG-103 (#209): a digit run longer than the 30-byte token buffer
+         * is rejected instead of overflowing it (same convention as the
+         * over-long quoted string above). */
+        if (i >= (int)sizeof(token)) {
+            (void)fprintf(stderr, "Error 3c: Number too long in boolean expression: %s", expression);
+            exit(-1);
+        }
         strncpy(token, temp, i);
         token[i] = '\0';
 
@@ -1825,9 +1897,12 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
       pt2++;
     }
     if (pt != pt2){
-       memcpy(buff,pt,pt2-pt);
-       buff[pt2-pt]='\0';
-       buff_ids[i++]=atoi(buff);
+       /* buff is 10 bytes and buff_ids holds 100 ids — clamp both */
+       size_t tok_len = (size_t)(pt2 - pt);
+       if (tok_len > 9) tok_len = 9;
+       memcpy(buff,pt,tok_len);
+       buff[tok_len]='\0';
+       if (i < 100) buff_ids[i++]=atoi(buff);
     }
     if(*pt2=='\0')break;
     pt=pt2+1;
@@ -1847,14 +1922,18 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
           pt2 = pt2 + 18;
           pt3 = strchr(pt2,':');
           if (pt3 != NULL){
-            memcpy(buff,pt2,pt3-pt2);
-            buff[pt3-pt2]='\0';
+            size_t tok_len = (size_t)(pt3 - pt2);
+            if (tok_len > 9) tok_len = 9;
+            memcpy(buff,pt2,tok_len);
+            buff[tok_len]='\0';
             if(event_found(buff_ids, atoi(buff)) == NO){
               pt2 = eliminate_from(pt);
             }
           }
         }
-        pt = strstr(pt2,"event");
+        /* a malformed history without a "description" after an "event" leaves
+         * pt2 NULL — stop instead of strstr(NULL, ...) (F-BUG-103, #209) */
+        pt = (pt2 != NULL) ? strstr(pt2,"event") : NULL;
       }
       new_rule->json_history = json_history;
     }
@@ -1982,84 +2061,59 @@ int eliminate_instance(rule **r, rule **i, char *type)
 }
 
 
+/* F-BUG-092 (#209): control bytes escape as \u + 4 hex digits — up to 6
+ * output bytes per
+ * input byte — so the destination is size*6+1, non-positive sizes are
+ * rejected, and the loop tracks the remaining capacity. */
 char * convert_string_to_json_compatible (char * p, int size){
-//*************
     char * result = NULL;
     char *c = NULL;
     char *r = NULL;
     int pos = 0;
+    size_t remaining;
+    if (p == NULL || size <= 0) return NULL;
+    if ((size_t) size > (SIZE_MAX - 1) / 6) return NULL;
     c = p;
-    result = xmalloc (size * 2);
-
+    result = xmalloc ((size_t) size * 6 + 1);
     r = result;
     if(r == NULL) return NULL;
     *r = '\0';
-    for (pos=0; pos<size; pos++){
+    remaining = (size_t) size * 6; /* keep the last byte for the terminator */
+    for (pos=0; pos<size && remaining > 0; pos++){
+        const char *esc = NULL;
         switch (*c) {
-            case  '"': strncpy(r, "\\\"",2); r = r + 2; break;
-            case '\\': strncpy(r, "\\\\",2); r = r + 2; break;
-            case '\b': strncpy(r, "\\b", 2); r = r + 2; break;
-            case '\f': strncpy(r, "\\f", 2); r = r + 2; break;
-            case '\n': strncpy(r, "\\n", 2); r = r + 2; break;
-            case '\r': strncpy(r, "\\r", 2); r = r + 2; break;
-            case '\t': strncpy(r, "\\t", 2); r = r + 2; break;
+            case  '"': esc = "\\\""; break;
+            case '\\': esc = "\\\\"; break;
+            case '\b': esc = "\\b"; break;
+            case '\f': esc = "\\f"; break;
+            case '\n': esc = "\\n"; break;
+            case '\r': esc = "\\r"; break;
+            case '\t': esc = "\\t"; break;
             default:
-                if ('\x00' <= *c && *c <= '\x1f') {
-                    sprintf(&r[0], "\\u%04x", (int)(*c)); r = r + 6;
+                if ((unsigned char) *c <= '\x1f') {
+                    if (remaining < 6) { c++; goto done; }
+                    snprintf(r, 7, "\\u%04x", (int)(unsigned char)(*c));
+                    r += 6;
+                    remaining -= 6;
             	} else {
                     *r = *c; r++;
+                    remaining--;
             	}
                 break;
         } //end of switch
+        if (esc != NULL) {
+            if (remaining < 2) { c++; goto done; }
+            memcpy(r, esc, 2); r += 2;
+            remaining -= 2;
+        }
         //end string
         *r = '\0';
         c++;
     } //end of for
+done:
+    *r = '\0';
     return result;
 }
-//*************/
-/*************
-    char * result = NULL;
-    char *c = NULL;
-    int pos = 0;
-    int i = 0;
-    c = p;
-    result = xmalloc (size * 2);
-    for (i=0; i<size; i++){
-        switch (*c) {
-            // quotation mark (0x22)
-            case '"': { result[pos + 1] = '"'; pos += 2; break; }
-            // reverse solidus (0x5c): nothing to change
-            case '\\': { pos += 2; break; }
-            // backspace (0x08)
-            case '\b': { result[pos + 1] = 'b'; pos += 2; break; }
-            // formfeed (0x0c)
-            case '\f': { result[pos + 1] = 'f'; pos += 2; break; }
-            // newline (0x0a)
-            case '\n': { result[pos + 1] = 'n'; pos += 2; break; }
-            // carriage return (0x0d)
-            case '\r': { result[pos + 1] = 'r'; pos += 2; break; }
-            // horizontal tab (0x09)
-            case '\t': { result[pos + 1] = 't'; pos += 2; break; }
-            default: {
-                if (*c >= 0x00 && *c <= 0x1f) {
-                    // print character *c as \uxxxx
-                    sprintf(&result[pos + 1], "u%04x", (int)(*c));
-                    pos += 6;
-                    // overwrite trailing null character
-                    result[pos] = '\\';
-                } else {
-                    // all other characters are added as-is
-                    result[pos++] = *c;
-                }
-                break;
-            }
-        } //end of switch
-        c++;
-    } //end of for
-    return result;
-}
-*************/
 
 
 
@@ -2070,12 +2124,14 @@ static void json_grow_append(char **buf, size_t *cap, const char *src) {
     if (cur + add + 1 > *cap) {
         size_t newcap = *cap * 2;
         while (newcap < cur + add + 1) newcap *= 2;
-        char *nb = realloc(*buf, newcap);
+        char *nb = xmalloc(newcap);
         if (!nb) return;
+        memcpy(nb, *buf, cur + 1);
+        xfree(*buf);
         *buf = nb;
         *cap = newcap;
     }
-    strcat(*buf, src);
+    memcpy(*buf + cur, src, add + 1);
 }
 void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *curr_rule, char *cause, short event_id)
 {
@@ -2104,7 +2160,10 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 
     tvp.tv_sec=0;
     tvp.tv_usec=0;
-    tvp = *(struct timeval *) get_attribute_extracted_data(pkt, PROTO_META, META_UTIME);
+    {
+        void *utime = get_attribute_extracted_data(pkt, PROTO_META, META_UTIME);
+        if (utime != NULL) tvp = *(struct timeval *) utime;
+    }
 
     snprintf(json_buff, json_cap, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (long) tvp.tv_usec);
 
@@ -2174,6 +2233,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     break;
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
+                    if (temp_MAC == NULL) goto cleanup; /* F-BUG-096: one exit frees both JSON buffers */
                     convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
                     snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, temp_MAC);
                     json_grow_append(&json_buff, &json_cap, json_buff1);
@@ -2220,9 +2280,12 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     if (hl_len > 512) hl_len = 512;
                     buff = xmalloc (hl_len + 1);
                     if(buff == NULL){
-                        xfree(json_buff);
-                        xfree(json_buff1);
-                        break;
+                        /* F-BUG-096 (#209): the old `break` only left the
+                         * switch — the loop kept appending into the freed
+                         * json_buff and both buffers were freed again at the
+                         * bottom (use-after-free + double free). Every failure
+                         * path now reaches the single cleanup exit. */
+                        goto cleanup;
                     }
                     memcpy(buff, ((mmt_header_line_t *)data1)->ptr, hl_len);
                     buff[hl_len] ='\0';
@@ -2235,9 +2298,12 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_DATA_PATH:
                 case MMT_STRING_LONG_DATA:
                 case MMT_STRING_DATA: {
+                    /* declared prefix is packet-controlled: bound it by the
+                     * record size and by the stack buffer (F-BUG-091, #209) */
                     int slen = *(int*)(data1);
-                    if (slen < 0) slen = 0;
+                    if (slen > data_size - (int)sizeof(int)) slen = data_size - (int)sizeof(int);
                     if (slen > 512) slen = 512;
+                    if (slen < 0) slen = 0;
                     char tmp_str[513];
                     memcpy(tmp_str, (char*)(data1 + sizeof(int)), slen);
                     tmp_str[slen]='\0';
@@ -2249,7 +2315,13 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_BINARY_VAR_DATA:
                     // TODO
                     db1 = (mmt_binary_data_t *) (data1);
+                    /* db1->len is a packet-controlled record prefix — bound it
+                     * by the inline array the record actually carries, same
+                     * family as the int-prefix clamps above (F-BUG-091, #209) */
                     data_size = db1->len;
+                    if (data_size > (int)(type == MMT_BINARY_VAR_DATA ? BINARY_1024DATA_LEN : BINARY_64DATA_LEN))
+                        data_size = (int)(type == MMT_BINARY_VAR_DATA ? BINARY_1024DATA_LEN : BINARY_64DATA_LEN);
+                    if (data_size < 0) data_size = 0;
                     data2 = db1->data;
                     if (data_size == 4) {
                         L1 = (*(unsigned long*)(data2)&0x000000ff);
@@ -2286,7 +2358,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                         }
                         //end attribute
                         if(close_tag==YES)
-                          (void)strcat(json_buff, "\"},");
+                          json_grow_append(&json_buff, &json_cap, "\"},");
                     }
                     break;
                 case MMT_DATA_LAYERID:
@@ -2306,9 +2378,13 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 								  data_pointer = get_attribute_extracted_data_by_name(pkt, "tcp","p_payload");
 								  if( data_pointer != NULL ){
 									  new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
-									  snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
-									  json_grow_append(&json_buff, &json_cap, json_buff1);
-									  xfree (new_data_pointer);
+									  /* NULL on non-positive size or OOM — a NULL %s
+									   * argument is undefined; skip the attribute */
+									  if (new_data_pointer != NULL) {
+										  snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
+										  json_grow_append(&json_buff, &json_cap, json_buff1);
+										  xfree (new_data_pointer);
+									  }
 								  }
 							  }
                	  }
@@ -2347,6 +2423,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
        	   }else if( having_mac_src == 0 ){
         		data1 = get_attribute_extracted_data(pkt, 99, 3);
         		temp_MAC = xmalloc(22);
+        		if (temp_MAC == NULL) goto cleanup;
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
         		snprintf(json_buff1, json_cap1,"{\"eth.src\":\"%s\"},", temp_MAC );
         		json_grow_append(&json_buff, &json_cap, json_buff1);
@@ -2369,6 +2446,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 		    }else if( having_mac_dst == 0 ){
 				data1 = get_attribute_extracted_data(pkt, 99, 2);
 				temp_MAC = xmalloc(22);
+				if (temp_MAC == NULL) goto cleanup;
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
 				snprintf(json_buff1, json_cap1,"{\"eth.dst\":\"%s\"},", temp_MAC);
 				json_grow_append(&json_buff, &json_cap, json_buff1);
@@ -2380,7 +2458,9 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 
         if( num_attr > 0 ){
         	//remove the last comma in "event: [{...},...,{..},"
-        	json_buff[ strlen(json_buff) - 1 ] = '\0';
+        	size_t _jlen = strlen(json_buff);
+        	if (_jlen > 0 && json_buff[_jlen - 1] == ',')
+        	    json_buff[_jlen - 1] = '\0';
         }
         json_grow_append(&json_buff, &json_cap, "]");
         {
@@ -2390,35 +2470,40 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 snprintf(ev_buf, ev_len, "\"event_%d\":{%s},", event_id, json_buff );
                 size_t _l = strlen(ev_buf);
                 if (_l + 1 > json_cap) { char *nb = realloc(json_buff, _l+1); if (nb) { json_buff=nb; json_cap=_l+1; } }
-                if (_l + 1 <= json_cap) strcpy(json_buff, ev_buf);
+                if (_l + 1 <= json_cap) memcpy(json_buff, ev_buf, _l + 1);
                 xfree(ev_buf);
             }
         }
 
         short c = 0;
         if (context == BEFORE || context == AFTER || context == SAME) c = 1;
-        int json_buff_size = strlen(json_buff) + 1 + c;
+        /* size_t: the history grows one event per satisfied condition — an int
+         * could wrap on a long-running probe (F-BUG-096, #209) */
+        size_t json_buff_size = strlen(json_buff) + 1 + (size_t) c;
         if (curr_rule->json_history != NULL) {
             json_buff_size = json_buff_size + strlen(curr_rule->json_history);
             char *tmp = realloc(curr_rule->json_history, json_buff_size);
             if(tmp!=NULL){
                 curr_rule->json_history = tmp;
             }else{
-                xfree(json_buff);
-                xfree(json_buff1);
-                return;
+                goto cleanup;
             }
         } else {
             curr_rule->json_history = xcalloc(1, json_buff_size);
             if (curr_rule->json_history == NULL){
-                xfree(json_buff);
-                xfree(json_buff1);
-                return;
+                goto cleanup;
             }
         }
 
-        (void)strcat(curr_rule->json_history, json_buff);
+        {
+            /* bounded append: json_buff_size was sized for exactly this */
+            size_t _off = strlen(curr_rule->json_history);
+            size_t _n = strlen(json_buff) + 1;
+            if (_off + _n <= json_buff_size)
+                memcpy(curr_rule->json_history + _off, json_buff, _n);
+        }
     }
+cleanup:
     xfree(json_buff);
     xfree(json_buff1);
 }
@@ -2543,30 +2628,36 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
             break;
         case MMT_U16_DATA:
             s1 = *((unsigned short *) (v1.data));
-            for (i = 0; i < size; i = i + sizeof (unsigned short)) {
-                if (s1 == ((unsigned short *) (v2.data))[i])
+            /* i counts bytes — the table index must be the element number,
+             * and only complete elements may be read: indexing [i] read up to
+             * 2*size bytes past v2.data and skipped odd elements (#209) */
+            j = 0;
+            for (i = 0; i + (int)sizeof(unsigned short) <= size; i = i + sizeof (unsigned short)) {
+                if (s1 == ((unsigned short *) (v2.data))[j++])
                     return VALID;
             }
             break;
         case MMT_U32_DATA:
             l1 = *((unsigned long *) (v1.data));
             j = 0;
-            for (i = 0; i < size; i = i + sizeof (unsigned long)) {
+            for (i = 0; i + (int)sizeof(unsigned long) <= size; i = i + sizeof (unsigned long)) {
                 if (l1 == ((unsigned long *) (v2.data))[j++])
                     return VALID;
             }
             break;
         case MMT_U64_DATA:
             ll1 = *((unsigned long long *) (v1.data));
-            for (i = 0; i < size; i = i + sizeof (unsigned long long)) {
-                if (ll1 == ((unsigned long long*) (v2.data))[i])
+            j = 0;
+            for (i = 0; i + (int)sizeof(unsigned long long) <= size; i = i + sizeof (unsigned long long)) {
+                if (ll1 == ((unsigned long long*) (v2.data))[j++])
                     return VALID;
             }
             break;
         case MMT_DATA_FLOAT:
             f1 = *((float *) (v1.data));
-            for (i = 0; i < size; i = i + sizeof (float)) {
-                if (f1 == ((float *) (v2.data))[i])
+            j = 0;
+            for (i = 0; i + (int)sizeof(float) <= size; i = i + sizeof (float)) {
+                if (f1 == ((float *) (v2.data))[j++])
                     return VALID;
             }
             break;
@@ -2723,7 +2814,10 @@ int comp2(compare_value v1, compare_value v2, short ope)
             if (ope == XC || ope == XCE) {
               j = atoi(data2);
               if(size>0 && size < 20){
-                for(i=1;i<size;i++){
+                /* i indexes int elements — bound the byte offset by the
+                 * operand buffer (size bytes): read complete ints only
+                 * (the old i<size bound read up to 4x past it, #209) */
+                for(i=1; i * (int)sizeof(int) + (int)sizeof(int) <= size; i++){
                   if(j == *(int*) (data1 + i*sizeof (int))) return VALID;
                 }
                 return NOT_VALID;
@@ -3051,7 +3145,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         v1.size = r1->t.data_size;
         void *data = r1->t.data;
         if (v1.type == MMT_STRING_DATA || v1.type == MMT_STRING_LONG_DATA || v1.type == MMT_BINARY_DATA || v1.type == MMT_BINARY_VAR_DATA || v1.type == MMT_DATA_PATH) {
-            v1.size = *(int*) (data);
+            if (v1.type == MMT_DATA_PATH)
+                v1.size = clamp_path_count(*(int*) (data), r1->t.data_size);
+            else
+                v1.size = clamp_prefixed_size(*(int*) (data), r1->t.data_size);
             data = r1->t.data + sizeof (int);
         }
         else if (v1.type == MMT_HEADER_LINE) {
@@ -3064,7 +3161,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         if(v1.data == NULL){
             return 0;
         }
-        memcpy(v1.data, data, v1.size);
+        if (data != NULL && v1.size > 0) memcpy(v1.data, data, v1.size);
     } else if (r1->t.event_id != 0) {
         if (skip_refs == YES) v1.found = SKIP;
         else {
@@ -3077,7 +3174,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                     v1.size = temp_tuple2->data_size;
                     void *data = temp_tuple2->data;
                     if (v1.type == MMT_STRING_DATA || v1.type == MMT_STRING_LONG_DATA || v1.type == MMT_BINARY_DATA || v1.type == MMT_BINARY_VAR_DATA || v1.type == MMT_DATA_PATH) {
-                        v1.size = *(int*) (data);
+                        if (v1.type == MMT_DATA_PATH)
+                            v1.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size);
+                        else
+                            v1.size = clamp_prefixed_size(*(int*) (data), temp_tuple2->data_size);
                         data = temp_tuple2->data + sizeof (int);
                     }
                     else if (v1.type == MMT_HEADER_LINE){
@@ -3103,7 +3203,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         v2.size = r2->t.data_size;
         void *data = r2->t.data;
         if (v2.type == MMT_STRING_DATA || v2.type == MMT_STRING_LONG_DATA || v2.type == MMT_BINARY_DATA || v2.type == MMT_BINARY_VAR_DATA || v2.type == MMT_DATA_PATH) {
-            v2.size = *(int*) (data);
+            if (v2.type == MMT_DATA_PATH)
+                v2.size = clamp_path_count(*(int*) (data), r2->t.data_size);
+            else
+                v2.size = clamp_prefixed_size(*(int*) (data), r2->t.data_size);
             data = r2->t.data + sizeof (int);
         }
         else if (v2.type == MMT_HEADER_LINE){
@@ -3117,7 +3220,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         {
             return 0;
         }
-        memcpy(v2.data, data, v2.size);
+        if (data != NULL && v2.size > 0) memcpy(v2.data, data, v2.size);
     } else if (r2->t.event_id != 0) {
         if (skip_refs == YES) v1.found = SKIP;
         else {
@@ -3134,7 +3237,10 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                                         v2.size = temp_tuple2->data_size;
                                         void *data = temp_tuple2->data;
                                         if (v2.type == MMT_STRING_DATA || v2.type == MMT_STRING_LONG_DATA || v2.type == MMT_BINARY_DATA || v2.type == MMT_BINARY_VAR_DATA || v2.type == MMT_DATA_PATH) {
-                                            v2.size = *(int*) (data);
+                                            if (v2.type == MMT_DATA_PATH)
+                                                v2.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size);
+                                            else
+                                                v2.size = clamp_prefixed_size(*(int*) (data), temp_tuple2->data_size);
                                             data = temp_tuple2->data + sizeof (int);
                                         }
                                         else if (v2.type == MMT_HEADER_LINE){
@@ -3196,7 +3302,13 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             tmp_v->found = FOUND;
             tmp_v->size = get_data_size_by_proto_and_field_ids(tmp_r->t.protocol_id, tmp_r->t.field_id);
             if (tmp_v->type == MMT_STRING_DATA || tmp_v->type == MMT_STRING_LONG_DATA || tmp_v->type == MMT_BINARY_DATA || tmp_v->type == MMT_BINARY_VAR_DATA || tmp_v->type == MMT_DATA_PATH) {
-                tmp_v->size = *(int*) (data);
+                /* same clamps as the scalar/tuple paths: the record prefix is
+                 * packet-controlled — a forged value must not drive a giant
+                 * xcalloc or an over-reading memcpy (F-BUG-091/093, #209) */
+                if (tmp_v->type == MMT_DATA_PATH)
+                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size);
+                else
+                    tmp_v->size = clamp_prefixed_size(*(int*) (data), tmp_v->size);
                 data = data + sizeof (int);
             }
             else if (tmp_v->type == MMT_HEADER_LINE){
@@ -3206,10 +3318,12 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             }
             tmp_v->data = xcalloc(1, tmp_v->size);
             if(tmp_v->data == NULL){
-                xfree(data);
+                /* `data` is the attribute's internal storage — not ours to
+                 * free (the old xfree(data) here also hit an interior
+                 * pointer once the prefix was skipped) */
                 return 0;
             }
-            memcpy(tmp_v->data, data, tmp_v->size);
+            if (data != NULL && tmp_v->size > 0) memcpy(tmp_v->data, data, tmp_v->size);
         }
     }
     if (v2.found == NOT_FOUND) {
@@ -3221,7 +3335,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
             tmp_v->found = FOUND;
             tmp_v->size = get_data_size_by_proto_and_field_ids(tmp_r->t.protocol_id, tmp_r->t.field_id);
             if (tmp_v->type == MMT_STRING_DATA || tmp_v->type == MMT_STRING_LONG_DATA || tmp_v->type == MMT_BINARY_DATA || tmp_v->type == MMT_BINARY_VAR_DATA || tmp_v->type == MMT_DATA_PATH) {
-                tmp_v->size = *(int*) (data);
+                /* same clamps as the scalar/tuple paths (F-BUG-091/093, #209) */
+                if (tmp_v->type == MMT_DATA_PATH)
+                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size);
+                else
+                    tmp_v->size = clamp_prefixed_size(*(int*) (data), tmp_v->size);
                 data = data + sizeof (int);
             }
             else if (tmp_v->type == MMT_HEADER_LINE){
@@ -3235,7 +3353,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
                 xfree(v2.data);
                 return NOT_VALID;
             }
-            memcpy(tmp_v->data, data, tmp_v->size);
+            if (data != NULL && tmp_v->size > 0) memcpy(tmp_v->data, data, tmp_v->size);
         }
     }
 
@@ -3355,9 +3473,10 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
       	corr_mess++;
 
         if(history != NULL){
-      	  //remove the last comma
-		  if( history[ strlen( history ) - 1 ] == ',')
-			history[ strlen( history ) - 1 ] = '\0';
+      	  //remove the last comma — an empty history has no last char (F-BUG-103)
+		  size_t hlen = strlen( history );
+		  if( hlen > 0 && history[hlen - 1] == ',')
+			history[hlen - 1] = '\0';
 
             str = xmalloc( strlen( history ) + 3 );
             if(str == NULL){
@@ -3365,7 +3484,7 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
                 xfree(type);
                 return;
             }
-      	  sprintf( str, "{%s}", history );
+      	  snprintf( str, strlen( history ) + 3, "{%s}", history );
       	  ((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
           xfree( str );
         }
@@ -3640,71 +3759,86 @@ static char *escape_shell_arg(const char *arg) {
     return out;
 }
 
+/* F-BUG-102 (#209): the command buffer used to be sized from the parameter
+ * names in `input` while the escaped substitutions can add hundreds of bytes
+ * each. The output is now grown on demand, and every error path funnels to
+ * one exit that releases it (the four early `return NULL`s used to leak it). */
+static int gc_append(char **buf, size_t *cap, size_t *len, const char *src, size_t n) {
+    if (*len + n + 1 > *cap) {
+        size_t nc = *cap ? *cap : 256;
+        while (nc < *len + n + 1) nc *= 2;
+        char *nb = xmalloc(nc);
+        if (nb == NULL) return -1;
+        if (*len > 0) memcpy(nb, *buf, *len);
+        nb[*len] = '\0';
+        xfree(*buf);
+        *buf = nb;
+        *cap = nc;
+    }
+    memcpy(*buf + *len, src, n);
+    *len += n;
+    (*buf)[*len] = '\0';
+    return 0;
+}
+
 char *generate_command( const ipacket_t *pkt, rule *r, char * input )
 {
     //input: "name_of_script parameters" where parameters can be constants or variables (e.g., script(1,META.PROTO.3) )
     //output: idem but replacing variables with the value (e.g., script 1 801)
     char * output = NULL;
     char * tempi = NULL;
-    char * tempo = NULL;
-    int ibuff = 0;
+    char numbuf[40];
+    size_t out_cap = 0, out_len = 0;
+    int oom = 0;
     tuple *list_of_tuples = r->list_of_tuples;
 
-    // Allocate with expansion room for quoting: each byte may become up to 4
-    // bytes when escaped, plus base path and counter.
-    output = xmalloc(strlen(input) * 4 + 4096);
+    // Start with expansion room for quoting; the buffer grows further on
+    // demand so escaped substitutions can never overrun it.
+    out_cap = strlen(input) * 4 + 4096;
+    output = xmalloc(out_cap);
 
     if (output == NULL) {
         (void)fprintf(stderr, "Error 22x: Out of memory\n");
         return NULL;
     }
+    output[0] = '\0';
 
     //Copy input to output, replacing the variables with the values recovered below
-    // use malloc to allocate output
     // if a value is not available then print an error and return NULL!
-    
 
-    strcpy(output, "/opt/mmt/probe/conf/");
+    oom |= gc_append(&output, &out_cap, &out_len, "/opt/mmt/probe/conf/./", 22);
 
     tempi = input;
-    tempo = output+strlen(output);
-    *tempo='.';
-    tempo++;
-    *tempo='/';
-    tempo++;
     while (*tempi == ' ') tempi++;
     while (*tempi != '(' && *tempi != '\0') { // && *tempi != ' ') {
-        *tempo = *tempi;
-        tempo++;
+        oom |= gc_append(&output, &out_cap, &out_len, tempi, 1);
         tempi++;
     }
     if (*tempi == '\0') {
         (void)fprintf(stderr, "Error 22x: missing '(' in: %s\n", input);
-        return NULL;
+        goto fail;
     }
     while (*tempi == ' ') tempi++;
     if (*tempi != '(') {
         (void)fprintf(stderr, "Error 22x: missing '(' in: %s\n", input);
-        return NULL;
+        goto fail;
     }
     tempi++; //skip '('
-    *tempo = ' ';
-    tempo++;
+    oom |= gc_append(&output, &out_cap, &out_len, " ", 1);
     //we have: "script_name "
     counter_detection++;
-    ibuff = snprintf(tempo, 20, "%ld", counter_detection);
-    tempo = tempo + ibuff;
-    *tempo = ' ';
-    tempo++;
+    snprintf(numbuf, sizeof(numbuf), "%ld ", counter_detection);
+    oom |= gc_append(&output, &out_cap, &out_len, numbuf, strlen(numbuf));
 
     while (*tempi == ' ') tempi++;
 
+    int closed = 0;
     while (isalpha(*tempi) || *tempi == '_' || isdigit(*tempi) || *tempi == ')') {
+        if (oom) goto fail;
         if (isdigit(*tempi)) {
             //we have a constant that ends with ')' or ' ' or ',' or '\0'
             while (*tempi != ',' && *tempi != ')' && *tempi != ' ' && *tempi != '\0') {
-                *tempo = *tempi;
-                tempo++;
+                oom |= gc_append(&output, &out_cap, &out_len, tempi, 1);
                 tempi++;
             }
         }
@@ -3721,12 +3855,7 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
             // Apply strict single-quote escaping so shell metachars are literal.
             char *escaped = escape_shell_arg(data ? data : "");
             if (escaped != NULL) {
-                char *td = escaped;
-                while (*td != '\0') {
-                    *tempo = *td;
-                    tempo++;
-                    td++;
-                }
+                oom |= gc_append(&output, &out_cap, &out_len, escaped, strlen(escaped));
                 xfree(escaped);
             }
             xfree(data);
@@ -3735,22 +3864,26 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
         if (*tempi == ',') {
             tempi++;
             while (*tempi == ' ') tempi++;
-            *tempo = ' ';
-            tempo++;
+            oom |= gc_append(&output, &out_cap, &out_len, " ", 1);
             if (isalpha(*tempi) || *tempi == '_' || isdigit(*tempi)) continue;
             else {
                 (void)fprintf(stderr, "Error 22x: missing parameter\n");
-                return NULL;
+                goto fail;
             }
         }
         if (*tempi == ')') {
-            *tempo = '\0';
+            output[out_len] = '\0';
+            closed = 1;
             break;
         }
         if (*tempi == '\0') {
             (void)fprintf(stderr, "Error 22x: missing ')' in: %s\n", input);
-            return NULL;
+            goto fail;
         }
+    }
+    if (oom || !closed) {
+        if (!closed) (void)fprintf(stderr, "Error 22x: missing ')' in: %s\n", input);
+        goto fail;
     }
     //Put data in file with name: detection_<counter_detection>.data
     //Will be used by python script
@@ -3773,6 +3906,9 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     fprintf(pythonDataFile,"detected");
     close_file(pythonDataFile);
     return output;
+fail:
+    xfree(output);
+    return NULL;
 }
 
 char *my_strstr(char *texte, char* pattern, short reverse){
@@ -3852,13 +3988,14 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
         }
 		if (r->json_history != NULL){
             history = r->json_history;
-            //remove the last comma
-            if (history[strlen(history) - 1] == ',')
-                history[strlen(history) - 1] = '\0';
+            //remove the last comma — an empty history has no last char (F-BUG-103)
+            size_t hlen = strlen(history);
+            if (hlen > 0 && history[hlen - 1] == ',')
+                history[hlen - 1] = '\0';
 
             char *temp = xmalloc(strlen(history) + 3);
             if(temp != NULL){
-                sprintf(temp, "{%s}", history);
+                snprintf(temp, strlen(history) + 3, "{%s}", history);
                 ((op->callback_funct))(prop_id, verdict, type, des, temp, pkt->p_hdr->ts, (void *)op->user_args);
                 xfree(temp);
             }
@@ -4716,85 +4853,111 @@ void print_summary()
     }
 }
 
+/* F-BUG-103 (#209): xml_summary wrote into a fixed 10000-byte buffer with a
+ * 1000-byte scratch — attacker-controlled descriptions could overflow both.
+ * Grow-on-demand formatted append instead; returns -1 on allocation failure. */
+static int xml_appendf(char **buf, size_t *cap, const char *fmt, ...) {
+    va_list ap, ap2;
+    int need;
+    size_t cur;
+    if (buf == NULL || cap == NULL || fmt == NULL) return -1;
+    va_start(ap, fmt);
+    va_copy(ap2, ap);
+    need = vsnprintf(NULL, 0, fmt, ap);
+    va_end(ap);
+    if (need < 0) { va_end(ap2); return -1; }
+    cur = (*buf != NULL) ? strlen(*buf) : 0;
+    if (cur + (size_t) need + 1 > *cap) {
+        size_t nc = (*cap != 0) ? *cap : 1024;
+        char *nb;
+        while (nc < cur + (size_t) need + 1) nc *= 2;
+        nb = xmalloc(nc);
+        if (nb == NULL) { va_end(ap2); return -1; }
+        if (*buf != NULL) memcpy(nb, *buf, cur + 1);
+        else nb[0] = '\0';
+        xfree(*buf);
+        *buf = nb;
+        *cap = nc;
+    }
+    vsnprintf(*buf + cur, *cap - cur, fmt, ap2);
+    va_end(ap2);
+    return 0;
+}
+
 char * xml_summary()
 {
     //if used in the main.c needs to be freed
     int sp = 0;
     int spb = 0;
     rule *temp = top_rule;
-    char *xml_string = xmalloc(10000);
+    size_t xml_cap = 1024;
+    char *xml_string = xcalloc(1, xml_cap);
     if(xml_string == NULL) return NULL;
-    strcpy(xml_string, "</detail>\n");
-    (void)strcat(xml_string, "<summary>\n");
-    char tmp[1000];
+    xml_appendf(&xml_string, &xml_cap, "</detail>\n");
+    xml_appendf(&xml_string, &xml_cap, "<summary>\n");
     if (corr_mess != 0) {
         spb = 1;
-        (void)strcat(xml_string, "  <spb>\n");
-        (void)sprintf(tmp, "   <id>0</id>\n");
-        (void)strcat(xml_string, tmp);
-        (void)sprintf(tmp, "   <description>ATTACK: Corrupted messages: due to an attack, evasion or error.</description>\n");
-        (void)strcat(xml_string, tmp);
-        (void)sprintf(tmp, "   <detected>%lld</detected>\n", corr_mess);
-        (void)strcat(xml_string, tmp);
-        (void)sprintf(tmp, "   <not_detected>N&#47;A</not_detected>\n");
-        (void)strcat(xml_string, tmp);
-        (void)strcat(xml_string, "  </spb>\n");
+        xml_appendf(&xml_string, &xml_cap,
+                "  <spb>\n"
+                "   <id>0</id>\n"
+                "   <description>ATTACK: Corrupted messages: due to an attack, evasion or error.</description>\n"
+                "   <detected>%lld</detected>\n"
+                "   <not_detected>N&#47;A</not_detected>\n"
+                "  </spb>\n", corr_mess);
     }
     while (temp != NULL) {
+        const char *descr = temp->description ? temp->description : "";
         if (temp->type_rule == ATTACK) {
             spb = 1;
-            (void)strcat(xml_string, "  <spb>\n");
-            (void)sprintf(tmp, "   <id>%d</id>\n", temp->property_id);
-            (void)strcat(xml_string, tmp);
-            (void)sprintf(tmp, "   <description>ATTACK: %s</description>\n", temp->description);
-            (void)strcat(xml_string, tmp);
-            (void)sprintf(tmp, "   <detected>%ld</detected>\n", temp->nb_satisfied);
-            (void)strcat(xml_string, tmp);
-            (void)sprintf(tmp, "   <not_detected>%ld</not_detected>\n", temp->nb_not_satisfied);
-            (void)strcat(xml_string, tmp);
-            (void)strcat(xml_string, "  </spb>\n");
+            xml_appendf(&xml_string, &xml_cap,
+                    "  <spb>\n"
+                    "   <id>%d</id>\n"
+                    "   <description>ATTACK: %s</description>\n"
+                    "   <detected>%ld</detected>\n"
+                    "   <not_detected>%ld</not_detected>\n"
+                    "  </spb>\n",
+                    temp->property_id, descr, temp->nb_satisfied, temp->nb_not_satisfied);
         }else if (temp->type_rule == EVASION) {
             spb = 1;
-            (void)strcat(xml_string, "  <spb>\n");
-            (void)sprintf(tmp, "   <id>%d</id>\n", temp->property_id);
-            (void)strcat(xml_string, tmp);
-            (void)sprintf(tmp, "   <description>EVASION: %s</description>\n", temp->description);
-            (void)strcat(xml_string, tmp);
-            (void)sprintf(tmp, "   <detected>%ld</detected>\n", temp->nb_satisfied);
-            (void)strcat(xml_string, tmp);
-            (void)sprintf(tmp, "   <not_detected>%ld</not_detected>\n", temp->nb_not_satisfied);
-            (void)strcat(xml_string, tmp);
-            (void)strcat(xml_string, "  </spb>\n");
+            xml_appendf(&xml_string, &xml_cap,
+                    "  <spb>\n"
+                    "   <id>%d</id>\n"
+                    "   <description>EVASION: %s</description>\n"
+                    "   <detected>%ld</detected>\n"
+                    "   <not_detected>%ld</not_detected>\n"
+                    "  </spb>\n",
+                    temp->property_id, descr, temp->nb_satisfied, temp->nb_not_satisfied);
         } else if (temp->type_rule == SECURITY_RULE || temp->type_rule == TEST) {
             sp = 1;
-            (void)strcat(xml_string, "  <sp>\n");
-            (void)sprintf(tmp, "   <id>%d</id>\n", temp->property_id);
-            (void)strcat(xml_string, tmp);
-            if (temp->type_rule == SECURITY_RULE) (void)sprintf(tmp, "   <description>SECURITY RULE: %s</description>\n", temp->description);
-            else (void)sprintf(tmp, "   <description>%s</description>\n", temp->description);
-            (void)strcat(xml_string, tmp);
-            (void)sprintf(tmp, "   <respected>%ld</respected>\n", temp->nb_satisfied);
-            (void)strcat(xml_string, tmp);
-            (void)sprintf(tmp, "   <violated>%ld</violated>\n", temp->nb_not_satisfied);
-            (void)strcat(xml_string, tmp);
-            (void)strcat(xml_string, "  </sp>\n");
+            xml_appendf(&xml_string, &xml_cap,
+                    "  <sp>\n"
+                    "   <id>%d</id>\n"
+                    "   <description>%s%s</description>\n"
+                    "   <respected>%ld</respected>\n"
+                    "   <violated>%ld</violated>\n"
+                    "  </sp>\n",
+                    temp->property_id,
+                    (temp->type_rule == SECURITY_RULE) ? "SECURITY RULE: " : "",
+                    descr, temp->nb_satisfied, temp->nb_not_satisfied);
         }
         temp = temp->next;
     }
     if (sp == 0) {
-        (void)strcat(xml_string, "  <sp>\n");
-        (void)strcat(xml_string, "   <id></id>\n");
-        (void)strcat(xml_string, "   <description>none</description>\n");
-        (void)strcat(xml_string, "  </sp>\n");
+        xml_appendf(&xml_string, &xml_cap,
+                "  <sp>\n"
+                "   <id></id>\n"
+                "   <description>none</description>\n"
+                "  </sp>\n");
     }
     if (spb == 0) {
-        (void)strcat(xml_string, "  <spb>\n");
-        (void)strcat(xml_string, "   <id></id>\n");
-        (void)strcat(xml_string, "   <description>none</description>\n");
-        (void)strcat(xml_string, "  </spb>\n");
+        xml_appendf(&xml_string, &xml_cap,
+                "  <spb>\n"
+                "   <id></id>\n"
+                "   <description>none</description>\n"
+                "  </spb>\n");
     }
-    (void)strcat(xml_string, "</summary>\n");
-    (void)strcat(xml_string, "</results>\n");
+    xml_appendf(&xml_string, &xml_cap, "</summary>\n");
+    xml_appendf(&xml_string, &xml_cap, "</results>\n");
     return xml_string;
 }
 

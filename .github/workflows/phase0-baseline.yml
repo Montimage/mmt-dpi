@@ -135,6 +135,23 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  leak-gate:
+    # Issue #216 (F-TEST-008): named leak-regression cases for the four 1.8.0
+    # leak fixes plus a whole-corpus teardown, run under Valgrind so any
+    # definite leak fails the gate. The same harness also runs in the generic
+    # harness matrix above — on hosts without valgrind it falls back to an
+    # ASan detect_leaks=1 build — but this job pins the Valgrind oracle.
+    name: Leak regression over the golden corpus (Valgrind)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/bootstrap-deps
+        with:
+          extra-packages: valgrind
+      - name: Run the named leak-regression cases under Valgrind
+        run: bash tools/phase0/tests/run_leak_regression_test.sh
+
   precision-gate:
     name: Labelled-pcap precision/recall holds or improves (M9, issue #74)
     runs-on: ubuntu-24.04

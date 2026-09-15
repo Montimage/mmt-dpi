@@ -12,9 +12,20 @@ description = "false positives and non-secret fixtures"
 paths = [
     # Generated ASN.1 codecs: high-entropy constant tables, no secrets.
     '''^src/mmt_mobile/asn1c/''',
-    # Packet captures used as test fixtures: binary, not source.
-    '''^src/examples/.*\.pcap$''',
-    '''^tools/phase0/ci/pcaps/.*\.pcap$''',
+    # Packet captures used as test fixtures: binary, not source. Each capture
+    # is named individually — a directory-wide exemption would silently cover
+    # a future capture committed WITH real credentials (issue #214, F-SEC-014).
+    # Provenance and the sanitization record: tools/phase0/ci/pcaps/README.md.
+    '''^src/examples/google-fr\.pcap$''',
+    '''^tools/phase0/ci/pcaps/arp_padding\.pcap$''',
+    '''^tools/phase0/ci/pcaps/ftp_login_fail\.pcap$''',
+    '''^tools/phase0/ci/pcaps/ftp_multiple_session\.pcap$''',
+    '''^tools/phase0/ci/pcaps/ftp_txt\.pcap$''',
+    '''^tools/phase0/ci/pcaps/ip_ping_local_ip_fragmentation\.pcap$''',
+    '''^tools/phase0/ci/pcaps/ip_teardrop_overlaping_ip_fragments\.pcap$''',
+    '''^tools/phase0/ci/pcaps/tcp_bbc-out-of-order\.pcap$''',
+    '''^tools/phase0/ci/pcaps/tcp_ecn_sample\.pcap$''',
+    '''^tools/phase0/ci/pcaps/tcp_tpncp_tcp\.pcap$''',
     # Encapsulated PostScript diagrams: binary drawing data.
     '''^docs/docs/.*\.ep$''',
     '''^docs/images/.*\.ep$''',

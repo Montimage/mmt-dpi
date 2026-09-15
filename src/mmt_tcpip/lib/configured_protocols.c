@@ -4,6 +4,36 @@
 #include "../include/mmt_tcpip_plugin.h"
 #include "../include/mmt_tcpip_protocols.h"
 
+/* Issue #212 (F-BUG-041): the ~160 inter-protocol registration calls in
+ * init_tcpip_plugin() used to discard
+ * register_classification_function_with_parent_protocol()'s return value, so a
+ * partially registered classifier set reported full success and the affected
+ * protocols silently never classified. mmt_register_classifier() performs one
+ * checked registration and, on failure, prints a diagnostic naming the entry
+ * and returns 0 — which REGISTER_INTER_PROTO_OR_FAIL propagates out of
+ * init_tcpip_plugin() as an init failure. The function is exported
+ * (non-static) so the phase0 classifier_init harness can drive it with a
+ * deliberately bad entry and assert the init-failure signal. */
+int mmt_register_classifier(uint32_t parent_proto,
+        generic_classification_function classify_fn, int weight,
+        const char *name) {
+    if (!register_classification_function_with_parent_protocol(parent_proto,
+                classify_fn, weight)) {
+        fprintf(stderr,
+            "Error registering classification function %s for parent protocol %u (weight %d)\n Exiting\n",
+            (name != NULL) ? name : "?", (unsigned) parent_proto, weight);
+        return 0;
+    }
+    return 1;
+}
+
+#define REGISTER_INTER_PROTO_OR_FAIL(parent, fn, w)                          \
+    do {                                                                     \
+        if (!mmt_register_classifier((parent), (fn), (w), #fn)) {            \
+            return 0;                                                        \
+        }                                                                    \
+    } while (0)
+
 int init_proto() {
     return init_tcpip_plugin();
 }
@@ -75,108 +105,108 @@ int init_tcpip_plugin() {
      * 50: Rare
      * 60: Special project: NDN
      */
-     register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_http2, 9);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_http, 20);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ssl, 20);
+     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_http2, 9);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_http, 20);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_ssl, 20);
 
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dns, 30);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_imap, 30);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_smtp, 30);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_pop, 30);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_jabber, 30);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_dns, 30);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_imap, 30);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_smtp, 30);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_pop, 30);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_jabber, 30);
 
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_netbios_tcp, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_bittorrent_tcp, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ssh, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_smb, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_nfs, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_mysql, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_postgres, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_kerberos, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_redis, 40);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_oracle, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_netbios_tcp, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_ftp, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_bittorrent_tcp, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_ssh, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_smb, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_nfs, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_mysql, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_postgres, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_kerberos, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_redis, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_oracle, 40);
 
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_stun_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_telnet, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rtp_tcp, 50); //Check STUN before RTP
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rdp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_mssql, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_sip, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_edonkey, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_fasttrack, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_gnutella, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_winmx, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_directconnect_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_msn_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_yahoo_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_oscar, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_applejuice, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_soulseek, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_irc, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_usenet, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_filetopia, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_manolito_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_imesh_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_mms, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_pando, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_tvants_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_sopcast_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_tvuplayer_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ppstream_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_pplive_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_gadugadu, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_zattoo_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_qq_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_feidian_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_popo, 50); //BW: TODO: check this out
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_thunder_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_vnc, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_teamviewer_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_i23v5, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_socrates_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_steam, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_xbox, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_http_application_activesync, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_worldofwarcraft, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_flash, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_bgp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_secondlife_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_pcanywhere, 50); //BW: TODO: The classification of PCANYWHERE seems to be for UDP only, check this out
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_icecast, 50); //BW: TODO: Check out the classification --- dependence on http
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_shoutcast, 50); //BW: TODO: Check out the classification --- dependence on http
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_veohtv_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_openft, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_syslog, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_tds, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_direct_download_link, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ipp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ldap, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_warcraft3, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_xdmcp_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_pptp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_stealthnet, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_meebo, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_afp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_aimini_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_florensia_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_maplestory, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dofus, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_world_of_kung_fu, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_fiesta, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_crossfire_tcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_guildwars, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_stun_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_telnet, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_rtp_tcp, 50); //Check STUN before RTP
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_rdp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_mssql, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_sip, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_edonkey, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_fasttrack, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_gnutella, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_winmx, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_directconnect_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_msn_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_yahoo_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_oscar, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_applejuice, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_soulseek, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_irc, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_usenet, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_filetopia, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_manolito_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_imesh_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_mms, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_pando, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_tvants_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_sopcast_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_tvuplayer_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_ppstream_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_pplive_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_gadugadu, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_zattoo_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_qq_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_feidian_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_popo, 50); //BW: TODO: check this out
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_thunder_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_vnc, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_teamviewer_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_i23v5, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_socrates_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_steam, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_xbox, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_http_application_activesync, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_worldofwarcraft, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_flash, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_bgp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_secondlife_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_pcanywhere, 50); //BW: TODO: The classification of PCANYWHERE seems to be for UDP only, check this out
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_icecast, 50); //BW: TODO: Check out the classification --- dependence on http
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_shoutcast, 50); //BW: TODO: Check out the classification --- dependence on http
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_veohtv_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_openft, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_syslog, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_tds, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_direct_download_link, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_ipp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_ldap, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_warcraft3, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_xdmcp_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_pptp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_stealthnet, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_meebo, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_afp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_aimini_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_florensia_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_maplestory, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_dofus, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_world_of_kung_fu, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_fiesta, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_crossfire_tcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_guildwars, 50);
     /* issue #102: mmt_check_skype_tcp registration removed -- the classifier
      * matched on coincidental packet shape (no Skype protocol content
      * validation) and was a false-positive source; see proto_skype.c. */
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_citrix, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_dcerpc, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_spotify, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_rtsp, 50);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_tpkt, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_citrix, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_dcerpc, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_spotify, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_rtsp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_tpkt, 50);
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn, 60);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ndn_http, 60);
-    register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_mqtt, 60);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_ndn_http, 60);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_mqtt, 60);
 
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp_control, 50);
     // register_classification_function_with_parent_protocol(PROTO_TCP, mmt_check_ftp_data, 50);
@@ -185,81 +215,82 @@ int init_tcpip_plugin() {
         CLASSIFY PROTOCOL OVER UDP PROTOCOL
 
     ***/
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_quic, 30);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_mdns, 30); // Must be before mmt_check_dns
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dns, 30);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dhcp, 30);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_quic, 30);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_mdns, 30); // Must be before mmt_check_dns
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_dns, 30);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_dhcp, 30);
 
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dropbox_udp, 40);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_bittorrent_udp, 40);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ntp, 40);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_nfs, 40);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ssdp, 40);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_syslog, 40);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_netbios_udp, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_dropbox_udp, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_bittorrent_udp, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_ntp, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_nfs, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_ssdp, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_syslog, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_netbios_udp, 40);
     /* issue #102: mmt_check_skype_udp registration removed -- the classifier
      * matched on coincidental packet shape (no Skype protocol content
      * validation) and outranked STUN/RTP (weight 50), causing their flows
      * to be mislabeled Skype; see proto_skype.c. */
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_netflow, 40);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_sflow, 40);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_vmware, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_netflow, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_sflow, 40);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_vmware, 40);
 
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_dhcpv6, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_stun_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_rtp_udp, 50); //Check STUN before RTP
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_sip, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_edonkey, 50); //BW: TODO: Edonkey classification seems limited to TCP! Check this out
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_gnutella, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_directconnect_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_msn_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_yahoo_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_oscar, 50); //BW: TODO: the classification of oscar seems to be for TCP only
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_jabber, 50); //BW: TODO: the classification of jabber seems to be for TCP only
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_gtp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_manolito_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_imesh_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_pando, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_tvants_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_sopcast_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_tvuplayer_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ppstream_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_pplive_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_iax, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_mgcp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_gadugadu, 50); //BW: TODO: the classification of gadugadu seems to be for TCP only
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_zattoo_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_qq_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_feidian_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_popo, 50); //BW: TODO: check this out
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_thunder_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_teamviewer_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_socrates_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_halflife2, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_xbox, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_quake, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_battlefield, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_secondlife_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_pcanywhere, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_snmp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_kontiki, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_veohtv_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ipp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ldap, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_warcraft3, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_xdmcp_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_tftp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_aimini_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_florensia_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_crossfire_udp, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_armagetron, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_radius, 50);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_eclipse_tcf, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_dhcpv6, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_stun_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_rtp_udp, 50); //Check STUN before RTP
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_sip, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_edonkey, 50); //BW: TODO: Edonkey classification seems limited to TCP! Check this out
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_gnutella, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_directconnect_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_msn_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_yahoo_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_oscar, 50); //BW: TODO: the classification of oscar seems to be for TCP only
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_jabber, 50); //BW: TODO: the classification of jabber seems to be for TCP only
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_gtp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_manolito_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_imesh_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_pando, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_tvants_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_sopcast_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_tvuplayer_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_ppstream_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_pplive_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_iax, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_mgcp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_gadugadu, 50); //BW: TODO: the classification of gadugadu seems to be for TCP only
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_zattoo_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_qq_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_feidian_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_popo, 50); //BW: TODO: check this out
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_thunder_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_teamviewer_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_socrates_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_halflife2, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_xbox, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_quake, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_battlefield, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_secondlife_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_pcanywhere, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_snmp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_kontiki, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_veohtv_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_ipp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_ldap, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_warcraft3, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_xdmcp_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_tftp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_aimini_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_florensia_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_crossfire_udp, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_armagetron, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_radius, 50);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_eclipse_tcf, 50);
     // register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn, 60);
-    register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_ndn_http, 60);
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_ndn_http, 60);
     ///////////////////////////////////////////////////////////////////////////////////////
     /////////////////////END OF INTER-PROTOCOL CLASSIFICATIONS ////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
+#undef REGISTER_INTER_PROTO_OR_FAIL
 
     // M9 (issue #26): now that every tcpip protocol is registered (so protocol
     // names resolve), pull in any externally-supplied IP-range / port-hint data.

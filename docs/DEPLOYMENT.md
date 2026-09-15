@@ -46,7 +46,7 @@ After installation, the following files are placed:
 └── examples/        # Example sources (rules/common.mk:8)
 ```
 
-The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:70,117`).
+The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:89,145`).
 
 ## Linking Against MMT-DPI
 

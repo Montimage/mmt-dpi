@@ -5,6 +5,7 @@
  *      Author: nhnghia
  */
 
+#include <string.h>
 #include "mmt_mobile_internal.h"
 #include "nas_5g/nas_5g.h"
 #include "ngap/ngap.h"
@@ -20,8 +21,6 @@ static inline bool _is_encrypt_mmm( const nas_5g_msg_t *nas_msg ){
 static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
 	nas_5g_msg_t nas_msg, nas_msg_2;
-	ngap_message_t ngap_msg;
-	uint32_t val;
 	//Ensure NGAP is existing (before NAS-5G)
 	const int ngap_index = get_protocol_index_by_id(packet, PROTO_NGAP);
 	if( ngap_index < 0 )
@@ -51,7 +50,10 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 	if( (size_t)ngap_offset + ngap_length > packet->p_hdr->caplen )
 		ngap_length = (uint16_t)(packet->p_hdr->caplen - (size_t)ngap_offset);
 
-	const uint32_t MAX_NAS_PDU_SIZE = 0xFFFF;
+	/* F-BUG-085: the scratch buffer was an uninitialised 64 KiB stack array
+	 * whose untouched bytes could be exported. Only the NAS header is ever
+	 * consumed below (<= 11 bytes), so a jumbo-frame-sized buffer is ample. */
+	const uint32_t MAX_NAS_PDU_SIZE = 8192;
 	uint8_t nas_pdu[MAX_NAS_PDU_SIZE];
 	uint32_t nas_length = get_nas_pdu(nas_pdu, MAX_NAS_PDU_SIZE, & packet->data[offset], ngap_length);
 
@@ -75,6 +77,10 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 				break;
 				//a special case where the content is in plain text
 			case 3:
+				/* F-BUG-085: nas_length - 7 wrapped to a huge uint32_t when
+				 * nas_length < 7 — decode then read unwritten stack bytes. */
+				if( nas_length <= 7 )
+					return 0;
 				if( !nas_5g_decode( &nas_msg_2, nas_pdu+7, nas_length - 7))
 					return 0;
 				*((uint8_t *) extracted_data->data) =  nas_msg_2.mmm.message_type;
@@ -99,14 +105,19 @@ static int _extraction_att_nas_5g(const ipacket_t * packet, unsigned proto_index
 		break;
 	case NAS5G_ATT_MESSAGE_AUTHENTICAION_CODE:
 		//only available when the message is encrypted
-		if( _is_encrypt_mmm( &nas_msg )){
-			val = *((uint32_t*) (nas_pdu + 2));
-			*((uint32_t *) extracted_data->data) = ntohl(val); //after 2 bytes headers
+		//F-BUG-085: MAC sits at octets 3-6 — needs nas_length >= 7, and the
+		//read must go through memcpy (nas_pdu + 2 is arbitrarily aligned)
+		if( _is_encrypt_mmm( &nas_msg ) && nas_length >= 7 ){
+			uint32_t mac_be;
+			memcpy( &mac_be, nas_pdu + 2, sizeof( mac_be ));
+			*((uint32_t *) extracted_data->data) = ntohl(mac_be); //after 2 bytes headers
 		} else
 			*((uint32_t *) extracted_data->data) = 0;
 		break;
 	case NAS5G_ATT_SEQUENCE_NUMBER:
-		if( _is_encrypt_mmm( &nas_msg )){
+		//F-BUG-085: the sequence number is octet 7 — never export bytes the
+		//decoder did not write (nas_length < 7 left the stack row untouched)
+		if( _is_encrypt_mmm( &nas_msg ) && nas_length >= 7 ){
 			*((uint8_t *) extracted_data->data) = nas_pdu[2 + 4]; //after 2 bytes headers, 4 bytes authentication code
 		} else
 			*((uint8_t *) extracted_data->data) = 0;

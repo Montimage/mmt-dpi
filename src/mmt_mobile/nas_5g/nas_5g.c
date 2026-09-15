@@ -9,14 +9,13 @@
 #include "nas_5g.h"
 
 bool nas_5g_decode( nas_5g_msg_t *nas_msg, const uint8_t *buffer, uint32_t length ){
+	if( nas_msg == NULL || buffer == NULL )
+		return false;
 	//not enougth room
 	if( length < sizeof( nas_5g_msg_t ))
 		return false;
-	memset( nas_msg, 0, sizeof( nas_5g_msg_t ));
-	nas_5g_msg_t *msg = (nas_5g_msg_t *) buffer;
-	//copy result to nas_msg
-	nas_msg->protocol_discriminator = msg->protocol_discriminator;
-	nas_msg->mmm = msg->mmm;
-	nas_msg->smm = msg->smm;
+	/* F-BUG-120: never reinterpret the wire buffer as the packed-bitfield
+	 * union — copy the captured bytes, then let the union members read them. */
+	memcpy( nas_msg, buffer, sizeof( nas_5g_msg_t ));
 	return true;
 }

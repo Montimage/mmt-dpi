@@ -22,17 +22,9 @@ int ndn_http_url_extraction(const ipacket_t * ipacket, unsigned proto_index,
     int offset = get_packet_offset_at_index(ipacket, proto_index);
     if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
-    // NDN over Ethernet
-    uint32_t payload_len = 0;
-    if(proto_index == 2){
-        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
-            payload_len = 0;
-        else
-            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
-    }else{
-        // NDN over TCP
-        payload_len = ipacket->internal_packet->payload_packet_len;
-    }
+    /* payload_packet_len derives from the IP total length and may exceed the
+     * captured bytes on truncated pcaps — clamp it (F-BUG-107, #195). */
+    uint32_t payload_len = ndn_effective_payload_len(ipacket, proto_index, offset);
 
     if(mmt_check_payload_ndn_http(payload,payload_len)==0){
 
@@ -68,17 +60,9 @@ int ndn_http_method_extraction(const ipacket_t * ipacket, unsigned proto_index,
     int offset = get_packet_offset_at_index(ipacket, proto_index);
     if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
-    // NDN over Ethernet
-    uint32_t payload_len = 0;
-    if(proto_index == 2){
-        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
-            payload_len = 0;
-        else
-            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
-    }else{
-        // NDN over TCP
-        payload_len = ipacket->internal_packet->payload_packet_len;
-    }
+    /* payload_packet_len derives from the IP total length and may exceed the
+     * captured bytes on truncated pcaps — clamp it (F-BUG-107, #195). */
+    uint32_t payload_len = ndn_effective_payload_len(ipacket, proto_index, offset);
 
     if(mmt_check_payload_ndn_http(payload,payload_len)==0){
 
@@ -115,17 +99,9 @@ int ndn_http_first_gw_extraction(const ipacket_t * ipacket, unsigned proto_index
     int offset = get_packet_offset_at_index(ipacket, proto_index);
     if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
-    // NDN over Ethernet
-    uint32_t payload_len = 0;
-    if(proto_index == 2){
-        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
-            payload_len = 0;
-        else
-            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
-    }else{
-        // NDN over TCP
-        payload_len = ipacket->internal_packet->payload_packet_len;
-    }
+    /* payload_packet_len derives from the IP total length and may exceed the
+     * captured bytes on truncated pcaps — clamp it (F-BUG-107, #195). */
+    uint32_t payload_len = ndn_effective_payload_len(ipacket, proto_index, offset);
 
     if(mmt_check_payload_ndn_http(payload,payload_len)==0){
 
@@ -146,17 +122,9 @@ int ndn_http_second_gw_extraction(const ipacket_t * ipacket, unsigned proto_inde
     int offset = get_packet_offset_at_index(ipacket, proto_index);
     if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen ) return 0;
     char *payload = (char*)&ipacket->data[offset];
-    // NDN over Ethernet
-    uint32_t payload_len = 0;
-    if(proto_index == 2){
-        if( offset < 0 || (size_t)offset > ipacket->p_hdr->caplen )
-            payload_len = 0;
-        else
-            payload_len = ipacket->p_hdr->caplen - (size_t)offset;
-    }else{
-        // NDN over TCP
-        payload_len = ipacket->internal_packet->payload_packet_len;
-    }
+    /* payload_packet_len derives from the IP total length and may exceed the
+     * captured bytes on truncated pcaps — clamp it (F-BUG-107, #195). */
+    uint32_t payload_len = ndn_effective_payload_len(ipacket, proto_index, offset);
 
     if(mmt_check_payload_ndn_http(payload,payload_len)==0){
 
@@ -228,8 +196,9 @@ int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
             
             // debug("NDN_HTTP: checking ndn payload %lu",ipacket->packet_id);
             int offset = get_packet_offset_at_index(ipacket, index + 1);
-            char * payload = (char*)&ipacket->data[offset];
-            uint32_t payload_len = ipacket->internal_packet->payload_packet_len;
+            /* payload_packet_len derives from the IP total length and may
+             * exceed the captured bytes on truncated pcaps (F-BUG-107, #195). */
+            uint32_t payload_len = ndn_effective_payload_len(ipacket, index + 1, offset);
 
             if(payload_len==0){
                 // debug("NDN_HTTP: payload_len == 0");
@@ -237,6 +206,7 @@ int mmt_check_ndn_http(ipacket_t * ipacket, unsigned index) {
                 return 0;
             }
 
+            char * payload = (char*)&ipacket->data[offset];
             if(mmt_check_ndn_payload(payload,payload_len)!=0){
                 // debug("NDN_HTTP: found ndn packet %lu",ipacket->packet_id);
                 // if(mmt_check_payload_ndn_http(payload,payload_len)==1){

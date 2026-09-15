@@ -10,10 +10,15 @@ int nas_decode_tracking_area_identity(nas_tracking_area_identity_t *trackingarea
 {
   int decoded = 0;
 
+  /* F-BUG-084: honour len — validate pointer and length before the first
+   * read. The TAI content is 5 bytes (3 MCC/MNC + 2 TAC). */
   if (iei > 0) {
+    CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, 1, len);
     CHECK_IEI_DECODER(iei, *buffer);
     decoded++;
   }
+
+  CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, decoded + 5, len);
 
   trackingareaidentity->mccdigit2 = (*(buffer + decoded) >> 4) & 0xf;
   trackingareaidentity->mccdigit1 = *(buffer + decoded) & 0xf;

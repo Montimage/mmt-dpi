@@ -116,9 +116,23 @@ int avltree_get_height(avltree_t * node,int current_level);
  * Insert a new node into a AVL Tree
  * @param  root current root of AVL Tree
  * @param  node new node to be inserted
- * @return      new root of the AVL Tree
+ * @return      new root of the AVL Tree — on a duplicate key, the existing
+ *              tree root (the duplicate node is not linked and stays owned by
+ *              the caller)
  */
 avltree_t * avltree_insert(avltree_t * root, avltree_t * node);
+
+/**
+ * Insert a new node into a AVL Tree, reporting a duplicate key
+ * @param  root current root of AVL Tree
+ * @param  node new node to be inserted
+ * @param  is_duplicate optional out-param (may be NULL): set to 1 when
+ *         node->key already exists in the tree (node is not linked and the
+ *         tree is unchanged), 0 otherwise
+ * @return      root of the (possibly rebalanced) AVL Tree — on a duplicate
+ *              key, the existing tree root
+ */
+avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_duplicate);
 
 /**
  * Search in the given AVL Tree a node which has the key equals with given key

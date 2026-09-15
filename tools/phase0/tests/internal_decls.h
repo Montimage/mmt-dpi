@@ -25,6 +25,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>   /* u_char */
+#include <sys/time.h>    /* struct timeval (ndn_session_t) */
 #include "mmt_core.h"    /* ipacket_t, mmt_key_t, attribute_t */
 
 /* Internal struct types used by the prototypes below. The including .c gets
@@ -58,18 +59,52 @@ void dns_free_name(dns_name_t *dns_name);
 int classify_dtls_from_udp(ipacket_t *ipacket, unsigned index);
 void mmt_init_classify_me_dtls(void);
 
-/* --- mmt_tcpip_classif_utils.c (externally-updatable IP-range / port map) --- */
+/* --- mmt_tcpip_classif_utils.c (externally-updatable IP-range / port map,
+ *     hostname tables) ---
+ * mmt_case_sensitive_reverse_hostname_matching is the exported wrapper over
+ * the static inline worker; get_proto_id_by_hostname is declared by the
+ * private mmt_common_internal_include.h. */
 int mmt_tcpip_load_ip_ranges_file(const char *path);
 int mmt_tcpip_load_port_map_file(const char *path);
 int _find_proto_id_by_address(uint32_t ip_src, uint32_t ip_dst);
 int _find_proto_id_by_address6(const uint8_t ip_src[16],
                                const uint8_t ip_dst[16]);
+int mmt_case_sensitive_reverse_hostname_matching(const char *hostname,
+        const char *url, size_t hostname_len, size_t url_len);
+uint32_t get_proto_id_by_hostname(ipacket_t *ipacket, char *hostname,
+        u_int hostname_len);
+
+/* --- configured_protocols.c (checked inter-protocol registration, issue #212)
+ * Returns non-zero on success, 0 on failure (after printing a diagnostic that
+ * names the entry) — the signal init_app_classification() propagates. */
+int mmt_register_classifier(uint32_t parent_proto,
+        generic_classification_function classify_fn, int weight,
+        const char *name);
 
 /* --- protocols/proto_ftp.c -------------------------------------------------- */
-char *ftp_get_data_client_addr_v6_from_LPRT(char *payload);
-char *ftp_get_data_client_addr_v6_from_EPRT(char *payload);
-unsigned short ftp_get_data_client_port_from_EPRT(char *payload);
+char *ftp_get_data_client_addr_v6_from_LPRT(char *payload, uint32_t payload_len);
+char *ftp_get_data_client_addr_v6_from_EPRT(char *payload, uint32_t payload_len);
+unsigned short ftp_get_data_client_port_from_EPRT(char *payload, uint32_t payload_len);
+unsigned short ftp_get_data_client_port_from_LPRT(char *payload, uint32_t payload_len);
 unsigned int ftp_get_addr_from_parameter(char *payload, unsigned int payload_len);
+/* src/mmt_tcpip/lib/protocols/ftp.h — result structs read back by
+ * ftp_lprt_eprt_test.c; mirrored here (like dns_name_t above) because ftp.h
+ * is not self-contained: it needs the internal bitmask types. Keep in step
+ * with that file (#206). */
+typedef struct ftp_command_struct {
+    uint16_t cmd;
+    char *str_cmd;
+    char *param;
+} ftp_command_t;
+typedef struct ftp_response_struct {
+    uint16_t code;
+    char *str_code;
+    char *value;
+} ftp_response_t;
+ftp_command_t *ftp_get_command(char *payload, int payload_len);
+void free_ftp_command(ftp_command_t *cmd);
+ftp_response_t *ftp_get_response(char *payload, int payload_len);
+void free_ftp_response(ftp_response_t *res);
 
 /* --- protocols/http2.c ------------------------------------------------------ */
 int http2_header_length_extraction(const ipacket_t *packet,
@@ -87,6 +122,23 @@ int http2_stream_id_extraction(const ipacket_t *packet,
 int _http2_classify_next_proto(ipacket_t *ipacket, unsigned index);
 int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index);
 
+/* issue #204 (F-BUG-057): packet-mutation helpers — every one of them now
+ * takes the destination buffer size and refuses out-of-window writes. */
+int update_http2_data(char *data_out, uint32_t data_size,
+        const ipacket_t *packet, uint32_t proto_id, uint32_t att_id,
+        uint32_t new_val);
+int update_stream_id(char *data_out, int proto_offset, uint32_t new_val,
+        uint32_t data_out_size);
+int restore_http2_packet(uint8_t *data_out, const ipacket_t *packet,
+        int proto_offset, uint32_t data_out_size);
+int modify_get(uint8_t *data_out, int proto_offset, uint32_t data_out_size);
+uint32_t update_window_update(char *data_out, int proto_offset,
+        uint32_t modify, uint32_t data_out_size);
+int inject_http2_packet(uint8_t *data_out, uint8_t *data_to_inject,
+        int proto_offset, int data_to_inject_len, uint32_t data_out_size);
+int fuzz_payload(uint8_t *data_out, const ipacket_t *packet, int proto_offset,
+        uint32_t data_out_size);
+
 /* --- http parsing helpers ----------------------------------------------------
  * get_request_method_uri_offset is extern in protocols/http.c;
  * http_request_url_offset is extern in protocols/proto_http.c (http.c also
@@ -94,12 +146,30 @@ int mmt_check_http2(ipacket_t *ipacket, unsigned proto_index);
 int get_request_method_uri_offset(const char *msg, int msg_len, int *method);
 uint16_t http_request_url_offset(ipacket_t *ipacket);
 
+/* issue #204: HTTP session lifecycle + MIME-table invariant (F-BUG-048,
+ * F-BUG-053) exercised by http_session_test.c. The session argument is the
+ * private struct mmt_session_struct — pull it from packet_processing.h. */
+void http_session_data_init(ipacket_t *ipacket, unsigned index);
+void http_session_data_cleanup(mmt_session_t *session, unsigned index);
+int http_session_data_analysis(ipacket_t *ipacket, unsigned index);
+int mmt_http_content_tables_check(void);
+int http_internal_session_data_analysis(ipacket_t *ipacket, unsigned index);
+
 /* --- protocols/rfc2822utils.c ------------------------------------------------ */
 int get_next_white_space_offset_no_limit(const char *str, int max);
 int get_next_non_white_space_offset_no_limit(const char *str, int max);
+/* issue #204: header-line scanner (F-BUG-046), bounded char search
+ * (F-BUG-047), field/value offset helpers feeding F-BUG-052. */
+int get_next_header_line_length(const char *msg, int msg_len, int *code);
+const char *mmt_find_char_instance(const char *str, char char_to_find, int max);
+int get_field_len(const char *str, int line_len);
+int get_value_offset(const char *msg, int line_len);
 
 /* --- mmt_tcpip_utils.c ------------------------------------------------------- */
 void _mmt_parse_packet_line_info(ipacket_t *ipacket);
+uint32_t mmt_bytestream_to_number(const uint8_t *str,
+                                  uint16_t max_chars_to_read,
+                                  uint16_t *bytes_read);
 
 /* --- protocols/proto_ip.c / proto_ipv6.c (session & fragment keys) ---------- */
 uint8_t build_ipv4_session_key(u_char *ip_packet, unsigned ip_packet_len,
@@ -133,6 +203,20 @@ int getServerNameFromClientHello(ipacket_t *ipacket, char *buffer, int buffer_le
 int ssl_is_tls_record_header(const uint8_t *payload, int payload_len);
 int tls_get_number_records(const ipacket_t *ipacket);
 int mmt_classify_me_ssl(ipacket_t *ipacket, unsigned index);
+int tls_content_type_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+int tls_version_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+int tls_length_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+
+/* --- protocols/proto_quic_ietf.c / proto_dtls.c extraction entry points ------
+ * Exported non-static solely so the crafted-input harnesses can drive them
+ * (issue #203). */
+int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
+        attribute_t *extracted_data);
+int _dtls_extract_attribute(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
 
 /* --- protocols/proto_tcp.c ----------------------------------------------------- */
 int tcp_pre_classification_function(ipacket_t *ipacket, unsigned index);
@@ -157,6 +241,77 @@ struct ndn_tlv_struct *ndn_TLV_parser(char *payload, int offset,
         int total_length);
 void ndn_TLV_free(struct ndn_tlv_struct *ndn);
 int mmt_check_ndn_payload(char *payload, int packet_len);
+/* --- hand-written extraction callbacks (issue #202, F-BUG-033) -------------
+ * Every non-static *_extraction callback in proto_{ip,tcp,gre,gtp,icmp}.c is
+ * declared here so extraction_caplen_prologue_test.c can drive them directly
+ * on crafted truncated captures. (_extract_l4s_metrics and
+ * _gtp_extract_pdu_extension_header_field are TU-static — corpus-only.) */
+
+/* protocols/proto_ip.c */
+int ip_version_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_ihl_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_rf_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_df_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_mf_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_frag_offset_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_client_port_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_server_port_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_client_addr_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_server_addr_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_options_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_opts_type_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip_padding_check_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int _extract_jitter(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
+/* protocols/proto_tcp.c */
+int tcp_data_offset_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_fin_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_syn_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_rst_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_psh_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_ack_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_urg_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_ece_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_cwr_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_established_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_connection_closed_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_flags_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_payload_len_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_retransmission_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_outoforder_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_retransmission_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_payload_up_len_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_payload_up_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_payload_down_len_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_payload_down_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_session_rtt_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
+/* protocols/proto_gre.c */
+int gre_c_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_k_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_s_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_version_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_csum_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_key_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gre_seqnb_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
+/* protocols/proto_gtp.c */
+int gtp_version_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_protocol_type_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_reserved_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_extension_header_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_seq_check_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_seq_num_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_imsi_mmc_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_imsi_mnc_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int gtp_npdu_number_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int _gtp_extract_next_extension_header_type(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
+/* protocols/proto_icmp.c */
+int icmp_identifier_and_seq_nb_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int icmp_gateway_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int icmp_data_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
 
 /* --- mmt_core/src/packet_processing.c (central caplen guard, issue #193) ----
  * internal_extract_attribute is exported non-static; the attribute struct tag
@@ -165,12 +320,128 @@ int mmt_check_ndn_payload(char *payload, int packet_len);
  * includes for member access. The mmt_caplen_guard_* accessors are always
  * exported; their counters only increment in assert-enabled (NDEBUG
  * undefined) or sanitizer-instrumented (MMT_BUILD_ASAN/MMT_BUILD_TSAN)
- * builds — in a plain release build they return 0. */
+ * builds — in a plain release build they return 0.
+ *
+ * get_registered_attribute_internal_struct() fetches the *registered* (hence
+ * real, plugin-wired) attribute for a protocol/field pair — the route a
+ * harness takes to reach a static extraction function (e.g. the DICOM
+ * dissector's _extraction_att) with the metadata the plugin registered. */
 int internal_extract_attribute(const ipacket_t *ipacket,
         struct attribute_internal_struct *tmp_attr_ref, unsigned index);
+/* Registry accessor exercised by extraction_caplen_prologue_test.c
+ * (issue #202, F-BUG-010): look up a registered protocol struct. */
+protocol_t *get_protocol_struct_by_protocol_id(uint32_t proto_id);
+struct attribute_internal_struct *get_registered_attribute_internal_struct(
+        const ipacket_t *ipacket, uint32_t proto_id, uint32_t attribute_id,
+        unsigned index);
 uint64_t mmt_caplen_guard_total_count(void);
 uint64_t mmt_caplen_guard_refused_count(void);
 uint64_t mmt_caplen_guard_unvalidated_count(void);
 void mmt_caplen_guard_stats_reset(void);
+
+/* --- protocols/ndn.c (NDN dissector, issue #215) -----------------------------
+ * ndn_tlv_t / ndn_tuple3_t / ndn_session_t below mirror
+ * src/mmt_tcpip/lib/protocols/ndn.h — keep them in step with that file (the
+ * header is internal and not installed; the TLV node struct is the only
+ * result struct harnesses read back). */
+typedef struct ndn_tlv_struct {
+    uint16_t type;
+    uint8_t nb_octets;
+    unsigned long length;
+    uint32_t node_offset;   /* matches ndn.h — #205 widened past uint16_t */
+    uint32_t data_offset;
+    struct ndn_tlv_struct *next;
+} ndn_tlv_t;
+
+typedef struct ndn_tuple3_struct {
+    uint8_t packet_type;
+    uint32_t ip_src;
+    uint32_t ip_dst;
+    uint16_t port_src;
+    uint16_t port_dst;
+    uint32_t proto_over;
+    char *src_MAC;
+    char *dst_MAC;
+    char *name;
+} ndn_tuple3_t;
+
+typedef struct ndn_session_struct {
+    uint64_t session_id;
+    uint32_t max_responsed_time[2];
+    uint32_t min_responsed_time[2];
+    uint32_t total_responsed_time[2];
+    uint32_t nb_responsed[2];
+    uint32_t interest_lifeTime[2];
+    uint32_t data_freshnessPeriod[2];
+    uint64_t nb_interest_packet[2];
+    uint64_t data_volume_interest_packet[2];
+    uint64_t ndn_volume_interest_packet[2];
+    uint64_t nb_data_packet[2];
+    uint64_t data_volume_data_packet[2];
+    uint64_t ndn_volume_data_packet[2];
+    uint8_t current_direction;
+    uint8_t is_expired;
+    ndn_tuple3_t *tuple3;
+    struct timeval *s_init_time;
+    struct timeval *s_last_activity_time;
+    struct timeval *last_reported_time;
+    struct timeval *last_interest_packet_time_0;
+    struct timeval *last_interest_packet_time_1;
+    struct ndn_session_struct *next;
+    void *user_arg;
+} ndn_session_t;
+
+int ndn_TLV_check_type(int type);
+ndn_tlv_t *ndn_TLV_init(void);
+void ndn_TLV_free(ndn_tlv_t *ndn);
+int ndn_TLV_get_int(ndn_tlv_t *ndn, char *payload, int payload_len);
+char *ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len);
+ndn_tlv_t *ndn_TLV_parser(char *payload, int offset, int total_length);
+ndn_tlv_t *ndn_find_node(char *payload, int total_length, ndn_tlv_t *root,
+        int node_type);
+int mmt_check_ndn_payload(char *payload, int payload_len);
+ndn_tlv_t *ndn_TLV_parser_name_comp(char *payload, int total_length,
+        int offset, int nc_length);
+uint8_t ndn_packet_type_extraction_payload(char *payload, int payload_len);
+uint32_t ndn_packet_length_extraction_payload(char *payload, int total_length);
+char *ndn_TVL_get_name_components(ndn_tlv_t *name_com, char *payload,
+        int total_length);
+char *ndn_name_components_at_index(char *payload, int total_length,
+        int nc_index);
+char *ndn_name_components_extraction_payload(char *payload, int total_length);
+int ndn_interest_nonce_extraction_payload(char *payload, int payload_len);
+int ndn_interest_lifetime_extraction_payload(char *payload, int payload_len);
+int ndn_interest_min_suffix_component_extraction_payload(char *payload,
+        int payload_len);
+int ndn_interest_max_suffix_component_extraction_payload(char *payload,
+        int payload_len);
+char *ndn_data_content_extraction_payload(char *payload, int total_length);
+int ndn_data_content_type_extraction_payload(char *payload, int payload_len);
+int ndn_data_freshness_period_extraction_payload(char *payload,
+        int payload_len);
+int ndn_data_signature_type_extraction_payload(char *payload, int payload_len);
+char *ndn_data_key_locator_extraction_payload(char *payload, int total_length);
+char *ndn_data_signature_value_extraction_payload(char *payload,
+        int total_length);
+uint8_t mmt_check_payload_ndn_http(char *payload, int payload_len);
+
+/* ipacket-typed extraction entry points — driven on a fabricated ipacket by
+ * ndn_test.c to reach the caplen guards added by issue #146 (10afc854). */
+int ndn_packet_type_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+int ndn_packet_length_extraction(const ipacket_t *ipacket, unsigned proto_index,
+        attribute_t *extracted_data);
+int ndn_name_components_extraction(const ipacket_t *ipacket,
+        unsigned proto_index, attribute_t *extracted_data);
+int ndn_interest_nonce_extraction(const ipacket_t *ipacket,
+        unsigned proto_index, attribute_t *extracted_data);
+
+ndn_tuple3_t *ndn_new_tuple3(void);
+void ndn_free_tuple3(ndn_tuple3_t *t3);
+uint8_t ndn_compare_tupe3(ndn_tuple3_t *t1, ndn_tuple3_t *t2);
+ndn_session_t *ndn_new_session(void);
+void ndn_free_session(ndn_session_t *ndn_session);
+ndn_session_t *ndn_find_session_by_tuple3(ndn_tuple3_t *t3,
+        ndn_session_t *list_sessions);
 
 #endif /* MMT_PHASE0_INTERNAL_DECLS_H */

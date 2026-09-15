@@ -101,8 +101,9 @@ list fails the build):
 - `harness-*` — harness-${{ matrix.harness }}
 - `harness-gate` — harness-gate
 - `classification-gate` — Golden classification fingerprint unchanged
+- `leak-gate` — Leak regression over the golden corpus (Valgrind)
 - `precision-gate` — Labelled-pcap precision/recall holds or improves (M9, issue #74)
-- matrix expansion: `harness-*` fans out to 30 jobs, one per `tools/phase0/tests/run_*.sh`
+- matrix expansion: `harness-*` fans out to 40 jobs, one per `tools/phase0/tests/run_*.sh`
 <!-- end-generated: ci-gates -->
 
 What each gate asserts:

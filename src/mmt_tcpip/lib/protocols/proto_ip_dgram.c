@@ -2,6 +2,7 @@
 #include <string.h> // memcpy()
 
 #include "proto_ip_dgram.h"
+#include "proto_ipv6_dgram.h" /* Issue #201: sweep/drain dispatch on ip_version */
 
 
 //  - - - - - - - - - - - - - -  //
@@ -16,8 +17,16 @@
 
 ip_dgram_t *ip_dgram_alloc()
 {
+   /* Issue #201: both allocations below were unchecked — a NULL dg would be
+    * written through by ip_dgram_init(), and a failed hole allocation left a
+    * datagram whose hole list made it look instantly "complete". */
    ip_dgram_t *dg = (ip_dgram_t *)mmt_malloc( sizeof( ip_dgram_t ));
-   ip_dgram_init( dg );
+   if( dg == NULL )
+      return NULL;
+   if( !ip_dgram_init( dg )) {
+      mmt_free( dg );
+      return NULL;
+   }
 
    return dg;
 }
@@ -38,10 +47,15 @@ void ip_dgram_free( ip_dgram_t *dg )
  * Initialize a datagram (constructor)
  *
  * @param dg a pointer to an uninitialized ip_dgram_t
+ * @return 1 on success, 0 if the initial hole could not be allocated
  */
 
-void ip_dgram_init( ip_dgram_t *dg )
+int ip_dgram_init( ip_dgram_t *dg )
 {
+   /* Issue #201 (F-BUG-020): metadata used by the ip_streams sweep/drain
+    * hooks — must stay the leading layout shared with struct ipv6_dgram. */
+   dg->ip_version    = 4;
+   dg->last_activity = 0;
    dg->x   = 0;
    dg->len = 0;
    dg->nb_packets = 0;
@@ -54,8 +68,11 @@ void ip_dgram_init( ip_dgram_t *dg )
    }
    LIST_INIT( &dg->holes );
 
-   ip_frag_t *hole = ip_frag_alloc( 0, (uint16_t)-1 );
+   ip_frag_t *hole = ip_frag_alloc( 0, MMT_IP_FRAG_MAX_DGRAM );
+   if( hole == NULL )
+      return 0;
    LIST_INSERT_HEAD( &dg->holes, hole, frags );
+   return 1;
 }
 
 /**
@@ -117,17 +134,32 @@ int ip_dgram_update( ip_dgram_t *dg, const mmt_una_iphdr_t *ip, unsigned len ,un
    unsigned ip_mf  =  ntohs( ip->frag_off ) & IP_MF;
    unsigned ip_hl  =  ip->ihl << 2;
 
-   const uint8_t *payload = (const uint8_t *)ip + ip_hl;
-
+   /* Issue #201 (F-BUG-017/037): every field is attacker-controlled — validate
+    * all of them against the CAPTURED length `len` before deriving the payload
+    * pointer or doing any subtraction:
+    *   - ip_hl must be a full header (>= 20) and captured (<= len),
+    *   - ip_len must cover the header (otherwise ip_len - ip_hl underflows to
+    *     ~4 GiB and the hole update memcpy's gigabytes past the buffer),
+    *   - the captured datagram must actually contain ip_len bytes. */
    if(( ip_hl < sizeof( struct iphdr )) || ( ip_hl > len )) {
       MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (header length mismatch)\n" );
       return 1;
    }
 
-   if( len < ip_len ) {
+   if(( ip_len < ip_hl ) || ( ip_len > len )) {
       MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (length mismatch)\n" );
       return 1;
    }
+
+   /* Issue #201 (F-BUG-037): bound the reassembled extent — a fragment can
+    * legally address at most a 65535-byte datagram, so off+len beyond that is
+    * malformed and also keeps every reassembly buffer <= 64 KiB. */
+   if( (uint64_t) ip_off + ( ip_len - ip_hl ) > MMT_IP_FRAG_MAX_DGRAM ) {
+      MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (fragment extent out of range)\n" );
+      return 1;
+   }
+
+   const uint8_t *payload = (const uint8_t *)ip + ip_hl;
 
    dg->nb_packets ++;
    dg->caplen += caplen;
@@ -293,6 +325,14 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
    ip_frags_t *holes = &dg->holes;
    ip_frag_t  *hole  = holes->lh_first;
 
+   /* Issue #201 (F-BUG-037): reject extents beyond the max datagram size up
+    * front — callers should have validated this already, but the check keeps
+    * the hole math and the buffer growth below bounded no matter who calls. */
+   if( (uint64_t) off + len > MMT_IP_FRAG_MAX_DGRAM ) {
+      MMT_LOG( PROTO_IP, MMT_LOG_DEBUG, "*** Warning: malformed packet (fragment extent out of range)\n" );
+      return 1;
+   }
+
    unsigned loff = off;
    unsigned roff = off+len;
    int is_overlapped = 0;
@@ -326,6 +366,10 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
             // -> resize current (left) hole
             // -> allocate a new (right) hole
             ip_frag_t *new = ip_frag_alloc( roff, hole->roff );
+            /* Issue #201: unchecked allocation — a NULL hole must not be
+             * inserted (LIST_INSERT_AFTER writes through it). */
+            if( new == NULL )
+               return 1;
             hole->roff = loff - 1;
             LIST_INSERT_AFTER( hole, new, frags );
             hole = new;
@@ -363,7 +407,12 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
 
       // copy the payload, possibly growing the reassembly buffer
       if( roff > dg->len ) {
+         /* Issue #201: unchecked realloc — on failure dg->x used to be
+          * overwritten with NULL while dg->len still grew, so the memcpy below
+          * wrote through NULL + off. Keep the old buffer on failure. */
          uint8_t *x0 = (uint8_t*)mmt_realloc( dg->x, roff );
+         if( x0 == NULL )
+            return 1;
          dg->x   = x0;
          dg->len = roff;
       }
@@ -380,6 +429,99 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
    }
    if (unused_fragment) return 6;
    return is_overlapped;
+}
+
+
+/* Issue #201 (F-BUG-020): shared ip_streams fragment-map maintenance.
+ *
+ * The map holds both ip_dgram_t and ipv6_dgram_t values; both structs share
+ * the same leading {ip_version, last_activity, x, len} layout, so the walkers
+ * below can read the metadata and pick the right deallocator through an
+ * ip_dgram_t view. Removal inside hashmap_walk() is safe: the walk caches the
+ * successor before invoking the callback (hashmap.c). */
+
+static void _frag_dgram_free( void *val )
+{
+   ip_dgram_t *dg = (ip_dgram_t *) val;
+   if( dg == NULL )
+      return;
+   if( dg->ip_version == 6 )
+      ipv6_dgram_free( (ipv6_dgram_t *) val );
+   else
+      ip_dgram_free( dg );
+}
+
+static void _frag_sweep_walker( mmt_hashmap_t *map, mmt_hent_t *he, void *arg )
+{
+   uint32_t    now = *(const uint32_t *) arg;
+   ip_dgram_t *dg  = (ip_dgram_t *) he->val;
+
+   /* Drop map corruption (NULL values) and datagrams idle for at least
+    * MMT_IP_FRAG_TIMEOUT_SEC. The `now >= last_activity` clause keeps entries
+    * alive if packet timestamps ever run backwards. */
+   if( dg == NULL
+   || ( now >= dg->last_activity
+        && now - dg->last_activity >= MMT_IP_FRAG_TIMEOUT_SEC )) {
+      void *val = he->val;
+      hashmap_remove( map, he->key );
+      _frag_dgram_free( val );
+   }
+}
+
+void mmt_ip_frag_map_sweep( mmt_hashmap_t *map, uint32_t now )
+{
+   if( map == NULL || map->slots == NULL )
+      return;
+   hashmap_walk( map, _frag_sweep_walker, &now );
+}
+
+static void _frag_drain_walker( mmt_hashmap_t *map, mmt_hent_t *he, void *arg )
+{
+   (void) arg;
+   void *val = he->val;
+   hashmap_remove( map, he->key );
+   _frag_dgram_free( val );
+}
+
+void mmt_ip_frag_map_drain( mmt_hashmap_t *map )
+{
+   if( map == NULL || map->slots == NULL )
+      return;
+   hashmap_walk( map, _frag_drain_walker, NULL );
+}
+
+struct _frag_oldest_ctx {
+   int        found;
+   uint32_t   last_activity;
+   mmt_key_t  key;
+};
+
+static void _frag_oldest_walker( mmt_hashmap_t *map, mmt_hent_t *he, void *arg )
+{
+   (void) map;
+   struct _frag_oldest_ctx *ctx = (struct _frag_oldest_ctx *) arg;
+   ip_dgram_t *dg = (ip_dgram_t *) he->val;
+   uint32_t    act = (dg != NULL) ? dg->last_activity : 0;
+   if( !ctx->found || act < ctx->last_activity ) {
+      ctx->found         = 1;
+      ctx->last_activity = act;
+      ctx->key           = he->key;
+   }
+}
+
+void mmt_ip_frag_map_evict_oldest( mmt_hashmap_t *map )
+{
+   if( map == NULL || map->slots == NULL )
+      return;
+   struct _frag_oldest_ctx ctx = { 0, 0, 0 };
+   hashmap_walk( map, _frag_oldest_walker, &ctx );
+   if( !ctx.found )
+      return;
+   void *val = NULL;
+   if( hashmap_get( map, ctx.key, &val ) ) {
+      hashmap_remove( map, ctx.key );
+      _frag_dgram_free( val );
+   }
 }
 
 

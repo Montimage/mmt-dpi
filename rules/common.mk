@@ -157,13 +157,30 @@ CXXFLAGS += $(SANITIZE_FLAGS)
 endif
 
 # SHOWLOG = 1 to show all the log from MMT_LOG() ...
+#
+#   ⚠ CAUTION (F-SEC-016, issue #214): a SHOWLOG=1 build prints decoded packet
+#   fields to stdout, and several of them are subscriber-identifying — IMSI,
+#   M-TMSI, UE/eNB IPs, eNB/MME names, URLs and hostnames lifted straight out
+#   of the traffic under inspection. Build with SHOWLOG=1 only on captures you
+#   are allowed to expose, and never ship or deploy a SHOWLOG build where the
+#   output is collected: the log stream *is* personal data.
+#
 ifdef SHOWLOG
-CFLAGS   += -DDEBUG -DHTTP_PARSER_STRICT=1
-CXXFLAGS += -DDEBUG -DHTTP_PARSER_STRICT=1
-else
-CFLAGS   += -DHTTP_PARSER_STRICT=0
-CXXFLAGS += -DHTTP_PARSER_STRICT=0
+CFLAGS   += -DDEBUG
+CXXFLAGS += -DDEBUG
 endif
+
+# HTTP_PARSER_STRICT — strict-mode checks in the vendored HTTP parser
+# (issue #204, F-BUG-060). This used to be coupled to SHOWLOG, so every
+# release/CI build (no SHOWLOG) silently parsed leniently. It is now its own
+# knob and defaults to 1; pass HTTP_PARSER_STRICT=0 to explicitly opt back
+# into the lenient parser. http_parser.h defaults to 1 when the macro is
+# undefined — keep the two in agreement.
+ifndef HTTP_PARSER_STRICT
+HTTP_PARSER_STRICT := 1
+endif
+CFLAGS   += -DHTTP_PARSER_STRICT=$(HTTP_PARSER_STRICT)
+CXXFLAGS += -DHTTP_PARSER_STRICT=$(HTTP_PARSER_STRICT)
 
 .PHONY: libraries includes tools documentation examples
 
@@ -252,6 +269,15 @@ $(LIBDICOM_OBJECTS): CFLAGS +=  -Wno-unused-variable -fPIC
 # To silence all extra warnings: make MMT_WARN_FLAGS=
 MMT_WARN_FLAGS ?= -Wformat=2 -Wformat-security -Wnull-dereference -Wvla
 
+# Flags for compiling/linking the *installed examples* (F-SEC-010, issue #214).
+# The examples are executables end users build from the installed tree (the
+# `test` target in sdk/Makefile is the in-repo example of that flow), so they
+# get position-independent code + a PIE link plus the same RELRO/noexecstack
+# link hardening as the libraries — an executable processing untrusted pcaps
+# should not be the softest binary in the install.
+MMT_EXAMPLE_CFLAGS   ?= -fPIE
+MMT_EXAMPLE_LDFLAGS  ?= -pie -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
+
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(MMT_WARN_FLAGS) $(patsubst %,-I%,$(SRCINC))
 $(CORE_OBJECTS) $(TCPIP_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(MMT_WARN_FLAGS) $(patsubst %,-I%,$(SRCINC))
 
@@ -276,13 +302,17 @@ LIBMOBILE_INC := $(SRCINC)          \
 $(LIBMOBILE_OBJECTS): CFLAGS +=  -Wno-unused-but-set-variable -Wno-unused-variable -fPIC $(NGHTTP2_CFLAGS) -D_MMT_BUILD_SDK $(patsubst %,-I%,$(LIBMOBILE_INC))
 
 $(TCPIP_OBJECTS): CFLAGS +=   $(NGHTTP2_CFLAGS)
-ifdef ENABLESEC
+# These object lists stay defined even without ENABLESEC so that
+# `make clean` removes stale optional-engine objects left behind by an
+# ENABLESEC build — otherwise e.g. instrumented BUILD=asan objects would
+# survive the profile-switch clean and get linked into a default build.
 FUZZ_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_fuzz_engine/*.c))
 
 SECURITY_OBJECTS := \
  $(patsubst %.c,%.o,$(wildcard $(SRCDIR)/mmt_security/*.c))
 
+ifdef ENABLESEC
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 $(FUZZ_OBJECTS) $(SECURITY_OBJECTS): CXXFLAGS += -D_MMT_BUILD_SDK $(patsubst %,-I%,$(SRCINC))
 endif
@@ -434,4 +464,21 @@ $(SDK_EXAMPLES_SRC): $(SDKXAM)
 %.o: %.cpp
 	@echo "[COMPILE] $(notdir $@)"
 	$(QUIET) $(CXX) $(CXXFLAGS) -I. -o $@ -c $<
+
+#  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#  T O O L C H A I N   F L O O R   ( i s s u e   # 2 1 8 ,   F - D E P - 2 0 7 )
+#  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# Single source of truth for the minimum supported toolchain: the oldest
+# toolchain the release matrix (.github/workflows/release-packages.yml)
+# still builds on. Rocky 9 / CentOS Stream 9 ship GCC 11 on glibc 2.34 —
+# the oldest combination in the matrix (Ubuntu 22.04 has the same GCC on
+# glibc 2.35; Debian 12 GCC 12; Ubuntu 24.04 GCC 13). rules/arch-linux.mk
+# enforces the GCC floor at parse time and the generated .deb declares the
+# glibc and libstdc++ floors in its Depends: line (sdk/Makefile); the
+# toolchain-floor CI job exercises them on ubuntu-22.04. libstdc++6 package
+# versions track the GCC major, so its floor is pinned to MMT_GCC_MIN.
+MMT_GCC_MIN       := 11
+MMT_GLIBC_MIN     := 2.34
+MMT_LIBSTDCXX_MIN := $(MMT_GCC_MIN)
 

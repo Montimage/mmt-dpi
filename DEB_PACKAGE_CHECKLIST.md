@@ -9,13 +9,13 @@
 - Version: `1.7.10-3ab25616`
 - Architecture: `aarch64` (dynamically detected from `uname -m`)
 - Size: ~1.5 MB
-- Libraries: `libmmt_core.so`, `libmmt_tcpip.so`, `libmmt_tmobile.so`, `libmmt_business_app.so`
+- Libraries: `libmmt_core.so`, `libmmt_tcpip.so`, `libmmt_tmobile.so`, `libmmt_business_app.so`, `libmmt_tdicom.so` — plus `libmmt_fuzz.so` and `libmmt_security.so` when built with `ENABLESEC=1` (as the release packages now are, issue #219)
 
 ## Issues Fixed
 
 1. **Architecture Detection**: Changed from `all` to dynamic `$(shell uname -m)` to properly detect the system architecture (arm64/aarch64, x86_64, etc.)
 
-2. **Dependencies**: Added `Depends: libc6 (>= 2.17)` to the control file
+2. **Dependencies**: `Depends:` is derived at package-build time from the `NEEDED` entries `objdump -p` reports for the shipped `.so` files — `tools/ci/shlib-deps.sh` maps each soname to its Debian package (issue #219). The toolchain floor (issue #218) survives in that output as `libc6 (>= 2.34), libstdc++6 (>= 11)` — the constants come from `rules/common.mk` (`MMT_GLIBC_MIN`, `MMT_LIBSTDCXX_MIN`). `libpcap`/`libnghttp2` are gone (nothing links them); `libxml2` appears when the package is built with `ENABLESEC=1`. Verify with `bash tools/ci/check-package-deps.sh --verify-package <pkg>.deb`.
 
 3. **Post-install Script**: Added `postinst` to run `ldconfig` after installation
 
@@ -37,7 +37,7 @@
 ### Pre-Installation Checks
 
 - [ ] Verify system architecture compatibility (aarch64 vs x86_64)
-- [ ] Ensure `libc6 >= 2.17` is available: `dpkg -l libc6`
+- [ ] Ensure `libc6 >= 2.34` and `libstdc++6 >= 11` are available: `dpkg -l libc6 libstdc++6`
 - [ ] Check available disk space in `/opt/mmt` (requires ~50MB)
 
 ### Installation Testing

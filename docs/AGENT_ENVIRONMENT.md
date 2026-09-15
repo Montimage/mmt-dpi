@@ -30,7 +30,7 @@ sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnght
 
 | Package | Why it is needed |
 |---------|------------------|
-| `gcc`, `make` | The whole build (`rules/common-linux.mk:47` enables LTO for GCC only) |
+| `gcc`, `make` | The whole build (`rules/common-linux.mk:62` enables LTO for GCC only) |
 | `libpcap-dev` | Examples that read pcap files (`src/examples/`) |
 | `libxml2-dev` | Only needed with `ENABLESEC=1` (`rules/common.mk:76-84`) |
 | `libnghttp2-dev` | Optional at build time — the Makefile auto-detects its absence and keeps building (`rules/common.mk:56-74`) |
@@ -39,12 +39,34 @@ sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnght
 CI builds and tests on `ubuntu-24.04` (GCC 13) — see
 `.github/workflows/c-cpp.yml`. That is the reference toolchain.
 
+**Supported floor (issue #218, F-DEP-207):** GCC ≥ 11 with glibc ≥ 2.34 and
+libstdc++6 ≥ 11 — the oldest toolchain the release matrix
+(`.github/workflows/release-packages.yml`) still builds on, carried by
+Rocky 9 / CentOS Stream 9 and Ubuntu 22.04. The constants live in
+`rules/common.mk` (`MMT_GCC_MIN`, `MMT_GLIBC_MIN`, `MMT_LIBSTDCXX_MIN`):
+`rules/arch-linux.mk` fails the build below GCC 11 with a message naming
+the detected compiler, the generated `.deb` declares the same glibc and
+libstdc++ floors in its `Depends:` line (`sdk/Makefile` `deb` target), and
+the `toolchain-floor` job in `c-cpp.yml` builds the SDK and runs the full
+suite on `ubuntu-22.04` (GCC 11.4) so the floor is exercised, not just
+asserted.
+
+**Package dependency declarations (issue #219):** the `.deb` `Depends:` and
+the `.rpm` `Requires:`/`BuildRequires:` are not hand-maintained lists —
+`tools/ci/shlib-deps.sh` derives them at package-build time from the NEEDED
+entries `objdump -p` reports for the shipped `.so` files (the floors above
+survive as the `libc6`/`glibc` and `libstdc++6`/`libstdc++` entries).
+`tools/ci/build-package.sh` builds with `ENABLESEC=1` and verifies each
+artifact with `tools/ci/check-package-deps.sh --verify-package`, which
+compares `dpkg-deb -f` / `rpm -qp` output against the derived set and fails
+on divergence.
+
 Notes:
 
 - Clang is available via `make ARCH=linux-clang`; icc via `ARCH=linux-icc`
   (rule files in `rules/arch-*.mk`). GCC is the default and best-tested path.
 - A C++ compiler (`g++`, pulled in by `build-essential`) is required because
-  shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:161`).
+  shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:237`).
 
 ## 2. Building
 
@@ -56,13 +78,13 @@ make -C sdk -j$(nproc)
 
 Exit code `0` = green build. Warnings in the output (e.g. from vendored asn1c
 code) are informational; extra diagnostic warnings are deliberately not
-`-Werror` (`rules/common.mk:239-253`), so they never fail the build.
+`-Werror` (`rules/common.mk:256-270`), so they never fail the build.
 
 The build produces versioned shared libraries and static archives under
 `sdk/lib/` (`libmmt_core.so.$(VERSION)`, `libmmt_tcpip.so.$(VERSION)`,
 `libmmt_tmobile.so.$(VERSION)`, `libmmt_business_app.so.$(VERSION)`,
 `libmmt_tdicom.so.$(VERSION)`, plus matching `.a` files; the unversioned
-`.so` symlinks are created by `make install`, `sdk/Makefile:45-51`), copies
+`.so` symlinks are created by `make install`, `sdk/Makefile:53-59`), copies
 public headers under `sdk/include/` and example sources under
 `sdk/examples/` (`sdk/bin/` stays empty in a plain build). It does **not**
 require root and does **not** install anything.
@@ -81,9 +103,9 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 |------|--------|--------|
 | `DEBUG=1` | `-g` instead of `-O3`; asserts/debug() stay active | `rules/common.mk:87-93` |
 | `NDEBUG=1` | Keep debug/assert active (suppress `-DNDEBUG`; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
-| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`) | `rules/common.mk:159-166` |
+| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-171` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
-| `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:89-97` |
+| `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:149-157` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
 
 ## 3. Testing
@@ -96,23 +118,27 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **12/12 suites pass**, total runtime roughly **45–65 s** on a
-typical development machine (measured: 52 s and 57 s on a 20-core host, 53 s on
-the September 2026 audit machine — the suites compile their own sources, so the
-wall clock is dominated by `gcc`, not by the assertions). Exit code `0` on
-success, `1` on any failure. The runner has no `-j` option: the 12 suites run
+Expected result: **16/16 suites pass**, total runtime roughly **60–100 s** on
+a typical development machine (measured: 77 s for the full run); the suites
+compile their own sources, so the
+wall clock is dominated by `gcc`, not by the assertions; `fault_injection`
+also builds+installs the SDK once for its engine leg). Exit code `0` on
+success, `1` on any failure. The runner has no `-j` option: the 16 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:155-168`):
-`hashmap`, `memory`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`, `avltree`,
-`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`, `rule_engine`,
-`radius_hardening`, `nas_ies_tail`.
+(`tests/run_all_tests.sh:155-172`)
+(`tests/run_all_tests.sh`):
+`hashmap`, `memory`, `fault_injection`, `hexdump`, `mmt_utils`, `mmt_inet_ntop`,
+`avltree`, `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
+`rule_engine`, `radius_hardening`, `nas_ies_tail`, `installer`,
+`dicom_dissector`, `ndn_dissector`.
 
 Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
-directly against sources under `src/` with plain `gcc`; the five that need the
+directly against sources under `src/` with plain `gcc`; the six that need the
 built SDK (`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
-`rule_engine`, `nas_ies_tail`) run `make -C sdk clean` and build it themselves
-into a throwaway prefix, so running them discards an existing `sdk/` build. You
+`rule_engine`, `nas_ies_tail`, `installer`) run `make -C sdk clean` and build
+it themselves into a throwaway prefix, so running them discards an existing
+`sdk/` build. You
 can run one suite by passing its directory name:
 
 ```bash
@@ -139,7 +165,7 @@ skipped — the runner exits non-zero (issue #186).
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count and `tests/coverage/summary.json`
-  in stdout (`tests/run_all_tests.sh:181-283`). Requires `gcov` (shipped with
+  in stdout (`tests/run_all_tests.sh:185-287`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` via
   `tools/ci/check-coverage-floor.sh`.
@@ -147,7 +173,7 @@ skipped — the runner exits non-zero (issue #186).
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:285-301`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:289-305`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -170,7 +196,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:248-251`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:301-306`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -212,7 +238,7 @@ Two verification profiles exist in `rules/common.mk` (both add flags to
 
 > **⚠ Always `make -C sdk clean` before switching build profiles.**
 > *(This warning is the single source for the rule; other documents link here.)*
-> Object rules depend on source timestamps only (`rules/common.mk:426-428`) —
+> Object rules depend on source timestamps only (`rules/common.mk:456-458`) —
 > changing `BUILD=` does *not* invalidate existing `.o` files, so building
 > `BUILD=asan` on top of a plain tree relinks sanitized `.so` files from
 > non-instrumented objects and reports success. Clean first, then build the
@@ -253,18 +279,18 @@ make -C sdk BUILD=tsan MMT_BASE=/tmp/mmt-tsan install
 ```
 
 In both profiles the release-hardening block (LTO, FORTIFY, stack protector,
-RELRO — `rules/common-linux.mk:51-103`) is automatically disabled, and the
+RELRO — `rules/common-linux.mk:66-163`) is automatically disabled, and the
 `-Wl,-z,defs` self-containedness guard is skipped because sanitizer runtime
-symbols are intentionally left undefined (`rules/common-linux.mk:126-138`).
+symbols are intentionally left undefined (`rules/common-linux.mk:202-214`).
 
 ## 6. `ENABLESEC=1` Security Engines Flag
 
 `ENABLESEC` gates two optional libraries — `libmmt_security` and
 `libmmt_fuzz` — which are otherwise not built at all:
 
-- Object/header selection: `rules/common.mk:189-191, 213-216, 279-288`
-- Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 139-142, 150-154, 187-203`
-- Install symlinks for both engines: `sdk/Makefile:46-47, 109-110`
+- Object/header selection: `rules/common.mk:206-208, 230-233, 315-318`
+- Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 215-218, 226-230, 263-279`
+- Install symlinks for both engines: `sdk/Makefile:54-55, 140-141`
 
 Usage (requires `libxml2-dev`):
 
@@ -281,7 +307,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 12/12 suites PASSED, exit 0 (45–65 s)
+bash tests/run_all_tests.sh     # 13/13 suites PASSED, exit 0 (45–80 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

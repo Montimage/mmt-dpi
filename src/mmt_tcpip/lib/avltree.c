@@ -292,12 +292,24 @@ int avltree_get_balance_factor(avltree_t * node) {
 }
 
 /**
- * Insert a new node into a AVL Tree
+ * Insert a new node into a AVL Tree, reporting a duplicate key
  * @param  root current root of AVL Tree
  * @param  node new node to be inserted
- * @return      new root of the AVL Tree
+ * @param  is_duplicate optional out-param (may be NULL): set to 1 when
+ *         node->key already exists in the tree — in that case node is NOT
+ *         linked and the tree is unchanged — 0 otherwise
+ * @return      root of the (possibly rebalanced) AVL Tree. On a duplicate key
+ *              this is the EXISTING tree's root, never the unlinked node —
+ *              issue #212 (F-BUG-027): this function used to end with
+ *              `return avltree_get_root(node)`, and since a duplicate node is
+ *              never linked it is its own root, so the
+ *              `tree = avltree_insert(tree, node)` idiom silently replaced the
+ *              entire existing subtree with the orphan node.
  */
-avltree_t * avltree_insert(avltree_t * root, avltree_t * node) {
+avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_duplicate) {
+    if (is_duplicate != NULL) {
+        *is_duplicate = 0;
+    }
 #ifdef DEBUG
     printf("[debug] Insert new node: %u\n", node->key);
 #endif
@@ -365,7 +377,7 @@ avltree_t * avltree_insert(avltree_t * root, avltree_t * node) {
                 parent = parent->parent;
             }            
         } else {
-            avltree_insert(root->left_child, node);
+            avltree_insert_ex(root->left_child, node, is_duplicate);
         }
     } else if(root->key < node->key){
         // Insert in the right subtree
@@ -422,12 +434,31 @@ avltree_t * avltree_insert(avltree_t * root, avltree_t * node) {
                 parent = parent->parent;
             }
         } else {
-            avltree_insert(root->right_child, node);
+            avltree_insert_ex(root->right_child, node, is_duplicate);
         }
     }else{
+        if (is_duplicate != NULL) {
+            *is_duplicate = 1;
+        }
         printf("[info] Node is already exist: %u - %p | %u - %p\n",root->key,root->data ,node->key,node->data );
     }
-    return avltree_get_root(node);
+    /* F-BUG-027: return the root of the EXISTING tree. On a duplicate, node was
+     * never linked so avltree_get_root(node) would be node itself — returning
+     * it would orphan the whole subtree for callers doing
+     * `tree = avltree_insert(tree, node)`. Walking up from `root` is correct in
+     * every case: node was either linked under it, or the tree is unchanged. */
+    return avltree_get_root(root);
+};
+
+/**
+ * Insert a new node into a AVL Tree
+ * @param  root current root of AVL Tree
+ * @param  node new node to be inserted
+ * @return      root of the (possibly rebalanced) AVL Tree — on a duplicate key
+ *              the existing root, and the unlinked node is left to the caller
+ */
+avltree_t * avltree_insert(avltree_t * root, avltree_t * node) {
+    return avltree_insert_ex(root, node, NULL);
 };
 
 /**

@@ -7,16 +7,29 @@
 #   curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 #   wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 #
+# By default the installer clones the pinned release tag below and verifies it
+# after checkout (commit pin, plus the tag signature when one is present) —
+# never a moving branch. See docs/DECISIONS.md for the canonical-organisation
+# and verification decisions (issue #197).
+#
+# Options:
+#   --dry-run              - Print the install plan and exit without changes
+#   --prefix <dir>         - Install to <dir> (same as MMT_BASE=<dir>)
+#   --branch <ref>         - Build a specific branch instead of the release tag
+#   --unverified-branch    - Required to permit a moving ref (no verification)
+#   -h, --help             - Show usage
+#
 # Options (via environment variables):
 #   MMT_BASE=/custom/path  - Install to a custom directory (default: /opt/mmt)
-#   BRANCH=dev             - Use a specific git branch (default: main)
+#   BRANCH=dev             - Same as --branch dev (requires --unverified-branch)
 #   JOBS=4                 - Number of parallel build jobs (default: auto-detected)
 #   SKIP_DEPS=1            - Skip dependency installation
 #
 # Examples:
 #   curl -sSL https://...install.sh | bash
+#   curl -sSL https://...install.sh | bash -s -- --dry-run
 #   curl -sSL https://...install.sh | MMT_BASE=/usr/local/mmt bash
-#   curl -sSL https://...install.sh | BRANCH=dev bash
+#   curl -sSL https://...install.sh | BRANCH=dev bash -s -- --unverified-branch
 #
 
 set -euo pipefail
@@ -24,11 +37,25 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+# Canonical repository — the organisation is declared in docs/DECISIONS.md
+# (issue #197). scripts/validate-install-origin.sh fails CI if this constant
+# and the README clone URL ever diverge again.
 REPO_URL="https://github.com/montimage-projects/mmt-dpi.git"
-BRANCH="${BRANCH:-main}"
+
+# Default ref: the pinned release tag, never a moving branch (issue #197,
+# F-SEC-006 / F-BUG-118). RELEASE_TAG_SHA pins the commit the tag must resolve
+# to, so a moved or re-created tag fails verification right after cloning.
+RELEASE_TAG="v1.8.0"
+RELEASE_TAG_SHA="af4c3cd7c4d04307411ef17bb16971a0df47f3d1"
+
+BRANCH="${BRANCH:-}"           # opt-in moving ref (env BRANCH or --branch)
+UNVERIFIED_BRANCH=0            # set by --unverified-branch
+DRY_RUN=0                      # set by --dry-run
 MMT_BASE="${MMT_BASE:-/opt/mmt}"
 SKIP_DEPS="${SKIP_DEPS:-0}"
 BUILD_DIR=""
+REF=""                         # resolved by resolve_ref()
+REF_KIND=""                    # "tag" (verified) or "branch" (unverified)
 
 # ---------------------------------------------------------------------------
 # Input validation (hardening: reject injection / path-traversal via env vars)
@@ -46,31 +73,6 @@ validate_branch() {
     fi
 }
 
-validate_mmt_base() {
-    local p="$1"
-    if [ -z "$p" ] || [ ${#p} -gt 256 ]; then
-        printf 'ERROR: MMT_BASE must be 1-256 characters\n' >&2; exit 1
-    fi
-    if [[ "$p" != /* ]]; then
-        printf 'ERROR: MMT_BASE must be an absolute path: %s\n' "$p" >&2; exit 1
-    fi
-    if [ "$p" = "/" ]; then
-        printf 'ERROR: MMT_BASE must not be /\n' >&2; exit 1
-    fi
-    if [[ "$p" == *".."* ]]; then
-        printf 'ERROR: MMT_BASE must not contain .. : %s\n' "$p" >&2; exit 1
-    fi
-    # shellcheck disable=SC1003  # single-quote pattern $'\'' is intentional
-    if [[ "$p" == *';'* || "$p" == *'|'* || "$p" == *'&'* || "$p" == *'$'* || "$p" == *'`'* \
-        || "$p" == *'!'* || "$p" == *'*'* || "$p" == *'?'* || "$p" == *'<'* || "$p" == *'>'* \
-        || "$p" == *'"'* || "$p" == *$'\''* || "$p" == *'\\'* || "$p" == *$'\n'* ]]; then
-        printf 'ERROR: MMT_BASE contains shell metacharacters: %s\n' "$p" >&2; exit 1
-    fi
-    if [[ "$p" == */ ]]; then
-        printf 'ERROR: MMT_BASE must not have trailing slash: %s\n' "$p" >&2; exit 1
-    fi
-}
-
 validate_jobs() {
     local j="$1"
     if [[ ! "$j" =~ ^[0-9]+$ ]] || [ "$j" -lt 1 ] || [ "$j" -gt 256 ]; then
@@ -84,9 +86,150 @@ validate_skip_deps() {
     fi
 }
 
-validate_branch "$BRANCH"
-validate_mmt_base "$MMT_BASE"
+usage() {
+    cat <<'EOF'
+MMT-DPI Installation Script — https://github.com/montimage-projects/mmt-dpi
+
+Usage:
+  bash install.sh [OPTIONS]
+
+Options:
+  --dry-run              Print the install plan and exit without changes.
+  --prefix <dir>         Install to <dir> instead of /opt/mmt (same as
+                         setting MMT_BASE=<dir> in the environment).
+  --branch <ref>         Build a specific branch instead of the pinned
+                         release tag. Moving refs carry no integrity
+                         guarantee and require --unverified-branch.
+  --unverified-branch    Permit building a moving ref (BRANCH env or
+                         --branch) with no tag, signature or commit pin.
+  -h, --help             Show this help.
+
+Environment variables:
+  MMT_BASE=/custom/path  Install to a custom directory (default: /opt/mmt)
+  BRANCH=dev             Same as --branch dev (requires --unverified-branch)
+  JOBS=4                 Number of parallel build jobs (default: auto)
+  SKIP_DEPS=1            Skip dependency installation
+EOF
+}
+
+parse_args() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --dry-run)            DRY_RUN=1 ;;
+            --unverified-branch)  UNVERIFIED_BRANCH=1 ;;
+            --prefix)
+                if [ $# -lt 2 ]; then
+                    printf 'ERROR: --prefix requires a directory\n' >&2; exit 1
+                fi
+                MMT_BASE="$2"; shift ;;
+            --prefix=*)           MMT_BASE="${1#*=}" ;;
+            --branch)
+                if [ $# -lt 2 ]; then
+                    printf 'ERROR: --branch requires a value\n' >&2; exit 1
+                fi
+                BRANCH="$2"; shift ;;
+            --branch=*)           BRANCH="${1#*=}" ;;
+            -h|--help)            usage; exit 0 ;;
+            *) printf 'ERROR: unknown option: %s (try --help)\n' "$1" >&2; exit 1 ;;
+        esac
+        shift
+    done
+}
+
+# Resolve which ref to clone. The default is the pinned release tag; any other
+# (moving) ref is refused unless --unverified-branch was given explicitly
+# (issue #197, F-BUG-118 — the old validator admitted arbitrary refs).
+resolve_ref() {
+    if [ -n "$BRANCH" ] && [ "$BRANCH" != "$RELEASE_TAG" ]; then
+        if [ "$UNVERIFIED_BRANCH" != "1" ]; then
+            printf 'ERROR: refusing to build unverified moving ref: %s\n' "$BRANCH" >&2
+            printf '       The default install pins release tag %s (verified after clone).\n' "$RELEASE_TAG" >&2
+            printf '       Re-run with --unverified-branch to accept the risk.\n' >&2
+            exit 1
+        fi
+        REF="$BRANCH"
+        REF_KIND="branch"
+    else
+        REF="$RELEASE_TAG"
+        REF_KIND="tag"
+    fi
+}
+
+parse_args "$@"
+resolve_ref
+validate_branch "$REF"
 validate_skip_deps "$SKIP_DEPS"
+
+# ---------------------------------------------------------------------------
+# Shared install definitions (single source of truth — issue #211, F-BUG-121)
+# ---------------------------------------------------------------------------
+# The prefix validator and the prefix-writability helper live in
+# dist/ZIP/mmt-install-common.sh, shared with the offline ZIP installer. This
+# script is designed for `curl | bash` where no repo file sits next to it, so:
+#   * run from a checkout  -> source the file right away and validate MMT_BASE
+#                             up front (fail fast, covers --dry-run too);
+#   * curl|bash            -> source it from the verified clone after
+#                             clone_repo(), before MMT_BASE is ever used.
+COMMON_FILE=""   # path of the sourced mmt-install-common.sh, empty until then
+ELEVATED=0       # set to 1 when the install step needed privilege escalation
+
+# prefix_writable() and validate_mmt_base() below are local fallbacks: the
+# canonical copies live in dist/ZIP/mmt-install-common.sh and overwrite these
+# when sourced — tests/installer asserts the two stay byte-identical. Local
+# copies are still needed because `curl | bash` has no repo file beside the
+# script, --dry-run never reaches the clone, and a clone of the pinned release
+# tag predates the common file entirely (v1.8.0 ships no
+# dist/ZIP/mmt-install-common.sh — issue #211).
+prefix_writable() {
+    local p="$1"
+    while [ ! -e "$p" ]; do
+        p="$(dirname -- "$p")"
+    done
+    [ -w "$p" ]
+}
+
+# Fallback copy of dist/ZIP/mmt-install-common.sh's validator — keep identical
+# (the installer suite diffs the two definitions).
+validate_mmt_base() {
+    local p="$1"
+    if [ -z "$p" ] || [ ${#p} -gt 256 ]; then
+        echo "ERROR: MMT_BASE must be 1-256 characters" >&2; return 1
+    fi
+    if [[ "$p" != /* ]]; then
+        echo "ERROR: MMT_BASE must be an absolute path: $p" >&2; return 1
+    fi
+    if [ "$p" = "/" ]; then
+        echo "ERROR: MMT_BASE must not be /" >&2; return 1
+    fi
+    if [[ "$p" == *".."* ]]; then
+        echo "ERROR: MMT_BASE must not contain .. : $p" >&2; return 1
+    fi
+    # Allowlist: path components may only contain [A-Za-z0-9._-] — every
+    # metacharacter, whitespace and control character is rejected by
+    # construction rather than by an incomplete blacklist.
+    if [[ ! "$p" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+        echo "ERROR: MMT_BASE contains characters outside [A-Za-z0-9._/-]: $p" >&2; return 1
+    fi
+    if [[ "$p" == */ ]]; then
+        echo "ERROR: MMT_BASE must not have trailing slash: $p" >&2; return 1
+    fi
+}
+
+load_common_defs() {
+    local f="$1"
+    [ -f "$f" ] || return 1
+    # shellcheck disable=SC1090  # runtime-resolved path, checked just above
+    source "$f"
+    COMMON_FILE="$f"
+}
+
+_INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
+if [ -n "$_INSTALLER_DIR" ] && [ -f "$_INSTALLER_DIR/install.sh" ]; then
+    load_common_defs "$_INSTALLER_DIR/dist/ZIP/mmt-install-common.sh" || true
+fi
+# Always validate the prefix up front — the local fallback exists even when no
+# common file was sourced, so this also covers `curl | bash -s -- --dry-run`.
+validate_mmt_base "$MMT_BASE" || exit 1
 
 # Auto-detect parallelism
 if [ -z "${JOBS:-}" ]; then
@@ -279,21 +422,84 @@ preflight_checks() {
     fi
 
     success "All required tools found"
-    info "OS: $OS | Arch: $ARCH | Jobs: $JOBS | Branch: $BRANCH"
+    info "OS: $OS | Arch: $ARCH | Jobs: $JOBS | Ref: $REF"
     info "Install prefix: $MMT_BASE"
+}
+
+# ---------------------------------------------------------------------------
+# Dry-run plan
+# ---------------------------------------------------------------------------
+print_plan() {
+    step "Install plan (dry run — no changes made)"
+    printf "  Repository : %s\n" "$REPO_URL"
+    if [ "$REF_KIND" = "tag" ]; then
+        printf "  Ref        : %s (release tag)\n" "$REF"
+        printf "  Verify     : pinned commit %s; tag signature checked when present\n" "$RELEASE_TAG_SHA"
+    else
+        printf "  Ref        : %s (moving branch — UNVERIFIED, --unverified-branch given)\n" "$REF"
+    fi
+    printf "  Prefix     : %s\n" "$MMT_BASE"
+    if prefix_writable "$MMT_BASE"; then
+        printf "  Elevation  : not needed (prefix writable by this user)\n"
+    else
+        printf "  Elevation  : sudo (prefix not writable by this user)\n"
+    fi
+    printf "  Jobs       : %s\n" "$JOBS"
+    if [ "$SKIP_DEPS" = "1" ]; then
+        printf "  Deps       : skipped (SKIP_DEPS=1)\n"
+    else
+        printf "  Deps       : auto-install via detected package manager\n"
+    fi
+    printf "  OS / Arch  : %s / %s\n" "$OS" "$ARCH"
+    printf "\nRe-run without --dry-run to install.\n"
 }
 
 # ---------------------------------------------------------------------------
 # Clone & Build
 # ---------------------------------------------------------------------------
+
+# Tag-path verification (issue #197, F-SEC-006). Two checks:
+#  1. The tag must resolve to the pinned commit — a moved or re-created tag
+#     fails here even though `git clone --branch` fetched it happily.
+#  2. `git tag -v` verifies the tag signature. An invalid signature is fatal;
+#     an unsigned tag warns — upstream release tags are currently unsigned
+#     (docs/DECISIONS.md), so the commit pin above is the enforced check and
+#     any future signed tag is verified automatically.
+verify_release_tag() {
+    local repo_dir="$1"
+    local actual sig_out sig_rc
+
+    actual="$(git -C "$repo_dir" rev-parse "${RELEASE_TAG}^{commit}" 2>/dev/null || true)"
+    if [ "$actual" != "$RELEASE_TAG_SHA" ]; then
+        fatal "Release tag $RELEASE_TAG resolved to '${actual:-unknown}', expected $RELEASE_TAG_SHA — the tag may have been moved; refusing to build"
+    fi
+    success "Release tag $RELEASE_TAG resolves to pinned commit"
+
+    sig_rc=0
+    sig_out="$(git -C "$repo_dir" tag -v "$RELEASE_TAG" 2>&1)" || sig_rc=$?
+    case "$sig_out" in
+        *"BAD signature"*|*"bad signature"*|*"not a valid signature"*)
+            fatal "Tag $RELEASE_TAG carries an INVALID GPG signature — refusing to build" ;;
+    esac
+    if [ "$sig_rc" -eq 0 ]; then
+        success "Tag $RELEASE_TAG signature verified"
+    else
+        warn "Tag $RELEASE_TAG carries no GPG signature — integrity asserted by the pinned commit"
+    fi
+}
+
 clone_repo() {
-    step "Cloning mmt-dpi ($BRANCH)"
+    step "Cloning mmt-dpi ($REF)"
 
     BUILD_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t 'mmt-dpi')"
     info "Build directory: $BUILD_DIR"
 
-    git clone --depth 1 --branch "$BRANCH" -- "$REPO_URL" "$BUILD_DIR/mmt-dpi"
+    git clone --depth 1 --branch "$REF" -- "$REPO_URL" "$BUILD_DIR/mmt-dpi"
     success "Repository cloned"
+
+    if [ "$REF_KIND" = "tag" ]; then
+        verify_release_tag "$BUILD_DIR/mmt-dpi"
+    fi
 }
 
 build() {
@@ -312,12 +518,20 @@ install_mmt() {
 
     cd "$BUILD_DIR/mmt-dpi/sdk"
 
-    if [ "$MMT_BASE" = "/opt/mmt" ] && [ -n "$SUDO" ]; then
-        info "Installing to default path (requires sudo)..."
-        $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" install
-    else
-        info "Installing to $MMT_BASE"
+    # Elevate by writability, not by a path literal (issue #211, F-BUG-116):
+    # /usr/local/mmt needs sudo exactly like /opt/mmt did, while a prefix the
+    # user can already write installs unprivileged — and must not trigger the
+    # post-install ldconfig escalation.
+    if prefix_writable "$MMT_BASE"; then
+        info "Installing to user-writable prefix $MMT_BASE"
         make ARCH="linux" MMT_BASE="$MMT_BASE" install
+    else
+        if [ -z "$SUDO" ]; then
+            fatal "Prefix $MMT_BASE is not writable by this user and sudo is unavailable — set MMT_BASE to a user-writable directory or re-run as root"
+        fi
+        ELEVATED=1
+        info "Prefix $MMT_BASE is not writable — installing via sudo"
+        $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" install
     fi
 
     success "Installation completed"
@@ -329,9 +543,15 @@ install_mmt() {
 post_install() {
     step "Post-installation setup"
 
-    # Refresh shared library cache on Linux
-    if [ "$OS" = "linux" ] && check_command ldconfig; then
-        $SUDO ldconfig 2>/dev/null || true
+    # Refresh the shared library cache only when the install escalated — a
+    # user-local prefix never wrote to system paths, so ldconfig would be a
+    # pointless privilege grab (issue #211, F-BUG-116).
+    if [ "$ELEVATED" = "1" ]; then
+        if [ "$OS" = "linux" ] && check_command ldconfig; then
+            $SUDO ldconfig 2>/dev/null || true
+        fi
+    else
+        info "User-local install: skipping ldconfig — use LD_LIBRARY_PATH=$MMT_BASE/dpi/lib"
     fi
 
     # Verify installation
@@ -379,12 +599,33 @@ main() {
     printf "https://github.com/montimage-projects/mmt-dpi\n"
     printf "\n"
 
+    if [ "$DRY_RUN" = "1" ]; then
+        print_plan
+        return 0
+    fi
+
+    if [ "$REF_KIND" = "branch" ]; then
+        warn "Building unverified moving ref '$REF' (--unverified-branch):"
+        warn "no release tag, signature or commit-pin checks apply."
+    fi
+
     install_dependencies
     preflight_checks
     clone_repo
+
+    # curl|bash path: the shared definitions were not next to this script —
+    # take them from the clone (commit-pinned and signature-checked when
+    # REF_KIND=tag) when the file exists there. The pinned release tag
+    # predates dist/ZIP/mmt-install-common.sh entirely, so a missing file is
+    # not fatal — the identical local fallbacks defined above are used.
+    if [ -z "$COMMON_FILE" ]; then
+        load_common_defs "$BUILD_DIR/mmt-dpi/dist/ZIP/mmt-install-common.sh" || true
+    fi
+    validate_mmt_base "$MMT_BASE" || exit 1
+
     build
     install_mmt
     post_install
 }
 
-main "$@"
+main

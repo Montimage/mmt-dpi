@@ -110,6 +110,12 @@ char *ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len);
  *                      		total_length < 4 + 2*nb_octets + length
  */	
 ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length);
+/* Number of payload bytes that may safely be read at `offset` (#195).
+ * NDN-over-Ethernet (proto_index == 2): payload runs to the end of the
+ * captured frame. Otherwise it is internal_packet->payload_packet_len, which
+ * derives from the IP total length and can exceed the captured bytes on
+ * truncated pcaps — so it is clamped to caplen - offset (F-BUG-107). */
+uint32_t ndn_effective_payload_len(const ipacket_t *ipacket, unsigned proto_index, int offset);
 
 /**
  * Get the root node of an NDN packet

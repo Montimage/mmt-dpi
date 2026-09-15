@@ -14,12 +14,30 @@ source "$SCRIPT_DIR/mmt-install-common.sh"
 # ---------------------------------------------------------------------------
 # Pre-flight
 # ---------------------------------------------------------------------------
-if [[ $(id -u) -ne 0 ]]; then
-    echo "This script should be run using sudo or as the root user" >&2
-    exit 1
-fi
+validate_mmt_base "$MMT_BASE" || exit 1
 
-validate_mmt_base "$MMT_BASE"
+# F-SEC-012 (issue #214): this installer may run as root and adds $MMT_LIB to
+# the system library search path. Pin an explicit umask, lay files down with
+# explicit modes, and assert nothing under $MMT_LIB is group/world-writable —
+# a writable library in the loader path is a local privilege-escalation
+# primitive.
+umask 022
+
+# Elevation is only required when the prefix is not writable by the current
+# user — a user-local prefix installs unprivileged and skips the linker-cache
+# steps (issue #211, F-BUG-116/F-BUG-121).
+ELEVATED=0
+if ! prefix_writable "$MMT_BASE"; then
+    if [[ $(id -u) -ne 0 ]]; then
+        echo "This script should be run using sudo or as the root user" >&2
+        echo "(prefix $MMT_BASE is not writable by $(id -un))" >&2
+        exit 1
+    fi
+    ELEVATED=1
+elif [[ $(id -u) -eq 0 ]]; then
+    # Root on a writable prefix can still refresh the linker cache below.
+    ELEVATED=1
+fi
 
 # Resolve source directories relative to this script (not $PWD).
 SDKINC="$SCRIPT_DIR/include"
@@ -54,11 +72,11 @@ echo "SDKLIB: $SDKLIB"
 echo "SDKXAM: $SDKXAM"
 
 echo "Preparing location ... "
-mkdir -p "$MMT_DPI"
-mkdir -p "$MMT_LIB"
-mkdir -p "$MMT_INC"
-mkdir -p "$MMT_PLUGINS"
-mkdir -p "$MMT_EXAMS"
+install -d -m 0755 "$MMT_DPI"
+install -d -m 0755 "$MMT_LIB"
+install -d -m 0755 "$MMT_INC"
+install -d -m 0755 "$MMT_PLUGINS"
+install -d -m 0755 "$MMT_EXAMS"
 
 echo "Copying resource ... "
 
@@ -69,7 +87,7 @@ for lib in "${MMT_LIBS[@]}"; do
         echo "[WARN] $lib not found in $SDKLIB -- skipping" >&2
         continue
     fi
-    cp "${matches[@]}" "$MMT_LIB"/
+    install -m 0755 "${matches[@]}" "$MMT_LIB"/
     base="$(basename "${matches[0]}")"
     ln -snf "$MMT_LIB/$base" "$MMT_LIB/$lib.so"
 done
@@ -77,9 +95,13 @@ shopt -u nullglob
 echo "[MMT-]> Installed  $SDKLIB at $MMT_LIB"
 
 cp -R "$SDKINC"/* "$MMT_INC"/
+find "$MMT_INC" -type d -exec chmod 0755 {} +
+find "$MMT_INC" -type f -exec chmod 0644 {} +
 echo "[MMT-]> Installed  $SDKINC at $MMT_INC"
 
 cp -R "$SDKXAM"/* "$MMT_EXAMS"/
+find "$MMT_EXAMS" -type d -exec chmod 0755 {} +
+find "$MMT_EXAMS" -type f -exec chmod 0644 {} +
 echo "[MMT-]> Installed  $SDKXAM at $MMT_EXAMS"
 
 for lib in "${MMT_PLUGIN_LIBS[@]}"; do
@@ -90,21 +112,35 @@ for lib in "${MMT_PLUGIN_LIBS[@]}"; do
         echo "[WARN] plugin $lib not found -- skipping" >&2
         continue
     fi
-    cp "${matches[0]}" "$MMT_PLUGINS/$lib.so"
+    install -m 0755 "${matches[0]}" "$MMT_PLUGINS/$lib.so"
     echo "[MMT-]> Installed $MMT_PLUGINS/$lib.so"
 done
 
-if [ -f "$LD_CONF_LEGACY" ] && [ ! -f "$LD_CONF_CANONICAL" ]; then
-    mv "$LD_CONF_LEGACY" "$LD_CONF_CANONICAL"
-fi
-if [ ! -f "$LD_CONF_CANONICAL" ] || ! grep -qxF "$MMT_LIB" "$LD_CONF_CANONICAL" 2>/dev/null; then
-    echo "$MMT_LIB" >> "$LD_CONF_CANONICAL"
-fi
-if [ -f "$LD_CONF_LEGACY" ] && [ -f "$LD_CONF_CANONICAL" ]; then
-    rm -f "$LD_CONF_LEGACY"
-fi
+if [ "$ELEVATED" = "1" ]; then
+    # Assert nothing under the library directory is group- or world-writable:
+    # it is added to the system search path below, so a permissive mode would be
+    # a local privilege-escalation primitive (F-SEC-012).
+    if find "$MMT_LIB" -type f -perm /022 -print -quit | grep -q .; then
+        echo "ERROR: group/world-writable file under $MMT_LIB -- refusing to leave it in the loader path" >&2
+        exit 1
+    fi
 
-ldconfig
+    if [ -f "$LD_CONF_LEGACY" ] && [ ! -f "$LD_CONF_CANONICAL" ]; then
+        mv "$LD_CONF_LEGACY" "$LD_CONF_CANONICAL"
+    fi
+    if [ ! -f "$LD_CONF_CANONICAL" ] || ! grep -qxF "$MMT_LIB" "$LD_CONF_CANONICAL" 2>/dev/null; then
+        echo "$MMT_LIB" >> "$LD_CONF_CANONICAL"
+    fi
+    chmod 0644 "$LD_CONF_CANONICAL"
+    if [ -f "$LD_CONF_LEGACY" ] && [ -f "$LD_CONF_CANONICAL" ]; then
+        rm -f "$LD_CONF_LEGACY"
+    fi
+
+    ldconfig
+else
+    echo "[MMT-]> User-local prefix: skipped ld.so.conf/ldconfig — run with"
+    echo "        export LD_LIBRARY_PATH=$MMT_LIB"
+fi
 
 echo "[MMT-]> Done! "
 echo "Thanks you for installing mmt-sdk, you can learn more about mmt-sdk at: http://www.montimage.eu"

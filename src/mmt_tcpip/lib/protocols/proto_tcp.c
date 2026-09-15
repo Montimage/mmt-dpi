@@ -1,7 +1,10 @@
 #include "mmt_core.h"
 #include "plugin_defs.h"
 #include "extraction_lib.h"
+#include "packet_processing.h" /* mmt_have_bytes() — issue #202 caplen prologues */
 #include "../mmt_common_internal_include.h"
+
+#include <inttypes.h> /* PRIu64 in debug() calls — only compiled when asserts live (issue #214) */
 
 #include "tcp.h"
 #include "tcp_segment.h"
@@ -9,10 +12,13 @@
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — every packet byte this
+     * callback dereferences must lie inside the captured data. The data
+     * offset nibble lives in byte 12 of the TCP header. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 12, sizeof(uint8_t))) return 0;
 
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     *((unsigned char *) extracted_data->data) = tcp_hdr->doff; //Already aligned to the correct bit ordering
@@ -22,10 +28,12 @@ int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
 int tcp_fin_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — the flags byte is at offset
+     * 13 of the TCP header. See tcp_data_offset_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     // if (tcp_hdr->fin) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->fin; //Already aligned to the correct bit ordering
@@ -37,10 +45,11 @@ int tcp_fin_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int tcp_syn_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     // if (tcp_hdr->syn) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->syn; //Already aligned to the correct bit ordering
@@ -52,10 +61,11 @@ int tcp_syn_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int tcp_rst_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     // if (tcp_hdr->rst) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->rst; //Already aligned to the correct bit ordering
@@ -67,10 +77,11 @@ int tcp_rst_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int tcp_psh_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     // if (tcp_hdr->psh) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->psh; //Already aligned to the correct bit ordering
@@ -82,10 +93,11 @@ int tcp_psh_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int tcp_ack_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     // if (tcp_hdr->ack) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->ack; //Already aligned to the correct bit ordering
@@ -97,10 +109,11 @@ int tcp_ack_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int tcp_urg_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     // if (tcp_hdr->urg) {
         *((unsigned char *) extracted_data->data) = tcp_hdr->urg; //Already aligned to the correct bit ordering
@@ -113,10 +126,11 @@ int tcp_ece_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
 #ifndef _WIN32
+    /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     if (( tcp_hdr->res2 & 0x01 ) != 0 ) {
         *((unsigned char *) extracted_data->data) = 1; //Already aligned to the correct bit ordering
@@ -130,10 +144,11 @@ int tcp_cwr_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
 #ifndef _WIN32
+    /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    //protocol_t * protocol_struct = get_protocol_struct_by_id(protocol_id);
-    //int attribute_offset = protocol_struct->get_attribute_position(protocol_id, attribute_id);
-    //int attr_data_len = protocol_struct->get_attribute_length(protocol_id, attribute_id);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
     if (( tcp_hdr->res2 & 0x02 ) != 0 ) {
         *((unsigned char *) extracted_data->data) = 1; //Already aligned to the correct bit ordering
@@ -145,6 +160,10 @@ int tcp_cwr_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 
 int tcp_established_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — this extractor reads
+     * no packet bytes; the floor still validates the capture plumbing. */
+    if (!mmt_have_bytes(packet, 0, 0) || extracted_data == NULL) return 0;
+    if (packet->internal_packet == NULL || packet->internal_packet->flow == NULL) return 0;
     struct mmt_internal_tcpip_session_struct *flow = packet->internal_packet->flow;
     *((unsigned char *) extracted_data->data) = flow->l4.tcp.seen_ack;
     return 1;
@@ -152,6 +171,10 @@ int tcp_established_extraction(const ipacket_t * packet, unsigned proto_index,
 
 int tcp_connection_closed_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_established_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(packet, 0, 0) || extracted_data == NULL) return 0;
+    if (packet->internal_packet == NULL || packet->internal_packet->flow == NULL) return 0;
     struct mmt_internal_tcpip_session_struct *flow = packet->internal_packet->flow;
     *((unsigned char *) extracted_data->data) = flow->l4.tcp.seen_fin_ack;
     return 1;
@@ -160,8 +183,12 @@ int tcp_connection_closed_extraction(const ipacket_t * packet, unsigned proto_in
 int tcp_flags_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
+    /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
     int attribute_offset = extracted_data->position_in_packet;
+    if (proto_offset < 0 || attribute_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, sizeof(uint8_t))) return 0;
     //int attr_data_len = protocol_struct->get_attribute_length(extracted_data->proto_id, extracted_data->field_id);
     *((unsigned char *) extracted_data->data) = *((unsigned char *) & packet->data[proto_offset + attribute_offset]);
     return 1;
@@ -169,6 +196,10 @@ int tcp_flags_extraction(const ipacket_t * packet, unsigned proto_index,
 
 int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — this extractor reads
+     * no packet bytes; the floor still validates the capture plumbing. */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
+    if (ipacket->internal_packet == NULL) return 0;
     // if(ipacket->internal_packet->payload_packet_len){
         // Check padding packet
         if(ipacket->internal_packet->iph==NULL){
@@ -187,6 +218,9 @@ int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
 int tcp_retransmission_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_payload_len_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if(ipacket->internal_packet){
         *((uint32_t*) extracted_data->data) = ipacket->internal_packet->tcp_retransmission;
         return 1;
@@ -197,6 +231,9 @@ int tcp_retransmission_extraction(const ipacket_t * ipacket, unsigned proto_inde
 int tcp_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_payload_len_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if(ipacket->internal_packet){
         *((uint32_t*) extracted_data->data) = ipacket->internal_packet->tcp_outoforder;
         return 1;
@@ -208,6 +245,10 @@ int tcp_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
 int tcp_session_retransmission_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_payload_len_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
+    if (ipacket->session == NULL) return 0;
     *((uint32_t*) extracted_data->data) = ipacket->session->tcp_retransmissions;
     return 1;
 }
@@ -215,12 +256,19 @@ int tcp_session_retransmission_extraction(const ipacket_t * ipacket, unsigned pr
 int tcp_session_payload_up_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_payload_len_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
+    if (ipacket->session == NULL) return 0;
     *((uint32_t*) extracted_data->data) = ipacket->session->session_payload_len[ipacket->session->setup_packet_direction];
     return 1;
 }
 
 int tcp_session_payload_up_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_payload_len_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if (ipacket->session){
         uint8_t up_direction = ipacket->session->setup_packet_direction;
         uint32_t payload_len = ipacket->session->session_payload_len[up_direction];
@@ -229,6 +277,10 @@ int tcp_session_payload_up_extraction(const ipacket_t * ipacket, unsigned proto_
                 free(ipacket->session->session_payload[up_direction]);
             }
             ipacket->session->session_payload[up_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
+            /* Issue #201: unchecked malloc — never pass NULL into
+             * tcp_seg_reassembly(). */
+            if (ipacket->session->session_payload[up_direction] == NULL)
+                return 0;
             tcp_seg_reassembly(
                 ipacket->session->session_payload[up_direction],
                 ipacket->session->tcp_segment_list[up_direction],
@@ -246,12 +298,19 @@ int tcp_session_payload_up_extraction(const ipacket_t * ipacket, unsigned proto_
 int tcp_session_payload_down_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_payload_len_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
+    if (ipacket->session == NULL) return 0;
     *((uint32_t*) extracted_data->data) = ipacket->session->session_payload_len[!ipacket->session->setup_packet_direction];
     return 1;
 }
 
 int tcp_session_payload_down_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_payload_len_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if (ipacket->session){
         uint8_t down_direction = !ipacket->session->setup_packet_direction;
         uint32_t payload_len = ipacket->session->session_payload_len[down_direction];
@@ -260,6 +319,10 @@ int tcp_session_payload_down_extraction(const ipacket_t * ipacket, unsigned prot
                 free(ipacket->session->session_payload[down_direction]);
             }
             ipacket->session->session_payload[down_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
+            /* Issue #201: unchecked malloc — never pass NULL into
+             * tcp_seg_reassembly(). */
+            if (ipacket->session->session_payload[down_direction] == NULL)
+                return 0;
             tcp_seg_reassembly(
                 ipacket->session->session_payload[down_direction],
                 ipacket->session->tcp_segment_list[down_direction],
@@ -286,6 +349,9 @@ int tcp_session_payload_down_extraction(const ipacket_t * ipacket, unsigned prot
 int tcp_session_rtt_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
+    /* Issue #202 (F-BUG-033): uniform caplen prologue — see
+     * tcp_payload_len_extraction (no packet bytes are read). */
+    if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if(ipacket->session){
         memcpy(extracted_data->data, & ipacket->session->rtt, sizeof (struct timeval));
         // (struct timeval *)extracted_data->data = ;
@@ -295,10 +361,12 @@ int tcp_session_rtt_extraction(const ipacket_t * ipacket, unsigned proto_index,
 }
 
 int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t * extracted_data){
+    /* Issue #202 (F-BUG-033): route every bounds check through the shared
+     * caplen helper so the coverage stays greppable. */
     if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
     if (proto_offset < 0) return 0;
-    if (ipacket->p_hdr->caplen < (unsigned)(proto_offset + (int)sizeof(struct tcphdr))) return 0;
+    if (!mmt_have_bytes(ipacket, (size_t) proto_offset, sizeof(struct tcphdr))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & ipacket->data[proto_offset];
     int data_offset = tcp_hdr->doff;
     //no optional fields
@@ -309,7 +377,7 @@ int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attrib
     //its value is from 5 (no option fields) to 15
     int tcphdr_len = data_offset * 4;
     if (tcphdr_len < 20 || tcphdr_len > 60) return 0;
-    if ((unsigned)(proto_offset + tcphdr_len) > ipacket->p_hdr->caplen) return 0;
+    if (!mmt_have_bytes(ipacket, (size_t) proto_offset, (size_t) tcphdr_len)) return 0;
     int option_offset = proto_offset + (5*4); //5 words of tcp header
     int end_of_option = proto_offset + tcphdr_len;
     if (end_of_option > (int)ipacket->p_hdr->caplen) end_of_option = ipacket->p_hdr->caplen;
@@ -340,7 +408,7 @@ int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attrib
     } __attribute__((packed)) *ts_field;
 
     while( option_offset < end_of_option ){
-        if (option_offset >= (int)ipacket->p_hdr->caplen) break;
+        if (!mmt_have_bytes(ipacket, (size_t) option_offset, 1)) break;
         opt_field = (struct tcp_option *) &ipacket->data[ option_offset ];
         switch( opt_field->kind ){
         case 0: //end of option list
@@ -353,19 +421,19 @@ int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attrib
         case 4: //Selective Acknowledgement permitted
         case 5: //Selective ACKnowledgement (SACK)
             if (option_offset + 1 >= end_of_option) return 0;
-            if (option_offset + 1 >= (int)ipacket->p_hdr->caplen) return 0;
+            if (!mmt_have_bytes(ipacket, (size_t) option_offset, 2)) return 0;
             if (opt_field->length < 2) return 0;
             if (option_offset + opt_field->length > end_of_option) return 0;
-            if (option_offset + opt_field->length > (int)ipacket->p_hdr->caplen) return 0;
+            if (!mmt_have_bytes(ipacket, (size_t) option_offset, (size_t) opt_field->length)) return 0;
             option_offset += opt_field->length; //jump over this option
             break;
         case 8: //Timestamp and echo of previous timestamp
             if (option_offset + 1 >= end_of_option) return 0;
-            if (option_offset + 1 >= (int)ipacket->p_hdr->caplen) return 0;
+            if (!mmt_have_bytes(ipacket, (size_t) option_offset, 2)) return 0;
             if (opt_field->length < 2) return 0;
             if (opt_field->length < 10) return 0;
             if (option_offset + opt_field->length > end_of_option) return 0;
-            if (option_offset + opt_field->length > (int)ipacket->p_hdr->caplen) return 0;
+            if (!mmt_have_bytes(ipacket, (size_t) option_offset, (size_t) opt_field->length)) return 0;
             ts_field = (struct timestamp_option_field *) opt_field->data;
             //depending on which attribute we are extracting
             switch( extracted_data->field_id ){
@@ -382,10 +450,10 @@ int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attrib
             break;
         default:
             if (option_offset + 1 >= end_of_option) return 0;
-            if (option_offset + 1 >= (int)ipacket->p_hdr->caplen) return 0;
+            if (!mmt_have_bytes(ipacket, (size_t) option_offset, 2)) return 0;
             if (opt_field->length < 2) return 0;
             if (option_offset + opt_field->length > end_of_option) return 0;
-            if (option_offset + opt_field->length > (int)ipacket->p_hdr->caplen) return 0;
+            if (!mmt_have_bytes(ipacket, (size_t) option_offset, (size_t) opt_field->length)) return 0;
             option_offset += opt_field->length; //jump over this option
             break;
         }
@@ -489,8 +557,20 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     }
 
     packet->payload_packet_len = packet->l4_packet_len - tcphdr_len;
-    packet->actual_payload_len = packet->payload_packet_len;
     packet->payload = ((uint8_t *) packet->tcp) + tcphdr_len;
+    /* F-BUG-107/#195: l4_packet_len derives from the IP total length and can
+     * exceed the captured bytes on truncated pcaps — clamp payload_packet_len
+     * to what data[] actually holds so every payload[] read stays in bounds.
+     * Synthetic harness packets may carry no p_hdr — skip the clamp then. */
+    if (ipacket->p_hdr != NULL) {
+        /* uintptr subtraction wraps huge when payload < data -> fails check */
+        uintptr_t poff = (uintptr_t)packet->payload - (uintptr_t)ipacket->data;
+        uint32_t avail = ( poff < ipacket->p_hdr->caplen )
+            ? (uint32_t)(ipacket->p_hdr->caplen - (uint32_t)poff) : 0;
+        if( packet->payload_packet_len > avail )
+            packet->payload_packet_len = avail;
+    }
+    packet->actual_payload_len = packet->payload_packet_len;
     packet->https_server_name.ptr = NULL;
     packet->https_server_name.len = 0;
 
@@ -591,8 +671,20 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     }
 
     packet->payload_packet_len = packet->l4_packet_len - tcphdr_len;
-    packet->actual_payload_len = packet->payload_packet_len;
     packet->payload = ((uint8_t *) packet->tcp) + tcphdr_len;
+    /* F-BUG-107/#195: l4_packet_len derives from the IP total length and can
+     * exceed the captured bytes on truncated pcaps — clamp payload_packet_len
+     * to what data[] actually holds so every payload[] read stays in bounds.
+     * Synthetic harness packets may carry no p_hdr — skip the clamp then. */
+    if (ipacket->p_hdr != NULL) {
+        /* uintptr subtraction wraps huge when payload < data -> fails check */
+        uintptr_t poff = (uintptr_t)packet->payload - (uintptr_t)ipacket->data;
+        uint32_t avail = ( poff < ipacket->p_hdr->caplen )
+            ? (uint32_t)(ipacket->p_hdr->caplen - (uint32_t)poff) : 0;
+        if( packet->payload_packet_len > avail )
+            packet->payload_packet_len = avail;
+    }
+    packet->actual_payload_len = packet->payload_packet_len;
     packet->https_server_name.ptr = NULL;
     packet->https_server_name.len = 0;
 

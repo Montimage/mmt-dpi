@@ -2,7 +2,12 @@
 #define __MMT_TCPIP_PLUGIN_STRUCTS__
 
 #include "mmt_tcpip_internal_defs_macros.h"
-#define NETMASK_MAX_NB 31
+/* Number of slots in the per-prefix-length AVL tree arrays. The trees are
+ * indexed by IPv4 prefix length, so 33 slots cover /0../32 — issue #212
+ * (F-BUG-028): 31 used to reject external /31 and /32 attribution rules while
+ * IPv6 accepted up to /128. (Slot 0 stays unused: a /0 catch-all is rejected
+ * by the loaders, matching the compiled-in table which never uses it.) */
+#define NETMASK_MAX_NB 33
 
 #ifdef MMT_SUPPORT_IPV6
 

@@ -5,6 +5,18 @@
 
 #include "ndn.h"
 
+uint32_t ndn_effective_payload_len(const ipacket_t *ipacket, unsigned proto_index, int offset){
+    uint32_t avail = 0;
+    if( offset >= 0 && (size_t)offset < ipacket->p_hdr->caplen )
+        avail = (uint32_t)(ipacket->p_hdr->caplen - (size_t)offset);
+    // NDN over Ethernet: payload runs to the end of the captured frame
+    if( proto_index == 2 )
+        return avail;
+    // NDN over TCP: IP-derived payload length clamped to captured bytes
+    uint32_t len = ipacket->internal_packet->payload_packet_len;
+    return ( len > avail ) ? avail : len;
+}
+
 int ndn_TLV_check_type(int type){
 
     // 01 - ImplicitSha256DigestComponent
@@ -97,7 +109,7 @@ char * ndn_TLV_get_string(ndn_tlv_t *ndn, char *payload, int payload_len){
         return NULL;
     }
 
-    char * ret = str_sub(payload,ndn->data_offset, ndn->data_offset + ndn->length -1 );
+    char * ret = str_sub_n(payload, (size_t)payload_len, ndn->data_offset, ndn->data_offset + ndn->length -1 );
 
     /* Issue #205: str_sub() fails on embedded NULs (strlen-bounded) — a
      * binary TLV value must not turn into a NULL dereference. */
@@ -597,7 +609,7 @@ char * ndn_TVL_get_name_components(ndn_tlv_t *name_com, char *payload, int total
 
     if(name_com != NULL) {
 
-        ret = str_sub(payload,name_com->data_offset,name_com->data_offset + name_com->length - 1);
+        ret = str_sub_n(payload, (size_t)total_length, name_com->data_offset, name_com->data_offset + name_com->length - 1);
 
         ndn_tlv_t *temp = name_com->next;
 

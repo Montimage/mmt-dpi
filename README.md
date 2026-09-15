@@ -31,14 +31,20 @@ or using `wget`:
 wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 ```
 
+The installer clones the pinned release tag (`v1.8.0`) and verifies it after
+checkout; moving branches are refused unless explicitly opted in.
+
 **Custom options** (via environment variables):
 
 ```bash
+# Preview the install plan without changing anything
+curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --dry-run
+
 # Install to a custom directory
 curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
 
-# Use a specific branch
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=dev bash
+# Build a development branch instead of the pinned release (unverified — explicit opt-in)
+curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=dev bash -s -- --unverified-branch
 
 # Skip automatic dependency installation
 curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
@@ -49,8 +55,9 @@ Supports **Linux** distributions: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, and 
 ### Pre-built packages
 
 Every tagged release publishes ready-to-install `.deb` and `.rpm` packages
-(amd64 and arm64) built in CI for the major Linux families. Download the one
-matching your distribution from the
+(amd64 and arm64) — one per distribution in the release matrix: **Ubuntu
+22.04, Ubuntu 24.04, Debian 12 (.deb), Rocky Linux 9, and CentOS Stream 9
+(.rpm)**. Download the one matching your distribution from the
 [Releases page](https://github.com/montimage-projects/mmt-dpi/releases) and
 install it with your native package manager:
 
@@ -58,13 +65,33 @@ install it with your native package manager:
 # Debian / Ubuntu (.deb)
 sudo apt install ./mmt-dpi_*_ubuntu-24.04_x86_64.deb
 
-# RedHat / Rocky / CentOS (.rpm)
+# Rocky Linux / CentOS Stream (.rpm)
 sudo dnf install ./mmt-dpi_*_rocky-9_x86_64.rpm
 ```
 
 Packages are produced by the `Build & release packages` workflow
-(`.github/workflows/release-packages.yml`) for Ubuntu 22.04/24.04, Debian 12,
-Rocky Linux 9, and CentOS Stream 9.
+(`.github/workflows/release-packages.yml`).
+
+#### Verify a package before installing it
+
+Installing a package runs its maintainer scripts as root, so authenticate the
+download first. Every release asset is verifiable: a `SHA256SUMS` manifest
+covers all published files, each package ships an SPDX SBOM
+(`<package>.sbom.json` listing what it was built and linked against), and the
+workflow records a build-provenance attestation for every asset.
+
+Download `SHA256SUMS` and the package from the same release, then:
+
+```bash
+# Integrity — the package must match the release manifest
+sha256sum --check SHA256SUMS --ignore-missing
+
+# Provenance — the package must have been built by this repo's release workflow
+gh attestation verify mmt-dpi_*_ubuntu-24.04_x86_64.deb \
+  --repo montimage-projects/mmt-dpi
+```
+
+Install only after both checks pass.
 
 ### Manual Build and Install
 

@@ -19,17 +19,54 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
+/* Parse the long header at data[0..len) into the LOCAL descriptor `hdr`.
+ * Returns !=0 only when the whole variable-length section (dcid_len, dcid,
+ * scid_len, scid) fits inside `len`: each cursor step is validated against
+ * the captured length before it is taken (issue #203, F-BUG-063). A header
+ * whose declared spans overrun the capture is malformed — nothing is
+ * extracted from it. */
+static int _quic_ietf_parse_long_header(const uint8_t *data, size_t len,
+		quic_ietf_long_header_t *hdr) {
+	//flags octet + version + dcid_len must all be present
+	if( len < 6 )
+		return 0;
+	hdr->flags = data[0];
+	{
+		uint32_t v;
+		memcpy(&v, data + 1, sizeof(v));
+		hdr->version = ntohl(v);
+	}
+	hdr->destination_connection_id_length = data[5];
+	size_t cursor = 6;
+	if( cursor + hdr->destination_connection_id_length > len )
+		return 0;
+	hdr->destination_connection_id_offset = cursor;
+	cursor += hdr->destination_connection_id_length;
+	if( cursor + 1 > len )
+		return 0;
+	hdr->source_connection_id_length = data[cursor];
+	cursor += 1;
+	if( cursor + hdr->source_connection_id_length > len )
+		return 0;
+	hdr->source_connection_id_offset = cursor;
+	cursor += hdr->source_connection_id_length;
+	hdr->types_pecific_payload_offset = cursor;
+	return 1;
+}
+
+/* non-static: driven directly by tools/phase0/tests/quic_dtls_extractor_test.c
+   (declared in internal_decls.h — internal seam, not a public API) */
+int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
 	int ioff = get_packet_offset_at_index(ipacket, index);
 	if( ioff < 0 || (size_t)ioff >= ipacket->p_hdr->caplen )
 		return ATTRIBUTE_UNSET;
 	size_t offset = (size_t)ioff;
-	// get the first bit in the UDP payload
-	uint8_t first_bit = ipacket->data[ offset ] & 0b10000000;
-	const uint8_t *p;
+	size_t avail  = ipacket->p_hdr->caplen - offset;
+	const uint8_t *data = ipacket->data;
+	// first octet: header_form bit7
+	uint8_t flags = data[ offset ];
 	uint32_t u32;
-	mmt_string_data_t *string;
 	quic_ietf_session_t * session_data = ipacket->session->session_data[index];
 	//extract session's attributes
 	if( session_data != NULL ){
@@ -46,52 +83,42 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 		}
 	}
 
-	if( first_bit != 0 ){
-		//Long header
-		quic_ietf_long_header_t *hdr = (quic_ietf_long_header_t*) &ipacket->data[offset];
-		p = &hdr->destination_connection_id_length;
-		p += 1; //start of DESTINATION_CONNECTION_ID
-		hdr->destination_connection_id = p;
-		//jump over DESTINATION_CONNECTION_ID
-		p += hdr->destination_connection_id_length;
-
-		hdr->source_connection_id_length = *p;
-		p += 1;
-		hdr->source_connection_id = p;
-		p += hdr->source_connection_id_length;
-
-		//payload
-		hdr->types_pecific_payload = p;
+	if( flags & 0x80 ){
+		//Long header — parse into a local descriptor, never onto the packet
+		quic_ietf_long_header_t hdr;
+		if( ! _quic_ietf_parse_long_header(data + offset, avail, &hdr) )
+			return ATTRIBUTE_UNSET;
 
 		switch( extracted_data->field_id ){
 		case QUIC_IETF_HEADER_FORM:
-			(*(uint8_t *) extracted_data->data) = hdr->header_form;
+			(*(uint8_t *) extracted_data->data) = (hdr.flags >> 7) & 1;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_LONG_PACKET_TYPE:
-			(*(uint8_t *) extracted_data->data) = hdr->long_packet_type;
+			(*(uint8_t *) extracted_data->data) = (hdr.flags >> 4) & 3;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_VERSION:
-			(*(uint32_t *) extracted_data->data) = ntohl( hdr->version );
+			(*(uint32_t *) extracted_data->data) = hdr.version;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_DESTINATION_CONNECTION_ID_LENGTH:
-			(*(uint16_t *) extracted_data->data) = hdr->destination_connection_id_length;
+			(*(uint16_t *) extracted_data->data) = hdr.destination_connection_id_length;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_SOURCE_CONNECTION_ID_LENGTH:
-			(*(uint16_t *) extracted_data->data) = hdr->source_connection_id_length;
+			(*(uint16_t *) extracted_data->data) = hdr.source_connection_id_length;
 			return ATTRIBUTE_SET;
 		}
 
 		//for each type of packet
-		switch( hdr->long_packet_type ){
+		switch( (hdr.flags >> 4) & 3 ){
 		//Initial: https://datatracker.ietf.org/doc/html/rfc9000#packet-initial
-		case QUIC_IETF_INITIAL_PACKET_TYPE: {
-			quic_ietf_initial_packet_t *ext = (quic_ietf_initial_packet_t* ) hdr->types_pecific_payload;
+		case QUIC_IETF_INITIAL_PACKET_TYPE:
 			switch( extracted_data->field_id ){
 			case QUIC_IETF_TOKEN_LENGTH:
-				(*(uint16_t *) extracted_data->data) = ext->token_length;
+				//token_length is the first byte of the type-specific payload
+				if( hdr.types_pecific_payload_offset >= avail )
+					return ATTRIBUTE_UNSET;
+				(*(uint16_t *) extracted_data->data) = data[ offset + hdr.types_pecific_payload_offset ];
 				return ATTRIBUTE_SET;
 			}
-		}
 			break;
 		//0-RTT: https://datatracker.ietf.org/doc/html/rfc9000#packet-0rtt
 		case QUIC_IETF_0RTT_PACKET_TYPE:
@@ -105,28 +132,37 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 			break;
 		}
 	} else {
-		//Short header
-		quic_ietf_short_packet_t *hdr = (quic_ietf_short_packet_t *) &ipacket->data[offset];
+		//Short header — flag bits are in data[offset]; the fixed 8-byte
+		//destination connection id is at offset+1, the packet number at
+		//offset+9 (the quic_ietf_1_rtt_packet_t layout notes the field is
+		//fixed at 8 bytes).
 		switch( extracted_data->field_id ){
 		case QUIC_IETF_HEADER_FORM:
-			(*(uint8_t *) extracted_data->data) = hdr->header_form;
+			(*(uint8_t *) extracted_data->data) = (flags >> 7) & 1;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_SPIN_BIT:
-			(*(uint8_t *) extracted_data->data) = hdr->spin_bit;
+			(*(uint8_t *) extracted_data->data) = (flags >> 5) & 1;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_PACKET_NUMBER_LENGTH:
-			(*(uint8_t *) extracted_data->data) = hdr->packet_number_length;
+			(*(uint8_t *) extracted_data->data) = flags & 3;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_DESTINATION_CONNECTION_ID:
-			string = (mmt_string_data_t *) extracted_data;
-			string->len = 8;
-			snprintf( (char*)string->data, 8, "%s", hdr->destination_connection_id );
+			if( avail < 1 + 8 )
+				return ATTRIBUTE_UNSET;
+			{
+				mmt_string_data_t *string = (mmt_string_data_t *) extracted_data->data;
+				string->len = 8;
+				memcpy( string->data, &data[ offset + 1 ], 8 );
+				string->data[8] = '\0';
+			}
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_PACKET_NUMBER:
+			if( avail < 1 + 8 + 4 )
+				return ATTRIBUTE_UNSET;
 			//the length of the Packet Number field is the value of QUIC_IETF_PACKET_NUMBER_LENGTH plus one
-			memcpy((char*)&u32, hdr->packet_number, 4);
+			memcpy((char*)&u32, &data[ offset + 1 + 8 ], 4);
 
-			switch( hdr->packet_number_length + 1 ){
+			switch( (flags & 3) + 1 ){
 			case 1:
 				((char*)&u32)[1] = 0; //no break here as we need to clear 2nd and 3rd elements
 			case 2:
@@ -143,27 +179,36 @@ static int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 	return ATTRIBUTE_UNSET;
 }
 
+/* Wire minimums preserved from the old packed-overlay size gates so the
+ * classification boundary is byte-identical: the old code required
+ * sizeof(quic_ietf_long_header_t)=31 payload bytes for a long header and
+ * sizeof(quic_ietf_1_rtt_packet_t)=21 for a short header. */
+#define QUIC_IETF_LONG_HEADER_WIRE_MIN  31
+#define QUIC_IETF_SHORT_HEADER_WIRE_MIN 21
+
 static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned parent_proto_index, size_t offset) {
 	if( offset >= ipacket->p_hdr->caplen )
 		return NOT_FOUND;
 	size_t payload_len = ipacket->p_hdr->caplen - offset;
-	// get the first bit in the UDP payload
-	uint8_t first_bit = ipacket->data[ offset ] & 0b10000000;
-	if( first_bit != 0 ){
-		// Long Header
-		const quic_ietf_long_header_t *hdr = (quic_ietf_long_header_t*) &ipacket->data[offset];
-		// must have enough room
-		if( payload_len < sizeof( *hdr))
+	// get the first octet of the UDP payload: header_form bit7, fixed_bit bit6
+	uint8_t flags = ipacket->data[ offset ];
+	if( flags & 0x80 ){
+		// Long Header — must have enough room
+		if( payload_len < QUIC_IETF_LONG_HEADER_WIRE_MIN )
 			goto _not_found_quic_ietf;
 
-		//is set to 1.
+		//fixed_bit (bit6) is set to 1.
 		// Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded
 		// https://datatracker.ietf.org/doc/html/rfc9000#section-17.2
-		if( hdr->fixed_bit != 1 )
+		if( !(flags & 0x40) )
 			goto _not_found_quic_ietf;
 		//TODO: support only version 1 for now
-		if( ntohl(hdr->version) != QUIC_IETF_VERSION_1 )
-			goto _not_found_quic_ietf;
+		{
+			uint32_t version;
+			memcpy(&version, &ipacket->data[offset + 1], sizeof(version));
+			if( ntohl(version) != QUIC_IETF_VERSION_1 )
+				goto _not_found_quic_ietf;
+		}
 
 	} else {
 		//Short Header
@@ -178,17 +223,16 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 		if( ipacket->session->session_data[quick_proto_index] == NULL )
 			goto _not_found_quic_ietf;
 
-		const quic_ietf_short_packet_t *hdr = (quic_ietf_short_packet_t *) &ipacket->data[offset];
 		// must have enough room
-		if( payload_len < sizeof( *hdr))
+		if( payload_len < QUIC_IETF_SHORT_HEADER_WIRE_MIN )
 			goto _not_found_quic_ietf;
 
-		if( hdr->fixed_bit != 1 ) //
+		if( !(flags & 0x40) ) //fixed_bit is set to 1
 			goto _not_found_quic_ietf;
 
 		//FIXME: not sure why this value can be non-zero
 		//The value included prior to protection MUST be set to 0.
-		//if( hdr->reserved_bits != 0 ) //
+		//if( (flags & 0x18) != 0 ) //reserved_bits
 		//	goto _not_found_quic_ietf;
 
 		//check correct packet length

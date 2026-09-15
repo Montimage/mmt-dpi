@@ -35,6 +35,10 @@ int proto_hierarchy_to_str_with_size(const proto_hierarchy_t * proto_hierarchy, 
         dest[0] = '\0';
         return 0;
     }
+    /* F-BUG-013 (issue #199): proto_path[] holds PROTO_PATH_SIZE entries — a
+       len beyond that is corrupt state; clamp rather than read out of bounds. */
+    int path_len = proto_hierarchy->len;
+    if (path_len > PROTO_PATH_SIZE) path_len = PROTO_PATH_SIZE;
     size_t offset = 0;
     int n = snprintf(dest + offset, dest_size - offset, "%s",
                      get_protocol_name_by_id(proto_hierarchy->proto_path[0]));
@@ -44,7 +48,7 @@ int proto_hierarchy_to_str_with_size(const proto_hierarchy_t * proto_hierarchy, 
         return (int)(dest_size - 1);
     }
     offset += (size_t)n;
-    for (unsigned index = 1; index < (unsigned)proto_hierarchy->len; index++) {
+    for (int index = 1; index < path_len; index++) {
         if (offset >= dest_size) break;
         n = snprintf(dest + offset, dest_size - offset, ".%s",
                      get_protocol_name_by_id(proto_hierarchy->proto_path[index]));
@@ -59,27 +63,24 @@ int proto_hierarchy_to_str_with_size(const proto_hierarchy_t * proto_hierarchy, 
 }
 
 int proto_hierarchy_to_str(const proto_hierarchy_t * proto_hierarchy, char * dest) {
-    /* Deprecated unbounded variant - kept for ABI compatibility.
-       Delegates to bounded variant with a large assumed buffer.
+    /* Deprecated variant - kept for ABI compatibility.
+       F-BUG-008 (issue #199): the old body performed unbounded formatted
+       writes. The signature carries no dest size, so the write is capped at
+       the largest output the function can legitimately produce:
+       PROTO_PATH_SIZE protocol names of at most Max_Alias_Len chars plus
+       separators.
        Callers should migrate to proto_hierarchy_to_str_with_size(). */
-    if (proto_hierarchy == NULL || dest == NULL) return 0;
-    if (proto_hierarchy->len <= 0) {
-        dest[0] = '\0';
-        return 0;
-    }
-    unsigned index = 0;
-    int offset = 0;
-    offset += sprintf(dest, "%s", get_protocol_name_by_id(proto_hierarchy->proto_path[index]));
-    index++;
-    for (; index < (unsigned)proto_hierarchy->len; index++) {
-        offset += sprintf(&dest[offset], ".%s", get_protocol_name_by_id(proto_hierarchy->proto_path[index]));
-    }
-    return offset;
+    return proto_hierarchy_to_str_with_size(proto_hierarchy, dest,
+                                          (size_t)PROTO_PATH_SIZE * (Max_Alias_Len + 1));
 }
 
 const char * get_application_name(const proto_hierarchy_t * proto_hierarchy) {
     if (proto_hierarchy == NULL || proto_hierarchy->len <= 0) return NULL;
-    return get_protocol_name_by_id(proto_hierarchy->proto_path[proto_hierarchy->len - 1]);
+    /* proto_path[] holds PROTO_PATH_SIZE entries; a len beyond that is corrupt
+       state — clamp rather than read out of bounds (issue #199). */
+    int len = proto_hierarchy->len;
+    if (len > PROTO_PATH_SIZE) len = PROTO_PATH_SIZE;
+    return get_protocol_name_by_id(proto_hierarchy->proto_path[len - 1]);
 }
 
 /**
@@ -310,8 +311,22 @@ int validate_attribute_metadata(attribute_metadata_t * attribute_meta_data) {
     // Validate data_len against type size: inconsistent plugin metadata must not overflow generic extraction
     {
         uint32_t type_size = get_data_size_by_data_type(attribute_meta_data->data_type);
-        if (type_size != 0 && (uint32_t)attribute_meta_data->data_len > type_size) return false;
-        if (type_size == 0 && attribute_meta_data->data_len != 0) return false;
+        if (type_size != 0 && (uint32_t)attribute_meta_data->data_len > type_size) {
+            /* Issue #202 (F-BUG-010): name the offending attribute so a
+             * rejected registration is diagnosable. */
+            fprintf(stderr, "[error] validate_attribute_metadata - attribute '%s' (id=%u): declared data_len %d exceeds size %u of data type %u\n",
+                    attribute_meta_data->alias, (unsigned) attribute_meta_data->id,
+                    attribute_meta_data->data_len, (unsigned) type_size,
+                    (unsigned) attribute_meta_data->data_type);
+            return false;
+        }
+        if (type_size == 0 && attribute_meta_data->data_len != 0) {
+            fprintf(stderr, "[error] validate_attribute_metadata - attribute '%s' (id=%u): declared data_len %d but data type %u has no fixed size\n",
+                    attribute_meta_data->alias, (unsigned) attribute_meta_data->id,
+                    attribute_meta_data->data_len,
+                    (unsigned) attribute_meta_data->data_type);
+            return false;
+        }
     }
     return true;
 }
@@ -520,7 +535,10 @@ void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
     int i = 0;
 
     // Clean session data for the different protocols in the session's protocol path
-    for (; i < timed_out_session->proto_path.len; i++) {
+    // (bounded by PROTO_PATH_SIZE: a corrupt len must not read past proto_path[])
+    int path_len = timed_out_session->proto_path.len;
+    if (path_len > PROTO_PATH_SIZE) path_len = PROTO_PATH_SIZE;
+    for (; i < path_len; i++) {
         if (_is_registered_protocol(timed_out_session->proto_path.proto_path[i])) {
             if (configured_protocols[timed_out_session->proto_path.proto_path[i]]->session_data_cleanup != NULL) {
                 ((generic_session_data_cleanup_function) configured_protocols[timed_out_session->proto_path.proto_path[i]]->session_data_cleanup)(timed_out_session, i);
@@ -531,9 +549,14 @@ void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
     //Update the protocol statistics to indicate the session timeout
     update_proto_stats_on_session_timeout(timed_out_session, NULL);
 
-    // Clean the session context
-    ((generic_session_context_cleanup_function) ((protocol_instance_t *) timed_out_session->protocol_container_context)->protocol->session_context_cleanup)((protocol_instance_t *) timed_out_session->protocol_container_context,
-            timed_out_session, NULL);
+    // Clean the session context — F-BUG-014 (issue #199): the callback is
+    // optional (register_sessionizer_function accepts NULL) and the container
+    // context itself may be unset; never invoke through a NULL pointer.
+    protocol_instance_t * container = (protocol_instance_t *) timed_out_session->protocol_container_context;
+    if (container != NULL && container->protocol != NULL && container->protocol->session_context_cleanup != NULL) {
+        ((generic_session_context_cleanup_function) container->protocol->session_context_cleanup)(container,
+                timed_out_session, NULL);
+    }
 }
 
 void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args) {
@@ -625,6 +648,12 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
             }
             //remove the timeout milestone from the hash
             delete_timeout_milestone(mmt_handler, counter);
+        }
+        /* Issue #201 (F-BUG-020): piggyback the fragment-map expiry sweep on
+         * this existing once-per-second expiry pass — armed by the TCP/IP
+         * plugin the first time a fragment is reassembled. */
+        if (mmt_handler->frag_map_sweep_fct != NULL && mmt_handler->ip_streams != NULL) {
+            mmt_handler->frag_map_sweep_fct(mmt_handler->ip_streams, current_seconds);
         }
     }
     mmt_handler->last_expiry_timeout = current_seconds;
@@ -1300,6 +1329,14 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
         mmt_free(new_handler);
         return NULL;
     }
+    new_handler->ip6_streams = hashmap_alloc();
+    if (new_handler->ip6_streams == NULL) {
+        if ( errbuf )
+            strcpy(errbuf, "Error while initializing mmt extraction handler");
+        hashmap_free(new_handler->ip_streams);
+        mmt_free(new_handler);
+        return NULL;
+    }
 
     new_handler->last_received_packet.packet_id = 0;
     new_handler->last_received_packet.packet_len = 0;
@@ -1318,6 +1355,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
 
     // Initialize current_ipacket
     new_handler->current_ipacket.proto_headers_offset = NULL;
+    new_handler->current_ipacket.proto_headers_offset_owned = 0;
     new_handler->current_ipacket.proto_classif_status = NULL;
     new_handler->current_ipacket.session = NULL;
     new_handler->current_ipacket.internal_packet = NULL;
@@ -1330,6 +1368,10 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     if (new_handler->timeout_milestones_map == NULL) {
         if ( errbuf )
             strcpy(errbuf, "Error while initializing mmt extraction handler");
+        // F-BUG-012 (issue #199): the IP fragment maps were allocated above —
+        // release them before abandoning the handler.
+        hashmap_free(new_handler->ip_streams);
+        hashmap_free(new_handler->ip6_streams);
         mmt_free(new_handler);
         return NULL;
     }
@@ -1350,6 +1392,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
                     }
                 }
                 hashmap_free(new_handler->ip_streams);
+                hashmap_free(new_handler->ip6_streams);
                 delete_int_map_space(new_handler->timeout_milestones_map);
                 mmt_free(new_handler);
                 if (errbuf) strcpy(errbuf, "Error while initializing mmt extraction handler");
@@ -1375,6 +1418,10 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->session_timer_handler.session_timer_handler_fct = NULL;
     new_handler->session_timer_handler.args = NULL;
     new_handler->evasion_handler = NULL;
+    /* Issue #201 (F-BUG-020): armed lazily by the TCP/IP plugin on the first
+     * fragment seen (the ip_streams map exists but may stay empty forever). */
+    new_handler->frag_map_sweep_fct = NULL;
+    new_handler->frag_map_drain_fct = NULL;
     new_handler->fragment_in_packet = 0;
     new_handler->fragmented_packet_in_session = 0;
     new_handler->fragment_in_session = 0;
@@ -1438,6 +1485,15 @@ uint64_t get_active_session_count(mmt_handler_t *mmt_handler) {
 }
 
 
+/* hashmap_walk() callback draining an ip_streams value through the
+ * plugin-registered destructor — see mmt_close_handler() (issue #216). */
+static void free_ip_stream_value(mmt_hashmap_t * map, mmt_hent_t * he, void * arg) {
+    (void) map;
+    void (*value_free)(void *) = (void (*)(void *)) arg;
+    if (he->val != NULL)
+        value_free(he->val);
+}
+
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
     // Iterate over the timeout milestones and expticitly timeout all registered sessions
     timeout_iteration_callback(mmt_handler, force_sessions_timeout);
@@ -1453,8 +1509,20 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
     free_registered_packet_handlers(mmt_handler);
     // Free protocol statistics
     free_handler_protocols_statistics(mmt_handler);
-    // Free IP streams hashtable
+    // Free IP streams hashtables — first drain any values still held in them
+    // (incomplete-fragment datagrams whose completion never arrived). The
+    // owning plugin registers the destructor on the handler (issue #216;
+    // supersedes the #201 frag_map_drain_fct hook, which stays disarmed).
+    if (mmt_handler->ip_streams != NULL && mmt_handler->ip_streams_value_free != NULL) {
+        hashmap_walk(mmt_handler->ip_streams, free_ip_stream_value,
+                     (void *) mmt_handler->ip_streams_value_free);
+    }
     hashmap_free(mmt_handler->ip_streams);
+    if (mmt_handler->ip6_streams != NULL && mmt_handler->ip6_streams_value_free != NULL) {
+        hashmap_walk(mmt_handler->ip6_streams, free_ip_stream_value,
+                     (void *) mmt_handler->ip6_streams_value_free);
+    }
+    hashmap_free(mmt_handler->ip6_streams);
 
     // Free the registered evasion handler, if any
     if (mmt_handler->evasion_handler != NULL) {
@@ -1619,6 +1687,12 @@ int init_extraction()
     // registered (init_proto_meta_struct/init_plugins below call
     // register_protocol, which populates this map).
     configured_protocols_names_map = init_map_space(protocol_names_comparison_fct);
+    if (configured_protocols_names_map == NULL) {
+        // Issue #200 (F-BUG-003): the map allocation failed — refuse to start
+        // instead of registering protocols into a NULL map.
+        fprintf(stderr, "Error during initialization (out of memory)\n");
+        return 0;
+    }
 
     /////////// INITILIZING PROTO_META & PROTO_UNKNOWN //////////////////
     if (!init_proto_meta_struct() || !init_proto_unknown_struct()) {
@@ -1638,6 +1712,11 @@ int init_extraction()
 
     init_plugins();
     mmt_configured_handlers_map = init_map_space(pointer_comp_fn_pt);
+    if (mmt_configured_handlers_map == NULL) {
+        // Issue #200 (F-BUG-003): same unchecked-nothrow-new guard as above.
+        fprintf(stderr, "Error during initialization (out of memory)\n");
+        return 0;
+    }
     return 1;
 }
 
@@ -2069,6 +2148,10 @@ void close_extraction() {
     iterate_through_mmt_handlers(mmt_close_handler_internal, NULL);
     //Delete the handlers map
     delete_map_space(mmt_configured_handlers_map);
+    // Issue #200 (F-BUG-005): NULL the global after deleting it — a second
+    // init_extraction()/close_extraction() cycle in one process must not
+    // dereference the dangling pointer.
+    mmt_configured_handlers_map = NULL;
     // Iterate over the registered protocol stacks
     iterate_through_protocol_stacks(protocol_stack_callback_fct, NULL);
     // Clear the protocol stacks map
@@ -2420,7 +2503,13 @@ int register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id,
             int s0 = sizeof (struct attribute_internal_struct);
             int s1 = get_attribute_data_type(proto_id, field_id);
             int s2 = get_data_size_by_data_type(s1);
-            int size = s0 + s2;
+            /* Issue #202 (F-BUG-010): the scratch area must be at least
+             * data_len wide. validate_attribute_metadata() already rejects
+             * data_len > type size at protocol-registration time, but size
+             * defensively here as well so a metadata inconsistency can never
+             * turn into a heap overflow of the scratch buffer. */
+            int s3 = get_data_size_by_proto_and_field_ids(proto_id, field_id);
+            int size = s0 + ((s3 > s2) ? s3 : s2);
             //fprintf(stderr, "      size=%d\n",size);
             extract_attribute = (struct attribute_internal_struct *) mmt_malloc(size);
             if (extract_attribute == NULL) {
@@ -2896,6 +2985,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             //Now update the packet structure to point to the flow and the protocol hierarchy info
             if(likely(!ipacket->mmt_handler->has_reassembly)){
                 ipacket->proto_headers_offset = &session->proto_headers_offset;
+                ipacket->proto_headers_offset_owned = 0; // embedded in the session — never freed
                 // Issue #19: offset buffer swapped to the session's stored
                 // offsets — invalidate the memoized cumulative-offset cache.
                 ipacket->internal_cumulative_offset_valid = 0;
@@ -2909,10 +2999,15 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 // frees only the final pointer). Keep old buffer on OOM.
                 proto_hierarchy_t *new_off = (proto_hierarchy_t*)mmt_malloc(sizeof(proto_hierarchy_t));
                 if (new_off != NULL) {
-                    if (ipacket->proto_headers_offset != &ipacket->mmt_handler->last_received_packet.proto_headers_offset) {
+                    // F-BUG-002 (issue #199): ownership is tracked by the
+                    // explicit flag, not by comparing against one known
+                    // embedded address — the flag is authoritative for every
+                    // non-heap alias (handler's last_received_packet, session).
+                    if (ipacket->proto_headers_offset_owned) {
                         mmt_free(ipacket->proto_headers_offset);
                     }
                     ipacket->proto_headers_offset = new_off;
+                    ipacket->proto_headers_offset_owned = 1; // single allocation site
                     memcpy(ipacket->proto_headers_offset,&session->proto_headers_offset,sizeof(proto_hierarchy_t));
                 }
                 // Issue #19: offset buffer replaced by a fresh per-packet copy —
@@ -3107,12 +3202,16 @@ proto_statistics_t * get_protocol_stats(mmt_handler_t *mmt_handler, uint32_t pro
 
 void get_protocol_stats_path(mmt_handler_t *mmt_handler, proto_statistics_t * stats, proto_hierarchy_t * proto_hierarchy) {
     if ((mmt_handler == NULL) || (stats == NULL) || (proto_hierarchy == NULL)) {
-        proto_hierarchy->len = 0;
+        // F-BUG-013 (issue #199): the old code dereferenced proto_hierarchy here
+        // even when it was the NULL that triggered this guard.
+        if (proto_hierarchy != NULL) proto_hierarchy->len = 0;
         return;
     }
     proto_hierarchy_t temp_path = {0};
     proto_statistics_internal_t * temp_stats = (proto_statistics_internal_t *) stats;
-    while (temp_stats) {
+    // F-BUG-013 (issue #199): temp_path.proto_path holds PROTO_PATH_SIZE
+    // entries — an over-deep stats chain must stop at the array bound.
+    while (temp_stats && temp_path.len < PROTO_PATH_SIZE) {
         temp_path.proto_path[temp_path.len] = temp_stats->proto->protocol->proto_id;
         temp_path.len ++;
         temp_stats = temp_stats->parent_proto_stats;
@@ -3125,15 +3224,27 @@ void get_protocol_stats_path(mmt_handler_t *mmt_handler, proto_statistics_t * st
 }
 
 void update_proto_stats_on_session_timeout(mmt_session_t * timed_out_session, proto_statistics_internal_t * parent_proto_stats) {
+    // F-BUG-006 (issue #199): guard every level that can be missing — the
+    // session, its handler, and each stats instance (the stats lookup allocates
+    // on demand and returns NULL under OOM).
+    if (timed_out_session == NULL || timed_out_session->mmt_handler == NULL) {
+        return;
+    }
     if (!isProtocolStatisticsEnabled(timed_out_session->mmt_handler)) {
         return;
     }
     proto_statistics_internal_t * proto_stats = parent_proto_stats;
     int i = 0;
-    for (; i < timed_out_session->proto_path.len; i++) {
-        proto_stats = _get_protocol_stats_from_parent(&(timed_out_session->mmt_handler)->configured_protocols[timed_out_session->proto_path.proto_path[i]],
+    // proto_path[] holds PROTO_PATH_SIZE entries; a corrupt len must not walk past it.
+    int path_len = timed_out_session->proto_path.len;
+    if (path_len > PROTO_PATH_SIZE) path_len = PROTO_PATH_SIZE;
+    for (; i < path_len; i++) {
+        uint32_t proto_id = (uint32_t) timed_out_session->proto_path.proto_path[i];
+        if (!_is_valid_protocol_id(proto_id)) break; // corrupt path element
+        proto_stats = _get_protocol_stats_from_parent(&(timed_out_session->mmt_handler)->configured_protocols[proto_id],
                       proto_stats);
-        if (i >= timed_out_session->session_protocol_index) {
+        if (proto_stats == NULL) break; // OOM creating the stats instance
+        if (i >= (int) timed_out_session->session_protocol_index) {
             proto_stats->timedout_sessions_count += 1;
             proto_stats->touched = 1;
         }
@@ -3447,12 +3558,23 @@ void clean_packet(ipacket_t *ipacket){
 void clean_packet_with_reassembly(ipacket_t *ipacket){
 
     if(ipacket->session){ // Only packet which has session need to be clean those information
-        if (ipacket->proto_headers_offset) mmt_free(ipacket->proto_headers_offset);
+        // F-BUG-002 (issue #199): free only packet-owned heap buffers. On the
+        // OOM path proto_headers_offset still aliases storage embedded in the
+        // handler (last_received_packet) or in the session — freeing that was
+        // mmt_free() on a non-heap address.
+        if (ipacket->proto_headers_offset_owned && ipacket->proto_headers_offset)
+            mmt_free(ipacket->proto_headers_offset);
     }
 
     mmt_free(ipacket->internal_packet);
+    /* Fragment reassembly (ip_process_fragment) may have replaced data with a
+     * freshly allocated buffer — free it too, then free the heap copy that
+     * process_packet_with_reassembly() made (pointed by original_data).
+     * Without the original_data free every fragment-reassembled packet leaked
+     * its initial copy (issue #216). */
+    if ((void *) ipacket->data != (void *) ipacket->original_data)
 	mmt_free((void *) ipacket->data);
-        //ipacket->data = ipacket->original_data;
+    mmt_free((void *) ipacket->original_data);
     mmt_free( ipacket );
 
 }
@@ -3652,6 +3774,7 @@ int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     mmt->current_ipacket.data = packet;
     mmt->current_ipacket.proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
     mmt->current_ipacket.proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
+    mmt->current_ipacket.proto_headers_offset_owned = 0; // embedded in the handler — never freed
     mmt->current_ipacket.proto_classif_status = &mmt->last_received_packet.proto_classif_status;
     mmt->current_ipacket.p_hdr = &mmt->current_ipacket.internal_p_hdr;
     mmt->current_ipacket.p_hdr->ts.tv_sec = header->ts.tv_sec;
@@ -3715,6 +3838,7 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     // ipacket->proto_classif_status = (proto_hierarchy_t*)malloc(sizeof(proto_hierarchy_t));
     ipacket->proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
     ipacket->proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
+    ipacket->proto_headers_offset_owned = 0; // embedded in the handler — never freed
     ipacket->proto_classif_status = &mmt->last_received_packet.proto_classif_status;
     // copy_ipacket_header(ipacket, header);
     // Start copy header
@@ -4120,58 +4244,58 @@ int get_type_formatted_len(int type_id);
 #define MMT_STRING_STRLEN       BINARY_64DATA_LEN
 #define MMT_STRINGLONG_STRLEN   STRING_DATA_TYPE_LEN
 
-int mmt_char_sprintf(char * buff, size_t len, attribute_internal_t * attr) {
+int mmt_char_snprintf(char * buff, size_t len, attribute_internal_t * attr) {
     if (len < MMT_CHAR_STRLEN) return -1;
     return snprintf(buff, len, "%c", *(char *) attr->data);
 }
 
-int mmt_uint8_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_uint8_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_U8_STRLEN) return -1;
     return snprintf(buff, len, "%hu", (uint16_t) * (uint8_t *) attr->data);
 }
 
-int mmt_uint16_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_uint16_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_U16_STRLEN) return -1;
     return snprintf(buff, len, "%hu", *(uint16_t *) attr->data);
 }
 
-int mmt_uint32_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_uint32_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_U32_STRLEN) return -1;
     return snprintf(buff, len, "%u", *(uint32_t *) attr->data);
 }
 
-int mmt_uint64_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_uint64_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_U64_STRLEN) return -1;
     return snprintf(buff, len, "%"PRIu64, *(uint64_t *) attr->data);
 }
 
-int mmt_float_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_float_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_U64_STRLEN) return -1;
     return snprintf(buff, len, "%.3f", *(float *) attr->data);
 }
 
-int mmt_pointer_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_pointer_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_POINTER_STRLEN) return -1;
     return snprintf(buff, len, "%p", (void *) attr->data);
 }
 
-int mmt_mac_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_mac_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_MAC_STRLEN) return -1;
     const uint8_t *ea = attr->data;
     return snprintf( buff, MMT_MAC_STRLEN, "%02x:%02x:%02x:%02x:%02x:%02x", ea[0], ea[1], ea[2], ea[3], ea[4], ea[5] );
 }
 
-int mmt_ip_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_ip_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_IP_STRLEN) return -1;
     return mmt_inet_ntop(AF_INET, (void *) attr->data, buff, INET_ADDRSTRLEN) == NULL ? -1 : strlen(buff);
 }
 
-int mmt_ip6_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_ip6_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < MMT_IP6_STRLEN) return -1;
     return mmt_inet_ntop(AF_INET6, (void *) attr->data, buff, INET6_ADDRSTRLEN) == NULL ? -1 : strlen(buff);
 }
 
-int mmt_path_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_path_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (len < 2) return -1; //not less than 1 character (".")
     //Print as much as it can into buff. If the len is less than the expected strlen, then the
     //return value will be higher than the given length and the user would be able to detect
@@ -4202,14 +4326,14 @@ int mmt_path_sprintf(char * buff, int len, attribute_internal_t * attr) {
     return offset;
 }
 
-int mmt_timeval_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_timeval_snprintf(char * buff, int len, attribute_internal_t * attr) {
     //Print as much as it can into buff. If the len is less than the expected strlen, then the
     //return value will be higher than the given length and the user would be able to detect
     //the truncation.
     return snprintf(buff, len, "%lu.%06lu", ((struct timeval *) attr->data)->tv_sec, ((struct timeval *) attr->data)->tv_usec);
 }
 
-int mmt_binary_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_binary_snprintf(char * buff, int len, attribute_internal_t * attr) {
     mmt_binary_var_data_t * b = (mmt_binary_var_data_t *) attr->data;
     if (len < (b->len * 2 + 1)) return -1;
     int index = 0, offset = 0;
@@ -4219,7 +4343,7 @@ int mmt_binary_sprintf(char * buff, int len, attribute_internal_t * attr) {
     return offset;
 }
 
-int mmt_string_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_string_snprintf(char * buff, int len, attribute_internal_t * attr) {
     mmt_binary_var_data_t * b = (mmt_binary_var_data_t *) attr->data;
     if (buff == NULL || len <= 0) return -1;
     if (b == NULL) { buff[0] = '\0'; return 0; }
@@ -4227,18 +4351,18 @@ int mmt_string_sprintf(char * buff, int len, attribute_internal_t * attr) {
     return snprintf(buff, (size_t)len, "%.*s", (int)b->len, (char *) &b->data);
 }
 
-int mmt_string_pointer_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_string_pointer_snprintf(char * buff, int len, attribute_internal_t * attr) {
     if (buff == NULL || len <= 0) return -1;
     if (attr == NULL || attr->data == NULL) { buff[0] = '\0'; return 0; }
     /* packet-derived pointer string is expected NUL-terminated; still bounded by dest len via snprintf */
     return snprintf(buff, (size_t)len, "%s", (char *) attr->data);
 }
 
-int mmt_stats_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_stats_snprintf(char * buff, int len, attribute_internal_t * attr) {
     return snprintf(buff, len, "%s", "TODO");
 }
 
-int mmt_header_line_pointer_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_header_line_pointer_snprintf(char * buff, int len, attribute_internal_t * attr) {
     mmt_header_line_t * data = (mmt_header_line_t *) attr->data;
     int copy_len = (data->len > (len - 1)) ? len - 1 : data->len;
     memcpy((void *) buff, (void *) data->ptr, copy_len);
@@ -4246,7 +4370,7 @@ int mmt_header_line_pointer_sprintf(char * buff, int len, attribute_internal_t *
     return copy_len;
 }
 
-int mmt_u16_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_u16_array_snprintf(char * buff, int len, attribute_internal_t * attr) {
     mmt_u16_array_t * b = (mmt_u16_array_t *) attr->data;
     int i, total=0;
     if (buff == NULL || len <= 0 || b == NULL) return -1;
@@ -4260,7 +4384,7 @@ int mmt_u16_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
     }
     return total;
 }
-int mmt_u32_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_u32_array_snprintf(char * buff, int len, attribute_internal_t * attr) {
     mmt_u32_array_t * b = (mmt_u32_array_t *) attr->data;
     int i, total=0;
     if (buff == NULL || len <= 0 || b == NULL) return -1;
@@ -4274,7 +4398,7 @@ int mmt_u32_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
     }
     return total;
 }
-int mmt_u64_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
+int mmt_u64_array_snprintf(char * buff, int len, attribute_internal_t * attr) {
     mmt_u64_array_t * b = (mmt_u64_array_t *) attr->data;
     int i, total=0;
     if (buff == NULL || len <= 0 || b == NULL) return -1;
@@ -4290,55 +4414,55 @@ int mmt_u64_array_sprintf(char * buff, int len, attribute_internal_t * attr) {
     return total;
 }
 
-int mmt_attr_sprintf(char * buff, int len, attribute_t * a) {
+int mmt_attr_snprintf(char * buff, int len, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
     switch (attr->data_type) {
     case MMT_U8_DATA:
-        return mmt_uint8_sprintf(buff, len, attr);
+        return mmt_uint8_snprintf(buff, len, attr);
     case MMT_U16_DATA:
-        return mmt_uint16_sprintf(buff, len, attr);
+        return mmt_uint16_snprintf(buff, len, attr);
     case MMT_U32_DATA:
-        return mmt_uint32_sprintf(buff, len, attr);
+        return mmt_uint32_snprintf(buff, len, attr);
     case MMT_U64_DATA:
-        return mmt_uint64_sprintf(buff, len, attr);
+        return mmt_uint64_snprintf(buff, len, attr);
     case MMT_DATA_FLOAT:
-         return mmt_float_sprintf(buff, len, attr);
+         return mmt_float_snprintf(buff, len, attr);
     case MMT_DATA_CHAR:
-        return mmt_char_sprintf(buff, len, attr);
+        return mmt_char_snprintf(buff, len, attr);
     case MMT_DATA_POINTER:
-        return mmt_pointer_sprintf(buff, len, attr);
+        return mmt_pointer_snprintf(buff, len, attr);
     case MMT_DATA_MAC_ADDR:
-        return mmt_mac_sprintf(buff, len, attr);
+        return mmt_mac_snprintf(buff, len, attr);
     case MMT_DATA_IP_ADDR:
-        return mmt_ip_sprintf(buff, len, attr);
+        return mmt_ip_snprintf(buff, len, attr);
     case MMT_DATA_IP6_ADDR:
-        return mmt_ip6_sprintf(buff, len, attr);
+        return mmt_ip6_snprintf(buff, len, attr);
     case MMT_DATA_PATH:
-        return mmt_path_sprintf(buff, len, attr);
+        return mmt_path_snprintf(buff, len, attr);
     case MMT_DATA_TIMEVAL:
-        return mmt_timeval_sprintf(buff, len, attr);
+        return mmt_timeval_snprintf(buff, len, attr);
     case MMT_BINARY_DATA:
-        return mmt_binary_sprintf(buff, len, attr);
+        return mmt_binary_snprintf(buff, len, attr);
     case MMT_BINARY_VAR_DATA:
-        return mmt_binary_sprintf(buff, len, attr);
+        return mmt_binary_snprintf(buff, len, attr);
     case MMT_STRING_DATA:
-        return mmt_string_sprintf(buff, len, attr);
+        return mmt_string_snprintf(buff, len, attr);
     case MMT_STRING_LONG_DATA:
-        return mmt_string_sprintf(buff, len, attr);
+        return mmt_string_snprintf(buff, len, attr);
     case MMT_STRING_DATA_POINTER:
-        return mmt_string_pointer_sprintf(buff, len, attr);
+        return mmt_string_pointer_snprintf(buff, len, attr);
     case MMT_HEADER_LINE:
-        return mmt_header_line_pointer_sprintf(buff, len, attr);
+        return mmt_header_line_pointer_snprintf(buff, len, attr);
     case MMT_STATS:
-        return mmt_stats_sprintf(buff, len, attr);
+        return mmt_stats_snprintf(buff, len, attr);
     case MMT_U16_ARRAY:
-        return mmt_u16_array_sprintf( buff, len, attr );
+        return mmt_u16_array_snprintf( buff, len, attr );
     case MMT_U32_ARRAY:
-        return mmt_u32_array_sprintf( buff, len, attr );
+        return mmt_u32_array_snprintf( buff, len, attr );
     case MMT_U64_ARRAY:
-        return mmt_u64_array_sprintf( buff, len, attr );
+        return mmt_u64_array_snprintf( buff, len, attr );
     default:
-        return mmt_stats_sprintf(buff, len, attr); //TODO
+        return mmt_stats_snprintf(buff, len, attr); //TODO
     }
 }
 
@@ -4368,7 +4492,7 @@ int mmt_pointer_fprintf(FILE * f, attribute_internal_t * attr) {
 
 int mmt_mac_fprintf(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_MAC_STRLEN];
-    if (mmt_mac_sprintf(buff, MMT_MAC_STRLEN, attr) > 0) {
+    if (mmt_mac_snprintf(buff, MMT_MAC_STRLEN, attr) > 0) {
         return fprintf(f, "%s", buff);
     }
     return -1;
@@ -4376,7 +4500,7 @@ int mmt_mac_fprintf(FILE * f, attribute_internal_t * attr) {
 
 int mmt_ip_fprintf(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_IP_STRLEN];
-    if (mmt_ip_sprintf(buff, MMT_IP_STRLEN, attr) > 0) {
+    if (mmt_ip_snprintf(buff, MMT_IP_STRLEN, attr) > 0) {
         return fprintf(f, "%s", buff);
     }
     return -1;
@@ -4384,7 +4508,7 @@ int mmt_ip_fprintf(FILE * f, attribute_internal_t * attr) {
 
 int mmt_ip6_fprintf(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_IP6_STRLEN];
-    if (mmt_ip6_sprintf(buff, MMT_IP6_STRLEN, attr) > 0) {
+    if (mmt_ip6_snprintf(buff, MMT_IP6_STRLEN, attr) > 0) {
         return fprintf(f, "%s", buff);
     }
     return -1;
@@ -4392,7 +4516,7 @@ int mmt_ip6_fprintf(FILE * f, attribute_internal_t * attr) {
 
 int mmt_path_fprintf(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_PATH_STRLEN];
-    if (mmt_path_sprintf(buff, MMT_PATH_STRLEN, attr) > 0) {
+    if (mmt_path_snprintf(buff, MMT_PATH_STRLEN, attr) > 0) {
         return fprintf(f, "%s", buff);
     }
     return -1;
@@ -4402,7 +4526,7 @@ int mmt_timeval_fprintf(FILE * f, attribute_internal_t * attr) {
 }
 int mmt_binary_fprintf(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_BINARYVAR_STRLEN];
-    if (mmt_binary_sprintf(buff, MMT_BINARY_STRLEN, attr) > 0) {
+    if (mmt_binary_snprintf(buff, MMT_BINARY_STRLEN, attr) > 0) {
         return fprintf(f, "%s", buff);
     }
     return -1;
@@ -4419,7 +4543,7 @@ int mmt_string_pointer_fprintf(FILE * f, attribute_internal_t * attr) {
 
 int mmt_header_line_pointer_fprintf(FILE * f, attribute_internal_t * attr) {
     char buff[8096 + 1]; //Max accepted header line length is 8K (default for Apache)
-    if (mmt_header_line_pointer_sprintf(buff, 8096, attr) > 0) {
+    if (mmt_header_line_pointer_snprintf(buff, 8096, attr) > 0) {
         return fprintf(f, "%s", buff);
     }
     return -1;
@@ -4505,7 +4629,7 @@ int mmt_pointer_format(FILE * f, attribute_internal_t * attr) {
 
 int mmt_mac_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_MAC_STRLEN];
-    if (mmt_mac_sprintf(buff, MMT_MAC_STRLEN, attr) > 0) {
+    if (mmt_mac_snprintf(buff, MMT_MAC_STRLEN, attr) > 0) {
         return fprintf(f, "Attribute %s.%s = %s\n",
                        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
@@ -4514,7 +4638,7 @@ int mmt_mac_format(FILE * f, attribute_internal_t * attr) {
 
 int mmt_ip_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_IP_STRLEN];
-    if (mmt_ip_sprintf(buff, MMT_IP_STRLEN, attr) > 0) {
+    if (mmt_ip_snprintf(buff, MMT_IP_STRLEN, attr) > 0) {
         return fprintf(f, "Attribute %s.%s = %s\n",
                        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
@@ -4523,7 +4647,7 @@ int mmt_ip_format(FILE * f, attribute_internal_t * attr) {
 
 int mmt_ip6_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_IP6_STRLEN];
-    if (mmt_ip6_sprintf(buff, MMT_IP6_STRLEN, attr) > 0) {
+    if (mmt_ip6_snprintf(buff, MMT_IP6_STRLEN, attr) > 0) {
         return fprintf(f, "Attribute %s.%s = %s\n",
                        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
@@ -4532,7 +4656,7 @@ int mmt_ip6_format(FILE * f, attribute_internal_t * attr) {
 
 int mmt_path_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_PATH_STRLEN];
-    if (mmt_path_sprintf(buff, MMT_PATH_STRLEN, attr) > 0) {
+    if (mmt_path_snprintf(buff, MMT_PATH_STRLEN, attr) > 0) {
         return fprintf(f, "Attribute %s.%s = %s\n",
                        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
@@ -4545,7 +4669,7 @@ int mmt_timeval_format(FILE * f, attribute_internal_t * attr) {
 
 int mmt_binary_format(FILE * f, attribute_internal_t * attr) {
     char buff[MMT_BINARYVAR_STRLEN];
-    if (mmt_binary_sprintf(buff, MMT_BINARY_STRLEN, attr) > 0) {
+    if (mmt_binary_snprintf(buff, MMT_BINARY_STRLEN, attr) > 0) {
         return fprintf(f, "Attribute %s.%s = %s\n",get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }
     return -1;
@@ -4565,7 +4689,7 @@ int mmt_string_pointer_format(FILE * f, attribute_internal_t * attr) {
 
 int mmt_header_line_pointer_format(FILE * f, attribute_internal_t * attr) {
     char buff[8096 + 1]; //Max accepted header line length is 8K (default for Apache)
-    if (mmt_header_line_pointer_sprintf(buff, 8096, attr) > 0) {
+    if (mmt_header_line_pointer_snprintf(buff, 8096, attr) > 0) {
         return fprintf(f, "Attribute %s.%s = %s\n",
                        get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
     }

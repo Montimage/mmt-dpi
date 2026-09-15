@@ -97,8 +97,9 @@ int classify_dtls_from_udp(ipacket_t * ipacket, unsigned index) {
 }
 
 static uint16_t _get_u16(const uint8_t *data ){
-	uint16_t *i = (uint16_t *)data;
-	return ntohs( *i );
+	uint16_t i;
+	memcpy( &i, data, sizeof(i) ); //alignment-safe: data may sit at an odd offset
+	return ntohs( i );
 }
 
 static int _dtls_client_hello_extract_attribute(const uint8_t *data, size_t data_len, attribute_t * extracted_data){
@@ -160,11 +161,15 @@ static int _dtls_client_hello_extract_attribute(const uint8_t *data, size_t data
 			if( cipher_bytes > data_len - data_index - 2 )
 				cipher_bytes = (uint16_t)(data_len - data_index - 2);
 			u16_arr->len = cipher_bytes / 2; //each cipher is a number of 2 bytes
+			//the backing array is fixed-size: never publish a larger length
+			//(F-BUG-070)
+			if( u16_arr->len > BINARY_64DATA_LEN )
+				u16_arr->len = BINARY_64DATA_LEN;
 		}
 		data_index += 2;
 		if( data_index > data_len )
 			return 0;
-		for( i=0; i<u16_arr->len && i<BINARY_64DATA_LEN; i++){
+		for( i=0; i<u16_arr->len; i++){
 			if( data_index + 2 > data_len )
 				break;
 			u16_arr->data[i] = _get_u16( &data[data_index]);
@@ -175,7 +180,9 @@ static int _dtls_client_hello_extract_attribute(const uint8_t *data, size_t data
 	return 0;
 }
 
-static int _dtls_extract_attribute(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data){
+/* non-static: driven directly by tools/phase0/tests/quic_dtls_extractor_test.c
+   (declared in internal_decls.h — internal seam, not a public API) */
+int _dtls_extract_attribute(const ipacket_t * ipacket, unsigned proto_index, attribute_t * extracted_data){
 	int ioffset = get_packet_offset_at_index(ipacket, proto_index);
 	if( ioffset < 0 || (size_t)ioffset + sizeof(dtls_header_t) > ipacket->p_hdr->caplen )
 		return 0;

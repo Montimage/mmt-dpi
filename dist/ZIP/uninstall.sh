@@ -7,12 +7,19 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=./mmt-install-common.sh
 source "$SCRIPT_DIR/mmt-install-common.sh"
 
-if [[ $(id -u) -ne 0 ]]; then
-    echo "This script should be run using sudo or as the root user" >&2
-    exit 1
-fi
+validate_mmt_base "$MMT_BASE" || exit 1
 
-validate_mmt_base "$MMT_BASE"
+# Elevation mirrors install.sh (issue #211): a user-local prefix uninstalls
+# without root; system paths (/etc/ld.so.conf.d, ldconfig) are touched only
+# when we actually have the privileges to do so.
+ELEVATED=0
+if ! prefix_writable "$MMT_BASE" && [[ $(id -u) -ne 0 ]]; then
+    echo "This script should be run using sudo or as the root user" >&2
+    echo "(prefix $MMT_BASE is not writable by $(id -un))" >&2
+    exit 1
+elif [[ $(id -u) -eq 0 ]]; then
+    ELEVATED=1
+fi
 
 echo "Start uninstalling mmt-sdk .... "
 echo "MMT_BASE: $MMT_BASE"
@@ -33,9 +40,20 @@ if [ -d "$MMT_PLUGINS" ]; then
     rmdir "$MMT_PLUGINS" 2>/dev/null || true
 fi
 
+# The installer creates $MMT_EXAMS (mkdir -p + full copy) — remove it too so
+# an install/uninstall round trip leaves no residue (issue #211, F-BUG-121).
+if [ -d "$MMT_EXAMS" ]; then
+    rm -rf "$MMT_EXAMS"
+fi
+# Drop the prefix itself when nothing remains — rmdir fails harmlessly on a
+# non-empty directory the installer did not create (e.g. /opt/mmt content).
+rmdir "$MMT_BASE" 2>/dev/null || true
+
 echo "Cleaning environment ... "
-rm -f "$LD_CONF_CANONICAL" "$LD_CONF_LEGACY"
-ldconfig
+if [ "$ELEVATED" = "1" ]; then
+    rm -f "$LD_CONF_CANONICAL" "$LD_CONF_LEGACY"
+    ldconfig
+fi
 
 echo "[MMT-]> mmt-sdk has been removed from the system! "
 echo "You can learn more about mmt-sdk at: http://www.montimage.eu"

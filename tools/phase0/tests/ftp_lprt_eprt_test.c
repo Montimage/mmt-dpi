@@ -31,6 +31,12 @@
  *       str_get_indexes(payload, ",") with the same missing NULL/count guard.
  *       Hardened to mirror the EPRT port parser.
  *
+ *   #195 All four parsers now take an explicit payload_len and locate
+ *       delimiters with str_get_indexes_n() instead of strlen()-based scans —
+ *       they must be safe on raw, non-NUL-terminated packet buffers. The
+ *       test_bounded_buffers() cases allocate exactly payload_len bytes with
+ *       no NUL inside the span so any over-read trips ASan.
+ *
  * The library is built with BUILD=asan and this file is compiled with
  * -fsanitize=address,undefined -fno-sanitize-recover=all (see the runner
  * run_ftp_lprt_eprt_test.sh), so any out-of-bounds write/read aborts the
@@ -46,6 +52,14 @@
 /* Parsers under test — exported from proto_ftp.c, declared in the shared
  * internal header (issue #186). */
 #include "internal_decls.h"
+
+/* protocols/ftp.h is not self-contained (needs the internal bitmask types),
+ * so internal_decls.h mirrors ftp_command_t / ftp_response_t. The command
+ * enum values are not mirrored: UNKNOWN_CMD is 0 by definition, and the
+ * known-command checks assert cmd != 0 plus the decoded strings instead of
+ * hardcoding enum positions. */
+#define FTP_UNKNOWN_CMD 0       /* MMT_FTP_UNKNOWN_CMD */
+#define FTP_213_CODE    213     /* MMT_FTP_213_CODE */
 
 static int g_failures = 0;
 static int g_checks = 0;
@@ -72,6 +86,18 @@ static char *dup_payload(const char *s)
     return p;
 }
 
+/* #195: the parsers take an explicit payload_len and must never scan past it.
+ * Allocate exactly len bytes — NO NUL terminator inside the allocation — so
+ * any strlen()/unbounded read past payload_len lands in the ASan redzone.
+ * The caller must ensure strlen(s) >= len. */
+static char *raw_payload(const char *s, size_t len)
+{
+    char *p = (char *) malloc(len);
+    if (!p) { perror("malloc"); exit(2); }
+    memcpy(p, s, len);
+    return p;
+}
+
 static void test_lprt_wellformed(void)
 {
     printf("[K4] LPRT well-formed classification unchanged\n");
@@ -80,7 +106,7 @@ static void test_lprt_wellformed(void)
      * exactly this IPv6 string. */
     char *in = dup_payload(
         "LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7");
-    char *out = ftp_get_data_client_addr_v6_from_LPRT(in);
+    char *out = ftp_get_data_client_addr_v6_from_LPRT(in, (uint32_t)strlen(in));
     CHECK(out != NULL && strcmp(out, "2002:5183:4383::5183:4383") == 0,
           "well-formed LPRT decodes to 2002:5183:4383::5183:4383");
     free(out);
@@ -98,7 +124,7 @@ static void test_lprt_overflow_inputs(void)
             "LPRT 6,99,255,255,255,255,255,255,255,255,255,255,255,255,"
             "255,255,255,255,255,255,255,255,255,255,255,255,255,255,"
             "255,255,255,255,255,255,255,255,255,255,255,255");
-        char *out = ftp_get_data_client_addr_v6_from_LPRT(in);
+        char *out = ftp_get_data_client_addr_v6_from_LPRT(in, (uint32_t)strlen(in));
         CHECK(out != NULL && strlen(out) <= 32,
               "oversized host-address-length is rejected/bounded");
         free(out);
@@ -112,7 +138,7 @@ static void test_lprt_overflow_inputs(void)
         char *in = dup_payload(
             "LPRT 6,16,255,255,255,255,255,255,255,255,"
             "255,255,255,255,255,255,255,255");
-        char *out = ftp_get_data_client_addr_v6_from_LPRT(in);
+        char *out = ftp_get_data_client_addr_v6_from_LPRT(in, (uint32_t)strlen(in));
         CHECK(out != NULL && strlen(out) <= 32,
               "all-255 octets accumulate within the 32-char bound");
         free(out);
@@ -123,7 +149,7 @@ static void test_lprt_overflow_inputs(void)
      * "FFFFFF"+NUL (7 bytes) into a malloc(3) buffer pre-fix. */
     {
         char *in = dup_payload("LPRT 6,16,16777215,2,3,4");
-        char *out = ftp_get_data_client_addr_v6_from_LPRT(in);
+        char *out = ftp_get_data_client_addr_v6_from_LPRT(in, (uint32_t)strlen(in));
         CHECK(out != NULL && strlen(out) <= 32,
               "out-of-range element (>255) does not overflow hvalue");
         free(out);
@@ -134,7 +160,7 @@ static void test_lprt_overflow_inputs(void)
      * malloc() buffer (ASan use-of-uninitialised via strstr/strcat). */
     {
         char *in = dup_payload("LPRT 6,16,0,0,81,131,67,131,2,4,7");
-        char *out = ftp_get_data_client_addr_v6_from_LPRT(in);
+        char *out = ftp_get_data_client_addr_v6_from_LPRT(in, (uint32_t)strlen(in));
         CHECK(out != NULL && strlen(out) <= 32,
               "leading-zero octet handled on zero-initialised buffer");
         free(out);
@@ -149,7 +175,7 @@ static void test_eprt(void)
     /* Well-formed EPRT IPv6: the address between the 2nd and 3rd "|". */
     {
         char *in = dup_payload("EPRT |2|2002:5183:4383::5183:4383|1031");
-        char *out = ftp_get_data_client_addr_v6_from_EPRT(in);
+        char *out = ftp_get_data_client_addr_v6_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(out != NULL && strcmp(out, "2002:5183:4383::5183:4383") == 0,
               "well-formed EPRT extracts the IPv6 address");
         free(out);
@@ -160,7 +186,7 @@ static void test_eprt(void)
      * 2-element array returned by str_get_indexes(). Must return NULL safely. */
     {
         char *in = dup_payload("EPRT |2");
-        char *out = ftp_get_data_client_addr_v6_from_EPRT(in);
+        char *out = ftp_get_data_client_addr_v6_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(out == NULL, "truncated EPRT (one delimiter) returns NULL safely");
         free(out);
         free(in);
@@ -169,7 +195,7 @@ static void test_eprt(void)
     /* No delimiters at all: str_get_indexes returns NULL. */
     {
         char *in = dup_payload("EPRT 2");
-        char *out = ftp_get_data_client_addr_v6_from_EPRT(in);
+        char *out = ftp_get_data_client_addr_v6_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(out == NULL, "EPRT with no delimiter returns NULL safely");
         free(out);
         free(in);
@@ -184,7 +210,7 @@ static void test_eprt_port(void)
      * From the proto_ftp.c docstring example. Must still decode to 6275. */
     {
         char *in = dup_payload("EPRT |1|132.235.1.2|6275|");
-        unsigned short port = ftp_get_data_client_port_from_EPRT(in);
+        unsigned short port = ftp_get_data_client_port_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(port == 6275, "well-formed EPRT extracts port 6275");
         free(in);
     }
@@ -193,7 +219,7 @@ static void test_eprt_port(void)
      * past the 2-element array returned by str_get_indexes(). Must return 0. */
     {
         char *in = dup_payload("EPRT |2");
-        unsigned short port = ftp_get_data_client_port_from_EPRT(in);
+        unsigned short port = ftp_get_data_client_port_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(port == 0, "truncated EPRT (one delimiter) returns 0 safely");
         free(in);
     }
@@ -202,7 +228,7 @@ static void test_eprt_port(void)
      * pre-fix. Must be rejected by the delimiter-count guard. */
     {
         char *in = dup_payload("EPRT |1|132.235.1.2");
-        unsigned short port = ftp_get_data_client_port_from_EPRT(in);
+        unsigned short port = ftp_get_data_client_port_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(port == 0, "EPRT missing the port delimiter returns 0 safely");
         free(in);
     }
@@ -211,7 +237,7 @@ static void test_eprt_port(void)
      * NULL-deref pre-fix. */
     {
         char *in = dup_payload("EPRT 2");
-        unsigned short port = ftp_get_data_client_port_from_EPRT(in);
+        unsigned short port = ftp_get_data_client_port_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(port == 0, "EPRT with no delimiter returns 0 safely");
         free(in);
     }
@@ -221,7 +247,7 @@ static void test_eprt_port(void)
      * Must still decode to 6275 — covers the else branch's well-formed path. */
     {
         char *in = dup_payload("EPRT |1|132.235.1.2|6275\r\n");
-        unsigned short port = ftp_get_data_client_port_from_EPRT(in);
+        unsigned short port = ftp_get_data_client_port_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(port == 6275, "EPRT without trailing '|' (CRLF) extracts port 6275");
         free(in);
     }
@@ -231,7 +257,7 @@ static void test_eprt_port(void)
      * len<=0 guard — must return 0 with no OOB malloc(0)/memcpy. */
     {
         char *in = dup_payload("EPRT |2|a|");
-        unsigned short port = ftp_get_data_client_port_from_EPRT(in);
+        unsigned short port = ftp_get_data_client_port_from_EPRT(in, (uint32_t)strlen(in));
         CHECK(port == 0, "EPRT with empty port field returns 0 safely");
         free(in);
     }
@@ -289,14 +315,219 @@ static void test_port_addr(void)
     }
 }
 
+static void test_bounded_buffers(void)
+{
+    printf("[#195] non-NUL-terminated buffers: parsers are bounded by payload_len\n");
+
+    /* Raw (no-NUL) EPRT: three "|" delimiters, address between the 2nd and
+     * 3rd. A strlen()-based search would run into the ASan redzone. */
+    {
+        const char *lit = "EPRT |2|2002:5183:4383::5183:4383|1031";
+        char *in = raw_payload(lit, strlen(lit));
+        char *out = ftp_get_data_client_addr_v6_from_EPRT(in, (uint32_t)strlen(lit));
+        CHECK(out != NULL && strcmp(out, "2002:5183:4383::5183:4383") == 0,
+              "raw EPRT (no NUL) extracts the IPv6 address");
+        free(out);
+        free(in);
+    }
+
+    /* Raw (no-NUL) EPRT port, CRLF-terminated else branch. */
+    {
+        const char *lit = "EPRT |1|132.235.1.2|6275\r\n";
+        char *in = raw_payload(lit, strlen(lit));
+        unsigned short port = ftp_get_data_client_port_from_EPRT(in, (uint32_t)strlen(lit));
+        CHECK(port == 6275, "raw EPRT (no NUL) extracts port 6275");
+        free(in);
+    }
+
+    /* Captured-length truncation: payload_len shorter than the C string — the
+     * port field is cut mid-token; the parser must bound reads to payload_len
+     * and reject rather than read the trailing bytes. */
+    {
+        const char *lit = "EPRT |1|132.235.1.2|6275";
+        char *in = raw_payload(lit, strlen(lit));
+        /* payload_len ends just after the third "|" (offset 19): the else
+         * branch computes len = 20 - 19 - 2 <= 0 and must return 0 without
+         * reading the digits that follow in the buffer. */
+        unsigned short port = ftp_get_data_client_port_from_EPRT(in, 20);
+        CHECK(port == 0, "truncated EPRT payload_len is bounded, returns 0");
+        free(in);
+    }
+
+    /* Raw (no-NUL) PORT parameter. */
+    {
+        const char *lit = "192,168,1,2,7,138";
+        char *in = raw_payload(lit, strlen(lit));
+        unsigned int addr = ftp_get_addr_from_parameter(in, (unsigned int)strlen(lit));
+        CHECK(addr == inet_addr("192.168.1.2"),
+              "raw PORT parameter (no NUL) extracts 192.168.1.2");
+        free(in);
+    }
+
+    /* Raw (no-NUL) LPRT: the parser internally makes a bounded NUL-terminated
+     * copy before strtok — a strlen() on the raw buffer would hit the redzone. */
+    {
+        const char *lit =
+            "LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7";
+        char *in = raw_payload(lit, strlen(lit));
+        char *out = ftp_get_data_client_addr_v6_from_LPRT(in, (uint32_t)strlen(lit));
+        CHECK(out != NULL && strcmp(out, "2002:5183:4383::5183:4383") == 0,
+              "raw LPRT (no NUL) decodes to 2002:5183:4383::5183:4383");
+        free(out);
+        free(in);
+    }
+}
+
+static void test_lprt_port(void)
+{
+    printf("[#206] LPRT port parser: declared lengths validated, copy freed\n");
+
+    /* The RFC 1639 example — port_length=2, octets 4,7 -> 4*256+7 = 1031. */
+    {
+        char *in = dup_payload(
+            "LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7");
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(in));
+        CHECK(port == 1031, "well-formed LPRT extracts port 1031");
+        free(in);
+    }
+
+    /* Forged port-address-length: 1073741824 * 2 overflows int (UBSan abort)
+     * and power_16() would loop on the forged bound pre-fix. Rejected -> 0. */
+    {
+        char *in = dup_payload("LPRT 6,4,10,0,0,1,1073741824,1,2");
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(in));
+        CHECK(port == 0, "oversized port-address-length is rejected");
+        free(in);
+    }
+
+    /* Forged host-address-length: INT_MAX makes host_address_length + 2
+     * overflow int pre-fix (UBSan abort). Rejected -> 0. */
+    {
+        char *in = dup_payload("LPRT 6,2147483647,1,2,3,4,2,4,7");
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(in));
+        CHECK(port == 0, "oversized host-address-length is rejected");
+        free(in);
+    }
+
+    /* port_length == 0 is malformed too — must not drive the loop. */
+    {
+        char *in = dup_payload("LPRT 6,4,10,0,0,1,0,4,7");
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(in));
+        CHECK(port == 0, "zero port-address-length is rejected");
+        free(in);
+    }
+
+    /* Raw (no-NUL) LPRT — the parser's own bounded copy is NUL-terminated. */
+    {
+        const char *lit =
+            "LPRT 6,16,32,2,81,131,67,131,0,0,0,0,0,0,81,131,67,131,2,4,7";
+        char *in = raw_payload(lit, strlen(lit));
+        unsigned short port = ftp_get_data_client_port_from_LPRT(
+            in, (uint32_t)strlen(lit));
+        CHECK(port == 1031, "raw LPRT (no NUL) extracts port 1031");
+        free(in);
+    }
+}
+
+static void test_command_parsing(void)
+{
+    printf("[#206] ftp_get_command: init, guarded reads, terminal else\n");
+
+    /* Bare 3-byte payload, no CRLF (F-BUG-068): passes
+     * mmt_int_check_possible_ftp_command() but neither the 3- nor the
+     * 4-letter-verb branch matches — the terminal else must yield
+     * UNKNOWN_CMD with a non-NULL str_cmd (pre-#195 str_cmd kept
+     * uninitialised heap contents for ftp_set_command_id's strcmp, and
+     * the payload[3]/payload[4] probes read out of bounds). */
+    {
+        char *in = raw_payload("ABC", 3);
+        ftp_command_t *cmd = ftp_get_command(in, 3);
+        CHECK(cmd != NULL && cmd->cmd == FTP_UNKNOWN_CMD &&
+              cmd->str_cmd != NULL && strcmp(cmd->str_cmd, "UNKNOWN_CMD") == 0,
+              "3-byte payload yields UNKNOWN_CMD with set str_cmd");
+        free_ftp_command(cmd);
+        free(in);
+    }
+
+    /* Bare 4-byte payload — same terminal-else path. */
+    {
+        char *in = raw_payload("ABCD", 4);
+        ftp_command_t *cmd = ftp_get_command(in, 4);
+        CHECK(cmd != NULL && cmd->cmd == FTP_UNKNOWN_CMD &&
+              cmd->str_cmd != NULL && strcmp(cmd->str_cmd, "UNKNOWN_CMD") == 0,
+              "4-byte payload yields UNKNOWN_CMD with set str_cmd");
+        free_ftp_command(cmd);
+        free(in);
+    }
+
+    /* Well-formed 3-byte command with CRLF (the payload_len == 5 branch). */
+    {
+        char *in = raw_payload("PWD\r\n", 5);
+        ftp_command_t *cmd = ftp_get_command(in, 5);
+        CHECK(cmd != NULL && cmd->cmd != FTP_UNKNOWN_CMD &&
+              cmd->str_cmd != NULL && strcmp(cmd->str_cmd, "PWD") == 0,
+              "PWD\\r\\n decodes to MMT_FTP_PWD_CMD");
+        free_ftp_command(cmd);
+        free(in);
+    }
+
+    /* Well-formed 3-byte command with a parameter. */
+    {
+        char *in = raw_payload("CWD /\r\n", 7);
+        ftp_command_t *cmd = ftp_get_command(in, 7);
+        CHECK(cmd != NULL && cmd->cmd != FTP_UNKNOWN_CMD &&
+              cmd->param != NULL && strcmp(cmd->param, "/") == 0,
+              "CWD / decodes command + parameter");
+        free_ftp_command(cmd);
+        free(in);
+    }
+}
+
+static void test_response_213(void)
+{
+    printf("[#206] ftp_get_response: 213 reply parsing (F-BUG-067 input)\n");
+
+    /* "213 x\r\n" — the reply that crashed the 213 session handler when it
+     * arrived before any client command (last_command still NULL). */
+    {
+        char *in = raw_payload("213 x\r\n", 7);
+        ftp_response_t *res = ftp_get_response(in, 7);
+        CHECK(res != NULL && res->code == FTP_213_CODE &&
+              res->value != NULL && strcmp(res->value, "x") == 0,
+              "213 x decodes to code 213, value \"x\"");
+        free_ftp_response(res);
+        free(in);
+    }
+
+    /* "213 \r\n" — a short reply leaves response->value NULL (the SIZE branch
+     * must not atoi(NULL)). */
+    {
+        char *in = raw_payload("213 \r\n", 6);
+        ftp_response_t *res = ftp_get_response(in, 6);
+        CHECK(res != NULL && res->code == FTP_213_CODE &&
+              res->value == NULL,
+              "213 with empty value decodes to code 213, NULL value");
+        free_ftp_response(res);
+        free(in);
+    }
+}
+
 int main(void)
 {
-    printf("== ftp_lprt_eprt_test (issue #8, K4; issue #35) ==\n");
+    printf("== ftp_lprt_eprt_test (issue #8, K4; issue #35; #195; #206) ==\n");
     test_lprt_wellformed();
     test_lprt_overflow_inputs();
     test_eprt();
     test_eprt_port();
     test_port_addr();
+    test_bounded_buffers();
+    test_lprt_port();
+    test_command_parsing();
+    test_response_213();
 
     printf("\n%d/%d checks passed\n", g_checks - g_failures, g_checks);
     if (g_failures) {

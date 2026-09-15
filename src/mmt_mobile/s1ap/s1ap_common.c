@@ -6,21 +6,24 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include "s1ap_common.h"
 #include "nas/nas_msg.h"
 #include "proto_s1ap.h"
 
 static inline uint32_t _octet_string_to_uint32_t( const OCTET_STRING_t *t){
-	if( t->size != 4 )
+	if( t->size != 4 || t->buf == NULL )
 		return 0;
-	uint32_t val = *(uint32_t*) t->buf;
+	uint32_t val;
+	memcpy( &val, t->buf, sizeof( val ));
 	return val;
 }
 
 static inline uint32_t _bit_string_to_uint32_t( const BIT_STRING_t *t){
-	if( t->size != 4 )
+	if( t->size != 4 || t->buf == NULL )
 		return 0;
-	uint32_t val = *(uint32_t*) t->buf;
+	uint32_t val;
+	memcpy( &val, t->buf, sizeof( val ));
 	return val;
 }
 
@@ -81,7 +84,13 @@ static inline int _decode_s1ap_e_rabsetuplistctxtsures(
 	int i, decoded = 0;
 	int tempDecoded = 0;
 
-	assert(s1ap_E_RABSetupListCtxtSURes != NULL);
+	/* F-SEC-011 (issue #214): decoded-message pointers are validated
+	 * unconditionally — the shipped build defines NDEBUG, so an assert()
+	 * here would compile out and a NULL would dereference below. */
+	if (s1ap_E_RABSetupListCtxtSURes == NULL) {
+		S1AP_ERROR("NULL E_RABSetupListCtxtSURes\n");
+		return -1;
+	}
 
 	for (i = 0; i < s1ap_E_RABSetupListCtxtSURes->list.count; i++) {
 		S1ap_IE_t *ie_p = s1ap_E_RABSetupListCtxtSURes->list.array[i];
@@ -125,7 +134,10 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 	int i, decoded = 0;
 	int tempDecoded = 0;
 
-	assert(s1ap_E_RABToBeSetupListCtxtSUReq != NULL);
+	if (s1ap_E_RABToBeSetupListCtxtSUReq == NULL) {
+		S1AP_ERROR("NULL E_RABToBeSetupListCtxtSUReq\n");
+		return -1;
+	}
 
 	for (i = 0; i < s1ap_E_RABToBeSetupListCtxtSUReq->list.count; i++) {
 		S1ap_IE_t *ie_p = s1ap_E_RABToBeSetupListCtxtSUReq->list.array[i];
@@ -177,7 +189,8 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 							if( pdn && pdn->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4
 									&& pdn->pdn_address_information.data != NULL
 									&& pdn->pdn_address_information.len >= 4 ){
-								message->ue_ipv4 = *(uint32_t *) pdn->pdn_address_information.data;
+								memcpy( &message->ue_ipv4, pdn->pdn_address_information.data,
+										sizeof( message->ue_ipv4 ));
 							}
 						}
 					}
@@ -208,7 +221,10 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 	S1ap_InitialContextSetupRequest_t *s1ap_InitialContextSetupRequest_p = NULL;
 	int i, decoded = 0;
 	int tempDecoded = 0;
-	assert(any_p != NULL);
+	if (any_p == NULL) {
+		S1AP_ERROR("NULL ANY_t value\n");
+		return -1;
+	}
 
 	S1AP_DEBUG("Decoding message S1ap_InitialContextSetupRequestIEs (%s:%d)\n", __FILE__, __LINE__);
 
@@ -277,7 +293,10 @@ static inline int _decode_s1ap_initialContextSetupResponse(
 	S1ap_InitialContextSetupResponse_t *s1ap_InitialContextSetupResponse_p = NULL;
 	int i, decoded = 0;
 	int tempDecoded = 0;
-	assert(any_p != NULL);
+	if (any_p == NULL) {
+		S1AP_ERROR("NULL ANY_t value\n");
+		return -1;
+	}
 
 	S1AP_DEBUG("Decoding message S1ap_InitialContextSetupResponseIEs (%s:%d)\n", __FILE__, __LINE__);
 
@@ -308,7 +327,10 @@ static inline int _decode_s1ap_initialContextSetupResponse(
 				S1AP_ERROR("Decoding of IE e_RABSetupListCtxtSURes failed\n");
 				if (s1apERABSetupListCtxtSURes_p)
 					ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABSetupListCtxtSURes, s1apERABSetupListCtxtSURes_p);
-				return -1;
+				/* must go through _finish to free the outer decoded tree
+				 * (F-BUG-087) */
+				decoded = -1;
+				goto _finish;
 			}
 
 			if (_decode_s1ap_e_rabsetuplistctxtsures( message, s1apERABSetupListCtxtSURes_p) < 0) {
@@ -338,7 +360,10 @@ static inline int _decode_s1ap_initialuemessageies(
 	S1ap_InitialUEMessage_t *s1ap_InitialUEMessage_p = NULL;
 	int i, decoded = 0;
 	int tempDecoded = 0;
-	assert(any_p != NULL);
+	if (any_p == NULL) {
+		S1AP_ERROR("NULL ANY_t value\n");
+		return -1;
+	}
 
 	S1AP_DEBUG("Decoding message S1ap_InitialUEMessageIEs (%s:%d)\n", __FILE__, __LINE__);
 
@@ -462,7 +487,10 @@ static inline int _decode_s1ap_S1SetupRequest(
 	int i, decoded = 0;
 	int tempDecoded = 0;
 
-	assert(any_p != NULL);
+	if (any_p == NULL) {
+		S1AP_ERROR("NULL ANY_t value\n");
+		return -1;
+	}
 
 	S1AP_DEBUG("Decoding message S1ap_S1SetupRequestIEs (%s:%d)\n", __FILE__, __LINE__);
 
@@ -531,7 +559,10 @@ static inline int _decode_s1ap_S1SetupResponse(
 	S1ap_S1SetupResponse_t *s1ap_S1SetupResponse_p = NULL;
 	int i, decoded = 0;
 	int tempDecoded = 0;
-	assert(any_p != NULL);
+	if (any_p == NULL) {
+		S1AP_ERROR("NULL ANY_t value\n");
+		return -1;
+	}
 
 	S1AP_DEBUG("Decoding message S1ap_S1SetupResponseIEs (%s:%d)\n", __FILE__, __LINE__);
 
@@ -653,7 +684,10 @@ static inline int _decode_s1ap_uecontextrelease(
     S1ap_UEContextReleaseCommand_t *s1ap_UEContextReleaseCommand_p = NULL;
     int i, decoded = 0;
     int tempDecoded = 0;
-    assert(any_p != NULL);
+    if (any_p == NULL) {
+        S1AP_ERROR("NULL ANY_t value\n");
+        return -1;
+    }
 
     S1AP_DEBUG("Decoding message S1ap_UEContextReleaseCommandIEs (%s:%d)\n", __FILE__, __LINE__);
 
@@ -727,7 +761,10 @@ static inline int _decode_s1ap_UEContextReleaseRequest(
 	S1ap_UEContextReleaseRequest_t *s1ap_UEContextReleaseRequest_p =  NULL;
 	int i, decoded = 0;
 	int tempDecoded = 0;
-	assert(any_p != NULL);
+	if (any_p == NULL) {
+		S1AP_ERROR("NULL ANY_t value\n");
+		return -1;
+	}
 
 	S1AP_DEBUG("Decoding message S1ap_UEContextReleaseRequestIEs (%s:%d)\n", __FILE__, __LINE__);
 
@@ -860,10 +897,20 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 	S1AP_PDU_t *pdu_p = NULL;
 	asn_dec_rval_t dec_ret;
 
-	assert(message != NULL);
+	if (message == NULL) {
+		fprintf(stderr, "[S1AP] NULL output message pointer\n");
+		return -1;
+	}
 
 	if( length == 0 )
 		return 0;
+
+	/* F-SEC-011 (issue #214): a NULL buffer with a nonzero length is
+	 * rejected unconditionally — aper_decode() would dereference it. */
+	if (buffer == NULL) {
+		fprintf(stderr, "[S1AP] NULL input buffer\n");
+		return -1;
+	}
 
 	dec_ret = aper_decode(_aper_codec_ctx(),
 			&asn_DEF_S1AP_PDU,
@@ -875,6 +922,10 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 
 	if (dec_ret.code != RC_OK) {
 		fprintf(stderr, "[S1AP] Failed to decode S1AP, code %d, consumed: %zu\n", dec_ret.code, dec_ret.consumed);
+		/* aper_decode leaves the partially-decoded tree in pdu_p — free it
+		 * here or every malformed S1AP packet leaks it (F-BUG-078).
+		 * ASN_STRUCT_FREE is NULL-safe. */
+		ASN_STRUCT_FREE( asn_DEF_S1AP_PDU, pdu_p );
 		return -1;
 	}
 

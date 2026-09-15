@@ -258,10 +258,12 @@ dns_name_t * dns_extract_name(const u_char* dns_name_payload, const u_char* dns_
     uint16_t str_length = hex2int(dns_name_payload[0]);
     if(str_length == 0){
         return NULL;
-    }else if(str_length == 192){
-        /* Compression pointer: the second byte holds the target offset. */
+    }else if((str_length & 0xC0) == 0xC0){
+        /* Compression pointer (RFC 1035 §4.1.4): the top two bits are set;
+           the target offset is the remaining 14 bits — high 6 bits of the
+           first byte, then the whole second byte (F-BUG-072). */
         if(!dns_can_read(dns_name_payload, 2, payload_end)) return NULL;
-        int offset_name = hex2int(dns_name_payload[1]);
+        int offset_name = ((str_length & 0x3F) << 8) | hex2int(dns_name_payload[1]);
         const u_char * target = dns_payload + offset_name;
         /* Target must be inside the payload AND strictly before the current
            position; otherwise it is a forward/self reference (malformed) that
@@ -333,12 +335,29 @@ dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char*
                     dns_free_name(q_name);
                     return NULL;
                 }
+                /* Issue #212 (F-BUG-077): snprintf was used here to concatenate
+                 * the name parts — replaced with explicit bounded copies so this
+                 * file carries no printf-family call at all (log-discipline
+                 * rule). Same truncation semantics as "%s.%s" / "%s": stop at
+                 * the first NUL, never write more than q_name_length + 1. */
+                {
+                    size_t cap  = (size_t) q_name_length + 1;
+                    size_t pos  = 0;
+                    size_t part;
+                    if(com_name){
+                        part = strlen(com_name);
+                        if (part > cap - 1 - pos) part = cap - 1 - pos;
+                        memcpy(temp_name + pos, com_name, part); pos += part;
+                        if (pos < cap - 1) temp_name[pos++] = '.';
+                    }
+                    part = strlen(current_name->value);
+                    if (part > cap - 1 - pos) part = cap - 1 - pos;
+                    memcpy(temp_name + pos, current_name->value, part); pos += part;
+                    temp_name[pos] = '\0';
+                }
                 if(com_name){
-                    snprintf(temp_name,q_name_length + 1,"%s.%s",com_name,current_name->value);
                     free(com_name);
                     com_name = NULL;
-                }else{
-                    snprintf(temp_name,q_name_length + 1,"%s",current_name->value);
                 }
                 // com_name = malloc((q_name_length + 2) * sizeof(char));
                 // if(com_name == NULL) {
@@ -586,7 +605,10 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
             txtValue = (void*)as;
             break;
         default:
-        fprintf(stderr, "\n[DNS] Do not know the type of answer: %d\n",atype);
+        /* Issue #212 (F-BUG-077): fprintf to stderr ran per packet carrying an
+         * unknown answer type — a remote log flood. Routed through the
+         * (default-off) MMT_LOG macro like the rest of this file. */
+        MMT_LOG(PROTO_DNS, MMT_LOG_DEBUG, "\n[DNS] Do not know the type of answer: %d\n", atype);
         break;
     }
     return txtValue;

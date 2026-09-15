@@ -16,10 +16,18 @@ static inline int _nas_msg_plain_decode(
 		int                             length)
 {
 	int size = 0, byte = 0;
+
+	/* F-BUG-081: validate the length before reading the first header byte —
+	 * a minimum-size security-protected PDU reaches here with length == 0. */
+	CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, 1, length );
+
 	DECODE_U8( buffer, *(uint8_t *)& msg->emm.header, size );
 
 	switch ( msg->emm.header.protocol_discriminator ){
 	case NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE:
+		/* EMM header: one more byte for the message type. buffer is already
+		 * proven non-NULL above — only the length leg is still needed. */
+		CHECK_LENGTH_DECODER( length, size + 1 );
 		DECODE_U8( buffer+size, msg->emm.header.message_type, size );
 
 		/* Decode EPS Mobility Management L3 message */
@@ -27,6 +35,8 @@ static inline int _nas_msg_plain_decode(
 		break;
 	case NAS_EPS_SESSION_MANAGEMENT_MESSAGE:
 
+		/* ESM header: procedure transaction identity + message type */
+		CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, size + 2, length );
 		DECODE_U8( buffer+size, msg->esm.header.procedure_transaction_identity, size );
 		DECODE_U8( buffer+size, msg->esm.header.message_type, size );
 

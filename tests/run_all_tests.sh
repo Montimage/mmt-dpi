@@ -155,6 +155,7 @@ run_test_suite() {
 DEFAULT_SUITES=(
     hashmap
     memory
+    fault_injection
     hexdump
     mmt_utils
     mmt_inet_ntop
@@ -165,6 +166,9 @@ DEFAULT_SUITES=(
     rule_engine
     radius_hardening
     nas_ies_tail
+    installer
+    dicom_dissector
+    ndn_dissector
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.
