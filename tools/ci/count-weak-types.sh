@@ -34,7 +34,7 @@ STRICT=0
 
 count="$(grep -hE '\b(int|uint32_t|uint16_t|uint8_t|unsigned|u_int32_t|short|long|char)[[:space:]]+[a-z_]*(proto|protocol)[a-z_]*[[:space:]]*[,)=]' \
     src/mmt_core/public_include/*.h \
-    | grep -vcE '\*|_name[[:space:]]*[,)=]')"
+    | grep -vcE '\*|_name[[:space:]]*[,)=]' || true)"
 echo "    raw-integer protocol-id parameters: $count"
 
 if [ "$STRICT" -eq 1 ]; then

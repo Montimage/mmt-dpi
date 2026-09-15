@@ -53,7 +53,7 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 		*((uint32_t *) extracted_data->data) = copy_4bytes_order( hdr->end_to_end_id, 4 );
 		break;
 	default:
-		log_warn("Unknown attribute %d.%d", extracted_data->proto_id, extracted_data->field_id );
+		log_warn("Unknown attribute %d.%d", mmt_attr_get_proto_id_typed(extracted_data), extracted_data->field_id );
 	}
 	return 1;
 }

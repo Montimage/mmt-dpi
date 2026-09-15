@@ -17,13 +17,13 @@ extern "C" {
  * Generic packet field extraction function
  */
 typedef int (*generic_attribute_extraction_function) (
-        const ipacket_t * packet, unsigned proto_index,
+        const ipacket_t * packet, mmt_proto_index_t proto_index,
         attribute_t * extracted_data);
 
 /**
  * Signature of the function for returning the attribute extraction function given the attribute id
  */
-typedef generic_attribute_extraction_function(*generic_get_attribute_extraction_function) (uint32_t proto_id, uint32_t attribute_id);
+typedef generic_attribute_extraction_function(*generic_get_attribute_extraction_function) (mmt_proto_id_t proto_id, uint32_t attribute_id);
 
 /**
  * Defines the attribute meta data.
@@ -41,37 +41,37 @@ typedef struct attribute_metadata_struct {
 /**
  * Signature of the function for returning attribute id given its name
  */
-typedef int (*generic_get_attribute_id_by_name) (uint32_t proto_id, const char * attribute_name);
+typedef int (*generic_get_attribute_id_by_name) (mmt_proto_id_t proto_id, const char * attribute_name);
 
 /**
  * Signature of the function for returning attribute name given its id
  */
-typedef const char * (*generic_get_attribute_name_by_id) (uint32_t proto_id, uint32_t attribute_id);
+typedef const char * (*generic_get_attribute_name_by_id) (mmt_proto_id_t proto_id, uint32_t attribute_id);
 
 /**
  * Signature of the function for returning attribute data type given its id
  */
-typedef int (*generic_get_attribute_data_type_by_id) (uint32_t proto_id, uint32_t attribute_id);
+typedef int (*generic_get_attribute_data_type_by_id) (mmt_proto_id_t proto_id, uint32_t attribute_id);
 
 /**
  * Signature of the function for returning attribute data length given its id
  */
-typedef int (*generic_get_attribute_data_length_by_id) (uint32_t proto_id, uint32_t attribute_id);
+typedef int (*generic_get_attribute_data_length_by_id) (mmt_proto_id_t proto_id, uint32_t attribute_id);
 
 /**
  * Signature of the function for returning attribute position in the packet if such a thing is known
  */
-typedef int (*generic_get_attribute_position_by_id) (uint32_t proto_id, uint32_t attribute_id);
+typedef int (*generic_get_attribute_position_by_id) (mmt_proto_id_t proto_id, uint32_t attribute_id);
 
 /**
  * Signature of the function for returning if the given attribute id exists
  */
-typedef int(*generic_is_valid_attribute) (uint32_t proto_id, uint32_t attribute_id);
+typedef int(*generic_is_valid_attribute) (mmt_proto_id_t proto_id, uint32_t attribute_id);
 
 /**
  * Signature of the function returning the scope of the given attribute
  */
-typedef int (*generic_get_attribute_scope) (uint32_t proto_id, uint32_t attribute_id);
+typedef int (*generic_get_attribute_scope) (mmt_proto_id_t proto_id, uint32_t attribute_id);
 
 /**
  * Signature of the function for cleaning up the protocol stack internal data.
@@ -95,7 +95,7 @@ typedef int (*generic_cleanup_proto)(void);
 typedef struct classified_proto_struct {
     uint16_t offset; /**< offset of the protocol in the packet */
     uint16_t status; /**< the status of the classified protocol (classified, non-classified, ...) */
-    uint32_t proto_id; /**< identifier of the protocol */
+    mmt_proto_id_t proto_id; /**< identifier of the protocol */
 } classified_proto_t;
 
 /**
@@ -182,7 +182,7 @@ MMTAPI int MMTCALL set_classified_proto(
  * @return a positive value on success, zero on failure.
  */
 MMTAPI int MMTCALL register_classification_function_with_parent_protocol(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     generic_classification_function classification_fct,
     int weight
 );
@@ -311,7 +311,7 @@ MMTAPI void MMTCALL register_session_data_cleanup_function(
  * @return a positive value on success, zero on failure.
  */
 MMTAPI int MMTCALL register_session_data_analysis_function_with_protocol(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     generic_session_data_analysis_function session_data_analysis_fct,
     int weight
 );
@@ -415,7 +415,7 @@ MMTAPI int MMTCALL unregister_protocol_stack(
  * @return a positive value if their in no protocol registered with the given identifier. 0 otherwise.
  */
 MMTAPI int MMTCALL is_free_protocol_id_for_registractionl(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -425,7 +425,7 @@ MMTAPI int MMTCALL is_free_protocol_id_for_registractionl(
  * @return a pointer to the protocol structure if the given identifier is not registered, NULL otherwise.
  */
 MMTAPI protocol_t* MMTCALL get_protocol_struct_for_registration_if_free(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -436,7 +436,7 @@ MMTAPI protocol_t* MMTCALL get_protocol_struct_for_registration_if_free(
  * @return a pointer to the protocol if the given identifier is not registered, NULL otherwise.
  */
 MMTAPI protocol_t* MMTCALL init_protocol_struct_for_registration(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     const char *protocol_name
 );
 
@@ -461,7 +461,7 @@ MMTAPI int MMTCALL register_attribute_with_protocol(
  */
 MMTAPI int MMTCALL register_protocol(
     protocol_t *protocol_struct,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -470,7 +470,7 @@ MMTAPI int MMTCALL register_protocol(
  * @return PROTO_REGISTERED on success, PROTO_NOT_REGISTERED on failure.
  */
 MMTAPI int MMTCALL unregister_protocol_by_id(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -490,7 +490,7 @@ MMTAPI int MMTCALL unregister_protocol_by_name(
  * @return the pointer to the protocol structure with the given identifier
  */
 MMTAPI protocol_t* MMTCALL get_protocol_struct_by_id(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 //  - - - - - - - - - - - - - - - - - -
@@ -499,43 +499,43 @@ MMTAPI protocol_t* MMTCALL get_protocol_struct_by_id(
 
 MMTAPI int MMTCALL get_proto_attribute_position(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL get_proto_attribute_length(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL get_proto_attribute_id(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     const char *attr_name
 );
 
 MMTAPI const char* MMTCALL get_proto_attribute_name(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL get_proto_attribute_type(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL get_proto_attribute_scope(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 
 MMTAPI int MMTCALL is_valid_proto_attribute(
     protocol_t *proto,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attr_id
 );
 

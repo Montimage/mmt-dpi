@@ -2174,7 +2174,7 @@ int is_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint3
     int retval = 0;
     struct attribute_internal_struct * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
     while (tmp_attribute != NULL) {
-        if (proto_id == tmp_attribute->proto_id &&
+        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute) &&
                 field_id == tmp_attribute->field_id) return 1;
         tmp_attribute = tmp_attribute->next;
     }
@@ -2186,7 +2186,7 @@ struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_h
     if (_is_registered_protocol(proto_id) > 0) {
         struct attribute_internal_struct * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
         while (tmp_attribute != NULL) {
-            if (proto_id == tmp_attribute->proto_id &&
+            if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute) &&
                     field_id == tmp_attribute->field_id) return tmp_attribute;
             tmp_attribute = tmp_attribute->next;
         }
@@ -2200,7 +2200,7 @@ int has_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_
     }
     attribute_internal_t * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
     while (tmp_attribute != NULL) {
-        if (proto_id == tmp_attribute->proto_id &&
+        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute) &&
                 attribute_id == tmp_attribute->field_id &&
                 tmp_attribute->attribute_handler != NULL /* The attribute has at least one registered handler */) {
             return 1;
@@ -2217,7 +2217,7 @@ int is_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_i
     }
     attribute_internal_t * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
     while (tmp_attribute != NULL) {
-        if (proto_id == tmp_attribute->proto_id &&
+        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute) &&
                 attribute_id == tmp_attribute->field_id &&
                 tmp_attribute->attribute_handler != NULL /* The attribute has at least one registered handler */) {
             attribute_handler_t * att_handler_fct = tmp_attribute->attribute_handler;
@@ -2434,7 +2434,7 @@ int unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, 
         safe_to_delete_attr_handler = temp_attr_handler;
     }
 
-    if ((temp_attr->attribute_handler == NULL) && !(temp_attr->scope & SCOPE_EVENT)) {
+    if ((temp_attr->attribute_handler == NULL) && !(mmt_attr_get_scope_typed((const attribute_t *) temp_attr) & SCOPE_EVENT)) {
         //We need to delete the attribute handler element as there are no more registered handler functions
         attribute_handler_element_t * temp_attr_handler_elem = mmt_handler->proto_registered_attribute_handlers[proto_id];
         attribute_handler_element_t * safe_to_delete_attr_handler_elem = NULL;
@@ -2486,7 +2486,7 @@ int register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id,
 
         if (!extract_attribute) {
             int s0 = sizeof (struct attribute_internal_struct);
-            int s1 = get_attribute_data_type(proto_id, field_id);
+            int s1 = mmt_attribute_get_data_type_typed(proto_id, field_id);
             int s2 = get_data_size_by_data_type(s1);
             /* Issue #202 (F-BUG-010): the scratch area must be at least
              * data_len wide. validate_attribute_metadata() already rejects
@@ -2504,8 +2504,8 @@ int register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id,
                 memset(extract_attribute, 0, size);
                 extract_attribute->proto_id = proto_id;
                 extract_attribute->field_id = field_id;
-                extract_attribute->scope = get_attribute_scope(proto_id, field_id);
-                extract_attribute->data_type = get_attribute_data_type(proto_id, field_id);
+                extract_attribute->scope = mmt_attribute_get_scope_typed(proto_id, field_id);
+                extract_attribute->data_type = mmt_attribute_get_data_type_typed(proto_id, field_id);
                 extract_attribute->data_len = get_data_size_by_proto_and_field_ids(proto_id, field_id);
                 extract_attribute->position_in_packet = get_field_position_by_protocol_and_field_ids(proto_id, field_id);
                 extract_attribute->memsize = size;
@@ -2585,7 +2585,7 @@ int register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, ui
         new_attribute_handler->next = NULL;
         attr->attribute_handler = new_attribute_handler;
 
-        if (!(attr->scope & SCOPE_EVENT)) {
+        if (!(mmt_attr_get_scope_typed((const attribute_t *) attr) & SCOPE_EVENT)) {
             //We should add an attribute handler element as this is the first handler for the attribute
             attribute_handler_element_t * attr_handler_elem = (attribute_handler_element_t *) mmt_malloc(sizeof (attribute_handler_element_t));
             if (attr_handler_elem == NULL) {
@@ -2720,10 +2720,10 @@ int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *
         while (tmp_attribute != NULL) {
             void * data = NULL;
 #ifdef DEBUG
-        (void)fprintf( stderr, "[debug] debug_extracted_attributes_printout_handler: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %"PRIu32" , field_id - %"PRIu32", index - %u \n", ipacket->packet_id,tmp_attribute->proto_id,tmp_attribute->field_id, proto_index);
-        (void)fprintf( stderr, "[debug] debug_extracted_attributes_printout_handler: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %s , field_id - %s, index - %u \n", ipacket->packet_id,get_protocol_name_by_id(tmp_attribute->proto_id),get_attribute_name_by_protocol_and_attribute_ids(tmp_attribute->proto_id,tmp_attribute->field_id), proto_index);
+        (void)fprintf( stderr, "[debug] debug_extracted_attributes_printout_handler: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %"PRIu32" , field_id - %"PRIu32", index - %u \n", ipacket->packet_id,mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute),tmp_attribute->field_id, proto_index);
+        (void)fprintf( stderr, "[debug] debug_extracted_attributes_printout_handler: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %s , field_id - %s, index - %u \n", ipacket->packet_id,get_protocol_name_by_id(mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute)),get_attribute_name_by_protocol_and_attribute_ids(mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute),tmp_attribute->field_id), proto_index);
 #endif /*DEBUG*/
-            data = _get_attribute_extracted_data_at_index(ipacket, tmp_attribute->proto_id, tmp_attribute->field_id, proto_index);
+            data = _get_attribute_extracted_data_at_index(ipacket, mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute), tmp_attribute->field_id, proto_index);
             if (!quiet && data != NULL) {
                 print_attributes_list(tmp_attribute);
             }
@@ -4401,7 +4401,7 @@ int mmt_u64_array_snprintf(char * buff, int len, attribute_internal_t * attr) {
 
 int mmt_attr_snprintf(char * buff, int len, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
-    switch (attr->data_type) {
+    switch (mmt_attr_get_data_type_typed(a)) {
     case MMT_U8_DATA:
         return mmt_uint8_snprintf(buff, len, attr);
     case MMT_U16_DATA:
@@ -4540,7 +4540,7 @@ int mmt_stats_fprintf(FILE *f, attribute_internal_t * attr) {
 
 int mmt_attr_fprintf(FILE * f, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
-    switch (attr->data_type) {
+    switch (mmt_attr_get_data_type_typed(a)) {
     case MMT_U8_DATA:
         return mmt_uint8_fprintf(f, attr);
     case MMT_U16_DATA:
@@ -4688,7 +4688,7 @@ int mmt_stats_format(FILE *f, attribute_internal_t * attr) {
 
 int mmt_attr_format(FILE * f, attribute_t * a) {
     attribute_internal_t * attr = (attribute_internal_t *) a;
-    switch (attr->data_type) {
+    switch (mmt_attr_get_data_type_typed(a)) {
     case MMT_U8_DATA:
         return mmt_uint8_format(f, attr);
     case MMT_U16_DATA:

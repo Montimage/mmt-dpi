@@ -5,4 +5,7 @@
 # typed as int/uintN_t/unsigned/short/long/char, excluding pointers and
 # *_name strings. Tasks 5.6/5.7 convert them to the protocol-id typedef —
 # lower this number as they land. The gate fails only when the count RISES.
-48
+#
+# #230: all protocol-id parameters now use mmt_proto_id_t / mmt_proto_index_t —
+# baseline is 0; any new raw-integer proto*/protocol* parameter fails the gate.
+0

@@ -207,6 +207,7 @@ jobs:
       run: |
         bash tools/ci/count-init-wrappers.sh
         bash tools/ci/count-weak-types.sh
+        bash tools/ci/check-typed-accessors.sh
         bash tools/ci/lint-markers.sh
     - name: Documentation checks (blocking)
       run: |

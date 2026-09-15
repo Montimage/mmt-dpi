@@ -656,7 +656,7 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     //Got variable identifiers: token1.ltoken2.ltoken3 (e.g., META.PROTO.3)
     protocol_id = get_protocol_id_by_name(token1);
     field_id = get_attribute_id_by_protocol_id_and_attribute_name(protocol_id, ltoken2);
-    data_type_id = get_attribute_data_type(protocol_id, field_id);
+    data_type_id = mmt_attribute_get_data_type_typed(protocol_id, field_id);
     if (ltoken3[0] != '\0') event_id = atoi(ltoken3);
     if (event_id != 0) {
         //case variable is stored in list_of_tuples
@@ -877,7 +877,7 @@ char * funct_get_info_param( mmt_handler_t *mmt, short reg_tuple, char * input, 
         tokenize(input, &token2, &token3, &ref);
         a_tuple->protocol_id = get_protocol_id_by_name(token2);
         a_tuple->field_id = get_attribute_id_by_protocol_id_and_attribute_name(a_tuple->protocol_id, token3);
-        a_tuple->data_type_id = get_attribute_data_type(a_tuple->protocol_id, a_tuple->field_id);
+        a_tuple->data_type_id = mmt_attribute_get_data_type_typed(a_tuple->protocol_id, a_tuple->field_id);
         a_tuple->data_size = get_data_size_by_proto_and_field_ids(a_tuple->protocol_id, a_tuple->field_id);
         a_tuple->event_id = ref;
         if (ref > 0 || reg_tuple == YES) {
@@ -1122,7 +1122,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         new_rule->value = XVAR;
         new_rule->t.protocol_id = get_protocol_id_by_name(token2);
         new_rule->t.field_id = get_attribute_id_by_protocol_id_and_attribute_name(new_rule->t.protocol_id, token3);
-        new_rule->t.data_type_id = get_attribute_data_type(new_rule->t.protocol_id, new_rule->t.field_id);
+        new_rule->t.data_type_id = mmt_attribute_get_data_type_typed(new_rule->t.protocol_id, new_rule->t.field_id);
         int ret = 1;
         if (is_registered_attribute(mmt, new_rule->t.protocol_id, new_rule->t.field_id) == 0) {
             ret = register_extraction_attribute(mmt, new_rule->t.protocol_id, new_rule->t.field_id);

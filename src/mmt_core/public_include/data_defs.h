@@ -28,6 +28,8 @@ extern "C" {
 /* Typed aliases for weak int/uint32_t types (ABI-compatible, underlying representation stays uint32_t/int) */
 typedef uint32_t mmt_proto_id_t;
 typedef uint32_t mmt_attribute_id_t;
+/* Index of a protocol inside a packet's protocol path — distinct from mmt_proto_id_t (ABI-compatible, stays unsigned) */
+typedef unsigned mmt_proto_index_t;
 
 typedef struct mmt_handler_struct               mmt_handler_t;
 typedef struct mmt_session_struct               mmt_session_t;
@@ -278,7 +280,7 @@ typedef struct ip_rtt_struct{
  * @return the protocol name.
  */
 MMTAPI const char* MMTCALL get_protocol_name_by_id(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -288,7 +290,7 @@ MMTAPI const char* MMTCALL get_protocol_name_by_id(
  * @return the name of the attribute.
  */
 MMTAPI const char* MMTCALL get_attribute_name_by_protocol_and_attribute_ids(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -324,7 +326,7 @@ MMTAPI uint32_t MMTCALL get_protocol_id_at_index(
  */
 MMTAPI unsigned MMTCALL get_protocol_index_by_id(
     const ipacket_t *ipacket,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -1068,7 +1070,7 @@ MMTAPI unsigned int MMTCALL htoi(
  * @return the data size of the attribute
  */
 MMTAPI int MMTCALL get_data_size_by_proto_and_field_ids(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -1089,7 +1091,7 @@ MMTAPI uint32_t MMTCALL get_data_size_by_data_type(
  * @return the position of the attribute in the message. POSITION_NOT_KNOWN is returned if the proto_id and attribute_id couple are not valid.
  */
 MMTAPI int MMTCALL get_field_position_by_protocol_and_field_ids(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -1100,7 +1102,7 @@ MMTAPI int MMTCALL get_field_position_by_protocol_and_field_ids(
  * @return true if the attribute exists, false otherwise
  */
 MMTAPI int MMTCALL is_protocol_attribute(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -1131,7 +1133,7 @@ MMTAPI uint32_t MMTCALL get_attribute_id_by_protocol_and_attribute_names(
  * @return the identifier (positive value) of the attribute on success, 0 otherwise.
  */
 MMTAPI uint32_t MMTCALL get_attribute_id_by_protocol_id_and_attribute_name(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     const char *attribute_name
 );
 
@@ -1142,7 +1144,7 @@ MMTAPI uint32_t MMTCALL get_attribute_id_by_protocol_id_and_attribute_name(
  * @return the data type of the attribute if it is defined (attribute exists in the protocol), NOTYPE otherwise.
  */
 MMTAPI long MMTCALL get_attribute_data_type(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -1153,7 +1155,7 @@ MMTAPI long MMTCALL get_attribute_data_type(
  * @return the scope of the attribute. This method should only be applied on valid attribute ids.
  */
 MMTAPI int MMTCALL get_attribute_scope(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 

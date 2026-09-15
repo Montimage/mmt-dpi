@@ -120,7 +120,7 @@ typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, void 
 /**
  * Generic evasion handler callback
  */
-typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, uint32_t proto_id, unsigned proto_index, unsigned evasion_id, void * data, void * args);
+typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, mmt_proto_id_t proto_id, mmt_proto_index_t proto_index, unsigned evasion_id, void * data, void * args);
 
 /**
  * Generic process_packet
@@ -154,12 +154,12 @@ typedef void (*generic_mapspace_iteration_callback) (void * key, void * value, v
 /**
  * Signature of the function that will be called by the protocol attribute iterator.
  */
-typedef void (*generic_protocol_attribute_iteration_callback) (attribute_metadata_t * attribute, uint32_t proto_id, void * args);
+typedef void (*generic_protocol_attribute_iteration_callback) (attribute_metadata_t * attribute, mmt_proto_id_t proto_id, void * args);
 
 /**
  * Signature of the function that will be called by the protocol iterator.
  */
-typedef void (*generic_protocol_iteration_callback) (uint32_t proto_id, void * args);
+typedef void (*generic_protocol_iteration_callback) (mmt_proto_id_t proto_id, void * args);
 
 /**
  * Signature of the function that will be called by the mmt handler iterator.
@@ -188,7 +188,7 @@ MMTAPI int MMTCALL init_extraction();
  * @param   action_id   Action id -> to update
  * @return a positive value on success, 0 otherwise
  */
-MMTAPI int MMTCALL update_protocol(uint32_t proto_id, int action_id);
+MMTAPI int MMTCALL update_protocol(mmt_proto_id_t proto_id, int action_id);
 
 /**
  * Closes the extraction and frees any previously allocated memory.
@@ -314,7 +314,7 @@ MMTAPI int MMTCALL register_session_timer_handler(
  */
 MMTAPI int MMTCALL is_registered_attribute(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -341,7 +341,7 @@ MMTAPI int MMTCALL register_evasion_handler(
  */
 MMTAPI int MMTCALL register_extraction_attribute(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -368,7 +368,7 @@ MMTAPI int MMTCALL register_extraction_attribute_by_name(
  */
 MMTAPI int MMTCALL unregister_extraction_attribute(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -395,7 +395,7 @@ MMTAPI int MMTCALL unregister_extraction_attribute_by_name(
  */
 MMTAPI int MMTCALL has_registered_attribute_handler(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -409,7 +409,7 @@ MMTAPI int MMTCALL has_registered_attribute_handler(
  */
 MMTAPI int MMTCALL is_registered_attribute_handler(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     attribute_handler_function handler_fct
 );
@@ -426,7 +426,7 @@ MMTAPI int MMTCALL is_registered_attribute_handler(
  */
 MMTAPI int MMTCALL register_attribute_handler(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     attribute_handler_function handler_fct,
     void *handler_condition,
@@ -462,7 +462,7 @@ MMTAPI int MMTCALL register_attribute_handler_by_name(
  */
 MMTAPI int MMTCALL unregister_attribute_handler(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     attribute_handler_function handler_fct
 );
@@ -592,7 +592,7 @@ MMTAPI int MMTCALL debug_extracted_attributes_printout_handler(
  */
 MMTAPI void MMTCALL fire_attribute_event(
     ipacket_t *ipacket,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     unsigned index,
     void *data
@@ -608,8 +608,8 @@ MMTAPI void MMTCALL fire_attribute_event(
  */
 MMTAPI void MMTCALL fire_evasion_event(
     ipacket_t *ipacket,
-    uint32_t proto_id,
-    unsigned proto_index,
+    mmt_proto_id_t proto_id,
+    mmt_proto_index_t proto_index,
     unsigned evasion_id,
     void *data
 );
@@ -767,7 +767,7 @@ MMTAPI void MMTCALL set_session_timeout_delay(
  */
 MMTAPI void* MMTCALL get_attribute_extracted_data(
     const ipacket_t *ipacket,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -785,7 +785,7 @@ MMTAPI void* MMTCALL get_attribute_extracted_data(
  */
 MMTAPI void* MMTCALL get_attribute_extracted_data_encap_index(
     const ipacket_t *ipacket,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     unsigned encap_index
 ) __attribute__((deprecated("use get_attribute_extracted_data_at_index instead")));
@@ -815,7 +815,7 @@ MMTAPI void* MMTCALL get_attribute_extracted_data_by_name(
  */
 MMTAPI void* MMTCALL get_attribute_extracted_data_at_index(
     const ipacket_t *ipacket,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     unsigned index
 );
@@ -830,7 +830,7 @@ MMTAPI void* MMTCALL get_attribute_extracted_data_at_index(
  */
 MMTAPI attribute_t* MMTCALL get_extracted_attribute(
     const ipacket_t *ipacket,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
 
@@ -859,7 +859,7 @@ MMTAPI attribute_t* MMTCALL get_extracted_attribute_by_name(
  */
 MMTAPI attribute_t* MMTCALL get_extracted_attribute_at_index(
     const ipacket_t *ipacket,
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     unsigned index
 );
@@ -888,7 +888,7 @@ MMTAPI attribute_t* MMTCALL get_extracted_attribute_at_index_by_name(
  */
 MMTAPI proto_statistics_t* MMTCALL get_protocol_stats(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -965,7 +965,7 @@ MMTAPI void MMTCALL disable_protocol_statistics(
  */
 MMTAPI void MMTCALL enable_protocol_analysis(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -975,7 +975,7 @@ MMTAPI void MMTCALL enable_protocol_analysis(
  */
 MMTAPI void MMTCALL disable_protocol_analysis(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -985,7 +985,7 @@ MMTAPI void MMTCALL disable_protocol_analysis(
  */
 MMTAPI void MMTCALL enable_protocol_classification(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -995,7 +995,7 @@ MMTAPI void MMTCALL enable_protocol_classification(
  */
 MMTAPI void MMTCALL disable_protocol_classification(
     mmt_handler_t *mmt_handler,
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -1005,7 +1005,7 @@ MMTAPI void MMTCALL disable_protocol_classification(
  * @return a positive value if the given identifier is valid, 0 otherwise.
  */
 MMTAPI int MMTCALL is_valid_protocol_id(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -1014,7 +1014,7 @@ MMTAPI int MMTCALL is_valid_protocol_id(
  * @return PROTO_REGISTERED if the protocol is already registered, PROTO_NOT_REGISTERED otherwise
  */
 MMTAPI int MMTCALL is_registered_protocol(
-    uint32_t proto_id
+    mmt_proto_id_t proto_id
 );
 
 /**
@@ -1024,7 +1024,7 @@ MMTAPI int MMTCALL is_registered_protocol(
  * @param user pointer to the user argument. It will be passed to the iterator callback function.
  */
 MMTAPI void MMTCALL iterate_through_protocol_attributes(
-    uint32_t proto_id,
+    mmt_proto_id_t proto_id,
     generic_protocol_attribute_iteration_callback iterator_fct,
     void *user
 );
