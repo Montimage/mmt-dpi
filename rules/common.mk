@@ -1,5 +1,5 @@
 VERSION  := 1.8.0
-GIT_VERSION := $(shell git log --format="%h" -n 1)
+GIT_VERSION := $(shell git log --format="%h" -n 1 2>/dev/null)
 MMT_BASE ?=/opt/mmt
 MMT_DPI ?= $(MMT_BASE)/dpi
 MMT_LIB ?= $(MMT_DPI)/lib
@@ -455,15 +455,15 @@ $(SDK_EXAMPLES_SRC): $(SDKXAM)
 
 %.o: %.c
 	@echo "[COMPILE] $(notdir $@)"
-	$(QUIET) $(CC) $(CFLAGS) -I. -o $@ -c $<
+	$(QUIET) $(CC) $(CFLAGS) $(MMT_REPRO_SEED) -I. -o $@ -c $<
 
 %.o: %.cc
 	@echo "[COMPILE] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) -I. -o $@ -c $<
+	$(QUIET) $(CXX) $(CXXFLAGS) $(MMT_REPRO_SEED) -I. -o $@ -c $<
 
 %.o: %.cpp
 	@echo "[COMPILE] $(notdir $@)"
-	$(QUIET) $(CXX) $(CXXFLAGS) -I. -o $@ -c $<
+	$(QUIET) $(CXX) $(CXXFLAGS) $(MMT_REPRO_SEED) -I. -o $@ -c $<
 
 #  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #  T O O L C H A I N   F L O O R   ( i s s u e   # 2 1 8 ,   F - D E P - 2 0 7 )
@@ -481,4 +481,55 @@ $(SDK_EXAMPLES_SRC): $(SDKXAM)
 MMT_GCC_MIN       := 11
 MMT_GLIBC_MIN     := 2.34
 MMT_LIBSTDCXX_MIN := $(MMT_GCC_MIN)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#  R E P R O D U C I B L E   P A C K A G E   B U I L D S   ( # 2 2 0 ,  F - C I - 0 1 1 )
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# Reproducible-build epoch: every timestamp the deb/rpm packaging would
+# otherwise stamp from the wall clock (metadata "Built time"/"Build date",
+# staged file mtimes, the ar/rpm header times dpkg-deb/rpmbuild write) is
+# pinned to SOURCE_DATE_EPOCH instead. Honour a caller-provided epoch first
+# (the reproducible-builds.org contract); otherwise pin it to the checked-out
+# commit's own timestamp so two builds of the same tree agree.
+SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct 2>/dev/null)
+#
+# A missing git history under CI (CI=true, exported by every CI runner —
+# release-packages.yml forwards it into the build containers) is a HARD
+# error: it used to silently downgrade the package revision to a
+# wall-clock-derived stamp, which is exactly the F-CI-011 drift this gate
+# exists to catch. Local tarball builds keep working — they get the
+# deterministic "nogit" revision and a warning instead of a date
+# masquerading as a version.
+ifeq ($(strip $(GIT_VERSION)),)
+ifneq ($(strip $(CI)),)
+$(error no git history under CI — GIT_VERSION/SOURCE_DATE_EPOCH are underivable: use a full checkout (fetch-depth: 0) or pass GIT_VERSION=/SOURCE_DATE_EPOCH= explicitly)
+else
+GIT_VERSION := nogit
+endif
+endif
+ifeq ($(strip $(SOURCE_DATE_EPOCH)),)
+ifneq ($(strip $(CI)),)
+$(error no git history and SOURCE_DATE_EPOCH unset — package timestamps are underivable: export SOURCE_DATE_EPOCH or fetch the full history)
+else
+$(warning SOURCE_DATE_EPOCH unset and no git history to derive it from — stamping packages with the current time; artifacts will NOT be reproducible)
+SOURCE_DATE_EPOCH := $(shell date +%s)
+endif
+endif
+export SOURCE_DATE_EPOCH
+# Human-readable form of the epoch, stamped into the deb control "Built
+# time:" and the rpm spec "Build date:" where those stanzas used to embed
+# `date` output (sdk/Makefile).
+BUILD_DATE := $(shell LC_ALL=C date -u -d "@$(SOURCE_DATE_EPOCH)" '+%Y-%m-%d %H:%M:%S UTC' 2>/dev/null || LC_ALL=C date -u -r "$(SOURCE_DATE_EPOCH)" '+%Y-%m-%d %H:%M:%S UTC' 2>/dev/null)
+#
+# -frandom-seed pins the per-compile seed GCC salts into the .gnu.lto_*
+# section names/hashes of LTO objects — the nondeterminism a same-tree
+# double build still shows once every timestamp is epoch-pinned (GCC 13
+# ignores SOURCE_DATE_EPOCH for this). Probed once because only GCC
+# documents the flag; the %.o recipes pass the source's repo-relative path
+# so the seed is unique per translation unit and identical across builds.
+MMT_SEED_OK := $(shell printf 'int mmt_seed_probe;' | $(CC) -frandom-seed=probe -x c -c - -o /dev/null 2>/dev/null && echo 1)
+ifneq ($(MMT_SEED_OK),)
+MMT_REPRO_SEED = -frandom-seed=$(subst $(TOPDIR)/,,$<)
+endif
 

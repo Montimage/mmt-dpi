@@ -29,7 +29,9 @@ Usage:
   build-package.sh <distro-id> <deb|rpm>     build inside the distro container
 
 A real run performs, in order:
-  1. install distro build dependencies (apt-get, or dnf/yum with CRB enabled)
+  1. install distro build dependencies via tools/ci/install-build-deps.sh
+     (apt-get, or dnf/yum with CRB enabled) — the single source for the dep
+     set, shared with check-reproducible-build.sh
   2. make -C sdk && make -C sdk <deb|rpm>    (GIT_VERSION pinned explicitly)
   3. clear dist/packages/, then collect the freshly built artifact there —
      the directory is bind-mounted from the host and shared across matrix
@@ -45,63 +47,42 @@ PKG_TYPE="${2:?usage: build-package.sh <distro-id> <deb|rpm>}"
 
 log() { printf '\n\033[1;34m==>\033[0m %s\n' "$*"; }
 
-install_build_deps_debian() {
-  log "Installing build dependencies (Debian/Ubuntu: $DISTRO_ID)"
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get update -y
-  # Compile-time deps only (issue #219): libxml2-dev is linked by the
-  # ENABLESEC engines built below; libpcap-dev provides <pcap/pcap.h> for
-  # src/mmt_security/public_defs.h — neither lands in the package's Depends,
-  # which is derived from the shipped libraries' NEEDED entries instead.
-  # binutils provides objdump for that derivation (tools/ci/shlib-deps.sh).
-  # libnghttp2-dev is intentionally absent: no built library references any
-  # nghttp2_* symbol, so the linker's --as-needed would drop it anyway.
-  # python3 runs the --verify-package leg of check-package-deps.sh below.
-  apt-get install -y --no-install-recommends \
-    build-essential g++ make git ca-certificates file binutils \
-    libxml2-dev libpcap-dev dpkg-dev python3
-}
-
-install_build_deps_rhel() {
-  log "Installing build dependencies (RHEL family: $DISTRO_ID)"
-  local pm=dnf
-  command -v dnf >/dev/null 2>&1 || pm=yum
-  # libpcap-devel lives in the CRB (CodeReady Builder / PowerTools) repo on
-  # EL9, which ships disabled — enable it before installing the -devel packages.
-  # binutils provides objdump for the NEEDED -> Requires derivation (issue
-  # #219); see install_build_deps_debian for the libxml2/libpcap rationale.
-  "$pm" install -y dnf-plugins-core || true
-  "$pm" config-manager --set-enabled crb 2>/dev/null \
-    || "$pm" config-manager --set-enabled powertools 2>/dev/null || true
-  # python3 runs the --verify-package leg of check-package-deps.sh below.
-  "$pm" install -y \
-    gcc gcc-c++ make git file findutils which binutils \
-    libxml2-devel libpcap-devel rpm-build python3
-}
-
-case "$PKG_TYPE" in
-  deb) install_build_deps_debian ;;
-  rpm) install_build_deps_rhel ;;
-  *) echo "✗ Unknown package type: $PKG_TYPE (expected deb|rpm)" >&2; exit 2 ;;
-esac
+# The dep set lives in install-build-deps.sh so the reproducibility gate
+# (check-reproducible-build.sh) installs the identical packages (issue #220).
+bash "$(dirname "$0")/install-build-deps.sh" "$DISTRO_ID" "$PKG_TYPE"
 
 # The repo is bind-mounted from the host; git refuses to operate on a tree owned
 # by another uid unless it is marked safe. GIT_VERSION (short hash) needs this.
 git config --global --add safe.directory "$(pwd)" 2>/dev/null || true
 
-# Resolve the short commit hash used for package versioning. The Makefile derives
-# it from `git log`, which yields an empty string when git history is missing
-# (shallow checkout, tarball build, detached worktree) — and an empty revision
-# makes both dpkg-deb ("revision number is empty") and rpmbuild fail. Compute it
-# here with a date-stamp fallback and pass it explicitly so the Version is never
-# left empty.
-GIT_VERSION="$(git log --format='%h' -n 1 2>/dev/null || true)"
+# Resolve the short commit hash used for package versioning. The Makefile
+# derives it from `git log`, which yields an empty string when git history is
+# missing (shallow checkout, tarball build, detached worktree). Under CI
+# (CI=true, forwarded by the workflow's docker run) that is a HARD error
+# (issue #220, F-CI-011): the old date-stamp fallback stamped a
+# wall-clock-derived "version" no one could reproduce or trace to a commit.
+# Locally it stays non-fatal but deterministic — "nogit", never a date. An
+# explicit GIT_VERSION in the environment wins either way (tarball builds
+# can still package by pinning the revision themselves).
+GIT_VERSION="${GIT_VERSION:-$(git log --format='%h' -n 1 2>/dev/null || true)}"
 if [ -z "$GIT_VERSION" ]; then
-  GIT_VERSION="$(date -u +%Y%m%d)"
-  echo "⚠ git history unavailable — using fallback GIT_VERSION=$GIT_VERSION"
+  if [ -n "${CI:-}" ]; then
+    echo "✗ git history unavailable under CI — cannot derive GIT_VERSION." >&2
+    echo "  Check out with fetch-depth: 0, or pass GIT_VERSION explicitly." >&2
+    exit 1
+  fi
+  GIT_VERSION="nogit"
+  echo "⚠ git history unavailable — using deterministic fallback GIT_VERSION=$GIT_VERSION"
 fi
 
-log "Building SDK (GIT_VERSION=$GIT_VERSION, ENABLESEC=1)"
+# Pin the reproducible-build epoch to the commit being packaged so the stamp
+# is visible in the build log; rules/common.mk derives the same value when
+# the variable is unset. An empty value is handed to make as-is — the
+# CI-gate there fails the same way a missing git history does (issue #220).
+SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct 2>/dev/null || true)}"
+export SOURCE_DATE_EPOCH
+
+log "Building SDK (GIT_VERSION=$GIT_VERSION, SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-<derived in make>}, ENABLESEC=1)"
 # Note: the deb/rpm targets populate their package tree from the SDK build
 # output (see `--private-prepare-build-dir`), not from an installed /opt/mmt —
 # so `make install` is deliberately NOT run here. Skipping it keeps /opt/mmt

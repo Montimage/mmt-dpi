@@ -1,8 +1,8 @@
 ARCH         ?= linux
 TOPDIR       := $(realpath $(CURDIR)/..)
 RULESDIR     := $(TOPDIR)/rules
-# Set name of package with given version
-BUILD_DIR	 :=mmt-dpi_$(VERSION)_`uname -s`_`uname -p`_`date +%s`
+# Name of the package staging dir — the sole BUILD_DIR definition lives with
+# the package targets below and must carry no wall-clock component (issue #220, F-CI-011)
 
 #Directory given by user (e.g., make install INSTALL_DIR=/home/tata/mmt) to install MMT-DPI to
 ifdef MMT_BASE
@@ -169,7 +169,7 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
         \nMaintainer: Montimage <contact@montimage.eu> \
         \nDepends: $$deps \
         \nDescription: MMT-DPI:  \
-        \n (Built time: `date +"%Y-%m-%d %H:%M:%S"`) \
+        \n (Built time: $(BUILD_DATE)) \
         \n A software C library designed to extract data attributes from network packets, server logs, and from structured events in general, in order to make them available for analysis \
         \n Homepage: http://www.montimage.eu" \
 		> $(BUILD_DIR)/DEBIAN/control
@@ -186,7 +186,11 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) echo 'fi' >> $(BUILD_DIR)/DEBIAN/postrm
 	$(QUIET) chmod +x $(BUILD_DIR)/DEBIAN/postrm
 
-	$(QUIET) dpkg-deb -b $(BUILD_DIR)
+	# Reproducibility (issue #220, F-CI-011): clamp every staged mtime —
+	# payload, DEBIAN metadata and symlinks (-h, the targets do not exist
+	# during staging) — to SOURCE_DATE_EPOCH, and normalise uid/gid to root
+	# so the archive does not record who built it.
+	$(QUIET) find $(BUILD_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} + && dpkg-deb --root-owner-group -b $(BUILD_DIR)
 	$(QUIET) $(RM) $(BUILD_DIR)
 
 #  - - - - - - - - - -
@@ -220,12 +224,12 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	    \n\
 	    \n%description\
 	    \nMMT-DPI is a library for deep packet inspection.\
-	    \nBuild date: `date +"%Y-%m-%d %H:%M:%S"`\
+	    \nBuild date: $(BUILD_DATE)\
 	    \n\
 	    \n%prep\
 	    \nrm -rf %{buildroot}\
 	    \nmkdir -p %{buildroot}/\
-	    \ncp -r %{_topdir}/../$(BUILD_DIR)/* %{buildroot}/\
+	    \ncp -rp %{_topdir}/../$(BUILD_DIR)/. %{buildroot}/\
 	    \nmkdir -p %{buildroot}/etc/ld.so.conf.d/\
 	    \n\
 	    \n%clean\
@@ -239,7 +243,14 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	    \nldconfig\
 	" > ./mmt-dpi.spec
 
-	rpmbuild --quiet --rmspec --define "_topdir `pwd`/rpmbuild" --define "_rpmfilename ../../$(BUILD_DIR).rpm" -bb ./mmt-dpi.spec
+	# Reproducibility (issue #220, F-CI-011): clamp the staged mtimes to
+	# SOURCE_DATE_EPOCH before rpmbuild copies the tree, pin %_buildhost —
+	# the hostname otherwise leaks into RPMTAG_BUILDHOST and the build
+	# cookie — and opt in to rpm's SDE handling: %_buildhost alone leaves
+	# RPMTAG_BUILDTIME at the wall clock (rpm needs the two explicit
+	# macros; merely exporting the variable is not enough on rpm 4.16).
+	$(QUIET) find $(BUILD_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} +
+	rpmbuild --quiet --rmspec --define "_topdir `pwd`/rpmbuild" --define "_rpmfilename ../../$(BUILD_DIR).rpm" --define "_buildhost mmt-dpi" --define "use_source_date_epoch_as_buildtime 1" --define "clamp_mtime_to_source_date_epoch 1" -bb ./mmt-dpi.spec
 
 	$(QUIET) $(RM) $(BUILD_DIR) rpmbuild mmt-dpi.spec
 

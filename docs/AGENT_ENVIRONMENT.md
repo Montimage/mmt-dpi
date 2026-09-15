@@ -61,6 +61,19 @@ artifact with `tools/ci/check-package-deps.sh --verify-package`, which
 compares `dpkg-deb -f` / `rpm -qp` output against the derived set and fails
 on divergence.
 
+**Reproducible packages (issue #220, F-CI-011):** `make -C sdk deb` /
+`make -C sdk rpm` are byte-deterministic for a given commit — the staging
+dir name, the `Built time:`/`Build date:` metadata fields and every staged
+file mtime are pinned to `SOURCE_DATE_EPOCH` (honoured when exported;
+otherwise derived from the commit's own timestamp in `rules/common.mk`),
+never the wall clock. `tools/ci/check-reproducible-build.sh` is the CI gate:
+it builds the package twice in the release container and diffs the sha256
+sums. A missing git history is a hard error under `CI=true` — it used to
+silently downgrade the package revision to a date stamp; local tarball
+builds get the deterministic `nogit` revision and a warning instead. Release
+tags are gated by `tools/ci/check-release-tag.sh`, which requires the pushed
+tag to equal `v$(VERSION)` before the publish job runs.
+
 Notes:
 
 - Clang is available via `make ARCH=linux-clang`; icc via `ARCH=linux-icc`
@@ -196,7 +209,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:301-306`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:312-317`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```

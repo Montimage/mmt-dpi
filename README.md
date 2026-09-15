@@ -70,7 +70,11 @@ sudo dnf install ./mmt-dpi_*_rocky-9_x86_64.rpm
 ```
 
 Packages are produced by the `Build & release packages` workflow
-(`.github/workflows/release-packages.yml`).
+(`.github/workflows/release-packages.yml`). Builds are reproducible: two
+builds of the same commit in the same release container produce
+byte-identical packages (all timestamps are pinned to `SOURCE_DATE_EPOCH`),
+and a CI job diffs the sha256 sums of a double build on every packaging
+change.
 
 #### Verify a package before installing it
 

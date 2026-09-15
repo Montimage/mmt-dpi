@@ -1,6 +1,6 @@
 
 CXX := icpc
 CC  := icc
-AR  := ar rcs
+AR  := ar rcsD
 
 include $(RULESDIR)/common-linux.mk

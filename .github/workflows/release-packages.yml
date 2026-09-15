@@ -21,6 +21,13 @@ name: Build & release packages
 # (issue #217, F-DEP-101/F-CI-012/F-SEC-007) — the same digest resolves both
 # the amd64 and arm64 matrix legs — and mirrored in the tracked
 # tools/ci/base-images.txt, which the dependency bot diffs for drift.
+#
+# Reproducibility + tag gates (issue #220, F-CI-010/F-CI-011): the
+# `reproducibility` job builds the package twice inside the same container
+# and diffs the sha256 sums, and on tag pushes the `verify-tag` job checks
+# the tag equals the VERSION declared in rules/common.mk and runs the
+# release-prep validators — the publish job `needs` both, so nothing ships
+# unverified.
 
 on:
   push:
@@ -32,6 +39,9 @@ on:
       - "src/**"
       - "rules/**"
       - "tools/ci/build-package.sh"
+      - "tools/ci/install-build-deps.sh"
+      - "tools/ci/check-reproducible-build.sh"
+      - "tools/ci/check-release-tag.sh"
       - "tools/ci/base-images.txt"
       - ".github/workflows/release-packages.yml"
 
@@ -79,9 +89,13 @@ jobs:
         with:
           platforms: arm64
 
+      # -e CI forwards the runner's CI=true marker into the container so a
+      # missing git history there is the hard error rules/common.mk intends
+      # (issue #220) instead of a silently date-stamped package.
       - name: Build ${{ matrix.distro.pkg }} in ${{ matrix.distro.image }}
         run: |
           docker run --rm --platform "linux/${{ matrix.arch }}" \
+            -e CI \
             -v "$PWD":/work -w /work \
             "${{ matrix.distro.image }}" \
             bash tools/ci/build-package.sh "${{ matrix.distro.name }}" "${{ matrix.distro.pkg }}"
@@ -132,9 +146,62 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  reproducibility:
+    # F-CI-011 (issue #220): build the package twice inside the same
+    # container and diff the sha256 sums — the AC for reproducible packages
+    # is byte-identity, and this job is the gate that proves it. One amd64
+    # leg per package format on images already pinned in the build matrix.
+    name: Reproducible ${{ matrix.pkg }} build (${{ matrix.distro }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { distro: ubuntu-24.04, image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254",                    pkg: deb }
+          - { distro: rocky-9,      image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                   pkg: rpm }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # GIT_VERSION + SOURCE_DATE_EPOCH derive from the commit
+
+      - name: Verify pinned base image is recorded
+        run: grep -Fx "${{ matrix.image }}" tools/ci/base-images.txt
+
+      - name: Double-build and diff sha256 in ${{ matrix.image }}
+        run: |
+          docker run --rm -e CI \
+            -v "$PWD":/work -w /work \
+            "${{ matrix.image }}" \
+            bash tools/ci/check-reproducible-build.sh --install-deps "${{ matrix.distro }}" "${{ matrix.pkg }}"
+
+  verify-tag:
+    # F-CI-010 (issue #220): gate every tag publish. The tag must equal the
+    # VERSION declared in rules/common.mk (a v1.9.0 tag on a 1.8.0 tree used
+    # to publish mismatched packages), and the release-prep validators run
+    # here — inside the release flow itself — instead of only as static
+    # checks in c-cpp.yml. `release` needs this job, so nothing publishes
+    # before it passes.
+    name: Tag/version gate + release validators
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # GIT_VERSION derivation needs the git history
+
+      - name: Tag matches the declared VERSION
+        run: bash tools/ci/check-release-tag.sh "$GITHUB_REF_NAME"
+
+      - name: Release-prep validators
+        run: |
+          bash tools/ci/check-release-verification.sh
+          bash scripts/validate-release-prep.sh
+
   release:
     name: Publish GitHub Release
-    needs: build
+    needs: [build, reproducibility, verify-tag]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 15

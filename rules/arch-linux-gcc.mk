@@ -1,7 +1,7 @@
 
 CXX := g++ -std=c++11
 CC  := gcc
-AR  := ar rcs
+AR  := ar rcsD
 
 include $(RULESDIR)/common-linux.mk
 

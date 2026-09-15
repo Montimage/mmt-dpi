@@ -1,6 +1,6 @@
 
 CXX := clang++
 CC  := clang
-AR  := ar rcs
+AR  := ar rcsD
 
 include $(RULESDIR)/common-linux.mk
