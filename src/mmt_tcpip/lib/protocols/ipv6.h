@@ -46,7 +46,6 @@ extern "C" {
 #define IPPROTO_SHIM6P              140     /* Shim6 Protocol         */
 #endif
 
-  //#ifdef _WIN32
     struct ipv6hdr {
 
         union {
@@ -77,7 +76,6 @@ extern "C" {
         struct in6_addr saddr;
         struct in6_addr daddr;
     };
-  //#endif //WIN32
     struct ext_hdr_generic {
         uint8_t nexthdr;
         uint8_t ext_len;

@@ -60,9 +60,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#ifdef WIN32
-#include <windows.h>
-#else
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -70,15 +67,10 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <dlfcn.h>
-#endif
 
 #include <libxml2/libxml/xmlreader.h>
 
-#ifdef WIN32
-#define LIB_NAME "libembedded_functions.dll"
-#else
 #define LIB_NAME "libembedded_functions.so"
-#endif
 
 #include "struct_defs.h"
 #include "public_defs.h"
@@ -857,23 +849,9 @@ char * funct_extract_name(char * input)
 
 int funct_get_return_type_and_size(int *size, char *lib_name, char *funct_name)
 {
-#ifdef WIN32
-    HMODULE lib_pointer;
-#else
     void * lib_pointer;
-#endif
     void *(*embedded_function)();
     int type = 0;
-#ifdef WIN32
-    lib_pointer = LoadLibrary(lib_name);
-    if (lib_pointer != NULL) {
-        FARPROC initializer = GetProcAddress(lib_pointer, "get_data_type_of_funct_return_value");
-        *(void **) (&embedded_function) = initializer;
-        int * temph = (int*) embedded_function(funct_name, size);
-        type = *temph;
-        xfree(temph);
-    }
-#else
     lib_pointer = dlopen(lib_name, RTLD_LAZY);
     if (lib_pointer != NULL) {
         *(void **) (&embedded_function) = dlsym(lib_pointer, "get_data_type_of_funct_return_value");
@@ -881,7 +859,6 @@ int funct_get_return_type_and_size(int *size, char *lib_name, char *funct_name)
         type = *temph;
         xfree(temph);
     }
-#endif
     return type;
 }
 
@@ -943,19 +920,10 @@ void * funct_get_params_and_execute( const ipacket_t *pkt, short skip_refs, char
     void * result_data = NULL;
     tuple *temp_tuple2;
 
-#ifdef WIN32
-    lib_pointer = LoadLibrary(lib_name);
-#else
     lib_pointer = dlopen(lib_name, RTLD_NOW);
     //lib_pointer = dlopen(lib_name, RTLD_LAZY);
-#endif
     if (lib_pointer != NULL) {
-#ifdef WIN32
-        FARPROC initializer = GetProcAddress(lib_pointer, funct_name);
-        *(void **) (&embedded_function) = initializer;
-#else
         *(void **) (&embedded_function) = dlsym(lib_pointer, funct_name);
-#endif
         short param_count = 0;
         void *data[4];
         while (tt != NULL) {
@@ -1002,11 +970,7 @@ void * funct_get_params_and_execute( const ipacket_t *pkt, short skip_refs, char
         }
         memcpy(result_data, ihandle, data_size);
         xfree(ihandle);
-#ifdef WIN32
-        FreeLibrary(lib_pointer);
-#else
         dlclose(lib_pointer);
-#endif
         *found = FOUND;
         //caller needs to free return value
         return result_data;

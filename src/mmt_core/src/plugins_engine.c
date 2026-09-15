@@ -6,7 +6,6 @@
 #include "plugins_engine.h"
 #include "packet_processing.h"
 
-#ifndef _WIN32
 #include <dirent.h>
 
 static int load_filter( const struct dirent *entry )
@@ -14,7 +13,6 @@ static int load_filter( const struct dirent *entry )
     char *ext = strrchr( entry->d_name, '.' );
     return( ext && !strcmp( ext, ".so" ));
 }
-#endif
 
 /*
  * Issue #22 (thread safety) - global plugin registry.
@@ -36,29 +34,6 @@ static struct plugin_handler_struct * plugin_handlers_list = NULL;
 
 int load_plugins() {
     int retval = 1;
-#ifdef _WIN32
-    HANDLE hFind;
-    WIN32_FIND_DATA FindFileData;
-    char folder_name[256] = "";
-
-    strcat(folder_name, PLUGINS_REPOSITORY);
-    strcat(folder_name, "/*.dll");
-
-    if ((hFind = FindFirstFile(folder_name, &FindFileData)) != INVALID_HANDLE_VALUE) {
-        do {
-            char plugin_name[256] = "";
-            strcat(plugin_name, PLUGINS_REPOSITORY);
-            strcat(plugin_name, "/");
-            strcat(plugin_name, FindFileData.cFileName);
-            //printf("%s\n", FindFileData.cFileName);
-            if (!load_plugin(plugin_name)) {
-                retval = 0;
-                break;
-            }
-        } while (FindNextFile(hFind, &FindFileData));
-        FindClose(hFind);
-    }
-#else
     char path[ 256 ];
 
     struct dirent **entries;
@@ -93,7 +68,6 @@ int load_plugins() {
     }
 
     free( entries );
-#endif
     return retval;
 }
 
@@ -107,24 +81,6 @@ int load_plugin(char * plugin_path_name) {
         fprintf(stderr, "Memory allocation error while initializing plugin %s\n", plugin_path_name);
         return 0;
     }
-#ifdef _WIN32
-    plugin_handler->handler = LoadLibrary(plugin_path_name);
-    if (plugin_handler->handler == NULL) {
-        fprintf(stderr, "Error when loading plugin %s\n", plugin_path_name);
-        mmt_free(plugin_handler);
-        return 0;
-    }
-
-    FARPROC initializer = GetProcAddress(plugin_handler->handler, PLUGIN_INIT_FUNCTION_NAME);
-    if (initializer == NULL) {
-        fprintf(stderr, "Error when extracting plugin content. Function %s was not found\n", PLUGIN_INIT_FUNCTION_NAME);
-        FreeLibrary(plugin_handler->handler);
-        mmt_free(plugin_handler);
-        return 0;
-    }
-
-    init_proto_fct = (generic_init_proto) initializer;
-#else
     char *error;
 //    plugin_handler->handler = dlopen(plugin_path_name, RTLD_LAZY);
     plugin_handler->handler = dlopen(plugin_path_name, RTLD_NOW | RTLD_GLOBAL);
@@ -143,7 +99,6 @@ int load_plugin(char * plugin_path_name) {
         mmt_free(plugin_handler);
         return 0;
     }
-#endif
     retval = init_proto_fct();
     /* Issue #22: guard the registry mutation only (not init_proto_fct, which
      * takes the configured_protocols lock separately - keeping the two locks
@@ -163,16 +118,6 @@ void close_plugins() {
     while (temp_plugin != NULL) {
         struct plugin_handler_struct * temp_plugin_to_free = temp_plugin;
         generic_cleanup_proto cleanup_proto_fct;
-#ifdef _WIN32
-        FARPROC cleaner = GetProcAddress(temp_plugin->handler,PLUGIN_CLEANUP_FUNCTION_NAME);
-        if (cleaner == NULL) {
-            debug("Cannot load function clean up when extracting plugin content. Function %s was not found\n", PLUGIN_CLEANUP_FUNCTION_NAME);
-        }else{
-            cleanup_proto_fct = (generic_cleanup_proto)cleaner;
-        }
-        cleanup_proto_fct();
-        FreeLibrary(temp_plugin->handler);
-#else
         char *error;
         cleanup_proto_fct = dlsym(temp_plugin->handler,PLUGIN_CLEANUP_FUNCTION_NAME);
         if((error=dlerror())==NULL){
@@ -181,7 +126,6 @@ void close_plugins() {
             debug("Cannot load function clean up when extracting plugin content. Function %s was not found\n", PLUGIN_CLEANUP_FUNCTION_NAME);
         }
         dlclose(temp_plugin->handler);
-#endif
         temp_plugin = temp_plugin->next;
         //Now it's safe to free the plugin struct
         mmt_free(temp_plugin_to_free);

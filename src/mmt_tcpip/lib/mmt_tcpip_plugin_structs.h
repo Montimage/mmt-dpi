@@ -384,9 +384,7 @@ struct mmt_internal_tcp_session_struct {
 #endif
 }
 
-#if !(defined(WIN32))
 __attribute__((__packed__))
-#endif
 ;
 
 struct mmt_internal_udp_session_struct {
@@ -435,9 +433,7 @@ struct mmt_internal_udp_session_struct {
 #endif
 }
 
-#if !(defined(WIN32))
 __attribute__((__packed__))
-#endif
 ;
 
 typedef struct mmt_internal_tcpip_session_struct {
@@ -454,10 +450,7 @@ typedef struct mmt_internal_tcpip_session_struct {
         uint8_t entry_is_real_protocol : 5;
         uint8_t current_stack_size_minus_one : 3;
     }
-
-#if !(defined(WIN32))
     __attribute__((__packed__))
-#endif
     protocol_stack_info;
 #endif
 
@@ -593,9 +586,7 @@ struct mmt_tcpip_internal_packet_struct {
         uint8_t entry_is_real_protocol : 5;
         uint8_t current_stack_size_minus_one : 3;
     }
-#if !(defined(WIN32))
     __attribute__((__packed__))
-#endif
     protocol_stack_info;
 #endif
 

@@ -61,7 +61,7 @@ gcc -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lm
 
 ---------------------------------
 
-> **Note:** macOS and Windows are **not currently supported**. The instructions below are retained for historical reference only and may not work with the current codebase.
+> **Note:** macOS and Windows are **not supported**. The make rules these commands relied on (`rules/arch-osx.mk`, `rules/arch-win32.mk`, `rules/arch-win64.mk`, `rules/common-windows.mk`) were removed in #228, so `ARCH=osx|win32|win64` now fails at the `include arch-$(ARCH).mk` line. The instructions below are retained for historical reference only.
 
 <details>
 <summary>Mac OSX (unsupported)</summary>

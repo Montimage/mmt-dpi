@@ -1,14 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef _WIN32
-#include <ws2tcpip.h>
-#elif _OSX
-#include <arpa/inet.h>
-#else
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <netinet/in.h>
-#endif
 
 #include "packet_processing.h"
 #include "mmt_core.h"
@@ -2160,15 +2154,6 @@ void close_extraction() {
     free_registered_protocols();
     // unload plugins
     close_plugins();
-//#ifdef DEBUG
-#if 0
-    mmt_meminfo_t m;
-    mmt_meminfo(&m);
-    (void)fprintf( stderr, "*** MEMORY USAGE ***\n" );
-    (void)fprintf( stderr, "allocated: %"PRIu64" bytes\n", m.allocated );
-    (void)fprintf( stderr, "    freed: %"PRIu64" bytes\n", m.freed );
-    (void)fprintf( stderr, "     lost: %"PRIu64" bytes\n", m.allocated - m.freed );
-#endif
 }
 
 void print_attributes_list(struct attribute_internal_struct * tmp_attribute) {

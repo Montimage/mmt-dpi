@@ -15,12 +15,7 @@ extern "C" {
 #include <stdint.h>
 #include <sys/time.h>
 
-#ifdef _WIN32
-//#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
 #include <netinet/in.h>
-#endif
 
 #ifndef false
 #define false 0 /**< Code of false value.*/

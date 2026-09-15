@@ -22,29 +22,15 @@ extern "C" {
 #endif
 
 //#define __forceinline __attribute__((always_inline))
-#if !(defined(_WIN32))
- #if 1 && !defined __APPLE__ && !defined __FreeBSD__
-  #ifndef MMT_NETFILTER_MODULE
-   #include <endian.h>
-   #include <byteswap.h>
-  #else
-   #include <asm/byteorder.h>
-  #endif
- #endif							/* not _WIN32 && not APPLE) */
-#endif /* ntop */
+#ifndef MMT_NETFILTER_MODULE
+ #include <endian.h>
+ #include <byteswap.h>
+#else
+ #include <asm/byteorder.h>
+#endif
 
     /* default includes */
 
-#if defined(__APPLE__) || defined(_WIN32) || defined(__FreeBSD__)
-
-#ifndef _WIN32
-#include <sys/param.h>
-#endif
-
-#if defined(__FreeBSD__)
-#include <netinet/in.h>
-#endif
-#else							/* APPLE */
 #ifndef MMT_NETFILTER_MODULE
 #include <netinet/in.h>
 #endif
@@ -52,7 +38,6 @@ extern "C" {
 //#include <netinet/ip6.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
-#endif
 
 /*
  * Issue #57 — alignment-safe views over the (byte-aligned) packet buffer.
@@ -317,20 +302,12 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
      **********************/
 #define MMT_SELECT_DETECTION_WITH_REAL_PROTOCOL ( 1 << 0 )
 
-#if defined(_WIN32)
-#define MMT_LOG_BITTORRENT(...) {}
-#define MMT_LOG_GNUTELLA(...) {}
-#define MMT_LOG_EDONKEY(...) {}
-#define MMT_LOG(...) {}
-
-#else
 #define MMT_LOG_BITTORRENT(proto, mod, log_level, args...) {}
 
 #define MMT_LOG_GNUTELLA(proto, mod, log_level, args...) {}
 
 #define MMT_LOG_EDONKEY(proto, mod, log_level, args...) {}
 #define MMT_LOG(proto, mod, log_level, args...) {}
-#endif
 
     /* the get_uXX will return raw network packet bytes !! */
 /*

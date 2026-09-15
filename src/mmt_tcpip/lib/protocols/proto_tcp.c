@@ -125,7 +125,6 @@ int tcp_urg_flag_extraction(const ipacket_t * packet, unsigned proto_index,
 int tcp_ece_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
-#ifndef _WIN32
     /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
@@ -136,14 +135,12 @@ int tcp_ece_flag_extraction(const ipacket_t * packet, unsigned proto_index,
         *((unsigned char *) extracted_data->data) = 1; //Already aligned to the correct bit ordering
         return 1;
     }
-#endif
     return 0;
 }
 
 int tcp_cwr_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
-#ifndef _WIN32
     /* Issue #202 (F-BUG-033): caplen prologue — see tcp_fin_flag_extraction. */
     if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(packet, proto_index);
@@ -154,7 +151,6 @@ int tcp_cwr_flag_extraction(const ipacket_t * packet, unsigned proto_index,
         *((unsigned char *) extracted_data->data) = 1; //Already aligned to the correct bit ordering
         return 1;
     }
-#endif
     return 0;
 }
 

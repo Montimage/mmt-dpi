@@ -27,16 +27,7 @@
 #include <time.h>
 #include "mmt_core.h"
 #include "tcpip/mmt_tcpip.h"
-#ifdef WIN32
-#include <ws2tcpip.h>
-#include <windows.h>
-#ifndef socklen_t
-typedef int socklen_t;
-#define socklen_t socklen_t
-#endif
-#else
 #include <netinet/in.h>
-#endif
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
     typedef struct ipv4_ipv6_id_struct {

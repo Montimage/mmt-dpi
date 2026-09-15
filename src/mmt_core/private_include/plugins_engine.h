@@ -12,11 +12,7 @@
 extern "C" {
 #endif
 
-#ifdef _WIN32
-#include <windows.h>
-#else
 #include <dlfcn.h>
-#endif
 
 #define PLUGINS_REPOSITORY "plugins"
 /*
@@ -33,11 +29,7 @@ extern "C" {
 #define PLUGIN_CLEANUP_FUNCTION_NAME "cleanup_proto"
 
     struct plugin_handler_struct {
-#ifdef _WIN32
-        HMODULE handler;
-#else
         void * handler;
-#endif
         struct plugin_handler_struct * next;
     };
     /**

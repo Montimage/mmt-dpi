@@ -1,10 +1,6 @@
 #include <sys/param.h>
 #include <string.h>
 
-#ifdef _WIN32
-#include <ws2tcpip.h>
-#endif
-
 #include "data_defs.h"
 
 static const char *hexchars = "0123456789abcdef";
@@ -57,13 +53,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
    if ((i != 0) || (j != 0))
    {
       char tmp2[16]; /* max length of ipv4 addr string */
-#ifdef _WIN32
-      a4.s_addr = addr->u.Word[3];
-#elif _OSX
-      a4.s_addr = 0;	//TODO need to fix in OSX
-#else
       a4.s_addr = addr->__in6_u.__u6_addr32[3];
-#endif
       len = snprintf(tmp, sizeof(tmp), "::%s%s", (i != 0) ? "ffff:" : "",
                   mmt_inet_ntop4(&a4, tmp2, sizeof(tmp2)));
       if (len >= size) return NULL;
@@ -79,13 +69,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
 
       (void)memset( hexa[k], 0, 5 );
 
-#ifdef _WIN32
-      x8 = addr->u.Byte[i];
-#elif _OSX
-      x8 = addr->s6_addr[i];      /* POSIX member name on OSX/BSD */
-#else
       x8 = addr->__in6_u.__u6_addr8[i];
-#endif
 
       hx8 = x8 >> 4;
       if (hx8 != 0)
@@ -101,13 +85,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
          hexa[k][j++] = hexchars[hx8];
       }
 
-#ifdef _WIN32
-      x8 = addr->u.Byte[i + 1];
-#elif _OSX
-      x8 = addr->s6_addr[i + 1];
-#else
       x8 = addr->__in6_u.__u6_addr8[i + 1];
-#endif
 
       hx8 = x8 >> 4;
       if ((skip == 0) || (hx8 != 0))
@@ -126,13 +104,7 @@ mmt_inet_ntop6( const struct in6_addr *addr, char *dst, socklen_t size )
    for (i = 7; i >= 0; i--)
    {
       zr[i] = j;
-#ifdef _WIN32
-      x16 = addr->u.Word[i];
-#elif _OSX
-      x16 = addr->s6_addr16[i];   /* POSIX member name on OSX/BSD */
-#else
       x16 = addr->__in6_u.__u6_addr16[i];
-#endif
       if (x16 == 0) j++;
       else j = 0;
       zr[i] = j;
