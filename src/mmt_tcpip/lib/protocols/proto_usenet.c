@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -13,67 +12,12 @@ static void mmt_int_usenet_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_USENET, MMT_REAL_PROTOCOL);
 }
 
-void mmt_classify_me_usenet(ipacket_t * ipacket, unsigned index) {
-    
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: search usenet.\n");
-    MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: STAGE IS %u.\n", flow->l4.tcp.usenet_stage);
-
-    // check for the first server replay
-    /*
-       200    Service available, posting allowed
-       201    Service available, posting prohibited
-     */
-    if (flow->l4.tcp.usenet_stage == 0 && packet->payload_packet_len > 10
-            && ((mmt_mem_cmp(packet->payload, "200 ", 4) == 0)
-            || (mmt_mem_cmp(packet->payload, "201 ", 4) == 0))) {
-
-        MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: found 200 or 201.\n");
-        flow->l4.tcp.usenet_stage = 1 + ipacket->session->last_packet_direction;
-
-        MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: maybe hit.\n");
-        return;
-    }
-
-    /*
-       [C] AUTHINFO USER fred
-       [S] 381 Enter passphrase
-       [C] AUTHINFO PASS flintstone
-       [S] 281 Authentication accepted
-     */
-    // check for client username
-    if (flow->l4.tcp.usenet_stage == 2 - ipacket->session->last_packet_direction) {
-        if (packet->payload_packet_len > 20 && (mmt_mem_cmp(packet->payload, "AUTHINFO USER ", 14) == 0)) {
-            MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: username found\n");
-            flow->l4.tcp.usenet_stage = 3 + ipacket->session->last_packet_direction;
-
-            MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: found usenet.\n");
-            mmt_int_usenet_add_connection(ipacket);
-            return;
-        } else if (packet->payload_packet_len == 13 && (mmt_mem_cmp(packet->payload, "MODE READER\r\n", 13) == 0)) {
-            MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG,
-                    "USENET: no login necessary but we are a client.\n");
-
-            MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: found usenet.\n");
-            mmt_int_usenet_add_connection(ipacket);
-            return;
-        }
-    }
-
-    MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: exclude usenet.\n");
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_USENET);
-}
-
 int mmt_check_usenet(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         MMT_LOG(PROTO_USENET, MMT_LOG_DEBUG, "USENET: search usenet.\n");
@@ -146,5 +90,3 @@ int init_proto_usenet_struct() {
         return 0;
     }
 }
-
-

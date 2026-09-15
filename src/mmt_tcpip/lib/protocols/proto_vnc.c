@@ -48,7 +48,6 @@ int mmt_check_vnc(ipacket_t * ipacket, unsigned index) {
             }
         }
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VNC);
-        // mmt_classify_me_vnc(ipacket, index);
         return 0;
     }
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_VNC);

@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -58,7 +57,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     const uint8_t *packet_payload = packet->payload;
     uint32_t payload_len = packet->payload_packet_len;
-
 
     if (payload_len > 4) {
         /* search for STUN Turn ChannelData Prefix */
@@ -237,22 +235,6 @@ static void mmt_search_sip_handshake(ipacket_t * ipacket)
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SIP);
     return;
 
-
-}
-
-void mmt_classify_me_sip(ipacket_t * ipacket, unsigned index) {
-
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-
-    MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "sip detection...\n");
-
-    /* skip marked packets */
-    if (packet->detected_protocol_stack[0] != PROTO_SIP) {
-        if (packet->tcp_retransmission == 0) {
-            mmt_search_sip_handshake(ipacket);
-        }
-    }
 }
 
 int mmt_check_sip(ipacket_t * ipacket, unsigned index) {
@@ -260,7 +242,6 @@ int mmt_check_sip(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
 
         MMT_LOG(PROTO_SIP, MMT_LOG_DEBUG, "sip detection...\n");
 
@@ -295,5 +276,3 @@ int init_proto_sip_struct() {
         return 0;
     }
 }
-
-

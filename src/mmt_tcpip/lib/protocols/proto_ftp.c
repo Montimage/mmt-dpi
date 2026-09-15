@@ -71,7 +71,6 @@ static char * ftp_str_subvalue_n(char *str, size_t str_len, char *begin, char *e
     return str_sub_n(str, str_len, start_index, end_index - 1);
 }
 
- 
 //////////// FTP - FUNCTION    /////////////////////////
 
 /**
@@ -1133,8 +1132,6 @@ char * ftp_get_response_value(char* payload, int payload_len) {
     return str_value;
 }
 
-
-
 /**
  * Get response code from a reponse packet
  * @param  payload     payload of packet
@@ -1164,7 +1161,6 @@ int ftp_get_response_code(char* payload, int payload_len) {
     }
     return code;
 }
-
 
 /**
  * Get client address from an EPRT command
@@ -1199,7 +1195,6 @@ inline static uint32_t ftp_get_data_client_addr_from_EPRT(char * payload, uint32
     free(indexes);
     return address;
 }
-
 
 /**
  * Get client address IPV6 from an EPRT command
@@ -1653,7 +1648,6 @@ inline static uint16_t ftp_get_data_server_port_code_229(char *payload, uint32_t
     return s_port;
 }
 
-
 /**
  * Get data server address from value of response code 227
  * @param  payload payload
@@ -1861,14 +1855,12 @@ static uint8_t search_ftp(ipacket_t * ipacket) {
 
 static void search_passive_ftp_mode(ipacket_t * ipacket) {
 
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     uint16_t plen;
     uint8_t i;
     uint32_t ftp_ip;
-
 
     // TODO check if normal passive mode also needs adaption for ipv6
     if (packet->payload_packet_len > 3 && mmt_mem_cmp(packet->payload, "227 ", 4) == 0) {
@@ -1892,7 +1884,6 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
 
         if (plen >= packet->payload_packet_len)
             return;
-
 
         ftp_ip = 0;
         for (i = 0; i < 4; i++) {
@@ -1950,7 +1941,6 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
 
 static void search_active_ftp_mode(ipacket_t * ipacket) {
 
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
@@ -1977,82 +1967,6 @@ static void search_active_ftp_mode(ipacket_t * ipacket) {
     return;
 }
 
-void mmt_classify_me_ftp(ipacket_t * ipacket, unsigned index) {
-
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
-    struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
-
-    if (src != NULL && mmt_compare_packet_destination_ip_to_given_ip(packet, &src->ftp_ip)
-            && packet->tcp->syn != 0 && packet->tcp->ack == 0
-            && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
-            && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask,
-                    PROTO_FTP) != 0 && src->ftp_timer_set != 0) {
-        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "possible ftp data, src!= 0.\n");
-
-        if (((MMT_INTERNAL_TIMESTAMP_TYPE)
-                (packet->tick_timestamp - src->ftp_timer)) >= ftp_connection_timeout) {
-            src->ftp_timer_set = 0;
-        } else if (ntohs(packet->tcp->dest) > 1024
-                   && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
-            mmt_int_ftp_add_connection(ipacket);
-            return;
-        }
-    }
-
-    if (dst != NULL && mmt_compare_packet_source_ip_to_given_ip(packet, &dst->ftp_ip)
-            && packet->tcp->syn != 0 && packet->tcp->ack == 0
-            && packet->detected_protocol_stack[0] == PROTO_UNKNOWN
-            && MMT_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,
-                    PROTO_FTP) != 0 && dst->ftp_timer_set != 0) {
-        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "possible ftp data; dst!= 0.\n");
-
-        if (((MMT_INTERNAL_TIMESTAMP_TYPE)
-                (packet->tick_timestamp - dst->ftp_timer)) >= ftp_connection_timeout) {
-            dst->ftp_timer_set = 0;
-
-        } else if (ntohs(packet->tcp->dest) > 1024
-                   && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
-            MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "detected FTP data stream.\n");
-            mmt_int_ftp_add_connection(ipacket);
-            return;
-        }
-    }
-    // ftp data asymmetrically
-
-
-    /* skip packets without payload */
-    if (packet->payload_packet_len == 0) {
-        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
-                "FTP test skip because of data connection or zero byte packet_payload.\n");
-        return;
-    }
-    /* skip excluded connections */
-
-    // we test for FTP connection and search for passive mode
-    if (packet->detected_protocol_stack[0] == PROTO_FTP) {
-        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
-                "detected ftp command mode. going to test data mode.\n");
-        search_passive_ftp_mode(ipacket);
-
-        search_active_ftp_mode(ipacket);
-        return;
-    }
-
-
-    if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
-        MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");
-
-        return;
-    }
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FTP);
-    MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "exclude ftp.\n");
-
-}
-
 int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
     // debug("[PROTO_FTP] mmt_check_ftp on packet: %lu, index: %d",ipacket->packet_id,index);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -2060,7 +1974,6 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             ) {
-
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -2106,7 +2019,6 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
         }
         // ftp data asymmetrically
 
-
         /* skip packets without payload */
         if (packet->payload_packet_len == 0) {
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG,
@@ -2125,7 +2037,6 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
             return 1;
         }
 
-
         if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN && search_ftp(ipacket) != 0) {
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "unknown. need next packet.\n");       
             return 4;
@@ -2138,7 +2049,6 @@ int mmt_check_ftp(ipacket_t * ipacket, unsigned index) {
 }
 
 //////////////////////////// EXTRACTION ///////////////////////////////////////
-
 
 int ftp_get_packet_type(const ipacket_t *ipacket, unsigned index) {
 
@@ -2187,7 +2097,6 @@ int ftp_session_conn_type_extraction(const ipacket_t * ipacket, unsigned proto_i
 
     return 0;
 }
-
 
 int ftp_server_contrl_addr_extraction(const ipacket_t * ipacket, unsigned proto_index,
                                       attribute_t * extracted_data) {
@@ -2610,7 +2519,6 @@ int ftp_client_data_port_extraction(const ipacket_t * ipacket, unsigned proto_in
     return 0;
 }
 
-
 int ftp_data_ip_session_id_extraction(const ipacket_t * ipacket, unsigned proto_index,
                                       attribute_t * extracted_data) {
     if (ftp_check_control_packet(ipacket)) {
@@ -2715,8 +2623,6 @@ int ftp_data_direction_extraction(const ipacket_t * ipacket, unsigned proto_inde
     return 0;
 }
 
-
-
 int ftp_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
                              attribute_t * extracted_data) {
     if (ftp_check_control_packet(ipacket)) {
@@ -2741,7 +2647,6 @@ int ftp_file_name_extraction(const ipacket_t * ipacket, unsigned proto_index,
 
     return 0;
 }
-
 
 int ftp_file_size_extraction(const ipacket_t * ipacket, unsigned proto_index,
                              attribute_t * extracted_data) {
@@ -2790,7 +2695,6 @@ int ftp_file_last_modified_extraction(const ipacket_t * ipacket, unsigned proto_
     }
     return 0;
 }
-
 
 ////////////////////// PACKET ATTRIBUTE EXTRACTION ///////////////////////
 int ftp_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
@@ -2976,7 +2880,6 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
 
 //////////////////////////// END OF EXTRACTION /////////////////////////////////
 
-
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 /**
  * Analysis FTP data packet
@@ -3154,7 +3057,6 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
         break;
     }
 }
-
 
 /**
  * Analyse response packet to get information of this ftp session
@@ -3424,7 +3326,6 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
 
-
 void * setup_ftp_context(void * proto_context, void * args) {
     ftp_control_session_t * ftp_list_control_conns;
     ftp_list_control_conns = (ftp_control_session_t*)malloc(sizeof(ftp_control_session_t));
@@ -3461,7 +3362,6 @@ void cleanup_ftp_context(void * proto_context, void * args) {
     }
 }
 
-
 void mmt_init_classify_me_ftp() {
     selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION  ;
     MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
@@ -3487,5 +3387,3 @@ int init_proto_ftp_struct() {
         return 0;
     }
 }
-
-

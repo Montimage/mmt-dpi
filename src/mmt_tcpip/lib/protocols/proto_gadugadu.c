@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MMT_GADGADU_TIMEOUT                 120
 
@@ -19,7 +18,6 @@ static void mmt_int_gadugadu_add_connection(ipacket_t * ipacket, mmt_protocol_ty
 
 static void parse_gg_foneno(ipacket_t * ipacket) {
     
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     uint16_t pos = 18;
@@ -66,7 +64,6 @@ static void parse_gg_foneno(ipacket_t * ipacket) {
 
 static uint8_t check_for_gadugadu_payload_pattern(ipacket_t * ipacket) {
     
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -92,7 +89,6 @@ static uint8_t check_for_gadugadu_payload_pattern(ipacket_t * ipacket) {
 
 static uint8_t check_for_http(ipacket_t * ipacket) {
     
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: check for http.\n");
@@ -181,7 +177,6 @@ static uint8_t check_for_http(ipacket_t * ipacket) {
 
 static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
     
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -203,7 +198,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                         src->gadu_gadu_ft_direction = 1;
                     src->gadu_gadu_voice = 0;
 
-
                 }
                 if (dst != NULL) {
                     dst->gg_timeout = packet->tick_timestamp;
@@ -212,7 +206,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                     else
                         dst->gadu_gadu_ft_direction = 1;
                     dst->gadu_gadu_voice = 0;
-
 
                 }
 
@@ -243,14 +236,12 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
     }
 #endif
 
-
     /* the following code is implemented asymmetrically. */
     if (packet->tcp != NULL &&
             (ntohs(packet->tcp->dest) == 443 || ntohs(packet->tcp->dest) == 8074
             || ntohs(packet->tcp->source) == 443 || ntohs(packet->tcp->source) == 8074)) {
         MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: found port 8074 or 443.\n");
         if (ipacket->session->data_packet_count <= 6) {
-
 
             if ((packet->payload_packet_len == 9
                     || packet->payload_packet_len == 12
@@ -272,8 +263,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                         "Gadu-Gadu: len=9,12,100,190-210, stage++.\n");
             }
 
-
-
             /*detection of mirinda client .this has a different way of communicating ports */
             if (packet->payload_packet_len == 114
                     && ntohl(get_u32(packet->payload, 0)) == 0x19000000
@@ -281,7 +270,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
                 flow->l4.tcp.gadugadu_stage++;
                 MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "Gadu-Gadu: len=114, stage++.\n");
                 /* here the asymmetric implementation ends */
-
 
                 if (flow->l4.tcp.gadugadu_stage == 2) {
                     if (src != NULL) {
@@ -353,7 +341,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
             } else {
                 MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "http file transfer timeout \n");
 
-
             }
 
         } else if (MMT_COMPARE_PROTOCOL_TO_BITMASK
@@ -412,7 +399,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
             } else {
                 MMT_LOG(PROTO_GADUGADU, MMT_LOG_DEBUG, "http file transfer timeout \n");
 
-
             }
 
         } else if (MMT_COMPARE_PROTOCOL_TO_BITMASK
@@ -448,11 +434,6 @@ static void mmt_search_gadugadu_tcp(ipacket_t * ipacket) {
 
 }
 
-void mmt_classify_me_gadugadu(ipacket_t * ipacket, unsigned index) {
-
-    mmt_search_gadugadu_tcp(ipacket);
-}
-
 int mmt_check_gadugadu(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
@@ -485,5 +466,3 @@ int init_proto_gadugadu_struct() {
         return 0;
     }
 }
-
-

@@ -30,7 +30,7 @@ static void mmt_int_soulseek_add_connection(ipacket_t * ipacket) {
     return;
 }
 
-int mmt_classify_me_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
+int mmt_classify_soulseek_tcp(ipacket_t * ipacket, unsigned index) {
     
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -274,7 +274,7 @@ int mmt_check_soulseek(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-       return mmt_classify_me_soulseek_tcp(ipacket, index);
+       return mmt_classify_soulseek_tcp(ipacket, index);
     }
     return 4;
 }

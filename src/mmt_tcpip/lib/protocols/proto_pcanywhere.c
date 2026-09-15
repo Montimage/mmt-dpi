@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -11,23 +10,6 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
 static void mmt_int_pcanywhere_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_PCANYWHERE, MMT_REAL_PROTOCOL);
-}
-
-void mmt_classify_me_pcanywhere(ipacket_t * ipacket, unsigned index)
-{
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    if (packet->udp != NULL && packet->udp->dest == htons(5632)
-            && packet->payload_packet_len == 2
-            && (mmt_mem_cmp(packet->payload, "NQ", 2) == 0 || mmt_mem_cmp(packet->payload, "ST", 2) == 0)) {
-        MMT_LOG(PROTO_PCANYWHERE, MMT_LOG_DEBUG,
-                "PC Anywhere name or status query detected.\n");
-        mmt_int_pcanywhere_add_connection(ipacket);
-        return;
-    }
-
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_PCANYWHERE);
 }
 
 int mmt_check_pcanywhere(ipacket_t * ipacket, unsigned index)
@@ -73,5 +55,3 @@ int init_proto_pcanywhere_struct() {
         return 0;
     }
 }
-
-

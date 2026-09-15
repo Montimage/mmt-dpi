@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MAX_PACKETS_FOR_MSN 100
 
@@ -70,8 +69,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
         }
     }
 #endif
-
-
 
     /* we detect the initial connection only ! */
     /* match: "VER " ..... "CVR" x 0x0d 0x0a
@@ -289,7 +286,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
             }
         }
 
-
         /* did not find any trace with this pattern !!!!! */
         /* now block proxy connection */
         if (packet->payload_packet_len >= 42) {
@@ -345,7 +341,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
 
     /* finished examining the first packet only. */
 
-
     /* asym (1) ; possibly occurs in symmetric cases also. */
     if (ipacket->session->data_packet_count <= 10 &&
             (ipacket->session->data_packet_count_direction[0] <= 2 || ipacket->session->data_packet_count_direction[1] <= 2) &&
@@ -379,9 +374,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
             }
         }
     }
-
-
-
 
     /* finished examining the secone packet only */
     /* direct user connection (file transfer,...) */
@@ -429,7 +421,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
             flow->l4.tcp.msn_stage = 3 + ipacket->session->last_packet_direction;
             return;
         }
-
 
     } else if (flow->l4.tcp.msn_stage == 2 - ipacket->session->last_packet_direction
             && packet->payload_packet_len == 4 && get_u32(packet->payload, 0) == htonl(0x30000000)) {
@@ -488,7 +479,6 @@ static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
-
     /* do we have an msn login ? */
     if ((src == NULL || MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_MSN) == 0)
             && (dst == NULL
@@ -508,37 +498,6 @@ static void mmt_search_udp_msn_misc(ipacket_t * ipacket) {
     /* asymmetric detection working. */
     return;
     //}
-}
-
-void mmt_classify_me_msn(ipacket_t * ipacket, unsigned index) {
-    
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    /* this if request should always be true */
-    if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MSN) == 0) {
-        /* we deal with tcp now */
-        if (packet->tcp != NULL) {
-            /* msn can use http or ssl for connection. That's why every http, ssl and ukn packet must enter in the msn detection */
-            /* the detection can swich out the http or the ssl detection. In this case we need not check those protocols */
-            // need to do the ceck when protocol == http too (POST /gateway ...)
-            if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN
-#if defined(PROTO_HTTP)
-                    || packet->detected_protocol_stack[0] == PROTO_HTTP
-#endif
-#if defined(PROTO_SSL)
-                    || packet->detected_protocol_stack[0] == PROTO_SSL
-#endif
-#if defined(PROTO_STUN)
-                    || packet->detected_protocol_stack[0] == PROTO_STUN
-#endif
-                    ) {
-                mmt_search_msn_tcp(ipacket);
-            }
-        } else if (packet->udp != NULL) {
-            mmt_search_udp_msn_misc(ipacket);
-        }
-    }
 }
 
 int mmt_check_msn_tcp(ipacket_t * ipacket, unsigned index) {
@@ -604,5 +563,3 @@ int init_proto_msn_struct() {
         return 0;
     }
 }
-
-

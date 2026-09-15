@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -82,24 +81,6 @@ static int check_citrix_payload(ipacket_t * ipacket) {
     return 0;
 }
 
-static void ntop_check_citrix(ipacket_t * ipacket) {
-    struct mmt_tcpip_internal_packet_struct *packet =
-        (struct mmt_tcpip_internal_packet_struct *) ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    if (packet->tcp != NULL && check_citrix_payload(ipacket)) {
-        mmt_internal_add_connection(ipacket, PROTO_CITRIX, MMT_REAL_PROTOCOL);
-    }
-}
-
-void mmt_classify_me_citrix(ipacket_t * ipacket, unsigned index) {
-    MMT_LOG(PROTO_CITRIX, MMT_LOG_DEBUG, "citrix detection...\n");
-
-    /* skip already-classified packets */
-    if (((mmt_tcpip_internal_packet_t *) ipacket->internal_packet)->detected_protocol_stack[0] != PROTO_CITRIX)
-        ntop_check_citrix(ipacket);
-}
-
 int mmt_check_citrix(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet =
         (mmt_tcpip_internal_packet_t *) ipacket->internal_packet;
@@ -124,7 +105,6 @@ void mmt_init_classify_me_citrix() {
     MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_CITRIX);
 }
 
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_citrix_struct() {
@@ -138,5 +118,3 @@ int init_proto_citrix_struct() {
         return 0;
     }
 }
-
-

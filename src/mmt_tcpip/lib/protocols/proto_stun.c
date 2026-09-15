@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -119,49 +118,11 @@ static mmt_int_stun_result_t mmt_int_check_stun(ipacket_t * ipacket, const uint8
     return MMT_IS_NOT_STUN;
 }
 
-void mmt_classify_me_stun(ipacket_t * ipacket, unsigned index) {
-
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "search stun.\n");
-
-
-    if (packet->tcp) {
-
-        /* STUN may be encapsulated in TCP packets */
-
-        if (packet->payload_packet_len >= 2 + 20 &&
-                ntohs(get_u16(packet->payload, 0)) + 2 == packet->payload_packet_len) {
-
-            /* TODO there could be several STUN packets in a single TCP packet so maybe the detection could be
-             * improved by checking only the STUN packet of given length */
-
-            if (mmt_int_check_stun(ipacket, packet->payload + 2, packet->payload_packet_len - 2) ==
-                    MMT_IS_STUN) {
-                MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found TCP stun.\n");
-                mmt_int_stun_add_connection(ipacket);
-                return;
-            }
-        }
-    }
-    if (mmt_int_check_stun(ipacket, packet->payload, packet->payload_packet_len) == MMT_IS_STUN) {
-        MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "found UDP stun.\n");
-        mmt_int_stun_add_connection(ipacket);
-        return;
-    }
-
-    MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "exclude stun.\n");
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_STUN);
-}
-
 int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -394,7 +355,6 @@ int mmt_check_stun_udp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         MMT_LOG(PROTO_STUN, MMT_LOG_DEBUG, "search stun.\n");
@@ -436,5 +396,3 @@ int init_proto_stun_struct() {
         return 0;
     }
 }
-
-

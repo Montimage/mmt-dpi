@@ -1930,46 +1930,11 @@ int radius_alloc_ip_type_extraction(const ipacket_t * ipacket, unsigned proto_in
     return 0;
 }
 
-void mmt_classify_me_radius(ipacket_t * ipacket, unsigned index) {
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    MMT_LOG(PROTO_RADIUS, MMT_LOG_DEBUG, "radius detection...\n");
-
-    /* skip marked packets */
-    if (packet->detected_protocol_stack[0] != PROTO_RADIUS) {
-        /* unused
-        const uint8_t *packet_payload = packet->payload;
-        */
-        uint32_t payload_len = packet->payload_packet_len;
-
-        if (packet->udp != NULL) {
-            mmt_una_radius_header_t *h = (mmt_una_radius_header_t*) packet->payload;
-
-            uint32_t h_len = ntohs(h->len);
-
-            if ((payload_len > sizeof (struct radius_header))
-                    && (h->code <= 5)
-                    && (h_len == payload_len)) {
-                MMT_LOG(PROTO_RADIUS, MMT_LOG_DEBUG, "Found radius.\n");
-                mmt_internal_add_connection(ipacket, PROTO_RADIUS, MMT_REAL_PROTOCOL);
-
-                return;
-            }
-
-            MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RADIUS);
-            return;
-        }
-    }
-}
-
 int mmt_check_radius(ipacket_t * ipacket, unsigned index) { //BW: TODO: check this out
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 

@@ -13,7 +13,7 @@ static void mmt_int_popo_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_POPO, MMT_REAL_PROTOCOL);
 }
 
-void mmt_classify_me_popo(ipacket_t * ipacket, unsigned index) {
+void mmt_classify_popo(ipacket_t * ipacket, unsigned index) {
     
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -73,7 +73,7 @@ int mmt_check_popo(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_me_popo(ipacket, index);
+        mmt_classify_popo(ipacket, index);
     }
     return 4;
 }

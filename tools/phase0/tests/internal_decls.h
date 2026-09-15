@@ -202,7 +202,7 @@ void mmt_init_classify_me_skype(void);
 int getServerNameFromClientHello(ipacket_t *ipacket, char *buffer, int buffer_len);
 int ssl_is_tls_record_header(const uint8_t *payload, int payload_len);
 int tls_get_number_records(const ipacket_t *ipacket);
-int mmt_classify_me_ssl(ipacket_t *ipacket, unsigned index);
+int mmt_classify_ssl(ipacket_t *ipacket, unsigned index);
 int tls_content_type_extraction(const ipacket_t *ipacket, unsigned proto_index,
         attribute_t *extracted_data);
 int tls_version_extraction(const ipacket_t *ipacket, unsigned proto_index,

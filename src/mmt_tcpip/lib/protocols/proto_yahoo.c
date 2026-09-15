@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MMT_YAHOO_DETECT_HTTP_CONNECTIONS   1
 #define MMT_YAHOO_LAN_VIDEO_TIMEOUT         30
@@ -52,8 +51,6 @@ static void mmt_int_yahoo_add_connection(ipacket_t * ipacket, mmt_protocol_type_
     mmt_internal_add_connection(ipacket, PROTO_YAHOO, protocol_type);
 }
 
-
-
 static uint8_t check_ymsg(const uint8_t * payload, uint16_t payload_packet_len) {
 
     const mmt_una_yahoo_header_t *yahoo = (const mmt_una_yahoo_header_t *) payload;
@@ -76,7 +73,6 @@ static uint8_t check_ymsg(const uint8_t * payload, uint16_t payload_packet_len) 
 }
 
 static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
-
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -269,7 +265,6 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
         /* asymmetric detection for SNDIMG not done yet.
          * See ./Yahoo8.1-VideoCall-LAN.pcap and ./Yahoo-VideoCall-inPublicIP.pcap */
 
-
         if (packet->payload_packet_len == 8
                 && (mmt_memcmp(packet->payload, "<SNDIMG>", 8) == 0 || mmt_memcmp(packet->payload, "<REQIMG>", 8) == 0
                 || mmt_memcmp(packet->payload, "<RVWCFG>", 8) == 0 || mmt_memcmp(packet->payload, "<RUPCFG>", 8) == 0)) {
@@ -366,7 +361,6 @@ static void mmt_search_yahoo_tcp(ipacket_t * ipacket) {
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_YAHOO);
 }
 
-
 static void mmt_search_yahoo_udp(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -380,45 +374,11 @@ excl_yahoo_udp:
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_YAHOO);
 }
 
-void mmt_classify_me_yahoo(ipacket_t * ipacket, unsigned index) {
-
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-
-    MMT_LOG(PROTO_YAHOO, MMT_LOG_DEBUG, "search yahoo\n");
-
-    if (packet->payload_packet_len > 0 && flow->yahoo_detection_finished == 0) {
-        if (packet->tcp != NULL && packet->tcp_retransmission == 0) {
-
-            if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN
-#ifdef PROTO_HTTP
-                    || packet->detected_protocol_stack[0] == PROTO_HTTP
-#endif
-#ifdef PROTO_SSL
-                    || packet->detected_protocol_stack[0] == PROTO_SSL
-#endif
-                    ) {
-                mmt_search_yahoo_tcp(ipacket);
-            }
-        } else if (packet->udp != NULL) {
-            mmt_search_yahoo_udp(ipacket);
-        }
-    }
-    if (packet->payload_packet_len > 0 && flow->yahoo_detection_finished == 2) {
-        if (packet->tcp != NULL && packet->tcp_retransmission == 0) {
-            mmt_search_yahoo_tcp(ipacket);
-        }
-    }
-}
-
 int mmt_check_yahoo_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -448,7 +408,6 @@ int mmt_check_yahoo_udp(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -483,5 +442,3 @@ int init_proto_yahoo_struct() {
         return 0;
     }
 }
-
-

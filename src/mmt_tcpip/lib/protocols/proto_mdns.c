@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MMT_MAX_MDNS_REQUESTS                        128
 
@@ -40,93 +39,12 @@ static int mmt_int_check_mdns_payload(ipacket_t * ipacket) {
     return 0;
 }
 
-void mmt_classify_me_mdns(ipacket_t * ipacket, unsigned index) {
-    
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    uint16_t dport;
-    //      const u16 sport=ntohs(packet->udp->source);
-
-    /* check if UDP and */
-    if (packet->udp != NULL) {
-        /*read destination port */
-        dport = ntohs(packet->udp->dest);
-
-        MMT_LOG(PROTO_MDNS, MMT_LOG_DEBUG, "MDNS udp start \n");
-
-
-
-        /*check standard MDNS to port 5353 */
-        /*took this information from http://www.it-administrator.de/lexikon/multicast-dns.html */
-
-        if (dport == 5353 && packet->payload_packet_len >= 12) {
-
-            MMT_LOG(PROTO_MDNS, MMT_LOG_DEBUG, "found MDNS with destination port 5353\n");
-
-            /* MDNS header is similar to dns header */
-            /* dns header
-               0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
-               +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-               |                      ID                       |
-               +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-               |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
-               +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-               |                    QDCOUNT                    |
-               +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-               |                    ANCOUNT                    |
-               +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-               |                    NSCOUNT                    |
-               +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-               |                    ARCOUNT                    |
-               +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-             *
-             * dns query check: query: QR set, ancount = 0, nscount = 0, QDCOUNT < MAX_MDNS, ARCOUNT < MAX_MDNS
-             *
-             */
-
-            /* mdns protocol must have destination address  224.0.0.251 */
-            /* took this information from http://www.it-administrator.de/lexikon/multicast-dns.html */
-
-            if (packet->iph != NULL && ntohl(packet->iph->daddr) == 0xe00000fb) {
-
-                MMT_LOG(PROTO_MDNS, 
-                        MMT_LOG_DEBUG, "found MDNS with destination address 224.0.0.251 (=0xe00000fb)\n");
-
-                if (mmt_int_check_mdns_payload(ipacket) == 1) {
-                    mmt_int_mdns_add_connection(ipacket);
-                    return;
-                }
-            }
-#ifdef MMT_SUPPORT_IPV6
-            if (packet->iphv6 != NULL) {
-                const uint32_t *daddr = packet->iphv6->daddr.mmt_v6_u.u6_addr32;
-                if (daddr[0] == htonl(0xff020000) && daddr[1] == 0 && daddr[2] == 0 && daddr[3] == htonl(0xfb)) {
-
-                    MMT_LOG(PROTO_MDNS, 
-                            MMT_LOG_DEBUG, "found MDNS with destination address ff02::fb\n");
-
-                    if (mmt_int_check_mdns_payload(ipacket) == 1) {
-                        mmt_int_mdns_add_connection(ipacket);
-                        return;
-                    }
-                }
-            }
-#endif
-
-        }
-    }
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MDNS);
-}
-
 int mmt_check_mdns(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
         struct mmt_internal_tcpip_session_struct * flow = packet->flow;
 
         uint16_t dport;
@@ -213,5 +131,3 @@ int init_proto_mdns_struct() {
         return 0;
     }
 }
-
-

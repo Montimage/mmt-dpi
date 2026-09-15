@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 /* debug defines */
 #define MMT_PROTOCOL_SAFE_DETECTION    1
@@ -192,7 +191,6 @@ static uint8_t check_edk_len(const uint8_t * payload, uint16_t payload_packet_le
 }
 
 int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
-
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -389,15 +387,6 @@ exclude_edk_udp:
     return 0;
 }
 
-void mmt_classify_me_edonkey(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    if (packet->detected_protocol_stack[0] != PROTO_EDONKEY) {
-        /* check for retransmission here */
-        if (packet->tcp != NULL && packet->tcp_retransmission == 0)
-            mmt_int_edonkey_tcp(ipacket);
-    }
-}
-
 int mmt_check_edonkey(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
@@ -438,5 +427,3 @@ int init_proto_edonkey_struct() {
         return 0;
     }
 }
-
-

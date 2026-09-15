@@ -1784,7 +1784,7 @@ void mmt_init_classify_me_http() {
     MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP); //Exclude processing when ssl is detected! Obvious no?
 }
 
-void mmt_classify_me_http(ipacket_t * ipacket, unsigned index) {
+void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
 
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -2044,7 +2044,7 @@ int mmt_check_http(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-            mmt_classify_me_http(ipacket, index);
+            mmt_classify_http(ipacket, index);
     }
     return 4;
 }

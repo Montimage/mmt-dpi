@@ -549,21 +549,6 @@ typedef struct mmt_internal_tcpip_session_struct {
 // #endif
 } mmt_internal_tcpip_session_t;
 
-typedef struct mmt_classify_me_function_element_struct {
-    uint32_t priority;
-    MMT_PROTOCOL_BITMASK detection_bitmask;
-    MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
-    MMT_SELECTION_BITMASK_PROTOCOL_SIZE mmt_selection_bitmask;
-    void (*func) (ipacket_t * ipacket, int index);
-    uint8_t detection_feature;
-} mmt_classify_me_function_element_t;
-
-typedef struct mmt_call_function_struct {
-    mmt_classify_me_function_element_t * classify_me;
-    struct mmt_call_function_struct * next;
-    struct mmt_call_function_struct * previous;
-} mmt_call_function_struct_t;
-
 typedef struct mmt_int_one_line_struct {
     const uint8_t *ptr;
     uint16_t len;

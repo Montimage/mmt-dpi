@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MMT_MANOLITO_TIMEOUT                120
 
@@ -20,7 +19,6 @@ static void mmt_int_manolito_add_connection(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
 
     mmt_internal_add_connection(ipacket, PROTO_MANOLITO, MMT_REAL_PROTOCOL);
-
 
     if (src != NULL) {
         if (packet->udp != NULL) {
@@ -40,7 +38,6 @@ static void mmt_int_manolito_add_connection(ipacket_t * ipacket) {
  */
 uint8_t search_manolito_tcp(ipacket_t * ipacket) {
     
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -92,72 +89,6 @@ end_manolito_nothing_found:
     return 0;
 }
 
-void mmt_classify_me_manolito(ipacket_t * ipacket, unsigned index) {
-    
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
-    struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
-
-
-    if (packet->tcp != NULL) {
-        if (search_manolito_tcp(ipacket) != 0)
-            return;
-    } else if (packet->udp != NULL) {
-        if (flow->detected_protocol_stack[0] == PROTO_MANOLITO) {
-            if (src != NULL) {
-                src->manolito_last_pkt_arrival_time = packet->tick_timestamp;
-            }
-            if (dst != NULL) {
-                dst->manolito_last_pkt_arrival_time = packet->tick_timestamp;
-            }
-            return;
-        } else if (packet->udp->source == htons(41170)
-                || packet->udp->dest == htons(41170)) {
-            if (src != NULL && src->manolito_last_pkt_arrival_time != 0
-                    && (packet->tick_timestamp - src->manolito_last_pkt_arrival_time <
-                    manolito_subscriber_timeout)) {
-                MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO: UDP detected \n");
-                mmt_int_manolito_add_connection(ipacket);
-                return;
-            } else if (src != NULL
-                    && (packet->tick_timestamp - src->manolito_last_pkt_arrival_time) >=
-                    manolito_subscriber_timeout) {
-                src->manolito_last_pkt_arrival_time = packet->tick_timestamp;
-            }
-
-            if (dst != NULL && dst->manolito_last_pkt_arrival_time != 0
-                    && (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time <
-                    manolito_subscriber_timeout)) {
-                MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO: UDP detected \n");
-                mmt_int_manolito_add_connection(ipacket);
-                return;
-            } else if (dst != NULL
-                    && (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time) >=
-                    manolito_subscriber_timeout) {
-                dst->manolito_last_pkt_arrival_time = packet->tick_timestamp;
-            }
-
-            if ((packet->payload_packet_len == 20 && htons(0x3d4b) == get_u16(packet->payload, 0)
-                    && packet->payload[2] == 0xd9 && htons(0xedbb) == get_u16(packet->payload, 16))
-                    || (packet->payload_packet_len == 25 && htons(0x3e4a) == get_u16(packet->payload, 0)
-                    && htons(0x092f) == get_u16(packet->payload, 20) && packet->payload[22] == 0x20)
-                    || (packet->payload_packet_len == 20 && !get_u16(packet->payload, 2) && !get_u32(packet->payload, 8)
-                    && !get_u16(packet->payload, 18) && get_u16(packet->payload, 0))
-                    ) { //20B pkt is For PING
-                MMT_LOG(PROTO_MANOLITO, MMT_LOG_DEBUG, "MANOLITO: UDP detected \n");
-                mmt_int_manolito_add_connection(ipacket);
-                return;
-            } else if (ipacket->session->data_packet_count < 7) {
-                return;
-            }
-        }
-    }
-
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MANOLITO);
-}
-
 int mmt_check_manolito_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
@@ -181,7 +112,6 @@ int mmt_check_manolito_udp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
         struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
@@ -259,5 +189,3 @@ int init_proto_manolito_struct() {
         return 0;
     }
 }
-
-

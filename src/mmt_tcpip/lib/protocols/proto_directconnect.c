@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define DIRECT_CONNECT_TYPE_HUB  0
 #define DIRECT_CONNECT_TYPE_PEER 1
@@ -111,7 +110,6 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 src->detected_directconnect_ssl_port = ssl_port;
             }
 
-
         }
         if ((packet->payload_packet_len >= 38 && packet->payload_packet_len <= 42)
                 && mmt_memcmp(&packet->payload[0], "DCTM", 4) == 0 && mmt_memcmp(&packet->payload[15], "ADCS", 4) == 0) {
@@ -128,7 +126,6 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "directconnect ssl port parsed %d", ntohs(src->detected_directconnect_ssl_port));
             }
-
 
         }
         return 4;
@@ -266,7 +263,6 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                         MMT_LOG_DEBUG, "found directconnect HSUP ADBAS0 E in second packet\n");
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_ADC_PEER);
 
-
                 return 1;
 
             }
@@ -291,7 +287,6 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
                 MMT_LOG(PROTO_DIRECTCONNECT, 
                         MMT_LOG_DEBUG, "second dc between peers detected\n");
 
-
                 mmt_int_directconnect_add_connection(ipacket, DIRECT_CONNECT_TYPE_PEER);
 
                 return 1;
@@ -302,7 +297,6 @@ int mmt_search_directconnect_tcp(ipacket_t * ipacket) {
         }
 
     }
-
 
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_DIRECTCONNECT);
     return 0;
@@ -315,7 +309,6 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
     struct mmt_internal_tcpip_id_struct *src = packet->src;
     struct mmt_internal_tcpip_id_struct *dst = packet->dst;
     int pos, count = 0;
-
 
     if (dst != NULL && dst->detected_directconnect_udp_port == packet->udp->dest) {
         if ((MMT_INTERNAL_TIMESTAMP_TYPE)
@@ -360,7 +353,6 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
 
                 if (flow->directconnect_stage < 3) {
 
-
                     return 4;
                 }
 
@@ -403,48 +395,12 @@ int mmt_search_directconnect_udp(ipacket_t * ipacket) {
     return 0;
 }
 
-void mmt_classify_me_directconnect(ipacket_t * ipacket, unsigned index) {
-    
-    mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
-
-    struct mmt_internal_tcpip_id_struct *src = packet->src;
-    struct mmt_internal_tcpip_id_struct *dst = packet->dst;
-
-    if (packet->detected_protocol_stack[0] == PROTO_DIRECTCONNECT) {
-        if (src != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
-                (packet->tick_timestamp -
-                src->directconnect_last_safe_access_time) <
-                directconnect_connection_ip_tick_timeout)) {
-            src->directconnect_last_safe_access_time = packet->tick_timestamp;
-
-        } else if (dst != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
-                (packet->tick_timestamp -
-                dst->directconnect_last_safe_access_time) <
-                directconnect_connection_ip_tick_timeout)) {
-            dst->directconnect_last_safe_access_time = packet->tick_timestamp;
-        } else {
-            packet->detected_protocol_stack[0] = PROTO_UNKNOWN;
-            MMT_LOG(PROTO_DIRECTCONNECT, 
-                    MMT_LOG_DEBUG, "directconnect: skipping as unknown due to timeout\n");
-        }
-        return;
-    }
-
-    if (packet->tcp != NULL) {
-        mmt_search_directconnect_tcp(ipacket);
-    }
-    if (packet->udp != NULL) {
-        mmt_search_directconnect_udp(ipacket);
-    }
-}
-
 int mmt_check_directconnect_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
         struct mmt_internal_tcpip_id_struct *src = packet->src;
         struct mmt_internal_tcpip_id_struct *dst = packet->dst;
 
@@ -479,7 +435,6 @@ int mmt_check_directconnect_udp(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
         struct mmt_internal_tcpip_id_struct *src = packet->src;
         struct mmt_internal_tcpip_id_struct *dst = packet->dst;
 
@@ -527,5 +482,3 @@ int init_proto_directconnect_struct() {
         return 0;
     }
 }
-
-

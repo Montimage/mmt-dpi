@@ -1094,7 +1094,7 @@ static void mmt_int_dns_add_connection(ipacket_t * ipacket) {
     set_session_timeout_delay(ipacket->session, MMT_DNS_SESSION_TIMEOUT_DELAY);
 }
 
-int mmt_classify_me_dns(ipacket_t * ipacket, unsigned index) {
+int mmt_classify_dns(ipacket_t * ipacket, unsigned index) {
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -1164,7 +1164,7 @@ int mmt_check_dns(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-        return mmt_classify_me_dns(ipacket, index);
+        return mmt_classify_dns(ipacket, index);
     }
     return 4;
 }

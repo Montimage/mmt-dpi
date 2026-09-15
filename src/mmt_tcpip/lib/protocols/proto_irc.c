@@ -336,7 +336,7 @@ uint8_t mmt_search_irc_ssl_detect_ninty_percent_but_very_fast(ipacket_t * ipacke
     return 0;
 }
 
-void mmt_classify_me_irc_tcp(ipacket_t * ipacket, unsigned index) {
+void mmt_classify_irc_tcp(ipacket_t * ipacket, unsigned index) {
     
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -792,7 +792,7 @@ int mmt_check_irc(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_me_irc_tcp(ipacket, index);
+        mmt_classify_irc_tcp(ipacket, index);
     }
     return 4;
 }

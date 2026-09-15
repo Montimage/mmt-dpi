@@ -199,7 +199,7 @@ static uint32_t mmt_int_parse_syslog_pri(struct mmt_tcpip_internal_packet_struct
 }
 
 /*
- * Internal classification function used by both mmt_classify_me_syslog and mmt_check_syslog.
+ * Internal classification function used by mmt_check_syslog.
  *
  * For UDP: checks port 514 for lenient detection.
  * For TCP: uses strict detection.
@@ -258,17 +258,6 @@ static void mmt_int_classify_syslog(ipacket_t * ipacket,
 
     MMT_LOG(PROTO_SYSLOG, MMT_LOG_DEBUG, "no syslog detected.\n");
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SYSLOG);
-}
-
-/*
- * Entry point called from the classify_me registration.
- * No bitmask checks — handles all packets directly.
- */
-void mmt_classify_me_syslog(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    mmt_int_classify_syslog(ipacket, packet, flow);
 }
 
 /*

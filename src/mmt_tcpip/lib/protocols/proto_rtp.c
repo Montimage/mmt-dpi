@@ -47,7 +47,6 @@ static rtp_payload_mime_type_t static_rtp_payload_mime_types[MAX_RTP_PT] = {
     [34] = { MMT_RTP_FORMAT_H263,  VIDEO,       90000, 1, "H263"  },
 };
 
-
 #ifndef _MMT_BUILD_SDK
 void update_multimedia_quality_index_context(multimedia_quality_index_context_t * quality_index_context, multimedia_session_context_t * session_context) {
     int timediff = short_time_diff(&quality_index_context->last_quality_estimation_time, &session_context->last_arrival_time);
@@ -528,7 +527,6 @@ int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
     rtp_session_data->rtp_media_session_context.high_seqnb = new_seqnb;
     rtp_session_data->rtp_media_session_context.seqnb_cache[rtp_session_data->rtp_media_session_context.index_low.index] = new_seqnb;
 
-
     //set the payload type code, and properties
     //If this is a static payload type the values will be non zero! code of zero means unknown!
     rtp_session_data->payload_type = rtp_hdr->pt;
@@ -688,7 +686,6 @@ static void init_seq(struct mmt_internal_tcpip_session_struct *flow, uint8_t dir
 static uint16_t update_seq(struct mmt_internal_tcpip_session_struct *flow, uint8_t direction, uint16_t seq) {
     uint16_t delta = seq - flow->rtp_seqnum[direction];
 
-
     if (delta < RTP_MAX_OUT_OF_ORDER) { /* in order, with permissible gap */
         flow->rtp_seqnum[direction] = seq;
         return delta;
@@ -698,7 +695,6 @@ static uint16_t update_seq(struct mmt_internal_tcpip_session_struct *flow, uint8
 }
 
 static void mmt_rtp_search(ipacket_t * ipacket, const uint8_t * payload, const uint16_t payload_len) {
-
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -827,74 +823,6 @@ exclude_rtp:
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP);
 }
 
-void mmt_classify_me_rtp(ipacket_t * ipacket, unsigned index) {
-
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    if (packet->udp) {
-        mmt_rtp_search(ipacket, packet->payload, packet->payload_packet_len);
-    } else if (packet->tcp) {
-
-        /* skip special packets seen at yahoo traces */
-        if (packet->payload_packet_len >= 20 && ntohs(get_u16(packet->payload, 2)) + 20 == packet->payload_packet_len &&
-                packet->payload[0] == 0x90 && packet->payload[1] >= 0x01 && packet->payload[1] <= 0x07) {
-            if (ipacket->session->data_packet_count == 2)
-                flow->l4.tcp.rtp_special_packets_seen = 1;
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG,
-                    "skipping STUN-like, special yahoo packets with payload[0] == 0x90.\n");
-            return;
-        }
-#ifdef PROTO_STUN
-        /* TODO the rtp detection sometimes doesn't exclude rtp
-         * so for TCP flows only run the detection if STUN has been
-         * detected (or RTP is already detected)
-         * If flows will be seen which start directly with RTP
-         * we can remove this restriction
-         */
-
-        if (packet->detected_protocol_stack[0] == PROTO_STUN
-                || packet->detected_protocol_stack[0] == PROTO_RTP) {
-
-            /* RTP may be encapsulated in TCP packets */
-
-            if (packet->payload_packet_len >= 2 && ntohs(get_u16(packet->payload, 0)) + 2 == packet->payload_packet_len) {
-
-                /* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
-                 * improved by checking only the RTP packet of given length */
-
-                mmt_rtp_search(ipacket, packet->payload + 2, packet->payload_packet_len - 2);
-
-                return;
-            }
-        }
-        if (flow!=NULL && packet->detected_protocol_stack[0] == PROTO_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1) {
-
-            if (packet->payload_packet_len >= 4 && ntohl(get_u32(packet->payload, 0)) + 4 == packet->payload_packet_len) {
-
-                /* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
-                 * improved by checking only the RTP packet of given length */
-
-                mmt_rtp_search(ipacket, packet->payload + 4, packet->payload_packet_len - 4);
-
-                return;
-            }
-        }
-
-        if (MMT_FLOW_PROTOCOL_EXCLUDED(flow, PROTO_STUN)) {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "exclude rtp.\n");
-            MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP);
-        } else {
-            MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "STUN not yet excluded, need next packet.\n");
-        }
-#else
-        MMT_LOG(PROTO_RTP, MMT_LOG_DEBUG, "exclude rtp.\n");
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_RTP);
-#endif
-    }
-}
-
 int mmt_check_rtp_udp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
@@ -911,7 +839,6 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -1002,5 +929,3 @@ int init_proto_rtp_struct() {
     }
 
 }
-
-

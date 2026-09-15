@@ -41,7 +41,7 @@ static void check_content_type_and_change_protocol(ipacket_t * ipacket, uint16_t
     return;
 }
 
-void mmt_classify_me_jabber_tcp(ipacket_t * ipacket, unsigned index) {
+void mmt_classify_jabber_tcp(ipacket_t * ipacket, unsigned index) {
     
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -315,7 +315,7 @@ int mmt_check_jabber(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_me_jabber_tcp(ipacket, index); //BW: TODO: this seems to be limited to tcp, check this out
+        mmt_classify_jabber_tcp(ipacket, index); //BW: TODO: this seems to be limited to tcp, check this out
     }
     return 4;
 }

@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -12,7 +11,6 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 static void mmt_int_qq_add_connection(ipacket_t * ipacket, mmt_protocol_type_t protocol_type) {
     mmt_internal_add_connection(ipacket, PROTO_QQ, protocol_type);
 }
-
 
 /*
  * a qq client packet looks like this:
@@ -210,9 +208,7 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
     {0x1549, 0x1801, 0x180d, 0x0961, 0x01501, 0x0e35, 0x113f, 0x0b37, 0x1131, 0x163a, 0x1e0d};
     uint16_t no_of_patterns = 11, index = 0;
 
-
     MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "search qq udp.\n");
-
 
     if (flow->qq_stage <= 3) {
         if ((packet->payload_packet_len == 27 && ntohs(get_u16(packet->payload, 0)) == 0x0300
@@ -526,8 +522,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
         return;
     }
 
-
-
     if (packet->payload_packet_len > 100
             && ((mmt_mem_cmp(packet->payload, "GET", 3) == 0) || (mmt_mem_cmp(packet->payload, "POST", 4) == 0))) {
         MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found GET or POST.\n");
@@ -607,18 +601,6 @@ static void mmt_search_qq_tcp(ipacket_t * ipacket)
 
 }
 
-void mmt_classify_me_qq(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-
-    if (packet->udp != NULL && flow->detected_protocol_stack[0] != PROTO_QQ)
-        mmt_search_qq_udp(ipacket);
-
-    if (packet->tcp != NULL && flow->detected_protocol_stack[0] != PROTO_QQ)
-        mmt_search_qq_tcp(ipacket);
-}
-
 int mmt_check_qq_tcp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
@@ -671,5 +653,3 @@ int init_proto_qq_struct() {
         return 0;
     }
 }
-
-

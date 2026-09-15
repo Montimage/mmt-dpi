@@ -2,7 +2,7 @@
  * ssl_tls12_version_test — crafted-input regression test for the TLS 1.2
  * record-version check in the mid-flow SSL/TLS classifier (issue #100).
  *
- * mmt_classify_me_ssl() (src/mmt_tcpip/lib/protocols/proto_ssl.c) recognizes
+ * mmt_classify_ssl() (src/mmt_tcpip/lib/protocols/proto_ssl.c) recognizes
  * mid-flow TLS records — Application Data (0x17) and encrypted Alert (0x15) —
  * by content type, record version (payload[1..2], 0x03 0x00..0x03) and record
  * length, bumping flow->l4.tcp.ssl_stage toward SSL classification. Before the
@@ -16,7 +16,7 @@
  *     same encrypted byte happened to be 0x03 (luck-based false positive).
  *
  * The fix reads the record version at payload[2], matching the sibling
- * handshake-record check. This test drives mmt_classify_me_ssl() with exactly
+ * handshake-record check. This test drives mmt_classify_ssl() with exactly
  * sized TLS 1.2 records whose payload[10] is deterministically NOT 0x03 and
  * asserts the ssl_stage advance (and, over three records, that the flow
  * deterministically reaches ssl_stage 3, the "detected SSL" stage).
@@ -42,7 +42,7 @@
 
 #include "mmt_core.h"
 /*
- * mmt_classify_me_ssl() reads ipacket->internal_packet->{payload,
+ * mmt_classify_ssl() reads ipacket->internal_packet->{payload,
  * payload_packet_len, tcp, iph, flow} plus ipacket->session. The internal
  * packet and session structs are opaque in the installed public headers, so we
  * pull in their full definitions from the (in-tree) plugin header. The runner
@@ -53,7 +53,7 @@
 #include "mmt_tcpip_internal_defs_macros.h"
 
 /*
- * Entry point under test. mmt_classify_me_ssl() is exported (non-static) in
+ * Entry point under test. mmt_classify_ssl() is exported (non-static) in
  * src/mmt_tcpip/lib/protocols/proto_ssl.c but not declared in any public
  * header, so declare it here. It is the classifier mmt_check_ssl() dispatches
  * to; calling it directly skips only the selection/detection bitmask gate,
@@ -75,7 +75,7 @@ static int g_checks = 0;
     } while (0)
 
 /*
- * mmt_classify_me_ssl() only READS ipacket->session — the "fewer than 8 data
+ * mmt_classify_ssl() only READS ipacket->session — the "fewer than 8 data
  * packets seen, keep waiting" fall-through check at the bottom of the
  * classifier. struct mmt_session_struct is private to mmt_core
  * (private_include/packet_processing.h), so rather than reaching into private
@@ -116,7 +116,7 @@ static uint8_t *make_tls_record(uint8_t content_type, uint8_t ver_minor,
 }
 
 /*
- * Drive mmt_classify_me_ssl() with `payload` of exactly `payload_len` bytes on
+ * Drive mmt_classify_ssl() with `payload` of exactly `payload_len` bytes on
  * the given flow. The TCP ports are chosen so the WhatsApp (443), Viber
  * (5242/4244) and Gameforge (non-443/80 + IPv4) pre-checks all fall through:
  * Gameforge enters its branch on non-443/80 ports but requires packet->iph
@@ -145,7 +145,7 @@ static int run_classify_ssl(struct mmt_internal_tcpip_session_struct *flow,
 
     pkt.internal_packet = &ip;
     pkt.session = g_session;
-    return mmt_classify_me_ssl(&pkt, 0);
+    return mmt_classify_ssl(&pkt, 0);
 }
 
 /* ---- TLS 1.2 Application Data record advances the SSL stage (AC #1) ----

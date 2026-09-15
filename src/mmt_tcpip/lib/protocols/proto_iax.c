@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MMT_IAX_MAX_INFORMATION_ELEMENTS 15
 
@@ -18,7 +17,6 @@ static void mmt_int_iax_add_connection(ipacket_t * ipacket) {
 static void mmt_search_setup_iax(ipacket_t * ipacket) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
 
     uint8_t i;
     uint16_t packet_len;
@@ -64,13 +62,6 @@ static void mmt_search_setup_iax(ipacket_t * ipacket) {
 
 }
 
-void mmt_classify_me_iax(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-
-    if (packet->detected_protocol_stack[0] == PROTO_UNKNOWN)
-        mmt_search_setup_iax(ipacket);
-}
-
 int mmt_check_iax(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
@@ -104,5 +95,3 @@ int init_proto_iax_struct() {
         return 0;
     }
 }
-
-

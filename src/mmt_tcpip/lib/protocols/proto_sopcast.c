@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -70,8 +69,6 @@ static uint8_t mmt_int_is_sopcast_tcp(const uint8_t * payload, const uint16_t pa
 
 static void mmt_search_sopcast_tcp(ipacket_t * ipacket) {
 
-
-
   struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
   struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 	if (ipacket->session->data_packet_count == 1 && packet->payload_packet_len == 54 && get_u16(packet->payload, 0) == ntohs(0x0036)) {
@@ -85,11 +82,9 @@ static void mmt_search_sopcast_tcp(ipacket_t * ipacket) {
 	MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "exclude sopcast TCP.  \n");
 	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SOPCAST);
 
-
 }
 
 static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
-
 
   struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
   struct mmt_internal_tcpip_session_struct *flow = packet->flow;
@@ -98,7 +93,6 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 //      struct mmt_id_struct         *dst=mmt_struct->dst;
 
 	MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "search sopcast.  \n");
-
 
 	if (packet->payload_packet_len == 52 && packet->payload[0] == 0xff
 		&& packet->payload[1] == 0xff && packet->payload[2] == 0x01
@@ -175,18 +169,6 @@ static void mmt_search_sopcast_udp(ipacket_t * ipacket) {
 	MMT_LOG(PROTO_SOPCAST, MMT_LOG_DEBUG, "exclude sopcast.  \n");
 	MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_SOPCAST);
 
-
-
-}
-
-void mmt_classify_me_sopcast(ipacket_t * ipacket, unsigned index) {
-  struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-
-	if (packet->udp != NULL)
-		mmt_search_sopcast_udp(ipacket);
-	if (packet->tcp != NULL)
-		mmt_search_sopcast_tcp(ipacket);
-
 }
 
 int mmt_check_sopcast_tcp(ipacket_t * ipacket, unsigned index) {
@@ -230,5 +212,3 @@ int init_proto_sopcast_struct() {
         return 0;
     }
 }
-
-

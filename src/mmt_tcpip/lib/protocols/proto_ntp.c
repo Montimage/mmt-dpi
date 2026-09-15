@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -15,36 +14,6 @@ static void mmt_int_ntp_add_connection(ipacket_t * ipacket) {
 
 /* detection also works asymmetrically */
 
-void mmt_classify_me_ntp(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    
-
-
-    if (!(packet->udp->dest == htons(123) || packet->udp->source == htons(123)))
-        goto exclude_ntp;
-
-    MMT_LOG(PROTO_NTP, MMT_LOG_DEBUG, "NTP port detected\n");
-
-    if (packet->payload_packet_len != 48)
-        goto exclude_ntp;
-
-    MMT_LOG(PROTO_NTP, MMT_LOG_DEBUG, "NTP length detected\n");
-
-
-    if ((((packet->payload[0] & 0x38) >> 3) <= 4)) {
-        MMT_LOG(PROTO_NTP, MMT_LOG_DEBUG, "detected NTP.");
-        mmt_int_ntp_add_connection(ipacket);
-        return;
-    }
-
-
-
-exclude_ntp:
-    MMT_LOG(PROTO_NTP, MMT_LOG_DEBUG, "NTP excluded.\n");
-    MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_NTP);
-}
-
 int mmt_check_ntp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
@@ -53,7 +22,6 @@ int mmt_check_ntp(ipacket_t * ipacket, unsigned index) {
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
         
-
         if (!(packet->udp->dest == htons(123) || packet->udp->source == htons(123)))
             goto exclude_ntp;
 
@@ -94,5 +62,3 @@ int init_proto_ntp_struct() {
         return 0;
     }
 }
-
-

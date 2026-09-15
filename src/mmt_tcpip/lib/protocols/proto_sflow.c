@@ -3,32 +3,10 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
-
-void mmt_classify_me_sflow(ipacket_t * ipacket, unsigned index)
-{
-    MMT_LOG(PROTO_SFLOW, MMT_LOG_DEBUG, "sflow detection...\n");
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    /* unused
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    const uint8_t *packet_payload = packet->payload;
-    */
-    uint32_t payload_len = packet->payload_packet_len;
-
-    if ((packet->udp != NULL)
-            && (payload_len >= 24)
-            /* Version */
-            && (packet->payload[0] == 0) && (packet->payload[1] == 0) && (packet->payload[2] == 0)
-            && ((packet->payload[3] == 2) || (packet->payload[3] == 5))) {
-        MMT_LOG(PROTO_SFLOW, MMT_LOG_DEBUG, "Found sflow.\n");
-        mmt_internal_add_connection(ipacket, PROTO_SFLOW, MMT_REAL_PROTOCOL);
-        return;
-    }
-}
 
 int mmt_check_sflow(ipacket_t * ipacket, unsigned index) { //BW: TODO: check this out! classif too weak
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -71,5 +49,3 @@ int init_proto_sflow_struct() {
         return 0;
     }
 }
-
-

@@ -22,7 +22,7 @@ static uint8_t mmt_int_is_wow_port(const uint16_t port) {
     return 0;
 }
 
-void mmt_classify_me_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
+void mmt_classify_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
@@ -183,7 +183,7 @@ int mmt_check_worldofwarcraft(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_me_worldofwarcraft(ipacket, index);
+        mmt_classify_worldofwarcraft(ipacket, index);
     }
     return 4;
 }

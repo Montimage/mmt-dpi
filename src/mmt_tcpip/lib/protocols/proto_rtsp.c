@@ -29,7 +29,7 @@ static void mmt_int_rtsp_add_connection(ipacket_t * ipacket, mmt_protocol_type_t
 }
 
 /* this function searches for a rtsp-"handshake" over tcp or udp. */
-int mmt_classify_me_rtsp(ipacket_t * ipacket, unsigned index) {
+int mmt_classify_rtsp(ipacket_t * ipacket, unsigned index) {
     
 
   struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -105,7 +105,7 @@ int mmt_check_rtsp(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-        	return mmt_classify_me_rtsp(ipacket, index);
+        	return mmt_classify_rtsp(ipacket, index);
     }
     return 4;
 }

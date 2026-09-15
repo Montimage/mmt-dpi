@@ -675,7 +675,7 @@ end_ddl_found:
     return 1;
 }
 
-void mmt_classify_me_ddl(ipacket_t * ipacket, unsigned index) {
+void mmt_classify_ddl(ipacket_t * ipacket, unsigned index) {
     
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -696,7 +696,7 @@ int mmt_check_direct_download_link(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_me_ddl(ipacket, index);
+        mmt_classify_ddl(ipacket, index);
     }
     return 4;
 }

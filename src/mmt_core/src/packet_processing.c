@@ -669,17 +669,17 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
 int register_classification_function_internal(protocol_t * proto, generic_classification_function classification_fct, int weight) {
     if (weight < 0) weight = 0;
     if (weight > 100) weight = 100;
-    mmt_classify_me_t * temp = (mmt_classify_me_t *) mmt_malloc(sizeof (mmt_classify_me_t));
+    mmt_classify_proto_t * temp = (mmt_classify_proto_t *) mmt_malloc(sizeof (mmt_classify_proto_t));
     if (temp == NULL) {
         return 0;
     }
-    memset(temp, 0, sizeof (mmt_classify_me_t));
+    memset(temp, 0, sizeof (mmt_classify_proto_t));
     temp->weight = weight;
     temp->next = NULL;
     temp->previous = NULL;
     temp->classify_me = classification_fct;
 
-    mmt_classify_me_t * temp_list = proto->classify_next.classify_protos;
+    mmt_classify_proto_t * temp_list = proto->classify_next.classify_protos;
     if (temp_list == NULL) {
         proto->classify_next.classify_protos = temp;
         temp->next = NULL;
@@ -987,8 +987,8 @@ void free_registered_protocol(protocol_t * protocol) {
     }
 
     //Clear the classification function if it exists
-    mmt_classify_me_t * temp_class = protocol->classify_next.classify_protos;
-    mmt_classify_me_t * safe_to_delete_c = NULL;
+    mmt_classify_proto_t * temp_class = protocol->classify_next.classify_protos;
+    mmt_classify_proto_t * safe_to_delete_c = NULL;
     while (temp_class != NULL) {
         safe_to_delete_c = temp_class;
         temp_class = temp_class->next;
@@ -3418,7 +3418,7 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
         }
         //Classify next protocol
         if (configured_protocol->protocol->classify_next.classify_protos && classif_status != MMT_CLASSIFY_SKIP) { // Classify next proto only when such a function exists!
-            mmt_classify_me_t * temp = configured_protocol->protocol->classify_next.classify_protos;
+            mmt_classify_proto_t * temp = configured_protocol->protocol->classify_next.classify_protos;
             // Checking for the port number ??????
             for (; temp != NULL; temp = temp->next) {
                 classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!

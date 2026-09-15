@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MMT_THUNDER_TIMEOUT                 30
 
@@ -27,8 +26,6 @@ static void mmt_int_thunder_add_connection(ipacket_t * ipacket, mmt_protocol_typ
         dst->thunder_ts = packet->tick_timestamp;
     }
 }
-
-
 
 int mmt_int_search_thunder_udp(ipacket_t * ipacket)
 {
@@ -55,7 +52,6 @@ int mmt_int_search_thunder_udp(ipacket_t * ipacket)
     MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_THUNDER);
     return 0;
 }
-
 
 int mmt_int_search_thunder_tcp(ipacket_t * ipacket)
 {
@@ -108,7 +104,6 @@ int mmt_int_search_thunder_tcp(ipacket_t * ipacket)
     return 0;
 }
 
-
 int mmt_int_search_thunder_http(ipacket_t * ipacket)
 {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -117,7 +112,6 @@ int mmt_int_search_thunder_http(ipacket_t * ipacket)
     */
     struct mmt_internal_tcpip_id_struct *src = ipacket->internal_packet->src;
     struct mmt_internal_tcpip_id_struct *dst = ipacket->internal_packet->dst;
-
 
     if (packet->detected_protocol_stack[0] == PROTO_THUNDER) {
         if (src != NULL && ((MMT_INTERNAL_TIMESTAMP_TYPE)
@@ -162,17 +156,6 @@ int mmt_int_search_thunder_http(ipacket_t * ipacket)
         }
     }
     return 4;
-}
-
-void mmt_classify_me_thunder(ipacket_t * ipacket, unsigned index) {
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-
-    if (packet->tcp != NULL) {
-        mmt_int_search_thunder_http(ipacket);
-        mmt_int_search_thunder_tcp(ipacket);
-    } else if (packet->udp != NULL) {
-        mmt_int_search_thunder_udp(ipacket);
-    }
 }
 
 int mmt_check_thunder_tcp(ipacket_t * ipacket, unsigned index) {
@@ -221,5 +204,3 @@ int init_proto_thunder_struct() {
         return 0;
     }
 }
-
-

@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 #define MMT_PROTOCOL_UNSAFE_DETECTION 	0
 #define MMT_PROTOCOL_SAFE_DETECTION 		1
@@ -43,7 +42,6 @@ static void mmt_add_connection_as_bittorrent(ipacket_t * ipacket, const uint8_t 
 
 static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
 
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -65,7 +63,6 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
             return 1;
         }
     }
-
 
     if (packet->payload_packet_len > 20) {
         /* test for match 0x13+"BitTorrent protocol" */
@@ -102,13 +99,11 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
         return 1;
     }
 
-
     if (packet->payload_packet_len > 90 && (mmt_memcmp(packet->payload, "GET ", 4) == 0
             || mmt_memcmp(packet->payload, "POST ", 5) == 0)) {
         const uint8_t *ptr = &packet->payload[4];
         uint16_t len = packet->payload_packet_len - 4;
         a = 0;
-
 
         /* parse complete get packet here into line structure elements */
         mmt_parse_packet_line_info(ipacket);
@@ -250,7 +245,6 @@ static uint8_t mmt_int_search_bittorrent_tcp_zero(ipacket_t * ipacket) {
                 uint8_t x1 = 0xFF;
                 uint8_t x2 = 0xFF;
 
-
                 if (ptr[1] >= '0' && ptr[1] <= '9') {
                     x1 = ptr[1] - '0';
                 }
@@ -342,7 +336,6 @@ mmt_end_bt_tracker_check:
 /*Search for BitTorrent commands*/
 static void mmt_int_search_bittorrent_tcp(ipacket_t * ipacket) {
 
-
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
     if (packet->payload_packet_len == 0) {
@@ -362,55 +355,6 @@ static void mmt_int_search_bittorrent_tcp(ipacket_t * ipacket) {
                 "stage 0 has no direct detection, fall through\n");
     }
     return;
-}
-
-void mmt_classify_me_bittorrent(ipacket_t * ipacket, unsigned index) {
-
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    if (packet->detected_protocol_stack[0] != PROTO_BITTORRENT) {
-        /* check for tcp retransmission here */
-
-        if ((packet->tcp != NULL)
-                && (packet->tcp_retransmission == 0 || packet->num_retried_bytes)) {
-            mmt_int_search_bittorrent_tcp(ipacket);
-        } else if (packet->udp != NULL) {
-
-            flow->bittorrent_stage++;
-
-            if (flow->bittorrent_stage < 10) {
-                if (packet->payload_packet_len > 19 /* min size */) {
-                    char *begin;
-
-                    if (mmt_strncmp((const char*)packet->payload, ":target20:",   packet->payload_packet_len) == 0
-                     || mmt_strncmp((const char*)packet->payload, ":find_node1:", packet->payload_packet_len) == 0
-                     || mmt_strncmp((const char*)packet->payload, "d1:ad2:id20:", packet->payload_packet_len) == 0) {
-bittorrent_found:
-                        MMT_LOG_BITTORRENT(PROTO_BITTORRENT,
-                                MMT_LOG_TRACE, "BT: plain BitTorrent protocol detected\n");
-                        mmt_add_connection_as_bittorrent(ipacket,
-                                MMT_PROTOCOL_SAFE_DETECTION, MMT_PROTOCOL_PLAIN_DETECTION,
-                                MMT_REAL_PROTOCOL);
-                        return;
-                    } else if ((begin = memchr(packet->payload, 'B', packet->payload_packet_len - 19)) != NULL) {
-                        u_long offset = (const unsigned char*)begin - packet->payload;
-
-                        if ((packet->payload_packet_len - 19) > offset) {
-                            if (mmt_memcmp(begin, "BitTorrent protocol", 19) == 0) {
-                                goto bittorrent_found;
-                            }
-                        }
-                    }
-                }
-
-                return;
-            }
-
-            MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_BITTORRENT);
-        }
-
-    }
 }
 
 int mmt_check_bittorrent_tcp(ipacket_t * ipacket, unsigned index) {
@@ -460,7 +404,6 @@ int mmt_check_bittorrent_udp(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-
 
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
@@ -544,5 +487,3 @@ int init_proto_bittorrent_struct() {
         return 0;
     }
 }
-
-

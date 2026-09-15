@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -11,49 +10,6 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
 static void mmt_int_mms_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_MMS, MMT_REAL_PROTOCOL);
-}
-
-void mmt_classify_me_mms(ipacket_t * ipacket, unsigned index) {
-    
-
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-
-    /* search MSMMS packets */
-    if (packet->payload_packet_len >= 20) {
-
-        if (flow->l4.tcp.mms_stage == 0 && packet->payload[4] == 0xce
-                && packet->payload[5] == 0xfa && packet->payload[6] == 0x0b
-                && packet->payload[7] == 0xb0 && packet->payload[12] == 0x4d
-                && packet->payload[13] == 0x4d && packet->payload[14] == 0x53 && packet->payload[15] == 0x20) {
-            MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS: MSMMS Request found \n");
-            flow->l4.tcp.mms_stage = 1 + ipacket->session->last_packet_direction;
-            return;
-        }
-
-        if (flow->l4.tcp.mms_stage == 2 - ipacket->session->last_packet_direction
-                && packet->payload[4] == 0xce && packet->payload[5] == 0xfa
-                && packet->payload[6] == 0x0b && packet->payload[7] == 0xb0
-                && packet->payload[12] == 0x4d && packet->payload[13] == 0x4d
-                && packet->payload[14] == 0x53 && packet->payload[15] == 0x20) {
-            MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS: MSMMS Response found \n");
-            mmt_int_mms_add_connection(ipacket);
-            return;
-        }
-    }
-#ifdef PROTO_HTTP
-    if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
-#endif							/* PROTOCOL_HTTP */
-        MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS: exclude\n");
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_MMS);
-
-#ifdef PROTO_HTTP
-    } else {
-        MMT_LOG(PROTO_MMS, MMT_LOG_DEBUG, "MMS avoid early exclude from http\n");
-    }
-#endif							/* PROTOCOL_HTTP */
-
 }
 
 int mmt_check_mms(ipacket_t * ipacket, unsigned index) {
@@ -114,5 +70,3 @@ int init_proto_mms_struct() {
         return 0;
     }
 }
-
-

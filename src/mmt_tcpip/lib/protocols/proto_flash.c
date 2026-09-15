@@ -3,7 +3,6 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
-
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -34,71 +33,12 @@ static void mmt_int_flash_add_connection(ipacket_t * ipacket)
     check_by_ip_address(ipacket);
 }
 
-void mmt_classify_me_flash(ipacket_t * ipacket, unsigned index)
-{
-    struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
-    struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-
-    if (flow->l4.tcp.flash_stage == 0 && packet->payload_packet_len > 0
-            && (packet->payload[0] == 0x03 || packet->payload[0] == 0x06)) {
-        flow->l4.tcp.flash_bytes = packet->payload_packet_len;
-        if (packet->tcp->psh == 0) {
-            MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "FLASH pass 1: \n");
-            flow->l4.tcp.flash_stage = ipacket->session->last_packet_direction + 1;
-
-            MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                    "FLASH pass 1: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
-                    flow->l4.tcp.flash_bytes);
-            return;
-        } else if (packet->tcp->psh != 0 && flow->l4.tcp.flash_bytes == 1537) {
-            MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                    "FLASH hit: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
-                    flow->l4.tcp.flash_bytes);
-            flow->l4.tcp.flash_stage = 3;
-            mmt_int_flash_add_connection(ipacket);
-            return;
-        }
-    } else if (flow->l4.tcp.flash_stage == 1 + ipacket->session->last_packet_direction) {
-        flow->l4.tcp.flash_bytes += packet->payload_packet_len;
-        if (packet->tcp->psh != 0 && flow->l4.tcp.flash_bytes == 1537) {
-            MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                    "FLASH hit: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
-                    flow->l4.tcp.flash_bytes);
-            flow->l4.tcp.flash_stage = 3;
-            mmt_int_flash_add_connection(ipacket);
-            return;
-        } else if (packet->tcp->psh == 0 && flow->l4.tcp.flash_bytes < 1537) {
-            MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-                    "FLASH pass 2: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
-                    flow->l4.tcp.flash_bytes);
-            return;
-        }
-    }
-
-    MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG,
-            "FLASH might be excluded: flash_stage: %u, flash_bytes: %u, packet_direction: %u\n",
-            flow->l4.tcp.flash_stage, flow->l4.tcp.flash_bytes, packet->last_packet_direction);
-
-#ifdef PROTO_HTTP
-    if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_HTTP) != 0) {
-#endif							/* PROTOCOL_HTTP */
-        MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "FLASH: exclude\n");
-        MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_FLASH);
-#ifdef PROTO_HTTP
-    } else {
-        MMT_LOG(PROTO_FLASH, MMT_LOG_DEBUG, "FLASH avoid early exclude from http\n");
-    }
-#endif							/* PROTOCOL_HTTP */
-
-}
-
 int mmt_check_flash(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        
         struct mmt_internal_tcpip_session_struct *flow = packet->flow;
 
         if (flow->l4.tcp.flash_stage == 0 && packet->payload_packet_len > 0
@@ -173,5 +113,3 @@ int init_proto_flash_struct() {
         return 0;
     }
 }
-
-
