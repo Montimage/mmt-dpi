@@ -25,8 +25,9 @@ static inline int _nas_msg_plain_decode(
 
 	switch ( msg->emm.header.protocol_discriminator ){
 	case NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE:
-		/* EMM header: one more byte for the message type */
-		CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, size + 1, length );
+		/* EMM header: one more byte for the message type. buffer is already
+		 * proven non-NULL above — only the length leg is still needed. */
+		CHECK_LENGTH_DECODER( length, size + 1 );
 		DECODE_U8( buffer+size, msg->emm.header.message_type, size );
 
 		/* Decode EPS Mobility Management L3 message */

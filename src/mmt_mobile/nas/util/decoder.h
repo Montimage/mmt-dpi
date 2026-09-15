@@ -107,7 +107,7 @@ extern int errorCodeDecoder;
 		while (unlikely( length < minimumlength))                              \
         {                                                                      \
                 LOG("(%s:%d) Expecting at least %d bytes, got %d\n",           \
-                      __FILE__, __LINE__, minimumlength, length);              \
+                      __FILE__, __LINE__, (int) minimumlength, (int) length);  \
                 errorCodeDecoder = DECODE_BUFFER_TOO_SHORT;                    \
                 return (DECODE_BUFFER_TOO_SHORT);                              \
         }
