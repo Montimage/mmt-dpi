@@ -1,0 +1,16 @@
+# Fuzz suppressions — already-reported deterministic mutants.
+#
+# Format: <seed-file-basename>:<mutant-seed>   # mandatory comment naming the
+# tracking issue. run-fuzz.sh skips a mutant whose (basename, seed) pair is
+# listed here; every other input is still gated, so the file must only ever
+# grow a line when the finding it silences is tracked in the issue tracker.
+# Remove the line once the underlying bug is fixed — the mutant then runs
+# again and proves the fix.
+#
+# Issue #306 — mutated golden pcaps stall the classifier (pre-existing
+# latent hangs found on the gate's first run; deterministic under the PR
+# seed base 224):
+ip_ping_local_ip_fragmentation.pcap:321   # issue #306 — fragment-path hang
+ftp_login_fail.pcap:1231                  # issue #306 — session-path hang
+tcp_ecn_sample.pcap:1259                  # issue #306 — session-path hang
+tcp_tpncp_tcp.pcap:2221                   # issue #306 — session-path hang

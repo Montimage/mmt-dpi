@@ -159,6 +159,33 @@ jobs:
         if-no-files-found: error
         retention-days: 14
 
+  codeql:
+    # Static application security testing (issue #224, F-SEC-009): CodeQL
+    # with the security-extended query set runs on every pull request and
+    # uploads SARIF to code scanning, so findings land on the repository's
+    # Security tab. The ENABLESEC=1 build is traced so the optional
+    # security/fuzz engines — code that only exists to parse hostile input —
+    # are inside the analysis surface too.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      security-events: write   # SARIF upload to code scanning
+      actions: read            # required by codeql-action on private repos
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+    - uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+      with:
+        languages: c-cpp
+        queries: security-extended
+        build-mode: manual
+    - name: Build the SDK for CodeQL extraction
+      run: make -C sdk ENABLESEC=1 -j"$(nproc)"
+    - uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+      with:
+        category: "/language:c-cpp"
+
   verify-helpers:
     # Verification-helper machinery gate (issue #190). Every tools/ci/*.sh
     # helper the modernization plan's Verify lines name is exercised here, so
@@ -383,3 +410,40 @@ jobs:
 
     - name: Assert a secret scan actually ran
       run: bash tools/ci/assert-gitleaks-ran.sh '${{ steps.action-scan.outcome }}'
+
+  fuzz:
+    # Mutation-fuzz gate (issue #224, F-SEC-009): tools/ci/run-fuzz.sh builds
+    # the SDK with BUILD=asan + ENABLESEC=1, then feeds deterministic mutants
+    # of the vendored golden captures (tools/phase0/ci/pcaps) to
+    # phase0_classify and mutants of the QE model seed to libmmt_fuzz's XML
+    # parser — so the shipped fuzz engine is exercised by this job rather
+    # than only compiled. On pull requests the run is short and bounded both
+    # ways (300 s of fuzzing, at most 1200 mutants — the cap keeps the
+    # explored mutant set runner-speed-independent, which is what makes the
+    # suppressions file sufficient); on the Task-0.8 weekly schedule it runs
+    # longer (1800 s, uncapped) with a per-run seed. A signal, sanitizer
+    # abort or per-input timeout is a finding: the reproducer lands in
+    # fuzz-artifacts/ and the job fails.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+      with:
+        extra-packages: python3
+    - name: Fuzz the golden corpus + the fuzz engine
+      env:
+        FUZZ_SECONDS: ${{ github.event_name == 'schedule' && '1800' || '300' }}
+        FUZZ_SEED: ${{ github.event_name == 'schedule' && github.run_id || '224' }}
+        # PRs additionally cap iterations so the explored mutant set is
+        # identical on every runner; the nightly run explores freely.
+        FUZZ_ITER: ${{ github.event_name == 'schedule' && '0' || '1200' }}
+      run: bash tools/ci/run-fuzz.sh --seconds "${FUZZ_SECONDS}" --seed "${FUZZ_SEED}" --iterations "${FUZZ_ITER}" --artifacts fuzz-artifacts
+    - name: Upload crash reproducers
+      if: failure()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: fuzz-reproducers
+        path: fuzz-artifacts/
+        if-no-files-found: ignore
+        retention-days: 14

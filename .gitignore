@@ -135,3 +135,9 @@ report.html
 # gitleaks scan artifacts (tools/ci/run-gitleaks.sh)
 gitleaks-report.json
 .gitleaks-scan-ran
+
+# fuzz-gate crash reproducers (tools/ci/run-fuzz.sh)
+fuzz-artifacts/
+
+# python bytecode from tools/ci/fuzz/mutate.py
+__pycache__/

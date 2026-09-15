@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<application app_id="1">
+  <kpis>
+    <kpi metric_id="12" metric_range_low="0.0" metric_range_high="100.0">
+      <grades>
+        <grade grade_value="1">
+          <membership_function_type>3</membership_function_type>
+          <parameters>
+            <membership_function_parameters>2.0</membership_function_parameters>
+            <membership_function_parameters>5.0</membership_function_parameters>
+          </parameters>
+        </grade>
+        <grade grade_value="2">
+          <membership_function_type>2</membership_function_type>
+          <parameters>
+            <membership_function_parameters>1.0</membership_function_parameters>
+            <membership_function_parameters>3.0</membership_function_parameters>
+            <membership_function_parameters>2.5</membership_function_parameters>
+            <membership_function_parameters>4.5</membership_function_parameters>
+          </parameters>
+        </grade>
+      </grades>
+    </kpi>
+    <indexs metric_id="3" metric_range_low="1.0" metric_range_high="5.0">
+      <index>
+        <grade grade_value="1">
+          <membership_function_type>1</membership_function_type>
+          <parameters>
+            <membership_function_parameters>2.0</membership_function_parameters>
+            <membership_function_parameters>2.5</membership_function_parameters>
+          </parameters>
+        </grade>
+      </index>
+    </indexs>
+  </kpis>
+  <rules>
+    <rule>
+      <rules_elements>
+        <element metric_id="12" grade_value="1"/>
+      </rules_elements>
+      <output_elements>
+        <element metric_id="3" grade_value="1"/>
+      </output_elements>
+    </rule>
+  </rules>
+</application>
