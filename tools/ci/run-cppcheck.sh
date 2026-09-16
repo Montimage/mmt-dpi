@@ -35,6 +35,15 @@ JOBS="${CPPCHECK_JOBS:-$(nproc 2>/dev/null || echo 2)}"
 SCAN_DIRS=(src)
 EXCLUDE=(-i src/mmt_mobile/asn1c)   # generated ASN.1 tree — never scanned
 
+# Vendored sources are excluded by configuration, not convention
+# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
+VENDOR_LIST="tools/ci/vendor-paths.txt"
+[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
+while IFS= read -r p; do
+    case "$p" in ''|'#'*) continue ;; esac
+    EXCLUDE+=(-i "$p")
+done < "$VENDOR_LIST"
+
 if ! command -v cppcheck >/dev/null 2>&1; then
     echo "✗ cppcheck is not installed" >&2
     echo "To fix:  apt-get install -y cppcheck" >&2

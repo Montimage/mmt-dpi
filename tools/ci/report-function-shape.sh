@@ -15,6 +15,10 @@
 # enum, union, typedef, if/for/while/switch, =). Good enough for a report —
 # deterministic, not a parser.
 #
+# Vendored sources (tools/ci/vendor-paths.txt) are dropped from the input
+# list here — exclusion by configuration, not by the convention of never
+# passing them (issue #249, F-CLEAN-019).
+#
 #   default          gate mode: exit 1 when any function exceeds
 #                    --max-lines (default 200) or --max-depth (default 6).
 #   --report-only    print the table and always exit 0.
@@ -48,6 +52,26 @@ done
 if [ "${#FILES[@]}" -eq 0 ]; then
     echo "✗ no input files — usage: report-function-shape.sh [--report-only] FILE..." >&2
     exit 2
+fi
+# Drop vendored sources listed in tools/ci/vendor-paths.txt (issue #249,
+# F-CLEAN-019): upstream code is reported on upstream, so its shape is not
+# this repo's debt — the exclusion lives in configuration, not convention.
+VENDOR_LIST="tools/ci/vendor-paths.txt"
+[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
+kept=()
+while [ "${#FILES[@]}" -gt 0 ]; do
+    f="${FILES[0]}"
+    FILES=("${FILES[@]:1}")
+    if grep -qxF -- "$f" "$VENDOR_LIST"; then
+        echo "  note: $f is vendored ($VENDOR_LIST) — skipped"
+        continue
+    fi
+    kept+=("$f")
+done
+FILES=("${kept[@]}")
+if [ "${#FILES[@]}" -eq 0 ]; then
+    echo "✓ nothing to check — every input file is vendored ($VENDOR_LIST)"
+    exit 0
 fi
 for f in "${FILES[@]}"; do
     [ -f "$f" ] || { echo "✗ file not found: $f" >&2; exit 2; }

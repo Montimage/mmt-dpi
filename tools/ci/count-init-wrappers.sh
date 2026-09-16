@@ -30,7 +30,17 @@ BASELINE_FILE="tools/ci/init-wrappers-baseline.txt"
 STRICT=0
 [ "${1:-}" = "--strict" ] && STRICT=1
 
-count="$(git ls-files 'src/*.c' | xargs grep -hE '^[a-zA-Z_][a-zA-Z0-9_ \*]*\bmmt_init_classify_me_[A-Za-z0-9_]+[[:space:]]*\(' | wc -l)"
+# Vendored sources are excluded by configuration, not convention
+# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
+VENDOR_LIST="tools/ci/vendor-paths.txt"
+vendor_excludes=()
+[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
+while IFS= read -r p; do
+    case "$p" in ''|'#'*) continue ;; esac
+    vendor_excludes+=(":!:$p")
+done < "$VENDOR_LIST"
+
+count="$(git ls-files 'src/*.c' "${vendor_excludes[@]}" | xargs grep -hE '^[a-zA-Z_][a-zA-Z0-9_ \*]*\bmmt_init_classify_me_[A-Za-z0-9_]+[[:space:]]*\(' | wc -l)"
 echo "    init-wrapper definitions: $count"
 
 if [ "$STRICT" -eq 1 ]; then

@@ -12,7 +12,7 @@ and no build input.*
 ## 1. Current state
 
 MMT-DPI vendors **nodejs/http-parser 2.9.4** at `src/mmt_tcpip/lib/http_parser.c` /
-`http_parser.h` (`HTTP_PARSER_VERSION_*` at `http_parser.h:28-30`; bumped from 2.5.0 by
+`http_parser.h` (`HTTP_PARSER_VERSION_*` at `http_parser.h:36-38`; bumped from 2.5.0 by
 issue #142, hardened by issue #204). Upstream was archived on 2022-06-19 and points at
 **llhttp** as its successor — the dependency is terminal and unmaintained.
 
@@ -279,7 +279,7 @@ if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {
 - llhttp changelog — GitHub releases (`release/v9.x.y` tags,
   https://github.com/nodejs/llhttp/releases); v9.4.3 is the adoption target.
 - nodejs/http-parser — archived upstream (https://github.com/nodejs/http-parser);
-  vendored copy at 2.9.4 (`src/mmt_tcpip/lib/http_parser.h:28-30`).
+  vendored copy at 2.9.4 (`src/mmt_tcpip/lib/http_parser.h:36-38`).
 - In-repo: task 2.6 strict-mode fix (`rules/common.mk:173-183`, issue #204);
   toolchain floor (`rules/common.mk:497-499`, `docs/AGENT_ENVIRONMENT.md` §1,
   issue #218); prior parser spike (`docs/DECISIONS.md`, issue #142 entry).

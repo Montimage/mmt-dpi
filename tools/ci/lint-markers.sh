@@ -15,7 +15,9 @@
 #                Task 5.8 gate, run once the backlog is triaged.
 #
 # Counted: lines matching TODO|FIXME|XXX|HACK in tracked C/C++ sources and
-# headers, excluding the generated src/mmt_mobile/asn1c/ tree.
+# headers, excluding the generated src/mmt_mobile/asn1c/ tree and the vendored
+# sources listed in tools/ci/vendor-paths.txt (issue #249, F-CLEAN-019 —
+# exclusion by configuration, not convention).
 #
 # Exit codes: 0 = pass, 1 = condition violated, 2 = helper broken.
 #
@@ -30,7 +32,15 @@ BASELINE_FILE="tools/ci/marker-baseline.txt"
 STRICT=0
 [ "${1:-}" = "--strict" ] && STRICT=1
 
-marker_lines="$(git ls-files '*.[ch]' '*.cpp' '*.hpp' ':!:src/mmt_mobile/asn1c/*' \
+VENDOR_LIST="tools/ci/vendor-paths.txt"
+vendor_excludes=()
+[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
+while IFS= read -r p; do
+    case "$p" in ''|'#'*) continue ;; esac
+    vendor_excludes+=(":!:$p")
+done < "$VENDOR_LIST"
+
+marker_lines="$(git ls-files '*.[ch]' '*.cpp' '*.hpp' ':!:src/mmt_mobile/asn1c/*' "${vendor_excludes[@]}" \
     | xargs grep -nE 'TODO|FIXME|XXX|HACK' || true)"
 count="$(printf '%s\n' "$marker_lines" | grep -c .)"
 

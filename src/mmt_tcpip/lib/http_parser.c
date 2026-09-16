@@ -18,6 +18,15 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+
+/* VENDORED SOURCE — nodejs/http-parser v2.9.4
+ * Upstream pin: https://github.com/nodejs/http-parser/tree/v2.9.4 (project
+ * archived; final release). Do not hand-edit: local changes diverge from
+ * upstream and are lost on the next vendor bump — the planned llhttp
+ * replacement is documented in docs/llhttp-migration.md. Excluded from the
+ * clean-code metrics by configuration: tools/ci/vendor-paths.txt
+ * (issue #249, F-CLEAN-019).
+ */
 #include "http_parser.h"
 #include <assert.h>
 #include <stddef.h>

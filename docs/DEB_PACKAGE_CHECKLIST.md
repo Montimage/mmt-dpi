@@ -1,4 +1,18 @@
+---
+layout: default
+title: ".deb Package Build & apt Repository Setup Checklist"
+---
+
 # .deb Package Build & apt Repository Setup Checklist
+
+> **Status note (2026-09-16, issue #249):** the build report below describes the
+> `mmt-dpi 1.7.10-3ab25616` package — recorded before the current `1.8.0`
+> release (`rules/common.mk:1`), which added the DICOM plugin library
+> `libmmt_tdicom.so` that this report originally omitted. The library list
+> under *Package Info* has since been annotated, but the authoritative package
+> contents and dependency set are now derived from the built `.so` files at
+> package-build time (`tools/ci/shlib-deps.sh`, verified per artifact by
+> `tools/ci/check-package-deps.sh --verify-package`), not maintained here.
 
 ## Build Testing Results
 

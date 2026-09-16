@@ -29,7 +29,17 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 2
 fi
 
-git ls-files -z 'src/*.[ch]' ':!:src/mmt_mobile/asn1c/*' > /tmp/ccode-tracked.$$
+# Vendored sources are excluded by configuration, not convention
+# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
+VENDOR_LIST="tools/ci/vendor-paths.txt"
+vendor_excludes=()
+[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
+while IFS= read -r p; do
+    case "$p" in ''|'#'*) continue ;; esac
+    vendor_excludes+=(":!:$p")
+done < "$VENDOR_LIST"
+
+git ls-files -z 'src/*.[ch]' ':!:src/mmt_mobile/asn1c/*' "${vendor_excludes[@]}" > /tmp/ccode-tracked.$$
 trap 'rm -f /tmp/ccode-tracked.$$' EXIT
 
 python3 - /tmp/ccode-tracked.$$ <<'PYEOF'

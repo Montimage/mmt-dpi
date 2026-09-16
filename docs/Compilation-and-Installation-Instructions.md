@@ -66,74 +66,10 @@ gcc -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lm
 
 ---------------------------------
 
-> **Note:** macOS and Windows are **not supported**. The make rules these commands relied on (`rules/arch-osx.mk`, `rules/arch-win32.mk`, `rules/arch-win64.mk`, `rules/common-windows.mk`) were removed in #228, so `ARCH=osx|win32|win64` now fails at the `include arch-$(ARCH).mk` line. The instructions below are retained for historical reference only.
-
-<details>
-<summary>Mac OSX (unsupported)</summary>
-
-## Install required tools
-
-* XCode
-* Install Hombrew
-```bash
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew install/master/install)"
-```
-* Git: See [Install Git for Mac OSX](https://git-scm.com/download/mac)
-
-## Install some required packages
-```bash
-brew install gcc48
-brew install cmake libpth-dev ldconfig
-brew install libxml2 hiredis confuse libpcap
-```
-
-## Compile and install
-
-Assume that we are in mmt-dpi directory:
-```sh
-cd sdk/
-make -j4 ARCH=osx
-sudo make ARCH=osx install
-```
-
-</details>
-
-<details>
-<summary>Windows cross-compilation (unsupported)</summary>
-
-## Install some required tools
-* Git: See [Install Git for Window](https://git-scm.com/download/win)
-
-## Compile
-Cross-compiling for Windows requires `mingw-w64` (NOT `mingw32`, as this version is deprecated)
-and some Windows libraries (`libxml`, etc...).
-
-All the required Windows libraries can be found in `/windows` on the public share.
-Make expects the files to be available locally in `/opt/windows/`.
-
-Example setup looks like this:
-```sh
-oprs@oxps% ls -l /opt/windows/
-total 12
-drwxr-xr-x 7 oprs oprs 4096 May 28 16:38 32
-drwxr-xr-x 7 oprs oprs 4096 May 28 16:17 64
-```
-So assuming the public share directory was mounted on `/mnt/share`, perform:
-```sh
-sudo mkdir -p /opt
-sudo cp -R /mnt/share/windows /opt/
-```
-(you can discard the 'packages' directory, it just contains the original archives)
-
-Then build either a 32-bit version of the MMT-DPI:
-```sh
-make -j4 ARCH=win32
-make install
-```
-... or a 64-bit version:
-```sh
-make -j4 ARCH=win64
-make install
-```
-
-</details>
+> **Note:** macOS and Windows are **not supported** — only Linux is
+> ([Agent Environment Notes](./AGENT_ENVIRONMENT.md)). The make rules the old
+> macOS/Windows builds relied on (`rules/arch-osx.mk`, `rules/arch-win32.mk`,
+> `rules/arch-win64.mk`, `rules/common-windows.mk`) were removed in #228, so
+> `ARCH=osx|win32|win64` fails at the `include arch-$(ARCH).mk` line; the
+> unsupported-platform instruction blocks that once stood here were deleted in
+> #249.

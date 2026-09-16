@@ -1,0 +1,20 @@
+# Vendored third-party sources (issue #249, F-CLEAN-019).
+#
+# Files listed here are verbatim copies of upstream projects — they are
+# excluded from the clean-code metrics (function-shape report, marker
+# ratchet, commented-code lint, cppcheck scan, init-wrapper count) by this
+# configuration, not by the convention of simply never naming them. Each
+# entry carries its pinned upstream reference; a vendored file must also
+# carry a VENDORED banner naming the same pin.
+#
+# Format: one repo-relative path per line; blank lines and #-comments are
+# ignored. Consumers: tools/ci/report-function-shape.sh, lint-markers.sh,
+# lint-commented-code.sh, count-init-wrappers.sh, run-cppcheck.sh and
+# scripts/validate-doc-drift.sh.
+#
+# nodejs/http-parser — pinned at tag v2.9.4 (final upstream release; the
+# project is archived and recommends llhttp — see docs/llhttp-migration.md):
+#   https://github.com/nodejs/http-parser/tree/v2.9.4
+#   version macros: src/mmt_tcpip/lib/http_parser.h:36-38
+src/mmt_tcpip/lib/http_parser.c
+src/mmt_tcpip/lib/http_parser.h

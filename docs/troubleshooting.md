@@ -48,3 +48,16 @@ Append-only log of real fixes applied during doc-manager validation runs.
 - **Fix**: `MMT-Handler.md` had wrong return type for `get_active_session_count()` and wrong evasion constant names.
   Source: `sdk/include/mmt_core.h:209, 86-90`.
   Impact: Code written from the doc would not compile.
+
+## 2026-09-16
+
+- **Correction**: the 2026-07-21 entry above for `DEVELOPMENT.md`'s `NDEBUG=1`
+  description stated the flag's semantics backwards — it claimed `NDEBUG=1`
+  "defines `-DNDEBUG` which *disables* debug output". The rule file does the
+  opposite: the *default* build defines `-DNDEBUG` (`rules/common.mk:40-43`),
+  and passing `NDEBUG=1` takes the `ifdef NDEBUG` branch (`rules/common.mk:38-39`),
+  which *suppresses* `-DNDEBUG` so `debug()`/`assert()` stay active. The fix
+  recorded that day (document `NDEBUG=1` as suppressing `-DNDEBUG`) stands; only
+  its stated justification was inverted. `DEVELOPMENT.md:58` and
+  `AGENT_ENVIRONMENT.md` now state the correct semantics.
+  Source: `rules/common.mk:33-43`.
