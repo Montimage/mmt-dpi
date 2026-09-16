@@ -22042,7 +22042,7 @@ int _find_proto_id_by_address6(const uint8_t ip_src[16], const uint8_t ip_dest[1
  * Initialize protocol AVL Trees
  */
 void _init_proto_avltrees() {
-    // printf("[debug] _init_proto_avltrees ... \n");
+    // mmt_debug_log("[debug] _init_proto_avltrees ... \n");
     int i = 0 , nb_nodes = 0;
     for (i = NETMASK_MAX_NB - 1 ; i >= 0; i--) {
         proto_avltrees[i] = 0x0;
@@ -22058,12 +22058,12 @@ void _init_proto_avltrees() {
          * table — a malformed entry would index proto_avltrees[] out of bounds.
          * Range-check it like the external-rule loader does. */
         if (tree_index <= 0 || tree_index >= NETMASK_MAX_NB) {
-            fprintf(stderr, "[mmt-dpi] proto_ip_address[%d]: prefix length %d out of range [1,%d] - entry skipped\n",
+            mmt_stderr_log( "[mmt-dpi] proto_ip_address[%d]: prefix length %d out of range [1,%d] - entry skipped\n",
                     i, tree_index, NETMASK_MAX_NB - 1);
             i++;
             continue;
         }
-        // printf("[debug] %d new node key = %u, tree_index = %d\n", i, key, tree_index);
+        // mmt_debug_log("[debug] %d new node key = %u, tree_index = %d\n", i, key, tree_index);
         avltree_t * node = avltree_create(key, (void*)&proto_ip_address[i]);
         if (node != NULL) {
             int is_duplicate = 0;
@@ -22071,23 +22071,23 @@ void _init_proto_avltrees() {
             if (is_duplicate) {
                 /* A duplicate table key must not silently orphan the subtree
                  * (F-BUG-027); the unlinked node stays ours — free it. */
-                fprintf(stderr, "[mmt-dpi] proto_ip_address[%d]: duplicate key %u - entry skipped\n",
+                mmt_stderr_log( "[mmt-dpi] proto_ip_address[%d]: duplicate key %u - entry skipped\n",
                         i, key);
                 avltree_free_node(node);
             } else {
                 nb_nodes++;
             }
-            // printf("[debug] new node has been added into tree: %d\n", tree_index);
+            // mmt_debug_log("[debug] new node has been added into tree: %d\n", tree_index);
             // avltree_show_node(node);
         }
         i++;
     }
 #ifdef DEBUG
-    printf("AVLTrees - total number of nodes: %d\n",nb_nodes);
-    printf("Index\t Height \t Size\n");
+    mmt_debug_log("AVLTrees - total number of nodes: %d\n",nb_nodes);
+    mmt_debug_log("Index\t Height \t Size\n");
     for (i = 0; i < NETMASK_MAX_NB; i ++) {
         if(proto_avltrees[i] != NULL){
-            printf("%d\t %d \t %d\n",i,avltree_get_height(proto_avltrees[i],1),avltree_size(proto_avltrees[i]));
+            mmt_debug_log("%d\t %d \t %d\n",i,avltree_get_height(proto_avltrees[i],1),avltree_size(proto_avltrees[i]));
         }
     }
 #endif    
@@ -22131,7 +22131,7 @@ int _find_proto_id_by_address(uint32_t ip_src,uint32_t ip_dest){
 }
 
 void _free_proto_avltrees(){
-    // printf("[debug] _free_proto_avltrees ... \n");
+    // mmt_debug_log("[debug] _free_proto_avltrees ... \n");
     int i = 0;
     for (i = NETMASK_MAX_NB - 1 ; i >= 0; i--) {
         avltree_free_tree(proto_avltrees[i]);
@@ -22180,7 +22180,7 @@ int mmt_tcpip_load_ip_ranges_file(const char *path) {
     }
     FILE *fp = fopen(path, "r");
     if (fp == NULL) {
-        fprintf(stderr, "[mmt-dpi][M9] could not open IP-range file '%s': %s\n",
+        mmt_stderr_log( "[mmt-dpi][M9] could not open IP-range file '%s': %s\n",
                 path, strerror(errno));
         return -1;
     }
@@ -22207,7 +22207,7 @@ int mmt_tcpip_load_ip_ranges_file(const char *path) {
             if (strcasecmp(flag_tok, "override") == 0) {
                 is_override = 1;
             } else {
-                fprintf(stderr, "[mmt-dpi][M9] %s:%d unknown flag '%s' (expected "
+                mmt_stderr_log( "[mmt-dpi][M9] %s:%d unknown flag '%s' (expected "
                         "'override') - treating rule as extend\n",
                         path, lineno, flag_tok);
             }
@@ -22215,7 +22215,7 @@ int mmt_tcpip_load_ip_ranges_file(const char *path) {
         // Split "<addr>/<prefixlen>".
         char *slash = strchr(cidr, '/');
         if (slash == NULL) {
-            fprintf(stderr, "[mmt-dpi][M9] %s:%d missing '/prefix' in '%s' - skipped\n",
+            mmt_stderr_log( "[mmt-dpi][M9] %s:%d missing '/prefix' in '%s' - skipped\n",
                     path, lineno, cidr);
             continue;
         }
@@ -22230,18 +22230,18 @@ int mmt_tcpip_load_ip_ranges_file(const char *path) {
         if (is_ipv6) {
             struct in6_addr addr6;
             if (inet_pton(AF_INET6, cidr, &addr6) != 1) {
-                fprintf(stderr, "[mmt-dpi][M9] %s:%d invalid IPv6 address '%s' - skipped\n",
+                mmt_stderr_log( "[mmt-dpi][M9] %s:%d invalid IPv6 address '%s' - skipped\n",
                         path, lineno, cidr);
                 continue;
             }
             if (prefix <= 0 || prefix > 128) {
-                fprintf(stderr, "[mmt-dpi][M9] %s:%d IPv6 prefix /%d out of range [1,128] - skipped\n",
+                mmt_stderr_log( "[mmt-dpi][M9] %s:%d IPv6 prefix /%d out of range [1,128] - skipped\n",
                         path, lineno, prefix);
                 continue;
             }
             proto_id = _resolve_proto_token(proto_tok);
             if (proto_id == PROTO_UNKNOWN) {
-                fprintf(stderr, "[mmt-dpi][M9] %s:%d unknown protocol '%s' - skipped\n",
+                mmt_stderr_log( "[mmt-dpi][M9] %s:%d unknown protocol '%s' - skipped\n",
                         path, lineno, proto_tok);
                 continue;
             }
@@ -22253,18 +22253,18 @@ int mmt_tcpip_load_ip_ranges_file(const char *path) {
 
         struct in_addr addr;
         if (inet_pton(AF_INET, cidr, &addr) != 1) {
-            fprintf(stderr, "[mmt-dpi][M9] %s:%d invalid IPv4 address '%s' - skipped\n",
+            mmt_stderr_log( "[mmt-dpi][M9] %s:%d invalid IPv4 address '%s' - skipped\n",
                     path, lineno, cidr);
             continue;
         }
         if (prefix <= 0 || prefix >= NETMASK_MAX_NB) {
-            fprintf(stderr, "[mmt-dpi][M9] %s:%d prefix /%d out of range [1,%d] - skipped\n",
+            mmt_stderr_log( "[mmt-dpi][M9] %s:%d prefix /%d out of range [1,%d] - skipped\n",
                     path, lineno, prefix, NETMASK_MAX_NB - 1);
             continue;
         }
         proto_id = _resolve_proto_token(proto_tok);
         if (proto_id == PROTO_UNKNOWN) {
-            fprintf(stderr, "[mmt-dpi][M9] %s:%d unknown protocol '%s' - skipped\n",
+            mmt_stderr_log( "[mmt-dpi][M9] %s:%d unknown protocol '%s' - skipped\n",
                     path, lineno, proto_tok);
             continue;
         }
@@ -22286,7 +22286,7 @@ void mmt_tcpip_load_external_ip_ranges(void) {
     }
     int n = mmt_tcpip_load_ip_ranges_file(path);
     if (n > 0) {
-        fprintf(stderr, "[mmt-dpi][M9] loaded %d external IP-range rule(s) from %s\n",
+        mmt_stderr_log( "[mmt-dpi][M9] loaded %d external IP-range rule(s) from %s\n",
                 n, path);
     }
 }
@@ -22403,7 +22403,7 @@ static int _init_tree(){
 
 		//we are now in a leaf
 		if( node_ptr->protocol != NULL )
-			fprintf(stderr, "Error: Double domain name\"%s\"\n", node_ptr->protocol->string_to_match );
+			mmt_stderr_log( "Error: Double domain name\"%s\"\n", node_ptr->protocol->string_to_match );
 
 		node_ptr->protocol = proto_ptr;
 
@@ -22433,7 +22433,7 @@ static void _free_tree(void){
 
 __attribute__((constructor)) void _constructor () {
 	if( !_init_tree() )
-		fprintf(stderr, "[mmt-dpi] hostname trie init failed (out of memory) - hostname classification disabled\n");
+		mmt_stderr_log( "[mmt-dpi] hostname trie init failed (out of memory) - hostname classification disabled\n");
     _init_proto_avltrees();
 }
 
@@ -22509,9 +22509,9 @@ uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hos
 //
 //	if( val1 != val2 ){
 //		if( proto != NULL )
-//			printf("\"%d - %d: [%d] \"%s\" -- [%d]\"%s\" \n", val1, val2, hostname_len, str, proto->str_len, proto->string_to_match );
+//			mmt_debug_log("\"%d - %d: [%d] \"%s\" -- [%d]\"%s\" \n", val1, val2, hostname_len, str, proto->str_len, proto->string_to_match );
 //		else
-//			printf("\"%d - %d: [%d] \"%s\" -- NULL \n", val1, val2, hostname_len, str);
+//			mmt_debug_log("\"%d - %d: [%d] \"%s\" -- NULL \n", val1, val2, hostname_len, str);
 //
 //	}
 //	return val1;

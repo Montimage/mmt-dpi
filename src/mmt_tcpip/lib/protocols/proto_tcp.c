@@ -838,17 +838,17 @@ int update_tcp_protocol(int action_id){
     {
         case TCP_ENABLE_REASSEMBLE:
         // Enable tcp_action
-            printf("[active_tcp_reassembly] action_id: %d", action_id);
+            mmt_debug_log("[active_tcp_reassembly] action_id: %d", action_id);
             register_session_data_cleanup_function(protocol_struct, clean_session_payload);
             register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function_with_reassemble, tcp_post_classification_function);
             return 1;
         case TCP_DISABLE_REASSEMBLE:
-            printf("[active_tcp_reassembly] action_id: %d", action_id);
+            mmt_debug_log("[active_tcp_reassembly] action_id: %d", action_id);
             register_session_data_cleanup_function(protocol_struct, NULL);
             register_pre_post_classification_functions(protocol_struct, tcp_pre_classification_function, tcp_post_classification_function);
             return 1;
         default:
-            printf("[active_tcp_reassembly] Not implemented yet! %d", action_id);
+            mmt_debug_log("[active_tcp_reassembly] Not implemented yet! %d", action_id);
             break;
     }
     return 0;

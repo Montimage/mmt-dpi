@@ -32,7 +32,7 @@ void *mmt_malloc( size_t size )
    // A wrapped size would allocate a tiny block that the caller believes is
    // huge -> heap overflow.
    if( unlikely( size > SIZE_MAX - sizeof( size_t ))) {
-      (void)fprintf( stderr, "mmt_malloc: size overflow (%zu bytes)\n", size );
+      (void)mmt_debug_log( "mmt_malloc: size overflow (%zu bytes)\n", size );
       return NULL;
    }
 
@@ -41,7 +41,7 @@ void *mmt_malloc( size_t size )
    if( unlikely( x0 == NULL )) {
       // OOM: log and return NULL (do NOT abort the host). The caller must
       // tolerate a NULL result and fail gracefully (drop the packet).
-      (void)fprintf( stderr, "mmt_malloc: not enough memory (%zu bytes)\n", size );
+      (void)mmt_debug_log( "mmt_malloc: not enough memory (%zu bytes)\n", size );
       return NULL;
    }
 
@@ -78,7 +78,7 @@ void *mmt_realloc( void *x, size_t size )
    // F-BUG-009 (issue #199): same wrap guard as mmt_malloc — a wrapped
    // size + sizeof(size_t) would shrink the block the caller sees as grown.
    if( unlikely( size > SIZE_MAX - sizeof( size_t ))) {
-      (void)fprintf( stderr, "mmt_realloc: size overflow (%zu bytes)\n", size );
+      (void)mmt_debug_log( "mmt_realloc: size overflow (%zu bytes)\n", size );
       return NULL; // original block left intact per realloc() semantics
    }
 
@@ -88,7 +88,7 @@ void *mmt_realloc( void *x, size_t size )
       // OOM: log and return NULL (do NOT abort the host). The original block
       // (x0) is left intact per standard realloc() semantics; the caller must
       // tolerate a NULL result and fail gracefully.
-      (void)fprintf( stderr, "mmt_realloc: not enough memory (%zu bytes)\n", size );
+      (void)mmt_debug_log( "mmt_realloc: not enough memory (%zu bytes)\n", size );
       return NULL;
    }
 
@@ -160,12 +160,12 @@ mmt_arena_t *mmt_arena_create( size_t block_size )
    // F-BUG-009 (issue #199): the ALIGN_UP below adds MMT_ARENA_ALIGN-1; reject
    // block sizes for which that addition wraps to a tiny/0 payload.
    if( unlikely( block_size > SIZE_MAX - ( MMT_ARENA_ALIGN - 1u ))) {
-      (void)fprintf( stderr, "mmt_arena_create: block size overflow (%zu bytes)\n", block_size );
+      (void)mmt_debug_log( "mmt_arena_create: block size overflow (%zu bytes)\n", block_size );
       return NULL;
    }
    mmt_arena_t *a = (mmt_arena_t*)malloc( sizeof( mmt_arena_t ) );
    if( unlikely( a == NULL )) {
-      (void)fprintf( stderr, "mmt_arena_create: not enough memory\n" );
+      (void)mmt_debug_log( "mmt_arena_create: not enough memory\n" );
       return NULL;
    }
    a->current    = NULL;
@@ -184,7 +184,7 @@ void *mmt_arena_alloc( mmt_arena_t *a, size_t size )
    //   2. b->used + need in the capacity test (rewritten as a subtraction),
    //   3. MMT_ARENA_HDR + cap in the grow malloc (rejected below).
    if( unlikely( size > SIZE_MAX - ( MMT_ARENA_ALIGN - 1u ))) {
-      (void)fprintf( stderr, "mmt_arena_alloc: size overflow (%zu bytes)\n", size );
+      (void)mmt_debug_log( "mmt_arena_alloc: size overflow (%zu bytes)\n", size );
       return NULL;
    }
 
@@ -198,12 +198,12 @@ void *mmt_arena_alloc( mmt_arena_t *a, size_t size )
       // their own dedicated block sized exactly to the request).
       size_t cap = ( need > a->block_size ) ? need : a->block_size;
       if( unlikely( cap > SIZE_MAX - MMT_ARENA_HDR )) {
-         (void)fprintf( stderr, "mmt_arena_alloc: size overflow (%zu bytes)\n", size );
+         (void)mmt_debug_log( "mmt_arena_alloc: size overflow (%zu bytes)\n", size );
          return NULL;
       }
       mmt_arena_block_t *nb = (mmt_arena_block_t*)malloc( MMT_ARENA_HDR + cap );
       if( unlikely( nb == NULL )) {
-         (void)fprintf( stderr, "mmt_arena_alloc: not enough memory (%zu bytes)\n", size );
+         (void)mmt_debug_log( "mmt_arena_alloc: not enough memory (%zu bytes)\n", size );
          return NULL;
       }
       nb->capacity = cap;

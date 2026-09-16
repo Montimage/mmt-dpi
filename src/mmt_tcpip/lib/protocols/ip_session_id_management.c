@@ -283,7 +283,7 @@ void free_session_data(void * key, void * value, void * args) {
     //Free the internal structure used by DPI
     //mmt_free(session->internal_data);
     //Free the session data
-    // printf("Session is going to be freed: %lu\n",session->session_id);
+    // mmt_debug_log("Session is going to be freed: %lu\n",session->session_id);
     free(session);
 }
 
@@ -383,7 +383,7 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
         //retval->proto_stack = ipacket->proto_stack;
 
         if( unlikely( insert_session_into_protocol_context(protocol_context, retval->session_key, retval) == 0 )) {
-            fprintf(stderr, "[error] get_session: insert_session_into_protocol_context return 0\n");
+            mmt_debug_log( "[error] get_session: insert_session_into_protocol_context return 0\n");
             //The session failed to be inserted into the MAP.
             //Cleanup what was created for this
             /* Issue #201 (F-BUG-025): these id objects were inserted into

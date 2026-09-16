@@ -1,5 +1,6 @@
 #include <math.h>
 #include "mmt_utils.h"
+#include "dbg.h"
 // #include "../public_include/mmt_utils.h"
 
 int hex2int(char hc){
@@ -515,7 +516,7 @@ char * str_copy(char *str2){
 void str_print_array(char **array){
     int i=0;
     while(array[i] != NULL){
-        printf("Array[%d]: %s\n",i,array[i]);
+        mmt_stream_printf(stdout, "Array[%d]: %s\n",i,array[i]);
         i++;
     }
 }

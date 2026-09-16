@@ -19,7 +19,7 @@ int mmt_register_classifier(uint32_t parent_proto,
         const char *name) {
     if (!register_classification_function_with_parent_protocol(parent_proto,
                 classify_fn, weight)) {
-        fprintf(stderr,
+        mmt_stderr_log(
             "Error registering classification function %s for parent protocol %u (weight %d)\n Exiting\n",
             (name != NULL) ? name : "?", (unsigned) parent_proto, weight);
         return 0;
@@ -44,7 +44,7 @@ int cleanup_proto(){
 
 int cleanup_tcpip_plugin(){
     // if(!cleanup_proto_tcp_struct()){
-    //     fprintf(stderr, "No cleanup function for protocol proto_tcp\n");
+    //     mmt_stderr_log( "No cleanup function for protocol proto_tcp\n");
     // }
     // M9 (issue #26): release the externally-loaded port-hint table. The IP-range
     // AVL trees (built-in + external) are freed by the library destructor via
@@ -80,7 +80,7 @@ int init_tcpip_plugin() {
     };
     for (size_t i = 0; i < sizeof(proto_init_table)/sizeof(proto_init_table[0]); i++) {
         if (!proto_init_table[i].init()) {
-            fprintf(stderr, "Error initializing protocol %s\n Exiting\n", proto_init_table[i].name);
+            mmt_stderr_log( "Error initializing protocol %s\n Exiting\n", proto_init_table[i].name);
             return 0;
         }
     }

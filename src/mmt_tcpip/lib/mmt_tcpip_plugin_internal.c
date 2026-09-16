@@ -571,7 +571,7 @@ int mmt_tcpip_load_port_map_file(const char *path) {
     }
     FILE *fp = fopen(path, "r");
     if (fp == NULL) {
-        fprintf(stderr, "[mmt-dpi][M9] could not open port-map file '%s': %s\n",
+        mmt_stderr_log( "[mmt-dpi][M9] could not open port-map file '%s': %s\n",
                 path, strerror(errno));
         return -1;
     }
@@ -599,13 +599,13 @@ int mmt_tcpip_load_port_map_file(const char *path) {
             if (strcasecmp(flag_tok, "override") == 0) {
                 is_override = 1;
             } else {
-                fprintf(stderr, "[mmt-dpi][M9] %s:%d unknown flag '%s' (expected "
+                mmt_stderr_log( "[mmt-dpi][M9] %s:%d unknown flag '%s' (expected "
                         "'override') - treating hint as extend\n",
                         path, lineno, flag_tok);
             }
         }
         if (port <= 0 || port > 65535) {
-            fprintf(stderr, "[mmt-dpi][M9] %s:%d port %d out of range - skipped\n",
+            mmt_stderr_log( "[mmt-dpi][M9] %s:%d port %d out of range - skipped\n",
                     path, lineno, port);
             continue;
         }
@@ -618,7 +618,7 @@ int mmt_tcpip_load_port_map_file(const char *path) {
             }
         }
         if (proto_id == PROTO_UNKNOWN) {
-            fprintf(stderr, "[mmt-dpi][M9] %s:%d unknown protocol '%s' - skipped\n",
+            mmt_stderr_log( "[mmt-dpi][M9] %s:%d unknown protocol '%s' - skipped\n",
                     path, lineno, proto_tok);
             continue;
         }
@@ -636,7 +636,7 @@ int mmt_tcpip_load_port_map_file(const char *path) {
                 : _ext_port_append(&ext_udp_ports, &ext_udp_ports_n,
                                    (uint16_t) port, proto_id);
         } else {
-            fprintf(stderr, "[mmt-dpi][M9] %s:%d expected 'tcp'/'udp', got '%s' - skipped\n",
+            mmt_stderr_log( "[mmt-dpi][M9] %s:%d expected 'tcp'/'udp', got '%s' - skipped\n",
                     path, lineno, l4);
             continue;
         }
@@ -655,7 +655,7 @@ void mmt_tcpip_load_external_port_map(void) {
     }
     int n = mmt_tcpip_load_port_map_file(path);
     if (n > 0) {
-        fprintf(stderr, "[mmt-dpi][M9] loaded %d external port hint(s) from %s\n",
+        mmt_stderr_log( "[mmt-dpi][M9] loaded %d external port hint(s) from %s\n",
                 n, path);
     }
 }

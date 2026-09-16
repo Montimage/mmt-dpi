@@ -70,7 +70,7 @@ int init_proto_s7comm_struct() {
         }
 
         if (!register_classification_function_with_parent_protocol(PROTO_COTP, mmt_check_s7comm, 50)) {
-            fprintf(stderr, "[err] init_cotp_proto_struct - cannot register_classification_function_with_parent_protocol\n");
+            mmt_stderr_log( "[err] init_cotp_proto_struct - cannot register_classification_function_with_parent_protocol\n");
         };
         // register_protocol_stack(PROTO_S7COMM, PROTO_S7COMM_ALIAS, s7comm_stack_classification);
         return register_protocol(protocol_struct, PROTO_S7COMM);

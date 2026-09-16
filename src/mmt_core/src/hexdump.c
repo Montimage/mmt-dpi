@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "hexdump.h"
+#include "dbg.h"
 
 
 void
@@ -20,7 +21,7 @@ fhexdump( FILE *out, const uint8_t *x, uint32_t len )
          (void)strcat( buffer,"\t" );
          (void)strcat( buffer, strbuf );
          (void)strcat( buffer,"\n" );
-         (void)fprintf( out, "%s", buffer );
+         (void)mmt_stream_printf( out, "%s", buffer );
          (void)sprintf( buffer, "\t%08x   ", i );
       }
 
@@ -37,7 +38,7 @@ fhexdump( FILE *out, const uint8_t *x, uint32_t len )
          (void)strcat( buffer, "\t" );
          (void)strcat( buffer, strbuf );
          (void)strcat( buffer, "\n" );
-         (void)fprintf( out, "%s", buffer );
+         (void)mmt_stream_printf( out, "%s", buffer );
       }
       if(( *(x+i) >= 0x20 ) && (( *(x+i) <= 0x7e ) && ( *(x+i) != 0x25 )))
          strbuf[i%16] = *(x+i);

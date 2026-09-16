@@ -767,7 +767,7 @@ static inline int mmt_http_check_table(const struct mmt_content_type_entry *tabl
     for (i = 0; i < n; i++) {
         const struct mmt_content_type_entry *e = &table[i];
         if (e->min_len < e->cmp_len || e->cmp_len > strlen(e->mime)) {
-            fprintf(stderr, "mmt_http: MIME table row '%s' has min_len=%u < cmp_len=%u (or cmp_len > mime length)\n",
+            mmt_stderr_log( "mmt_http: MIME table row '%s' has min_len=%u < cmp_len=%u (or cmp_len > mime length)\n",
                     e->mime, (unsigned) e->min_len, (unsigned) e->cmp_len);
             bad++;
         }

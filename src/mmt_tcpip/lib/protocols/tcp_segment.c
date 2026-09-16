@@ -18,10 +18,10 @@
  *              a pointer points to new TCP segment. The new node has the key = 0, all other attributes are NULL
  */
 tcp_seg_t * tcp_seg_new(uint64_t packet_id, uint64_t seq, uint64_t next_seq, uint64_t ack, uint16_t len, uint8_t * data){
-	// printf("[tcp_seg_new] New segment of packet: %lu\n", packet_id);
+	// mmt_stream_printf(stdout, "[tcp_seg_new] New segment of packet: %lu\n", packet_id);
 	tcp_seg_t * new_seg = (tcp_seg_t *) malloc(sizeof(tcp_seg_t));
 	if (new_seg == NULL) {
-		// fprintf(stderr,"[tcp_seg_new] Cannot create a new tcp_seg_t");
+		// mmt_debug_log("[tcp_seg_new] Cannot create a new tcp_seg_t");
 		return NULL;
 	}else{
 		new_seg->packet_id = packet_id;
@@ -68,7 +68,7 @@ tcp_seg_t * tcp_seg_new_in_arena(struct mmt_arena_s * arena, uint64_t packet_id,
  */
 void tcp_seg_free(tcp_seg_t * seg){
 	if (seg != NULL) {
-		// printf("[tcp_seg_free] Free segment of packet: %lu\n", seg->packet_id);
+		// mmt_stream_printf(stdout, "[tcp_seg_free] Free segment of packet: %lu\n", seg->packet_id);
 		/* Issue #201 (F-BUG-039): arena-backed nodes must not reach free() —
 		 * the arena is released wholesale on session teardown. Skip the
 		 * frees so mixed lists and stray callers cannot trigger an
@@ -107,7 +107,7 @@ void tcp_seg_free_list(tcp_seg_t * head) {
 		current_seg = current_seg->next;
 		if (current_seg != NULL){
 			if (current_seg->seq != to_be_deleted->next_seq){
-				fprintf(stderr,"[tcp_seg_free_list] Packet lost in sequence: %lu (next_seq of packet: %lu) - %lu (seq of packet: %lu)\n", to_be_deleted->next_seq, to_be_deleted->packet_id, current_seg->seq, current_seg->packet_id);
+				mmt_debug_log("[tcp_seg_free_list] Packet lost in sequence: %lu (next_seq of packet: %lu) - %lu (seq of packet: %lu)\n", to_be_deleted->next_seq, to_be_deleted->packet_id, current_seg->seq, current_seg->packet_id);
 			}
 		}
 		tcp_seg_free(to_be_deleted);
@@ -122,7 +122,7 @@ void tcp_seg_free_list(tcp_seg_t * head) {
  */
 tcp_seg_t * tcp_seg_insert(tcp_seg_t * root, tcp_seg_t * seg){
 	if (seg == NULL){
-		fprintf(stderr,"[tcp_seg_insert] Cannot insert NULL segment\n");
+		mmt_debug_log("[tcp_seg_insert] Cannot insert NULL segment\n");
 		return NULL;
 	}
 
@@ -137,7 +137,7 @@ tcp_seg_t * tcp_seg_insert(tcp_seg_t * root, tcp_seg_t * seg){
 		if (current_seg->seq == seg->seq) {
 			// Duplicated segment
 			// TODO: discuss whether to override duplicate segment or keep first
-			fprintf(stderr,"[tcp_seg_insert] Duplicated segment: seq %lu - packets: %lu, %lu (ignored)\n", seg->seq, current_seg->packet_id, seg->packet_id);
+			mmt_debug_log("[tcp_seg_insert] Duplicated segment: seq %lu - packets: %lu, %lu (ignored)\n", seg->seq, current_seg->packet_id, seg->packet_id);
 			return NULL; // duplicated segment
 		}
 		if (current_seg->seq > seg->seq){
@@ -165,7 +165,7 @@ tcp_seg_t * tcp_seg_insert(tcp_seg_t * root, tcp_seg_t * seg){
 
 		current_seg = current_seg->next;
 	}
-	fprintf(stderr,"[tcp_seg_insert] Should not be here seq: %lu - packets: %lu\n", seg->seq, seg->packet_id);
+	mmt_debug_log("[tcp_seg_insert] Should not be here seq: %lu - packets: %lu\n", seg->seq, seg->packet_id);
 	return NULL; // Should not be here
 
 }
@@ -198,10 +198,10 @@ tcp_seg_t * tcp_seg_find(tcp_seg_t * root, uint64_t seq){
  */
 void tcp_seg_show_list(tcp_seg_t * seg){
 	if (seg == NULL) {
-		printf("[Empty]\n");
+		mmt_stream_printf(stdout, "[Empty]\n");
 	} else {
 		tcp_seg_t * current_seg = seg;
-		printf("packet_id | prev_seg | seg | seq | next_seq | ack | data | next_seq \n");
+		mmt_stream_printf(stdout, "packet_id | prev_seg | seg | seq | next_seq | ack | data | next_seq \n");
 		while(current_seg){
 			tcp_seg_show(current_seg);
 			current_seg = current_seg->next;
@@ -217,9 +217,9 @@ void tcp_seg_show_list(tcp_seg_t * seg){
  */
 void tcp_seg_show(tcp_seg_t * seg) {
 	if (seg == NULL){
-		printf("[NULL]\n");
+		mmt_stream_printf(stdout, "[NULL]\n");
 	} else {
-		printf("[%lu | %p | %p | %lu | %lu | %lu | %d | %p | %p]\n", seg->packet_id, seg->prev, seg, seg->seq, seg->next_seq, seg->ack, seg->len, seg->data, seg->next);
+		mmt_stream_printf(stdout, "[%lu | %p | %p | %lu | %lu | %lu | %d | %p | %p]\n", seg->packet_id, seg->prev, seg, seg->seq, seg->next_seq, seg->ack, seg->len, seg->data, seg->next);
 	}
 }
 

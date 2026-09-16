@@ -63,7 +63,7 @@ int init_proto_cotp_struct() {
         }
 
         if (!register_classification_function_with_parent_protocol(PROTO_TPKT, mmt_check_cotp, 50)) {
-            fprintf(stderr, "[err] init_cotp_proto_struct - cannot register_classification_function_with_parent_protocol\n");
+            mmt_stderr_log( "[err] init_cotp_proto_struct - cannot register_classification_function_with_parent_protocol\n");
         };
 
         // register_protocol_stack(PROTO_COTP, PROTO_COTP_ALIAS, cotp_stack_classification);

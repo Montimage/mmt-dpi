@@ -27,4 +27,33 @@
 
 #define check_debug(A, M, ...) if(!(A)) { debug(M, ##__VA_ARGS__); errno=0; goto error; }
 
+/*
+ * Issue #246 (F-PERF-009): unconditional printf/fprintf on packet paths
+ * reached by network-controlled input turn stderr's unbuffered writes into
+ * a per-packet syscall storm — e.g. duplicate TCP segments on a
+ * retransmission-heavy flow — collapsing throughput toward the syscall
+ * ceiling. Writes from library code go through these macros instead:
+ *
+ *   mmt_debug_log(fmt, ...)     packet-path diagnostics and traces; emits
+ *                               to stderr only in -DDEBUG builds
+ *                               (make SHOWLOG=1) and expands to a no-op
+ *                               expression otherwise.
+ *   mmt_stderr_log(fmt, ...)    unconditional stderr write reserved for
+ *                               one-shot init/configuration failures the
+ *                               operator must see — never on a packet path.
+ *   mmt_stream_printf(f, ...)   caller-directed FILE* writes for the
+ *                               print/dump API (mmt_print_*, attribute
+ *                               formatters, fhexdump): the destination
+ *                               stream is supplied by the caller.
+ */
+#ifdef DEBUG
+#define mmt_debug_log(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define mmt_debug_log(...) ((void)0)
+#endif
+
+#define mmt_stderr_log(...) fprintf(stderr, __VA_ARGS__)
+
+#define mmt_stream_printf(...) fprintf(__VA_ARGS__)
+
 #endif

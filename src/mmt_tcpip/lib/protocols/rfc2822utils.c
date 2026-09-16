@@ -76,7 +76,7 @@ int is_space_or_htab(char c) {
  */
 void print_char_per_char(const char * str, int max) {
     while (max) {
-        printf("%c", *str);
+        mmt_stream_printf(stdout, "%c", *str);
         max--;
         str++;
     }

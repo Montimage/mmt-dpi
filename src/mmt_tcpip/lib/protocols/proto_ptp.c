@@ -46,7 +46,7 @@ int init_proto_ptp_struct() {
 	int ret = register_classification_function_with_parent_protocol( PROTO_UDP, _classify_ptp_from_udp, 100);
 	if (ret == 0) {
 		//no SCTP (need to do if diameter can work with TCP)
-		fprintf(stderr, "Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
+		mmt_stderr_log( "Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
 		return PROTO_NOT_REGISTERED;
 	}
 	return register_protocol(protocol_struct, PROTO_PTP);

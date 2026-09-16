@@ -559,7 +559,7 @@ int ftp_compare_tuple6(ftp_tuple6_t *t1, ftp_tuple6_t * t2) {
 void ftp_set_tuple6_direction(ftp_tuple6_t *tuple6, ftp_tuple6_t *conn, int compare) {
     switch (compare) {
     case 0:
-        fprintf(stderr, "FTP: Not correct control connection\n");
+        mmt_debug_log( "FTP: Not correct control connection\n");
         break;
     case 2:
         tuple6->direction = conn->direction;
@@ -1333,10 +1333,10 @@ uint32_t ftp_get_addr_from_parameter(char * payload, uint32_t payload_len) {
     }
     memcpy(str_addr, payload, len + 1);
     str_addr[len] = '\0';
-    // printf("String before replacing: %s\n",str_addr);
+    // mmt_debug_log("String before replacing: %s\n",str_addr);
     char *new_str_addr = NULL;
     new_str_addr = str_replace_all_char(str_addr, (int)',', (int)'.');
-    // printf("String after replacing: %s\n",str_addr);
+    // mmt_debug_log("String after replacing: %s\n",str_addr);
     if(new_str_addr == NULL) {
         free(str_addr);
         free(indexes);
@@ -2890,7 +2890,7 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
 // void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_data){
 // debug("FTP: FTP_DATA PACKET: %lu",ipacket->packet_id);
 
-//printf("from http generic session data analysis\n");
+//mmt_debug_log("from http generic session data analysis\n");
 // int offset = get_packet_offset_at_index(ipacket, index);
 
 // char *payload = (char*)&ipacket->data[offset];
@@ -2966,7 +2966,7 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
     case MMT_FTP_PORT_CMD:
         current_data_session->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
         if(current_data_session->data_conn->is_ipv6==1){
-            printf("[PROTO_FTP] ftp_request_packet: MMT_FTP_PORT_CMD for IPv6 is not implemented yet! %"PRIu64"\n",ipacket->packet_id);
+            mmt_debug_log("[PROTO_FTP] ftp_request_packet: MMT_FTP_PORT_CMD for IPv6 is not implemented yet! %"PRIu64"\n",ipacket->packet_id);
             // strcpy(&current_data_session->data_conn->c_addr_v6,ftp_get_addr_v6_from_parameter(payload,payload_len));
         }else{
             /* payload + 5 skips the "PORT " prefix — the length must shrink
@@ -2990,7 +2990,7 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
             }
             free(ipv6_address_from_LPRT);
         }else{
-            printf("[PROTO_FTP] ftp_request_packet: MMT_FTP_LPRT_CMD for IPv4 is not implemented yet! %"PRIu64"\n",ipacket->packet_id);
+            mmt_debug_log("[PROTO_FTP] ftp_request_packet: MMT_FTP_LPRT_CMD for IPv4 is not implemented yet! %"PRIu64"\n",ipacket->packet_id);
         }
         current_data_session->data_conn->c_port = ftp_get_data_client_port_from_LPRT(payload, payload_len);
         debug("[PROTO_FTP] %lu current_data_session->data_conn->c_port: %d",ipacket->packet_id,current_data_session->data_conn->c_port);
@@ -3211,7 +3211,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
     debug("FTP: START ANALYSING SESSION DATA OF PACKET: %lu", ipacket->packet_id);
 
-    //printf("from http generic session data analysis\n");
+    //mmt_debug_log("from http generic session data analysis\n");
     // int offset = get_packet_offset_at_index(ipacket, index);
 
     // char *payload = (char*)&ipacket->data[offset];
@@ -3245,7 +3245,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
             }
             compare = ftp_compare_tuple6(tuple6, ftp_control->contrl_conn);
             if (compare == 0) {
-                // fprintf(stderr, "FTP: Not correct control connection\n");
+                // mmt_debug_log( "FTP: Not correct control connection\n");
                 free(tuple6);
                 return MMT_CONTINUE;
             } else {
@@ -3286,7 +3286,7 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         } else {
             // New not FTP control packet
             if (ftp_list_control->next == NULL) {
-                // fprintf(stderr, "FTP: Cannot find any control connection\n");
+                // mmt_debug_log( "FTP: Cannot find any control connection\n");
                 return MMT_CONTINUE;
             } else {
                 ftp_control_session_t *temp = ftp_list_control->next;

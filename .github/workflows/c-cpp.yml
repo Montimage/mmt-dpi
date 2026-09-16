@@ -229,6 +229,11 @@ jobs:
       # the build; the contradictions it tracked are closed, so a regression
       # now fails the job.
       run: bash tools/ci/check-package-deps.sh
+    - name: Packet-path I/O lint (blocking — issue #246)
+      # The gate condition holds — zero unconditional printf/fprintf on
+      # packet paths — so this helper runs as an ordinary blocking step, not
+      # in the advisory loop. A regression now fails the job.
+      run: bash tools/ci/lint-packet-path-io.sh
     - name: Advisory helpers (gate condition still open — owning task flips it)
       run: |
         fail=0
@@ -238,7 +243,6 @@ jobs:
           tools/ci/check-protocol-count.sh
           tools/ci/check-public-decls.sh
           tools/ci/lint-commented-code.sh
-          tools/ci/lint-packet-path-io.sh
           "tools/ci/report-function-shape.sh src/mmt_tcpip/lib/protocols/proto_irc.c"
         )
         for spec in "${helpers[@]}"; do

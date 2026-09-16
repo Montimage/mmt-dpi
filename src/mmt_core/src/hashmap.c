@@ -185,7 +185,7 @@ void hashmap_walk( mmt_hashmap_t *map, mmt_hashmap_walker_t walker, void *arg )
 
 void hashmap_dump( mmt_hashmap_t *map )
 {
-   (void)printf( "*** DUMPING HASHMAP %p\n", map );
+   (void)mmt_stream_printf(stdout, "*** DUMPING HASHMAP %p\n", map );
    hashmap_walk( map, hmap_dump_entry, 0 );
 }
 
@@ -231,8 +231,8 @@ mmt_hent_t *hmap_lookup( mmt_hashmap_t *map, mmt_key_t key )
 
 void hmap_dump_entry( mmt_hashmap_t *map, mmt_hent_t *he, void *arg )
 {
-   (void)printf( "KEY: 0x%p\n", (void*)he->key );
-   (void)printf( "VAL: *(%p)\n",    he->val );
+   (void)mmt_stream_printf(stdout, "KEY: 0x%p\n", (void*)he->key );
+   (void)mmt_stream_printf(stdout, "VAL: *(%p)\n",    he->val );
 }
 
 

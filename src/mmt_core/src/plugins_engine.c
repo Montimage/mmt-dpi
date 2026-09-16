@@ -49,7 +49,7 @@ int load_plugins() {
 	plugins_path=1;
         n = scandir( PLUGINS_REPOSITORY_OPT, &entries, load_filter, alphasort );
 	if (n<0){
-		printf("You don't have any plugin\n");
+		mmt_debug_log("You don't have any plugin\n");
 	        return 1;
 	}
     }
@@ -78,7 +78,7 @@ int load_plugin(char * plugin_path_name) {
 
     plugin_handler = mmt_malloc(sizeof (struct plugin_handler_struct));
     if (plugin_handler == NULL) {
-        fprintf(stderr, "Memory allocation error while initializing plugin %s\n", plugin_path_name);
+        mmt_stderr_log( "Memory allocation error while initializing plugin %s\n", plugin_path_name);
         return 0;
     }
     char *error;
@@ -86,7 +86,7 @@ int load_plugin(char * plugin_path_name) {
     plugin_handler->handler = dlopen(plugin_path_name, RTLD_NOW | RTLD_GLOBAL);
 
     if (!plugin_handler->handler) {
-        fprintf(stderr, "%s\n", dlerror());
+        mmt_stderr_log( "%s\n", dlerror());
         mmt_free(plugin_handler);
         return 0;
     }
@@ -94,7 +94,7 @@ int load_plugin(char * plugin_path_name) {
     init_proto_fct = dlsym(plugin_handler->handler, PLUGIN_INIT_FUNCTION_NAME);
     
     if ((error = dlerror()) != NULL) {
-        fprintf(stderr, "%s\n", error);
+        mmt_stderr_log( "%s\n", error);
         dlclose(plugin_handler->handler);
         mmt_free(plugin_handler);
         return 0;

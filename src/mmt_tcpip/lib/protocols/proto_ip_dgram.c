@@ -209,9 +209,9 @@ int ip_dgram_is_complete( ip_dgram_t *dg )
 
 void ip_dgram_dump( ip_dgram_t *dg )
 {
-   (void)printf( "--- IP DATAGRAM ---\n" );
-   (void)printf( "   id: %p\n", dg );
-   (void)printf( "  len: %d\n", dg->len );
+   (void)mmt_stream_printf(stdout, "--- IP DATAGRAM ---\n" );
+   (void)mmt_stream_printf(stdout, "   id: %p\n", dg );
+   (void)mmt_stream_printf(stdout, "  len: %d\n", dg->len );
 
    ip_dgram_dump_holes( dg );
 }
@@ -227,10 +227,10 @@ void ip_dgram_dump_holes( ip_dgram_t *dg )
    ip_frags_t *holes = &dg->holes;
    ip_frag_t  *hole  = holes->lh_first;
 
-   (void)printf( "holes:" );
+   (void)mmt_stream_printf(stdout, "holes:" );
 
    if( hole == 0 ) {
-      (void)printf( " none - datagram is complete\n" );
+      (void)mmt_stream_printf(stdout, " none - datagram is complete\n" );
       return;
    }
 
@@ -239,7 +239,7 @@ void ip_dgram_dump_holes( ip_dgram_t *dg )
       hole = hole->frags.le_next;
    }
 
-   (void)printf( "\n" );
+   (void)mmt_stream_printf(stdout, "\n" );
 }
 
 /**

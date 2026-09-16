@@ -16,6 +16,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LIB_DIR="${REPO_ROOT}/src/mmt_tcpip/lib"
+CORE_PUBLIC_INC="${REPO_ROOT}/src/mmt_core/public_include"
 TEST_SRC="${SCRIPT_DIR}/test_avltree.c"
 
 CC="${CC:-gcc}"
@@ -25,7 +26,7 @@ CFLAGS="-O2 -Wall -g ${EXTRA_CFLAGS:-}"
 read -r -a cflags <<< "${CFLAGS}"
 
 echo "  building correctness binary ..."
-${CC} "${cflags[@]}" -I "${LIB_DIR}" -o "${SCRIPT_DIR}/test_avltree" \
+${CC} "${cflags[@]}" -I "${LIB_DIR}" -I "${CORE_PUBLIC_INC}" -o "${SCRIPT_DIR}/test_avltree" \
     "${TEST_SRC}" "${LIB_DIR}/avltree.c"
 
 echo

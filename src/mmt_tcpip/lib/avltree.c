@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "avltree.h"
+#include "dbg.h"
 
 /**
  * Create a new AVL Tree node
@@ -10,7 +11,7 @@
 avltree_t * avltree_new() {
     avltree_t * node = (avltree_t *) malloc (sizeof(avltree_t));
     if (node == 0x0) {
-        fprintf(stderr, "[error] Cannot allocate memory for a new AVLTree\n");
+        mmt_stderr_log("[error] Cannot allocate memory for a new AVLTree\n");
         return 0x0;
     }
 
@@ -143,7 +144,7 @@ int avltree_get_height(avltree_t * node, int current_level) {
  */
 avltree_t * avltree_rotate_left(avltree_t * node) {
 #ifdef DEBUG
-    printf("[debug] avltree_rotate_left for node: %d\n", node->key);
+    mmt_debug_log("[debug] avltree_rotate_left for node: %d\n", node->key);
 #endif
     avltree_t * new_root = node->right_child;
     new_root->parent = node->parent;
@@ -187,7 +188,7 @@ avltree_t * avltree_rotate_left(avltree_t * node) {
  */
 avltree_t * avltree_rotate_right(avltree_t * node) {
 #ifdef DEBUG
-    printf("[debug] avltree_rotate_right for node: %d\n", node->key);
+    mmt_debug_log("[debug] avltree_rotate_right for node: %d\n", node->key);
 #endif
     avltree_t * new_root = node->left_child;
     new_root->parent = node->parent;
@@ -231,11 +232,11 @@ avltree_t * avltree_rotate_right(avltree_t * node) {
  */
 avltree_t * avltree_rotate_left_right(avltree_t * node) {
 #ifdef DEBUG
-    printf("[debug] avltree_rotate_left_right for node: %u\n", node->key);
+    mmt_debug_log("[debug] avltree_rotate_left_right for node: %u\n", node->key);
 #endif
     avltree_t * temp_node = avltree_rotate_left(node->left_child);
 #ifdef DEBUG
-    printf("[debug] avltree_rotate_left_right temp_node: %u\n", temp_node->key);
+    mmt_debug_log("[debug] avltree_rotate_left_right temp_node: %u\n", temp_node->key);
 #endif
     avltree_t * new_root = avltree_rotate_right(temp_node->parent);
 #ifdef DEBUG
@@ -251,11 +252,11 @@ avltree_t * avltree_rotate_left_right(avltree_t * node) {
  */
 avltree_t * avltree_rotate_right_left(avltree_t * node) {
 #ifdef DEBUG
-    printf("[debug] avltree_rotate_right_left for node: %u\n", node->key);
+    mmt_debug_log("[debug] avltree_rotate_right_left for node: %u\n", node->key);
 #endif
     avltree_t * temp_node = avltree_rotate_right(node->right_child);
 #ifdef DEBUG
-    printf("[debug] avltree_rotate_right_left temp_node: %u\n", temp_node->key);
+    mmt_debug_log("[debug] avltree_rotate_right_left temp_node: %u\n", temp_node->key);
 #endif
     avltree_t * new_root = avltree_rotate_left(temp_node->parent);
 #ifdef DEBUG
@@ -311,18 +312,18 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
         *is_duplicate = 0;
     }
 #ifdef DEBUG
-    printf("[debug] Insert new node: %u\n", node->key);
+    mmt_debug_log("[debug] Insert new node: %u\n", node->key);
 #endif
     if (root == NULL) {
 #ifdef DEBUG
-        printf("[debug] First node of the tree\n");
+        mmt_debug_log("[debug] First node of the tree\n");
 #endif        
         return node;
     }
     if (root->key > node->key) {
         // Insert in the left subtree
 #ifdef DEBUG
-        printf("[debug] Insert in the left subtree of node: %u\n", root->key);
+        mmt_debug_log("[debug] Insert in the left subtree of node: %u\n", root->key);
 #endif
         if (root->left_child == NULL) {
             root->left_child = node;
@@ -337,15 +338,15 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
                 // cached lookups match the legacy full recomputation exactly.
                 avltree_update_height(parent);
 #ifdef DEBUG
-                printf("[debug] Checking balance of tree: %u\n",parent->key);
+                mmt_debug_log("[debug] Checking balance of tree: %u\n",parent->key);
 #endif
                 int balance_factor = avltree_get_balance_factor(parent);
 #ifdef DEBUG
-                printf("[debug] balance_factor of node %u: %d\n", parent->key, balance_factor);
+                mmt_debug_log("[debug] balance_factor of node %u: %d\n", parent->key, balance_factor);
 #endif
                 if (balance_factor > 1) {
 #ifdef DEBUG
-                    printf("[debug] Tree need to rebalanced on left side: %d\n", balance_factor);
+                    mmt_debug_log("[debug] Tree need to rebalanced on left side: %d\n", balance_factor);
 #endif
                     int balance_factor_child = avltree_get_balance_factor(parent->left_child);
                     if (balance_factor_child > 0) {
@@ -355,12 +356,12 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
                         // left - right -> need to rotate right then left
                         parent = avltree_rotate_left_right(parent);
                     } else {
-                        fprintf(stderr, "[error] Insert left_child and tree unbalanced: %d / %d \n", balance_factor, balance_factor_child);
+                        mmt_debug_log( "[error] Insert left_child and tree unbalanced: %d / %d \n", balance_factor, balance_factor_child);
                         avltree_show_tree(parent);
                     }
                 } else if (balance_factor < -1) {
 #ifdef DEBUG
-                    printf("[debug] Tree need to rebalanced on right side: %d\n", balance_factor);
+                    mmt_debug_log("[debug] Tree need to rebalanced on right side: %d\n", balance_factor);
 #endif
                     int balance_factor_child = avltree_get_balance_factor(parent->right_child);
                     if (balance_factor_child > 0) {
@@ -370,7 +371,7 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
                         // right - right -> need to rotate left
                         parent = avltree_rotate_left(parent);
                     } else {
-                        fprintf(stderr, "[error] Insert left_child and tree unbalanced: %d / %d \n", balance_factor, balance_factor_child);
+                        mmt_debug_log( "[error] Insert left_child and tree unbalanced: %d / %d \n", balance_factor, balance_factor_child);
                         avltree_show_tree(parent);
                     }
                 }
@@ -382,7 +383,7 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
     } else if(root->key < node->key){
         // Insert in the right subtree
 #ifdef DEBUG
-        printf("[debug] Insert in the right subtree of node: %u\n", root->key);
+        mmt_debug_log("[debug] Insert in the right subtree of node: %u\n", root->key);
 #endif
         if (root->right_child == NULL) {
             root->right_child = node;
@@ -398,11 +399,11 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
                 avltree_update_height(parent);
                 int balance_factor = avltree_get_balance_factor(parent);
 #ifdef DEBUG
-                printf("[debug] balance_factor of node %u: %d\n", parent->key, balance_factor);
+                mmt_debug_log("[debug] balance_factor of node %u: %d\n", parent->key, balance_factor);
 #endif
                 if (balance_factor > 1) {
 #ifdef DEBUG
-                    printf("[debug] Tree need to rebalanced on left side: %d\n", balance_factor);
+                    mmt_debug_log("[debug] Tree need to rebalanced on left side: %d\n", balance_factor);
 #endif
                     int balance_factor_child = avltree_get_balance_factor(parent->left_child);
                     if (balance_factor_child > 0) {
@@ -412,12 +413,12 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
                         // left - right -> need to rotate right then left
                         parent = avltree_rotate_left_right(parent);
                     } else {
-                        fprintf(stderr, "[error] Insert left_child and tree unbalanced: %d / %d \n", balance_factor, balance_factor_child);
+                        mmt_debug_log( "[error] Insert left_child and tree unbalanced: %d / %d \n", balance_factor, balance_factor_child);
                         avltree_show_tree(parent);
                     }
                 } else if (balance_factor < -1) {
 #ifdef DEBUG
-                    printf("[debug] Tree need to rebalanced on right side: %d\n", balance_factor);
+                    mmt_debug_log("[debug] Tree need to rebalanced on right side: %d\n", balance_factor);
 #endif
                     int balance_factor_child = avltree_get_balance_factor(parent->right_child);
                     if (balance_factor_child > 0) {
@@ -427,7 +428,7 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
                         // right - right -> need to rotate left
                         parent = avltree_rotate_left(parent);
                     } else {
-                        fprintf(stderr, "[error] Insert left_child and tree unbalanced: %d / %d \n", balance_factor, balance_factor_child);
+                        mmt_debug_log( "[error] Insert left_child and tree unbalanced: %d / %d \n", balance_factor, balance_factor_child);
                         avltree_show_tree(parent);
                     }
                 }
@@ -440,7 +441,7 @@ avltree_t * avltree_insert_ex(avltree_t * root, avltree_t * node, int * is_dupli
         if (is_duplicate != NULL) {
             *is_duplicate = 1;
         }
-        printf("[info] Node is already exist: %u - %p | %u - %p\n",root->key,root->data ,node->key,node->data );
+        mmt_debug_log("[info] Node is already exist: %u - %p | %u - %p\n",root->key,root->data ,node->key,node->data );
     }
     /* F-BUG-027: return the root of the EXISTING tree. On a duplicate, node was
      * never linked so avltree_get_root(node) would be node itself — returning
@@ -494,9 +495,9 @@ void avltree_show_tree(avltree_t * node) {
 
 void avltree_show_node(avltree_t * node) {
     if (node == NULL) {
-        printf("\"NULL\"");
+        mmt_debug_log("\"NULL\"");
     } else {
-        printf("{Key: %u, Left: %u, Right: %u}\n", node->key, node->left_child == NULL ? 0 : node->left_child->key, node->right_child == NULL ? 0 : node->right_child->key);
+        mmt_debug_log("{Key: %u, Left: %u, Right: %u}\n", node->key, node->left_child == NULL ? 0 : node->left_child->key, node->right_child == NULL ? 0 : node->right_child->key);
     }
 }
 

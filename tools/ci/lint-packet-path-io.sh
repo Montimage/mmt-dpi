@@ -33,7 +33,9 @@ done
 hits="$(grep -rnE '^[^/]*\b(printf|fprintf)[[:space:]]*\(' \
         src/mmt_core/src src/mmt_tcpip/lib --include='*.c' \
     | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#[[:space:]]*define' || true)"
-count="$(printf '%s\n' "$hits" | grep -c .)"
+# `grep -c .` exits 1 on a zero count, which `set -e` would turn into a
+# silent failure before the success path — keep the count, swallow the status.
+count="$(printf '%s\n' "$hits" | grep -c . || true)"
 
 if [ "$count" -ne 0 ]; then
     echo "✗ $count unconditional printf/fprintf call(s) on packet-path code:" >&2
