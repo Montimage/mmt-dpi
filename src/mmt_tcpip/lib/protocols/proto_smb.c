@@ -575,12 +575,6 @@ static attribute_metadata_t smb_attributes_metadata[SMB_ATTRIBUTES_NB] = {
     {SMB_NT_CREATE_FILE_NAME,SMB_NT_CREATE_FILE_NAME_ALIAS,MMT_HEADER_LINE,sizeof (void *),POSITION_NOT_KNOWN,SCOPE_PACKET,smb_nt_create_file_name_extraction},
 };
 
-void mmt_init_classify_me_smb() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SMB);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 void smb_setup_session_context(ipacket_t *ipacket, unsigned index, smb_session_t * root)
@@ -805,7 +799,9 @@ int init_proto_smb_struct() {
         for (; i < SMB_ATTRIBUTES_NB; i++) {
             register_attribute_with_protocol(protocol_struct, &smb_attributes_metadata[i]);
         }
-        mmt_init_classify_me_smb();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                PROTO_UNKNOWN, PROTO_SMB);
 
         register_session_data_analysis_function(protocol_struct, smb_session_data_analysis);
 

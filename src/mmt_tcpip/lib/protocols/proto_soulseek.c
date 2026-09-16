@@ -279,20 +279,15 @@ int mmt_check_soulseek(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-void mmt_init_classify_me_soulseek() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOULSEEK);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SOULSEEK);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_soulseek_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_SOULSEEK, PROTO_SOULSEEK_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_soulseek();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+                PROTO_SOULSEEK, PROTO_SOULSEEK);
         
         return register_protocol(protocol_struct, PROTO_SOULSEEK);
     } else {

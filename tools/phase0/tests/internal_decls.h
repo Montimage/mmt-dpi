@@ -57,7 +57,7 @@ void dns_free_name(dns_name_t *dns_name);
 
 /* --- protocols/proto_dtls.c ------------------------------------------------ */
 int classify_dtls_from_udp(ipacket_t *ipacket, unsigned index);
-void mmt_init_classify_me_dtls(void);
+int init_proto_dtls_struct(void);
 
 /* --- mmt_tcpip_classif_utils.c (externally-updatable IP-range / port map,
  *     hostname tables) ---
@@ -187,7 +187,7 @@ int mmt_payload_confirms_proto(uint32_t proto_id,
 
 /* --- protocols/proto_quic.c --------------------------------------------------- */
 int mmt_check_quic(ipacket_t *ipacket, unsigned index);
-void mmt_init_classify_me_quic(void);
+int init_proto_quic_struct(void);
 
 /* --- protocols/proto_redis.c -------------------------------------------------- */
 int redis_is_resp_opener(uint8_t c);
@@ -196,7 +196,7 @@ int redis_resp_exchange_match(uint8_t a, uint8_t b);
 /* --- protocols/proto_skype.c -------------------------------------------------- */
 int mmt_check_skype_tcp(ipacket_t *ipacket, unsigned index);
 int mmt_check_skype_udp(ipacket_t *ipacket, unsigned index);
-void mmt_init_classify_me_skype(void);
+int init_proto_skype_struct(void);
 
 /* --- protocols/proto_ssl.c (SNI / record / version helpers) ------------------- */
 int getServerNameFromClientHello(ipacket_t *ipacket, char *buffer, int buffer_len);

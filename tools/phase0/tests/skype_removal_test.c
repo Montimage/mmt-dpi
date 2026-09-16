@@ -85,8 +85,8 @@
 #include "mmt_tcpip_internal_defs_macros.h"
 
 /*
- * mmt_check_skype_tcp(), mmt_check_skype_udp() and
- * mmt_init_classify_me_skype() are exported (non-static) in
+ * mmt_check_skype_tcp(), mmt_check_skype_udp() and init_proto_skype_struct()
+ * are exported (non-static) in
  * src/mmt_tcpip/lib/protocols/proto_skype.c but not declared in any public
  * header; they come from the shared internal header (issue #186).
  */
@@ -294,7 +294,12 @@ static void test_udp_already_classified_flow_not_reclassified(void)
 int main(void)
 {
     printf("=== Skype false-positive heuristic removal test (issue #102) ===\n");
-    mmt_init_classify_me_skype();
+    /* init_proto_skype_struct() registers the protocol and populates the
+     * file-scope bitmasks the classify gates read (issue #226 folded the old
+     * init wrapper into it); init_extraction() allocates the registry it
+     * registers into. */
+    init_extraction();
+    init_proto_skype_struct();
     test_tcp_coincidental_shape_no_longer_classifies_skype();
     test_udp_coincidental_shape_no_longer_classifies_skype();
     test_tcp_already_classified_flow_not_reclassified();

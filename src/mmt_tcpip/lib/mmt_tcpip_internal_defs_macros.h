@@ -274,6 +274,37 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
 #define MMT_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(MMT_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP | MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | MMT_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
 #define MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP | MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | MMT_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
 
+    /* Issue #226 (F-DEAD-011): every protocol used to carry a private
+     * `void mmt_init_classify_me_<proto>(void)` wrapper that only filled its
+     * translation unit's selection/detection/excluded bitmasks — 106 copies of
+     * the same body differing only in the protocol id. They are folded into
+     * this single generic helper, invoked by the registered
+     * init_proto_*_struct functions that proto_init_table
+     * (proto_init_list.def) drives. The bitmasks stay file-scope in each
+     * protocol TU (the check functions read them directly), so callers pass
+     * pointers to their own three globals.
+     *
+     * `detection_add` is an extra protocol OR'd into detection_bitmask on top
+     * of PROTO_UNKNOWN — pass PROTO_UNKNOWN when the protocol marks nothing
+     * extra (adding PROTO_UNKNOWN again would be a no-op anyway).
+     *
+     * static inline keeps the helper a single source definition with no
+     * exported symbol, so deleting the 106 wrappers drops libmmt_tcpip.so's
+     * exported `_init` symbols by exactly 106. */
+    static inline void mmt_init_classify_bitmasks(
+        MMT_SELECTION_BITMASK_PROTOCOL_SIZE *selection_bitmask,
+        MMT_PROTOCOL_BITMASK *detection_bitmask,
+        MMT_PROTOCOL_BITMASK *excluded_protocol_bitmask,
+        MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_value,
+        uint32_t detection_add, uint32_t excluded_proto) {
+        *selection_bitmask = selection_value;
+        MMT_SAVE_AS_BITMASK(*detection_bitmask, PROTO_UNKNOWN);
+        if (detection_add != PROTO_UNKNOWN) {
+            MMT_ADD_PROTOCOL_TO_BITMASK(*detection_bitmask, detection_add);
+        }
+        MMT_SAVE_AS_BITMASK(*excluded_protocol_bitmask, excluded_proto);
+    }
+
     /* safe src/dst protocol check macros... */
 
 #define MMT_SRC_HAS_PROTOCOL(src,protocol) ((src) != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK((src)->detected_protocol_bitmask,(protocol)) != 0)

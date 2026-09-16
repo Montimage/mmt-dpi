@@ -105,20 +105,15 @@ int mmt_check_veohtv_udp(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_veohtv() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_http_application_veohtv_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_HTTP_APPLICATION_VEOHTV, PROTO_HTTP_APPLICATION_VEOHTV_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_veohtv();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                PROTO_HTTP, PROTO_HTTP_APPLICATION_VEOHTV);
 
         return register_protocol(protocol_struct, PROTO_HTTP_APPLICATION_VEOHTV);
     } else {

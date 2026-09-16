@@ -282,20 +282,15 @@ int mmt_check_imesh_udp(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_imesh() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SSL);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_IMESH);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_imesh_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_IMESH, PROTO_IMESH_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_imesh();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
+                PROTO_SSL, PROTO_IMESH);
         
         return register_protocol(protocol_struct, PROTO_IMESH);
     } else {

@@ -53,8 +53,9 @@
 /*
  * Entry point under test. mmt_check_quic() is exported and declared in
  * mmt_common_internal_include.h, but that header is not installed; declare it
- * here. mmt_init_classify_me_quic() populates the file-scope selection /
- * detection / excluded bitmasks the gate at the top of mmt_check_quic() reads;
+ * here. init_proto_quic_struct() registers the protocol and populates the
+ * file-scope selection / detection / excluded bitmasks the gate at the top of
+ * mmt_check_quic() reads (issue #226 folded the old init wrapper into it);
  * it is non-static but undeclared in any public header.
  */
 #include "internal_decls.h"
@@ -180,8 +181,11 @@ int main(void)
 {
     printf("=== QUIC minimum-length gating test (issue #6: H3) ===\n");
     /* Populate the file-scope selection/detection/excluded bitmasks that the
-     * gate at the top of mmt_check_quic() compares against. */
-    mmt_init_classify_me_quic();
+     * gate at the top of mmt_check_quic() compares against. init_extraction()
+     * allocates the global protocol registry init_proto_quic_struct()
+     * registers into. */
+    init_extraction();
+    init_proto_quic_struct();
     test_min_len_gate();
     test_version_read_in_bounds();
     printf("=== %d checks, %d failure(s) ===\n", g_checks, g_failures);

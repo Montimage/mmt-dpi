@@ -3362,13 +3362,6 @@ void cleanup_ftp_context(void * proto_context, void * args) {
     }
 }
 
-void mmt_init_classify_me_ftp() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION  ;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FTP);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_FTP);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_ftp_struct() {
@@ -3380,7 +3373,9 @@ int init_proto_ftp_struct() {
         }
         register_proto_context_init_cleanup_function(protocol_struct, setup_ftp_context, cleanup_ftp_context, NULL);
         register_session_data_analysis_function(protocol_struct, ftp_session_data_analysis);
-        mmt_init_classify_me_ftp();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION,
+                PROTO_FTP, PROTO_FTP);
 
         return register_protocol(protocol_struct, PROTO_FTP);
     } else {

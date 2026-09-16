@@ -255,20 +255,15 @@ int mmt_check_oscar(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-void mmt_init_classify_me_oscar() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_OSCAR);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_OSCAR);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_oscar_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_OSCAR, PROTO_OSCAR_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_oscar();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                PROTO_OSCAR, PROTO_OSCAR);
         
         return register_protocol(protocol_struct, PROTO_OSCAR);
     } else {

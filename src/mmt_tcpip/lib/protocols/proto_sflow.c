@@ -29,20 +29,15 @@ int mmt_check_sflow(ipacket_t * ipacket, unsigned index) { //BW: TODO: check thi
     return 4;
 }
 
-void mmt_init_classify_me_sflow() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SFLOW); //BW: TODO: check this out!
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SFLOW);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_sflow_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_SFLOW, PROTO_SFLOW_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_sflow();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+                PROTO_SFLOW, PROTO_SFLOW);
 
         return register_protocol(protocol_struct, PROTO_SFLOW);
     } else {

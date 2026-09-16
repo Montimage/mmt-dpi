@@ -62,7 +62,7 @@
 #include "mmt_tcpip_internal_defs_macros.h"
 
 /*
- * classify_dtls_from_udp() and mmt_init_classify_me_dtls() are exported
+ * classify_dtls_from_udp() and init_proto_dtls_struct() are exported
  * (non-static) in src/mmt_tcpip/lib/protocols/proto_dtls.c but not declared
  * in any public header; they come from the shared internal header
  * (issue #186).
@@ -239,7 +239,12 @@ static void test_genuine_dtls_versions_classify(void)
 int main(void)
 {
     printf("=== DTLS classifier guard test (issue #104) ===\n");
-    mmt_init_classify_me_dtls();
+    /* init_proto_dtls_struct() registers the protocol and populates the
+     * file-scope bitmasks classify_dtls_from_udp()'s gate reads (issue #226
+     * folded the old init wrapper into it); init_extraction() allocates the
+     * registry it registers into. */
+    init_extraction();
+    init_proto_dtls_struct();
     test_already_classified_flow_not_reclassified();
     test_excluded_flow_not_reclassified();
     test_version_0x0100_rejected();

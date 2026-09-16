@@ -233,12 +233,6 @@ static attribute_metadata_t dtls_attributes_metadata[] = {
 	{DTLS_CLIENT_HELLO_CIPHER_SUITE, DTLS_CLIENT_HELLO_CIPHER_SUITE_ALIAS, MMT_U16_ARRAY, U16_ARRAY_TYPE_LEN, 0, SCOPE_PACKET, _dtls_extract_attribute },
 };
 
-void mmt_init_classify_me_dtls() {
-	selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
-	MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-	MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_DTLS);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_dtls_struct() {
@@ -250,7 +244,9 @@ int init_proto_dtls_struct() {
 			register_attribute_with_protocol(protocol_struct, &dtls_attributes_metadata[i]);
 		}
 
-		mmt_init_classify_me_dtls();
+		mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+		        &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+		        PROTO_UNKNOWN, PROTO_DTLS);
 
 		register_classification_function_with_parent_protocol(PROTO_UDP, classify_dtls_from_udp, 20);
 		return register_protocol(protocol_struct, PROTO_DTLS);

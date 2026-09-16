@@ -4,4 +4,10 @@
 # commit that introduced the gate. Tasks 5.2/5.3 fold these per-protocol
 # wrappers into one generic function — lower this number as they land.
 # The gate fails only when the count RISES above this value.
-119
+#
+# Issue #226 folded the 106 canonical-shape wrappers into
+# mmt_init_classify_bitmasks(); the 13 left are the richer, non-canonical
+# wrappers (multi-protocol detection lists, extra exclusions) that Task 5.3
+# (#227) owns. tools/ci/check-canonical-init-wrappers.sh pins the
+# canonical-shape count at 0.
+13

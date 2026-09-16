@@ -1169,12 +1169,6 @@ int mmt_check_dns(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-void mmt_init_classify_me_dns() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_DNS);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_dns_struct() {
@@ -1185,7 +1179,9 @@ int init_proto_dns_struct() {
             register_attribute_with_protocol(protocol_struct, &dns_attributes_metadata[i]);
         }
 
-        mmt_init_classify_me_dns();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                PROTO_UNKNOWN, PROTO_DNS);
 
         /* Session context specific initializations */
         // register_session_data_initialization_function(protocol_struct, dns_session_data_init);

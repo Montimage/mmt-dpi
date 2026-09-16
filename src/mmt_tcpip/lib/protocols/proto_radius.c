@@ -1977,12 +1977,6 @@ void radius_vendor_specific_fields_analysis(ipacket_t * ipacket, uint8_t * v_fie
     radius_session_data->vendor_3gpp_tlvs[tlv->type] = tlv;
 }
 
-void mmt_init_classify_me_radius() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_RADIUS);
-}
-
 void radius_session_data_init(ipacket_t * ipacket, unsigned index) {
     /*
      * Issue #23: RADIUS parser state is stored per-session (allocated into the
@@ -2236,7 +2230,9 @@ int init_proto_radius_struct() {
             register_attribute_with_protocol(protocol_struct, &radius_attributes_metadata[i]);
         }
 
-        mmt_init_classify_me_radius();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+                PROTO_UNKNOWN, PROTO_RADIUS);
         register_session_data_initialization_function(protocol_struct, radius_session_data_init);
         register_session_data_cleanup_function(protocol_struct, radius_session_data_cleanup);
         register_session_data_analysis_function(protocol_struct, radius_session_data_analysis);

@@ -197,12 +197,6 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 }
 
 
-void mmt_init_classify_me_gtp() {
-	selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD;
-	MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-	MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_GTP);
-}
-
 /* extracted_data->data is NULL once a packet took the not-extracted path —
  * every extractor must bail before writing through it (issue #216). */
 int gtp_version_flag_extraction(const ipacket_t * packet, unsigned proto_index,
@@ -449,7 +443,9 @@ int init_proto_gtp_struct() {
 			if( !register_attribute_with_protocol(protocol_struct, &gtp_attributes_metadata[i]) )
 				log_err("Cannot register attribute %s.%s", PROTO_GTP_ALIAS, gtp_attributes_metadata[i].alias);;
 		}
-		mmt_init_classify_me_gtp();
+		mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+		        &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+		        PROTO_UNKNOWN, PROTO_GTP);
 		register_classification_function(protocol_struct, gtp_classify_next_proto);
 		return register_protocol(protocol_struct, PROTO_GTP);
 	} else {

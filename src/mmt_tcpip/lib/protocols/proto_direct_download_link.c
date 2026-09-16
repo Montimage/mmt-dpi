@@ -701,20 +701,15 @@ int mmt_check_direct_download_link(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-void mmt_init_classify_me_direct_download_link() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DIRECT_DOWNLOAD_LINK);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_DIRECT_DOWNLOAD_LINK);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_direct_download_link_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_DIRECT_DOWNLOAD_LINK, PROTO_DIRECT_DOWNLOAD_LINK_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_direct_download_link();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+                PROTO_DIRECT_DOWNLOAD_LINK, PROTO_DIRECT_DOWNLOAD_LINK);
         
         return register_protocol(protocol_struct, PROTO_DIRECT_DOWNLOAD_LINK);
     } else {

@@ -116,13 +116,6 @@ int mmt_check_redis(ipacket_t * ipacket, unsigned index)
     return 0;
 }
 
-void mmt_init_classify_me_redis() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REDIS);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_REDIS);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_redis_struct() {
@@ -138,7 +131,9 @@ int init_proto_redis_struct() {
         // register_pre_post_classification_functions(protocol_struct, NULL, NULL);
         // register_proto_context_init_cleanup_function(protocol_struct, setup_ndn_context, cleanup_ndn_context, NULL);
         // register_session_data_analysis_function(protocol_struct, ndn_session_data_analysis);
-        mmt_init_classify_me_redis();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                PROTO_REDIS, PROTO_REDIS);
 
         return register_protocol(protocol_struct, PROTO_REDIS);
     } else {

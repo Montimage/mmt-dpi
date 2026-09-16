@@ -46,19 +46,15 @@ int mmt_check_kerberos(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_kerberos() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_KERBEROS);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_kerberos_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_KERBEROS, PROTO_KERBEROS_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_kerberos();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                PROTO_UNKNOWN, PROTO_KERBEROS);
 
         return register_protocol(protocol_struct, PROTO_KERBEROS);
     } else {

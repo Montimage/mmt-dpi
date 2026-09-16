@@ -67,20 +67,15 @@ int mmt_check_warcraft3(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_warcraft3() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WARCRAFT3);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_WARCRAFT3);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_warcraft3_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_WARCRAFT3, PROTO_WARCRAFT3_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_warcraft3();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
+                PROTO_WARCRAFT3, PROTO_WARCRAFT3);
 
         return register_protocol(protocol_struct, PROTO_WARCRAFT3);
     } else {

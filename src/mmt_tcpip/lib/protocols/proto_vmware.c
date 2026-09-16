@@ -41,13 +41,6 @@ int mmt_check_vmware(ipacket_t * ipacket, unsigned index)
     return 0;
 }
 
-void mmt_init_classify_me_vmware() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VMWARE);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_VMWARE);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_vmware_struct() {
@@ -63,7 +56,9 @@ int init_proto_vmware_struct() {
         // register_pre_post_classification_functions(protocol_struct, NULL, NULL);
         // register_proto_context_init_cleanup_function(protocol_struct, setup_ndn_context, cleanup_ndn_context, NULL);
         // register_session_data_analysis_function(protocol_struct, ndn_session_data_analysis);
-        mmt_init_classify_me_vmware();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+                PROTO_VMWARE, PROTO_VMWARE);
 
         return register_protocol(protocol_struct, PROTO_VMWARE);
     } else {

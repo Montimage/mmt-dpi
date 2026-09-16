@@ -417,12 +417,6 @@ int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
     }
     return 0;
 }
-
-void mmt_init_classify_me_netbios() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_NETBIOS);
-}
 /*
 DIRECT_UNIQUE, DIRECT_GROUP, & BROADCAST DATAGRAM
 */
@@ -471,7 +465,9 @@ int init_proto_netbios_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_NETBIOS, PROTO_NETBIOS_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_netbios();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                PROTO_UNKNOWN, PROTO_NETBIOS);
         register_classification_function(protocol_struct, netbios_classify_next_proto);
         return register_protocol(protocol_struct, PROTO_NETBIOS);
     } else {

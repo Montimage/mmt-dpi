@@ -35,19 +35,15 @@ int mmt_check_http_application_activesync(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_http_application_activesync() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP_APPLICATION_ACTIVESYNC);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_http_application_activesync_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_HTTP_APPLICATION_ACTIVESYNC, PROTO_HTTP_APPLICATION_ACTIVESYNC_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_http_application_activesync();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                PROTO_UNKNOWN, PROTO_HTTP_APPLICATION_ACTIVESYNC);
 
         return register_protocol(protocol_struct, PROTO_HTTP_APPLICATION_ACTIVESYNC);
     } else {

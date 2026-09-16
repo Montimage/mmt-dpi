@@ -200,13 +200,6 @@ int mmt_check_quic(ipacket_t * ipacket, unsigned index)
     return 0;
 }
 
-void mmt_init_classify_me_quic() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_QUIC);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_QUIC);
-}
-
 
 int init_proto_quic_struct() {
     
@@ -221,7 +214,9 @@ int init_proto_quic_struct() {
         // register_pre_post_classification_functions(protocol_struct, NULL, NULL);
         // register_proto_context_init_cleanup_function(protocol_struct, setup_ndn_context, cleanup_ndn_context, NULL);
         // register_session_data_analysis_function(protocol_struct, ndn_session_data_analysis);
-        mmt_init_classify_me_quic();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                PROTO_QUIC, PROTO_QUIC);
 
         return register_protocol(protocol_struct, PROTO_QUIC);
     } else {
