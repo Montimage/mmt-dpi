@@ -369,7 +369,7 @@ void internal_attribute_iterator_callback(void * key, void * value, void * args)
 }
 
 void internal_handler_iterator_callback(void * key, void * value, void * args) {
-    ((generic_handler_iteration_callback) ((struct internal_handler_iterator_struct *) args)->iterator_fct)(value, ((struct internal_attribute_iterator_struct *) args)->args);
+    ((generic_handler_iteration_callback) ((struct internal_handler_iterator_struct *) args)->iterator_fct)(value, ((struct internal_handler_iterator_struct *) args)->args);
 }
 
 void iterate_through_protocol_attributes(uint32_t proto_id, generic_protocol_attribute_iteration_callback iterator_fct, void * args) {

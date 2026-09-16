@@ -156,6 +156,7 @@ DEFAULT_SUITES=(
     hashmap
     memory
     fault_injection
+    core_engine
     hexdump
     mmt_utils
     mmt_inet_ntop

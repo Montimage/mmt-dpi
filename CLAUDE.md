@@ -6,7 +6,7 @@ GCC is the supported toolchain. Environment details: @docs/AGENT_ENVIRONMENT.md
 ## Critical commands
 
 - Build (there is no top-level Makefile): `make -C sdk -j$(nproc)` — exit 0 = green; warnings are informational (never `-Werror`)
-- Test: `bash tests/run_all_tests.sh` — the 12 suites are standalone: no prior build or install needed; the ones that need the built SDK build it themselves into a throwaway prefix, running `make -C sdk clean` first (so a suite run discards an existing `sdk/` build); [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing) is authoritative for that count, the runtime band and the exit codes
+- Test: `bash tests/run_all_tests.sh` — the 17 suites are standalone: no prior build or install needed; the ones that need the built SDK build it themselves into a throwaway prefix, running `make -C sdk clean` first (so a suite run discards an existing `sdk/` build); [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing) is authoritative for that count, the runtime band and the exit codes
 - Run a subset: `bash tests/run_all_tests.sh hashmap memory`
 - Sanitized suites: `SANITIZE=asan|tsan bash tests/run_all_tests.sh` (mirrors `BUILD=asan`/`BUILD=tsan`; tsan re-execs under `setarch -R`)
 - Coverage: `bash tests/run_all_tests.sh --coverage` — writes `tests/coverage/coverage.info` (lcov tracefile) and prints the overall line percentage

@@ -180,9 +180,9 @@ sdk/Makefile:140-141	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dis
 sdk/Makefile:316-321	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
 tests/run_all_tests.sh:8-98	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
 tests/run_all_tests.sh:86-89	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled
-tests/run_all_tests.sh:155-172	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	installer
-tests/run_all_tests.sh:185-287	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
-tests/run_all_tests.sh:289-305	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
+tests/run_all_tests.sh:155-173	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	installer
+tests/run_all_tests.sh:186-288	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
+tests/run_all_tests.sh:290-306	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
 CITATIONS
 
 registered="$(printf '%s' "$registered" | grep -v '^$' | sort -u)"
