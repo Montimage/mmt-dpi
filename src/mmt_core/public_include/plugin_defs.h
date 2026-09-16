@@ -11,6 +11,8 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
+#include <stdbool.h>
+
 #include "data_defs.h"
 
 /**
@@ -76,7 +78,7 @@ typedef int (*generic_get_attribute_scope) (mmt_proto_id_t proto_id, uint32_t at
 /**
  * Signature of the function for cleaning up the protocol stack internal data.
  */
-typedef void (*stack_internal_cleanup)(void * stack_internal_context);
+typedef void (*stack_internal_cleanup)(mmt_opaque_t stack_internal_context);
 
 /**
  * Signature of the function that every plugin MUST implement. In the plugin, the function name MUST be "init_proto".
@@ -142,22 +144,22 @@ typedef enum mmt_classify_verdict_enum {
 /**
  * Signature of the function for sessionizing a packet. That is, associating a packet to its communication session.
  */
-typedef void * (*generic_sessionizer_function)(void * protocol_context, ipacket_t * ipacket, unsigned previous_index, int * is_new);
+typedef void * (*generic_sessionizer_function)(mmt_opaque_t protocol_context, ipacket_t * ipacket, unsigned previous_index, int * is_new);
 
 /**
  * Signature of the function for initializing the protocol context.
  */
-typedef void * (*generic_proto_context_init_function)(void * protocol_context, void * args);
+typedef void * (*generic_proto_context_init_function)(mmt_opaque_t protocol_context, mmt_opaque_t args);
 
 /**
  * Signature of the function for cleaning up the protocol context.
  */
-typedef void (*generic_proto_context_cleanup_function)(void * protocol_context, void * args);
+typedef void (*generic_proto_context_cleanup_function)(mmt_opaque_t protocol_context, mmt_opaque_t args);
 
 /**
  * Signature of the function for cleaning up the protocol context (protocol struct).
  */
-typedef int (*generic_session_context_cleanup_function)(void * protocol_context, mmt_session_t * session_context, void * args);
+typedef int (*generic_session_context_cleanup_function)(mmt_opaque_t protocol_context, mmt_session_t * session_context, mmt_opaque_t args);
 
 /**
  * Signature of a protocol's session data initialization function.
@@ -181,7 +183,7 @@ MMTAPI int MMTCALL set_classified_proto(
  * proto_id has multiple registered classification functions. Must be either between 0 to 9 or 90 to 100.
  * @return a positive value on success, zero on failure.
  */
-MMTAPI int MMTCALL register_classification_function_with_parent_protocol(
+MMTAPI bool MMTCALL register_classification_function_with_parent_protocol(
     mmt_proto_id_t proto_id,
     generic_classification_function classification_fct,
     int weight
@@ -195,7 +197,7 @@ MMTAPI int MMTCALL register_classification_function_with_parent_protocol(
  * @param classification_fct The classification function.
  * @return a positive value on success, zero on failure.
  */
-MMTAPI int MMTCALL register_classification_function(
+MMTAPI bool MMTCALL register_classification_function(
     protocol_t *protocol_struct,
     generic_classification_function classification_fct
 );
@@ -213,7 +215,7 @@ MMTAPI int MMTCALL register_classification_function(
  * @param post_classification The post-classification routine.
  * @return a positive value on success, zero value on failure.
  */
-MMTAPI int MMTCALL register_classification_function_full(
+MMTAPI bool MMTCALL register_classification_function_full(
     protocol_t *protocol_struct,
     generic_classification_function classification_fct,
     int weight,
@@ -230,7 +232,7 @@ MMTAPI int MMTCALL register_classification_function_full(
  * @param post_classification The post-classification routine.
  * @return a positive value on success, zero value on failure.
  */
-MMTAPI int MMTCALL register_pre_post_classification_functions(
+MMTAPI bool MMTCALL register_pre_post_classification_functions(
     protocol_t *protocol_struct,
     generic_classification_function pre_classification,
     generic_classification_function post_classification
@@ -275,7 +277,7 @@ MMTAPI void MMTCALL register_proto_context_init_cleanup_function(
     protocol_t *protocol_struct,
     generic_proto_context_init_function context_init_fct,
     generic_proto_context_cleanup_function context_cleanup_fct,
-    void *args
+    mmt_opaque_t args
 );
 
 /**
@@ -310,7 +312,7 @@ MMTAPI void MMTCALL register_session_data_cleanup_function(
  * Must be either between 0 to 9 or 90 to 100.
  * @return a positive value on success, zero on failure.
  */
-MMTAPI int MMTCALL register_session_data_analysis_function_with_protocol(
+MMTAPI bool MMTCALL register_session_data_analysis_function_with_protocol(
     mmt_proto_id_t proto_id,
     generic_session_data_analysis_function session_data_analysis_fct,
     int weight
@@ -324,7 +326,7 @@ MMTAPI int MMTCALL register_session_data_analysis_function_with_protocol(
  * @param session_data_analysis_fct the session data analysis function to register.
  * @return a positive value on success, zero on failure.
  */
-MMTAPI int MMTCALL register_session_data_analysis_function(
+MMTAPI bool MMTCALL register_session_data_analysis_function(
     protocol_t *protocol_struct,
     generic_session_data_analysis_function session_data_analysis_fct
 );
@@ -343,7 +345,7 @@ MMTAPI int MMTCALL register_session_data_analysis_function(
  * @param post_analysis The post-analysis routine.
  * @return a positive value on success, zero value on failure.
  */
-MMTAPI int MMTCALL register_session_data_analysis_function_full(
+MMTAPI bool MMTCALL register_session_data_analysis_function_full(
     protocol_t *protocol_struct,
     generic_session_data_analysis_function session_data_analysis_fct,
     int weight,
@@ -360,7 +362,7 @@ MMTAPI int MMTCALL register_session_data_analysis_function_full(
  * @param post_analysis The post-analysis routine.
  * @return a positive value on success, zero value on failure.
  */
-MMTAPI int MMTCALL register_pre_post_analysis_functions(
+MMTAPI bool MMTCALL register_pre_post_analysis_functions(
     protocol_t *protocol_struct,
     generic_session_data_analysis_function pre_analysis,
     generic_session_data_analysis_function post_analysis
@@ -374,7 +376,7 @@ MMTAPI int MMTCALL register_pre_post_analysis_functions(
  * @param fct The base classification function corresponding to the protocol stack to register.
  * @return a positive value on success, zero value on failure.
  */
-MMTAPI int MMTCALL register_protocol_stack(
+MMTAPI bool MMTCALL register_protocol_stack(
     uint32_t s_id,
     char *s_name,
     generic_stack_classification_function fct
@@ -391,12 +393,12 @@ MMTAPI int MMTCALL register_protocol_stack(
  * @param stack_internal_context The pointer to the stack internal context data.
  * @return a positive value on success, zero value on failure.
  */
-MMTAPI int MMTCALL register_protocol_stack_full(
+MMTAPI bool MMTCALL register_protocol_stack_full(
     uint32_t s_id,
     char *s_name,
     generic_stack_classification_function fct,
     stack_internal_cleanup stack_cleanup,
-    void * stack_internal_context
+    mmt_opaque_t stack_internal_context
 );
 
 /**
@@ -405,7 +407,7 @@ MMTAPI int MMTCALL register_protocol_stack_full(
  * @return a positive value on success, zero value on failure.
  * <p> A positive value is returned if the given identifier does not correspond to any registered protocol stack. This is not considered as failure.
  */
-MMTAPI int MMTCALL unregister_protocol_stack(
+MMTAPI bool MMTCALL unregister_protocol_stack(
     uint32_t s_id
 );
 
@@ -414,7 +416,7 @@ MMTAPI int MMTCALL unregister_protocol_stack(
  * @param proto_id the identifier of the protocol
  * @return a positive value if their in no protocol registered with the given identifier. 0 otherwise.
  */
-MMTAPI int MMTCALL is_free_protocol_id_for_registractionl(
+MMTAPI bool MMTCALL is_free_protocol_id_for_registractionl(
     mmt_proto_id_t proto_id
 );
 
@@ -447,7 +449,7 @@ MMTAPI protocol_t* MMTCALL init_protocol_struct_for_registration(
  * @param attribute_meta_data the metadata structure of the attribute.
  * @return a positive value on success (valid attribute and not already registered), a zero value is returned on failure.
  */
-MMTAPI int MMTCALL register_attribute_with_protocol(
+MMTAPI bool MMTCALL register_attribute_with_protocol(
     protocol_t *protocol_struct,
     attribute_metadata_t *attribute_meta_data
 );
@@ -459,7 +461,7 @@ MMTAPI int MMTCALL register_attribute_with_protocol(
  * @param proto_id the identifier of the protocol to register
  * @return PROTO_REGISTERED on success, PROTO_NOT_REGISTERED on failure.
  */
-MMTAPI int MMTCALL register_protocol(
+MMTAPI bool MMTCALL register_protocol(
     protocol_t *protocol_struct,
     mmt_proto_id_t proto_id
 );
@@ -469,7 +471,7 @@ MMTAPI int MMTCALL register_protocol(
  * @param proto_id the identifier of the protocol to register
  * @return PROTO_REGISTERED on success, PROTO_NOT_REGISTERED on failure.
  */
-MMTAPI int MMTCALL unregister_protocol_by_id(
+MMTAPI bool MMTCALL unregister_protocol_by_id(
     mmt_proto_id_t proto_id
 );
 
@@ -478,7 +480,7 @@ MMTAPI int MMTCALL unregister_protocol_by_id(
  * @param proto_id the identifier of the protocol to register
  * @return PROTO_REGISTERED on success, PROTO_NOT_REGISTERED on failure.
  */
-MMTAPI int MMTCALL unregister_protocol_by_name(
+MMTAPI bool MMTCALL unregister_protocol_by_name(
     char * proto_name
 );
 
@@ -533,7 +535,7 @@ MMTAPI int MMTCALL get_proto_attribute_scope(
     uint32_t attr_id
 );
 
-MMTAPI int MMTCALL is_valid_proto_attribute(
+MMTAPI bool MMTCALL is_valid_proto_attribute(
     protocol_t *proto,
     mmt_proto_id_t proto_id,
     uint32_t attr_id

@@ -17,6 +17,7 @@ extern "C" {
  #include <string.h>
  #include <stdint.h>
  #include <math.h>
+ #include <stdbool.h>
 
 //predictor
 #ifndef likely
@@ -130,7 +131,7 @@ char * hex2str(char *h_str);
  *                  @str1 and @str2 are NULL
  *                  @str1 equals @str2
  */
- int str_compare(char * str1, char * str2); // Passed
+ bool str_compare(char * str1, char * str2); // Passed
 
  /**
   * Get the first index of a substring in a string

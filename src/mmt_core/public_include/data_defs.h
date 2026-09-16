@@ -31,6 +31,13 @@ typedef uint32_t mmt_attribute_id_t;
 /* Index of a protocol inside a packet's protocol path — distinct from mmt_proto_id_t (ABI-compatible, stays unsigned) */
 typedef unsigned mmt_proto_index_t;
 
+/* Opaque data/context pointer used across the public API (ABI-compatible, stays void *).
+   Covers user-supplied contexts passed back to callbacks, protocol/stack internal
+   contexts, map keys/values and generic memory parameters. */
+typedef void *mmt_opaque_t;
+/* Const-qualified variant of mmt_opaque_t (ABI-compatible, stays const void *). */
+typedef const void *mmt_const_opaque_t;
+
 typedef struct mmt_handler_struct               mmt_handler_t;
 typedef struct mmt_session_struct               mmt_session_t;
 typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
@@ -97,7 +104,7 @@ typedef uint64_t mmt_key_t;
  * Signature of the function comparing two keys given by their addresses. An implementing function must return true
  * if the value of key1 given by its address is strictly lower than the value of key2; false is returned otherwise. (strict weak ordering operation).
  */
-typedef bool (*generic_comparison_fct) (void * key_1, void * key_2); //public function
+typedef bool (*generic_comparison_fct) (mmt_opaque_t key_1, mmt_opaque_t key_2); //public function
 
 /**
  * Signature of a function that computes a hash value for a key given by its address.
@@ -106,7 +113,7 @@ typedef bool (*generic_comparison_fct) (void * key_1, void * key_2); //public fu
  * MUST produce the same hash value, otherwise lookups will miss. The returned value
  * may span the full 64-bit range; the table reduces it modulo the bucket count.
  */
-typedef uint64_t (*generic_hash_fct) (void * key); //public function
+typedef uint64_t (*generic_hash_fct) (mmt_opaque_t key); //public function
 
 /**
  * Signature of the function comparing two unsigned int keys. An implementing function must return true
@@ -367,7 +374,7 @@ MMTAPI void* MMTCALL get_user_session_context_from_packet(
  */
 MMTAPI void MMTCALL set_user_session_context_for_packet(
     const ipacket_t *ipacket,
-    void *user_data
+    mmt_opaque_t user_data
 );
 
 /**
@@ -464,7 +471,7 @@ MMTAPI void* MMTCALL get_proto_session_data(
  */
 MMTAPI void MMTCALL set_proto_session_data(
     mmt_session_t *session,
-    void * proto_data,
+    mmt_opaque_t proto_data,
     unsigned index
 );
 
@@ -475,7 +482,7 @@ MMTAPI void MMTCALL set_proto_session_data(
  */
 MMTAPI void MMTCALL set_user_session_context(
     mmt_session_t *session,
-    void *user_data
+    mmt_opaque_t user_data
 );
 
 /**
@@ -1101,7 +1108,7 @@ MMTAPI int MMTCALL get_field_position_by_protocol_and_field_ids(
  * @param attribute_id the identifier of the attribute
  * @return true if the attribute exists, false otherwise
  */
-MMTAPI int MMTCALL is_protocol_attribute(
+MMTAPI bool MMTCALL is_protocol_attribute(
     mmt_proto_id_t proto_id,
     uint32_t attribute_id
 );
@@ -1327,7 +1334,7 @@ MMTAPI int MMTCALL mmt_attr_sprintf(char * buff, int len, attribute_t * attr);
  * @param dst pointer to a C string where the result will be stored
  * @param len number of bytes available in dst
  */
-MMTAPI const char* MMTCALL mmt_inet_ntop( int af, const void *src, char *dst, socklen_t len );
+MMTAPI const char* MMTCALL mmt_inet_ntop( int af, mmt_const_opaque_t src, char *dst, socklen_t len );
 
 #ifdef __cplusplus
 }

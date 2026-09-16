@@ -1,11 +1,24 @@
-# Ratchet baseline for tools/ci/count-weak-types.sh (issues #190/#230).
+# Ratchet baselines for tools/ci/count-weak-types.sh (issues #190/#230/#231).
 #
-# Number of raw-integer protocol-id parameters in src/mmt_core/public_include/
-# at the commit that introduced the gate — parameters named proto*/protocol*
-# typed as int/uintN_t/unsigned/short/long/char, excluding pointers and
-# *_name strings. Tasks 5.6/5.7 convert them to the protocol-id typedef —
-# lower this number as they land. The gate fails only when the count RISES.
+# Each line is `<metric> <count>` — the maximum number of weakly typed
+# signatures still tolerated in src/mmt_core/public_include/. The gate fails
+# when a count RISES; --strict requires all counts to be 0.
 #
-# #230: all protocol-id parameters now use mmt_proto_id_t / mmt_proto_index_t —
-# baseline is 0; any new raw-integer proto*/protocol* parameter fails the gate.
-0
+# Metrics:
+#   proto_id   raw-integer protocol-id parameters (task 5.6 / #230)
+#   void_star  raw `void *` parameters (task 5.7 / #231)
+#   int_bool   public functions returning `int` outside the int-return
+#              allowlist in count-weak-types.sh (task 5.7 / #231)
+#
+# #230: all protocol-id parameters use mmt_proto_id_t / mmt_proto_index_t —
+#       baseline is 0; any new raw-integer proto*/protocol* parameter fails.
+# #231: all raw `void *` parameters use mmt_opaque_t / mmt_const_opaque_t and
+#       every boolean-semantic function returns `bool` — baselines are 0; any
+#       new weakly typed signature fails. The issue's audit recorded 56 raw
+#       `void *` and 41 int-as-boolean returns; measured at the change commit
+#       the counters found 47 and 58 (audit scope evidently included struct
+#       fields / return types / delegate wrappers — all are now converted or
+#       explicitly allowlisted).
+proto_id  0
+void_star 0
+int_bool  0

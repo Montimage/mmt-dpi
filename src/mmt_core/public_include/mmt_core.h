@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 #include "data_defs.h"
 #include "mmt_exports.h"
 #include "plugin_defs.h"
@@ -115,12 +117,12 @@ typedef enum {
 /**
  * Generic packet handler callback
  */
-typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, void * args);
+typedef int (*generic_packet_handler_callback) (const ipacket_t * ipacket, mmt_opaque_t args);
 
 /**
  * Generic evasion handler callback
  */
-typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, mmt_proto_id_t proto_id, mmt_proto_index_t proto_index, unsigned evasion_id, void * data, void * args);
+typedef void (*generic_evasion_handler_callback) (const ipacket_t * ipacket, mmt_proto_id_t proto_id, mmt_proto_index_t proto_index, unsigned evasion_id, mmt_opaque_t data, mmt_opaque_t args);
 
 /**
  * Generic process_packet
@@ -135,36 +137,36 @@ typedef void (*generic_clean_packet_fct) (ipacket_t *ipacket);
 /**
  * Signature of the session timeout handler.
  */
-typedef void (*generic_session_timeout_handler_function)(const mmt_session_t * expired_session, void * args);
+typedef void (*generic_session_timeout_handler_function)(const mmt_session_t * expired_session, mmt_opaque_t args);
 /**
  * Signature of the session timer handler - call preodically.
  */
-typedef void (*generic_session_timer_handler_function)(const mmt_session_t * head_session, void * args);
+typedef void (*generic_session_timer_handler_function)(const mmt_session_t * head_session, mmt_opaque_t args);
 
 /**
  * Signature of the attribute handler function
  */
-typedef void (*attribute_handler_function)(const ipacket_t * ipacket, attribute_t * attribute, void * user_args);
+typedef void (*attribute_handler_function)(const ipacket_t * ipacket, attribute_t * attribute, mmt_opaque_t user_args);
 
 /**
  * Signature of the function that should be called when iterating between the entries of a map (hash map, list, map, whatever...).
  */
-typedef void (*generic_mapspace_iteration_callback) (void * key, void * value, void * args);
+typedef void (*generic_mapspace_iteration_callback) (mmt_opaque_t key, mmt_opaque_t value, mmt_opaque_t args);
 
 /**
  * Signature of the function that will be called by the protocol attribute iterator.
  */
-typedef void (*generic_protocol_attribute_iteration_callback) (attribute_metadata_t * attribute, mmt_proto_id_t proto_id, void * args);
+typedef void (*generic_protocol_attribute_iteration_callback) (attribute_metadata_t * attribute, mmt_proto_id_t proto_id, mmt_opaque_t args);
 
 /**
  * Signature of the function that will be called by the protocol iterator.
  */
-typedef void (*generic_protocol_iteration_callback) (mmt_proto_id_t proto_id, void * args);
+typedef void (*generic_protocol_iteration_callback) (mmt_proto_id_t proto_id, mmt_opaque_t args);
 
 /**
  * Signature of the function that will be called by the mmt handler iterator.
  */
-typedef void (*generic_handler_iteration_callback) (mmt_handler_t *mmt_handler, void * args);
+typedef void (*generic_handler_iteration_callback) (mmt_handler_t *mmt_handler, mmt_opaque_t args);
 
 /**
  * Start process packet handlers
@@ -180,7 +182,7 @@ MMTAPI void MMTCALL mmt_drop_packet(ipacket_t *ipacket);
  * Initializes the extraction. This function MUST be called first.
  * @return a positive value on success, 0 otherwise
  */
-MMTAPI int MMTCALL init_extraction();
+MMTAPI bool MMTCALL init_extraction();
 
 /**
  * Update protocol
@@ -188,7 +190,7 @@ MMTAPI int MMTCALL init_extraction();
  * @param   action_id   Action id -> to update
  * @return a positive value on success, 0 otherwise
  */
-MMTAPI int MMTCALL update_protocol(mmt_proto_id_t proto_id, int action_id);
+MMTAPI bool MMTCALL update_protocol(mmt_proto_id_t proto_id, int action_id);
 
 /**
  * Closes the extraction and frees any previously allocated memory.
@@ -243,7 +245,7 @@ MMTAPI const char* MMTCALL get_protocol_stack_name(
  * @param packet_handler_id the identifier of the packet handler
  * @return a positive value if the given packet handler id is already registered, 0 otherwise.
  */
-MMTAPI int MMTCALL is_registered_packet_handler(
+MMTAPI bool MMTCALL is_registered_packet_handler(
     mmt_handler_t *mmt_handler,
     int packet_handler_id
 );
@@ -257,11 +259,11 @@ MMTAPI int MMTCALL is_registered_packet_handler(
  * @param user a pointer to user argument that will be passed to the callback function.
  * @return a positive value upon success, a zaro value otherwise.
  */
-MMTAPI int MMTCALL register_packet_handler(
+MMTAPI bool MMTCALL register_packet_handler(
     mmt_handler_t *mmt_handler,
     int packet_handler_id,
     generic_packet_handler_callback function,
-    void *user
+    mmt_opaque_t user
 );
 
 /**
@@ -271,7 +273,7 @@ MMTAPI int MMTCALL register_packet_handler(
  * @return a positive value on success, 0 otherwise. If there is no packet handler with the given identifier,
  * a positive value is returned. 0 is only returned when an error occurs.
  */
-MMTAPI int MMTCALL unregister_packet_handler(
+MMTAPI bool MMTCALL unregister_packet_handler(
     mmt_handler_t *mmt_handler,
     int packet_handler_id
 );
@@ -283,10 +285,10 @@ MMTAPI int MMTCALL unregister_packet_handler(
  * @param user pointer to a user defined argument to be passed to the callback function
  * @return This function will always succeed; a positive value will be returned.
  */
-MMTAPI int MMTCALL register_session_timeout_handler(
+MMTAPI bool MMTCALL register_session_timeout_handler(
     mmt_handler_t *mmt_handler,
     generic_session_timeout_handler_function session_expiry_handler_fct,
-    void *user
+    mmt_opaque_t user
 );
 
 /**
@@ -297,10 +299,10 @@ MMTAPI int MMTCALL register_session_timeout_handler(
  * @param user pointer to a user defined argument to be passed to the callback function
  * @return This function will always succeed; a positive value will be returned.
  */
-MMTAPI int MMTCALL register_session_timer_handler(
+MMTAPI bool MMTCALL register_session_timer_handler(
     mmt_handler_t *mmt_handler,
     generic_session_timer_handler_function session_timer_handler_fct,
-    void *user,
+    mmt_opaque_t user,
     uint8_t no_fragmented
 );
 
@@ -312,7 +314,7 @@ MMTAPI int MMTCALL register_session_timer_handler(
  * @param attribute_id the identifier of the attribute
  * @return a positive value if the attribute identifier by the given protocol and attribute ids is already registered, 0 otherwise.
  */
-MMTAPI int MMTCALL is_registered_attribute(
+MMTAPI bool MMTCALL is_registered_attribute(
     mmt_handler_t *mmt_handler,
     mmt_proto_id_t proto_id,
     uint32_t attribute_id
@@ -326,10 +328,10 @@ MMTAPI int MMTCALL is_registered_attribute(
  * @param user_args User data
  * @return a positive value upon success, a zero value otherwise.
  */
-MMTAPI int MMTCALL register_evasion_handler(
+MMTAPI bool MMTCALL register_evasion_handler(
     mmt_handler_t *mmt_handler,
     generic_evasion_handler_callback evasion_handler,
-    void * user_args
+    mmt_opaque_t user_args
 );
 
 /**
@@ -339,7 +341,7 @@ MMTAPI int MMTCALL register_evasion_handler(
  * @param attribute_id the identifier of the attribute itself.
  * @return a positive value upon success, a zero value otherwise.
  */
-MMTAPI int MMTCALL register_extraction_attribute(
+MMTAPI bool MMTCALL register_extraction_attribute(
     mmt_handler_t *mmt_handler,
     mmt_proto_id_t proto_id,
     uint32_t attribute_id
@@ -352,7 +354,7 @@ MMTAPI int MMTCALL register_extraction_attribute(
  * @param attribute_name the name of the attribute itself.
  * @return a positive value upon success, a zero value otherwise.
  */
-MMTAPI int MMTCALL register_extraction_attribute_by_name(
+MMTAPI bool MMTCALL register_extraction_attribute_by_name(
     mmt_handler_t *mmt_handler,
     const char *protocol_name,
     const char *attribute_name
@@ -366,7 +368,7 @@ MMTAPI int MMTCALL register_extraction_attribute_by_name(
  * @return a positive value upon success, a zero value otherwise.
  * If there is no attribute with the given identifiers, a positive value is returned.
  */
-MMTAPI int MMTCALL unregister_extraction_attribute(
+MMTAPI bool MMTCALL unregister_extraction_attribute(
     mmt_handler_t *mmt_handler,
     mmt_proto_id_t proto_id,
     uint32_t attribute_id
@@ -380,7 +382,7 @@ MMTAPI int MMTCALL unregister_extraction_attribute(
  * @return a positive value upon success, a zero value otherwise.
  * If there is no attribute with the given names, a positive value is returned
  */
-MMTAPI int MMTCALL unregister_extraction_attribute_by_name(
+MMTAPI bool MMTCALL unregister_extraction_attribute_by_name(
     mmt_handler_t *mmt_handler,
     const char *protocol_name,
     const char *attribute_name
@@ -393,7 +395,7 @@ MMTAPI int MMTCALL unregister_extraction_attribute_by_name(
  * @param attribute_id the identifier of the attribute
  * @return a positive value if a handler is already registered; 0 otherwise.
  */
-MMTAPI int MMTCALL has_registered_attribute_handler(
+MMTAPI bool MMTCALL has_registered_attribute_handler(
     mmt_handler_t *mmt_handler,
     mmt_proto_id_t proto_id,
     uint32_t attribute_id
@@ -407,7 +409,7 @@ MMTAPI int MMTCALL has_registered_attribute_handler(
  * @param handler_fct the attribute handler callback function to check
  * @return a positive value if \handler_fct handler is already registered; 0 otherwise.
  */
-MMTAPI int MMTCALL is_registered_attribute_handler(
+MMTAPI bool MMTCALL is_registered_attribute_handler(
     mmt_handler_t *mmt_handler,
     mmt_proto_id_t proto_id,
     uint32_t attribute_id,
@@ -424,13 +426,13 @@ MMTAPI int MMTCALL is_registered_attribute_handler(
  * @param user pointer ot user defined argument to be passed to the handler.
  * @return a positive value on sucess and 0 on failure.
  */
-MMTAPI int MMTCALL register_attribute_handler(
+MMTAPI bool MMTCALL register_attribute_handler(
     mmt_handler_t *mmt_handler,
     mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     attribute_handler_function handler_fct,
-    void *handler_condition,
-    void *user
+    mmt_opaque_t handler_condition,
+    mmt_opaque_t user
 );
 
 /**
@@ -443,13 +445,13 @@ MMTAPI int MMTCALL register_attribute_handler(
  * @param user pointer ot user defined argument to be passed to the handler.
  * @return a positive value on sucess and 0 on failure.
  */
-MMTAPI int MMTCALL register_attribute_handler_by_name(
+MMTAPI bool MMTCALL register_attribute_handler_by_name(
     mmt_handler_t *mmt_handler,
     const char *protocol_name,
     const char *attribute_name,
     attribute_handler_function handler_fct,
-    void *handler_condition,
-    void *user
+    mmt_opaque_t handler_condition,
+    mmt_opaque_t user
 );
 
 /**
@@ -460,7 +462,7 @@ MMTAPI int MMTCALL register_attribute_handler_by_name(
  * @param handler_fct the attribute handler callback function to unregister.
  * @return a positive value on sucess and 0 on failure. This function will always succeed.
  */
-MMTAPI int MMTCALL unregister_attribute_handler(
+MMTAPI bool MMTCALL unregister_attribute_handler(
     mmt_handler_t *mmt_handler,
     mmt_proto_id_t proto_id,
     uint32_t attribute_id,
@@ -475,7 +477,7 @@ MMTAPI int MMTCALL unregister_attribute_handler(
  * @param handler_fct the attribute handler callback function to unregister.
  * @return a positive value on sucess and 0 on failure. This function will always succeed.
  */
-MMTAPI int MMTCALL unregister_attribute_handler_by_name(
+MMTAPI bool MMTCALL unregister_attribute_handler_by_name(
     mmt_handler_t *mmt_handler,
     const char *protocol_name,
     const char *attribute_name,
@@ -489,7 +491,7 @@ MMTAPI int MMTCALL unregister_attribute_handler_by_name(
  * @return                1 if successful
  *                          0 if failed
  */
-MMTAPI int MMTCALL set_default_session_timed_out(
+MMTAPI bool MMTCALL set_default_session_timed_out(
     mmt_handler_t *mmt_handler,
     uint32_t timedout_value
 );
@@ -502,7 +504,7 @@ MMTAPI int MMTCALL set_default_session_timed_out(
  * @return                1 if successful
  *                          0 if failed
  */
-MMTAPI int MMTCALL set_long_session_timed_out(
+MMTAPI bool MMTCALL set_long_session_timed_out(
     mmt_handler_t *mmt_handler,
     uint32_t timedout_value
 );
@@ -514,7 +516,7 @@ MMTAPI int MMTCALL set_long_session_timed_out(
  * @return                1 if successful
  *                          0 if failed
  */
-MMTAPI int MMTCALL set_short_session_timed_out(
+MMTAPI bool MMTCALL set_short_session_timed_out(
     mmt_handler_t *mmt_handler,
     uint32_t timedout_value
 );
@@ -526,7 +528,7 @@ MMTAPI int MMTCALL set_short_session_timed_out(
  * @return                1 if successful
  *                          0 if failed
  */
-MMTAPI int MMTCALL set_live_session_timed_out(
+MMTAPI bool MMTCALL set_live_session_timed_out(
     mmt_handler_t *mmt_handler,
     uint32_t timedout_value
 );
@@ -540,7 +542,7 @@ MMTAPI int MMTCALL set_live_session_timed_out(
  * @return                1 if successful
  *                          0 if failed
  */
-MMTAPI int MMTCALL set_fragment_in_packet(
+MMTAPI bool MMTCALL set_fragment_in_packet(
     mmt_handler_t *mmt_handler,
     uint32_t frag_in_packet
 );
@@ -552,7 +554,7 @@ MMTAPI int MMTCALL set_fragment_in_packet(
  * @return                1 if successful
  *                          0 if failed
  */
-MMTAPI int MMTCALL set_fragmented_packet_in_session(
+MMTAPI bool MMTCALL set_fragmented_packet_in_session(
     mmt_handler_t *mmt_handler,
     uint32_t frag_packet_in_session
 );
@@ -564,7 +566,7 @@ MMTAPI int MMTCALL set_fragmented_packet_in_session(
  * @return                1 if successful
  *                          0 if failed
  */
-MMTAPI int MMTCALL set_fragment_in_session(
+MMTAPI bool MMTCALL set_fragment_in_session(
     mmt_handler_t *mmt_handler,
     uint32_t frag_in_session
 );
@@ -577,7 +579,7 @@ MMTAPI int MMTCALL set_fragment_in_session(
  */
 MMTAPI int MMTCALL debug_extracted_attributes_printout_handler(
     const ipacket_t *ipacket,
-    void *user
+    mmt_opaque_t user
 );
 
 /**
@@ -595,7 +597,7 @@ MMTAPI void MMTCALL fire_attribute_event(
     mmt_proto_id_t proto_id,
     uint32_t attribute_id,
     unsigned index,
-    void *data
+    mmt_opaque_t data
 );
 
 /**
@@ -611,7 +613,7 @@ MMTAPI void MMTCALL fire_evasion_event(
     mmt_proto_id_t proto_id,
     mmt_proto_index_t proto_index,
     unsigned evasion_id,
-    void *data
+    mmt_opaque_t data
 );
 
 /**
@@ -621,7 +623,7 @@ MMTAPI void MMTCALL fire_evasion_event(
  * @param packet a pointer to the actual packet data.
  * @return a positive value if the process is successful, a zero value if an internal error occurs.
  */
-MMTAPI int MMTCALL packet_process(
+MMTAPI bool MMTCALL packet_process(
     mmt_handler_t *mmt_handler,
     struct pkthdr *header,
     const u_char *packet
@@ -650,7 +652,7 @@ MMTAPI void MMTCALL process_session_timer_handler(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL enable_mmt_reassembly(
+MMTAPI bool MMTCALL enable_mmt_reassembly(
     mmt_handler_t *mmt_handler
 );
 
@@ -660,7 +662,7 @@ MMTAPI int MMTCALL enable_mmt_reassembly(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL disable_mmt_reassembly(
+MMTAPI bool MMTCALL disable_mmt_reassembly(
     mmt_handler_t *mmt_handler
 );
 
@@ -670,7 +672,7 @@ MMTAPI int MMTCALL disable_mmt_reassembly(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL enable_port_classify(
+MMTAPI bool MMTCALL enable_port_classify(
     mmt_handler_t *mmt_handler
 );
 
@@ -680,7 +682,7 @@ MMTAPI int MMTCALL enable_port_classify(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL disable_port_classify(
+MMTAPI bool MMTCALL disable_port_classify(
     mmt_handler_t *mmt_handler
 );
 
@@ -697,7 +699,7 @@ MMTAPI int MMTCALL disable_port_classify(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL enable_port_classify_payload_confirm(
+MMTAPI bool MMTCALL enable_port_classify_payload_confirm(
     mmt_handler_t *mmt_handler
 );
 
@@ -707,7 +709,7 @@ MMTAPI int MMTCALL enable_port_classify_payload_confirm(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL disable_port_classify_payload_confirm(
+MMTAPI bool MMTCALL disable_port_classify_payload_confirm(
     mmt_handler_t *mmt_handler
 );
 
@@ -717,7 +719,7 @@ MMTAPI int MMTCALL disable_port_classify_payload_confirm(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL enable_hostname_classify(
+MMTAPI bool MMTCALL enable_hostname_classify(
     mmt_handler_t *mmt_handler);
 
 /**
@@ -726,7 +728,7 @@ MMTAPI int MMTCALL enable_hostname_classify(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL disable_hostname_classify(
+MMTAPI bool MMTCALL disable_hostname_classify(
     mmt_handler_t *mmt_handler);
 
 /**
@@ -735,7 +737,7 @@ MMTAPI int MMTCALL disable_hostname_classify(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL enable_ip_address_classify(
+MMTAPI bool MMTCALL enable_ip_address_classify(
     mmt_handler_t *mmt_handler);
 
 /**
@@ -744,7 +746,7 @@ MMTAPI int MMTCALL enable_ip_address_classify(
  * @return             0 - unsuccessful
  *                       1 - sucessful
  */
-MMTAPI int MMTCALL disable_ip_address_classify(
+MMTAPI bool MMTCALL disable_ip_address_classify(
     mmt_handler_t *mmt_handler);
 
 /**
@@ -1004,7 +1006,7 @@ MMTAPI void MMTCALL disable_protocol_classification(
  * @param proto_id the identifier of the protocol
  * @return a positive value if the given identifier is valid, 0 otherwise.
  */
-MMTAPI int MMTCALL is_valid_protocol_id(
+MMTAPI bool MMTCALL is_valid_protocol_id(
     mmt_proto_id_t proto_id
 );
 
@@ -1013,7 +1015,7 @@ MMTAPI int MMTCALL is_valid_protocol_id(
  * @param proto_id the identifier of the protocol
  * @return PROTO_REGISTERED if the protocol is already registered, PROTO_NOT_REGISTERED otherwise
  */
-MMTAPI int MMTCALL is_registered_protocol(
+MMTAPI bool MMTCALL is_registered_protocol(
     mmt_proto_id_t proto_id
 );
 
@@ -1026,7 +1028,7 @@ MMTAPI int MMTCALL is_registered_protocol(
 MMTAPI void MMTCALL iterate_through_protocol_attributes(
     mmt_proto_id_t proto_id,
     generic_protocol_attribute_iteration_callback iterator_fct,
-    void *user
+    mmt_opaque_t user
 );
 
 /**
@@ -1036,7 +1038,7 @@ MMTAPI void MMTCALL iterate_through_protocol_attributes(
  */
 MMTAPI void MMTCALL iterate_through_protocols(
     generic_protocol_iteration_callback iterator_fct,
-    void *user
+    mmt_opaque_t user
 );
 
 /**
@@ -1046,7 +1048,7 @@ MMTAPI void MMTCALL iterate_through_protocols(
  */
 MMTAPI void MMTCALL iterate_through_mmt_handlers(
     generic_handler_iteration_callback iterator_fct,
-    void *user
+    mmt_opaque_t user
 );
 
 /**
@@ -1059,8 +1061,8 @@ MMTAPI char* MMTCALL mmt_version();
  * Memory management helpers
  */
 MMTAPI void* MMTCALL mmt_malloc  ( size_t size );
-MMTAPI void* MMTCALL mmt_realloc ( void *x, size_t size );
-MMTAPI void  MMTCALL mmt_free    ( void *x );
+MMTAPI void* MMTCALL mmt_realloc ( mmt_opaque_t x, size_t size );
+MMTAPI void  MMTCALL mmt_free    ( mmt_opaque_t x );
 
 /**
  * Per-flow arena (slab) allocator.
@@ -1084,7 +1086,7 @@ MMTAPI void         MMTCALL mmt_arena_reset  ( mmt_arena_t *arena );
 /** Free the arena and every block carved from it. */
 MMTAPI void         MMTCALL mmt_arena_destroy( mmt_arena_t *arena );
 
-static inline int mmt_memcmp( const void *x, const void *y, size_t size ){
+static inline int mmt_memcmp( mmt_const_opaque_t x, mmt_const_opaque_t y, size_t size ){
     const char *s1 = (char*)x, *s2 = (char*)y;
     int ret;
     ret = s1[0] - s2[0];

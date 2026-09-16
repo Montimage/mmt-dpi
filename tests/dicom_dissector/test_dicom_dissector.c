@@ -33,20 +33,20 @@ protocol_t *init_protocol_struct_for_registration(uint32_t proto_id,
 	return (protocol_t *) calloc(1, 1);
 }
 
-int register_attribute_with_protocol(protocol_t *protocol_struct,
+bool register_attribute_with_protocol(protocol_t *protocol_struct,
 		attribute_metadata_t *attribute_meta_data) {
 	(void) protocol_struct;
 	(void) attribute_meta_data;
 	return 1;
 }
 
-int register_protocol(protocol_t *protocol_struct, uint32_t proto_id) {
+bool register_protocol(protocol_t *protocol_struct, uint32_t proto_id) {
 	(void) proto_id;
 	free(protocol_struct); /* stub allocation from init_protocol_struct_* */
 	return 1;
 }
 
-int register_classification_function_with_parent_protocol(uint32_t proto_id,
+bool register_classification_function_with_parent_protocol(uint32_t proto_id,
 		generic_classification_function classification_fct, int weight) {
 	(void) proto_id;
 	(void) classification_fct;

@@ -185,7 +185,7 @@ bool protocol_names_comparison_fct(void * l_name, void * r_name) {
 
 #define _is_valid_protocol_id( proto_id ) ( proto_id < PROTO_MAX_IDENTIFIER )
 
-int is_valid_protocol_id(uint32_t proto_id) {
+bool is_valid_protocol_id(uint32_t proto_id) {
 	return _is_valid_protocol_id( proto_id );
 }
 
@@ -196,7 +196,7 @@ static inline int _is_registered_protocol(uint32_t proto_id) {
     return PROTO_NOT_REGISTERED;
 }
 
-int is_registered_protocol(uint32_t proto_id) {
+bool is_registered_protocol(uint32_t proto_id) {
 	return _is_registered_protocol( proto_id );
 }
 
@@ -325,7 +325,7 @@ int validate_attribute_metadata(attribute_metadata_t * attribute_meta_data) {
     return true;
 }
 
-int register_attribute_with_protocol(protocol_t *proto, attribute_metadata_t *attribute_meta_data) {
+bool register_attribute_with_protocol(protocol_t *proto, attribute_metadata_t *attribute_meta_data) {
     //validate the attribute
     if (validate_attribute_metadata(attribute_meta_data) == true) {
         attribute_metadata_t * attr = (attribute_metadata_t *) find_int_key_value(proto->attributes_map, (uint32_t) attribute_meta_data->id);
@@ -439,13 +439,13 @@ void iterate_through_mmt_handlers(generic_handler_iteration_callback iterator_fc
     mapspace_iteration_callback(mmt_configured_handlers_map, internal_handler_iterator_callback, (void *) & temp_handler_iterator_struct);
 }
 
-int register_session_timeout_handler(mmt_handler_t *mmt_h, generic_session_timeout_handler_function session_expiry_handler_fct, void * args) {
+bool register_session_timeout_handler(mmt_handler_t *mmt_h, generic_session_timeout_handler_function session_expiry_handler_fct, void * args) {
     mmt_h->session_expiry_handler.handler_fct = session_expiry_handler_fct;
     mmt_h->session_expiry_handler.args = args;
     return 1;
 }
 
-int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_handler_function session_timer_handler_fct, void * args, uint8_t no_fragmented) {
+bool register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_handler_function session_timer_handler_fct, void * args, uint8_t no_fragmented) {
     mmt_h->session_timer_handler.session_timer_handler_fct = session_timer_handler_fct;
     mmt_h->session_timer_handler.args = args;
     mmt_h->session_timer_handler.no_fragmented = no_fragmented;
@@ -454,7 +454,7 @@ int register_session_timer_handler(mmt_handler_t *mmt_h, generic_session_timer_h
 
 void base_packet_extraction(ipacket_t * ipacket, unsigned protocol_index);
 
-int register_protocol_stack(uint32_t s_id, char * s_name, generic_stack_classification_function fct) {
+bool register_protocol_stack(uint32_t s_id, char * s_name, generic_stack_classification_function fct) {
     if (get_protocol_stack_from_map(s_id) == NULL) {
         protocol_stack_t * new_stack = (protocol_stack_t *) mmt_malloc(sizeof (protocol_stack_t));
         if (new_stack != NULL) {
@@ -478,7 +478,7 @@ int register_protocol_stack(uint32_t s_id, char * s_name, generic_stack_classifi
     return 0;
 }
 
-int register_protocol_stack_full(uint32_t s_id, char * s_name, generic_stack_classification_function fct,
+bool register_protocol_stack_full(uint32_t s_id, char * s_name, generic_stack_classification_function fct,
                                  stack_internal_cleanup stack_cleanup, void * stack_internal_context) {
     if (get_protocol_stack_from_map(s_id) == NULL) {
         protocol_stack_t * new_stack = (protocol_stack_t *) mmt_malloc(sizeof (protocol_stack_t));
@@ -503,7 +503,7 @@ int register_protocol_stack_full(uint32_t s_id, char * s_name, generic_stack_cla
     return 0;
 }
 
-int unregister_protocol_stack(uint32_t s_id) {
+bool unregister_protocol_stack(uint32_t s_id) {
     protocol_stack_t * temp_stack = get_protocol_stack_from_map(s_id);
     if (temp_stack != NULL && s_id != 0) {
         //The protocol stack is registered, remove it from the map, and free it
@@ -716,7 +716,7 @@ int register_classification_function_internal(protocol_t * proto, generic_classi
  * @return                    0 if there is no classification function
  *                            call to register_classification_function_internal
  */
-int register_classification_function_with_parent_protocol(uint32_t proto_id, generic_classification_function classification_fct, int weight) {
+bool register_classification_function_with_parent_protocol(uint32_t proto_id, generic_classification_function classification_fct, int weight) {
     if (classification_fct != NULL) {
         protocol_t * proto = get_protocol_struct_by_protocol_id(proto_id);
         if (proto) {
@@ -739,14 +739,14 @@ int register_classification_function_with_parent_protocol(uint32_t proto_id, gen
  * of the 10..80 range register_classification_function_full() documents. */
 #define MMT_DEFAULT_CALLBACK_WEIGHT 50
 
-int register_classification_function(protocol_t *proto, generic_classification_function classification_fct) {
+bool register_classification_function(protocol_t *proto, generic_classification_function classification_fct) {
     if (classification_fct != NULL) {
         return register_classification_function_internal(proto, classification_fct, MMT_DEFAULT_CALLBACK_WEIGHT);
     }
     return 0;
 }
 
-int register_pre_post_classification_functions(protocol_t *proto,
+bool register_pre_post_classification_functions(protocol_t *proto,
         generic_classification_function pre_classification,
         generic_classification_function post_classification) {
 
@@ -757,7 +757,7 @@ int register_pre_post_classification_functions(protocol_t *proto,
 
 }
 
-int register_classification_function_full(protocol_t *proto, generic_classification_function classification_fct, int weight,
+bool register_classification_function_full(protocol_t *proto, generic_classification_function classification_fct, int weight,
         generic_classification_function pre_classification, generic_classification_function post_classification) {
     if (weight < 10) weight = 10;
     if (weight > 90) weight = 90;
@@ -847,7 +847,7 @@ int register_data_analysis_function_internal(protocol_t * proto, generic_session
     return 1;
 }
 
-int register_session_data_analysis_function_with_protocol(uint32_t proto_id,
+bool register_session_data_analysis_function_with_protocol(uint32_t proto_id,
         generic_session_data_analysis_function session_data_analysis_fct, int weight) {
     if (session_data_analysis_fct != NULL) {
         protocol_t * proto = get_protocol_struct_by_protocol_id(proto_id);
@@ -861,7 +861,7 @@ int register_session_data_analysis_function_with_protocol(uint32_t proto_id,
     return 0;
 }
 
-int register_session_data_analysis_function(protocol_t *proto,
+bool register_session_data_analysis_function(protocol_t *proto,
         generic_session_data_analysis_function session_data_analysis_fct) {
     if (session_data_analysis_fct != NULL) {
         return register_data_analysis_function_internal(proto, session_data_analysis_fct, MMT_DEFAULT_CALLBACK_WEIGHT);
@@ -869,7 +869,7 @@ int register_session_data_analysis_function(protocol_t *proto,
     return 0;
 }
 
-int register_pre_post_analysis_functions(protocol_t *proto,
+bool register_pre_post_analysis_functions(protocol_t *proto,
         generic_session_data_analysis_function pre_analysis,
         generic_session_data_analysis_function post_analysis) {
 
@@ -879,7 +879,7 @@ int register_pre_post_analysis_functions(protocol_t *proto,
     return 1;
 }
 
-int register_session_data_analysis_function_full(protocol_t *proto,
+bool register_session_data_analysis_function_full(protocol_t *proto,
         generic_session_data_analysis_function session_data_analysis_fct,
         int weight,
         generic_session_data_analysis_function pre_analysis,
@@ -899,7 +899,7 @@ int register_session_data_analysis_function_full(protocol_t *proto,
 }
 
 
-int is_free_protocol_id_for_registractionl(uint32_t proto_id) {
+bool is_free_protocol_id_for_registractionl(uint32_t proto_id) {
     if (proto_id >= PROTO_MAX_IDENTIFIER) return 0; //The prtocol id is not valid
 
     protocol_t *proto = configured_protocols[proto_id];
@@ -1222,7 +1222,7 @@ void register_protocol_session_attributes(protocol_t *proto) {
     }
 }
 
-int register_protocol(protocol_t *proto, uint32_t proto_id) {
+bool register_protocol(protocol_t *proto, uint32_t proto_id) {
     // Issue #22: guard the global registry mutation. Held only on this
     // registration path, never on the per-packet hot path (which reads the
     // per-handler snapshot, see configured_protocols declaration).
@@ -1249,7 +1249,7 @@ int register_protocol(protocol_t *proto, uint32_t proto_id) {
     return retval;
 }
 
-int unregister_protocol_by_id(uint32_t proto_id) {
+bool unregister_protocol_by_id(uint32_t proto_id) {
     // Issue #22: guard the global registry mutation (see register_protocol).
     int retval = 0;
     pthread_mutex_lock(&configured_protocols_mutex);
@@ -1261,7 +1261,7 @@ int unregister_protocol_by_id(uint32_t proto_id) {
     return retval;
 }
 
-int unregister_protocol_by_name(char* proto_name) {
+bool unregister_protocol_by_name(char* proto_name) {
     // Issue #22: guard the global registry mutation (see register_protocol).
     int i=0;
     int retval = 0;
@@ -1648,7 +1648,7 @@ static inline int isProtocolStatisticsEnabled(mmt_handler_t *mmt_handler) {
     return mmt_handler->stats_reporting_status;
 }
 
-int update_protocol(uint32_t proto_id, int action_id){
+bool update_protocol(uint32_t proto_id, int action_id){
     protocol_t * proto_struct = get_protocol_struct_by_id(proto_id);
     if (proto_struct && proto_struct->update_protocol_fct){
         return proto_struct->update_protocol_fct(action_id);
@@ -1656,7 +1656,7 @@ int update_protocol(uint32_t proto_id, int action_id){
     return 0;
 }
 
-int init_extraction()
+bool init_extraction()
 {
     int i = 0;
     for (; i < PROTO_MAX_IDENTIFIER; i++) {
@@ -1697,7 +1697,7 @@ int init_extraction()
     /////////////////////////////////////////////
 
     // B5: propagate a package_dependent_init() / plugin init failure to the
-    // caller (init_extraction() returns int; callers such as
+    // caller (init_extraction() returns bool; callers such as
     // simple_traffic_reporting already check it) rather than continuing blindly.
     if (!package_dependent_init()) {
         mmt_stderr_log( "Error during package-dependent initialization\n");
@@ -2161,7 +2161,7 @@ void print_attributes_list(struct attribute_internal_struct * tmp_attribute) {
     // free(tmp_attribute);
 }
 
-int is_registered_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id) {
+bool is_registered_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id) {
     packet_handler_t * temp_handler = mmt_handler->packet_handlers;
     while (temp_handler != NULL) {
         if (temp_handler->packet_handler_id == packet_handler_id) return 1;
@@ -2170,7 +2170,7 @@ int is_registered_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_
     return 0;
 }
 
-int is_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
+bool is_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
     int retval = 0;
     struct attribute_internal_struct * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
     while (tmp_attribute != NULL) {
@@ -2194,7 +2194,7 @@ struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_h
     return NULL;
 }
 
-int has_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id) {
+bool has_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id) {
     if (!_is_valid_protocol_id(proto_id)) {
         return 0;
     }
@@ -2210,7 +2210,7 @@ int has_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_
     return 0;
 }
 
-int is_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id,
+bool is_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id,
                                     uint32_t attribute_id, attribute_handler_function handler_fct) {
     if (!_is_valid_protocol_id(proto_id)) {
         return 0;
@@ -2264,7 +2264,7 @@ void free_registered_attribute_handlers(mmt_handler_t *mmt_handler) {
     }
 }
 
-int register_evasion_handler(mmt_handler_t *mmt_handler, generic_evasion_handler_callback evasion_handler, void * user_args){
+bool register_evasion_handler(mmt_handler_t *mmt_handler, generic_evasion_handler_callback evasion_handler, void * user_args){
     if(mmt_handler){
         if (mmt_handler->evasion_handler != NULL) {
             mmt_stderr_log("[ERROR] register_evasion_handler - Evasion handler function has been registered already!");
@@ -2284,7 +2284,7 @@ int register_evasion_handler(mmt_handler_t *mmt_handler, generic_evasion_handler
 }
 
 
-int unregister_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const char *protocol_name, const char *attribute_name) {
+bool unregister_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const char *protocol_name, const char *attribute_name) {
     uint32_t proto_id, attribute_id;
     proto_id = get_protocol_id_by_name(protocol_name);
     if (!proto_id) {
@@ -2297,7 +2297,7 @@ int unregister_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const ch
     return unregister_extraction_attribute(mmt_handler, proto_id, attribute_id);
 }
 
-int unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
+bool unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
 
     struct attribute_internal_struct * temp_attr_proto_list;
     struct attribute_internal_struct * safe_to_delete_attr_for_proto = NULL;
@@ -2344,7 +2344,7 @@ int unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_i
     return 1;
 }
 
-int unregister_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char *protocol_name,
+bool unregister_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char *protocol_name,
         const char *attribute_name, attribute_handler_function handler_fct) {
     uint32_t proto_id, attribute_id;
     proto_id = get_protocol_id_by_name(protocol_name);
@@ -2358,49 +2358,49 @@ int unregister_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char 
     return unregister_attribute_handler(mmt_handler, proto_id, attribute_id, handler_fct);
 }
 
-int set_default_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
+bool set_default_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
     mmt_handler->default_session_timed_out = timedout_value;
     return 1;
 }
 
-int set_long_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
+bool set_long_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
     mmt_handler->long_session_timed_out = timedout_value;
     return 1;
 }
 
-int set_short_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
+bool set_short_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
     mmt_handler->short_session_timed_out = timedout_value;
     return 1;
 }
 
-int set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
+bool set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_value){
     if(mmt_handler==NULL) return 0;
     mmt_handler->live_session_timed_out = timedout_value;
     return 1;
 }
 
-int set_fragment_in_packet(mmt_handler_t *mmt_handler,uint32_t fragment_in_packet){
+bool set_fragment_in_packet(mmt_handler_t *mmt_handler,uint32_t fragment_in_packet){
     if ( mmt_handler == NULL ) return 0;
     mmt_handler->fragment_in_packet = fragment_in_packet;
     return 1;
 }
 
-int set_fragmented_packet_in_session(mmt_handler_t *mmt_handler,uint32_t fragmented_packet_in_session){
+bool set_fragmented_packet_in_session(mmt_handler_t *mmt_handler,uint32_t fragmented_packet_in_session){
     if ( mmt_handler == NULL ) return 0;
     mmt_handler->fragmented_packet_in_session = fragmented_packet_in_session;
     return 1;
 }
 
-int set_fragment_in_session(mmt_handler_t *mmt_handler,uint32_t fragment_in_session){
+bool set_fragment_in_session(mmt_handler_t *mmt_handler,uint32_t fragment_in_session){
     if ( mmt_handler == NULL ) return 0;
     mmt_handler->fragment_in_session = fragment_in_session;
     return 1;
 }
 
-int unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id, attribute_handler_function handler_fct) {
+bool unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id, attribute_handler_function handler_fct) {
     attribute_handler_t * temp_attr_handler;
     attribute_handler_t * safe_to_delete_attr_handler = NULL;
     attribute_internal_t * temp_attr;
@@ -2466,7 +2466,7 @@ int unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, 
     return 1;
 }
 
-int register_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const char *protocol_name, const char *attribute_name) {
+bool register_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const char *protocol_name, const char *attribute_name) {
     uint32_t proto_id, attribute_id;
     proto_id = get_protocol_id_by_name(protocol_name);
     if (!proto_id) {
@@ -2479,7 +2479,7 @@ int register_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const char
     return register_extraction_attribute(mmt_handler, proto_id, attribute_id);
 }
 
-int register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
+bool register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
     protocol_t * proto = get_protocol_struct_by_protocol_id(proto_id);
     if (proto != NULL) {
         struct attribute_internal_struct * extract_attribute = get_registered_attribute(mmt_handler, proto_id, field_id);
@@ -2546,7 +2546,7 @@ int register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id,
     return 0;
 }
 
-int register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id, attribute_handler_function handler_fct, void * handler_condition, void * user_args) {
+bool register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id, attribute_handler_function handler_fct, void * handler_condition, void * user_args) {
     int retval = 0;
 
     if (is_registered_attribute_handler(mmt_handler, proto_id, attribute_id, handler_fct)) {
@@ -2628,7 +2628,7 @@ int register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, ui
     return 1;
 }
 
-int register_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char *protocol_name, const char *attribute_name, attribute_handler_function handler_fct, void *handler_condition, void *user_args) {
+bool register_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char *protocol_name, const char *attribute_name, attribute_handler_function handler_fct, void *handler_condition, void *user_args) {
     uint32_t proto_id, attribute_id;
     proto_id = get_protocol_id_by_name(protocol_name);
     if (!proto_id) {
@@ -2653,7 +2653,7 @@ void free_registered_packet_handlers(mmt_handler_t *mmt_handler) {
     mmt_handler->packet_handlers = NULL;
 }
 
-int register_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id, generic_packet_handler_callback function, void *args) {
+bool register_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id, generic_packet_handler_callback function, void *args) {
     if (mmt_handler == NULL) { //The mmt_handler is null
         return 0;
     }
@@ -2673,7 +2673,7 @@ int register_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id, g
     return 1;
 }
 
-int unregister_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id) {
+bool unregister_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id) {
     int retval = 1;
     packet_handler_t * temp_handler = mmt_handler->packet_handlers;
     packet_handler_t * safe_to_delete = NULL;
@@ -3870,7 +3870,7 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     return proto_packet_process(ipacket, NULL, 0);
 }
 
-int enable_mmt_reassembly(mmt_handler_t *mmt) {
+bool enable_mmt_reassembly(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->process_packet = process_packet_with_reassembly;
         mmt->clean_packet = clean_packet_with_reassembly;
@@ -3880,7 +3880,7 @@ int enable_mmt_reassembly(mmt_handler_t *mmt) {
     return 0;
 }
 
-int disable_mmt_reassembly(mmt_handler_t *mmt) {
+bool disable_mmt_reassembly(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->process_packet = process_packet;
         mmt->clean_packet = clean_packet;
@@ -3890,7 +3890,7 @@ int disable_mmt_reassembly(mmt_handler_t *mmt) {
     return 0;
 }
 
-int enable_port_classify(mmt_handler_t *mmt) {
+bool enable_port_classify(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->port_classify = 1;
         return 1;
@@ -3898,7 +3898,7 @@ int enable_port_classify(mmt_handler_t *mmt) {
     return 0;
 }
 
-int disable_port_classify(mmt_handler_t *mmt) {
+bool disable_port_classify(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->port_classify = 0;
         return 1;
@@ -3906,7 +3906,7 @@ int disable_port_classify(mmt_handler_t *mmt) {
     return 0;
 }
 
-int enable_port_classify_payload_confirm(mmt_handler_t *mmt) {
+bool enable_port_classify_payload_confirm(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->port_classify_payload_confirm = 1;
         return 1;
@@ -3914,7 +3914,7 @@ int enable_port_classify_payload_confirm(mmt_handler_t *mmt) {
     return 0;
 }
 
-int disable_port_classify_payload_confirm(mmt_handler_t *mmt) {
+bool disable_port_classify_payload_confirm(mmt_handler_t *mmt) {
     if (likely(mmt != NULL)) {
         mmt->port_classify_payload_confirm = 0;
         return 1;
@@ -3922,7 +3922,7 @@ int disable_port_classify_payload_confirm(mmt_handler_t *mmt) {
     return 0;
 }
 
-int enable_hostname_classify(mmt_handler_t *mmt)
+bool enable_hostname_classify(mmt_handler_t *mmt)
 {
     if (likely(mmt != NULL))
     {
@@ -3932,7 +3932,7 @@ int enable_hostname_classify(mmt_handler_t *mmt)
     return 0;
 }
 
-int disable_hostname_classify(mmt_handler_t *mmt)
+bool disable_hostname_classify(mmt_handler_t *mmt)
 {
     if (likely(mmt != NULL))
     {
@@ -3942,7 +3942,7 @@ int disable_hostname_classify(mmt_handler_t *mmt)
     return 0;
 }
 
-int enable_ip_address_classify(mmt_handler_t *mmt)
+bool enable_ip_address_classify(mmt_handler_t *mmt)
 {
     if (likely(mmt != NULL))
     {
@@ -3952,7 +3952,7 @@ int enable_ip_address_classify(mmt_handler_t *mmt)
     return 0;
 }
 
-int disable_ip_address_classify(mmt_handler_t *mmt)
+bool disable_ip_address_classify(mmt_handler_t *mmt)
 {
     if (likely(mmt != NULL))
     {
@@ -3962,7 +3962,7 @@ int disable_ip_address_classify(mmt_handler_t *mmt)
     return 0;
 }
 
-int packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
+bool packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet) {
 
 #ifdef CFG_OS_MAX_PACKET
     if ( mmt->packet_count >= CFG_OS_MAX_PACKET ) {
@@ -4041,7 +4041,7 @@ int get_data_size_by_proto_and_field_ids(uint32_t proto_id, uint32_t field_id) {
     return 0;
 }
 
-int is_protocol_attribute(uint32_t proto_id, uint32_t field_id) {
+bool is_protocol_attribute(uint32_t proto_id, uint32_t field_id) {
 #ifdef DEBUG
     (void)mmt_debug_log( "Entering isProtocolAttribute proto %u --- field %u\n", proto_id, field_id );
 #endif
@@ -4172,7 +4172,7 @@ int get_proto_attribute_length( protocol_t *proto, uint32_t proto_id, uint32_t a
 int get_proto_attribute_scope( protocol_t *proto, uint32_t proto_id, uint32_t attr_id)
 { return proto->get_attribute_scope( proto_id, attr_id ); }
 
-int is_valid_proto_attribute( protocol_t *proto, uint32_t proto_id, uint32_t attr_id)
+bool is_valid_proto_attribute( protocol_t *proto, uint32_t proto_id, uint32_t attr_id)
 { return proto->is_valid_attribute( proto_id, attr_id ); }
 
 //  - - - - - - - - - - - - - - - - - -

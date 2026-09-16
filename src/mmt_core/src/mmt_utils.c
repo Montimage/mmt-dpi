@@ -185,7 +185,7 @@ char * hex2str(char *h_str){
     return ret;
 }
 
-int str_compare(char * str1, char * str2){
+bool str_compare(char * str1, char * str2){
 
     if(str1 == NULL && str2 == NULL) return 1;
 
