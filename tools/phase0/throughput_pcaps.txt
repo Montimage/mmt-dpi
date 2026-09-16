@@ -1,0 +1,16 @@
+# Phase 0 throughput/memory benchmark pcap set (issue #251, F-PERF-016).
+#
+# The two large captures the perf benchmark replays. Kept separate from
+# golden_pcaps.txt so the classification fingerprint's input set is
+# unchanged — capture_baseline.sh consumes this list only via --golden.
+#
+# Paths are relative to the mmt-test data-sets root (MMT_TEST_DATASETS or
+# capture_baseline.sh --datasets).
+#
+#   bigFlows.pcap   — 791,615 packets, ~368 MB on disk: the preload that
+#                     made process max-RSS attribute ~400 MB of harness
+#                     memory to the library
+#   smallFlows.pcap — 14,261 packets, ~9 MB
+
+bigFlows.pcap
+smallFlows.pcap

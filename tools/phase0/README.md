@@ -12,14 +12,17 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 | File | Purpose |
 |---|---|
 | `phase0_classify.c` | Deterministic protocol-classification fingerprint tool. Prints, per pcap, sorted `count<TAB>protocol.path` lines — free of timestamps/addresses/ordering, so it diffs cleanly. |
-| `phase0_throughput.c` | Throughput baseline tool (packets/second), in-memory replay with a fresh handler per iteration. |
+| `phase0_throughput.c` | Throughput baseline tool (packets/second), in-memory replay with a fresh handler per iteration. Reports `harness_rss_kib` (trace-preload share) and `library_rss_kib` (SDK share) separately next to the process peak (issue #251). |
 | `phase0_precision.c` | Labelled-pcap precision/recall harness (Phase 7, M9, issue #74). Given a pcap and the application protocol it is known to carry, prints `label<TAB>total<TAB>tp<TAB>fp<TAB>app_unknown` from the classifier's deterministic decisions. The unlabelled fingerprint proves decisions don't *change*; this measures whether they are *correct*. |
 | `golden_pcaps.txt` | The fixed golden pcap set (paths relative to the mmt-test `data-sets/` root). |
+| `throughput_pcaps.txt` | The bigFlows/smallFlows perf-benchmark set (issue #251) — deliberately separate from `golden_pcaps.txt` so the classification fingerprint's input set is unchanged. |
 | `capture_baseline.sh` | Orchestrator: build+install at `-O3`, compile the drivers, capture all baselines into `baseline/`. |
 | `run_all_harnesses.sh` | Aggregate runner (issue #183): enumerates `tests/run_*.sh`, builds the SDK once per required profile into a shared prefix, and replays every harness against it. Reachable from the suite runner via `bash tests/run_all_tests.sh --with-harnesses`. |
 | `baseline/classification.txt` | **The golden classification baseline.** The asserted regression oracle. |
 | `baseline/classification/` | Per-pcap fingerprints (one file each), for granular diffs. |
 | `baseline/throughput.txt` | Throughput reference snapshot (environment-dependent — compare relative deltas). |
+| `baseline/perf/throughput.txt` | Same-machine throughput + RSS reference for the `throughput_pcaps.txt` benchmark set (issue #251). |
+| `ci/baseline/memory.txt` | The M4 library-RSS ceiling (KiB), enforced by `tests/run_memory_ceiling_test.sh` in the CI harness matrix (issue #251). |
 | `baseline/valgrind.txt` | Valgrind leak baseline, or a SKIPPED note + exact command when valgrind is absent. |
 
 ## The ASan/UBSan build profile (`BUILD=asan`)
@@ -103,7 +106,7 @@ list fails the build):
 - `classification-gate` — Golden classification fingerprint unchanged
 - `leak-gate` — Leak regression over the golden corpus (Valgrind)
 - `precision-gate` — Labelled-pcap precision/recall holds or improves (M9, issue #74)
-- matrix expansion: `harness-*` fans out to 40 jobs, one per `tools/phase0/tests/run_*.sh`
+- matrix expansion: `harness-*` fans out to 41 jobs, one per `tools/phase0/tests/run_*.sh`
 <!-- end-generated: ci-gates -->
 
 What each gate asserts:
@@ -184,3 +187,10 @@ data-sets).
   parsers and the reassembly/session tables into states never seen in real
   capture and can crash. Per-handler init is ~0.01 ms, so this costs nothing
   measurable.
+- `phase0_throughput` preloads the trace — it does **not** stream — so its
+  process max-RSS alone would charge the whole capture to the library
+  (issue #251). It instead samples live RSS (`/proc` VmRSS; `ru_maxrss` is a
+  monotonic high-water mark and cannot attribute deltas) and reports the
+  harness preload share and the library share separately. On the reference
+  host the bigFlows peak (~448 MB) resolves to ~394 MB harness preload plus
+  ~52 MB library; `ci/baseline/memory.txt` gates the library figure.

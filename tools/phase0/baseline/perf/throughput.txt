@@ -1,0 +1,10 @@
+# Phase 0 throughput baseline — packets/second, in-memory replay.
+# Environment-dependent: compare relative deltas, not absolute pps.
+# RSS columns (issue #251): the trace is preloaded, not streamed —
+# harness_rss_kib is the preload cost subtracted explicitly, and
+# library_rss_kib is the RSS delta attributable to the SDK on top of it.
+# host: aarch64 | cpu: 20 | iterations: 200
+#
+# pcap	packets	iterations	elapsed_s	pps	harness_rss_kib	library_rss_kib	peak_rss_kib
+bigFlows.pcap	791615	200	75.7117	2091129	403980	53468	462100
+smallFlows.pcap	14261	200	1.9106	1492817	10076	25468	40076

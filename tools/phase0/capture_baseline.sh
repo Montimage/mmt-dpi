@@ -165,9 +165,12 @@ THRU="${OUT_DIR}/throughput.txt"
 {
     printf '# Phase 0 throughput baseline — packets/second, in-memory replay.\n'
     printf '# Environment-dependent: compare relative deltas, not absolute pps.\n'
+    printf '# RSS columns (issue #251): the trace is preloaded, not streamed —\n'
+    printf '# harness_rss_kib is the preload cost subtracted explicitly, and\n'
+    printf '# library_rss_kib is the RSS delta attributable to the SDK on top of it.\n'
     printf '# host: %s | cpu: %s | iterations: %s\n' \
         "$(uname -m)" "$(nproc 2>/dev/null || echo '?')" "${ITERATIONS}"
-    printf '#\n# pcap\tpackets\titerations\telapsed_s\tpps\n'
+    printf '#\n# pcap\tpackets\titerations\telapsed_s\tpps\tharness_rss_kib\tlibrary_rss_kib\tpeak_rss_kib\n'
 } > "${THRU}"
 for rel in "${PCAPS[@]}"; do
     pcap="${DATASETS}/${rel}"
@@ -175,7 +178,7 @@ for rel in "${PCAPS[@]}"; do
     if line="$("${BUILD_DIR}/phase0_throughput" "${pcap}" "${ITERATIONS}" 2>/dev/null)"; then
         printf '%s\t%s\n' "${rel}" "${line}" >> "${THRU}"
     else
-        printf '%s\tn/a\tn/a\tn/a\t<unsupported link-type>\n' "${rel}" >> "${THRU}"
+        printf '%s\tn/a\tn/a\tn/a\tn/a\tn/a\tn/a\t<unsupported link-type>\n' "${rel}" >> "${THRU}"
     fi
 done
 say "      wrote ${THRU}"

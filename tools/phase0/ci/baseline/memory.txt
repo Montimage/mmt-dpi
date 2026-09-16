@@ -1,0 +1,17 @@
+# M4 library-RSS ceiling (issue #251, F-PERF-016).
+#
+# library_rss_ceiling_kib is the maximum resident set, in KiB, that the
+# SDK's own allocations may reach while replaying the CI pcap subset —
+# reported by phase0_throughput's library_rss_kib column: the live-RSS
+# delta on top of the driver's preloaded trace, NOT the process max-RSS
+# that used to conflate the library with the ~400 MB harness preload.
+#
+# Measured on the reference host (aarch64, Ubuntu 24.04): ~24.4 MiB worst
+# across ci/pcaps — dominated by init_extraction()'s one-time protocol
+# tables, so it is nearly pcap-independent. The 64 MiB ceiling gives ~2.5x
+# headroom for runner/libc variance while still catching real bloat.
+#
+# Enforced by tools/phase0/tests/run_memory_ceiling_test.sh (CI job
+# harness-run_memory_ceiling_test.sh in .github/workflows/phase0-baseline.yml).
+
+library_rss_ceiling_kib	65536

@@ -21,6 +21,20 @@
  * sequence numbers, forever) and can crash. A fresh handler per pass keeps each
  * replay a clean, representative single-trace run.
  *
+ * Memory reporting (issue #251, F-PERF-016): the trace is preloaded, NOT
+ * streamed, so the process peak RSS used to attribute the whole capture to
+ * the library. The driver now samples the live RSS (/proc VmRSS — unlike
+ * getrusage's ru_maxrss it is not a monotonic high-water mark, so deltas
+ * attribute cost to the phase that allocated it) and reports two separate
+ * figures next to the process peak:
+ *   harness_rss_kib = RSS delta of the trace preload (driver-side cost,
+ *                     subtracted explicitly rather than streamed away)
+ *   library_rss_kib = RSS delta on top of the preloaded trace attributable
+ *                     to the library's own allocations (init_extraction
+ *                     tables, the per-iteration handler and its session /
+ *                     reassembly state — peak over the replay)
+ *   peak_rss_kib    = process ru_maxrss high-water mark, for context
+ *
  * Build (done by capture_baseline.sh against an installed prefix):
  *   gcc -O2 -o phase0_throughput phase0_throughput.c \
  *       -I <prefix>/dpi/include -L <prefix>/dpi/lib -lmmt_core -ldl -lpcap
@@ -28,13 +42,14 @@
  * Usage:
  *   phase0_throughput <file.pcap> [iterations]   (default iterations: 200)
  *
- * Output (one line, tab-separated, stable/diffable):
- *   <packets>\t<iterations>\t<elapsed_s>\t<pps>
+ * Output (one line, tab-separated, stable/diffable; -1 = RSS unavailable):
+ *   <packets>\t<iterations>\t<elapsed_s>\t<pps>\t<harness_rss_kib>\t<library_rss_kib>\t<peak_rss_kib>
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/resource.h>
 #include <pcap.h>
 
 #include "mmt_core.h"
@@ -44,6 +59,26 @@ typedef struct {
     struct pkthdr header;
     unsigned char *data;
 } stored_pkt_t;
+
+/* Live resident set in KiB from /proc (VmRSS), or -1 when unreadable. */
+static long current_rss_kib(void) {
+    FILE *f = fopen("/proc/self/status", "r");
+    char  line[256];
+    long  kib = -1;
+    if (f == NULL) return -1;
+    while (fgets(line, sizeof(line), f) != NULL) {
+        if (sscanf(line, "VmRSS: %ld kB", &kib) == 1) break;
+    }
+    fclose(f);
+    return kib;
+}
+
+/* Process RSS high-water mark in KiB (ru_maxrss on Linux), or -1. */
+static long peak_rss_kib(void) {
+    struct rusage ru;
+    if (getrusage(RUSAGE_SELF, &ru) != 0) return -1;
+    return ru.ru_maxrss;
+}
 
 int main(int argc, char **argv) {
     char            mmt_errbuf[1024];
@@ -59,6 +94,8 @@ int main(int argc, char **argv) {
     stored_pkt_t   *pkts;
     struct timespec t0, t1;
     double          elapsed, pps;
+    long            rss_base, rss_preloaded, rss_now, rss_lib_peak;
+    long            harness_rss, library_rss, peak_rss;
 
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <file.pcap> [iterations]\n", argv[0]);
@@ -75,6 +112,10 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
     datalink = pcap_datalink(pcap);
+
+    /* Baseline RSS: everything below this sample is harness/process overhead;
+     * the preload delta measured against it is the harness share (issue #251). */
+    rss_base = current_rss_kib();
 
     /* Slurp the whole trace into memory. */
     pkts = (stored_pkt_t *)malloc(cap * sizeof(*pkts));
@@ -97,6 +138,7 @@ int main(int argc, char **argv) {
         n++;
     }
     pcap_close(pcap);
+    rss_preloaded = current_rss_kib();
 
     if (n == 0) {
         fprintf(stderr, "%s: no packets\n", argv[1]);
@@ -114,6 +156,9 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
     mmt_close_handler(mmt_handler);
+    /* RSS after init_extraction() + the probe handler lifecycle: the floor of
+     * the library share (its one-time tables); the replay peak may exceed it. */
+    rss_lib_peak = current_rss_kib();
 
     /* Time only the packet-processing inner loop, accumulated across all
      * iterations. The per-iteration handler init/close stays (a fresh handler
@@ -129,12 +174,23 @@ int main(int argc, char **argv) {
         clock_gettime(CLOCK_MONOTONIC, &t1);
         elapsed += (double)(t1.tv_sec - t0.tv_sec)
                  + (double)(t1.tv_nsec - t0.tv_nsec) / 1e9;
+        /* Live RSS while the handler's session/reassembly state is still
+         * allocated — the library share peaks here, outside the timed window. */
+        rss_now = current_rss_kib();
+        if (rss_now > rss_lib_peak) rss_lib_peak = rss_now;
         mmt_close_handler(mmt_handler);
     }
     mmt_handler = NULL;
     pps = (elapsed > 0.0) ? ((double)n * (double)iterations / elapsed) : 0.0;
 
-    printf("%zu\t%ld\t%.4f\t%.0f\n", n, iterations, elapsed, pps);
+    harness_rss = (rss_base >= 0 && rss_preloaded >= 0)
+                ? rss_preloaded - rss_base : -1;
+    library_rss = (rss_preloaded >= 0 && rss_lib_peak >= 0)
+                ? rss_lib_peak - rss_preloaded : -1;
+    peak_rss    = peak_rss_kib();
+
+    printf("%zu\t%ld\t%.4f\t%.0f\t%ld\t%ld\t%ld\n",
+           n, iterations, elapsed, pps, harness_rss, library_rss, peak_rss);
 
     close_extraction();
     for (i = 0; i < (long)n; i++) free(pkts[i].data);
