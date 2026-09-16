@@ -61,9 +61,8 @@ git checkout -b new_branch_name v1.5
 
 ## Update the documents
 
-- Update `ChangeLog`
-
-- Update `changelog.html`
+- Update `ChangeLog` (`CHANGELOG.md` is the single canonical changelog — the
+  hand-maintained `changelog.html` duplicate was removed in #232)
 
 - Update `wiki`
 

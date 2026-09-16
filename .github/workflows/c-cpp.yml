@@ -208,7 +208,7 @@ jobs:
         bash tools/ci/count-init-wrappers.sh
         bash tools/ci/count-weak-types.sh --strict
         bash tools/ci/check-typed-accessors.sh
-        bash tools/ci/lint-markers.sh
+        bash tools/ci/lint-markers.sh --strict
     - name: Set up Ruby for the docs-site build
       uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1.323.0
       with:
@@ -240,6 +240,11 @@ jobs:
       # the build; the contradictions it tracked are closed, so a regression
       # now fails the job.
       run: bash tools/ci/check-package-deps.sh
+    - name: Commented-out code lint (blocking — issue #232)
+      # The gate condition holds — zero commented-out statement blocks of
+      # ≥5 lines — so this helper runs as an ordinary blocking step, not in
+      # the advisory loop. A regression now fails the job.
+      run: bash tools/ci/lint-commented-code.sh
     - name: Packet-path I/O lint (blocking — issue #246)
       # The gate condition holds — zero unconditional printf/fprintf on
       # packet paths — so this helper runs as an ordinary blocking step, not
@@ -253,7 +258,6 @@ jobs:
 
           tools/ci/check-protocol-count.sh
           tools/ci/check-public-decls.sh
-          tools/ci/lint-commented-code.sh
           "tools/ci/report-function-shape.sh src/mmt_tcpip/lib/protocols/proto_irc.c"
         )
         for spec in "${helpers[@]}"; do

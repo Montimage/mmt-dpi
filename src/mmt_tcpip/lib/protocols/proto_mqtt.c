@@ -9,15 +9,6 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-// struct mmt_mqtt_header_struct {
-//   uint8_t msg_type;
-//   uint8_t flags;
-//   uint16_t datagram_id;
-//   uint32_t source_ip;
-//   uint16_t source_port;
-//   uint8_t * data;
-// };
-
 static void mmt_int_mqtt_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_MQTT, MMT_REAL_PROTOCOL);
 }
@@ -39,7 +30,7 @@ int mmt_check_mqtt(ipacket_t * ipacket, unsigned index) {
 
         /* destination port must be 1883 or 8883 - ports reserved for MQTT http://mqtt.org/faq */
         if (dport == 1883 || dport == 8883) {
-            // TODO: Check the header length: > 2 bytes and < 5 bytes
+            // TODO(#330): Check the header length: > 2 bytes and < 5 bytes
             MMT_LOG(PROTO_MQTT, MMT_LOG_DEBUG, "found mqtt with destination port 139\n");
             mmt_int_mqtt_add_connection(ipacket);
             return 1;
@@ -50,44 +41,6 @@ int mmt_check_mqtt(ipacket_t * ipacket, unsigned index) {
     }
     return 0;
 }
-/*
-DIRECT_UNIQUE, DIRECT_GROUP, & BROADCAST DATAGRAM
-*/
-// int mqtt_classify_next_proto(ipacket_t * ipacket, unsigned index) {
-//     int offset = get_packet_offset_at_index(ipacket, index);
-//     // uint8_t * mqtt_type = (uint8_t *) & ipacket->data[offset];
-//     // printf("Message type: %d\n", *mqtt_type);
-//     struct mmt_mqtt_header_struct * mqtt_header = (struct mmt_mqtt_header_struct *) & ipacket->data[offset];
-//     classified_proto_t retval;
-//     // Classify base on port number
-//     if (ntohs(mqtt_header->source_port) == 138 || ntohs(mqtt_header->source_port) == 445) {
-//       retval.proto_id = PROTO_SMB;
-//     }
-//     retval.status = Classified;
-//     retval.offset = -1;
-//     switch(mqtt_header->msg_type){
-//       case NB_MSG_SESSION_MESSAGE:
-//         retval.offset = 4;
-//         break;
-//       case NB_MSG_DIRECT_UNIQUE:
-//       case NB_MSG_DIRECT_GROUP:
-//       case NB_MSG_BROADCAST_DATAGRAM:
-//         retval.offset = 82;
-//         break;
-//       case NB_MSG_ERROR:
-//         retval.offset = 11;
-//         break;
-//       case NB_MSG_QUERY_REQUEST:
-//       case NB_MSG_POSITIVE_QUERY_RESPONSE:
-//       case NB_MSG_NEGATIVE_QUERY_RESPONSE:
-//         retval.offset = 44;
-//         break;
-//       default:
-//         return 0;
-//     }
-//     // return 0;
-//     return set_classified_proto(ipacket, index + 1, retval);
-// }
 
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
@@ -98,7 +51,6 @@ int init_proto_mqtt_struct() {
         mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                 PROTO_UNKNOWN, PROTO_MQTT);
-        // register_classification_function(protocol_struct, mqtt_classify_next_proto);
         return register_protocol(protocol_struct, PROTO_MQTT);
     } else {
         return 0;

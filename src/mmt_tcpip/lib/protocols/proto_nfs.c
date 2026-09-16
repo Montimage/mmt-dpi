@@ -75,22 +75,6 @@ nfs_opcode_t * nfs_extract_opcode(const ipacket_t *ipacket, int opcode_data_offs
 //     NFS_OPCODE_SETCLIENTID_CONFIRM = 36,// 4 + 8 + 8
 //     NFS_OPCODE_WRITE = 38, // 4 + 4 + 12 + 8 + 4 + length(4)
 
-/**
- * Get total length of opcode to get the offset of next opcode
- * @param  ipacket    ipacket
- * @param  nfs_opcode current opcode
- * @return            total length of current opcode
- */
-// int nfs_opcode_length_extraction(const ipacket_t * ipacket, nfs_opcode_t *nfs_opcode){
-//     switch(nfs_opcode->opcode){
-//         case NFS_OPCODE_PUTFH:
-//             return 8 + ntohl(*((unsigned int *) &ipacket->data[nfs_opcode->data_offset + 4]));
-//         case NFS_OPCODE_SAVEFH:
-//             return 4;
-//         default:
-//             return 0;
-//     }
-// }
 int nfs_extract_file_name_from_opcode_open(const ipacket_t * ipacket, int data_offset,attribute_t * extracted_data) {
     int length, open_type, file_name_offset, owner_length, create_mode;
     file_name_offset = data_offset + 4;

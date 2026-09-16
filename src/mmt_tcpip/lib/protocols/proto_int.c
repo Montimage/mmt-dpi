@@ -47,7 +47,7 @@ static int _classify_int_from_udp_or_tcp(ipacket_t * ipacket, unsigned index, bo
 	//need IP.UDP/TCP
 	if( index <=1 )
 		return 0;
-	//must be preceded by IPv4 (TODO: need to support IPv6)
+	//must be preceded by IPv4 (TODO(#332): need to support IPv6)
 	if( get_protocol_id_at_index(ipacket, index - 1) != PROTO_IP )
 		goto _not_found_int;
 
@@ -84,7 +84,7 @@ static int _classify_int_from_tcp(ipacket_t * ipacket, unsigned index) {
 static int _int_classify_me(ipacket_t * ipacket, unsigned index) {
 	classified_proto_t retval;
 	retval.offset = 56;
-	retval.proto_id = 0; //FIXME: need to update to QUIC_IETF
+	retval.proto_id = 0; //FIXME(#332): need to update to QUIC_IETF
 	retval.status = NonClassified;
 	set_classified_proto(ipacket, index+1, retval);
 	return NOT_FOUND;
@@ -318,7 +318,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 
 	memset( &data, 0, sizeof(data) );
 
-	//TODO: limit number of hops by 64
+	//TODO(#332): limit number of hops by 64
 	//we can increase size of "data" in "mmt_u32_array_t" to contain more hops
 	// but 64 should be further than enough
 	//This check is to avoid overflow attack that should never occurs in a normal condition
@@ -364,7 +364,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		}
 
 		if( is_lv2_in_e_port_ids ){
-			//TODO: somehow no LV2 Egress Port in
+			//TODO(#332): somehow no LV2 Egress Port in
 			//4.7 INT Hop-by-Hop Metadata Header Format (page 15)
 			//Level 2 Ingress Port ID + Egress Port ID (4 bytes each)
 			//

@@ -91,7 +91,7 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
             MMT_LOG(PROTO_MSN, MMT_LOG_TRACE,
                     "found MSN in packets that also contain voice.messenger.live.com.\n");
 
-            /* TODO this is an alternative pattern for video detection */
+            /* TODO(#330) this is an alternative pattern for video detection */
             /*          if (packet->payload_packet_len > 100 &&
                get_u16(packet->payload, 86) == htons(0x05dc)) { */
             mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
@@ -99,12 +99,6 @@ static void mmt_search_msn_tcp(ipacket_t * ipacket) {
              * @brief V523 The 'then' statement is equivalent to the 'else' statement.
              * 
              */
-            // if (packet->payload_packet_len > 101 && packet->payload[101] == 0x02) {
-            //     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
-            // } else {
-            //     mmt_int_msn_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
-            // }
-
             return;
         }
 

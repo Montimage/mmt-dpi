@@ -115,7 +115,7 @@ int get_next_header_line_length(const char * msg, int msg_len, int * code) {
     char nb_termination = 1;
 
     if (msg_len == 0) {
-        //TODO: code should be updated here
+        //TODO(#327): code should be updated here
         return 0;
     }
 
@@ -170,7 +170,7 @@ int get_value_offset(const char * msg, int line_len) {
     colon = mmt_find_char_instance(msg, ':', line_len);
     if (colon == NULL) {
         /* error in header line, report it */
-        return -1; //TODO replace with definition. Header line badly formatted, no column was found
+        return -1; //TODO(#327) replace with definition. Header line badly formatted, no column was found
     }
 
     colon++;
@@ -190,7 +190,7 @@ int get_field_len(const char * str, int line_len) {
     colon = mmt_find_char_instance(str, ':', line_len);
     if (colon == NULL) {
         /* error in header line, report it */
-        return -1; //TODO replace with definition. Header line badly formatted, no column was found
+        return -1; //TODO(#327) replace with definition. Header line badly formatted, no column was found
     }
 
     //colon--;

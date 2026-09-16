@@ -384,7 +384,7 @@ int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
                     }
                 }
             }
-            /* TODO: extend according to rfc1002 */
+            /* TODO(#330): extend according to rfc1002 */
         }
 
         /*check standard NETBIOS over udp to port 138 */

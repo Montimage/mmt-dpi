@@ -124,29 +124,6 @@ extern "C" {
         rtp_payload_mime_type_t * mime_type;
         multimedia_session_context_t rtp_media_session_context;
         multimedia_quality_index_context_t rtp_quality_index_context;
-//        uint8_t payload_type_code;
-//        uint8_t media_type;
-//        uint32_t clock_rate;
-
-//        uint32_t last_tstmp;
-//        struct timeval last_arrival_time;
-//
-//        uint32_t media_jitter_us; //metric: RTP jitter in microseconds: this is the last two packets inter arrival delay
-//        uint32_t jitter_us; //metric: jitter in microseconds: this is the last two packets inter arrival delay
-//        uint32_t delay_us; // metric: delay in microseconds: this is the last two packets inter arrival delay
-//
-//        uint16_t last_seqnb;
-//        uint16_t nb_out_of_order; //metric
-//        uint16_t nb_order_error; //metric
-//        uint16_t nb_lost; //metric
-//        uint16_t nb_duplicate; //metric
-//        uint16_t loss_burst_size; //metric
-//        struct indexes index_low;
-//        struct indexes index_high;
-//        uint16_t low_seqnb;
-//        uint16_t high_seqnb;
-//        uint16_t nb_missed;
-//        uint16_t seqnb_cache[windowwidth];
     };
 
 #define AUDIO           1

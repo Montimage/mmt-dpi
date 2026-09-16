@@ -8,7 +8,7 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-int mmt_check_spotify(ipacket_t * ipacket, unsigned index) { //BW: TODO: check this out
+int mmt_check_spotify(ipacket_t * ipacket, unsigned index) { //BW: TODO(#330): check this out
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0

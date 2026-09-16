@@ -384,7 +384,6 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
         // handle new protocol
       } else if (err != HPE_OK) {
         // Handle error. Usually just close the connection.
-        //TODO: LN uncomment the next line please :p
         debug("[PROTO_HTTP-]> Error while parsing this HTTP message -Error %s: %s\n", llhttp_errno_name(err), llhttp_get_error_reason(parser));
         /* issue #204 (F-BUG-058): reset only the failing direction's parser.
          * The session holds one parser per direction inside stream_parser_t;

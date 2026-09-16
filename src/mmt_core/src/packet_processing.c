@@ -350,7 +350,7 @@ bool register_attribute_with_protocol(protocol_t *proto, attribute_metadata_t *a
             }
         }
     }
-    return 0; // TODO: error handling
+    return 0; // TODO(#327): error handling
 }
 
 struct internal_attribute_iterator_struct {
@@ -507,7 +507,7 @@ bool unregister_protocol_stack(uint32_t s_id) {
     protocol_stack_t * temp_stack = get_protocol_stack_from_map(s_id);
     if (temp_stack != NULL && s_id != 0) {
         //The protocol stack is registered, remove it from the map, and free it
-        delete_protocol_stack_from_map(s_id); //TODO: check the return value
+        delete_protocol_stack_from_map(s_id); //TODO(#327): check the return value
         //Set link_layer_stack to dummy if it is the same as the stack to unregister
         free_protocol_stack(temp_stack);
     }
@@ -910,7 +910,7 @@ bool is_free_protocol_id_for_registractionl(uint32_t proto_id) {
 }
 
 void init_protocol_struct(protocol_t * proto) {
-    // TODO: complete this
+    // TODO(#327): complete this
 
     // register dummy sessionizer
     proto->sessionize = NULL;
@@ -2075,7 +2075,7 @@ attribute_t * get_extracted_attribute_by_name(const ipacket_t *ipacket, const ch
 }
 
 
-//TODO: this function does not take into account protocol encapsulation where more than one occurrence of the same protocol exists in the path
+//TODO(#327): this function does not take into account protocol encapsulation where more than one occurrence of the same protocol exists in the path
 
 void * get_attribute_extracted_data(const ipacket_t * ipacket, uint32_t proto_id, uint32_t field_id) {
     unsigned index = 0;
@@ -2550,7 +2550,7 @@ bool register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, u
     int retval = 0;
 
     if (is_registered_attribute_handler(mmt_handler, proto_id, attribute_id, handler_fct)) {
-        return 0; //TODO: error codes should be added to differentiate between registration failed and handler already exists.
+        return 0; //TODO(#327): error codes should be added to differentiate between registration failed and handler already exists.
     }
 
     struct attribute_internal_struct * attr = get_registered_attribute(mmt_handler, proto_id, attribute_id);
@@ -2564,7 +2564,7 @@ bool register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, u
 
     attr = get_registered_attribute(mmt_handler, proto_id, attribute_id);
     if (attr == NULL) {
-        return 0; //TODO: This is getting paranoiac! we MUST never get here
+        return 0; //TODO(#327): This is getting paranoiac! we MUST never get here
     }
 
     attribute_handler_t * new_attribute_handler = (attribute_handler_t *) mmt_malloc(sizeof (attribute_handler_t));
@@ -2810,7 +2810,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     int is_new_session = 0;
 
-    //TODO: addition of proper handling of embedded sessions.
+    //TODO(#327): addition of proper handling of embedded sessions.
     mmt_session_t * session = ipacket->session;
     if (configured_protocol->protocol->has_session) { // Sessionize packet only if such a function exists!
         session = (mmt_session_t *) ((generic_sessionizer_function) configured_protocol->protocol->sessionize)(configured_protocol, ipacket, index, & is_new_session);
@@ -2925,7 +2925,7 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
 
                 if (ipacket->session == NULL) {
                     //No session encapsulation; parent is NULL
-                    session->parent_session = NULL; //TODO: parent should be set here. If the ipacket is alreay associated to a session, then it is the parent of this one!
+                    session->parent_session = NULL; //TODO(#327): parent should be set here. If the ipacket is alreay associated to a session, then it is the parent of this one!
                     ipacket->session = session;
                 } else {
                     //Embedded session; set its parent
@@ -3296,7 +3296,7 @@ void reset_proto_stats(protocol_instance_t * proto) {
 static inline
 proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset, unsigned index) {
     if (likely(isProtocolStatisticsEnabled(ipacket->mmt_handler))) {
-        /* TODO: Throughout metrics should be replaced by periodic handlers! */
+        /* TODO(#329): Throughout metrics should be replaced by periodic handlers! */
         proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
 
         if (likely(proto_stats)) {
@@ -3347,7 +3347,7 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
         return NULL;
     }
 
-    /* TODO: Throughout metrics should be replaced by periodic handlers! */
+    /* TODO(#329): Throughout metrics should be replaced by periodic handlers! */
     proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
 
     if (likely(proto_stats)) {
@@ -3391,8 +3391,8 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
  * @param index               index of protocol
  */
 int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
-    //TODO: review the exit codes; this depends on the return values of the sub-classification routines
-    //TODO: why don't to enforce here a threshold on the classification?
+    //TODO(#327): review the exit codes; this depends on the return values of the sub-classification routines
+    //TODO(#327): why don't to enforce here a threshold on the classification?
     //Verify that classification is not disabled for this protocol
     // Issue #69: lock-free atomic read (relaxed); compiles to a plain load.
     if (proto_status_load(&configured_protocol->protocol->classify_next.status)) {
@@ -3406,7 +3406,7 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
             mmt_classify_proto_t * temp = configured_protocol->protocol->classify_next.classify_protos;
             // Checking for the port number ??????
             for (; temp != NULL; temp = temp->next) {
-                classif_status = temp->classify_me(ipacket, index); //TODO: check the return value and make the corresponding action accordingly!!!
+                classif_status = temp->classify_me(ipacket, index); //TODO(#327): check the return value and make the corresponding action accordingly!!!
                 // // LN: check if the classify return 1-> do not need to go to check other protocol
                 if(classif_status & MMT_CLASSIFY_MATCHED_MASK){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
                     // mmt_stream_printf(stdout, "\n-]> Classified for protocol %d: %"PRIu64" - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
@@ -3501,7 +3501,7 @@ void proto_process_attribute_handlers(ipacket_t * ipacket, unsigned index) {
  *                             MMT_SKIP : Skip processing this packet but will be come back in future
  */
 int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
-    //TODO: review the exit codes; this depends on the return values of the sub-analysis routines
+    //TODO(#327): review the exit codes; this depends on the return values of the sub-analysis routines
     int retval = MMT_CONTINUE;
     //Verify that analysis is not disabled for this protocol
     // Issue #69: lock-free atomic read (relaxed); compiles to a plain load.
@@ -3742,14 +3742,6 @@ void process_session_timer_handler(mmt_handler_t *mmt) {
     session_timer_iteration_callback(mmt, session_timer_handler_callback);
 }
 
-
-// static inline void update_last_received_packet(packet_info_t * last_packet, ipacket_t * ipacket) {
-//     last_packet->packet_id += 1;
-//     last_packet->packet_len = ipacket->p_hdr->len;
-//     last_packet->time.tv_sec = ipacket->p_hdr->ts.tv_sec;
-//     last_packet->time.tv_usec = ipacket->p_hdr->ts.tv_usec;
-//     ipacket->packet_id = last_packet->packet_id;
-// }
 
 int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
     classified_proto_t classified_proto;
@@ -4344,7 +4336,7 @@ int mmt_string_pointer_snprintf(char * buff, int len, attribute_internal_t * att
 }
 
 int mmt_stats_snprintf(char * buff, int len, attribute_internal_t * attr) {
-    return snprintf(buff, len, "%s", "TODO");
+    return snprintf(buff, len, "%s", "TODO"); /* unimplemented report output — issue #328 */
 }
 
 int mmt_header_line_pointer_snprintf(char * buff, int len, attribute_internal_t * attr) {
@@ -4447,7 +4439,7 @@ int mmt_attr_snprintf(char * buff, int len, attribute_t * a) {
     case MMT_U64_ARRAY:
         return mmt_u64_array_snprintf( buff, len, attr );
     default:
-        return mmt_stats_snprintf(buff, len, attr); //TODO
+        return mmt_stats_snprintf(buff, len, attr); //TODO(#328)
     }
 }
 
@@ -4535,7 +4527,7 @@ int mmt_header_line_pointer_fprintf(FILE * f, attribute_internal_t * attr) {
 }
 
 int mmt_stats_fprintf(FILE *f, attribute_internal_t * attr) {
-    return mmt_stream_printf(f, "%s", "TODO");
+    return mmt_stream_printf(f, "%s", "TODO"); /* unimplemented report output — issue #328 */
 }
 
 int mmt_attr_fprintf(FILE * f, attribute_t * a) {
@@ -4683,7 +4675,7 @@ int mmt_header_line_pointer_format(FILE * f, attribute_internal_t * attr) {
 
 int mmt_stats_format(FILE *f, attribute_internal_t * attr) {
     return mmt_stream_printf(f, "Attribute %s.%s = %s\n",
-                   get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), "TODO");
+                   get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), "TODO"); /* unimplemented report output — issue #328 */
 }
 
 int mmt_attr_format(FILE * f, attribute_t * a) {

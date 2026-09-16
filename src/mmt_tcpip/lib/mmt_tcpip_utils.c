@@ -437,11 +437,6 @@ void mmt_parse_packet_line_info_unix(ipacket_t * ipacket) {
 #define is_separa( x)  (x==' ' || x==';')
 #define is_letter( x ) (is_minus(x) || is_majus(x) || is_number(x) || x == '-' || x == '_')
 
-//static inline bool is_minus( x ) { return  (x >='a'&& x<='z'); }
-//static inline bool is_majus( x ) { return  (x>='A' && x<='Z'); }
-//static inline bool is_number( x ){ return  (x>='0' && x<='9'); }
-//static inline bool is_separa( x) { return  (x==' ' || x==';'); }
-//static inline bool is_letter( x ){ return  (is_minus(x) || is_majus(x) || is_number(x) || x == '-' || x == '_'); }
 
 uint16_t mmt_check_for_email_address(ipacket_t * ipacket, uint16_t counter) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;

@@ -1,6 +1,15 @@
 RELEASE NOTES
 ---
 
+Version 2.0.0 (unreleased — scheduled removals)
+- remove the four deprecated public symbols recorded under issues #149 and #237 (issue #232):
+  `setDataLinkType` (obsolete; no replacement),
+  `get_attribute_extracted_data_encap_index` (use `get_attribute_extracted_data_at_index`),
+  `mmt_print_all_protocols` (use `iterate_through_protocols`), all in `libmmt_core`,
+  and `mmt_search_irc_ssl_detect_ninty_percent_but_very_fast` (use `mmt_search_irc_ssl_detect`)
+  in `libmmt_tcpip`. All four are `__attribute__((deprecated))` today and keep their
+  exported ABI until this major release.
+
 Version 1.8.0 (23 July 2026 - by EM)
 - add DICOM protocol plugin (libmmt_dicom): classify DICOM flows and extract A-ASSOCIATE, C-FIND and P-DATA attributes (called/calling AE titles, max PDU length, command group length and command field, patient name)
 - add syslog protocol parser supporting both RFC 3164 and RFC 5424 message formats

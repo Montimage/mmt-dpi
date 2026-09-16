@@ -14,10 +14,12 @@
 #                reference (#N, GH-N or a github.com/.../issues/N link) — the
 #                Task 5.8 gate, run once the backlog is triaged.
 #
-# Counted: lines matching TODO|FIXME|XXX|HACK in tracked C/C++ sources and
-# headers, excluding the generated src/mmt_mobile/asn1c/ tree and the vendored
-# sources listed in tools/ci/vendor-paths.txt (issue #249, F-CLEAN-019 —
-# exclusion by configuration, not convention).
+# Counted: lines matching a whole-word TODO|FIXME|XXX|HACK in tracked C/C++
+# sources and headers, excluding the generated src/mmt_mobile/asn1c/ tree and
+# the vendored sources listed in tools/ci/vendor-paths.txt (issue #249,
+# F-CLEAN-019 — exclusion by configuration, not convention). Word boundaries
+# (issue #232) keep mkstemp "XXXXXX" templates and strings like "HACKED" from
+# counting as markers.
 #
 # Exit codes: 0 = pass, 1 = condition violated, 2 = helper broken.
 #
@@ -41,14 +43,14 @@ while IFS= read -r p; do
 done < "$VENDOR_LIST"
 
 marker_lines="$(git ls-files '*.[ch]' '*.cpp' '*.hpp' ':!:src/mmt_mobile/asn1c/*' "${vendor_excludes[@]}" \
-    | xargs grep -nE 'TODO|FIXME|XXX|HACK' || true)"
-count="$(printf '%s\n' "$marker_lines" | grep -c .)"
+    | xargs grep -nE '\b(TODO|FIXME|XXX|HACK)\b' || true)"
+count="$(printf '%s\n' "$marker_lines" | grep -c . || true)"
 
 # A marker "carries an issue reference" when the same line names #N, GH-N or
 # a full issues/ URL — everything else is a bare note nobody will find again.
 unreferenced="$(printf '%s\n' "$marker_lines" \
-    | grep -vE '(TODO|FIXME|XXX|HACK)[^\n]*(#\d+|GH-\d+|issues/\d+)' || true)"
-unref_count="$(printf '%s\n' "$unreferenced" | grep -c .)"
+    | grep -vE '(TODO|FIXME|XXX|HACK).*(#[0-9]+|GH-[0-9]+|issues/[0-9]+)' || true)"
+unref_count="$(printf '%s\n' "$unreferenced" | grep -c . || true)"
 
 echo "    markers: $count ($unref_count without an issue reference)"
 
@@ -61,7 +63,8 @@ if [ "$STRICT" -eq 1 ]; then
         exit 1
     fi
     echo "✓ every marker carries an issue reference"
-    exit 0
+    # Fall through: --strict additionally enforces the baseline ratchet
+    # below — the count must not rise even when every marker is referenced.
 fi
 
 if [ ! -f "$BASELINE_FILE" ]; then

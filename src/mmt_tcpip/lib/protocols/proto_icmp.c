@@ -132,7 +132,7 @@ int init_proto_icmp_struct() {
             register_attribute_with_protocol(protocol_struct, &icmp_attributes_metadata[i]);
         }
 
-        register_classification_function(protocol_struct, NULL); //TODO: do not classify what comes next! Check this out
+        register_classification_function(protocol_struct, NULL); //TODO(#330): do not classify what comes next! Check this out
 
         return register_protocol(protocol_struct, PROTO_ICMP);
     } else {

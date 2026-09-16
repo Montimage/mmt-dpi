@@ -15,7 +15,7 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
 static uint32_t edonkey_upper_ports_only = MMT_EDONKEY_UPPER_PORTS_ONLY;
 /* unused - see below in mmt_int_edonkey_tcp()
-static uint32_t edonkey_safe_mode = MMT_PROTOCOL_PLAIN_DETECTION; //BW TODO: Check this out
+static uint32_t edonkey_safe_mode = MMT_PROTOCOL_PLAIN_DETECTION; //BW TODO(#330): Check this out
 */
 
 static int mmt_edonkey_payload_check(const u_int8_t *data, u_int32_t len) {

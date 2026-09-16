@@ -194,7 +194,7 @@ int ipv6_dgram_update(ipv6_dgram_t *dg, const mmt_una_ipv6hdr_t *ip, unsigned av
    }
    else
    {
-      // TODO: Can return here to not overwrite the later fragment
+      // TODO(#327): Can return here to not overwrite the later fragment
       return 2;
    }
    // ipv6_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf);

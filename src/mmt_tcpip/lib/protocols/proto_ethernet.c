@@ -169,7 +169,7 @@ int init_proto_ethernet_struct() {
         register_classification_function(protocol_struct, ethernet_classify_next_proto);
 
         // Ethernet is a major encapsulating protocol, register it as a stack
-        register_protocol_stack(DLT_EN10MB, PROTO_ETHERNET_ALIAS, ethernet_stack_classification); // TODO: check return value (non-critical)
+        register_protocol_stack(DLT_EN10MB, PROTO_ETHERNET_ALIAS, ethernet_stack_classification); // TODO(#327): check return value (non-critical)
 
         return register_protocol(protocol_struct, PROTO_ETHERNET);
     } else {

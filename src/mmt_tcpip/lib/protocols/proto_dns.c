@@ -359,16 +359,7 @@ dns_name_t * dns_extract_name_value(const u_char *dns_name_payload,const u_char*
                     free(com_name);
                     com_name = NULL;
                 }
-                // com_name = malloc((q_name_length + 2) * sizeof(char));
-                // if(com_name == NULL) {
-                //     dns_free_name(q_name);
-                //     free(temp_name);
-                //     return NULL;
-                // }
-                // memcpy(com_name,temp_name,q_name_length+1);
-                // com_name[q_name_length+1]='\0';
                 com_name = temp_name;
-                // free(temp_name);
                 dns_name_t * del_name = current_name;
                 current_name = current_name->next;
                 dns_free_name(del_name);
@@ -422,11 +413,6 @@ dns_query_t * dns_extract_queries(const u_char * dns_queries_payload,int nb_quer
         dq->name[current_name->length]='\0';
         int name_offset = 0;
         name_offset = current_name->real_length;
-        // if(current_name->real_length==2){
-        //     name_offset = 1;
-        // }else{
-        //     name_offset = current_name->real_length;
-        // }
 
         /* QTYPE(2) + QCLASS(2) follow the name at name_offset+1. Bound them;
            on a truncated record keep the name and stop the chain. */

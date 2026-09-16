@@ -465,7 +465,7 @@ typedef struct mmt_internal_tcpip_session_struct {
 
     /* ALL protocol specific 64 bit variables here */
 
-    /* protocols which have marked a connection as this connection cannot be protocol XXX, multiple u64 */
+    /* protocols which have marked a connection as excluded for a given protocol, multiple u64 */
     MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 
 #ifdef PROTO_RTP
@@ -637,7 +637,6 @@ struct mmt_tcpip_internal_packet_struct {
     uint8_t packet_unix_lines_parsed_complete;
     uint8_t empty_line_position_set;
     
-    //TODO: BW temporary solution waiting the TCP segmentation 
     uint32_t tcp_outoforder;
     
     // uint8_t packet_direction:1;

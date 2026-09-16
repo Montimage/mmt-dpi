@@ -537,7 +537,7 @@ int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
      */
     rtp_session_data->mime_type = &static_rtp_payload_mime_types[rtp_hdr->pt];
 
-    ////////////////////////////////////////////TODO: replace by generic function
+    ////////////////////////////////////////////TODO(#331): replace by generic function
 #ifndef _MMT_BUILD_SDK
     application_quality_estimation_internal_t * app_internal_struct;
     app_internal_struct = init_new_internal_application_quality_estimation_struct(init_application_quality_estimation_structures("rtp_q_inf_rules.xml"));
@@ -579,7 +579,7 @@ void rtp_session_data_cleanup(mmt_session_t * session, unsigned index) {
     if (session->session_data[index] != NULL) {
         mmt_free(session->session_data[index]);
 #ifndef _MMT_BUILD_SDK
-        //TODO: free the fuzz quality estimation context
+        //TODO(#336): free the fuzz quality estimation context
         //rtp_session_data->rtp_quality_index_context.quality_index_internal_struct
 #endif /* _MMT_BUILD_SDK */
     }
@@ -852,7 +852,7 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
             return 4;
         }
 #ifdef PROTO_STUN
-        /* TODO the rtp detection sometimes doesn't exclude rtp
+        /* TODO(#330) the rtp detection sometimes doesn't exclude rtp
          * so for TCP flows only run the detection if STUN has been
          * detected (or RTP is already detected)
          * If flows will be seen which start directly with RTP
@@ -864,7 +864,7 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
 
             /* RTP may be encapsulated in TCP packets */
             if (packet->payload_packet_len >= 2 && ntohs(get_u16(packet->payload, 0)) + 2 == packet->payload_packet_len) {
-                /* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
+                /* TODO(#330) there could be several RTP packets in a single TCP packet so maybe the detection could be
                  * improved by checking only the RTP packet of given length */
                 mmt_rtp_search(ipacket, packet->payload + 2, packet->payload_packet_len - 2);
                 return 4;
@@ -873,7 +873,7 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
         if (flow != NULL && packet->detected_protocol_stack[0] == PROTO_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1)
         {
             if (packet->payload_packet_len >= 4 && ntohl(get_u32(packet->payload, 0)) + 4 == packet->payload_packet_len) {
-                /* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
+                /* TODO(#330) there could be several RTP packets in a single TCP packet so maybe the detection could be
                  * improved by checking only the RTP packet of given length */
                 mmt_rtp_search(ipacket, packet->payload + 4, packet->payload_packet_len - 4);
                 return 4;

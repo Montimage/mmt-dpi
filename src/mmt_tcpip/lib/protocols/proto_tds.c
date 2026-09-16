@@ -42,7 +42,7 @@ int mmt_check_tds(ipacket_t * ipacket, unsigned index) {
                         } else {
                             goto exclude_tds;
                         }
-                        //BW: TODO: add more cases for other versions
+                        //BW: TODO(#330): add more cases for other versions
                     default:
                         goto exclude_tds;
                 }
@@ -56,7 +56,7 @@ int mmt_check_tds(ipacket_t * ipacket, unsigned index) {
                         } else {
                             goto exclude_tds;
                         }
-                        //BW: TODO: add more cases for other versions
+                        //BW: TODO(#330): add more cases for other versions
                     default:
                         goto exclude_tds;
                 }

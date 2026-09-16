@@ -64,13 +64,6 @@ int init_proto_oracle_struct() {
 
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ORACLE, PROTO_ORACLE_ALIAS);
     if (protocol_struct != NULL) {
-        // int i = 0;
-        // for (; i < NDN_ATTRIBUTES_NB; i++) {
-        //     register_attribute_with_protocol(protocol_struct, &ndn_attributes_metadata[i]);
-        // }
-        // register_pre_post_classification_functions(protocol_struct, NULL, NULL);
-        // register_proto_context_init_cleanup_function(protocol_struct, setup_ndn_context, cleanup_ndn_context, NULL);
-        // register_session_data_analysis_function(protocol_struct, ndn_session_data_analysis);
         mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
                 &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                 PROTO_ORACLE, PROTO_ORACLE);

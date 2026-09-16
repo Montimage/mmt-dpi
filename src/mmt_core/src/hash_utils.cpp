@@ -482,7 +482,7 @@ extern "C" void int_mapspace_iteration_callback(void * maplist, generic_mapspace
             values.push_back(it->second);
         }
         for (size_t i = 0; i < values.size(); i++) {
-            fct(NULL, values[i], args); //TODO
+            fct(NULL, values[i], args);
         }
     } catch (...) {
         return;
@@ -746,7 +746,7 @@ extern "C" void iterate_through_protocol_stacks(generic_mapspace_iteration_callb
             values.push_back(it->second);
         }
         for (size_t i = 0; i < values.size(); i++) {
-            fct(NULL, values[i], args); //TODO
+            fct(NULL, values[i], args);
         }
     } catch (...) {
         return;

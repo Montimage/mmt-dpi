@@ -8,19 +8,19 @@ application_quality_estimation_t * init_voip_quality_estimation_struct() {
     application = init_new_application_quality_estimation_struct(VoIP);
 
     //initialize loss metric
-    voip_loss = init_new_metric_struct(12, 0.0, 100.0); //TODO: just a test the metric ID should be defined
+    voip_loss = init_new_metric_struct(12, 0.0, 100.0); //TODO(#336): just a test the metric ID should be defined
     register_grade_membership_function_with_metric(voip_loss, init_trapez_right_grade_membership_function(3, 2, 5));
     register_grade_membership_function_with_metric(voip_loss, init_trapez_center_grade_membership_function(2, 0.5, 2.0, 2.0, 5));
     register_grade_membership_function_with_metric(voip_loss, init_trapez_left_grade_membership_function(1, 0.5, 1));
 
     //initialize jitter metric
-    voip_jitter = init_new_metric_struct(15, 0.0, 100); //TODO: just a test the metric ID should be defined
+    voip_jitter = init_new_metric_struct(15, 0.0, 100); //TODO(#336): just a test the metric ID should be defined
     register_grade_membership_function_with_metric(voip_jitter, init_trapez_right_grade_membership_function(3, 5, 20));
     register_grade_membership_function_with_metric(voip_jitter, init_trapez_center_grade_membership_function(2, 2, 5, 5, 20));
     register_grade_membership_function_with_metric(voip_jitter, init_trapez_left_grade_membership_function(1, 2, 5));
 
     //initialize quality index evaluation metric
-    voip_index = init_new_metric_struct(3, 1.0, 5.0); //TODO: just a test the metric ID should be defined
+    voip_index = init_new_metric_struct(3, 1.0, 5.0); //TODO(#336): just a test the metric ID should be defined
     register_grade_membership_function_with_metric(voip_index, init_trapez_left_grade_membership_function(5, 2, 2.5));
     register_grade_membership_function_with_metric(voip_index, init_trapez_center_grade_membership_function(4, 2, 2.5, 2.5, 3));
     register_grade_membership_function_with_metric(voip_index, init_trapez_center_grade_membership_function(3, 2.5, 3, 3, 3.5));

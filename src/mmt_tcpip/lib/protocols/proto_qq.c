@@ -183,7 +183,7 @@ static uint8_t mmt_is_valid_qq_ft_packet(const struct mmt_tcpip_internal_packet_
             return 0;
         }
     } else if (packet->payload[0] == 0x03) {
-        /* TODO currently not detected */
+        /* TODO(#330) currently not detected */
         return 0;
     } else if (packet->payload[0] == 0x00) {
 
@@ -226,15 +226,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                 || (get_u32(packet->payload, 0) == htonl(0x04163a00)
                 && packet->payload[packet->payload_packet_len - 1] == 0x03
                 && packet->payload[4] == packet->payload_packet_len)))) {
-            /*
-               if (flow->qq_stage == 3 && flow->detected_protocol == MMT_PROTOCOL_QQ) {
-               if (flow->packet_direction_counter[0] > 0 && flow->packet_direction_counter[1] > 0) {
-               flow->protocol_subtype = MMT_PROTOCOL_QQ_SUBTYPE_AUDIO;
-               return;
-               } else if (flow->packet_counter < 10) {
-               return;
-               }
-               } */
             flow->qq_stage++;
             if (flow->qq_stage == 3) {
                 MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
@@ -253,11 +244,6 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
                     if (flow->qq_stage == 3) {
                         MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG,
                                 "found qq udp pattern 02 ... 03 four times.\n");
-                        /*
-                           if (packet->payload[0] == 0x04) {
-                           mmt_int_qq_add_connection( MMT_REAL_PROTOCOL);
-                           return;
-                           } */
                         mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return;
                     }
@@ -270,13 +256,7 @@ static void mmt_search_qq_udp(ipacket_t * ipacket)
             for (index = 0; index < no_of_patterns; index++) {
                 if (pat == p8000_patt_02[index]) {
                     flow->qq_stage++;
-                    /*
-                       if (flow->qq_stage == 3 && flow->packet_direction_counter[0] > 0 &&
-                       flow->packet_direction_counter[1] > 0) {
-                       MMT_LOG(MMT_PROTOCOL_QQ, MMT_LOG_DEBUG, "found qq udp pattern four times.\n");
-                       mmt_int_qq_add_connection( MMT_REAL_PROTOCOL);
-                       return;
-                       } else */ if (flow->qq_stage == 3) {
+                    if (flow->qq_stage == 3) {
                         MMT_LOG(PROTO_QQ, MMT_LOG_DEBUG, "found qq udp pattern four times.\n");
                         mmt_int_qq_add_connection(ipacket, MMT_REAL_PROTOCOL);
                         return;

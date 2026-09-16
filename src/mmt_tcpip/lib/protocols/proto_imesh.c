@@ -197,7 +197,7 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IMESH);
         MMT_LOG(PROTO_IMESH, MMT_LOG_DEBUG, "iMesh excluded at stage %d\n",
                 packet->tcp != NULL ? flow->l4.tcp.imesh_stage : 0);
-        // XXX return 0 here ?
+        // XXX(#330) return 0 here ?
     }
     return 0;
 }

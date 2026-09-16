@@ -332,16 +332,6 @@ int tcp_session_payload_down_extraction(const ipacket_t * ipacket, unsigned prot
 
     return 0;
 }
-// int tcp_session_outoforder_extraction(const ipacket_t * ipacket, unsigned proto_index,
-//     attribute_t * extracted_data){
-
-//     if(ipacket->internal_packet->payload_packet_len){
-//         *((uint32_t*) extracted_data->data) = ipacket->session->tcp_outoforder;
-//         return 1;
-//     }
-//     return 0;
-// }
-
 int tcp_session_rtt_extraction(const ipacket_t * ipacket, unsigned proto_index,
     attribute_t * extracted_data){
 
@@ -487,7 +477,7 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_CHECKSUM, TCP_CHECKSUM_ALIAS, MMT_U16_DATA, sizeof (short), 16, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_URG_PTR, TCP_URG_PTR_ALIAS, MMT_U16_DATA, sizeof (short), 18, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_RTT, TCP_RTT_ALIAS, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_session_rtt_extraction},
-    {TCP_SYN_RCV, TCP_SYN_RCV_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_flag_extraction},//TODO: extract function not correct
+    {TCP_SYN_RCV, TCP_SYN_RCV_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_flag_extraction},//TODO(#331): extract function not correct
     {TCP_PAYLOAD_LEN, TCP_PAYLOAD_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_payload_len_extraction},
     {TCP_RETRANSMISSION, TCP_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_retransmission_extraction},
     {TCP_OUTOFORDER, TCP_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_outoforder_extraction},
@@ -580,7 +570,7 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         && ipacket->session->packet_count == 0 /*First packet of the flow*/
         && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN) {
 
-        memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO: Is this memset needed? the syn should be
+        memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO(#330): Is this memset needed? the syn should be
         //seen at the start of the flow, this should have been set to zero
         //at the creation of the flow!!! Check this out
         MMT_LOG(PROTO_UNKNOWN, packet,
@@ -694,7 +684,7 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
         && ipacket->session->packet_count == 0 /*First packet of the flow*/
         && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN) {
 
-        memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO: Is this memset needed? the syn should be
+        memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO(#330): Is this memset needed? the syn should be
         //seen at the start of the flow, this should have been set to zero
         //at the creation of the flow!!! Check this out
         MMT_LOG(PROTO_UNKNOWN, packet,
@@ -795,7 +785,7 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_TCP){
             return new_retval;
         }
-        //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.
+        //BW - TODO(#87): We should have different strategies: best_effort = we can affort a number of missclassifications, etc.
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         if (ipacket->mmt_handler->ip_address_classify == 1){
             retval.proto_id = get_proto_id_from_address(ipacket);
@@ -822,7 +812,7 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
                     retval.proto_id = packet->flow->detected_protocol_stack[a];
                     retval.status = Classified;
                     new_retval = set_classified_proto(ipacket, index, retval);
-                    retval.offset = 0; //From the second proto the offset is the same! //TODO: check this out
+                    retval.offset = 0; //From the second proto the offset is the same! //TODO(#330): check this out
                 }
             }
         }

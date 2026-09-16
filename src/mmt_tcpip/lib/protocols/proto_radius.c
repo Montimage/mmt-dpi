@@ -1930,7 +1930,7 @@ int radius_alloc_ip_type_extraction(const ipacket_t * ipacket, unsigned proto_in
     return 0;
 }
 
-int mmt_check_radius(ipacket_t * ipacket, unsigned index) { //BW: TODO: check this out
+int mmt_check_radius(ipacket_t * ipacket, unsigned index) { //BW: TODO(#330): check this out
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
@@ -2088,7 +2088,7 @@ static attribute_metadata_t radius_attributes_metadata[RADIUS_ATTRIBUTES_NB] = {
     {RADIUS_3GPP_CG_IPV6, RADIUS_3GPP_CG_IPV6_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, -2, SCOPE_PACKET, radius_cgipv6_extraction},
     {RADIUS_3GPP_SGSN_IPV6, RADIUS_3GPP_SGSN_IPV6_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, -2, SCOPE_PACKET, radius_sgsn_ipv6_extraction},
     {RADIUS_3GPP_GGSN_IPV6, RADIUS_3GPP_GGSN_IPV6_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, -2, SCOPE_PACKET, radius_ggsn_ipv6_extraction},
-    {RADIUS_3GPP_DNS_IPV6, RADIUS_3GPP_DNS_IPV6_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, -2, SCOPE_PACKET, radius_dns_ipv6_extraction}, //TODO: binary 256 needed
+    {RADIUS_3GPP_DNS_IPV6, RADIUS_3GPP_DNS_IPV6_ALIAS, MMT_DATA_IP6_ADDR, IPv6_ALEN, -2, SCOPE_PACKET, radius_dns_ipv6_extraction}, //TODO(#331): binary 256 needed
     {RADIUS_3GPP_SGSN_MCCMNC, RADIUS_3GPP_SGSN_MCCMNC_ALIAS, MMT_BINARY_DATA, BINARY_64DATA_TYPE_LEN, -2, SCOPE_PACKET, radius_sgsn_mccmnc_extraction},
     {RADIUS_3GPP_TEARDOWN_IND, RADIUS_3GPP_TEARDOWN_IND_ALIAS, MMT_U8_DATA, sizeof (uint8_t), 0, SCOPE_PACKET, radius_teardown_ind_extraction},
     {RADIUS_3GPP_IMEISV, RADIUS_3GPP_IMEISV_ALIAS, MMT_BINARY_DATA, BINARY_64DATA_TYPE_LEN, -2, SCOPE_PACKET, radius_imei_extraction},

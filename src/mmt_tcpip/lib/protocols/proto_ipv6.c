@@ -272,7 +272,7 @@ int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * 
 
 int ip6_session_cleanup_on_timeout(void * protocol_context, mmt_session_t * timedout_session, void * args) {
     //Remove the session from the sessions hash
-    delete_session_from_protocol_context(protocol_context, timedout_session->session_key); //TODO: we are not verifying the return of the delete
+    delete_session_from_protocol_context(protocol_context, timedout_session->session_key); //TODO(#327): we are not verifying the return of the delete
 
     // free session allocated memory. be careful about multiple free of the same data.
     // In the closup some session data are freed. These should not be the same as here.
@@ -707,13 +707,6 @@ int ip6_classify_next_proto(ipacket_t * ipacket, unsigned index) {
             //ipacket->session->tcp_udp_index = index + 1;
             retval.status = Classified;
             break;
-            /* // Not valid for IPv6
-                   case 94:
-                            retval.proto_id = PROTO_IP_IN_IP;
-                            retval.offset = next_offset;
-                            retval.status = Classified;
-                            break;
-             */
         case 115:
             retval.proto_id = PROTO_L2TP;
             retval.offset = next_offset;
@@ -1502,17 +1495,6 @@ int proto_out_of_order_extraction(const ipacket_t * ipacket, unsigned proto_inde
     }
     return 0;
 }
-
-// int proto_unknown_ext_header_extraction(const ipacket_t * ipacket, unsigned proto_index,
-//                                   attribute_t * extracted_data) {
-//     int offset = get_packet_offset_at_index(ipacket, index);
-//     if (ipacket->ipv6_ext_headers_len > 0) {
-//         struct ext_hdr_generic * header = (struct ext_hdr_generic *)& ipacket->data[offset + sizeof(struct iphdr) + ipacket->ipv6_ext_headers_offset[ipacket->ipv6_ext_headers_len - 1]];
-//         *((uint16_t *) extracted_data->data) = header->nexthdr;
-//         return 1;
-//     }
-//     return 0;
-// }
 
 static attribute_metadata_t ip6_attributes_metadata[IP6_ATTRIBUTES_NB] = {
     {IP6_VERSION, IP6_VERSION_ALIAS, MMT_U8_DATA, sizeof (char), 0, SCOPE_PACKET, ip6_version_extraction},

@@ -186,21 +186,6 @@ extern "C" {
      * BUILD=asan -fsanitize=alignment. Same remedy, same reasoning.
      */
     typedef struct sctp_datahdr __attribute__((aligned(1))) mmt_una_sctp_datahdr_t;
- /*
- typedef struct sctp_gap_ack_block {
- uint16_t start;
- uint16_t end;
- struct sctp_gap_ack_block * next;
- };
-
- typedef uint32_t sctp_dup_tsn_t;
-
- typedef struct sctp_sack_variable{
-        sctp_gap_ack_block    * gab;
-        sctp_dup_tsn_t        * dup;
-        struct sctp_sack_variable * next;
- };
-*/
  struct sctp_sackhdr {
  uint8_t type;
  uint8_t flags;

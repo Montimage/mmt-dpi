@@ -141,7 +141,7 @@ int cleanup_ipv6_internal_context(internal_ip_proto_context_t * tcpip_context) {
     return 1;
 }
 
-int close_session_id_lists(void * proto_context) { //TODO: rename to remove "id" from function name
+int close_session_id_lists(void * proto_context) { //TODO(#327): rename to remove "id" from function name
     //clear_timeout_milestones(); // This is performed in the core in the function "close_extraction"! This is not the right place to do this.
 
     protocol_sessions_iteration_callback(proto_context, free_session_data, ((protocol_instance_t *) proto_context)->args);
@@ -378,7 +378,7 @@ mmt_session_t * get_session(void * protocol_context, mmt_session_key_t * session
             ((mmt_ip6_id_t *) ((mmt_session_key_t *) retval->session_key)->higher_ip)->count++;
         }
 
-        //TODO: we are not verifying the return value of the insert
+        //TODO(#327): we are not verifying the return value of the insert
         retval->setup_packet_direction = session_key->is_lower_initiator;
         //retval->proto_stack = ipacket->proto_stack;
 

@@ -8,4 +8,10 @@
 # #249: re-baselined 199 -> 188 — the vendored http_parser.{c,h} exclusion
 # (F-CLEAN-019) removed 2 markers and the value also absorbs 9 markers
 # burned down since the gate was introduced.
-188
+#
+# #232: re-baselined 188 -> 170 — Task 5.8 triage: every surviving marker now
+# carries an issue reference (see lint-markers.sh --strict, run blocking in
+# CI). Word-boundary matching dropped 3 false positives (mkstemp "XXXXXX"
+# templates, a "HACKED" test string); 10 stale/noise markers were deleted and
+# 2 embedded in now-deleted commented-out code went away with them.
+170

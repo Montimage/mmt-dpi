@@ -438,22 +438,6 @@ inline static uint64_t _get_proto_by_udp_port_number(uint16_t port_number,const 
     // M9 (issue #26): fall back to externally-loaded port hints (extend-only).
     return _ext_port_lookup(ext_udp_ports, ext_udp_ports_n, port_number);
 }
-// unsigned int mmt_get_protocol_by_port_number(uint8_t proto, uint16_t sport, uint16_t dport) {
-//     uint64_t proto_id = PROTO_UNKNOWN;
-//     if (proto == IPPROTO_UDP) {
-//         proto_id = _get_proto_by_udp_port_number(sport);
-//         if(proto_id == PROTO_UNKNOWN){
-//              proto_id = _get_proto_by_udp_port_number(dport);
-//         }
-//     } else if (proto == IPPROTO_TCP) {
-//         proto_id = _get_proto_by_tcp_port_number(sport);
-//         if(proto_id == PROTO_UNKNOWN){
-//              proto_id = _get_proto_by_tcp_port_number(dport);
-//         }
-//     }
-
-//     return (proto_id);
-// }
 
 /*
  * M9 (issue #75): payload-confirmed port-only demotion.

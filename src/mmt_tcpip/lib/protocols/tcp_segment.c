@@ -136,7 +136,7 @@ tcp_seg_t * tcp_seg_insert(tcp_seg_t * root, tcp_seg_t * seg){
 	while(current_seg) {
 		if (current_seg->seq == seg->seq) {
 			// Duplicated segment
-			// TODO: discuss whether to override duplicate segment or keep first
+			// TODO(#245): discuss whether to override duplicate segment or keep first
 			mmt_debug_log("[tcp_seg_insert] Duplicated segment: seq %lu - packets: %lu, %lu (ignored)\n", seg->seq, current_seg->packet_id, seg->packet_id);
 			return NULL; // duplicated segment
 		}

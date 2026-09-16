@@ -159,7 +159,7 @@ int init_tcpip_plugin() {
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_zattoo_tcp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_qq_tcp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_feidian_tcp, 50);
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_popo, 50); //BW: TODO: check this out
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_popo, 50); //BW: TODO(#330): check this out
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_thunder_tcp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_vnc, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_teamviewer_tcp, 50);
@@ -172,9 +172,9 @@ int init_tcpip_plugin() {
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_flash, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_bgp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_secondlife_tcp, 50);
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_pcanywhere, 50); //BW: TODO: The classification of PCANYWHERE seems to be for UDP only, check this out
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_icecast, 50); //BW: TODO: Check out the classification --- dependence on http
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_shoutcast, 50); //BW: TODO: Check out the classification --- dependence on http
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_pcanywhere, 50); //BW: TODO(#330): The classification of PCANYWHERE seems to be for UDP only, check this out
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_icecast, 50); //BW: TODO(#330): Check out the classification --- dependence on http
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_shoutcast, 50); //BW: TODO(#330): Check out the classification --- dependence on http
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_veohtv_tcp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_openft, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_TCP, mmt_check_syslog, 50);
@@ -239,13 +239,13 @@ int init_tcpip_plugin() {
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_stun_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_rtp_udp, 50); //Check STUN before RTP
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_sip, 50);
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_edonkey, 50); //BW: TODO: Edonkey classification seems limited to TCP! Check this out
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_edonkey, 50); //BW: TODO(#330): Edonkey classification seems limited to TCP! Check this out
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_gnutella, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_directconnect_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_msn_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_yahoo_udp, 50);
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_oscar, 50); //BW: TODO: the classification of oscar seems to be for TCP only
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_jabber, 50); //BW: TODO: the classification of jabber seems to be for TCP only
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_oscar, 50); //BW: TODO(#330): the classification of oscar seems to be for TCP only
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_jabber, 50); //BW: TODO(#330): the classification of jabber seems to be for TCP only
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_gtp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_manolito_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_imesh_udp, 50);
@@ -257,11 +257,11 @@ int init_tcpip_plugin() {
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_pplive_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_iax, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_mgcp, 50);
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_gadugadu, 50); //BW: TODO: the classification of gadugadu seems to be for TCP only
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_gadugadu, 50); //BW: TODO(#330): the classification of gadugadu seems to be for TCP only
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_zattoo_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_qq_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_feidian_udp, 50);
-    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_popo, 50); //BW: TODO: check this out
+    REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_popo, 50); //BW: TODO(#330): check this out
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_thunder_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_teamviewer_udp, 50);
     REGISTER_INTER_PROTO_OR_FAIL(PROTO_UDP, mmt_check_socrates_udp, 50);

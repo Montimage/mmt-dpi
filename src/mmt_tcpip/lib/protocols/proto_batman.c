@@ -26,7 +26,7 @@ int batman_packet_format_extraction(const ipacket_t * packet, unsigned proto_ind
     struct batman_packet * b_packet = (struct batman_packet *) &packet->data[proto_offset];
     */
 
-    //TODO: check if packet is well formatted
+    //TODO(#330): check if packet is well formatted
 
     *((unsigned int *) extracted_data->data) = 1;
 
@@ -261,14 +261,6 @@ int init_batman_uni_frag() {
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 int init_proto_batman_struct() {
     init_proto_batman();
-/*
-    init_batman_packet();
-    init_batman_icmp();
-    init_batman_unicast();
-    init_batman_bcast();
-    init_batman_vis();
-    init_batman_uni_frag();
-*/
     return 1;
 }
 

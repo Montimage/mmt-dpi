@@ -59,7 +59,7 @@ uint8_t search_ddl_domains(ipacket_t * ipacket) {
     if (packet->line[0].len < 9 + filename_start
             || mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) != 0) {
         MMT_LOG(PROTO_DIRECT_DOWNLOAD_LINK, 
-                MMT_LOG_DEBUG, "DDL: PACKET NOT HTTP CONFORM.\nXXX%.*sXXX\n",
+                MMT_LOG_DEBUG, "DDL: PACKET NOT HTTP CONFORM.\n>>>%.*s<<<\n",
                 8, &packet->line[0].ptr[packet->line[0].len - 9]);
         goto end_ddl_nothing_found;
     }

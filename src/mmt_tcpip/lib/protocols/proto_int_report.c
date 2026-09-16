@@ -58,7 +58,7 @@ size_t proto_int_get_int_report_header_size(const u_char *cursor, const u_char *
 	advance_pointer(eth, struct ethhdr, cursor, end_cursor, "No INT.Ethernet");
 
 	if( ntohs(eth->h_proto) != ETH_TYPE_IP ){
-		//TODO support IPv6?
+		//TODO(#332) support IPv6?
 		debug("No IPv4 after Ethernet");
 		return 0;
 	}
@@ -159,7 +159,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	advance_pointer(eth, struct ethhdr, cursor, end_cursor, "No INT.Ethernet");
 
 	if( ntohs(eth->h_proto) != ETH_TYPE_IP ){
-		//TODO support IPv6?
+		//TODO(#332) support IPv6?
 		debug("No IPv4 after Ethernet");
 		return NOT_FOUND;
 	}

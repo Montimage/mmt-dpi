@@ -372,7 +372,7 @@ void *get_xdata(long type, int size, void *str)
         case MMT_STRING_LONG_DATA:
         case MMT_BINARY_VAR_DATA:
         case MMT_BINARY_DATA:
-            // TODO: BINARY needs to be corrected? Normally will contain an address that needs to be fitted in to the form short+void* where short is the
+            // TODO(#326): BINARY needs to be corrected? Normally will contain an address that needs to be fitted in to the form short+void* where short is the
             //      length in bytes of void* and contains the address in 4 hex values
             memcpy(data, (void *) str, size);
             return (void *) data;
@@ -426,7 +426,7 @@ void *get_xdata(long type, int size, void *str)
         case MMT_STRING_DATA_POINTER:
         case MMT_UNDEFINED_TYPE:
              //if(type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:4\n");
-             return NULL;                 //TODO verify if OK
+             return NULL;                 //TODO(#326) verify if OK
              break;
         default:
             (void)fprintf(stderr, "Error 2: Type [%ld], size [%d] not implemented yet, data type unknown.\n [%s]\n", type, size, (char *)data);
@@ -454,48 +454,48 @@ char *get_my_data(void *data1, short size, long type) {
     buff1[0] = '\0';
     switch (type) {
         case MMT_DATA_IP6_ADDR:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_PORT:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_PORT_RANGE:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_DATE:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_TIMEARG:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_FLOAT:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_IP_NET:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_MAC_ADDR:
-            // TODO
+            // TODO(#326)
             convert_mac_bytes_to_string(&buff1, (unsigned char *) data1);
             break;
         case MMT_DATA_TIMEVAL:
-            // TODO
+            // TODO(#326)
             t1 = *(struct timeval *) (data1);
             (void)snprintf(buff1, 100, "%lu.%06lu", t1.tv_sec, (long) t1.tv_usec);
             break;
         case MMT_DATA_IP_ADDR:
-            // TODO
+            // TODO(#326)
             (void)snprintf(buff1, 100, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));
             break;
         case MMT_U16_DATA:
-            // TODO
+            // TODO(#326)
             (void)snprintf(buff1, 100, "%d", *(unsigned short*) (data1));
             break;
         case MMT_U32_DATA:
             (void)snprintf(buff1, 100, "%lu", *(unsigned long*) (data1));
             break;
         case MMT_U64_DATA:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_U8_DATA:
         case MMT_DATA_CHAR:
@@ -541,7 +541,7 @@ char *get_my_data(void *data1, short size, long type) {
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
 
-            // TODO
+            // TODO(#326)
             db1 = (mmt_binary_data_t *) (data1);
             data_size = db1->len;
             data2 = db1->data;
@@ -565,13 +565,13 @@ char *get_my_data(void *data1, short size, long type) {
             }
             break;
         case MMT_DATA_LAYERID:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_POINT:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_DATA_FILTER_STATE:
-            // TODO
+            // TODO(#326)
             break;
         case MMT_UNDEFINED_TYPE:
         case MMT_DATA_POINTER:
@@ -581,7 +581,7 @@ char *get_my_data(void *data1, short size, long type) {
         case MMT_STATS:
         case MMT_GENERIC_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
-            // TODO verify if OK
+            // TODO(#326) verify if OK
             //if(type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:5\n");
             break;
              
@@ -907,7 +907,7 @@ char * funct_get_info_param( mmt_handler_t *mmt, short reg_tuple, char * input, 
     }
 
     if (*end == ')')
-        return NULL; // XXX well ?
+        return NULL; // XXX(#326) well ?
 
     return NULL;
 }
@@ -2175,25 +2175,25 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
             type = temp->data_type_id;
             switch (type) {
                 case MMT_DATA_IP6_ADDR:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_PORT:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_PORT_RANGE:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_DATE:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_TIMEARG:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_FLOAT:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_IP_NET:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
@@ -2204,7 +2204,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     xfree(temp_MAC);
                     break;
                 case MMT_DATA_TIMEVAL:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_IP_ADDR:
                     if(proto_name!=NULL && att_name!=NULL && *((char*)data1)!=0){
@@ -2229,7 +2229,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 case MMT_U64_DATA:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_U8_DATA:
                 case MMT_DATA_CHAR:
@@ -2277,7 +2277,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 }
                 case MMT_BINARY_DATA:
                 case MMT_BINARY_VAR_DATA:
-                    // TODO
+                    // TODO(#326)
                     db1 = (mmt_binary_data_t *) (data1);
                     /* db1->len is a packet-controlled record prefix — bound it
                      * by the inline array the record actually carries, same
@@ -2326,13 +2326,13 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     }
                     break;
                 case MMT_DATA_LAYERID:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_POINT:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_DATA_POINTER:
-                    // TODO
+                    // TODO(#326)
                     //(void)fprintf(stderr, "MMT_DATA_POINTER:6\n");
                	 //check only if we are verifying tcp.p_payload
                	 if( temp->protocol_id == 354  && temp->field_id == 4098 ){
@@ -2354,7 +2354,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                	  }
                     break;
                 case MMT_DATA_FILTER_STATE:
-                    // TODO
+                    // TODO(#326)
                     break;
                 case MMT_UNDEFINED_TYPE:
                 case MMT_DATA_BUFFER:
@@ -2363,7 +2363,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                 case MMT_STATS:
                 case MMT_GENERIC_HEADER_LINE:
                 case MMT_STRING_DATA_POINTER:
-                    // TODO verify if OK
+                    // TODO(#326) verify if OK
                     break;
 
                 default:
@@ -2650,11 +2650,11 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
         case MMT_GENERIC_HEADER_LINE:
         case MMT_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
-            return NOT_VALID; //TODO verify if OK
+            return NOT_VALID; //TODO(#326) verify if OK
             break;
         case MMT_DATA_POINTER:
             //(void)fprintf(stderr, "MMT_DATA_POINTER:1\n");
-            return NOT_VALID; //TODO verify if OK
+            return NOT_VALID; //TODO(#326) verify if OK
             break;
         default:
             (void)fprintf(stderr, "Error 36b: Comparing values is not possible. Type not implemented yet.\n");
@@ -2773,7 +2773,7 @@ int compare_values(compare_value v1, compare_value v2, short ope)
                 return VALID;
             break;
         case MMT_DATA_PATH:
-            //TODO: need to complete for other cases
+            //TODO(#326): need to complete for other cases
             if (ope == XC || ope == XCE) {
               needle = atoi(data2);
               if(size>0 && size < 20){
@@ -2876,7 +2876,7 @@ int compare_values(compare_value v1, compare_value v2, short ope)
         case MMT_STATS:
         case MMT_GENERIC_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
-            return NOT_VALID; //TODO verify if OK
+            return NOT_VALID; //TODO(#326) verify if OK
             break;
         default:
             (void)fprintf(stderr, "Error 36: Comparing values is not possible. Type not implemented yet.\n");
@@ -2930,17 +2930,17 @@ void * compute(compare_value v1, compare_value v2, short operator)
 
     switch (v1.type) {
         case MMT_DATA_TIMEVAL:
-            // TODO
+            // TODO(#326)
             (void)fprintf(stderr, "Error 36a1: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
             exit(-1);
             break;
         case MMT_DATA_DATE:
-            // TODO
+            // TODO(#326)
             (void)fprintf(stderr, "Error 36a2: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
             exit(-1);
             break;
         case MMT_DATA_FLOAT:
-            // TODO
+            // TODO(#326)
             (void)fprintf(stderr, "Error 36a3: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
             exit(-1);
             break;
@@ -2987,7 +2987,7 @@ void * compute(compare_value v1, compare_value v2, short operator)
             break;
         case MMT_U64_DATA:
         case MMT_DATA_POINT:
-        case MMT_DATA_PORT_RANGE: // TODO: to check
+        case MMT_DATA_PORT_RANGE: // TODO(#326): to check
             ull1 = *((unsigned long long *) (data1));
             ull2 = *((unsigned long long *) (data2));
             ull0 = xmalloc(sizeof (unsigned long long));
@@ -3063,7 +3063,7 @@ void * compute(compare_value v1, compare_value v2, short operator)
         case MMT_GENERIC_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
             //if(v1.type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:3\n");
-            return NULL; //TODO verify if OK
+            return NULL; //TODO(#326) verify if OK
             break;
         default:
             (void)fprintf(stderr, "Error 36a: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
@@ -3363,7 +3363,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 			} else if (po == BOTH && state == NOT_SATISFIED) {
 				(void)strcpy(verdict, "not_respected");
 			} else if (po == BOTH && state == NEITHER) {
-				(void)strcpy(verdict, "unknown"); // TODO:????
+				(void)strcpy(verdict, "unknown"); // TODO(#326):????
 			}
 			break;
 		case ATTACK:
@@ -3381,7 +3381,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 			} else if (po == BOTH && state == NOT_SATISFIED) {
 				(void)strcpy(verdict, "not_detected");
 			} else if (po == BOTH && state == NEITHER) {
-				(void)strcpy(verdict, "unknown"); // TODO for inconclusive at begining or at end of input
+				(void)strcpy(verdict, "unknown"); // TODO(#326) for inconclusive at begining or at end of input
 			}
 			break;
 		default:
@@ -3968,7 +3968,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
 		xfree( type );
     }
 
-    // TODO: Folder where the scripts are installed is current folder
+    // TODO(#326): Folder where the scripts are installed is current folder
     void *data = NULL;
     short do_it = 0;
     char * what_to_do = NULL;
@@ -4104,7 +4104,7 @@ int timeval_control(double delay_max, double delay_min, struct timeval start, st
 
 int check_for_countout(rule *r, int count)
 {
-    // TODO: increment counter
+    // TODO(#326): increment counter
     int ret = 0;
     // ret = COUNTIN;
     ret = COUNTOUT;
@@ -4639,7 +4639,7 @@ int verify( verify_ctx_t *ctx, short context, rule *r )
             (void)fprintf(stderr, "Error 38: Encoutered incorrect sequence of events.\n");
             break;
         case REPEAT: //same as AND but do it several repeat_times, couting them in repeat_times_found
-            // TODO
+            // TODO(#326)
             break;
         case XFUNCT:
         case XAND:
@@ -4752,7 +4752,7 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
             curr_rule_instance = temp;
         }
         if(if_valid_and_no_instance_satisfied_then_generate_not_satisfied == VALID){
-          // TODO: works only if left branch is one event
+          // TODO(#326): works only if left branch is one event
           if_valid_and_no_instance_satisfied_then_generate_not_satisfied = NOT_VALID;
           strncpy(cause,"C1 satisfied but C2 not found in property: 'if C1 THEN BEFORE we should have C2'", SIZE_CAUSE);
           cause[SIZE_CAUSE]='\0';

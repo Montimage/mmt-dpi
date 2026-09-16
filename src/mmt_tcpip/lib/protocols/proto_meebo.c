@@ -31,7 +31,7 @@ void mmt_classify_meebo(ipacket_t * ipacket, unsigned index) {
 #endif
             ) {
 
-        /* TODO: once we have an amf decoder we can more directly access the rtmp fields
+        /* TODO(#330): once we have an amf decoder we can more directly access the rtmp fields
          *       if so, we may also exclude earlier */
         if (packet->payload_packet_len > 900) {
             if (mmt_memcmp(packet->payload + 116, "tokbox/", 7) == 0 ||

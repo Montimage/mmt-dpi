@@ -82,27 +82,13 @@ int header_value_cb (llhttp_t *p, const char *buf, size_t len)
  **/
 int request_url_cb (llhttp_t *p, const char *buf, size_t len)
 {
-  // char temp[20408 + 1];
-  // char *temp;
-  // temp = malloc((len+1)*sizeof(char));
-  // strncpy(temp, buf, len);
-  // temp[len] = '\0';
-  //fprintf(stdout, "URL: %s\n", temp);
-  // fire_attribute_event(sp->ipacket, PROTO_HTTP, HTTP_HEADER, sp->index, (void *) &temp);
-  stream_processor_t * sp = (stream_processor_t *) p->data;
-  // if (sp) printf("Start a HTTP request: %lu, %d \n", ((ipacket_t *)sp->ipacket)->packet_id, sp->index);
+  (void)p; (void)buf; (void)len;
   return 0;
 }
 
 int response_status_cb (llhttp_t *p, const char *buf, size_t len)
 {
-  // char *temp;
-  // temp = malloc((len+1)*sizeof(char));
-  // strncpy(temp, buf, len);
-  // temp[len] = '\0';
-  // printf("Status: %s\n", temp);
-  stream_processor_t * sp = (stream_processor_t *) p->data;
-  // if (sp) printf("Start a HTTP response: %lu, %d \n", ((ipacket_t *)sp->ipacket)->packet_id, sp->index);
+  (void)p; (void)buf; (void)len;
   return 0;
 }
 

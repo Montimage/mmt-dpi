@@ -202,7 +202,7 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 		// https://datatracker.ietf.org/doc/html/rfc9000#section-17.2
 		if( !(flags & 0x40) )
 			goto _not_found_quic_ietf;
-		//TODO: support only version 1 for now
+		//TODO(#333): support only version 1 for now
 		{
 			uint32_t version;
 			memcpy(&version, &ipacket->data[offset + 1], sizeof(version));
@@ -230,7 +230,7 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 		if( !(flags & 0x40) ) //fixed_bit is set to 1
 			goto _not_found_quic_ietf;
 
-		//FIXME: not sure why this value can be non-zero
+		//FIXME(#333): not sure why this value can be non-zero
 		//The value included prior to protection MUST be set to 0.
 		//if( (flags & 0x18) != 0 ) //reserved_bits
 		//	goto _not_found_quic_ietf;
@@ -259,7 +259,7 @@ static int _classified_quic_ietf(ipacket_t *ipacket, unsigned index, size_t offs
 	retval.proto_id = PROTO_QUIC_IETF;
 	retval.status = Classified;
 
-	//TODO: need to find a suitable place to put these 2 functions
+	//TODO(#333): need to find a suitable place to put these 2 functions
 	_quic_ietf_session_data_init( ipacket, index+1 );
 	_quic_ietf_session_data_analysis( ipacket, index+1 );
 	return set_classified_proto(ipacket, index+1, retval);
@@ -429,7 +429,7 @@ int init_proto_quic_ietf_struct() {
 	}
 
 	//QUIC is after UDP, so we classify it once we got UDP
-	//TODO: need to classify QUIC after QUIC
+	//TODO(#333): need to classify QUIC after QUIC
 	if( !register_classification_function_with_parent_protocol( PROTO_UDP, _classify_quic_ietf_from_udp, 100 ) ){
 		log_err("Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
 		return PROTO_NOT_REGISTERED;
@@ -442,7 +442,7 @@ int init_proto_quic_ietf_struct() {
 
 	_init_bitmask();
 
-	//TODO: need to get QUIC session
+	//TODO(#333): need to get QUIC session
 	register_session_data_initialization_function(protocol_struct, _quic_ietf_session_data_init);
 	register_session_data_cleanup_function(protocol_struct, _quic_ietf_session_data_cleanup);
 	register_session_data_analysis_function(protocol_struct, _quic_ietf_session_data_analysis);

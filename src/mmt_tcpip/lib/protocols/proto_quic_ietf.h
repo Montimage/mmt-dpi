@@ -103,7 +103,7 @@ typedef struct quic_ietf_1_rtt_packet {
 	//https://datatracker.ietf.org/doc/html/rfc9000#section-5.1
 	// Packets with short headers (Section 17.3) only include the Destination Connection ID
 	//  and omit the explicit length
-	uint8_t destination_connection_id[8]; //0..160, TODO: fixed 8 bytes for now
+	uint8_t destination_connection_id[8]; //0..160, TODO(#333): fixed 8 bytes for now
 	uint8_t packet_number[4]; // (8..32),
 	const uint8_t *packet_payload;
 } __attribute__((packed))

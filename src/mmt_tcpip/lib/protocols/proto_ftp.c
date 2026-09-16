@@ -1862,7 +1862,7 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
     uint8_t i;
     uint32_t ftp_ip;
 
-    // TODO check if normal passive mode also needs adaption for ipv6
+    // TODO(#330) check if normal passive mode also needs adaption for ipv6
     if (packet->payload_packet_len > 3 && mmt_mem_cmp(packet->payload, "227 ", 4) == 0) {
         MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP passive mode initial string\n");
 
@@ -2725,14 +2725,6 @@ int ftp_packet_request_extraction(const ipacket_t * ipacket, unsigned proto_inde
             extracted_data->data = (void*)ret;
             return 1;
         }
-        // ftp_command_t * cmd = ftp_get_command(payload, payload_len);
-        // if (cmd && cmd->str_cmd) {
-        //     debug("FTP: packet_request %d in packet: %lu\n", cmd->cmd, ipacket->packet_id);
-        //     char *ret_v = str_copy(cmd->str_cmd);
-        //     extracted_data->data = (void*)ret_v;
-        //     free_ftp_command(cmd);
-        //     return 1;
-        // }
     }
     return 0;
 }
@@ -2780,14 +2772,6 @@ int ftp_packet_response_code_extraction(const ipacket_t * ipacket, unsigned prot
         }
         *((uint16_t*)extracted_data->data) = ftp_get_response_code(payload,payload_len);
         return 1;
-        // ftp_response_t * res = ftp_get_response(payload, payload_len);
-        // if (res && res->code) {
-        //     debug("FTP: packet_response %d in packet: %lu\n", res->code, ipacket->packet_id);
-        //     uint16_t ret_v = res->code;
-        //     *((uint16_t*)extracted_data->data) = ret_v;
-        //     free_ftp_response(res);
-        //     return 1;
-        // }
     }
     return 0;
 }
@@ -2813,14 +2797,6 @@ int ftp_packet_response_value_extraction(const ipacket_t * ipacket, unsigned pro
             extracted_data->data = (void*)ret;
             return 1;
         }
-        // ftp_response_t * res = ftp_get_response(payload, payload_len);
-        // if (res->code && res->value) {
-        //     debug("FTP: packet_response_value %s in packet: %lu\n", res->value, ipacket->packet_id);
-        //     char * ret_v = str_copy(res->value);
-        //     extracted_data->data = (void*)ret_v;
-        //     free_ftp_response(res);
-        //     return 1;
-        // }
     }
     return 0;
 }
@@ -2881,31 +2857,6 @@ static attribute_metadata_t ftp_attributes_metadata[FTP_ATTRIBUTES_NB] = {
 //////////////////////////// END OF EXTRACTION /////////////////////////////////
 
 ///////////////////////////////// SESSION DATA ANALYSE ////////////////////////////////////////
-/**
- * Analysis FTP data packet
- * @param ipacket  packet to analysis
- * @param index    protocol index
- * @param ftp_data ftp data session which this packet belongs to
- */
-// void ftp_data_packet(ipacket_t *ipacket,unsigned index,ftp_data_session_t * ftp_data){
-// debug("FTP: FTP_DATA PACKET: %lu",ipacket->packet_id);
-
-//mmt_debug_log("from http generic session data analysis\n");
-// int offset = get_packet_offset_at_index(ipacket, index);
-
-// char *payload = (char*)&ipacket->data[offset];
-// if(payload[0]=='\0'){
-// return 0;
-// }
-
-// ftp_data_session_t *ftp_data = (ftp_data_session_t*)ipacket->session->session_data[index];
-
-// if(ftp_data != NULL){
-//     ipacket->session->session_data[index] =  ipacket->session->next->session_data[index];
-// }
-// debug("FTP: Payload: %s",payload);
-// }
-
 /**
  * Analysis a request packet
  * @param ipacket     packet to analysis
@@ -3210,14 +3161,6 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
 int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 
     debug("FTP: START ANALYSING SESSION DATA OF PACKET: %lu", ipacket->packet_id);
-
-    //mmt_debug_log("from http generic session data analysis\n");
-    // int offset = get_packet_offset_at_index(ipacket, index);
-
-    // char *payload = (char*)&ipacket->data[offset];
-    // if(payload[0]=='\0'){
-    // return 0;
-    // }
 
     // Make sure there is data to analayse
     if (ipacket->internal_packet->payload_packet_len == 0) {

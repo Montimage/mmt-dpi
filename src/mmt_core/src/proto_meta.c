@@ -144,7 +144,7 @@ int init_proto_meta_struct() {
             register_attribute_with_protocol(protocol_struct, &meta_attributes_metadata[i]);
         }
 
-        //TODO: these initializations need to be done
+        //TODO(#327): these initializations need to be done
         register_session_data_initialization_function(protocol_struct, NULL);
         register_session_data_analysis_function(protocol_struct, NULL);
         register_session_data_cleanup_function(protocol_struct, NULL);

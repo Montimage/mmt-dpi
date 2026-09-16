@@ -44,14 +44,6 @@ typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
 typedef struct protocol_struct                  protocol_t;
 typedef struct ipacket_struct                   ipacket_t;
 typedef struct proto_statistics_struct          proto_statistics_t;
-// typedef struct extra_struct                     extra_t;
-// typedef void (*next_process_function) (ipacket_t * ipacket);
-// typedef struct extra_struct{
-    // proto_statistics_t * parent_stats;
-    // int index;
-    // int status;// MMT_CONTINUE/ MMT_SKIP
-    // next_process_function next_process;
-// }extra_t;
 /* NOTE: Custom swab/ntohl overrides provide a consistent, header-independent byte-order implementation. */
 /** Switches the order of bytes of a short int value */
 #define swab16(x) ((uint16_t)(                         \

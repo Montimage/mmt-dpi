@@ -77,7 +77,7 @@ static inline const uint8_t* _nas_msg_decrypt(
 
 	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED:
 	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW:
-		//TODO: decrypt
+		//TODO(#335): decrypt
 		dest = src;
 		break;
 	default:

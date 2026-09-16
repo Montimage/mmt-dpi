@@ -75,7 +75,7 @@ int udp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD;
     }
 
-    if (packet->tcp_retransmission == 0) { //TODO: do we need to keep this???
+    if (packet->tcp_retransmission == 0) {
         packet->mmt_selection_packet |= MMT_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION;
     }
 
@@ -105,7 +105,7 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_UDP){
             return new_retval;
         }
-        //BW - TODO: We should have different strategies: best_effort = we can affort a number of missclassifications, etc.  
+        //BW - TODO(#87): We should have different strategies: best_effort = we can affort a number of missclassifications, etc.
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         if (ipacket->mmt_handler->ip_address_classify == 1)
         {
@@ -137,7 +137,7 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
                     retval.proto_id = packet->flow->detected_protocol_stack[a];
                     retval.status = Classified;
                     new_retval = set_classified_proto(ipacket, index, retval);
-                    retval.offset = 0; //From the second proto the offset is the same! //TODO: check this out
+                    retval.offset = 0; //From the second proto the offset is the same! //TODO(#330): check this out
                 }
             }
         }

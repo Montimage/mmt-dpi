@@ -222,13 +222,6 @@ ndn_tlv_t * ndn_TLV_parser(char *payload, int offset, int total_length){
         return NULL;
     }
 
-    // ndn_new_node->value = payload + 2 + ndn_new_node->nb_octets;
-    // if(2 + ndn_new_node->nb_octets + ndn_new_node->length < total_length){
-    //     char *new_str = payload + 2 + ndn_new_node->nb_octets + ndn_new_node->length;
-    //     ndn_new_node->remain_value = str_copy(new_str);
-    //     // if(new_str != NULL) free(new_str);
-    //     // ndn_new_node->remain_value = payload + 2*(2 + ndn_new_node->nb_octets + ndn_new_node->length);
-    // }
     return ndn_new_node;
 }
 
@@ -503,22 +496,6 @@ ndn_proto_context_t * ndn_get_proto_context(ipacket_t *ipacket, unsigned index){
         return ndn_proto_context->dummy_session;
     }
 }
-
-
-// uint8_t ndn_packet_type_extraction_payload(char* payload, int total_length){
-
-
-
-    // uint8_t ret = NDN_UNKNOWN_PACKET;
-    // if(ndn!=NULL){
-    //     if(ndn->type == 5) ret = NDN_INTEREST_PACKET;
-    //     if(ndn->type == 6) ret = NDN_DATA_PACKET;
-    // }
-
-    // ndn_TLV_free(ndn);
-
-    // return ret;
-// }
 
 
 int ndn_packet_type_extraction(const ipacket_t * ipacket, unsigned proto_index,
@@ -1967,11 +1944,6 @@ void ndn_process_timed_out_session(ipacket_t *ipacket, unsigned index, ndn_sessi
     ndn_TLV_free(name_node);
 
     t3->name = name_component;
-    // free(name_component);
-    // debug("NDN/NDN_HTTP: MAC (source): %s \n",t3->src_MAC);
-    // debug("NDN/NDN_HTTP: MAC (destination): %s \n",t3->dst_MAC);
-    // debug("NDN/NDN_HTTP: name: %s\n",t3->name);
-    // debug("NDN/NDN_HTTP: Type: %d\n",t3->packet_type);
     // Created tuple3
     ndn_proto_context_t * ndn_proto_context = ndn_get_proto_context(ipacket,index);
     if(ndn_proto_context == NULL){

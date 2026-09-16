@@ -22496,23 +22496,3 @@ uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hos
 	else
 		return get_proto_id_from_ak_cdn(ipacket, hostname, hostname_len);
 }
-
-//uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hostname_len) {
-//	uint32_t val1, val2;
-//	char str[1000];
-//	strncpy( str, hostname, hostname_len );
-//	str[hostname_len] = '\0';
-//	protocol_match *proto = NULL;
-//
-//	val2 = __get_proto_id_by_hostname( ipacket, hostname, hostname_len, &proto );
-//	val1 = _get_proto_id_by_hostname( ipacket, hostname, hostname_len );
-//
-//	if( val1 != val2 ){
-//		if( proto != NULL )
-//			mmt_debug_log("\"%d - %d: [%d] \"%s\" -- [%d]\"%s\" \n", val1, val2, hostname_len, str, proto->str_len, proto->string_to_match );
-//		else
-//			mmt_debug_log("\"%d - %d: [%d] \"%s\" -- NULL \n", val1, val2, hostname_len, str);
-//
-//	}
-//	return val1;
-//}

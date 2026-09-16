@@ -132,7 +132,7 @@ int mmt_check_stun_tcp(ipacket_t * ipacket, unsigned index) {
         if (packet->payload_packet_len >= 2 + 20 &&
                 ntohs(get_u16(packet->payload, 0)) + 2 == packet->payload_packet_len) {
 
-            /* TODO there could be several STUN packets in a single TCP packet so maybe the detection could be
+            /* TODO(#330) there could be several STUN packets in a single TCP packet so maybe the detection could be
              * improved by checking only the STUN packet of given length */
             if (mmt_int_check_stun(ipacket, packet->payload + 2, packet->payload_packet_len - 2) ==
                     MMT_IS_STUN) {

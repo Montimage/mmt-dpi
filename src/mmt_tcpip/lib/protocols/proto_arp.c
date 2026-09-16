@@ -13,26 +13,6 @@ static uint16_t arp_ar_hrd_get_value     (const ipacket_t * packet, unsigned pro
 static uint16_t arp_ar_pro_get_value     (const ipacket_t * packet, unsigned proto_index);
 static uint8_t  arp_ar_hln_get_value     (const ipacket_t * packet, unsigned proto_index);
 static uint8_t  arp_ar_pln_get_value     (const ipacket_t * packet, unsigned proto_index);
-/*
-static uint32_t arp_ar_sha_get_offset    (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_sha_get_length    (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_sip_get_value     (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_sip_get_offset    (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_sip_get_length    (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_tha_get_offset    (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_tha_get_length    (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_tip_get_value     (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_tip_get_offset    (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_ar_tip_get_length    (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_src_hard_get_offset  (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_src_hard_get_length  (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_src_proto_get_offset (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_src_proto_get_length (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_dst_hard_get_offset  (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_dst_hard_get_length  (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_dst_proto_get_offset (const ipacket_t * packet, unsigned proto_index);
-static uint32_t arp_dst_proto_get_length (const ipacket_t * packet, unsigned proto_index);
-*/
 
 static int arp_ar_sha_extraction    (const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
 static int arp_ar_sip_extraction    (const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);

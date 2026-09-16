@@ -233,7 +233,7 @@ enum {
 #define TCP_CONN_ESTABLISHED_ALIAS "established"
 #define TCP_TSVAL_ALIAS "tsval" //timestamp value
 #define TCP_TSECR_ALIAS "tsecr" //timestamp echo reply
-//TODO: addition of the tcp options
+//TODO(#331): addition of the tcp options
 
 enum {
     UDP_SRC_PORT = 1,
@@ -338,7 +338,7 @@ enum arp_attributes {
 /**
  * GRE protocol: extraction of ann of the protocol fields.
  * <p>
- * TODO: Link sequence numbers and Keys to extract attributes like: out of sequence, in sequence, sequence gap, loss.
+ * TODO(#331): Link sequence numbers and Keys to extract attributes like: out of sequence, in sequence, sequence gap, loss.
  */
 
 enum gre_attributes {
@@ -351,10 +351,10 @@ enum gre_attributes {
     GRE_K_FLAG,
     GRE_S_FLAG,
     GRE_VERSION,
-    GRE_OUT_SEQENCE, //TODO
-    GRE_IN_SEQENCE, //TODO
-    GRE_SEQENCE_GAP, //TODO
-    GRE_LOSS, //TODO
+    GRE_OUT_SEQENCE, //TODO(#331)
+    GRE_IN_SEQENCE, //TODO(#331)
+    GRE_SEQENCE_GAP, //TODO(#331)
+    GRE_LOSS, //TODO(#331)
 };
 
 #define GRE_ATTRIBUTES_NB GRE_LOSS
@@ -438,8 +438,8 @@ enum {
     RTP_CSRC,
     RTP_QUALITY_INDEX,
     RTP_JITTER,
-    RTP_INTER_ARRIVAL_JITTER, //TODO
-    RTP_INTER_DELAY, //TODO
+    RTP_INTER_ARRIVAL_JITTER, //TODO(#331)
+    RTP_INTER_DELAY, //TODO(#331)
     RTP_LOSS,
     RTP_BURST_LOSS,
     RTP_UNORDER,

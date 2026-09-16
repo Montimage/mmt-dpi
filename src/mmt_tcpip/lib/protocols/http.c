@@ -81,7 +81,7 @@ static inline int get_header_index_by_header_id(int header_id) {
 static inline int get_header_id_by_field_name(const char * header_field, int max) {
     int count = 0;
     for (; count < HTTP_HEADERS_NB; count++) {
-        if (mmt_strncasecmp(header_field, http_header_fields[count], max) == 0) { //TODO: this is consuming (calculating len every time)
+        if (mmt_strncasecmp(header_field, http_header_fields[count], max) == 0) { //TODO(#330): this is consuming (calculating len every time)
             return count + 1; //The header indexes start at 1
         }
     }
@@ -251,7 +251,7 @@ int is_http_valid_attribute(int proto_id, int attribute_id) {
     return false;
 }
 
-//TODO: needs to be changed to take the correct scope from the attribute information
+//TODO(#331): needs to be changed to take the correct scope from the attribute information
 
 int get_http_attribute_scope(int proto_id, int attribute_id) {
     return SCOPE_SESSION;
@@ -391,7 +391,7 @@ static inline int get_response_code_offset(const char *msg, int msg_len, char **
  * Parse the HTTP HEADER.
  */
 static inline int
-parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //TODO: optimization work required here! VERY IMPORTANT
+parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //TODO(#330): optimization work required here! VERY IMPORTANT
     int code, hlen;
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     int base_offset = get_packet_offset_at_index(ipacket, index);
@@ -1774,12 +1774,6 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IZLESENE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VIDEO_HOSTING);
     //////////// End of HTTP based protocols /////////////////////
-    //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_UNKNOWN);
-    //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_QQ);
-    //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_FLASH);
-    //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_MMS);
-    //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_RTSP);
-    //MMT_DEL_PROTOCOL_FROM_BITMASK(excluded_protocol_bitmask, PROTO_XBOX);
     MMT_BITMASK_RESET(excluded_protocol_bitmask);
     MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP); //Exclude processing when ssl is detected! Obvious no?
 }
@@ -1792,54 +1786,9 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
 
     uint16_t filename_start;
 
-    // /* BW: TODO: the following strategy should be enforced! No?
-    //  * HTTP stages: 0 means no request no response seen, expecting a request or response
-    //  *              1 means request seen, expecting response now
-    //  *              2 means resposne seen, expecting request now
-    //  *
-    //  * Exclude strategy: If we have seen payload data on both directions, then this is not HTTP!
-    //  */
-
-    // //First parse the packet to check if it contains any: field: value lines
-    // packet->empty_line_position = 0;
-    // if(packet->payload_packet_len < 32) {
-    //     return;
-    // }
-
-    // mmt_parse_packet_line_info(ipacket);
-
-    // if (packet->parsed_lines > 1) {
-    //     //If the packet contains a response, try to check the payload
-    //     if (packet->http_response.ptr) {
-    //         if (!flow->http_detected) {
-    //             mmt_int_http_add_connection(ipacket, PROTO_HTTP);
-    //         }
-    //         check_content_type_and_change_protocol(ipacket);
-    //         if (packet->empty_line_position_set) {
-    //             check_http_payload(ipacket);
-    //         }
-    //     } else {
-    //         //The packet is not a response! maybe this is a request
-    //         filename_start = http_request_url_offset(ipacket);
-    //         if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
-    //                 && mmt_memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
-    //             packet->http_url_name.ptr = &packet->payload[filename_start];
-    //             packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
-
-    //             packet->http_method.ptr = packet->line[0].ptr;
-    //             packet->http_method.len = filename_start - 1;
-
-    //             MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "next http action, "
-    //                     "resetting to http and search for other protocols later.\n");
-    //             if (!flow->http_detected) {
-    //                 mmt_int_http_add_connection(ipacket, PROTO_HTTP);
-    //             }
-    //         }
-    //         check_content_type_and_change_protocol(ipacket);
-    //     }
-    // }
-
-    // return;
+    /* Open question moved to issue #334: whether the stage-based
+     * "payload seen on both directions ⇒ not HTTP" exclude strategy
+     * should be enforced. */
 
     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "search http\n");
 
@@ -1904,8 +1853,8 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
 
                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "http structure detected, adding\n");
 
-                //BW: TODO: What the hell is HTTP_CONNECT ?????
-                //mmt_int_http_add_connection(ipacket, (filename_start == 8) ? PROTO_HTTP_CONNECT : PROTO_HTTP);
+                /* Whether CONNECT should classify as a distinct PROTO_HTTP_CONNECT
+                 * is an open question — see issue #334. */
                 mmt_int_http_add_connection(ipacket, PROTO_HTTP);
 
                 check_content_type_and_change_protocol(ipacket);
