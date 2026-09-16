@@ -192,7 +192,7 @@ echo "-- F-CLEAN-019: vendored sources --"
 VENDOR_LIST="tools/ci/vendor-paths.txt"
 check "tools/ci/vendor-paths.txt exists" "test -f $VENDOR_LIST"
 check "vendor-paths.txt carries a pinned upstream reference" \
-      "grep -Eq 'nodejs/http-parser.*v2\.9\.4|v2\.9\.4.*nodejs/http-parser' $VENDOR_LIST"
+      "grep -Eq 'nodejs/llhttp.*v9\.4\.3|v9\.4\.3.*nodejs/llhttp' $VENDOR_LIST"
 
 vendored_ok=1
 while IFS= read -r p; do
@@ -205,7 +205,7 @@ while IFS= read -r p; do
     if ! head -40 "$p" | grep -q 'VENDORED'; then
         echo "  ✗ $p carries no VENDORED banner in its first 40 lines"
         vendored_ok=0
-    elif ! head -40 "$p" | grep -q 'v2\.9\.4'; then
+    elif ! head -40 "$p" | grep -q 'v9\.4\.3'; then
         echo "  ✗ $p banner names no pinned upstream reference"
         vendored_ok=0
     fi
@@ -214,8 +214,8 @@ done < "$VENDOR_LIST"
     || ERRORS=$((ERRORS + 1))
 
 for s in tools/ci/report-function-shape.sh tools/ci/lint-markers.sh \
-         tools/ci/lint-commented-code.sh tools/ci/count-init-wrappers.sh \
-         tools/ci/run-cppcheck.sh; do
+         tools/ci/lint-commented-code.sh tools/ci/lint-packet-path-io.sh \
+         tools/ci/count-init-wrappers.sh tools/ci/run-cppcheck.sh; do
     check "$s excludes vendored sources via $VENDOR_LIST" \
           "grep -q 'vendor-paths.txt' $s"
 done

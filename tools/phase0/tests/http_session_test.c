@@ -38,7 +38,7 @@
 #include "mmt_core.h"
 #include "mmt_tcpip_plugin_structs.h"   /* mmt_tcpip_internal_packet + flow */
 #include "packet_processing.h"          /* struct mmt_session_struct */
-#include "http_parser.h"                /* http_parser, http_parser_execute  */
+#include "llhttp.h"                     /* llhttp_t, llhttp_execute          */
 #include "http_parser_integration.h"    /* stream_parser_t, init_http_parser */
 #include "protocols/http.h"             /* struct http_session_data_struct   */
 
@@ -176,7 +176,8 @@ static void test_direction_reset(mmt_handler_t *handler)
 {
     fixture_t f;
     stream_parser_t *sp;
-    http_parser *p0, *p1;
+    llhttp_t *p0, *p1;
+    void *fresh_state;
     printf("[204-S2] per-direction parser reset (F-BUG-058)\n");
 
     fixture_init(&f, "GET /half HTTP/1.1\r\nHost: exa", handler);
@@ -186,14 +187,23 @@ static void test_direction_reset(mmt_handler_t *handler)
     p0 = &sp->parser[0];
     p1 = &sp->parser[1];
 
+    /* llhttp has no nread/state counters like http_parser had; the state
+     * machine position lives in the internal _current field, seeded with
+     * the start state by llhttp_init() and restored to it by
+     * llhttp_reset(). Capture the fresh-init value so the "reset to a
+     * clean state" check below can compare against it (issue #222). */
+    fresh_state = p1->_current;
+
     /* Direction 0: a well-formed PARTIAL request — parser advances, no
      * error, message incomplete. */
     f.session->last_packet_direction = 0;
     http_internal_session_data_analysis(&f.ip, SESSION_INDEX);
-    CHECK(p0->nread > 0 && f.session->session_data[SESSION_INDEX] == sp,
+    CHECK(p0->_current != fresh_state &&
+          llhttp_get_errno(p0) == HPE_OK &&
+          f.session->session_data[SESSION_INDEX] == sp,
           "direction 0 parser advanced on a partial request");
     {
-        unsigned int d0_state = p0->state;
+        void *d0_state = p0->_current;
         void *d0_data = p0->data;
 
         /* Direction 1: bytes the parser must reject — pre-fix this destroyed
@@ -204,9 +214,9 @@ static void test_direction_reset(mmt_handler_t *handler)
 
         CHECK(f.session->session_data[SESSION_INDEX] == sp,
               "session data survives a one-direction parse error");
-        CHECK(p0->state == d0_state && p0->data == d0_data,
+        CHECK(p0->_current == d0_state && p0->data == d0_data,
               "direction 0 parser state is preserved");
-        CHECK(p1->http_errno == 0 && p1->nread == 0,
+        CHECK(llhttp_get_errno(p1) == HPE_OK && p1->_current == fresh_state,
               "direction 1 parser was reset to a clean state");
     }
 
@@ -214,7 +224,7 @@ static void test_direction_reset(mmt_handler_t *handler)
     f.session->last_packet_direction = 0;
     fixture_reset_payload(&f, "mple.com\r\n\r\n");
     http_internal_session_data_analysis(&f.ip, SESSION_INDEX);
-    CHECK(p0->http_errno == 0,
+    CHECK(llhttp_get_errno(p0) == HPE_OK,
           "direction 0 message completes after the other direction's error");
 
     close_http_parser(sp);

@@ -368,32 +368,32 @@ int http_internal_session_data_analysis(ipacket_t * ipacket, unsigned index) {
     // As two parser exists for both client -> server and server -> client
     // directions, get the corresponding parser first, then feed it the payload data.
     if( ipacket->session->session_data[index] != NULL ) {
-      size_t nparsed;
-      http_parser_settings * settings = get_settings();
-      http_parser * parser = &((stream_parser_t *) ipacket->session->session_data[index])->parser[ipacket->session->last_packet_direction];
+      llhttp_errno_t err;
+      llhttp_t * parser = &((stream_parser_t *) ipacket->session->session_data[index])->parser[ipacket->session->last_packet_direction];
 
       // update the parser internal data with the current index and ipacket
       ( (stream_processor_t *) parser->data)->index = index;
       ( (stream_processor_t *) parser->data)->ipacket = ipacket;
 
-      // Feeds the HTTP parser with additional data to process.
-      // Returns the length of successfully parsed data bytes.
-      // If the parsed data length is different than the provided
-      // data length, an error has occurred.
-      nparsed = http_parser_execute(parser, settings, (const char *) packet->payload, packet->payload_packet_len);
-      if (parser->upgrade) {
+      // Feeds the HTTP parser with additional data to process (the settings
+      // table was bound at llhttp_init() time — issue #222).
+      // llhttp_execute() returns HPE_OK when all the provided bytes were
+      // consumed; any other return value marks an error or a pause.
+      err = llhttp_execute(parser, (const char *) packet->payload, packet->payload_packet_len);
+      if (err == HPE_PAUSED_UPGRADE || llhttp_get_upgrade(parser)) {
         // handle new protocol
-      } else if (nparsed != packet->payload_packet_len) {
+      } else if (err != HPE_OK) {
         // Handle error. Usually just close the connection.
         //TODO: LN uncomment the next line please :p
-        debug("[PROTO_HTTP-]> Error while parsing this HTTP message -Error %s\n", http_errno_description(HTTP_PARSER_ERRNO(parser)));
+        debug("[PROTO_HTTP-]> Error while parsing this HTTP message -Error %s: %s\n", llhttp_errno_name(err), llhttp_get_error_reason(parser));
         /* issue #204 (F-BUG-058): reset only the failing direction's parser.
          * The session holds one parser per direction inside stream_parser_t;
          * destroying the whole structure on a one-sided error also killed the
          * opposite direction's in-flight parse state and left session_data
          * NULL, disabling HTTP parsing for the rest of the session.
-         * http_parser_init() preserves parser->data (the stream processor). */
-        http_parser_init(parser, HTTP_BOTH);
+         * llhttp_reset() preserves type, settings and parser->data (the
+         * stream processor) — the same property http_parser_init() had. */
+        llhttp_reset(parser);
         ((stream_processor_t *) parser->data)->hfield_valid = 0;
       }
     }

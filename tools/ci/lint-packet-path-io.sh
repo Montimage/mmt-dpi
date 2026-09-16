@@ -11,7 +11,12 @@
 #
 # Counted: lines in src/mmt_core/src and src/mmt_tcpip/lib matching a
 # printf(/fprintf( call that is not inside a comment and not part of a
-# logging-macro definition.
+# logging-macro definition. Vendored sources listed in
+# tools/ci/vendor-paths.txt are excluded by configuration (issue #249,
+# F-CLEAN-019) — upstream code is pinned byte-verbatim and cannot be
+# routed through MMT_LOG without breaking the pin; llhttp's
+# llhttp__debug() fprintf pair is dead code with no call site in the
+# generated release build.
 #
 # Exits 1 when any call site is found (the condition Task 8.7 removes).
 #
@@ -28,10 +33,22 @@ for d in src/mmt_core/src src/mmt_tcpip/lib; do
     [ -d "$d" ] || { echo "✗ expected source dir missing: $d" >&2; exit 2; }
 done
 
+# Vendored sources are excluded by configuration, not convention
+# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
+VENDOR_LIST="tools/ci/vendor-paths.txt"
+vendor_excludes=()
+[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
+while IFS= read -r p; do
+    case "$p" in ''|'#'*) continue ;; esac
+    vendor_excludes+=(":!:$p")
+done < "$VENDOR_LIST"
+
 # `^[^/]*` keeps comment lines (whose first non-space char is /) out of the
-# match; the second grep drops macro-definition lines.
-hits="$(grep -rnE '^[^/]*\b(printf|fprintf)[[:space:]]*\(' \
-        src/mmt_core/src src/mmt_tcpip/lib --include='*.c' \
+# match; the second grep drops macro-definition lines. git pathspec globs
+# match across directory boundaries, so lib/*.c also covers lib/protocols/.
+hits="$(git ls-files 'src/mmt_core/src/*.c' 'src/mmt_tcpip/lib/*.c' \
+            "${vendor_excludes[@]}" \
+    | xargs grep -nE '^[^/]*\b(printf|fprintf)[[:space:]]*\(' \
     | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#[[:space:]]*define' || true)"
 # `grep -c .` exits 1 on a zero count, which `set -e` would turn into a
 # silent failure before the success path — keep the count, swallow the status.

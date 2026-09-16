@@ -9,12 +9,19 @@
 #
 # Format: one repo-relative path per line; blank lines and #-comments are
 # ignored. Consumers: tools/ci/report-function-shape.sh, lint-markers.sh,
-# lint-commented-code.sh, count-init-wrappers.sh, run-cppcheck.sh and
-# scripts/validate-doc-drift.sh.
+# lint-commented-code.sh, lint-packet-path-io.sh, count-init-wrappers.sh,
+# run-cppcheck.sh and scripts/validate-doc-drift.sh.
 #
-# nodejs/http-parser — pinned at tag v2.9.4 (final upstream release; the
-# project is archived and recommends llhttp — see docs/llhttp-migration.md):
-#   https://github.com/nodejs/http-parser/tree/v2.9.4
-#   version macros: src/mmt_tcpip/lib/http_parser.h:36-38
-src/mmt_tcpip/lib/http_parser.c
-src/mmt_tcpip/lib/http_parser.h
+# nodejs/llhttp — pinned at tag release/v9.4.3 (generated release sources;
+# adopted per docs/llhttp-migration.md, issue #222, replacing the archived
+# nodejs/http-parser v2.9.4):
+#   https://github.com/nodejs/llhttp/tree/release/v9.4.3
+#   upstream include/llhttp.h  -> src/mmt_tcpip/lib/llhttp.h
+#   upstream src/llhttp.c      -> src/mmt_tcpip/lib/llhttp.c
+#   upstream src/api.c         -> src/mmt_tcpip/lib/llhttp_api.c
+#   upstream src/http.c        -> src/mmt_tcpip/lib/llhttp_http.c
+#   version macros: src/mmt_tcpip/lib/llhttp.h (LLHTTP_VERSION_*)
+src/mmt_tcpip/lib/llhttp.h
+src/mmt_tcpip/lib/llhttp.c
+src/mmt_tcpip/lib/llhttp_api.c
+src/mmt_tcpip/lib/llhttp_http.c

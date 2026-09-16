@@ -11,17 +11,17 @@
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
-#include "http_parser.h"
+#include "llhttp.h"
 #include "mmt_core.h"
 
 /**
  * Defines an HTTP parser structure. Two seperate parsers are needed.
- * One parser for Client -> Server communication and the second for 
+ * One parser for Client -> Server communication and the second for
  * Server -> Client communications.
  **/
-typedef struct 
+typedef struct
 {
-  http_parser parser[2]; /** Array of two HTTP parsers. **/
+  llhttp_t parser[2]; /** Array of two HTTP parsers. **/
 } stream_parser_t;
 
 /**
@@ -53,7 +53,7 @@ typedef struct
  * The settings is a pointer to an array of callbacks
  * for specific HTTP events.
  **/
-http_parser_settings * get_settings();
+const llhttp_settings_t * get_settings();
 
 /**
  * Initializes internal HTTP parsing processor store.
@@ -87,8 +87,11 @@ inline static void * close_stream_processor(stream_processor_t * sp) {
 inline static stream_parser_t * init_http_parser() {
   // printf("[HTTP_PARSER] init_http_parser\n");
   stream_parser_t * parser = (stream_parser_t *) mmt_malloc(sizeof(stream_parser_t));
-  http_parser_init(& parser->parser[0], HTTP_BOTH);
-  http_parser_init(& parser->parser[1], HTTP_BOTH);
+  /* llhttp_init() zeroes the whole parser struct (issue #222): data must be
+   * assigned AFTER init, and the settings table is bound at init time —
+   * get_settings() returns a static object that outlives every parser. */
+  llhttp_init(& parser->parser[0], HTTP_BOTH, get_settings());
+  llhttp_init(& parser->parser[1], HTTP_BOTH, get_settings());
   parser->parser[0].data = init_stream_processor();
   parser->parser[1].data = init_stream_processor();
   return parser;

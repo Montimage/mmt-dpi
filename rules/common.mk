@@ -170,17 +170,12 @@ CFLAGS   += -DDEBUG
 CXXFLAGS += -DDEBUG
 endif
 
-# HTTP_PARSER_STRICT — strict-mode checks in the vendored HTTP parser
-# (issue #204, F-BUG-060). This used to be coupled to SHOWLOG, so every
-# release/CI build (no SHOWLOG) silently parsed leniently. It is now its own
-# knob and defaults to 1; pass HTTP_PARSER_STRICT=0 to explicitly opt back
-# into the lenient parser. http_parser.h defaults to 1 when the macro is
-# undefined — keep the two in agreement.
-ifndef HTTP_PARSER_STRICT
-HTTP_PARSER_STRICT := 1
-endif
-CFLAGS   += -DHTTP_PARSER_STRICT=$(HTTP_PARSER_STRICT)
-CXXFLAGS += -DHTTP_PARSER_STRICT=$(HTTP_PARSER_STRICT)
+# HTTP strict-mode (issue #204, F-BUG-060; issue #222, F-DEP-201): the
+# vendored parser is now llhttp v9.4.3, which compiles strict checks in
+# unconditionally — there is no compile-time leniency switch, so the old
+# HTTP_PARSER_STRICT knob is gone and cannot silently drop out of a build
+# flavour again. Leniency is a deliberate per-parser runtime opt-in via
+# llhttp_set_lenient_*() if a deployment ever needs it.
 
 .PHONY: libraries includes tools documentation examples
 
@@ -258,7 +253,7 @@ $(LIBDICOM_OBJECTS): CFLAGS +=  -Wno-unused-variable -fPIC
 # deliberately NOT -Werror: they only emit warnings, so the build still exits 0
 # (golden/ASan gates stay green). Scoped to MMT's own core + tcpip sources to
 # keep the output actionable rather than flooding it with diagnostics from the
-# vendored/generated third-party code (http_parser, asn1c, ...).
+# vendored/generated third-party code (llhttp, asn1c, ...).
 #
 # The default set is the high-signal, zero-noise subset: format-string, NULL-deref
 # and VLA checks (the safety classes B5 targets) currently emit no warnings on

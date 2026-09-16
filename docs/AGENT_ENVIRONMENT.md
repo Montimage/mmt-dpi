@@ -96,7 +96,7 @@ make -C sdk -j$(nproc)
 
 Exit code `0` = green build. Warnings in the output (e.g. from vendored asn1c
 code) are informational; extra diagnostic warnings are deliberately not
-`-Werror` (`rules/common.mk:256-270`), so they never fail the build.
+`-Werror` (`rules/common.mk:251-265`), so they never fail the build.
 
 The build produces versioned shared libraries and static archives under
 `sdk/lib/` (`libmmt_core.so.$(VERSION)`, `libmmt_tcpip.so.$(VERSION)`,
@@ -121,7 +121,7 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 |------|--------|--------|
 | `DEBUG=1` | `-g` instead of `-O3`; asserts/debug() stay active | `rules/common.mk:87-93` |
 | `NDEBUG=1` | Keep debug/assert active (suppress `-DNDEBUG`; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
-| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG -DHTTP_PARSER_STRICT=1`). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-171` |
+| `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG`). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-171` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
 | `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:149-157` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
@@ -257,7 +257,7 @@ Two verification profiles exist in `rules/common.mk` (both add flags to
 
 > **⚠ Always `make -C sdk clean` before switching build profiles.**
 > *(This warning is the single source for the rule; other documents link here.)*
-> Object rules depend on source timestamps only (`rules/common.mk:472-474`) —
+> Object rules depend on source timestamps only (`rules/common.mk:467-469`) —
 > changing `BUILD=` does *not* invalidate existing `.o` files, so building
 > `BUILD=asan` on top of a plain tree relinks sanitized `.so` files from
 > non-instrumented objects and reports success. Clean first, then build the
@@ -307,7 +307,7 @@ symbols are intentionally left undefined (`rules/common-linux.mk:202-214`).
 `ENABLESEC` gates two optional libraries — `libmmt_security` and
 `libmmt_fuzz` — which are otherwise not built at all:
 
-- Object/header selection: `rules/common.mk:206-208, 230-233, 315-318`
+- Object/header selection: `rules/common.mk:201-203, 225-228, 310-313`
 - Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 215-218, 226-230, 263-279`
 - Install symlinks for both engines: `sdk/Makefile:54-55, 140-141`
 

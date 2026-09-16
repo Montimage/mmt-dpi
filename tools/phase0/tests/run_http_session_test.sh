@@ -9,7 +9,7 @@
 #   1. Build + install the SDK with BUILD=asan into an isolated prefix.
 #   2. Compile tools/phase0/tests/http_session_test.c against that library,
 #      itself instrumented with -fsanitize=address,undefined. Internal headers
-#      (mmt_tcpip_plugin_structs.h, packet_processing.h, http_parser*.h,
+#      (mmt_tcpip_plugin_structs.h, packet_processing.h, llhttp.h,
 #      protocols/http.h) are pulled from the source tree — they are not part
 #      of the installed public include set.
 #   3. Run it with ASAN_OPTIONS=detect_leaks=1. The harness replays 10,000

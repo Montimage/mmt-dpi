@@ -7,7 +7,7 @@
  * starts parsing an HTTP message. This is the first callback
  * to be called.
  **/
-int message_begin_cb (http_parser *p)
+int message_begin_cb (llhttp_t *p)
 {
   int end = 1; // Just to return a positive value :)
   stream_processor_t * sp = (stream_processor_t *) p->data;
@@ -23,7 +23,7 @@ int message_begin_cb (http_parser *p)
  * temporary processing store to keep trace of it waiting for
  * the header value.
  **/
-int header_field_cb (http_parser *p, const char *buf, size_t len)
+int header_field_cb (llhttp_t *p, const char *buf, size_t len)
 {
   stream_processor_t * sp = (stream_processor_t *) p->data;
 
@@ -49,7 +49,7 @@ int header_field_cb (http_parser *p, const char *buf, size_t len)
  * detected a header value. We copy this header value into the
  * temporary processing store before firing an event into MMT.
  **/
-int header_value_cb (http_parser *p, const char *buf, size_t len)
+int header_value_cb (llhttp_t *p, const char *buf, size_t len)
 {
   stream_processor_t * sp = (stream_processor_t *) p->data;
   // Issue #20 (M5): reuse the header-value buffer across headers (see
@@ -80,7 +80,7 @@ int header_value_cb (http_parser *p, const char *buf, size_t len)
  * Callback function that will be called when the HTTP parser
  * detected a URL of an HTTP request.
  **/
-int request_url_cb (http_parser *p, const char *buf, size_t len)
+int request_url_cb (llhttp_t *p, const char *buf, size_t len)
 {
   // char temp[20408 + 1];
   // char *temp;
@@ -94,7 +94,7 @@ int request_url_cb (http_parser *p, const char *buf, size_t len)
   return 0;
 }
 
-int response_status_cb (http_parser *p, const char *buf, size_t len)
+int response_status_cb (llhttp_t *p, const char *buf, size_t len)
 {
   // char *temp;
   // temp = malloc((len+1)*sizeof(char));
@@ -112,7 +112,7 @@ int response_status_cb (http_parser *p, const char *buf, size_t len)
  * reconstruct data, it is up to the user to reconstruct data
  * if this is useful for her application.
  **/
-int count_body_cb (http_parser *p, const char *buf, size_t len)
+int count_body_cb (llhttp_t *p, const char *buf, size_t len)
 {
   mmt_header_line_t attr;
   stream_processor_t * sp = (stream_processor_t *) p->data;
@@ -132,13 +132,13 @@ int count_body_cb (http_parser *p, const char *buf, size_t len)
  * HTTP request or response, and it will be just before the
  * body callback if there is any data.
  **/
-int headers_complete_cb (http_parser *p)
+int headers_complete_cb (llhttp_t *p)
 {
   int end = 1; // Just to return a positive value :)
   stream_processor_t * sp = (stream_processor_t *) p->data;
   fire_attribute_event(sp->ipacket, PROTO_HTTP, HTTP_HEADERS_END, sp->index, (void *) &end);
   //fprintf(stdout, "Headers complete CB calledi\n");
-  //http_should_keep_alive(parser);
+  //llhttp_should_keep_alive(parser);
 
   return 0;
 }
@@ -150,7 +150,7 @@ int headers_complete_cb (http_parser *p)
  * useful when the user is reconstructing message data for
  * instance.
  **/
-int message_complete_cb (http_parser *p)
+int message_complete_cb (llhttp_t *p)
 {
   int end = 1; // Just to return a positive value :)
   stream_processor_t * sp = (stream_processor_t *) p->data;
@@ -164,7 +164,7 @@ int message_complete_cb (http_parser *p)
 /**
  * Array of HTTP parser callbacks.
  **/
-static http_parser_settings settings =
+static llhttp_settings_t settings =
 {
   .on_header_field = header_field_cb
   ,.on_message_begin = message_begin_cb
@@ -177,7 +177,7 @@ static http_parser_settings settings =
 };
 
 /** Returns a pointer to the HTTP parser settings (callback array) **/
-http_parser_settings * get_settings() {
+const llhttp_settings_t * get_settings() {
   return & settings;
 }
 

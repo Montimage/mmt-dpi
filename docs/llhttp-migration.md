@@ -110,8 +110,9 @@ http-parser's strictness is a **compile-time** flag: `#if HTTP_PARSER_STRICT` gu
 `STRICT_CHECK` throughout `http_parser.c` (e.g. `http_parser.c:463-472`), raising
 `HPE_STRICT` on malformed tokens. F-BUG-060 found it gated on `SHOWLOG`, so every
 release build parsed leniently; issue #204 (task 2.6) gave it its own flag defaulting
-on — `rules/common.mk:173-183` sets `HTTP_PARSER_STRICT := 1` unless explicitly
-overridden.
+on — the pre-#222 `rules/common.mk:173-183` block set `HTTP_PARSER_STRICT := 1`
+unless explicitly overridden (removed by the #222 migration, which replaced it
+with the always-strict note now at `rules/common.mk:173-178`).
 
 **llhttp is strict by default, unconditionally compiled in.** There is no compile-time
 leniency switch; leniency is a **per-parser, runtime** opt-in through the
