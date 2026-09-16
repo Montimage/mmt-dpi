@@ -1,3 +1,8 @@
+---
+layout: default
+title: "MMT Attributes"
+---
+
 # MMT Attributes #
 
 [TOC]

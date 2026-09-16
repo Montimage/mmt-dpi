@@ -1,3 +1,8 @@
+---
+layout: default
+title: "NDN test cases"
+---
+
 # NDN test cases
 
 ## How to generate NDN protocol trace file

@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Developer Notes"
+---
+
 # Developer Notes
 
 This page collects notes and references for developers extending MMT-DPI —

@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Development Guide"
+---
+
 # Development Guide
 
 ## Setting Up the Development Environment

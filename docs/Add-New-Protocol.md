@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Workflow to Add New Protocol"
+---
+
 # Workflow to Add New Protocol
 
 [TOC]

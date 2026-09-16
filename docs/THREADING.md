@@ -1,3 +1,8 @@
+---
+layout: default
+title: "MMT-DPI Threading Model"
+---
+
 # MMT-DPI Threading Model
 
 This document describes the threading contract for MMT-DPI: what state is

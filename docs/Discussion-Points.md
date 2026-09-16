@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Discussion Points"
+---
+
 # Discussion Points
 
 [TOC]

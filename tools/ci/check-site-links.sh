@@ -9,11 +9,20 @@
 # checked for scheme, never fetched.
 #
 # Checked per <a>/<link>/<script>/<img> reference in each *.html under DIR:
-#   - `path` (no scheme) must resolve to an existing file or directory under
-#     DIR, relative to the page
+#   - `path` (no scheme, optional ?query) must resolve to an existing file or
+#     directory under DIR, relative to the page
+#   - `path` ending in `.md` is a violation — published links must target the
+#     built `.html` page, not the raw markdown (issue #247, F-UX-001)
+#   - `path` ending in `.html` that does not exist falls back to the
+#     same-basename `.md` — running against the *source* tree (e.g. `docs/`
+#     on trunk) resolves built URLs to their markdown sources
+#   - `/path` (site-absolute) resolves under DIR itself; if missing, the first
+#     segment is dropped (a Pages `baseurl` prefix such as `/mmt-dpi/`)
 #   - `path#frag` / `#frag` — the fragment must exist as id= or name= in the
-#     target file
-#   - `http://` outbound links are violations (HTTPS or nothing)
+#     target file (markdown sources: as a heading slug)
+#   - `http://` outbound links are violations (HTTPS or nothing); loopback
+#     targets (localhost/127.0.0.1/[::1]) are exempt — demo consoles are
+#     served over plain HTTP by design
 #
 # Exit codes: 0 = all links resolve, 1 = broken/unsafe link(s), 2 = helper
 # broken (missing dir, no html files).
@@ -42,17 +51,44 @@ import sys
 
 root = sys.argv[1]
 pages = sorted(glob.glob(os.path.join(root, "**", "*.html"), recursive=True))
+# never scan nested jekyll output, bundled gems (setup-ruby's bundler-cache
+# installs under docs/vendor/bundle on CI), caches or VCS dirs — those are
+# build artifacts, not site source
+SKIP_DIRS = {"_site", "vendor", ".jekyll-cache", ".bundle", ".git"}
+pages = [p for p in pages
+         if not SKIP_DIRS.intersection(
+             os.path.relpath(p, root).split(os.sep))]
 if not pages:
     print(f"✗ no *.html files under {root}", file=sys.stderr)
     sys.exit(2)
 
 ATTR = re.compile(r'(?:href|src)\s*=\s*["\']([^"\']+)["\']', re.I)
 ID = re.compile(r'(?:id|name)\s*=\s*["\']([^"\']+)["\']')
+HEADING = re.compile(r'^#{1,6}\s+(.+?)\s*#*\s*$', re.M)
+
+
+def kramdown_slug(text):
+    # Jekyll renders headings with kramdown's auto-id rule: strip inline
+    # markup, lowercase, drop anything but alnum/space/hyphen, spaces → '-'.
+    text = re.sub(r'[`*\[\]()]', '', text)
+    text = re.sub(r'[^a-z0-9_ -]', '', text.lower())
+    return text.replace(' ', '-')
+
+
+def anchors_of(target):
+    """Anchor ids of a target: id=/name= for HTML, heading slugs for .md."""
+    try:
+        text = open(target, encoding="utf-8", errors="replace").read()
+    except OSError:
+        return set()
+    if target.endswith(".md"):
+        return {kramdown_slug(h) for h in HEADING.findall(text)}
+    return set(ID.findall(text))
+
 
 ids = {}
 for page in pages:
-    ids[page] = set(ID.findall(open(page, encoding="utf-8",
-                                    errors="replace").read()))
+    ids[page] = anchors_of(page)
 
 errors = 0
 
@@ -63,6 +99,36 @@ def fail(page, ref, why):
     print(f"  ✗ {page}: {ref} — {why}")
 
 
+def resolve(page, path):
+    """Map a link path to a file under root. Returns (target, None) or
+    (None, reason)."""
+    if path.startswith("/"):
+        # site-absolute: resolve under the checked root; a missing hit may
+        # carry a baseurl prefix — retry after dropping the first segment
+        cand = os.path.normpath(os.path.join(root, path.lstrip("/")))
+        if not os.path.exists(cand) and "/" in path.lstrip("/"):
+            cand = os.path.normpath(
+                os.path.join(root, path.lstrip("/").split("/", 1)[1]))
+        target = cand
+    else:
+        target = os.path.normpath(os.path.join(os.path.dirname(page), path))
+
+    if os.path.isdir(target):
+        return target, None
+    if os.path.exists(target):
+        if target.endswith(".md"):
+            return None, "raw .md target — link the built .html page instead"
+        return target, None
+    if target.endswith(".html"):
+        # source-tree run: the built .html is produced from a .md sibling
+        md = target[:-len(".html")] + ".md"
+        if os.path.exists(md):
+            return md, None
+    if path.endswith(".md") or target.endswith(".md"):
+        return None, "raw .md target — link the built .html page instead"
+    return None, "target file does not exist"
+
+
 for page in pages:
     text = open(page, encoding="utf-8", errors="replace").read()
     for raw in ATTR.findall(text):
@@ -71,24 +137,34 @@ for page in pages:
                                       "data:")):
             continue
         if re.match(r'https?://', ref):
-            if ref.startswith("http://"):
+            if ref.startswith("http://") and not re.match(
+                    r'http://(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])',
+                    ref):
                 fail(page, ref, "plain-HTTP outbound link")
             continue
         if "://" in ref:
             continue                       # other schemes — not checked
-        path, _, frag = ref.partition("#")
-        target = page
-        if path:
-            target = os.path.normpath(os.path.join(os.path.dirname(page),
-                                                   path))
-            if not os.path.exists(target):
-                fail(page, ref, "target file does not exist")
+        path = ref.split("#", 1)[0].split("?", 1)[0]
+        frag = ref.partition("#")[2]
+        if not path:
+            target = page
+        else:
+            if os.path.splitext(path)[1].lower() == ".md":
+                fail(page, ref,
+                     "raw .md target — link the built .html page instead")
+                continue
+            target, err = resolve(page, path)
+            if err:
+                fail(page, ref, err)
                 continue
             if os.path.isdir(target):
                 continue
-        if frag and target.endswith(".html") and frag not in ids.get(target,
-                                                                     set()):
-            fail(page, ref, f"anchor #{frag} not found in {target}")
+        if frag:
+            anchors = ids.get(target)
+            if anchors is None:
+                anchors = anchors_of(target)
+            if frag not in anchors:
+                fail(page, ref, f"anchor #{frag} not found in {target}")
 
 if errors:
     print(f"✗ {errors} broken or unsafe link(s) under {root}",

@@ -1,3 +1,5 @@
+---
+---
 <!doctype html>
 <html lang="en">
 <head>
@@ -194,6 +196,7 @@
     .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
     .hero-grid .hero-code { min-width: 0; }                 /* let the code-card shrink instead of overflowing */
     .hero-grid .hero-code .code-card { margin: 0; }
+    .hero-grid .hero-code .term { margin-top: 0; max-width: none; }       /* the hero card IS the install terminal */
     .hero-grid .hero-code pre.code { font-size: .78rem; padding: 16px; }  /* fit longer lines in the narrower column */
     .hero-grid h1.hero-title { max-width: 14ch; }
     .hero-grid .hero-sub { max-width: 52ch; }
@@ -233,11 +236,18 @@
     .term-body .cmd { color: var(--text); }
     .term-body .out { color: var(--text-mute); }
     .term-body .ok { color: var(--green); }
+    /* each command gets its own labelled copy control — one button must never
+       silently copy a different command (F-UX-013) */
+    .cmd-group { display: flex; align-items: center; gap: 14px; }
+    .cmd-group + .cmd-group { margin-top: 14px; }
+    .cmd-group .cmd-lines { flex: 1; min-width: 0; }
     .copy-btn {
-      margin-left: auto; font-family: var(--mono); font-size: .72rem; color: var(--text-dim);
-      background: var(--panel-2); border: 1px solid var(--border-2); padding: 4px 10px; border-radius: 6px; cursor: pointer;
+      flex-shrink: 0; font-family: var(--mono); font-size: .78rem; color: var(--text-dim);
+      background: var(--panel-2); border: 1px solid var(--border-2); border-radius: 8px; cursor: pointer;
+      min-height: 44px; padding: 10px 14px;   /* 44px minimum touch target */
     }
     .copy-btn:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+    @media (max-width: 480px){ .cmd-group { flex-direction: column; align-items: stretch; } }
 
     /* ---------- stats strip ---------- */
     .stats { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg-soft); }
@@ -345,9 +355,10 @@
     .chip {
       font-family: var(--mono); font-size: .82rem; color: var(--text-dim);
       border: 1px solid var(--border); background: var(--panel); padding: 6px 12px; border-radius: 7px;
-      transition: .15s;
     }
-    .chip:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+    /* only chips that are links get the interactive hover affordance — plain
+       span chips are inert labels, not disguised buttons (F-UX-014) */
+    a.chip:hover { color: var(--cyan); border-color: var(--cyan-dim); }
     .chip.hot { color: var(--cyan); border-color: var(--border-2); background: rgba(233,171,52,.07); }
 
     /* ---------- use cases ---------- */
@@ -417,11 +428,12 @@
           <svg class="ic-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
         </button>
         <div class="nav-links" id="navLinks">
+          <a href="#quick-start">Install</a>
           <a href="#features">Features</a>
           <a href="#api">API</a>
           <a href="#protocols">Protocols</a>
           <a href="#use-cases">Use cases</a>
-          <a href="USER_GUIDE.md">Docs</a>
+          <a href="docs/">Docs</a>
           <a class="nav-cta" href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">★ GitHub</a>
         </div>
       </div>
@@ -439,35 +451,43 @@
           <strong>6,334 typed attributes</strong>, and tracks per-flow sessions — all behind one callback API.
         </p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="#api">▸ See the API</a>
-          <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">Browse examples</a>
+          <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
+          <a class="btn btn-ghost" href="#api">See the API</a>
         </div>
        </div>
 
        <div class="hero-code">
-        <div class="code-card">
-        <div class="code-head">
+        <div class="term">
+        <div class="term-bar">
           <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
-          <span class="fn">hello_packet.c — your first program</span>
+          <span class="term-title">install — three steps</span>
+          <span id="copyStatus" class="sr-only" role="status" aria-live="polite"></span>
         </div>
-<pre class="code"><span class="t-com">#include "mmt_core.h"</span>
-
-<span class="t-com">// Called after MMT classifies and extracts each packet.</span>
-<span class="t-key">int</span> <span class="t-fn">on_packet</span>(<span class="t-key">const</span> <span class="t-ty">ipacket_t</span> *ipacket, <span class="t-key">void</span> *args) {
-    <span class="t-ty">uint32_t</span> *len = <span class="t-fn">get_attribute_extracted_data_by_name</span>(ipacket, <span class="t-str">"META"</span>, <span class="t-str">"PACKET_LEN"</span>);
-    <span class="t-key">if</span> (len) <span class="t-fn">printf</span>(<span class="t-str">"packet size: %u\n"</span>, *len);
-    <span class="t-key">return</span> <span class="t-num">0</span>;
-}
-
-<span class="t-key">int</span> <span class="t-fn">main</span>(<span class="t-key">void</span>) {
-    <span class="t-fn">init_extraction</span>();
-    <span class="t-key">char</span> errbuf[<span class="t-num">1024</span>];
-    <span class="t-ty">mmt_handler_t</span> *h = <span class="t-fn">mmt_init_handler</span>(<span class="t-ty">DLT_EN10MB</span>, <span class="t-num">0</span>, errbuf);
-
-    <span class="t-fn">register_extraction_attribute_by_name</span>(h, <span class="t-str">"META"</span>, <span class="t-str">"PACKET_LEN"</span>);
-    <span class="t-fn">register_packet_handler</span>(h, <span class="t-num">1</span>, on_packet, <span class="t-ty">NULL</span>);
-    <span class="t-com">// ... feed packets (pcap or live) — see the API section ...</span>
-}</pre>
+        <div class="term-body">
+          <div class="cmd-group">
+            <div class="cmd-lines">
+              <div><span class="out"># 1 — install the library (or grab a .deb/.rpm from Releases)</span></div>
+              <div><span class="pr">$ </span><span class="cmd">curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash</span></div>
+            </div>
+            <button class="copy-btn" data-cmd="curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash" aria-label="Copy the install command">copy install</button>
+          </div>
+          <div class="cmd-group">
+            <div class="cmd-lines">
+              <div><span class="out"># 2 — compile your program against libmmt_core</span></div>
+              <div><span class="pr">$ </span><span class="cmd">gcc -o hello_packet hello_packet.c \</span></div>
+              <div><span class="cmd">      -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap</span></div>
+            </div>
+            <button class="copy-btn" data-cmd="gcc -o hello_packet hello_packet.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap" aria-label="Copy the compile command">copy build</button>
+          </div>
+          <div class="cmd-group">
+            <div class="cmd-lines">
+              <div><span class="out"># 3 — run it on a capture</span></div>
+              <div><span class="pr">$ </span><span class="cmd">./hello_packet traffic.pcap</span></div>
+              <div><span class="ok">packet size: 1514</span></div>
+            </div>
+            <button class="copy-btn" data-cmd="./hello_packet traffic.pcap" aria-label="Copy the run command">copy run</button>
+          </div>
+        </div>
         </div>
        </div>
       </div>
@@ -670,7 +690,7 @@
     <span class="t-com">// ... same pcap / packet_process() loop as Tier 1 ...</span>
 }</pre>
             </div>
-            <p class="api-note">Each attribute has a typed value — numeric fields come back as <code>uint*_t*</code>, while header strings like <code>http/host</code> are <code>mmt_header_line_t*</code> (a <code>ptr</code>+<code>len</code> pair, not null-terminated). Names map to MMT's 6,334 attributes; the engine classifies by payload signature, so these resolve regardless of port. See <a href="MMT-Attributes.md">MMT-Attributes</a>.</p>
+            <p class="api-note">Each attribute has a typed value — numeric fields come back as <code>uint*_t*</code>, while header strings like <code>http/host</code> are <code>mmt_header_line_t*</code> (a <code>ptr</code>+<code>len</code> pair, not null-terminated). Names map to MMT's 6,334 attributes; the engine classifies by payload signature, so these resolve regardless of port. See <a href="MMT-Attributes.html">MMT-Attributes</a>.</p>
           </div>
 
           <!-- TIER 3 -->
@@ -720,7 +740,7 @@
       <p class="api-note" style="margin-top:30px;">
         Adding a protocol MMT doesn't cover yet is a library-level extension: a module implements
         <code>init_proto_&lt;name&gt;_struct()</code>, declares its fields, and registers with the core at
-        build time — see <a href="Add-New-Protocol.md">Adding New Protocols</a>. Full runnable examples live in
+        build time — see <a href="Add-New-Protocol.html">Adding New Protocols</a>. Full runnable examples live in
         <a href="https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">src/examples/</a>.
       </p>
     </section>
@@ -742,7 +762,7 @@
         <span class="chip">GTP / GTPv2</span><span class="chip">Diameter</span><span class="chip">SIP</span>
         <span class="chip">S7COMM</span><span class="chip">COTP / TPKT</span><span class="chip">CDP / DTP</span>
         <span class="chip">DICOM</span><span class="chip">Syslog</span><span class="chip">PTP</span><span class="chip">VNC</span><span class="chip">MSSQL</span>
-        <span class="chip mono">+ 600 more</span>
+        <a class="chip mono" href="PROTOCOLS.html">+ 600 more →</a>
       </div>
     </section>
 
@@ -812,31 +832,17 @@
       <h2 class="sec-title">Get the library, then compile against it.</h2>
       <p class="sec-lead">Install the SDK to <code>/opt/mmt/dpi</code> (headers in <code>include/</code>, <code>libmmt_core</code> in <code>lib/</code>), then build your program. Linux: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, openSUSE.</p>
 
-      <div class="term" style="max-width:none; margin-top:34px;">
-        <div class="term-bar">
-          <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
-          <span class="term-title">bash</span>
-          <button class="copy-btn" onclick="copyInstall(this)">copy</button>
-          <span id="copyStatus" class="sr-only" role="status" aria-live="polite"></span>
-        </div>
-        <div class="term-body">
-          <div><span class="out"># 1 — install the library (one line; or grab a .deb/.rpm from Releases)</span></div>
-          <div><span class="pr">$ </span><span class="cmd">curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash</span></div>
-          <div style="height:14px"></div>
-          <div><span class="out"># 2 — compile your program against libmmt_core</span></div>
-          <div><span class="pr">$ </span><span class="cmd">gcc -o hello_packet hello_packet.c \</span></div>
-          <div><span class="cmd">      -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap</span></div>
-          <div style="height:14px"></div>
-          <div><span class="out"># 3 — run it on a capture</span></div>
-          <div><span class="pr">$ </span><span class="cmd">./hello_packet traffic.pcap</span></div>
-          <div><span class="ok">packet size: 1514</span></div>
-        </div>
-      </div>
-
       <div class="cta-row" style="margin-top:28px;">
-        <a class="btn btn-primary" href="USER_GUIDE.md">Read the User Guide ▸</a>
+        <a class="btn btn-primary" href="USER_GUIDE.html">Read the User Guide ▸</a>
         <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">Browse examples</a>
       </div>
+      <p class="api-note" style="margin-top:22px;">
+        The three commands above the fold install to <code>/opt/mmt/dpi</code>. Prefer a package? Grab the
+        <code>.deb</code>/<code>.rpm</code> from <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>;
+        building from source or cross-compiling is covered in the
+        <a href="Compilation-and-Installation-Instructions.html">install guide</a>. Every guide lives in the
+        <a href="docs/">documentation index</a>.
+      </p>
     </section>
 
     <hr class="divider">
@@ -856,7 +862,7 @@
         </details>
         <details>
           <summary>How do I add a protocol that isn't covered?</summary>
-          <p>Write a plugin. You declare the protocol's attributes and its classification logic as a modular plugin and drop it in — no changes to the core engine. See the <a href="Add-New-Protocol.md">Adding New Protocols</a> guide.</p>
+          <p>Write a plugin. You declare the protocol's attributes and its classification logic as a modular plugin and drop it in — no changes to the core engine. See the <a href="Add-New-Protocol.html">Adding New Protocols</a> guide.</p>
         </details>
         <details>
           <summary>Is it really free? What's the license?</summary>
@@ -895,9 +901,10 @@
           </div>
         </div>
         <div class="foot-links">
-          <a href="USER_GUIDE.md">User Guide</a>
-          <a href="Add-New-Protocol.md">Add a Protocol</a>
-          <a href="Protocol-Stack.md">Architecture</a>
+          <a href="docs/">Documentation index</a>
+          <a href="USER_GUIDE.html">User Guide</a>
+          <a href="Add-New-Protocol.html">Add a Protocol</a>
+          <a href="Protocol-Stack.html">Architecture</a>
           <a href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">GitHub</a>
           <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>
           <a href="https://github.com/montimage-projects/mmt-dpi/blob/main/LICENSE" target="_blank" rel="noopener">Apache-2.0</a>
@@ -908,14 +915,17 @@
   </div>
 
   <script>
+    // Each command carries its own copy control; the button's data-cmd
+    // attribute is the exact string copied — no hidden mapping (F-UX-013).
     function copyInstall(btn){
-      var cmd = "curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash";
+      var cmd = btn.getAttribute('data-cmd') || "";
       var status = document.getElementById('copyStatus');
+      var label = btn.getAttribute('aria-label') || 'Command';
       function done(ok){
         var prev = btn.textContent;
         btn.textContent = ok ? "copied ✓" : "copy failed";
         btn.style.color = ok ? "#5af78e" : "#ff5f56";
-        if (status) status.textContent = ok ? "Install command copied to clipboard" : "Copy failed — select and copy manually";
+        if (status) status.textContent = ok ? label + " copied to clipboard" : "Copy failed — select and copy manually";
         setTimeout(function(){ btn.textContent = prev; btn.style.color = ""; }, 1600);
       }
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -966,6 +976,14 @@
       btn.setAttribute('aria-expanded', open ? 'false' : 'true');
       links.classList.toggle('open', !open);
     }
+
+    // Wire every per-command copy control.
+    (function(){
+      var btns = document.querySelectorAll('.copy-btn[data-cmd]');
+      for (var i = 0; i < btns.length; i++){
+        btns[i].addEventListener('click', function(){ copyInstall(this); });
+      }
+    })();
 
     // Close the mobile menu after tapping a section link.
     (function(){

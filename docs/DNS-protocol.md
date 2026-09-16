@@ -1,3 +1,8 @@
+---
+layout: default
+title: "DNS protocol"
+---
+
 # DNS protocol
 
 ## Overview
@@ -66,14 +71,14 @@ registered as `PROTO_DNS` in `sdk/include/tcpip/mmt_tcpip_protocols.h`.
 
 | Attribute | MMT value | Value |data size| Notes |
 | ------------ | ------------ | --- | --- | ---------------------- |
-|DNS_QNAME|||String|Question Name: Contains the object, domain or zone name, encoded using [standard DNS name notation](http://www.tcpipguide.com/free/t_DNSNameNotationandMessageCompressionTechnique.htm)|
+|DNS_QNAME|||String|Question Name: Contains the object, domain or zone name, encoded using [standard DNS name notation](https://www.tcpipguide.com/free/t_DNSNameNotationandMessageCompressionTechnique.htm)|
 |DNS_QTYPE|||2 bytes|Question Type|
 |||251||IXFR - A request for incremental (partial) zone transfer|
 |||252||AXFR - A request for a zone transfer|
 |||253||MAILB - A request for mailbox-related record|
 |||254||MAILB - A request for mail agent resource records|
 |||255||* - A request for all request|
-|DNS_QCLASS|||2 bytes|Question class - the class of the resource record being requested (normaly 1 for Internet "IN", 255 - any class) [see more](http://www.tcpipguide.com/free/t_DNSNameServerDataStorageResourceRecordsandClasses.htm)|
+|DNS_QCLASS|||2 bytes|Question class - the class of the resource record being requested (normaly 1 for Internet "IN", 255 - any class) [see more](https://www.tcpipguide.com/free/t_DNSNameServerDataStorageResourceRecordsandClasses.htm)|
 
 **DNS Common resource Record Format**
 
@@ -82,23 +87,23 @@ registered as `PROTO_DNS` in `sdk/include/tcpip/mmt_tcpip_protocols.h`.
 | Attribute | MMT value | Value |data size| Notes |
 | ------------ | ------------ | --- | --- | ---------------------- |
 |NAME|||variable|Name - Contains the object, domain, ...|
-|TYPE|||2 bytes| Type - Type a code value specifying the [type of resource record](http://www.tcpipguide.com/free/t_DNSNameServerDataStorageResourceRecordsandClasses-3.htm#Table_166)|
-|Class|||2 bytes|Class - The [class](http://www.tcpipguide.com/free/t_DNSNameServerDataStorageResourceRecordsandClasses.htm) of the resource record being requested|
+|TYPE|||2 bytes| Type - Type a code value specifying the [type of resource record](https://www.tcpipguide.com/free/t_DNSNameServerDataStorageResourceRecordsandClasses-3.htm#Table_166)|
+|Class|||2 bytes|Class - The [class](https://www.tcpipguide.com/free/t_DNSNameServerDataStorageResourceRecordsandClasses.htm) of the resource record being requested|
 |TTL|||4 bytes|Time to Live - The number of seconds that the record should be retained in the cache|
 |RDLength|||2 bytes|Resource Data Length - The size of RData field, in bytes|
 |RData|||variable|Resource Data - The data portion of the resource record|
 
 May need more detail:
 
-* [RData Field Formats For Common Resource Records](http://www.tcpipguide.com/free/t_DNSMessageResourceRecordFieldFormats-3.htm)
+* [RData Field Formats For Common Resource Records](https://www.tcpipguide.com/free/t_DNSMessageResourceRecordFieldFormats-3.htm)
 
-* [DNS Start Of Authority Resource Record Data Format](http://www.tcpipguide.com/free/t_DNSMessageResourceRecordFieldFormats-4.htm)
+* [DNS Start Of Authority Resource Record Data Format](https://www.tcpipguide.com/free/t_DNSMessageResourceRecordFieldFormats-4.htm)
 
-* [Other DNS resource record](http://www.tcpipguide.com/free/t_DNSMessageResourceRecordFieldFormats-5.htm)
+* [Other DNS resource record](https://www.tcpipguide.com/free/t_DNSMessageResourceRecordFieldFormats-5.htm)
 
 ## DNS Name Notation and Message Compression Technique
 
-More detail can be found from [here...](http://www.tcpipguide.com/free/t_DNSNameNotationandMessageCompressionTechnique.htm)
+More detail can be found from [here...](https://www.tcpipguide.com/free/t_DNSNameNotationandMessageCompressionTechnique.htm)
 
 General rule: `[size_1]string_size_1[size_2]string_size_2[size_3]string_size_3[last_size=0]`
 
@@ -126,7 +131,7 @@ The string is separated by `.` or `@`
 
 [RFC 1035 - DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION](https://www.ietf.org/rfc/rfc1035.txt)
 
-[DNS Message Header and Question Section Format ](http://www.tcpipguide.com/free/t_DNSMessageHeaderandQuestionSectionFormat.htm)
+[DNS Message Header and Question Section Format ](https://www.tcpipguide.com/free/t_DNSMessageHeaderandQuestionSectionFormat.htm)
 
 
 

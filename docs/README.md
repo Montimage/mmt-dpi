@@ -1,7 +1,13 @@
+---
+layout: default
+title: "MMT-DPI Documentation"
+permalink: /docs/
+---
+
 # MMT-DPI Documentation #
 
 Documentation for the MMT-DPI deep packet inspection library. For a project
-overview and quick start, see the [root README](../README.md).
+overview and quick start, see the [root README](https://github.com/montimage-projects/mmt-dpi/blob/main/README.md).
 
 ## Getting Started ##
 * [User Guide](./USER_GUIDE.md) — install, first run, and embedding the library

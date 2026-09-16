@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Protocol Model"
+---
+
 # Protocol Model
 
 [TOC]

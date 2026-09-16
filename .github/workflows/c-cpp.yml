@@ -209,9 +209,20 @@ jobs:
         bash tools/ci/count-weak-types.sh
         bash tools/ci/check-typed-accessors.sh
         bash tools/ci/lint-markers.sh
+    - name: Set up Ruby for the docs-site build
+      uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1.323.0
+      with:
+        ruby-version: "3.3"
+        working-directory: docs
+        bundler-cache: true
     - name: Documentation checks (blocking)
+      # Source-tree pass (trunk): built .html URLs resolve to their .md
+      # sources; built-site pass: the real check over jekyll output — the
+      # exclusion/front-matter rules are only enforceable there (issue #247).
       run: |
         bash tools/ci/check-site-links.sh docs
+        cd docs && bundle exec jekyll build && cd ..
+        bash tools/ci/check-site-links.sh docs/_site
         bash tools/phase0/ci/check_readme_gates.sh
     - name: Release verification wiring (blocking — issue #198)
       # The gate condition holds — released packages ship SBOM + SHA256SUMS +

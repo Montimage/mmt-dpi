@@ -1,3 +1,8 @@
+---
+layout: default
+title: "httpparser → llhttp migration guide"
+---
+
 # http_parser → llhttp migration guide
 
 *Plan task 4.5 (spike) — closes `F-DEP-201`; consumed by task 4.6 (issue #222), which

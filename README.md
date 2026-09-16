@@ -1,5 +1,7 @@
 # MMT-DPI
 
+**[Documentation site → montimage-projects.github.io/mmt-dpi](https://montimage-projects.github.io/mmt-dpi/)**
+
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![C/C++ CI](https://github.com/montimage-projects/mmt-dpi/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/montimage-projects/mmt-dpi/actions/workflows/c-cpp.yml)
 
@@ -197,6 +199,7 @@ mmt-dpi/
 
 ## Documentation
 
+- [Documentation site](https://montimage-projects.github.io/mmt-dpi/) — the rendered version of everything below
 - [User Guide](docs/USER_GUIDE.md) — install, run the examples, write your first program
 - [Compilation and Installation](docs/Compilation-and-Installation-Instructions.md)
 - [Protocol Stack Architecture](docs/Protocol-Stack.md)

@@ -1,3 +1,8 @@
+---
+layout: default
+title: "MMT Sessions"
+---
+
 # MMT Sessions #
 
 [TOC]

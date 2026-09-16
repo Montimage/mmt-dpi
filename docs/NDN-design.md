@@ -1,3 +1,8 @@
+---
+layout: default
+title: "NDN design"
+---
+
 # NDN design
 
 ## ndn_TLV_t struct

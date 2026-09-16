@@ -1,3 +1,8 @@
+---
+layout: default
+title: "User Guide"
+---
+
 # User Guide
 
 This guide walks through installing MMT-DPI, running the included example
@@ -110,5 +115,5 @@ Skim `src/examples/extract_all.c` for the most complete reference;
 - Performance / runtime tuning: `docs/Deployment-Consideration.md`.
 
 If you hit something this guide doesn't answer, open an issue using the
-[bug report template](../.github/ISSUE_TEMPLATE/bug_report.md) or start
+[bug report template](https://github.com/montimage-projects/mmt-dpi/blob/main/.github/ISSUE_TEMPLATE/bug_report.md) or start
 a discussion on the repo.

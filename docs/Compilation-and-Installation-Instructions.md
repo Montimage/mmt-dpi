@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Before compiling"
+---
+
 **Compilation and Installation instructions**
 
 ------------------
@@ -51,7 +56,7 @@ In this example, we are going to use `libpcap` to capture packets from a given N
 sudo apt-get install libpcap-dev
 ```
 
-You can test `mmt-dpi` library with some examples in [`src/examples`](../src/examples) to see how it works.
+You can test `mmt-dpi` library with some examples in [`src/examples`](https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples) to see how it works.
 
 ```sh
 cd src/examples
@@ -73,7 +78,7 @@ gcc -o extract_all extract_all.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lm
 ```bash
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew install/master/install)"
 ```
-* Git: See [Install Git for Mac OSX](http://git-scm.com/download/mac)
+* Git: See [Install Git for Mac OSX](https://git-scm.com/download/mac)
 
 ## Install some required packages
 ```bash
@@ -97,7 +102,7 @@ sudo make ARCH=osx install
 <summary>Windows cross-compilation (unsupported)</summary>
 
 ## Install some required tools
-* Git: See [Install Git for Window](http://git-scm.com/download/win)
+* Git: See [Install Git for Window](https://git-scm.com/download/win)
 
 ## Compile
 Cross-compiling for Windows requires `mingw-w64` (NOT `mingw32`, as this version is deprecated)

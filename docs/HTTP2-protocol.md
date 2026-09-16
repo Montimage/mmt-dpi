@@ -1,3 +1,8 @@
+---
+layout: default
+title: "HTTP2 protocol"
+---
+
 # HTTP2 protocol
 
 ## Overview
@@ -61,7 +66,7 @@ Upgrade: h2c
 
 ## HTTP2 frame format
 
-References: [HTTP/2](http://httpwg.org/specs/rfc7540.html#FramingLayer)
+References: [HTTP/2](https://httpwg.org/specs/rfc7540.html#FramingLayer)
 
 ```
  +-----------------------------------------------+

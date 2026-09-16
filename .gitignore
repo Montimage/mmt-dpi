@@ -141,3 +141,11 @@ fuzz-artifacts/
 
 # python bytecode from tools/ci/fuzz/mutate.py
 __pycache__/
+
+# jekyll site build output (docs/_config.yml)
+_site/
+.jekyll-cache/
+.jekyll-metadata
+Gemfile.lock
+.bundle/
+vendor/bundle/

@@ -1,3 +1,8 @@
+---
+layout: default
+title: "FTP protocol test case"
+---
+
 # FTP protocol test case
 
 To test the FTP plugin, we need to setup the environment for testing FTP protocol

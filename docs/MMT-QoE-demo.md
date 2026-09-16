@@ -1,3 +1,8 @@
+---
+layout: default
+title: "MMT-QoE Demo"
+---
+
 # MMT-QoE Demo
 
 > ⚠️ This document describes the MMT_QoE / mmtprobe / MMT_Operator ecosystem, which
@@ -30,7 +35,7 @@ sudo sudo apt-get install libmicrohttpd5 tomcat7 postgresql sqlite3 libpcap libx
 ** Download and install MMT_QoE **
 
 ```sh
-wget  http://www.montimage.eu/mmt-probe/downloads/vestel/mmt_pkg.tar.gz
+wget  https://www.montimage.eu/mmt-probe/downloads/vestel/mmt_pkg.tar.gz
 tar -zxvf mmt_pkg.tar.gz
 cd mmt_pkg
 ./install

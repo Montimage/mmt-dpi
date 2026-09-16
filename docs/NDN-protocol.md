@@ -1,3 +1,8 @@
+---
+layout: default
+title: "NDN protocol"
+---
+
 # NDN protocol
 
 ## Overview

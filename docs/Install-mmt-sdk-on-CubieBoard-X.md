@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Install mmt-sdk in cubieboard X in a micro-SD card:"
+---
+
 # Install mmt-sdk in cubieboard X in a micro-SD card:
 
 [Install cubieboard](https://github.com/cubieplayer/Cubian/wiki/Install-Cubian)

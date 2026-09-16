@@ -1,3 +1,8 @@
+---
+layout: default
+title: "MMT Protocol Stack"
+---
+
 # MMT Protocol Stack #
 
 [TOC]

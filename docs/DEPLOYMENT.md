@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Deployment Guide"
+---
+
 # Deployment Guide
 
 ## Installation

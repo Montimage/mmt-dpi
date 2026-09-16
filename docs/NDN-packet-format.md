@@ -1,3 +1,8 @@
+---
+layout: default
+title: "NDN packet format"
+---
+
 # NDN packet format
 
 ## View NDN packet in Wireshark
@@ -12,7 +17,7 @@ The file `ndn.lua` was previously hosted at `/montimage/mmt-test/scripts/ndn.lua
 
 ## Understand NDN data format
 
-Each NDN packet is encoded in a Type-Length-Value (TLV) format. You can check [Type-Length-Value (TLV) Encoding](http://named-data.net/doc/ndn-tlv/tlv.html) and [Type value assignment](http://named-data.net/doc/ndn-tlv/types.html)
+Each NDN packet is encoded in a Type-Length-Value (TLV) format. You can check [Type-Length-Value (TLV) Encoding](https://named-data.net/doc/ndn-tlv/tlv.html) and [Type value assignment](https://named-data.net/doc/ndn-tlv/types.html)
 
 ### Interest packet
 
@@ -95,7 +100,7 @@ _Analysis_
 
 * T-**06**: data packet
 
-* L-**fd**: 253 (decimal value) -> 2 octets ([see why?](http://named-data.net/doc/ndn-tlv/tlv.html#variable-size-encoding-for-type-t-and-length-l)) 
+* L-**fd**: 253 (decimal value) -> 2 octets ([see why?](https://named-data.net/doc/ndn-tlv/tlv.html#variable-size-encoding-for-type-t-and-length-l)) 
 
 	-> L-**01:f4** 500 -> The NDN packet len is 500 octets, the value after this
 
@@ -170,7 +175,7 @@ _Analysis_
 		
 		* L-**01**: 1 octet
 		
-		* V-**01**: SignatureSha256WithRsa ([see why](http://named-data.net/doc/ndn-tlv/signature.html#signaturetype))
+		* V-**01**: SignatureSha256WithRsa ([see why](https://named-data.net/doc/ndn-tlv/signature.html#signaturetype))
 		
 		
 		* T-**1c**: KeyLocator

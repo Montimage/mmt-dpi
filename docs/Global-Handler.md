@@ -1,3 +1,8 @@
+---
+layout: default
+title: "MMT Global Handler"
+---
+
 # MMT Global Handler #
 
 [TOC]

@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Memory Management"
+---
+
 # Memory Management #
 
 [TOC]

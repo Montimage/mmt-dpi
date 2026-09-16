@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Agent Environment Notes"
+---
+
 # Agent Environment Notes
 
 This document describes the build/test environment an automated agent (or a

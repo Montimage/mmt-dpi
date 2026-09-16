@@ -1,3 +1,8 @@
+---
+layout: default
+title: "HTTP protocol"
+---
+
 # HTTP protocol
 
 ## HTTP message format
@@ -24,9 +29,9 @@ The HTTP generic message format is as follows:
 [<message-trailers>]
 ```
 
-![http request message format](http://www.tcpipguide.com/free/diagrams/httprequest.png)
+![http request message format](https://www.tcpipguide.com/free/diagrams/httprequest.png)
 
-To know more about `METHOD`, [link](http://www.tcpipguide.com/free/t_HTTPMethods-2.htm)
+To know more about `METHOD`, [link](https://www.tcpipguide.com/free/t_HTTPMethods-2.htm)
 
 ### HTTP Response message format
 
@@ -40,14 +45,14 @@ To know more about `METHOD`, [link](http://www.tcpipguide.com/free/t_HTTPMethods
 [<message-trailers>]
 ```
 
-![http response message format](http://www.tcpipguide.com/free/diagrams/httpresponse.png)
+![http response message format](https://www.tcpipguide.com/free/diagrams/httpresponse.png)
 
 
-To know more about `status-code : reason-phrase`, [link](http://www.tcpipguide.com/free/t_HTTPStatusCodeFormatStatusCodesandReasonPhrases-2.htm)
+To know more about `status-code : reason-phrase`, [link](https://www.tcpipguide.com/free/t_HTTPStatusCodeFormatStatusCodesandReasonPhrases-2.htm)
 
 ### Multiple HTTP request over one TCP session
 
-- [HTTP Data Length Issues, "Chunked" Transfers and Message Trailers ](http://www.tcpipguide.com/free/t_HTTPDataLengthIssuesChunkedTransfersandMessageTrai.htm)
+- [HTTP Data Length Issues, "Chunked" Transfers and Message Trailers ](https://www.tcpipguide.com/free/t_HTTPDataLengthIssuesChunkedTransfersandMessageTrai.htm)
 
 **Chunked transfer**
 

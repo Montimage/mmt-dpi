@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Protocol Statistics"
+---
+
 # Protocol Statistics #
 
 [TOC]

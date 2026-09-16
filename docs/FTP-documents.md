@@ -1,3 +1,8 @@
+---
+layout: default
+title: "FTP protocol documents:"
+---
+
 # FTP protocol documents:
 
 * [rfc959](https://tools.ietf.org/html/rfc959)
@@ -14,5 +19,5 @@
 
 * [Install and config a FTP server on Ubuntu](https://help.ubuntu.com/lts/serverguide/ftp-server.html)
 
-* [Example Sessions Using Active and Passive Data Transfers](http://www.ncftp.com/ncftpd/doc/misc/ftp_and_firewalls.html)
+* [Example Sessions Using Active and Passive Data Transfers](https://www.ncftp.com/ncftpd/doc/misc/ftp_and_firewalls.html)
 to be continue ...

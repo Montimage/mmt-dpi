@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Externally-updatable IP-range / port attribution (M9)"
+---
+
 # Externally-updatable IP-range / port attribution (M9)
 
 *Part of the MMT-DPI Master Improvement Plan — Phase 7 (M9, issues #26 & #74).*
@@ -61,21 +66,21 @@ separate set that is consulted *before* the built-in/extend tables. Use this to
 > file with no `override` rules) classification is byte-identical to the
 > compiled-in baseline, as gated by the golden classification fingerprint.
 
-See [`data/ip_ranges.example.txt`](../data/ip_ranges.example.txt) (`data/ip_ranges.example.txt`).
+See [`data/ip_ranges.example.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.example.txt) (`data/ip_ranges.example.txt`).
 
 ### Refreshing high-impact CDN/cloud ranges (issue #75)
 
 CDN/cloud allocations change often, so they are shipped as a **refreshable data
 file** rather than baked into the compiled-in `proto_ip_address[]` table. A
 ready-to-use bundle lives at
-[`data/ip_ranges.cdn.txt`](../data/ip_ranges.cdn.txt); load it the same way:
+[`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt); load it the same way:
 
 ```
 export MMT_DPI_IP_RANGES_FILE=/path/to/ip_ranges.cdn.txt
 ```
 
 Regenerate it from each provider's own authoritative, machine-readable endpoint
-with [`tools/refresh_cdn_ranges.sh`](../tools/refresh_cdn_ranges.sh):
+with [`tools/refresh_cdn_ranges.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/refresh_cdn_ranges.sh):
 
 ```
 tools/refresh_cdn_ranges.sh > data/ip_ranges.cdn.txt
@@ -88,7 +93,7 @@ git diff data/ip_ranges.cdn.txt        # review before committing
 | AWS CloudFront  | `CLOUDFRONT` | `https://ip-ranges.amazonaws.com/ip-ranges.json` |
 | Google          | `GOOGLE`     | `https://www.gstatic.com/ipranges/goog.json`  |
 
-The bundled [`data/ip_ranges.cdn.txt`](../data/ip_ranges.cdn.txt) is a curated
+The bundled [`data/ip_ranges.cdn.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/ip_ranges.cdn.txt) is a curated
 **Fastly-only seed** (reviewable without network access); running the script
 regenerates the fuller multi-provider file. `goog.json` is Google's *own*
 service ranges — narrower and more accurate for `GOOGLE` than the broad GCP
@@ -118,7 +123,7 @@ returns no match, so they never override a built-in mapping. A rule tagged
 `override` (issue #74) is consulted **before** the switch, so it can replace a
 built-in port→protocol mapping.
 
-See [`data/port_map.example.txt`](../data/port_map.example.txt) (`data/port_map.example.txt`).
+See [`data/port_map.example.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/data/port_map.example.txt) (`data/port_map.example.txt`).
 
 ### Port attribution is a hint, not a verdict
 
@@ -169,18 +174,18 @@ readers). Heap allocations are released by `_free_proto_avltrees()` (IPv4 extend
 ## Measuring accuracy — the precision/recall harness (issue #74)
 
 The golden classification fingerprint
-([`tools/phase0/ci/check_classification.sh`](../tools/phase0/ci/check_classification.sh))
+([`tools/phase0/ci/check_classification.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/ci/check_classification.sh))
 proves *that* per-packet classification decisions do not change, but it is
 unlabelled — it cannot say whether a change made classification more or less
 *correct*. The Phase 7 precision/recall harness adds ground truth:
 
-* [`tools/phase0/phase0_precision.c`](../tools/phase0/phase0_precision.c) —
+* [`tools/phase0/phase0_precision.c`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/phase0_precision.c) —
   given a pcap and the application protocol it is known to carry, counts true
   positives / false positives / no-verdict packets from the classifier's
   deterministic decisions.
-* [`tools/phase0/ci/labels.txt`](../tools/phase0/ci/labels.txt) — labels for the
+* [`tools/phase0/ci/labels.txt`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/ci/labels.txt) — labels for the
   single-application captures in the CI golden subset.
-* [`tools/phase0/ci/check_precision.sh`](../tools/phase0/ci/check_precision.sh) —
+* [`tools/phase0/ci/check_precision.sh`](https://github.com/montimage-projects/mmt-dpi/blob/main/tools/phase0/ci/check_precision.sh) —
   runs the harness over the labelled set and diffs the micro-averaged
   precision/recall against the committed baseline
   (`tools/phase0/ci/baseline/precision.txt`). Wired into CI as the

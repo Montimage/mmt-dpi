@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Exported Symbols"
+---
+
 > ⚠️ This document is auto-generated from `nm` output and may drift as symbols change.
 > Regenerate with: `nm -gC --defined-only ./sdk/lib/libmmt_core.so | grep ' T ' | cut -f 3- -d ' '`
 

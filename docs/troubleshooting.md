@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Troubleshooting Log"
+---
+
 # Troubleshooting Log
 
 Append-only log of real fixes applied during doc-manager validation runs.

@@ -1,0 +1,11 @@
+# Local build of the documentation site: `cd docs && bundle install &&
+# bundle exec jekyll build` writes the site to docs/_site/. CI builds the
+# same source with actions/jekyll-build-pages (.github/workflows/pages.yml),
+# which provides these gems via the github-pages gemset — the plugins below
+# mirror the plugin list in _config.yml.
+source "https://rubygems.org"
+
+gem "jekyll", "~> 4.3"
+gem "jekyll-remote-theme"
+gem "jekyll-relative-links"
+gem "jekyll-seo-tag"

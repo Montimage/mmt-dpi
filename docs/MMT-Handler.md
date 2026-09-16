@@ -1,3 +1,8 @@
+---
+layout: default
+title: "MMT Handler"
+---
+
 # MMT Handler #
 ## Definition ##
 MMT Handler is an abstract instance responsible for processing data packets, extracting registered attributes, and notifying user about defined events.

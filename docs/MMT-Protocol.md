@@ -1,3 +1,8 @@
+---
+layout: default
+title: "MMT Protocol"
+---
+
 # MMT Protocol #
 
 [TOC]

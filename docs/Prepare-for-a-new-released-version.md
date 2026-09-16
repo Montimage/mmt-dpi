@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Things need to be done before releasing a new stable version"
+---
+
 # Things need to be done before releasing a new stable version
 
 ## Update the new version number

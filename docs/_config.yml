@@ -9,12 +9,14 @@ description: >-
 remote_theme: pages-themes/cayman@2f96786aaa4fce7ab3df07bd4a9f271b06584c0f # v0.2.0
 plugins:
   - jekyll-remote-theme
+  - jekyll-seo-tag     # the cayman default layout calls {% seo %}
+  - jekyll-relative-links  # rewrite .md links in guides to built .html URLs
 show_downloads: false
 
-# Build only the landing page and curated guides; exclude heavy/binary assets
-# and design-note pages from the published site.
+# Exclude only heavy/binary assets from the published site; every guide is
+# published so no page is both excluded and linked from the docs index.
 exclude:
   - docs/            # nested binary assets (mmt-flow.ep, *.png, *.csv)
   - "*.deb"
-  - Discussion-Points.md
-  - Phase2-Heuristics.md
+  - Gemfile
+  - Gemfile.lock

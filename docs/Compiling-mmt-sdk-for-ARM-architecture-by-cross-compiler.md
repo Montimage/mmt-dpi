@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Compiling mmt-sdk for ARM architecture by cross-compiler"
+---
+
 # Compiling mmt-sdk for ARM architecture by cross-compiler
 
 > ⚠️ This document references the `ARCH=green-arm` build target which no longer
