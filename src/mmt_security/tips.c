@@ -2663,16 +2663,16 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
     return NOT_VALID;
 }
 
-int comp2(compare_value v1, compare_value v2, short ope)
+int compare_values(compare_value v1, compare_value v2, short ope)
 {
-    int i = 0, j = 0, ret = 0;
-    unsigned short s1 = 0, s2 = 0;
-    unsigned long l1 = 0, l2 = 0;
-    unsigned long long ll1 = 0, ll2 = 0;
-    double f1 = 0, f2 = 0;
-    unsigned char c1 = 0, c2 = 0;
-    mmt_date_t *d1, *d2;
-    struct timeval *t1, *t2;
+    int idx = 0, needle = 0;
+    unsigned short u16_1 = 0, u16_2 = 0;
+    unsigned long u32_1 = 0, u32_2 = 0;
+    unsigned long long u64_1 = 0, u64_2 = 0;
+    double fval_1 = 0, fval_2 = 0;
+    unsigned char u8_1 = 0, u8_2 = 0;
+    mmt_date_t *date_1, *date_2;
+    struct timeval *tv_1, *tv_2;
     int size = 0;
     char * data1 = NULL;
     char * data2 = NULL;
@@ -2680,21 +2680,20 @@ int comp2(compare_value v1, compare_value v2, short ope)
 
     //Special case: ope==XIN with v1 is some type and v2 is MMT_BINARY_VAR_DATA
     if (ope == XIN && v2.type == MMT_BINARY_VAR_DATA) {
-        ret = compare_in_table(v1, v2, ope);
-        return ret;
+        return compare_in_table(v1, v2, ope);
     }
     if((v1.type == MMT_U8_DATA || v1.type == MMT_U16_DATA || v1.type == MMT_U32_DATA || v1.type == MMT_U64_DATA) &&
       (v2.type == MMT_U8_DATA || v2.type == MMT_U16_DATA || v2.type == MMT_U32_DATA || v2.type == MMT_U64_DATA)){
-      if     (v1.type == MMT_U64_DATA) ll1 = *((uint64_t *) (v1.data));
-      else if(v1.type == MMT_U32_DATA) ll1 = *((uint32_t *)      (v1.data));
-      else if(v1.type == MMT_U16_DATA) ll1 = *((uint16_t *)     (v1.data));
-      else ll1 = *((uint8_t *)      (v1.data));
-      if     (v2.type == MMT_U64_DATA) ll2 = *((uint64_t *) (v2.data));
-      else if(v2.type == MMT_U32_DATA) ll2 = *((uint32_t *)      (v2.data));
-      else if(v2.type == MMT_U16_DATA) ll2 = *((uint16_t *)     (v2.data));
-      else  ll2 = *((uint8_t *)      (v2.data));
-      if ((ope == NEQ && ll1 != ll2) || (ope == EQ && ll1 == ll2) || (ope == LT && ll1 < ll2) || (ope == LTE && ll1 <= ll2) || (ope == GT && ll1 > ll2) ||
-                    (ope == GTE && ll1 >= ll2)) return VALID;
+      if     (v1.type == MMT_U64_DATA) u64_1 = *((uint64_t *) (v1.data));
+      else if(v1.type == MMT_U32_DATA) u64_1 = *((uint32_t *)      (v1.data));
+      else if(v1.type == MMT_U16_DATA) u64_1 = *((uint16_t *)     (v1.data));
+      else u64_1 = *((uint8_t *)      (v1.data));
+      if     (v2.type == MMT_U64_DATA) u64_2 = *((uint64_t *) (v2.data));
+      else if(v2.type == MMT_U32_DATA) u64_2 = *((uint32_t *)      (v2.data));
+      else if(v2.type == MMT_U16_DATA) u64_2 = *((uint16_t *)     (v2.data));
+      else  u64_2 = *((uint8_t *)      (v2.data));
+      if ((ope == NEQ && u64_1 != u64_2) || (ope == EQ && u64_1 == u64_2) || (ope == LT && u64_1 < u64_2) || (ope == LTE && u64_1 <= u64_2) || (ope == GT && u64_1 > u64_2) ||
+                    (ope == GTE && u64_1 >= u64_2)) return VALID;
       else return NOT_VALID;
     }
     //Line not to be used if using XE (included in): if (v1.type != v2.type || v1.size != v2.size) return NOT_VALID;
@@ -2704,85 +2703,85 @@ int comp2(compare_value v1, compare_value v2, short ope)
 
     switch (v1.type) {
         case MMT_DATA_TIMEVAL:
-            t1 = (struct timeval *) (v1.data);
-            t2 = (struct timeval *) (v2.data);
-            if ((((ope == EQ) || (ope == LTE) || (ope == GTE)) && t1->tv_sec == t2->tv_sec && t1->tv_usec == t2->tv_usec)) return VALID;
-            else if ((ope == NEQ) && (t1->tv_sec != t2->tv_sec || t1->tv_usec != t2->tv_usec)) return VALID;
-            else if (((ope == LT) || (ope == LTE)) && ((t1->tv_sec < t2->tv_sec) || ((t1->tv_sec == t2->tv_sec) && (t1->tv_usec < t2->tv_usec)))) return VALID;
-            else if (((ope == GT) || (ope == GTE)) && ((t1->tv_sec > t2->tv_sec) || ((t1->tv_sec == t2->tv_sec) && (t1->tv_usec > t2->tv_usec)))) return VALID;
+            tv_1 = (struct timeval *) (v1.data);
+            tv_2 = (struct timeval *) (v2.data);
+            if ((((ope == EQ) || (ope == LTE) || (ope == GTE)) && tv_1->tv_sec == tv_2->tv_sec && tv_1->tv_usec == tv_2->tv_usec)) return VALID;
+            else if ((ope == NEQ) && (tv_1->tv_sec != tv_2->tv_sec || tv_1->tv_usec != tv_2->tv_usec)) return VALID;
+            else if (((ope == LT) || (ope == LTE)) && ((tv_1->tv_sec < tv_2->tv_sec) || ((tv_1->tv_sec == tv_2->tv_sec) && (tv_1->tv_usec < tv_2->tv_usec)))) return VALID;
+            else if (((ope == GT) || (ope == GTE)) && ((tv_1->tv_sec > tv_2->tv_sec) || ((tv_1->tv_sec == tv_2->tv_sec) && (tv_1->tv_usec > tv_2->tv_usec)))) return VALID;
             break;
         case MMT_DATA_DATE:
-            d1 = (mmt_date_t *) (v1.data);
-            d2 = (mmt_date_t *) (v2.data);
-            if ((((ope == EQ) || (ope == LTE) || (ope == GTE)) && d1->sec == d2->sec && d1->min == d2->min && d1->hour == d2->hour && d1->mday == d2->mday &&
-                    d1->month == d2->month && d1->year == d2->year && d1->wday == d2->wday)) return VALID;
-            else if ((ope == NEQ) && (d1->sec != d2->sec || d1->min != d2->min || d1->hour != d2->hour || d1->mday != d2->mday ||
-                    d1->month != d2->month || d1->year != d2->year || d1->wday != d2->wday)) return VALID;
-            else if (((ope == LT) || (ope == LTE)) && ((d1->year < d2->year) || ((d1->year == d2->year) && (d1->month < d2->month)) ||
-                    ((d1->year == d2->year) && (d1->month == d2->month) && (d1->mday < d2->mday)) ||
-                    ((d1->year == d2->year) && (d1->month == d2->month) && (d1->mday == d2->mday) && (d1->hour < d2->hour)) ||
-                    ((d1->year == d2->year) && (d1->month == d2->month) && (d1->mday == d2->mday) && (d1->hour == d2->hour) && (d1->min < d2->min)) ||
-                    ((d1->year == d2->year) && (d1->month == d2->month) && (d1->mday == d2->mday) && (d1->hour == d2->hour) && (d1->min == d2->min) &&
-                    (d1->sec < d2->sec))))
+            date_1 = (mmt_date_t *) (v1.data);
+            date_2 = (mmt_date_t *) (v2.data);
+            if ((((ope == EQ) || (ope == LTE) || (ope == GTE)) && date_1->sec == date_2->sec && date_1->min == date_2->min && date_1->hour == date_2->hour && date_1->mday == date_2->mday &&
+                    date_1->month == date_2->month && date_1->year == date_2->year && date_1->wday == date_2->wday)) return VALID;
+            else if ((ope == NEQ) && (date_1->sec != date_2->sec || date_1->min != date_2->min || date_1->hour != date_2->hour || date_1->mday != date_2->mday ||
+                    date_1->month != date_2->month || date_1->year != date_2->year || date_1->wday != date_2->wday)) return VALID;
+            else if (((ope == LT) || (ope == LTE)) && ((date_1->year < date_2->year) || ((date_1->year == date_2->year) && (date_1->month < date_2->month)) ||
+                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday < date_2->mday)) ||
+                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour < date_2->hour)) ||
+                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min < date_2->min)) ||
+                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min == date_2->min) &&
+                    (date_1->sec < date_2->sec))))
                 return VALID;
-            else if (((ope == GT) || (ope == GTE)) && ((d1->year < d2->year) || ((d1->year == d2->year) && (d1->month > d2->month)) ||
-                    ((d1->year == d2->year) && (d1->month == d2->month) && (d1->mday > d2->mday)) ||
-                    ((d1->year == d2->year) && (d1->month == d2->month) && (d1->mday == d2->mday) && (d1->hour > d2->hour)) ||
-                    ((d1->year == d2->year) && (d1->month == d2->month) && (d1->mday == d2->mday) && (d1->hour == d2->hour) && (d1->min > d2->min)) ||
-                    ((d1->year == d2->year) && (d1->month == d2->month) && (d1->mday == d2->mday) && (d1->hour == d2->hour) && (d1->min == d2->min) &&
-                    (d1->sec > d2->sec))))
+            else if (((ope == GT) || (ope == GTE)) && ((date_1->year < date_2->year) || ((date_1->year == date_2->year) && (date_1->month > date_2->month)) ||
+                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday > date_2->mday)) ||
+                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour > date_2->hour)) ||
+                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min > date_2->min)) ||
+                    ((date_1->year == date_2->year) && (date_1->month == date_2->month) && (date_1->mday == date_2->mday) && (date_1->hour == date_2->hour) && (date_1->min == date_2->min) &&
+                    (date_1->sec > date_2->sec))))
                 return VALID;
             break;
         case MMT_DATA_FLOAT:
-            f1 = *((float *) (v1.data));
-            f2 = *((float *) (v2.data));
-            if ((ope == NEQ && f1 != f2) || (ope == EQ && f1 == f2) || (ope == LT && f1 < f2) || (ope == LTE && f1 <= f2) || (ope == GT && f1 > f2) || (ope == GTE && f1 >= f2))
+            fval_1 = *((float *) (v1.data));
+            fval_2 = *((float *) (v2.data));
+            if ((ope == NEQ && fval_1 != fval_2) || (ope == EQ && fval_1 == fval_2) || (ope == LT && fval_1 < fval_2) || (ope == LTE && fval_1 <= fval_2) || (ope == GT && fval_1 > fval_2) || (ope == GTE && fval_1 >= fval_2))
                 return VALID;
             break;
         case MMT_U16_DATA:
         case MMT_DATA_LAYERID:
-            s1 = *((unsigned short *) (v1.data));
-            s2 = *((unsigned short *) (v2.data));
-            if ((ope == NEQ && s1 != s2) || (ope == EQ && s1 == s2) || (ope == LT && s1 < s2) || (ope == LTE && s1 <= s2) || (ope == GT && s1 > s2) || (ope == GTE && s1 >= s2))
+            u16_1 = *((unsigned short *) (v1.data));
+            u16_2 = *((unsigned short *) (v2.data));
+            if ((ope == NEQ && u16_1 != u16_2) || (ope == EQ && u16_1 == u16_2) || (ope == LT && u16_1 < u16_2) || (ope == LTE && u16_1 <= u16_2) || (ope == GT && u16_1 > u16_2) || (ope == GTE && u16_1 >= u16_2))
                 return VALID;
             break;
         case MMT_U32_DATA:
         case MMT_DATA_PORT:
-            l1 = (*((unsigned long *) (v1.data)));
-            l2 = (*((unsigned long *) (v2.data)));
-            if ((ope == NEQ && l1 != l2) || (ope == EQ && l1 == l2) || (ope == LT && l1 < l2) || (ope == LTE && l1 <= l2) || (ope == GT && l1 > l2) || (ope == GTE && l1 >= l2))
+            u32_1 = (*((unsigned long *) (v1.data)));
+            u32_2 = (*((unsigned long *) (v2.data)));
+            if ((ope == NEQ && u32_1 != u32_2) || (ope == EQ && u32_1 == u32_2) || (ope == LT && u32_1 < u32_2) || (ope == LTE && u32_1 <= u32_2) || (ope == GT && u32_1 > u32_2) || (ope == GTE && u32_1 >= u32_2))
                 return VALID;
             break;
         case MMT_U64_DATA:
         case MMT_DATA_POINT:
         case MMT_DATA_PORT_RANGE:
-            ll1 = *((unsigned long long *) (v1.data));
-            ll2 = *((unsigned long long *) (v2.data));
-            if ((ope == NEQ && ll1 != ll2) || (ope == EQ && ll1 == ll2) || (ope == LT && ll1 < ll2) || (ope == LTE && ll1 <= ll2) || (ope == GT && ll1 > ll2) ||
-                    (ope == GTE && ll1 >= ll2)) return VALID;
+            u64_1 = *((unsigned long long *) (v1.data));
+            u64_2 = *((unsigned long long *) (v2.data));
+            if ((ope == NEQ && u64_1 != u64_2) || (ope == EQ && u64_1 == u64_2) || (ope == LT && u64_1 < u64_2) || (ope == LTE && u64_1 <= u64_2) || (ope == GT && u64_1 > u64_2) ||
+                    (ope == GTE && u64_1 >= u64_2)) return VALID;
             break;
         case MMT_U8_DATA:
-            c1 = *((unsigned char *) (v1.data));
-            c2 = *((unsigned char *) (v2.data));
-            if ((ope == NEQ && c1 != c2) || (ope == EQ && c1 == c2) || (ope == LT && c1 < c2) || (ope == LTE && c1 <= c2) || (ope == GT && c1 > c2) || (ope == GTE && c1 >= c2))
+            u8_1 = *((unsigned char *) (v1.data));
+            u8_2 = *((unsigned char *) (v2.data));
+            if ((ope == NEQ && u8_1 != u8_2) || (ope == EQ && u8_1 == u8_2) || (ope == LT && u8_1 < u8_2) || (ope == LTE && u8_1 <= u8_2) || (ope == GT && u8_1 > u8_2) || (ope == GTE && u8_1 >= u8_2))
                 return VALID;
             break;
         case MMT_DATA_CHAR:
-            c1 = ((char *) (v1.data))[0];
-            c2 = ((char *) (v2.data))[0];
-            if ((ope == NEQ && c1 != c2) || (ope == EQ && c1 == c2) || (ope == LT && c1 < c2) || (ope == LTE && c1 <= c2) || (ope == GT && c1 > c2) || (ope == GTE && c1 >= c2))
+            u8_1 = ((char *) (v1.data))[0];
+            u8_2 = ((char *) (v2.data))[0];
+            if ((ope == NEQ && u8_1 != u8_2) || (ope == EQ && u8_1 == u8_2) || (ope == LT && u8_1 < u8_2) || (ope == LTE && u8_1 <= u8_2) || (ope == GT && u8_1 > u8_2) || (ope == GTE && u8_1 >= u8_2))
                 return VALID;
             break;
         case MMT_DATA_PATH:
             //TODO: need to complete for other cases
             if (ope == XC || ope == XCE) {
-              j = atoi(data2);
+              needle = atoi(data2);
               if(size>0 && size < 20){
-                /* i indexes int elements — bound the byte offset by the
+                /* idx indexes int elements — bound the byte offset by the
                  * operand buffer (size bytes): read complete ints only
-                 * (the old i<size bound read up to 4x past it, #209) */
-                for(i=1; i * (int)sizeof(int) + (int)sizeof(int) <= size; i++){
-                  if(j == *(int*) (data1 + i*sizeof (int))) return VALID;
+                 * (the old idx<size bound read up to 4x past it, #209) */
+                for(idx=1; idx * (int)sizeof(int) + (int)sizeof(int) <= size; idx++){
+                  if(needle == *(int*) (data1 + idx*sizeof (int))) return VALID;
                 }
                 return NOT_VALID;
               }
@@ -2825,43 +2824,43 @@ int comp2(compare_value v1, compare_value v2, short ope)
                 else
                     return NOT_VALID;
             } else {
-                for (i = 0; i < size; i = i + sizeof (char)) {
+                for (idx = 0; idx < size; idx = idx + sizeof (char)) {
                     if (ope == EQ) {
-                        if (((char *) (data1))[i] != ((char *) (data2))[i]) {
+                        if (((char *) (data1))[idx] != ((char *) (data2))[idx]) {
                             return NOT_VALID;
                         }
-                        if (i == size - 1) {
+                        if (idx == size - 1) {
                             return VALID;
                         }
                     } else if (ope == NEQ) {
-                        if (((char *) (data1))[i] != ((char *) (data2))[i]) {
+                        if (((char *) (data1))[idx] != ((char *) (data2))[idx]) {
                             return VALID;
                         }
-                        if (i == size - 1) {
+                        if (idx == size - 1) {
                             return NOT_VALID;
                         }
                     } else if ((ope == LTE) || (ope == LT)) {
-                        if (((char *) (data1))[i] == ((char *) (data2))[i]) {
-                            if (i == size - 1) {
+                        if (((char *) (data1))[idx] == ((char *) (data2))[idx]) {
+                            if (idx == size - 1) {
                                 if (ope == LTE) return VALID;
                                 return NOT_VALID;
                             }
                             continue;
-                        } else if (((char *) (data1))[i] > ((char *) (data2))[i]) {
+                        } else if (((char *) (data1))[idx] > ((char *) (data2))[idx]) {
                             return NOT_VALID;
-                        } else if (((char *) (data1))[i] < ((char *) (data2))[i]) {
+                        } else if (((char *) (data1))[idx] < ((char *) (data2))[idx]) {
                             return VALID;
                         }
                     } else if ((ope == GTE) || (ope == GT)) {
-                        if (((char *) (data1))[i] == ((char *) (data2))[i]) {
-                            if (i == size - 1) {
+                        if (((char *) (data1))[idx] == ((char *) (data2))[idx]) {
+                            if (idx == size - 1) {
                                 if (ope == GTE) return VALID;
                                 return NOT_VALID;
                             }
                             continue;
-                        } else if (((char *) (data1))[i] < ((char *) (data2))[i]) {
+                        } else if (((char *) (data1))[idx] < ((char *) (data2))[idx]) {
                             return NOT_VALID;
-                        } else if (((char *) (data1))[i] > ((char *) (data2))[i]) {
+                        } else if (((char *) (data1))[idx] > ((char *) (data2))[idx]) {
                             return VALID;
                         }
                     }
@@ -3332,7 +3331,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         return NOT_VALID;
     }
     if (action == COMPARE) {
-        ret = comp2(v1, v2, operator);
+        ret = compare_values(v1, v2, operator);
         //printf(" = %d\n\n", ret);
     } else if (action == COMPUTE) {
         *result_value = compute(v1, v2, operator);

@@ -14,6 +14,13 @@ We should probably trim it down to ~30 symbols.
 > `setDataLinkType` (obsolete, @obsolete since long), `get_attribute_extracted_data_encap_index`
 > (redundant with `get_attribute_extracted_data_at_index`), `mmt_print_all_protocols` (debug helper, prefer `iterate_through_protocols`).
 
+> **Deprecation note (2026-09, #237):** `mmt_search_irc_ssl_detect_ninty_percent_but_very_fast`
+> (libmmt_tcpip) keeps its exported symbol for ABI stability but is now
+> `__attribute__((deprecated))` in `src/mmt_tcpip/lib/protocols/proto_irc.c:375-376`.
+> Use the correctly named alias `mmt_search_irc_ssl_detect` (same signature and
+> behaviour, defined alongside at `proto_irc.c:356`). The misspelled name is
+> scheduled for removal in release 2.0.0.
+
 Symbol table
 
 
@@ -1360,7 +1367,7 @@ Symbol table
 |1339|`mmt_parse_packet_line_info`|**Y**|
 |1340|`mmt_parse_packet_line_info_unix`|**Y**|
 |1341|`mmt_realloc`|**Y**|
-|1342|`mmt_search_irc_ssl_detect_ninty_percent_but_very_fast`|**Y**|
+|1342|`mmt_search_irc_ssl_detect_ninty_percent_but_very_fast`|**Y** (deprecated → `mmt_search_irc_ssl_detect`, removal 2.0.0)|
 |1343|`mmt_strncmp`|**Y**|
 |1344|`mmt_tolower`|**Y**|
 |1345|`mmt_toupper`|**Y**|

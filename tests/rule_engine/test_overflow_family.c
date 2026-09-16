@@ -627,12 +627,12 @@ static void test_generate_command_bounded(void)
     fi_tracking = 0;
 }
 
-/* compare_in_table (reached via comp2 when a rule uses XIN on a
+/* compare_in_table (reached via compare_values when a rule uses XIN on a
  * MMT_BINARY_VAR_DATA operand) used the byte offset i as the element index —
  * reading up to 8x past the operand buffer for u64 and never comparing
  * odd-indexed elements. Elements must be scanned by element number, and only
  * complete elements inside v2.size. */
-extern int comp2(compare_value v1, compare_value v2, short ope);
+extern int compare_values(compare_value v1, compare_value v2, short ope);
 
 static void test_compare_in_table_bounded(void)
 {
@@ -661,10 +661,10 @@ static void test_compare_in_table_bounded(void)
     memcpy(heap28, table, sizeof table);
     memcpy((char *)heap28 + 24, &absent, 4); /* partial tail: must not match */
 
-    CHECK(comp2(v1, v2, XIN) == VALID,
+    CHECK(compare_values(v1, v2, XIN) == VALID,
           "XIN u64 finds the value at element index 1 (was skipped by the byte-offset index)");
     v1.data = &absent;
-    CHECK(comp2(v1, v2, XIN) == NOT_VALID,
+    CHECK(compare_values(v1, v2, XIN) == NOT_VALID,
           "XIN u64 does not match the partial 4-byte tail");
     free(heap28);
 
@@ -679,10 +679,10 @@ static void test_compare_in_table_bounded(void)
     v2.size = (int)sizeof table16;
     v2.data = malloc(sizeof table16);
     memcpy(v2.data, table16, sizeof table16);
-    CHECK(comp2(v1, v2, XIN) == VALID,
+    CHECK(compare_values(v1, v2, XIN) == VALID,
           "XIN u16 finds the value at element index 1 (was skipped by the byte-offset index)");
     needle16 = 0xDEAD;
-    CHECK(comp2(v1, v2, XIN) == NOT_VALID,
+    CHECK(compare_values(v1, v2, XIN) == NOT_VALID,
           "XIN u16 returns NOT_VALID for an absent value");
     free(v2.data);
 }
