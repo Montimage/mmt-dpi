@@ -1,10 +1,12 @@
 /*
- * test_overflow_family.c — regression tests for the tips.c overflow family
+ * test_overflow_family.c — regression tests for the tips_extract.c
+ * overflow family
  * (issue #137): F-BUG-212 (zero divisor in COMPUTE) and F-BUG-208 (>99-byte
  * header line copied into get_my_data()'s 100-byte buffer).
  *
  * Both entry points are exported by libmmt_security (non-static in
- * src/mmt_security/tips.c) and are driven directly here, the same way the
+ * src/mmt_security/tips_extract.c) and are driven directly here, the same
+ * way the
  * phase0 harnesses drive individual classifiers:
  *
  *   void *compute(compare_value v1, compare_value v2, short operator);
@@ -32,11 +34,13 @@
 #include "mmt_core.h"
 
 /* Internal rule/tuple layouts — not installed headers, but including them keeps
- * this test in lock-step with src/mmt_security/tips.c (same way compare_value
+ * this test in lock-step with src/mmt_security/tips_extract.c (same way
+ * compare_value
  * is mirrored below for the #137 checks). */
 #include "struct_defs.h"
 
-/* Mirrors `struct COMPARE_VALUE_struct` in src/mmt_security/tips.c (not part
+/* Mirrors `struct COMPARE_VALUE_struct` in src/mmt_security/tips_extract.c
+ * (not part
  * of the installed headers). Keep the field order in sync. */
 typedef struct {
     int type;
@@ -204,13 +208,15 @@ static void test_header_line_clamped(void)
 }
 
 /* ======================================================================
- * Issue #209 — second tips.c overflow family
+ * Issue #209 — second tips_*.c overflow family
  * (F-BUG-091, F-BUG-092, F-BUG-093, F-BUG-095, F-BUG-096, F-BUG-102, F-BUG-103)
  *
- * Entry points are exported by libmmt_security (non-static in tips.c) and are
+ * Entry points are exported by libmmt_security (non-static in the tips_*.c
+ * units) and are
  * driven directly here. For the allocation-failure and command-buffer checks
  * this binary interposes the libc-level symbols the engine bottoms out at —
- * xmalloc/xcalloc/xfree are tips.c-internal helpers that the -flto shared
+ * xmalloc/xcalloc/xfree are engine-internal helpers (tips.c) that the
+ * -flto shared
  * build binds invisibly, but their malloc/calloc/realloc/free (and fopen via
  * open_file) stay PLT-preemptible, so these definitions win process-wide:
  *   malloc/calloc/realloc/free — fault injection + live-allocation tracking
@@ -267,7 +273,7 @@ static void fi_reset(void)
 }
 
 /* --- interposed C-allocation family ----------------------------------------
- * tips.c's intra-TU helper calls (xmalloc -> malloc etc.) are bound
+ * the tips_*.c units' helper calls (xmalloc -> malloc etc.) are bound
  * internally by -flto in the shared build, but the libc symbols they bottom
  * out at stay PLT-preemptible — so the shims below see every allocation the
  * rule engine makes. The real targets are resolved once through

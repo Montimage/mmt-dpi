@@ -7,7 +7,7 @@
 # report-function-shape.sh: verify() held the record at 9 parameters until
 # Task 6.2 threaded its invariant arguments through a context struct. This
 # report makes "the signature is too wide" a measurable, reviewable claim —
-# the committed snapshot for src/mmt_security/tips.c lives at
+# the committed snapshot for the src/mmt_security/tips*.c units lives at
 # tools/ci/param-count-tips.txt and the remaining >6-parameter functions
 # there are Task 6.5 scope.
 #

@@ -1,7 +1,8 @@
 /*
  * test_injection.c — metacharacter reaction injection test for #136 / F-BUG-207
  *
- * Verifies the fix in src/mmt_security/tips.c: packet-derived attribute
+ * Verifies the fix in src/mmt_security/tips_report.c: packet-derived
+ * attribute
  * values interpolated into reaction commands must not be interpreted by the
  * shell. The fix uses strict single-quote escaping (escape_shell_arg).
  *

@@ -1,19 +1,20 @@
 <?xml version="1.0"?>
 <!--
   Minimal MMT security-rule set used by tests/rule_engine to exercise the
-  rule-file parser (read_rules/processNode in src/mmt_security/tips.c).
+  rule-file parser (read_rules/processNode in src/mmt_security/tips_xml.c
+  — split out of tips.c in issue #235).
 
-  The schema is derived directly from tips.c:
+  The schema is derived directly from tips_xml.c:
     - document root is ignored, <beginning> is skipped;
-      each <property> opens a new rule tree (processNode, tips.c:1373)
+      each <property> opens a new rule tree (processNode, tips_xml.c:950)
     - <operator> nodes carry value= boolean connectors (THEN/OR/AND/NOT/
       REPEAT/COMPUTE), nested operators build the event sub-tree
-      (tips.c:1390, tips.c:1503+)
+      (tips_xml.c:989, tips_xml.c:997+)
     - the boolean_expression= attribute is compiled into condition leaves;
       identifiers follow PROTO.FIELD [.EVENT_REF] and operators are
-      == != > >= < <= && || (create_boolean_expression, tips.c:945)
+      == != > >= < <= && || (create_boolean_expression, tips_xml.c:537)
     - referencing an unknown protocol/attribute aborts parsing with
-      Error 9 (tips.c:1094), so the expressions below resolve against
+      Error 9 (tips_xml.c:686), so the expressions below resolve against
       the always-present META protocol only.
 -->
 <beginning>

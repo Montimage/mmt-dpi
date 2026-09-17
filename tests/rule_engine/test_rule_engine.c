@@ -2,20 +2,21 @@
  * test_rule_engine.c — minimal rule-engine tests for the ENABLESEC
  * security library (issue #126 / F-TEST-003).
  *
- * The security engine (src/mmt_security/tips.c) is only compiled into
+ * The security engine (src/mmt_security/tips*.c — tips.c was split along
+ * its four responsibilities in issue #235) is only compiled into
  * libmmt_security.so when the SDK is built with ENABLESEC=1; before this
  * suite existed it was never exercised by CI.
  *
  * Scope (kept deliberately minimal per issue #126):
  *   - load a real hand-crafted rule-set XML through the public library
- *     entry point init_sec_lib() -> read_rules() -> processNode()
- *     and verify the parse+construction side effects through observable
+ *     entry point init_sec_lib() (tips.c) -> read_rules() -> processNode()
+ *     (tips_xml.c) and verify the parse+construction side effects through observable
  *     core APIs (extraction attributes registered while compiling the
  *     boolean expressions);
  *   - verify the error paths for a missing rule file and malformed XML.
  *
  * Rule-file XML schema is derived from processNode()/read_rules() in
- * src/mmt_security/tips.c; see tests/rule_engine/rules_minimal.xml.
+ * src/mmt_security/tips_xml.c; see tests/rule_engine/rules_minimal.xml.
  *
  * Usage: test_rule_engine parse <rules.xml>
  */

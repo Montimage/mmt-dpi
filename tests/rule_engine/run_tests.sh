@@ -2,22 +2,24 @@
 #
 # run_tests.sh — rule-engine tests for issue #126 / F-TEST-003.
 #
-# The security-rule engine (src/mmt_security/tips.c) and the fuzz engine
+# The security-rule engine (src/mmt_security/tips*.c — split in #235) and
+# the fuzz engine
 # are only compiled when the SDK is built with ENABLESEC=1. This suite
 # builds the SDK with ENABLESEC=1 into an isolated prefix, then loads a
 # hand-crafted rule-set XML through the library's public entry point
-# init_sec_lib() -> read_rules() -> processNode() (src/mmt_security/tips.c)
+# init_sec_lib() (tips.c) -> read_rules() -> processNode() (tips_xml.c)
 # and asserts parse/construction outcomes:
 #   1. a valid ruleset parses end-to-end and every attribute referenced by
 #      its boolean_expression attributes gets registered for extraction;
 #   2. a missing rule file and malformed XML hit the documented error paths
 #      (Error 13/14 in read_rules);
-#   3. the tips.c overflow family (#137) stays fixed: a packet-forced divisor
+#   3. the tips_extract.c overflow family (#137) stays fixed: a packet-forced divisor
 #      of 0 on the u16/u32/u64 COMPUTE paths returns NULL instead of SIGFPE
 #      (F-BUG-212) and a >99-byte header line is clamped inside
 #      get_my_data()'s 100-byte buffer (F-BUG-208) — test_overflow_family.c,
 #      which under SANITIZE=asan also fences the copy;
-#   4. the tips.c rule-engine overflow family (#209) stays fixed:
+#   4. the tips_extract.c/tips_report.c rule-engine overflow family (#209)
+#      stays fixed:
 #      MMT_STRING_LONG_DATA/MMT_DATA_PATH clamping (F-BUG-091/093),
 #      size*6+1 JSON escaping (F-BUG-092), header-line length ordering
 #      (F-BUG-095), the single-cleanup-exit allocation failure in
@@ -125,7 +127,7 @@ ${CC} "${extra_cflags[@]}" -O2 -Wall \
     -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm
 
 # Fixtures exercising the parser error paths (schema derived from
-# read_rules / create_boolean_expression in src/mmt_security/tips.c).
+# read_rules / create_boolean_expression in src/mmt_security/tips_xml.c).
 MALFORMED_XML="${WORK}/rule_malformed.xml"
 printf '<?xml version="1.0"?>\n<beginning>\n  <property property_id="1"\n' > "${MALFORMED_XML}"
 
@@ -215,7 +217,7 @@ run_expect_ok "metacharacter injection (no shell interpretation)" "${INJECTION_L
 grep '^ok - ' "${INJECTION_LOG}" | sed 's/^/  /'
 echo "  injection test passed (packet-derived metachars treated literally)"
 
-echo "  [6/7] tips.c overflow family (F-BUG-208 / F-BUG-212, #137) ..."
+echo "  [6/7] tips_extract.c overflow family (F-BUG-208 / F-BUG-212, #137) ..."
 OVERFLOW_LOG="${WORK}/overflow.log"
 run_expect_ok "overflow-family regression (zero divisor, >99-byte header line)" "${OVERFLOW_LOG}" \
     "${LD_ENV[@]}" "${OVERFLOW_BIN}"

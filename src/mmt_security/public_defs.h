@@ -57,13 +57,13 @@ typedef struct {
 } OPTIONS_struct ;      //Structure containing command options
 //--------------------------------- End of command options ----------------------------------------------------
 
-enum {
+typedef enum {
   SATISFIED, NOT_SATISFIED, BOTH, NEITHER
-}enum_print;
+} enum_print;
 
-enum {
+typedef enum {
   PCAP, TDMA 
-}enum_type_input;
+} enum_type_input;
 
 #define MTU_BIG               (16*1024)
 

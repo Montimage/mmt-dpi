@@ -16,16 +16,16 @@ extern "C" {
 #include <stdlib.h>
 #include <sys/time.h>
 
-enum {
+typedef enum {
   ROOT, SON, LEAF, ROOT_INSTANCE, EVENT
-}enum_type_node;
+} enum_type_node;
 
-enum {
+typedef enum {
   VALID, NOT_VALID, NOT_YET, TIMEOUT, TIMEIN, COUNTOUT, COUNTIN, ELIMINATE, CONTINUE, COUNT_SATISFIED,
   COUNT_SATISFIED_ELIMINATE, COUNT_NOT_SATISFIED, COUNT_NOT_SATISFIED_ELIMINATE, SKIP2
-}enum_result;
+} enum_result;
 
-enum {
+typedef enum {
   OR, AND, NOT, REPEAT, NEQ, EQ, GT, GTE, LT, LTE,
   THEN, COMPUTE, COMPARE, XC, XCE, XD, XDE, XE, ADD, SUB,
   MUL, DIV, XVAR, XCON, NOP, XAND, XOR, XIN, XFUNCT, DE, DNE
@@ -43,35 +43,35 @@ enum {
 //XIN =  in the table (numeric operator)
 //DE  =  does exist
 //DNE =  does not exist
-}enum_operation;
+} enum_operation;
 
-enum {
+typedef enum {
   ATTACK, SECURITY_RULE, EVASION, TEST
-}enum_type_rule_node;
+} enum_type_rule_node;
 
-enum {
+typedef enum {
   YES, NO, NOT_USED
-}enum_yes;
+} enum_yes;
 
-enum {
+typedef enum {
   NOT_OK, OK
-}enum_ok;
+} enum_ok;
 
-enum {
+typedef enum {
   DONT_CLEAN, CLEAN
-}enum_clean;
+} enum_clean;
 
-enum {
+typedef enum {
   FOUND, NOT_FOUND, SKIP
-}enum_found;
+} enum_found;
 
 #define FORMAT_IP(ip)  ((ip)&0x000000ff),((ip)&0x0000ff00)>>8,((ip)&0x00ff0000)>>16,(ip)>>24
 
 #define FIRST_EVENT_NUMBER 100
 
-enum {
+typedef enum {
   BEFORE, AFTER, SAME
-}enum_operation_type;
+} enum_operation_type;
 
 typedef struct ATTRIBUTE_struct{
   long protocol_id;//Number that identifies protocol (using those defined in protodef.h)
@@ -163,12 +163,11 @@ typedef struct REFERENCE_NAME_struct{
   struct REFERENCE_NAME_struct *next;
 }reference_name;
 
-static rule *top_rule = NULL;
-static rule *bot_rule = NULL;
-static rule *root_rule;
-
-static father *top_father = NULL;
-static father *bot_father = NULL;
+/* The engine state formerly declared here (`static` in a header => one copy
+ * per translation unit) moved with the tips.c split (issue #235): top_rule
+ * is now defined once in tips.c and declared extern in tips_internal.h;
+ * bot_rule/root_rule and the father stack are used only by the XML loader
+ * and are file-local in tips_xml.c. */
 
 #define MTU_BIG               (16*1024)
 
