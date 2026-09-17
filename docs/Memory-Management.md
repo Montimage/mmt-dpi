@@ -21,8 +21,7 @@ This is an overview of the memory management features implemented in `src/mmt_co
 
 ## Implementation ##
 
-Each chunk of allocated memory is prefixed with the size of the chunk.
-Global counters on allocated and freed memory are also maintained; those counters are accessible through `mmt_meminfo()` (`src/mmt_core/private_include/memory.h:25`, internal API).
+`mmt_malloc()`/`mmt_realloc()`/`mmt_free()` are thin libc pass-throughs — requests reach the heap at their natural size class (the per-block `size_t` prefix was dropped in issue #255, and the `mmt_meminfo()` counters went with it).
 
 ![MMT Memory Management](images/mmt_malloc.png)
 

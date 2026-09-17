@@ -794,28 +794,34 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     {
 
         target = proto_packet_classify_next(ipacket, configured_protocol, index) ? MMT_CONTINUE : MMT_SKIP;
-        if (ipacket->session != NULL)
+        /* Issue #255 (F-PERF-010): the per-direction proto_path copies moved
+         * into the tunnel-parent extension. They are maintained only for
+         * sessions that parent embedded sessions (a leaf session's path is
+         * identical in both directions — get_session_proto_path_direction()
+         * falls back to proto_path then). */
+        if (ipacket->session != NULL && ipacket->session->children_stats != NULL)
         {
             // Update proto_path_direction
             if (ipacket->session->proto_path.len > 0)
             {
+                mmt_session_children_stats_t *cs = ipacket->session->children_stats;
                 int proto_direction = ipacket->session->last_packet_direction;
                 int proto_path_len = ipacket->session->proto_path.len;
-                if (ipacket->session->proto_path_direction[proto_direction].len != proto_path_len)
+                if (cs->proto_path_direction[proto_direction].len != proto_path_len)
                 {
-                    ipacket->session->proto_path_direction[proto_direction].len = proto_path_len;
+                    cs->proto_path_direction[proto_direction].len = proto_path_len;
                     int i = 0;
                     for (i = 0; i < proto_path_len; i++)
                     {
-                        ipacket->session->proto_path_direction[proto_direction].proto_path[i] = ipacket->session->proto_path.proto_path[i];
+                        cs->proto_path_direction[proto_direction].proto_path[i] = ipacket->session->proto_path.proto_path[i];
                     }
                     // debug("[IP] Update protocol path direction: %d", proto_direction);
                 }
                 else
                 {
-                    if (ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] != ipacket->session->proto_path.proto_path[proto_path_len - 1])
+                    if (cs->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] != ipacket->session->proto_path.proto_path[proto_path_len - 1])
                     {
-                        ipacket->session->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] = ipacket->session->proto_path.proto_path[proto_path_len - 1];
+                        cs->proto_path_direction[proto_direction].proto_path[proto_path_len - 1] = ipacket->session->proto_path.proto_path[proto_path_len - 1];
                     }
                 }
             }
@@ -851,6 +857,25 @@ int proto_packet_process(ipacket_t * ipacket, proto_statistics_internal_t * pare
     return target;
 }
 
+/* Issue #255 (F-PERF-014): reset the seven PROTO_PATH_SIZE-element per-packet
+ * arrays shared by process_packet() and process_packet_with_reassembly().
+ * The interleaved scalar loops used to emit ~112 scattered stores per packet;
+ * the contiguous memsets (plus the dense fill for nb_reassembled_packets,
+ * which resets to 1 — a value memset cannot express) compile down to vector
+ * stores at -O2. */
+static inline void reset_ipacket_path_arrays(ipacket_t *ipacket) {
+    memset(ipacket->is_completed,             0, sizeof(ipacket->is_completed));
+    memset(ipacket->is_fragment,              0, sizeof(ipacket->is_fragment));
+    memset(ipacket->ipv6_ext_headers_path,    0, sizeof(ipacket->ipv6_ext_headers_path));
+    memset(ipacket->ipv6_ext_headers_offset,  0, sizeof(ipacket->ipv6_ext_headers_offset));
+    memset(ipacket->ipv6_overlapping,         0, sizeof(ipacket->ipv6_overlapping));
+    memset(ipacket->ipv6_outoforder,          0, sizeof(ipacket->ipv6_outoforder));
+    int i = 0;
+    for (; i < PROTO_PATH_SIZE; i++) {
+        ipacket->nb_reassembled_packets[i] = 1;
+    }
+}
+
 int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet){
     classified_proto_t classified_proto;
     classified_proto.proto_id = PROTO_META;
@@ -882,16 +907,7 @@ int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     mmt->current_ipacket.last_callback_fct_id = 0;
     // IPV6
     mmt->current_ipacket.ipv6_ext_headers_len = 0;
-    int i = 0;
-    for ( i = 0; i < PROTO_PATH_SIZE; i++ ) {
-        mmt->current_ipacket.nb_reassembled_packets[i] = 1;
-        mmt->current_ipacket.is_completed[i] = 0;
-        mmt->current_ipacket.is_fragment[i] = 0;
-        mmt->current_ipacket.ipv6_ext_headers_path[i] = 0;
-        mmt->current_ipacket.ipv6_ext_headers_offset[i] = 0;
-        mmt->current_ipacket.ipv6_overlapping[i] = 0;
-        mmt->current_ipacket.ipv6_outoforder[i] = 0;
-    }
+    reset_ipacket_path_arrays(&mmt->current_ipacket);
     mmt->current_ipacket.total_caplen = header->caplen;
     // update_last_received_packet(&mmt->last_received_packet, &mmt->current_ipacket);
     mmt->last_received_packet.packet_id += 1;
@@ -948,16 +964,7 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     ipacket->last_callback_fct_id = 0;
     // ipv6
     ipacket->ipv6_ext_headers_len = 0;
-    int i = 0;
-    for ( i = 0; i < PROTO_PATH_SIZE; i++ ) {
-        ipacket->nb_reassembled_packets[i] = 1;
-        ipacket->is_completed[i] = 0;
-        ipacket->is_fragment[i] = 0;
-        ipacket->ipv6_ext_headers_offset[i] = 0;
-        ipacket->ipv6_ext_headers_path[i] = 0;
-        ipacket->ipv6_overlapping[i] = 0;
-        ipacket->ipv6_outoforder[i] = 0;
-    }
+    reset_ipacket_path_arrays(ipacket);
     ipacket->total_caplen = header->caplen;
     // update_last_received_packet(&mmt->last_received_packet, ipacket);
     mmt->last_received_packet.packet_id += 1;

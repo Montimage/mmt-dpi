@@ -1074,9 +1074,9 @@ MMTAPI void  MMTCALL mmt_free    ( mmt_opaque_t x );
  * storage (e.g. the TCP segment list): allocations are carved from large blocks
  * and are NEVER individually freed - the whole arena is released in one shot
  * with mmt_arena_destroy(). This collapses per-packet malloc/free churn into a
- * single create/destroy pair per flow. Returned blocks are 16-byte aligned and
- * carry NO size prefix (unlike mmt_malloc), so they must not be passed to
- * mmt_free()/mmt_realloc().
+ * single create/destroy pair per flow. Returned blocks are 16-byte aligned
+ * carve-outs of a larger malloc() block, so they must not be passed to
+ * mmt_free()/mmt_realloc() — only whole arenas are released.
  */
 typedef struct mmt_arena_s mmt_arena_t;
 

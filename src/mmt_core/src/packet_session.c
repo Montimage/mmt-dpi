@@ -239,26 +239,10 @@ static void init_new_session_fields(mmt_handler_t * mmt_handler, mmt_session_t *
     session->data_packet_count_direction[0] = 0;
     session->data_byte_volume_direction[0] = 0;
 
-    session->sub_packet_count = 0;
-    session->sub_packet_cap_count = 0;
-    session->sub_data_packet_count = 0;
-    session->sub_data_volume = 0;
-    session->sub_data_cap_volume = 0;
-    session->sub_data_byte_volume = 0;
-
-    session->sub_packet_count_direction[1] = 0;
-    session->sub_data_volume_direction[1] = 0;
-    session->sub_packet_cap_count_direction[1] = 0;
-    session->sub_data_cap_volume_direction[1] = 0;
-    session->sub_data_packet_count_direction[1] = 0;
-    session->sub_data_byte_volume_direction[1] = 0;
-
-    session->sub_packet_count_direction[0] = 0;
-    session->sub_data_volume_direction[0] = 0;
-    session->sub_packet_cap_count_direction[0] = 0;
-    session->sub_data_cap_volume_direction[0] = 0;
-    session->sub_data_packet_count_direction[0] = 0;
-    session->sub_data_byte_volume_direction[0] = 0;
+    /* Issue #255 (F-PERF-010): the subsession counters + per-direction path
+     * copies live in the lazily-allocated tunnel-parent extension — a fresh
+     * session has no children, so it starts NULL. */
+    session->children_stats = NULL;
 
     session->tcp_retransmissions = 0;
     session->tcp_outoforders = 0;
@@ -321,6 +305,10 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
                 ((generic_session_data_cleanup_function)configured_protocol->protocol->session_data_cleanup)(session, session->session_protocol_index);
             mmt_handler->active_sessions_count--;
             mmt_handler->sessions_count--;
+            /* Issue #255: NULL today (a fresh session is never a tunnel
+             * parent) — kept for parity with the plugin destructor in case
+             * extension allocation ever moves earlier. */
+            mmt_free(session->children_stats);
             mmt_free(session);
             return 0;
         }
@@ -333,6 +321,11 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
     } else {
         //Embedded session; set its parent
         session->parent_session = ipacket->session;
+        /* Issue #255 (F-PERF-010): this turns ipacket->session into a tunnel
+         * parent — materialize its children-stats extension now so the
+         * counter-update walk below and the per-direction path copies find it
+         * allocated (best-effort: it may stay NULL under OOM). */
+        (void) mmt_session_get_children_stats(ipacket->session);
         // Share the session data from the parent session up to the index of the new detected encapsulated session
         unsigned i;
         for (i = 0; i < index; i++) {
@@ -447,10 +440,16 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
             session->packet_cap_count += ipacket->nb_reassembled_packets[index];
             mmt_session_t * p_session = session->parent_session;
             while(p_session) {
-                p_session->sub_packet_count     ++;
-                p_session->sub_data_volume      += ipacket->p_hdr->len;
-                p_session->sub_data_cap_volume  += ipacket->total_caplen;
-                p_session->sub_packet_cap_count += ipacket->nb_reassembled_packets[index];
+                /* Issue #255: children counters live in the lazily-allocated
+                 * extension; a parent that still has none gets it now (NULL
+                 * under OOM -> the counter update is skipped). */
+                mmt_session_children_stats_t *cs = mmt_session_get_children_stats(p_session);
+                if (cs != NULL) {
+                    cs->sub_packet_count     ++;
+                    cs->sub_data_volume      += ipacket->p_hdr->len;
+                    cs->sub_data_cap_volume  += ipacket->total_caplen;
+                    cs->sub_packet_cap_count += ipacket->nb_reassembled_packets[index];
+                }
                 p_session = p_session->parent_session;
             }
 

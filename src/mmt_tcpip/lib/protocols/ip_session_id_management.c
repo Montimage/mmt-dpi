@@ -299,6 +299,9 @@ void free_session_data(void * key, void * value, void * args) {
     //mmt_free(session->internal_data);
     //Free the session data
     // mmt_debug_log("Session is going to be freed: %lu\n",session->session_id);
+    /* Issue #255: release the lazily-allocated tunnel-parent extension (NULL
+     * for leaf sessions; mmt_free(NULL) is a no-op). */
+    mmt_free(session->children_stats);
     free(session);
 }
 

@@ -21,6 +21,8 @@ extern "C" {
 #include "plugin_defs.h"
 #include "cfg_defaults.h"
 
+#include <string.h> /* memset in mmt_session_get_children_stats() */
+
 #define PROTO_CLASSIFICATION_DONE       0 /**< defines that processing is done with the classification process.
                                         * This is to acknowledge that the core took the necessary actions following the
                                         * classification process. */
@@ -51,6 +53,40 @@ typedef struct mmt_proto_data_analysis_struct      mmt_analyser_t;
 typedef struct protocol_instance_struct            protocol_instance_t;
 typedef struct proto_statistics_internal_struct    proto_statistics_internal_t;
 typedef struct protocol_stack_struct               protocol_stack_t;
+typedef struct mmt_session_children_stats_struct   mmt_session_children_stats_t;
+
+/**
+ * Issue #255 (F-PERF-010): the session's tunnel-parent extension — the
+ * subsession (children) counters plus the per-direction protocol-path copies.
+ * All of it is meaningful only once the session parents an embedded session
+ * (GTP/tunnel/VPN children): the counters stay zero for leaf sessions and the
+ * per-direction paths are verbatim copies of proto_path while no child
+ * session can extend the path differently per direction. The block used to
+ * sit inline in every mmt_session_t (~280 B of a ~1,032 B record); it is now
+ * allocated lazily by mmt_session_get_children_stats() the first time the
+ * session becomes a parent.
+ */
+struct mmt_session_children_stats_struct {
+    /* per-direction copies of the session's proto_path, maintained for
+     * tunnel parents only (see the writer in proto_packet_process()). */
+    proto_hierarchy_t proto_path_direction[2];
+
+    /* Children's statistics: subsession aggregates over all sessions created
+     * inside this session (tunnel, GTP, VPN, ...). */
+    uint64_t sub_packet_count;                   /**< subsession: tracks the number of packets*/
+    uint64_t sub_packet_cap_count;               /**< subsession: number of packets which are captured as in this session - include fragmented packets*/
+    uint64_t sub_data_cap_volume;                /**< subsession: data volume captured  - include fragmented packets*/
+    uint64_t sub_data_volume;                    /**< subsession: tracks the octet data volume */
+    uint64_t sub_data_packet_count;              /**< subsession: tracks the number of packets holding effective payload data */
+    uint64_t sub_data_byte_volume;               /**< subsession: tracks the effective payload data volume */
+
+    uint64_t sub_packet_count_direction[2];      /**< subsession: Session's packet count in both directions: initiator <-> remote */
+    uint64_t sub_data_volume_direction[2];       /**< subsession: Session's data volume in both directions: initiator <-> remote */
+    uint64_t sub_packet_cap_count_direction[2];  /**< subsession: Session's packet count ( - include fragmented packets) in both directions: initiator <-> remote */
+    uint64_t sub_data_cap_volume_direction[2];   /**< subsession: Session's data volume ( - include fragmented packets) in both directions: initiator <-> remote */
+    uint64_t sub_data_packet_count_direction[2]; /**< subsession: Session's effective payload packet count in both directions: initiator <-> remote */
+    uint64_t sub_data_byte_volume_direction[2];  /**< subsession: Session's effective payload data volume in both directions: initiator <-> remote */
+};
 
 /**
  * Central bounds predicate for packet offsets (issue #193, F-BUG-032).
@@ -144,21 +180,11 @@ struct mmt_session_struct {
     uint64_t data_byte_volume_direction[2];  /**< Session's effective payload data volume in both directions: initiator <-> remote */
     // End of total statistics
 
-    // Children's statistics: subsession: all sessions which are created inside this session (tunnel, GTP, VPN, ...)
-    uint64_t sub_packet_count;                   /**< subsession: tracks the number of packets*/
-    uint64_t sub_packet_cap_count;               /**< subsession: number of packets which are captured as in this session - include fragmented packets*/
-    uint64_t sub_data_cap_volume;                /**< subsession: data volume captured  - include fragmented packets*/
-    uint64_t sub_data_volume;                    /**< subsession: tracks the octet data volume */
-    uint64_t sub_data_packet_count;              /**< subsession: tracks the number of packets holding effective payload data */
-    uint64_t sub_data_byte_volume;               /**< subsession: tracks the effective payload data volume */
-
-    uint64_t sub_packet_count_direction[2];      /**< subsession: Session's packet count in both directions: initiator <-> remote */
-    uint64_t sub_data_volume_direction[2];       /**< subsession: Session's data volume in both directions: initiator <-> remote */
-    uint64_t sub_packet_cap_count_direction[2];      /**< subsession: Session's packet count ( - include fragmented packets) in both directions: initiator <-> remote */
-    uint64_t sub_data_cap_volume_direction[2];       /**< subsession: Session's data volume ( - include fragmented packets) in both directions: initiator <-> remote */
-    uint64_t sub_data_packet_count_direction[2]; /**< subsession: Session's effective payload packet count in both directions: initiator <-> remote */
-    uint64_t sub_data_byte_volume_direction[2];  /**< subsession: Session's effective payload data volume in both directions: initiator <-> remote */
-    // End of children's statistics
+    /* Children's statistics + per-direction path copies: lazily-allocated
+     * extension, non-NULL only for tunnel parents (issue #255, F-PERF-010).
+     * Subsession bookkeeping is zero for every leaf session — keeping it
+     * inline cost ~280 B per session. */
+    mmt_session_children_stats_t *children_stats;
 
     struct timeval s_init_time;              /**< indicates the time when the session was first detected. */
     struct timeval s_last_activity_time;     /**< indicates the time when the last activity on this session was detected (time of the last packet). */
@@ -168,7 +194,6 @@ struct mmt_session_struct {
     proto_hierarchy_t proto_path;            /**< The session detected protocol hierarchy */
     proto_hierarchy_t proto_headers_offset;  /**< The protocol offsets of the detected protocols */
     proto_hierarchy_t proto_classif_status;  /**< the classification status of the protocols in the path */
-    proto_hierarchy_t proto_path_direction[2];
 
     /* BW: MMT content type */
     struct {
@@ -211,6 +236,25 @@ struct mmt_session_struct {
     void * segment_arena; // Issue #20: per-flow arena backing the TCP segment
                           // nodes + payload copies; freed on session teardown.
 };
+
+/**
+ * Returns the session's tunnel-parent extension, allocating it on first use
+ * (issue #255). Returns NULL under OOM — callers then skip the subsession
+ * update, which degrades the children counters to zero rather than aborting
+ * the packet path. The returned block is released with the session (the
+ * plugin session destructor frees session->children_stats).
+ */
+static inline mmt_session_children_stats_t *mmt_session_get_children_stats(mmt_session_t *session) {
+    if (session->children_stats == NULL) {
+        mmt_session_children_stats_t *cs =
+            (mmt_session_children_stats_t *) mmt_malloc(sizeof(mmt_session_children_stats_t));
+        if (cs != NULL) {
+            memset(cs, 0, sizeof(*cs));
+            session->children_stats = cs;
+        }
+    }
+    return session->children_stats;
+}
 
 /**
  * Defines the packet handler structure.

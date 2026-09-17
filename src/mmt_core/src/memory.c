@@ -28,34 +28,30 @@
 
 void *mmt_malloc( size_t size )
 {
-   // F-BUG-009 (issue #199): reject sizes whose header addition wraps around.
-   // A wrapped size would allocate a tiny block that the caller believes is
-   // huge -> heap overflow.
-   if( unlikely( size > SIZE_MAX - sizeof( size_t ))) {
-      (void)mmt_debug_log( "mmt_malloc: size overflow (%zu bytes)\n", size );
-      return NULL;
-   }
+   // Issue #255 (F-PERF-015): the 8-byte size prefix is gone — requests are
+   // passed to malloc() at their natural size. The prefix inflated every
+   // allocation into the next heap size class (e.g. the 48-byte trie node
+   // became 56 -> 64-byte bucket, +33%) and forced an extra cache-line touch
+   // at free() time to read the stored size.
+   if( unlikely( size == 0 )) size = 1; // malloc(0) may legitimately return NULL
 
-   uint8_t *x0 = (uint8_t*)malloc( size + sizeof( size_t ));
+   void *x = malloc( size );
 
-   if( unlikely( x0 == NULL )) {
+   if( unlikely( x == NULL )) {
       // OOM: log and return NULL (do NOT abort the host). The caller must
       // tolerate a NULL result and fail gracefully (drop the packet).
       (void)mmt_debug_log( "mmt_malloc: not enough memory (%zu bytes)\n", size );
       return NULL;
    }
 
-   *((size_t*)x0) = size;
-   // allocated     += size;
-
-   return (void*)( x0 + sizeof( size_t ));
+   return x;
 }
 
 
 void *mmt_realloc( void *x, size_t size )
 {
    if( x == NULL ) {
-      if( size == 0 ) return NULL; // nothig to do
+      if( size == 0 ) return NULL; // nothing to do
       return mmt_malloc( size );
    }
 
@@ -68,44 +64,29 @@ void *mmt_realloc( void *x, size_t size )
 
    // ( x != NULL ) && ( size != 0 )
 
-   uint8_t *x0 = (uint8_t*)x - sizeof( size_t );
-   size_t  psz = *((size_t*)x0);
+   /* Issue #255 (F-PERF-015): no stored size to consult anymore — defer to
+    * realloc() itself, which already shrinks/grows in place when possible.
+    * Callers must treat the result as the (possibly moved) block, per the
+    * standard realloc() contract. */
+   void *x1 = realloc( x, size );
 
-   if( size <= psz ) return x; // nothing to do, existing block is large enough
-
-   // ( x != NULL ) && ( size > psz )
-
-   // F-BUG-009 (issue #199): same wrap guard as mmt_malloc — a wrapped
-   // size + sizeof(size_t) would shrink the block the caller sees as grown.
-   if( unlikely( size > SIZE_MAX - sizeof( size_t ))) {
-      (void)mmt_debug_log( "mmt_realloc: size overflow (%zu bytes)\n", size );
-      return NULL; // original block left intact per realloc() semantics
-   }
-
-   uint8_t *x1 = (uint8_t*)realloc( x0, size + sizeof( size_t ));
-
-   if( x1 == NULL ) {
+   if( unlikely( x1 == NULL )) {
       // OOM: log and return NULL (do NOT abort the host). The original block
-      // (x0) is left intact per standard realloc() semantics; the caller must
+      // (x) is left intact per standard realloc() semantics; the caller must
       // tolerate a NULL result and fail gracefully.
       (void)mmt_debug_log( "mmt_realloc: not enough memory (%zu bytes)\n", size );
       return NULL;
    }
 
-   *((size_t*)x1) = size;
-   // allocated     += ( size - psz );
-
-   return (void*)( x1 + sizeof( size_t ));
+   return x1;
 }
 
 
 void mmt_free( void *x )
 {
-   if( unlikely( x == NULL )) return; // nothing to do
-
-   uint8_t *x0 = (uint8_t*)x - sizeof( size_t );
-   // freed += *((size_t*)x0);
-   free( x0 );
+   // Issue #255 (F-PERF-015): no size prefix to step over — the pointer is
+   // the malloc() block itself. free(NULL) is already a no-op.
+   free( x );
 }
 
 

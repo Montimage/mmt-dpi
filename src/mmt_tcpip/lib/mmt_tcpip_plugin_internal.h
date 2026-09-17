@@ -369,11 +369,16 @@ mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
         mmt_session_t * p_session = session->parent_session;
         while (p_session)
         {
-            uint8_t direction = p_session->last_packet_direction;
-            p_session->sub_data_packet_count++;
-            p_session->sub_data_byte_volume += packet->payload_packet_len;
-            p_session->sub_data_packet_count_direction[direction]++;
-            p_session->sub_data_byte_volume_direction[direction] += packet->payload_packet_len;
+            /* Issue #255: children counters live in the lazily-allocated
+             * tunnel-parent extension (NULL under OOM -> update skipped). */
+            mmt_session_children_stats_t *cs = mmt_session_get_children_stats(p_session);
+            if (cs != NULL) {
+                uint8_t direction = p_session->last_packet_direction;
+                cs->sub_data_packet_count++;
+                cs->sub_data_byte_volume += packet->payload_packet_len;
+                cs->sub_data_packet_count_direction[direction]++;
+                cs->sub_data_byte_volume_direction[direction] += packet->payload_packet_len;
+            }
             p_session = p_session->parent_session;
         }
         if ((ipacket->internal_packet->iph == NULL) || (ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)) {

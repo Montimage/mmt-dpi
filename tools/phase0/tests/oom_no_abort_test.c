@@ -36,8 +36,8 @@
 #include "mmt_core.h"
 
 /* An allocation request that no real system can satisfy: SIZE_MAX/2 bytes.
- * mmt_malloc() adds sizeof(size_t) on top, so malloc() is guaranteed to fail
- * and return NULL, exercising the OOM path deterministically. */
+ * malloc() is guaranteed to fail and return NULL, exercising the OOM path
+ * deterministically (issue #255 removed the sizeof(size_t) block prefix). */
 #define IMPOSSIBLE_SIZE ((size_t)-1 / 2)
 
 static int failures = 0;

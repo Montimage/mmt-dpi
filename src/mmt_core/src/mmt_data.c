@@ -119,59 +119,67 @@ uint32_t get_session_protocol_index( const mmt_session_t *session )
 const proto_hierarchy_t * get_session_protocol_hierarchy( const mmt_session_t *session )
 { return &session->proto_path; }
 
+/* Issue #255 (F-PERF-010): the subsession counters live in the lazily-
+ * allocated tunnel-parent extension — a NULL children_stats means "no child
+ * sessions", i.e. every sub_* counter reads as 0. */
+#define SESSION_SUB(session, field) \
+    ((session)->children_stats != NULL ? (session)->children_stats->field : 0)
+
 uint64_t get_session_packet_count( const mmt_session_t *session )
-{ return session->packet_count - session->sub_packet_count; }
+{ return session->packet_count - SESSION_SUB(session, sub_packet_count); }
 
 uint64_t get_session_packet_cap_count( const mmt_session_t *session )
-{ return session->packet_cap_count - session->sub_packet_cap_count; }
+{ return session->packet_cap_count - SESSION_SUB(session, sub_packet_cap_count); }
 
 uint64_t get_session_data_cap_volume( const mmt_session_t *session )
-{ return session->data_cap_volume - session->sub_data_cap_volume; }
+{ return session->data_cap_volume - SESSION_SUB(session, sub_data_cap_volume); }
 
 uint64_t get_session_ul_packet_count( const mmt_session_t *session )
-{ return session->packet_count_direction[session->setup_packet_direction] - session->sub_packet_count_direction[session->setup_packet_direction]; }
+{ return session->packet_count_direction[session->setup_packet_direction] - SESSION_SUB(session, sub_packet_count_direction[session->setup_packet_direction]); }
 
 uint64_t get_session_ul_cap_packet_count( const mmt_session_t *session )
-{ return session->packet_cap_count_direction[session->setup_packet_direction] - session->sub_packet_cap_count_direction[session->setup_packet_direction]; }
+{ return session->packet_cap_count_direction[session->setup_packet_direction] - SESSION_SUB(session, sub_packet_cap_count_direction[session->setup_packet_direction]); }
 
 uint64_t get_session_dl_packet_count( const mmt_session_t *session )
-{ return session->packet_count_direction[!session->setup_packet_direction] - session->sub_packet_count_direction[!session->setup_packet_direction]; }
+{ return session->packet_count_direction[!session->setup_packet_direction] - SESSION_SUB(session, sub_packet_count_direction[!session->setup_packet_direction]); }
 
 uint64_t get_session_dl_cap_packet_count( const mmt_session_t *session )
-{ return session->packet_cap_count_direction[!session->setup_packet_direction] - session->sub_packet_cap_count_direction[!session->setup_packet_direction]; }
+{ return session->packet_cap_count_direction[!session->setup_packet_direction] - SESSION_SUB(session, sub_packet_cap_count_direction[!session->setup_packet_direction]); }
 
 uint64_t get_session_byte_count( const mmt_session_t *session )
-{ return session->data_volume - session->sub_data_volume; }
+{ return session->data_volume - SESSION_SUB(session, sub_data_volume); }
 
 uint64_t get_session_ul_byte_count( const mmt_session_t *session )
-{ return session->data_volume_direction[session->setup_packet_direction] - session->sub_data_volume_direction[session->setup_packet_direction]; }
+{ return session->data_volume_direction[session->setup_packet_direction] - SESSION_SUB(session, sub_data_volume_direction[session->setup_packet_direction]); }
 
 uint64_t get_session_ul_cap_byte_count( const mmt_session_t *session )
-{ return session->data_cap_volume_direction[session->setup_packet_direction] - session->sub_data_cap_volume_direction[session->setup_packet_direction]; }
+{ return session->data_cap_volume_direction[session->setup_packet_direction] - SESSION_SUB(session, sub_data_cap_volume_direction[session->setup_packet_direction]); }
 
 uint64_t get_session_dl_byte_count( const mmt_session_t *session )
-{ return session->data_volume_direction[!session->setup_packet_direction] - session->sub_data_volume_direction[!session->setup_packet_direction]; }
+{ return session->data_volume_direction[!session->setup_packet_direction] - SESSION_SUB(session, sub_data_volume_direction[!session->setup_packet_direction]); }
 
 uint64_t get_session_dl_cap_byte_count( const mmt_session_t *session )
-{ return session->data_cap_volume_direction[!session->setup_packet_direction] - session->sub_data_cap_volume_direction[!session->setup_packet_direction]; }
+{ return session->data_cap_volume_direction[!session->setup_packet_direction] - SESSION_SUB(session, sub_data_cap_volume_direction[!session->setup_packet_direction]); }
 
 uint64_t get_session_data_packet_count( const mmt_session_t *session )
-{ return session->data_packet_count - session->sub_data_packet_count; }
+{ return session->data_packet_count - SESSION_SUB(session, sub_data_packet_count); }
 
 uint64_t get_session_ul_data_packet_count( const mmt_session_t *session )
-{ return session->data_packet_count_direction[session->setup_packet_direction] - session->sub_data_packet_count_direction[session->setup_packet_direction]; }
+{ return session->data_packet_count_direction[session->setup_packet_direction] - SESSION_SUB(session, sub_data_packet_count_direction[session->setup_packet_direction]); }
 
 uint64_t get_session_dl_data_packet_count( const mmt_session_t *session )
-{ return session->data_packet_count_direction[!session->setup_packet_direction] - session->sub_data_packet_count_direction[!session->setup_packet_direction]; }
+{ return session->data_packet_count_direction[!session->setup_packet_direction] - SESSION_SUB(session, sub_data_packet_count_direction[!session->setup_packet_direction]); }
 
 uint64_t get_session_data_byte_count( const mmt_session_t *session )
-{ return session->data_byte_volume - session->sub_data_byte_volume; }
+{ return session->data_byte_volume - SESSION_SUB(session, sub_data_byte_volume); }
 
 uint64_t get_session_ul_data_byte_count( const mmt_session_t *session )
-{ return session->data_byte_volume_direction[session->setup_packet_direction] - session->sub_data_byte_volume_direction[session->setup_packet_direction]; }
+{ return session->data_byte_volume_direction[session->setup_packet_direction] - SESSION_SUB(session, sub_data_byte_volume_direction[session->setup_packet_direction]); }
 
 uint64_t get_session_dl_data_byte_count( const mmt_session_t *session )
-{ return session->data_byte_volume_direction[!session->setup_packet_direction] - session->sub_data_byte_volume_direction[!session->setup_packet_direction]; }
+{ return session->data_byte_volume_direction[!session->setup_packet_direction] - SESSION_SUB(session, sub_data_byte_volume_direction[!session->setup_packet_direction]); }
+
+#undef SESSION_SUB
 
 // GET TOTAL STATISTICS
 uint64_t get_session_total_packet_count( const mmt_session_t *session )
@@ -266,26 +274,33 @@ const mmt_session_t * get_session_previous( const mmt_session_t *session )
 
 
 const proto_hierarchy_t * get_session_proto_path_direction(const mmt_session_t *session, mmt_session_direction_t direction){
+    /* Issue #255 (F-PERF-010): the per-direction copies moved into the
+     * tunnel-parent extension. A leaf session (children_stats == NULL) has a
+     * single protocol path shared by both directions — report proto_path
+     * itself (identical to what the direction copies would hold). */
+    if (session->children_stats == NULL)
+        return &session->proto_path;
+    const proto_hierarchy_t *paths = session->children_stats->proto_path_direction;
     // debug("[IP] setup_packet_direction: %d",session->setup_packet_direction);
     // debug("[IP] last_packet_direction: %d",session->last_packet_direction);
     if(direction == MMT_SESSION_DIRECTION_UPLINK){
         // Uplink path requested: the setup direction is the uplink one
         if(session->last_packet_direction == session->setup_packet_direction){
             // last packet went uplink -> uplink path
-            return &session->proto_path_direction[session->setup_packet_direction];
+            return &paths[session->setup_packet_direction];
         }else{
             // last packet went downlink -> downlink path
-            return &session->proto_path_direction[!session->setup_packet_direction];
+            return &paths[!session->setup_packet_direction];
         }
     }else{
         // Downlink path requested
         if(session->last_packet_direction == session->setup_packet_direction){
             // last packet went uplink -> downlink path
-            return &session->proto_path_direction[!session->setup_packet_direction];
+            return &paths[!session->setup_packet_direction];
         }else{
             // last packet went downlink -> uplink path (issue #238: this
             // branch used to repeat the sibling's "downloading data" comment)
-            return &session->proto_path_direction[session->setup_packet_direction];
+            return &paths[session->setup_packet_direction];
         }
     }
 

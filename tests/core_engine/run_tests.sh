@@ -72,7 +72,7 @@ objects+=("$SCRIPT_DIR/test_core_engine.o")
     -c "$SCRIPT_DIR/test_core_engine_new.cpp" -o "$SCRIPT_DIR/test_core_engine_new.o"
 objects+=("$SCRIPT_DIR/test_core_engine_new.o")
 
-"$CXX" "${extra_cflags[@]}" -Wl,--wrap=malloc -Wl,--wrap=calloc \
+"$CXX" "${extra_cflags[@]}" -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc \
     -o "$SCRIPT_DIR/test_core_engine" "${objects[@]}" -lm -lpthread -ldl
 
 # Run from a scratch directory: load_plugins() scans ./plugins first, and an

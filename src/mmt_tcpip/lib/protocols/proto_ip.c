@@ -1051,11 +1051,16 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     mmt_session_t *p_session = session->parent_session;
     while (p_session)
     {
-        uint8_t direction = p_session->last_packet_direction ;
-        p_session->sub_packet_cap_count_direction[direction] += ipacket->nb_reassembled_packets[index];
-        p_session->sub_data_cap_volume_direction[direction] += ipacket->total_caplen;
-        p_session->sub_packet_count_direction[direction]++;
-        p_session->sub_data_volume_direction[direction] += ipacket->p_hdr->len;
+        /* Issue #255: children counters live in the lazily-allocated
+         * tunnel-parent extension (NULL under OOM -> update skipped). */
+        mmt_session_children_stats_t *cs = mmt_session_get_children_stats(p_session);
+        if (cs != NULL) {
+            uint8_t direction = p_session->last_packet_direction ;
+            cs->sub_packet_cap_count_direction[direction] += ipacket->nb_reassembled_packets[index];
+            cs->sub_data_cap_volume_direction[direction] += ipacket->total_caplen;
+            cs->sub_packet_count_direction[direction]++;
+            cs->sub_data_volume_direction[direction] += ipacket->p_hdr->len;
+        }
         p_session = p_session->parent_session;
     }
 

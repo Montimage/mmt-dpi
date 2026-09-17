@@ -76,14 +76,31 @@ static int g_failures = 0;
         fprintf(stderr, "  FAIL [%s:%d]: %s\n", __FILE__, __LINE__, (msg)); \
         g_failures++; } } while (0)
 
+/* Issue #255 (F-PERF-010) acceptance: the session record must be at least
+ * 190 bytes slimmer. The child-statistics block (12 sub_* counters, 144 B)
+ * plus the per-direction proto_path copies (2 x 68 B) = 280 B moved into the
+ * lazily-allocated mmt_session_children_stats_t tunnel-parent extension; the
+ * record keeps one pointer (8 B). Pre-change sizeof measured 1032 B on this
+ * LP64 target — pin the new record to <= 842 B. */
+#define CE_SESSION_SIZE_PRE_255 1032u
+_Static_assert(sizeof(mmt_session_t) <= CE_SESSION_SIZE_PRE_255 - 190,
+               "issue #255: mmt_session_t must be at least 190 bytes slimmer");
+
 /* ---------------- libc allocation failure injection ---------------------- */
 extern void *__real_malloc(size_t size);
 extern void *__real_calloc(size_t nmemb, size_t size);
+extern void *__real_realloc(void *ptr, size_t size);
 
 static long g_malloc_budget = -1; /* -1 unlimited; 0 fail; N = next N succeed */
 static long g_calloc_budget = -1;
 
+/* Issue #255 (F-PERF-015): instrumentation proving the allocator no longer
+ * adds the 8-byte size prefix — the sizes libc actually sees are recorded. */
+static size_t g_malloc_last_size;
+static size_t g_realloc_last_size;
+
 void *__wrap_malloc(size_t size) {
+    g_malloc_last_size = size;
     if (g_malloc_budget == 0) return NULL;
     if (g_malloc_budget > 0) g_malloc_budget--;
     return __real_malloc(size);
@@ -92,6 +109,10 @@ void *__wrap_calloc(size_t nmemb, size_t size) {
     if (g_calloc_budget == 0) return NULL;
     if (g_calloc_budget > 0) g_calloc_budget--;
     return __real_calloc(nmemb, size);
+}
+void *__wrap_realloc(void *ptr, size_t size) {
+    g_realloc_last_size = size;
+    return __real_realloc(ptr, size);
 }
 
 /* C++ operator new interposer lives in test_core_engine_new.cpp. */
@@ -186,9 +207,22 @@ static classified_proto_t test_stack_classify(ipacket_t *ipacket) {
     return r;
 }
 
+/* Issue #255: when armed, A's classifier declares B as the encapsulated
+ * protocol — B's sessionizer then creates a session whose parent is A's,
+ * turning A's session into a tunnel parent. */
+static int g_classify_to_b = 0;
 static int test_classify_me(ipacket_t *ipacket, unsigned index) {
-    (void) ipacket; (void) index;
     g_classify_calls++;
+    if (g_classify_to_b) {
+        g_classify_to_b = 0; /* one-shot: only the first packet chains A->B */
+        classified_proto_t r;
+        r.offset = 4;
+        r.proto_id = TEST_PROTO_B;
+        r.status = Classified;
+        (void) set_classified_proto(ipacket, index + 1, r);
+        return MMT_CLASSIFY_MATCHED;
+    }
+    (void) ipacket; (void) index;
     return 0; /* no match — let the chain continue */
 }
 static int test_pre_classify(ipacket_t *ipacket, unsigned index) {
@@ -222,6 +256,11 @@ static void test_session_data_init(ipacket_t *ipacket, unsigned index) {
 }
 static void test_session_data_cleanup(mmt_session_t *session, unsigned index) {
     g_session_data_cleanup_calls++;
+    /* Ownership convention (matches the engine's session_data sharing in
+     * setup_new_session): entries below this session's own protocol index are
+     * borrowed copies of the parent session's slots — the parent frees them.
+     * Freeing them here would double-free once the parent expires. */
+    if (index < session->session_protocol_index) return;
     mmt_free(session->session_data[index]);
     session->session_data[index] = NULL;
 }
@@ -231,6 +270,7 @@ static int test_session_ctx_cleanup(void *protocol_context, mmt_session_t *sessi
     /* Plugin convention: drop the map entry while the key is still valid,
      * then release the session (the key rides at the tail of the block). */
     delete_session_from_protocol_context(protocol_context, session->session_key);
+    mmt_free(session->children_stats); /* issue #255: lazily-allocated extension */
     mmt_free(session);
     return 1;
 }
@@ -1027,6 +1067,117 @@ static void test_session_create_oom(void) {
     CHECK(g_session_ctx_cleanup_calls == ctx_before + 2, "context cleanup ran for Z");
 }
 
+/* ============ issue #255: tunnel-parent extension + prefix-free alloc ===== */
+
+static void test_children_stats_extension(void) {
+    fprintf(stderr, "  test: children-stats extension allocated for tunnel parents only\n");
+    char errbuf[256];
+    u_char pkt[64];
+    pkthdr_t hdr;
+
+    mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler init for tunnel-parent test");
+    if (h == NULL) return;
+
+    /* Leaf session: the extension must stay NULL and the accessors read 0. */
+    make_packet(&hdr, pkt, sizeof(pkt), 0x60606060u, 7000, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "leaf packet processed");
+    uint32_t k_leaf = 0x60606060u;
+    mmt_session_t *leaf = (mmt_session_t *) get_session_from_protocol_context_by_session_key(
+        &h->configured_protocols[TEST_PROTO_A], &k_leaf);
+    CHECK(leaf != NULL, "leaf session found");
+    if (leaf != NULL) {
+        CHECK(leaf->children_stats == NULL, "leaf session carries no extension");
+        CHECK(get_session_packet_count(leaf) == 1, "leaf packet count");
+        CHECK(get_session_packet_count(leaf) == get_session_total_packet_count(leaf),
+              "leaf own count equals total (no children)");
+        /* the direction-path accessor falls back to proto_path on a leaf */
+        CHECK(get_session_proto_path_direction(leaf, MMT_SESSION_DIRECTION_UPLINK) ==
+              get_session_protocol_hierarchy(leaf), "leaf uplink path is proto_path");
+        CHECK(get_session_proto_path_direction(leaf, MMT_SESSION_DIRECTION_DOWNLINK) ==
+              get_session_protocol_hierarchy(leaf), "leaf downlink path is proto_path");
+    }
+
+    /* Nested packet: A's classifier chains to B, so B's sessionizer creates
+     * a session whose parent_session is A's — making A's a tunnel parent. */
+    g_classify_to_b = 1;
+    make_packet(&hdr, pkt, sizeof(pkt), 0x61616161u, 7001, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "nested packet processed");
+    CHECK(g_classify_to_b == 0, "the A->B classification fired");
+    /* Second packet on the same flow: the parent is already a tunnel parent,
+     * so the per-direction path copy is written at the parent's own index. */
+    make_packet(&hdr, pkt, sizeof(pkt), 0x61616161u, 7002, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "second packet on the parent flow");
+    uint32_t k_par = 0x61616161u;
+    mmt_session_t *parent = (mmt_session_t *) get_session_from_protocol_context_by_session_key(
+        &h->configured_protocols[TEST_PROTO_A], &k_par);
+    mmt_session_t *child = (mmt_session_t *) get_session_from_protocol_context_by_session_key(
+        &h->configured_protocols[TEST_PROTO_B], &k_par);
+    CHECK(parent != NULL && child != NULL, "parent and child sessions exist");
+    if (parent != NULL && child != NULL) {
+        CHECK(child->parent_session == parent, "child session links to its parent");
+        CHECK(parent->children_stats != NULL, "tunnel parent allocated the extension");
+        CHECK(child->children_stats == NULL, "child session stays a leaf");
+        if (parent->children_stats != NULL) {
+            /* Both packets on the flow re-hit the child session (the parent's
+             * session proto_path permanently carries B once classified), so
+             * the parent's sub_packet_count is 2. */
+            CHECK(parent->children_stats->sub_packet_count == 2,
+                  "the child packets are counted under the parent");
+        }
+        /* own traffic = total minus children (2 counted packets, all of them
+         * also hit the embedded session) */
+        CHECK(get_session_total_packet_count(parent) == 2,
+              "parent total counts its packets");
+        CHECK(get_session_packet_count(parent) == 0,
+              "parent packet count nets out the child's");
+        /* the per-direction path copy was populated for the parent */
+        const proto_hierarchy_t *pp =
+            get_session_proto_path_direction(parent, MMT_SESSION_DIRECTION_UPLINK);
+        const proto_hierarchy_t *ph = get_session_protocol_hierarchy(parent);
+        CHECK(pp != NULL && ph != NULL && pp->len == ph->len,
+              "parent direction path mirrors its proto_path");
+        /* leaf child: the fallback reports the child's own (longer) path */
+        CHECK(get_session_proto_path_direction(child, MMT_SESSION_DIRECTION_UPLINK) ==
+              get_session_protocol_hierarchy(child),
+              "child direction path is its own proto_path");
+    }
+    g_classify_to_b = 0;
+    mmt_close_handler(h); /* expires both sessions -> ctx cleanup frees the extension */
+}
+
+static void test_alloc_no_prefix(void) {
+    fprintf(stderr, "  test: allocator passes natural sizes to libc (F-PERF-015)\n");
+
+    /* mmt_malloc must hand malloc() exactly the requested size — the removed
+     * 8-byte size prefix used to inflate every request (48 -> 56 -> 64-byte
+     * size class). */
+    g_malloc_last_size = 0;
+    void *p = mmt_malloc(48);
+    CHECK(p != NULL, "mmt_malloc(48) succeeded");
+    CHECK(g_malloc_last_size == 48, "malloc sees the natural size (no +8 prefix)");
+
+    g_realloc_last_size = 0;
+    void *q = mmt_realloc(p, 64);
+    CHECK(q != NULL, "mmt_realloc to 64 succeeded");
+    CHECK(g_realloc_last_size == 64, "realloc sees the natural size (no +8 prefix)");
+    mmt_free(q);
+
+    /* The internal-allocation-site case: hashmap_insert_kv allocates its
+     * mmt_hent_t node through mmt_malloc — it must reach malloc() at exactly
+     * sizeof(mmt_hent_t) (the issue's "natural size class" assertion). */
+    mmt_hashmap_t *m = hashmap_alloc();
+    CHECK(m != NULL, "hashmap_alloc for the size-class check");
+    if (m != NULL) {
+        static char v;
+        g_malloc_last_size = 0;
+        hashmap_insert_kv(m, (mmt_key_t) 7, &v);
+        CHECK(g_malloc_last_size == sizeof(mmt_hent_t),
+              "hashmap node reaches malloc at its natural size class");
+        hashmap_free(m);
+    }
+}
+
 /* ============================ misc helpers ================================ */
 
 static void test_helpers(void) {
@@ -1359,6 +1510,8 @@ int main(void) {
     test_handler_bootstrap_oom();
     test_session_lifecycle();
     test_session_create_oom();
+    test_children_stats_extension();
+    test_alloc_no_prefix();
     test_helpers();
     test_iteration();
 

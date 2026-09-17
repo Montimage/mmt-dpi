@@ -7,8 +7,8 @@
  *   - mmt_malloc large allocation
  *   - mmt_realloc NULL pointer (should behave like malloc)
  *   - mmt_realloc zero size on NULL (should return NULL)
- *   - mmt_realloc same/larger size (no reallocation when old block is large enough)
- *   - mmt_realloc smaller size (no reallocation)
+ *   - mmt_realloc same/larger size (contents preserved, block may move)
+ *   - mmt_realloc smaller size (contents preserved, block may move)
  *   - mmt_realloc on NULL with zero size
  *   - mmt_free NULL (should be no-op)
  *   - mmt_arena_create / mmt_arena_destroy lifecycle
@@ -63,9 +63,10 @@ static void test_malloc_basic(void) {
 /* ---- Test: mmt_malloc zero size ---- */
 static void test_malloc_zero(void) {
     fprintf(stderr, "  test: mmt_malloc zero size\n");
-    /* mmt_malloc(0) allocates sizeof(size_t) bytes (the header) */
+    /* mmt_malloc(0) is normalized to a 1-byte request (malloc(0) may return
+       NULL legitimately); no size prefix since issue #255. */
     void *p = mmt_malloc(0);
-    CHECK(p != NULL, "mmt_malloc(0) should allocate header-only block");
+    CHECK(p != NULL, "mmt_malloc(0) should still return a usable pointer");
     if (p) mmt_free(p);
 }
 
@@ -104,15 +105,24 @@ static void test_realloc_null_zero(void) {
     CHECK(p == NULL, "mmt_realloc(NULL, 0) should return NULL");
 }
 
-/* ---- Test: mmt_realloc same size (no reallocation) ---- */
+/* ---- Test: mmt_realloc same size ---- */
 static void test_realloc_same_size(void) {
-    fprintf(stderr, "  test: mmt_realloc same size returns same pointer\n");
+    fprintf(stderr, "  test: mmt_realloc same size\n");
     void *p1 = mmt_malloc(100);
     CHECK(p1 != NULL, "initial malloc");
     if (p1) {
+        ((uint8_t*)p1)[0] = 0x5A;
+        ((uint8_t*)p1)[99] = 0xA5;
+        /* Issue #255: no stored size means mmt_realloc defers to realloc(),
+           which MAY return a moved block — the contract only promises the
+           contents survive. */
         void *p2 = mmt_realloc(p1, 100);
-        CHECK(p2 == p1, "realloc same size should return same pointer");
-        mmt_free(p2);
+        CHECK(p2 != NULL, "realloc same size should not return NULL");
+        if (p2) {
+            CHECK(((uint8_t*)p2)[0] == 0x5A, "realloc: first byte preserved");
+            CHECK(((uint8_t*)p2)[99] == 0xA5, "realloc: last byte preserved");
+            mmt_free(p2);
+        }
     }
 }
 
@@ -139,15 +149,23 @@ static void test_realloc_larger(void) {
     }
 }
 
-/* ---- Test: mmt_realloc smaller size (no reallocation) ---- */
+/* ---- Test: mmt_realloc smaller size ---- */
 static void test_realloc_smaller(void) {
-    fprintf(stderr, "  test: mmt_realloc smaller size returns same pointer\n");
+    fprintf(stderr, "  test: mmt_realloc smaller size\n");
     void *p1 = mmt_malloc(200);
     CHECK(p1 != NULL, "initial malloc");
     if (p1) {
+        ((uint8_t*)p1)[0] = 0xDE;
+        ((uint8_t*)p1)[49] = 0xED;
+        /* Issue #255: shrinking used to short-circuit to the same pointer via
+           the stored size; now realloc() decides and may move the block. */
         void *p2 = mmt_realloc(p1, 50);
-        CHECK(p2 == p1, "realloc smaller should return same pointer");
-        mmt_free(p2);
+        CHECK(p2 != NULL, "realloc smaller should not return NULL");
+        if (p2) {
+            CHECK(((uint8_t*)p2)[0] == 0xDE, "realloc: first byte preserved on shrink");
+            CHECK(((uint8_t*)p2)[49] == 0xED, "realloc: last in-range byte preserved on shrink");
+            mmt_free(p2);
+        }
     }
 }
 
@@ -333,9 +351,10 @@ static void test_arena_custom_block_size(void) {
 /* ---- F-BUG-009 (issue #199): size arithmetic must not wrap ---- */
 
 static void test_malloc_size_wrap(void) {
-    fprintf(stderr, "  test: mmt_malloc rejects size+header wrap\n");
-    /* size + sizeof(size_t) must not wrap; wrapped sizes used to allocate a
-       tiny block that the caller believes is huge (heap overflow). */
+    fprintf(stderr, "  test: mmt_malloc rejects oversized requests\n");
+    /* Issue #255: no size prefix anymore, so there is no header addition to
+       wrap — but near-SIZE_MAX requests must still fail (libc returns NULL)
+       rather than handing back a tiny block (the old F-BUG-009 hazard). */
     CHECK(mmt_malloc(SIZE_MAX) == NULL, "mmt_malloc(SIZE_MAX) must return NULL");
     CHECK(mmt_malloc(SIZE_MAX - 4) == NULL, "mmt_malloc(SIZE_MAX-4) must return NULL");
     /* Note: a just-below-the-limit size legitimately reaches real malloc(); under
@@ -343,7 +362,7 @@ static void test_malloc_size_wrap(void) {
 }
 
 static void test_realloc_size_wrap(void) {
-    fprintf(stderr, "  test: mmt_realloc rejects size+header wrap\n");
+    fprintf(stderr, "  test: mmt_realloc rejects oversized requests\n");
     void *p = mmt_malloc(64);
     CHECK(p != NULL, "initial malloc for realloc-wrap test");
     if (p) {

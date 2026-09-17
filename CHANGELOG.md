@@ -38,6 +38,7 @@ checklist requires a line here for every user-visible change.
 ### Performance
 - remove unconditional packet-path writes to stdout/stderr (#246)
 - separate library RSS from harness RSS in the phase0 benchmark (#251)
+- slim the session record by 272 B (child statistics and per-direction path copies move to a lazily-allocated tunnel-parent extension), drop the allocator's per-block size prefix, and share the per-packet path-array reset (#255)
 
 ### Tests and hygiene
 - pcap-driven harnesses for the TCP/IP-stack and mobile/security parsers (#143, #144)
