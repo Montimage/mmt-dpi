@@ -38,9 +38,9 @@ Three pieces of state are global and shared across all handlers/threads:
 - `plugin_handlers_list` (`src/mmt_core/src/plugins_engine.c`) - linked list of
   loaded plugin handles.
 - `configured_protocols[PROTO_MAX_IDENTIFIER]` and
-  `configured_protocols_names_map` (`src/mmt_core/src/packet_processing.c`) -
+  `configured_protocols_names_map` (`src/mmt_core/src/packet_registry.c`) -
   the table of protocol descriptors and the name->descriptor index.
-- `mmt_configured_handlers_map` (`src/mmt_core/src/packet_processing.c`) -
+- `mmt_configured_handlers_map` (`src/mmt_core/src/packet_registry.c`) -
   handler-lifecycle bookkeeping: the set of live `mmt_handler_t` instances, used
   by `iterate_through_mmt_handlers()` and force-closed at teardown. It is *not*
   touched on the per-packet hot path.
@@ -95,7 +95,7 @@ design.
 
 Instead, **every access to these flags is atomic** (issue #69): the hot-path
 reads and the `enable_*`/`disable_*` writes go through `proto_status_load()` /
-`proto_status_store()` in `packet_processing.c`, which use the compiler
+`proto_status_store()` in `src/mmt_core/private_include/packet_processing.h`, which use the compiler
 `__atomic_*` builtins with `__ATOMIC_RELAXED` ordering. The flag stays a plain
 `int` in the struct (no ABI/layout change); only the accesses are atomic. A
 relaxed atomic load of an `int` compiles to a plain load on common targets, so

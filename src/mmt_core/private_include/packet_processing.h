@@ -610,6 +610,66 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
 void clean_packet(ipacket_t * ipacket);
 void clean_packet_with_reassembly(ipacket_t * ipacket);
 
+/* ===== Internal cross-module prototypes (issue #239) ======================
+ * The packet-processing module is split into three translation units:
+ * packet_processing.c (session lifecycle, statistics and the attribute
+ * accessors/formatting tail), packet_pipeline.c (per-packet processing path
+ * and the attribute-extraction machinery) and packet_registry.c (protocol /
+ * handler / attribute registration and handler lifecycle). The entry points
+ * below keep external linkage so the three units can call each other; they
+ * are not part of the public SDK ABI.
+ * ======================================================================== */
+
+/*
+ * Issue #69: the analysis/classification "status" flags live on the SHARED
+ * global protocol descriptors (each handler's configured_protocols[i].protocol
+ * aliases the same global protocol_t). The enable/disable helpers write
+ * them from mmt_init_handler(), while proto_packet_analyze() and
+ * proto_packet_classify_next() read them LOCK-FREE on the per-packet hot path.
+ * Creating the very first
+ * handlers concurrently from cold therefore races on these flags.
+ *
+ * We make every access to these flags an atomic operation (relaxed ordering)
+ * using the compiler __atomic_* builtins. This keeps the hot-path read
+ * lock-free -- a relaxed atomic load of an int is a plain load on common
+ * targets (no fence, no lock) -- while making the concurrent idempotent writes
+ * plus reads race-free under the C memory model, which is exactly what TSan
+ * checks. Relaxed ordering is sufficient because the flag only gates whether
+ * analysis/classification runs for a protocol: the function pointers and
+ * analyse/classify lists it guards are populated during single-threaded
+ * init_extraction()/registration and are stable before any worker thread can
+ * observe the flag, so no other data is published through it.
+ *
+ * The flag remains a plain int in the struct (no ABI/layout change); only the
+ * accesses are made atomic.
+ */
+static inline int proto_status_load(const int *status) {
+    return __atomic_load_n(status, __ATOMIC_RELAXED);
+}
+static inline void proto_status_store(int *status, int value) {
+    __atomic_store_n(status, value, __ATOMIC_RELAXED);
+}
+
+/* packet_processing.c — session lifecycle, called by packet_registry.c and
+ * packet_pipeline.c. */
+void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args);
+void process_timedout_sessions(mmt_handler_t *mmt_handler, uint32_t current_seconds);
+int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index);
+
+/* packet_processing.c — statistics, called by packet_registry.c and
+ * packet_pipeline.c. */
+void free_handler_protocols_statistics(mmt_handler_t *mmt_handler);
+proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset, unsigned index);
+proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset, unsigned index);
+void register_protocol_stats_attributes(protocol_t *proto);
+void register_protocol_session_attributes(protocol_t *proto);
+
+/* packet_registry.c — registered-attribute bookkeeping, called by
+ * packet_pipeline.c and packet_processing.c. */
+bool attribute_ids_comparison_fct(uint32_t l_id, uint32_t r_id);
+struct attribute_internal_struct * get_registered_attribute_internal_struct(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index);
+struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id);
+
 #ifdef __cplusplus
 }
 #endif
