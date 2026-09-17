@@ -113,7 +113,10 @@ int main(void)
         close_extraction();
         return 2;
     }
-    mmt_init_classify_me_sip();
+    /* issue #227: the old init wrapper was folded into the registered
+     * init_proto_sip_struct(), which also populates the file-scope bitmasks
+     * mmt_check_sip()'s gate reads. */
+    init_proto_sip_struct();
 
     printf("issue #205: SIP method casing + response compare bounds\n");
 

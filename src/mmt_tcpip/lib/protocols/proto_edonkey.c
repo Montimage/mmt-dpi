@@ -406,21 +406,19 @@ int mmt_check_edonkey(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_edonkey() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EDONKEY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BITTORRENT);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_EDONKEY);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_edonkey_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_EDONKEY, PROTO_EDONKEY_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_edonkey();
+        /* two detection adds (BITTORRENT on top of EDONKEY) — beyond the
+         * single-add shape of mmt_init_classify_bitmasks() */
+        mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP,
+                (const uint32_t[]){PROTO_EDONKEY, PROTO_BITTORRENT}, 2,
+                PROTO_EDONKEY);
 
         return register_protocol(protocol_struct, PROTO_EDONKEY);
     } else {

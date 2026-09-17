@@ -71,25 +71,21 @@ icecast_exclude:
     return 0;
 }
 
-void mmt_init_classify_me_icecast() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MPEG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REALMEDIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WINDOWSMEDIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AVI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_OGG);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_ICECAST);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_icecast_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ICECAST, PROTO_ICECAST_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_icecast();
+        /* six detection adds (HTTP plus the streaming-media protocols icecast
+         * is carried over) — beyond the single-add shape of
+         * mmt_init_classify_bitmasks() */
+        mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+                (const uint32_t[]){PROTO_HTTP, PROTO_MPEG, PROTO_REALMEDIA,
+                        PROTO_WINDOWSMEDIA, PROTO_AVI, PROTO_OGG}, 6,
+                PROTO_ICECAST);
 
         return register_protocol(protocol_struct, PROTO_ICECAST);
     } else {

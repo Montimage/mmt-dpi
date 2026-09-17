@@ -16,16 +16,25 @@
 # registered init_proto_*_struct functions.
 #
 # This gate re-finds any wrapper whose body still normalizes to that shape:
-# reintroducing one means the generic helper was bypassed. The richer
-# wrappers that remain (multi-protocol detection lists, extra exclusions —
-# Task 5.3 material) do not match and stay untouched.
+# reintroducing one means the generic helper was bypassed. Task 5.3 (#227)
+# then folded the richer wrappers too — multi-protocol detection lists ride a
+# new mmt_init_classify_bitmasks_multi() helper, and whatever the generic path
+# cannot express survives inline with a comment.
+#
+# Phase 2 of this script is the Task 5.3 normalised-body report: it
+# histograms the remaining raw bitmask-init blocks (maximal runs of
+# statements on the TU-local bitmask globals, identifiers normalised away)
+# and fails when one repeats 3 or more times or carries no comment — the
+# "every surviving init block is converted or commented" invariant made
+# checkable.
 #
 # What it counts: `mmt_init_classify_me_*` definitions in tracked C sources
 # under src/ whose normalized body is exactly the canonical statement
-# sequence above (comments or any other statement disqualify it).
+# sequence above (comments or any other statement disqualify it), plus the
+# raw init-block histogram described above.
 #
-# Exit codes: 0 = no canonical wrappers, 1 = canonical wrapper(s) found,
-#             2 = helper broken.
+# Exit codes: 0 = clean, 1 = canonical wrapper(s) found or a repeated /
+#             uncommented init block, 2 = helper broken.
 #
 # Usage: bash tools/ci/check-canonical-init-wrappers.sh
 
@@ -134,4 +143,110 @@ if canonical:
     sys.exit(1)
 
 print('✓ no canonical-shape init wrappers remain')
+
+# --- Task 5.3 (issue #227): normalised-body report over surviving init logic
+#
+# A "logic block" is a maximal run of consecutive raw bitmask-init statements
+# acting on the three translation-unit-local globals every protocol TU owns —
+# selection_bitmask, detection_bitmask, excluded_protocol_bitmask. Blank and
+# comment-only lines do not break a run; any other statement does. Protocols
+# routed through mmt_init_classify_bitmasks{,_multi}() contribute no raw
+# statements, so converted protocols never appear in this report — only the
+# genuinely distinct init logic Task 5.3 allowed to survive does, and it must
+# carry a comment naming the protocol-specific behaviour.
+#
+# Two invariants are asserted here:
+#   * no normalised logic block repeats 3 or more times (the duplication
+#     threshold the M3 metric checks);
+#   * every surviving raw init block carries a comment (inside the run or on
+#     the line directly above it).
+INIT_OP_RE = re.compile(
+    r'^\s*(?:selection_bitmask\s*=|'
+    r'MMT_(?:SAVE_AS_BITMASK|ADD_PROTOCOL_TO_BITMASK|BITMASK_RESET|'
+    r'BITMASK_SET|BITMASK_SET_ALL)\(\s*'
+    r'(?:detection_bitmask|excluded_protocol_bitmask|selection_bitmask)\s*[,)])')
+COMMENT_RE = re.compile(r'(//|/\*|\*/)')
+
+
+def normalize_stmt(s):
+    s = re.sub(r'//.*$', '', s).strip()
+    s = re.sub(r'\s+', ' ', s)
+    s = re.sub(r'MMT_SELECTION_BITMASK_PROTOCOL_[A-Za-z0-9_]+', 'SEL', s)
+    s = re.sub(r'PROTO_[A-Za-z0-9_]+', 'PROTO', s)
+    return s
+
+
+blocks = {}          # normalised block text -> [location, ...]
+uncommented = []     # locations of raw init runs carrying no comment
+
+for path in files:
+    try:
+        with open(path, encoding='utf-8', errors='replace') as fh:
+            lines = fh.read().splitlines()
+    except OSError:
+        continue
+    run = None           # {'norm': [..], 'start': int, 'commented': bool}
+    prev_nonempty = ''   # last non-blank line before the current one
+
+    def end_run():
+        global run
+        if run is None:
+            return
+        key = '\n'.join(run['norm'])
+        loc = '%s:%d' % (path, run['start'])
+        blocks.setdefault(key, []).append(loc)
+        if not run['commented']:
+            uncommented.append(loc)
+        run = None
+
+    for lineno, line in enumerate(lines, 1):
+        s = line.strip()
+        if INIT_OP_RE.match(line):
+            if run is None:
+                run = {'norm': [], 'start': lineno,
+                       'commented': bool(COMMENT_RE.search(prev_nonempty))}
+            if COMMENT_RE.search(line):
+                run['commented'] = True
+            run['norm'].append(normalize_stmt(line))
+        elif not s:
+            pass                      # blank lines neither break nor mark
+        elif s.startswith('//') or s.startswith('/*') or s.startswith('*'):
+            if run is not None and COMMENT_RE.search(line):
+                run['commented'] = True   # comment inside a run
+        else:
+            end_run()
+        if s:
+            prev_nonempty = line
+    end_run()
+
+print('    raw init-logic blocks: %d (distinct normalised: %d)'
+      % (sum(len(v) for v in blocks.values()), len(blocks)))
+for norm, locs in sorted(blocks.items(), key=lambda kv: -len(kv[1])):
+    first = norm.splitlines()[0] if norm else ''
+    print('      %dx  %s%s  [%s]'
+          % (len(locs), first[:60], '…' if '\n' in norm or len(first) > 60 else '',
+             ', '.join(locs)))
+
+failed = False
+for norm, locs in blocks.items():
+    if len(locs) >= 3:
+        print('✗ init-logic block repeated %d times (≥3):' % len(locs),
+              file=sys.stderr)
+        for loc in locs:
+            print('    %s' % loc, file=sys.stderr)
+        failed = True
+if uncommented:
+    print('✗ raw init-logic block(s) without a comment naming the '
+          'protocol-specific behaviour:', file=sys.stderr)
+    for loc in uncommented:
+        print('    %s' % loc, file=sys.stderr)
+    failed = True
+if failed:
+    print('To fix: route the shared shape through '
+          'mmt_init_classify_bitmasks{,_multi}() and comment whatever the '
+          'generic path cannot express.', file=sys.stderr)
+    sys.exit(1)
+
+print('✓ no init-logic block repeats ≥3 times and every surviving raw '
+      'block is commented')
 PYEOF

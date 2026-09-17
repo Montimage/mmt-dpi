@@ -1397,10 +1397,18 @@ static inline void http_bitmask_exclude(struct mmt_internal_tcpip_session_struct
 #endif
 }
 
-void mmt_init_classify_me_http() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD;
+/* Issue #227: http keeps a genuinely distinct init — it seeds the detection
+ * bitmask with the HTTP-based protocol list (hundreds of protocols observed
+ * over HTTP), far beyond the single-add shape of mmt_init_classify_bitmasks(),
+ * which here covers only the selection value, the PROTO_UNKNOWN detection
+ * reset and the excluded mask. Stays in this TU because the bitmasks are
+ * file-scope; called from init_proto_http_struct() in proto_http.c. */
+void mmt_http_init_detection_bitmask() {
+    mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+            &excluded_protocol_bitmask,
+            MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+            PROTO_UNKNOWN, PROTO_HTTP);
 
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
     // This list should not be updated
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REUTERS);
@@ -1774,8 +1782,6 @@ void mmt_init_classify_me_http() {
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IZLESENE);
     MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VIDEO_HOSTING);
     //////////// End of HTTP based protocols /////////////////////
-    MMT_BITMASK_RESET(excluded_protocol_bitmask);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_HTTP); //Exclude processing when ssl is detected! Obvious no?
 }
 
 void mmt_classify_http(ipacket_t * ipacket, unsigned index) {

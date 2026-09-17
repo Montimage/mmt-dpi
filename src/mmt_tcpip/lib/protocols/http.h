@@ -218,7 +218,7 @@ struct http_session_data_struct {
     field_value_t session_field_values[HTTP_HEADERS_NB];
 };
 
-void mmt_init_classify_me_http();
+void mmt_http_init_detection_bitmask();
 int init_http_proto_struct();
 int init_http_proto_struct_new();
 

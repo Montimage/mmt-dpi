@@ -148,7 +148,12 @@ int main(void)
      * the bug the seqnum read at function entry over-read the 1-byte heap
      * buffer and ASan aborts. */
     {
-        mmt_init_classify_me_rtp();
+        /* issue #227: init_proto_rtp_struct() registers the protocol and
+         * populates the file-scope bitmasks mmt_check_rtp_udp()'s gate reads
+         * (the old init wrapper was folded into it); init_extraction()
+         * allocates the registry it registers into. */
+        init_extraction();
+        init_proto_rtp_struct();
 
         struct mmt_internal_tcpip_session_struct flow;
         struct mmt_tcpip_internal_packet_struct ip;

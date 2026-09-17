@@ -290,7 +290,8 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
      *
      * static inline keeps the helper a single source definition with no
      * exported symbol, so deleting the 106 wrappers drops libmmt_tcpip.so's
-     * exported `_init` symbols by exactly 106. */
+     * exported `_init` symbols by exactly 106. Issue #227 folded the remaining
+     * richer wrappers through the multi-add variant below. */
     static inline void mmt_init_classify_bitmasks(
         MMT_SELECTION_BITMASK_PROTOCOL_SIZE *selection_bitmask,
         MMT_PROTOCOL_BITMASK *detection_bitmask,
@@ -301,6 +302,29 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
         MMT_SAVE_AS_BITMASK(*detection_bitmask, PROTO_UNKNOWN);
         if (detection_add != PROTO_UNKNOWN) {
             MMT_ADD_PROTOCOL_TO_BITMASK(*detection_bitmask, detection_add);
+        }
+        MMT_SAVE_AS_BITMASK(*excluded_protocol_bitmask, excluded_proto);
+    }
+
+    /* Issue #227 (F-DEAD-011): multi-add variant for the protocols whose
+     * detection set is a list rather than a single extra protocol —
+     * mmt_init_classify_bitmasks() above expresses only one optional
+     * detection_add. Same canonical body otherwise: selection assignment,
+     * detection reset to PROTO_UNKNOWN, then every listed protocol is OR'd
+     * in, then the excluded mask is saved. Callers pass a compound literal,
+     * e.g. (const uint32_t[]){PROTO_A, PROTO_B}, 2. */
+    static inline void mmt_init_classify_bitmasks_multi(
+        MMT_SELECTION_BITMASK_PROTOCOL_SIZE *selection_bitmask,
+        MMT_PROTOCOL_BITMASK *detection_bitmask,
+        MMT_PROTOCOL_BITMASK *excluded_protocol_bitmask,
+        MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_value,
+        const uint32_t *detection_adds, size_t detection_adds_count,
+        uint32_t excluded_proto) {
+        size_t _mmt_add_i;
+        *selection_bitmask = selection_value;
+        MMT_SAVE_AS_BITMASK(*detection_bitmask, PROTO_UNKNOWN);
+        for (_mmt_add_i = 0; _mmt_add_i < detection_adds_count; _mmt_add_i++) {
+            MMT_ADD_PROTOCOL_TO_BITMASK(*detection_bitmask, detection_adds[_mmt_add_i]);
         }
         MMT_SAVE_AS_BITMASK(*excluded_protocol_bitmask, excluded_proto);
     }

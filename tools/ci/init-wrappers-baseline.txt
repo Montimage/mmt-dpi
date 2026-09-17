@@ -1,4 +1,4 @@
-# Ratchet baseline for tools/ci/count-init-wrappers.sh (issues #190/#226).
+# Ratchet baseline for tools/ci/count-init-wrappers.sh (issues #190/#226/#227).
 #
 # Number of `mmt_init_classify_me_*` function definitions under src/ at the
 # commit that introduced the gate. Tasks 5.2/5.3 fold these per-protocol
@@ -6,8 +6,8 @@
 # The gate fails only when the count RISES above this value.
 #
 # Issue #226 folded the 106 canonical-shape wrappers into
-# mmt_init_classify_bitmasks(); the 13 left are the richer, non-canonical
-# wrappers (multi-protocol detection lists, extra exclusions) that Task 5.3
-# (#227) owns. tools/ci/check-canonical-init-wrappers.sh pins the
-# canonical-shape count at 0.
-13
+# mmt_init_classify_bitmasks(); issue #227 folded the remaining 13 richer
+# ones (plus quic_ietf's _init_bitmask) onto it and the new
+# mmt_init_classify_bitmasks_multi() — zero `mmt_init_classify_me_*`
+# definitions remain, so the gate now runs --strict in CI.
+0

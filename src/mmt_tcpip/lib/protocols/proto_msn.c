@@ -534,23 +534,21 @@ int mmt_check_msn_udp(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-void mmt_init_classify_me_msn() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MSN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SSL);
-    MMT_BITMASK_RESET(excluded_protocol_bitmask);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_MSN);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_msn_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_MSN, PROTO_MSN_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_msn();
+        /* three detection adds (HTTP and SSL on top of MSN) — beyond the
+         * single-add shape of mmt_init_classify_bitmasks(). The old wrapper's
+         * explicit MMT_BITMASK_RESET of the excluded mask was redundant:
+         * MMT_SAVE_AS_BITMASK already zeroes every word. */
+        mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                (const uint32_t[]){PROTO_MSN, PROTO_HTTP, PROTO_SSL}, 3,
+                PROTO_MSN);
 
         return register_protocol(protocol_struct, PROTO_MSN);
     } else {

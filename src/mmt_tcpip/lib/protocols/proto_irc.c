@@ -952,21 +952,19 @@ int mmt_check_irc(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-void mmt_init_classify_me_irc() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IRC);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_IRC);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_irc_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_IRC, PROTO_IRC_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_irc();
+        /* two detection adds (HTTP on top of IRC) — beyond the single-add
+         * shape of mmt_init_classify_bitmasks() */
+        mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                (const uint32_t[]){PROTO_IRC, PROTO_HTTP}, 2,
+                PROTO_IRC);
 
         return register_protocol(protocol_struct, PROTO_IRC);
     } else {

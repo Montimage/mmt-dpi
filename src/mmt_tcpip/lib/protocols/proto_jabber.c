@@ -320,21 +320,22 @@ int mmt_check_jabber(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-void mmt_init_classify_me_jabber() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITHOUT_RETRANSMISSION;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_UNENCRYPED_JABBER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SSL);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_UNENCRYPED_JABBER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(excluded_protocol_bitmask, PROTO_TRUPHONE);
-}
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_unencryped_jabber_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_UNENCRYPED_JABBER, PROTO_UNENCRYPED_JABBER_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_jabber();
+        /* two detection adds (SSL on top of UNENCRYPED_JABBER) — beyond the
+         * single-add shape of mmt_init_classify_bitmasks() */
+        mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITHOUT_RETRANSMISSION,
+                (const uint32_t[]){PROTO_UNENCRYPED_JABBER, PROTO_SSL}, 2,
+                PROTO_UNENCRYPED_JABBER);
+        /* a second exclusion (TRUPHONE) the generic helpers cannot express —
+         * they save exactly one excluded protocol */
+        MMT_ADD_PROTOCOL_TO_BITMASK(excluded_protocol_bitmask, PROTO_TRUPHONE);
         
         return register_protocol(protocol_struct, PROTO_UNENCRYPED_JABBER);
     } else {

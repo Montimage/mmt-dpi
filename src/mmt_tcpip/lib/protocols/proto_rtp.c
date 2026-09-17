@@ -894,14 +894,6 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_rtp() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_STUN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SIP);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_RTP);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_rtp_struct() {
@@ -915,7 +907,13 @@ int init_proto_rtp_struct() {
             register_attribute_with_protocol(protocol_struct, &rtp_attributes_metadata[i]);
         }
 
-        mmt_init_classify_me_rtp();
+        /* two detection adds (STUN and SIP flows can carry RTP) — beyond the
+         * single-add shape of mmt_init_classify_bitmasks() */
+        mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
+                (const uint32_t[]){PROTO_STUN, PROTO_SIP}, 2,
+                PROTO_RTP);
 
 #ifdef _MMT_BUILD_SDK
         register_session_data_initialization_function(protocol_struct, rtp_session_data_init);

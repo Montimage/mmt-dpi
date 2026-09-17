@@ -428,7 +428,7 @@ int init_proto_http_struct() {
             register_attribute_with_protocol(protocol_struct, &http_new_attributes_metadata[i]);
         }
 
-        mmt_init_classify_me_http();
+        mmt_http_init_detection_bitmask();
 
         //BW: Add session data initialization, cleanup and analysis routines.
         //    This is mainly used for HTTP data parsing.

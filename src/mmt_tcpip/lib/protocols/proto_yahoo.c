@@ -420,22 +420,19 @@ int mmt_check_yahoo_udp(ipacket_t * ipacket, unsigned index) {
     return 4;
 }
 
-void mmt_init_classify_me_yahoo() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YAHOO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SSL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_YAHOO);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_yahoo_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_YAHOO, PROTO_YAHOO_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_yahoo();
+        /* three detection adds (SSL and HTTP on top of YAHOO) — beyond the
+         * single-add shape of mmt_init_classify_bitmasks() */
+        mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP,
+                (const uint32_t[]){PROTO_YAHOO, PROTO_SSL, PROTO_HTTP}, 3,
+                PROTO_YAHOO);
 
         return register_protocol(protocol_struct, PROTO_YAHOO);
     } else {

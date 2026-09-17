@@ -387,13 +387,6 @@ static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index)
 }
 
 
-void _init_bitmask() {
-	selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD;
-	MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-	MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INT);
-	MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_QUIC_IETF);
-}
-
 #define def_att(id, data_type, data_len ) { id, id##_ALIAS, data_type, data_len, POSITION_NOT_KNOWN, SCOPE_PACKET, _extraction_quic_ietf_att}
 static attribute_metadata_t _attributes_metadata[] = {
 	def_att( QUIC_IETF_HEADER_FORM,      MMT_U8_DATA,  sizeof(uint8_t) ),
@@ -440,7 +433,10 @@ int init_proto_quic_ietf_struct() {
 		return PROTO_NOT_REGISTERED;
 	}
 
-	_init_bitmask();
+	mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+			&excluded_protocol_bitmask,
+			MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
+			PROTO_INT, PROTO_QUIC_IETF);
 
 	//TODO(#333): need to get QUIC session
 	register_session_data_initialization_function(protocol_struct, _quic_ietf_session_data_init);

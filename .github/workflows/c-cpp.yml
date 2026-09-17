@@ -205,7 +205,8 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Ratchet counters (blocking — a rise above baseline fails)
       run: |
-        bash tools/ci/count-init-wrappers.sh
+        bash tools/ci/count-init-wrappers.sh --strict
+        bash tools/ci/check-canonical-init-wrappers.sh
         bash tools/ci/count-weak-types.sh --strict
         bash tools/ci/check-typed-accessors.sh
         bash tools/ci/lint-markers.sh --strict

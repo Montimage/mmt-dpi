@@ -225,7 +225,7 @@ int tcp_pre_classification_function(ipacket_t *ipacket, unsigned index);
 int rtp_csrc_list_extraction(const ipacket_t *packet, unsigned proto_index,
         attribute_t *extracted_data);
 int mmt_check_rtp_udp(ipacket_t *ipacket, unsigned index);
-void mmt_init_classify_me_rtp(void);
+int init_proto_rtp_struct(void);
 
 /* --- protocols/proto_smb.c (issue #205 harness) ------------------------------- */
 const uint8_t *get_smb_payload(const ipacket_t *ipacket, unsigned proto_index);
@@ -233,7 +233,7 @@ int smb_session_data_analysis(ipacket_t *ipacket, unsigned index);
 
 /* --- protocols/proto_sip.c (issue #205 harness) ------------------------------- */
 int mmt_check_sip(ipacket_t *ipacket, unsigned index);
-void mmt_init_classify_me_sip(void);
+int init_proto_sip_struct(void);
 
 /* --- protocols/ndn.c (issue #205 harness) -------------------------------------- */
 struct ndn_tlv_struct;

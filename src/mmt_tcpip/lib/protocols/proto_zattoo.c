@@ -234,22 +234,19 @@ int mmt_check_zattoo_udp(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_zattoo() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ZATTOO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FLASH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_ZATTOO);
-}
-
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
 int init_proto_zattoo_struct() {
     protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_ZATTOO, PROTO_ZATTOO_ALIAS);
     if (protocol_struct != NULL) {
 
-        mmt_init_classify_me_zattoo();
+        /* three detection adds (FLASH and HTTP on top of ZATTOO) — beyond the
+         * single-add shape of mmt_init_classify_bitmasks() */
+        mmt_init_classify_bitmasks_multi(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD,
+                (const uint32_t[]){PROTO_ZATTOO, PROTO_FLASH, PROTO_HTTP}, 3,
+                PROTO_ZATTOO);
 
         return register_protocol(protocol_struct, PROTO_ZATTOO);
     } else {

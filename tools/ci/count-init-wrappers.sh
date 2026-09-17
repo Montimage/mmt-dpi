@@ -40,7 +40,9 @@ while IFS= read -r p; do
     vendor_excludes+=(":!:$p")
 done < "$VENDOR_LIST"
 
-count="$(git ls-files 'src/*.c' "${vendor_excludes[@]}" | xargs grep -hE '^[a-zA-Z_][a-zA-Z0-9_ \*]*\bmmt_init_classify_me_[A-Za-z0-9_]+[[:space:]]*\(' | wc -l)"
+# `|| true`: grep exits 1 (xargs then 123) on zero matches — the intended
+# Task 5.3 end state — which would otherwise trip pipefail.
+count="$(git ls-files 'src/*.c' "${vendor_excludes[@]}" | xargs grep -hE '^[a-zA-Z_][a-zA-Z0-9_ \*]*\bmmt_init_classify_me_[A-Za-z0-9_]+[[:space:]]*\(' | wc -l || true)"
 echo "    init-wrapper definitions: $count"
 
 if [ "$STRICT" -eq 1 ]; then

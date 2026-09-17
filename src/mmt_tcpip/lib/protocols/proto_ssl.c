@@ -978,14 +978,6 @@ int mmt_classify_ssl(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-void mmt_init_classify_me_ssl() {
-    selection_bitmask = MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD;
-    MMT_SAVE_AS_BITMASK(detection_bitmask, PROTO_UNKNOWN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SSL);
-    MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL); //Exclude processing when http is detected! Obvious no?
-    //MMT_SAVE_AS_BITMASK(excluded_protocol_bitmask, PROTO_SSL);
-}
-
 int mmt_check_ssl(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
@@ -1016,7 +1008,10 @@ int init_proto_ssl_struct() {
             register_attribute_with_protocol(protocol_struct, &ssl_attributes_metadata[i]);
         }
 
-        mmt_init_classify_me_ssl();
+        mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+                &excluded_protocol_bitmask,
+                MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+                PROTO_SSL, PROTO_SSL);
 
         return register_protocol(protocol_struct, PROTO_SSL);
     } else {
