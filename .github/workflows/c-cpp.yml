@@ -250,13 +250,23 @@ jobs:
       # packet paths — so this helper runs as an ordinary blocking step, not
       # in the advisory loop. A regression now fails the job.
       run: bash tools/ci/lint-packet-path-io.sh
+    - name: Protocol-count agreement (blocking — issue #248)
+      # Was advisory while the five public claims contradicted each other
+      # (200+ vs 643). They now quote the runtime-enumerated count — a
+      # regression fails the job. The runtime check itself lives in the
+      # build job, which has the SDK installed.
+      run: bash tools/ci/check-protocol-count.sh
+    - name: Shared-doc fragments (blocking — issue #248)
+      # The README feature list / quick-start / first example are the same
+      # fragments docs/index.html includes — this helper fails the job when
+      # the two copies drift.
+      run: bash tools/ci/check-doc-includes.sh
     - name: Advisory helpers (gate condition still open — owning task flips it)
       run: |
         fail=0
         helpers=(
           tools/ci/check-hardening-flags.sh
 
-          tools/ci/check-protocol-count.sh
           tools/ci/check-public-decls.sh
           "tools/ci/report-function-shape.sh src/mmt_tcpip/lib/protocols/proto_irc.c"
         )
@@ -339,6 +349,11 @@ jobs:
       # "tests passed"; the project rules forbid it as a smoke test, so it
       # is kept and named for what it actually verifies.
       run: cd sdk/ && make test
+    - name: Assert quoted counts match the built SDK (blocking — issue #248)
+      # The install step above placed every plugin under /opt/mmt/plugins,
+      # so the enumerator this helper compiles and runs reports the real
+      # core+plugins totals; any drift between docs and the engine fails CI.
+      run: bash tools/ci/check-runtime-protocol-count.sh
     - name: Assert the hardening set on the built shared objects
       # Issue #214 (F-SEC-010): the makefile grep half of this helper only
       # proves the flags are written down; --built inspects the .so files the

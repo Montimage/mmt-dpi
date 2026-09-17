@@ -21,6 +21,7 @@ Fixes #(issue number)
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
+- [ ] I have added a line to the `Unreleased` section of `CHANGELOG.md` for every user-visible change (or this PR changes nothing user-visible)
 - [ ] I have tested with relevant pcap files
 
 ## Testing

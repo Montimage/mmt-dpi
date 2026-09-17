@@ -24,11 +24,12 @@
  #include <pcap.h>
  #include "mmt_core.h"
 
-void packet_handler(const ipacket_t * ipacket, void * user_args){
+int packet_handler(const ipacket_t * ipacket, void * user_args){
 	uint32_t * p_len = (uint32_t *) get_attribute_extracted_data_by_name(ipacket,"META","PACKET_LEN");
 	if(p_len){
         printf("Received packet of size %u\n",*p_len);
 	}
+	return 0; // generic_packet_handler_callback is int-returning; 1 ends packet processing early
 }
 
 int main(int argc, char ** argv){
@@ -59,7 +60,7 @@ int main(int argc, char ** argv){
 	pcap = pcap_open_offline(argv[1],errbuf); // open offline trace
 	if(!pcap){ /* pcap error? */
 		fprintf(stderr, "pcap_open failed for the following reason: %s\n", errbuf);
-		return;
+		return EXIT_FAILURE;
 	}
 
 	while((data=pcap_next(pcap,&p_pkthdr))){

@@ -1,6 +1,6 @@
 title: MMT-DPI
 description: >-
-  High-performance C library for deep packet inspection — 200+ protocol
+  High-performance C library for deep packet inspection — 669 protocol
   classification, named attribute extraction, session tracking, and an
   extensible plugin architecture.
 # Pinned to the v0.2.0 commit of pages-themes/cayman (issue #213, F-DEP-202) —

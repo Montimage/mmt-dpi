@@ -1,17 +1,21 @@
 ---
+# No layout: the page keeps its standalone design. Front matter exists so
+# Jekyll runs Liquid — the shared fragments under _includes/ are pulled in
+# below with {% include %} + | markdownify (issue #248, F-UX-011).
 ---
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MMT-DPI — Deep packet inspection for 643 protocols, in C</title>
-  <meta name="description" content="MMT-DPI is a high-performance C library for deep packet inspection: classify 643 protocols, extract 6,334 named attributes, and track sessions at line rate. Apache-2.0. Linux. Plugin-extensible.">
+  <title>MMT-DPI — Deep packet inspection for 669 protocols, in C</title>
+  <meta name="description" content="MMT-DPI is a high-performance C library for deep packet inspection: classify 669 protocols, extract 7,429 named attributes, and track sessions at line rate. Apache-2.0. Linux. Plugin-extensible.">
 
   <!-- Open Graph / social -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="MMT-DPI — Deep packet inspection, in C">
-  <meta property="og:description" content="Classify 643 protocols, extract 6,334 named attributes, track sessions at line rate. Open-source C library by Montimage.">
+  <meta property="og:description" content="Classify 669 protocols, extract 7,429 named attributes, track sessions at line rate. Open-source C library by Montimage.">
   <meta property="og:url" content="https://montimage-projects.github.io/mmt-dpi/">
   <meta name="theme-color" content="#131110">
 
@@ -295,6 +299,21 @@
     .feat p { margin: 0; color: var(--text-dim); font-size: .95rem; }
     @media (max-width: 760px){ .feat-grid{ grid-template-columns: 1fr; } }
 
+    /* canonical feature list included from _includes/key-features.md (#248) */
+    .feat-md { margin-top: 44px; }
+    .feat-md ul { columns: 2; column-gap: 34px; margin: 0; padding-left: 20px; list-style: none; }
+    .feat-md li { break-inside: avoid; margin-bottom: 14px; color: var(--text-dim); font-size: .95rem; }
+    .feat-md li strong { color: var(--text); display: block; font-size: 1.02rem; margin-bottom: 2px; }
+    .feat-md code { color: var(--amber); font-size: .88em; }
+    @media (max-width: 760px){ .feat-md ul{ columns: 1; } }
+
+    /* quick-start fragment carries fenced bash blocks (#248) */
+    .quick-md p { color: var(--text-dim); font-size: 1.02rem; max-width: 62ch; }
+    .quick-md .highlight pre {
+      margin: 14px 0; padding: 16px 18px; overflow-x: auto; font-size: .88rem; line-height: 1.7;
+      border: 1px solid var(--border); border-radius: 10px; background: #100d0b;
+    }
+
     /* ---------- how it works ---------- */
     .flow { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; margin-top: 44px; align-items: start; }
     @media (max-width: 880px){ .flow{ grid-template-columns: 1fr; } }
@@ -319,6 +338,10 @@
     .code-head { display:flex; align-items:center; gap:8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02); }
     .code-head .fn { font-family: var(--mono); font-size: .78rem; color: var(--text-mute); }
     pre.code { margin: 0; padding: 18px; overflow-x: auto; font-size: .84rem; line-height: 1.7; }
+    /* canonical first-example.md include rendered inside the card (#248) */
+    .code-card p { margin: 0; padding: 14px 18px 0; font-size: .88rem; color: var(--text-dim); }
+    .code-card p code { color: var(--amber); font-size: .9em; }
+    .code-card .highlight pre { margin: 0; padding: 18px; overflow-x: auto; font-size: .84rem; line-height: 1.7; background: transparent; }
     .t-key { color: var(--magenta); }
     .t-fn  { color: var(--blue); }
     .t-str { color: var(--green); }
@@ -447,8 +470,8 @@
         <h1 class="hero-title">A deep packet inspection <span class="accent">engine for C.</span></h1>
         <p class="hero-sub">
           Link <code>libmmt_core</code>, register the protocol fields you need, and process packets from a
-          pcap or a live interface. MMT&#8209;DPI classifies <strong>643 protocols</strong>, extracts
-          <strong>6,334 typed attributes</strong>, and tracks per-flow sessions — all behind one callback API.
+          pcap or a live interface. MMT&#8209;DPI classifies <strong>669 protocols</strong>, extracts
+          <strong>7,429 typed attributes</strong>, and tracks per-flow sessions — all behind one callback API.
         </p>
         <div class="cta-row">
           <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
@@ -496,8 +519,8 @@
     <!-- STATS -->
     <section class="stats">
       <div class="wrap stats-grid">
-        <div class="stat"><div class="num">643</div><div class="lbl">protocols classified</div></div>
-        <div class="stat"><div class="num">6,334</div><div class="lbl">named attributes</div></div>
+        <div class="stat"><div class="num">669</div><div class="lbl">protocols classified</div></div>
+        <div class="stat"><div class="num">7,429</div><div class="lbl">named attributes</div></div>
         <div class="stat"><div class="num">5G</div><div class="lbl">LTE &amp; mobile core</div></div>
         <div class="stat"><div class="num">5+</div><div class="lbl">Linux distros</div></div>
       </div>
@@ -543,37 +566,11 @@
         a decade of Montimage monitoring products.
       </p>
 
-      <div class="feat-grid">
-        <div class="feat">
-          <span class="badge">classification</span>
-          <h3>643 protocols, auto-detected</h3>
-          <p>Classification across the full TCP/IP stack and application layer — not by port number, but by payload signature. From Ethernet to QUIC to S7COMM.</p>
-        </div>
-        <div class="feat">
-          <span class="badge">extraction</span>
-          <h3>6,334 named attributes</h3>
-          <p>Pull any protocol field — IPs, ports, headers, payload values — by name. No manual offset math, no per-protocol glue code in your application.</p>
-        </div>
-        <div class="feat">
-          <span class="badge">sessions</span>
-          <h3>Flow tracking &amp; stats</h3>
-          <p>Per-flow RTT, retransmissions, byte and packet counts, sub-session statistics. TCP reassembly handles out-of-order, overlap, and retransmission.</p>
-        </div>
-        <div class="feat">
-          <span class="badge">plugins</span>
-          <h3>Extensible by design</h3>
-          <p>Cover a protocol MMT doesn't ship yet by adding a module: declare its fields and classification logic and register it with the core at build time.</p>
-        </div>
-        <div class="feat">
-          <span class="badge">5G / LTE</span>
-          <h3>Mobile-core ready</h3>
-          <p>NAS, S1AP, NGAP, GTPv2, Diameter, GTP — extract IMSI and control-plane fields for mobile-network monitoring and security.</p>
-        </div>
-        <div class="feat">
-          <span class="badge">performance</span>
-          <h3>Built for line rate</h3>
-          <p>Lean C with a callback-driven API — open-addressing session hash table, per-flow arena allocator, single-pass protocol dispatch — static-analysis-hardened (PVS-Studio, cppcheck). Designed to run inside high-throughput probes.</p>
-        </div>
+      <!-- Canonical feature list — same fragment README embeds (F-UX-011);
+           edit docs/_includes/key-features.md, never a second copy here. -->
+      <div class="feat feat-md">
+        {% capture features %}{% include key-features.md %}{% endcapture %}
+        {{ features | markdownify }}
       </div>
     </section>
 
@@ -616,38 +613,12 @@
                 <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
                 <span class="fn">hello_packet.c</span>
               </div>
-<pre class="code"><span class="t-com">#include &lt;pcap.h&gt;</span>
-<span class="t-com">#include "mmt_core.h"</span>
-
-<span class="t-com">// Fires after MMT classifies &amp; extracts each packet.</span>
-<span class="t-key">int</span> <span class="t-fn">on_packet</span>(<span class="t-key">const</span> <span class="t-ty">ipacket_t</span> *ipacket, <span class="t-key">void</span> *args) {
-    <span class="t-ty">uint32_t</span> *len = <span class="t-fn">get_attribute_extracted_data_by_name</span>(ipacket, <span class="t-str">"META"</span>, <span class="t-str">"PACKET_LEN"</span>);
-    <span class="t-key">if</span> (len) <span class="t-fn">printf</span>(<span class="t-str">"packet size: %u\n"</span>, *len);
-    <span class="t-key">return</span> <span class="t-num">0</span>;
-}
-
-<span class="t-key">int</span> <span class="t-fn">main</span>(<span class="t-key">int</span> argc, <span class="t-key">char</span> **argv) {
-    <span class="t-fn">init_extraction</span>();
-    <span class="t-key">char</span> errbuf[<span class="t-num">1024</span>];
-    <span class="t-ty">mmt_handler_t</span> *h = <span class="t-fn">mmt_init_handler</span>(<span class="t-ty">DLT_EN10MB</span>, <span class="t-num">0</span>, errbuf);
-
-    <span class="t-fn">register_extraction_attribute_by_name</span>(h, <span class="t-str">"META"</span>, <span class="t-str">"PACKET_LEN"</span>);
-    <span class="t-fn">register_packet_handler</span>(h, <span class="t-num">1</span>, on_packet, <span class="t-ty">NULL</span>);
-
-    <span class="t-com">// Feed packets from a .pcap file.</span>
-    <span class="t-ty">pcap_t</span> *pcap = <span class="t-fn">pcap_open_offline</span>(argv[<span class="t-num">1</span>], errbuf);
-    <span class="t-key">struct</span> <span class="t-ty">pcap_pkthdr</span> ph; <span class="t-key">struct</span> <span class="t-ty">pkthdr</span> hdr;
-    <span class="t-key">const</span> <span class="t-ty">u_char</span> *data;
-    <span class="t-key">while</span> ((data = <span class="t-fn">pcap_next</span>(pcap, &amp;ph))) {
-        hdr.ts = ph.ts; hdr.caplen = ph.caplen; hdr.len = ph.len;
-        <span class="t-fn">packet_process</span>(h, &amp;hdr, data);
-    }
-
-    <span class="t-fn">mmt_close_handler</span>(h);
-    <span class="t-fn">close_extraction</span>();
-}</pre>
+              <!-- Canonical first example — same fragment README embeds (F-UX-011);
+                   edit docs/_includes/first-example.md, never a second copy here. -->
+              {% capture first_example %}{% include first-example.md %}{% endcapture %}
+              {{ first_example | markdownify }}
             </div>
-            <p class="api-note">Adapted from the bundled <code>src/examples/packet_handler.c</code>. The handler returns <code>int</code> (the callback contract); <code>"META"/"PACKET_LEN"</code> is a built-in meta attribute available on every packet.</p>
+            <p class="api-note">The handler returns <code>int</code> (the callback contract) — non-zero aborts the packet loop early.</p>
           </div>
 
           <!-- TIER 2 -->
@@ -690,7 +661,7 @@
     <span class="t-com">// ... same pcap / packet_process() loop as Tier 1 ...</span>
 }</pre>
             </div>
-            <p class="api-note">Each attribute has a typed value — numeric fields come back as <code>uint*_t*</code>, while header strings like <code>http/host</code> are <code>mmt_header_line_t*</code> (a <code>ptr</code>+<code>len</code> pair, not null-terminated). Names map to MMT's 6,334 attributes; the engine classifies by payload signature, so these resolve regardless of port. See <a href="MMT-Attributes.html">MMT-Attributes</a>.</p>
+            <p class="api-note">Each attribute has a typed value — numeric fields come back as <code>uint*_t*</code>, while header strings like <code>http/host</code> are <code>mmt_header_line_t*</code> (a <code>ptr</code>+<code>len</code> pair, not null-terminated). Names map to MMT's 7,429 attributes; the engine classifies by payload signature, so these resolve regardless of port. See <a href="MMT-Attributes.html">MMT-Attributes</a>.</p>
           </div>
 
           <!-- TIER 3 -->
@@ -751,7 +722,7 @@
     <section class="sec wrap" id="protocols">
       <div class="sec-tag">// coverage</div>
       <h2 class="sec-title">From Ethernet to 5G, classified out of the box.</h2>
-      <p class="sec-lead">A selection of the 643 protocols MMT&#8209;DPI recognizes — across the TCP/IP stack, application layer, mobile core, and industrial/OT.</p>
+      <p class="sec-lead">A selection of the 669 protocols MMT&#8209;DPI recognizes — across the TCP/IP stack, application layer, mobile core, and industrial/OT.</p>
       <div class="proto-cloud">
         <span class="chip hot">TCP</span><span class="chip hot">IPv4/IPv6</span><span class="chip hot">HTTP</span>
         <span class="chip hot">HTTP/2</span><span class="chip hot">QUIC</span><span class="chip hot">DNS</span>
@@ -762,7 +733,7 @@
         <span class="chip">GTP / GTPv2</span><span class="chip">Diameter</span><span class="chip">SIP</span>
         <span class="chip">S7COMM</span><span class="chip">COTP / TPKT</span><span class="chip">CDP / DTP</span>
         <span class="chip">DICOM</span><span class="chip">Syslog</span><span class="chip">PTP</span><span class="chip">VNC</span><span class="chip">MSSQL</span>
-        <a class="chip mono" href="PROTOCOLS.html">+ 600 more →</a>
+        <a class="chip mono" href="PROTOCOLS.html">+ 640 more →</a>
       </div>
     </section>
 
@@ -830,7 +801,12 @@
     <section class="sec wrap" id="quick-start">
       <div class="sec-tag">// install &amp; link</div>
       <h2 class="sec-title">Get the library, then compile against it.</h2>
-      <p class="sec-lead">Install the SDK to <code>/opt/mmt/dpi</code> (headers in <code>include/</code>, <code>libmmt_core</code> in <code>lib/</code>), then build your program. Linux: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, openSUSE.</p>
+      <!-- Canonical quick-start — same fragment README embeds (F-UX-011);
+           edit docs/_includes/quick-start.md, never a second copy here. -->
+      <div class="feat-md quick-md">
+        {% capture quick_start %}{% include quick-start.md %}{% endcapture %}
+        {{ quick_start | markdownify }}
+      </div>
 
       <div class="cta-row" style="margin-top:28px;">
         <a class="btn btn-primary" href="USER_GUIDE.html">Read the User Guide ▸</a>
@@ -854,7 +830,7 @@
       <div class="faq">
         <details open>
           <summary>What exactly is MMT-DPI?</summary>
-          <p>A high-performance C library for deep packet inspection. It classifies network traffic into 643 protocols and lets you extract 6,334 named, typed attributes from packets, server logs, and structured events — for real-time analysis. It's the extraction core inside the broader Montimage Monitoring Tool (MMT) suite.</p>
+          <p>A high-performance C library for deep packet inspection. It classifies network traffic into 669 protocols and lets you extract 7,429 named, typed attributes from packets, server logs, and structured events — for real-time analysis. It's the extraction core inside the broader Montimage Monitoring Tool (MMT) suite.</p>
         </details>
         <details>
           <summary>Which platforms are supported?</summary>
@@ -882,7 +858,7 @@
     <!-- FINAL CTA -->
     <section class="final wrap">
       <h2>Stop writing byte-offset parsers.<br><span class="accent">Start querying packets by name.</span></h2>
-      <p>643 protocols, 6,334 attributes, plugin-extensible — open source under Apache-2.0. One command and you're running.</p>
+      <p>669 protocols, 7,429 attributes, plugin-extensible — open source under Apache-2.0. One command and you're running.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
         <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">★ Star on GitHub</a>
