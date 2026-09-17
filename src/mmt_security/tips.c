@@ -4339,305 +4339,444 @@ typedef struct {
     short leftleft;
 } verify_ctx_t;
 
+int verify( verify_ctx_t *ctx, short context, rule *r );
+
+//Tail shared by every verify() arm that fell through its checks — the
+//malformed-tree diagnostic plus the NOT_VALID verdict the switch produced.
+static int verify_malformed_rule( void )
+{
+    (void)fprintf(stderr, "Error 40: Possible error in the XML properties file: %s.\n", op->RuleFileName);
+    return NOT_VALID;
+}
+
+//THEN node, SAME packet: verify the left son then, when it validated, the
+//right son — a right son that fails is stamped NOT_VALID. A missing left
+//son takes the malformed-tree tail.
+static int verify_then_same( verify_ctx_t *ctx, rule *r )
+{
+    short result = 0;
+    if (r->list_of_sons != NULL) {
+        r->list_of_sons->father = r;
+        result = verify( ctx, SAME, r->list_of_sons );
+        if (result == VALID) {
+            r->list_of_sons->next->father = r;
+            result = verify( ctx, SAME, r->list_of_sons->next );
+            if (result == NOT_VALID)r->list_of_sons->next->valid = NOT_VALID;
+        }
+        return action(SAME, ctx->leftleft, r);
+    }
+    (void)fprintf(stderr, "Error 26: Encoutered incorrect sequence of events.\n");
+    return verify_malformed_rule();
+}
+
+//THEN/AFTER, left son still pending: verify it for this packet — when it
+//validates, arm the node timer and, unless a delay_min gate applies, verify
+//the right son on the same packet with leftleft dropped to NO.
+static int verify_then_after_pending( verify_ctx_t *ctx, rule *r )
+{
+    short result = 0;
+    const short leftleft = ctx->leftleft;
+    //Need to verify left branch
+    r->list_of_sons->father = r;
+    result = verify( ctx, AFTER, r->list_of_sons );
+    if (result == VALID) {
+        //Left branch was found valid so need to start timer
+        result = init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
+        if (r->delay_min == 0 && r->not_equal_min == NO) {
+            //Since there is no delay_min set we need to verify, for the same packet, the right branch
+            r->list_of_sons->next->father = r;
+            ctx->leftleft = NO;
+            result = verify( ctx, AFTER, r->list_of_sons->next );
+            ctx->leftleft = leftleft;
+        }
+    }
+    return action(AFTER, leftleft, r);
+}
+
+//THEN/AFTER, left son already valid: control the node timeout — TIMEIN is
+//still pending, a NOT right son turns expiry into validity, anything else
+//fails the node — otherwise verify the right son for this packet.
+static int verify_then_after_valid( verify_ctx_t *ctx, rule *r )
+{
+    //Left branch already valid so need to check for timeout
+    short result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
+    if (result != SKIP2) {
+        //We have a timeout condition
+        if (result == TIMEIN){
+            return NOT_YET;
+        }
+        //EDMO:Eliminated since not correct
+        if (r->list_of_sons->next->value == NOT) {
+            r->valid = VALID;
+            if (r->type == ROOT_INSTANCE) {
+                return COUNT_SATISFIED_ELIMINATE;
+            } else {
+                return VALID;
+            }
+        } else {
+            r->valid = NOT_VALID;
+            if (r->type == ROOT_INSTANCE) {
+                return COUNT_NOT_SATISFIED_ELIMINATE;
+            } else {
+                return NOT_VALID;
+            }
+        }
+    }
+    //Need to verify right branch
+    r->list_of_sons->next->father = r;
+    result = verify( ctx, AFTER, r->list_of_sons->next );
+    return action(AFTER, ctx->leftleft, r);
+}
+
+//THEN node, AFTER situation (counter_max or delay_max armed): dispatch on
+//the left son's state — pending, already valid (timeout control), or dead.
+static int verify_then_after( verify_ctx_t *ctx, rule *r )
+{
+    if (r->list_of_sons != NULL) {
+        if (r->list_of_sons->valid == NOT_YET) {
+            return verify_then_after_pending( ctx, r );
+        }
+        if (r->list_of_sons->valid == VALID) {
+            return verify_then_after_valid( ctx, r );
+        }
+        if (r->list_of_sons->valid == NOT_VALID) {
+            return action(AFTER, ctx->leftleft, r);
+        }
+        (void)fprintf(stderr, "Error 27: Encoutered incorrect sequence of events.\n");
+    }
+    (void)fprintf(stderr, "Error 30: Encoutered incorrect sequence of events.\n");
+    return verify_malformed_rule();
+}
+
+//THEN/BEFORE, right son still pending: verify it for this packet — when it
+//validates, arm the node timer and, unless a delay_max gate applies, verify
+//the left son on the same packet.
+static int verify_then_before_pending( verify_ctx_t *ctx, rule *r )
+{
+    short result = 0;
+    //Need to verify right branch
+    r->list_of_sons->next->father = r;
+    result = verify( ctx, BEFORE, r->list_of_sons->next );
+    r->list_of_sons->next->valid = result;
+    if (result == VALID) {
+        //Right branch was found valid so need to start timer
+        result = init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
+        if (r->delay_max == 0 && r->not_equal_max == NO) {
+            //Since there is no delay_max set we need to verify, for the same packet, the left branch
+            r->list_of_sons->father = r;
+            result = verify( ctx, BEFORE, r->list_of_sons );
+        }
+    }
+    return action(BEFORE, ctx->leftleft, r);
+}
+
+//THEN/BEFORE, right son already valid: control the node timeout — a NOT
+//left son turns expiry into validity, anything else eliminates the node —
+//otherwise verify the left son for this packet.
+static int verify_then_before_valid( verify_ctx_t *ctx, rule *r )
+{
+    //Right branch already valid so need to check for timeout
+    short result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
+    if (result != SKIP2) {
+        //We have a timeout condition
+
+        //EDMO:Eliminated since not correct
+        if (r->list_of_sons->value == NOT) {
+            r->valid = VALID;
+            if (r->type == ROOT_INSTANCE) {
+                return COUNT_SATISFIED_ELIMINATE;
+            } else {
+                return VALID;
+            }
+        } else {
+            r->valid = NOT_VALID;
+            if (r->type == ROOT_INSTANCE) {
+                return ELIMINATE;
+            } else {
+                return NOT_VALID;
+            }
+        }
+    }
+    //Need to verify left branch
+    r->list_of_sons->father = r;
+    result = verify( ctx, BEFORE, r->list_of_sons );
+    return action(BEFORE, ctx->leftleft, r);
+}
+
+//THEN node, BEFORE situation (negative counter_min or delay_min): dispatch
+//on the right son's state — pending, already valid (timeout control), or
+//the left son dead.
+static int verify_then_before( verify_ctx_t *ctx, rule *r )
+{
+    if (r->list_of_sons != NULL) {
+        if (r->list_of_sons->next->valid == NOT_YET) {
+            return verify_then_before_pending( ctx, r );
+        }
+        if (r->list_of_sons->next->valid == VALID) {
+            return verify_then_before_valid( ctx, r );
+        }
+        if (r->list_of_sons->valid == NOT_VALID) {
+            return action(BEFORE, ctx->leftleft, r);
+        }
+        (void)fprintf(stderr, "Error 35: Encoutered incorrect sequence of events.\n");
+    }
+    return verify_malformed_rule();
+}
+
+//THEN node: pick the temporal situation — counter_max/delay_max mean
+//AFTER, a negative counter_min/delay_min mean BEFORE, otherwise both sons
+//are tested on the SAME packet — report inconsistent son states, then run
+//the per-situation walk.
+static int verify_then( verify_ctx_t *ctx, rule *r )
+{
+    //Determine if we are in the situation AFTER or BEFORE and report errors in state of sons
+    //  (e.g., if "A then AFTER B" and "A not_yet" and "B valid" => error because B can not be valid before A in this situation)
+    if (r->counter_max > 0 || r->delay_max > 0) {
+        if (r->list_of_sons != NULL && r->list_of_sons->valid == NOT_YET &&
+                r->list_of_sons->next != NULL && r->list_of_sons->next->valid == VALID) {
+            (void)fprintf(stderr, "Error 24.5: Encoutered incorrect sequence of events.\n");
+        }
+        return verify_then_after( ctx, r );
+    }
+    if (r->counter_min < 0 || r->delay_min < 0) {
+        if (r->list_of_sons != NULL && r->list_of_sons->valid == VALID &&
+                r->list_of_sons->next != NULL && r->list_of_sons->next->valid == NOT_YET) {
+            (void)fprintf(stderr, "Error 25: Encoutered incorrect sequence of events.\n");
+        }
+        return verify_then_before( ctx, r );
+    }
+    return verify_then_same( ctx, r );
+}
+
+//OR node: no timer — verify each son in order until one validates; the
+//first VALID son validates the node, otherwise every son and the node are
+//stamped NOT_VALID. Sons are verified in the BEFORE situation (the
+//uninitialised-then-0 context verify() always passed here).
+static int verify_or( verify_ctx_t *ctx, rule *r )
+{
+    short result = 0;
+    rule *curr_r = NULL;
+    //No timer needed
+    if (r->list_of_sons != NULL) {
+        curr_r = r->list_of_sons;
+        //assume none are valid
+        while (curr_r != NULL) {
+            curr_r->father = r;
+            result = verify( ctx, BEFORE, curr_r );
+            if (result == VALID) {
+                //Found valid
+                curr_r->valid = VALID;
+                r->valid = VALID;
+                return VALID;
+            }
+            curr_r->valid = NOT_VALID;
+            curr_r = curr_r->next;
+        }
+        r->valid = NOT_VALID;
+        return NOT_VALID;
+    }
+    (void)fprintf(stderr, "Error 36: Encoutered incorrect sequence of events.\n");
+    return verify_malformed_rule();
+}
+
+//AND node with the timer already armed (a son validated earlier): control
+//the node timeout — a satisfied son opposite a NOT sibling keeps the node
+//VALID, anything else fails it. SKIP2 means the window is still open.
+static int verify_and_timeout( verify_ctx_t *ctx, rule *r )
+{
+    short result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
+    if (result != SKIP2) {
+        //EDMO:Eliminated since not correct
+        if ((r->list_of_sons->valid == VALID && r->list_of_sons->next->value == NOT) ||
+                (r->list_of_sons->next->valid == VALID && r->list_of_sons->value == NOT)) {
+            r->valid = VALID;
+            return VALID;
+        } else {
+            r->valid = NOT_VALID;
+            return NOT_VALID;
+        }
+    }
+    return SKIP2;
+}
+
+//AND node, one not-yet-valid son: verify it, arm the node timer on the
+//first VALID son, and fold the verdict into the node flags.
+static void verify_and_son( verify_ctx_t *ctx, rule *r, rule *curr_r, int *one_already_valid, int *all_valid )
+{
+    short result = 0;
+    curr_r->father = r;
+    result = verify( ctx, BEFORE, curr_r );
+    if (*one_already_valid == 0) {
+        if (result == VALID) {
+            //Case found the first VALID son so timer needs to be started
+            init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
+            *one_already_valid = 1;
+        }
+    }
+    if (result == VALID) {
+        *one_already_valid = 1;
+        curr_r->valid = VALID;
+    } else if (result == NOT_VALID) {
+        curr_r->valid = NOT_YET;
+        *all_valid = 0;
+    } else if (result == NOT_YET) {
+        curr_r->valid = NOT_YET;
+        *all_valid = 0;
+    }
+}
+
+//AND node: with a son already valid, control the armed timer first; then
+//verify each pending son — all VALID means the node validates, none ever
+//valid fails it, otherwise it stays pending.
+static int verify_and( verify_ctx_t *ctx, rule *r )
+{
+    short result = 0;
+    rule *curr_r = NULL;
+    int one_already_valid = 0;
+    int all_valid = 1;
+    //Timer needed
+    if (r->list_of_sons == NULL) {
+        (void)fprintf(stderr, "Error 37: Encoutered incorrect sequence of events.\n");
+        return verify_malformed_rule();
+    }
+    curr_r = r->list_of_sons;
+    while (curr_r != NULL) {
+        if (curr_r->valid == VALID) {
+            one_already_valid = 1;
+            break;
+        }
+        curr_r = curr_r->next;
+    }
+    if (one_already_valid == 1) {
+        //Case timer already started so need to control timeout
+        result = verify_and_timeout( ctx, r );
+        if (result != SKIP2) {
+            return result;
+        }
+    }
+    curr_r = r->list_of_sons;
+    while (curr_r != NULL) {
+        if (curr_r->valid != VALID) {
+            verify_and_son( ctx, r, curr_r, &one_already_valid, &all_valid );
+        }
+        curr_r = curr_r->next;
+    }
+    if (all_valid == 1) {
+        r->valid = VALID;
+        return VALID;
+    } else if (one_already_valid == 0) {
+        r->valid = NOT_VALID;
+        return NOT_VALID;
+    } else {
+        r->valid = NOT_YET;
+        return NOT_YET;
+    }
+}
+
+//NOT node whose son stayed NOT_VALID/NOT_YET and has no right sibling: the
+//verdict depends on the enclosing sequence — climb to the nearest ancestor
+//having a next sibling and verify it; its VALID lifts the NOT node too.
+static int verify_not_backtrack( verify_ctx_t *ctx, rule *r, rule *curr_r )
+{
+    short result = 0;
+    rule *curr_r_NOT = curr_r;
+    //EDMO!
+    curr_r = r->list_of_sons->father;
+    while(curr_r != NULL && curr_r->next == NULL){
+        curr_r = curr_r->father;
+    }
+    if(curr_r != NULL && curr_r->next != NULL){
+        curr_r = curr_r->next;
+        curr_r->father = r;
+        result = verify( ctx, BEFORE, curr_r );
+        if (result == VALID) {
+            //Found valid so NOT is valid also
+            curr_r->valid = VALID;
+            r->valid = VALID;
+            curr_r_NOT->valid = VALID;
+            return VALID;
+        }
+    }
+    curr_r->valid = NOT_YET;
+    r->valid = NOT_YET;
+    return NOT_YET;
+}
+
+//NOT node: with the timer already armed, a timeout means the son never
+//validated so the node is VALID; otherwise verify the son — a VALID son
+//fails the node, a still-failing son arms the timer once and may still
+//validate through the enclosing sequence.
+static int verify_not( verify_ctx_t *ctx, rule *r )
+{
+    short result = 0;
+    rule *curr_r = NULL;
+    //Timer needed
+    if (r->list_of_sons == NULL) {
+        (void)fprintf(stderr, "Error 38: Encoutered incorrect sequence of events.\n");
+        return verify_malformed_rule();
+    }
+    curr_r = r->list_of_sons;
+    if (r->timer.tv_usec != 0 || r->timer.tv_sec != 0) {
+        //Case timer already started so need to control timeout
+        result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
+        if (result != SKIP2) {
+            //Son never found VALID so the NOT node is VALID
+            r->valid = VALID;
+            return VALID;
+        }
+    }
+    curr_r->father = r;
+    result = verify( ctx, BEFORE, curr_r );
+    if (result == NOT_VALID && r->timer.tv_usec == 0 && r->timer.tv_sec == 0) {
+        //Case found the NOT_VALID son so NOT node is VALID and timer needs to be started (if not already started)
+        init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
+    }
+    if (result == VALID) {
+        //son of NOT is valid so NOT node is NOT_VALID
+        curr_r->valid = VALID;
+        r->valid = NOT_VALID;
+        return NOT_VALID;
+    }
+    if (result == NOT_VALID || result == NOT_YET) {
+        //son of NOT is NOT_VALID so NOT node can still be VALID (if timeout is reached with the son always remaining NOT_VALID)
+        //now need to check next noeud and if next noeud is not valid then leave as it is
+        //but if next branch is valid then should set NOT noeud to VALID
+        if (r->list_of_sons->next == NULL) {
+            return verify_not_backtrack( ctx, r, curr_r );
+        }
+    }
+    (void)fprintf(stderr, "Error 38: Encoutered incorrect sequence of events.\n");
+    return verify_malformed_rule();
+}
+
+//Leaf node (event expression or arithmetic): evaluate the condition
+//against the instance tuples; a VALID leaf copies its description into the
+//diagnostic buffer and stores the event tuples.
+static int verify_leaf( verify_ctx_t *ctx, short context, rule *r )
+{
+    short result = verify_segment( ctx->pkt, NO, ctx->list_of_tuples, r, ctx->curr_root );
+    if (result == VALID) {
+        if (r->description != NULL) {
+            strncpy(ctx->cause, r->description, SIZE_CAUSE);
+            ctx->cause[SIZE_CAUSE]='\0';
+        }
+        store_tuples( ctx->pkt, context, ctx->curr_root, r->root, r->event_id, ctx->cause );
+    }
+    return result;
+}
+
 int verify( verify_ctx_t *ctx, short context, rule *r )
 {
-    short result = 0, situation = 0, this = 0;
-    const short leftleft = ctx->leftleft;
-    rule *curr_r = NULL;
-    rule *curr_r_NOT = NULL;
-    rule *temp_rule = NULL;
     *ctx->cause = '\0';
     switch (r->value) {
         case THEN:
-            situation = SAME;
-            //Determine if we are in the situation AFTER or BEFORE and report errors in state of sons
-            //  (e.g., if "A then AFTER B" and "A not_yet" and "B valid" => error because B can not be valid before A in this situation)
-            if (r->counter_max > 0 || r->delay_max > 0) {
-                situation = AFTER;
-                if (r->list_of_sons != NULL && r->list_of_sons->valid == NOT_YET &&
-                        r->list_of_sons->next != NULL && r->list_of_sons->next->valid == VALID) {
-                    (void)fprintf(stderr, "Error 24.5: Encoutered incorrect sequence of events.\n");
-                }
-            } else if (r->counter_min < 0 || r->delay_min < 0) {
-                situation = BEFORE;
-                if (r->list_of_sons != NULL && r->list_of_sons->valid == VALID &&
-                        r->list_of_sons->next != NULL && r->list_of_sons->next->valid == NOT_YET) {
-                    (void)fprintf(stderr, "Error 25: Encoutered incorrect sequence of events.\n");
-                }
-            }
-            if (situation == SAME) { //conditions to be tested on same packet
-                if (r->list_of_sons != NULL) {
-                    r->list_of_sons->father = r;
-                    result = verify( ctx, situation, r->list_of_sons );
-                    if (result == VALID) {
-                        r->list_of_sons->next->father = r;
-                        result = verify( ctx, situation, r->list_of_sons->next );
-                        if (result == NOT_VALID)r->list_of_sons->next->valid = NOT_VALID;
-                    }
-                    this = action(situation, leftleft, r);
-                    return this;
-                } else {
-                    (void)fprintf(stderr, "Error 26: Encoutered incorrect sequence of events.\n");
-                }
-            } else if (situation == AFTER) {
-                if (r->list_of_sons != NULL) {
-                    if (r->list_of_sons->valid == NOT_YET) {
-                        //Need to verify left branch
-                        r->list_of_sons->father = r;
-                        result = verify( ctx, situation, r->list_of_sons );
-                        if (result == VALID) {
-                            //Left branch was found valid so need to start timer
-                            result = init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
-                            if (r->delay_min == 0 && r->not_equal_min == NO) {
-                                //Since there is no delay_min set we need to verify, for the same packet, the right branch
-                                r->list_of_sons->next->father = r;
-                                ctx->leftleft = NO;
-                                result = verify( ctx, situation, r->list_of_sons->next );
-                                ctx->leftleft = leftleft;
-                            }
-                        }
-                        this = action(situation, leftleft, r);
-                        return this;
-                    } else if (r->list_of_sons->valid == VALID) {
-                        //Left branch already valid so need to check for timeout
-                        result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
-                        if (result != SKIP2) {
-                            //We have a timeout condition
-                            if (result == TIMEIN){
-                              return NOT_YET;
-                            }
-                            //EDMO:Eliminated since not correct
-                            if (r->list_of_sons->next->value == NOT) {
-                                r->valid = VALID;
-                                if (r->type == ROOT_INSTANCE) {
-                                  return COUNT_SATISFIED_ELIMINATE;
-                                } else {
-                                    return VALID;
-                                }
-                            } else {
-                                r->valid = NOT_VALID;
-                                if (r->type == ROOT_INSTANCE) {
-                                    return COUNT_NOT_SATISFIED_ELIMINATE;
-                                } else {
-                                    return NOT_VALID;
-                                }
-                            }
-                        }
-                        //Need to verify right branch
-                        r->list_of_sons->next->father = r;
-                        result = verify( ctx, situation, r->list_of_sons->next );
-                        this = action(situation, leftleft, r);
-                        return this;
-                    } else if (r->list_of_sons->valid == NOT_VALID) {
-                        this = action(situation, leftleft, r);
-                        return this;
-                    } else {
-                        (void)fprintf(stderr, "Error 27: Encoutered incorrect sequence of events.\n");
-                    }
-                }
-                (void)fprintf(stderr, "Error 30: Encoutered incorrect sequence of events.\n");
-            } else {
-                if (r->list_of_sons != NULL) {
-                    if (r->list_of_sons->next->valid == NOT_YET) {
-                        //Need to verify right branch
-                        r->list_of_sons->next->father = r;
-                        result = verify( ctx, situation, r->list_of_sons->next );
-                        r->list_of_sons->next->valid = result;
-                        if (result == VALID) {
-                            //Right branch was found valid so need to start timer
-                            result = init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
-                            if (r->delay_max == 0 && r->not_equal_max == NO) {
-                                //Since there is no delay_max set we need to verify, for the same packet, the left branch
-                                r->list_of_sons->father = r;
-                                result = verify( ctx, situation, r->list_of_sons );
-                            }
-                        }
-                        this = action(situation, leftleft, r);
-                        return this;
-                    } else if (r->list_of_sons->next->valid == VALID) {
-                        //Right branch already valid so need to check for timeout
-                        result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
-                        if (result != SKIP2) {
-                            //We have a timeout condition
-                            
-                            //EDMO:Eliminated since not correct
-                            if (r->list_of_sons->value == NOT) {
-                                r->valid = VALID;
-                                if (r->type == ROOT_INSTANCE) {
-                                    return COUNT_SATISFIED_ELIMINATE;
-                                } else {
-                                    return VALID;
-                                }
-                            } else {
-                                r->valid = NOT_VALID;
-                                if (r->type == ROOT_INSTANCE) {
-                                    return ELIMINATE;
-                                } else {
-                                    return NOT_VALID;
-                                }
-                            }
-                        }
-                        //Need to verify left branch
-                        r->list_of_sons->father = r;
-                        result = verify( ctx, situation, r->list_of_sons );
-                        this = action(situation, leftleft, r);
-                        return this;
-                    } else if (r->list_of_sons->valid == NOT_VALID) {
-                        this = action(situation, leftleft, r);
-                        return this;
-                    } else {
-                        (void)fprintf(stderr, "Error 35: Encoutered incorrect sequence of events.\n");
-                    }
-                }
-            }//end of if SAME/AFTER/BEFORE
-            break;
+            return verify_then( ctx, r );
         case OR:
-            //No timer needed
-            if (r->list_of_sons != NULL) {
-                curr_r = r->list_of_sons;
-                //assume none are valid
-                while (curr_r != NULL) {
-                    curr_r->father = r;
-                    result = verify( ctx, situation, curr_r );
-                    if (result == VALID) {
-                        //Found valid
-                        curr_r->valid = VALID;
-                        r->valid = VALID;
-                        return VALID;
-                    }
-                    curr_r->valid = NOT_VALID;
-                    curr_r = curr_r->next;
-                }
-                r->valid = NOT_VALID;
-                return NOT_VALID;
-            }
-            (void)fprintf(stderr, "Error 36: Encoutered incorrect sequence of events.\n");
-            break;
+            return verify_or( ctx, r );
         case AND:
-            //Timer needed
-            if (r->list_of_sons != NULL) {
-                curr_r = r->list_of_sons;
-                int one_already_valid = 0;
-                while (curr_r != NULL) {
-                    if (curr_r->valid == VALID) {
-                        one_already_valid = 1;
-                        break;
-                    }
-                    curr_r = curr_r->next;
-                    continue;
-                }
-                if (one_already_valid == 1) {
-                    //Case timer already started so need to control timeout
-                    result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
-                    if (result != SKIP2) {
-                        //EDMO:Eliminated since not correct
-                        if ((r->list_of_sons->valid == VALID && r->list_of_sons->next->value == NOT) ||
-                                (r->list_of_sons->next->valid == VALID && r->list_of_sons->value == NOT)) {
-                            r->valid = VALID;
-                            return VALID;
-                        } else {
-                            r->valid = NOT_VALID;
-                            return NOT_VALID;
-                        }
-                    }
-                }
-                int all_valid = 1;
-                curr_r = r->list_of_sons;
-                while (curr_r != NULL) {
-                    if (curr_r->valid != VALID) {
-                        curr_r->father = r;
-                        result = verify( ctx, situation, curr_r );
-                        if (one_already_valid == 0) {
-                            if (result == VALID) {
-                                //Case found the first VALID son so timer needs to be started
-                                init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
-                                one_already_valid = 1;
-                            }
-                        }
-                        if (result == VALID) {
-                            one_already_valid = 1;
-                            curr_r->valid = VALID;
-                        } else if (result == NOT_VALID) {
-                            curr_r->valid = NOT_YET;
-                            all_valid = 0;
-                        } else if (result == NOT_YET) {
-                            curr_r->valid = NOT_YET;
-                            all_valid = 0;
-                        }
-                    }
-                    curr_r = curr_r->next;
-                    continue;
-                }
-                if (all_valid == 1) {
-                    r->valid = VALID;
-                    return VALID;
-                } else if (one_already_valid == 0) {
-                    r->valid = NOT_VALID;
-                    return NOT_VALID;
-                } else {
-                    r->valid = NOT_YET;
-                    return NOT_YET;
-                }
-            }
-            (void)fprintf(stderr, "Error 37: Encoutered incorrect sequence of events.\n");
-            break;
+            return verify_and( ctx, r );
         case NOT:
-            //Timer needed
-            if (r->list_of_sons != NULL) {
-                curr_r = r->list_of_sons;
-                if (r->timer.tv_usec != 0 || r->timer.tv_sec != 0) {
-                    //Case timer already started so need to control timeout
-                    result = check_time(r, ctx->current_packet_time); //returns SKIP2/TIMEOUT/TIMEIN/COUNTOUT/COUNTIN
-                    if (result != SKIP2) {
-                        //Son never found VALID so the NOT node is VALID
-                        r->valid = VALID;
-                        return VALID;
-                    }
-                }
-                curr_r->father = r;
-                result = verify( ctx, situation, curr_r );
-                if (result == NOT_VALID && r->timer.tv_usec == 0 && r->timer.tv_sec == 0) {
-                    //Case found the NOT_VALID son so NOT node is VALID and timer needs to be started (if not already started)
-                    init_time(&(r->timer), &(r->counter), ctx->current_packet_time);
-                }
-                if (result == VALID) {
-                    //son of NOT is valid so NOT node is NOT_VALID
-                    curr_r->valid = VALID;
-                    r->valid = NOT_VALID;
-                    return NOT_VALID;
-                } else if (result == NOT_VALID || result == NOT_YET) {
-                    //son of NOT is NOT_VALID so NOT node can still be VALID (if timeout is reached with the son always remaining NOT_VALID)
-                    //now need to check next noeud and if next noeud is not valid then leave as it is
-                    //but if next branch is valid then should set NOT noeud to VALID
-                    curr_r_NOT = curr_r;
-                    if (r->list_of_sons->next != NULL) {
-                        curr_r = r->list_of_sons->next;
-                    } else {
-                        //EDMO!
-                        curr_r = r->list_of_sons->father;
-                        while(curr_r != NULL && curr_r->next == NULL){
-                            curr_r = curr_r->father;
-                        }
-                        if(curr_r != NULL && curr_r->next != NULL){
-                            curr_r = curr_r->next;
-                            curr_r->father = r;
-                            result = verify( ctx, situation, curr_r );
-                            if (result == VALID) {
-                                //Found valid so NOT is valid also
-                                curr_r->valid = VALID;
-                                r->valid = VALID;
-                                curr_r_NOT->valid = VALID;
-                                return VALID;
-                            }
-                        }
-                        curr_r->valid = NOT_YET;
-                        r->valid = NOT_YET;
-                        return NOT_YET;
-                    }
-                }
-            }
-            (void)fprintf(stderr, "Error 38: Encoutered incorrect sequence of events.\n");
-            break;
+            return verify_not( ctx, r );
         case REPEAT: //same as AND but do it several repeat_times, couting them in repeat_times_found
             // TODO(#326)
             break;
@@ -4660,23 +4799,12 @@ int verify( verify_ctx_t *ctx, short context, rule *r )
         case SUB:
         case MUL:
         case DIV:
-            temp_rule = r;
-            result = verify_segment( ctx->pkt, NO, ctx->list_of_tuples, temp_rule, ctx->curr_root );
-            if (result == VALID) {
-                if (temp_rule->description != NULL) {
-                    strncpy(ctx->cause, temp_rule->description, SIZE_CAUSE);
-                    ctx->cause[SIZE_CAUSE]='\0';
-                }
-                store_tuples( ctx->pkt, context, ctx->curr_root, r->root, temp_rule->event_id, ctx->cause );
-            }
-            return result;
-            break;
+            return verify_leaf( ctx, context, r );
         default:
             (void)fprintf(stderr, "Error 39: Should be a event. XML properties file: %s might be incorrect.\n", op->RuleFileName);
             break;
     }//end of switch THEN/OR/AND/NOT/REPEAT
-    (void)fprintf(stderr, "Error 40: Possible error in the XML properties file: %s.\n", op->RuleFileName);
-    return NOT_VALID;
+    return verify_malformed_rule();
 }
 
 int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
