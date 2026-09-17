@@ -190,6 +190,97 @@ mmt_reset_internal_packet_protocol(struct mmt_tcpip_internal_packet_struct *pack
 #endif
 }
 
+/* Issue #245: the per-protocol context packet is scratch shared across
+ * packets — reassembly mode included since #245 (it used to malloc+memset a
+ * private ~6.7 KB packet per packet). Early returns in
+ * ip_post_classification_function()/ipv6_post_classification_function()
+ * (fragmented datagrams, malformed ihl, short caplen) can leave fields
+ * written by a PREVIOUS packet visible to this packet's attribute readers —
+ * e.g. tcp_payload_len_extraction() reads packet->payload_packet_len with no
+ * packet_id guard. Reset the per-packet scalars up front so stale state can
+ * never be attributed to the current packet. The big line[]/unix_line[]
+ * arrays (the bulk of the struct) are gated by parsed_lines/parsed_unix_lines
+ * — both reset here — and deliberately not cleared: re-zeroing them was the
+ * dominant per-packet memset cost. packet_id is left to the caller. */
+static inline void
+mmt_reset_internal_packet_scalars(struct mmt_tcpip_internal_packet_struct *packet)
+{
+    packet->flow = NULL;
+    packet->src = NULL;
+    packet->dst = NULL;
+    packet->iph = NULL;
+#ifdef MMT_SUPPORT_IPV6
+    packet->iphv6 = NULL;
+#endif
+    packet->tcp = NULL;
+    packet->udp = NULL;
+    packet->payload = NULL;
+
+    packet->detected_protocol_stack[0] = PROTO_UNKNOWN;
+    packet->detected_subprotocol_stack[0] = 0;
+    packet->real_protocol_read_only = PROTO_UNKNOWN;
+#if PROTOCOL_HISTORY_SIZE > 1
+    packet->protocol_stack_info.entry_is_real_protocol = 0;
+    packet->protocol_stack_info.current_stack_size_minus_one = 0;
+#endif
+    packet->content_info.content_class = 0;
+    packet->content_info.content_type = 0;
+
+    packet->https_server_name.ptr = NULL;
+    packet->https_server_name.len = 0;
+    packet->host_line.ptr = NULL;
+    packet->host_line.len = 0;
+    packet->referer_line.ptr = NULL;
+    packet->referer_line.len = 0;
+    packet->content_line.ptr = NULL;
+    packet->content_line.len = 0;
+    packet->accept_line.ptr = NULL;
+    packet->accept_line.len = 0;
+    packet->user_agent_line.ptr = NULL;
+    packet->user_agent_line.len = 0;
+    packet->upgrade_line.ptr = NULL;
+    packet->upgrade_line.len = 0;
+    packet->connection_line.ptr = NULL;
+    packet->connection_line.len = 0;
+    packet->http_url_name.ptr = NULL;
+    packet->http_url_name.len = 0;
+    packet->http_encoding.ptr = NULL;
+    packet->http_encoding.len = 0;
+    packet->http_transfer_encoding.ptr = NULL;
+    packet->http_transfer_encoding.len = 0;
+    packet->http_contentlen.ptr = NULL;
+    packet->http_contentlen.len = 0;
+    packet->http_cookie.ptr = NULL;
+    packet->http_cookie.len = 0;
+    packet->http_x_session_type.ptr = NULL;
+    packet->http_x_session_type.len = 0;
+    packet->server_line.ptr = NULL;
+    packet->server_line.len = 0;
+    packet->http_method.ptr = NULL;
+    packet->http_method.len = 0;
+    packet->http_response.ptr = NULL;
+    packet->http_response.len = 0;
+
+    MMT_BITMASK_RESET(packet->detection_bitmask);
+    packet->mmt_selection_packet = 0;
+    packet->l3_packet_len = 0;
+    packet->l3_captured_packet_len = 0;
+    packet->l4_packet_len = 0;
+    packet->payload_packet_len = 0;
+    packet->actual_payload_len = 0;
+    packet->num_retried_bytes = 0;
+    packet->parsed_lines = 0;
+    packet->parsed_unix_lines = 0;
+    packet->empty_line_position = 0;
+    packet->tcp_retransmission = 0;
+    packet->l4_protocol = 0;
+    packet->has_x_cdn_hdr = 0;
+    packet->packet_lines_parsed_complete = 0;
+    packet->packet_unix_lines_parsed_complete = 0;
+    packet->empty_line_position_set = 0;
+    packet->tcp_outoforder = 0;
+}
+
 static inline void
 mmt_connection_tracking(ipacket_t * ipacket, unsigned index) {
     /* const for gcc code optimisation and cleaner code */

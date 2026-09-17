@@ -23,6 +23,211 @@
 #define TCP_DOFF_MIN_WORDS     5
 #define TCP_DOFF_MAX_WORDS    15
 
+/* ------------------------------------------------------------------ */
+/* Issue #245: bounded, linear TCP reassembly (F-PERF-004/005/006,      */
+/* F-BUG-038).                                                        */
+/*                                                                    */
+/* Per direction the flattened stream image is a persistent buffer     */
+/* grown geometrically up to the handler's tcp_reassembly_limit and    */
+/* shared with attribute readers; pending (not yet flattened) segments */
+/* live in a seq-sorted doubly-linked list carved from reclaimable     */
+/* bump blocks. In-order arrivals append through a tail pointer — the  */
+/* root walk is gone. Each extraction drains only the pending tail, so */
+/* a byte is copied exactly once (incremental, memoized), and a        */
+/* released block frees the consumed prefix instead of pinning it to   */
+/* session teardown. r->live (pending carve bytes + image bytes) never */
+/* exceeds the ceiling: segments are dropped when it would overflow.   */
+/* ------------------------------------------------------------------ */
+
+/* Lazily allocate the session's reassembly extension. */
+static mmt_tcp_reasm_t *tcp_reasm_state(mmt_session_t *session) {
+    if (session->tcp_reasm == NULL) {
+        mmt_tcp_reasm_t *r = (mmt_tcp_reasm_t *) mmt_malloc(sizeof(mmt_tcp_reasm_t));
+        if (r != NULL) memset(r, 0, sizeof(*r));
+        session->tcp_reasm = r;
+    }
+    return session->tcp_reasm;
+}
+
+/* Release a segment's store carve and its share of the live counter. */
+static void tcp_reasm_seg_release(mmt_tcp_reasm_t *r, tcp_seg_t *seg) {
+    r->live -= seg->blk_size;
+    mmt_tcp_reasm_stat_live(-(int64_t) seg->blk_size);
+    mmt_segblk_release(&r->blocks, seg->blk, seg->blk_size);
+}
+
+/* Append bytes to the direction's image buffer, growing it geometrically
+ * (x4 from a 16 KiB floor) but never past the per-flow ceiling. Returns the
+ * number of bytes appended; the caller's segment is only released for what
+ * was appended or intentionally dropped. */
+static uint32_t tcp_reasm_image_append(mmt_session_t *session, mmt_tcp_reasm_t *r,
+                                       int dir, const uint8_t *data, uint32_t len) {
+    uint32_t limit = session->mmt_handler->tcp_reassembly_limit;
+    uint32_t room = (r->image_len[dir] < limit) ? limit - r->image_len[dir] : 0;
+    if (len > room) len = room;
+    if (len == 0) return 0;
+    uint32_t need = r->image_len[dir] + len;
+    if (need > r->image_cap[dir]) {
+        /* ncap must be 64-bit: a x4 step past 1 GiB wraps a uint32_t to 0 and
+         * the while loop would never terminate (reviewer lane, run r3). */
+        uint64_t ncap = (r->image_cap[dir] != 0) ? r->image_cap[dir] : (16u * 1024u);
+        while (ncap < need) ncap *= 4;
+        if (ncap > limit) ncap = limit;
+        /* need <= limit by construction (len <= room), so ncap >= need and
+         * ncap <= limit <= UINT32_MAX — the cast back to uint32_t is safe. */
+        uint8_t *nb = (uint8_t *) realloc(r->image[dir], (size_t) ncap);
+        if (nb == NULL) return 0;   /* OOM — leave the segment pending */
+        r->image[dir] = nb;
+        r->image_cap[dir] = (uint32_t) ncap;
+    }
+    memcpy(r->image[dir] + r->image_len[dir], data, len);
+    r->image_len[dir] += len;
+    r->live += len;
+    mmt_tcp_reasm_stat_move(len);
+    mmt_tcp_reasm_stat_live((int64_t) len);
+    return len;
+}
+
+/* Flatten every pending segment of direction `dir` into the image buffer,
+ * in seq order, releasing each store carve as it is consumed. Segments whose
+ * sequence range was already emitted (consumed prefix) are dropped instead
+ * of being spliced into the middle of the image — that is the "consumed
+ * prefix is discarded" half of the bound. O(pending) per call. */
+static void tcp_reasm_drain(mmt_session_t *session, int dir) {
+    mmt_tcp_reasm_t *r = session->tcp_reasm;
+    if (r == NULL) return;
+    tcp_seg_t *seg = (tcp_seg_t *) r->seg_head[dir];
+    while (seg != NULL) {
+        tcp_seg_t *nx = seg->next;
+        /* unlink seg from the pending list */
+        r->seg_head[dir] = nx;
+        if (nx != NULL) nx->prev = NULL;
+        else r->seg_tail[dir] = NULL;
+
+        if (r->consumed_valid[dir] && !tcp_seq_before(r->consumed_seq[dir], seg->next_seq)) {
+            r->dropped += seg->len;
+            mmt_tcp_reasm_stat_drop(seg->len);
+        } else {
+            uint32_t n = tcp_reasm_image_append(session, r, dir, seg->data, seg->len);
+            if (n == 0 && r->image_len[dir] + seg->len <= session->mmt_handler->tcp_reassembly_limit
+                      && r->image_cap[dir] < r->image_len[dir] + seg->len) {
+                /* OOM growing the image — re-link at head and stop: the
+                 * pending list keeps the segment for the next read. The
+                 * bytes are NOT counted dropped — the segment survives. */
+                seg->next = (tcp_seg_t *) r->seg_head[dir];
+                seg->prev = NULL;
+                if (r->seg_head[dir] != NULL) ((tcp_seg_t *) r->seg_head[dir])->prev = seg;
+                else r->seg_tail[dir] = seg;
+                r->seg_head[dir] = seg;
+                return;
+            }
+            if (n < seg->len) {
+                r->dropped += seg->len - n;
+                mmt_tcp_reasm_stat_drop(seg->len - n);
+            }
+            r->consumed_seq[dir] = (uint32_t) seg->next_seq;
+            r->consumed_valid[dir] = 1;
+        }
+        tcp_reasm_seg_release(r, seg);
+        seg = nx;
+    }
+}
+
+/* Offer a freshly arrived TCP payload segment to the direction's pending
+ * store. In-order and descending arrivals take O(1) fast paths (tail /
+ * head); other out-of-order segments fall back to the sorted-list insert
+ * whose walk is bounded by the ceiling-limited pending window. */
+static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
+                            uint32_t seq, uint32_t ack, const uint8_t *payload,
+                            uint32_t len) {
+    mmt_tcp_reasm_t *r = tcp_reasm_state(session);
+    if (r == NULL) return;
+    uint32_t limit = session->mmt_handler->tcp_reassembly_limit;
+
+    /* The consumed prefix is gone for good: a segment whose WHOLE range is
+     * below the emitted frontier (a pure retransmission) cannot be spliced
+     * mid-image — drop it rather than growing memory for bytes already
+     * reported. A partially overlapping segment (seq < frontier < next_seq)
+     * is still appended in full, preserving the pre-#245 sorted-concat
+     * semantics for overlapping ranges. */
+    if (r->consumed_valid[dir] && !tcp_seq_before(r->consumed_seq[dir], seq + len)) {
+        r->dropped += len;
+        mmt_tcp_reasm_stat_drop(len);
+        return;
+    }
+    uint32_t carve = MMT_SEGBLK_ALIGN_UP(sizeof(tcp_seg_t)) + MMT_SEGBLK_ALIGN_UP(len);
+    /* Bounded: pending carve bytes + image bytes never exceed the ceiling. */
+    if (r->live + carve > limit) {
+        r->dropped += len;
+        mmt_tcp_reasm_stat_drop(len);
+        return;
+    }
+    mmt_segblk_t *blk = NULL;
+    uint8_t *p = mmt_segblk_carve(&r->blocks, carve, &blk);
+    if (p == NULL || blk == NULL) {
+        r->dropped += len;
+        mmt_tcp_reasm_stat_drop(len);
+        return;
+    }
+    tcp_seg_t *seg = (tcp_seg_t *) p;
+    seg->packet_id = packet_id;
+    seg->seq = seq;
+    seg->next_seq = (uint32_t)(seq + len); /* 32-bit wrap */
+    seg->ack = ack;
+    seg->len = (uint16_t) len;
+    seg->in_arena = 1; /* store-backed: tcp_seg_free() must not free() it */
+    seg->data = p + MMT_SEGBLK_ALIGN_UP(sizeof(tcp_seg_t));
+    seg->next = NULL;
+    seg->prev = NULL;
+    seg->blk = blk;
+    seg->blk_size = carve;
+    memcpy(seg->data, payload, len);
+
+    tcp_seg_t *head = (tcp_seg_t *) r->seg_head[dir];
+    tcp_seg_t *tail = (tcp_seg_t *) r->seg_tail[dir];
+    if (tail == NULL) {
+        r->seg_head[dir] = seg;
+        r->seg_tail[dir] = seg;
+        r->live += carve;
+        mmt_tcp_reasm_stat_live((int64_t) carve);
+        return;
+    }
+    if (tcp_seq_before(tail->seq, seg->seq)) {
+        /* F-PERF-004: in-order append through the tail — O(1). */
+        tail->next = seg;
+        seg->prev = tail;
+        r->seg_tail[dir] = seg;
+        r->live += carve;
+        mmt_tcp_reasm_stat_live((int64_t) carve);
+        return;
+    }
+    if (tcp_seq_equal(seg->seq, tail->seq) || tcp_seq_equal(seg->seq, head->seq)) {
+        goto release_dup;
+    }
+    if (tcp_seq_before(seg->seq, head->seq)) {
+        /* Descending order prepends at head — O(1). */
+        seg->next = head;
+        head->prev = seg;
+        r->seg_head[dir] = seg;
+        r->live += carve;
+        mmt_tcp_reasm_stat_live((int64_t) carve);
+        return;
+    }
+    {
+        tcp_seg_t *root = tcp_seg_insert(head, seg);
+        if (root == NULL) goto release_dup;
+        r->seg_head[dir] = root;
+        r->live += carve;
+        mmt_tcp_reasm_stat_live((int64_t) carve);
+        return;
+    }
+release_dup:
+    /* Duplicate sequence — abandon the segment; the carve is released. */
+    mmt_segblk_release(&r->blocks, blk, carve);
+    r->dropped += len;
+    mmt_tcp_reasm_stat_drop(len);
+}
+
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
@@ -273,7 +478,11 @@ int tcp_session_payload_up_len_extraction(const ipacket_t * ipacket, unsigned pr
      * tcp_payload_len_extraction (no packet bytes are read). */
     if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if (ipacket->session == NULL) return 0;
-    *((uint32_t*) extracted_data->data) = ipacket->session->session_payload_len[ipacket->session->setup_packet_direction];
+    /* Issue #245: LEN reports the bytes valid in the flattened image — the
+     * drain keeps it consistent with what a DATA read returns. */
+    tcp_reasm_drain(ipacket->session, ipacket->session->setup_packet_direction);
+    mmt_tcp_reasm_t *r = ipacket->session->tcp_reasm;
+    *((uint32_t*) extracted_data->data) = (r != NULL) ? r->image_len[ipacket->session->setup_packet_direction] : 0;
     return 1;
 }
 
@@ -284,23 +493,12 @@ int tcp_session_payload_up_extraction(const ipacket_t * ipacket, unsigned proto_
     if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if (ipacket->session){
         uint8_t up_direction = ipacket->session->setup_packet_direction;
-        uint32_t payload_len = ipacket->session->session_payload_len[up_direction];
-        if ( payload_len > 0){
-            if (ipacket->session->session_payload[up_direction]) {
-                free(ipacket->session->session_payload[up_direction]);
-            }
-            ipacket->session->session_payload[up_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
-            /* Issue #201: unchecked malloc — never pass NULL into
-             * tcp_seg_reassembly(). */
-            if (ipacket->session->session_payload[up_direction] == NULL)
-                return 0;
-            tcp_seg_reassembly(
-                ipacket->session->session_payload[up_direction],
-                ipacket->session->tcp_segment_list[up_direction],
-                payload_len
-            );
-
-            extracted_data->data = (void*) ipacket->session->session_payload[up_direction];
+        /* Issue #245 (F-PERF-005): incremental flatten — only newly pending
+         * segments are appended; the persistent image is returned as-is. */
+        tcp_reasm_drain(ipacket->session, up_direction);
+        mmt_tcp_reasm_t *r = ipacket->session->tcp_reasm;
+        if (r != NULL && r->image_len[up_direction] > 0){
+            extracted_data->data = (void*) r->image[up_direction];
             return 1;
         }
     }
@@ -315,7 +513,9 @@ int tcp_session_payload_down_len_extraction(const ipacket_t * ipacket, unsigned 
      * tcp_payload_len_extraction (no packet bytes are read). */
     if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if (ipacket->session == NULL) return 0;
-    *((uint32_t*) extracted_data->data) = ipacket->session->session_payload_len[!ipacket->session->setup_packet_direction];
+    tcp_reasm_drain(ipacket->session, !ipacket->session->setup_packet_direction);
+    mmt_tcp_reasm_t *r = ipacket->session->tcp_reasm;
+    *((uint32_t*) extracted_data->data) = (r != NULL) ? r->image_len[!ipacket->session->setup_packet_direction] : 0;
     return 1;
 }
 
@@ -326,23 +526,10 @@ int tcp_session_payload_down_extraction(const ipacket_t * ipacket, unsigned prot
     if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if (ipacket->session){
         uint8_t down_direction = !ipacket->session->setup_packet_direction;
-        uint32_t payload_len = ipacket->session->session_payload_len[down_direction];
-        if ( payload_len > 0){
-            if (ipacket->session->session_payload[down_direction]) {
-                free(ipacket->session->session_payload[down_direction]);
-            }
-            ipacket->session->session_payload[down_direction] = (uint8_t*) malloc(sizeof(uint8_t) * payload_len);
-            /* Issue #201: unchecked malloc — never pass NULL into
-             * tcp_seg_reassembly(). */
-            if (ipacket->session->session_payload[down_direction] == NULL)
-                return 0;
-            tcp_seg_reassembly(
-                ipacket->session->session_payload[down_direction],
-                ipacket->session->tcp_segment_list[down_direction],
-                payload_len
-            );
-
-            extracted_data->data = (void*) ipacket->session->session_payload[down_direction];
+        tcp_reasm_drain(ipacket->session, down_direction);
+        mmt_tcp_reasm_t *r = ipacket->session->tcp_reasm;
+        if (r != NULL && r->image_len[down_direction] > 0){
+            extracted_data->data = (void*) r->image[down_direction];
             return 1;
         }
     }
@@ -513,15 +700,18 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
 };
 
 void clean_session_payload(mmt_session_t * session, unsigned index){
-    // Issue #20 (P2): the TCP segment nodes and their payload copies (both
-    // directions) live in a single per-flow arena - free them all in one shot
-    // instead of walking each list and free()-ing every node/buffer.
-    mmt_arena_destroy((mmt_arena_t *) session->segment_arena);
-    session->segment_arena = NULL;
-    session->tcp_segment_list[0] = NULL;
-    session->tcp_segment_list[1] = NULL;
-    if (session->session_payload[session->last_packet_direction] ) free(session->session_payload[session->last_packet_direction]);
-    if (session->session_payload[!session->last_packet_direction] ) free(session->session_payload[!session->last_packet_direction]);
+    /* Issue #245: the bounded reassembly extension holds the pending segment
+     * block chain plus both image buffers — released in one shot at session
+     * teardown (consumed prefix was already reclaimed during the flow). */
+    mmt_tcp_reasm_t *r = session->tcp_reasm;
+    if (r != NULL) {
+        mmt_tcp_reasm_stat_live(-(int64_t) r->live);
+        mmt_segblk_free_all(r->blocks);
+        free(r->image[0]);
+        free(r->image[1]);
+        free(r);
+        session->tcp_reasm = NULL;
+    }
 }
 
 int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
@@ -718,35 +908,17 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     }
     // Update segment list
     if (packet->payload_packet_len > 0) {
-        // Issue #20 (P2): back the per-segment node + its payload copy with a
-        // per-flow arena so the per-packet malloc/free churn collapses into a
-        // single mmt_arena_destroy() on session teardown (clean_session_payload).
-        if (ipacket->session->segment_arena == NULL) {
-            ipacket->session->segment_arena = (void*) mmt_arena_create(0);
-        }
-        mmt_arena_t * arena = (mmt_arena_t *) ipacket->session->segment_arena;
-        // Create a new segment (node + payload copy carved from the arena). The
-        // arena is reclaimed wholesale on teardown, so segments that fail to
-        // insert (duplicates) are simply abandoned in place - never freed here.
-        tcp_seg_t * new_seg = tcp_seg_new_in_arena(arena, ipacket->packet_id, ntohl(packet->tcp->seq), ntohl(packet->tcp->seq) + packet->payload_packet_len, ntohl(packet->tcp->ack) ,packet->payload_packet_len, packet->payload);
-        if (new_seg != NULL){
-            if (ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction] == NULL){
-                ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction] = (void*) new_seg;
-                ipacket->session->session_payload_len[ipacket->session->last_packet_direction] += packet->payload_packet_len;
-            } else {
-                tcp_seg_t * root = tcp_seg_insert((tcp_seg_t *) ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction], new_seg);
-                if ( root == NULL){
-                    // Cannot insert new segment (duplicate seq): abandon it in
-                    // the arena - it will be reclaimed on session teardown.
-                } else {
-                    // Do something if success
-                    ipacket->session->tcp_segment_list[ipacket->session->last_packet_direction] = root;
-                    ipacket->session->session_payload_len[ipacket->session->last_packet_direction] += packet->payload_packet_len;
-                    // tcp_seg_show_list(root);
-                }
-            }
-        }
-        debug("[tcp_pre_classification_function_with_reassemble] %u\n",ipacket->session->session_payload_len[ipacket->session->last_packet_direction]);
+        /* Issue #245 (F-PERF-004/006, F-BUG-038): the pending store is a
+         * bounded seq-sorted list backed by reclaimable bump blocks; in-order
+         * arrivals append through a tail pointer and consumed segments are
+         * released at drain time instead of on session teardown. */
+        tcp_reasm_offer(ipacket->session,
+                        ipacket->session->last_packet_direction,
+                        ipacket->packet_id,
+                        ntohl(packet->tcp->seq), ntohl(packet->tcp->ack),
+                        packet->payload, packet->payload_packet_len);
+        debug("[tcp_pre_classification_function_with_reassemble] dir %u\n",
+              (unsigned) ipacket->session->last_packet_direction);
     }
     //Set the offset for the next proto anyway! we might not get there
     ipacket->proto_headers_offset->proto_path[index + 1] = tcphdr_len;

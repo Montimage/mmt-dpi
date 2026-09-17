@@ -4,9 +4,73 @@
  */
 #include "tcp_segment.h"
 #include "mmt_core.h"   // Issue #20: per-flow arena allocator (mmt_arena_*)
+#include "packet_processing.h" // Issue #245: mmt_tcp_reasm_stat_visit()
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  //
+//  Issue #245: reclaimable bump-block chain (mmt_segblk_t)                  //
+//                                                                         //
+//  Same bump-pointer model as mmt_arena (carved chunks are never            //
+//  individually free()d), but every block counts its live carved bytes so  //
+//  a fully-consumed block is recycled (chain head) or freed — the consumed //
+//  prefix no longer pins memory until session teardown.                    //
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#define MMT_SEGBLK_HDR ((uint32_t)MMT_SEGBLK_ALIGN_UP(sizeof(mmt_segblk_t)))
+
+static inline uint8_t *mmt_segblk_data(mmt_segblk_t *b) {
+	return (uint8_t *)b + MMT_SEGBLK_HDR;
+}
+
+uint8_t *mmt_segblk_carve(mmt_segblk_t **head, uint32_t size, mmt_segblk_t **blk_out) {
+	if (head == NULL || blk_out == NULL || size == 0) return NULL;
+	uint32_t need = MMT_SEGBLK_ALIGN_UP(size);
+	mmt_segblk_t *b = *head;
+	/* used <= cap is the invariant, so cap - used cannot wrap. */
+	if (b == NULL || b->used > b->cap || need > b->cap - b->used) {
+		uint32_t cap = (need > MMT_SEGBLK_PAYLOAD) ? need : MMT_SEGBLK_PAYLOAD;
+		mmt_segblk_t *nb = (mmt_segblk_t *) malloc(MMT_SEGBLK_HDR + cap);
+		if (nb == NULL) return NULL;
+		nb->cap = cap;
+		nb->used = 0;
+		nb->live = 0;
+		nb->next = *head;         /* prepend; head is the bump target */
+		nb->prev = NULL;
+		if (*head != NULL) (*head)->prev = nb;
+		*head = nb;
+		b = nb;
+	}
+	uint8_t *p = mmt_segblk_data(b) + b->used;
+	b->used += need;
+	b->live += need;            /* born referenced by its segment */
+	*blk_out = b;
+	return p;
+}
+
+void mmt_segblk_release(mmt_segblk_t **head, mmt_segblk_t *blk, uint32_t carve) {
+	if (head == NULL || blk == NULL || carve == 0) return;
+	uint32_t need = MMT_SEGBLK_ALIGN_UP(carve);
+	if (blk->live < need) need = blk->live; /* defensive: never wrap live */
+	blk->live -= need;
+	if (blk->live != 0) return;
+	if (*head == blk) {
+		blk->used = 0;          /* recycle the bump target in place */
+		return;
+	}
+	if (blk->prev != NULL) blk->prev->next = blk->next;
+	if (blk->next != NULL) blk->next->prev = blk->prev;
+	free(blk);
+}
+
+void mmt_segblk_free_all(mmt_segblk_t *head) {
+	while (head != NULL) {
+		mmt_segblk_t *nx = head->next;
+		free(head);
+		head = nx;
+	}
+}
 
 /**
  * Create a new TCP segment
@@ -33,6 +97,8 @@ tcp_seg_t * tcp_seg_new(uint64_t packet_id, uint64_t seq, uint64_t next_seq, uin
 		new_seg->data = data;
 		new_seg->next = NULL;
 		new_seg->prev = NULL;
+		new_seg->blk = NULL;   /* Issue #245: not store-carved */
+		new_seg->blk_size = 0;
 		return new_seg;
 	}
 }
@@ -59,6 +125,8 @@ tcp_seg_t * tcp_seg_new_in_arena(struct mmt_arena_s * arena, uint64_t packet_id,
 	new_seg->data = data;
 	new_seg->next = NULL;
 	new_seg->prev = NULL;
+	new_seg->blk = NULL;   /* Issue #245: arena-carved, not segblk-carved */
+	new_seg->blk_size = 0;
 	return new_seg;
 }
 
@@ -134,13 +202,19 @@ tcp_seg_t * tcp_seg_insert(tcp_seg_t * root, tcp_seg_t * seg){
 	tcp_seg_t * current_seg = root;
 
 	while(current_seg) {
+		/* Issue #245 (F-PERF-004): count the nodes examined — in-order
+		 * arrivals are appended via the caller's tail pointer and never
+		 * reach this walk, so a runaway counter means a regression. */
+		mmt_tcp_reasm_stat_visit();
 		if (current_seg->seq == seg->seq) {
 			// Duplicated segment
 			// TODO(#245): discuss whether to override duplicate segment or keep first
 			mmt_debug_log("[tcp_seg_insert] Duplicated segment: seq %lu - packets: %lu, %lu (ignored)\n", seg->seq, current_seg->packet_id, seg->packet_id);
 			return NULL; // duplicated segment
 		}
-		if (current_seg->seq > seg->seq){
+		/* Issue #245: wrap-aware ordering — a post-2^32 sequence continues
+		 * the stream instead of sorting before the head. */
+		if (tcp_seq_before(seg->seq, current_seg->seq)){
 			// Found the place to add new segment
 			seg->next = current_seg;
 			seg->prev = current_seg->prev;

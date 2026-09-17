@@ -940,6 +940,9 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->link_layer_stack = temp_stack;
 
     new_handler->has_reassembly = 0; // Disable TCP-reassembly by default
+    /* Issue #245: bounded TCP reassembly ceiling + pooled reassembly packets. */
+    new_handler->tcp_reassembly_limit = MMT_TCP_REASSEMBLY_LIMIT_DEFAULT;
+    new_handler->ipacket_pool = NULL;
     new_handler->port_classify = 0; // Disable classification by port number by default
     new_handler->port_classify_payload_confirm = 0; // M9 (issue #75): accept any port-based guess by default (no payload confirmation required)
     new_handler->hostname_classify = 1; // Enable classification by Hostname by default
@@ -1095,6 +1098,18 @@ void mmt_close_handler(mmt_handler_t *mmt_handler) {
     if (mmt_handler->evasion_handler != NULL) {
         mmt_free(mmt_handler->evasion_handler);
         mmt_handler->evasion_handler = NULL;
+    }
+
+    /* Issue #245: drain the reassembly ipacket pool — every free slot owns
+     * its grow-once copy buffer. Slots still held by user callbacks are not
+     * on the freelist; they are released when their ipacket is cleaned (a
+     * held packet past handler teardown was already a user-side lifetime
+     * bug before the pool existed). */
+    while (mmt_handler->ipacket_pool != NULL) {
+        mmt_ipacket_slot_t *slot = mmt_handler->ipacket_pool;
+        mmt_handler->ipacket_pool = slot->next_free;
+        mmt_free(slot->data);
+        mmt_free(slot);
     }
 
     //Remove the handler from the registered handlers in the global context

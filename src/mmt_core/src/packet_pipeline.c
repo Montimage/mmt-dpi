@@ -64,6 +64,47 @@ void mmt_caplen_guard_stats_reset(void) {
 #endif
 }
 
+/* Issue #245: TCP-reassembly instrumentation — see packet_processing.h for
+ * the contract. Always-on relaxed-atomic counters; the increments sit on
+ * paths that already memcpy() a whole segment, so the cost is noise. */
+static uint64_t mmt_tcp_reasm_visits = 0;
+static uint64_t mmt_tcp_reasm_moved = 0;
+static uint64_t mmt_tcp_reasm_dropped = 0;
+static int64_t mmt_tcp_reasm_live = 0;
+static uint64_t mmt_reasm_packet_allocs = 0;
+
+void mmt_tcp_reasm_stat_visit(void) {
+    __atomic_add_fetch(&mmt_tcp_reasm_visits, 1, __ATOMIC_RELAXED);
+}
+void mmt_tcp_reasm_stat_move(uint32_t bytes) {
+    __atomic_add_fetch(&mmt_tcp_reasm_moved, bytes, __ATOMIC_RELAXED);
+}
+void mmt_tcp_reasm_stat_drop(uint32_t bytes) {
+    __atomic_add_fetch(&mmt_tcp_reasm_dropped, bytes, __ATOMIC_RELAXED);
+}
+void mmt_tcp_reasm_stat_live(int64_t delta) {
+    __atomic_add_fetch(&mmt_tcp_reasm_live, delta, __ATOMIC_RELAXED);
+}
+void mmt_reassembly_stat_packet_alloc(void) {
+    __atomic_add_fetch(&mmt_reasm_packet_allocs, 1, __ATOMIC_RELAXED);
+}
+uint64_t mmt_tcp_reasm_insert_visits(void) {
+    return __atomic_load_n(&mmt_tcp_reasm_visits, __ATOMIC_RELAXED);
+}
+uint64_t mmt_tcp_reasm_bytes_moved(void) {
+    return __atomic_load_n(&mmt_tcp_reasm_moved, __ATOMIC_RELAXED);
+}
+uint64_t mmt_tcp_reasm_bytes_dropped(void) {
+    return __atomic_load_n(&mmt_tcp_reasm_dropped, __ATOMIC_RELAXED);
+}
+uint64_t mmt_tcp_reasm_resident_bytes(void) {
+    int64_t v = __atomic_load_n(&mmt_tcp_reasm_live, __ATOMIC_RELAXED);
+    return (v > 0) ? (uint64_t) v : 0;
+}
+uint64_t mmt_reassembly_packet_alloc_count(void) {
+    return __atomic_load_n(&mmt_reasm_packet_allocs, __ATOMIC_RELAXED);
+}
+
 /**
  * Internal function for extracting attribute data.
  * @param ipacket pointer to internal packet structure
@@ -657,25 +698,34 @@ void clean_packet(ipacket_t *ipacket){
 void clean_packet_with_reassembly(ipacket_t *ipacket){
 
     if(ipacket->session){ // Only packet which has session need to be clean those information
-        // F-BUG-002 (issue #199): free only packet-owned heap buffers. On the
-        // OOM path proto_headers_offset still aliases storage embedded in the
-        // handler (last_received_packet) or in the session — freeing that was
-        // mmt_free() on a non-heap address.
+        // F-BUG-002 (issue #199): free only packet-owned heap buffers. Since
+        // issue #245 the reassembly path writes session offsets into the
+        // ipacket's embedded internal_proto_headers_offset, so this flag is
+        // never set on a pooled packet — keep the guard for safety.
         if (ipacket->proto_headers_offset_owned && ipacket->proto_headers_offset)
             mmt_free(ipacket->proto_headers_offset);
     }
 
-    mmt_free(ipacket->internal_packet);
+    /* Issue #245 (F-PERF-003): internal_packet aliases the shared per-protocol
+     * context packet (exactly like the non-reassembly path) — never freed. */
+
     /* Fragment reassembly (ip_process_fragment) may have replaced data with a
-     * freshly allocated buffer — free it too, then free the heap copy that
-     * process_packet_with_reassembly() made (pointed by original_data).
-     * Without the original_data free every fragment-reassembled packet leaked
-     * its initial copy (issue #216). */
+     * freshly allocated buffer — free it. The original copy buffer is owned
+     * by the slot and survives for reuse. */
     if ((void *) ipacket->data != (void *) ipacket->original_data)
 	mmt_free((void *) ipacket->data);
-    mmt_free((void *) ipacket->original_data);
-    mmt_free( ipacket );
 
+    /* Return the slot to the handler freelist. The ipacket is the slot's
+     * first member, so the cast recovers it. Reset the fields that hold
+     * pointers into per-packet state so a recycled slot never exposes a stale
+     * reference before process_packet_with_reassembly() rewrites them. */
+    ipacket->data = ipacket->original_data;
+    ipacket->internal_packet = NULL;
+    ipacket->proto_headers_offset = NULL;
+    ipacket->proto_headers_offset_owned = 0;
+    mmt_ipacket_slot_t *slot = (mmt_ipacket_slot_t *) ipacket;
+    slot->next_free = ipacket->mmt_handler->ipacket_pool;
+    ipacket->mmt_handler->ipacket_pool = slot;
 }
 
 /**
@@ -927,20 +977,44 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     classified_proto.offset = 0;
     classified_proto.status = Classified;
     if (header->caplen > 65535) return 0;
-    ipacket_t *ipacket;
-    ipacket = mmt_malloc(sizeof(ipacket_t));
-    if (ipacket == NULL) return 0;
-    ipacket->data = mmt_malloc(header->caplen);
-    if (ipacket->data == NULL) { mmt_free(ipacket); return 0; }
-    memcpy((void *)ipacket->data, (void *)packet, header->caplen);
-    ipacket->original_data = ipacket->data;
-    // ipacket->proto_hierarchy = (proto_hierarchy_t*)malloc(sizeof(proto_hierarchy_t));
-    // ipacket->proto_headers_offset = (proto_hierarchy_t*)malloc(sizeof(proto_hierarchy_t));
-    // ipacket->proto_classif_status = (proto_hierarchy_t*)malloc(sizeof(proto_hierarchy_t));
-    ipacket->proto_hierarchy = &mmt->last_received_packet.proto_hierarchy;
-    ipacket->proto_headers_offset = &mmt->last_received_packet.proto_headers_offset;
-    ipacket->proto_headers_offset_owned = 0; // embedded in the handler — never freed
-    ipacket->proto_classif_status = &mmt->last_received_packet.proto_classif_status;
+    /* Issue #245 (F-PERF-003): recycle a pooled slot instead of malloc()ing a
+     * fresh ipacket + copy buffer per packet. The slot is allocated once and
+     * its data buffer only ever grows to the largest caplen seen, so after
+     * warm-up this path performs zero allocations per packet. */
+    mmt_ipacket_slot_t *slot = mmt->ipacket_pool;
+    if (likely(slot != NULL)) {
+        mmt->ipacket_pool = slot->next_free;
+    } else {
+        slot = (mmt_ipacket_slot_t *) mmt_malloc(sizeof(mmt_ipacket_slot_t));
+        if (slot == NULL) return 0;
+        slot->data = NULL;
+        slot->data_cap = 0;
+        mmt_reassembly_stat_packet_alloc();
+    }
+    if (header->caplen > slot->data_cap) {
+        uint8_t *grown = (uint8_t *) mmt_realloc(slot->data, header->caplen);
+        if (grown == NULL) {
+            slot->next_free = mmt->ipacket_pool;
+            mmt->ipacket_pool = slot;
+            return 0;
+        }
+        slot->data = grown;
+        slot->data_cap = header->caplen;
+        mmt_reassembly_stat_packet_alloc();
+    }
+    ipacket_t *ipacket = &slot->ipacket;
+    memcpy(slot->data, packet, header->caplen);
+    ipacket->data = slot->data;
+    ipacket->original_data = slot->data;
+    /* Per-packet copies live in the ipacket's embedded internal_* members: a
+     * packet held by a user callback then keeps its own hierarchy/offset/
+     * status state instead of aliasing the handler's last_received_packet
+     * (issue #245 — also required for the offsets snapshot copied per
+     * session layer in proto_session_management). */
+    ipacket->proto_hierarchy = &ipacket->internal_proto_hierarchy;
+    ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
+    ipacket->proto_headers_offset_owned = 0; // embedded in the slot — never freed
+    ipacket->proto_classif_status = &ipacket->internal_proto_classif_status;
     // copy_ipacket_header(ipacket, header);
     // Start copy header
     ipacket->p_hdr = &ipacket->internal_p_hdr;

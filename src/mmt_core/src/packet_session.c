@@ -176,6 +176,16 @@ bool set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_val
     return 1;
 }
 
+/* Issue #245 (F-PERF-006 / F-BUG-038): configure the per-flow ceiling on TCP
+ * reassembly content bytes (pending segments + flattened image). Passing 0
+ * restores the default. */
+bool set_tcp_reassembly_limit(mmt_handler_t *mmt_handler,uint32_t bytes){
+    if(mmt_handler == NULL) return 0;
+    mmt_handler->tcp_reassembly_limit =
+        (bytes != 0) ? bytes : MMT_TCP_REASSEMBLY_LIMIT_DEFAULT;
+    return 1;
+}
+
 bool set_fragment_in_packet(mmt_handler_t *mmt_handler,uint32_t fragment_in_packet){
     if ( mmt_handler == NULL ) return 0;
     mmt_handler->fragment_in_packet = fragment_in_packet;
@@ -251,13 +261,9 @@ static void init_new_session_fields(mmt_handler_t * mmt_handler, mmt_session_t *
     session->session_protocol_index = index;
     session->tcp_retransmissions = 0;
     session->tcp_outoforders = 0;
-    session->session_payload_len[0] = 0;
-    session->session_payload_len[1] = 0;
-    session->session_payload[0] = NULL;
-    session->session_payload[1] = NULL;
-    session->tcp_segment_list[0] = NULL;
-    session->tcp_segment_list[1] = NULL;
-    session->segment_arena = NULL; // Issue #20: lazily created on first TCP segment
+    /* Issue #245: the bounded TCP reassembly extension is allocated lazily on
+     * the first TCP payload segment (see mmt_tcp_reasm_t). */
+    session->tcp_reasm = NULL;
     mmt_handler->sessions_count += 1;
     mmt_handler->active_sessions_count += 1;
 }
@@ -405,27 +411,17 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                 ipacket->internal_cumulative_offset_valid = 0;
 
             }else{
-                // Copy the session offsets into a per-packet heap buffer.
-                // proto_session_management runs once per protocol layer (see the
-                // index+1 recursion in proto_packet_process), so without freeing
-                // here every encapsulated/embedded session layer would leak the
-                // buffer allocated by the previous layer (clean_packet_with_reassembly
-                // frees only the final pointer). Keep old buffer on OOM.
-                proto_hierarchy_t *new_off = (proto_hierarchy_t*)mmt_malloc(sizeof(proto_hierarchy_t));
-                if (new_off != NULL) {
-                    // F-BUG-002 (issue #199): ownership is tracked by the
-                    // explicit flag, not by comparing against one known
-                    // embedded address — the flag is authoritative for every
-                    // non-heap alias (handler's last_received_packet, session).
-                    if (ipacket->proto_headers_offset_owned) {
-                        mmt_free(ipacket->proto_headers_offset);
-                    }
-                    ipacket->proto_headers_offset = new_off;
-                    ipacket->proto_headers_offset_owned = 1; // single allocation site
-                    memcpy(ipacket->proto_headers_offset,&session->proto_headers_offset,sizeof(proto_hierarchy_t));
-                }
-                // Issue #19: offset buffer replaced by a fresh per-packet copy —
-                // invalidate the memoized cumulative-offset cache.
+                /* Issue #245 (F-PERF-003): copy the session offsets into the
+                 * ipacket's embedded internal_proto_headers_offset — same
+                 * per-packet snapshot semantics as the old per-layer heap
+                 * copy, with zero allocation. proto_session_management runs
+                 * once per protocol layer (index+1 recursion); each embedded
+                 * session layer refreshes the snapshot. */
+                ipacket->proto_headers_offset = &ipacket->internal_proto_headers_offset;
+                ipacket->proto_headers_offset_owned = 0; // embedded in the ipacket — never freed
+                memcpy(ipacket->proto_headers_offset,&session->proto_headers_offset,sizeof(proto_hierarchy_t));
+                // Issue #19: offset buffer replaced — invalidate the memoized
+                // cumulative-offset cache.
                 ipacket->internal_cumulative_offset_valid = 0;
             }
 

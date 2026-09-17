@@ -496,6 +496,27 @@ MMTAPI bool MMTCALL set_default_session_timed_out(
     uint32_t timedout_value
 );
 
+/* Issue #245 (F-PERF-006, F-BUG-038): per-flow ceiling on TCP reassembly
+ * content bytes — pending segments plus the flattened session-payload image.
+ * A flow never holds more than this many reassembly bytes; segments beyond
+ * the ceiling are dropped (see the TCP session-payload attributes). */
+#define MMT_TCP_REASSEMBLY_LIMIT_DEFAULT (4u * 1024u * 1024u)
+
+/**
+ * Set the per-flow ceiling on TCP reassembly content bytes. Only meaningful
+ * for handlers running with enable_mmt_reassembly() plus TCP segment
+ * reassembly (update_protocol(PROTO_TCP, TCP_ENABLE_REASSEMBLE)). Passing 0
+ * restores MMT_TCP_REASSEMBLY_LIMIT_DEFAULT.
+ * @param  mmt_handler    handler
+ * @param  bytes          ceiling in bytes
+ * @return                1 if successful
+ *                          0 if failed
+ */
+MMTAPI bool MMTCALL set_tcp_reassembly_limit(
+    mmt_handler_t *mmt_handler,
+    uint32_t bytes
+);
+
 
 /**
  * Set default timedout session - replace for value of CFG_LONG_SESSION_TIMEDOUT

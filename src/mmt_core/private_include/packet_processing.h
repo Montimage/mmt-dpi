@@ -144,6 +144,33 @@ typedef struct field_value_attribute_information_struct {
     int relative_header_id; /**< the header id relative to this attribute. */
     generic_attribute_extraction_function extraction_function; /**< the extraction function for this attribute. */
 } field_value_attribute_information_t;
+struct mmt_segblk_s; /* tcp_segment.h — plugin-owned bump block chain */
+
+/**
+ * Issue #245 (F-PERF-005/006, F-BUG-038): bounded per-flow TCP reassembly
+ * state — a lazily-allocated extension (NULL for sessions that never carry
+ * reassembled TCP payload). For each direction the flattened stream image
+ * lives in a geometrically-grown buffer capped by the handler's
+ * tcp_reassembly_limit, and the not-yet-flattened segments live in a
+ * seq-sorted doubly-linked list backed by bump blocks (see mmt_segblk_t in
+ * tcp_segment.h). `live` counts pending carved bytes plus image bytes and is
+ * the quantity bounded by the ceiling; consumed segments are released
+ * promptly (dead blocks are recycled/freed) so the prefix already emitted
+ * does not pin memory until teardown.
+ */
+typedef struct mmt_tcp_reasm_s {
+    void *seg_head[2];            /* pending tcp_seg_t list head, seq-sorted */
+    void *seg_tail[2];            /* pending list tail — O(1) in-order append */
+    uint8_t *image[2];            /* flattened stream image (was session_payload) */
+    uint32_t image_len[2];        /* valid bytes in image (was session_payload_len) */
+    uint32_t image_cap[2];        /* allocated capacity of image */
+    uint32_t consumed_seq[2];     /* seq of the byte just past the image end */
+    uint8_t consumed_valid[2];    /* 1 once the direction emitted ≥1 segment */
+    uint64_t live;                /* pending carved bytes + image bytes (≤ limit) */
+    uint64_t dropped;             /* payload bytes dropped by ceiling/late-arrival */
+    struct mmt_segblk_s *blocks;  /* bump-block chain backing pending segs */
+} mmt_tcp_reasm_t;
+
 /**
  * Defines the structure of a session.
  */
@@ -230,11 +257,11 @@ struct mmt_session_struct {
 #else
 #error "BYTE_ORDER must be defined"
 #endif
-    void * tcp_segment_list[2]; // TCP Payload of session
-    uint8_t * session_payload[2]; // TCP Payload of session
-    uint32_t session_payload_len[2]; // session payload len
-    void * segment_arena; // Issue #20: per-flow arena backing the TCP segment
-                          // nodes + payload copies; freed on session teardown.
+    /* Issue #245: the TCP reassembly fields (segment lists, payload image
+     * buffers, block chain) moved into the lazily-allocated mmt_tcp_reasm_t
+     * extension above — a session that never reassembles TCP payload pays
+     * only this one pointer. */
+    mmt_tcp_reasm_t * tcp_reasm;
 };
 
 /**
@@ -458,6 +485,21 @@ struct protocol_instance_struct {
     void * args; /**< For internal use. MUST not be changed. */
 };
 
+/* Issue #245 (F-PERF-003): pooled reassembly ipacket — a slot owns the
+ * packet structure plus a grow-once copy buffer, so the reassembly packet
+ * path performs no per-packet allocations in steady state. The ipacket member
+ * MUST stay first: clean_packet_with_reassembly() recovers the slot from the
+ * ipacket pointer by a plain cast. Slots live on the handler's freelist
+ * (mmt_handler_struct.ipacket_pool); a packet held by a user callback keeps
+ * its slot until mmt_drop_packet()/clean-up, which bounds the pool by the
+ * number of concurrently held packets. */
+typedef struct mmt_ipacket_slot_s {
+    ipacket_t ipacket;                    /* MUST stay the first member */
+    struct mmt_ipacket_slot_s *next_free;
+    uint8_t *data;                        /* owned copy of the packet bytes */
+    uint32_t data_cap;                    /* allocated size of data */
+} mmt_ipacket_slot_t;
+
 struct mmt_handler_struct {
     uint8_t has_reassembly; // 0 - no, 1 - yes
     // Classification process configuration
@@ -521,6 +563,14 @@ struct mmt_handler_struct {
      * plugin-agnostic on purpose. */
     void (*frag_map_sweep_fct)(mmt_hashmap_t *map, uint32_t now);
     void (*frag_map_drain_fct)(mmt_hashmap_t *map);
+    /* Issue #245: per-flow ceiling on TCP reassembly content bytes (pending
+     * segments + flattened image). Set via set_tcp_reassembly_limit(); the
+     * default is MMT_TCP_REASSEMBLY_LIMIT_DEFAULT. */
+    uint32_t tcp_reassembly_limit;
+    /* Issue #245: freelist of mmt_ipacket_slot_t recycled by
+     * process_packet_with_reassembly()/clean_packet_with_reassembly() —
+     * drained by mmt_close_handler(). */
+    mmt_ipacket_slot_t *ipacket_pool;
 };
 
 
@@ -722,6 +772,31 @@ void update_proto_stats_on_session_timeout(mmt_session_t * timed_out_session, pr
 bool attribute_ids_comparison_fct(uint32_t l_id, uint32_t r_id);
 struct attribute_internal_struct * get_registered_attribute_internal_struct(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index);
 struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id);
+
+/* Issue #245 (F-PERF-003/004/005/006): TCP-reassembly instrumentation. The
+ * counters live in libmmt_core (packet_pipeline.c) — the one shared object
+ * the protocol plugin resolves at dlopen() time — so the plugin increments
+ * the SAME instance a harness reads through the linked library. They are
+ * always-on relaxed-atomic counters: a handful of adds per segment is
+ * negligible next to the segment payload copy itself, and keeping them
+ * unconditional lets the phase-0 harness assert against a stock build.
+ *   - visits: nodes examined by sorted-list insertion (O(n^2) tripwire)
+ *   - moved:  payload bytes the flatten path memcpy()s into image buffers
+ *   - dropped: payload bytes refused by the per-flow ceiling / late-arrival
+ *   - packet_allocs: allocations performed by process_packet_with_reassembly()
+ *     (slot creation or copy-buffer growth — steady-state must be 0) */
+void mmt_tcp_reasm_stat_visit(void);
+void mmt_tcp_reasm_stat_move(uint32_t bytes);
+void mmt_tcp_reasm_stat_drop(uint32_t bytes);
+/* Signed delta on the resident reassembly bytes (pending carves + image
+ * bytes across all sessions) — the quantity the per-flow ceiling bounds. */
+void mmt_tcp_reasm_stat_live(int64_t delta);
+void mmt_reassembly_stat_packet_alloc(void);
+uint64_t mmt_tcp_reasm_insert_visits(void);
+uint64_t mmt_tcp_reasm_bytes_moved(void);
+uint64_t mmt_tcp_reasm_bytes_dropped(void);
+uint64_t mmt_tcp_reasm_resident_bytes(void);
+uint64_t mmt_reassembly_packet_alloc_count(void);
 
 #ifdef __cplusplus
 }
