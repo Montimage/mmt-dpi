@@ -1,6 +1,9 @@
 #!/bin/bash
 # Run core-engine tests (issue #241): session lifecycle through
 # packet_session.c's session manager and the memory.c arena allocator.
+# Part 2 (issue #242) adds the classification utilities: hostname matching
+# (doted-name trie + linear suffix scan), the CIDR attribution trees and the
+# memoized packet-offset cache.
 #
 # The suite source-compiles packet_processing.c and the objects it needs from
 # src/mmt_core (packet_registry, packet_pipeline, packet_session,
@@ -45,6 +48,21 @@ done
 "$CXX" "${extra_cflags[@]}" -Wall -Wextra -std=c++11 "${INCS[@]}" \
     -c "$CORE_SRC/hash_utils.cpp" -o "$SCRIPT_DIR/hash_utils.o"
 objects+=("$SCRIPT_DIR/hash_utils.o")
+
+# Issue #242: the classification-utility unit under test lives in
+# src/mmt_tcpip/lib. Compile it and its avltree dependency here; the unit's
+# mmt_common_internal_include.h pulls protocols/rtp.h, which needs the
+# fuzz-engine include dir for mmt_quality_estimation_utilities.h.
+# -Wno-missing-field-initializers keeps the generated 3-field table entries
+# quiet under -Wextra.
+TCPIP_SRC="$PROJECT_DIR/src/mmt_tcpip/lib"
+for src in avltree.c mmt_tcpip_classif_utils.c; do
+    obj="$SCRIPT_DIR/$(basename "$src" .c).o"
+    "$CC" "${extra_cflags[@]}" -Wall -Wextra -Wno-missing-field-initializers \
+        -std=gnu11 "${INCS[@]}" -I"$PROJECT_DIR/src/mmt_fuzz_engine" \
+        -c "$TCPIP_SRC/$src" -o "$obj"
+    objects+=("$obj")
+done
 
 "$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
     -c "$SCRIPT_DIR/test_core_engine.c" -o "$SCRIPT_DIR/test_core_engine.o"

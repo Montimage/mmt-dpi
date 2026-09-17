@@ -26,6 +26,20 @@
  *     NULL arena, size-overflow guards, and injected malloc failures on both
  *     the arena-create and the block-grow allocations.
  *
+ * Part 2 (issue #242) also source-compiles:
+ *
+ *   src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c — hostname matching (the
+ *     reversed doted-name trie plus the linear suffix scan), the per-prefix
+ *     AVL CIDR attribution trees including the externally-loaded
+ *     extend/override rules (issues #26/#74) and the duplicate-CIDR cases
+ *     fixed by Task 3.6 (F-BUG-027/028), plus the empty-hostname guard
+ *     (F-BUG-030);
+ *   src/mmt_tcpip/lib/avltree.c — the tree implementation backing the CIDR
+ *     attribution (already covered standalone by tests/avltree);
+ *   src/mmt_core/src/mmt_data.c — the memoized cumulative-offset cache behind
+ *     get_packet_offset_at_index() (issue #19): lazy prefix-sum build,
+ *     high-water-mark extension, invalidation and index clamping.
+ *
  * Failure injection: the binary is linked with -Wl,--wrap=malloc
  * -Wl,--wrap=calloc; every libc allocation in the linked library objects is
  * routed through the budget counters below. test_core_engine_new.cpp still
@@ -50,6 +64,12 @@
 #include "plugin_defs.h"
 #include "packet_processing.h" /* private: mmt_handler_t / protocol_instance_t internals */
 #include "hash_utils.h"
+/* Issue #242: tcpip internals for the fabricated internal_packet — brings in
+ * mmt_tcpip_protocols.h (MMT_SUPPORT_IPV6, PROTO_* ids) and the
+ * mmt_tcpip_internal_packet_struct layout (iph/iphv6). */
+#include "mmt_tcpip_internal_defs_macros.h"
+#include "mmt_tcpip_plugin_structs.h"
+#include <arpa/inet.h>
 
 static int g_failures = 0;
 #define CHECK(cond, msg) do { if (!(cond)) { \
@@ -81,6 +101,21 @@ extern void ce_set_new_budget(long budget);
 int mmt_attr_snprintf(char *buff, int len, attribute_t *a);
 void mmt_print_proto_info(protocol_t *proto);
 int is_protocol_valid_attribute(uint32_t proto_id, uint32_t attribute_id);
+
+/* mmt_tcpip_classif_utils.c entry points (issue #242) — the two public ones
+ * are declared in mmt_common_internal_include.h, which is too heavy to pull
+ * in here, so all are declared by hand like the block above. */
+int mmt_case_sensitive_reverse_hostname_matching(const char *hostname, const char *url,
+                                                 size_t hostname_len, size_t url_len);
+uint32_t get_proto_id_by_hostname(ipacket_t *ipacket, char *hostname, u_int hostname_len);
+uint32_t _get_proto_id_by_hostname(ipacket_t *ipacket, char *hostname, u_int hostname_len);
+uint32_t get_proto_id_from_address(ipacket_t *ipacket);
+int _find_proto_id_by_address(uint32_t ip_src, uint32_t ip_dest);
+int _find_proto_id_by_address6(const uint8_t ip_src[16], const uint8_t ip_dest[16]);
+void _init_proto_avltrees(void);
+void _free_proto_avltrees(void);
+int mmt_tcpip_load_ip_ranges_file(const char *path);
+void mmt_tcpip_load_external_ip_ranges(void);
 
 /* ---------------- test protocol + stack plumbing ------------------------- */
 
@@ -1039,6 +1074,276 @@ static void test_iteration(void) {
     CHECK(g_attr_seen == 1, "attribute iteration visits the custom attr");
 }
 
+/* ============ classification utilities (issue #242, part 2) ================
+ * mmt_tcpip_classif_utils.c is linked into this binary, so its constructor
+ * already built the doted-name trie and the ~10k-node IPv4 CIDR AVL trees at
+ * load time; the destructor frees them at exit. The checks below drive the
+ * lookup entry points directly against fabricated packets. */
+
+/* Fabricate the minimal packet the classification helpers dereference:
+ * hostname paths need ->session->content_flags; address paths need
+ * ->internal_packet->{iph,iphv6}. */
+static void make_classif_packet(ipacket_t *pkt, mmt_session_t *sess,
+                                mmt_tcpip_internal_packet_t *internal) {
+    memset(pkt, 0, sizeof(*pkt));
+    memset(sess, 0, sizeof(*sess));
+    memset(internal, 0, sizeof(*internal));
+    pkt->session = sess;
+    pkt->internal_packet = internal;
+}
+
+static void test_hostname_matching(void) {
+    fprintf(stderr, "  test: hostname matching (reverse suffix + trie + linear)\n");
+    ipacket_t pkt;
+    mmt_session_t sess;
+    mmt_tcpip_internal_packet_t internal;
+    make_classif_packet(&pkt, &sess, &internal);
+
+    /* --- mmt_case_sensitive_reverse_hostname_matching --- */
+    CHECK(mmt_case_sensitive_reverse_hostname_matching("www.google.com", ".google.com", 14, 11) == 1,
+          "reverse match: subdomain suffix");
+    CHECK(mmt_case_sensitive_reverse_hostname_matching("google.com", ".google.com", 10, 11) == 1,
+          "reverse match: bare domain equals doted entry");
+    CHECK(mmt_case_sensitive_reverse_hostname_matching("xgoogle.com", ".google.com", 11, 11) == 0,
+          "reverse match: dot boundary enforced");
+    /* F-BUG-026 regression: zero-length and NULL inputs must not be
+     * dereferenced (the counters are tested before the cursors). */
+    CHECK(mmt_case_sensitive_reverse_hostname_matching("", ".google.com", 0, 11) == 0,
+          "reverse match: empty hostname");
+    CHECK(mmt_case_sensitive_reverse_hostname_matching("a", "", 1, 0) == 0,
+          "reverse match: empty pattern");
+    CHECK(mmt_case_sensitive_reverse_hostname_matching(NULL, ".google.com", 0, 11) == 0,
+          "reverse match: NULL hostname");
+    CHECK(mmt_case_sensitive_reverse_hostname_matching("a", "abc", 1, 3) == 0,
+          "reverse match: hostname shorter than pattern");
+    CHECK(mmt_case_sensitive_reverse_hostname_matching("abc", "abd", 3, 3) == 0,
+          "reverse match: same length, tail differs");
+
+    /* --- get_proto_id_by_hostname: reversed-name trie walk --- */
+    char h_sub[] = "www.google.com";
+    CHECK(get_proto_id_by_hostname(&pkt, h_sub, 14) == PROTO_GOOGLE,
+          "trie: subdomain of .google.com");
+    char h_bare[] = "google.com";
+    CHECK(get_proto_id_by_hostname(&pkt, h_bare, 10) == PROTO_GOOGLE,
+          "trie: bare domain via the '.'-child fallback");
+    /* F-BUG-030 regression: an empty hostname must not fire the '.'
+     * fallback on the trie root — it returns PROTO_UNKNOWN. */
+    char h_empty[] = "";
+    CHECK(get_proto_id_by_hostname(&pkt, h_empty, 0) == PROTO_UNKNOWN,
+          "trie: empty hostname returns UNKNOWN");
+    char h_bound[] = "xgoogle.com";
+    CHECK(get_proto_id_by_hostname(&pkt, h_bound, 11) == PROTO_UNKNOWN,
+          "trie: partial suffix without dot boundary is UNKNOWN");
+    char h_tld[] = "nonexistent.invalidtld";
+    CHECK(get_proto_id_by_hostname(&pkt, h_tld, 22) == PROTO_UNKNOWN,
+          "trie: unknown suffix is UNKNOWN");
+    /* akamai entries route through the fbcdn* prefix table; the content
+     * flags land on the session. */
+    char h_fbcdn[] = "fbcdn-video.akamai.net";
+    sess.content_flags = 0;
+    CHECK(get_proto_id_by_hostname(&pkt, h_fbcdn, 22) == PROTO_FACEBOOK,
+          "trie: akamai suffix resolved to facebook via fbcdn prefix");
+    CHECK((sess.content_flags & (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO)) ==
+          (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO),
+          "trie: CDN|VIDEO content flags set on the session");
+    char h_ak[] = "whatever.akamai.net";
+    sess.content_flags = 0;
+    CHECK(get_proto_id_by_hostname(&pkt, h_ak, 19) == PROTO_AKAMAI,
+          "trie: plain akamai hostname stays PROTO_AKAMAI");
+
+    /* --- _get_proto_id_by_hostname: linear table scan --- */
+    char l_yt[] = "www.youtube.com";
+    CHECK(_get_proto_id_by_hostname(&pkt, l_yt, 15) == PROTO_YOUTUBE,
+          "linear: subdomain of .youtube.com");
+    char l_bare[] = "google.com";
+    CHECK(_get_proto_id_by_hostname(&pkt, l_bare, 10) == PROTO_GOOGLE,
+          "linear: bare domain matches the doted entry");
+    char l_empty[] = "";
+    CHECK(_get_proto_id_by_hostname(&pkt, l_empty, 0) == PROTO_UNKNOWN,
+          "linear: empty hostname returns UNKNOWN");
+    char l_fb[] = "fbcdn-profile.akamai.net";
+    sess.content_flags = 0;
+    CHECK(_get_proto_id_by_hostname(&pkt, l_fb, 24) == PROTO_FACEBOOK,
+          "linear: akamai suffix resolved via fbcdn prefix");
+    CHECK((sess.content_flags & MMT_CONTENT_CDN) != 0,
+          "linear: CDN content flag set on the session");
+}
+
+static void test_ip_attribution(void) {
+    fprintf(stderr, "  test: CIDR attribution trees + external range loader\n");
+    ipacket_t pkt;
+    mmt_session_t sess;
+    mmt_tcpip_internal_packet_t internal;
+    make_classif_packet(&pkt, &sess, &internal);
+
+    /* --- compiled-in IPv4 table: 1.201.0.0/24 -> PROTO_KAKAO --- */
+    CHECK(_find_proto_id_by_address(0x01C90007u, 0xC0000201u) == PROTO_KAKAO,
+          "builtin CIDR: source-address match");
+    CHECK(_find_proto_id_by_address(0xC0000201u, 0x01C90007u) == PROTO_KAKAO,
+          "builtin CIDR: destination-address match");
+    CHECK(_find_proto_id_by_address(0xC0000201u, 0xC0000202u) == -1,
+          "builtin CIDR: no match returns -1 (192.0.2.0/24 is not in the table)");
+
+    /* get_proto_id_from_address reads the network-order headers. */
+    CHECK(get_proto_id_from_address(&pkt) == PROTO_UNKNOWN,
+          "no iph/iphv6 -> UNKNOWN");
+    struct iphdr ip4;
+    memset(&ip4, 0, sizeof(ip4));
+    ip4.saddr = htonl(0x01C90007u);
+    ip4.daddr = htonl(0xC0000201u);
+    internal.iph = (const mmt_una_iphdr_t *) &ip4;
+    CHECK(get_proto_id_from_address(&pkt) == PROTO_KAKAO,
+          "iph path returns the builtin attribution");
+    internal.iph = NULL;
+
+    /* IPv6 with no external rules loaded: empty list -> -1/UNKNOWN. */
+    uint8_t v6_src[16], v6_dst[16];
+    struct in6_addr a6;
+    CHECK(inet_pton(AF_INET6, "2001:db8::9", &a6) == 1, "v6 src parsed");
+    memcpy(v6_src, &a6, 16);
+    CHECK(inet_pton(AF_INET6, "2001:db7::9", &a6) == 1, "v6 dst parsed");
+    memcpy(v6_dst, &a6, 16);
+    CHECK(_find_proto_id_by_address6(v6_src, v6_dst) == -1,
+          "empty IPv6 range list returns -1");
+    struct mmt_ipv6hdr ip6;
+    memset(&ip6, 0, sizeof(ip6));
+    memcpy(ip6.saddr.mmt_v6_addr, v6_src, 16);
+    memcpy(ip6.daddr.mmt_v6_addr, v6_dst, 16);
+    internal.iphv6 = &ip6;
+    CHECK(get_proto_id_from_address(&pkt) == PROTO_UNKNOWN,
+          "iphv6 with no ranges -> UNKNOWN");
+    internal.iphv6 = NULL;
+
+    /* --- external range-file loader --- */
+    CHECK(mmt_tcpip_load_ip_ranges_file(NULL) == 0, "NULL path rejected");
+    CHECK(mmt_tcpip_load_ip_ranges_file("") == 0, "empty path rejected");
+    CHECK(mmt_tcpip_load_ip_ranges_file("/nonexistent/ce_ranges.txt") == -1,
+          "missing file reports -1");
+
+    /* One rule per loader branch. ce_proto_a (id 613) is still registered
+     * from the bootstrap test, so the name-token path resolves. */
+    const char *path = "./ce_ip_ranges.txt";
+    FILE *fp = fopen(path, "w");
+    CHECK(fp != NULL, "ranges file created");
+    if (fp == NULL) return;
+    fputs("# comment line is stripped\n"
+          "192.0.2.0/24 42\n"               /* extend: new dynamic rule */
+          "192.0.2.0/24 43\n"               /* duplicate dynamic CIDR: last wins */
+          "1.201.1.0/24 55\n"               /* duplicate of a builtin: dropped */
+          "9.9.9.0/24 70 override\n"
+          "9.9.9.0/24 71 override\n"        /* override dup: last wins */
+          "9.9.9.0/24 72\n"                 /* extend under the same CIDR */
+          "10.250.0.0/16 60 bogus\n"        /* unknown flag -> extend */
+          "10.251.0.0/16\n"                 /* missing proto token -> skip */
+          "10.252.0.0 42\n"                 /* missing /prefix -> skip */
+          "999.1.1.0/24 42\n"               /* invalid IPv4 -> skip */
+          "10.253.0.0/0 42\n"               /* prefix 0 -> skip */
+          "10.253.0.0/33 42\n"              /* prefix > 32 -> skip */
+          "10.254.0.0/24 nosuchproto\n"     /* unknown protocol -> skip */
+          "2001:db8::/32 77\n"              /* IPv6 extend */
+          "2001:db8:1::/48 79\n"            /* IPv6 extend, longer prefix */
+          "2001:db8::/48 78 override\n"     /* IPv6 override */
+          "2001:zz::/32 42\n"               /* invalid IPv6 -> skip */
+          "2001:db9::/0 42\n"               /* IPv6 prefix 0 -> skip */
+          "2001:db9::/129 42\n"             /* IPv6 prefix > 128 -> skip */
+          "2001:db7::/32 ce_proto_a\n",     /* name token -> id 613 */
+          fp);
+    fclose(fp);
+    CHECK(mmt_tcpip_load_ip_ranges_file(path) == 11, "11 valid rules loaded");
+
+    /* extend + last-rule-wins on a duplicate dynamic CIDR */
+    CHECK(_find_proto_id_by_address(0xC0000207u, 0x0u) == 43,
+          "dynamic extend rule applies (last wins on duplicate)");
+    /* Task 3.6 / F-BUG-027: an extend rule duplicating a compiled-in CIDR is
+     * a no-op — the builtin attribution stays authoritative. */
+    CHECK(_find_proto_id_by_address(0x01C90107u, 0x0u) == PROTO_KAKAO,
+          "builtin CIDR wins over a duplicate extend rule");
+    /* override rules are consulted before builtin and extend trees, and a
+     * duplicate override also resolves last-wins. */
+    CHECK(_find_proto_id_by_address(0x09090907u, 0x0u) == 71,
+          "override rules take precedence (last wins on duplicate)");
+    CHECK(_find_proto_id_by_address(0x0AFA0007u, 0x0u) == 60,
+          "unknown flag degrades to an extend rule");
+
+    /* IPv6: override class wins regardless of prefix length; within the
+     * extend class the longest prefix wins. v6_src is parked outside every
+     * loaded range so each lookup isolates the destination side. */
+    CHECK(inet_pton(AF_INET6, "2001:beef::9", &a6) == 1, "v6 unranged addr parsed");
+    memcpy(v6_src, &a6, 16);
+    CHECK(_find_proto_id_by_address6(v6_src, v6_dst) == 613,
+          "IPv6 destination match via protocol-name token");
+    CHECK(inet_pton(AF_INET6, "2001:db8:1::5", &a6) == 1, "v6 addr parsed");
+    memcpy(v6_dst, &a6, 16);
+    CHECK(_find_proto_id_by_address6(v6_src, v6_dst) == 79,
+          "IPv6 longest-prefix wins within the extend class");
+    CHECK(inet_pton(AF_INET6, "2001:db8::9", &a6) == 1, "v6 addr parsed");
+    memcpy(v6_dst, &a6, 16);
+    CHECK(_find_proto_id_by_address6(v6_src, v6_dst) == 78,
+          "IPv6 override wins over a longer-prefix extend rule");
+    /* through the packet accessor */
+    CHECK(inet_pton(AF_INET6, "2001:db7::9", &a6) == 1, "v6 addr parsed");
+    memcpy(ip6.saddr.mmt_v6_addr, v6_src, 16);
+    memcpy(ip6.daddr.mmt_v6_addr, &a6, 16);
+    internal.iphv6 = &ip6;
+    CHECK(get_proto_id_from_address(&pkt) == 613,
+          "iphv6 path returns the external attribution");
+    internal.iphv6 = NULL;
+
+    /* env-var entry point: unset -> no-op; set -> loads the same file. */
+    unsetenv("MMT_DPI_IP_RANGES_FILE");
+    mmt_tcpip_load_external_ip_ranges();
+    CHECK(setenv("MMT_DPI_IP_RANGES_FILE", path, 1) == 0, "env var set");
+    mmt_tcpip_load_external_ip_ranges();
+    CHECK(_find_proto_id_by_address(0xC0000207u, 0x0u) == 43,
+          "env-var load is idempotent");
+    unsetenv("MMT_DPI_IP_RANGES_FILE");
+    remove(path);
+
+    /* teardown + rebuild restore the compiled-in baseline. */
+    _free_proto_avltrees();
+    CHECK(_find_proto_id_by_address(0xC0000207u, 0x0u) == -1,
+          "external rules released with the trees");
+    _init_proto_avltrees();
+    CHECK(_find_proto_id_by_address(0x01C90007u, 0x0u) == PROTO_KAKAO,
+          "builtin attribution intact after free/re-init");
+}
+
+static void test_offset_memoization(void) {
+    fprintf(stderr, "  test: memoized cumulative offsets (issue #19)\n");
+    ipacket_t pkt;
+    memset(&pkt, 0, sizeof(pkt));
+    pkt.proto_headers_offset = &pkt.internal_proto_headers_offset;
+    pkt.proto_headers_offset->proto_path[0] = 14;
+    pkt.proto_headers_offset->proto_path[1] = 20;
+    pkt.proto_headers_offset->proto_path[2] = 8;
+    pkt.proto_headers_offset->proto_path[3] = 4;
+    pkt.internal_cumulative_offset_valid = 0;
+
+    /* lazy build: the first query sums proto_path[0..index] once. */
+    CHECK(get_packet_offset_at_index(&pkt, 2) == 42, "prefix sum 14+20+8");
+    CHECK(pkt.internal_cumulative_offset_valid == 1 &&
+          pkt.internal_cumulative_offset_hwm == 2, "cache valid, hwm == 2");
+    /* cached reads: querying at/below the hwm does not resum. */
+    CHECK(get_packet_offset_at_index(&pkt, 1) == 34, "cached lower index");
+    CHECK(pkt.internal_cumulative_offset_hwm == 2, "hwm unchanged by cached read");
+    /* extending past the hwm resumes the sum from the hwm, not from 0. */
+    CHECK(get_packet_offset_at_index(&pkt, 4) == 46, "extension resumes at the hwm");
+    CHECK(pkt.internal_cumulative_offset_hwm == 4, "hwm advanced to 4");
+    /* a mutated offset stays invisible until the cache is invalidated —
+     * that staleness is exactly why set_classified_proto() and the session
+     * offset swaps invalidate it. */
+    pkt.proto_headers_offset->proto_path[1] = 40;
+    CHECK(get_packet_offset_at_index(&pkt, 2) == 42, "mutation invisible while cached");
+    invalidate_packet_offset_cache(&pkt);
+    CHECK(pkt.internal_cumulative_offset_valid == 0, "invalidation flag dropped");
+    CHECK(get_packet_offset_at_index(&pkt, 2) == 62, "rebuilt sum 14+40+8");
+    invalidate_packet_offset_cache(NULL); /* NULL-safe helper */
+    /* index clamp: anything >= PROTO_PATH_SIZE reads the last slot. */
+    CHECK(get_packet_offset_at_index(&pkt, PROTO_PATH_SIZE + 7) ==
+          get_packet_offset_at_index(&pkt, PROTO_PATH_SIZE - 1),
+          "index is clamped to PROTO_PATH_SIZE-1");
+}
+
 /* ================================ main ==================================== */
 
 int main(void) {
@@ -1056,6 +1361,13 @@ int main(void) {
     test_session_create_oom();
     test_helpers();
     test_iteration();
+
+    /* Issue #242 part 2: classification utilities + offset memoization.
+     * These run while ce_proto_a/b are still registered (the ranges-file
+     * name-token test resolves "ce_proto_a") and before close_extraction. */
+    test_hostname_matching();
+    test_ip_attribution();
+    test_offset_memoization();
 
     /* Full teardown, then a second init/close cycle — F-BUG-005 regression:
      * the global maps must be NULLed, not left dangling. */
