@@ -937,13 +937,23 @@ MMTAPI const mmt_session_t MMTCALL * get_session_previous(
 );
 
 /**
+ * Direction selector for get_session_proto_path_direction(): uplink follows
+ * the session's setup direction, downlink is its opposite (issue #238,
+ * F-CLEAN-011 — replaces an unnamed 0/1 int flag).
+ */
+typedef enum {
+    MMT_SESSION_DIRECTION_DOWNLINK = 0, /**< downlink: opposite of the setup direction */
+    MMT_SESSION_DIRECTION_UPLINK   = 1  /**< uplink: the setup direction */
+} mmt_session_direction_t;
+
+/**
  * Get session protocol path by direction
  * @param  session   session
- * @param  direction direction 0 / 1
+ * @param  direction MMT_SESSION_DIRECTION_DOWNLINK / MMT_SESSION_DIRECTION_UPLINK
  * @return           protocol path
  */
 MMTAPI const proto_hierarchy_t MMTCALL * get_session_proto_path_direction(
-    const mmt_session_t *session, int direction
+    const mmt_session_t *session, mmt_session_direction_t direction
 );
 
 

@@ -1409,379 +1409,389 @@ void mmt_http_init_detection_bitmask() {
             MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
             PROTO_UNKNOWN, PROTO_HTTP);
 
-    // This list should not be updated
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REUTERS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP_PROXY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_I23V5);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_POPO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_QUAKE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REALMEDIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_USENET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WARCRAFT3);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WORLD_OF_KUNG_FU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MPEG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FLASH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WINDOWSMEDIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_OFF);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AVI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_OGG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MOVE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_RTSP);
-
-    //////////// Start of HTTP based protocols /////////////////////
-    /////// Needs to be updated when new protocols are added ///////
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_163);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_360);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_JD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_56);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_888POKER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ABOUT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ADCASH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ADDTHIS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ADF);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ADOBE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AFP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AIM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AIMINI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ALIBABA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ALIPAY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ALLEGRO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AMAZON);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AMEBLO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ANCESTRY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ANGRYBIRDS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ANSWERS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AOL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_APPLE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ASK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AVG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AWEBER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BABYLON);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BADOO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BAIDU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BANKOFAMERICA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BARNESANDNOBLE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BATTLEFIELD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BATTLENET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BBB);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BBC_ONLINE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BESTBUY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BETFAIR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BIBLEGATEWAY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BILD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BING);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BITTORRENT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BLEACHERREPORT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BLOGFA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BLOGGER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BLOGSPOT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BODYBUILDING);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BOOKING);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CBSSPORTS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CNET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CHANGE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CHASE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CHESS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CHINAZ);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CITRIXONLINE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CLICKSOR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CNN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CNZZ);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_COMCAST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CONDUIT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_COPYSCAPE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CORREIOS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CRAIGSLIST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CROSSFIRE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DAILYMAIL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DAILYMOTION);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DIRECT_DOWNLOAD_LINK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DEVIANTART);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DIGG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DIRECTCONNECT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DOFUS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DONANIMHABER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DOUBAN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DOUBLECLICK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DROPBOX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EBAY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EHOW);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EKSISOZLUK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ELECTRONICSARTS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ESPN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ETSY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EUROPA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EUROSPORT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FACEBOOK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FC2);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FEIDIAN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FIVERR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FLICKR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FOX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FREE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GAMEFAQS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GAMESPOT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GAP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GARANTI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GAZETEVATAN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GIGAPETA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GITHUB);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GITTIGIDIYOR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GLOBO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GMAIL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GNUTELLA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GOOGLE_MAPS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GODADDY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GOO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GOOGLE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GOOGLE_USER_CONTENT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GROOVESHARK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GROUPON);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GTALK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GUARDIAN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_GUILDWARS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HABERTURK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HAO123);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HEPSIBURADA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HI5);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOMEDEPOT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOOTSUITE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HOTMAIL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HUFFINGTONPOST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HURRIYET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ICECAST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_APPLE_ICLOUD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IFENG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IGN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IKEA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMDB);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMESH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IMGUR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LEBONCOIN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INDIATIMES);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_INSTAGRAM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IRS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_APPLE_ITUNES);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_UNENCRYPED_JABBER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_JAPANPOST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KAT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ORANGEFR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KING);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KOHLS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KONGREGATE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_KONTIKI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LASTFM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LEAGUEOFLEGENDS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LEGACY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LETV);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LINKEDIN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVEDOOR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVEMAIL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVEINTERNET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVEJASMIN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVEJOURNAL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVESCORE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVINGSOCIAL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LOWES);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MACYS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MAIL_RU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MAPLESTORY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MATCH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MEDIAFIRE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MEEBO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MICROSOFT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MILLIYET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MINECRAFT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MINICLIP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MLBASEBALL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MMO_CHAMPION);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MMS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MOZILLA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MSN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MULTIPLY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MYNET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MYSPACE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MYWEBSEARCH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NBA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NEOBUX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NETFLIX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NEWEGG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NEWSMAX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NFL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NICOVIDEO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NIH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NORDSTROM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_NYTIMES);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ODNOKLASSNIKI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ONET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ORANGEDONKEY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_OUTBRAIN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_OVERSTOCK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PAYPAL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PCH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PCONLINE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PHOTOBUCKET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PINTEREST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PLAYSTATION);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_POGO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PORNHUB);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PPLIVE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PPSTREAM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PREMIERLEAGUE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_QQ);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_QQLIVE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_R10);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_RAKUTEN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REDDIT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REDTUBE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_REFERENCE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_RENREN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ROBLOX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ROVIO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SABAH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SAHIBINDEN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SALESFORCE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SALON);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SEARCHNU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SEARCH_RESULTS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SEARS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SECONDLIFE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SECURESERVER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SHOUTCAST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SINA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SITEADVISOR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SKY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SKYPE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SKYROCK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SKYSPORTS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SLATE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SLIDESHARE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOFTONIC);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOGOU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOHU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOPCAST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOSO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOULSEEK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOUNDCLOUD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SOURCEFORGE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SPIEGEL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SPORX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SPOTIFY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SQUIDOO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_STACK_OVERFLOW);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_STATCOUNTER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_STEAM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_STUMBLEUPON);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SULEKHA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TAGGED);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TAOBAO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TARGET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TCO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_THEMEFOREST);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_THE_PIRATE_BAY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TIANYA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TMALL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TORRENTZ);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TRUPHONE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TUBE8);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TUDOU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TUENTI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TUMBLR);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TVANTS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_TWITTER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_UBI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_UCOZ);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_UOL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_USDEPARTMENTOFSTATE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HTTP_APPLICATION_VEOHTV);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VIADEO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VIBER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VIMEO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VKONTAKTE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WALMART);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WARRIORFORUM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WAYN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WEATHER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WEBEX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WEEKLYSTANDARD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WEIBO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WELLSFARGO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WHATSAPP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WIGETMEDIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WIKIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WIKIMEDIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WIKIPEDIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WILLIAMHILL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WINDOWSLIVE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WINUPDATE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WORDPRESS_ORG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WORLDOFWARCRAFT);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WOWHEAD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WWE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_XBOX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_XHAMSTER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_XING);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_XINHUANET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_XNXX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_XVIDEOS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YAHOO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ALLOCINE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YAHOOMAIL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YANDEX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YELP);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YOUKU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YOUPORN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_YOUTUBE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ZAPPOS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ZATTOO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ZEDO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ZOL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ZYNGA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BUZZNET);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_COMEDY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_RAMBLER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SMUGMUG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ARCHIEVE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CITYNEWS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SCIENCESTAGE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ONEWORLD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DISQUS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BLOGCU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_EKOLAY);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_500PX);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FOTKI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_FOTOLOG);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_JALBUM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LEMONDE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_PANORAMIO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SNAPFISH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WEBSHOTS);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MEGA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VIDOOSH);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_AFREECA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_WILDSCREEN);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BLOGTV);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_HULU);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MEVIO);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVESTREAM);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_LIVELEAK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_DEEZER);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BLIPTV);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_BREAK);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_CITYTV);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_COMEDYCENTRAL);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_ENGAGEMEDIA);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SCREENJUNKIES);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_RUTUBE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_SEVENLOAD);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_MUBI);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_IZLESENE);
-    MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, PROTO_VIDEO_HOSTING);
-    //////////// End of HTTP based protocols /////////////////////
+    /* Protocols reachable over HTTP — the detection_bitmask built here is
+     * what lets mmt_classify_http() claim a flow already detected as one of
+     * these ids. The first group is fixed: do not update it. The second
+     * group MUST be updated when a new HTTP-based protocol is registered —
+     * otherwise that protocol's flows keep being reported as plain
+     * PROTO_HTTP and are never attributed to it (issue #238, F-CLEAN-018). */
+    static const int http_detected_protocols[] = {
+        /* Fixed set — do not update */
+        PROTO_HTTP,
+        PROTO_REUTERS,
+        PROTO_HTTP_PROXY,
+        PROTO_I23V5,
+        PROTO_POPO,
+        PROTO_QUAKE,
+        PROTO_REALMEDIA,
+        PROTO_USENET,
+        PROTO_WARCRAFT3,
+        PROTO_WORLD_OF_KUNG_FU,
+        PROTO_MPEG,
+        PROTO_FLASH,
+        PROTO_WINDOWSMEDIA,
+        PROTO_OFF,
+        PROTO_AVI,
+        PROTO_OGG,
+        PROTO_MOVE,
+        PROTO_RTSP,
+        /* HTTP-based protocols — update when new protocols are added */
+        PROTO_163,
+        PROTO_360,
+        PROTO_JD,
+        PROTO_56,
+        PROTO_888POKER,
+        PROTO_ABOUT,
+        PROTO_ADCASH,
+        PROTO_ADDTHIS,
+        PROTO_ADF,
+        PROTO_ADOBE,
+        PROTO_AFP,
+        PROTO_AIM,
+        PROTO_AIMINI,
+        PROTO_ALIBABA,
+        PROTO_ALIPAY,
+        PROTO_ALLEGRO,
+        PROTO_AMAZON,
+        PROTO_AMEBLO,
+        PROTO_ANCESTRY,
+        PROTO_ANGRYBIRDS,
+        PROTO_ANSWERS,
+        PROTO_AOL,
+        PROTO_APPLE,
+        PROTO_ASK,
+        PROTO_AVG,
+        PROTO_AWEBER,
+        PROTO_BABYLON,
+        PROTO_BADOO,
+        PROTO_BAIDU,
+        PROTO_BANKOFAMERICA,
+        PROTO_BARNESANDNOBLE,
+        PROTO_BATTLEFIELD,
+        PROTO_BATTLENET,
+        PROTO_BBB,
+        PROTO_BBC_ONLINE,
+        PROTO_BESTBUY,
+        PROTO_BETFAIR,
+        PROTO_BIBLEGATEWAY,
+        PROTO_BILD,
+        PROTO_BING,
+        PROTO_BITTORRENT,
+        PROTO_BLEACHERREPORT,
+        PROTO_BLOGFA,
+        PROTO_BLOGGER,
+        PROTO_BLOGSPOT,
+        PROTO_BODYBUILDING,
+        PROTO_BOOKING,
+        PROTO_CBSSPORTS,
+        PROTO_CNET,
+        PROTO_CHANGE,
+        PROTO_CHASE,
+        PROTO_CHESS,
+        PROTO_CHINAZ,
+        PROTO_CITRIXONLINE,
+        PROTO_CLICKSOR,
+        PROTO_CNN,
+        PROTO_CNZZ,
+        PROTO_COMCAST,
+        PROTO_CONDUIT,
+        PROTO_COPYSCAPE,
+        PROTO_CORREIOS,
+        PROTO_CRAIGSLIST,
+        PROTO_CROSSFIRE,
+        PROTO_DAILYMAIL,
+        PROTO_DAILYMOTION,
+        PROTO_DIRECT_DOWNLOAD_LINK,
+        PROTO_DEVIANTART,
+        PROTO_DIGG,
+        PROTO_DIRECTCONNECT,
+        PROTO_DOFUS,
+        PROTO_DONANIMHABER,
+        PROTO_DOUBAN,
+        PROTO_DOUBLECLICK,
+        PROTO_DROPBOX,
+        PROTO_EBAY,
+        PROTO_EHOW,
+        PROTO_EKSISOZLUK,
+        PROTO_ELECTRONICSARTS,
+        PROTO_ESPN,
+        PROTO_ETSY,
+        PROTO_EUROPA,
+        PROTO_EUROSPORT,
+        PROTO_FACEBOOK,
+        PROTO_FC2,
+        PROTO_FEIDIAN,
+        PROTO_FIVERR,
+        PROTO_FLICKR,
+        PROTO_FOX,
+        PROTO_FREE,
+        PROTO_GAMEFAQS,
+        PROTO_GAMESPOT,
+        PROTO_GAP,
+        PROTO_GARANTI,
+        PROTO_GAZETEVATAN,
+        PROTO_GIGAPETA,
+        PROTO_GITHUB,
+        PROTO_GITTIGIDIYOR,
+        PROTO_GLOBO,
+        PROTO_GMAIL,
+        PROTO_GNUTELLA,
+        PROTO_GOOGLE_MAPS,
+        PROTO_GO,
+        PROTO_GODADDY,
+        PROTO_GOO,
+        PROTO_GOOGLE,
+        PROTO_GOOGLE_USER_CONTENT,
+        PROTO_GROOVESHARK,
+        PROTO_GROUPON,
+        PROTO_GTALK,
+        PROTO_GUARDIAN,
+        PROTO_GUILDWARS,
+        PROTO_HABERTURK,
+        PROTO_HAO123,
+        PROTO_HEPSIBURADA,
+        PROTO_HI5,
+        PROTO_HOMEDEPOT,
+        PROTO_HOOTSUITE,
+        PROTO_HOTMAIL,
+        PROTO_HUFFINGTONPOST,
+        PROTO_HURRIYET,
+        PROTO_ICECAST,
+        PROTO_APPLE_ICLOUD,
+        PROTO_IFENG,
+        PROTO_IGN,
+        PROTO_IKEA,
+        PROTO_IMDB,
+        PROTO_IMESH,
+        PROTO_IMGUR,
+        PROTO_LEBONCOIN,
+        PROTO_INDIATIMES,
+        PROTO_INSTAGRAM,
+        PROTO_IRS,
+        PROTO_APPLE_ITUNES,
+        PROTO_UNENCRYPED_JABBER,
+        PROTO_JAPANPOST,
+        PROTO_KAT,
+        PROTO_ORANGEFR,
+        PROTO_KING,
+        PROTO_KOHLS,
+        PROTO_KONGREGATE,
+        PROTO_KONTIKI,
+        PROTO_LASTFM,
+        PROTO_LEAGUEOFLEGENDS,
+        PROTO_LEGACY,
+        PROTO_LETV,
+        PROTO_LINKEDIN,
+        PROTO_LIVE,
+        PROTO_LIVEDOOR,
+        PROTO_LIVEMAIL,
+        PROTO_LIVEINTERNET,
+        PROTO_LIVEJASMIN,
+        PROTO_LIVEJOURNAL,
+        PROTO_LIVESCORE,
+        PROTO_LIVINGSOCIAL,
+        PROTO_LOWES,
+        PROTO_MACYS,
+        PROTO_MAIL_RU,
+        PROTO_MAPLESTORY,
+        PROTO_MATCH,
+        PROTO_MEDIAFIRE,
+        PROTO_MEEBO,
+        PROTO_MICROSOFT,
+        PROTO_MILLIYET,
+        PROTO_MINECRAFT,
+        PROTO_MINICLIP,
+        PROTO_MLBASEBALL,
+        PROTO_MMO_CHAMPION,
+        PROTO_MMS,
+        PROTO_MOZILLA,
+        PROTO_MSN,
+        PROTO_MULTIPLY,
+        PROTO_MYNET,
+        PROTO_MYSPACE,
+        PROTO_MYWEBSEARCH,
+        PROTO_NBA,
+        PROTO_NEOBUX,
+        PROTO_NETFLIX,
+        PROTO_NEWEGG,
+        PROTO_NEWSMAX,
+        PROTO_NFL,
+        PROTO_NICOVIDEO,
+        PROTO_NIH,
+        PROTO_NORDSTROM,
+        PROTO_NYTIMES,
+        PROTO_ODNOKLASSNIKI,
+        PROTO_ONET,
+        PROTO_ORANGEDONKEY,
+        PROTO_OUTBRAIN,
+        PROTO_OVERSTOCK,
+        PROTO_PAYPAL,
+        PROTO_PCH,
+        PROTO_PCONLINE,
+        PROTO_PHOTOBUCKET,
+        PROTO_PINTEREST,
+        PROTO_PLAYSTATION,
+        PROTO_POGO,
+        PROTO_PORNHUB,
+        PROTO_PPLIVE,
+        PROTO_PPSTREAM,
+        PROTO_PREMIERLEAGUE,
+        PROTO_QQ,
+        PROTO_QQLIVE,
+        PROTO_R10,
+        PROTO_RAKUTEN,
+        PROTO_REDDIT,
+        PROTO_REDTUBE,
+        PROTO_REFERENCE,
+        PROTO_RENREN,
+        PROTO_ROBLOX,
+        PROTO_ROVIO,
+        PROTO_SABAH,
+        PROTO_SAHIBINDEN,
+        PROTO_SALESFORCE,
+        PROTO_SALON,
+        PROTO_SEARCHNU,
+        PROTO_SEARCH_RESULTS,
+        PROTO_SEARS,
+        PROTO_SECONDLIFE,
+        PROTO_SECURESERVER,
+        PROTO_SHOUTCAST,
+        PROTO_SINA,
+        PROTO_SITEADVISOR,
+        PROTO_SKY,
+        PROTO_SKYPE,
+        PROTO_SKYROCK,
+        PROTO_SKYSPORTS,
+        PROTO_SLATE,
+        PROTO_SLIDESHARE,
+        PROTO_SOFTONIC,
+        PROTO_SOGOU,
+        PROTO_SOHU,
+        PROTO_SOPCAST,
+        PROTO_SOSO,
+        PROTO_SOULSEEK,
+        PROTO_SOUNDCLOUD,
+        PROTO_SOURCEFORGE,
+        PROTO_SPIEGEL,
+        PROTO_SPORX,
+        PROTO_SPOTIFY,
+        PROTO_SQUIDOO,
+        PROTO_STACK_OVERFLOW,
+        PROTO_STATCOUNTER,
+        PROTO_STEAM,
+        PROTO_STUMBLEUPON,
+        PROTO_SULEKHA,
+        PROTO_TAGGED,
+        PROTO_TAOBAO,
+        PROTO_TARGET,
+        PROTO_TCO,
+        PROTO_THEMEFOREST,
+        PROTO_THE_PIRATE_BAY,
+        PROTO_TIANYA,
+        PROTO_TMALL,
+        PROTO_TORRENTZ,
+        PROTO_TRUPHONE,
+        PROTO_TUBE8,
+        PROTO_TUDOU,
+        PROTO_TUENTI,
+        PROTO_TUMBLR,
+        PROTO_TVANTS,
+        PROTO_TWITTER,
+        PROTO_UBI,
+        PROTO_UCOZ,
+        PROTO_UOL,
+        PROTO_USDEPARTMENTOFSTATE,
+        PROTO_HTTP_APPLICATION_VEOHTV,
+        PROTO_VIADEO,
+        PROTO_VIBER,
+        PROTO_VIMEO,
+        PROTO_VK,
+        PROTO_VKONTAKTE,
+        PROTO_WALMART,
+        PROTO_WARRIORFORUM,
+        PROTO_WAYN,
+        PROTO_WEATHER,
+        PROTO_WEBEX,
+        PROTO_WEEKLYSTANDARD,
+        PROTO_WEIBO,
+        PROTO_WELLSFARGO,
+        PROTO_WHATSAPP,
+        PROTO_WIGETMEDIA,
+        PROTO_WIKIA,
+        PROTO_WIKIMEDIA,
+        PROTO_WIKIPEDIA,
+        PROTO_WILLIAMHILL,
+        PROTO_WINDOWSLIVE,
+        PROTO_WINUPDATE,
+        PROTO_WORDPRESS_ORG,
+        PROTO_WORLDOFWARCRAFT,
+        PROTO_WOWHEAD,
+        PROTO_WWE,
+        PROTO_XBOX,
+        PROTO_XHAMSTER,
+        PROTO_XING,
+        PROTO_XINHUANET,
+        PROTO_XNXX,
+        PROTO_XVIDEOS,
+        PROTO_YAHOO,
+        PROTO_ALLOCINE,
+        PROTO_YAHOOMAIL,
+        PROTO_YANDEX,
+        PROTO_YELP,
+        PROTO_YOUKU,
+        PROTO_YOUPORN,
+        PROTO_YOUTUBE,
+        PROTO_ZAPPOS,
+        PROTO_ZATTOO,
+        PROTO_ZEDO,
+        PROTO_ZOL,
+        PROTO_ZYNGA,
+        PROTO_BUZZNET,
+        PROTO_COMEDY,
+        PROTO_RAMBLER,
+        PROTO_SMUGMUG,
+        PROTO_ARCHIEVE,
+        PROTO_CITYNEWS,
+        PROTO_SCIENCESTAGE,
+        PROTO_ONEWORLD,
+        PROTO_DISQUS,
+        PROTO_BLOGCU,
+        PROTO_EKOLAY,
+        PROTO_500PX,
+        PROTO_FOTKI,
+        PROTO_FOTOLOG,
+        PROTO_JALBUM,
+        PROTO_LEMONDE,
+        PROTO_PANORAMIO,
+        PROTO_SNAPFISH,
+        PROTO_WEBSHOTS,
+        PROTO_MEGA,
+        PROTO_VIDOOSH,
+        PROTO_AFREECA,
+        PROTO_WILDSCREEN,
+        PROTO_BLOGTV,
+        PROTO_HULU,
+        PROTO_MEVIO,
+        PROTO_LIVESTREAM,
+        PROTO_LIVELEAK,
+        PROTO_DEEZER,
+        PROTO_BLIPTV,
+        PROTO_BREAK,
+        PROTO_CITYTV,
+        PROTO_COMEDYCENTRAL,
+        PROTO_ENGAGEMEDIA,
+        PROTO_SCREENJUNKIES,
+        PROTO_RUTUBE,
+        PROTO_SEVENLOAD,
+        PROTO_MUBI,
+        PROTO_IZLESENE,
+        PROTO_VIDEO_HOSTING,
+    };
+    for (size_t i = 0; i < sizeof(http_detected_protocols) / sizeof(http_detected_protocols[0]); i++) {
+        /* every HTTP-based id joins detection_bitmask — a multi-hundred add
+         * the single-add generic helpers cannot express */
+        MMT_ADD_PROTOCOL_TO_BITMASK(detection_bitmask, http_detected_protocols[i]);
+    }
 }
 
 void mmt_classify_http(ipacket_t * ipacket, unsigned index) {

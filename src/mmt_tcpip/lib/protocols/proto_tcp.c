@@ -9,6 +9,20 @@
 #include "tcp.h"
 #include "tcp_segment.h"
 
+/* Named constants replacing the bare literals below (issue #238):
+ * - MMT_ETH_HEADER_LEN is the Ethernet II header (dst + src MAC + ethertype);
+ * - MMT_ETH_MIN_FRAME_LEN is the smallest on-wire Ethernet frame (60 bytes,
+ *   FCS excluded) — a frame whose IP tot_len plus payload only reaches it is
+ *   padding, see tcp_payload_len_extraction();
+ * - TCP_DOFF_* name the TCP data-offset (doff) field: a 4-bit count of 32-bit
+ *   words whose minimum legal value is 5 (a 20-byte header with no options)
+ *   and whose maximum is 15 (60 bytes), see tcp_option_extraction(). */
+#define MMT_ETH_HEADER_LEN    14
+#define MMT_ETH_MIN_FRAME_LEN 60
+#define TCP_DOFF_WORD_BYTES    4
+#define TCP_DOFF_MIN_WORDS     5
+#define TCP_DOFF_MAX_WORDS    15
+
 int tcp_data_offset_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
@@ -196,18 +210,21 @@ int tcp_payload_len_extraction(const ipacket_t * ipacket, unsigned proto_index,
      * no packet bytes; the floor still validates the capture plumbing. */
     if (!mmt_have_bytes(ipacket, 0, 0) || extracted_data == NULL) return 0;
     if (ipacket->internal_packet == NULL) return 0;
-    // if(ipacket->internal_packet->payload_packet_len){
-        // Check padding packet
-        if(ipacket->internal_packet->iph==NULL){
-            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
-            return 1;
-        }
+    /* Padding probe: a minimum-size Ethernet frame pads its payload out to
+     * MMT_ETH_MIN_FRAME_LEN on the wire, so when IP tot_len + payload_len +
+     * MMT_ETH_HEADER_LEN lands exactly on it the "payload" is padding and no
+     * length is reported. (Issue #238, F-CLEAN-010: this block sat inside
+     * commented-out `if(payload_packet_len){ ... }` braces that made the live
+     * control flow look narrower than it is — they are gone now.) */
+    if(ipacket->internal_packet->iph==NULL){
+        *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
+        return 1;
+    }
 
-        if((ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + 14 != 60)){
-            *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
-            return 1;
-        }
-    // }
+    if((ntohs(ipacket->internal_packet->iph->tot_len) + ipacket->internal_packet->payload_packet_len + MMT_ETH_HEADER_LEN != MMT_ETH_MIN_FRAME_LEN)){
+        *((uint32_t*) extracted_data->data) = ipacket->internal_packet->payload_packet_len;
+        return 1;
+    }
     return 0;
 }
 
@@ -354,17 +371,19 @@ int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attrib
     if (proto_offset < 0) return 0;
     if (!mmt_have_bytes(ipacket, (size_t) proto_offset, sizeof(struct tcphdr))) return 0;
     mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & ipacket->data[proto_offset];
+    /* doff is a 4-bit count of 32-bit words (TCP_DOFF_WORD_BYTES each), so it
+     * is bounded by TCP_DOFF_MAX_WORDS = 15 by construction; at
+     * TCP_DOFF_MIN_WORDS = 5 the header is the 20-byte fixed part with no
+     * options to extract. (Issue #238, F-CLEAN-014: the `tcphdr_len < 20 ||
+     * tcphdr_len > 60` check that followed was subsumed by these bounds and
+     * has been deleted.) */
     int data_offset = tcp_hdr->doff;
     //no optional fields
-    if( data_offset <= 5 )
+    if( data_offset <= TCP_DOFF_MIN_WORDS )
        return 0;
-    if (data_offset > 15) return 0;
-    //tcp data offset specifies the size of tcp header length in 32-bit words
-    //its value is from 5 (no option fields) to 15
-    int tcphdr_len = data_offset * 4;
-    if (tcphdr_len < 20 || tcphdr_len > 60) return 0;
+    int tcphdr_len = data_offset * TCP_DOFF_WORD_BYTES;
     if (!mmt_have_bytes(ipacket, (size_t) proto_offset, (size_t) tcphdr_len)) return 0;
-    int option_offset = proto_offset + (5*4); //5 words of tcp header
+    int option_offset = proto_offset + (TCP_DOFF_MIN_WORDS * TCP_DOFF_WORD_BYTES); //option fields start after the fixed header
     int end_of_option = proto_offset + tcphdr_len;
     if (end_of_option > (int)ipacket->p_hdr->caplen) end_of_option = ipacket->p_hdr->caplen;
 
@@ -529,11 +548,11 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     // malformed value below 5 yields a header length that is too small (and
     // would slip past the "l4_packet_len < tcphdr_len" check below for doff 0),
     // so reject the packet before deriving any offsets from it.
-    if (packet->tcp->doff < 5) {
+    if (packet->tcp->doff < TCP_DOFF_MIN_WORDS) {
         MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp data offset < 5)\n" );
         return MMT_CLASSIFY_SKIP;
     }
-    uint16_t tcphdr_len = packet->tcp->doff * 4; //TCP header length
+    uint16_t tcphdr_len = packet->tcp->doff * TCP_DOFF_WORD_BYTES; //TCP header length
 
     packet->l4_protocol = 6; /* TCP for sure ;) */
 
@@ -643,11 +662,11 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
     // malformed value below 5 yields a header length that is too small (and
     // would slip past the "l4_packet_len < tcphdr_len" check below for doff 0),
     // so reject the packet before deriving any offsets from it.
-    if (packet->tcp->doff < 5) {
+    if (packet->tcp->doff < TCP_DOFF_MIN_WORDS) {
         MMT_LOG( PROTO_TCP, MMT_LOG_DEBUG, "*** Warning: malformed packet (tcp data offset < 5)\n" );
         return MMT_CLASSIFY_SKIP;
     }
-    uint16_t tcphdr_len = packet->tcp->doff * 4; //TCP header length
+    uint16_t tcphdr_len = packet->tcp->doff * TCP_DOFF_WORD_BYTES; //TCP header length
 
     packet->l4_protocol = 6; /* TCP for sure ;) */
 
@@ -772,7 +791,7 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
     // retval.offset = 0;
     // retval.proto_id = 0;
     retval.status = NonClassified;
-    retval.offset = packet->tcp->doff * 4; //TCP header length
+    retval.offset = packet->tcp->doff * TCP_DOFF_WORD_BYTES; //TCP header length
 
     a = packet->detected_protocol_stack[0];
     ////////////////////////////////////////////////

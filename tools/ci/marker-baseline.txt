@@ -14,4 +14,9 @@
 # CI). Word-boundary matching dropped 3 false positives (mkstemp "XXXXXX"
 # templates, a "HACKED" test string); 10 stale/noise markers were deleted and
 # 2 embedded in now-deleted commented-out code went away with them.
-170
+#
+# #238: re-baselined 170 -> 161 — the nine `//BW: TODO(#330)` trailing comments
+# on the inter-protocol registration calls moved verbatim from
+# configured_protocols.c into inter_proto_classif_list.def, which the marker
+# scan (tracked *.[ch] only) does not read; the markers still live there.
+161

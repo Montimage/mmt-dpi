@@ -265,25 +265,26 @@ const mmt_session_t * get_session_previous( const mmt_session_t *session )
 { return session->previous; }
 
 
-const proto_hierarchy_t * get_session_proto_path_direction(const mmt_session_t *session, int direction){
+const proto_hierarchy_t * get_session_proto_path_direction(const mmt_session_t *session, mmt_session_direction_t direction){
     // debug("[IP] setup_packet_direction: %d",session->setup_packet_direction);
     // debug("[IP] last_packet_direction: %d",session->last_packet_direction);
-    if(direction == 1){
-        // Get uplink path
+    if(direction == MMT_SESSION_DIRECTION_UPLINK){
+        // Uplink path requested: the setup direction is the uplink one
         if(session->last_packet_direction == session->setup_packet_direction){
-            // uploading data
+            // last packet went uplink -> uplink path
             return &session->proto_path_direction[session->setup_packet_direction];
         }else{
-            // downloading data
+            // last packet went downlink -> downlink path
             return &session->proto_path_direction[!session->setup_packet_direction];
         }
     }else{
-        // Get downlink path
+        // Downlink path requested
         if(session->last_packet_direction == session->setup_packet_direction){
-            // downloading data
+            // last packet went uplink -> downlink path
             return &session->proto_path_direction[!session->setup_packet_direction];
         }else{
-            // downloading data
+            // last packet went downlink -> uplink path (issue #238: this
+            // branch used to repeat the sibling's "downloading data" comment)
             return &session->proto_path_direction[session->setup_packet_direction];
         }
     }

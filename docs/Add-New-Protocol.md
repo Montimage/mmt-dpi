@@ -68,21 +68,16 @@ If a protocol needs a classification for example protocol rtp, we need to add a 
    
 ```
 
-In the TCP/IP configured protocols library file **`src/mmt_tcpip/lib/configured_protocols.c`** add **lemonde** protocol initialization at the end of protocol initialization block:
+In the protocol-init list **`src/mmt_tcpip/lib/proto_init_list.def`** (included by `configured_protocols.c`, which expands it into the `proto_init_table[]` walked by `init_tcpip_plugin()`) add **lemonde** protocol initialization at the end of the list — order is significant, it decides classifier chain order:
 
 ```c
-    /////////// INITILIZING PROTO_LEMONDE //////////////////
-    if (!init_proto_lemonde_struct()) {
-        fprintf(stderr, "Error initializing protocol proto_lemonde\n Exiting\n");
-        exit(0);
-    }
-    /////////////////////////////////////////////
+    MMT_PROTO_INIT(init_proto_lemonde_struct, "proto_lemonde")
 ```
-If a protocol needs a classification for example protocol rtp, we need to add a classification function
+If a protocol needs a classification for example protocol rtp, we need to add a classification function entry in the inter-protocol list **`src/mmt_tcpip/lib/inter_proto_classif_list.def`** (expanded into `inter_proto_table[]` in the same function):
 
 ```c
     
-  register_classification_function_with_parent_protocol(PROTO_UDP, mmt_check_rtp_udp, 50);
+  MMT_INTER_PROTO(PROTO_UDP, mmt_check_rtp_udp, 50)
    
 ```
 In the same file, update function **get_application_class_by_protocol_id** to include **lemonde** as a WEB protocol.
