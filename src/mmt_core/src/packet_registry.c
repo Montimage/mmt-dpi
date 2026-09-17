@@ -16,10 +16,6 @@
 #include <pthread.h>
 // #include "libntoh.h"
 
-bool session_timeout_comp_fn_pt(uint32_t l_timeout, uint32_t r_timeout) {
-    return (l_timeout < r_timeout);
-}
-
 bool pointer_comp_fn_pt(void * l_p, void * r_p) {
     return (l_p < r_p);
 }
@@ -105,6 +101,30 @@ bool attribute_names_comparison_fct(void * l_name, void * r_name) {
 // in get_protocol_id_by_name() matched.
 bool protocol_names_comparison_fct(void * l_name, void * r_name) {
     return (mmt_strncasecmp((char *) l_name, (char *) r_name, Max_Alias_Len) < 0) ? true : false;
+}
+
+/* Issue #254 (F-PERF-012): hash functions for the open-addressing void* maps.
+ * Each must be consistent with its comparison's equivalence: keys equal under
+ * !cmp(a,b) && !cmp(b,a) have to hash equally. */
+
+/* The handler registry keys on the pointer value itself, so equivalence is
+ * pointer equality — hash the address. */
+static uint64_t pointer_hash_fn(void * p) {
+    return (uint64_t) (uintptr_t) p;
+}
+
+/* The attribute/protocol name maps compare with
+ * mmt_strncasecmp(..., Max_Alias_Len): two names are equivalent iff their
+ * uppercase-folded bytes agree through Max_Alias_Len or a shared NUL. Hash
+ * the same folded bytes over the same bounded span so equivalent aliases
+ * always land in the same bucket. */
+static uint64_t alias_names_hash(void * name) {
+    const unsigned char * s = (const unsigned char *) name;
+    uint64_t h = 1469598103934665603ULL; /* FNV-1a basis */
+    for (int i = 0; i < Max_Alias_Len && s[i] != '\0'; i++) {
+        h = (h ^ (uint64_t) (unsigned char) mmt_toupper((char) s[i])) * 1099511628211ULL;
+    }
+    return h;
 }
 
 
@@ -680,7 +700,7 @@ void init_protocol_struct(protocol_t * proto) {
     proto->has_session = NO_SESSION_CONTEXT;
     proto->session_timeout_delay = CFG_DEFAULT_SESSION_TIMEOUT;
     proto->attributes_map = init_int_map_space(attribute_ids_comparison_fct);
-    proto->attributes_names_map = init_map_space(attribute_names_comparison_fct);
+    proto->attributes_names_map = init_map_space(attribute_names_comparison_fct, alias_names_hash);
     proto->get_attribute_id_by_name = get_attribute_id_by_name_from_protocol_map;
     proto->get_attribute_name_by_id = get_attribute_name_by_id_from_protocol_map;
     proto->get_attribute_data_length_by_id = get_attribute_length_from_protocol_map;
@@ -938,7 +958,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->current_ipacket.data = NULL;
     new_handler->current_ipacket.original_data = NULL;
 
-    new_handler->timeout_milestones_map = init_int_map_space(session_timeout_comp_fn_pt);
+    new_handler->timeout_milestones_map = init_timeout_milestones_index();
     if (new_handler->timeout_milestones_map == NULL) {
         if ( errbuf )
             strcpy(errbuf, "Error while initializing mmt extraction handler");
@@ -967,7 +987,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
                 }
                 hashmap_free(new_handler->ip_streams);
                 hashmap_free(new_handler->ip6_streams);
-                delete_int_map_space(new_handler->timeout_milestones_map);
+                clear_timeout_milestones(new_handler);
                 mmt_free(new_handler);
                 if (errbuf) strcpy(errbuf, "Error while initializing mmt extraction handler");
                 return NULL;
@@ -1178,7 +1198,7 @@ bool init_extraction()
     // Issue #19: create the protocol name -> id index before any protocol is
     // registered (init_proto_meta_struct/init_plugins below call
     // register_protocol, which populates this map).
-    configured_protocols_names_map = init_map_space(protocol_names_comparison_fct);
+    configured_protocols_names_map = init_map_space(protocol_names_comparison_fct, alias_names_hash);
     if (configured_protocols_names_map == NULL) {
         // Issue #200 (F-BUG-003): the map allocation failed — refuse to start
         // instead of registering protocols into a NULL map.
@@ -1203,7 +1223,7 @@ bool init_extraction()
     }
 
     init_plugins();
-    mmt_configured_handlers_map = init_map_space(pointer_comp_fn_pt);
+    mmt_configured_handlers_map = init_map_space(pointer_comp_fn_pt, pointer_hash_fn);
     if (mmt_configured_handlers_map == NULL) {
         // Issue #200 (F-BUG-003): same unchecked-nothrow-new guard as above.
         mmt_stderr_log( "Error during initialization (out of memory)\n");

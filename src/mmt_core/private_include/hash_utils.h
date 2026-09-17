@@ -37,7 +37,11 @@ extern "C" {
     void * init_session_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct);
     void delete_session_map_space(void * sessionmap);
 
-    void * init_map_space(generic_comparison_fct comp_fct);
+    // Generic void*-keyed map — the same open-addressing table as the session
+    // store (issue #254): hash_fct must be consistent with comp_fct equality
+    // (keys equal under !cmp(a,b) && !cmp(b,a) must hash equally); NULL is a
+    // correct but slow constant-hash fallback.
+    void * init_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct);
     void * init_int_map_space(generic_int_comparison_fct comp_fct);
     int getmapsize(void * maplist);
 
@@ -55,6 +59,10 @@ extern "C" {
     void mapspace_iteration_callback(void * maplist, generic_mapspace_iteration_callback fct, void * args);
     void int_mapspace_iteration_callback(void * maplist, generic_mapspace_iteration_callback fct, void * args);
 
+    // Session-timeout index: a timing-wheel ring bounded by the live
+    // milestone span (issue #254, F-PERF-013) — insert/update/delete are O(1)
+    // and allocate nothing on the hot path.
+    void * init_timeout_milestones_index(void);
     int insert_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t timeout, mmt_session_t * session);
     int update_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t new_timeout, uint32_t old_timeout, mmt_session_t * session);
     mmt_session_t * get_timed_out_session_list(mmt_handler_t *mmt_handler, uint32_t timeout);

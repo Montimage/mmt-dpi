@@ -9,19 +9,20 @@
  * Covered surface (asserted contract: NULL propagation or clean success, no
  * double free, zero net leaked blocks once cleanup ran):
  *
- *   1. mmt_init_handler() — the six allocation sites whose failure must
+ *   1. mmt_init_handler() — the seven allocation sites whose failure must
  *      abort the init cleanly:
  *        #1 mmt_malloc(mmt_handler_t)
  *        #2 hashmap_alloc() map struct   (ip_streams)
  *        #3 hashmap_alloc() slot array   (ip_streams)
  *        #4 hashmap_alloc() map struct   (ip6_streams)
  *        #5 hashmap_alloc() slot array   (ip6_streams)
- *        #6 init_int_map_space()         (timeout_milestones_map) — the
+ *        #6 init_timeout_milestones_index() ring struct
+ *        #7 init_timeout_milestones_index() ring slot array — the
  *          second-allocation-failure branch hardened by task 2.1: it must
  *          release both stream maps before returning NULL.
  *      Allocation sites deeper in the per-protocol loop (setup_*_context
- *      and the C++ map insertion further on) still have unchecked OOM paths
- *      on this branch — they are the subject of the open 2.x hardening
+ *      and the session-table creation further on) still have unchecked OOM
+ *      paths on this branch — they are the subject of the open 2.x hardening
  *      work — so the sweep is deliberately bounded to the hardened sites.
  *      Widening FI_INIT_BRANCHES exercises them once those fixes land.
  *
@@ -59,7 +60,7 @@ static int failures;
 
 /* Number of mmt_init_handler allocation sites asserted in the sweep — see
  * the file header for why the sweep is bounded here. */
-#define FI_INIT_BRANCHES 6
+#define FI_INIT_BRANCHES 7
 
 /* ------------------------------------------------------------------ */
 /* generic map fixtures                                                 */

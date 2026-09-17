@@ -23,6 +23,21 @@ bool ipv6_addr_comp(void * l_ip, void * r_ip) {
     return (mmt_memcmp(&((struct in6_addr *) l_ip)->s6_addr, &((struct in6_addr *) r_ip)->s6_addr, IPv6_ALEN) < 0);
 }
 
+/* Issue #254 (F-PERF-012): hashes consistent with the comp functions above —
+ * equal addresses must hash equal. Same unaligned-read precaution as
+ * ipv4_addr_comp: the key may point into the byte-aligned packet buffer. */
+static uint64_t ipv4_addr_hash(void * ip) {
+    uint32_t v;
+    memcpy(&v, ip, sizeof(v));
+    return (uint64_t) v;
+}
+
+static uint64_t ipv6_addr_hash(void * ip) {
+    uint64_t w[2];
+    memcpy(w, &((struct in6_addr *) ip)->s6_addr, sizeof(w));
+    return w[0] ^ (w[1] << 1);
+}
+
 static inline int _insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip4_id_t * ip_id) {
     return insert_key_value(tcpip_context->ips_map, (void *) &ip_id->ip, (void *) ip_id);
 }
@@ -67,7 +82,7 @@ internal_ip_proto_context_t * setup_ipv4_internal_context() {
     }
     memset(tcpip_context, 0, sizeof (internal_ip_proto_context_t));
 
-    tcpip_context->ips_map = init_map_space(ipv4_addr_comp);
+    tcpip_context->ips_map = init_map_space(ipv4_addr_comp, ipv4_addr_hash);
     if (tcpip_context->ips_map == NULL) {
         mmt_free(tcpip_context);
         return NULL;
@@ -89,7 +104,7 @@ internal_ip_proto_context_t * setup_ipv6_internal_context() {
     }
     memset(tcpip_context, 0, sizeof (internal_ip_proto_context_t));
 
-    tcpip_context->ips_map = init_map_space(ipv6_addr_comp);
+    tcpip_context->ips_map = init_map_space(ipv6_addr_comp, ipv6_addr_hash);
     if (tcpip_context->ips_map == NULL) {
         mmt_free(tcpip_context);
         return NULL;

@@ -3,7 +3,7 @@
  * the session-timeout milestone lists in src/mmt_core/src/hash_utils.cpp.
  *
  * Issue #199 coverage:
- *   - F-BUG-001: mmt_session_resize() must restore the previous slot array when
+ *   - F-BUG-001: the table resize must restore the previous slot array when
  *     the grow allocation fails (calloc fault injected via -Wl,--wrap=calloc),
  *     and lookup/insert/delete must early-out on a dead (cap == 0) or absent
  *     session table instead of indexing NULL slots.
@@ -35,7 +35,6 @@ extern "C" void *__wrap_calloc(size_t nmemb, size_t size) {
 /* ---- key helpers: keys are plain ints addressed by pointer ---------------- */
 static bool int_key_comp(void *a, void *b) { return *(int *)a < *(int *)b; }
 static uint64_t int_key_hash(void *k) { return (uint64_t)(uint32_t)*(int *)k; }
-static bool u32_lt(uint32_t a, uint32_t b) { return a < b; }
 
 static protocol_instance_t make_proto_ctx(void *sessions_map) {
     protocol_instance_t pc;
@@ -130,8 +129,8 @@ static void test_milestone_unlink_null_previous(void) {
     fprintf(stderr, "  test: milestone unlink with NULL session->previous\n");
     mmt_handler_t h;
     memset(&h, 0, sizeof(h));
-    h.timeout_milestones_map = init_int_map_space(u32_lt);
-    CHECK(h.timeout_milestones_map != NULL, "init_int_map_space should succeed");
+    h.timeout_milestones_map = init_timeout_milestones_index();
+    CHECK(h.timeout_milestones_map != NULL, "init_timeout_milestones_index should succeed");
     if (h.timeout_milestones_map == NULL) return;
 
     mmt_session_t head, orphan;

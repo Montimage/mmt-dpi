@@ -2,10 +2,12 @@
  * test_core_engine_new.cpp — C++ allocation failure injection for the
  * core-engine suite (issue #241).
  *
- * hash_utils.cpp allocates through operator new (std::map nodes) and
- * new (std::nothrow) (the map objects themselves). Those calls are not
- * reachable via -Wl,--wrap=malloc, so this TU replaces the global new/delete
- * with budgeted versions:
+ * hash_utils.cpp still allocates through operator new in one place: the
+ * std::vector snapshots taken by the iteration callbacks (issue #200,
+ * F-BUG-004). Those calls are not reachable via -Wl,--wrap=malloc, so this
+ * TU keeps replacing the global new/delete with budgeted versions — the
+ * budget also stays a tripwire for any C++ allocation that creeps back into
+ * the store implementations (issue #254 removed the tree nodes entirely):
  *
  *   ce_set_new_budget(-1)  unlimited (default)
  *   ce_set_new_budget( 0)  every new fails — throwing new raises

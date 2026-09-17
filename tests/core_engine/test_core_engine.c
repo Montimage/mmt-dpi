@@ -24,12 +24,13 @@
  *
  * Failure injection: the binary is linked with -Wl,--wrap=malloc
  * -Wl,--wrap=calloc; every libc allocation in the linked library objects is
- * routed through the budget counters below. C++ operator new is interposed by
- * test_core_engine_new.cpp (ce_set_new_budget) so the nothrow-new and
- * throwing-new paths behind init_int_map_space()/std::map::insert() can be
- * failed deterministically — that is what drives the double-OOM session
- * destroy branch (F-BUG-023) and the timeout_milestones_map == NULL branch in
- * mmt_init_handler().
+ * routed through the budget counters below. test_core_engine_new.cpp still
+ * interposes C++ operator new (ce_set_new_budget) for any std:: allocations
+ * left in the engine (the iteration snapshot vectors in hash_utils.cpp), but
+ * every store there is now plain calloc/malloc — the double-OOM session
+ * destroy branch (F-BUG-023) is driven by a calloc budget against the
+ * timeout-ring growth, and the timeout_milestones_map == NULL branch in
+ * mmt_init_handler() by calloc budget 0.
  */
 
 #include <stdint.h>
@@ -504,16 +505,16 @@ static void test_handler_bootstrap_oom(void) {
      *   #1 handler struct (mmt_malloc)
      *   #2 ip_streams map, #3 ip_streams slots (hashmap_alloc)
      *   #4 ip6_streams map, #5 ip6_streams slots
-     *   timeout_milestones_map is a C++ nothrow-new — budgeted separately
-     *   #6 A's session table (malloc)  + A's slots (calloc)
-     *   #7 B's session table (malloc)  + B's slots (calloc)
-     * Budgets 0..6 all fail; 7 lets the whole call through.
+     *   #6 timeout-ring struct (malloc)    + ring slots (calloc)
+     *   #7 A's session table (malloc)  + A's slots (calloc)
+     *   #8 B's session table (malloc)  + B's slots (calloc)
+     * Budgets 0..7 all fail; 8 lets the whole call through.
      */
-    for (long b = 0; b <= 7; b++) {
+    for (long b = 0; b <= 8; b++) {
         g_malloc_budget = b;
         mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
         g_malloc_budget = -1;
-        if (b < 7) {
+        if (b < 8) {
             CHECK(h == NULL, "init_handler under malloc budget should fail");
         } else {
             CHECK(h != NULL, "init_handler with enough budget succeeds");
@@ -527,22 +528,19 @@ static void test_handler_bootstrap_oom(void) {
         }
     }
 
-    /* calloc budget: A's slot array fails first; then B's — the second
-     * failure must roll back A's already-created session map. */
+    /* calloc budget: the timeout ring's slot array fails first (the
+     * F-BUG-012 cleanup frees both ip_streams maps); then A's session slots;
+     * then B's — the last failure must roll back A's already-created map. */
     g_calloc_budget = 0;
     CHECK(mmt_init_handler(TEST_STACK_ID, 0, errbuf) == NULL,
-          "init_handler fails when A's session slots cannot be allocated");
+          "init_handler fails when the timeout ring cannot be allocated");
     g_calloc_budget = 1;
+    CHECK(mmt_init_handler(TEST_STACK_ID, 0, errbuf) == NULL,
+          "init_handler fails when A's session slots cannot be allocated");
+    g_calloc_budget = 2;
     CHECK(mmt_init_handler(TEST_STACK_ID, 0, errbuf) == NULL,
           "init_handler fails when B's session slots cannot be allocated");
     g_calloc_budget = -1;
-
-    /* C++ new budget: timeout_milestones_map (nothrow new) cannot be
-     * allocated -> the F-BUG-012 cleanup frees both ip_streams maps. */
-    ce_set_new_budget(0);
-    CHECK(mmt_init_handler(TEST_STACK_ID, 0, errbuf) == NULL,
-          "init_handler fails when the timeout milestone map cannot be allocated");
-    ce_set_new_budget(-1);
 }
 
 /* ==================== session lifecycle via the dispatcher ================ */
@@ -934,20 +932,41 @@ static void test_session_create_oom(void) {
     CHECK(packet_process(h, &hdr, pkt_x) == 1, "packet X processed");
     CHECK(h->sessions_count == 1, "session X created");
 
-    /* Y: sessionize + map insert succeed, but the C++ node allocation inside
+    /* Y: sessionize + map insert succeed, but the timeout-ring growth inside
      * insert_session_timeout_milestone fails — twice — so the engine must run
      * process_outofmemory_force_sessions_timeout() (which expires X) and then
-     * destroy Y on the F-BUG-023 double-OOM path. */
-    ce_set_new_budget(0);
+     * destroy Y on the F-BUG-023 double-OOM path.
+     *
+     * Ring inserts allocate only when the target slot is already owned by a
+     * different live milestone (which forces a grow); a plain calloc budget
+     * cannot fail a free-slot claim. The fabricated session below parks on
+     * milestone 935 — below last_expiry_timeout (5001) when Y is processed —
+     * so the OOM sweep, which only scans forward from last_expiry_timeout,
+     * never removes it; and Y's milestone 5031 collides with it modulo the
+     * initial ring capacity (5031 % 1024 == 935). Both the first insert and
+     * the post-sweep retry hit that slot and fail on the growth calloc. */
+    mmt_session_t *stale = (mmt_session_t *) mmt_malloc(sizeof(*stale));
+    CHECK(stale != NULL, "fabricated session alloc");
+    if (stale == NULL) { mmt_close_handler(h); return; }
+    memset(stale, 0, sizeof(*stale));
+    stale->session_timeout_milestone = 935;
+    CHECK(insert_session_timeout_milestone(h, 935, stale) == 1,
+          "stale milestone inserted");
+
+    g_calloc_budget = 0;
     make_packet(&hdr, pkt_y, sizeof(pkt_y), 0x51515151u, 5001, 0);
     CHECK(packet_process(h, &hdr, pkt_y) == 1, "packet Y processed under OOM");
-    ce_set_new_budget(-1);
+    g_calloc_budget = -1;
     CHECK(h->sessions_count == 1, "Y was destroyed — sessions_count rolled back");
     CHECK(get_active_session_count(h) == 0, "no active sessions after the OOM sweep");
     CHECK(g_expiry_calls == expiry_before + 1, "the OOM sweep expired X");
     CHECK(g_session_ctx_cleanup_calls == ctx_before + 1, "X went through context cleanup");
     CHECK(g_session_data_cleanup_calls == data_before + 2, "data cleanup ran for X and Y");
     CHECK(get_timed_out_session_list(h, 5030) == NULL, "X milestone drained");
+    CHECK(get_timed_out_session_list(h, 935) == stale,
+          "stale milestone survived the OOM sweep");
+    CHECK(force_session_timeout(h, stale) == 1, "stale session unlinked");
+    mmt_free(stale);
 
     /* sessionizer OOM: the session malloc itself fails with is_new set —
      * drives the NULL-session/is_new branch in proto_session_management. */
