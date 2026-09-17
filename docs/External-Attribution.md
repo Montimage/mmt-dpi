@@ -8,7 +8,7 @@ title: "Externally-updatable IP-range / port attribution (M9)"
 *Part of the MMT-DPI Master Improvement Plan — Phase 7 (M9, issues #26 & #74).*
 
 Historically MMT-DPI shipped ~10,000 IP ranges and a fixed set of L4 ports
-**hardcoded** in the C sources (`src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c`,
+**hardcoded** in the C sources (`src/mmt_tcpip/lib/mmt_tcpip_classif_proto_ip_address.inc`,
 `src/mmt_tcpip/lib/mmt_tcpip_plugin_internal.c`). Refreshing a stale CDN/cloud range or adding a
 port hint meant editing C and rebuilding the library.
 

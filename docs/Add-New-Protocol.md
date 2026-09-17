@@ -91,7 +91,7 @@ In the same file, update function **get_application_class_by_protocol_id** to in
 
 Now comes the last part where the classification rules for **lemonde** needs to be added. As **lemonde** is a WEB protocol, the classification is directly derived from the **hostnames** of **lemonde** website. An investigation needs to be performed in order to gat the list of domain names for a Web application as there could be many. We will consider here that **lemonde** protocol uses just one hostname **lemonde.fr**.
 
-In the TCP/IP classification utilities source file **`src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c`** add to the end of **`doted_host_names`** structure the following:
+In the hostname-match data unit **`src/mmt_tcpip/lib/mmt_tcpip_classif_doted_host_names.inc`** (included by `mmt_tcpip_classif_utils.c`) add to the end of **`doted_host_names`** structure the following:
 
 ```c
     // Add a line for every domain name you have
