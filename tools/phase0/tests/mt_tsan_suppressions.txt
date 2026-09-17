@@ -2,7 +2,7 @@
 #
 # Scope: this file may suppress ONLY known-benign or third-party reports that are
 # NOT part of the Phase 6 thread-safety code under test. A race reported in
-#   - src/mmt_core/src/packet_processing.c   (configured_protocols_mutex, #22)
+#   - src/mmt_core/src/packet_registry.c     (configured_protocols_mutex, #22)
 #   - src/mmt_core/src/plugins_engine.c      (plugin_handlers_list_mutex, #22)
 #   - src/mmt_tcpip/lib/protocols/proto_radius.c (per-session state, #23)
 # is a REAL finding and MUST surface — never suppress those here.

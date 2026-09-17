@@ -1,10 +1,11 @@
 #!/bin/bash
 # Run core-engine tests (issue #241): session lifecycle through
-# packet_processing.c's dispatcher and the memory.c arena allocator.
+# packet_session.c's session manager and the memory.c arena allocator.
 #
 # The suite source-compiles packet_processing.c and the objects it needs from
-# src/mmt_core (packet_registry, packet_pipeline, memory, hashmap, mmt_data,
-# mmt_inet_ntop, proto_meta, plugins_engine, extraction_lib, mmt_init) plus
+# src/mmt_core (packet_registry, packet_pipeline, packet_session,
+# packet_stats, memory, hashmap, mmt_data, mmt_inet_ntop, proto_meta,
+# plugins_engine, extraction_lib, mmt_init) plus
 # hash_utils.cpp, so gcov records them under --coverage and ASan/UBSan
 # instrument them under SANITIZE=*.
 #
@@ -28,7 +29,8 @@ INCS=(-I"$CORE_PRIVATE_INC" -I"$CORE_PUBLIC_INC" -I"$PROJECT_DIR/src/mmt_tcpip/l
 
 echo "Compiling core-engine tests..."
 
-C_SOURCES="packet_processing.c packet_registry.c packet_pipeline.c memory.c \
+C_SOURCES="packet_processing.c packet_registry.c packet_pipeline.c \
+packet_session.c packet_stats.c memory.c \
 hashmap.c mmt_data.c mmt_inet_ntop.c \
 proto_meta.c plugins_engine.c extraction_lib.c mmt_init.c"
 

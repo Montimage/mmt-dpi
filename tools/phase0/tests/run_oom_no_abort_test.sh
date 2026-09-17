@@ -54,9 +54,9 @@ strip_and_grep() {
 }
 hits=""
 hits+="$(strip_and_grep "${REPO_ROOT}/src/mmt_tcpip/lib/configured_protocols.c")"
-# init_extraction() lives in packet_processing.c; only flag exit() inside it.
-pp_init="$(awk '/^int init_extraction\(/{f=1} f; /^}/{if(f)exit}' \
-            "${REPO_ROOT}/src/mmt_core/src/packet_processing.c" \
+# init_extraction() lives in packet_registry.c; only flag exit() inside it.
+pp_init="$(awk '/^bool init_extraction\(/{f=1} f; /^}/{if(f)exit}' \
+            "${REPO_ROOT}/src/mmt_core/src/packet_registry.c" \
             | sed -E 's://.*$::' | grep -nE '\bexit[[:space:]]*\(' || true)"
 hits+="${pp_init}"
 if [ -n "${hits//[[:space:]]/}" ]; then

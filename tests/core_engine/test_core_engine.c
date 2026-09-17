@@ -4,14 +4,18 @@
  * Drives the two largest central files directly, source-compiled so gcov
  * records them:
  *
- *   src/mmt_core/src/packet_processing.c — handler lifecycle
+ *   src/mmt_core/src/packet_registry.c — handler lifecycle
  *     (init_extraction/mmt_init_handler/mmt_close_handler/close_extraction),
- *     the packet dispatch path (packet_process -> proto_packet_process ->
- *     proto_session_management), session create/lookup/timeout/teardown,
- *     the timeout-milestone sweep, session timer/expiry callbacks, protocol
- *     statistics, attribute registration + extraction and the handler
- *     registries — including the OOM cleanup branches under deterministic
- *     malloc/calloc/operator-new failure injection.
+ *     attribute registration and the handler registries;
+ *   src/mmt_core/src/packet_pipeline.c — the packet dispatch path
+ *     (packet_process -> proto_packet_process) and attribute extraction;
+ *   src/mmt_core/src/packet_session.c — proto_session_management, session
+ *     create/lookup/timeout/teardown, the timeout-milestone sweep and the
+ *     session timer/expiry callbacks;
+ *   src/mmt_core/src/packet_stats.c — protocol statistics;
+ *   src/mmt_core/src/packet_processing.c — the attribute accessors and
+ *     formatting tail — including the OOM cleanup branches under
+ *     deterministic malloc/calloc/operator-new failure injection.
  *
  *   src/mmt_core/src/hash_utils.cpp — the session store and the
  *     timeout-milestone maps as exercised through the engine (the hashmap

@@ -1547,69 +1547,65 @@ bool register_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const cha
 
 bool register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
     protocol_t * proto = get_protocol_struct_by_protocol_id(proto_id);
-    if (proto != NULL) {
-        struct attribute_internal_struct * extract_attribute = get_registered_attribute(mmt_handler, proto_id, field_id);
-
-        if (!extract_attribute) {
-            int s0 = sizeof (struct attribute_internal_struct);
-            int s1 = mmt_attribute_get_data_type_typed(proto_id, field_id);
-            int s2 = get_data_size_by_data_type(s1);
-            /* Issue #202 (F-BUG-010): the scratch area must be at least
-             * data_len wide. validate_attribute_metadata() already rejects
-             * data_len > type size at protocol-registration time, but size
-             * defensively here as well so a metadata inconsistency can never
-             * turn into a heap overflow of the scratch buffer. */
-            int s3 = get_data_size_by_proto_and_field_ids(proto_id, field_id);
-            int size = s0 + ((s3 > s2) ? s3 : s2);
-            //mmt_stderr_log( "      size=%d\n",size);
-            extract_attribute = (struct attribute_internal_struct *) mmt_malloc(size);
-            if (extract_attribute == NULL) {
-                return 0;
-            } else {
-                // We set the attribute structure content to zeros
-                memset(extract_attribute, 0, size);
-                extract_attribute->proto_id = proto_id;
-                extract_attribute->field_id = field_id;
-                extract_attribute->scope = mmt_attribute_get_scope_typed(proto_id, field_id);
-                extract_attribute->data_type = mmt_attribute_get_data_type_typed(proto_id, field_id);
-                extract_attribute->data_len = get_data_size_by_proto_and_field_ids(proto_id, field_id);
-                extract_attribute->position_in_packet = get_field_position_by_protocol_and_field_ids(proto_id, field_id);
-                extract_attribute->memsize = size;
-                extract_attribute->status = ATTRIBUTE_UNSET;
-                extract_attribute->extraction_function = proto->get_attribute_extraction_function(proto_id, field_id);
-
-                extract_attribute->data = &((char *) extract_attribute)[sizeof (struct attribute_internal_struct) ];
-
-                struct attribute_internal_struct * registered_attr = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
-
-                if (registered_attr == NULL) {
-                    extract_attribute->next = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
-                    mmt_handler->proto_registered_attributes[extract_attribute->proto_id] = extract_attribute;
-                } else {
-                    if (extract_attribute->field_id < registered_attr->field_id) {
-                        //This is the new head list
-                        extract_attribute->next = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
-                        mmt_handler->proto_registered_attributes[extract_attribute->proto_id] = extract_attribute;
-                    } else {
-                        while (registered_attr->next != NULL) {
-                            if (extract_attribute->field_id < registered_attr->next->field_id) {
-                                break;
-                            }
-                            registered_attr = registered_attr->next;
-                        }
-                        //The attribute to register should be inserted between registered_attr and registered_attr->next
-                        extract_attribute->next = registered_attr->next;
-                        registered_attr->next = extract_attribute;
-                    }
-                }
-            }
-
-        }
-        //Finally we increment the registration count of this attribute.
-        extract_attribute->registration_count++;
-        return 1;
+    if (proto == NULL) {
+        return 0;
     }
-    return 0;
+    struct attribute_internal_struct * extract_attribute = get_registered_attribute(mmt_handler, proto_id, field_id);
+
+    if (!extract_attribute) {
+        int s0 = sizeof (struct attribute_internal_struct);
+        int s1 = mmt_attribute_get_data_type_typed(proto_id, field_id);
+        int s2 = get_data_size_by_data_type(s1);
+        /* Issue #202 (F-BUG-010): the scratch area must be at least
+         * data_len wide. validate_attribute_metadata() already rejects
+         * data_len > type size at protocol-registration time, but size
+         * defensively here as well so a metadata inconsistency can never
+         * turn into a heap overflow of the scratch buffer. */
+        int s3 = get_data_size_by_proto_and_field_ids(proto_id, field_id);
+        int size = s0 + ((s3 > s2) ? s3 : s2);
+        //mmt_stderr_log( "      size=%d\n",size);
+        extract_attribute = (struct attribute_internal_struct *) mmt_malloc(size);
+        if (extract_attribute == NULL) {
+            return 0;
+        }
+        // We set the attribute structure content to zeros
+        memset(extract_attribute, 0, size);
+        extract_attribute->proto_id = proto_id;
+        extract_attribute->field_id = field_id;
+        extract_attribute->scope = mmt_attribute_get_scope_typed(proto_id, field_id);
+        extract_attribute->data_type = mmt_attribute_get_data_type_typed(proto_id, field_id);
+        extract_attribute->data_len = get_data_size_by_proto_and_field_ids(proto_id, field_id);
+        extract_attribute->position_in_packet = get_field_position_by_protocol_and_field_ids(proto_id, field_id);
+        extract_attribute->memsize = size;
+        extract_attribute->status = ATTRIBUTE_UNSET;
+        extract_attribute->extraction_function = proto->get_attribute_extraction_function(proto_id, field_id);
+
+        extract_attribute->data = &((char *) extract_attribute)[sizeof (struct attribute_internal_struct) ];
+
+        struct attribute_internal_struct * registered_attr = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
+
+        if (registered_attr == NULL) {
+            extract_attribute->next = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
+            mmt_handler->proto_registered_attributes[extract_attribute->proto_id] = extract_attribute;
+        } else if (extract_attribute->field_id < registered_attr->field_id) {
+            //This is the new head list
+            extract_attribute->next = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
+            mmt_handler->proto_registered_attributes[extract_attribute->proto_id] = extract_attribute;
+        } else {
+            while (registered_attr->next != NULL) {
+                if (extract_attribute->field_id < registered_attr->next->field_id) {
+                    break;
+                }
+                registered_attr = registered_attr->next;
+            }
+            //The attribute to register should be inserted between registered_attr and registered_attr->next
+            extract_attribute->next = registered_attr->next;
+            registered_attr->next = extract_attribute;
+        }
+    }
+    //Finally we increment the registration count of this attribute.
+    extract_attribute->registration_count++;
+    return 1;
 }
 
 bool register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id, attribute_handler_function handler_fct, void * handler_condition, void * user_args) {

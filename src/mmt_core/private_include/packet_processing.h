@@ -610,14 +610,15 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
 void clean_packet(ipacket_t * ipacket);
 void clean_packet_with_reassembly(ipacket_t * ipacket);
 
-/* ===== Internal cross-module prototypes (issue #239) ======================
- * The packet-processing module is split into three translation units:
- * packet_processing.c (session lifecycle, statistics and the attribute
- * accessors/formatting tail), packet_pipeline.c (per-packet processing path
- * and the attribute-extraction machinery) and packet_registry.c (protocol /
- * handler / attribute registration and handler lifecycle). The entry points
- * below keep external linkage so the three units can call each other; they
- * are not part of the public SDK ABI.
+/* ===== Internal cross-module prototypes (issues #239, #240) ===============
+ * The packet-processing module is split into five translation units:
+ * packet_processing.c (the attribute accessors/formatting tail and misc
+ * helpers), packet_pipeline.c (per-packet processing path and the
+ * attribute-extraction machinery), packet_registry.c (protocol / handler /
+ * attribute registration and handler lifecycle), packet_session.c (session
+ * lifecycle and timeout — issue #240) and packet_stats.c (protocol
+ * statistics — issue #240). The entry points below keep external linkage so
+ * the units can call each other; they are not part of the public SDK ABI.
  * ======================================================================== */
 
 /*
@@ -650,19 +651,27 @@ static inline void proto_status_store(int *status, int value) {
     __atomic_store_n(status, value, __ATOMIC_RELAXED);
 }
 
-/* packet_processing.c — session lifecycle, called by packet_registry.c and
+/* packet_session.c — session lifecycle, called by packet_registry.c and
  * packet_pipeline.c. */
 void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args);
 void process_timedout_sessions(mmt_handler_t *mmt_handler, uint32_t current_seconds);
 int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index);
 
-/* packet_processing.c — statistics, called by packet_registry.c and
- * packet_pipeline.c. */
+/* packet_stats.c — statistics, called by packet_registry.c,
+ * packet_pipeline.c and packet_session.c. */
 void free_handler_protocols_statistics(mmt_handler_t *mmt_handler);
 proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset, unsigned index);
 proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, int new_session, uint32_t proto_offset, unsigned index);
 void register_protocol_stats_attributes(protocol_t *proto);
 void register_protocol_session_attributes(protocol_t *proto);
+
+/**
+ * Updates the protocol statistics on session timeout. It will basically increase the number
+ * of timedout sessions for the protocols in the given session.
+ * @param timed_out_session the timed out session.
+ * @param parent_proto_stats pointer to the parent protocol statistics
+ */
+void update_proto_stats_on_session_timeout(mmt_session_t * timed_out_session, proto_statistics_internal_t * parent_proto_stats);
 
 /* packet_registry.c — registered-attribute bookkeeping, called by
  * packet_pipeline.c and packet_processing.c. */
