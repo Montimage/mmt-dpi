@@ -627,7 +627,13 @@ static void test_handler_bootstrap_oom(void) {
 static void test_session_lifecycle(void) {
     fprintf(stderr, "  test: session create/lookup/timeout/teardown through the dispatcher\n");
     char errbuf[256];
-    u_char pkt_a[64], pkt_b[64], pkt_c[64];
+    /* pkt_a is the first packet through the handler, so it is the one the
+     * once-only attribute-formatting pass inspects: it must be large enough
+     * for the caplen guard (packet_pipeline.c: internal_extract_attribute)
+     * to admit the wide fixed-size attributes — BINARY_64DATA_TYPE_LEN (68)
+     * and the u16/u32/u64 array types (132/260/516 bytes). At 64 bytes those
+     * extractors are refused and the MMT_*_ARRAY snprintf arms stay dark. */
+    u_char pkt_a[1024], pkt_b[64], pkt_c[64];
     pkthdr_t hdr;
 
     mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
@@ -1495,6 +1501,41 @@ static void test_offset_memoization(void) {
           "index is clamped to PROTO_PATH_SIZE-1");
 }
 
+/* Issue #243 / F-TEST-018: the TCP-reassembly instrumentation counters in
+ * packet_pipeline.c are only incremented from reassembly code paths that the
+ * session-lifecycle packets never take. Drive them directly so the accessor
+ * block stops being a contiguous uncovered run — and pin the counter contract
+ * (resident bytes clamp at zero) while we are here. */
+static void test_reasm_stats(void) {
+    fprintf(stderr, "  test: tcp-reassembly instrumentation counters\n");
+    uint64_t v0 = mmt_tcp_reasm_insert_visits();
+    uint64_t m0 = mmt_tcp_reasm_bytes_moved();
+    uint64_t d0 = mmt_tcp_reasm_bytes_dropped();
+    uint64_t a0 = mmt_reassembly_packet_alloc_count();
+    uint64_t r0 = mmt_tcp_reasm_resident_bytes();
+
+    mmt_tcp_reasm_stat_visit();
+    mmt_tcp_reasm_stat_visit();
+    mmt_tcp_reasm_stat_move(150);
+    mmt_tcp_reasm_stat_drop(40);
+    mmt_tcp_reasm_stat_live(200);
+    mmt_tcp_reasm_stat_live(-50);
+    mmt_reassembly_stat_packet_alloc();
+
+    CHECK(mmt_tcp_reasm_insert_visits() == v0 + 2, "visit counter +2");
+    CHECK(mmt_tcp_reasm_bytes_moved() == m0 + 150, "moved bytes +150");
+    CHECK(mmt_tcp_reasm_bytes_dropped() == d0 + 40, "dropped bytes +40");
+    CHECK(mmt_reassembly_packet_alloc_count() == a0 + 1, "packet allocs +1");
+    CHECK(mmt_tcp_reasm_resident_bytes() == r0 + 150, "resident bytes +150");
+
+    /* resident bytes are a signed gauge exposed as unsigned: a negative
+     * balance reports 0, never wraps. */
+    mmt_tcp_reasm_stat_live(-(int64_t) (r0 + 150) - 10);
+    CHECK(mmt_tcp_reasm_resident_bytes() == 0, "negative resident clamps to 0");
+    /* the gauge sits at -10 here; restoring the prior balance takes r0+10 */
+    mmt_tcp_reasm_stat_live((int64_t) r0 + 10);
+}
+
 /* ================================ main ==================================== */
 
 int main(void) {
@@ -1521,6 +1562,7 @@ int main(void) {
     test_hostname_matching();
     test_ip_attribution();
     test_offset_memoization();
+    test_reasm_stats();
 
     /* Full teardown, then a second init/close cycle — F-BUG-005 regression:
      * the global maps must be NULLed, not left dangling. */

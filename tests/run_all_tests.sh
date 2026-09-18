@@ -170,6 +170,8 @@ DEFAULT_SUITES=(
     installer
     dicom_dissector
     ndn_dissector
+    business_app
+    proto_classifiers
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

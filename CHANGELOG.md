@@ -44,6 +44,7 @@ checklist requires a line here for every user-visible change.
 - pcap-driven harnesses for the TCP/IP-stack and mobile/security parsers (#143, #144)
 - dead-code batches, TODO/FIXME triage and repo-root report hygiene (#145, #147, #153, #158)
 - core-engine unit suite part 1 — session lifecycle and arena allocator (#241)
+- business-app plugin suite plus crafted-input regression tests for the 1.8.0 syslog, PTP and DCERPC fixes; the contiguous-uncovered-run gate now holds at 10 lines (#243)
 - delete commented-out code and triage the marker backlog, enforced by lint gates (#232)
 
 Version 2.0.0 (unreleased — scheduled removals)

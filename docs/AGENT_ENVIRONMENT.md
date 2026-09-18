@@ -15,7 +15,7 @@ repository itself; the authoritative sources are:
 | `rules/common.mk` | Compiler flags, `MMT_BASE`, `BUILD=asan`/`tsan`, `ENABLESEC`, debug/valgrind toggles |
 | `rules/common-linux.mk` | Linux link rules, release hardening, `ENABLESEC` engines |
 | `sdk/Makefile` | Build entry point, `install`/`test` targets, default `MMT_BASE` |
-| `tests/run_all_tests.sh` | Master test runner and the 17 standalone suites |
+| `tests/run_all_tests.sh` | Master test runner and the 19 standalone suites |
 
 ## 1. Toolchain Requirements
 
@@ -136,20 +136,20 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **17/17 suites pass**, total runtime roughly **60–100 s** on
+Expected result: **19/19 suites pass**, total runtime roughly **60–100 s** on
 a typical development machine (measured: 97 s for the full run); the suites
 compile their own sources, so the
 wall clock is dominated by `gcc`, not by the assertions; `fault_injection`
 also builds+installs the SDK once for its engine leg). Exit code `0` on
-success, `1` on any failure. The runner has no `-j` option: the 17 suites run
+success, `1` on any failure. The runner has no `-j` option: the 19 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:155-173`)
+(`tests/run_all_tests.sh:155-175`)
 (`tests/run_all_tests.sh`):
 `hashmap`, `memory`, `fault_injection`, `core_engine`, `hexdump`, `mmt_utils`,
 `mmt_inet_ntop`,
 `avltree`, `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
 `rule_engine`, `radius_hardening`, `nas_ies_tail`, `installer`,
-`dicom_dissector`, `ndn_dissector`.
+`dicom_dissector`, `ndn_dissector`, `business_app`, `proto_classifiers`.
 
 Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
@@ -184,7 +184,7 @@ skipped — the runner exits non-zero (issue #186).
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count and `tests/coverage/summary.json`
-  in stdout (`tests/run_all_tests.sh:186-288`). Requires `gcov` (shipped with
+  in stdout (`tests/run_all_tests.sh:188-290`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` via
   `tools/ci/check-coverage-floor.sh`.
@@ -192,7 +192,7 @@ skipped — the runner exits non-zero (issue #186).
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:290-306`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:292-308`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -326,7 +326,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 17/17 suites PASSED, exit 0 (60–100 s)
+bash tests/run_all_tests.sh     # 19/19 suites PASSED, exit 0 (60–100 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```
