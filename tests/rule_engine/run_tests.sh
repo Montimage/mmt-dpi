@@ -122,7 +122,7 @@ done
 echo "  [2/7] compiling test ..."
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 ${CC} "${extra_cflags[@]}" -O2 -Wall \
-    -I "${INC}" -o "${SCRIPT_DIR}/test_rule_engine" \
+    -I "${INC}" -I "${REPO_ROOT}/src/mmt_security" -o "${SCRIPT_DIR}/test_rule_engine" \
     "${TEST_SRC}" -L "${LIB}" \
     -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm
 

@@ -9,7 +9,7 @@
  * way the
  * phase0 harnesses drive individual classifiers:
  *
- *   void *compute(compare_value v1, compare_value v2, short operator);
+ *   void *compute(compare_value v1, compare_value v2, enum_operation operator);
  *   char *get_my_data(void *data1, short size, long type);
  *
  * Before F-BUG-212, a packet-forced divisor of 0 on the u64/u32/u16 COMPUTE
@@ -39,6 +39,10 @@
  * is mirrored below for the #137 checks). */
 #include "struct_defs.h"
 
+/* verify_ctx_t and the prototypes of the functions exercised below come
+ * from the real internal header (the suite adds -I src/mmt_security). */
+#include "tips_internal.h"
+
 /* Mirrors `struct COMPARE_VALUE_struct` in src/mmt_security/tips_extract.c
  * (not part
  * of the installed headers). Keep the field order in sync. */
@@ -49,7 +53,7 @@ typedef struct {
     void *data;
 } compare_value;
 
-extern void *compute(compare_value v1, compare_value v2, short operator);
+extern void *compute(compare_value v1, compare_value v2, enum_operation operator);
 extern char *get_my_data(void *data1, short size, long type);
 
 /* Rule-operator codes (OR/AND/.../MUL/DIV) come from struct_defs.h above. */
@@ -224,11 +228,9 @@ static void test_header_line_clamped(void)
  *   get_attribute_extracted_data — returns fabricated META_UTIME / header line
  * ====================================================================== */
 
-extern char *get_value(const ipacket_t *pkt, char *input, short *jump, short *size, tuple *list_of_tuples);
 extern char *convert_string_to_json_compatible(char *p, int size);
 extern char *tokenize(char *temp, char **ltoken2, char **ltoken3, short *ref);
 extern char *generate_command(const ipacket_t *pkt, rule *r, char *input);
-extern void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *curr_rule, char *cause, short event_id);
 extern char *xml_summary(void);
 
 static int fi_tracking = 0;
@@ -542,7 +544,8 @@ static void test_store_history_alloc_failure(void)
      * xcalloc(json_buff1), then xmalloc(buff) in the MMT_HEADER_LINE case —
      * failing the 3rd exercises the F-BUG-096 cleanup-exit path. */
     fi_alloc_fail_after = 3;
-    store_history((const ipacket_t *)NULL, SAME, &root, &curr, "test-cause", 3);
+    verify_ctx_t hctx = { NULL, &root, NULL, NULL, { 0, 0 }, NO, NO };
+    store_history(&hctx, SAME, &curr, "test-cause", 3);
     CHECK(fi_alloc_seen >= 3, "fault injection reached the failing allocation");
     CHECK(!fi_double_free,
           "allocation-failure path frees each JSON buffer exactly once");
@@ -551,7 +554,7 @@ static void test_store_history_alloc_failure(void)
 
     /* sunny path: substitution path runs end-to-end under ASan */
     fi_reset();
-    store_history((const ipacket_t *)NULL, SAME, &root, &curr, "test-cause", 3);
+    store_history(&hctx, SAME, &curr, "test-cause", 3);
     CHECK(curr.json_history != NULL && strstr(curr.json_history, "timestamp") != NULL,
           "store_history records the substituted attribute");
     CHECK(!fi_double_free, "sunny path frees each JSON buffer exactly once");
@@ -638,7 +641,7 @@ static void test_generate_command_bounded(void)
  * reading up to 8x past the operand buffer for u64 and never comparing
  * odd-indexed elements. Elements must be scanned by element number, and only
  * complete elements inside v2.size. */
-extern int compare_values(compare_value v1, compare_value v2, short ope);
+extern int compare_values(compare_value v1, compare_value v2, enum_operation ope);
 
 static void test_compare_in_table_bounded(void)
 {

@@ -417,7 +417,7 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     return output;
 }
 
-void * funct_get_params_and_execute( const ipacket_t *pkt, short skip_refs, char *lib_name, char *funct_name, int data_size, tuple *tt, tuple *list_of_tuples, short *found )
+void * funct_get_params_and_execute( verify_ctx_t *ctx, char *funct_name, int data_size, tuple *tt, tuple *list_of_tuples, enum_found *found )
 {
     void *lib_pointer = NULL;
     void *(*embedded_function)();
@@ -425,17 +425,17 @@ void * funct_get_params_and_execute( const ipacket_t *pkt, short skip_refs, char
     void * result_data = NULL;
     tuple *temp_tuple2;
 
-    lib_pointer = dlopen(lib_name, RTLD_NOW);
-    //lib_pointer = dlopen(lib_name, RTLD_LAZY);
+    lib_pointer = dlopen(LIB_NAME, RTLD_NOW);
+    //lib_pointer = dlopen(LIB_NAME, RTLD_LAZY);
     if (lib_pointer != NULL) {
         *(void **) (&embedded_function) = dlsym(lib_pointer, funct_name);
         short param_count = 0;
         void *data[4];
         while (tt != NULL) {
             if (tt->data == NULL && tt->event_id == 0) {
-                data[param_count] = get_attribute_extracted_data( pkt, tt->protocol_id, tt->field_id );
+                data[param_count] = get_attribute_extracted_data( ctx->pkt, tt->protocol_id, tt->field_id );
             } else if (tt->data == NULL && tt->event_id != 0) {
-                if (skip_refs == YES || list_of_tuples == NULL) {
+                if (ctx->skip_refs == YES || list_of_tuples == NULL) {
                     *found = SKIP;
                     return NULL;
                 } else {
@@ -542,7 +542,7 @@ long get_useconds( const ipacket_t *pkt )
     return t->tv_usec;
 }
 
-int compare_in_table(compare_value v1, compare_value v2, short ope)
+int compare_in_table(compare_value v1, compare_value v2, enum_operation ope)
 {
     int i = 0, j = 0;
     unsigned short s1 = 0;
@@ -646,7 +646,7 @@ int compare_in_table(compare_value v1, compare_value v2, short ope)
     return NOT_VALID;
 }
 
-int compare_values(compare_value v1, compare_value v2, short ope)
+int compare_values(compare_value v1, compare_value v2, enum_operation ope)
 {
     int idx = 0, needle = 0;
     unsigned short u16_1 = 0, u16_2 = 0;
@@ -868,7 +868,7 @@ int compare_values(compare_value v1, compare_value v2, short ope)
     return NOT_VALID;
 }
 
-void * compute(compare_value v1, compare_value v2, short operator)
+void * compute(compare_value v1, compare_value v2, enum_operation operator)
 {
     unsigned char uc = 0, uc1 = 0, uc2 = 0, *uc0 = NULL;
     unsigned short us1 = 0, us2 = 0, *us0 = NULL;
@@ -1055,17 +1055,17 @@ void * compute(compare_value v1, compare_value v2, short operator)
     return NULL;
 }
 
-int exists_or_not (const ipacket_t *pkt, short operator, rule *r) { 
+int exists_or_not (const ipacket_t *pkt, enum_operation operator, rule *r) { 
     void *data = get_attribute_extracted_data( pkt, r->t.protocol_id, r->t.field_id );
     if (operator == DE && data != NULL) return VALID; 
     else if (operator == DNE && data == NULL) return VALID;
     return NOT_VALID;
 }
 
-int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, void** result_value, tuple *list_of_tuples, short operator, rule *r1, rule *r2)
+int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_value, enum_operation operator, rule *r1, rule *r2)
 {
     int ret = 0;
-    tuple *temp_tuple = list_of_tuples;
+    tuple *temp_tuple = ctx->list_of_tuples;
     tuple *temp_tuple2 = NULL;
     compare_value v1;
     compare_value v2;
@@ -1109,7 +1109,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         }
         if (data != NULL && v1.size > 0) memcpy(v1.data, data, v1.size);
     } else if (r1->t.event_id != 0) {
-        if (skip_refs == YES) v1.found = SKIP;
+        if (ctx->skip_refs == YES) v1.found = SKIP;
         else {
             temp_tuple2 = temp_tuple;
             while (temp_tuple2 != NULL) {
@@ -1168,7 +1168,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         }
         if (data != NULL && v2.size > 0) memcpy(v2.data, data, v2.size);
     } else if (r2->t.event_id != 0) {
-        if (skip_refs == YES) v1.found = SKIP;
+        if (ctx->skip_refs == YES) v1.found = SKIP;
         else {
             temp_tuple2 = temp_tuple;
             while (temp_tuple2 != NULL) {
@@ -1215,11 +1215,11 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
         tmp_v = &v2;
     }
     if (r1->value == XFUNCT || r2->value == XFUNCT) {
-       short found = 0;
+       enum_found found = NOT_FOUND;
        tmp_v->found = NOT_FOUND;
-            void *data = funct_get_params_and_execute( pkt, skip_refs, LIB_NAME, tmp_r->funct_name, tmp_r->t.data_size, tmp_r->t.next, list_of_tuples, &found);
+            void *data = funct_get_params_and_execute( ctx, tmp_r->funct_name, tmp_r->t.data_size, tmp_r->t.next, ctx->list_of_tuples, &found);
             if(found != FOUND || data == NULL){
-              if (skip_refs == YES) tmp_v->found = SKIP;
+              if (ctx->skip_refs == YES) tmp_v->found = SKIP;
               else {
                 (void)fprintf(stderr, "Error 123: Function %s not found or returned NULL\n", tmp_r->funct_name);
                 exit(-1);
@@ -1242,7 +1242,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
     if (v1.found == NOT_FOUND) {
         tmp_r = r1;
         tmp_v = &v1;
-        void *data = get_attribute_extracted_data( pkt, tmp_r->t.protocol_id, tmp_r->t.field_id );
+        void *data = get_attribute_extracted_data( ctx->pkt, tmp_r->t.protocol_id, tmp_r->t.field_id );
         if (data != NULL) {
             tmp_v->type = tmp_r->t.data_type_id;
             tmp_v->found = FOUND;
@@ -1275,7 +1275,7 @@ int get_data_from_pcap( const ipacket_t *pkt, short skip_refs, short action, voi
     if (v2.found == NOT_FOUND) {
         tmp_r = r2;
         tmp_v = &v2;
-        void *data = get_attribute_extracted_data( pkt, tmp_r->t.protocol_id, tmp_r->t.field_id );
+        void *data = get_attribute_extracted_data( ctx->pkt, tmp_r->t.protocol_id, tmp_r->t.field_id );
         if (data != NULL) {
             tmp_v->type = tmp_r->t.data_type_id;
             tmp_v->found = FOUND;

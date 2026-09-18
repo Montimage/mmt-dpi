@@ -28,17 +28,10 @@
 #include "mmt_core.h"
 #include "proto_meta.h"
 
-/* Entry points of libmmt_security that are global symbols but not part of
- * the installed SDK headers; declared here with their definitions from
- * src/mmt_security/public_defs.h (result_callback) and tips.c. */
-typedef void (*sec_result_callback)(int prop_id, char *verdict, char *type,
-        char *cause, char *history, struct timeval packet_timestamp,
-        void *user_args);
-
-extern void init_sec_lib(mmt_handler_t *mmt, char *property_file,
-        short option_satisfied, short option_not_satisfied,
-        sec_result_callback callback_funct, sec_result_callback db_create_funct,
-        sec_result_callback db_insert_funct, void *user_args);
+/* init_sec_lib() and the enum_print verdict selector come from
+ * src/mmt_security/tips_internal.h — a global symbol but not part of the
+ * installed SDK headers (the suite adds -I src/mmt_security). */
+#include "tips_internal.h"
 
 static int failures = 0;
 
@@ -70,7 +63,7 @@ static int run_parse(const char *rule_file) {
 
     /* This call runs the full read_rules()/processNode() chain; any schema
      * or resolution error inside it aborts the process (exit(-1)). */
-    init_sec_lib(mmt, strdup(rule_file), 1, 1, NULL, NULL, NULL, NULL);
+    init_sec_lib(mmt, strdup(rule_file), BOTH, NULL, NULL);
     printf("ok - init_sec_lib() parsed '%s'\n", rule_file);
 
     /* Side-effect assertions: every attribute referenced by the rule set's

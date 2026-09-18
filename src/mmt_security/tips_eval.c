@@ -463,7 +463,7 @@ int eliminate_instance(rule **r, rule **i, char *type)
 
 static int temptemp = 0;
 
-int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples, rule *c, rule *curr_root )
+int verify_segment( verify_ctx_t *ctx, rule *c )
 {
     short result = 0;
     void *result_value = NULL;
@@ -473,7 +473,7 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
             //Need to analyse the sons
             temp1 = c->list_of_sons;
             while (temp1 != NULL) {
-                result = verify_segment( pkt, skip_refs, list_of_tuples, temp1, curr_root );
+                result = verify_segment( ctx, temp1 );
                 if (result == VALID) {
                     c->valid = VALID;
                     return VALID;
@@ -487,7 +487,7 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
             //Need to analyse the sons
             temp1 = c->list_of_sons;
             while (temp1 != NULL) {
-                result = verify_segment( pkt, skip_refs, list_of_tuples, temp1, curr_root );
+                result = verify_segment( ctx, temp1 );
                 if (result == VALID) {
                     temp1 = temp1->next;
                     continue;
@@ -514,14 +514,14 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
             temp1 = c->list_of_sons;
             temp2 = c->list_of_sons->next;
             if (temp1->type != LEAF && temp1->t.valid == NOT_YET) {
-                result = verify_segment( pkt, skip_refs, list_of_tuples, temp1, curr_root );
+                result = verify_segment( ctx, temp1 );
                 if (result != VALID) {
                     c->valid = NOT_VALID;
                     return NOT_VALID;
                 }
             }
             if (temp2->type != LEAF && temp2->t.valid == NOT_YET) {
-                result = verify_segment( pkt, skip_refs, list_of_tuples, temp2, curr_root );
+                result = verify_segment( ctx, temp2 );
                 if (result != VALID) {
                     c->valid = NOT_VALID;
                     return NOT_VALID;
@@ -531,7 +531,7 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
             while (temp2) {
                 uint64_t tmp=0;
                 void *not_used = &tmp;
-                result = get_data_from_pcap( pkt, skip_refs, COMPARE, &not_used, list_of_tuples, c->value, temp1, temp2 );
+                result = get_data_from_pcap( ctx, COMPARE, &not_used, c->value, temp1, temp2 );
                 if (result != VALID) {
                     c->valid = NOT_VALID;
                     return NOT_VALID;
@@ -549,26 +549,26 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
             temp1 = c->list_of_sons;
             temp2 = c->list_of_sons->next;
             if (temp1->type != LEAF && temp1->t.valid == NOT_YET) {
-                result = verify_segment( pkt, skip_refs, list_of_tuples, temp1, curr_root );
+                result = verify_segment( ctx, temp1 );
                 if (result != VALID) {
                     c->valid = NOT_VALID;
                     return NOT_VALID;
                 }
             }
             if (temp2->type != LEAF && temp2->t.valid == NOT_YET) {
-                result = verify_segment( pkt, skip_refs, list_of_tuples, temp2, curr_root );
+                result = verify_segment( ctx, temp2 );
                 if (result != VALID) {
                     c->valid = NOT_VALID;
                     return NOT_VALID;
                 }
             }
             temptemp++;
-            result = get_data_from_pcap( pkt, skip_refs, COMPUTE, &result_value, list_of_tuples, c->value, temp1, temp2 );
+            result = get_data_from_pcap( ctx, COMPUTE, &result_value, c->value, temp1, temp2 );
             if (result_value == NULL) {
                 //changed so that considered as a violated property (corrupted message):
                 c->valid = NOT_VALID;
-                store_history(pkt, SAME, curr_root, c, NULL, 0);
-                detected_corrupted_message(op->Print, c, "Corrupted message: due to an attack or error.", SATISFIED,pkt->p_hdr->ts);
+                store_history(ctx, SAME, c, NULL, 0);
+                detected_corrupted_message(ctx, c, "Corrupted message: due to an attack or error.", SATISFIED);
                 return NOT_VALID;
             }
             //Need to use result_value
@@ -596,7 +596,7 @@ int verify_segment( const ipacket_t *pkt, short skip_refs, tuple *list_of_tuples
         case DNE:
         case DE:
             temp1 = c->list_of_sons;
-            result = exists_or_not (pkt, c->value, temp1);
+            result = exists_or_not (ctx->pkt, c->value, temp1);
             if (result != VALID) {
                 c->valid = NOT_VALID;
                 return NOT_VALID;
@@ -695,7 +695,7 @@ short check_time(rule *r, struct timeval curr)
     return result;
 }
 
-short action(short situation, short leftleft, rule *r)
+short action(enum_operation_type situation, enum_yes leftleft, rule *r)
 {
     //result: VALID, NOT_VALID, NOT_YET
     //situation: BEFORE, AFTER, SAME
@@ -819,14 +819,14 @@ short action(short situation, short leftleft, rule *r)
     return NOT_VALID;
 }
 
-int verify_left(const ipacket_t *pkt, char *cause, rule *r, rule *root)
+int verify_left( verify_ctx_t *ctx, rule *r )
 {
     short result = 0;
     rule *temp_rule = NULL;
     switch (r->value) {
         case THEN:
                 if (r->list_of_sons != NULL) {
-                    result = verify_left(pkt, cause, r->list_of_sons, root);
+                    result = verify_left( ctx, r->list_of_sons );
                     return result;
                 } else {
                     (void)fprintf(stderr, "Error 26: Encoutered incorrect sequence of events.\n");
@@ -852,13 +852,13 @@ int verify_left(const ipacket_t *pkt, char *cause, rule *r, rule *root)
         case MUL:
         case DIV:
             temp_rule = r;
-            result = verify_segment( pkt, YES, root->list_of_tuples, temp_rule, root );
+            result = verify_segment( ctx, temp_rule );
             if(result == VALID){
-              if(root->json_history != NULL){
-                xfree (root->json_history);
-                root->json_history = NULL;
+              if(ctx->curr_root->json_history != NULL){
+                xfree (ctx->curr_root->json_history);
+                ctx->curr_root->json_history = NULL;
               }
-              store_history(pkt, SAME, root, root, cause, root->list_of_sons->event_id);
+              store_history(ctx, SAME, ctx->curr_root, ctx->cause, ctx->curr_root->list_of_sons->event_id);
             }
             return result;
             break;
@@ -905,7 +905,7 @@ static int verify_then_same( verify_ctx_t *ctx, rule *r )
 static int verify_then_after_pending( verify_ctx_t *ctx, rule *r )
 {
     short result = 0;
-    const short leftleft = ctx->leftleft;
+    const enum_yes leftleft = ctx->leftleft;
     //Need to verify left branch
     r->list_of_sons->father = r;
     result = verify( ctx, AFTER, r->list_of_sons );
@@ -1282,20 +1282,20 @@ static int verify_not( verify_ctx_t *ctx, rule *r )
 //Leaf node (event expression or arithmetic): evaluate the condition
 //against the instance tuples; a VALID leaf copies its description into the
 //diagnostic buffer and stores the event tuples.
-static int verify_leaf( verify_ctx_t *ctx, short context, rule *r )
+static int verify_leaf( verify_ctx_t *ctx, enum_operation_type context, rule *r )
 {
-    short result = verify_segment( ctx->pkt, NO, ctx->list_of_tuples, r, ctx->curr_root );
+    short result = verify_segment( ctx, r );
     if (result == VALID) {
         if (r->description != NULL) {
             strncpy(ctx->cause, r->description, SIZE_CAUSE);
             ctx->cause[SIZE_CAUSE]='\0';
         }
-        store_tuples( ctx->pkt, context, ctx->curr_root, r->root, r->event_id, ctx->cause );
+        store_tuples( ctx, context, r->root, r->event_id, ctx->cause );
     }
     return result;
 }
 
-int verify( verify_ctx_t *ctx, short context, rule *r )
+int verify( verify_ctx_t *ctx, enum_operation_type context, rule *r )
 {
     *ctx->cause = '\0';
     switch (r->value) {

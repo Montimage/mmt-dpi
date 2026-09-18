@@ -158,7 +158,7 @@ static void json_grow_append(char **buf, size_t *cap, const char *src) {
     memcpy(*buf + cur, src, add + 1);
 }
 
-void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *curr_rule, char *cause, short event_id)
+void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_rule, char *cause, short event_id )
 {
     unsigned long L1=0,L2=0,L3=0,L4=0;
     //store data on packet so that they can be printed if rule is satisfied
@@ -186,7 +186,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
     tvp.tv_sec=0;
     tvp.tv_usec=0;
     {
-        void *utime = get_attribute_extracted_data(pkt, PROTO_META, META_UTIME);
+        void *utime = get_attribute_extracted_data(ctx->pkt, PROTO_META, META_UTIME);
         if (utime != NULL) tvp = *(struct timeval *) utime;
     }
 
@@ -203,13 +203,13 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         int num_attr = 0;
         unsigned long tmp_lu=0;
         //printout all the attributes
-        tuple * temp = curr_root->list_of_tuples_to_print;
+        tuple * temp = ctx->curr_root->list_of_tuples_to_print;
         while (temp) {
             if(temp->protocol_id<1||temp->field_id<1){
               temp=temp->next;
               continue;
             }
-            data1 = get_attribute_extracted_data(pkt, temp->protocol_id, temp->field_id);
+            data1 = get_attribute_extracted_data(ctx->pkt, temp->protocol_id, temp->field_id);
             if(data1 == NULL){
               temp=temp->next;
               continue;
@@ -397,10 +397,10 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
                     //(void)fprintf(stderr, "MMT_DATA_POINTER:6\n");
                	 //check only if we are verifying tcp.p_payload
                	 if( temp->protocol_id == 354  && temp->field_id == 4098 ){
-							  data_ptr = get_attribute_extracted_data_by_name(pkt, "tcp","payload_len");
+							  data_ptr = get_attribute_extracted_data_by_name(ctx->pkt, "tcp","payload_len");
 							  if( data_ptr != NULL ){
 								  data_pointer_size = *(int *) data_ptr;
-								  data_pointer = get_attribute_extracted_data_by_name(pkt, "tcp","p_payload");
+								  data_pointer = get_attribute_extracted_data_by_name(ctx->pkt, "tcp","p_payload");
 								  if( data_pointer != NULL ){
 									  new_data_pointer = convert_string_to_json_compatible (data_pointer, data_pointer_size);
 									  /* NULL on non-positive size or OOM — a NULL %s
@@ -437,7 +437,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         //ensure IP or MAC of src and dst are included in attribute
         if( having_ip_src == 0){
             data1 = NULL;
-        	data1 = get_attribute_extracted_data(pkt, 178, 12);
+        	data1 = get_attribute_extracted_data(ctx->pkt, 178, 12);
             if(data1!= NULL && *((char*)data1)!=0){
                 L1 = (*(unsigned long*)(data1)&0x000000ff);
                 L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
@@ -446,7 +446,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
         		snprintf(json_buff1, json_cap1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
         	    json_grow_append(&json_buff, &json_cap, json_buff1);
        	   }else if( having_mac_src == 0 ){
-        		data1 = get_attribute_extracted_data(pkt, 99, 3);
+        		data1 = get_attribute_extracted_data(ctx->pkt, 99, 3);
         		temp_MAC = xmalloc(22);
         		if (temp_MAC == NULL) goto cleanup;
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
@@ -460,7 +460,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 
         if( having_ip_dst == 0){
             data1 = NULL;
-            data1 = get_attribute_extracted_data(pkt, 178, 13);
+            data1 = get_attribute_extracted_data(ctx->pkt, 178, 13);
             if(data1!=NULL && *((char*)data1)!=0){
                 L1 = (*(unsigned long*)(data1)&0x000000ff);
                 L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
@@ -469,7 +469,7 @@ void store_history(const ipacket_t *pkt, short context, rule *curr_root, rule *c
 				snprintf(json_buff1, json_cap1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
 			    json_grow_append(&json_buff, &json_cap, json_buff1);
 		    }else if( having_mac_dst == 0 ){
-				data1 = get_attribute_extracted_data(pkt, 99, 2);
+				data1 = get_attribute_extracted_data(ctx->pkt, 99, 2);
 				temp_MAC = xmalloc(22);
 				if (temp_MAC == NULL) goto cleanup;
 				convert_mac_bytes_to_string(&temp_MAC, (unsigned char *) data1);
@@ -533,7 +533,7 @@ cleanup:
     xfree(json_buff1);
 }
 
-void store_tuples( const ipacket_t *pkt, short context, rule *curr_root, rule *curr_rule, short event_id, char *cause )
+void store_tuples( verify_ctx_t *ctx, enum_operation_type context, rule *curr_rule, short event_id, char *cause )
 {
     tuple * temp_tuple = NULL;
     if(curr_rule != NULL) temp_tuple = curr_rule->list_of_tuples;
@@ -543,10 +543,10 @@ void store_tuples( const ipacket_t *pkt, short context, rule *curr_root, rule *c
             temp_tuple = temp_tuple->next;
             continue;
         }
-        data = get_attribute_extracted_data( pkt, temp_tuple->protocol_id, temp_tuple->field_id );
+        data = get_attribute_extracted_data( ctx->pkt, temp_tuple->protocol_id, temp_tuple->field_id );
         if (data == NULL) {
             (void)printf("Error 16: in stored reference tuples. Data is not available. packet_id=%"PRIu64", protocol_id=%ld, field_id=%ld\n",
-            		pkt->packet_id,
+            		ctx->pkt->packet_id,
                     temp_tuple->protocol_id, temp_tuple->field_id);
             //exit(-1);
         } else {
@@ -560,10 +560,10 @@ void store_tuples( const ipacket_t *pkt, short context, rule *curr_root, rule *c
         }
         temp_tuple = temp_tuple->next;
     }
-    store_history(pkt, context, curr_root, curr_rule, cause, event_id);
+    store_history(ctx, context, curr_rule, cause, event_id);
 }
 
-void get_verdict( int t, int po, int state, char **str_verdict, char **str_type ){
+void get_verdict( enum_type_rule_node t, enum_print po, enum_print state, char **str_verdict, char **str_type ){
 	char verdict[100];
 	char type[100];
     memset(verdict,0,100);
@@ -631,7 +631,7 @@ void get_verdict( int t, int po, int state, char **str_verdict, char **str_type 
 	strcpy( *str_type, type );
 }
 
-void detected_corrupted_message(short print_option, rule *r, char *cause, short state, struct timeval packet_time_stamp)
+void detected_corrupted_message( verify_ctx_t *ctx, rule *r, char *cause, enum_print state )
 {
     rule *temp = r;
     char *history = NULL;
@@ -639,9 +639,9 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
 
     if(op->callback_funct != NULL){
     	char *verdict = NULL, *type = NULL;
-    	get_verdict( ATTACK, print_option, state, &verdict, &type );
+    	get_verdict( ATTACK, op->Print, state, &verdict, &type );
 
-        //char * xml_string = xml_message(ATTACK, print_option, state, 0, cause);
+        //char * xml_string = xml_message(ATTACK, op->Print, state, 0, cause);
       	if ( verdict == NULL) {
             if (type != NULL)
                 free(type);
@@ -668,7 +668,7 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
                 return;
             }
       	  snprintf( str, strlen( history ) + 3, "{%s}", history );
-      	  ((op->callback_funct))( 0, verdict, type, cause, str, packet_time_stamp,(void *) op->user_args);
+      	  ((op->callback_funct))( 0, verdict, type, cause, str, ctx->pkt->p_hdr->ts,(void *) op->user_args);
           xfree( str );
         }
       	xfree( verdict );
@@ -677,7 +677,7 @@ void detected_corrupted_message(short print_option, rule *r, char *cause, short 
     return;
 }
 
-int print_message(int type, int po, int state, int num, char *desc)
+int print_message(enum_type_rule_node type, enum_print po, enum_print state, int num, char *desc)
 {
     switch (type) {
         case TEST:
@@ -739,7 +739,7 @@ int print_message(int type, int po, int state, int num, char *desc)
     return OK;
 }
 
-void print_nothing(short print_option, rule *curr_root, rule *r, char *cause, short state) {
+void print_nothing(enum_print print_option, rule *curr_root, rule *r, char *cause, enum_print state) {
     //(void)fprintf(stderr, "nothing\n");
 }
 
@@ -942,7 +942,7 @@ fail:
     return NULL;
 }
 
-char *my_strstr(char *texte, char* pattern, short reverse){
+char *my_strstr(char *texte, char* pattern, enum_yes reverse){
    char *pt1 = NULL;
    char *pt2 = NULL;
   if(reverse == YES){
@@ -958,7 +958,7 @@ char *my_strstr(char *texte, char* pattern, short reverse){
   return pt2;
 }
 
-void get_time_value(char * history, char *a_time, short reverse, short direct)
+void get_time_value(char * history, char *a_time, enum_yes reverse, enum_yes direct)
 {
         char *pt_j = NULL;
         char *pt_i = history;
@@ -997,7 +997,7 @@ void get_time_value(char * history, char *a_time, short reverse, short direct)
         }
 }
 
-void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *curr_root, rule *r, char *cause, short state, short use_cause) {
+void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state ) {
     short result = 0;
     char *command = NULL;
     if (r->description == NULL) {
@@ -1009,10 +1009,10 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
     if(op->callback_funct != NULL){
 		char *verdict = NULL, *type = NULL;
 		char *history;
-		int prop_id = curr_root->property_id;
+		int prop_id = ctx->curr_root->property_id;
 		char *des   = r->description;
 
-		get_verdict( curr_root->type_rule, print_option, state, &verdict, &type );
+		get_verdict( ctx->curr_root->type_rule, op->Print, state, &verdict, &type );
 		if( verdict == NULL) {
             if(type!=NULL) free(type);
             return;
@@ -1027,7 +1027,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
             char *temp = xmalloc(strlen(history) + 3);
             if(temp != NULL){
                 snprintf(temp, strlen(history) + 3, "{%s}", history);
-                ((op->callback_funct))(prop_id, verdict, type, des, temp, pkt->p_hdr->ts, (void *)op->user_args);
+                ((op->callback_funct))(prop_id, verdict, type, des, temp, ctx->pkt->p_hdr->ts, (void *)op->user_args);
                 xfree(temp);
             }
            
@@ -1060,7 +1060,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                 // this as the sole call site and this comment as its audit.
                 // The metacharacter-attribute test in tests/rule_engine
                 // proves no injection occurs.
-                command = generate_command( pkt, r, what_to_do );
+                command = generate_command( ctx->pkt, r, what_to_do );
                 if (command != NULL) {
                     fprintf(stderr, "EXECUTE FUNCTION:%s\n",command);
                     result = system(command);
@@ -1092,7 +1092,7 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                 tuple * a_tuple = top_tuple;
                 tuple * new_tuple;
 
-                command2 = funct_get_info_param( pkt->mmt_handler, NOT_USED, command, a_tuple);
+                command2 = funct_get_info_param( ctx->pkt->mmt_handler, NOT_USED, command, a_tuple);
                 while( command2 ) {
                     new_tuple = (tuple *)xmalloc(sizeof (tuple));
                     if(new_tuple == NULL){
@@ -1111,11 +1111,11 @@ void rule_is_satisfied_or_not(const ipacket_t *pkt, short print_option, rule *cu
                     if(a_tuple != NULL){
                         a_tuple->next = new_tuple;
                         a_tuple = new_tuple;
-                        command2 = funct_get_info_param(pkt->mmt_handler, NOT_USED, command2, a_tuple);
+                        command2 = funct_get_info_param(ctx->pkt->mmt_handler, NOT_USED, command2, a_tuple);
                     }
                 }
-                short found = NOT_FOUND; //not used in this context
-                data = funct_get_params_and_execute( pkt, NO, LIB_NAME, funct_name, data_size, top_tuple, r->list_of_tuples, &found);
+                enum_found found = NOT_FOUND; //not used in this context
+                data = funct_get_params_and_execute( ctx, funct_name, data_size, top_tuple, r->list_of_tuples, &found);
                 xfree(data);
                 a_tuple = top_tuple;
                 while (a_tuple != NULL) {

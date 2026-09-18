@@ -154,7 +154,6 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
     rule *temp = NULL;
     rule *root_inst = NULL;
     struct timeval current_packet_time;
-    short reference = 0;
     char *cause = xmalloc(SIZE_CAUSE+1);
     if(cause == NULL){
         return 0;
@@ -171,11 +170,16 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
         if(curr_rule->delay_min < 0){
           strncpy(cause,"C1 satisfied but C2 not found in property: 'if C1 THEN BEFORE we should have C2'", SIZE_CAUSE);
           cause[SIZE_CAUSE]='\0';
-          if_valid_and_no_instance_satisfied_then_generate_not_satisfied = verify_left(ipacket, cause, curr_rule, curr_rule);
+          {
+            //Left-branch probe: .EVENT references stay symbolic (skip_refs = YES)
+            //and the rule's own tuple store is used, not an instance's.
+            verify_ctx_t lctx = { ipacket, curr_rule, curr_rule->list_of_tuples, cause, current_packet_time, NO, YES };
+            if_valid_and_no_instance_satisfied_then_generate_not_satisfied = verify_left(&lctx, curr_rule);
+          }
           *cause = '\0';
         }
         while (curr_rule_instance != NULL) {
-            verify_ctx_t vctx = { ipacket, curr_rule, curr_rule_instance->list_of_tuples, &reference, cause, current_packet_time, NO };
+            verify_ctx_t vctx = { ipacket, curr_rule, curr_rule_instance->list_of_tuples, cause, current_packet_time, NO, NO };
             result = verify(&vctx, SAME, curr_rule_instance);
             if (result == NOT_VALID) {
                 (void)fprintf(stderr, "Error 41: Problem in packet number: %lld\n", packet_count);
@@ -185,10 +189,10 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
             //if instance is VALID or NOT_VALID then eliminate it
             if (result != NOT_YET) {
                 if (result == COUNT_NOT_SATISFIED || result == COUNT_NOT_SATISFIED_ELIMINATE) {
-                    rule_is_satisfied_or_not( ipacket, op->Print, curr_rule, curr_rule_instance, cause, NOT_SATISFIED, NO );
+                    rule_is_satisfied_or_not( &vctx, curr_rule_instance, NOT_SATISFIED );
                     (curr_rule->nb_not_satisfied)++;
                 } else if (result == COUNT_SATISFIED || result == COUNT_SATISFIED_ELIMINATE) {
-                    rule_is_satisfied_or_not( ipacket, op->Print, curr_rule, curr_rule_instance, cause, SATISFIED, NO );
+                    rule_is_satisfied_or_not( &vctx, curr_rule_instance, SATISFIED );
                     (curr_rule->nb_satisfied)++;
                     //skip = YES; //Case root says that if property is satisfied thanks to current packet
                                 //then do not create new instance using the current packet
@@ -215,7 +219,10 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
           if_valid_and_no_instance_satisfied_then_generate_not_satisfied = NOT_VALID;
           strncpy(cause,"C1 satisfied but C2 not found in property: 'if C1 THEN BEFORE we should have C2'", SIZE_CAUSE);
           cause[SIZE_CAUSE]='\0';
-          rule_is_satisfied_or_not( ipacket, op->Print, curr_rule, curr_rule, cause, NOT_SATISFIED, YES );
+          {
+            verify_ctx_t nctx = { ipacket, curr_rule, curr_rule->list_of_tuples, cause, current_packet_time, NO, NO };
+            rule_is_satisfied_or_not( &nctx, curr_rule, NOT_SATISFIED );
+          }
           *cause = '\0';
           (curr_rule->nb_not_satisfied)++;
         }
@@ -227,15 +234,15 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
                 xfree(cause);
                 return 0;
             }
-            verify_ctx_t vctx = { ipacket, curr_rule, curr_rule_instance->list_of_tuples, &reference, cause, current_packet_time, YES };
+            verify_ctx_t vctx = { ipacket, curr_rule, curr_rule_instance->list_of_tuples, cause, current_packet_time, YES, NO };
             result = verify(&vctx, SAME, curr_rule_instance);
             //if instance is VALID or NOT_VALID then eliminate it
             if (result != NOT_YET) {
                 if (result == COUNT_NOT_SATISFIED || result == COUNT_NOT_SATISFIED_ELIMINATE) {
-                    rule_is_satisfied_or_not( ipacket, op->Print, curr_rule, curr_rule_instance, cause, NOT_SATISFIED, NO );
+                    rule_is_satisfied_or_not( &vctx, curr_rule_instance, NOT_SATISFIED );
                     (curr_rule->nb_not_satisfied)++;
                 } else if (result == COUNT_SATISFIED || result == COUNT_SATISFIED_ELIMINATE) {
-                    rule_is_satisfied_or_not( ipacket, op->Print, curr_rule, curr_rule_instance, cause, SATISFIED, NO );
+                    rule_is_satisfied_or_not( &vctx, curr_rule_instance, SATISFIED );
                     (curr_rule->nb_satisfied)++;
                 }
                 if (result == COUNT_NOT_SATISFIED_ELIMINATE || result == ELIMINATE || result == COUNT_SATISFIED_ELIMINATE || result == NOT_VALID) {
@@ -277,16 +284,13 @@ void init_options( mmt_handler_t *mmt )
 }
 
 void init_sec_lib( mmt_handler_t *mmt, char * property_file,
-        short option_satisfied, short option_not_satisfied, result_callback cont_funct,
-        result_callback db_create_funct, result_callback db_insert_funct, void * user_args)
+        enum_print print_option, result_callback cont_funct, void * user_args)
 {
     op = (OPTIONS_struct *)xcalloc(1, sizeof (OPTIONS_struct));
     if(op == NULL) return ;
     op->StartTime = time(NULL);
-    op->Print = BOTH;
+    op->Print = print_option;
     op->user_args = (void *)user_args;
-    if (option_satisfied == 1 && option_not_satisfied == 0) op->Print = SATISFIED;
-    if (option_satisfied == 0 && option_not_satisfied == 1) op->Print = NOT_SATISFIED;
     op->RuleFileName = strdup(property_file);
     op->callback_funct = cont_funct;
     op->RuleFile = open_file(op->RuleFileName, "r");

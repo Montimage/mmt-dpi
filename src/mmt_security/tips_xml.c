@@ -144,7 +144,7 @@ rule * create_rule()
     return a_rule;
 }
 
-void create_father(rule *a_rule, short depth, short clean)
+void create_father(rule *a_rule, short depth, enum_clean clean)
 {
     father *temp = top_father;
     if (clean == CLEAN) {
@@ -484,7 +484,7 @@ int funct_get_return_type_and_size(int *size, char *lib_name, char *funct_name)
     return type;
 }
 
-char * funct_get_info_param( mmt_handler_t *mmt, short reg_tuple, char * input, tuple *a_tuple)
+char * funct_get_info_param( mmt_handler_t *mmt, enum_yes reg_tuple, char * input, tuple *a_tuple)
 {
     //input: param1,...) or param1) or )
     //output: NULL if no params left or paramx) or paramx,...)
@@ -534,7 +534,7 @@ char * funct_get_info_param( mmt_handler_t *mmt, short reg_tuple, char * input, 
     return NULL;
 }
 
-void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule, char *expression)
+void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_rule, char *expression)
 {
     //parse expression and create sub-tree, a_rule->value = top operator
     //((ARP.OPCODE == 2)&&(ARP.SRC_PROTO == ARP.SRC_PROTO.1))
@@ -783,7 +783,7 @@ void create_boolean_expression(mmt_handler_t *mmt, int first_time, rule *a_rule,
         tuple * a_tuple = top_tuple;
         tuple * new_tuple;
         command2 = command;
-        short reg_tuple = YES;
+        enum_yes reg_tuple = YES;
 
         command2 = funct_get_info_param( mmt, reg_tuple, command2, a_tuple );
         while( command2 ) {
