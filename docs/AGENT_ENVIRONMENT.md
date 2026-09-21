@@ -183,16 +183,17 @@ skipped — the runner exits non-zero (issue #186).
 - `bash tests/run_all_tests.sh --coverage` — instruments the suites with gcov,
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
-  line percentage, instrumented-file count and `tests/coverage/summary.json`
-  in stdout (`tests/run_all_tests.sh:188-290`). Requires `gcov` (shipped with
+  line percentage, instrumented-file count/list and
+  `tests/coverage/summary.json` in stdout
+  (`tests/run_all_tests.sh:188-297`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
-  committed floor `tests/coverage/floor.json` via
-  `tools/ci/check-coverage-floor.sh`.
+  committed floor `tests/coverage/floor.json` — both counters plus the
+  required sources it names — via `tools/ci/check-coverage-floor.sh`.
 - `bash tests/run_all_tests.sh --with-harnesses` — after the suites, runs
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:292-308`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:299-315`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.

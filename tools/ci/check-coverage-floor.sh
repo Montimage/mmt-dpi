@@ -5,11 +5,13 @@
 # (issue #185, F-CI-014).
 #
 # tests/run_all_tests.sh --coverage writes tests/coverage/summary.json with
-# library_line_pct and instrumented_files (src/ sources only — test sources
-# under tests/ are excluded so the number means the library). This helper
-# compares both counters against the committed tests/coverage/floor.json and
-# fails on a drop, so a suite losing instrumentation or coverage sinks the CI
-# job instead of drifting unnoticed.
+# library_line_pct, instrumented_files and instrumented_sources (src/
+# sources only — test sources under tests/ are excluded so the number means
+# the library). This helper compares both counters against the committed
+# tests/coverage/floor.json, verifies every source named in the floor's
+# required_instrumented_files is still instrumented (issue #244), and fails
+# on a drop, so a suite losing instrumentation or coverage sinks the CI job
+# instead of drifting unnoticed.
 #
 # Exit codes: 0 = at/above floor, 1 = below floor, 2 = helper broken
 #             (missing or unparsable input).
@@ -51,5 +53,30 @@ awk -v a="$pct" -v b="$floor_pct" 'BEGIN{exit !(a+0 < b+0)}' && {
     echo "✗ instrumented-file count ${files} is below the committed floor ${floor_files}" >&2
     rc=1
 }
+
+# Named-file floor (issue #244): when floor.json pins required sources by
+# repo-relative path, each one must appear in the summary's
+# instrumented_sources — a suite silently dropping a required file fails even
+# when the raw count still holds (another file could replace it).
+jq -e '(.required_instrumented_files // []) | type == "array"' "$FLOOR" >/dev/null 2>&1 || {
+    echo "✗ required_instrumented_files in $FLOOR is not an array" >&2
+    exit 2
+}
+if [ "$(jq -r '.required_instrumented_files // [] | length' "$FLOOR")" -gt 0 ]; then
+    jq -e '.instrumented_sources | type == "array"' "$SUMMARY" >/dev/null 2>&1 || {
+        echo "✗ $SUMMARY has no instrumented_sources list — re-run tests/run_all_tests.sh --coverage" >&2
+        exit 2
+    }
+    while IFS= read -r req; do
+        [ -n "$req" ] || continue
+        jq -e --arg req "$req" '.instrumented_sources | index($req) != null' \
+            "$SUMMARY" >/dev/null || {
+            echo "✗ required instrumented file $req is absent from the measured coverage" >&2
+            rc=1
+        }
+    done < <(jq -r '.required_instrumented_files[]' "$FLOOR")
+    [ "$rc" -eq 0 ] && echo "✓ all required instrumented files are present"
+fi
+
 [ "$rc" -eq 0 ] && echo "✓ coverage floor holds"
 exit "$rc"

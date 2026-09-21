@@ -272,9 +272,16 @@ write_coverage_report() {
     # Instrumented files == SF: records in the tracefile (all under src/).
     local instrumented
     instrumented="$(grep -c '^SF:' "$trace")"
+    # Repo-relative paths of the instrumented src/ sources (sorted,
+    # deterministic) — issue #244 lets the floor pin required files by name.
+    local sources_json
+    sources_json="$(sed -n "s|^SF:${REPO_ROOT}/\(src/.*\)|\1|p" "$trace" \
+        | sort | jq -Rn '[inputs]')"
     jq -n --argjson pct "$pct" --argjson files "$instrumented" \
         --argjson hit "$lines_hit" --argjson total "$lines_total" \
+        --argjson sources "$sources_json" \
         '{library_line_pct: $pct, instrumented_files: $files,
+          instrumented_sources: $sources,
           library_lines_hit: $hit, library_lines_total: $total,
           scope: "src/"}' > "$COVERAGE_DIR/summary.json"
     echo "Library line coverage: ${pct}% (${lines_hit}/${lines_total} executable lines, ${instrumented} instrumented files under src/)"
