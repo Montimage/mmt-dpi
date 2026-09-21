@@ -105,6 +105,74 @@ uint64_t mmt_reassembly_packet_alloc_count(void) {
     return __atomic_load_n(&mmt_reasm_packet_allocs, __ATOMIC_RELAXED);
 }
 
+/* Issue #252 (F-PERF-002): debug-build tripwires for the classifier chain.
+ * mmt_classify_checker_calls counts checker-chain probes (classify_me()
+ * invocations reached by walking classify_protos, also broken down per
+ * chain-owner protocol), mmt_classify_walk_skips counts the walks skipped
+ * because the flow already converged, and mmt_classify_direct_calls counts
+ * the O(1) dispatches to the flow's recorded owning protocol engine — the
+ * winning checker keeps its per-packet role but is reached directly, not by
+ * probing the chain. Same arming contract as the caplen-guard stats above:
+ * assert-enabled or sanitizer builds only, relaxed atomics, always-exported
+ * accessors so test harnesses link regardless of profile. */
+#if !defined(NDEBUG) || defined(MMT_BUILD_ASAN) || defined(MMT_BUILD_TSAN)
+#define MMT_CLASSIFY_STATS 1
+static uint64_t mmt_classify_checker_calls = 0;
+static uint64_t mmt_classify_checker_calls_by_proto[PROTO_MAX_IDENTIFIER];
+static uint64_t mmt_classify_walk_skips = 0;
+static uint64_t mmt_classify_direct_calls = 0;
+#else
+#define MMT_CLASSIFY_STATS 0
+#endif
+
+uint64_t mmt_classify_checker_call_count(void) {
+#if MMT_CLASSIFY_STATS
+    return __atomic_load_n(&mmt_classify_checker_calls, __ATOMIC_RELAXED);
+#else
+    return 0;
+#endif
+}
+
+uint64_t mmt_classify_checker_calls_for_proto(uint32_t proto_id) {
+#if MMT_CLASSIFY_STATS
+    if (proto_id < PROTO_MAX_IDENTIFIER) {
+        return __atomic_load_n(&mmt_classify_checker_calls_by_proto[proto_id], __ATOMIC_RELAXED);
+    }
+#else
+    (void) proto_id;
+#endif
+    return 0;
+}
+
+uint64_t mmt_classify_walk_skip_count(void) {
+#if MMT_CLASSIFY_STATS
+    return __atomic_load_n(&mmt_classify_walk_skips, __ATOMIC_RELAXED);
+#else
+    return 0;
+#endif
+}
+
+uint64_t mmt_classify_direct_call_count(void) {
+#if MMT_CLASSIFY_STATS
+    return __atomic_load_n(&mmt_classify_direct_calls, __ATOMIC_RELAXED);
+#else
+    return 0;
+#endif
+}
+
+void mmt_classify_stats_reset(void) {
+#if MMT_CLASSIFY_STATS
+    __atomic_store_n(&mmt_classify_checker_calls, 0, __ATOMIC_RELAXED);
+    /* Atomic stores — a plain memset would race with in-flight relaxed
+     * increments on the TSan profile. */
+    for (uint32_t i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
+        __atomic_store_n(&mmt_classify_checker_calls_by_proto[i], 0, __ATOMIC_RELAXED);
+    }
+    __atomic_store_n(&mmt_classify_walk_skips, 0, __ATOMIC_RELAXED);
+    __atomic_store_n(&mmt_classify_direct_calls, 0, __ATOMIC_RELAXED);
+#endif
+}
+
 /**
  * Internal function for extracting attribute data.
  * @param ipacket pointer to internal packet structure
@@ -473,11 +541,15 @@ int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *
     int quiet = args ? *((int*)args) : 0;
     struct attribute_internal_struct * tmp_attribute = NULL;
     for (proto_index = 0 ; proto_index < ipacket->proto_hierarchy->len; proto_index++) {
+        struct attribute_internal_struct ** attrs = NULL;
+        uint32_t nattrs = 0;
         if (is_registered_protocol(ipacket->proto_hierarchy->proto_path[proto_index])) {
-            tmp_attribute = mmt_handler->proto_registered_attributes[ipacket->proto_hierarchy->proto_path[proto_index]];
+            attrs = mmt_handler->proto_registered_attributes[ipacket->proto_hierarchy->proto_path[proto_index]];
+            nattrs = mmt_handler->proto_registered_attributes_len[ipacket->proto_hierarchy->proto_path[proto_index]];
         }
-        while (tmp_attribute != NULL) {
+        for (uint32_t a = 0; a < nattrs; a++) {
             void * data = NULL;
+            tmp_attribute = attrs[a];
 #ifdef DEBUG
         (void)mmt_debug_log( "[debug] debug_extracted_attributes_printout_handler: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %"PRIu32" , field_id - %"PRIu32", index - %u \n", ipacket->packet_id,mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute),tmp_attribute->field_id, proto_index);
         (void)mmt_debug_log( "[debug] debug_extracted_attributes_printout_handler: calling _get_attribute_extracted_data_at_index: packet - %"PRIu64", proto_id - %s , field_id - %s, index - %u \n", ipacket->packet_id,get_protocol_name_by_id(mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute)),get_attribute_name_by_protocol_and_attribute_ids(mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute),tmp_attribute->field_id), proto_index);
@@ -486,7 +558,6 @@ int debug_extracted_attributes_printout_handler(const ipacket_t *ipacket, void *
             if (!quiet && data != NULL) {
                 print_attributes_list(tmp_attribute);
             }
-            tmp_attribute = tmp_attribute->next;
         }
 
     }
@@ -515,6 +586,17 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
         ipacket->proto_headers_offset->proto_path[index] = classified_proto.offset;
         ipacket->proto_classif_status->proto_path[index] = PROTO_CLASSIFICATION_DETECTION;
 
+        /* Issue #252 (F-PERF-002): slots at or beyond the old tip belong to
+         * a previously truncated path (or were never recorded) — they cannot
+         * own this freshly appended layer. Clear them; a classify_next()
+         * walk observing the change re-records, an out-of-band append falls
+         * back to the historical full walk. */
+        if (ipacket->session != NULL) {
+            for (unsigned s = index; s < PROTO_PATH_SIZE; s++) {
+                ipacket->session->proto_checkers[s] = NULL;
+            }
+        }
+
         retval = PROTO_CLASSIFICATION_DETECTION;
     } else if (ipacket->proto_hierarchy->proto_path[index] == classified_proto.proto_id) {
         //The protocol is already set! just update its offset
@@ -528,12 +610,38 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
         ipacket->proto_headers_offset->proto_path[index] = classified_proto.offset;
         ipacket->proto_classif_status->proto_path[index] = PROTO_RECLASSIFICATION;
 
+        /* Issue #252 (F-PERF-002): this entry and every deeper layer's
+         * recorded winning checkers were earned under the protocol being
+         * replaced — a stale slot would dispatch an engine that no longer
+         * owns the layer. Drop them; affected layers re-walk the full chain
+         * and re-record. When the write happens inside a classify_next()
+         * walk, the slot for `index` is re-recorded at post-classify time
+         * in the same round; for out-of-band writes (sessionizers, analyse
+         * or extraction paths) the cleared slot conservatively restores the
+         * historical full walk instead of permanently dispatching the old
+         * layer's engine. */
+        if (ipacket->session != NULL) {
+            for (unsigned s = index; s < PROTO_PATH_SIZE; s++) {
+                ipacket->session->proto_checkers[s] = NULL;
+            }
+        }
+
         retval = PROTO_RECLASSIFICATION;
     }
 
     // Issue #19: the per-layer offsets just changed — drop the memoized
     // cumulative-offset cache so get_packet_offset_at_index() rebuilds it.
     ipacket->internal_cumulative_offset_valid = 0;
+
+    /* Issue #252 (F-PERF-002): a checker that writes the path directly
+     * (plugin-side set_classified_proto inside its classify_me — e.g. the
+     * mobile protocol classifiers) claims the layer for direct dispatch on
+     * converged flows. mmt_current_classifier is non-NULL only while a
+     * classify_me runs — calls from post_classify or outside walks cannot
+     * claim. */
+    if (ipacket->mmt_current_classifier != NULL) {
+        ipacket->mmt_classifier_claim = ipacket->mmt_current_classifier;
+    }
 
     set_ipacket_session_status(ipacket, classified_proto.status);
     return retval;
@@ -558,22 +666,87 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
         }
         //Classify next protocol
         if (configured_protocol->protocol->classify_next.classify_protos && classif_status != MMT_CLASSIFY_SKIP) { // Classify next proto only when such a function exists!
-            mmt_classify_proto_t * temp = configured_protocol->protocol->classify_next.classify_protos;
-            // Checking for the port number ??????
-            for (; temp != NULL; temp = temp->next) {
-                classif_status = temp->classify_me(ipacket, index); //TODO(#327): check the return value and make the corresponding action accordingly!!!
-                // // LN: check if the classify return 1-> do not need to go to check other protocol
-                if(classif_status & MMT_CLASSIFY_MATCHED_MASK){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
-                    // mmt_stream_printf(stdout, "\n-]> Classified for protocol %d: %"PRIu64" - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
-                    break;
+            /* Issue #252 (F-PERF-002): when the hierarchy already carries a
+             * converged (non-UNKNOWN) protocol at index + 1, the packet rides
+             * an already-classified flow — the protocol path is session-backed
+             * and persists across packets. The chain's identification job at
+             * this layer is done, but the WINNING checker is also the flow's
+             * per-packet protocol engine (stage machines, SNI/hostname service
+             * detection), so it must still see the packet — dispatch straight
+             * to it instead of re-walking ~99 cache-cold nodes whose handlers
+             * are no-ops on a committed flow. Layers that converged without a
+             * recorded winner (port/IP fallback, plugin-side
+             * set_classified_proto) keep the full walk so late
+             * reclassification stays possible. */
+            mmt_classify_proto_t *direct = NULL;
+            mmt_classify_proto_t *winner = NULL;
+            int expected_proto = PROTO_UNKNOWN;
+            /* proto_checkers is PROTO_PATH_SIZE entries like the path itself —
+             * the index+1 bound keeps a corrupt len (e.g. the SCTP/S1AP direct
+             * len writes) from reading past the table. */
+            if (ipacket->session != NULL &&
+                    index + 1 < PROTO_PATH_SIZE &&
+                    ipacket->proto_hierarchy->len > (index + 1) &&
+                    ipacket->proto_hierarchy->proto_path[index + 1] != PROTO_UNKNOWN) {
+                expected_proto = ipacket->proto_hierarchy->proto_path[index + 1];
+                direct = ipacket->session->proto_checkers[index + 1];
+            }
+            ipacket->mmt_classifier_claim = NULL;
+            if (direct != NULL) {
+#if MMT_CLASSIFY_STATS
+                __atomic_add_fetch(&mmt_classify_walk_skips, 1, __ATOMIC_RELAXED);
+                __atomic_add_fetch(&mmt_classify_direct_calls, 1, __ATOMIC_RELAXED);
+#endif
+                ipacket->mmt_current_classifier = direct;
+                classif_status = direct->classify_me(ipacket, index);
+                ipacket->mmt_current_classifier = NULL;
+            } else {
+                mmt_classify_proto_t * temp = configured_protocol->protocol->classify_next.classify_protos;
+                // Checking for the port number ??????
+                for (; temp != NULL; temp = temp->next) {
+#if MMT_CLASSIFY_STATS
+                    __atomic_add_fetch(&mmt_classify_checker_calls, 1, __ATOMIC_RELAXED);
+                    __atomic_add_fetch(&mmt_classify_checker_calls_by_proto[configured_protocol->protocol->proto_id], 1, __ATOMIC_RELAXED);
+#endif
+                    ipacket->mmt_current_classifier = temp;
+                    classif_status = temp->classify_me(ipacket, index); //TODO(#327): check the return value and make the corresponding action accordingly!!!
+                    // // LN: check if the classify return 1-> do not need to go to check other protocol
+                    if(classif_status & MMT_CLASSIFY_MATCHED_MASK){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
+                        // mmt_stream_printf(stdout, "\n-]> Classified for protocol %d: %"PRIu64" - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
+                        winner = temp;
+                        break;
+                    }
+                    // // End of LN
                 }
-                // // End of LN
+                ipacket->mmt_current_classifier = NULL;
             }
 
             //Post-classification! Post classification is only accessible if there is a classification function
             //And if the preclassification returned non zero which means: proceed with the classification routines.
             if (configured_protocol->protocol->classify_next.post_classify) {
-                return configured_protocol->protocol->classify_next.post_classify(ipacket, index);
+                int post_ret = configured_protocol->protocol->classify_next.post_classify(ipacket, index);
+                if (ipacket->session != NULL &&
+                        index + 1 < PROTO_PATH_SIZE &&
+                        ipacket->proto_hierarchy->len > (index + 1) &&
+                        ipacket->proto_hierarchy->proto_path[index + 1] != expected_proto) {
+                    /* The layer's path entry changed this round (first
+                     * detection or reclassification — read the path AFTER
+                     * post_classify, which is what materialises index+1).
+                     * Record the engine that owns it so converged packets
+                     * dispatch directly: prefer the plugin-funnel claim —
+                     * it also covers checkers that classify via
+                     * add_connection/set_classified_proto without returning
+                     * a MATCHED verdict — else the verdict winner. A NULL
+                     * store means "converged without identifiable owner":
+                     * such layers keep the full walk. Safe to store node
+                     * pointers: classify chains live as long as the handler,
+                     * sessions cannot outlive it. */
+                    ipacket->session->proto_checkers[index + 1] =
+                            (ipacket->mmt_classifier_claim != NULL)
+                            ? (mmt_classify_proto_t *) ipacket->mmt_classifier_claim
+                            : winner;
+                }
+                return post_ret;
             }
         }
     }
@@ -599,10 +772,9 @@ void fire_attribute_event(ipacket_t * ipacket, uint32_t proto_id, uint32_t attri
         attr->packet_id = mmt_handler->last_received_packet.packet_id;
         //We set the index of the protocol
         attr->protocol_index = index;
-        attribute_handler_t * attr_handler_fct = attr->attribute_handler;
-        while (attr_handler_fct != NULL) {
-            attr_handler_fct->handler_fct(ipacket, (attribute_t *) attr, attr_handler_fct->args);
-            attr_handler_fct = attr_handler_fct->next;
+        /* Issue #252 (F-PERF-017): contiguous handler array. */
+        for (int h = 0; h < attr->handlers_count; h++) {
+            attr->attribute_handlers[h].handler_fct(ipacket, (attribute_t *) attr, attr->attribute_handlers[h].args);
         }
         attr->status = ATTRIBUTE_CONSUMED;
     }
@@ -632,18 +804,21 @@ void proto_process_attribute_handlers(ipacket_t * ipacket, unsigned index) {
     if (offset >= ipacket->p_hdr->caplen) {
         return;
     }
-    attribute_handler_element_t * attribute_handler = mmt_handler->proto_registered_attribute_handlers[ipacket->proto_hierarchy->proto_path[index]];
-    while (attribute_handler != NULL) {
-        internal_extract_attribute(ipacket, attribute_handler->attribute, index);
-        if (attribute_handler->attribute->status == ATTRIBUTE_SET) {
-            attribute_handler_t * attr_handler_fct = attribute_handler->attribute->attribute_handler;
-            while (attr_handler_fct != NULL) {
-                attr_handler_fct->handler_fct(ipacket, (attribute_t *) attribute_handler->attribute, attr_handler_fct->args);
-                attr_handler_fct = attr_handler_fct->next;
+    /* Issue #252 (F-PERF-017): contiguous frozen array — indexed walk, no
+     * ->next chasing through separately allocated nodes. Base and length are
+     * re-read every iteration because a handler_fct callback may
+     * register/unregister attribute handlers, relocating or shifting the
+     * array (same contract as process_packet_handler()). */
+    uint32_t proto = ipacket->proto_hierarchy->proto_path[index];
+    for (uint32_t e = 0; e < mmt_handler->proto_registered_attribute_handlers_len[proto]; e++) {
+        attribute_internal_t * attribute = mmt_handler->proto_registered_attribute_handlers[proto][e].attribute;
+        internal_extract_attribute(ipacket, attribute, index);
+        if (attribute->status == ATTRIBUTE_SET) {
+            for (int h = 0; h < attribute->handlers_count; h++) {
+                attribute->attribute_handlers[h].handler_fct(ipacket, (attribute_t *) attribute, attribute->attribute_handlers[h].args);
             }
-            attribute_handler->attribute->status = ATTRIBUTE_CONSUMED;
+            attribute->status = ATTRIBUTE_CONSUMED;
         }
-        attribute_handler = attribute_handler->next;
     }
 }
 /**
@@ -736,7 +911,8 @@ void clean_packet_with_reassembly(ipacket_t *ipacket){
 void process_packet_handler(ipacket_t *ipacket) {
     debug("process_packet_handler of ipacket: %"PRIu64"\n", ipacket->packet_id);
     // debug("Last packet_handler_id: %d", ipacket->last_callback_fct_id);
-    packet_handler_t * temp_packet_handler = ipacket->mmt_handler->packet_handlers;
+    mmt_handler_t *mmt_handler = ipacket->mmt_handler;
+    uint32_t i = 0;
     // Resume after the last handler that already ran for this packet, if any.
     // process_packet_handler() can be re-invoked for the same ipacket after a
     // handler returns 1; last_callback_fct_id records where to continue so the
@@ -748,27 +924,27 @@ void process_packet_handler(ipacket_t *ipacket) {
     // Resuming by id (instead of a saved next pointer persisted on the ipacket)
     // keeps the previous mutation semantics: the handler list may be rebuilt
     // between invocations and a stale pointer would dangle, whereas an id is
-    // re-resolved against the current list. Within the pass below we advance via
-    // ->next read after the callback, identical to the original first branch.
+    // re-resolved against the current list. Issue #252 (F-PERF-017): the array
+    // base and length are re-read every iteration because a callback may
+    // register/unregister handlers, relocating or shifting the array.
     if (ipacket->last_callback_fct_id != 0) {
-        while (temp_packet_handler != NULL &&
-               temp_packet_handler->packet_handler_id != ipacket->last_callback_fct_id) {
-            temp_packet_handler = temp_packet_handler->next;
+        while (i < mmt_handler->packet_handlers_len &&
+               mmt_handler->packet_handlers[i].packet_handler_id != ipacket->last_callback_fct_id) {
+            i++;
         }
         // Skip the already-processed handler; if it is no longer present
-        // (temp_packet_handler == NULL) the pass below is a no-op.
-        if (temp_packet_handler != NULL) {
-            temp_packet_handler = temp_packet_handler->next;
-        }
+        // (i == len) the pass below is a no-op.
+        i++;
     }
-    while (temp_packet_handler != NULL) {
-        ipacket->last_callback_fct_id = temp_packet_handler->packet_handler_id;
-        int result = (temp_packet_handler->function(ipacket, temp_packet_handler->args));
+    while (i < mmt_handler->packet_handlers_len) {
+        packet_handler_t *handler = &mmt_handler->packet_handlers[i];
+        ipacket->last_callback_fct_id = handler->packet_handler_id;
+        int result = (handler->function(ipacket, handler->args));
         if (result == 1) {
             debug("process_packet_handler result == 1  status of ipacket: %"PRIu64"\n", ipacket->packet_id);
             return;
         }
-        temp_packet_handler = temp_packet_handler->next;
+        i++;
     }
 
     process_timedout_sessions(ipacket->mmt_handler, ipacket->p_hdr->ts.tv_sec);
@@ -955,6 +1131,10 @@ int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pac
     mmt->current_ipacket.mmt_handler = mmt;
     mmt->current_ipacket.internal_packet = NULL;
     mmt->current_ipacket.last_callback_fct_id = 0;
+    /* Issue #252 (F-PERF-002): the classifier claim channel is per-packet —
+     * reset it alongside the rest of the per-packet state. */
+    mmt->current_ipacket.mmt_current_classifier = NULL;
+    mmt->current_ipacket.mmt_classifier_claim = NULL;
     // IPV6
     mmt->current_ipacket.ipv6_ext_headers_len = 0;
     reset_ipacket_path_arrays(&mmt->current_ipacket);
@@ -1036,6 +1216,12 @@ int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, co
     ipacket->mmt_handler = mmt;
     ipacket->internal_packet = NULL;
     ipacket->last_callback_fct_id = 0;
+    /* Issue #252 (F-PERF-002): reset the classifier claim channel — the slot
+     * is mmt_malloc'd (never zeroed) and recycled between packets, so the
+     * fields must be rearmed here or the first set_classified_proto() below
+     * reads uninitialised memory (Valgrind memcheck on the leak gate). */
+    ipacket->mmt_current_classifier = NULL;
+    ipacket->mmt_classifier_claim = NULL;
     // ipv6
     ipacket->ipv6_ext_headers_len = 0;
     reset_ipacket_path_arrays(ipacket);
@@ -1176,24 +1362,23 @@ int base_classify_next_proto(ipacket_t * ipacket, unsigned index) {
  */
 void generic_data_extraction(unsigned protocol_index, ipacket_t * ipacket) {
     uint32_t proto_id = get_protocol_id_at_index(ipacket, protocol_index);
-    struct attribute_internal_struct * tmp_attr_ref;
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
 
     if (!is_registered_protocol(proto_id)) return;
-    tmp_attr_ref = mmt_handler->proto_registered_attributes[proto_id];
-
-    if (is_registered_protocol(proto_id)) {
-        while (tmp_attr_ref != NULL) {
-            if (tmp_attr_ref->extraction_function(ipacket, protocol_index, (attribute_t *) tmp_attr_ref) > 0) {
-                //We set the status of the protocol
-                tmp_attr_ref->status = ATTRIBUTE_SET;
-                //We update the packet id of the attribute
-                tmp_attr_ref->packet_id = mmt_handler->last_received_packet.packet_id;
-                //We set the index of the protocol
-                tmp_attr_ref->protocol_index = protocol_index;
-            }
-
-            tmp_attr_ref = tmp_attr_ref->next;
+    /* Issue #252 (F-PERF-017): contiguous frozen array of attribute pointers —
+     * the per-packet extraction walk indexes it instead of chasing ->next.
+     * Base and length are re-read every iteration because an extraction
+     * callback may register/unregister attributes, relocating or shifting
+     * the array (same contract as process_packet_handler()). */
+    for (uint32_t a = 0; a < mmt_handler->proto_registered_attributes_len[proto_id]; a++) {
+        struct attribute_internal_struct * tmp_attr_ref = mmt_handler->proto_registered_attributes[proto_id][a];
+        if (tmp_attr_ref->extraction_function(ipacket, protocol_index, (attribute_t *) tmp_attr_ref) > 0) {
+            //We set the status of the protocol
+            tmp_attr_ref->status = ATTRIBUTE_SET;
+            //We update the packet id of the attribute
+            tmp_attr_ref->packet_id = mmt_handler->last_received_packet.packet_id;
+            //We set the index of the protocol
+            tmp_attr_ref->protocol_index = protocol_index;
         }
     }
 }

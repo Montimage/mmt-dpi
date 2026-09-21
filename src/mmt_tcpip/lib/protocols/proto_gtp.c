@@ -185,8 +185,15 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		// mean while, in the current packet we are at GTP (index = 5) and we are going to classify the next protocol which normally is IP
 		//However, this GTP packet is echo request/response ==> no IP after it
 		// ==> thus we need to trunk the length of proto_path
-		if( ipacket->session && ipacket->session->proto_path.len > index + 1 )
+		if( ipacket->session && ipacket->session->proto_path.len > index + 1 ) {
 			ipacket->session->proto_path.len = index + 1;
+			/* Issue #252 (F-PERF-002): truncating the path invalidates the
+			 * recorded winning checkers beyond index+1 — they must not be
+			 * dispatched if a later packet re-extends the path. Slots below
+			 * index+1 stay aligned with entries that did not move. */
+			memset(&ipacket->session->proto_checkers[index + 1], 0,
+					(PROTO_PATH_SIZE - index - 1) * sizeof(ipacket->session->proto_checkers[0]));
+		}
 
 		if( gtp_offset + offset >= ipacket->p_hdr->caplen )
 			return MMT_DROP; //do not classify any further protocol after GTP

@@ -81,10 +81,16 @@ static int g_failures = 0;
  * plus the per-direction proto_path copies (2 x 68 B) = 280 B moved into the
  * lazily-allocated mmt_session_children_stats_t tunnel-parent extension; the
  * record keeps one pointer (8 B). Pre-change sizeof measured 1032 B on this
- * LP64 target — pin the new record to <= 842 B. */
+ * LP64 target — pin the new record to <= 842 B.
+ * Issue #252 (F-PERF-002) adds mmt_session_t.proto_checkers[PROTO_PATH_SIZE]
+ * (16 pointers = 128 B): the per-layer winning checker recorded so converged
+ * flows dispatch their per-packet protocol engine in O(1) instead of
+ * re-walking the ~99-node classify chain. A lazily-allocated extension was
+ * rejected — virtually every session classifies, so lazy would add an
+ * alloc + pointer indirection for a block that is always needed. */
 #define CE_SESSION_SIZE_PRE_255 1032u
-_Static_assert(sizeof(mmt_session_t) <= CE_SESSION_SIZE_PRE_255 - 190,
-               "issue #255: mmt_session_t must be at least 190 bytes slimmer");
+_Static_assert(sizeof(mmt_session_t) <= CE_SESSION_SIZE_PRE_255 - 190 + 16u * sizeof(void *),
+               "issue #255 + #252: session record within the #255 budget plus the #252 checker-dispatch table");
 
 /* ---------------- libc allocation failure injection ---------------------- */
 extern void *__real_malloc(size_t size);

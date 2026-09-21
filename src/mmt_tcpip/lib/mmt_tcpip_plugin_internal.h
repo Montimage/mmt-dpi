@@ -164,6 +164,15 @@ get_local_conv_proto(ipacket_t * ipacket) {
 static inline void
 mmt_change_internal_flow_packet_protocol(ipacket_t * ipacket, uint16_t detected_protocol, mmt_protocol_type_t protocol_type)
 {
+    /* Issue #252 (F-PERF-002): the deepest classification funnel — every
+     * add_connection / direct flow-packet protocol change lands here. When a
+     * checker claims a protocol while being probed by the classify walk,
+     * record it so the pipeline can dispatch converged packets straight to
+     * the owning engine. mmt_current_classifier is non-NULL only inside a
+     * classify_me call. */
+    if (ipacket->mmt_current_classifier != NULL) {
+        ipacket->mmt_classifier_claim = ipacket->mmt_current_classifier;
+    }
     mmt_change_internal_flow_protocol(ipacket, detected_protocol, protocol_type);
     mmt_change_internal_packet_protocol(ipacket, detected_protocol, protocol_type);
 }

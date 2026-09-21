@@ -168,6 +168,8 @@ struct ipacket_struct {
     int internal_cumulative_offset_valid;     /**< internal: - never modify it. Issue #19: 0 when the cumulative-offset cache must be rebuilt. */
     int internal_cumulative_offset_hwm;       /**< internal: - never modify it. Issue #19: highest index whose prefix sum is cached (the cache is extended on demand, never beyond what is queried). */
     int proto_headers_offset_owned;           /**< internal: - never modify it. Issue #199 (F-BUG-002): 1 when proto_headers_offset points to a heap buffer owned by this packet (set at its single mmt_malloc site in proto_session_management), 0 when it aliases storage embedded in the handler or the session. clean_packet_with_reassembly() frees the buffer only when this flag is set. */
+    void * mmt_current_classifier;            /**< internal: - never modify it. Issue #252 (F-PERF-002): the checker node currently being probed by proto_packet_classify_next()'s chain walk (NULL outside walks). Read by plugin classification funnels to claim ownership. */
+    void * mmt_classifier_claim;              /**< internal: - never modify it. Issue #252 (F-PERF-002): the checker node that last claimed a classification this classify_next() round — written by plugin funnels (mmt_change_internal_flow_packet_protocol, set_classified_proto) copying mmt_current_classifier. */
 };
 
 /**

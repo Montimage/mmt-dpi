@@ -16,6 +16,21 @@
 #include <pthread.h>
 // #include "libntoh.h"
 
+/* Issue #252 (F-PERF-017): geometric growth for the frozen registration
+ * arrays (proto_registered_attributes, proto_registered_attribute_handlers,
+ * attribute_handlers, packet_handlers). Returns the array pointer — possibly
+ * relocated — or NULL when growth was needed and the realloc failed, leaving
+ * the caller's original pointer untouched. */
+static void * grow_registration_array(void *arr, uint32_t *cap, uint32_t elem_size, uint32_t need) {
+    if (*cap >= need) return arr;
+    uint32_t new_cap = (*cap != 0) ? *cap : 4;
+    while (new_cap < need) new_cap *= 2;
+    void *grown = mmt_realloc(arr, (size_t) new_cap * elem_size);
+    if (grown == NULL) return NULL;
+    *cap = new_cap;
+    return grown;
+}
+
 bool pointer_comp_fn_pt(void * l_p, void * r_p) {
     return (l_p < r_p);
 }
@@ -1248,15 +1263,17 @@ bool init_extraction()
 }
 
 struct attribute_internal_struct * get_registered_attribute_internal_struct(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index) {
-    struct attribute_internal_struct * tmp_attr_ref;
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
-    tmp_attr_ref = mmt_handler->proto_registered_attributes[proto_id]; //This is safe as we are sure the protocol is registered
+    /* Issue #252 (F-PERF-017): contiguous frozen array — keep it sorted by
+     * field_id so a binary search would also be valid; a linear scan is what
+     * the old list walk did and the arrays are short. */
+    struct attribute_internal_struct ** attrs = mmt_handler->proto_registered_attributes[proto_id]; //This is safe as we are sure the protocol is registered
+    uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
 
-    while (tmp_attr_ref != NULL) {
-        if (attribute_id == tmp_attr_ref->field_id) {
-            return tmp_attr_ref;
+    for (uint32_t i = 0; i < n; i++) {
+        if (attribute_id == attrs[i]->field_id) {
+            return attrs[i];
         }
-        tmp_attr_ref = tmp_attr_ref->next;
     }
     return NULL;
 }
@@ -1286,32 +1303,29 @@ void close_extraction() {
 }
 
 bool is_registered_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id) {
-    packet_handler_t * temp_handler = mmt_handler->packet_handlers;
-    while (temp_handler != NULL) {
-        if (temp_handler->packet_handler_id == packet_handler_id) return 1;
-        temp_handler = temp_handler->next;
+    for (uint32_t i = 0; i < mmt_handler->packet_handlers_len; i++) {
+        if (mmt_handler->packet_handlers[i].packet_handler_id == packet_handler_id) return 1;
     }
     return 0;
 }
 
 bool is_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
-    int retval = 0;
-    struct attribute_internal_struct * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
-    while (tmp_attribute != NULL) {
-        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute) &&
-                field_id == tmp_attribute->field_id) return 1;
-        tmp_attribute = tmp_attribute->next;
+    struct attribute_internal_struct ** attrs = mmt_handler->proto_registered_attributes[proto_id];
+    uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
+    for (uint32_t i = 0; i < n; i++) {
+        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) attrs[i]) &&
+                field_id == attrs[i]->field_id) return 1;
     }
-    return retval;
+    return 0;
 }
 
 struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
     if (_is_registered_protocol(proto_id) > 0) {
-        struct attribute_internal_struct * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
-        while (tmp_attribute != NULL) {
-            if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute) &&
-                    field_id == tmp_attribute->field_id) return tmp_attribute;
-            tmp_attribute = tmp_attribute->next;
+        struct attribute_internal_struct ** attrs = mmt_handler->proto_registered_attributes[proto_id];
+        uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
+        for (uint32_t i = 0; i < n; i++) {
+            if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) attrs[i]) &&
+                    field_id == attrs[i]->field_id) return attrs[i];
         }
     }
     return NULL;
@@ -1321,14 +1335,14 @@ bool has_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto
     if (!_is_valid_protocol_id(proto_id)) {
         return 0;
     }
-    attribute_internal_t * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
-    while (tmp_attribute != NULL) {
-        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute) &&
-                attribute_id == tmp_attribute->field_id &&
-                tmp_attribute->attribute_handler != NULL /* The attribute has at least one registered handler */) {
+    attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[proto_id];
+    uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
+    for (uint32_t i = 0; i < n; i++) {
+        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) attrs[i]) &&
+                attribute_id == attrs[i]->field_id &&
+                attrs[i]->handlers_count > 0 /* The attribute has at least one registered handler */) {
             return 1;
         }
-        tmp_attribute = tmp_attribute->next;
     }
     return 0;
 }
@@ -1338,52 +1352,47 @@ bool is_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_
     if (!_is_valid_protocol_id(proto_id)) {
         return 0;
     }
-    attribute_internal_t * tmp_attribute = mmt_handler->proto_registered_attributes[proto_id];
-    while (tmp_attribute != NULL) {
-        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) tmp_attribute) &&
-                attribute_id == tmp_attribute->field_id &&
-                tmp_attribute->attribute_handler != NULL /* The attribute has at least one registered handler */) {
-            attribute_handler_t * att_handler_fct = tmp_attribute->attribute_handler;
-            while (att_handler_fct != NULL) {
-                if (att_handler_fct->handler_fct == handler_fct) {
+    attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[proto_id];
+    uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
+    for (uint32_t i = 0; i < n; i++) {
+        if (proto_id == mmt_attr_get_proto_id_typed((const attribute_t *) attrs[i]) &&
+                attribute_id == attrs[i]->field_id &&
+                attrs[i]->handlers_count > 0 /* The attribute has at least one registered handler */) {
+            for (int j = 0; j < attrs[i]->handlers_count; j++) {
+                if (attrs[i]->attribute_handlers[j].handler_fct == handler_fct) {
                     return 1;
                 }
-                att_handler_fct = att_handler_fct->next;
             }
         }
-        tmp_attribute = tmp_attribute->next;
     }
     return 0;
 }
 
 void free_registered_extraction_attributes(mmt_handler_t *mmt_handler) {
-    struct attribute_internal_struct * temp_attr;
-    struct attribute_internal_struct * safe_to_delete_attr = NULL;
-    int i = 0;
-    for (i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
-        temp_attr = mmt_handler->proto_registered_attributes[i];
-        while (temp_attr != NULL) {
-            safe_to_delete_attr = temp_attr;
-            temp_attr = temp_attr->next;
-            mmt_free(safe_to_delete_attr); // we free the internal attribute struct
+    for (int i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
+        attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[i];
+        uint32_t n = mmt_handler->proto_registered_attributes_len[i];
+        for (uint32_t j = 0; j < n; j++) {
+            mmt_free(attrs[j]->attribute_handlers); // the frozen handler array of the attribute
+            mmt_free(attrs[j]); // we free the internal attribute struct
         }
+        mmt_free(attrs); // we free the contiguous attribute array itself
         mmt_handler->proto_registered_attributes[i] = NULL;
+        mmt_handler->proto_registered_attributes_len[i] = 0;
+        mmt_handler->proto_registered_attributes_cap[i] = 0;
     }
 }
 
 void free_registered_attribute_handlers(mmt_handler_t *mmt_handler) {
-    attribute_handler_element_t * temp_attr_handler;
-    attribute_handler_element_t * safe_to_delete_attr_handler = NULL;
-    int i = 0;
-
-    for (i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
-        temp_attr_handler = mmt_handler->proto_registered_attribute_handlers[i];
-        while (temp_attr_handler != NULL) {
-            safe_to_delete_attr_handler = temp_attr_handler;
-            temp_attr_handler = temp_attr_handler->next;
-            mmt_free(safe_to_delete_attr_handler); // we free the attribute handler struct
-        }
+    for (int i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
+        /* Issue #252 (F-PERF-017): the handler elements live in one contiguous
+         * block — the per-attribute handler arrays are owned by the
+         * attribute_internal_t elements and released by
+         * free_registered_extraction_attributes(). */
+        mmt_free(mmt_handler->proto_registered_attribute_handlers[i]);
         mmt_handler->proto_registered_attribute_handlers[i] = NULL;
+        mmt_handler->proto_registered_attribute_handlers_len[i] = 0;
+        mmt_handler->proto_registered_attribute_handlers_cap[i] = 0;
     }
 }
 
@@ -1442,26 +1451,25 @@ bool unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_
     }
 
     if (!temp_attr_proto_list->registration_count && !temp_attr_proto_list->handlers_count) { // Both values are non positive! we delete it
-        temp_attr_proto_list = mmt_handler->proto_registered_attributes[proto_id];
+        /* Issue #252 (F-PERF-017): remove the element from the contiguous
+         * array — the slot is closed by memmove so the per-packet walk never
+         * sees a gap. */
+        struct attribute_internal_struct ** attrs = mmt_handler->proto_registered_attributes[proto_id];
+        uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
 
-        while (temp_attr_proto_list != NULL) {
-            if ((temp_attr_proto_list->field_id == field_id) && (temp_attr_proto_list->proto_id == proto_id)) {
-                //attr_found_in_proto_list = 1;
+        for (uint32_t i = 0; i < n; i++) {
+            if ((attrs[i]->field_id == field_id) && (attrs[i]->proto_id == proto_id)) {
+                safe_to_delete_attr_for_proto = attrs[i];
+                memmove(&attrs[i], &attrs[i + 1], (n - i - 1) * sizeof(*attrs));
+                mmt_handler->proto_registered_attributes_len[proto_id] = n - 1;
                 break;
             }
-            safe_to_delete_attr_for_proto = temp_attr_proto_list;
-            temp_attr_proto_list = temp_attr_proto_list->next;
         }
 
-        if (safe_to_delete_attr_for_proto == NULL) { //The attribute to delete is the first in the list
-            mmt_handler->proto_registered_attributes[proto_id] = temp_attr_proto_list->next;
-            safe_to_delete_attr_for_proto = temp_attr_proto_list;
-        } else {
-            safe_to_delete_attr_for_proto->next = temp_attr_proto_list->next; // We relink the elements
-            safe_to_delete_attr_for_proto = temp_attr_proto_list;
+        if (safe_to_delete_attr_for_proto != NULL) {
+            mmt_free(safe_to_delete_attr_for_proto->attribute_handlers);
+            mmt_free(safe_to_delete_attr_for_proto);
         }
-
-        mmt_free(safe_to_delete_attr_for_proto);
     }
 
     return 1;
@@ -1482,68 +1490,54 @@ bool unregister_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char
 }
 
 bool unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t attribute_id, attribute_handler_function handler_fct) {
-    attribute_handler_t * temp_attr_handler;
-    attribute_handler_t * safe_to_delete_attr_handler = NULL;
-    attribute_internal_t * temp_attr;
+    attribute_internal_t * temp_attr = NULL;
     if (!is_registered_attribute_handler(mmt_handler, proto_id, attribute_id, handler_fct)) {
         return 1;
     }
 
     //Get the attribute
-    temp_attr = mmt_handler->proto_registered_attributes[proto_id];
-    while (temp_attr != NULL) {
-        if ((temp_attr->field_id == attribute_id) && (temp_attr->proto_id == proto_id)) {
-            break;
-        }
-        temp_attr = temp_attr->next;
-    }
-
-    temp_attr_handler = temp_attr->attribute_handler;
-    while (temp_attr_handler != NULL) {
-        if (temp_attr_handler->handler_fct == handler_fct) {
-            break;
-        }
-        safe_to_delete_attr_handler = temp_attr_handler;
-        temp_attr_handler = temp_attr_handler->next;
-    }
-
-    if (safe_to_delete_attr_handler == NULL) { //The attribute handler to delete is the first in the list
-        temp_attr->attribute_handler = temp_attr_handler->next;
-        safe_to_delete_attr_handler = temp_attr_handler;
-    } else {
-        safe_to_delete_attr_handler->next = temp_attr_handler->next; // We relink the elements
-        safe_to_delete_attr_handler = temp_attr_handler;
-    }
-
-    if ((temp_attr->attribute_handler == NULL) && !(mmt_attr_get_scope_typed((const attribute_t *) temp_attr) & SCOPE_EVENT)) {
-        //We need to delete the attribute handler element as there are no more registered handler functions
-        attribute_handler_element_t * temp_attr_handler_elem = mmt_handler->proto_registered_attribute_handlers[proto_id];
-        attribute_handler_element_t * safe_to_delete_attr_handler_elem = NULL;
-
-        while (temp_attr_handler_elem != NULL) {
-            if (temp_attr_handler_elem->attribute->proto_id == proto_id && temp_attr_handler_elem->attribute->field_id == attribute_id) {
+    {
+        attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[proto_id];
+        uint32_t n = mmt_handler->proto_registered_attributes_len[proto_id];
+        for (uint32_t i = 0; i < n; i++) {
+            if ((attrs[i]->field_id == attribute_id) && (attrs[i]->proto_id == proto_id)) {
+                temp_attr = attrs[i];
                 break;
             }
-            safe_to_delete_attr_handler_elem = temp_attr_handler_elem;
-            temp_attr_handler_elem = temp_attr_handler_elem->next;
         }
+    }
 
-        if (safe_to_delete_attr_handler_elem == NULL) { //The attribute handler to delete is the first in the list
-            mmt_handler->proto_registered_attribute_handlers[proto_id] = temp_attr_handler_elem->next;
-            safe_to_delete_attr_handler_elem = temp_attr_handler_elem;
-        } else {
-            safe_to_delete_attr_handler_elem->next = temp_attr_handler_elem->next; // We relink the elements
-            safe_to_delete_attr_handler_elem = temp_attr_handler_elem;
+    /* Issue #252 (F-PERF-017): the handlers are a contiguous array on the
+     * attribute — drop the matching slot with memmove. handlers_count is the
+     * element count; it is decremented below as before. */
+    {
+        int hc = temp_attr->handlers_count;
+        for (int i = 0; i < hc; i++) {
+            if (temp_attr->attribute_handlers[i].handler_fct == handler_fct) {
+                memmove(&temp_attr->attribute_handlers[i], &temp_attr->attribute_handlers[i + 1],
+                        (hc - i - 1) * sizeof(attribute_handler_t));
+                break;
+            }
         }
-        mmt_free(safe_to_delete_attr_handler_elem); // we free the attribute handler element struct
+    }
+
+    if ((temp_attr->handlers_count <= 1) && !(mmt_attr_get_scope_typed((const attribute_t *) temp_attr) & SCOPE_EVENT)) {
+        //We need to delete the attribute handler element as there are no more registered handler functions
+        attribute_handler_element_t * elems = mmt_handler->proto_registered_attribute_handlers[proto_id];
+        uint32_t n = mmt_handler->proto_registered_attribute_handlers_len[proto_id];
+        for (uint32_t i = 0; i < n; i++) {
+            if (elems[i].attribute->proto_id == proto_id && elems[i].attribute->field_id == attribute_id) {
+                memmove(&elems[i], &elems[i + 1], (n - i - 1) * sizeof(*elems));
+                mmt_handler->proto_registered_attribute_handlers_len[proto_id] = n - 1;
+                break;
+            }
+        }
     }
 
     //Decrement by one the handlers count of the attribute
     temp_attr->handlers_count -= 1;
     // We unregister the attribute associated with this handler
     unregister_extraction_attribute(mmt_handler, proto_id, attribute_id);
-    //Finally we free the attribute
-    mmt_free(safe_to_delete_attr_handler); // we free the attribute handler struct
     return 1;
 }
 
@@ -1597,26 +1591,25 @@ bool register_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id
 
         extract_attribute->data = &((char *) extract_attribute)[sizeof (struct attribute_internal_struct) ];
 
-        struct attribute_internal_struct * registered_attr = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
-
-        if (registered_attr == NULL) {
-            extract_attribute->next = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
-            mmt_handler->proto_registered_attributes[extract_attribute->proto_id] = extract_attribute;
-        } else if (extract_attribute->field_id < registered_attr->field_id) {
-            //This is the new head list
-            extract_attribute->next = mmt_handler->proto_registered_attributes[extract_attribute->proto_id];
-            mmt_handler->proto_registered_attributes[extract_attribute->proto_id] = extract_attribute;
-        } else {
-            while (registered_attr->next != NULL) {
-                if (extract_attribute->field_id < registered_attr->next->field_id) {
-                    break;
-                }
-                registered_attr = registered_attr->next;
-            }
-            //The attribute to register should be inserted between registered_attr and registered_attr->next
-            extract_attribute->next = registered_attr->next;
-            registered_attr->next = extract_attribute;
+        /* Issue #252 (F-PERF-017): insert into the contiguous array keeping
+         * the field_id ascending order the old sorted-insert list kept. */
+        uint32_t reg_proto = extract_attribute->proto_id;
+        uint32_t n = mmt_handler->proto_registered_attributes_len[reg_proto];
+        void *grown = grow_registration_array(mmt_handler->proto_registered_attributes[reg_proto],
+                &mmt_handler->proto_registered_attributes_cap[reg_proto],
+                sizeof(attribute_internal_t *), n + 1);
+        if (grown == NULL) {
+            mmt_free(extract_attribute);
+            return 0;
         }
+        struct attribute_internal_struct ** attrs = (struct attribute_internal_struct **) grown;
+        mmt_handler->proto_registered_attributes[reg_proto] = attrs;
+
+        uint32_t pos = 0;
+        while (pos < n && attrs[pos]->field_id < field_id) pos++;
+        memmove(&attrs[pos + 1], &attrs[pos], (n - pos) * sizeof(*attrs));
+        attrs[pos] = extract_attribute;
+        mmt_handler->proto_registered_attributes_len[reg_proto] = n + 1;
     }
     //Finally we increment the registration count of this attribute.
     extract_attribute->registration_count++;
@@ -1644,61 +1637,53 @@ bool register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, u
         return 0; //TODO(#327): This is getting paranoiac! we MUST never get here
     }
 
-    attribute_handler_t * new_attribute_handler = (attribute_handler_t *) mmt_malloc(sizeof (attribute_handler_t));
-    if (new_attribute_handler == NULL) {
+    /* Issue #252 (F-PERF-017): handlers live in a contiguous array on the
+     * attribute (index 0 = most recently registered, preserving the old
+     * head-insert order) and the per-protocol handler elements in a
+     * contiguous array sorted by field_id. Grow both before mutating so a
+     * single allocation failure leaves registration state untouched. */
+    int first_handler = (attr->handlers_count == 0);
+    int needs_elem = first_handler &&
+            !(mmt_attr_get_scope_typed((const attribute_t *) attr) & SCOPE_EVENT);
+
+    void *grown_handlers = grow_registration_array(attr->attribute_handlers,
+            &attr->attribute_handlers_cap, sizeof(attribute_handler_t),
+            (uint32_t) attr->handlers_count + 1);
+    if (grown_handlers == NULL) {
         if (retval) unregister_extraction_attribute(mmt_handler, proto_id, attribute_id); // If we get here then the attribute
         // handler creation failed, and previously in this function
         // the attribute was registered (retval was initially set to 0)
         // We unregister the registered attribute to undo any action done in this function
         return 0;
     }
+    attr->attribute_handlers = (attribute_handler_t *) grown_handlers;
 
-    new_attribute_handler->args = user_args;
-    new_attribute_handler->handler_fct = handler_fct;
-    new_attribute_handler->condition = handler_condition;
-    new_attribute_handler->next = NULL;
-
-    if (attr->attribute_handler == NULL) {
-        new_attribute_handler->next = NULL;
-        attr->attribute_handler = new_attribute_handler;
-
-        if (!(mmt_attr_get_scope_typed((const attribute_t *) attr) & SCOPE_EVENT)) {
-            //We should add an attribute handler element as this is the first handler for the attribute
-            attribute_handler_element_t * attr_handler_elem = (attribute_handler_element_t *) mmt_malloc(sizeof (attribute_handler_element_t));
-            if (attr_handler_elem == NULL) {
-                attr->attribute_handler = NULL;
-                mmt_free(new_attribute_handler);
-                if (retval) unregister_extraction_attribute(mmt_handler, proto_id, attribute_id);
-                return 0;
-            }
-            attr_handler_elem->attribute = attr;
-            attr_handler_elem->next = NULL;
-            if (mmt_handler->proto_registered_attribute_handlers[proto_id] == NULL) {
-                attr_handler_elem->next = NULL;
-                mmt_handler->proto_registered_attribute_handlers[proto_id] = attr_handler_elem;
-            } else {
-                attribute_handler_element_t * registered_attr_handler = mmt_handler->proto_registered_attribute_handlers[proto_id];
-                if (attr_handler_elem->attribute->field_id < registered_attr_handler->attribute->field_id) {
-                    //This is the new head list
-                    attr_handler_elem->next = mmt_handler->proto_registered_attribute_handlers[proto_id];
-                    mmt_handler->proto_registered_attribute_handlers[proto_id] = attr_handler_elem;
-                } else {
-                    while (registered_attr_handler->next != NULL) {
-                        if (attr_handler_elem->attribute->field_id < registered_attr_handler->next->attribute->field_id) {
-                            break;
-                        }
-                        registered_attr_handler = registered_attr_handler->next;
-                    }
-                    //The attribute to register should be inserted between registered_attr and registered_attr->next
-                    attr_handler_elem->next = registered_attr_handler->next;
-                    registered_attr_handler->next = attr_handler_elem;
-                }
-            }
+    if (needs_elem) {
+        uint32_t elen = mmt_handler->proto_registered_attribute_handlers_len[proto_id];
+        void *grown_elems = grow_registration_array(mmt_handler->proto_registered_attribute_handlers[proto_id],
+                &mmt_handler->proto_registered_attribute_handlers_cap[proto_id],
+                sizeof(attribute_handler_element_t), elen + 1);
+        if (grown_elems == NULL) {
+            if (retval) unregister_extraction_attribute(mmt_handler, proto_id, attribute_id);
+            return 0;
         }
-    } else {
-        new_attribute_handler->next = attr->attribute_handler;
-        attr->attribute_handler = new_attribute_handler;
+        attribute_handler_element_t * elems = (attribute_handler_element_t *) grown_elems;
+        mmt_handler->proto_registered_attribute_handlers[proto_id] = elems;
+
+        uint32_t pos = 0;
+        while (pos < elen && elems[pos].attribute->field_id < attribute_id) pos++;
+        memmove(&elems[pos + 1], &elems[pos], (elen - pos) * sizeof(*elems));
+        elems[pos].attribute = attr;
+        elems[pos].next = NULL;
+        mmt_handler->proto_registered_attribute_handlers_len[proto_id] = elen + 1;
     }
+
+    memmove(&attr->attribute_handlers[1], &attr->attribute_handlers[0],
+            (uint32_t) attr->handlers_count * sizeof(attribute_handler_t));
+    attr->attribute_handlers[0].args = user_args;
+    attr->attribute_handlers[0].handler_fct = handler_fct;
+    attr->attribute_handlers[0].condition = handler_condition;
+    attr->attribute_handlers[0].next = NULL;
 
     // The attribute handler was successfully created, we increment the handlers count of the attribute
     attr->handlers_count++;
@@ -1719,15 +1704,12 @@ bool register_attribute_handler_by_name(mmt_handler_t *mmt_handler, const char *
 }
 
 void free_registered_packet_handlers(mmt_handler_t *mmt_handler) {
-    packet_handler_t * temp_phandler = mmt_handler->packet_handlers;
-    packet_handler_t * safe_to_delete_handler = NULL;
-    while (temp_phandler != NULL) {
-        safe_to_delete_handler = temp_phandler;
-        temp_phandler = temp_phandler->next;
-        mmt_free(safe_to_delete_handler); // we free the packet handler struct
-    }
-
+    /* Issue #252 (F-PERF-017): packet handlers live in one contiguous
+     * block — a single free releases them all. */
+    mmt_free(mmt_handler->packet_handlers);
     mmt_handler->packet_handlers = NULL;
+    mmt_handler->packet_handlers_len = 0;
+    mmt_handler->packet_handlers_cap = 0;
 }
 
 bool register_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id, generic_packet_handler_callback function, void *args) {
@@ -1735,41 +1717,38 @@ bool register_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id, 
         return 0;
     }
     if (!is_registered_packet_handler(mmt_handler, packet_handler_id)) {
-        packet_handler_t * new_packet_handler = (packet_handler_t *) mmt_malloc(sizeof (packet_handler_t));
-        if (new_packet_handler == NULL) {
+        /* Issue #252 (F-PERF-017): prepend into the contiguous array —
+         * element 0 stays the most recently registered handler, the order
+         * the old head-insert list kept. */
+        void *grown = grow_registration_array(mmt_handler->packet_handlers,
+                &mmt_handler->packet_handlers_cap, sizeof(packet_handler_t),
+                mmt_handler->packet_handlers_len + 1);
+        if (grown == NULL) {
             return 0;
-        } else {
-            new_packet_handler->packet_handler_id = packet_handler_id;
-            new_packet_handler->function = function;
-            new_packet_handler->args = args;
-
-            new_packet_handler->next = mmt_handler->packet_handlers;
-            mmt_handler->packet_handlers = new_packet_handler;
         }
+        mmt_handler->packet_handlers = (packet_handler_t *) grown;
+        memmove(&mmt_handler->packet_handlers[1], &mmt_handler->packet_handlers[0],
+                mmt_handler->packet_handlers_len * sizeof(packet_handler_t));
+        mmt_handler->packet_handlers[0].packet_handler_id = packet_handler_id;
+        mmt_handler->packet_handlers[0].function = function;
+        mmt_handler->packet_handlers[0].args = args;
+        mmt_handler->packet_handlers[0].next = NULL;
+        mmt_handler->packet_handlers_len++;
     }
     return 1;
 }
 
 bool unregister_packet_handler(mmt_handler_t *mmt_handler, int packet_handler_id) {
     int retval = 1;
-    packet_handler_t * temp_handler = mmt_handler->packet_handlers;
-    packet_handler_t * safe_to_delete = NULL;
-    while (temp_handler != NULL) {
-        if (temp_handler->packet_handler_id == packet_handler_id) {
-            if (safe_to_delete == NULL) { //The handler to delete is the first in the list
-                mmt_handler->packet_handlers = temp_handler->next;
-                safe_to_delete = temp_handler;
-                mmt_free(safe_to_delete); // we free the packet handler struct
-                return retval;
-            } else {
-                safe_to_delete->next = temp_handler->next; // We relink the elements
-                safe_to_delete = temp_handler;
-                mmt_free(safe_to_delete); // we free the packet handler struct
-                return retval;
-            }
+    uint32_t n = mmt_handler->packet_handlers_len;
+    for (uint32_t i = 0; i < n; i++) {
+        if (mmt_handler->packet_handlers[i].packet_handler_id == packet_handler_id) {
+            /* Issue #252 (F-PERF-017): close the slot with memmove. */
+            memmove(&mmt_handler->packet_handlers[i], &mmt_handler->packet_handlers[i + 1],
+                    (n - i - 1) * sizeof(packet_handler_t));
+            mmt_handler->packet_handlers_len = n - 1;
+            return retval;
         }
-        safe_to_delete = temp_handler;
-        temp_handler = temp_handler->next;
     }
     return retval;
 }

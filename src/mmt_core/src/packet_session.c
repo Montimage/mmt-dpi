@@ -264,6 +264,9 @@ static void init_new_session_fields(mmt_handler_t * mmt_handler, mmt_session_t *
     /* Issue #245: the bounded TCP reassembly extension is allocated lazily on
      * the first TCP payload segment (see mmt_tcp_reasm_t). */
     session->tcp_reasm = NULL;
+    /* Issue #252 (F-PERF-002): no layer has a recorded winning checker yet —
+     * the first classifications run the full walk and fill the slots. */
+    memset(session->proto_checkers, 0, sizeof(session->proto_checkers));
     mmt_handler->sessions_count += 1;
     mmt_handler->active_sessions_count += 1;
 }

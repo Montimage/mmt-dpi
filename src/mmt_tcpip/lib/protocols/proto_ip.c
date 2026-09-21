@@ -891,6 +891,12 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
                 // Issue #19: the session offset path was rewritten in place; if
                 // the packet shares this buffer the memoized cache is now stale.
                 invalidate_packet_offset_cache(ipacket);
+                /* Issue #252 (F-PERF-002): the splice moved path entries
+                 * between indices, so the recorded per-layer winning checkers
+                 * no longer line up with proto_path — drop them all. Affected
+                 * layers re-walk the full chain (and re-record) instead of
+                 * dispatching a stale engine. */
+                memset(session->proto_checkers, 0, sizeof(session->proto_checkers));
             }
 
         }

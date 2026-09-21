@@ -221,6 +221,16 @@ struct mmt_session_struct {
     proto_hierarchy_t proto_path;            /**< The session detected protocol hierarchy */
     proto_hierarchy_t proto_headers_offset;  /**< The protocol offsets of the detected protocols */
     proto_hierarchy_t proto_classif_status;  /**< the classification status of the protocols in the path */
+    /* Issue #252 (F-PERF-002): the checker node that won each layer's
+     * classification — recorded when the checker walk first matches so a
+     * converged flow dispatches straight to its owning protocol engine
+     * instead of re-walking the whole chain. The winning checker keeps its
+     * per-packet role on the flow (stage machines, SNI/hostname service
+     * detection); the ~98 non-owning checkers are no-ops on a committed flow.
+     * NULL when the layer converged without a winning checker (port/IP
+     * fallback, plugin-side set_classified_proto) — such layers keep the
+     * full walk so late reclassification stays possible. */
+    mmt_classify_proto_t *proto_checkers[PROTO_PATH_SIZE];
 
     /* BW: MMT content type */
     struct {
@@ -344,7 +354,13 @@ struct attribute_internal_struct {
     int handlers_count; /**< Number of times this attributes has been registered with an attribute handler */
     uint32_t packet_id; /**< identifier of the packet from which this attribute was extracted */
     generic_attribute_extraction_function extraction_function; /**< the extraction function for this attribute. */
-    attribute_handler_t * attribute_handler;
+    /* Issue #252 (F-PERF-017): handlers frozen into a contiguous array —
+     * handlers_count stays the element count (it was always maintained in
+     * lock-step with the old chain), attribute_handlers_cap its capacity.
+     * Element 0 is the most recently registered handler, preserving the old
+     * head-insert order. */
+    attribute_handler_t * attribute_handlers;
+    uint32_t attribute_handlers_cap;
     attribute_internal_t * next; /**< next attribute */
 };
 
@@ -535,9 +551,22 @@ struct mmt_handler_struct {
 
     protocol_stack_t * link_layer_stack;
     protocol_instance_t configured_protocols[PROTO_MAX_IDENTIFIER];
-    attribute_internal_t * proto_registered_attributes[PROTO_MAX_IDENTIFIER];
+    /* Issue #252 (F-PERF-017): the per-protocol registration-time lists are
+     * frozen into contiguous arrays — the per-packet attribute/handler walks
+     * index these instead of chasing ->next through separately allocated
+     * nodes. Register/unregister (cold paths) mutate the arrays in place;
+     * the _len/_cap pairs track element count vs allocated capacity.
+     * proto_registered_attributes stays sorted by field_id (the order the
+     * old sorted-insert list kept). */
+    attribute_internal_t ** proto_registered_attributes[PROTO_MAX_IDENTIFIER];
+    uint32_t proto_registered_attributes_len[PROTO_MAX_IDENTIFIER];
+    uint32_t proto_registered_attributes_cap[PROTO_MAX_IDENTIFIER];
     attribute_handler_element_t * proto_registered_attribute_handlers[PROTO_MAX_IDENTIFIER];
+    uint32_t proto_registered_attribute_handlers_len[PROTO_MAX_IDENTIFIER];
+    uint32_t proto_registered_attribute_handlers_cap[PROTO_MAX_IDENTIFIER];
     packet_handler_t * packet_handlers;
+    uint32_t packet_handlers_len;
+    uint32_t packet_handlers_cap;
     // Specific session timedout value
     // uint32_t mmt_http_session_timed_out;
     mmt_hashmap_t *ip_streams;
