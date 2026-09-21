@@ -524,6 +524,7 @@ struct mmt_handler_struct {
     uint8_t ip_address_classify; // 0 - disable, 1 - enable
     uint8_t port_classify; // 0 - no classification based on port number, 1 - classification based on port number
     uint8_t port_classify_payload_confirm; // M9 (issue #75): 0 - accept any port-based guess (default), 1 - only accept a port-based guess when a payload signature confirms it
+    uint8_t classification_max_depth; // Issue #87: deepest protocol-path index the classifier may write (0..PROTO_PATH_SIZE-1; PROTO_PATH_SIZE-1 = unlimited). Layers already in the path stay; the classify walk and path appends stop below it.
 
     uint32_t last_expiry_timeout;
     uint32_t attr_extraction_strategy;
@@ -796,6 +797,11 @@ void register_protocol_session_attributes(protocol_t *proto);
  * @param parent_proto_stats pointer to the parent protocol statistics
  */
 void update_proto_stats_on_session_timeout(mmt_session_t * timed_out_session, proto_statistics_internal_t * parent_proto_stats);
+
+/* dpi_profiles.c — DPI profile registry (issue #87). Applies the
+ * MMT_DPI_PROFILES_FILE / MMT_DPI_PROFILE environment selection onto a fresh
+ * handler; called once by mmt_init_handler() (single-threaded init). */
+void mmt_dpi_profile_apply_env(mmt_handler_t *mmt_handler);
 
 /* packet_registry.c — registered-attribute bookkeeping, called by
  * packet_pipeline.c and packet_processing.c. */

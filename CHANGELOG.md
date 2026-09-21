@@ -34,6 +34,7 @@ checklist requires a line here for every user-visible change.
 - remove the dead non-Linux portability layer (#228); delete uncalled `mmt_classify_me_*` clones (#225); fold identical init wrappers into a generic helper (#226)
 - flatten and deduplicate IRC classification (#237); repair the business-app header install and strip the decoy API surface (#229)
 - security engine: thread `verify()`'s invariant arguments through a context struct (#233) and split `verify()` into one handler per node type (#234)
+- configurable DPI profiles: four named presets (`default`/`minimal`/`balanced`/`full`) plus operator-defined profiles bundle the detection levers — classification-depth cap, application/hostname detection, port-based and IP-range hints — applied per handler via API, `MMT_DPI_PROFILE`/`MMT_DPI_PROFILES_FILE` env vars or a profiles file; a depth cap also skips the per-layer checker walk for the CPU saving (#87)
 
 ### Performance
 - remove unconditional packet-path writes to stdout/stderr (#246)

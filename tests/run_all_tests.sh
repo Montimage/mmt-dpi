@@ -172,6 +172,7 @@ DEFAULT_SUITES=(
     ndn_dissector
     business_app
     proto_classifiers
+    dpi_profiles
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

@@ -36,6 +36,7 @@ overview and quick start, see the [root README](https://github.com/montimage-pro
     * [Adding a New Protocol](./Add-New-Protocol.md)
 * [Protocol Stack](./Protocol-Stack.md)
 * [Phase-2 Heuristics](./Phase2-Heuristics.md)
+* [DPI Profiles](./DPI-Profiles.md) — named per-level detection toggles (depth, app/port/IP-range)
 
 ## Development & Operations ##
 * [Agent Environment Notes](./AGENT_ENVIRONMENT.md) — toolchain, build/test commands of record, `MMT_BASE`, sanitizer profiles, `ENABLESEC`

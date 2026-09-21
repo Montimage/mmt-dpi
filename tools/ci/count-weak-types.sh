@@ -31,6 +31,8 @@
 #                - tri-state comparators (mmt_str*cmp, mmt_memcmp) and
 #                  length writers (mmt_attr_*format, proto_hierarchy_to_str)
 #                - enum-status returns (set_classified_proto)
+#                - load-count/error returns (mmt_load_dpi_profiles_file —
+#                  issue #87: number of profiles loaded, -1 on open failure)
 #                - callback-conforming functions whose signature must stay
 #                  assignment-compatible with an int-returning
 #                  function-pointer typedef (general_*_extraction,
@@ -118,6 +120,7 @@ mmt_attr_sprintf
 proto_hierarchy_to_str
 proto_hierarchy_to_str_with_size
 set_classified_proto
+mmt_load_dpi_profiles_file
 hex2int
 str_hex2int
 str_hex2int_n

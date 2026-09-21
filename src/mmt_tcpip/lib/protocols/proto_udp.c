@@ -105,7 +105,9 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
         if(ipacket->proto_hierarchy->proto_path[ipacket->proto_hierarchy->len - 1]!=PROTO_UDP){
             return new_retval;
         }
-        //BW - TODO(#87): We should have different strategies: best_effort = we can affort a number of missclassifications, etc.
+        // Issue #87: the "different strategies" this fallback asked for are
+        // the DPI profiles — each of the heuristic levers below (IP-range,
+        // then port) is gated by its own profile toggle on the handler.
         /* The protocol is unkown and we reached the classification threshold! Try with IP addresses and port numbers before setting it as unkown */
         if (ipacket->mmt_handler->ip_address_classify == 1)
         {

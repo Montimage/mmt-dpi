@@ -576,6 +576,19 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
     if (!is_valid_protocol_id(classified_proto.proto_id)) return retval;
 
     if (index + 1 > ipacket->proto_hierarchy->len) {
+        /* Issue #87: DPI profiles bound how deep payload inspection runs —
+         * refuse appends below the handler's classification_max_depth.
+         * Layers already in the path (update/reclassification branches
+         * below) are untouched, and the default bound
+         * (PROTO_PATH_SIZE - 1) makes this check a no-op on the bundled
+         * configuration. Out-of-band writers (sessionizers, analyse and
+         * extraction paths) respect the same cap as the classify walk.
+         * A NULL handler (crafted-input harnesses driving dissectors on a
+         * fabricated ipacket) carries no bound — the historical behaviour. */
+        if (ipacket->mmt_handler != NULL
+                && index > ipacket->mmt_handler->classification_max_depth) {
+            return retval;
+        }
         //Increment the length of the protocol path and protocol offsets
         ipacket->proto_hierarchy->len = index + 1;
         ipacket->proto_headers_offset->len = ipacket->proto_hierarchy->len;
@@ -665,7 +678,14 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
             classif_status = configured_protocol->protocol->classify_next.pre_classify(ipacket, index);
         }
         //Classify next protocol
-        if (configured_protocol->protocol->classify_next.classify_protos && classif_status != MMT_CLASSIFY_SKIP) { // Classify next proto only when such a function exists!
+        /* Issue #87: the classification_max_depth bound skips the whole
+         * deeper-layer detection round — checker walk AND post_classify —
+         * once the next index would exceed it. pre_classify above still
+         * ran, so the current layer's header parse (packet->tcp/udp),
+         * sessionization and attribute extraction are unaffected. */
+        if (configured_protocol->protocol->classify_next.classify_protos && classif_status != MMT_CLASSIFY_SKIP
+                && (ipacket->mmt_handler == NULL
+                    || (index + 1) <= ipacket->mmt_handler->classification_max_depth)) { // Classify next proto only when such a function exists!
             /* Issue #252 (F-PERF-002): when the hierarchy already carries a
              * converged (non-UNKNOWN) protocol at index + 1, the packet rides
              * an already-classified flow — the protocol path is session-backed

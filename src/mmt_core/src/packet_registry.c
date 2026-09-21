@@ -966,6 +966,9 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
     new_handler->port_classify_payload_confirm = 0; // M9 (issue #75): accept any port-based guess by default (no payload confirmation required)
     new_handler->hostname_classify = 1; // Enable classification by Hostname by default
     new_handler->ip_address_classify = 1; // Enable classification by IP address by default
+    // Issue #87: unlimited inspection depth by default — keep in sync with
+    // MMT_DPI_PROFILE_DEFAULT (dpi_profiles.c), the test suite pins it.
+    new_handler->classification_max_depth = PROTO_PATH_SIZE - 1;
     new_handler->clean_packet = clean_packet;
     new_handler->process_packet = process_packet;
 
@@ -1048,6 +1051,12 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
 
     //Enable protocol statistics (this is default config)
     enable_protocol_statistics((void *) new_handler);
+
+    /* Issue #87: last step before publishing — apply the operator-selected
+     * DPI profile (MMT_DPI_PROFILES_FILE then MMT_DPI_PROFILE). Both unset
+     * is the common case and leaves the built-in defaults above untouched,
+     * so classification stays byte-identical to the baseline. */
+    mmt_dpi_profile_apply_env(new_handler);
 
     pthread_mutex_lock(&configured_handlers_map_mutex);
     if(!insert_key_value(mmt_configured_handlers_map, (void *) new_handler, (void *) new_handler)){

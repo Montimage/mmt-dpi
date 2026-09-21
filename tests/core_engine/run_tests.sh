@@ -8,7 +8,7 @@
 # The suite source-compiles packet_processing.c and the objects it needs from
 # src/mmt_core (packet_registry, packet_pipeline, packet_session,
 # packet_stats, memory, hashmap, mmt_data, mmt_inet_ntop, proto_meta,
-# plugins_engine, extraction_lib, mmt_init) plus
+# plugins_engine, extraction_lib, mmt_init, dpi_profiles) plus
 # hash_utils.cpp, so gcov records them under --coverage and ASan/UBSan
 # instrument them under SANITIZE=*.
 #
@@ -35,7 +35,8 @@ echo "Compiling core-engine tests..."
 C_SOURCES="packet_processing.c packet_registry.c packet_pipeline.c \
 packet_session.c packet_stats.c memory.c \
 hashmap.c mmt_data.c mmt_inet_ntop.c \
-proto_meta.c plugins_engine.c extraction_lib.c mmt_init.c"
+proto_meta.c plugins_engine.c extraction_lib.c mmt_init.c \
+dpi_profiles.c"
 
 objects=()
 for src in $C_SOURCES; do

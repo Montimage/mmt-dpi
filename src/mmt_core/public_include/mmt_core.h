@@ -771,6 +771,138 @@ MMTAPI bool MMTCALL enable_ip_address_classify(
 MMTAPI bool MMTCALL disable_ip_address_classify(
     mmt_handler_t *mmt_handler);
 
+/* -------------------- DPI profiles (issue #87) ---------------------------
+ *
+ * A DPI profile bundles the four independent detection levers of the engine
+ * so a deployment can trade detection depth for throughput with one call:
+ *
+ *   - classification_max_depth: deepest index the classifier may write in
+ *     the protocol path — i.e. how many layers deep payload inspection runs.
+ *     The path layout is index 0 = PROTO_META, 1 = link layer (ETH), 2 =
+ *     network (IP), 3 = transport (TCP/UDP), 4 = first application protocol,
+ *     5+ = encapsulated / tunnelled protocols. A profile with max depth 4
+ *     inspects "up to 4 levels" and never runs the deeper checker walks.
+ *     PROTO_PATH_SIZE - 1 is the compiled-in ceiling ("unlimited" — the
+ *     historical behaviour); 0 stops classification at PROTO_META.
+ *   - app_protocol_classify: application-protocol detection from TLS SNI /
+ *     HTTP Host header and the hostname fingerprint table (the
+ *     hostname_classify flag).
+ *   - port_classify: protocol attribution from well-known port numbers,
+ *     consulted as a last resort after payload classification fails.
+ *   - ip_address_classify: protocol attribution from compiled-in or
+ *     externally-loaded (MMT_DPI_IP_RANGES_FILE) IP address ranges.
+ *
+ * Selection: call mmt_apply_dpi_profile() / mmt_apply_dpi_profile_by_name()
+ * on a handler, or set the MMT_DPI_PROFILE environment variable to a
+ * predefined or file-defined profile name before mmt_init_handler().
+ * MMT_DPI_PROFILES_FILE points at a data file adding custom named profiles —
+ * one per line:
+ *     <name> <max_depth> <app_protocol_classify> <port_classify> <ip_address_classify>
+ * (e.g. "edge 4 1 0 0"; '#' starts a comment). Predefined names are
+ * reserved: a file entry reusing one is skipped with a diagnostic.
+ *
+ * The default handler configuration is unchanged — equivalent to
+ * MMT_DPI_PROFILE_DEFAULT — so the bundled classification output stays
+ * byte-identical unless a profile is explicitly applied.
+ */
+
+/**
+ * A named set of per-level detection toggles. All fields are read at
+ * mmt_apply_dpi_profile() time; invalid combinations are clamped
+ * (max_depth) or normalised to 0/1 (the toggles). */
+typedef struct mmt_dpi_profile_struct {
+    uint8_t classification_max_depth; /**< deepest proto-path index (0..PROTO_PATH_SIZE-1) */
+    uint8_t app_protocol_classify;    /**< 0/1 — SNI/hostname/fingerprint application detection */
+    uint8_t port_classify;            /**< 0/1 — well-known port attribution */
+    uint8_t ip_address_classify;      /**< 0/1 — IP-range attribution */
+} mmt_dpi_profile_t;
+
+/* The predefined profile objects are plain `extern` — never MMTAPI: inside
+ * the SDK build MMTAPI is empty, which would turn these declarations into
+ * one tentative definition per translation unit. */
+/** Today's built-in defaults, spelled out: unlimited depth, application
+ * detection on, IP-range on, port attribution off. Applying this profile
+ * restores the stock configuration. */
+extern const mmt_dpi_profile_t MMT_DPI_PROFILE_DEFAULT;
+/** Everything on: unlimited depth plus all three heuristic levers,
+ * including port attribution. */
+extern const mmt_dpi_profile_t MMT_DPI_PROFILE_FULL;
+/** Middle ground: inspect through the first application layer and one
+ * encapsulation hop (depth 5, enough for TLS SNI attribution), application
+ * and IP-range detection on, port attribution off. */
+extern const mmt_dpi_profile_t MMT_DPI_PROFILE_BALANCED;
+/** Maximum throughput: structural classification only — path stops at the
+ * transport layer (depth 3), every heuristic lever off. Sessions and
+ * L2–L4 statistics still work; no application protocol is detected. */
+extern const mmt_dpi_profile_t MMT_DPI_PROFILE_MINIMAL;
+
+/**
+ * Apply a DPI profile to a handler: sets classification_max_depth and the
+ * three detection toggles in one call. May be called any time after
+ * mmt_init_handler(); mid-stream application only affects subsequent
+ * classification (layers already recorded in existing session paths stay).
+ * @param  mmt_handler mmt handler
+ * @param  profile     profile to apply (must not be NULL)
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI bool MMTCALL mmt_apply_dpi_profile(
+    mmt_handler_t *mmt_handler,
+    const mmt_dpi_profile_t *profile
+);
+
+/**
+ * Apply a named DPI profile: searches the four predefined profiles first,
+ * then the custom names loaded via mmt_load_dpi_profiles_file() (or
+ * MMT_DPI_PROFILES_FILE). Name matching is case-insensitive.
+ * @param  mmt_handler mmt handler
+ * @param  name        profile name, e.g. "minimal"
+ * @return             0 - unsuccessful (NULL args or unknown name)
+ *                       1 - sucessful
+ */
+MMTAPI bool MMTCALL mmt_apply_dpi_profile_by_name(
+    mmt_handler_t *mmt_handler,
+    const char *name
+);
+
+/**
+ * Load custom named DPI profiles from a data file — one profile per line:
+ *   <name> <max_depth> <app_protocol_classify> <port_classify> <ip_address_classify>
+ * '#' starts a comment; blank and malformed lines are skipped. Names are
+ * case-insensitive, must not collide with a predefined profile or an
+ * already-loaded name, and are truncated at 31 chars. Loaded profiles are
+ * registered process-wide (init-time data, read-only afterwards — same
+ * contract as the M9 external tables).
+ * @param  path profile file path (NULL/empty is a no-op returning 0)
+ * @return      number of profiles loaded, or -1 when the file cannot be opened
+ */
+MMTAPI int MMTCALL mmt_load_dpi_profiles_file(
+    const char *path
+);
+
+/**
+ * Bound how deep payload inspection walks the protocol path (see the DPI
+ * profile block above for the index layout). Values above
+ * PROTO_PATH_SIZE - 1 clamp to the unlimited ceiling.
+ * @param  mmt_handler mmt handler
+ * @param  max_depth   deepest proto-path index (0..PROTO_PATH_SIZE-1)
+ * @return             0 - unsuccessful
+ *                       1 - sucessful
+ */
+MMTAPI bool MMTCALL set_classification_max_depth(
+    mmt_handler_t *mmt_handler,
+    uint8_t max_depth
+);
+
+/**
+ * Read the current classification depth bound of a handler.
+ * @param  mmt_handler mmt handler
+ * @return             the bound (PROTO_PATH_SIZE-1 = unlimited), or 0 on NULL handler
+ */
+MMTAPI uint8_t MMTCALL get_classification_max_depth(
+    const mmt_handler_t *mmt_handler
+);
+
 /**
  * Sets the timeout delay for the given session.
  * @param session pointer to the session to set its timeout delay
