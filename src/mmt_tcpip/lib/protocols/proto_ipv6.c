@@ -31,25 +31,50 @@ bool ipv6_session_comp(void * key1, void * key2) {
 }
 
 /**
- * Hash of an IPv6 session key, consistent with ipv6_session_comp: it mixes
- * exactly the fields that comparison distinguishes — next_proto, both ports and
- * the 16 bytes of each interned IPv6 address — so that any two keys that compare
- * equal hash to the same value. FNV-1a over the packed 5-tuple.
+ * Issue #253 (F-PERF-008): one-call equality predicate for IPv6 session keys.
+ * True iff the same fields ipv6_session_comp distinguishes agree — next_proto,
+ * both ports and the 16 bytes of each interned IPv6 address — equivalent to
+ * the old `!comp(a,b) && !comp(b,a)` probe but evaluated in a single pass.
+ */
+bool ipv6_session_equal(void * key1, void * key2) {
+    mmt_session_key_t * l_session = (mmt_session_key_t *) key1;
+    mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
+
+    return l_session->next_proto == r_session->next_proto
+        && l_session->lower_ip_port == r_session->lower_ip_port
+        && l_session->higher_ip_port == r_session->higher_ip_port
+        && mmt_memcmp(l_session->lower_ip, r_session->lower_ip, IPv6_ALEN) == 0
+        && mmt_memcmp(l_session->higher_ip, r_session->higher_ip, IPv6_ALEN) == 0;
+}
+
+/**
+ * Hash of an IPv6 session key, consistent with ipv6_session_equal/
+ * ipv6_session_comp: it mixes exactly the fields equality distinguishes —
+ * next_proto, both ports and the 16 bytes of each interned IPv6 address — so
+ * that any two keys that compare equal hash to the same value.
+ *
+ * Dependent-multiply count (asserted by tools/phase0/tests/
+ * session_lookup_perf_test.sh): FNV-1a over the 37 key bytes ran 37
+ * serially-dependent multiplies; the five multiplies below are INDEPENDENT
+ * and the finalizer adds one dependent step — a chain 2 multiplies deep
+ * before the table's inlined fmix64, versus ~40 before.
  */
 uint64_t ipv6_session_hash(void * key) {
     mmt_session_key_t * s = (mmt_session_key_t *) key;
-    const unsigned char * lip = (const unsigned char *) s->lower_ip;
-    const unsigned char * hip = (const unsigned char *) s->higher_ip;
-    uint64_t h = 1469598103934665603ULL; // FNV-1a 64-bit offset basis
-    #define MMT_FNV1A(b) do { h ^= (uint8_t)(b); h *= 1099511628211ULL; } while (0)
-    MMT_FNV1A(s->next_proto);
-    MMT_FNV1A(s->lower_ip_port & 0xFF);
-    MMT_FNV1A((s->lower_ip_port >> 8) & 0xFF);
-    MMT_FNV1A(s->higher_ip_port & 0xFF);
-    MMT_FNV1A((s->higher_ip_port >> 8) & 0xFF);
-    for (int i = 0; i < IPv6_ALEN; i++) MMT_FNV1A(lip[i]);
-    for (int i = 0; i < IPv6_ALEN; i++) MMT_FNV1A(hip[i]);
-    #undef MMT_FNV1A
+    uint64_t lip[2], hip[2];
+    memcpy(lip, s->lower_ip, sizeof(lip));
+    memcpy(hip, s->higher_ip, sizeof(hip));
+    /* tuple word: next_proto(8b) | lower_ip_port(16b) | higher_ip_port(16b) */
+    uint64_t w = (uint64_t) s->next_proto
+               | ((uint64_t) s->lower_ip_port << 8)
+               | ((uint64_t) s->higher_ip_port << 24);
+    uint64_t h = w      * 0x9E3779B97F4A7C15ULL
+               ^ lip[0] * 0xC2B2AE3D27D4EB4FULL
+               ^ lip[1] * 0x165667B19E3779F9ULL
+               ^ hip[0] * 0x2545F4914F6CDD1DULL
+               ^ hip[1] * 0x9FB21C651E98DF25ULL;
+    h *= 0xD6E8FEB86659FD93ULL;
+    h ^= h >> 29;
     return h;
 }
 
@@ -848,6 +873,7 @@ int init_proto_ipv6_struct() {
 
         register_sessionizer_function(protocol_struct, ip6_sessionizer, ip6_session_cleanup_on_timeout, ipv6_session_comp);
         register_session_hash_function(protocol_struct, ipv6_session_hash);
+        register_session_equal_function(protocol_struct, ipv6_session_equal);
 
         register_proto_context_init_cleanup_function(protocol_struct, setup_ipv6_context, ipv6_context_cleanup, NULL);
 

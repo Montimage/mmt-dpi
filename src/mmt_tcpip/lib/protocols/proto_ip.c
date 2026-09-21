@@ -97,25 +97,52 @@ bool ipv4_session_comp(void * key1, void * key2) {
 }
 
 /**
- * Hash of an IPv4 session key, consistent with ipv4_session_comp: it mixes
- * exactly the fields that comparison distinguishes — next_proto, both ports and
- * the 4 bytes of each interned IP address — so that any two keys that compare
- * equal hash to the same value. FNV-1a over the packed 5-tuple.
+ * Issue #253 (F-PERF-008): one-call equality predicate for IPv4 session keys.
+ * True iff the same fields ipv4_session_comp distinguishes agree — next_proto,
+ * both ports and the 4 bytes of each interned IP — equivalent to the old
+ * `!comp(a,b) && !comp(b,a)` probe but evaluated in a single pass.
+ */
+bool ipv4_session_equal(void * key1, void * key2) {
+    mmt_session_key_t * l_session = (mmt_session_key_t *) key1;
+    mmt_session_key_t * r_session = (mmt_session_key_t *) key2;
+
+    return l_session->next_proto == r_session->next_proto
+        && l_session->lower_ip_port == r_session->lower_ip_port
+        && l_session->higher_ip_port == r_session->higher_ip_port
+        && mmt_memcmp(l_session->higher_ip, r_session->higher_ip, IPv4_ALEN) == 0
+        && mmt_memcmp(l_session->lower_ip, r_session->lower_ip, IPv4_ALEN) == 0;
+}
+
+/**
+ * Hash of an IPv4 session key, consistent with ipv4_session_equal/
+ * ipv4_session_comp: it mixes exactly the fields equality distinguishes —
+ * next_proto, both ports and the 4 bytes of each interned IP address — so
+ * that any two keys that compare equal hash to the same value.
+ *
+ * Dependent-multiply count (asserted by tools/phase0/tests/
+ * session_lookup_perf_test.sh): FNV-1a over the 13 key bytes ran 13
+ * serially-dependent multiplies; the three multiplies below are INDEPENDENT
+ * (the CPU overlaps them in one multiply-latency window) and the finalizer
+ * adds one dependent step — a chain 2 multiplies deep before the table's
+ * inlined fmix64, versus ~16 before.
  */
 uint64_t ipv4_session_hash(void * key) {
     mmt_session_key_t * s = (mmt_session_key_t *) key;
-    const unsigned char * lip = (const unsigned char *) s->lower_ip;
-    const unsigned char * hip = (const unsigned char *) s->higher_ip;
-    uint64_t h = 1469598103934665603ULL; // FNV-1a 64-bit offset basis
-    #define MMT_FNV1A(b) do { h ^= (uint8_t)(b); h *= 1099511628211ULL; } while (0)
-    MMT_FNV1A(s->next_proto);
-    MMT_FNV1A(s->lower_ip_port & 0xFF);
-    MMT_FNV1A((s->lower_ip_port >> 8) & 0xFF);
-    MMT_FNV1A(s->higher_ip_port & 0xFF);
-    MMT_FNV1A((s->higher_ip_port >> 8) & 0xFF);
-    for (int i = 0; i < IPv4_ALEN; i++) MMT_FNV1A(lip[i]);
-    for (int i = 0; i < IPv4_ALEN; i++) MMT_FNV1A(hip[i]);
-    #undef MMT_FNV1A
+    uint32_t lip, hip;
+    /* Same unaligned-read precaution as ipv4_addr_comp: the key may point
+     * into the byte-aligned packet buffer (build_ipv4_session_key stores raw
+     * header pointers; interned keys point at mmt_ip4_id_t.ip, offset 0). */
+    memcpy(&lip, s->lower_ip, sizeof(lip));
+    memcpy(&hip, s->higher_ip, sizeof(hip));
+    /* tuple word: next_proto(8b) | lower_ip_port(16b) | higher_ip_port(16b) */
+    uint64_t w = (uint64_t) s->next_proto
+               | ((uint64_t) s->lower_ip_port << 8)
+               | ((uint64_t) s->higher_ip_port << 24);
+    uint64_t h = w * 0x9E3779B97F4A7C15ULL
+               ^ (uint64_t) lip * 0xC2B2AE3D27D4EB4FULL
+               ^ (uint64_t) hip * 0x165667B19E3779F9ULL;
+    h *= 0xD6E8FEB86659FD93ULL;
+    h ^= h >> 29;
     return h;
 }
 /*
@@ -1088,6 +1115,7 @@ int init_proto_ip_struct() {
 
         register_sessionizer_function(protocol_struct, ip_sessionizer, ip_session_cleanup_on_timeout, ipv4_session_comp);
         register_session_hash_function(protocol_struct, ipv4_session_hash);
+        register_session_equal_function(protocol_struct, ipv4_session_equal);
 
         register_proto_context_init_cleanup_function(protocol_struct, setup_ip_context, ip_context_cleanup, NULL);
         return register_protocol(protocol_struct, PROTO_IP);

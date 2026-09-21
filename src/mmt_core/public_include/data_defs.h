@@ -108,6 +108,16 @@ typedef bool (*generic_comparison_fct) (mmt_opaque_t key_1, mmt_opaque_t key_2);
 typedef uint64_t (*generic_hash_fct) (mmt_opaque_t key); //public function
 
 /**
+ * Signature of a function that tests two keys for equality given by their
+ * addresses. An implementing function must return true iff the two keys are
+ * the same entry — equivalent to `!cmp(a,b) && !cmp(b,a)` under the matching
+ * generic_comparison_fct, but evaluated in a single call (issue #253,
+ * F-PERF-008: the per-packet session lookup used to run the ordering
+ * comparator twice per probe).
+ */
+typedef bool (*generic_equal_fct) (mmt_opaque_t key_1, mmt_opaque_t key_2); //public function
+
+/**
  * Signature of the function comparing two unsigned int keys. An implementing function must return true
  * if the value of key1 is strictly lower than the value of key2; false is returned otherwise. (strict weak ordering operation).
  */

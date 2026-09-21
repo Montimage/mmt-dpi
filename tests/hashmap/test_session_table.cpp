@@ -46,7 +46,7 @@ static protocol_instance_t make_proto_ctx(void *sessions_map) {
 /* ---- basic insert / lookup / delete on the session table ------------------ */
 static void test_session_table_basics(void) {
     fprintf(stderr, "  test: session table insert/get/delete\n");
-    void *store = init_session_map_space(int_key_comp, int_key_hash);
+    void *store = init_session_map_space(int_key_comp, int_key_hash, NULL);
     CHECK(store != NULL, "init_session_map_space should succeed");
     if (store == NULL) return;
 
@@ -71,7 +71,7 @@ static void test_resize_failure_preserves_table(void) {
     fprintf(stderr, "  test: session table survives failed resize\n");
     /* Budget 1: the initial 16-slot calloc succeeds, every later calloc fails. */
     g_calloc_budget = 1;
-    void *store = init_session_map_space(int_key_comp, int_key_hash);
+    void *store = init_session_map_space(int_key_comp, int_key_hash, NULL);
     g_calloc_budget = 0; /* hard OOM for the rest of the test */
     CHECK(store != NULL, "init_session_map_space should succeed under budget 1");
     if (store == NULL) { g_calloc_budget = -1; return; }
@@ -179,7 +179,7 @@ static void count_entry(void *key, void *value, void *args) {
 
 static void test_session_iteration(void) {
     fprintf(stderr, "  test: session iteration visits live entries only\n");
-    void *store = init_session_map_space(int_key_comp, int_key_hash);
+    void *store = init_session_map_space(int_key_comp, int_key_hash, NULL);
     CHECK(store != NULL, "init_session_map_space");
     if (store == NULL) return;
     protocol_instance_t pc = make_proto_ctx(store);

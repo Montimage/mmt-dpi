@@ -73,6 +73,25 @@ int mmt_case_sensitive_reverse_hostname_matching(const char *hostname,
         const char *url, size_t hostname_len, size_t url_len);
 uint32_t get_proto_id_by_hostname(ipacket_t *ipacket, char *hostname,
         u_int hostname_len);
+/* issue #253 (F-PERF-007): accounted resident bytes of the lazily-built
+ * sparse hostname trie — always exported, 0 until the first lookup builds
+ * it (asserted by hostname_trie_mem_test.c). */
+uint64_t mmt_hostname_trie_resident_bytes(void);
+
+/* --- protocols/proto_ip.c / proto_ipv6.c (session key functions) ----------
+ * The registered session-key comparator / hash / equality predicate —
+ * exercised directly by session_lookup_perf_test.c (issue #253, F-PERF-008).
+ * The mmt_oa_* call counters are the stats-gated tripwires: armed under
+ * BUILD=asan/tsan or NDEBUG-undefined builds, they return 0 elsewhere —
+ * declare them weak in the harness so the binary always links. */
+bool ipv4_session_comp(void *key1, void *key2);
+bool ipv6_session_comp(void *key1, void *key2);
+bool ipv4_session_equal(void *key1, void *key2);
+bool ipv6_session_equal(void *key1, void *key2);
+uint64_t ipv4_session_hash(void *key);
+uint64_t ipv6_session_hash(void *key);
+uint64_t mmt_oa_equal_call_count(void) __attribute__((weak));
+uint64_t mmt_oa_comp_call_count(void) __attribute__((weak));
 
 /* --- configured_protocols.c (checked inter-protocol registration, issue #212)
  * Returns non-zero on success, 0 on failure (after printing a diagnostic that

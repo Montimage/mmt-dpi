@@ -583,6 +583,10 @@ void register_session_hash_function(protocol_t *proto, generic_hash_fct session_
     proto->session_key_hash = session_key_hash_fct;
 }
 
+void register_session_equal_function(protocol_t *proto, generic_equal_fct session_key_equal_fct) {
+    proto->session_key_equal = session_key_equal_fct;
+}
+
 void register_proto_context_init_cleanup_function(protocol_t *proto, generic_proto_context_init_function context_init_fct,
         generic_proto_context_cleanup_function context_cleanup_fct, void * args) {
     proto->protocol_context_init = (void *) context_init_fct;
@@ -995,7 +999,7 @@ mmt_handler_t *mmt_init_handler( uint32_t stacktype, uint32_t options, char * er
 
         // Initialize the sessions context if the protocol has such context
         if (new_handler->configured_protocols[i].protocol->has_session == HAS_SESSION_CONTEXT) {
-            new_handler->configured_protocols[i].sessions_map = init_session_map_space(new_handler->configured_protocols[i].protocol->session_key_compare, new_handler->configured_protocols[i].protocol->session_key_hash);
+            new_handler->configured_protocols[i].sessions_map = init_session_map_space(new_handler->configured_protocols[i].protocol->session_key_compare, new_handler->configured_protocols[i].protocol->session_key_hash, new_handler->configured_protocols[i].protocol->session_key_equal);
             if (new_handler->configured_protocols[i].sessions_map == NULL) {
                 // OOM: cleanup already allocated session maps
                 for (int _j = 0; _j < i; _j++) {

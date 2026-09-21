@@ -267,6 +267,21 @@ MMTAPI void MMTCALL register_session_hash_function(
 );
 
 /**
+ * Registers the session key equality predicate for the protocol identified by the given @param protocol_struct.
+ * When registered, the session store tests two keys for equality with this single call instead of invoking the
+ * ordering comparator twice (!cmp(a,b) && !cmp(b,a)) on every probe — the per-packet session lookup's hot path
+ * (issue #253, F-PERF-008). The predicate MUST agree with the comparison function registered via
+ * register_sessionizer_function: equal(a,b) iff neither key orders before the other.
+ * If no predicate is registered, the store falls back to the two-call comparator equivalence.
+ * @param protocol_struct The protocol structure.
+ * @param session_key_equal_fct The function that tests two session keys for equality.
+ */
+MMTAPI void MMTCALL register_session_equal_function(
+    protocol_t *protocol_struct,
+    generic_equal_fct session_key_equal_fct
+);
+
+/**
  * Registers a protocol context cleanup function for the protocol identified by the given @param protocol_struct.
  * @param protocol_struct The protocol structure.
  * @param context_init_fct The protocol context initialization function.

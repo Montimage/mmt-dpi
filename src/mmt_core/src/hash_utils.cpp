@@ -61,6 +61,21 @@ static inline uint64_t mmt_mix64(uint64_t h) {
 static void * const MMT_SLOT_EMPTY = NULL;
 static void * const MMT_SLOT_TOMB  = reinterpret_cast<void *>(static_cast<uintptr_t>(1));
 
+/* Issue #253 (F-PERF-008): debug-build tripwires for the per-packet session
+ * lookup — mmt_oa_equal_calls counts probes resolved through the one-call
+ * equality predicate, mmt_oa_comp_calls counts probes that fell back to the
+ * two-invocation ordering comparator. Same arming contract as the classify
+ * counters in packet_pipeline.c: assert-enabled or sanitizer builds only,
+ * relaxed atomics, always-exported accessors so test harnesses link
+ * regardless of profile. */
+#if !defined(NDEBUG) || defined(MMT_BUILD_ASAN) || defined(MMT_BUILD_TSAN)
+#define MMT_SESSION_LOOKUP_STATS 1
+static uint64_t mmt_oa_equal_calls = 0;
+static uint64_t mmt_oa_comp_calls  = 0;
+#else
+#define MMT_SESSION_LOOKUP_STATS 0
+#endif
+
 struct mmt_oa_slot {
     void * key;
     void * value;
@@ -73,13 +88,28 @@ struct mmt_oa_table {
     size_t                 used;       // occupied + tombstones (drives resize)
     generic_comparison_fct comp;
     generic_hash_fct       hash;
+    generic_equal_fct      equal;      // issue #253 (F-PERF-008)
 
     uint64_t hash_of(void * k) const {
+        // The mixer is a static-inline fmix64 — it compiles into the call
+        // site (no function call, ~3 serially-dependent multiply steps on
+        // top of the key hash itself).
         return mmt_mix64(hash ? hash(k) : 0);
     }
-    // Map equivalence under a strict weak ordering: two keys are the same
-    // entry iff neither orders before the other.
+    // Issue #253 (F-PERF-008): a registered equality predicate resolves a
+    // probe in ONE call. The fallback keeps the old map equivalence under a
+    // strict weak ordering — two keys are the same entry iff neither orders
+    // before the other — which costs two comparator invocations.
     bool key_equal(void * a, void * b) const {
+        if (equal != NULL) {
+#if MMT_SESSION_LOOKUP_STATS
+            __atomic_add_fetch(&mmt_oa_equal_calls, 1, __ATOMIC_RELAXED);
+#endif
+            return equal(a, b);
+        }
+#if MMT_SESSION_LOOKUP_STATS
+        __atomic_add_fetch(&mmt_oa_comp_calls, 1, __ATOMIC_RELAXED);
+#endif
         return !comp(a, b) && !comp(b, a);
     }
 };
@@ -156,13 +186,14 @@ static void mmt_oa_reset(mmt_oa_table * t) {
     t->used = 0;
 }
 
-static void * mmt_oa_create(generic_comparison_fct comp_fct, generic_hash_fct hash_fct) {
+static void * mmt_oa_create(generic_comparison_fct comp_fct, generic_hash_fct hash_fct, generic_equal_fct equal_fct) {
     mmt_oa_table * t = (mmt_oa_table *) malloc(sizeof(mmt_oa_table));
     if (t == NULL) return NULL;
     t->size = 0;
     t->used = 0;
     t->comp = comp_fct;
     t->hash = hash_fct;
+    t->equal = equal_fct;
     mmt_oa_alloc_slots(t, MMT_OA_INITIAL_CAP);
     if (t->slots == NULL) { free(t); return NULL; }
     return reinterpret_cast<void *>(t);
@@ -515,9 +546,25 @@ static void mmt_ring_iterate(mmt_timeout_ring * r, generic_mapspace_iteration_ca
 
 } // namespace
 
-extern "C" void * init_session_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct) {
+extern "C" uint64_t mmt_oa_equal_call_count(void) {
+#if MMT_SESSION_LOOKUP_STATS
+    return __atomic_load_n(&mmt_oa_equal_calls, __ATOMIC_RELAXED);
+#else
+    return 0;
+#endif
+}
+
+extern "C" uint64_t mmt_oa_comp_call_count(void) {
+#if MMT_SESSION_LOOKUP_STATS
+    return __atomic_load_n(&mmt_oa_comp_calls, __ATOMIC_RELAXED);
+#else
+    return 0;
+#endif
+}
+
+extern "C" void * init_session_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct, generic_equal_fct equal_fct) {
     try {
-        return mmt_oa_create(comp_fct, hash_fct);
+        return mmt_oa_create(comp_fct, hash_fct, equal_fct);
     } catch (...) {
         return NULL;
     }
@@ -533,7 +580,10 @@ extern "C" void delete_session_map_space(void * sessionmap) {
 
 extern "C" void * init_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct) {
     try {
-        return mmt_oa_create(comp_fct, hash_fct);
+        // Generic maps have no registered equality predicate — the two-call
+        // comparator equivalence stays (issue #253 scoped the one-call path
+        // to the session store).
+        return mmt_oa_create(comp_fct, hash_fct, NULL);
     } catch (...) {
         return NULL;
     }

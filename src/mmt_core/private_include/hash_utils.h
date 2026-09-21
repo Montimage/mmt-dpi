@@ -31,10 +31,12 @@ extern "C" {
     // End of API for session management
 
     // Per-flow session store: a hash table keyed on a packed 5-tuple. The
-    // comparison function gives equality (a == b iff !cmp(a,b) && !cmp(b,a))
-    // and the hash function buckets the keys. hash_fct may be NULL (a correct
-    // but slow constant hash is used as a fallback).
-    void * init_session_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct);
+    // equality predicate tests two keys in one call (issue #253, F-PERF-008);
+    // when equal_fct is NULL the table derives equivalence from the ordering
+    // comparator as before (a == b iff !cmp(a,b) && !cmp(b,a)). The hash
+    // function buckets the keys; hash_fct may be NULL (a correct but slow
+    // constant hash is used as a fallback).
+    void * init_session_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct, generic_equal_fct equal_fct);
     void delete_session_map_space(void * sessionmap);
 
     // Generic void*-keyed map — the same open-addressing table as the session

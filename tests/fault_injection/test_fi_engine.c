@@ -196,7 +196,7 @@ static void sweep_mapspace(const char *name,
 
 static void *mk_session_map(void)
 {
-    return init_session_map_space(sess_key_comp, sess_key_hash);
+    return init_session_map_space(sess_key_comp, sess_key_hash, NULL);
 }
 static void *mk_int_map(void)
 {
