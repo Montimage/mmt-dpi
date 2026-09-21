@@ -32,7 +32,6 @@ static const protocol_match doted_host_names[] = {
     {".7digital.com", PROTO_7DIGITAL,13},
     {".7static.com", PROTO_7DIGITAL,12},
     {".888poker.fr", PROTO_888POKER,12},
-    {".Doubleclick.net", PROTO_DOUBLECLICK,16},
     {".abcnews.go.com", PROTO_GO,15},
     {".about.com", PROTO_ABOUT,10},
     {".absolute-playstation.com", PROTO_PLAYSTATION,25},

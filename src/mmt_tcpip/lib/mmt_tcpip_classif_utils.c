@@ -44,6 +44,35 @@ int mmt_case_sensitive_reverse_hostname_matching(const char *hostname, const cha
     return _mmt_case_sensitive_reverse_hostname_matching( hostname, url, hostname_len, url_len);
 }
 
+/* Issue #105: case-insensitive twin of the worker above — DNS hostnames are
+ * case-insensitive (RFC 1034 §3.1) and real SNI/HTTP Host values arrive in
+ * any case, so hostname-table lookups fold both cursors with mmt_tolower()
+ * (ASCII-only, locale-free) before comparing. Same guard order as the
+ * case-sensitive worker: counters are tested before the cursors are
+ * dereferenced (issue #212, F-BUG-026). */
+static inline int _mmt_case_insensitive_reverse_hostname_matching(const char *hostname, const char *url, size_t hostname_len, size_t url_len) {
+    if (hostname_len == 0 || url_len == 0 || hostname == NULL || url == NULL) {
+        return 0; //No match
+    }
+    if (hostname_len < url_len - 1) {
+        return 0; //No match
+    }
+
+    const char * hnr  = &hostname[hostname_len - 1];
+    const char * urlr = &url[url_len - 1];
+
+    while (url_len && hostname_len && *hnr && mmt_tolower(*hnr) == mmt_tolower(*urlr)) {
+        url_len--;
+        hostname_len--;
+        hnr--;
+        urlr--;
+    }
+    if (0 == url_len || hostname_len == 0)
+        return 1; /* they are equal this far */
+
+    return 0;
+}
+
 /* Generated protocol-match data: hostname-suffix table (issue #250).
  * Included as a data unit so this file holds only classification logic.
  */
@@ -63,7 +92,9 @@ static protocol_match ak_cdn_url_start_with_names[] = {
 static inline uint32_t get_proto_id_from_ak_cdn(ipacket_t * ipacket, char *hostname, u_int hostname_len) {
     int i = 0;
     while (ak_cdn_url_start_with_names[i].string_to_match != NULL) {
-        if (hostname_len > ak_cdn_url_start_with_names[i].str_len && strncmp(hostname, ak_cdn_url_start_with_names[i].string_to_match, ak_cdn_url_start_with_names[i].str_len) == 0) {
+        /* Issue #105: the akamai CDN prefixes are matched case-insensitively,
+         * like the hostname table that routed the lookup here. */
+        if (hostname_len > ak_cdn_url_start_with_names[i].str_len && mmt_strncasecmp(hostname, ak_cdn_url_start_with_names[i].string_to_match, ak_cdn_url_start_with_names[i].str_len) == 0) {
             ipacket->session->content_flags = ipacket->session->content_flags | ak_cdn_url_start_with_names[i].content_flags;
             return ak_cdn_url_start_with_names[i].proto_id;
         }
@@ -569,7 +600,8 @@ uint32_t _get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int ho
     //struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
 
     while ( likely( doted_host_names[i].string_to_match != NULL )) {
-        if (_mmt_case_sensitive_reverse_hostname_matching(hostname, doted_host_names[i].string_to_match, hostname_len, doted_host_names[i].str_len)) {
+        /* Issue #105: linear scan folds case like the production trie path. */
+        if (_mmt_case_insensitive_reverse_hostname_matching(hostname, doted_host_names[i].string_to_match, hostname_len, doted_host_names[i].str_len)) {
             ipacket->session->content_flags = ipacket->session->content_flags | doted_host_names[i].content_flags;
             if (doted_host_names[i].proto_id == PROTO_AKAMAI) {
                 return get_proto_id_from_ak_cdn(ipacket, hostname, hostname_len);
@@ -723,7 +755,10 @@ static int _init_tree(){
 
 		//for each character in the host name
 		for( j=proto_ptr->str_len-1; j>=0; j-- ){
-			node_ptr = _node_child_or_create(node_ptr, (uint8_t) proto_ptr->string_to_match[j]);
+			/* Issue #105: store lowercased edges so any case variant of a
+			 * listed suffix matches (and a stray mixed-case table entry
+			 * folds onto its lowercase twin instead of going dead). */
+			node_ptr = _node_child_or_create(node_ptr, (uint8_t) mmt_tolower(proto_ptr->string_to_match[j]));
 			if( node_ptr == NULL ){
 				// allocation failure: drop the partial tree, keep root NULL
 				_free_tree_node(root);
@@ -827,7 +862,9 @@ uint32_t get_proto_id_by_hostname(ipacket_t * ipacket, char *hostname, u_int hos
 	proto = node_ptr->protocol;
 
 	for( i=hostname_len-1; i>=0; i-- ){
-		c = hostname[i];
+		/* Issue #105: fold the wire hostname to lowercase on the walk —
+		 * the edges were stored lowercased at build time. */
+		c = (uint8_t) mmt_tolower(hostname[i]);
 		//in a leaf
 		node_ptr = _node_child(node_ptr, c);
 		if( node_ptr == NULL )

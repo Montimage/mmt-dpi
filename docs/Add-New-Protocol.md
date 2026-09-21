@@ -93,4 +93,8 @@ In the hostname-match data unit **`src/mmt_tcpip/lib/mmt_tcpip_classif_doted_hos
     {".lemonde.fr", PROTO_LEMONDE, MMT_STATICSTRING_LEN(".lemonde.fr")},
 ```
 
+Entries are matched **case-insensitively** (issue #105): they are stored
+lowercased in the hostname trie and lookups fold the wire hostname, so write
+them in lowercase — a mixed-case entry folds onto its lowercase twin.
+
 ## 4- Voilà Voilà

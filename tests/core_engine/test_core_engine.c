@@ -1330,6 +1330,43 @@ static void test_hostname_matching(void) {
           "linear: akamai suffix resolved via fbcdn prefix");
     CHECK((sess.content_flags & MMT_CONTENT_CDN) != 0,
           "linear: CDN content flag set on the session");
+
+    /* Issue #105: hostname classification is case-insensitive — the trie
+     * folds every byte to lowercase at build and lookup, and the linear
+     * scan folds both cursors, so any case variant of a listed suffix
+     * classifies the same. SNI and HTTP Host on the wire vary in case. */
+    char h_upper[] = "WWW.GOOGLE.COM";
+    CHECK(get_proto_id_by_hostname(&pkt, h_upper, 14) == PROTO_GOOGLE,
+          "trie: all-caps subdomain of .google.com");
+    char h_mixed[] = "WwW.YouTube.Com";
+    CHECK(get_proto_id_by_hostname(&pkt, h_mixed, 15) == PROTO_YOUTUBE,
+          "trie: mixed-case subdomain of .youtube.com");
+    char h_bare_up[] = "GOOGLE.COM";
+    CHECK(get_proto_id_by_hostname(&pkt, h_bare_up, 10) == PROTO_GOOGLE,
+          "trie: all-caps bare domain via the '.'-child fallback");
+    /* '.Doubleclick.net' was the one mixed-case table entry — unreachable
+     * before; it is normalised away as a duplicate of '.doubleclick.net',
+     * which now matches any case variant. */
+    char h_dclk[] = "ads.DOUBLECLICK.net";
+    CHECK(get_proto_id_by_hostname(&pkt, h_dclk, 19) == PROTO_DOUBLECLICK,
+          "trie: doubleclick.net matches under any case");
+    char h_bound_up[] = "XGOOGLE.COM";
+    CHECK(get_proto_id_by_hostname(&pkt, h_bound_up, 11) == PROTO_UNKNOWN,
+          "trie: dot boundary still enforced under folding");
+    char h_fbcdn_up[] = "FBCDN-video.AKAMAI.net";
+    sess.content_flags = 0;
+    CHECK(get_proto_id_by_hostname(&pkt, h_fbcdn_up, 22) == PROTO_FACEBOOK,
+          "trie: mixed-case fbcdn akamai host resolves to facebook");
+    CHECK((sess.content_flags & (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO)) ==
+          (MMT_CONTENT_CDN | MMT_CONTENT_VIDEO),
+          "trie: CDN|VIDEO content flags set under folding");
+
+    char l_upper[] = "WWW.YOUTUBE.COM";
+    CHECK(_get_proto_id_by_hostname(&pkt, l_upper, 15) == PROTO_YOUTUBE,
+          "linear: all-caps subdomain of .youtube.com");
+    char l_dclk[] = "ads.DOUBLECLICK.net";
+    CHECK(_get_proto_id_by_hostname(&pkt, l_dclk, 19) == PROTO_DOUBLECLICK,
+          "linear: doubleclick.net matches under any case");
 }
 
 static void test_ip_attribution(void) {

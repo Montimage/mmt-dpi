@@ -100,6 +100,11 @@ int main(void)
     CHECK(get_proto_id_by_hostname(&pkt, (char *) "mail.google.com", 15)
           == PROTO_GMAIL,
           "mail.google.com resolves to PROTO_GMAIL (longest suffix wins)");
+    /* Issue #105: matching is case-insensitive — edges store lowercase and
+     * the lookup folds each wire byte. */
+    CHECK(get_proto_id_by_hostname(&pkt, (char *) "WWW.GOOGLE.COM", 14)
+          == PROTO_GOOGLE,
+          "WWW.GOOGLE.COM resolves to PROTO_GOOGLE (case-insensitive)");
     CHECK(get_proto_id_by_hostname(&pkt, (char *) "no-such-host.invalid", 20)
           == PROTO_UNKNOWN,
           "unlisted hostname resolves to PROTO_UNKNOWN");
