@@ -181,9 +181,13 @@ check "no Homebrew install instructions remain" \
       "! grep -Eq 'brew install|Hombrew|libpth-dev' docs/Compilation-and-Installation-Instructions.md"
 check "no ARCH=osx/win build instructions remain" \
       "! grep -Eq 'make.*ARCH=(osx|win32|win64)|mingw|/opt/windows' docs/Compilation-and-Installation-Instructions.md"
+# `grep -c` (not `grep -q`) must consume the producer's whole stream: under
+# `set -o pipefail`, `grep -q` exits on the first match and the producer dies
+# on SIGPIPE (exit 141), which made this check flaky once DECISIONS.md grew
+# past the match point.
 check "docs/DECISIONS.md records the deletion" \
-      "awk '/^## 2026-09-16/{f=1} f' docs/DECISIONS.md | grep -q '#249' \
-       && awk '/^## 2026-09-16/{f=1} f' docs/DECISIONS.md | grep -qi 'homebrew'"
+      "awk '/^## 2026-09-16/{f=1} f' docs/DECISIONS.md | grep -c '#249' | grep -qv '^0$' \
+       && awk '/^## 2026-09-16/{f=1} f' docs/DECISIONS.md | grep -ci 'homebrew' | grep -qv '^0$'"
 
 # --- F-CLEAN-019: vendored-source configuration ------------------------------
 echo ""

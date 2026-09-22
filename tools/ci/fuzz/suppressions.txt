@@ -14,3 +14,4 @@ ip_ping_local_ip_fragmentation.pcap:321   # issue #306 — fragment-path hang
 ftp_login_fail.pcap:1231                  # issue #306 — session-path hang
 tcp_ecn_sample.pcap:1259                  # issue #306 — session-path hang
 tcp_tpncp_tcp.pcap:2221                   # issue #306 — session-path hang
+tcp_tpncp_tcp.pcap:305                    # issue #306 — session-path hang (mutant ~1000x slower than golden under -O2; crosses the 20s per-input timeout under ASan on a loaded runner)

@@ -24,6 +24,7 @@ arp_padding.pcap
 dns_query.pcap
 tls.pcap
 quic.pcap
+dtls.pcap
 http2.pcap
 dicom.pcap
 syslog.pcap

@@ -54,6 +54,10 @@
 ### quic.pcap
 1	meta.ethernet.ip.udp.quic_ietf
 
+### dtls.pcap
+2	meta.ethernet.ip.udp.dtls
+1	meta.ethernet.ip.udp.unknown
+
 ### http2.pcap
 1	meta.ethernet.ip.tcp.http2
 

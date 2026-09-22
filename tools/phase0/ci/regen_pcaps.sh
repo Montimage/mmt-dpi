@@ -7,6 +7,7 @@
 #   DNS        dns_query.pcap   (gen_tcpip_pcap.py --pcap dns_query)
 #   TLS        tls.pcap         (gen_tcpip_pcap.py --pcap tls)
 #   QUIC       quic.pcap        (gen_tcpip_pcap.py --pcap quic)
+#   DTLS       dtls.pcap        (gen_tcpip_pcap.py --pcap dtls, issue #262)
 #   HTTP/2     http2.pcap       (gen_tcpip_pcap.py --pcap http2)
 #   DICOM      dicom.pcap       (gen_tcpip_pcap.py --pcap dicom)
 #   syslog     syslog.pcap      (gen_tcpip_pcap.py --pcap syslog)
@@ -28,7 +29,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PHASE0="$(cd "${HERE}/.." && pwd)"
 OUT="${HERE}/pcaps"
 
-for n in dns_query tls quic http2 dicom syslog ptp; do
+for n in dns_query tls quic dtls http2 dicom syslog ptp; do
     python3 "${PHASE0}/gen_tcpip_pcap.py" --out-dir "${OUT}" --pcap "${n}"
 done
 for n in radius gtp s1ap ngap; do

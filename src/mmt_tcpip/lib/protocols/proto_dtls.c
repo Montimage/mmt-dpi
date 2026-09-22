@@ -238,15 +238,22 @@ static attribute_metadata_t dtls_attributes_metadata[] = {
 int init_proto_dtls_struct() {
 	protocol_t * protocol_struct = init_protocol_struct_for_registration(PROTO_DTLS, PROTO_DTLS_ALIAS);
 	const size_t nb_attributes = sizeof(dtls_attributes_metadata)/sizeof(dtls_attributes_metadata[0]);
+
+	/* Populate the classifier gate bitmasks unconditionally: the values are
+	 * deterministic constants, so recomputing them is idempotent. A direct
+	 * caller driving the exported classify_dtls_from_udp() symbol — the
+	 * phase0 crafted-input harness — needs them set in *this* translation
+	 * unit even when the protocol was already registered through
+	 * init_tcpip_plugin() (issue #262). */
+	mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
+	        &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+	        PROTO_UNKNOWN, PROTO_DTLS);
+
 	if (protocol_struct != NULL) {
 		int i = 0;
 		for (; i < nb_attributes; i++) {
 			register_attribute_with_protocol(protocol_struct, &dtls_attributes_metadata[i]);
 		}
-
-		mmt_init_classify_bitmasks(&selection_bitmask, &detection_bitmask,
-		        &excluded_protocol_bitmask, MMT_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
-		        PROTO_UNKNOWN, PROTO_DTLS);
 
 		register_classification_function_with_parent_protocol(PROTO_UDP, classify_dtls_from_udp, 20);
 		return register_protocol(protocol_struct, PROTO_DTLS);

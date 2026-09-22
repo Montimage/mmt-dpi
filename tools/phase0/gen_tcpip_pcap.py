@@ -10,6 +10,8 @@ Covers the core TCP/IP parsers under src/mmt_tcpip/lib/protocols/:
   - HTTP/2 (connection preface + SETTINGS over TCP)
   - DICOM (A-ASSOCIATE-RQ over TCP/104)
   - syslog (RFC3164 over UDP/514), PTPv2 (Announce over UDP/319)
+  - DTLS (1.2 handshake + application-data records over UDP, plus a
+         bogus-version datagram that must stay udp.unknown — issue #262)
   - FTP  (control session over TCP, incl. PORT/EPRT commands and 227/228/229
          responses — issue #195 hardened those parsers to length-bounded
          helpers, so they are now emitted)
@@ -279,6 +281,67 @@ def gen_ptp_pcap(path):
     print("wrote %s (PTPv2 Announce)" % path)
 
 
+def gen_dtls_pcap(path):
+    """DTLS 1.2 over UDP (issue #262).
+
+    Flow A (2 packets): a Handshake record (content type 22, version 0xFEFD)
+    carrying a minimal ClientHello, then an Application-data record (type 23)
+    on the same flow. Flow B (1 packet): a datagram with a valid DTLS content
+    type but the bogus version 0x0100 — it must NOT classify as DTLS (the
+    fingerprint records it as udp.unknown)."""
+    f = pcap_open(path)
+    src_ip = struct.pack("!I", 0x0A000001)
+    dst_ip = struct.pack("!I", 0x0A000002)
+
+    def dtls_record(content_type, version, epoch, seq, body):
+        # dtls_header_t: content_type(1) version(2) epoch(2) seq(6) length(2)
+        return (struct.pack("!BHH", content_type, version, epoch)
+                + seq.to_bytes(6, "big")
+                + struct.pack("!H", len(body)) + body)
+
+    # Minimal ClientHello handshake body (draft-ietf-tls-dtls13-34, 5.3):
+    # type(1) length(3) msg_seq(2) fragment_offset(3) fragment_length(3)
+    # version(2) random(32) session_id cookie cipher_suites compression
+    ch_body = (
+        b"\xfe\xfd"                     # client version: DTLS 1.2
+        + b"\x00" * 32                  # random
+        + b"\x00"                       # session id len 0
+        + b"\x00"                       # cookie len 0
+        + b"\x00\x04\x00\x2f\x00\xff"   # cipher suites len=4: AES128-SHA, SCSV
+        + b"\x01\x00"                   # compression methods len=1: null
+    )
+    client_hello = (b"\x01"             # handshake_type: client_hello
+                    + struct.pack("!I", len(ch_body))[1:]
+                    + b"\x00\x00"       # message_seq
+                    + b"\x00\x00\x00"   # fragment_offset
+                    + struct.pack("!I", len(ch_body))[1:]
+                    + ch_body)
+    rec_hello = dtls_record(22, 0xFEFD, 0, 0, client_hello)
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 17, UDP_HLEN + len(rec_hello))
+           + udp_header(4433, 4433, len(rec_hello))
+           + rec_hello)
+    pcap_write(f, pkt, ts_us=0)
+
+    rec_app = dtls_record(23, 0xFEFD, 1, 1, b"\x00" * 16)
+    pkt = (eth_header()
+           + ip_header(src_ip, dst_ip, 17, UDP_HLEN + len(rec_app), ident=1)
+           + udp_header(4433, 4433, len(rec_app))
+           + rec_app)
+    pcap_write(f, pkt, ts_us=1000)
+
+    # Bogus version 0x0100 (rejected by _is_dtls_version since issue #104) on
+    # a different flow — exercises the version gate end to end.
+    rec_bogus = dtls_record(22, 0x0100, 0, 0, b"\x00" * 16)
+    pkt = (eth_header()
+           + ip_header(dst_ip, src_ip, 17, UDP_HLEN + len(rec_bogus), ident=2)
+           + udp_header(55555, 44444, len(rec_bogus))
+           + rec_bogus)
+    pcap_write(f, pkt, ts_us=2000)
+    f.close()
+    print("wrote %s (DTLS 1.2 hello+appdata + bogus-version reject)" % path)
+
+
 def gen_ftp_pcap(path):
     f = pcap_open(path)
     src_ip = struct.pack("!I", 0x0A000001)
@@ -467,6 +530,7 @@ GENS = {
     "dicom": gen_dicom_pcap,
     "syslog": gen_syslog_pcap,
     "ptp": gen_ptp_pcap,
+    "dtls": gen_dtls_pcap,
 }
 
 

@@ -217,12 +217,6 @@ extern "C" {
 #include "proto_init_list.def"
 #undef MMT_PROTO_INIT
 
-    /* Defined in proto_dtls.c but deliberately absent from proto_init_list.def:
-     * no entry has ever registered it, so DTLS is not part of the classifier
-     * chain. Declared here to keep the definition prototyped. Tracked
-     * separately — registering it would change classification results. */
-    int init_proto_dtls_struct();
-
 #ifdef	__cplusplus
 }
 #endif

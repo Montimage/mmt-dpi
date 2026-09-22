@@ -1,4 +1,4 @@
-- **Protocol Classification** - Automatic identification and classification of network traffic across 669 protocols
+- **Protocol Classification** - Automatic identification and classification of network traffic across 670 protocols
 - **Attribute Extraction** - Extract detailed protocol-specific fields (IPs, ports, headers, payloads, etc.)
 - **Session Tracking** - Track and analyze network sessions with flow-level statistics (RTT, retransmissions, byte/packet counts)
 - **Extensible Plugin Architecture** - Add new protocol support via modular plugins
