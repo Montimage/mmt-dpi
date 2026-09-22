@@ -422,3 +422,9 @@ Append-only log of ambiguities resolved during doc-manager runs.
 - Q: Issue #367 review — is the local Bundler lock part of the clean-checkout toolchain, and is the decision log a built page?
   A: No Bundler lockfile or version pin is tracked; CI uses Ruby 3.3 and enables ruby/setup-ruby bundler-cache. The guide now documents Bundler without a version pin and no longer validates an ignored local lockfile. The decision log has no Jekyll front matter, so the guide links to its GitHub source instead of a raw Markdown site target. This supersedes the locked-Bundler claim above.
   Source: `.github/workflows/c-cpp.yml:213-218`, `.github/workflows/c-cpp.yml:225`, `docs/Gemfile:6-11`, `docs/DECISIONS.md:1`.
+
+## 2026-09-22
+
+- Q: Issue #368 — does the coverage percentage represent the whole SDK, and what should an agent do when the golden classification fingerprint changes?
+  A: Coverage counts executable lines from the instrumented `src/` subset represented by suite gcov data, not all SDK sources. Clarify that denominator in `CLAUDE.md`, link the authoritative environment testing and install sections, and explicitly require stopping and flagging any changed classification fingerprint before the intentional-baseline process.
+  Source: `tests/run_all_tests.sh:217,226,234-287` (source filtering, suite data and line totals), `docs/AGENT_ENVIRONMENT.md:184-192,206` (coverage and install guidance), `tools/phase0/README.md:76-87` (classification differences and intentional golden updates).

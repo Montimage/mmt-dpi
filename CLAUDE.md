@@ -2,6 +2,7 @@
 
 C deep-packet-inspection SDK (plain Make, no autotools/cmake). Linux only;
 GCC is the supported toolchain. Environment details: @docs/AGENT_ENVIRONMENT.md
+Install instructions: [docs/AGENT_ENVIRONMENT.md §4](docs/AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 
 ## Critical commands
 
@@ -9,7 +10,7 @@ GCC is the supported toolchain. Environment details: @docs/AGENT_ENVIRONMENT.md
 - Test: `bash tests/run_all_tests.sh` — the 20 suites are standalone: no prior build or install needed; the ones that need the built SDK build it themselves into a throwaway prefix, running `make -C sdk clean` first (so a suite run discards an existing `sdk/` build); [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing) is authoritative for that count, the runtime band and the exit codes
 - Run a subset: `bash tests/run_all_tests.sh hashmap memory`
 - Sanitized suites: `SANITIZE=asan|tsan bash tests/run_all_tests.sh` (mirrors `BUILD=asan`/`BUILD=tsan`; tsan re-execs under `setarch -R`)
-- Coverage: `bash tests/run_all_tests.sh --coverage` — writes `tests/coverage/coverage.info` (lcov tracefile) and prints the overall line percentage
+- Coverage: `bash tests/run_all_tests.sh --coverage` — writes `tests/coverage/coverage.info` (lcov tracefile) and prints line coverage of the instrumented `src/` subset, not the whole SDK; see [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing)
 - Clean: `make -C sdk clean`
 - Optional security engines: `make -C sdk ENABLESEC=1 -j$(nproc)` (requires libxml2-dev)
 
@@ -32,7 +33,7 @@ GCC is the supported toolchain. Environment details: @docs/AGENT_ENVIRONMENT.md
 - IMPORTANT: never hand-edit asn1c-generated sources under `src/mmt_mobile/asn1c/` — they are regenerated from ASN.1 specs, so manual edits are silently lost.
 - YOU MUST follow the profile-switch clean rule stated in [docs/AGENT_ENVIRONMENT.md §5](docs/AGENT_ENVIRONMENT.md#5-sanitizer-build-profiles) before building `BUILD=asan` / `BUILD=tsan`.
 - NEVER use `make -C sdk test` as a smoke test: it compiles examples from the installed prefix and fails without a prior `sudo make install`. Use `bash tests/run_all_tests.sh`.
-- Classification logic changes must keep the phase0 golden-pcap fingerprint unchanged. The `classification-gate` job ("Golden classification fingerprint unchanged", `.github/workflows/phase0-baseline.yml`) runs on every PR into `main` and — since issue #184 made the phase0 gates required status checks on `main` — a mismatch blocks the merge. An intentional behavior change requires regenerating baselines per `tools/phase0/README.md`.
+- Classification logic changes must keep the phase0 golden-pcap fingerprint unchanged. The `classification-gate` job ("Golden classification fingerprint unchanged", `.github/workflows/phase0-baseline.yml`) runs on every PR into `main` and — since issue #184 made the phase0 gates required status checks on `main` — a mismatch blocks the merge. If the fingerprint changes, stop and flag the difference. An intentional behavior change requires regenerating baselines per `tools/phase0/README.md`.
 - YOU MUST follow the `MMT_BASE` prefix contract stated in [docs/AGENT_ENVIRONMENT.md §4](docs/AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior) when building and installing.
 - Never commit generated artifacts: `sdk/lib/`, `sdk/include/`, `sdk/examples/`, `sdk/bin/`, `build/`, `dist/`.
 
