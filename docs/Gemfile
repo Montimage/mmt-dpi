@@ -3,6 +3,11 @@
 # same source with actions/jekyll-build-pages (.github/workflows/pages.yml),
 # which provides these gems via the github-pages gemset — the plugins below
 # mirror the plugin list in _config.yml.
+#
+# Gemfile.lock is tracked (issue #372): the resolved graph is verified under
+# `BUNDLE_FROZEN=true`, so after changing this file run `bundle lock` (or a
+# plain `bundle install`) and commit the updated lock — otherwise the frozen
+# verification in .github/workflows/c-cpp.yml fails.
 source "https://rubygems.org"
 
 gem "jekyll", "~> 4.3"

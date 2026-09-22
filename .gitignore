@@ -146,5 +146,8 @@ _site/
 .jekyll-cache/
 .jekyll-metadata
 Gemfile.lock
+# docs/Gemfile.lock is tracked (issue #372): it locks the documentation
+# dependency graph and CI verifies it under `BUNDLE_FROZEN=true`.
+!docs/Gemfile.lock
 .bundle/
 vendor/bundle/

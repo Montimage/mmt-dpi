@@ -216,13 +216,20 @@ jobs:
         ruby-version: "3.3"
         working-directory: docs
         bundler-cache: true
+      env:
+        # Frozen install (issue #372): the tracked docs/Gemfile.lock is the
+        # dependency graph — a Gemfile change without a lock update fails here.
+        BUNDLE_FROZEN: "true"
     - name: Documentation checks (blocking)
       # Source-tree pass (trunk): built .html URLs resolve to their .md
       # sources; built-site pass: the real check over jekyll output — the
       # exclusion/front-matter rules are only enforceable there (issue #247).
+      # The lock-diff line (issue #372) proves a clean docs build leaves the
+      # tracked docs/Gemfile.lock unchanged.
       run: |
         bash tools/ci/check-site-links.sh docs
         cd docs && bundle exec jekyll build && cd ..
+        git diff --exit-code -- docs/Gemfile.lock
         bash tools/ci/check-site-links.sh docs/_site
         bash tools/phase0/ci/check_readme_gates.sh
     - name: Release verification wiring (blocking — issue #198)

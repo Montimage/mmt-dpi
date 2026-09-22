@@ -92,16 +92,19 @@ Notes:
 
 The C SDK does not require Ruby. For the documentation site, use Ruby **3.3**
 as in CI (`.github/workflows/c-cpp.yml:213-218`), with Bundler to install
-the gems and run Jekyll. CI enables `bundler-cache` through `ruby/setup-ruby`;
-no Bundler version or lockfile is committed. With Ruby 3.3 available:
+the gems and run Jekyll. CI enables `bundler-cache` through `ruby/setup-ruby`
+and verifies the committed `docs/Gemfile.lock` under `BUNDLE_FROZEN=true`
+(issue #372) — after changing `docs/Gemfile`, regenerate the lock
+(`bundle lock`) and commit it or the frozen install fails. With Ruby 3.3
+available:
 
 ```bash
 gem install bundler
 (cd docs && bundle install && bundle exec jekyll build)
 ```
 
-`docs/Gemfile:6-11` defines Jekyll and its plugins; CI's corresponding build
-is at `.github/workflows/c-cpp.yml:225`.
+`docs/Gemfile:11-16` defines Jekyll and its plugins; CI's corresponding build
+is at `.github/workflows/c-cpp.yml:231`.
 
 No application `.env` file is required: this is a Make-built SDK, configured
 through make variables (`sdk/Makefile:8-13`, `rules/common.mk:3-8`), and the
