@@ -16,8 +16,8 @@
 #                   (shipped with gcc) and jq.
 #   SANITIZE=asan   Compile the suites with AddressSanitizer + UBSan, mirroring
 #                   the SDK's BUILD=asan profile (rules/common.mk). Suites that
-#                   build the SDK internally (citrix_ica_detection,
-#                   http_header_case) inherit BUILD=asan via SDK_BUILD_PROFILE.
+#                   build the SDK internally inherit BUILD=asan via
+#                   SDK_BUILD_PROFILE.
 #   SANITIZE=tsan   Same for the SDK's BUILD=tsan profile (ThreadSanitizer).
 #   --with-harnesses  After the suites, run every phase0 harness
 #                   (tools/phase0/tests/run_*.sh) via the aggregate runner
