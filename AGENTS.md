@@ -1,7 +1,7 @@
 # MMT-DPI Agent & Role Guide
 
 Etiquette and focused role briefs for autonomous work in this repo.
-Project context and commands: @CLAUDE.md · Environment: @docs/AGENT_ENVIRONMENT.md
+Project context and commands: [CLAUDE.md](CLAUDE.md) · Environment: [docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md)
 
 This guide states no build, test or install command of its own — every one of
 them lives in the two documents above. Quote them from there, never from here.
@@ -10,7 +10,7 @@ them lives in the two documents above. Quote them from there, never from here.
 
 - Branches `<type>/<issue>-<short-desc>`; commits follow Conventional Commits with a trailing `(#N)`.
 - Docs are reconciled to code: cite `file:line` when documenting behavior; record resolved ambiguities append-only in `docs/DECISIONS.md`.
-- Never edit generated trees (`src/mmt_mobile/asn1c/`) or commit build outputs (`sdk/lib/`, `sdk/include/`, `build/`, `dist/`).
+- Never edit generated trees (`src/mmt_mobile/asn1c/`) or commit build outputs (`sdk/lib/`, `sdk/include/`, `sdk/examples/`, `sdk/bin/`, `build/`, `dist/`).
 - Classification changes must keep the phase0 golden-pcap fingerprint unchanged (`tools/phase0/README.md`). The `classification-gate` job ("Golden classification fingerprint unchanged", `.github/workflows/phase0-baseline.yml`) runs on every PR into `main` and — since issue #184 made the phase0 gates required status checks on `main` — a mismatch blocks the merge.
 
 ## Roles
@@ -34,7 +34,7 @@ Scope: `docs/`, root Markdown, `docs/DECISIONS.md`.
 
 - Verify each doc claim against sources (`rules/*.mk`, `sdk/Makefile`, `src/`, `tests/`); fix or flag unverifiable claims.
 - Every non-trivial resolution gets one append-only entry in `docs/DECISIONS.md`: question, answer, source.
-- Facts that have a single home stay there: link to [docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md) rather than restating it, and keep `scripts/validate-agent-environment.sh` green.
+- Facts that have a single home stay there: link to [docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md) rather than restating it, and keep `scripts/validate-agent-environment.sh` green — the `doc-validators` job (`.github/workflows/c-cpp.yml`) runs every `scripts/validate-*.sh` as a required `main` check.
 - Report: files fixed, claims verified, entries appended. Do not reformat docs beyond what the fix requires.
 
 ### sanitizer-verifier — memory- and thread-safety verification
