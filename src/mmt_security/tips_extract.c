@@ -134,48 +134,32 @@ char *get_my_data(void *data1, short size, long type) {
     buff1[0] = '\0';
     switch (type) {
         case MMT_DATA_IP6_ADDR:
-            // TODO(#326)
-            break;
-        case MMT_DATA_PORT:
-            // TODO(#326)
-            break;
-        case MMT_DATA_PORT_RANGE:
-            // TODO(#326)
-            break;
-        case MMT_DATA_DATE:
-            // TODO(#326)
-            break;
-        case MMT_DATA_TIMEARG:
-            // TODO(#326)
+            if (inet_ntop(AF_INET6, data1, buff1, 100) == NULL)
+                buff1[0] = '\0';
             break;
         case MMT_DATA_FLOAT:
-            // TODO(#326)
-            break;
-        case MMT_DATA_IP_NET:
-            // TODO(#326)
+            (void)snprintf(buff1, 100, "%f", (double) *(float*) (data1));
             break;
         case MMT_DATA_MAC_ADDR:
-            // TODO(#326)
             convert_mac_bytes_to_string(&buff1, (unsigned char *) data1);
             break;
         case MMT_DATA_TIMEVAL:
-            // TODO(#326)
             t1 = *(struct timeval *) (data1);
             (void)snprintf(buff1, 100, "%lu.%06lu", t1.tv_sec, (long) t1.tv_usec);
             break;
         case MMT_DATA_IP_ADDR:
-            // TODO(#326)
             (void)snprintf(buff1, 100, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));
             break;
         case MMT_U16_DATA:
-            // TODO(#326)
+        case MMT_DATA_LAYERID:
             (void)snprintf(buff1, 100, "%d", *(unsigned short*) (data1));
             break;
         case MMT_U32_DATA:
             (void)snprintf(buff1, 100, "%lu", *(unsigned long*) (data1));
             break;
         case MMT_U64_DATA:
-            // TODO(#326)
+        case MMT_DATA_POINT:
+            (void)snprintf(buff1, 100, "%"PRIu64, *(uint64_t*) (data1));
             break;
         case MMT_U8_DATA:
         case MMT_DATA_CHAR:
@@ -220,8 +204,6 @@ char *get_my_data(void *data1, short size, long type) {
         }
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
-
-            // TODO(#326)
             db1 = (mmt_binary_data_t *) (data1);
             data_size = db1->len;
             data2 = db1->data;
@@ -244,25 +226,34 @@ char *get_my_data(void *data1, short size, long type) {
                 }
             }
             break;
-        case MMT_DATA_LAYERID:
-            // TODO(#326)
+        case MMT_STRING_DATA_POINTER:
+            /* pointer-typed attribute: data1 is the string itself — bound
+             * the read in case the dissector did not NUL-terminate it */
+            (void)snprintf(buff1, 100, "%.99s", (char *) data1);
             break;
-        case MMT_DATA_POINT:
-            // TODO(#326)
+        case MMT_GENERIC_HEADER_LINE: {
+            /* RFC2822 header line: NUL-terminated field and value */
+            mmt_generic_header_line_t *ghl = (mmt_generic_header_line_t *) (data1);
+            (void)snprintf(buff1, 100, "%.*s: %.*s", 45,
+                    ghl->hfield != NULL ? ghl->hfield : "", 45,
+                    ghl->hvalue != NULL ? ghl->hvalue : "");
             break;
+        }
+        /* Types with no defined record representation — none is emitted by
+         * extraction (get_data_size_by_data_type gives them no size), so the
+         * empty string produced above is the intentional result (#326). */
+        case MMT_DATA_PORT:
+        case MMT_DATA_PORT_RANGE:
+        case MMT_DATA_DATE:
+        case MMT_DATA_TIMEARG:
+        case MMT_DATA_IP_NET:
         case MMT_DATA_FILTER_STATE:
-            // TODO(#326)
-            break;
         case MMT_UNDEFINED_TYPE:
         case MMT_DATA_POINTER:
         case MMT_DATA_BUFFER:
         case MMT_DATA_STRING_INDEX:
         case MMT_DATA_PARENT:
         case MMT_STATS:
-        case MMT_GENERIC_HEADER_LINE:
-        case MMT_STRING_DATA_POINTER:
-            // TODO(#326) verify if OK
-            //if(type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:5\n");
             break;
              
         default:
@@ -346,7 +337,10 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                     && temp_tuple2->event_id == event_id && temp_tuple2->data_size > 0 && temp_tuple2->data != NULL) {
                 long type = temp_tuple2->data_type_id;
                 *size = temp_tuple2->data_size;
-                void *data = temp_tuple2->data;
+                /* pointer-typed tuples store the char* — unwrap it so `data`
+                 * is the string itself, matching the packet-side convention */
+                void *data = (type == MMT_STRING_DATA_POINTER)
+                        ? *(void **)temp_tuple2->data : temp_tuple2->data;
                 if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA ) {
                     /* declared byte count from the record prefix — clamp it
                      * to the record's payload so a forged prefix cannot make
@@ -608,22 +602,37 @@ int compare_in_table(compare_value v1, compare_value v2, enum_operation ope)
                     return VALID;
             }
             break;
+        /* Fixed-width scalar types: membership is an element-wise equality
+         * walk over the binary table, one element of the type's defined
+         * size at a time. */
+        case MMT_DATA_IP_ADDR:
+        case MMT_DATA_IP6_ADDR:
+        case MMT_DATA_MAC_ADDR:
+        case MMT_DATA_TIMEVAL: {
+            int esz = (int) get_data_size_by_data_type(v1.type);
+            if (esz > 0) {
+                for (i = 0; i + esz <= size; i = i + esz) {
+                    if (memcmp(v1.data, (char *) v2.data + i, (size_t) esz) == 0)
+                        return VALID;
+                }
+            }
+            break;
+        }
+        /* Remaining types carry no element representation a binary table
+         * membership test can be defined on — NOT_VALID is the intended
+         * answer (#326). */
         case MMT_DATA_LAYERID:
         case MMT_DATA_PORT:
         case MMT_DATA_POINT:
         case MMT_DATA_PORT_RANGE:
         case MMT_STRING_DATA:
         case MMT_STRING_LONG_DATA:
-        case MMT_DATA_IP6_ADDR:
-        case MMT_DATA_IP_ADDR:
         case MMT_DATA_IP_NET:
-        case MMT_DATA_MAC_ADDR:
         case MMT_BINARY_DATA:
         case MMT_BINARY_VAR_DATA:
         case MMT_DATA_PATH:
         case MMT_DATA_FILTER_STATE:
         case MMT_DATA_TIMEARG:
-        case MMT_DATA_TIMEVAL:
         case MMT_DATA_DATE:
         case MMT_UNDEFINED_TYPE:
         case MMT_DATA_BUFFER:
@@ -633,12 +642,8 @@ int compare_in_table(compare_value v1, compare_value v2, enum_operation ope)
         case MMT_GENERIC_HEADER_LINE:
         case MMT_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
-            return NOT_VALID; //TODO(#326) verify if OK
-            break;
         case MMT_DATA_POINTER:
-            //(void)fprintf(stderr, "MMT_DATA_POINTER:1\n");
-            return NOT_VALID; //TODO(#326) verify if OK
-            break;
+            return NOT_VALID;
         default:
             (void)fprintf(stderr, "Error 36b: Comparing values is not possible. Type not implemented yet.\n");
             exit(-1);
@@ -729,7 +734,6 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
                 return VALID;
             break;
         case MMT_U32_DATA:
-        case MMT_DATA_PORT:
             u32_1 = (*((unsigned long *) (v1.data)));
             u32_2 = (*((unsigned long *) (v2.data)));
             if ((ope == NEQ && u32_1 != u32_2) || (ope == EQ && u32_1 == u32_2) || (ope == LT && u32_1 < u32_2) || (ope == LTE && u32_1 <= u32_2) || (ope == GT && u32_1 > u32_2) || (ope == GTE && u32_1 >= u32_2))
@@ -737,7 +741,6 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
             break;
         case MMT_U64_DATA:
         case MMT_DATA_POINT:
-        case MMT_DATA_PORT_RANGE:
             u64_1 = *((unsigned long long *) (v1.data));
             u64_2 = *((unsigned long long *) (v2.data));
             if ((ope == NEQ && u64_1 != u64_2) || (ope == EQ && u64_1 == u64_2) || (ope == LT && u64_1 < u64_2) || (ope == LTE && u64_1 <= u64_2) || (ope == GT && u64_1 > u64_2) ||
@@ -756,18 +759,34 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
                 return VALID;
             break;
         case MMT_DATA_PATH:
-            //TODO(#326): need to complete for other cases
+            /* v1.size is the byte size of the int element array produced by
+             * clamp_path_count (count*sizeof(int)) and data1 the array just
+             * past the record prefix — the search must scan every element
+             * (XC/XCE = "path contains needle"); other operators have no
+             * defined meaning on paths. */
             if (ope == XC || ope == XCE) {
               needle = atoi(data2);
-              if(size>0 && size < 20){
-                /* idx indexes int elements — bound the byte offset by the
-                 * operand buffer (size bytes): read complete ints only
-                 * (the old idx<size bound read up to 4x past it, #209) */
-                for(idx=1; idx * (int)sizeof(int) + (int)sizeof(int) <= size; idx++){
-                  if(needle == *(int*) (data1 + idx*sizeof (int))) return VALID;
+              if(size>0 && size < 20 * (int)sizeof (int)){
+                for(idx=0; idx + (int)sizeof (int) <= size; idx += (int)sizeof (int)){
+                  if(needle == *(int*) (data1 + idx)) return VALID;
                 }
                 return NOT_VALID;
               }
+            }
+            break;
+        case MMT_STRING_DATA_POINTER:
+            /* v1.data/v2.data hold the string pointer — compare the
+             * pointed-to contents, not the pointer values (#326). */
+            if (*(char **) (v1.data) == NULL || *(char **) (v2.data) == NULL) return NOT_VALID;
+            if (ope == XC || ope == XCE) {
+                return (strstr(*(char **) (v1.data), *(char **) (v2.data)) != NULL) ? VALID : NOT_VALID;
+            } else if (ope == XD || ope == XDE) {
+                return (strstr(*(char **) (v2.data), *(char **) (v1.data)) != NULL) ? VALID : NOT_VALID;
+            } else {
+                int sc = strcmp(*(char **) (v1.data), *(char **) (v2.data));
+                if ((ope == NEQ && sc != 0) || ((ope == EQ || ope == XE) && sc == 0) || (ope == LT && sc < 0) ||
+                        (ope == LTE && sc <= 0) || (ope == GT && sc > 0) || (ope == GTE && sc >= 0)) return VALID;
+                return NOT_VALID;
             }
             break;
         case MMT_HEADER_LINE:
@@ -850,6 +869,10 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
                 }
             }
             break;
+        /* No scalar comparison can be defined for these types — NOT_VALID
+         * is the intended answer (#326). */
+        case MMT_DATA_PORT:
+        case MMT_DATA_PORT_RANGE:
         case MMT_DATA_FILTER_STATE:
         case MMT_DATA_TIMEARG:
         case MMT_UNDEFINED_TYPE:
@@ -858,9 +881,7 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
         case MMT_DATA_PARENT:
         case MMT_STATS:
         case MMT_GENERIC_HEADER_LINE:
-        case MMT_STRING_DATA_POINTER:
-            return NOT_VALID; //TODO(#326) verify if OK
-            break;
+            return NOT_VALID;
         default:
             (void)fprintf(stderr, "Error 36: Comparing values is not possible. Type not implemented yet.\n");
             exit(-1);
@@ -912,21 +933,26 @@ void * compute(compare_value v1, compare_value v2, enum_operation operator)
     data2 = v2.data;
 
     switch (v1.type) {
-        case MMT_DATA_TIMEVAL:
-            // TODO(#326)
-            (void)fprintf(stderr, "Error 36a1: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
-            exit(-1);
-            break;
-        case MMT_DATA_DATE:
-            // TODO(#326)
-            (void)fprintf(stderr, "Error 36a2: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
-            exit(-1);
-            break;
-        case MMT_DATA_FLOAT:
-            // TODO(#326)
-            (void)fprintf(stderr, "Error 36a3: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
-            exit(-1);
-            break;
+        case MMT_DATA_FLOAT: {
+            float f1 = *((float *) (data1));
+            float f2 = *((float *) (data2));
+            float *f0 = xmalloc(sizeof (float));
+            if (f0 == NULL) {
+                xfree(ull0);
+                return NULL;
+            }
+            if (operator == ADD)
+                *f0 = f1 + f2;
+            else if (operator == SUB)
+                *f0 = f1 - f2;
+            else if (operator == DIV) {
+                if (f2 == 0.0f) { xfree(f0); xfree(ull0); return NULL; }
+                *f0 = f1 / f2;
+            } else if (operator == MUL)
+                *f0 = f1 * f2;
+            else { xfree(f0); xfree(ull0); return NULL; }
+            return (void *)f0;
+        }
         case MMT_U16_DATA:
         case MMT_DATA_LAYERID:
             us1 = *((unsigned short *) (data1));
@@ -970,7 +996,7 @@ void * compute(compare_value v1, compare_value v2, enum_operation operator)
             break;
         case MMT_U64_DATA:
         case MMT_DATA_POINT:
-        case MMT_DATA_PORT_RANGE: // TODO(#326): to check
+        case MMT_DATA_PORT_RANGE:
             ull1 = *((unsigned long long *) (data1));
             ull2 = *((unsigned long long *) (data2));
             ull0 = xmalloc(sizeof (unsigned long long));
@@ -1024,6 +1050,10 @@ void * compute(compare_value v1, compare_value v2, enum_operation operator)
             }
             return (void *)uc0;
             break;
+        /* Arithmetic has no defined meaning on these types — NULL reports
+         * "computation not possible" to the caller (#326). */
+        case MMT_DATA_TIMEVAL:
+        case MMT_DATA_DATE:
         case MMT_UNDEFINED_TYPE:
         case MMT_DATA_POINTER:
         case MMT_DATA_MAC_ADDR:
@@ -1045,9 +1075,7 @@ void * compute(compare_value v1, compare_value v2, enum_operation operator)
         case MMT_HEADER_LINE:
         case MMT_GENERIC_HEADER_LINE:
         case MMT_STRING_DATA_POINTER:
-            //if(v1.type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:3\n");
-            return NULL; //TODO(#326) verify if OK
-            break;
+            return NULL;
         default:
             (void)fprintf(stderr, "Error 36a: Computation is not possible. Type not implemented yet or the operation on this type has no sense.\n");
             exit(-1);
@@ -1092,7 +1120,9 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
         void *data = r1->t.data;
         if (v1.type == MMT_STRING_DATA || v1.type == MMT_STRING_LONG_DATA || v1.type == MMT_BINARY_DATA || v1.type == MMT_BINARY_VAR_DATA || v1.type == MMT_DATA_PATH) {
             if (v1.type == MMT_DATA_PATH)
-                v1.size = clamp_path_count(*(int*) (data), r1->t.data_size);
+                /* operand size is the element array's byte size — the
+                 * record is [int count][count ints] */
+                v1.size = clamp_path_count(*(int*) (data), r1->t.data_size) * (int)sizeof (int);
             else
                 v1.size = clamp_prefixed_size(*(int*) (data), r1->t.data_size);
             data = r1->t.data + sizeof (int);
@@ -1121,7 +1151,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                     void *data = temp_tuple2->data;
                     if (v1.type == MMT_STRING_DATA || v1.type == MMT_STRING_LONG_DATA || v1.type == MMT_BINARY_DATA || v1.type == MMT_BINARY_VAR_DATA || v1.type == MMT_DATA_PATH) {
                         if (v1.type == MMT_DATA_PATH)
-                            v1.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size);
+                            v1.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size) * (int)sizeof (int);
                         else
                             v1.size = clamp_prefixed_size(*(int*) (data), temp_tuple2->data_size);
                         data = temp_tuple2->data + sizeof (int);
@@ -1150,7 +1180,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
         void *data = r2->t.data;
         if (v2.type == MMT_STRING_DATA || v2.type == MMT_STRING_LONG_DATA || v2.type == MMT_BINARY_DATA || v2.type == MMT_BINARY_VAR_DATA || v2.type == MMT_DATA_PATH) {
             if (v2.type == MMT_DATA_PATH)
-                v2.size = clamp_path_count(*(int*) (data), r2->t.data_size);
+                v2.size = clamp_path_count(*(int*) (data), r2->t.data_size) * (int)sizeof (int);
             else
                 v2.size = clamp_prefixed_size(*(int*) (data), r2->t.data_size);
             data = r2->t.data + sizeof (int);
@@ -1184,7 +1214,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                                         void *data = temp_tuple2->data;
                                         if (v2.type == MMT_STRING_DATA || v2.type == MMT_STRING_LONG_DATA || v2.type == MMT_BINARY_DATA || v2.type == MMT_BINARY_VAR_DATA || v2.type == MMT_DATA_PATH) {
                                             if (v2.type == MMT_DATA_PATH)
-                                                v2.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size);
+                                                v2.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size) * (int)sizeof (int);
                                             else
                                                 v2.size = clamp_prefixed_size(*(int*) (data), temp_tuple2->data_size);
                                             data = temp_tuple2->data + sizeof (int);
@@ -1252,7 +1282,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                  * packet-controlled — a forged value must not drive a giant
                  * xcalloc or an over-reading memcpy (F-BUG-091/093, #209) */
                 if (tmp_v->type == MMT_DATA_PATH)
-                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size);
+                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size) * (int)sizeof (int);
                 else
                     tmp_v->size = clamp_prefixed_size(*(int*) (data), tmp_v->size);
                 data = data + sizeof (int);
@@ -1269,7 +1299,12 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                  * pointer once the prefix was skipped) */
                 return 0;
             }
-            if (data != NULL && tmp_v->size > 0) memcpy(tmp_v->data, data, tmp_v->size);
+            if (data != NULL && tmp_v->size > 0) {
+                /* a pointer-typed attribute's datum is the pointer itself —
+                 * store the pointer value, not `size` bytes of pointee */
+                if (tmp_v->type == MMT_STRING_DATA_POINTER) memcpy(tmp_v->data, &data, tmp_v->size);
+                else memcpy(tmp_v->data, data, tmp_v->size);
+            }
         }
     }
     if (v2.found == NOT_FOUND) {
@@ -1283,7 +1318,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
             if (tmp_v->type == MMT_STRING_DATA || tmp_v->type == MMT_STRING_LONG_DATA || tmp_v->type == MMT_BINARY_DATA || tmp_v->type == MMT_BINARY_VAR_DATA || tmp_v->type == MMT_DATA_PATH) {
                 /* same clamps as the scalar/tuple paths (F-BUG-091/093, #209) */
                 if (tmp_v->type == MMT_DATA_PATH)
-                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size);
+                    tmp_v->size = clamp_path_count(*(int*) (data), tmp_v->size) * (int)sizeof (int);
                 else
                     tmp_v->size = clamp_prefixed_size(*(int*) (data), tmp_v->size);
                 data = data + sizeof (int);
@@ -1299,7 +1334,10 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                 xfree(v2.data);
                 return NOT_VALID;
             }
-            if (data != NULL && tmp_v->size > 0) memcpy(tmp_v->data, data, tmp_v->size);
+            if (data != NULL && tmp_v->size > 0) {
+                if (tmp_v->type == MMT_STRING_DATA_POINTER) memcpy(tmp_v->data, &data, tmp_v->size);
+                else memcpy(tmp_v->data, data, tmp_v->size);
+            }
         }
     }
 

@@ -215,7 +215,9 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
             curr_rule_instance = temp;
         }
         if(if_valid_and_no_instance_satisfied_then_generate_not_satisfied == VALID){
-          // TODO(#326): works only if left branch is one event
+          /* Known limitation: the BEFORE left-branch probe (verify_left)
+           * evaluates a single event — a composite left branch is not
+           * supported (#326). */
           if_valid_and_no_instance_satisfied_then_generate_not_satisfied = NOT_VALID;
           strncpy(cause,"C1 satisfied but C2 not found in property: 'if C1 THEN BEFORE we should have C2'", SIZE_CAUSE);
           cause[SIZE_CAUSE]='\0';

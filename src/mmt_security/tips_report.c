@@ -235,26 +235,18 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
 
             type = temp->data_type_id;
             switch (type) {
-                case MMT_DATA_IP6_ADDR:
-                    // TODO(#326)
+                case MMT_DATA_IP6_ADDR: {
+                    char ip6_str[INET6_ADDRSTRLEN];
+                    if (inet_ntop(AF_INET6, data1, ip6_str, sizeof(ip6_str)) != NULL) {
+                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, ip6_str);
+                        json_grow_append(&json_buff, &json_cap, json_buff1);
+                    }
                     break;
-                case MMT_DATA_PORT:
-                    // TODO(#326)
-                    break;
-                case MMT_DATA_PORT_RANGE:
-                    // TODO(#326)
-                    break;
-                case MMT_DATA_DATE:
-                    // TODO(#326)
-                    break;
-                case MMT_DATA_TIMEARG:
-                    // TODO(#326)
-                    break;
+                }
                 case MMT_DATA_FLOAT:
-                    // TODO(#326)
-                    break;
-                case MMT_DATA_IP_NET:
-                    // TODO(#326)
+                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":%f},", proto_name,
+                            att_name, (double) *(float*) (data1));
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 case MMT_DATA_MAC_ADDR:
                     temp_MAC = xmalloc(22);
@@ -264,9 +256,13 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                     json_grow_append(&json_buff, &json_cap, json_buff1);
                     xfree(temp_MAC);
                     break;
-                case MMT_DATA_TIMEVAL:
-                    // TODO(#326)
+                case MMT_DATA_TIMEVAL: {
+                    struct timeval tv = *(struct timeval *) (data1);
+                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%lu.%06lu\"},", proto_name,
+                            att_name, tv.tv_sec, (long) tv.tv_usec);
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
+                }
                 case MMT_DATA_IP_ADDR:
                     if(proto_name!=NULL && att_name!=NULL && *((char*)data1)!=0){
                        L1 = (*(unsigned long*)(data1)&0x000000ff);
@@ -290,7 +286,10 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                     json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 case MMT_U64_DATA:
-                    // TODO(#326)
+                case MMT_DATA_POINT:
+                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":%"PRIu64"},", proto_name,
+                            att_name, *(uint64_t*) (data1));
+                    json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 case MMT_U8_DATA:
                 case MMT_DATA_CHAR:
@@ -338,7 +337,6 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                 }
                 case MMT_BINARY_DATA:
                 case MMT_BINARY_VAR_DATA:
-                    // TODO(#326)
                     db1 = (mmt_binary_data_t *) (data1);
                     /* db1->len is a packet-controlled record prefix — bound it
                      * by the inline array the record actually carries, same
@@ -386,15 +384,9 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                           json_grow_append(&json_buff, &json_cap, "\"},");
                     }
                     break;
-                case MMT_DATA_LAYERID:
-                    // TODO(#326)
-                    break;
-                case MMT_DATA_POINT:
-                    // TODO(#326)
-                    break;
                 case MMT_DATA_POINTER:
-                    // TODO(#326)
-                    //(void)fprintf(stderr, "MMT_DATA_POINTER:6\n");
+                    /* only tcp.p_payload (354.4098) has a printable form —
+                     * a generic pointer value is meaningless in a verdict. */
                	 //check only if we are verifying tcp.p_payload
                	 if( temp->protocol_id == 354  && temp->field_id == 4098 ){
 							  data_ptr = get_attribute_extracted_data_by_name(ctx->pkt, "tcp","payload_len");
@@ -414,17 +406,52 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
 							  }
                	  }
                     break;
-                case MMT_DATA_FILTER_STATE:
-                    // TODO(#326)
+                case MMT_STRING_DATA_POINTER:
+                    /* pointer-typed attribute: data1 is the string itself —
+                     * bound the scan by the string-record capacity */
+                    if ((char *) data1 != NULL) {
+                        char *esc = convert_string_to_json_compatible((char *) data1,
+                                (int) strnlen((char *) data1, STRING_DATA_LEN));
+                        if (esc != NULL) {
+                            snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, esc);
+                            json_grow_append(&json_buff, &json_cap, json_buff1);
+                            xfree(esc);
+                        }
+                    }
                     break;
+                case MMT_GENERIC_HEADER_LINE: {
+                    /* RFC2822 header line: NUL-terminated field and value */
+                    mmt_generic_header_line_t *ghl = (mmt_generic_header_line_t *) (data1);
+                    if (ghl->hfield != NULL || ghl->hvalue != NULL) {
+                        char *esc = convert_string_to_json_compatible(
+                                ghl->hfield != NULL ? (char *) ghl->hfield : "",
+                                (int) (ghl->hfield != NULL ? strlen(ghl->hfield) : 0));
+                        char *esc2 = convert_string_to_json_compatible(
+                                ghl->hvalue != NULL ? (char *) ghl->hvalue : "",
+                                (int) (ghl->hvalue != NULL ? strlen(ghl->hvalue) : 0));
+                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s: %s\"},", proto_name, att_name,
+                                esc != NULL ? esc : "", esc2 != NULL ? esc2 : "");
+                        json_grow_append(&json_buff, &json_cap, json_buff1);
+                        if (esc != NULL) xfree(esc);
+                        if (esc2 != NULL) xfree(esc2);
+                    }
+                    break;
+                }
+                /* Types with no defined record representation — none is
+                 * emitted by extraction, so omitting the attribute is the
+                 * intended result (#326). */
+                case MMT_DATA_PORT:
+                case MMT_DATA_PORT_RANGE:
+                case MMT_DATA_DATE:
+                case MMT_DATA_LAYERID:
+                case MMT_DATA_TIMEARG:
+                case MMT_DATA_IP_NET:
+                case MMT_DATA_FILTER_STATE:
                 case MMT_UNDEFINED_TYPE:
                 case MMT_DATA_BUFFER:
                 case MMT_DATA_STRING_INDEX:
                 case MMT_DATA_PARENT:
                 case MMT_STATS:
-                case MMT_GENERIC_HEADER_LINE:
-                case MMT_STRING_DATA_POINTER:
-                    // TODO(#326) verify if OK
                     break;
 
                 default:
@@ -556,7 +583,13 @@ void store_tuples( verify_ctx_t *ctx, enum_operation_type context, rule *curr_ru
             if (temp_tuple->data == NULL) {
                 return;
             }
-            memcpy(temp_tuple->data, data, temp_tuple->data_size);
+            /* a pointer-typed attribute's datum is the pointer itself —
+             * store the pointer value so references can compare the
+             * pointed-to string (#326) */
+            if (temp_tuple->data_type_id == MMT_STRING_DATA_POINTER)
+                memcpy(temp_tuple->data, &data, temp_tuple->data_size);
+            else
+                memcpy(temp_tuple->data, data, temp_tuple->data_size);
         }
         temp_tuple = temp_tuple->next;
     }
@@ -584,7 +617,9 @@ void get_verdict( enum_type_rule_node t, enum_print po, enum_print state, char *
 			} else if (po == BOTH && state == NOT_SATISFIED) {
 				(void)strcpy(verdict, "not_respected");
 			} else if (po == BOTH && state == NEITHER) {
-				(void)strcpy(verdict, "unknown"); // TODO(#326):????
+				/* inconclusive at the start or the end of input: the
+				 * property could not be decided either way */
+				(void)strcpy(verdict, "unknown");
 			}
 			break;
 		case ATTACK:
@@ -602,7 +637,8 @@ void get_verdict( enum_type_rule_node t, enum_print po, enum_print state, char *
 			} else if (po == BOTH && state == NOT_SATISFIED) {
 				(void)strcpy(verdict, "not_detected");
 			} else if (po == BOTH && state == NEITHER) {
-				(void)strcpy(verdict, "unknown"); // TODO(#326) for inconclusive at begining or at end of input
+				/* inconclusive at the start or the end of input */
+				(void)strcpy(verdict, "unknown");
 			}
 			break;
 		default:
@@ -1036,7 +1072,9 @@ void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state ) {
 		xfree( type );
     }
 
-    // TODO(#326): Folder where the scripts are installed is current folder
+    /* Reaction scripts are resolved from the folder generate_command
+     * prepends (/opt/mmt/probe/conf/) and run in the current working
+     * directory of the engine process. */
     void *data = NULL;
     short do_it = 0;
     char * what_to_do = NULL;

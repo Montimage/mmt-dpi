@@ -730,6 +730,288 @@ static void test_tokenize_and_summary_bounded(void)
     free(summary);
 }
 
+/* ======================================================================
+ * Issue #326 — fill-in/prune of the security-engine branches
+ *
+ * The branches this issue implemented are driven directly:
+ *   - get_my_data(): IPv6 / float / string-pointer / generic header line
+ *     formatting, and the intentionally-unsupported types returning the
+ *     empty string instead of reaching the fatal default;
+ *   - compare_values(): string-pointer operands compare by contents, and
+ *     the fixed-width XIN membership walk covers IP/MAC/timeval records;
+ *   - compute(): float arithmetic incl. the zero-divisor guard;
+ *   - get_xdata() (tips_xml.c): IPv4/IPv6/float/string-pointer constants;
+ *   - check_for_countout() (tips_eval.c): the counter window increments
+ *     once per call and honours the positive bounds.
+ * ====================================================================== */
+
+extern void *get_xdata(long type, int size, void *str, short is_string_data);
+extern int check_for_countout(rule *r, int count);
+
+static void test_get_my_data_filled_branches(void)
+{
+    char *out;
+    unsigned char ip6[16] = { 0 };
+    float fval = 1.5f;
+    struct timeval tv = { .tv_sec = 1, .tv_usec = 2 };
+    char *sptr = (char *)"ndn-name-component";
+    mmt_generic_header_line_t ghl;
+    unsigned long ignored = 0;
+
+    /* ::1 -> all-zero 16-byte address except the last byte */
+    ip6[15] = 1;
+    out = get_my_data(ip6, 16, MMT_DATA_IP6_ADDR);
+    CHECK(out != NULL && strcmp(out, "::1") == 0,
+          "get_my_data(MMT_DATA_IP6_ADDR) formats ::1");
+    free(out);
+
+    out = get_my_data(&fval, (short)sizeof fval, MMT_DATA_FLOAT);
+    CHECK(out != NULL && strcmp(out, "1.500000") == 0,
+          "get_my_data(MMT_DATA_FLOAT) formats the float value");
+    free(out);
+
+    out = get_my_data(&tv, (short)sizeof tv, MMT_DATA_TIMEVAL);
+    CHECK(out != NULL && strcmp(out, "1.000002") == 0,
+          "get_my_data(MMT_DATA_TIMEVAL) formats sec.usec");
+    free(out);
+
+    out = get_my_data(sptr, (short)sizeof sptr, MMT_STRING_DATA_POINTER);
+    CHECK(out != NULL && strcmp(out, "ndn-name-component") == 0,
+          "get_my_data(MMT_STRING_DATA_POINTER) prints the pointed-to string");
+    free(out);
+
+    ghl.hfield = "Host";
+    ghl.hvalue = "www.example.org";
+    out = get_my_data(&ghl, (short)sizeof ghl, MMT_GENERIC_HEADER_LINE);
+    CHECK(out != NULL && strcmp(out, "Host: www.example.org") == 0,
+          "get_my_data(MMT_GENERIC_HEADER_LINE) formats 'field: value'");
+    free(out);
+
+    /* Intentionally unsupported types return the empty string — the fatal
+     * default (Error 15.1 -> exit) must not be reached. */
+    out = get_my_data(&ignored, 0, MMT_DATA_PORT);
+    CHECK(out != NULL && out[0] == '\0',
+          "get_my_data(MMT_DATA_PORT) is intentionally unsupported (empty)");
+    free(out);
+    out = get_my_data(&ignored, 0, MMT_DATA_FILTER_STATE);
+    CHECK(out != NULL && out[0] == '\0',
+          "get_my_data(MMT_DATA_FILTER_STATE) is intentionally unsupported (empty)");
+    free(out);
+}
+
+static void test_string_pointer_compare(void)
+{
+    compare_value v1, v2;
+    char *s1 = (char *)"content-name";
+    char *s2 = (char *)"content-name";
+    char *s3 = (char *)"different";
+    char *s4 = (char *)"name";
+
+    memset(&v1, 0, sizeof v1);
+    memset(&v2, 0, sizeof v2);
+    v1.type = MMT_STRING_DATA_POINTER;
+    v1.found = FOUND;
+    v1.size = (int)sizeof(char *);
+    v1.data = &s1; /* the operand buffer holds the string pointer */
+    v2 = v1;
+
+    v2.data = &s2;
+    CHECK(compare_values(v1, v2, EQ) == VALID,
+          "string-pointer EQ compares contents, not pointer values");
+    CHECK(compare_values(v1, v2, NEQ) == NOT_VALID,
+          "string-pointer NEQ on equal contents is NOT_VALID");
+
+    v2.data = &s3;
+    CHECK(compare_values(v1, v2, NEQ) == VALID,
+          "string-pointer NEQ on different contents is VALID");
+    CHECK(compare_values(v1, v2, EQ) == NOT_VALID,
+          "string-pointer EQ on different contents is NOT_VALID");
+
+    v2.data = &s4;
+    CHECK(compare_values(v1, v2, XC) == VALID,
+          "string-pointer XC finds the substring inside the contents");
+    CHECK(compare_values(v1, v2, LT) == VALID,
+          "string-pointer LT uses lexicographic contents order");
+}
+
+static void test_xin_fixed_width_membership(void)
+{
+    compare_value v1, v2;
+    unsigned char table[32];
+    unsigned char needle[16];
+    unsigned char absent[16];
+    struct timeval tvt[2] = { { 5, 500 }, { 9, 900 } };
+    struct timeval tv_needle = { 9, 900 };
+
+    memset(table, 0, sizeof table);
+    table[15] = 1;                 /* element 0 = ::1 */
+    memset(needle, 0, sizeof needle);
+    needle[0] = 0x20; needle[1] = 0x01;
+    memcpy(table + 16, needle, 16); /* element 1 = needle */
+
+    memset(&v1, 0, sizeof v1);
+    memset(&v2, 0, sizeof v2);
+    v1.type = MMT_DATA_IP6_ADDR;
+    v1.found = FOUND;
+    v1.size = 16;
+    v1.data = needle;
+    v2.type = MMT_BINARY_VAR_DATA;
+    v2.found = FOUND;
+    v2.size = (int)sizeof table;
+    v2.data = table;
+
+    CHECK(compare_values(v1, v2, XIN) == VALID,
+          "XIN IPv6 finds the address at element index 1");
+    memset(absent, 0, sizeof absent);
+    absent[0] = 0xfe; absent[1] = 0x80;
+    v1.data = absent;
+    CHECK(compare_values(v1, v2, XIN) == NOT_VALID,
+          "XIN IPv6 returns NOT_VALID for an absent address");
+
+    memset(&v1, 0, sizeof v1);
+    memset(&v2, 0, sizeof v2);
+    v1.type = MMT_DATA_TIMEVAL;
+    v1.found = FOUND;
+    v1.size = (int)sizeof(struct timeval);
+    v1.data = &tv_needle;
+    v2.type = MMT_BINARY_VAR_DATA;
+    v2.found = FOUND;
+    v2.size = (int)sizeof tvt;
+    v2.data = tvt;
+    CHECK(compare_values(v1, v2, XIN) == VALID,
+          "XIN timeval finds the value at element index 1");
+    tv_needle.tv_sec = 7;
+    CHECK(compare_values(v1, v2, XIN) == NOT_VALID,
+          "XIN timeval returns NOT_VALID for an absent value");
+}
+
+static void test_compute_float(void)
+{
+    float a = 1.5f, b = 0.5f, z = 0.0f;
+    void *result;
+
+    result = compute(make_value(MMT_DATA_FLOAT, &a), make_value(MMT_DATA_FLOAT, &b), ADD);
+    CHECK(result != NULL && *(float *)result == 2.0f,
+          "COMPUTE float 1.5 + 0.5 == 2.0");
+    free(result);
+
+    result = compute(make_value(MMT_DATA_FLOAT, &a), make_value(MMT_DATA_FLOAT, &b), SUB);
+    CHECK(result != NULL && *(float *)result == 1.0f,
+          "COMPUTE float 1.5 - 0.5 == 1.0");
+    free(result);
+
+    result = compute(make_value(MMT_DATA_FLOAT, &a), make_value(MMT_DATA_FLOAT, &b), MUL);
+    CHECK(result != NULL && *(float *)result == 0.75f,
+          "COMPUTE float 1.5 * 0.5 == 0.75");
+    free(result);
+
+    result = compute(make_value(MMT_DATA_FLOAT, &a), make_value(MMT_DATA_FLOAT, &b), DIV);
+    CHECK(result != NULL && *(float *)result == 3.0f,
+          "COMPUTE float 1.5 / 0.5 == 3.0");
+    free(result);
+
+    result = compute(make_value(MMT_DATA_FLOAT, &a), make_value(MMT_DATA_FLOAT, &z), DIV);
+    CHECK(result == NULL,
+          "COMPUTE float / 0.0 returns NULL instead of raising SIGFPE");
+    free(result);
+}
+
+static void test_get_xdata_filled_branches(void)
+{
+    void *data;
+    char ip4tok[] = "10.0.0.1";
+    char flttok[] = "1.5";
+    /* quoted constants arrive as an mmt_string_data_t record */
+    struct { uint32_t len; char data[64]; } ip6_rec;
+    struct { uint32_t len; char data[64]; } str_rec;
+
+    data = get_xdata(MMT_DATA_IP_ADDR, 4, ip4tok, NO);
+    CHECK(data != NULL && ((unsigned char *)data)[0] == 10 &&
+          ((unsigned char *)data)[3] == 1,
+          "get_xdata parses a dotted-quad IPv4 constant");
+    free(data);
+
+    memset(&ip6_rec, 0, sizeof ip6_rec);
+    strcpy(ip6_rec.data, "::1");
+    ip6_rec.len = (uint32_t)strlen(ip6_rec.data) + 1;
+    data = get_xdata(MMT_DATA_IP6_ADDR, 16, &ip6_rec, YES);
+    CHECK(data != NULL && memcmp((char *)data + 15, "\x01", 1) == 0,
+          "get_xdata parses a quoted IPv6 constant");
+    free(data);
+
+    data = get_xdata(MMT_DATA_FLOAT, (int)sizeof(float), flttok, NO);
+    CHECK(data != NULL && *(float *)data == 1.5f,
+          "get_xdata parses a float constant");
+    free(data);
+
+    memset(&str_rec, 0, sizeof str_rec);
+    strcpy(str_rec.data, "quoted-name");
+    str_rec.len = (uint32_t)strlen(str_rec.data) + 1;
+    data = get_xdata(MMT_STRING_DATA_POINTER, (int)sizeof(char *), &str_rec, YES);
+    CHECK(data != NULL && *(char **)data != NULL &&
+          strcmp(*(char **)data, "quoted-name") == 0,
+          "get_xdata stores a private copy of a string-pointer constant");
+    if (data != NULL) {
+        free(*(char **)data);
+        free(data);
+    }
+
+    CHECK(get_xdata(MMT_U16_DATA, -1, flttok, NO) == NULL,
+          "get_xdata rejects a negative declared size");
+}
+
+static void test_countout_window(void)
+{
+    rule r;
+
+    memset(&r, 0, sizeof r);
+    r.counter = 0;                 /* fresh node — init_time bumps it to 1 */
+    r.counter_max = 3;
+    r.counter_min = 2;
+
+    /* counter 1: still before the minimum */
+    CHECK(check_for_countout(&r, r.counter) == TIMEIN,
+          "counter 1 with min=2 is still inside the minimum (TIMEIN)");
+    /* counter 2: inside the window */
+    CHECK(check_for_countout(&r, r.counter) == NOT_YET,
+          "counter 2 at min=2 is inside the window (NOT_YET)");
+    /* counter 3: at the max edge, still inside */
+    CHECK(check_for_countout(&r, r.counter) == NOT_YET,
+          "counter 3 at max=3 stays inside the window (NOT_YET)");
+    /* counter 4: past the max */
+    CHECK(check_for_countout(&r, r.counter) == COUNTOUT,
+          "counter 4 beyond max=3 closes the window (COUNTOUT)");
+}
+
+static void test_path_xc_membership(void)
+{
+    compare_value v1, v2;
+    int path[5] = { 3, 17, 42, 8, 90 };
+    char needle_last[] = "90";
+    char needle_first[] = "3";
+    char absent[] = "4";
+
+    memset(&v1, 0, sizeof v1);
+    memset(&v2, 0, sizeof v2);
+    /* the operand carries the byte size of the int element array —
+     * count*sizeof(int) — so XC can scan every element */
+    v1.type = MMT_DATA_PATH;
+    v1.found = FOUND;
+    v1.size = (int)sizeof path;
+    v1.data = path;
+    v2 = v1;
+
+    v2.data = needle_last;
+    CHECK(compare_values(v1, v2, XC) == VALID,
+          "path XC finds the needle at the last element");
+    v2.data = needle_first;
+    CHECK(compare_values(v1, v2, XC) == VALID,
+          "path XC finds the needle at element 0");
+    v2.data = absent;
+    CHECK(compare_values(v1, v2, XC) == NOT_VALID,
+          "path XC returns NOT_VALID for an absent needle");
+}
+
 int main(void)
 {
     test_compute_zero_divisor();
@@ -743,6 +1025,15 @@ int main(void)
     test_generate_command_bounded();
     test_compare_in_table_bounded();
     test_tokenize_and_summary_bounded();
+
+    /* #326: fill-in/prune branches */
+    test_get_my_data_filled_branches();
+    test_string_pointer_compare();
+    test_xin_fixed_width_membership();
+    test_compute_float();
+    test_get_xdata_filled_branches();
+    test_countout_window();
+    test_path_xc_membership();
 
     if (failures) {
         printf("%d check(s) failed\n", failures);

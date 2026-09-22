@@ -653,11 +653,29 @@ int timeval_control(double delay_max, double delay_min, struct timeval start, st
 
 int check_for_countout(rule *r, int count)
 {
-    // TODO(#326): increment counter
-    int ret = 0;
-    // ret = COUNTIN;
-    ret = COUNTOUT;
-    return ret;
+    /* counter_min/counter_max are the packet-count analogs of the delay
+     * bounds in timeval_control: r->counter is seeded to 1 when the bound
+     * is armed (init_time) and each new packet moves the window one step.
+     * `count` is the caller-side snapshot of r->counter — kept in the
+     * signature for symmetry with check_for_timeout. */
+    (void)count;
+    r->counter++;
+    if (r->counter_max >= 0 && r->counter_min >= 0) {
+        if (r->counter_max > 0 && r->counter > r->counter_max) {
+            return COUNTOUT;
+        }
+        if (r->counter_min > 0 && r->counter < r->counter_min) {
+            return TIMEIN;
+        }
+    } else {
+        if (r->counter_max < 0 && -1 * r->counter_max > r->counter) {
+            return TIMEIN;
+        }
+        if (r->counter_min < 0 && -1 * r->counter_min < r->counter) {
+            return COUNTOUT;
+        }
+    }
+    return NOT_YET;
 }
 
 int check_for_timeout(rule *r, struct timeval start, struct timeval curr)
@@ -1295,6 +1313,61 @@ static int verify_leaf( verify_ctx_t *ctx, enum_operation_type context, rule *r 
     return result;
 }
 
+//Clear the accumulated validity of a whole subtree so it can detect a
+//fresh occurrence: every descendant goes back to NOT_YET with disarmed
+//timers/counters. repeat_times bookkeeping on the REPEAT node itself is
+//untouched — it lives on r, not inside the subtree.
+static void reset_subtree(rule *r)
+{
+    rule *curr_r = NULL;
+    for (curr_r = r->list_of_sons; curr_r != NULL; curr_r = curr_r->next) {
+        reset_subtree(curr_r);
+    }
+    r->valid = NOT_YET;
+    r->timer.tv_sec = 0;
+    r->timer.tv_usec = 0;
+    r->counter = 0;
+}
+
+//REPEAT node: verify its son subtree; each VALID occurrence bumps
+//repeat_times_found, then the subtree is reset so the next packet(s) can
+//produce a fresh occurrence — the node validates once repeat_times
+//occurrences have been seen.
+static int verify_repeat( verify_ctx_t *ctx, rule *r )
+{
+    short result = 0;
+    rule *son = NULL;
+    if (r->list_of_sons == NULL) {
+        (void)fprintf(stderr, "Error 38.2: Encoutered incorrect sequence of events.\n");
+        return verify_malformed_rule();
+    }
+    /* a missing or non-positive repeat bound degenerates to one occurrence */
+    if (r->repeat_times <= 0) {
+        r->repeat_times = 1;
+    }
+    son = r->list_of_sons;
+    son->father = r;
+    result = verify( ctx, BEFORE, son );
+    if (result == VALID) {
+        son->valid = VALID;
+        r->repeat_times_found++;
+        if (r->repeat_times_found >= r->repeat_times) {
+            r->valid = VALID;
+            return VALID;
+        }
+        /* occurrence counted: reset the subtree so the next sequence is
+         * detected fresh */
+        reset_subtree(son);
+    } else if (result == NOT_VALID) {
+        /* the in-progress occurrence died on this packet: reset and let
+         * the next packets start a new attempt */
+        son->valid = NOT_YET;
+        reset_subtree(son);
+    }
+    r->valid = NOT_YET;
+    return NOT_YET;
+}
+
 int verify( verify_ctx_t *ctx, enum_operation_type context, rule *r )
 {
     *ctx->cause = '\0';
@@ -1308,8 +1381,7 @@ int verify( verify_ctx_t *ctx, enum_operation_type context, rule *r )
         case NOT:
             return verify_not( ctx, r );
         case REPEAT: //same as AND but do it several repeat_times, couting them in repeat_times_found
-            // TODO(#326)
-            break;
+            return verify_repeat( ctx, r );
         case XFUNCT:
         case XAND:
         case XOR:

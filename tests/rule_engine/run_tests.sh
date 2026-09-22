@@ -26,7 +26,12 @@
 #      store_history (F-BUG-096, via an interposed failing xmalloc),
 #      growable command substitution without leaks (F-BUG-102) and the
 #      bounded tokenize/xml_summary buffers (F-BUG-103);
-#   5. the fuzz engine's quality-estimation fixes (#210) hold: the grade
+#   5. the #326 fill-in/prune branches behave as documented: IPv6/float/
+#      timeval/string-pointer/generic-header-line formatting, string-pointer
+#      content comparison, fixed-width XIN membership for IP/MAC/timeval,
+#      float COMPUTE incl. the zero-divisor guard, get_xdata() constants for
+#      IPv4/IPv6/float/string-pointer, and the counter_min/max count window;
+#   6. the fuzz engine's quality-estimation fixes (#210) hold: the grade
 #      membership-function parameters live inside the allocation
 #      (F-BUG-094), the XML parser refuses missing app_id / empty
 #      documents instead of dereferencing NULL (F-BUG-100), and the
@@ -217,12 +222,12 @@ run_expect_ok "metacharacter injection (no shell interpretation)" "${INJECTION_L
 grep '^ok - ' "${INJECTION_LOG}" | sed 's/^/  /'
 echo "  injection test passed (packet-derived metachars treated literally)"
 
-echo "  [6/7] tips_extract.c overflow family (F-BUG-208 / F-BUG-212, #137) ..."
+echo "  [6/7] tips_extract.c overflow family (F-BUG-208 / F-BUG-212, #137; #326 fill-in branches) ..."
 OVERFLOW_LOG="${WORK}/overflow.log"
-run_expect_ok "overflow-family regression (zero divisor, >99-byte header line)" "${OVERFLOW_LOG}" \
+run_expect_ok "overflow-family + #326 regression" "${OVERFLOW_LOG}" \
     "${LD_ENV[@]}" "${OVERFLOW_BIN}"
 grep '^ok - ' "${OVERFLOW_LOG}" | sed 's/^/  /'
-echo "  $(grep -c '^ok - ' "${OVERFLOW_LOG}") assertions passed (overflow family)"
+echo "  $(grep -c '^ok - ' "${OVERFLOW_LOG}") assertions passed (overflow family + #326)"
 
 # --- 7. fuzz-engine parser + parameter storage (F-BUG-094/100/101, #210)
 # Drives application_quality_estimation_xml_parser() and the init_trapez_*

@@ -19,4 +19,11 @@
 # on the inter-protocol registration calls moved verbatim from
 # configured_protocols.c into inter_proto_classif_list.def, which the marker
 # scan (tracked *.[ch] only) does not read; the markers still live there.
-161
+#
+# #326: re-baselined 161 -> 107 — all 52 `TODO(#326)`/`XXX(#326)` markers in
+# src/mmt_security were resolved: supported converter/operator branches were
+# implemented (IPv6, float, timeval, string-pointer, generic header line,
+# count windows, REPEAT) and intentionally unsupported data types were
+# consolidated into marker-free fall-through cases; the remaining drop is
+# dead commentary removed with them.
+107

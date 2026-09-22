@@ -245,14 +245,24 @@ void convert_mac_bytes_to_string(char **pszMACAddress, unsigned char *pbyMacAddr
         (void)snprintf(*pszMACAddress, 18, "00:00:00:00:00");
 }
 
-void *get_xdata(long type, int size, void *str)
+void *get_xdata(long type, int size, void *str, short is_string_data)
 {
-    //Only used when reading values from XML file
+    /* Only used when reading constant values from the XML file.
+     * `str` has two possible shapes: a quoted 'value' constant arrives as an
+     * mmt_string_data_t (is_string_data == YES, the text sits at str + 4),
+     * while a bare numeric token arrives as a plain NUL-terminated char*
+     * (is_string_data == NO). */
     unsigned char c = 0;
     unsigned short s = 0;
     unsigned long l = 0;
     unsigned long long ll = 0L;
-    void * data = (void *) xmalloc(size);
+    /* enum_yes is {YES=0, NO=1}: compare explicitly, never test truthily */
+    const char *txt = (is_string_data == YES) ? (const char *) str + sizeof(uint32_t) : (const char *) str;
+    void * data = NULL;
+    /* a negative declared size would become a huge size_t in the memcpy
+     * calls below — refuse it up-front */
+    if (size < 0) return NULL;
+    data = (void *) xmalloc(size > 0 ? size : 1);
     if(data == NULL) return NULL;
     unsigned char *temp_MAC = NULL;
     mmt_string_data_t *tmp = NULL;
@@ -264,47 +274,88 @@ void *get_xdata(long type, int size, void *str)
                 xfree(data);
                 return NULL;
             }
-                
-            //str+4 to skip size of mmt_string_data_t structure
-            convert_mac_string_to_byte((const char *) (str + 4), &temp_MAC);
+
+            convert_mac_string_to_byte(txt, &temp_MAC);
             memcpy(data, (void *) temp_MAC, size);
             if (temp_MAC != NULL) xfree(temp_MAC);
             return (void *) data;
             break;
         case MMT_U16_DATA:
-            s = (unsigned short) atoi((char*) str);
+            s = (unsigned short) atoi(txt);
             memcpy(data, (void *) (&s), size);
             return (void *) data;
             break;
         case MMT_U32_DATA:
-            l = (unsigned long) atol((char*) str);
+            l = (unsigned long) atol(txt);
             memcpy(data, (void *) (&l), size);
             return (void *) data;
             break;
         case MMT_U64_DATA:
-            ll = (unsigned long long) atoll((char*) str);
+            ll = (unsigned long long) atoll(txt);
             memcpy(data, (void *) (&ll), size);
             return (void *) data;
             break;
         case MMT_U8_DATA:
         case MMT_DATA_CHAR:
-            c = (unsigned char) atoi((char*) str);
+            c = (unsigned char) atoi(txt);
             memcpy(data, (void *) (&c), size);
             return (void *) data;
             break;
+        case MMT_DATA_IP_ADDR:
+            /* dotted-quad string, e.g. "10.0.0.1" or '10.0.0.1' */
+            if (inet_pton(AF_INET, txt, data) != 1) {
+                xfree(data);
+                return NULL;
+            }
+            return (void *) data;
+            break;
+        case MMT_DATA_IP6_ADDR:
+            /* textual IPv6, e.g. '2001:db8::1' */
+            if (inet_pton(AF_INET6, txt, data) != 1) {
+                xfree(data);
+                return NULL;
+            }
+            return (void *) data;
+            break;
+        case MMT_DATA_FLOAT: {
+            float f = (float) atof(txt);
+            memcpy(data, (void *) (&f), (size < (int) sizeof (float)) ? (size_t) size : sizeof (float));
+            return (void *) data;
+            break;
+        }
+        case MMT_STRING_DATA_POINTER: {
+            /* the attribute data is a char* — keep a private copy of the
+             * constant so the tuple owns its memory like every other case */
+            char *copy = (char *) xmalloc(strlen(txt) + 1);
+            if (copy == NULL) {
+                xfree(data);
+                return NULL;
+            }
+            (void)strcpy(copy, txt);
+            memcpy(data, (void *) (&copy), (size < (int) sizeof (char *)) ? (size_t) size : sizeof (char *));
+            return (void *) data;
+            break;
+        }
         case MMT_STRING_DATA:
         case MMT_DATA_PATH:
         case MMT_STRING_LONG_DATA:
         case MMT_BINARY_VAR_DATA:
         case MMT_BINARY_DATA:
-            // TODO(#326): BINARY needs to be corrected? Normally will contain an address that needs to be fitted in to the form short+void* where short is the
-            //      length in bytes of void* and contains the address in 4 hex values
-            memcpy(data, (void *) str, size);
+            if (is_string_data == YES) {
+                /* copy the whole mmt_string_data_t record (len + payload) */
+                memcpy(data, (void *) str, size);
+            } else {
+                /* a bare token is only a few valid bytes on the caller's
+                 * stack — never copy `size` bytes from it */
+                size_t n = strlen(txt) + 1;
+                if (n > (size_t) size) n = (size_t) size;
+                memcpy(data, (void *) txt, n);
+            }
             return (void *) data;
             break;
         case MMT_HEADER_LINE: {
         	xfree (data);
-        	//str is an instance of mmt_string_data_t
+        	//str is an instance of mmt_string_data_t when the value is quoted
         	tmp = str;
         	/* the struct must be large enough to hold ptr+len no matter what
         	 * the caller-passed size is */
@@ -314,30 +365,30 @@ void *get_xdata(long type, int size, void *str)
                 return NULL;
             }
             /* the declared length is bounded by the source record so a bogus
-             * value cannot over-read tmp->data or underflow hl->len - 1 */
-            uint32_t hl_len = tmp->len;
+             * value cannot over-read the source or underflow hl->len - 1 */
+            uint32_t hl_len = (is_string_data == YES) ? tmp->len : (uint32_t) strlen(txt) + 1;
             if (hl_len == 0) hl_len = 1;
             if (hl_len > STRING_DATA_LEN) hl_len = STRING_DATA_LEN;
         	hl->len = (uint16_t) hl_len;
-        	char *str = xmalloc( hl->len);
-            if(str == NULL){
+        	char *hlp = xmalloc( hl->len);
+            if(hlp == NULL){
                 xfree(hl);
                 return NULL;
             }
-        	memcpy(str, (void *)tmp->data, hl->len);
-        	str[ hl->len - 1 ] = '\0';
-        	hl->ptr = str;
+        	memcpy(hlp, (is_string_data == YES) ? (const void *)tmp->data : (const void *)txt, hl->len);
+        	hlp[ hl->len - 1 ] = '\0';
+        	hl->ptr = hlp;
         	return hl;
             break;
         }
+        /* Types with no defined record representation cannot appear as
+         * constants either — returning NULL marks the leaf as unusable,
+         * which is the intended "unsupported" outcome (#326). */
         case MMT_DATA_TIMEVAL:
-        case MMT_DATA_IP_ADDR:
-        case MMT_DATA_IP6_ADDR:
         case MMT_DATA_PORT:
         case MMT_DATA_PORT_RANGE:
         case MMT_DATA_DATE:
         case MMT_DATA_TIMEARG:
-        case MMT_DATA_FLOAT:
         case MMT_DATA_IP_NET:
         case MMT_DATA_LAYERID:
         case MMT_DATA_POINT:
@@ -348,10 +399,8 @@ void *get_xdata(long type, int size, void *str)
         case MMT_DATA_PARENT:
         case MMT_STATS:
         case MMT_GENERIC_HEADER_LINE:
-        case MMT_STRING_DATA_POINTER:
         case MMT_UNDEFINED_TYPE:
-             //if(type == MMT_DATA_POINTER) (void)fprintf(stderr, "MMT_DATA_POINTER:4\n");
-             return NULL;                 //TODO(#326) verify if OK
+             return NULL;
              break;
         default:
             (void)fprintf(stderr, "Error 2: Type [%ld], size [%d] not implemented yet, data type unknown.\n [%s]\n", type, size, (char *)data);
@@ -529,7 +578,9 @@ char * funct_get_info_param( mmt_handler_t *mmt, enum_yes reg_tuple, char * inpu
     }
 
     if (*end == ')')
-        return NULL; // XXX(#326) well ?
+        /* ')' closes the parameter list: nothing more to parse, so the
+         * caller stops iterating — returning NULL is intentional. */
+        return NULL;
 
     return NULL;
 }
@@ -654,7 +705,7 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
         new_rule->t.event_id = temp_rule->t.event_id;
         new_rule->t.data_size = temp_rule->t.data_size;
         new_rule->t.valid = VALID;
-        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s));
+        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s), YES);
         ;
         if (a_rule->list_of_sons == NULL) {
             a_rule->list_of_sons = new_rule;
@@ -846,7 +897,7 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
         new_rule->t.event_id = temp_rule->t.event_id;
         new_rule->t.data_size = temp_rule->t.data_size;
         new_rule->t.valid = VALID;
-        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token);
+        new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token, NO);
         ;
         if (a_rule->list_of_sons == NULL) {
             a_rule->list_of_sons = new_rule;
