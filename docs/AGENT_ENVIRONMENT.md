@@ -19,7 +19,9 @@ repository itself; the authoritative sources are:
 
 ## 1. Toolchain Requirements
 
-Only **Linux** is supported (macOS/Windows are not).
+Only **Linux** is supported (macOS/Windows are not). The default architecture
+is Linux (`sdk/Makefile:1`), with GCC/G++ selected by
+`rules/arch-linux.mk:2-3`.
 
 This is the **single source** for the toolchain install line: other documents
 link here instead of repeating it. Two kinds of apt line elsewhere in the
@@ -85,6 +87,27 @@ Notes:
   (rule files in `rules/arch-*.mk`). GCC is the default and best-tested path.
 - A C++ compiler (`g++`, pulled in by `build-essential`) is required because
   shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:237`).
+
+### Documentation-site toolchain
+
+The C SDK does not require Ruby. For the documentation site, use Ruby **3.3**
+as in CI (`.github/workflows/c-cpp.yml:213-218`), with Bundler to install
+the gems and run Jekyll. CI enables `bundler-cache` through `ruby/setup-ruby`;
+no Bundler version or lockfile is committed. With Ruby 3.3 available:
+
+```bash
+gem install bundler
+(cd docs && bundle install && bundle exec jekyll build)
+```
+
+`docs/Gemfile:6-11` defines Jekyll and its plugins; CI's corresponding build
+is at `.github/workflows/c-cpp.yml:225`.
+
+No application `.env` file is required: this is a Make-built SDK, configured
+through make variables (`sdk/Makefile:8-13`, `rules/common.mk:3-8`), and the
+test runner takes shell variables such as `SANITIZE`
+(`tests/run_all_tests.sh:8-98`). No application service setup is needed for
+the build/test commands below.
 
 ## 2. Building
 
@@ -154,9 +177,10 @@ sequentially. The suite list lives in `DEFAULT_SUITES`
 
 Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
-directly against sources under `src/` with plain `gcc`; the six that need the
+directly against sources under `src/` with plain `gcc`; suites that need the
 built SDK (`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
-`rule_engine`, `nas_ies_tail`, `installer`) run `make -C sdk clean` and build
+`rule_engine`, `nas_ies_tail`, `installer`, and the default-profile engine
+leg of `fault_injection`, `tests/fault_injection/run_tests.sh:90-92`) run `make -C sdk clean` and build
 it themselves into a throwaway prefix, so running them discards an existing
 `sdk/` build. You
 can run one suite by passing its directory name:
@@ -175,8 +199,9 @@ skipped — the runner exits non-zero (issue #186).
 - `SANITIZE=asan bash tests/run_all_tests.sh` — compiles every suite with
   ASan + UBSan (same flag set as the SDK's `BUILD=asan`,
   `rules/common.mk:120-127`) and sets `ASAN_OPTIONS=detect_leaks=0`
-  (leak detection stays with Valgrind). The five SDK-building suites named
-  above inherit `BUILD=asan` for their internal SDK build.
+  (leak detection stays with Valgrind). The SDK-building suites inherit `BUILD=asan` for their internal SDK
+  build, except `fault_injection`: its engine leg is skipped under sanitizers
+  while its unit leg still runs (`tests/fault_injection/run_tests.sh:77-82`).
 - `SANITIZE=tsan bash tests/run_all_tests.sh` — same with TSan
   (`rules/common.mk:150-157`). On kernels with high-entropy ASLR the runner
   re-execs itself once under `setarch -R`
@@ -198,6 +223,20 @@ skipped — the runner exits non-zero (issue #186).
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
+
+The modernization task's **30-file coverage scope** refers to an audit-time
+instrumented subset, not all library sources and not a fixed runner limit.
+The 2026-09-22 audit at commit `2ab7b73516113009622cb3d32194d20121457010`
+reported 82.9% (5,660/6,831 lines) over those 30 files; this is historical
+evidence, not a new measurement (provenance recorded in [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)).
+Coverage includes only the `src/` files represented in emitted gcov data
+(`tests/run_all_tests.sh:213-217`); its percentage uses the lines in that
+subset, so it must not be reported as whole-library coverage. The current
+run's exact scope is `instrumented_sources` and `instrumented_files` in
+`summary.json` (`tests/run_all_tests.sh:273-287`). The committed minimum is
+**29 instrumented files**, alongside an **80.0%** line floor and required
+source names (`tests/coverage/floor.json:2-10`); a 30-file measurement does
+not change that floor. Consult a fresh summary for the current count.
 
 CI runs both modes on every push/PR to main (`.github/workflows/c-cpp.yml`,
 jobs `sanitizer-tests` and `coverage`); the coverage job uploads
@@ -233,24 +272,32 @@ hidden dependency.
 
 ### Isolating with `MMT_BASE`
 
-To exercise the real install flow without root, point `MMT_BASE` somewhere
-writable — everything (build artifacts and install destination) stays inside
-your sandbox directory:
+To exercise the real install flow without root, use a unique writable prefix.
+`MMT_BASE` redirects installation only: build artifacts still live in the
+checkout's `sdk/` and source object directories (`rules/common.mk:187-206`,
+`rules/common.mk:467-469`). This subshell removes its temporary installation
+and restores a clean default build on exit:
 
 ```bash
-make -C sdk MMT_BASE=/tmp/mmt-sandbox -j$(nproc)
-make -C sdk MMT_BASE=/tmp/mmt-sandbox install
-# libraries land in /tmp/mmt-sandbox/dpi/lib, headers in .../dpi/include,
-# plugin .so copies in /tmp/mmt-sandbox/plugins
-LD_LIBRARY_PATH=/tmp/mmt-sandbox/dpi/lib <your-test-binary>
+(
+  set -e
+  mmt_prefix=$(mktemp -d /tmp/mmt-sandbox.XXXXXX)
+  trap 'rm -rf -- "$mmt_prefix"; make -C sdk clean && make -C sdk -j$(nproc)' EXIT
+  make -C sdk clean
+  make -C sdk MMT_BASE="$mmt_prefix" -j$(nproc)
+  make -C sdk MMT_BASE="$mmt_prefix" install
+  # Libraries: "$mmt_prefix/dpi/lib"; headers: "$mmt_prefix/dpi/include"
+  # Plugins: "$mmt_prefix/plugins"; example sources: "$mmt_prefix/examples"
+  # Run your compiled consumer with LD_LIBRARY_PATH="$mmt_prefix/dpi/lib".
+)
 ```
 
-One subtlety: the plugin repository path is baked into compiled code as
+The plugin repository path is baked into compiled code as
 `PLUGINS_REPOSITORY_OPT` (`-DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"`,
-see `rules/common.mk:30`). If you change `MMT_BASE` between building and
-installing, `sdk/Makefile:28-29` removes `plugins_engine.o` so it gets
-recompiled with the new path. Keep `MMT_BASE` identical across your
-build/install invocations to avoid surprises.
+`rules/common.mk:30`). Every SDK target invocation
+refreshes `plugins_engine.o` (`sdk/Makefile:28-35`), including during install;
+this is not conditional on a detected prefix change. Keep `MMT_BASE` identical across
+build/install invocations so compilation and installation use one path.
 
 ## 5. Sanitizer Build Profiles
 
@@ -272,17 +319,20 @@ hardening: catches OOB reads/writes, use-after-free, and UB on untrusted
 packet input.
 
 ```bash
-make -C sdk clean
-make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan -j$(nproc)
-make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan install
-# Run an instrumented example through crafted pcaps:
-LD_PRELOAD=$(gcc -print-file-name=libasan.so) \
-  ASAN_OPTIONS=detect_leaks=0 \
-  LD_LIBRARY_PATH=/tmp/mmt-asan/dpi/lib \
-  /tmp/mmt-asan/examples/extract_all -t crafted.pcap
+(
+  set -e
+  mmt_prefix=$(mktemp -d /tmp/mmt-asan.XXXXXX)
+  trap 'rm -rf -- "$mmt_prefix"; make -C sdk clean && make -C sdk -j$(nproc)' EXIT
+  make -C sdk clean
+  make -C sdk BUILD=asan MMT_BASE="$mmt_prefix" -j$(nproc)
+  make -C sdk BUILD=asan MMT_BASE="$mmt_prefix" install
+  # Compile any consumer with ASan/UBSan before running it against this prefix.
+)
 ```
 
-Leak detection is left to Valgrind; ASan here targets memory safety/UB.
+Install copies example sources; it does not compile `extract_all`. For an
+executable sanitizer test, use `SANITIZE=asan bash tests/run_all_tests.sh`
+from §3. Leak detection is left to Valgrind; ASan here targets memory safety/UB.
 
 ### `BUILD=tsan` — ThreadSanitizer
 
@@ -294,9 +344,14 @@ harness must be built with this profile — see
 [THREADING.md](./THREADING.md) for what it verifies.
 
 ```bash
-make -C sdk clean
-make -C sdk BUILD=tsan MMT_BASE=/tmp/mmt-tsan -j$(nproc)
-make -C sdk BUILD=tsan MMT_BASE=/tmp/mmt-tsan install
+(
+  set -e
+  mmt_prefix=$(mktemp -d /tmp/mmt-tsan.XXXXXX)
+  trap 'rm -rf -- "$mmt_prefix"; make -C sdk clean && make -C sdk -j$(nproc)' EXIT
+  make -C sdk clean
+  make -C sdk BUILD=tsan MMT_BASE="$mmt_prefix" -j$(nproc)
+  make -C sdk BUILD=tsan MMT_BASE="$mmt_prefix" install
+)
 ```
 
 In both profiles the release-hardening block (LTO, FORTIFY, stack protector,
@@ -330,7 +385,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
 bash tests/run_all_tests.sh     # 20/20 suites PASSED, exit 0 (60–100 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
-make -C sdk clean && make -C sdk BUILD=asan MMT_BASE=/tmp/mmt-asan -j$(nproc)   # exit 0 (sanitizer profile)
+make -C sdk clean && make -C sdk BUILD=asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```
 
 If any of these fails, fix the environment before attempting code changes —

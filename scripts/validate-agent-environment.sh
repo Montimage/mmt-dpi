@@ -173,7 +173,7 @@ rules/common.mk:251-265	^# Extra diagnostic warnings	^MMT_WARN_FLAGS \?=	extra d
 rules/common.mk:310-313	^ifdef ENABLESEC	^endif	ENABLESEC selects the engine objects	SECURITY_OBJECTS
 rules/common.mk:467-469	^%\.o: %\.c	\$\(CC\) \$\(CFLAGS\)	object rules depend on source timestamps only	^%\.o: %\.c$
 sdk/Makefile:8-13	^ifdef MMT_BASE	^endif	an unset MMT_BASE targets /opt/mmt and needs root	NEED_ROOT_PERMISSION
-sdk/Makefile:28-29	^--refresh-plugin-engine:	plugins_engine\.o	changing MMT_BASE forces plugins_engine.o to recompile	\$\(RM\).*plugins_engine\.o
+sdk/Makefile:28-35	^--refresh-plugin-engine:	^sdk: --refresh-plugin-engine	every SDK invocation refreshes plugins_engine.o	\$\(RM\).*plugins_engine\.o
 sdk/Makefile:53-59	ln -sf .*libmmt_core\.so	ln -sf .*LIBDICOM	make install creates the unversioned .so symlinks	LIBMOBILE
 sdk/Makefile:54-55	ln -sf .*libmmt_fuzz\.so	ln -sf .*libmmt_security\.so	install symlinks both ENABLESEC engines	libmmt_fuzz\.so\.\$\(VERSION\) +\$\(MMT_LIB\)/libmmt_fuzz\.so$
 sdk/Makefile:140-141	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dist tree symlinks both ENABLESEC engines	libmmt_security\.so\.\$\(VERSION\) +\$\(BUILD_DIR\)\$\(MMT_LIB\)/libmmt_security\.so$
@@ -183,6 +183,18 @@ tests/run_all_tests.sh:86-89	command -v setarch	^ *fi$	TSan re-execs once with A
 tests/run_all_tests.sh:155-176	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	installer
 tests/run_all_tests.sh:189-298	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
 tests/run_all_tests.sh:300-316	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
+sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
+rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
+.github/workflows/c-cpp.yml:213-218	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.3	ruby-version: "3.3"
+docs/Gemfile:6-11	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
+.github/workflows/c-cpp.yml:225	cd docs && bundle exec jekyll build	-	CI builds Jekyll
+rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
+tests/fault_injection/run_tests.sh:90-92	^make .* clean	^make .* install	fault injection builds and installs SDK
+tests/fault_injection/run_tests.sh:77-82	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0
+tests/run_all_tests.sh:213-217	json_file=	select\(	coverage restricts emitted records to src	/src/
+tests/run_all_tests.sh:273-287	Instrumented files	scope:	coverage summary exposes measured scope	instrumented_sources
+tests/coverage/floor.json:2-10	"library_line_pct": 80.0	  ]	coverage floor and required sources	"instrumented_files": 29
+rules/common.mk:187-206	^SRCDIR	^SDKXAM	artifacts remain in checkout	SDKLIB
 CITATIONS
 
 registered="$(printf '%s' "$registered" | grep -v '^$' | sort -u)"
