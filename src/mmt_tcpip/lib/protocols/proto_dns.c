@@ -23,6 +23,41 @@ static inline int dns_can_read(const u_char *p, size_t n, const u_char *payload_
     return (size_t)(payload_end - p) >= n;
 }
 
+/*
+ * Consumed wire length of the DNS name encoded at p (issue #377, F-BUG-003):
+ * each literal label counts its length byte plus its content bytes, the root
+ * terminator counts 1, and a compression pointer counts exactly 2 — the
+ * pointer ends the name at this position and its target is not walked here
+ * (it legitimately lives anywhere earlier in the message, outside [p, end)).
+ * Returns 0 when the name is malformed for length purposes — a label whose
+ * declared bytes run past end, or end reached before any terminator — in
+ * which case its real extent is unknowable and the caller must not advance
+ * by it. dns_extract_name_value() reports the decoded value of the same
+ * name; the two functions deliberately differ on a name that fails to
+ * decode (bad pointer target): the wire walk still counts the 2 pointer
+ * bytes because the field is well-formed length-wise.
+ */
+static size_t dns_name_wire_length(const u_char *p, const u_char *end){
+    size_t consumed = 0;
+    if(p == NULL || end == NULL || p >= end) return 0;
+    /* consumed only advances by bytes already verified inside [p, end), so
+       p + consumed never forms a pointer past end. */
+    while(dns_can_read(p + consumed, 1, end)){
+        uint8_t b = p[consumed];
+        if(b == 0){
+            return consumed + 1;
+        }
+        if((b & 0xC0) == 0xC0){
+            return dns_can_read(p + consumed, 2, end) ? consumed + 2 : 0;
+        }
+        if(!dns_can_read(p + consumed + 1, b, end)){
+            return 0;
+        }
+        consumed += (size_t)b + 1;
+    }
+    return 0;
+}
+
 uint16_t bytes_to_int_extraction(const u_char *payload,int nb_bytes){
     if(payload==NULL) return -1;
     uint16_t ret = 0,i =0;
@@ -538,8 +573,25 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
             // SOA -
             as = dns_new_answer_soa();
             if(as){
+                /* F-BUG-003 (issue #377): advance by each name's consumed
+                 * wire length — literal labels plus the root terminator, or
+                 * the two bytes of a compression pointer — instead of
+                 * real_length, which is one byte short for terminator-ended
+                 * names (and whose is_ref shortcut counted a pointer as 1,
+                 * not 2; is_ref is never set on the value struct anyway).
+                 * Every step is bounded by the declared rdata extent so a
+                 * truncated record rejects instead of sliding into the next
+                 * record's bytes. */
+                size_t rdata_avail = (size_t)(payload_end - data_anwser_payload);
+                if((size_t)data_length < rdata_avail) rdata_avail = (size_t)data_length;
+                const u_char * rdata_end = data_anwser_payload + rdata_avail;
+
+                size_t pri_server_len = dns_name_wire_length(data_anwser_payload,rdata_end);
+                if(pri_server_len == 0){
+                    dns_free_answer_soa(as);
+                    return NULL;
+                }
                 dns_name_t * pri_server = dns_extract_name_value(data_anwser_payload,dns_payload,payload_end);
-                uint16_t pri_server_offset = 0;
                 if(pri_server){
                     as->soa_pri_server = malloc((pri_server->length +1)*sizeof(char));
                     if (as->soa_pri_server == NULL)
@@ -550,16 +602,15 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
                     }
                     memcpy(as->soa_pri_server,pri_server->value,pri_server->length);
                     as->soa_pri_server[pri_server->length]='\0';
-                    if(pri_server->is_ref){
-                        pri_server_offset = 1;
-                    }else{
-                        pri_server_offset = pri_server->real_length;    
-                    }
                     dns_free_name(pri_server);
                 }
 
-                dns_name_t *mail_box = dns_extract_name_value(data_anwser_payload + pri_server_offset,dns_payload,payload_end);
-                uint16_t mailbox_offset = 0;
+                size_t mailbox_len = dns_name_wire_length(data_anwser_payload + pri_server_len,rdata_end);
+                if(mailbox_len == 0){
+                    dns_free_answer_soa(as);
+                    return NULL;
+                }
+                dns_name_t *mail_box = dns_extract_name_value(data_anwser_payload + pri_server_len,dns_payload,payload_end);
                 if(mail_box){
                     as->soa_mail_box = malloc((mail_box->length +1)*sizeof(char));
                     if (as->soa_mail_box == NULL)
@@ -570,17 +621,12 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
                     }
                     memcpy(as->soa_mail_box,mail_box->value,mail_box->length);
                     as->soa_mail_box[mail_box->length]='\0';
-                    if(mail_box->is_ref){
-                        mailbox_offset = 1;
-                    }else{
-                        mailbox_offset = mail_box->real_length;    
-                    }
                     dns_free_name(mail_box);
                 }
 
                 /* The five 32-bit SOA fields (20 bytes) follow the two names. */
-                const u_char * soa_ints = data_anwser_payload + pri_server_offset + mailbox_offset;
-                if(dns_can_read(soa_ints, 20, payload_end)){
+                const u_char * soa_ints = data_anwser_payload + pri_server_len + mailbox_len;
+                if(dns_can_read(soa_ints, 20, rdata_end)){
                     as->soa_serial_number = bytes_to_uint64_extraction(soa_ints,4);
                     as->soa_refresh_interval = bytes_to_uint64_extraction(soa_ints + 4,4);
                     as->soa_retry_interval = bytes_to_uint64_extraction(soa_ints + 8,4);

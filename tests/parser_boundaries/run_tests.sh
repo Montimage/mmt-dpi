@@ -28,8 +28,20 @@
 #                               mmt_init_handler + packet_process with a
 #                               registered attribute handler.
 #
+# Issue #377 (F-BUG-003) adds the "dns-soa" fixture: the SOA answer parser in
+# proto_dns.c must advance by each name's consumed wire length — literal
+# labels plus the root terminator, or the two bytes of a compression
+# pointer — bounded by the declared rdata extent.
+#
+#   test_dns_soa_consumed_bytes.c — packet/API path: crafted
+#                               Ethernet/IPv4/UDP/DNS responses through
+#                               mmt_init_handler + packet_process, reading the
+#                               DNS_ANSWERS attribute back via
+#                               get_attribute_extracted_data().
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
-#   no arguments runs every fixture; "udp"/"dtls" select a fixture family.
+#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa" select a fixture
+#   family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -37,7 +49,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -49,8 +61,11 @@ for f in "${FIXTURES[@]}"; do
         dtls)
             API_TESTS+=(dtls_wire_extent_unit dtls_wire_extent_api)
             ;;
+        dns-soa)
+            API_TESTS+=(dns_soa_consumed_bytes)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa)" >&2
             exit 2
             ;;
     esac
@@ -157,4 +172,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #375, #376)"
+echo "✓ parser boundary tests passed (issues #375, #376, #377)"
