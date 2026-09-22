@@ -194,7 +194,9 @@ int ipv6_dgram_update(ipv6_dgram_t *dg, const mmt_una_ipv6hdr_t *ip, unsigned av
    }
    else
    {
-      // TODO(#327): Can return here to not overwrite the later fragment
+      /* Issue #327: duplicated fragment offset — return early (2) so this
+       * copy cannot overwrite the fragment already recorded; the caller
+       * treats any positive result as an overlap/duplication anomaly. */
       return 2;
    }
    // ipv6_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf);

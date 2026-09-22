@@ -169,7 +169,13 @@ int init_proto_ethernet_struct() {
         register_classification_function(protocol_struct, ethernet_classify_next_proto);
 
         // Ethernet is a major encapsulating protocol, register it as a stack
-        register_protocol_stack(DLT_EN10MB, PROTO_ETHERNET_ALIAS, ethernet_stack_classification); // TODO(#327): check return value (non-critical)
+        /* Issue #327: check the return — a failed stack registration is
+         * non-fatal (the protocol still registers and classifies below; only
+         * DLT_EN10MB stack dispatch is missing), so log it on the operator
+         * channel rather than aborting init. */
+        if (register_protocol_stack(DLT_EN10MB, PROTO_ETHERNET_ALIAS, ethernet_stack_classification) == 0) {
+            mmt_stderr_log( "[err] init_proto_ethernet_struct - register_protocol_stack(DLT_EN10MB) failed\n");
+        }
 
         return register_protocol(protocol_struct, PROTO_ETHERNET);
     } else {

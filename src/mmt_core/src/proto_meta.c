@@ -144,11 +144,12 @@ int init_proto_meta_struct() {
             register_attribute_with_protocol(protocol_struct, &meta_attributes_metadata[i]);
         }
 
-        //TODO(#327): these initializations need to be done
-        register_session_data_initialization_function(protocol_struct, NULL);
-        register_session_data_analysis_function(protocol_struct, NULL);
-        register_session_data_cleanup_function(protocol_struct, NULL);
-
+        /* Issue #327: PROTO_META carries no session state — it has no
+         * sessionizer and stays NO_SESSION_CONTEXT, so session-data
+         * init/analysis/cleanup callbacks would never fire. Registering the
+         * empty meta_session_data_* stubs would only add a per-packet no-op
+         * to every handler's analyse chain; they are intentionally not
+         * registered (the stubs stay exported for API completeness). */
         register_classification_function(protocol_struct, base_classify_next_proto);
 
         return register_protocol(protocol_struct, PROTO_META);

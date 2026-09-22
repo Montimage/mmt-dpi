@@ -300,7 +300,12 @@ int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * 
 
 int ip6_session_cleanup_on_timeout(void * protocol_context, mmt_session_t * timedout_session, void * args) {
     //Remove the session from the sessions hash
-    delete_session_from_protocol_context(protocol_context, timedout_session->session_key); //TODO(#327): we are not verifying the return of the delete
+    /* Issue #327: a failed delete leaves a map entry pointing at memory that
+     * free_session_data() is about to release — log it; the cleanup must
+     * still proceed because the session's owned memory is freed here. */
+    if (delete_session_from_protocol_context(protocol_context, timedout_session->session_key) == 0) {
+        mmt_debug_log( "[error] ip6_session_cleanup_on_timeout - delete_session_from_protocol_context failed\n");
+    }
 
     // free session allocated memory. be careful about multiple free of the same data.
     // In the closup some session data are freed. These should not be the same as here.
@@ -690,7 +695,7 @@ int ip6_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 }
 
 void ipv6_context_cleanup(void * proto_context, void * args) {
-    close_session_id_lists(proto_context);
+    close_session_lists(proto_context);
     cleanup_ipv6_internal_context(((protocol_instance_t *) proto_context)->args);
     close_ipv6_internal_context(proto_context);
 }

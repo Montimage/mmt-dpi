@@ -128,6 +128,7 @@ extern void ce_set_new_budget(long budget);
 int mmt_attr_snprintf(char *buff, int len, attribute_t *a);
 void mmt_print_proto_info(protocol_t *proto);
 int is_protocol_valid_attribute(uint32_t proto_id, uint32_t attribute_id);
+int proto_packet_analyze(ipacket_t *ipacket, protocol_instance_t *configured_protocol, unsigned index);
 
 /* mmt_tcpip_classif_utils.c entry points (issue #242) — the two public ones
  * are declared in mmt_common_internal_include.h, which is too heavy to pull
@@ -159,6 +160,7 @@ static int g_classify_calls;
 static int g_pre_classify_calls;
 static int g_post_classify_calls;
 static int g_analyse_calls;
+static int g_drop_analyse_calls;
 static int g_pre_analyse_calls;
 static int g_post_analyse_calls;
 static int g_session_data_init_calls;
@@ -245,6 +247,11 @@ static int test_analyse(ipacket_t *ipacket, unsigned index) {
     (void) ipacket; (void) index;
     g_analyse_calls++;
     return MMT_CONTINUE; /* anything else skips the timeout sweep */
+}
+static int test_drop_analyse(ipacket_t *ipacket, unsigned index) {
+    (void) ipacket; (void) index;
+    g_drop_analyse_calls++;
+    return MMT_DROP;
 }
 static int test_pre_analyse(ipacket_t *ipacket, unsigned index) {
     (void) ipacket; (void) index;
@@ -1079,6 +1086,55 @@ static void test_session_create_oom(void) {
     CHECK(g_session_ctx_cleanup_calls == ctx_before + 2, "context cleanup ran for Z");
 }
 
+/* ============ issue #327: analysis-verdict propagation ===================== */
+
+#define TEST_PROTO_V    620 /* verdict test — never appears in a packet path */
+
+static void test_analyse_verdict(void) {
+    fprintf(stderr, "  test: first non-MMT_CONTINUE analysis verdict wins\n");
+    char errbuf[256];
+
+    /* A dedicated protocol id keeps the dropping analyser off TEST_PROTO_A's
+     * chain — analysis registrations are global (no unregister API) and a
+     * DROP on A would suppress process_packet_handler()/the timeout sweep
+     * for every later packet of every test. */
+    CHECK(register_test_protocol(TEST_PROTO_V, "ce_proto_v", 1) != NULL,
+          "verdict protocol registered");
+    mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler init for verdict test");
+    if (h == NULL) return;
+    enable_protocol_analysis(h, TEST_PROTO_V);
+    CHECK(h->configured_protocols[TEST_PROTO_V].protocol->data_analyser.status == 1,
+          "analysis enabled on V");
+
+    /* The dropping analyser sits at weight 10 — the head of the chain, ahead
+     * of test_analyse (default weight 50). proto_packet_analyze() must run
+     * every analyser for its side effects yet return the FIRST non-CONTINUE
+     * verdict: a later MMT_CONTINUE must not erase the earlier MMT_DROP. */
+    CHECK(register_session_data_analysis_function_with_protocol(TEST_PROTO_V, test_drop_analyse, 10) == 1,
+          "dropping analyser at chain head");
+
+    ipacket_t ip;
+    memset(&ip, 0, sizeof(ip));
+    ip.mmt_handler = h;
+    int pre_before = g_pre_analyse_calls;
+    int analyse_before = g_analyse_calls;
+    int post_before = g_post_analyse_calls;
+    int ret = proto_packet_analyze(&ip, &h->configured_protocols[TEST_PROTO_V], 1);
+    CHECK(ret == MMT_DROP, "first non-CONTINUE verdict propagated (not overwritten by a later CONTINUE)");
+    CHECK(g_pre_analyse_calls == pre_before + 1, "pre-analysis ran");
+    CHECK(g_drop_analyse_calls == 1, "dropping analyser ran");
+    CHECK(g_analyse_calls == analyse_before + 1, "later analyser still ran (side effects kept)");
+    CHECK(g_post_analyse_calls == post_before + 1, "post-analysis still ran");
+
+    /* Disabled analysis short-circuits to MMT_CONTINUE. */
+    disable_protocol_analysis(h, TEST_PROTO_V);
+    ret = proto_packet_analyze(&ip, &h->configured_protocols[TEST_PROTO_V], 1);
+    CHECK(ret == MMT_CONTINUE, "disabled analysis returns MMT_CONTINUE");
+
+    mmt_close_handler(h);
+}
+
 /* ============ issue #255: tunnel-parent extension + prefix-free alloc ===== */
 
 static void test_children_stats_extension(void) {
@@ -1594,6 +1650,7 @@ int main(void) {
     test_handler_bootstrap_oom();
     test_session_lifecycle();
     test_session_create_oom();
+    test_analyse_verdict();
     test_children_stats_extension();
     test_alloc_no_prefix();
     test_helpers();

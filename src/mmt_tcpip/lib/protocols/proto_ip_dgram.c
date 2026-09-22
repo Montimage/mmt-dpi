@@ -179,7 +179,9 @@ int ip_dgram_update( ip_dgram_t *dg, const mmt_una_iphdr_t *ip, unsigned len ,un
       dg->packet_offsets[i] = ip_off;
       dg->current_packet_size += ip_len - ip_hl;
    }else{
-      // TODO(#327): Can return here to not overwrite the later fragment
+      /* Issue #327: duplicated fragment offset — return early (2) so this
+       * copy cannot overwrite the fragment already recorded; the caller
+       * maps 2 to EVA_IP_FRAGMENT_DUPLICATED. */
       return 2;
    }
    // ip_dgram_update_holes( dg, payload, ip_off, len - ip_hl, ip_mf);

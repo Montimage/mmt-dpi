@@ -17,6 +17,7 @@ extern "C" {
 #define CONTROL 3 /**< To reference the control part of the message */
 
 #define TRUNCATED -10
+#define NO_COLON -1 /**< Issue #327: header line has no ':' separator — the line is badly formatted */
 #define CR 13 //Carriage return 0x0D hexa
 #define LF 10 //Line feed 0x0A hexa
 #define SP 32 //Space 0x20 hexa

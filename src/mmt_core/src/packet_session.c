@@ -296,7 +296,14 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
         if (insert_session_timeout_milestone(mmt_handler, session->session_timeout_milestone, session) == 0) {
             // Double OOM: remain without milestone => session never time-outable (F-BUG-023).
             // Destroy session so we do not leak a non-time-outable flow.
-            if (configured_protocol->sessions_map) delete_session_from_protocol_context(configured_protocol, session->session_key);
+            if (configured_protocol->sessions_map &&
+                    delete_session_from_protocol_context(configured_protocol, session->session_key) == 0) {
+                /* Issue #327: the session stays reachable through the
+                 * sessions map after its memory is freed below — that is
+                 * worse than a leaked map slot, so make it loud. The
+                 * destroy continues regardless: the memory is owned here. */
+                mmt_debug_log( "[error] setup_new_session - delete_session_from_protocol_context failed during double-OOM rollback\n");
+            }
             if (configured_protocol->protocol->session_data_cleanup)
                 ((generic_session_data_cleanup_function)configured_protocol->protocol->session_data_cleanup)(session, session->session_protocol_index);
             mmt_handler->active_sessions_count--;
@@ -312,10 +319,11 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
 
     if (ipacket->session == NULL) {
         //No session encapsulation; parent is NULL
-        session->parent_session = NULL; //TODO(#327): parent should be set here. If the ipacket is alreay associated to a session, then it is the parent of this one!
+        session->parent_session = NULL;
         ipacket->session = session;
     } else {
-        //Embedded session; set its parent
+        /* Issue #327: embedded session — the packet's current session is the
+         * tunnel parent of this one (the case the old marker asked for). */
         session->parent_session = ipacket->session;
         /* Issue #255 (F-PERF-010): this turns ipacket->session into a tunnel
          * parent — materialize its children-stats extension now so the
@@ -352,7 +360,10 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
     mmt_handler_t * mmt_handler = ipacket->mmt_handler;
     int is_new_session = 0;
 
-    //TODO(#327): addition of proper handling of embedded sessions.
+    /* Issue #327: embedded sessions are handled — the sessionizer runs at
+     * every protocol index and setup_new_session() links the new session to
+     * the packet's current session as its tunnel parent and shares the
+     * parent's per-index session data. */
     mmt_session_t * session = ipacket->session;
     if (configured_protocol->protocol->has_session) { // Sessionize packet only if such a function exists!
         session = (mmt_session_t *) ((generic_sessionizer_function) configured_protocol->protocol->sessionize)(configured_protocol, ipacket, index, & is_new_session);

@@ -472,7 +472,10 @@ attribute_t * get_extracted_attribute_by_name(const ipacket_t *ipacket, const ch
 }
 
 
-//TODO(#327): this function does not take into account protocol encapsulation where more than one occurrence of the same protocol exists in the path
+/* Issue #327: by design this returns the attribute of the FIRST occurrence
+ * of proto_id in the protocol path — the common case for callers asking
+ * "the value of protocol X". Encapsulation-aware callers that need a later
+ * occurrence use get_attribute_extracted_data_encap_index() below. */
 
 void * get_attribute_extracted_data(const ipacket_t * ipacket, uint32_t proto_id, uint32_t field_id) {
     unsigned index = 0;
@@ -661,14 +664,21 @@ int set_classified_proto(ipacket_t * ipacket, unsigned index, classified_proto_t
 }
 
 /**
- * Try to classify encapsulated data
+ * Try to classify the next encapsulated protocol
  * @param ipacket             packet to classify
  * @param configured_protocol protocol configuration
  * @param index               index of protocol
+ * @return Issue #327: the exit code is the sub-classification verdict —
+ *         post_classify's return when it runs (nonzero = continue to the
+ *         next layer, 0 = skip deeper layers), or 1 (continue) when the
+ *         classification was disabled, skipped by pre_classify
+ *         (MMT_CLASSIFY_SKIP) or no classifier chain exists. The caller maps
+ *         a falsy return to MMT_SKIP.
  */
 int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
-    //TODO(#327): review the exit codes; this depends on the return values of the sub-classification routines
-    //TODO(#327): why don't to enforce here a threshold on the classification?
+    /* Issue #327: the classification depth threshold the old marker asked
+     * for is enforced below — classification_max_depth (issue #87) bounds
+     * the whole deeper-layer detection round. */
     //Verify that classification is not disabled for this protocol
     // Issue #69: lock-free atomic read (relaxed); compiles to a plain load.
     if (proto_status_load(&configured_protocol->protocol->classify_next.status)) {
@@ -729,7 +739,10 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
                     __atomic_add_fetch(&mmt_classify_checker_calls_by_proto[configured_protocol->protocol->proto_id], 1, __ATOMIC_RELAXED);
 #endif
                     ipacket->mmt_current_classifier = temp;
-                    classif_status = temp->classify_me(ipacket, index); //TODO(#327): check the return value and make the corresponding action accordingly!!!
+                    /* Issue #327: the verdict is checked — a MATCHED verdict
+                     * (MMT_CLASSIFY_MATCHED_MASK) stops the walk with this
+                     * node as winner; anything else tries the next checker. */
+                    classif_status = temp->classify_me(ipacket, index);
                     // // LN: check if the classify return 1-> do not need to go to check other protocol
                     if(classif_status & MMT_CLASSIFY_MATCHED_MASK){ // Short for classif_status == 1 || classif_status == 2 || classif_status == 3
                         // mmt_stream_printf(stdout, "\n-]> Classified for protocol %d: %"PRIu64" - %d - %p - %u\n",classif_status,ipacket->packet_id,index,temp,temp->weight);
@@ -851,7 +864,11 @@ void proto_process_attribute_handlers(ipacket_t * ipacket, unsigned index) {
  *                             MMT_SKIP : Skip processing this packet but will be come back in future
  */
 int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index) {
-    //TODO(#327): review the exit codes; this depends on the return values of the sub-analysis routines
+    /* Issue #327: exit-code contract — the first non-MMT_CONTINUE verdict
+     * wins. All registered analysers still run for their side effects
+     * (fail-safe: a veto must not suppress the analysis work of the other
+     * engines), but a later MMT_CONTINUE no longer erases an earlier
+     * MMT_DROP/MMT_SKIP. */
     int retval = MMT_CONTINUE;
     //Verify that analysis is not disabled for this protocol
     // Issue #69: lock-free atomic read (relaxed); compiles to a plain load.
@@ -866,13 +883,19 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
     if (configured_protocol->protocol->data_analyser.analyse && (retval == MMT_CONTINUE)) {
         mmt_analyse_me_t * temp = configured_protocol->protocol->data_analyser.analyse;
         for (; temp != NULL; temp = temp->next) {
-            retval = temp->analyse_me(ipacket, index);
+            int analyse_ret = temp->analyse_me(ipacket, index);
+            if (retval == MMT_CONTINUE) {
+                retval = analyse_ret;
+            }
         }
 
         //Post-analysis! Post analysis is only accessible if there is an analysis function
         //and if the pre-analysis returned CONTINUE which means: proceed with the analysis routines.
         if (configured_protocol->protocol->data_analyser.post_analyse) {
-            configured_protocol->protocol->data_analyser.post_analyse(ipacket, index);
+            int post_ret = configured_protocol->protocol->data_analyser.post_analyse(ipacket, index);
+            if (retval == MMT_CONTINUE) {
+                retval = post_ret;
+            }
         }
     }
 

@@ -308,9 +308,20 @@ bool register_attribute_with_protocol(protocol_t *proto, attribute_metadata_t *a
                 };
                 return 1;
             }
+            /* Issue #327: differentiate the failure kinds — the single 0
+             * return covers invalid metadata (already logged by
+             * validate_attribute_metadata), a duplicate registration and an
+             * allocation failure; the last two get their own diagnostics. */
+            mmt_stderr_log( "[error] register_attribute_with_protocol - Failed to allocate memory for attribute '%s' (id=%u)\n",
+                    attribute_meta_data->alias, (unsigned) attribute_meta_data->id);
+            return 0;
         }
+        /* The attribute is already registered under this id or alias — a
+         * benign caller error, not an engine failure: debug channel only. */
+        mmt_debug_log( "[error] register_attribute_with_protocol - attribute '%s' (id=%u) is already registered\n",
+                attribute_meta_data->alias, (unsigned) attribute_meta_data->id);
     }
-    return 0; // TODO(#327): error handling
+    return 0;
 }
 
 struct internal_attribute_iterator_struct {
@@ -434,7 +445,12 @@ bool unregister_protocol_stack(uint32_t s_id) {
     protocol_stack_t * temp_stack = get_protocol_stack_from_map(s_id);
     if (temp_stack != NULL && s_id != 0) {
         //The protocol stack is registered, remove it from the map, and free it
-        delete_protocol_stack_from_map(s_id); //TODO(#327): check the return value
+        /* Issue #327: propagate the failure — freeing temp_stack while the
+         * map still holds it would leave a dangling map entry. */
+        if (delete_protocol_stack_from_map(s_id) == 0) {
+            mmt_stderr_log( "[error] unregister_protocol_stack - failed to remove stack %u from the protocol stack map\n", (unsigned) s_id);
+            return 0;
+        }
         //Set link_layer_stack to dummy if it is the same as the stack to unregister
         free_protocol_stack(temp_stack);
     }
@@ -712,7 +728,26 @@ bool is_free_protocol_id_for_registractionl(uint32_t proto_id) {
 }
 
 void init_protocol_struct(protocol_t * proto) {
-    // TODO(#327): complete this
+    /* Issue #327: initialize every field explicitly. The struct is memset to
+     * zero at allocation (init_extraction), so the NULL/0 assignments are
+     * belt-and-suspenders guarding a future non-zeroed allocation path.
+     * proto_id, protocol_name, protocol_code and is_registered are left to
+     * the caller — they carry the caller-supplied identity, not a default. */
+    proto->session_key_compare = NULL;
+    proto->session_key_hash = NULL;
+    proto->session_key_equal = NULL;
+    proto->session_data_init = NULL;
+    proto->session_data_cleanup = NULL;
+    proto->session_context_cleanup = NULL;
+    proto_status_store(&proto->classify_next.status, 0);
+    proto->classify_next.pre_classify = NULL;
+    proto->classify_next.classify_protos = NULL;
+    proto->classify_next.post_classify = NULL;
+    proto_status_store(&proto->data_analyser.status, 0);
+    proto->data_analyser.pre_analyse = NULL;
+    proto->data_analyser.analyse = NULL;
+    proto->data_analyser.post_analyse = NULL;
+    proto->update_protocol_fct = NULL;
 
     // register dummy sessionizer
     proto->sessionize = NULL;
@@ -1633,21 +1668,33 @@ bool register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, u
     int retval = 0;
 
     if (is_registered_attribute_handler(mmt_handler, proto_id, attribute_id, handler_fct)) {
-        return 0; //TODO(#327): error codes should be added to differentiate between registration failed and handler already exists.
+        /* Issue #327: the handler is already registered for this attribute —
+         * a caller error distinct from an engine failure; say so on the
+         * debug channel instead of returning a silent 0. */
+        mmt_debug_log( "[error] register_attribute_handler - handler already registered for attribute %u of protocol %u\n",
+                (unsigned) attribute_id, (unsigned) proto_id);
+        return 0;
     }
 
     struct attribute_internal_struct * attr = get_registered_attribute(mmt_handler, proto_id, attribute_id);
     if (!attr) {
         retval = register_extraction_attribute(mmt_handler, proto_id, attribute_id);
         if (!retval) {
-            // An error occurred.
+            // An error occurred — the attribute could not be registered for extraction.
+            mmt_stderr_log( "[error] register_attribute_handler - failed to register attribute %u of protocol %u for extraction\n",
+                    (unsigned) attribute_id, (unsigned) proto_id);
             return 0;
         }
     }
 
     attr = get_registered_attribute(mmt_handler, proto_id, attribute_id);
     if (attr == NULL) {
-        return 0; //TODO(#327): This is getting paranoiac! we MUST never get here
+        /* Issue #327: unreachable in practice — the lookup above either
+         * found the attribute or registered it successfully. Kept as a
+         * defensive check; treat it as an engine inconsistency if it fires. */
+        mmt_stderr_log( "[error] register_attribute_handler - attribute %u of protocol %u vanished after registration\n",
+                (unsigned) attribute_id, (unsigned) proto_id);
+        return 0;
     }
 
     /* Issue #252 (F-PERF-017): handlers live in a contiguous array on the

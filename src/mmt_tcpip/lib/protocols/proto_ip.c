@@ -613,7 +613,12 @@ int ip_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 
 int ip_session_cleanup_on_timeout(void * protocol_context, mmt_session_t * timedout_session, void * args) {
     //Remove the session from the sessions hash
-    delete_session_from_protocol_context(protocol_context, timedout_session->session_key); //TODO(#327): we are not verifying the return of the delete
+    /* Issue #327: a failed delete leaves a map entry pointing at memory that
+     * free_session_data() is about to release — log it; the cleanup must
+     * still proceed because the session's owned memory is freed here. */
+    if (delete_session_from_protocol_context(protocol_context, timedout_session->session_key) == 0) {
+        mmt_debug_log( "[error] ip_session_cleanup_on_timeout - delete_session_from_protocol_context failed\n");
+    }
 
     // free session allocated memory. be careful about multiple free of the same data.
     // In the closup some session data are freed. These should not be the same as here.
@@ -828,7 +833,10 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
 
     mmt_session_t * session = get_session(protocol_context, & ipv4_session_key, ipacket, is_new_session);
     if (session) {
-        // TODO(#327): Check if dg->nb_packets > 1 -> update number of fragmented packet in current session
+        /* Issue #327: fragmented-packet accounting — when this packet was
+         * reassembled from more than one fragment, update the session's
+         * fragmented-packet and fragment counters and fire the threshold
+         * evasion events. */
         if(ipacket->nb_reassembled_packets[index] > 1){
             session->fragmented_packet_count++;
             session->fragment_count += ipacket->nb_reassembled_packets[index];
@@ -858,7 +866,10 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
 
 
         // Fix proto_path , only fix til IP
-        // TODO(#327): May be need to fix for ipacket->proto_headers_offset = &session->proto_headers_offset and ipacket->proto_classif_status = &session->proto_classif_status;
+        /* Issue #327: the splice below already keeps all three session paths
+         * in sync — proto_path, proto_headers_offset and proto_classif_status
+         * are copied together; the ipacket's pointers are re-pointed at the
+         * session's arrays by proto_session_management(). */
         if (session->proto_path.proto_path[index] != PROTO_IP) {
             // debug("[IP] Fixing proto_path of session: %lu", session->session_id);
             // Get PROTO_IP index in current proto_path
@@ -935,7 +946,7 @@ void * ip_sessionizer(void * protocol_context, ipacket_t * ipacket, unsigned ind
 }
 
 void ip_context_cleanup(void * proto_context, void * args) {
-    close_session_id_lists(proto_context);
+    close_session_lists(proto_context);
     cleanup_ipv4_internal_context(((protocol_instance_t *) proto_context)->args);
     close_ipv4_internal_context(proto_context);
 }
@@ -1043,7 +1054,12 @@ int ip_post_classification_function(ipacket_t * ipacket, unsigned index) {
     if( packet->l3_packet_len == 0 && packet->l3_captured_packet_len > 0 )
         packet->l3_packet_len = packet->l3_captured_packet_len;
 
-    /* TODO(#327): Check the padding -> allow only certain type of padding and inform other : if packet->l3_captured_packet_len != packet->l3_packet_len -> padding */
+    /* Issue #327: padding/truncation handling — l3_captured_packet_len may
+     * differ from l3_packet_len (link-layer padding adds bytes, capture
+     * truncation removes them). The usable bound below already clamps the
+     * L4 length to MIN(declared, captured), so padded and truncated packets
+     * both stay safe; distinguishing padding *types* has no consumer in the
+     * engine and is not required. */
     //packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
     // packet->l4_packet_len = packet->l3_packet_len - (ip_hdr->ihl * 4); //For IPv6 this is done in tcp and udp
     /* Issue #192 (F-BUG-016): l3_packet_len derives from the attacker-

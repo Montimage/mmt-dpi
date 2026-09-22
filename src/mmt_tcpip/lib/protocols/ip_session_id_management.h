@@ -70,10 +70,11 @@ extern "C" {
     internal_ip_proto_context_t * setup_ipv4_internal_context();
     internal_ip_proto_context_t * setup_ipv6_internal_context();
     /**
-     * Frees the memory allocated for the user ids and session structures.
+     * Frees the session data of every session in the protocol context
+     * (Issue #327: renamed — it closes the session lists, not "id" lists).
      * @return non zero value upon success, zero on failure.
      */
-    int close_session_id_lists(void * proto_context);
+    int close_session_lists(void * proto_context);
 
     /**
      * Closes application classification module
