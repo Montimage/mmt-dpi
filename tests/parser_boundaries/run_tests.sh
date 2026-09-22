@@ -39,9 +39,21 @@
 #                               DNS_ANSWERS attribute back via
 #                               get_attribute_extracted_data().
 #
+# Issue #378 (F-BUG-004) adds the "dns-txt" fixture: every TXT
+# <character-string> field — a length byte plus that many content bytes —
+# must stay inside the record's declared RDATA extent (RDLENGTH clamped to
+# captured bytes), so a string running past the record rejects instead of
+# consuming the next record's bytes.
+#
+#   test_dns_txt_rdata_bounds.c — packet/API path: crafted
+#                               Ethernet/IPv4/UDP/DNS responses through
+#                               mmt_init_handler + packet_process, reading the
+#                               DNS_ANSWERS attribute back via
+#                               get_attribute_extracted_data().
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
-#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa" select a fixture
-#   family.
+#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt" select
+#   a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -49,7 +61,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -64,8 +76,11 @@ for f in "${FIXTURES[@]}"; do
         dns-soa)
             API_TESTS+=(dns_soa_consumed_bytes)
             ;;
+        dns-txt)
+            API_TESTS+=(dns_txt_rdata_bounds)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt)" >&2
             exit 2
             ;;
     esac
@@ -172,4 +187,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #375, #376, #377)"
+echo "✓ parser boundary tests passed (issues #375, #376, #377, #378)"

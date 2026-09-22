@@ -479,7 +479,6 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
     if(!dns_can_read(data_anwser_payload, 1, payload_end)){
         return NULL;
     }
-    uint16_t txtLength = 0;
     void * txtValue;
     txtValue = NULL;
     char *str_value;
@@ -527,19 +526,42 @@ void * dns_extract_answer_data(uint16_t atype, uint16_t data_length, const u_cha
             break;
         case 16:
             // TXT - Text string
-            txtLength = bytes_to_int_extraction(data_anwser_payload,1);
-            /* The length byte is followed by txtLength content bytes. */
-            if(!dns_can_read(data_anwser_payload + 1, txtLength, payload_end)){
-                return NULL;
-            }
-            str_value = malloc((txtLength+1)*sizeof(char));
-            if (str_value == NULL)
+            /* F-BUG-004 (issue #378): a TXT rdata is a sequence of
+             * <character-string> fields — a length byte plus that many
+             * content bytes each — that must tile the declared RDLENGTH.
+             * Every field read is bounded by the rdata extent (clamped to
+             * captured bytes), not the message end, so a string whose
+             * declared length runs past the record rejects instead of
+             * consuming the next record's bytes. TXT rdata carries no
+             * domain names, so no compression reference needs the wider
+             * message bound here. The extracted value concatenates the
+             * field contents — the usual reading of a multi-string TXT
+             * (RFC 7208 §3.3). */
             {
-                dns_free_name(name);
-                return NULL;
+                size_t rdata_avail = (size_t)(payload_end - data_anwser_payload);
+                if((size_t)data_length < rdata_avail) rdata_avail = (size_t)data_length;
+                const u_char * rdata_end = data_anwser_payload + rdata_avail;
+                /* Field contents always total less than data_length — each
+                   field spends at least one byte on its own length — so
+                   data_length + 1 bounds the NUL-terminated output. */
+                str_value = malloc((size_t)data_length + 1);
+                if(str_value == NULL){
+                    return NULL;
+                }
+                const u_char * field = data_anwser_payload;
+                size_t pos = 0;
+                while(field < rdata_end){
+                    uint8_t field_len = *field;
+                    if(!dns_can_read(field + 1, field_len, rdata_end)){
+                        free(str_value);
+                        return NULL;
+                    }
+                    memcpy(str_value + pos, field + 1, field_len);
+                    pos += field_len;
+                    field += (size_t)field_len + 1;
+                }
+                str_value[pos] = '\0';
             }
-            memcpy(str_value,data_anwser_payload + 1,txtLength);
-            str_value[txtLength]='\0';
             txtValue = (void*)str_value;
             break;
         case 15:
