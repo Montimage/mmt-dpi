@@ -23,14 +23,22 @@
 # Finding rule: an exit code >= 128 (signal — ASan/UBSan aborts with
 # abort_on_error=1 and -fno-sanitize-recover=all, plus genuine SIGSEGV /
 # SIGABRT) or 124 (per-input timeout — a hang on hostile input is a
-# robustness finding) is a crash. Ordinary refusals (rc 1/2 — libpcap or
-# libxml2 cleanly rejecting the mutant) are not findings. On a finding the
+# robustness finding) is a crash. So is a sanitizer report on the driver's
+# stderr at any lower exit code: a sanitizer runtime that did not abort the
+# process (UBSan without abort_on_error, ASan with halt_on_error=0 or a
+# non-fatal report) prints its "runtime error" / "*Sanitizer" banner and
+# still exits 0/1/2, which the exit code alone would silently pass (issue
+# #370, F-TEST-001). Ordinary refusals (rc 1/2 — libpcap or libxml2 cleanly
+# rejecting the mutant) carry no sanitizer banner, are not findings and are
+# counted separately so a refusal never reads as a crash. An exit code of
+# 125/126/127 means the driver (or timeout itself) could not be executed —
+# harness breakage, never a finding. On a finding the
 # reproducer file and the driver's stderr are copied into the artifacts
 # directory and the run continues so one CI failure can carry several
 # distinct reproducers (capped); the script exits 1 at the end when any
 # finding was recorded. Exit 2 is reserved for the harness itself breaking
-# (build/compile failure, missing corpus) so a broken gate can never read
-# as a clean fuzz run.
+# (build/compile failure, missing corpus, unexecutable driver) so a broken
+# gate can never read as a clean fuzz run.
 #
 # Suppressions: tools/ci/fuzz/suppressions.txt lists already-reported
 # deterministic mutants as "<seed-file-basename>:<seed>" pairs, one per
@@ -191,6 +199,13 @@ deadline=$(( $(date +%s) + BUDGET ))
 iter=0
 findings=0
 runs=0
+refusals=0
+
+# A sanitizer report on stderr is a finding even when the process exits
+# cleanly (see the finding rule in the header). Match the runtime banners,
+# never a bare "error" substring, so an expected parser refusal cannot
+# collide with them.
+SANITIZER_MARKERS='runtime error:|ERROR: (Address|UndefinedBehavior|Leak|Memory|Thread)Sanitizer|SUMMARY: (Address|UndefinedBehavior|Leak|Memory|Thread)Sanitizer'
 
 run_driver() {
     # $1 = binary, $2 = mutant file, $3 = per-run stderr log
@@ -238,8 +253,31 @@ while [ "$(date +%s)" -lt "${deadline}" ] && [ "${findings}" -lt "${MAX_FINDINGS
     run_driver "${bin}" "${mutant}" "${log}" && rc=0 || rc=$?
     runs=$((runs + 1))
 
-    # Benign: clean refusal paths return < 128 and never 124.
-    if [ "${rc}" -lt 124 ]; then
+    # The driver failing to execute at all — or timeout itself failing —
+    # (timeout reports 125/126/127) is the harness breaking, never a finding
+    # on hostile input: a missing binary must not masquerade as a crash.
+    if [ "${rc}" -eq 125 ] || [ "${rc}" -eq 126 ] || [ "${rc}" -eq 127 ]; then
+        echo "✗ fuzz driver could not be executed: ${bin} (rc=${rc})" >&2
+        cat "${log}" >&2 || true
+        exit 2
+    fi
+
+    # Classify the outcome. rc >= 124 stays a finding (124 = per-input
+    # timeout/hang, >= 128 = signal/crash). Below that band the run is
+    # normally an expected parser refusal — except when the log carries a
+    # sanitizer banner, which is a real memory/UB finding the exit code
+    # alone would have passed (issue #370, F-TEST-001). rc 0 is a tested-
+    # clean run, counted via `runs`, never a refusal.
+    if [ "${rc}" -ge 124 ]; then
+        if [ "${rc}" -eq 124 ]; then kind="hang/timeout"; else kind="signal/crash"; fi
+    elif grep -qE "${SANITIZER_MARKERS}" "${log}"; then
+        kind="sanitizer-error"
+    elif [ "${rc}" -gt 0 ]; then
+        # Expected parser refusal — counted so it stays separately
+        # identifiable from both a tested-clean run and a finding.
+        refusals=$((refusals + 1))
+        continue
+    else
         continue
     fi
 
@@ -250,21 +288,21 @@ while [ "$(date +%s)" -lt "${deadline}" ] && [ "${findings}" -lt "${MAX_FINDINGS
         echo "driver   : $(basename "${bin}") ${repro}"
         echo "seed file: ${seed_file}"
         echo "mutant   : mutate.py --seed ${mseed} (repro: python3 ${MUTATE} \"${seed_file}\" out --seed ${mseed})"
-        echo "exit code: ${rc} ($([ "${rc}" -eq 124 ] && echo 'hang/timeout' || echo 'signal/crash'))"
+        echo "exit code: ${rc} (${kind})"
         echo "--- stderr ---"
         cat "${log}"
     } > "${repro}.log"
-    say "  ✗ finding #${findings}: ${tag} mutant of ${seed_base} (seed ${mseed}, rc=${rc}) -> ${repro}"
+    say "  ✗ finding #${findings}: ${tag} mutant of ${seed_base} (seed ${mseed}, rc=${rc}, ${kind}) -> ${repro}"
 done
 
 elapsed=$(( $(date +%s) - (deadline - BUDGET) ))
 {
     echo "run-fuzz summary"
-    echo "iterations: ${iter}  driver runs: ${runs}  suppressed: ${suppressed_count}  elapsed: ${elapsed}s  findings: ${findings}"
+    echo "iterations: ${iter}  driver runs: ${runs}  suppressed: ${suppressed_count}  refusals: ${refusals}  elapsed: ${elapsed}s  findings: ${findings}"
     echo "seed base: ${SEED}  corpus: ${#PCAPS[@]} pcaps + seed_qe.xml"
 } > "${ARTIFACTS}/SUMMARY.txt"
 
-say "[4/4] ${runs} mutated inputs in ${elapsed}s, ${findings} finding(s), ${suppressed_count} suppressed"
+say "[4/4] ${runs} mutated inputs in ${elapsed}s, ${findings} finding(s), ${refusals} parser refusal(s), ${suppressed_count} suppressed"
 if [ "${findings}" -gt 0 ]; then
     echo "✗ fuzz gate FAIL — ${findings} crash(es); reproducers in ${ARTIFACTS}" >&2
     exit 1
