@@ -13,17 +13,26 @@
  * protocol it is known to carry (these fixtures are single-application pcaps).
  * For such a pcap labelled P, every packet's "application protocol" is the
  * deepest protocol in its classified path that is not a link/network/transport
- * layer and not "unknown". The tool then counts, over all packets:
+ * layer and not "unknown". The tool RETAINS that predicted label per packet
+ * and emits the full prediction histogram (issue #373, F-TEST-002), from which
+ * the runner builds an actual-by-predicted confusion matrix over the labelled
+ * set:
  *
  *     tp           : packets whose application protocol == P   (true positive)
- *     fp           : packets given a *different* application protocol (false +)
- *     app_unknown  : packets with no application protocol (no verdict)
+ *     fp           : packets given a *different* application protocol -- an FN
+ *                    of P and an FP of the predicted class
+ *     app_unknown  : packets with no application verdict -- an abstention,
+ *                    counted as an FN of P only
  *     total        : tp + fp + app_unknown
  *
- * from which the runner derives, micro-averaged over the labelled set:
+ * Per class C the runner then derives, from the matrix alone:
  *
- *     recall    = tp / total          (of all P traffic, how much was labelled P)
- *     precision = tp / (tp + fp)      (of definite verdicts, how many were P)
+ *     TP = C[C][C];  FP = sum_{a != C} C[a][C];  FN = sum_{p != C} C[C][p]
+ *     recall    = TP / (TP + FN)   (abstentions included in FN)
+ *     precision = TP / (TP + FP)
+ *
+ * so a true-FTP packet predicted HTTP increments HTTP false positives AND FTP
+ * false negatives -- the accounting the pre-#373 `fp` column could not express.
  *
  * The counts are derived purely from the classifier's deterministic decisions
  * (the same source as the golden fingerprint), so they are stable across
@@ -39,7 +48,12 @@
  *   phase0_precision <file.pcap> <expected_protocol> [extra_ignore_csv]
  *
  * Output (one tab-separated line on stdout):
- *   <expected>\t<total>\t<tp>\t<fp>\t<app_unknown>
+ *   <expected>\t<total>\t<tp>\t<fp>\t<app_unknown>\t<predicted_csv>
+ *
+ * where <predicted_csv> is the retained prediction histogram -- sorted,
+ * comma-separated <name>:<count> pairs over the predicted application
+ * protocols (or '-' when every packet abstained). tp == the count of the
+ * expected label inside the histogram; fp == its sum over the other labels.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,6 +89,41 @@ static unsigned long g_tp = 0;
 static unsigned long g_fp = 0;
 static unsigned long g_app_unknown = 0;
 
+/* Retained prediction histogram (issue #373, F-TEST-002): every distinct
+ * predicted application name mapped to its packet count, so the runner can
+ * build the actual-by-predicted confusion matrix instead of collapsing all
+ * non-expected verdicts into a bare `fp`. Distinct application names are
+ * bounded by the registered protocol space; a defensive overflow bucket keeps
+ * the counts reconciled (tp + fp == histogram sum) even past that bound. */
+#define MAX_PRED_NAMES 1024
+static char          g_pred_names[MAX_PRED_NAMES][64];
+static unsigned long g_pred_counts[MAX_PRED_NAMES];
+static int           g_n_pred = 0;
+static unsigned long g_pred_overflow = 0;
+
+static void record_pred(const char *name) {
+    int i;
+    for (i = 0; i < g_n_pred; i++) {
+        if (strcmp(g_pred_names[i], name) == 0) {
+            g_pred_counts[i]++;
+            return;
+        }
+    }
+    if (g_n_pred < MAX_PRED_NAMES) {
+        snprintf(g_pred_names[g_n_pred], sizeof(g_pred_names[g_n_pred]), "%s", name);
+        g_pred_counts[g_n_pred] = 1;
+        g_n_pred++;
+    } else {
+        g_pred_overflow++;
+    }
+}
+
+/* qsort comparator over an index array into g_pred_names (byte-wise strcmp:
+ * deterministic across hosts/locales). */
+static int cmp_pred_index(const void *a, const void *b) {
+    return strcmp(g_pred_names[*(const int *)a], g_pred_names[*(const int *)b]);
+}
+
 static int is_ignored(const char *name) {
     int i;
     for (i = 0; i < N_BUILTIN_IGNORE; i++) {
@@ -105,10 +154,13 @@ static int packet_handler(const ipacket_t *ipacket, void *user_args) {
 
     if (app == NULL) {
         g_app_unknown++;
-    } else if (strcasecmp(app, g_expected) == 0) {
-        g_tp++;
     } else {
-        g_fp++;
+        record_pred(app);
+        if (strcasecmp(app, g_expected) == 0) {
+            g_tp++;
+        } else {
+            g_fp++;
+        }
     }
     return 0;
 }
@@ -170,9 +222,26 @@ int main(int argc, char **argv) {
         packet_process(mmt_handler, &header, data);
     }
 
-    /* expected \t total \t tp \t fp \t app_unknown */
-    printf("%s\t%lu\t%lu\t%lu\t%lu\n",
+    /* expected \t total \t tp \t fp \t app_unknown \t predicted_csv */
+    printf("%s\t%lu\t%lu\t%lu\t%lu\t",
            g_expected, g_total, g_tp, g_fp, g_app_unknown);
+    if (g_n_pred == 0 && g_pred_overflow == 0) {
+        printf("-\n");
+    } else {
+        int  order[MAX_PRED_NAMES];
+        int  i, first = 1;
+        for (i = 0; i < g_n_pred; i++) order[i] = i;
+        qsort(order, g_n_pred, sizeof(order[0]), cmp_pred_index);
+        for (i = 0; i < g_n_pred; i++) {
+            printf("%s%s:%lu", first ? "" : ",",
+                   g_pred_names[order[i]], g_pred_counts[order[i]]);
+            first = 0;
+        }
+        if (g_pred_overflow > 0) {
+            printf("%s<overflow>:%lu", first ? "" : ",", g_pred_overflow);
+        }
+        printf("\n");
+    }
 
     mmt_close_handler(mmt_handler);
     close_extraction();

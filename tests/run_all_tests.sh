@@ -174,6 +174,7 @@ DEFAULT_SUITES=(
     proto_classifiers
     dpi_profiles
     fuzz_verdicts
+    precision_metrics
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

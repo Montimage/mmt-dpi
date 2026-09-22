@@ -13,7 +13,7 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 |---|---|
 | `phase0_classify.c` | Deterministic protocol-classification fingerprint tool. Prints, per pcap, sorted `count<TAB>protocol.path` lines — free of timestamps/addresses/ordering, so it diffs cleanly. |
 | `phase0_throughput.c` | Throughput baseline tool (packets/second), in-memory replay with a fresh handler per iteration. Reports `harness_rss_kib` (trace-preload share) and `library_rss_kib` (SDK share) separately next to the process peak (issue #251). |
-| `phase0_precision.c` | Labelled-pcap precision/recall harness (Phase 7, M9, issue #74). Given a pcap and the application protocol it is known to carry, prints `label<TAB>total<TAB>tp<TAB>fp<TAB>app_unknown` from the classifier's deterministic decisions. The unlabelled fingerprint proves decisions don't *change*; this measures whether they are *correct*. |
+| `phase0_precision.c` | Labelled-pcap precision/recall harness (Phase 7, M9, issue #74). Given a pcap and the application protocol it is known to carry, prints `label<TAB>total<TAB>tp<TAB>fp<TAB>app_unknown<TAB>predicted_csv` from the classifier's deterministic decisions, where `predicted_csv` is the retained prediction histogram (`name:count` pairs) feeding the actual-by-predicted confusion matrix in `ci/render_precision.py` (issue #373, F-TEST-002). The unlabelled fingerprint proves decisions don't *change*; this measures whether they are *correct*. |
 | `golden_pcaps.txt` | The fixed golden pcap set (paths relative to the mmt-test `data-sets/` root). |
 | `throughput_pcaps.txt` | The bigFlows/smallFlows perf-benchmark set (issue #251) — deliberately separate from `golden_pcaps.txt` so the classification fingerprint's input set is unchanged. |
 | `capture_baseline.sh` | Orchestrator: build+install at `-O3`, compile the drivers, capture all baselines into `baseline/`. |
@@ -121,11 +121,20 @@ What each gate asserts:
   `ci/baseline/classification.txt`. Any diff fails the job.
 - **`precision-gate`** — runs `tools/phase0/ci/check_precision.sh`, which runs
   the labelled-pcap precision/recall harness (`phase0_precision`) over the
-  labelled subset (`ci/labels.txt`) and diffs the micro-averaged metrics
-  against the committed `ci/baseline/precision.txt`. Enforces the Phase 7 (M9,
+  labelled subset (`ci/labels.txt`), folds the retained predicted labels into
+  an actual-by-predicted confusion matrix (`ci/render_precision.py`, issue
+  #373: a wrong prediction is an FN of the actual class and an FP of the
+  predicted class; an abstention is an FN of the actual class only), and diffs
+  the resulting metrics against the committed `ci/baseline/precision.txt`.
+  Missing pcaps, empty harness output and malformed rows **fail** the gate —
+  labelled examples are never silently dropped. Enforces the Phase 7 (M9,
   issue #74) acceptance criterion that precision/recall **holds or improves**.
   Refresh `ci/baseline/precision.txt` (artifact: `phase0-precision-actual`) in
-  the same PR when an improvement is intentional.
+  the same PR when an improvement is intentional. Accuracy-baseline changes
+  are reviewed **separately** from the golden classification fingerprint: a
+  `precision.txt` diff never requires regenerating `classification.txt`, and
+  vice versa — but every corrected baseline carries its explanation in the PR
+  body (issue #373, F-TEST-002).
 - **`list-harnesses` / `harness-*` matrix** — the setup job enumerates
   `tools/phase0/tests/run_*.sh` and fans out one `harness-<script>` job per
   file (issue #182), so a newly added harness is gated with no workflow

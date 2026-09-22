@@ -1,16 +1,28 @@
-# Phase 7 (M9, issue #74) precision/recall baseline — labelled CI golden subset.
+# Phase 7 (M9, issue #74) precision/recall baseline -- labelled CI golden subset.
 # Deterministic: derived from the classifier's decisions (see phase0_precision.c).
+# Accounting (issue #373, F-TEST-002): counts derive from a retained
+# actual-by-predicted confusion matrix -- a packet predicted as a different
+# application is an FN of its actual class and an FP of the predicted class;
+# an abstention (no application verdict) is an FN of its actual class only.
 # Refresh with: tools/phase0/ci/check_precision.sh (then commit precision.txt).
 #
-ftp_txt.pcap                 ftp      total=75     tp=69     fp=0      unknown=6      recall=0.9200 precision=1.0000
-ftp_login_fail.pcap          ftp      total=77     tp=64     fp=0      unknown=13     recall=0.8312 precision=1.0000
-ftp_multiple_session.pcap    ftp      total=482    tp=472    fp=0      unknown=10     recall=0.9793 precision=1.0000
-tcp_bbc-out-of-order.pcap    http     total=125    tp=122    fp=0      unknown=3      recall=0.9760 precision=1.0000
-tcp_ecn_sample.pcap          http     total=479    tp=476    fp=0      unknown=3      recall=0.9937 precision=1.0000
+ftp_txt.pcap                 ftp      total=75     tp=69     miscls=0    abstain=6    recall=0.9200 pred=ftp:69
+ftp_login_fail.pcap          ftp      total=77     tp=64     miscls=0    abstain=13   recall=0.8312 pred=ftp:64
+ftp_multiple_session.pcap    ftp      total=482    tp=472    miscls=0    abstain=10   recall=0.9793 pred=ftp:472
+tcp_bbc-out-of-order.pcap    http     total=125    tp=122    miscls=0    abstain=3    recall=0.9760 pred=http:122
+tcp_ecn_sample.pcap          http     total=479    tp=476    miscls=0    abstain=3    recall=0.9937 pred=http:476
 
-# --- per-protocol (micro-averaged) ---
-proto   ftp      total=634    tp=605    fp=0      unknown=29     recall=0.9543 precision=1.0000
-proto   http     total=604    tp=598    fp=0      unknown=6      recall=0.9901 precision=1.0000
+# --- confusion matrix (actual-by-predicted) ---
+actual                       predicted        count
+ftp                          <abstain>        29
+ftp                          ftp              605
+http                         <abstain>        6
+http                         http             598
+
+# --- per-class ---
+class            support  tp       fp       fn       precision  recall
+ftp              634      605      0        29       1.0000     0.9543
+http             604      598      0        6        1.0000     0.9901
 
 # --- overall (micro-averaged) ---
-overall          total=1238   tp=1203   fp=0      unknown=35     recall=0.9717 precision=1.0000
+total=1238   tp=1203   fp=0      fn=35     accuracy=0.9717 micro_precision=1.0000 micro_recall=0.9717

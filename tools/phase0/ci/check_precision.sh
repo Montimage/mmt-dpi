@@ -5,12 +5,18 @@
 #
 # Runs the labelled-pcap precision/recall harness (tools/phase0/phase0_precision.c)
 # over the labelled CI golden subset (tools/phase0/ci/labels.txt) against a
-# freshly built+installed library, and diffs the resulting metrics against the
-# committed baseline (tools/phase0/ci/baseline/precision.txt). A non-empty diff
-# means a change moved classification accuracy on the labelled set — the gate
-# fails so the change is reviewed (acceptance criterion: precision/recall
-# "improves or holds"). If the change is an intentional improvement, refresh the
-# baseline in the same PR.
+# freshly built+installed library, folds the retained predicted labels into an
+# actual-by-predicted confusion matrix (render_precision.py — issue #373,
+# F-TEST-002), and diffs the resulting metrics against the committed baseline
+# (tools/phase0/ci/baseline/precision.txt). A non-empty diff means a change
+# moved classification accuracy on the labelled set — the gate fails so the
+# change is reviewed (acceptance criterion: precision/recall "improves or
+# holds"). If the change is an intentional improvement, refresh the baseline
+# in the same PR.
+#
+# Fail-fast (F-TEST-002): a missing pcap, an empty harness run, or a malformed
+# metric row FAILS the gate — silently dropping labelled examples would let
+# accuracy regressions hide inside a smaller corpus.
 #
 # Used by .github/workflows/phase0-baseline.yml. Runnable locally too:
 #   tools/phase0/ci/check_precision.sh
@@ -41,6 +47,11 @@ trap 'rm -rf "${BUILD_DIR}"' EXIT
 
 if [ ! -f "${LABELS}" ]; then
     echo "✗ labelled-pcap manifest missing: ${LABELS}" >&2
+    exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "✗ python3 required for render_precision.py" >&2
     exit 1
 fi
 
@@ -75,58 +86,26 @@ while IFS= read -r line; do
     [ -z "${rel}" ] && continue
     pcap="${PCAPS_DIR}/${rel}"
     if [ ! -f "${pcap}" ]; then
-        echo "  ⚠ missing pcap: ${rel}" >&2
-        continue
+        echo "✗ missing labelled pcap: ${rel} (a labelled example may never be" >&2
+        echo "  dropped — restore the fixture or remove its labels.txt row)" >&2
+        exit 1
     fi
-    # output: <label> <total> <tp> <fp> <app_unknown>. Don't let a harness
-    # non-zero exit (e.g. an unsupported link-type) abort the whole gate under
-    # 'set -e'; flag the pcap and skip it instead.
+    # output: <label> <total> <tp> <fp> <app_unknown> <predicted_csv>. A harness
+    # non-zero exit or empty output fails the gate: a labelled example that
+    # produces no metrics is a harness failure, not a skippable input.
     out="$(cd "${BUILD_DIR}" && "${BUILD_DIR}/phase0_precision" "${pcap}" "${label}" 2>/dev/null)" || out=""
     if [ -z "${out}" ]; then
-        echo "  ⚠ harness produced no output for: ${rel}" >&2
-        continue
+        echo "✗ harness produced no output for: ${rel}" >&2
+        exit 1
     fi
     printf '%s\t%s\n' "${rel}" "${out}" >> "${RAW}"
 done < "${LABELS}"
 
 # --- render the deterministic metrics file ---------------------------------
-# Per-pcap rows + per-protocol and overall micro-averages. recall/precision are
-# computed from integer counts so the formatted output is reproducible.
-render() {
-    awk -F'\t' '
-    function ratio(n, d) { return (d == 0) ? "n/a" : sprintf("%.4f", n / d) }
-    {
-        # cols: rel label total tp fp app_unknown
-        rel=$1; label=$2; total=$3; tp=$4; fp=$5; unk=$6;
-        printf "%-28s %-8s total=%-6d tp=%-6d fp=%-6d unknown=%-6d recall=%s precision=%s\n",
-               rel, label, total, tp, fp, unk, ratio(tp, total), ratio(tp, tp + fp);
-        p_total[label]+=total; p_tp[label]+=tp; p_fp[label]+=fp; p_unk[label]+=unk;
-        o_total+=total; o_tp+=tp; o_fp+=fp; o_unk+=unk;
-        if (!(label in seen)) { order[++no]=label; seen[label]=1 }
-    }
-    END {
-        print "";
-        print "# --- per-protocol (micro-averaged) ---";
-        for (i = 1; i <= no; i++) {
-            l = order[i];
-            printf "proto   %-8s total=%-6d tp=%-6d fp=%-6d unknown=%-6d recall=%s precision=%s\n",
-                   l, p_total[l], p_tp[l], p_fp[l], p_unk[l],
-                   ratio(p_tp[l], p_total[l]), ratio(p_tp[l], p_tp[l] + p_fp[l]);
-        }
-        print "";
-        print "# --- overall (micro-averaged) ---";
-        printf "overall          total=%-6d tp=%-6d fp=%-6d unknown=%-6d recall=%s precision=%s\n",
-               o_total, o_tp, o_fp, o_unk, ratio(o_tp, o_total), ratio(o_tp, o_tp + o_fp);
-    }' "${RAW}"
-}
-
-{
-    echo "# Phase 7 (M9, issue #74) precision/recall baseline — labelled CI golden subset."
-    echo "# Deterministic: derived from the classifier's decisions (see phase0_precision.c)."
-    echo "# Refresh with: tools/phase0/ci/check_precision.sh (then commit precision.txt)."
-    echo "#"
-    render
-} > "${BUILD_DIR}/precision.txt"
+# Per-pcap rows + confusion matrix + per-class and overall micro-averages.
+# render_precision.py validates every raw row and exits non-zero on malformed
+# input, so a broken harness can never render a partial metric set.
+python3 "${CI_DIR}/render_precision.py" "${RAW}" > "${BUILD_DIR}/precision.txt"
 
 if [ ! -f "${EXPECTED}" ]; then
     cp "${BUILD_DIR}/precision.txt" "${EXPECTED}"

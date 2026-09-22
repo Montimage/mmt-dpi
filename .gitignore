@@ -74,6 +74,9 @@ agent-instructions.md
 tools/phase0/ci/baseline/classification.actual.txt
 tools/phase0/baseline/classification.actual.txt
 **/classification.actual.txt
+# Same for the precision/recall gate's freshly-captured metrics
+tools/phase0/ci/baseline/precision.actual.txt
+**/precision.actual.txt
 
 # Compiled unit-test binaries — rebuilt by each suite's run_tests.sh
 tests/*/test_*
