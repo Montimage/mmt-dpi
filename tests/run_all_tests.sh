@@ -176,6 +176,7 @@ DEFAULT_SUITES=(
     fuzz_verdicts
     precision_metrics
     installed_consumer
+    release_gates
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

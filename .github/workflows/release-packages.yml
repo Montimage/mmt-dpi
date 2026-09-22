@@ -28,6 +28,13 @@ name: Build & release packages
 # the tag equals the VERSION declared in rules/common.mk and runs the
 # release-prep validators — the publish job `needs` both, so nothing ships
 # unverified.
+#
+# Exact-release-SHA gate (issue #371, F-CI-001): on tag pushes the
+# `release-gates` job additionally requires that the unit, sanitizer and
+# golden-classification checks recorded ON THE TAGGED COMMIT are green and
+# that this run's own build/reproducibility/verify-tag jobs succeeded —
+# evidence that is failed, skipped, cancelled or recorded for a different
+# SHA blocks publication (`release` needs `release-gates` too).
 
 on:
   push:
@@ -43,6 +50,7 @@ on:
       - "tools/ci/install-build-deps.sh"
       - "tools/ci/check-reproducible-build.sh"
       - "tools/ci/check-release-tag.sh"
+      - "tools/ci/check-release-gates.sh"
       - "tools/ci/base-images.txt"
       - ".github/workflows/release-packages.yml"
 
@@ -200,9 +208,56 @@ jobs:
           bash tools/ci/check-release-verification.sh
           bash scripts/validate-release-prep.sh
 
+  release-gates:
+    # F-CI-001 (issue #371): nothing may publish on evidence from another
+    # commit — every prerequisite gate must be green AT the tag SHA. The
+    # script asserts the same-run prerequisite results through the needs
+    # context (package matrix incl. the installed-consumer check, the
+    # reproducibility double-build, the tag/version guard) and queries the
+    # commit's check runs for the external gates (unit tests, the ASan/TSan
+    # sanitizer suites + SDK profile, the golden classification
+    # fingerprint). `if: always()` keeps the job running when a prerequisite
+    # failed so the gate itself — not a skipped job — records why the tag
+    # is ineligible. Tag pushes only: on PR/dispatch runs there is no
+    # candidate SHA to verify, and the wiring is exercised on PRs by the
+    # release_gates unit suite and check-release-verification.sh.
+    name: Exact-SHA prerequisite evidence
+    needs: [build, reproducibility, verify-tag]
+    if: always() && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read   # actions/checkout
+      checks: read     # list the check runs recorded on the tag SHA
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Require exact-release-SHA evidence
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEEDS_RESULT_BUILD: ${{ needs.build.result }}
+          NEEDS_RESULT_REPRODUCIBILITY: ${{ needs.reproducibility.result }}
+          NEEDS_RESULT_VERIFY_TAG: ${{ needs.verify-tag.result }}
+        run: |
+          # Peel annotated tags: github.sha is the tag object for those,
+          # but the check-run evidence lives on the tagged commit.
+          candidate="$(git rev-parse 'HEAD^{commit}')"
+          echo "candidate commit: ${candidate} (ref: ${GITHUB_REF_NAME})"
+          bash tools/ci/check-release-gates.sh \
+            --evidence release-evidence.json "${candidate}"
+
+      - name: Upload release evidence record
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-evidence
+          path: release-evidence.json
+          if-no-files-found: ignore
+          retention-days: 90
+
   release:
     name: Publish GitHub Release
-    needs: [build, reproducibility, verify-tag]
+    needs: [build, reproducibility, verify-tag, release-gates]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 15

@@ -23,6 +23,12 @@
 #     ships it, and collected into the release asset set (*.sbom.json)
 #   - README.md documents `sha256sum --check` and `gh attestation verify`
 #   - every `uses:` action reference stays SHA-pinned (repo convention)
+#   - the exact-release-SHA gate (issue #371, F-CI-001): a `release-gates`
+#     job gated to tag pushes `needs` build + reproducibility + verify-tag,
+#     runs tools/ci/check-release-gates.sh against github.sha with the
+#     needs results exported, holds `checks: read`, and the release job
+#     `needs` it — so failed/skipped/cancelled/wrong-SHA prerequisite
+#     evidence cannot publish
 #
 # Exit codes: 0 = verifiable wiring present, 1 = a violation, 2 = helper
 # broken.
@@ -69,6 +75,13 @@ m = re.search(r"(?m)^  release:\n(.*?)(?=^  [a-zA-Z_][a-zA-Z0-9_-]*:[^\S\n]*$|\Z
 release_job = m.group(1) if m else ""
 if not release_job:
     fail("no `release:` job found in the workflow")
+
+# Same isolation for the release-gates job (issue #371).
+m = re.search(r"(?m)^  release-gates:\n(.*?)(?=^  [a-zA-Z_][a-zA-Z0-9_-]*:[^\S\n]*$|\Z)",
+              wf, re.S)
+gates_job = m.group(1) if m else ""
+if not gates_job:
+    fail("no `release-gates:` job found — exact-SHA gate missing (issue #371)")
 
 # --- tag gate + permissions -------------------------------------------------
 if release_job:
@@ -125,6 +138,55 @@ if pub and re.search(r"release/\*|release/\*\*", pub.group(1)):
 else:
     fail("release files glob does not cover release/* — manifest/SBOMs "
          "would not be attached")
+
+# --- exact-release-SHA gate (issue #371, F-CI-001) ----------------------------
+if gates_job:
+    if re.search(r"refs/tags/v", gates_job):
+        ok("release-gates job is gated to tag pushes")
+    else:
+        fail("release-gates job not gated to refs/tags/v — it must only "
+             "judge tag candidates")
+    needs = re.search(r"(?m)^    needs:\s*\[([^\]]+)\]", gates_job)
+    needed = needs.group(1) if needs else ""
+    for req in ("build", "reproducibility", "verify-tag"):
+        if re.search(rf"\b{re.escape(req)}\b", needed):
+            ok(f"release-gates needs {req} (same-run evidence)")
+        else:
+            fail(f"release-gates needs lacks `{req}` — same-run "
+                 "prerequisite evidence is incomplete")
+    if re.search(r"always\(\)", gates_job):
+        ok("release-gates runs under always() so it records — not skips — "
+           "a prerequisite failure")
+    else:
+        fail("release-gates lacks always() — a failed prerequisite would "
+             "skip the gate instead of recording an ineligible verdict")
+    if re.search(r"checks:\s*write\b", gates_job):
+        fail("release-gates requests checks: write — read-only listing is "
+             "the required permission")
+    elif re.search(r"checks:\s*read\b", gates_job):
+        ok("release-gates holds checks: read (check-run listing only)")
+    else:
+        fail("release-gates lacks checks: read — it cannot list the "
+             "commit's check runs")
+    if re.search(r"check-release-gates\.sh", gates_job) \
+            and re.search(r"github\.sha|HEAD\^\{commit\}", gates_job):
+        ok("release-gates runs check-release-gates.sh on the tag's commit")
+    else:
+        fail("release-gates does not invoke check-release-gates.sh on the "
+             "candidate commit SHA — the exact-SHA check is unwired")
+    if re.search(r"NEEDS_RESULT_(BUILD|REPRODUCIBILITY|VERIFY_TAG)", gates_job):
+        ok("release-gates exports the needs results to the gate script")
+    else:
+        fail("release-gates does not export NEEDS_RESULT_* — the same-run "
+             "evidence never reaches the gate")
+
+if release_job:
+    if re.search(r"(?m)^    needs:\s*\[[^\]]*\brelease-gates\b", release_job):
+        ok("release job needs release-gates — wrong-SHA evidence blocks "
+           "publication")
+    else:
+        fail("release job does not need release-gates — publication is not "
+             "gated on exact-SHA evidence (issue #371)")
 
 # --- per-package SBOM -------------------------------------------------------
 if re.search(r"uses:\s*anchore/sbom-action@[0-9a-f]{40}", wf) \
