@@ -175,6 +175,7 @@ DEFAULT_SUITES=(
     dpi_profiles
     fuzz_verdicts
     precision_metrics
+    installed_consumer
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

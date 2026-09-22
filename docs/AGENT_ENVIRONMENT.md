@@ -15,7 +15,7 @@ repository itself; the authoritative sources are:
 | `rules/common.mk` | Compiler flags, `MMT_BASE`, `BUILD=asan`/`tsan`, `ENABLESEC`, debug/valgrind toggles |
 | `rules/common-linux.mk` | Linux link rules, release hardening, `ENABLESEC` engines |
 | `sdk/Makefile` | Build entry point, `install`/`test` targets, default `MMT_BASE` |
-| `tests/run_all_tests.sh` | Master test runner and the 22 standalone suites |
+| `tests/run_all_tests.sh` | Master test runner and the 23 standalone suites |
 
 ## 1. Toolchain Requirements
 
@@ -162,31 +162,34 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **22/22 suites pass**, total runtime roughly **60–100 s** on
-a typical development machine (measured: 97 s for the full run); the suites
-compile their own sources, so the
-wall clock is dominated by `gcc`, not by the assertions; `fault_injection`
-also builds+installs the SDK once for its engine leg). Exit code `0` on
-success, `1` on any failure. The runner has no `-j` option: the 22 suites run
+Expected result: **23/23 suites pass**, total runtime roughly **90–360 s** on
+a typical development machine (measured: 113 s for the full run) — the wall
+clock is dominated by the suites
+that build+install the SDK internally (`rule_engine`, `installer`,
+`installed_consumer`, …), not by the assertions. Exit code `0` on
+success, `1` on any failure. The runner has no `-j` option: the 23 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:155-178`)
+(`tests/run_all_tests.sh:155-179`)
 (`tests/run_all_tests.sh`):
 `hashmap`, `memory`, `fault_injection`, `core_engine`, `hexdump`, `mmt_utils`,
 `mmt_inet_ntop`,
 `avltree`, `citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
 `rule_engine`, `radius_hardening`, `nas_ies_tail`, `installer`,
 `dicom_dissector`, `ndn_dissector`, `business_app`, `proto_classifiers`,
-`dpi_profiles`, `fuzz_verdicts`, `precision_metrics`. The last two entries are
+`dpi_profiles`, `fuzz_verdicts`, `precision_metrics`, `installed_consumer`.
+`fuzz_verdicts` and `precision_metrics` are
 delegate suites for CI self-tests living under `tools/ci/tests/` — the fuzz
 gate's verdict handling (`test-fuzz-verdicts.sh`, issue #370) and the
 precision-gate metric accounting (`test-precision-metrics.py`, issue #373);
-both build nothing.
+both build nothing. `installed_consumer` (issue #374) drives the other
+`tools/ci/tests/` payload — `run-installed-consumer.sh` +
+`installed_consumer.c` — against a throwaway ENABLESEC=1 install prefix.
 
 Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
 directly against sources under `src/` with plain `gcc`; suites that need the
 built SDK (`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
-`rule_engine`, `nas_ies_tail`, `installer`, and the default-profile engine
+`rule_engine`, `nas_ies_tail`, `installer`, `installed_consumer`, and the default-profile engine
 leg of `fault_injection`, `tests/fault_injection/run_tests.sh:90-92`) run `make -C sdk clean` and build
 it themselves into a throwaway prefix, so running them discards an existing
 `sdk/` build. You
@@ -218,7 +221,7 @@ skipped — the runner exits non-zero (issue #186).
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count/list and
   `tests/coverage/summary.json` in stdout
-  (`tests/run_all_tests.sh:191-300`). Requires `gcov` (shipped with
+  (`tests/run_all_tests.sh:192-301`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` — both counters plus the
   required sources it names — via `tools/ci/check-coverage-floor.sh`.
@@ -226,7 +229,7 @@ skipped — the runner exits non-zero (issue #186).
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:302-318`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:303-319`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -237,10 +240,10 @@ The 2026-09-22 audit at commit `2ab7b73516113009622cb3d32194d20121457010`
 reported 82.9% (5,660/6,831 lines) over those 30 files; this is historical
 evidence, not a new measurement (provenance recorded in [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)).
 Coverage includes only the `src/` files represented in emitted gcov data
-(`tests/run_all_tests.sh:215-219`); its percentage uses the lines in that
+(`tests/run_all_tests.sh:216-220`); its percentage uses the lines in that
 subset, so it must not be reported as whole-library coverage. The current
 run's exact scope is `instrumented_sources` and `instrumented_files` in
-`summary.json` (`tests/run_all_tests.sh:275-289`). The committed minimum is
+`summary.json` (`tests/run_all_tests.sh:276-290`). The committed minimum is
 **29 instrumented files**, alongside an **80.0%** line floor and required
 source names (`tests/coverage/floor.json:2-10`); a 30-file measurement does
 not change that floor. Consult a fresh summary for the current count.
@@ -390,7 +393,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 22/22 suites PASSED, exit 0 (60–100 s)
+bash tests/run_all_tests.sh     # 23/23 suites PASSED, exit 0 (90–360 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

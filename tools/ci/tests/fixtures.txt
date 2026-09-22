@@ -1,0 +1,26 @@
+# Vendored-capture ground truth for the installed-consumer check
+# (issue #374, F-CI-002) — driven by tools/ci/tests/run-installed-consumer.sh.
+#
+# Each line labels one capture from the phase0 CI golden subset with the
+# single application protocol it is known to carry. The pcaps themselves are
+# NOT duplicated here: they are already vendored under
+# tools/phase0/ci/pcaps/ with a committed classification baseline
+# (tools/phase0/ci/baseline/classification/) that pins these verdicts.
+#
+# Format:  <pcap_relpath>   <expected_application_protocol>
+#   - paths are relative to tools/phase0/ci/pcaps/
+#   - protocol names are lowercase, matching get_protocol_name_by_id()
+#   - text after '#' is a comment; blank lines are ignored
+#
+# The set is deliberately one fixture per packaged protocol plugin so every
+# plugin .so shipped under <prefix>/plugins is exercised end to end:
+#   ftp_txt.pcap -> libmmt_tcpip      (expected: ftp)
+#   dicom.pcap   -> libmmt_tdicom     (expected: dicom)
+#   s1ap.pcap    -> libmmt_tmobile    (expected: s1ap)
+# libmmt_business_app has no packet fixture (its lps_data protocol parses
+# serial data, not pcap frames) — its registration is asserted through the
+# required-protocol list in run-installed-consumer.sh instead.
+
+ftp_txt.pcap    ftp
+dicom.pcap      dicom
+s1ap.pcap       s1ap

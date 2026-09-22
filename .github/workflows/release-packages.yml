@@ -39,6 +39,7 @@ on:
       - "src/**"
       - "rules/**"
       - "tools/ci/build-package.sh"
+      - "tools/ci/tests/**"
       - "tools/ci/install-build-deps.sh"
       - "tools/ci/check-reproducible-build.sh"
       - "tools/ci/check-release-tag.sh"

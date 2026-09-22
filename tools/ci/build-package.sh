@@ -38,6 +38,11 @@ A real run performs, in order:
      jobs, so a stale sibling artifact must never be picked up
   4. smoke-test: install exactly the artifact just built (tracked path, not
      a directory glob) and check /opt/mmt/dpi/lib/libmmt_core.so exists
+  5. installed consumer (issue #374, F-CI-002):
+     tools/ci/tests/run-installed-consumer.sh compiles a C consumer against
+     only the packaged headers/libraries, runs it through the packaged
+     plugins on vendored fixtures with known labels, and fails the row on a
+     missing library, plugin, fixture or wrong classification
 EOF
   exit 0
 fi
@@ -145,4 +150,16 @@ else
   ldconfig
 fi
 test -e /opt/mmt/dpi/lib/libmmt_core.so
-log "OK — package built and installs cleanly ($DISTRO_ID/$arch)"
+
+# Issue #374 (F-CI-002): prove the installed package is a usable SDK, not just
+# a fileset — compile a consumer against only the packaged headers/libraries,
+# run it through the packaged plugins on vendored fixtures with known labels,
+# and fail this matrix row on any missing library, required plugin, fixture or
+# wrong classification. Every log line carries the package name, SHA-256,
+# distro and architecture.
+log "Running installed consumer against the packaged SDK"
+for f in "${artifacts[@]}"; do
+  bash tools/ci/tests/run-installed-consumer.sh \
+      --package "$f" --distro "$DISTRO_ID" --arch "$arch"
+done
+log "OK — package built, installs cleanly and the packaged SDK works ($DISTRO_ID/$arch)"
