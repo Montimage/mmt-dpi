@@ -112,28 +112,15 @@ void process_outofmemory_force_sessions_timeout(mmt_handler_t * mmt_handler, ipa
 
 void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_seconds) {
     if (current_seconds > mmt_handler->last_expiry_timeout && mmt_handler->last_expiry_timeout != 0) {
-        uint32_t counter;
-        for (counter = mmt_handler->last_expiry_timeout; counter < current_seconds; counter++) {
-            mmt_session_t * timed_out_session = get_timed_out_session_list(mmt_handler, counter);
-            mmt_session_t * safe_to_delete_session;
-            while (timed_out_session != NULL) {
-                safe_to_delete_session = timed_out_session;
-                timed_out_session = timed_out_session->next;
-                //Call user handler for timed out sessions
-                if (mmt_handler->session_expiry_handler.handler_fct) {
-                    mmt_handler->session_expiry_handler.handler_fct(safe_to_delete_session, mmt_handler->session_expiry_handler.args);
-                }
-
-                cleanup_timedout_sessions(safe_to_delete_session);
-
-                // if(safe_to_delete_session != NULL){
-                //     safe_to_delete_session = NULL;
-                // }
-                // mmt_handler->active_sessions_count --;
-            }
-            //remove the timeout milestone from the hash
-            delete_timeout_milestone(mmt_handler, counter);
-        }
+        /* Issue #306: the pcap record timestamp is attacker-controlled — a
+         * mutated packet can jump billions of seconds ahead, and the old
+         * per-second loop here iterated once per second across the whole
+         * gap (a fuzz-discovered CPU denial of service). The ring helper
+         * expires exactly the same milestone range in a pass bounded by
+         * O(min(gap, ring capacity)). */
+        timeout_expire_milestones_range(mmt_handler,
+                mmt_handler->last_expiry_timeout, current_seconds,
+                force_sessions_timeout);
         /* Issue #201 (F-BUG-020): piggyback the fragment-map expiry sweep on
          * this existing once-per-second expiry pass — armed by the TCP/IP
          * plugin the first time a fragment is reassembled. */

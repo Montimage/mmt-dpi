@@ -2,6 +2,7 @@
 #include <new>
 #include <vector>
 #include <utility>
+#include <algorithm>
 #include <cstdint>
 #include <cstddef>
 
@@ -544,6 +545,55 @@ static void mmt_ring_iterate(mmt_timeout_ring * r, generic_mapspace_iteration_ca
     }
 }
 
+/* Issue #306: expire every live milestone in [lo, hi).
+ *
+ * The caller used to step one second at a time across the whole range —
+ * get_timed_out_session_list() + delete_timeout_milestone() per second — so
+ * a hostile pcap record timestamp jumping billions of seconds ahead made
+ * process_timedout_sessions() burn CPU in an effectively unbounded loop.
+ * Two bounded strategies keep the exact same expiry semantics:
+ *
+ *   - gap <= cap: per-second stepping (the old loop), already bounded by
+ *     the ring capacity;
+ *   - gap >  cap: a single O(cap) slot sweep — strictly cheaper than
+ *     stepping — collecting every slot whose owner milestone lies in
+ *     [lo, hi), then dispatching in ascending milestone order (the
+ *     chronological order the stepping loop produced).
+ *
+ * Slots are detached during the collection pass, before dispatch, so a
+ * callback that re-inserts a milestone never frees the fresh head — the
+ * same snapshot convention as the iteration helpers above (F-BUG-004,
+ * issue #200). */
+static void mmt_ring_expire_range(mmt_timeout_ring * r, uint32_t lo, uint32_t hi,
+        generic_mapspace_iteration_callback fct, mmt_handler_t *mmt_handler) {
+    if ((uint64_t) hi - (uint64_t) lo <= (uint64_t) r->cap) {
+        for (uint32_t s = lo; s < hi; s++) {
+            mmt_timeout_slot * slot = &r->slots[(size_t) s & (r->cap - 1)];
+            if (slot->head != NULL && slot->milestone == s) {
+                mmt_session_t * head = slot->head;
+                slot->head = NULL;
+                r->milestones--;
+                fct(NULL, head, mmt_handler);
+            }
+        }
+        return;
+    }
+    vector<pair<uint32_t, mmt_session_t *> > due;
+    due.reserve(r->milestones);
+    for (size_t i = 0; i < r->cap; i++) {
+        mmt_timeout_slot * slot = &r->slots[i];
+        if (slot->head != NULL && slot->milestone >= lo && slot->milestone < hi) {
+            due.push_back(make_pair(slot->milestone, slot->head));
+            slot->head = NULL;
+            r->milestones--;
+        }
+    }
+    sort(due.begin(), due.end());
+    for (size_t i = 0; i < due.size(); i++) {
+        fct(NULL, due[i].second, mmt_handler);
+    }
+}
+
 } // namespace
 
 extern "C" uint64_t mmt_oa_equal_call_count(void) {
@@ -894,6 +944,19 @@ extern "C" void session_timer_iteration_callback(mmt_handler_t *mmt_handler, gen
         mmt_timeout_ring * r = reinterpret_cast<mmt_timeout_ring *> (mmt_handler->timeout_milestones_map);
         if (r == NULL || r->slots == NULL) return;
         mmt_ring_iterate(r, fct, mmt_handler);
+    } catch (...) {
+        return;
+    }
+}
+
+/* Issue #306: range expiry used by process_timedout_sessions() — bounded
+ * pass over [range_lo, range_hi), see mmt_ring_expire_range(). */
+extern "C" void timeout_expire_milestones_range(mmt_handler_t *mmt_handler, uint32_t range_lo, uint32_t range_hi, generic_mapspace_iteration_callback fct) {
+    try {
+        if (mmt_handler == NULL || fct == NULL || range_hi <= range_lo) return;
+        mmt_timeout_ring * r = reinterpret_cast<mmt_timeout_ring *> (mmt_handler->timeout_milestones_map);
+        if (r == NULL || r->slots == NULL) return;
+        mmt_ring_expire_range(r, range_lo, range_hi, fct, mmt_handler);
     } catch (...) {
         return;
     }

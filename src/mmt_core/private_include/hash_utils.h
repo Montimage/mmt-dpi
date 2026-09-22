@@ -71,6 +71,9 @@ extern "C" {
     int delete_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t timeout);
     void clear_timeout_milestones(mmt_handler_t *mmt_handler);
     int force_session_timeout(mmt_handler_t *mmt_handler, mmt_session_t * session);
+    // Issue #306: bounded range expiry — dispatches fct once per live
+    // milestone in [range_lo, range_hi), cost O(min(gap, ring capacity)).
+    void timeout_expire_milestones_range(mmt_handler_t *mmt_handler, uint32_t range_lo, uint32_t range_hi, generic_mapspace_iteration_callback fct);
     void timeout_iteration_callback(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct);
     void session_timer_iteration_callback(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct);
     int insert_protocol_stack_into_map(uint32_t key, void * value);

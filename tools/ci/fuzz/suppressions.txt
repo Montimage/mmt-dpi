@@ -7,11 +7,7 @@
 # Remove the line once the underlying bug is fixed — the mutant then runs
 # again and proves the fix.
 #
-# Issue #306 — mutated golden pcaps stall the classifier (pre-existing
-# latent hangs found on the gate's first run; deterministic under the PR
-# seed base 224):
-ip_ping_local_ip_fragmentation.pcap:321   # issue #306 — fragment-path hang
-ftp_login_fail.pcap:1231                  # issue #306 — session-path hang
-tcp_ecn_sample.pcap:1259                  # issue #306 — session-path hang
-tcp_tpncp_tcp.pcap:2221                   # issue #306 — session-path hang
-tcp_tpncp_tcp.pcap:305                    # issue #306 — session-path hang (mutant ~1000x slower than golden under -O2; crosses the 20s per-input timeout under ASan on a loaded runner)
+# Issue #306 — mutated golden pcaps stall the classifier: FIXED. The
+# attacker-controlled timestamp gap that made process_timedout_sessions()
+# step billions of seconds is now bounded inside the timeout ring
+# (hash_utils.cpp, mmt_ring_expire_range), so all five mutants run again.
