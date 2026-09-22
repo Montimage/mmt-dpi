@@ -8,6 +8,7 @@
 #include "mmt_core.h"
 #include "memory.h"
 #include "plugins_engine.h"
+#include "extraction_lib.h"
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -186,24 +187,37 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
     __atomic_add_fetch(&mmt_caplen_guard_total, 1, __ATOMIC_RELAXED);
     int caplen_validated = 0;
 #endif
-    /* Central caplen guard (F-BUG-001; issue #193 / F-BUG-032 extends the same
-     * floor to POSITION_NOT_KNOWN attributes): an extractor may only run when
-     * the extent it declares lies inside the captured bytes.
-     *   - fixed offset (position_in_packet >= 0):
+    /* Central wire-extent guard (F-BUG-001; issue #376 separates the wire
+     * extent — the captured bytes an extractor may read — from data_len,
+     * which is the capacity of the attribute's output buffer):
+     *   - general_byte_to_byte_extraction() memcpy()s exactly data_len wire
+     *     bytes at the declared position — for it data_len IS the wire
+     *     extent, so the full
      *         proto_offset + position_in_packet + data_len <= caplen
-     *   - POSITION_NOT_KNOWN (position_in_packet < 0): the extractor computes
-     *     its own offset, so the floor is proto_offset + data_len <= caplen —
-     *     and with no declared data_len, the protocol's first captured byte
-     *     must at least exist. */
+     *     extent is still required;
+     *   - every other extractor bounds its own reads (the shared
+     *     mmt_have_bytes() caplen prologues and its cursor checks — issue
+     *     #193 / F-BUG-032 keeps POSITION_NOT_KNOWN attributes inside the
+     *     same floor): the central check only requires the attribute's
+     *     declared start to lie inside the capture —
+     *         fixed offset (position_in_packet >= 0):
+     *             proto_offset + position_in_packet + 1 <= caplen
+     *         POSITION_NOT_KNOWN (position_in_packet < 0):
+     *             proto_offset + 1 <= caplen
+     *     so an attribute whose output capacity exceeds the captured
+     *     remainder — e.g. DTLS_CLIENT_HELLO_CIPHER_SUITE's 132-byte result
+     *     array over a 67-byte record — reaches its own bounds instead of
+     *     being refused on the buffer size. */
     int proto_offset = get_packet_offset_at_index(ipacket, index);
     if (proto_offset < 0) return 0;
     size_t extent = (size_t) proto_offset;
     if (tmp_attr_ref->position_in_packet > 0) {
         extent += (size_t) tmp_attr_ref->position_in_packet;
     }
-    size_t need = (tmp_attr_ref->data_len > 0) ? (size_t) tmp_attr_ref->data_len : 0;
-    if (need == 0 && tmp_attr_ref->position_in_packet < 0) {
-        need = 1;
+    size_t need = 1;
+    if (tmp_attr_ref->extraction_function == general_byte_to_byte_extraction
+            && tmp_attr_ref->data_len > 0) {
+        need = (size_t) tmp_attr_ref->data_len;
     }
     if (!mmt_have_bytes(ipacket, extent, need)) {
 #if MMT_CAPLEN_GUARD_STATS

@@ -186,10 +186,10 @@ static int build_dimse_command(uint8_t *b) {
 }
 
 /* Dataset PDV carrying the patient name tag (0010,0010) with explicit VR 'PN',
- * followed by a 32-byte pixel-data element: the whole PDU must reach
- * caplen >= dicom_offset+68 = 122 or the central guard refuses the string
- * attribute (registered data_len is the 68-byte binary blob) before the
- * extractor runs. */
+ * followed by a 32-byte pixel-data element. Since #376 the central guard
+ * floors on the declared start, not the registered data_len (68-byte output
+ * capacity): extraction succeeds whenever the field's own wire bytes are
+ * captured, and the extractor's caplen checks bound the copies. */
 static int build_dimse_dataset(uint8_t *b) {
     int n = 0;
     b[n++] = 0x10; b[n++] = 0x00; b[n++] = 0x10; b[n++] = 0x00;  /* (0010,0010) */
@@ -532,10 +532,12 @@ static void test_full_path(void) {
             CHECK(g_extract_seen[6] && g_extract_str[6].len == 0, d);
         else
             CHECK(!g_extract_seen[6], d);
-        /* AE-title needs the central guard's 132 captured bytes (54+10+68);
-         * edge[5] captures only 76 payload bytes, so refusal is expected. */
+        /* AE-title's real wire extent is 16 bytes at offset 10 (absolute
+         * 54+10 .. +16 = 64..79) — since #376 the central floor is the
+         * declared start, so the title extracts whenever those 16 bytes are
+         * captured; the 68-byte data_len is output capacity, not wire need. */
         snprintf(d, sizeof(d), "edge[%d] %s: AE-title extraction bounded", v, edge_desc[v]);
-        if (54 + plen < 132)
+        if (54 + plen < 80)
             CHECK(!g_extract_seen[4], d);
         else
             CHECK(g_extract_seen[4] && g_extract_str[4].len == 16, d);
@@ -558,11 +560,12 @@ static void test_full_path(void) {
         } else {
             snprintf(d, sizeof(d), "cut at %d payload bytes: classified", k);
             CHECK(tail == PROTO_DICOM, d);
-            /* AE-title: the registered data_len is the 68-byte binary blob, so
-             * the central guard needs offset+pos+68 <= caplen (54+10+68=132)
-             * before the extractor even runs; below that it refuses cleanly. */
+            /* AE-title's wire extent is 16 bytes at offset 10 (absolute
+             * 64..79): below caplen 80 the extractor's own bound refuses, at
+             * or above it the title extracts — the 68-byte output capacity
+             * stopped being the central floor with #376. */
             snprintf(d, sizeof(d), "cut at %d: AE-title extraction bounded", k);
-            if (cuts[i] < 132)
+            if (cuts[i] < 80)
                 CHECK(!g_extract_seen[4], d);
             else
                 CHECK(g_extract_seen[4] && g_extract_str[4].len == 16, d);
@@ -664,13 +667,25 @@ static void test_fixture_extraction(void) {
     }
     dicom_fixture_free(&f);
 
-    /* AE-title cut below the declared extent: the central guard needs
-     * offset+pos+68 <= caplen (54+10+68=132) — 46 captured payload bytes
-     * (caplen 100) refuses before the extractor runs. */
+    /* Issue #376: the registered data_len (68) is the attribute's OUTPUT
+     * capacity, not its wire extent — the AE-title field needs only its
+     * real 16 bytes at offset 10 (absolute 64..79). 46 captured payload
+     * bytes (caplen 100) cover them, so the extractor runs and returns the
+     * title even though 54+10+68 > 100 — refused centrally pre-#376. */
     dicom_fixture_init(&f, h, pdu, 46);
     if (attr) {
         int r = internal_extract_attribute(&f.pkt, attr, 4);
-        CHECK(r == 0, "caplen 100: AE-title refused by central guard");
+        CHECK(r == 1, "caplen 100: AE-title extracts — capacity is not the wire extent");
+    }
+    dicom_fixture_free(&f);
+
+    /* The extractor's own bound still refuses when the field's real extent
+     * is truncated: 25 captured payload bytes (caplen 79) cuts the last
+     * byte of the 64..79 window, so _extraction_att() returns 0. */
+    dicom_fixture_init(&f, h, pdu, 25);
+    if (attr) {
+        int r = internal_extract_attribute(&f.pkt, attr, 4);
+        CHECK(r == 0, "caplen 79: AE-title refused — 16-byte extent truncated");
     }
     dicom_fixture_free(&f);
 

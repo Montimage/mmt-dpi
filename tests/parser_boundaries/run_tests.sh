@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# run_tests.sh — parser boundary tests. Issue #375 (F-BUG-002) adds the "udp"
-# fixture: udp_pre_classification_function() must bound the UDP payload by
+# run_tests.sh — parser boundary tests.
+#
+# Issue #375 (F-BUG-002) adds the "udp" fixture:
+# udp_pre_classification_function() must bound the UDP payload by
 # the UDP header length field AND the enclosing IP payload (IPv4 tot_len /
 # IPv6 payload_len, extension-header aware, jumbogram explicit).
 #
@@ -12,8 +14,22 @@
 #                               frames are fed through mmt_init_handler +
 #                               packet_process against the built SDK.
 #
+# Issue #376 (F-BUG-001 follow-up) adds the "dtls" fixture: the central
+# wire-extent guard in internal_extract_attribute() must separate the bytes
+# an extractor may read on the wire from data_len, the attribute's output
+# capacity — a 67-byte DTLS ClientHello must extract its cipher despite the
+# 132-byte mmt_u16_array_t result buffer.
+#
+#   test_dtls_wire_extent_unit.c — drives internal_extract_attribute() over
+#                               crafted ipacket/attribute fixtures plus the
+#                               real _dtls_extract_attribute() (linked SDK).
+#   test_dtls_wire_extent_api.c  — packet/API path: crafted
+#                               Ethernet/IPv4/UDP/DTLS frames through
+#                               mmt_init_handler + packet_process with a
+#                               registered attribute handler.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
-#   no arguments runs every fixture; "udp" selects the UDP fixture family.
+#   no arguments runs every fixture; "udp"/"dtls" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,7 +37,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -30,8 +46,11 @@ for f in "${FIXTURES[@]}"; do
             UNIT_TESTS+=(udp_bounds_unit)
             API_TESTS+=(udp_payload_bounds)
             ;;
+        dtls)
+            API_TESTS+=(dtls_wire_extent_unit dtls_wire_extent_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls)" >&2
             exit 2
             ;;
     esac
@@ -98,8 +117,8 @@ done
 for name in "${API_TESTS[@]}"; do
     "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
         -o "${SCRIPT_DIR}/test_${name}" "${SCRIPT_DIR}/test_${name}.c" \
-        -I"${INC}" -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
-        -L"${LIB}" -lmmt_core -ldl -lpcap
+        -I"${INC}" -I"${REPO_ROOT}/src/mmt_tcpip/lib" "${UNIT_INCS[@]}" \
+        -L"${LIB}" -lmmt_tcpip -lmmt_core -ldl -lpcap -lpthread -lm
 done
 
 # --- [3/3] run ---------------------------------------------------------------
@@ -138,4 +157,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issue #375)"
+echo "✓ parser boundary tests passed (issues #375, #376)"

@@ -1,24 +1,32 @@
 /*
  * position_unknown_guard_test — regression + coverage test for issue #193
- * (F-BUG-032): the central caplen guard in internal_extract_attribute()
- * (src/mmt_core/src/packet_processing.c) must apply to POSITION_NOT_KNOWN
- * attributes, not only to fixed-offset ones.
+ * (F-BUG-032), extended by issue #376 (F-BUG-001 follow-up): the central
+ * caplen guard in internal_extract_attribute()
+ * (src/mmt_core/src/packet_pipeline.c) must apply to POSITION_NOT_KNOWN
+ * attributes, not only to fixed-offset ones — and since #376 it validates
+ * the WIRE EXTENT (the captured bytes an extractor may read), which is no
+ * longer conflated with data_len, the attribute's output-buffer capacity.
  *
- * Before the fix the guard was gated on `position_in_packet >= 0`, and
+ * Before the #193 fix the guard was gated on `position_in_packet >= 0`, and
  * POSITION_NOT_KNOWN is -1 — so every variable-offset extractor (the ones
  * that compute their own offsets and read deepest: SMB, GRE, RTP, DNS, TLS,
- * QUIC, ...) received no bounds validation at all. The fix requires
- *   proto_offset + declared data_len <= caplen
- * as a floor for POSITION_NOT_KNOWN attributes too, evaluated through the
- * greppable mmt_have_bytes() helper (src/mmt_core/private_include/
- * packet_processing.h).
+ * QUIC, ...) received no bounds validation at all. The current contract,
+ * evaluated through the greppable mmt_have_bytes() helper
+ * (src/mmt_core/private_include/packet_processing.h):
+ *   - general_byte_to_byte_extraction() memcpy()s exactly data_len wire
+ *     bytes at the declared position: for it data_len IS the wire extent,
+ *     so proto_offset + position_in_packet + data_len <= caplen is required;
+ *   - every other extractor self-bounds, so the central floor is the
+ *     attribute's declared start inside the capture:
+ *     proto_offset + max(position_in_packet,0) + 1 <= caplen.
  *
  * Part 1 (unit) drives internal_extract_attribute() directly with crafted
  * attribute_internal_struct / ipacket_t instances — exactly what
  * register_extraction_attribute() produces — so no protocol registry or
  * plugin init is needed. The sentinel extraction function records whether
- * it ran: on the pre-fix tree every refused case below reaches the sentinel
- * (the test fails); post-fix the guard returns 0 first.
+ * it ran: refused cases must return 0 before reaching it; allowed cases
+ * must reach it even when data_len (output capacity) exceeds the captured
+ * remainder.
  *
  * Part 2 (corpus) replays the vendored golden pcap subset
  * (tools/phase0/ci/pcaps/) through a handler that registers an attribute
@@ -46,6 +54,7 @@
 #include <pcap.h>            /* pcap_open_offline, pcap_datalink, pcap_next */
 
 #include "mmt_core.h"
+#include "extraction_lib.h"  /* general_byte_to_byte_extraction — the wire copier */
 /* attribute_internal_struct + mmt_handler_struct live in the in-tree private
  * header; the layout matches the compiled library byte-for-byte (same
  * headers, same flags). */
@@ -90,6 +99,10 @@ static int sentinel_extraction(const ipacket_t *packet, unsigned proto_index,
     g_extract_calls++;
     return 1;
 }
+
+/* Scratch the generic byte copier may write into — sized past any data_len
+ * used below so the real general_byte_to_byte_extraction() can run. */
+static uint8_t g_copy_scratch[256];
 
 /* A heap-allocated, exactly-sized captured buffer (ASan brackets it) plus the
  * ipacket wiring internal_extract_attribute() reads: p_hdr, data,
@@ -143,6 +156,15 @@ static void make_attr(struct attribute_internal_struct *a, int position, int dat
     a->status = ATTRIBUTE_UNSET;
 }
 
+/* Variant wired to the real generic byte copier: for it data_len IS the
+ * wire extent, so the guard must keep the full declared extent (issue #376). */
+static void make_byte_copy_attr(struct attribute_internal_struct *a,
+        int position, int data_len) {
+    make_attr(a, position, data_len);
+    a->extraction_function = general_byte_to_byte_extraction;
+    a->data = g_copy_scratch;
+}
+
 /* Run one case: returns internal_extract_attribute()'s result; g_extract_calls
  * delta tells whether the extractor actually ran. */
 static int run_case(fixture_t *f, struct attribute_internal_struct *a,
@@ -166,23 +188,32 @@ static void test_unit_guard(void) {
     struct attribute_internal_struct a;
     int ran, r;
 
-    /* --- refused cases (all red on the pre-fix tree) --- */
+    /* --- refused cases --- */
 
-    /* POSITION_NOT_KNOWN attr declaring 30 bytes when only 20 are captured:
-     * proto_offset(40) + data_len(30) = 70 > caplen(60) — must be refused. */
+    /* A self-bounding extractor at a fixed offset whose declared position
+     * lands past caplen: refused — the field's first byte is not captured. */
     fixture_init(&f, layers_in, 3, 60, 100);
-    make_attr(&a, POSITION_NOT_KNOWN, 30);
+    make_attr(&a, 25, 10); /* 40 + 25 + 1 = 66 > 60 */
     r = run_case(&f, &a, 2, &ran);
     CHECK(r == 0 && !ran,
-          "POSITION_NOT_KNOWN attr with declared extent past caplen is refused");
+          "fixed-offset attr whose declared position is past caplen is refused");
     fixture_free(&f);
 
-    /* Same, with a declared length beyond the whole capture. */
+    /* The generic byte copier keeps the full declared-extent contract: for
+     * it data_len IS the wire extent, so position + data_len past caplen
+     * must still be refused centrally. */
     fixture_init(&f, layers_in, 3, 60, 100);
-    make_attr(&a, POSITION_NOT_KNOWN, 100);
+    make_byte_copy_attr(&a, 25, 10); /* 40 + 25 + 10 = 75 > 60 */
     r = run_case(&f, &a, 2, &ran);
     CHECK(r == 0 && !ran,
-          "POSITION_NOT_KNOWN attr declaring more than caplen is refused");
+          "byte-copy attr whose declared extent (position + data_len) is past caplen is refused");
+    fixture_free(&f);
+
+    fixture_init(&f, layers_in, 3, 60, 100);
+    make_byte_copy_attr(&a, 5, 30); /* 40 + 5 + 30 = 75 > 60 */
+    r = run_case(&f, &a, 2, &ran);
+    CHECK(r == 0 && !ran,
+          "byte-copy attr with data_len past the captured remainder is refused");
     fixture_free(&f);
 
     /* POSITION_NOT_KNOWN attr on a protocol whose offset is past caplen
@@ -195,16 +226,35 @@ static void test_unit_guard(void) {
           "POSITION_NOT_KNOWN attr at proto_offset >= caplen is refused");
     fixture_free(&f);
 
-    /* Fixed-offset attribute whose declared position lands past caplen:
-     * refused too (pre-existing F-BUG-001 coverage kept as a control). */
+    /* --- allowed cases (extractor must run) --- */
+
+    /* Issue #376: data_len is the attribute's OUTPUT capacity, not its wire
+     * extent. A self-bounding extractor whose declared start lies inside
+     * the capture must run even when the declared capacity exceeds the
+     * captured remainder — the extractor's own bounds decide the verdict.
+     * (On the pre-#376 tree both cases below were refused centrally.) */
     fixture_init(&f, layers_in, 3, 60, 100);
-    make_attr(&a, 25, 10); /* 40 + 25 + 10 = 75 > 60 */
+    make_attr(&a, POSITION_NOT_KNOWN, 30);
     r = run_case(&f, &a, 2, &ran);
-    CHECK(r == 0 && !ran,
-          "fixed-offset attr reading past caplen is refused (control)");
+    CHECK(r == 1 && ran,
+          "POSITION_NOT_KNOWN attr with output capacity past caplen still reaches its extractor");
     fixture_free(&f);
 
-    /* --- allowed cases (extractor must run) --- */
+    fixture_init(&f, layers_in, 3, 60, 100);
+    make_attr(&a, POSITION_NOT_KNOWN, 100);
+    r = run_case(&f, &a, 2, &ran);
+    CHECK(r == 1 && ran,
+          "POSITION_NOT_KNOWN attr with output capacity beyond the capture still reaches its extractor");
+    fixture_free(&f);
+
+    /* Fixed-offset self-bounding attr: declared start inside caplen, output
+     * capacity past it — same separation, extractor runs. */
+    fixture_init(&f, layers_in, 3, 60, 100);
+    make_attr(&a, 5, 30); /* start 40 + 5 = 45 < 60; capacity 30 > 15 left */
+    r = run_case(&f, &a, 2, &ran);
+    CHECK(r == 1 && ran,
+          "fixed-offset attr with output capacity past the captured remainder still reaches its extractor");
+    fixture_free(&f);
 
     /* POSITION_NOT_KNOWN attr declaring exactly the captured remainder:
      * 40 + 20 = 60 <= caplen — the floor is met, extraction proceeds. */
@@ -230,6 +280,17 @@ static void test_unit_guard(void) {
     r = run_case(&f, &a, 2, &ran);
     CHECK(r == 1 && ran,
           "fixed-offset attr inside caplen is extracted (control)");
+    fixture_free(&f);
+
+    /* The generic byte copier inside caplen extracts for real — data_len
+     * wire bytes land in the output buffer (the real copier does not bump
+     * the sentinel counter, so success is proven by r == 1 plus the copy). */
+    fixture_init(&f, layers_in, 3, 60, 100);
+    memset(f.buf, 0xAB, 60);
+    make_byte_copy_attr(&a, 5, 15); /* 40 + 5 + 15 = 60 <= 60 */
+    r = run_case(&f, &a, 2, &ran);
+    CHECK(r == 1 && g_copy_scratch[0] == 0xAB && g_copy_scratch[14] == 0xAB,
+          "byte-copy attr inside caplen extracts data_len wire bytes (control)");
     fixture_free(&f);
 }
 
