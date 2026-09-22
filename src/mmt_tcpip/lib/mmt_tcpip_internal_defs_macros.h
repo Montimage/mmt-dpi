@@ -166,7 +166,21 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
   } while (0)
 
 #define MMT_BITMASK_COMPARE(a,b) mmt_bitmask_compare(&(a),&(b))
-#define MMT_COMPARE_IPV6_ADDRESSES(x,y) ((((uint64_t *)(x))[0]) < (((uint64_t *)(y))[0]) || ( (((uint64_t *)(x))[0]) == (((uint64_t *)(y))[0]) && (((uint64_t *)(x))[1]) < (((uint64_t *)(y))[1])) )
+    /* Issue #57 follow-up (found via #375): the capture buffer is
+     * byte-aligned, so an IPv6 header can sit at an offset where saddr/daddr
+     * are not 8-aligned — Ethernet+IPv6 puts saddr at offset 22 — and the old
+     * (uint64_t *) loads were a misaligned access that aborts under
+     * -fsanitize=alignment. memcpy reads the same bytes with no alignment
+     * requirement and lowers to a single load on architectures with native
+     * unaligned access, so the ordering — and therefore the session-key
+     * direction — is unchanged. */
+    static inline int mmt_ipv6_addr_less(const void *x, const void *y) {
+        uint64_t x0, x1, y0, y1;
+        memcpy(&x0, x, 8); memcpy(&x1, (const uint8_t *) x + 8, 8);
+        memcpy(&y0, y, 8); memcpy(&y1, (const uint8_t *) y + 8, 8);
+        return x0 < y0 || (x0 == y0 && x1 < y1);
+    }
+#define MMT_COMPARE_IPV6_ADDRESSES(x,y) mmt_ipv6_addr_less((x), (y))
 #define MMT_BITMASK_MATCH(a,b) mmt_bitmask_match(&(a),&(b))
 
     // all protocols in b are also in a

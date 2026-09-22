@@ -20,7 +20,14 @@ bool ipv4_addr_comp(void * l_ip, void * r_ip) {
 }
 
 bool ipv6_addr_comp(void * l_ip, void * r_ip) {
-    return (mmt_memcmp(&((struct in6_addr *) l_ip)->s6_addr, &((struct in6_addr *) r_ip)->s6_addr, IPv6_ALEN) < 0);
+    /* Issue #57 (found via #375): l_ip/r_ip can point into the byte-aligned
+     * packet buffer (session_key stores &ip6h->saddr/&ip6h->daddr before the
+     * id structs are resolved). s6_addr is the only member of struct in6_addr
+     * and sits at offset 0, so forming the member access through a cast —
+     * which requires 4-byte alignment the packet buffer does not guarantee —
+     * is gratuitous UB under -fsanitize=alignment; compare the 16 bytes
+     * directly. */
+    return (mmt_memcmp(l_ip, r_ip, IPv6_ALEN) < 0);
 }
 
 /* Issue #254 (F-PERF-012): hashes consistent with the comp functions above —
@@ -34,7 +41,10 @@ static uint64_t ipv4_addr_hash(void * ip) {
 
 static uint64_t ipv6_addr_hash(void * ip) {
     uint64_t w[2];
-    memcpy(w, &((struct in6_addr *) ip)->s6_addr, sizeof(w));
+    /* Same unaligned-read precaution: ip may be a packet-buffer pointer;
+     * s6_addr is at offset 0 of struct in6_addr, so the member access is
+     * gratuitous — hash the 16 address bytes directly. */
+    memcpy(w, ip, sizeof(w));
     return w[0] ^ (w[1] << 1);
 }
 
@@ -219,7 +229,10 @@ mmt_ip6_id_t * get_ip6_id(internal_ip_proto_context_t * tcpip_context, struct in
         memset(retval, 0, sizeof (mmt_ip6_id_t));
 
         retval->count = 0;
-        memcpy(&retval->ip.s6_addr, &ip->s6_addr, IPv6_ALEN);
+        /* ip can point into the byte-aligned packet buffer — read the 16
+         * address bytes directly rather than through ->s6_addr member
+         * access on a misaligned struct in6_addr (offset 0 — same bytes). */
+        memcpy(&retval->ip.s6_addr, ip, IPv6_ALEN);
         if(insertID6(tcpip_context, retval) == 0) {
             //The insertion of the IP failed. This is really bad.
             //We should free this IP, return NULL, otherwise the workflow will be corrupted

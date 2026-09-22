@@ -59,6 +59,14 @@ struct mmt_ipv6hdr {
     struct mmt_ip6_addr saddr;
     struct mmt_ip6_addr daddr;
 };
+
+    /* Issue #57 follow-up (found via #375): packet->iphv6 and the header
+     * views in proto_ipv6.c point into the byte-aligned capture buffer, but
+     * struct mmt_ipv6hdr requires 8-byte alignment (mmt_ip6_addr contains a
+     * uint64_t union) — Ethernet+IPv6 puts it at offset 14, so every member
+     * access was a misaligned access under -fsanitize=alignment. This alias
+     * lowers the requirement to 1; field-access expressions are unchanged. */
+typedef struct mmt_ipv6hdr __attribute__((aligned(1))) mmt_una_mmt_ipv6hdr_t;
 #endif							/* MMT_SUPPORT_IPV6 */
 
 typedef union {
@@ -559,7 +567,10 @@ struct mmt_tcpip_internal_packet_struct {
      * access — no hot-path cost). */
     const mmt_una_iphdr_t *iph;
 #ifdef MMT_SUPPORT_IPV6
-    const struct mmt_ipv6hdr *iphv6;
+    /* Alignment-safe view (issue #57, found via #375): points into the
+     * byte-aligned capture buffer, so members must be read through the
+     * aligned(1) typedef — struct mmt_ipv6hdr requires 8-byte alignment. */
+    const mmt_una_mmt_ipv6hdr_t *iphv6;
 #endif
     const mmt_una_tcphdr_t *tcp;
     const mmt_una_udphdr_t *udp;

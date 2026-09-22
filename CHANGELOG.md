@@ -26,6 +26,8 @@ checklist requires a line here for every user-visible change.
 
 ### Core and protocols
 - bound the parsers and core APIs against short and attacker-controlled buffers — caplen guards for attribute extraction and packet-data reads, bounded header and stream walkers, and hardening of the FTP, RADIUS, S1AP/NGAP and NAS IE decoders plus the rule-engine command-injection fix (#127–#137, #146, #192, #193, #205)
+- bound the UDP payload by the datagram's own length field and the enclosing IP payload (IPv4 tot_len, IPv6 payload_len net of extension headers, explicit jumbogram handling), so captured bytes past the declared UDP datagram can no longer drive payload extraction, detection or session data-volume accounting; new `parser_boundaries` suite covers the unit and packet/API paths under ASan/UBSan (#375)
+- make the IPv6 session-key address ordering (`MMT_COMPARE_IPV6_ADDRESSES`), the session-map address hash/compares and the `packet->iphv6` header view alignment-safe — misaligned accesses on IPv6-over-Ethernet packets aborted under UBSan; the byte-identical memcpy/aligned(1) reads keep behaviour unchanged (#375)
 - name the classifier verdict constants, drive the protocol declarations and dispatch table from one list, table-drive the MIME registry, and deprecate the uncalled public ABI symbols (#148, #149, #150, #152)
 - integrate the modernization sweep: NAS/NAS5G IE decoders, SCTP-carried mobile protocols, shared HTTP/1+2 and RFC2822 fixes, TLS/QUIC/DTLS/DNS extractors, extraction-callback caplen prologues, classifier tables/AVL/log fixes, fuzz-engine DICOM and business-app coverage, crafted-input and fault-injection suites, build-hardening and assertion policy (#177)
 - migrate the HTTP parser from vendored http_parser to llhttp v9.4.3 (#222)

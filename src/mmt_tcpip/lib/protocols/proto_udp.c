@@ -17,9 +17,29 @@ static attribute_metadata_t udp_attributes_metadata[UDP_ATTRIBUTES_NB] = {
 int udp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
     int l4_offset = get_packet_offset_at_index(ipacket, index);
+    int ip6_jumbo = 0;
 
     if (packet->iphv6) {
         packet->l4_packet_len = (ipacket->p_hdr->caplen - l4_offset);
+        /* F-BUG-002 (#375): the enclosing IPv6 payload_len bounds the L4
+         * segment too — it counts every byte after the 40-byte base header
+         * (extension headers + upper-layer data), so bytes captured beyond
+         * it are not L4 data. A zero payload_len marks a jumbogram
+         * (RFC 2675): the real length sits in the Jumbo Payload hop-by-hop
+         * option, so the captured bound is the only one available. */
+        const uint8_t * ip6_hdr = (const uint8_t *) packet->iphv6;
+        uintptr_t ip6_off = (uintptr_t) ip6_hdr - (uintptr_t) ipacket->data;
+        uint32_t ip6_plen = ((uint32_t) ip6_hdr[4] << 8) | ip6_hdr[5];
+        if (ip6_plen == 0) {
+            ip6_jumbo = 1;
+        } else if (l4_offset >= 0
+                && (uint64_t) l4_offset >= (uint64_t) ip6_off + sizeof(struct mmt_ipv6hdr)) {
+            uint32_t ext_len = (uint32_t) l4_offset - (uint32_t) ip6_off
+                - (uint32_t) sizeof(struct mmt_ipv6hdr);
+            uint32_t declared = (ip6_plen > ext_len) ? ip6_plen - ext_len : 0;
+            if (declared < packet->l4_packet_len)
+                packet->l4_packet_len = declared;
+        }
     } else {
         //Do nothing! this is done in ip.c
     }
@@ -42,8 +62,33 @@ int udp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         return MMT_CLASSIFY_SKIP;
     }
 
-    packet->payload_packet_len = packet->l4_packet_len - sizeof( struct udphdr );
     packet->payload = ((uint8_t *) packet->udp) + sizeof( struct udphdr );
+    /* F-BUG-002 (#375): the UDP header's own length field bounds the
+     * datagram inside the enclosing IP payload — bytes captured beyond it
+     * (padding, over-capture, encapsulation trailers) are not payload, and a
+     * forged udp->len larger than the IP payload still clamps to the
+     * enclosing bound (l4_packet_len). udp->len == 0 keeps the enclosing
+     * bound — it means "rest of the datagram" over IPv4 and is mandatory in
+     * IPv6 jumbograms (RFC 2675) — but a non-jumbo IPv6 packet declaring it
+     * is malformed and exposes no payload. */
+    {
+        uint32_t udp_datagram_len = packet->l4_packet_len;
+        /* The header field is read only when the capture holds it — a
+         * corrupt l4_offset past caplen must not be dereferenced; keeping
+         * the enclosing bound lets the caplen clamp below expose zero
+         * payload, the same outcome the pre-#375 code reached. */
+        if ((uint64_t) l4_offset + sizeof(struct udphdr) <= ipacket->p_hdr->caplen) {
+            uint32_t udp_len = ntohs(((const mmt_una_udphdr_t *) packet->udp)->len);
+            if (udp_len != 0) {
+                if (udp_len < udp_datagram_len)
+                    udp_datagram_len = udp_len;
+            } else if (packet->iphv6 != NULL && ! ip6_jumbo) {
+                udp_datagram_len = sizeof(struct udphdr);
+            }
+        }
+        packet->payload_packet_len = (udp_datagram_len > sizeof(struct udphdr))
+            ? (uint16_t) (udp_datagram_len - sizeof(struct udphdr)) : 0;
+    }
     /* F-BUG-107/#195: l4_packet_len derives from the IP total length and can
      * exceed the captured bytes on truncated pcaps — clamp payload_packet_len
      * to what data[] actually holds so every payload[] read stays in bounds. */

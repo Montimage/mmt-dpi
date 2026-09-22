@@ -177,6 +177,7 @@ DEFAULT_SUITES=(
     precision_metrics
     installed_consumer
     release_gates
+    parser_boundaries
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

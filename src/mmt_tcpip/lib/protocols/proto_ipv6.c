@@ -267,7 +267,10 @@ int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * 
     if (ipacket->p_hdr->caplen >= (offset + next_offset + 4)) { //The packet contains the 4 L4 octets (source + destination ports) that follow the IPv6 header chain — both 16-bit ports are read below, so all 4 must be captured
         // tcp / udp detection
         if (ipv6_session->next_proto == 6) {
-            const struct tcphdr *tcph = (struct tcphdr *) & ipacket->data[offset + next_offset];
+            /* Issue #57 (found via #375): the port octets are read through
+             * the alignment-safe views — the L4 header can sit at an odd
+             * capture offset. */
+            const mmt_una_tcphdr_t *tcph = (mmt_una_tcphdr_t *) & ipacket->data[offset + next_offset];
             if (ipv6_session->is_lower_initiator) {
                 ipv6_session->lower_ip_port = ntohs(tcph->source);
                 ipv6_session->higher_ip_port = ntohs(tcph->dest);
@@ -276,7 +279,7 @@ int build_ipv6_session_key(ipacket_t * ipacket, int offset, mmt_session_key_t * 
                 ipv6_session->higher_ip_port = ntohs(tcph->source);
             }
         } else if (ipv6_session->next_proto == 17) {
-            const struct udphdr *udph = (struct udphdr *) & ipacket->data[offset + next_offset];
+            const mmt_una_udphdr_t *udph = (mmt_una_udphdr_t *) & ipacket->data[offset + next_offset];
             if (ipv6_session->is_lower_initiator) {
                 ipv6_session->lower_ip_port = ntohs(udph->source);
                 ipv6_session->higher_ip_port = ntohs(udph->dest);
@@ -809,7 +812,11 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     ipacket->internal_packet->packet_id = ipacket->packet_id;
     mmt_tcpip_internal_packet_t * packet = ipacket->internal_packet;
 
-    struct mmt_ipv6hdr *ip6h = (struct mmt_ipv6hdr *) & ipacket->data[ip_offset];
+    /* Issue #57 (found via #375): the header view must be alignment-safe —
+     * struct mmt_ipv6hdr needs 8-byte alignment (its mmt_ip6_addr members
+     * contain a uint64_t union) but the packet buffer is byte-aligned, so
+     * &ip6h->saddr below would be a member access on a misaligned struct. */
+    mmt_una_mmt_ipv6hdr_t *ip6h = (mmt_una_mmt_ipv6hdr_t *) & ipacket->data[ip_offset];
 
     uint32_t time = ((uint64_t) ipacket->p_hdr->ts.tv_sec) * MMT_MICRO_IN_SEC + ipacket->p_hdr->ts.tv_usec;
     packet->tick_timestamp = time;
@@ -818,7 +825,7 @@ int ipv6_post_classification_function(ipacket_t * ipacket, unsigned index) {
     struct mmt_internal_tcpip_id_struct * dst = NULL;
 
     packet->iph = NULL;
-    packet->iphv6 = (struct mmt_ipv6hdr *) ip6h;
+    packet->iphv6 = ip6h;
     packet->l3_packet_len = (ipacket->p_hdr->len - ip_offset);
     /* BW: add the length of the truncated packet as well */
     packet->l3_captured_packet_len = (ipacket->p_hdr->caplen - ip_offset);
