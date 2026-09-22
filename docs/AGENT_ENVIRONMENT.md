@@ -15,7 +15,7 @@ repository itself; the authoritative sources are:
 | `rules/common.mk` | Compiler flags, `MMT_BASE`, `BUILD=asan`/`tsan`, `ENABLESEC`, debug/valgrind toggles |
 | `rules/common-linux.mk` | Linux link rules, release hardening, `ENABLESEC` engines |
 | `sdk/Makefile` | Build entry point, `install`/`test` targets, default `MMT_BASE` |
-| `tests/run_all_tests.sh` | Master test runner and the 25 standalone suites |
+| `tests/run_all_tests.sh` | Master test runner and the 26 standalone suites |
 
 ## 1. Toolchain Requirements
 
@@ -162,14 +162,14 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **25/25 suites pass**, total runtime roughly **90–360 s** on
+Expected result: **26/26 suites pass**, total runtime roughly **90–360 s** on
 a typical development machine (measured: 113 s for the full run) — the wall
 clock is dominated by the suites
 that build+install the SDK internally (`rule_engine`, `installer`,
 `installed_consumer`, …), not by the assertions. Exit code `0` on
-success, `1` on any failure. The runner has no `-j` option: the 25 suites run
+success, `1` on any failure. The runner has no `-j` option: the 26 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:155-181`)
+(`tests/run_all_tests.sh:155-182`)
 (`tests/run_all_tests.sh`):
 `hashmap`, `memory`, `fault_injection`, `core_engine`, `hexdump`, `mmt_utils`,
 `mmt_inet_ntop`,
@@ -177,7 +177,7 @@ sequentially. The suite list lives in `DEFAULT_SUITES`
 `rule_engine`, `radius_hardening`, `nas_ies_tail`, `installer`,
 `dicom_dissector`, `ndn_dissector`, `business_app`, `proto_classifiers`,
 `dpi_profiles`, `fuzz_verdicts`, `precision_metrics`, `installed_consumer`,
-`release_gates`, `parser_boundaries`.
+`release_gates`, `parser_boundaries`, `resource_bounds`.
 `fuzz_verdicts`, `precision_metrics` and `release_gates` are
 delegate suites for CI self-tests living under `tools/ci/tests/` — the fuzz
 gate's verdict handling (`test-fuzz-verdicts.sh`, issue #370), the
@@ -225,7 +225,7 @@ skipped — the runner exits non-zero (issue #186).
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count/list and
   `tests/coverage/summary.json` in stdout
-  (`tests/run_all_tests.sh:194-303`). Requires `gcov` (shipped with
+  (`tests/run_all_tests.sh:195-304`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` — both counters plus the
   required sources it names — via `tools/ci/check-coverage-floor.sh`.
@@ -233,7 +233,7 @@ skipped — the runner exits non-zero (issue #186).
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:305-321`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:306-322`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -244,10 +244,10 @@ The 2026-09-22 audit at commit `2ab7b73516113009622cb3d32194d20121457010`
 reported 82.9% (5,660/6,831 lines) over those 30 files; this is historical
 evidence, not a new measurement (provenance recorded in [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)).
 Coverage includes only the `src/` files represented in emitted gcov data
-(`tests/run_all_tests.sh:218-222`); its percentage uses the lines in that
+(`tests/run_all_tests.sh:219-223`); its percentage uses the lines in that
 subset, so it must not be reported as whole-library coverage. The current
 run's exact scope is `instrumented_sources` and `instrumented_files` in
-`summary.json` (`tests/run_all_tests.sh:278-292`). The committed minimum is
+`summary.json` (`tests/run_all_tests.sh:279-293`). The committed minimum is
 **29 instrumented files**, alongside an **80.0%** line floor and required
 source names (`tests/coverage/floor.json:2-10`); a 30-file measurement does
 not change that floor. Consult a fresh summary for the current count.
@@ -397,7 +397,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 25/25 suites PASSED, exit 0 (90–360 s)
+bash tests/run_all_tests.sh     # 26/26 suites PASSED, exit 0 (90–360 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

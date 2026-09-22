@@ -45,7 +45,21 @@ static uint64_t ipv6_addr_hash(void * ip) {
      * s6_addr is at offset 0 of struct in6_addr, so the member access is
      * gratuitous — hash the 16 address bytes directly. */
     memcpy(w, ip, sizeof(w));
-    return w[0] ^ (w[1] << 1);
+    /* Issue #379 (F-PERF-001): was w[0] ^ (w[1] << 1) — the left shift
+     * dropped w[1]'s top bit (one of the 128 address bits never reached the
+     * bucket index) and the XOR fold let correlated differences cancel into
+     * the same bucket. Both 64-bit words — all 16 address bytes — now feed
+     * independent multiplies plus a one-step finalizer, the same shape as
+     * ipv6_session_hash(); equal addresses still hash equal, as
+     * ipv6_addr_comp's memcmp equivalence requires. The table's per-map
+     * seed (mmt_oa_table.seed in hash_utils.cpp) keys the final slot choice
+     * per handler, so a collision set built for one map does not transfer
+     * to another handler's. */
+    uint64_t h = w[0] * 0x9E3779B97F4A7C15ULL
+               ^ w[1] * 0xC2B2AE3D27D4EB4FULL;
+    h *= 0xD6E8FEB86659FD93ULL;
+    h ^= h >> 29;
+    return h;
 }
 
 static inline int _insertID4(internal_ip_proto_context_t * tcpip_context, mmt_ip4_id_t * ip_id) {

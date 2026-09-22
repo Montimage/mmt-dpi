@@ -178,6 +178,7 @@ DEFAULT_SUITES=(
     installed_consumer
     release_gates
     parser_boundaries
+    resource_bounds
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

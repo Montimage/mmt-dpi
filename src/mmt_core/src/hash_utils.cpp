@@ -54,6 +54,16 @@ static inline uint64_t mmt_mix64(uint64_t h) {
 // equally); a NULL hash degrades to a correct but slow constant hash rather
 // than crashing.
 //
+// Issue #379 (F-PERF-001) — bounded collision work: every probe sequence is
+// capped at cap slot visits. find/update/remove loop `n < t->cap` outright;
+// insert additionally fails (returns 0) when a full scan finds no EMPTY
+// terminator, which used < cap makes unreachable in correct operation — the
+// bound is defense-in-depth against invariant corruption, not a semantic
+// change. Adversarial inputs can therefore buy at most O(cap) comparator
+// work per operation, never an unbounded scan; the per-table seed mixed
+// into hash_of (see mmt_oa_create) is the mitigation that keeps engineered
+// collision clusters from being computed per handler in the first place.
+//
 // Slots are 16 bytes (two pointers) so four pack into a 64-byte cache line.
 // Empty/tombstone states are encoded in the key pointer rather than a
 // separate field: real keys are heap-allocated structures, so NULL and the
@@ -90,12 +100,16 @@ struct mmt_oa_table {
     generic_comparison_fct comp;
     generic_hash_fct       hash;
     generic_equal_fct      equal;      // issue #253 (F-PERF-008)
+    uint64_t               seed;       // issue #379 (F-PERF-001): per-table hash key
 
     uint64_t hash_of(void * k) const {
         // The mixer is a static-inline fmix64 — it compiles into the call
         // site (no function call, ~3 serially-dependent multiply steps on
-        // top of the key hash itself).
-        return mmt_mix64(hash ? hash(k) : 0);
+        // top of the key hash itself). The per-table seed keys the result:
+        // two tables built on the same hash function still bucket keys
+        // differently, so a collision cluster engineered for one handler's
+        // map does not transfer to another's (issue #379).
+        return mmt_mix64((hash ? hash(k) : 0) ^ seed);
     }
     // Issue #253 (F-PERF-008): a registered equality predicate resolves a
     // probe in ONE call. The fallback keeps the old map equivalence under a
@@ -187,6 +201,17 @@ static void mmt_oa_reset(mmt_oa_table * t) {
     t->used = 0;
 }
 
+/* Issue #379 (F-PERF-001): per-table seed supply. Every created table draws
+ * the next step of a process-local counter decorrelated through fmix64, so
+ * two maps are keyed independently — a forced-collision key set computed
+ * for one handler's table does not transfer to another's. The counter keeps
+ * seeds deterministic across runs (tables are created in a fixed order),
+ * which the golden classification fingerprint and reproducible tests rely
+ * on; the bound that actually caps adversarial work is the per-operation
+ * probe ceiling documented at mmt_oa_insert — the seed is the mitigation,
+ * the bound is the guarantee. */
+static uint64_t mmt_oa_seed_supply = 0x243F6A8885A308D3ULL;
+
 static void * mmt_oa_create(generic_comparison_fct comp_fct, generic_hash_fct hash_fct, generic_equal_fct equal_fct) {
     mmt_oa_table * t = (mmt_oa_table *) malloc(sizeof(mmt_oa_table));
     if (t == NULL) return NULL;
@@ -195,6 +220,9 @@ static void * mmt_oa_create(generic_comparison_fct comp_fct, generic_hash_fct ha
     t->comp = comp_fct;
     t->hash = hash_fct;
     t->equal = equal_fct;
+    t->seed = mmt_mix64(__atomic_add_fetch(&mmt_oa_seed_supply,
+                                           0x9E3779B97F4A7C15ULL,
+                                           __ATOMIC_RELAXED));
     mmt_oa_alloc_slots(t, MMT_OA_INITIAL_CAP);
     if (t->slots == NULL) { free(t); return NULL; }
     return reinterpret_cast<void *>(t);
@@ -227,8 +255,17 @@ static int mmt_oa_insert(mmt_oa_table * t, void * key, void * value) {
     size_t i = (size_t) t->hash_of(key) & mask;
     size_t tomb = 0;
     bool have_tomb = false;
-    void * k;
-    while ((k = t->slots[i].key) != MMT_SLOT_EMPTY) {
+    bool found_empty = false;
+    void * k = NULL;
+    /* Issue #379 (F-PERF-001): the probe is now explicitly bounded by cap,
+     * matching find/update/remove. used < cap normally guarantees an EMPTY
+     * terminator exists; if that invariant is ever violated (a table with
+     * no EMPTY slot at all) the scan stops after cap steps and the insert
+     * fails instead of wrapping the ring forever — the finite per-operation
+     * bound the collision-work budget is built on. */
+    for (size_t n = 0; n < t->cap; n++) {
+        k = t->slots[i].key;
+        if (k == MMT_SLOT_EMPTY) { found_empty = true; break; }
         if (k == MMT_SLOT_TOMB) {
             if (!have_tomb) { tomb = i; have_tomb = true; }
         } else if (t->key_equal(k, key)) {
@@ -236,6 +273,7 @@ static int mmt_oa_insert(mmt_oa_table * t, void * key, void * value) {
         }
         i = (i + 1) & mask;
     }
+    if (!found_empty) return 0;
     size_t dst = have_tomb ? tomb : i;
     if (t->slots[dst].key == MMT_SLOT_EMPTY) {
         t->used++; // reusing a tombstone does not change the load count
