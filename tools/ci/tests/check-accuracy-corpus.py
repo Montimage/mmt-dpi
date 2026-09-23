@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
-"""check-accuracy-corpus.py -- oracle for the reviewed DNS/TLS/QUIC/HTTP-2
-accuracy corpus (issue #389, F-TEST-003).
+"""check-accuracy-corpus.py -- oracle for the reviewed accuracy corpus:
+DNS/TLS/QUIC/HTTP-2 (issue #389), S1AP/NGAP/NAS and unknown/malformed traffic
+(issue #390), F-TEST-003.
 
 The corpus lives in tools/phase0/ci/accuracy/: one synthetic capture per case
 plus corpus.json, which records for every capture its protocol family, whether
-it is a positive, negative or ambiguous case, the expected per-packet handling,
-its redistribution provenance and its review notes. The captures are NOT part
-of tools/phase0/ci/golden_pcaps.txt, so the golden classification fingerprint's
-input set is unchanged.
+it is a positive, negative, ambiguous or unknown case, the expected per-packet
+handling, its redistribution provenance and its review notes. The captures are
+NOT part of tools/phase0/ci/golden_pcaps.txt, so the golden classification
+fingerprint's input set is unchanged.
+
+Protocol families need both a positive and a negative/ambiguous case. The
+"abstention" family (``"abstention": true``, no wire labels) holds unknown and
+malformed inputs: its cases are of kind "unknown" and state explicitly how many
+packets the SDK abstains on and which (if any) it still attributes.
 
 The oracle:
   1. validates the manifest strictly -- a missing capture, a capture on disk
      that has no manifest entry, a missing label/provenance/review field, a
-     sha256 mismatch, or a family without both a positive and a
-     negative/ambiguous case is a failure, never a skip;
+     sha256 mismatch, a generator that no longer reproduces the committed
+     bytes, or a family without its required cases is a failure, never a skip;
   2. (unless --offline) classifies every listed capture with
      tools/phase0/phase0_classify.c against a built SDK and compares the
      per-packet handling with the expectation:
@@ -23,13 +29,21 @@ The oracle:
        abstain     -- no application verdict at all
        attribution -- application names the SDK derives heuristically BENEATH
                       the wire label (e.g. ssl.google from a TLS SNI); reported
-                      separately and never counted as wire-protocol accuracy
+                      separately and never counted as wire-protocol accuracy.
+                      A protocol that is itself some family's wire label
+                      (nas_5g beneath ngap) is encapsulation, not attribution.
+     SCTP chunk layers (sctp_data, sctp_init, ...) are transport, like tcp.
   3. prints per-family support (packets in positive cases), wire hits,
-     abstentions and misattributions, negative/ambiguous handling, and the
-     heuristic attribution table on its own.
+     abstentions and misattributions, negative/ambiguous handling, the
+     unknown/malformed abstention table, and the heuristic attribution table
+     on its own.
 
 Usage:
   check-accuracy-corpus.py                     # build+install SDK in a temp prefix
+                                               # (runs `make -C sdk clean` before
+                                               # and after: the in-tree objects
+                                               # would otherwise keep the deleted
+                                               # temp prefix baked in)
   check-accuracy-corpus.py --prefix P --no-build   # reuse an installed prefix
   check-accuracy-corpus.py --classify-bin BIN  # use a prebuilt phase0_classify
   check-accuracy-corpus.py --offline           # manifest + reproducibility only
@@ -52,9 +66,10 @@ REPO_ROOT = os.path.abspath(os.path.join(SELF_DIR, "..", "..", ".."))
 DEFAULT_CORPUS = os.path.join(REPO_ROOT, "tools", "phase0", "ci", "accuracy")
 CLASSIFY_SRC = os.path.join(REPO_ROOT, "tools", "phase0", "phase0_classify.c")
 
-CASE_KINDS = ("positive", "negative", "ambiguous")
-# Families issue #389 requires; dropping one from the manifest is a failure.
-REQUIRED_FAMILIES = ("dns", "tls", "quic", "http2")
+CASE_KINDS = ("positive", "negative", "ambiguous", "unknown")
+# Families issues #389 and #390 require; dropping one is a failure.
+REQUIRED_FAMILIES = ("dns", "tls", "quic", "http2", "s1ap", "ngap", "nas",
+                     "unknown")
 
 # Link / network / transport names that never count as an application verdict
 # -- the same list as tools/phase0/phase0_precision.c.
@@ -63,6 +78,10 @@ NON_APP = {
     "tcp", "udp", "sctp", "icmp", "icmpv6", "igmp", "gre",
     "ppp", "pppoe", "vlan", "mpls", "sll", "ipsec", "esp", "ah",
     "unknown", "?", "<none>",
+    # SCTP chunk layers (mmt_tcpip_protocols.h PROTO_SCTP_*_ALIAS): transport
+    "sctp_data", "sctp_sack", "sctp_init", "sctp_heartbeat", "sctp_shutdown",
+    "sctp_shutdown_complete", "sctp_abort", "sctp_error", "sctp_cookie_echo",
+    "sctp_ecne", "sctp_cwr", "sctp_auth", "sctp_asconf", "sctp_re_config",
 }
 
 
@@ -118,11 +137,27 @@ def load_manifest(corpus_dir):
     if missing_fams:
         raise CorpusError("manifest: required family(ies) missing: %s"
                           % ", ".join(missing_fams))
+    unknown = families["unknown"]
+    if not isinstance(unknown, dict) or unknown.get("abstention") is not True:
+        raise CorpusError("family unknown: must be the abstention family "
+                          "(\"abstention\": true)")
     for fam, spec in families.items():
         labels = _need(spec, "wire_labels", list, "family %s" % fam)
-        if not labels or not all(isinstance(x, str) and x for x in labels):
+        abstention = spec.get("abstention", False)
+        if not isinstance(abstention, bool):
+            raise CorpusError("family %s: abstention must be true or false"
+                              % fam)
+        if abstention:
+            if labels:
+                raise CorpusError("family %s: an abstention family has no "
+                                  "wire_labels" % fam)
+        elif not labels or not all(isinstance(x, str) and x for x in labels):
             raise CorpusError("family %s: wire_labels must be non-empty names"
                               % fam)
+    for fam in REQUIRED_FAMILIES:
+        if fam != "unknown" and families[fam].get("abstention"):
+            raise CorpusError("family %s: a required protocol family cannot "
+                              "be an abstention family" % fam)
     cases = _need(man, "cases", list, "manifest")
     if not cases:
         raise CorpusError("manifest: no cases listed")
@@ -144,6 +179,10 @@ def load_manifest(corpus_dir):
         if kind not in CASE_KINDS:
             raise CorpusError("%s: case must be one of %s, got %r"
                               % (where, "/".join(CASE_KINDS), kind))
+        if (kind == "unknown") != bool(families[fam].get("abstention")):
+            raise CorpusError("%s: case 'unknown' belongs to the abstention "
+                              "family and only there (family %s, case %s)"
+                              % (where, fam, kind))
         _need(c, "description", str, where)
         digest = _need(c, "sha256", str, where)
         if len(digest) != 64 or any(ch not in "0123456789abcdef"
@@ -190,6 +229,10 @@ def load_manifest(corpus_dir):
 
     for fam in families:
         kinds = {c["case"] for c in cases if c["family"] == fam}
+        if families[fam].get("abstention"):
+            if not kinds:
+                raise CorpusError("family %s: no unknown/malformed case" % fam)
+            continue
         if "positive" not in kinds:
             raise CorpusError("family %s: no positive case" % fam)
         if not kinds & {"negative", "ambiguous"}:
@@ -268,10 +311,14 @@ def parse_fingerprint(pcap, text):
     return rows
 
 
-def evaluate(rows, wire_labels):
+def evaluate(rows, wire_labels, protocol_labels=()):
+    """protocol_labels: every family's wire labels. One of them beneath the
+    wire label is an encapsulated protocol (nas_5g in ngap), not a heuristic
+    attribution."""
     obs = {"packets": 0, "wire": 0, "abstain": 0, "other": {},
            "attribution": {}}
     labels = {x.lower() for x in wire_labels}
+    protocols = {x.lower() for x in protocol_labels}
     for count, path in rows:
         obs["packets"] += count
         parts = [p.lower() for p in path.split(".")]
@@ -279,7 +326,7 @@ def evaluate(rows, wire_labels):
         wire_at = next((i for i, p in apps if p in labels), None)
         if wire_at is not None:
             obs["wire"] += count
-            deeper = [p for i, p in apps if i > wire_at]
+            deeper = [p for i, p in apps if i > wire_at and p not in protocols]
             if deeper:
                 name = deeper[-1]
                 obs["attribution"][name] = obs["attribution"].get(name, 0) + count
@@ -311,11 +358,21 @@ def prepare_classifier(args, workdir):
     log = os.path.join(workdir, "build.log")
     if not args.no_build:
         jobs = str(os.cpu_count() or 4)
-        print("[build] SDK -> %s" % prefix, flush=True)
-        _run(["make", "-C", os.path.join(REPO_ROOT, "sdk"), "-j" + jobs,
-              "MMT_BASE=" + prefix], log)
-        _run(["make", "-C", os.path.join(REPO_ROOT, "sdk"),
-              "MMT_BASE=" + prefix, "install"], log)
+        sdk = os.path.join(REPO_ROOT, "sdk")
+        print("[build] SDK -> %s (discards the in-tree sdk/ build)" % prefix,
+              flush=True)
+        # Clean first (profile-switch rule, docs/AGENT_ENVIRONMENT.md §5) and
+        # afterwards: the objects compiled here bake the temporary prefix into
+        # plugins_engine.o, so an in-tree build left behind would look for
+        # plugins under a deleted directory.
+        _run(["make", "-C", sdk, "clean"], log)
+        try:
+            _run(["make", "-C", sdk, "-j" + jobs, "MMT_BASE=" + prefix], log)
+            _run(["make", "-C", sdk, "MMT_BASE=" + prefix, "install"], log)
+        finally:
+            subprocess.run(["make", "-C", sdk, "clean"],
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL)
     inc = os.path.join(prefix, "dpi", "include")
     lib = os.path.join(prefix, "dpi", "lib")
     if not os.path.isdir(inc) or not os.path.isdir(lib):
@@ -335,6 +392,8 @@ def classify_all(man, corpus_dir, binary, lib, workdir):
     neutral = os.path.join(workdir, "run")   # no ./plugins here (README note)
     os.makedirs(neutral, exist_ok=True)
     results = []
+    protocols = sorted({x for spec in man["families"].values()
+                        for x in spec["wire_labels"]})
     for c in man["cases"]:
         pcap = os.path.join(corpus_dir, c["pcap"])
         proc = subprocess.run([binary, pcap], capture_output=True, text=True,
@@ -345,7 +404,7 @@ def classify_all(man, corpus_dir, binary, lib, workdir):
                                  proc.stderr.strip()))
         rows = parse_fingerprint(c["pcap"], proc.stdout)
         wire_labels = man["families"][c["family"]]["wire_labels"]
-        results.append((c, evaluate(rows, wire_labels)))
+        results.append((c, evaluate(rows, wire_labels, protocols)))
     return results
 
 
@@ -369,12 +428,22 @@ def summarize(man, results):
     fams = {}
     attribution = []
     for c, obs in results:
+        other = sum(obs["other"].values())
+        if c["case"] == "unknown":
+            # abstention family: its own keys, never negative-case ones
+            f = fams.setdefault(c["family"], {
+                "unknown_cases": 0, "packets": 0, "abstain": 0,
+                "accepted": 0})
+            f["unknown_cases"] += 1
+            f["packets"] += obs["packets"]
+            f["abstain"] += obs["abstain"]
+            f["accepted"] += other
+            continue
         f = fams.setdefault(c["family"], {
             "positive_cases": 0, "support": 0, "wire": 0, "abstain": 0,
             "misattributed": 0, "negative_cases": 0, "ambiguous_cases": 0,
             "neg_packets": 0, "false_accept": 0, "neg_abstain": 0,
             "neg_other": 0})
-        other = sum(obs["other"].values())
         if c["case"] == "positive":
             f["positive_cases"] += 1
             f["support"] += obs["packets"]
@@ -393,16 +462,20 @@ def summarize(man, results):
     return {f: fams[f] for f in sorted(fams)}, attribution
 
 
+def _is_unknown(f):
+    return "unknown_cases" in f
+
+
 def render(results, fams, attribution):
     out = ["# per capture (packets: wire / abstain / other; attribution "
            "reported separately)",
-           "%-30s %-6s %-9s %-7s %-5s %-7s %s"
+           "%-30s %-7s %-9s %-7s %-5s %-7s %s"
            % ("capture", "family", "case", "packets", "wire", "abstain",
               "other")]
     for c, obs in results:
         other = ",".join("%s:%d" % (k, obs["other"][k])
                          for k in sorted(obs["other"])) or "-"
-        out.append("%-30s %-6s %-9s %-7d %-5d %-7d %s"
+        out.append("%-30s %-7s %-9s %-7d %-5d %-7d %s"
                    % (c["pcap"], c["family"], c["case"], obs["packets"],
                       obs["wire"], obs["abstain"], other))
     out += ["", "# per family -- wire-protocol accuracy (support and abstain "
@@ -411,12 +484,24 @@ def render(results, fams, attribution):
             % ("family", "positive", "support", "wire", "abstain", "other",
                "neg+amb", "packets", "false_accept", "abstain", "other")]
     for name, f in fams.items():
+        if _is_unknown(f):
+            continue
         out.append("%-6s %-9d %-7d %-5d %-7d %-6d | %-9d %-7d %-12d %-7d %d"
                    % (name, f["positive_cases"], f["support"], f["wire"],
                       f["abstain"], f["misattributed"],
                       f["negative_cases"] + f["ambiguous_cases"],
                       f["neg_packets"], f["false_accept"], f["neg_abstain"],
                       f["neg_other"]))
+    out += ["", "# unknown / malformed inputs -- explicit abstention "
+            "expectations (accepted = still given an application verdict)",
+            "%-30s %-7s %-7s %s" % ("capture", "packets", "abstain",
+                                    "accepted")]
+    for c, obs in results:
+        if c["case"] == "unknown":
+            accepted = ",".join("%s:%d" % (k, obs["other"][k])
+                                for k in sorted(obs["other"])) or "-"
+            out.append("%-30s %-7d %-7d %s" % (c["pcap"], obs["packets"],
+                                               obs["abstain"], accepted))
     out += ["", "# heuristic application attribution (beneath the wire label;"
             " not wire-protocol accuracy)"]
     if attribution:

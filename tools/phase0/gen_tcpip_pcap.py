@@ -32,6 +32,7 @@ Usage:
     tools/phase0/gen_tcpip_pcap.py --out-dir tools/phase0/ci/accuracy --accuracy
 """
 import argparse
+import hashlib
 import os
 import struct
 
@@ -755,6 +756,41 @@ def gen_acc_http2_negative_pcap(path):
     print("wrote %s (accuracy: declined h2c upgrade)" % path)
 
 
+def _acc_opaque(label, n):
+    """n deterministic high-entropy bytes (SHA-256 counter stream): payload
+    that matches no protocol grammar and carries no plaintext."""
+    out = b""
+    i = 0
+    while len(out) < n:
+        out += hashlib.sha256(b"mmt-accuracy-unknown:%s:%d"
+                              % (label.encode(), i)).digest()
+        i += 1
+    return out[:n]
+
+
+def gen_acc_unknown_udp_pcap(path):
+    """Opaque bytes both ways between unassigned UDP ports (issue #390): no
+    protocol grammar, no well-known port -- the SDK must abstain."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 47801, 47802)
+    flow.send("cli", _acc_opaque("udp-cli", 96))
+    flow.send("srv", _acc_opaque("udp-srv", 64))
+    f.close()
+    print("wrote %s (accuracy: opaque UDP on unassigned ports)" % path)
+
+
+def gen_acc_unknown_tcp_pcap(path):
+    """TCP handshake then opaque bytes both ways between unassigned ports
+    (issue #390) -- the SDK must abstain on every packet."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 47803, 47804)
+    flow.handshake()
+    flow.send("cli", _acc_opaque("tcp-cli", 120))
+    flow.send("srv", _acc_opaque("tcp-srv", 80))
+    f.close()
+    print("wrote %s (accuracy: opaque TCP on unassigned ports)" % path)
+
+
 ACC_GENS = {
     "acc_dns_positive": gen_acc_dns_positive_pcap,
     "acc_dns_negative": gen_acc_dns_negative_pcap,
@@ -765,6 +801,8 @@ ACC_GENS = {
     "acc_quic_v2_ambiguous": gen_acc_quic_v2_ambiguous_pcap,
     "acc_http2_positive": gen_acc_http2_positive_pcap,
     "acc_http2_negative": gen_acc_http2_negative_pcap,
+    "acc_unknown_udp": gen_acc_unknown_udp_pcap,
+    "acc_unknown_tcp": gen_acc_unknown_tcp_pcap,
 }
 
 
@@ -794,7 +832,7 @@ def main():
     sel.add_argument("--pcap", choices=list(GENS.keys()) + list(ACC_GENS.keys()),
                      default=None, help="generate only this pcap type")
     sel.add_argument("--accuracy", action="store_true",
-                     help="generate every accuracy-corpus capture (issue #389) "
+                     help="generate every TCP/IP accuracy-corpus capture (issues #389, #390) "
                           "instead of the default harness set")
     args = ap.parse_args()
 

@@ -190,7 +190,7 @@ sequentially. The suite list lives in `DEFAULT_SUITES`
 delegate suites for CI self-tests living under `tools/ci/tests/` — the fuzz
 gate's verdict handling (`test-fuzz-verdicts.sh`, issue #370), the
 precision-gate metric accounting (`test-precision-metrics.py`, issue #373,
-plus the accuracy-corpus oracle self-test `test-accuracy-corpus.py`, issue #389),
+plus the accuracy-corpus oracle self-test `test-accuracy-corpus.py`, issues #389/#390),
 the exact-release-SHA publish gate (`test-release-gates.py`, issue
 #371) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own

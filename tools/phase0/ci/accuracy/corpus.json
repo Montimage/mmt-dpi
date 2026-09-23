@@ -1,12 +1,14 @@
 {
   "_comment": [
-    "Issue #389 (F-TEST-003): reviewed DNS, TLS, QUIC and HTTP/2 accuracy cases.",
+    "Issues #389 and #390 (F-TEST-003): reviewed DNS, TLS, QUIC, HTTP/2, S1AP, NGAP and NAS accuracy cases plus unknown/malformed traffic.",
     "Checked by tools/ci/tests/check-accuracy-corpus.py; NOT part of ci/golden_pcaps.txt,",
     "so the golden classification fingerprint's input set is unchanged.",
     "expected counts are per packet: wire = carries the family's wire-protocol label,",
     "other = attributed to a different application protocol, abstain = no application verdict;",
     "attribution = application names the SDK derives heuristically beneath the wire label.",
-    "abstain counts include payload-less packets (e.g. TCP SYN/SYN-ACK/ACK), which carry no application data."
+    "abstain counts include payload-less packets (e.g. TCP SYN/SYN-ACK/ACK), which carry no application data.",
+    "The 'unknown' family is the abstention family: no wire labels, cases of kind 'unknown' whose expected block states explicitly how many packets must get no application verdict (abstain) and which are still attributed (other).",
+    "SCTP chunk layers (sctp_data, ...) count as transport; a family wire label beneath another (nas_5g beneath ngap) is encapsulation, not attribution."
   ],
   "schema": 1,
   "families": {
@@ -29,6 +31,25 @@
       "wire_labels": [
         "http2"
       ]
+    },
+    "s1ap": {
+      "wire_labels": [
+        "s1ap"
+      ]
+    },
+    "ngap": {
+      "wire_labels": [
+        "ngap"
+      ]
+    },
+    "nas": {
+      "wire_labels": [
+        "nas_5g"
+      ]
+    },
+    "unknown": {
+      "wire_labels": [],
+      "abstention": true
     }
   },
   "cases": [
@@ -306,6 +327,381 @@
         "checks": [
           "RFC 7540 \u00a73.2 Upgrade/HTTP2-Settings headers; no 101 Switching Protocols, no preface (RFC 9113 \u00a73.1 deprecates h2c upgrade, but clients still send it)",
           "expected handling: http for the two data packets, abstention for the handshake"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_s1ap_positive.pcap",
+      "family": "s1ap",
+      "case": "positive",
+      "description": "S1AP InitialUEMessage (EPS Attach Request, IMSI 001010123456789) on SCTP PPID 18 to port 36412.",
+      "sha256": "40c1b449e94ae875b187c74062c563cae89c659dfa2dc99824255fa708575f8d",
+      "expected": {
+        "packets": 1,
+        "wire": 1,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_s1ap_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "TS 36.413 InitiatingMessage procedureCode 12 with eNB-UE-S1AP-ID, NAS-PDU, TAI, EUTRAN-CGI and RRC-Establishment-Cause (all mandatory IEs); APER bytes equal an independent pycrate encoding of the message and round-trip through its decoder unchanged",
+          "NAS-PDU is a TS 24.301 plain EMM Attach Request (KSI 7, EPS attach, IMSI, UE network capability, ESM PDN Connectivity Request) decoded by pycrate",
+          "SCTP common header + one DATA chunk (B/E set, chunk length excludes padding) with a valid RFC 9260 CRC32c; PPID 18 = S1AP (IANA), destination port 36412",
+          "observed while reviewing: the SDK's vendored S1AP decoder rejects this InitialUEMessage's IEs ('Decoding of S1ap_InitialUEMessage failed'), so s1ap.* attributes stay empty; classification is by PPID and unaffected"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_s1ap_ambiguous.pcap",
+      "family": "s1ap",
+      "case": "ambiguous",
+      "description": "The same S1AP InitialUEMessage on port 36412 but with SCTP PPID 0 (unspecified).",
+      "sha256": "bc784e01a2966f1f7398009bc48f1af1d74b6e93db12a822cde723a22276063a",
+      "expected": {
+        "packets": 1,
+        "wire": 0,
+        "abstain": 1,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_s1ap_ambiguous"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "payload is byte-identical to acc_s1ap_positive; only the PPID differs (RFC 9260 allows PPID 0)",
+          "accepted handling: abstention -- proto_s1ap.c classifies on PPID 18 only and has no port/decode fallback (unlike NGAP), so real S1AP with PPID 0 is not recognised; recorded, not endorsed"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ngap_positive.pcap",
+      "family": "ngap",
+      "case": "positive",
+      "description": "NGAP InitialUEMessage (5GMM Registration Request) once on PPID 60 and once on PPID 0 to port 38412.",
+      "sha256": "39c23454ecfa8b277fa980514c9d31672371bcdfcef7f333ec32ef0282513d2f",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_ngap_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "TS 38.413 InitiatingMessage procedureCode 15 with RAN-UE-NGAP-ID, NAS-PDU, UserLocationInformation (NR-CGI + TAI), RRCEstablishmentCause and UEContextRequest; APER bytes equal an independent pycrate encoding of the message and round-trip through its decoder unchanged",
+          "NAS-PDU is a TS 24.501 plain 5GMM Registration Request (ngKSI 7, FOR, initial registration, null-scheme SUCI) decoded by pycrate",
+          "packet 1 exercises PPID 60, packet 2 the PPID 0 + port 38412 + successful-decode fallback of proto_ngap.c; SDK extraction returns ngap.procedure_code 15, ran_ue_id 1 and nas_5g.message_type 65 for both",
+          "nas_5g beneath ngap is the NAS family's wire label: encapsulation, not heuristic attribution"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_ngap_negative.pcap",
+      "family": "ngap",
+      "case": "negative",
+      "description": "Plain ASCII text in an SCTP DATA chunk with PPID 0 to port 38412; the port alone must not yield an NGAP verdict.",
+      "sha256": "82a1ebe17e1012cbea1e172ed7d325f0638cb3cd897d1fd2fafa5fca022172dc",
+      "expected": {
+        "packets": 1,
+        "wire": 0,
+        "abstain": 1,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_ngap_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "payload is not an APER NGAP-PDU (the NGAP decoder rejects it)",
+          "expected handling: abstention (sctp_data without an application), never ngap"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_nas_positive.pcap",
+      "family": "nas",
+      "case": "positive",
+      "description": "5GMM Authentication Request (NGAP DownlinkNASTransport) and Authentication Response (NGAP UplinkNASTransport) on PPID 60.",
+      "sha256": "81fe24893ab4de01e1c76ba12fa752753d453fb7fd014bed83b4a90b96d304ef",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_nas_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "TS 38.413 DownlinkNASTransport (procedureCode 4: AMF-UE-NGAP-ID, RAN-UE-NGAP-ID, NAS-PDU) and UplinkNASTransport (procedureCode 46: the same plus UserLocationInformation); APER bytes equal an independent pycrate encoding of the message and round-trip through its decoder unchanged",
+          "NAS-PDUs are TS 24.501 plain 5GMM Authentication Request (ngKSI 0, ABBA 0x0000) and Authentication Response, decoded by pycrate",
+          "wire label is nas_5g, the only NAS protocol the SDK exposes (EPS NAS is decoded inside S1AP, see acc_nas_eps_ambiguous)",
+          "observed while reviewing: nas_5g.message_type is extracted for the Authentication Request (86) but not for the 3-byte Authentication Response; classification is unaffected"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_nas_negative.pcap",
+      "family": "nas",
+      "case": "negative",
+      "description": "NGAP UEContextReleaseComplete on PPID 60: well-formed NGAP that carries no NAS-PDU.",
+      "sha256": "2ffad5f495bf7177a0d9b1a7aafd0f2711ffd3ce51c4200c45812fcc3a007fd0",
+      "expected": {
+        "packets": 1,
+        "wire": 0,
+        "abstain": 0,
+        "other": {
+          "ngap": 1
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_nas_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "TS 38.413 SuccessfulOutcome procedureCode 41 with AMF-UE-NGAP-ID and RAN-UE-NGAP-ID only (no NAS-PDU IE exists for this message); APER bytes equal an independent pycrate encoding of the message and round-trip through its decoder unchanged",
+          "expected handling: ngap without nas_5g (a nas_5g verdict would be a false accept); SDK extraction returns ngap.procedure_code 41, pdu_present 2"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_nas_eps_ambiguous.pcap",
+      "family": "nas",
+      "case": "ambiguous",
+      "description": "EPS NAS Identity Request carried by S1AP DownlinkNASTransport on PPID 18.",
+      "sha256": "0684e5c59aed535b41ebed74a304d99f75a15e2a635cc18c3e503d1bafbcab05",
+      "expected": {
+        "packets": 1,
+        "wire": 0,
+        "abstain": 0,
+        "other": {
+          "s1ap": 1
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_nas_eps_ambiguous"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "TS 36.413 DownlinkNASTransport (procedureCode 11: MME-UE-S1AP-ID, eNB-UE-S1AP-ID, NAS-PDU); APER bytes equal an independent pycrate encoding of the message and round-trip through its decoder unchanged",
+          "NAS-PDU is a TS 24.301 plain EMM Identity Request (type IMSI) decoded by pycrate",
+          "accepted handling: real NAS, but the SDK has no EPS NAS protocol -- it decodes EPS NAS only as S1AP attributes -- so the verdict is s1ap and never nas_5g; recorded, not endorsed"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_malformed_ngap.pcap",
+      "family": "unknown",
+      "case": "unknown",
+      "description": "A valid NGAP PDU behind lying SCTP DATA lengths on PPID 0 / port 38412: declared length 1 (< 16-byte header) and 4000 (> the 8 captured payload bytes).",
+      "sha256": "e6da5cb5ea94eab6548ba9c77f21309139b4983882aee276441c3f84d8904def",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_malformed_ngap"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "same shapes as the F-BUG-079 regression (tests/s1ap_ngap_decode/test_s1ap_ngap_packets.c): the classifier must reject the short length and clamp the long one, after which the truncated decode fails",
+          "expected handling: explicit abstention on both packets"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_malformed_s1ap.pcap",
+      "family": "unknown",
+      "case": "unknown",
+      "description": "SCTP PPID 18 carrying only the first 3 bytes of an S1AP PDU.",
+      "sha256": "e750d000a47b4a3283851983cca8d191e9b517115e6cbe703199ba5a7e8f2479",
+      "expected": {
+        "packets": 1,
+        "wire": 0,
+        "abstain": 0,
+        "other": {
+          "s1ap": 1
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_malformed_s1ap"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "3-byte payload cannot hold an S1AP-PDU (the SDK's own decoder fails on it)",
+          "expected handling is NOT abstention: proto_s1ap.c accepts any PPID 18 payload, so the truncated PDU is still labelled s1ap; recorded as a known false accept, not endorsed -- a classifier fix must update this expectation in a reviewed change"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_malformed_ngap_ppid60.pcap",
+      "family": "unknown",
+      "case": "unknown",
+      "description": "SCTP PPID 60 carrying only the first 2 bytes of an NGAP PDU.",
+      "sha256": "b5f2200fa05bc255bb40eea6838d16dda22f62a2fff5207fc153c24a2ccf06ca",
+      "expected": {
+        "packets": 1,
+        "wire": 0,
+        "abstain": 0,
+        "other": {
+          "ngap": 1
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_mobile_pcap.py",
+          "pcap": "acc_malformed_ngap_ppid60"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, 3GPP test PLMN 001/01 and test IMSI/SUCI MSIN 0123456789); no captured traffic, no third-party data, no real subscriber. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "2-byte payload cannot hold an NGAP-PDU (the SDK's own NGAP decoder rejects it)",
+          "expected handling is NOT abstention: proto_ngap.c labels any PPID 60 payload ngap without decoding it (only the PPID 0 fallback decodes); recorded as a known false accept, not endorsed -- a classifier fix must update this expectation in a reviewed change"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_unknown_udp.pcap",
+      "family": "unknown",
+      "case": "unknown",
+      "description": "Opaque high-entropy bytes both ways between unassigned UDP ports 47801/47802.",
+      "sha256": "07d2867cee1666e118bee9484af75f1295ad3283939f0337931ee3abaf5fab85",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_unknown_udp"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, SHA-256 counter-stream payload); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "payload is a SHA-256 counter stream: no protocol grammar, no plaintext; ports are not IANA-assigned to any protocol the SDK knows",
+          "expected handling: explicit abstention (udp.unknown) on both datagrams"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_unknown_tcp.pcap",
+      "family": "unknown",
+      "case": "unknown",
+      "description": "TCP handshake then opaque high-entropy bytes both ways between unassigned TCP ports 47803/47804.",
+      "sha256": "83be28b225e41924bccfbb6a018061f0c28a20c7126d64b7ff42d810e4f0b38f",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 5,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_unknown_tcp"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, locally administered MACs, SHA-256 counter-stream payload); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #390",
+        "date": "2026-09-23",
+        "checks": [
+          "consistent SYN/SYN-ACK/ACK then one data segment per direction; payload is a SHA-256 counter stream",
+          "expected handling: explicit abstention (tcp.unknown) on every packet, payload-less handshake included"
         ]
       }
     }

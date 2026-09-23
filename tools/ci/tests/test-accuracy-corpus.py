@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """test-accuracy-corpus.py -- self-test for the accuracy-corpus oracle
-(tools/ci/tests/check-accuracy-corpus.py, issue #389, F-TEST-003).
+(tools/ci/tests/check-accuracy-corpus.py, issues #389 and #390, F-TEST-003).
 
 Needs no SDK build: it validates the committed corpus offline, then drives the
 REAL oracle on temporary copies of the corpus with a fake phase0_classify that
@@ -9,17 +9,23 @@ replays canned fingerprints, asserting that
   - the committed corpus passes (manifest, files, provenance, review,
     byte-reproducibility from its generator);
   - a missing capture, an unlabelled capture, a missing label/provenance/review
-    field, a sha256 mismatch, a dropped required family and a family without
-    a negative/ambiguous case all FAIL;
+    field, a sha256 mismatch, a capture its generator no longer reproduces, a
+    dropped required family and a family without a negative/ambiguous case
+    all FAIL;
+  - the abstention family is enforced: an "unknown" case in a protocol family,
+    a positive case in the abstention family and an abstention family with
+    wire labels all FAIL, and an unknown input that gains a verdict diverges;
   - expected handling is enforced: a diverging verdict, an empty or failing
     classifier run and a negative case that expects a family verdict all FAIL;
   - heuristic application attribution beneath the wire label (ssl.google) is
-    counted as wire + attribution, never as a different protocol.
+    counted as wire + attribution, never as a different protocol, while a
+    family protocol beneath another (ngap.nas_5g) is not attribution at all.
 
 Usage: python3 tools/ci/tests/test-accuracy-corpus.py
 Exit: 0 = all checks passed, 1 = at least one failed.
 """
 
+import hashlib
 import json
 import os
 import shutil
@@ -60,6 +66,18 @@ GOOD_FP = {
                                "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_http2_negative.pcap": "2\tmeta.ethernet.ip.tcp.http\n"
                                "3\tmeta.ethernet.ip.tcp.unknown\n",
+    "acc_s1ap_positive.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.s1ap\n",
+    "acc_s1ap_ambiguous.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data\n",
+    "acc_ngap_positive.pcap": "2\tmeta.ethernet.ip.sctp.sctp_data.ngap.nas_5g\n",
+    "acc_ngap_negative.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data\n",
+    "acc_nas_positive.pcap": "2\tmeta.ethernet.ip.sctp.sctp_data.ngap.nas_5g\n",
+    "acc_nas_negative.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.ngap\n",
+    "acc_nas_eps_ambiguous.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.s1ap\n",
+    "acc_malformed_ngap.pcap": "2\tmeta.ethernet.ip.sctp.sctp_data\n",
+    "acc_malformed_s1ap.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.s1ap\n",
+    "acc_malformed_ngap_ppid60.pcap": "1\tmeta.ethernet.ip.sctp.sctp_data.ngap\n",
+    "acc_unknown_udp.pcap": "2\tmeta.ethernet.ip.udp.unknown\n",
+    "acc_unknown_tcp.pcap": "5\tmeta.ethernet.ip.tcp.unknown\n",
 }
 
 PASS = FAIL = 0
@@ -125,7 +143,7 @@ class Scratch:
                       env=dict({"FAKE_FP_DIR": self.fp_dir}, **env))
 
 
-print("accuracy-corpus oracle self-test (issue #389, F-TEST-003)")
+print("accuracy-corpus oracle self-test (issues #389, #390, F-TEST-003)")
 print()
 
 rc, out = oracle("--offline")
@@ -142,6 +160,29 @@ with Scratch() as s:
                if ln.startswith("tls ") and "|" in ln]
     check("attribution counted as wire, not other",
           tls_row and tls_row[0][3] == "4" and tls_row[0][5] == "0", out)
+    attr_rows = [ln for ln in out.split("# heuristic", 1)[-1].splitlines()
+                 if ln.startswith(("ngap ", "nas "))]
+    check("nas_5g beneath ngap is not heuristic attribution",
+          "# heuristic" in out and not attr_rows, out)
+    unk = [ln.split() for ln in out.splitlines()
+           if ln.startswith("acc_malformed_s1ap.pcap") and "s1ap:1" in ln]
+    check("unknown/malformed abstention table is printed",
+          "# unknown / malformed" in out and len(unk) == 2, out)
+
+with Scratch() as s:
+    rc, out = oracle("--corpus", s.corpus, "--classify-bin", s.fake, "--json",
+                     env={"FAKE_FP_DIR": s.fp_dir})
+    body = out[out.find("{"):out.rfind("}") + 1]
+    try:
+        fams = json.loads(body)["families"]
+    except ValueError:
+        fams = {}
+    check("--json reports the abstention family with its own keys",
+          rc == 0 and fams.get("unknown") == {"unknown_cases": 5,
+                                              "packets": 11, "abstain": 9,
+                                              "accepted": 2}
+          and not any("unknown_cases" in v for k, v in fams.items()
+                      if k != "unknown"), out)
 
 with Scratch() as s:
     os.remove(os.path.join(s.corpus, "acc_quic_positive.pcap"))
@@ -183,6 +224,85 @@ with Scratch() as s:
     rc, out = s.offline()
     check("modified capture fails the sha256 check",
           rc == 1 and "sha256" in out, out)
+
+with Scratch() as s:
+    # a re-reviewed sha256 does not excuse bytes the generator cannot produce
+    path = os.path.join(s.corpus, "acc_ngap_positive.pcap")
+    with open(path, "r+b") as fh:
+        data = bytearray(fh.read())
+        data[-1] ^= 0xFF
+        fh.seek(0)
+        fh.write(data)
+    man = s.manifest()
+    s.case(man, "acc_ngap_positive.pcap")["sha256"] = \
+        hashlib.sha256(bytes(data)).hexdigest()
+    s.save(man)
+    rc, out = s.offline()
+    check("capture its generator no longer reproduces fails",
+          rc == 1 and "differs from its generator output" in out, out)
+
+with Scratch() as s:
+    man = s.manifest()
+    s.case(man, "acc_ngap_negative.pcap")["case"] = "unknown"
+    s.save(man)
+    rc, out = s.offline()
+    check("unknown case inside a protocol family fails",
+          rc == 1 and "abstention" in out, out)
+
+with Scratch() as s:
+    man = s.manifest()
+    s.case(man, "acc_unknown_udp.pcap")["case"] = "positive"
+    s.save(man)
+    rc, out = s.offline()
+    check("positive case inside the abstention family fails",
+          rc == 1 and "abstention" in out, out)
+
+with Scratch() as s:
+    man = s.manifest()
+    man["families"]["unknown"]["wire_labels"] = ["dns"]
+    s.save(man)
+    rc, out = s.offline()
+    check("abstention family with wire labels fails",
+          rc == 1 and "no wire_labels" in out, out)
+
+with Scratch() as s:
+    man = s.manifest()
+    del man["families"]["unknown"]["abstention"]
+    s.save(man)
+    rc, out = s.offline()
+    check("unknown family that is not the abstention family fails",
+          rc == 1 and "abstention family" in out, out)
+
+with Scratch() as s:
+    man = s.manifest()
+    man["families"]["s1ap"] = {"wire_labels": [], "abstention": True}
+    for c in man["cases"]:
+        if c["family"] == "s1ap":
+            c["case"] = "unknown"
+    s.save(man)
+    rc, out = s.offline()
+    check("required protocol family turned abstention family fails",
+          rc == 1 and "cannot be an abstention family" in out, out)
+
+with Scratch() as s:
+    s.write_fp("acc_unknown_udp.pcap", "2\tmeta.ethernet.ip.udp.dns\n")
+    rc, out = s.run()
+    check("unknown input that gains a verdict diverges",
+          rc == 1 and "acc_unknown_udp.pcap" in out and "abstain expected 2" in out,
+          out)
+
+with Scratch() as s:
+    s.write_fp("acc_malformed_s1ap.pcap", "1\tmeta.ethernet.ip.sctp.sctp_data\n")
+    rc, out = s.run()
+    check("fixing a recorded false accept needs a reviewed expectation update",
+          rc == 1 and "acc_malformed_s1ap.pcap" in out, out)
+
+with Scratch() as s:
+    s.write_fp("acc_nas_negative.pcap",
+               "1\tmeta.ethernet.ip.sctp.sctp_data.ngap.nas_5g\n")
+    rc, out = s.run()
+    check("nas_5g verdict on NGAP without NAS-PDU is a false accept",
+          rc == 1 and "acc_nas_negative.pcap" in out, out)
 
 with Scratch() as s:
     man = s.manifest()

@@ -18,6 +18,7 @@ a truncated variant is included for the H-guard / bound-check oracle.
 Usage:
     tools/phase0/gen_mobile_pcap.py --out-dir /tmp/mobile-pcaps
     tools/phase0/gen_mobile_pcap.py --out-dir /tmp/mobile-pcaps --pcap diameter
+    tools/phase0/gen_mobile_pcap.py --out-dir tools/phase0/ci/accuracy --accuracy
 """
 import argparse
 import os
@@ -433,6 +434,266 @@ def gen_sctp_pcap(path):
     print("wrote %s (SCTP INIT + SACK + DATA)" % path)
 
 
+# --- accuracy corpus (issue #390, F-TEST-003) --------------------------------
+# Reviewed S1AP, NGAP and NAS positive and negative/ambiguous cases plus
+# malformed signalling, vendored under tools/phase0/ci/accuracy/ and listed
+# (with expected handling, provenance and review notes) in
+# tools/phase0/ci/accuracy/corpus.json. Like the issue #389 cases they are NOT
+# part of ci/golden_pcaps.txt. Addresses are RFC 5737 documentation ranges,
+# MACs are locally administered and every identity is a 3GPP test value
+# (PLMN 001/01, IMSI/SUCI MSIN 0123456789), so no real subscriber appears.
+# Unlike the harness captures above, the SCTP checksum is a real CRC32c
+# (RFC 9260 Appendix A); the IPv4 header checksum is left 0, as in every
+# other phase0 capture (the SDK does not verify it).
+# Regenerate with:
+#   tools/phase0/gen_mobile_pcap.py --out-dir tools/phase0/ci/accuracy --accuracy
+#
+# The PDUs below are APER encodings (ITU-T X.691, aligned variant) of the
+# messages named in each comment; they were produced and round-trip-checked
+# with an independent ASN.1 toolkit (pycrate, S1AP 36.413 / NGAP 38.413
+# modules) during review, and the NAS PDUs decoded with its TS 24.301 /
+# TS 24.501 parsers. They are written out as byte constants so this generator
+# stays stdlib-only.
+
+ACC_RAN = struct.pack("!I", 0xC0000201)    # 192.0.2.1    (TEST-NET-1): eNB/gNB
+ACC_CORE = struct.pack("!I", 0xC6336402)   # 198.51.100.2 (TEST-NET-2): MME/AMF
+ACC_RAN_MAC = b"\x02\x00\x00\x00\x02\x01"
+ACC_CORE_MAC = b"\x02\x00\x00\x00\x64\x02"
+
+# TS 24.301 EMM Attach Request (plain): NAS KSI 7 (no key), EPS attach,
+# IMSI 001010123456789, UE network capability EEA0-2/EIA0-2, ESM container
+# with a PDN Connectivity Request (PTI 1, IPv4, initial request).
+ACC_EPS_ATTACH_REQUEST = bytes.fromhex(
+    "074171" "080910101032547698" "02e0e0" "0004" "0201d011")
+# TS 24.301 EMM Identity Request (plain), identity type IMSI.
+ACC_EPS_IDENTITY_REQUEST = bytes.fromhex("075501")
+# TS 24.501 5GMM Registration Request (plain): ngKSI 7, FOR=1, initial
+# registration, SUCI (IMSI format, PLMN 001/01, routing indicator 0,
+# null protection scheme, MSIN 0123456789).
+ACC_5G_REGISTRATION_REQUEST = bytes.fromhex(
+    "7e004179" "000d" "0100f110f0ff0000" "1032547698")
+# TS 24.501 5GMM Authentication Request (plain): ngKSI 0, ABBA 0x0000.
+ACC_5G_AUTHENTICATION_REQUEST = bytes.fromhex("7e005600020000")
+# TS 24.501 5GMM Authentication Response (plain), no optional IEs.
+ACC_5G_AUTHENTICATION_RESPONSE = bytes.fromhex("7e0057")
+
+# TS 36.413 S1AP initiatingMessage InitialUEMessage (procedureCode 12):
+# eNB-UE-S1AP-ID 1, NAS-PDU (ACC_EPS_ATTACH_REQUEST), TAI (001/01, TAC 1),
+# EUTRAN-CGI (001/01, cell 0x0000010), RRC-Establishment-Cause mo-Signalling.
+ACC_S1AP_INITIAL_UE_MESSAGE = bytes.fromhex(
+    "000c403e000005"
+    "00080002" "0001"
+    "001a001615" + ACC_EPS_ATTACH_REQUEST.hex()
+    + "00430006" "0000f1100001"
+    + "00644008" "0000f11000000100"
+    + "0086400130")
+# TS 36.413 S1AP initiatingMessage DownlinkNASTransport (procedureCode 11):
+# MME-UE-S1AP-ID 1, eNB-UE-S1AP-ID 1, NAS-PDU (ACC_EPS_IDENTITY_REQUEST).
+ACC_S1AP_DOWNLINK_NAS_TRANSPORT = bytes.fromhex(
+    "000b4017000003" "00000002" "0001" "00080002" "0001"
+    "001a000403" + ACC_EPS_IDENTITY_REQUEST.hex())
+
+# TS 38.413 UserLocationInformation, userLocationInformationNR:
+# NR-CGI (001/01, cell 0x000000010), TAI (001/01, TAC 1).
+_ACC_NGAP_ULI_NR = "4000f110000000010000f110000001"
+# TS 38.413 NGAP initiatingMessage InitialUEMessage (procedureCode 15):
+# RAN-UE-NGAP-ID 1, NAS-PDU (ACC_5G_REGISTRATION_REQUEST),
+# UserLocationInformation (NR), RRCEstablishmentCause mo-Signalling,
+# UEContextRequest requested.
+ACC_NGAP_INITIAL_UE_MESSAGE = bytes.fromhex(
+    "000f403e000005"
+    "00550002" "0001"
+    "0026001413" + ACC_5G_REGISTRATION_REQUEST.hex()
+    + "0079000f" + _ACC_NGAP_ULI_NR
+    + "005a400118"
+    + "0070400100")
+# TS 38.413 NGAP initiatingMessage DownlinkNASTransport (procedureCode 4):
+# AMF-UE-NGAP-ID 1, RAN-UE-NGAP-ID 1, NAS-PDU (ACC_5G_AUTHENTICATION_REQUEST).
+ACC_NGAP_DOWNLINK_NAS_TRANSPORT = bytes.fromhex(
+    "0004401b000003" "000a0002" "0001" "00550002" "0001"
+    "0026000807" + ACC_5G_AUTHENTICATION_REQUEST.hex())
+# TS 38.413 NGAP initiatingMessage UplinkNASTransport (procedureCode 46):
+# AMF-UE-NGAP-ID 1, RAN-UE-NGAP-ID 1, NAS-PDU (ACC_5G_AUTHENTICATION_RESPONSE),
+# UserLocationInformation (NR).
+ACC_NGAP_UPLINK_NAS_TRANSPORT = bytes.fromhex(
+    "002e402a000004" "000a0002" "0001" "00550002" "0001"
+    "0026000403" + ACC_5G_AUTHENTICATION_RESPONSE.hex()
+    + "0079400f" + _ACC_NGAP_ULI_NR)
+# TS 38.413 NGAP successfulOutcome UEContextReleaseComplete (procedureCode 41):
+# AMF-UE-NGAP-ID 1, RAN-UE-NGAP-ID 1 -- a well-formed NGAP PDU without NAS.
+ACC_NGAP_UE_CONTEXT_RELEASE_COMPLETE = bytes.fromhex(
+    "2029000f000002" "000a4002" "0001" "00554002" "0001")
+
+# RFC 9260 SCTP payload protocol identifiers / IANA SCTP ports.
+PPID_UNSPECIFIED, PPID_S1AP, PPID_NGAP = 0, 18, 60
+PORT_S1AP, PORT_NGAP = 36412, 38412
+
+
+def _crc32c_table():
+    table = []
+    for n in range(256):
+        c = n
+        for _ in range(8):
+            c = (c >> 1) ^ 0x82F63B78 if c & 1 else c >> 1
+        table.append(c)
+    return table
+
+
+_CRC32C = _crc32c_table()
+
+
+def _crc32c(data):
+    crc = 0xFFFFFFFF
+    for b in data:
+        crc = _CRC32C[(crc ^ b) & 0xFF] ^ (crc >> 8)
+    return crc ^ 0xFFFFFFFF
+
+
+class _AccSctp:
+    """One SCTP association between the accuracy RAN node and core node.
+    Every packet carries a single chunk and a valid CRC32c; DATA chunks get
+    per-direction TSNs and strictly increasing timestamps."""
+
+    def __init__(self, f, ran_port, core_port, ts_us=0):
+        self.f = f
+        self.ports = {"ran": (ran_port, core_port), "core": (core_port, ran_port)}
+        # verification tag = the peer's Initiate Tag (RFC 9260 §8.5)
+        self.vtag = {"ran": 0x0A0B0C0D, "core": 0x01020304}
+        self.tsn = {"ran": 1000, "core": 5000}
+        self.ts_us = ts_us
+        self.ident = 0
+
+    def send_chunk(self, side, chunk):
+        sp, dp = self.ports[side]
+        common = struct.pack("!HHII", sp, dp, self.vtag[side], 0) + chunk
+        crc = _crc32c(common)
+        sctp = common[:8] + struct.pack("<I", crc) + common[12:]
+        if side == "ran":
+            smac, dmac, sip, dip = ACC_RAN_MAC, ACC_CORE_MAC, ACC_RAN, ACC_CORE
+        else:
+            smac, dmac, sip, dip = ACC_CORE_MAC, ACC_RAN_MAC, ACC_CORE, ACC_RAN
+        pkt = (eth_header(smac, dmac)
+               + ip_header(sip, dip, 132, len(sctp), ident=self.ident) + sctp)
+        pcap_write(self.f, pkt, ts_us=self.ts_us)
+        self.ts_us += 1000
+        self.ident += 1
+
+    def send(self, side, payload, ppid):
+        chunk, _ = sctp_data_chunk(payload, ppid, stream=1, ssn=0,
+                                   tsn=self.tsn[side])
+        self.tsn[side] += 1
+        self.send_chunk(side, chunk)
+
+
+def _acc_write(path, note, sends, ran_port, core_port):
+    f = pcap_open(path)
+    assoc = _AccSctp(f, ran_port, core_port)
+    for side, payload, ppid in sends:
+        assoc.send(side, payload, ppid)
+    f.close()
+    print("wrote %s (accuracy: %s)" % (path, note))
+
+
+def gen_acc_s1ap_positive_pcap(path):
+    """S1AP InitialUEMessage (EPS Attach Request) on PPID 18 / port 36412."""
+    _acc_write(path, "S1AP InitialUEMessage",
+               [("ran", ACC_S1AP_INITIAL_UE_MESSAGE, PPID_S1AP)],
+               40412, PORT_S1AP)
+
+
+def gen_acc_s1ap_ambiguous_pcap(path):
+    """The same S1AP PDU with PPID 0 (unspecified) on port 36412: real S1AP,
+    but the SDK only trusts PPID 18."""
+    _acc_write(path, "S1AP with unspecified PPID",
+               [("ran", ACC_S1AP_INITIAL_UE_MESSAGE, PPID_UNSPECIFIED)],
+               40413, PORT_S1AP)
+
+
+def gen_acc_ngap_positive_pcap(path):
+    """NGAP InitialUEMessage (5GMM Registration Request) once on PPID 60 and
+    once on PPID 0 to port 38412 (the decode-confirmed fallback)."""
+    _acc_write(path, "NGAP InitialUEMessage on PPID 60 and PPID 0",
+               [("ran", ACC_NGAP_INITIAL_UE_MESSAGE, PPID_NGAP),
+                ("ran", ACC_NGAP_INITIAL_UE_MESSAGE, PPID_UNSPECIFIED)],
+               40414, PORT_NGAP)
+
+
+def gen_acc_ngap_negative_pcap(path):
+    """Plain text on PPID 0 to port 38412: the port alone must not yield NGAP."""
+    _acc_write(path, "non-NGAP text on SCTP port 38412",
+               [("ran", b"hello, this chunk is not an NGAP PDU at all\n",
+                 PPID_UNSPECIFIED)],
+               40415, PORT_NGAP)
+
+
+def gen_acc_nas_positive_pcap(path):
+    """5GMM Authentication Request / Response carried by NGAP
+    DownlinkNASTransport / UplinkNASTransport on PPID 60."""
+    _acc_write(path, "5G NAS in NGAP NAS transport",
+               [("core", ACC_NGAP_DOWNLINK_NAS_TRANSPORT, PPID_NGAP),
+                ("ran", ACC_NGAP_UPLINK_NAS_TRANSPORT, PPID_NGAP)],
+               40416, PORT_NGAP)
+
+
+def gen_acc_nas_negative_pcap(path):
+    """NGAP UEContextReleaseComplete: well-formed NGAP without a NAS-PDU."""
+    _acc_write(path, "NGAP without NAS-PDU",
+               [("ran", ACC_NGAP_UE_CONTEXT_RELEASE_COMPLETE, PPID_NGAP)],
+               40417, PORT_NGAP)
+
+
+def gen_acc_nas_eps_ambiguous_pcap(path):
+    """EPS NAS Identity Request inside S1AP DownlinkNASTransport: real NAS,
+    but the SDK decodes EPS NAS only as S1AP attributes (no NAS protocol)."""
+    _acc_write(path, "EPS NAS in S1AP DownlinkNASTransport",
+               [("core", ACC_S1AP_DOWNLINK_NAS_TRANSPORT, PPID_S1AP)],
+               40418, PORT_S1AP)
+
+
+def gen_acc_malformed_ngap_pcap(path):
+    """A valid NGAP PDU behind lying SCTP DATA lengths on PPID 0 / port 38412:
+    a declared length (1) below the 16-byte DATA header, and a declared length
+    (4000) beyond the 8 captured payload bytes (F-BUG-079 shapes)."""
+    f = pcap_open(path)
+    assoc = _AccSctp(f, 40419, PORT_NGAP)
+    pdu = ACC_NGAP_UE_CONTEXT_RELEASE_COMPLETE
+    assoc.send_chunk("ran", sctp_data_chunk_raw(
+        pdu, PPID_UNSPECIFIED, declared_len=1, stream=1, ssn=0, tsn=1000))
+    assoc.send_chunk("ran", sctp_data_chunk_raw(
+        pdu[:8], PPID_UNSPECIFIED, declared_len=4000, stream=1, ssn=1,
+        tsn=1001))
+    f.close()
+    print("wrote %s (accuracy: NGAP behind lying SCTP DATA lengths)" % path)
+
+
+def gen_acc_malformed_s1ap_pcap(path):
+    """PPID 18 carrying only the first 3 bytes of an S1AP PDU."""
+    _acc_write(path, "truncated S1AP on PPID 18",
+               [("ran", ACC_S1AP_INITIAL_UE_MESSAGE[:3], PPID_S1AP)],
+               40420, PORT_S1AP)
+
+
+def gen_acc_malformed_ngap_ppid60_pcap(path):
+    """PPID 60 carrying only the first 2 bytes of an NGAP PDU."""
+    _acc_write(path, "truncated NGAP on PPID 60",
+               [("ran", ACC_NGAP_UE_CONTEXT_RELEASE_COMPLETE[:2], PPID_NGAP)],
+               40421, PORT_NGAP)
+
+
+ACC_GENS = {
+    "acc_s1ap_positive": gen_acc_s1ap_positive_pcap,
+    "acc_s1ap_ambiguous": gen_acc_s1ap_ambiguous_pcap,
+    "acc_ngap_positive": gen_acc_ngap_positive_pcap,
+    "acc_ngap_negative": gen_acc_ngap_negative_pcap,
+    "acc_nas_positive": gen_acc_nas_positive_pcap,
+    "acc_nas_negative": gen_acc_nas_negative_pcap,
+    "acc_nas_eps_ambiguous": gen_acc_nas_eps_ambiguous_pcap,
+    "acc_malformed_ngap": gen_acc_malformed_ngap_pcap,
+    "acc_malformed_s1ap": gen_acc_malformed_s1ap_pcap,
+    "acc_malformed_ngap_ppid60": gen_acc_malformed_ngap_ppid60_pcap,
+}
+
+
 GENS = {
     "radius": gen_radius_pcap,
     "gtp": gen_gtp_pcap,
@@ -448,15 +709,25 @@ def main():
     ap = argparse.ArgumentParser(description="Generate mobile/security synthetic pcaps (issue #144)")
     ap.add_argument("--out-dir", default="/tmp/mobile-pcaps",
                     help="output directory (default: /tmp/mobile-pcaps)")
-    ap.add_argument("--pcap", choices=list(GENS.keys()), default=None,
-                    help="generate only this pcap type")
+    sel = ap.add_mutually_exclusive_group()
+    sel.add_argument("--pcap", choices=list(GENS.keys()) + list(ACC_GENS.keys()),
+                     default=None, help="generate only this pcap type")
+    sel.add_argument("--accuracy", action="store_true",
+                     help="generate every mobile accuracy-corpus capture "
+                          "(issue #390) instead of the default harness set")
     args = ap.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
-    targets = [args.pcap] if args.pcap else sorted(GENS.keys())
+    gens = dict(GENS, **ACC_GENS)
+    if args.pcap:
+        targets = [args.pcap]
+    elif args.accuracy:
+        targets = sorted(ACC_GENS.keys())
+    else:
+        targets = sorted(GENS.keys())
     for name in targets:
         out = os.path.join(args.out_dir, "%s.pcap" % name)
-        GENS[name](out)
+        gens[name](out)
     total = len(targets)
     print("done: %d pcap(s) under %s" % (total, args.out_dir))
 

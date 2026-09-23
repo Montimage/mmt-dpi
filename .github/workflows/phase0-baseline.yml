@@ -164,9 +164,9 @@ jobs:
       - uses: ./.github/actions/bootstrap-deps
       - name: Check precision/recall against the committed baseline
         run: tools/phase0/ci/check_precision.sh
-      # Reviewed DNS/TLS/QUIC/HTTP-2 positive and negative/ambiguous cases
-      # (issue #389, F-TEST-003); reuses the SDK check_precision.sh installed
-      # under $MMT_PREFIX.
+      # Reviewed DNS/TLS/QUIC/HTTP-2 (issue #389) and S1AP/NGAP/NAS plus
+      # unknown/malformed (issue #390) cases, F-TEST-003; reuses the SDK
+      # check_precision.sh installed under $MMT_PREFIX.
       - name: Check the accuracy corpus against its reviewed expectations
         run: python3 tools/ci/tests/check-accuracy-corpus.py --prefix "$MMT_PREFIX" --no-build
       - name: Upload freshly captured metrics on mismatch
