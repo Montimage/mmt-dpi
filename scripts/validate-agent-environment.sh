@@ -186,8 +186,8 @@ tests/run_all_tests.sh:307-323	^# --- phase0 harnesses	^fi$	--with-harnesses del
 sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
 rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
 .github/workflows/c-cpp.yml:213-218	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.3	ruby-version: "3.3"
-docs/Gemfile:11-16	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
-.github/workflows/c-cpp.yml:231	cd docs && bundle exec jekyll build	-	CI builds Jekyll
+docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
+.github/workflows/c-cpp.yml:231	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
 tests/fault_injection/run_tests.sh:90-92	^make .* clean	^make .* install	fault injection builds and installs SDK
 tests/fault_injection/run_tests.sh:77-82	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0

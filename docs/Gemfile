@@ -1,8 +1,9 @@
 # Local build of the documentation site: `cd docs && bundle install &&
-# bundle exec jekyll build` writes the site to docs/_site/. CI builds the
-# same source with actions/jekyll-build-pages (.github/workflows/pages.yml),
-# which provides these gems via the github-pages gemset — the plugins below
-# mirror the plugin list in _config.yml.
+# bundle exec jekyll build` writes the site to docs/_site/. PR verification
+# (.github/workflows/c-cpp.yml) and Pages publication
+# (.github/workflows/pages.yml) both build it from this Gemfile and its lock
+# with tools/ci/build-docs-site.sh (issue #386) — the plugins below mirror the
+# plugin list in _config.yml.
 #
 # Gemfile.lock is tracked (issue #372): the resolved graph is verified under
 # `BUNDLE_FROZEN=true`, so after changing this file run `bundle lock` (or a

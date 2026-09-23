@@ -4,6 +4,14 @@ name: Deploy documentation site to Pages
 # Pages — but only when the documentation actually changes (issue #188,
 # F-CI-017): before this workflow, every push to main redeployed the site
 # whether or not docs/** moved.
+#
+# The site is built by tools/ci/build-docs-site.sh — the same script, frozen
+# docs/Gemfile.lock and Jekyll 4 graph the verify-helpers job in c-cpp.yml
+# runs on every PR (issue #386). The deploy job publishes that uploaded
+# artifact as-is; nothing rebuilds it at deployment time (the former
+# actions/jekyll-build-pages step rendered with github-pages' Jekyll 3.10).
+# The artifact carries build-manifest.json (renderer versions, lock and site
+# digests), served at <site>/build-manifest.json.
 
 on:
   push:
@@ -11,12 +19,14 @@ on:
     paths:
       - "docs/**"
       - ".github/workflows/pages.yml"
+      - "tools/ci/build-docs-site.sh"
+      - "tools/ci/check-site-links.sh"
   workflow_dispatch:
 
+# Least privilege: the build only reads the tree; the Pages-deployment scopes
+# are granted to the deploy job alone.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # One deployment at a time, in its own group — a newer docs push supersedes
 # the in-flight deploy of an older tree.
@@ -30,21 +40,24 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Setup Pages
-        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
+      - name: Set up Ruby for the docs-site build
+        uses: ruby/setup-ruby@e8944e80fb94b20106697132f8c20c665fab29e9 # v1.325.0
         with:
-          source: ./docs
-          destination: ./_site
-      # A broken link should fail the deploy, not ship — the same check gates
-      # PRs in the verify-helpers job of c-cpp.yml (issue #247).
-      - name: Link-check the built site
-        run: bash tools/ci/check-site-links.sh _site
+          ruby-version: "3.3"
+          working-directory: docs
+          bundler-cache: true
+        env:
+          # Same frozen install as the PR verification (issue #372).
+          BUNDLE_FROZEN: "true"
+      # A broken link should fail the deploy, not ship — the same script and
+      # checks gate PRs in the verify-helpers job of c-cpp.yml (issues #247,
+      # #386).
+      - name: Build the site with the locked Jekyll 4 recipe
+        run: bash tools/ci/build-docs-site.sh
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: ./_site
+          path: ./docs/_site
           # The artifact only exists to hand the site from build to deploy
           # inside this run — one day is the minimum and all it needs.
           retention-days: 1
@@ -52,7 +65,13 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
+    # Publish only from main (push or a manual dispatch on main) — never
+    # from a PR or another ref.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
     timeout-minutes: 15
     environment:
       name: github-pages

@@ -3,6 +3,21 @@ description: >-
   High-performance C library for deep packet inspection — 670 protocol
   classification, named attribute extraction, session tracking, and an
   extensible plugin architecture.
+# Published at https://montimage-projects.github.io/mmt-dpi/ (issue #386).
+# The site is built by plain Jekyll 4 (tools/ci/build-docs-site.sh), not the
+# github-pages gem, so nothing injects the Pages baseurl or the site.github
+# metadata at build time — they are declared here instead, identically for
+# PR verification, local builds and the published artifact. The github block
+# supplies the fields the cayman layout reads (header "View on GitHub"
+# button and footer owner line).
+url: https://montimage-projects.github.io
+baseurl: /mmt-dpi
+github:
+  is_project_page: true
+  repository_name: mmt-dpi
+  repository_url: https://github.com/montimage-projects/mmt-dpi
+  owner_name: montimage-projects
+  owner_url: https://github.com/montimage-projects
 # Pinned to the v0.2.0 commit of pages-themes/cayman (issue #213, F-DEP-202) —
 # remote_theme accepts a tag, branch or commit SHA; the SHA form matches the
 # repository's supply-chain convention for actions and container images.

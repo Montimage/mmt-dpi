@@ -103,8 +103,14 @@ gem install bundler
 (cd docs && bundle install && bundle exec jekyll build)
 ```
 
-`docs/Gemfile:11-16` defines Jekyll and its plugins; CI's corresponding build
-is at `.github/workflows/c-cpp.yml:231`.
+`docs/Gemfile:12-17` defines Jekyll and its plugins. CI builds the site with
+`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:231`): source and
+built-site link checks around a frozen Jekyll 4 build, the lock-unchanged
+check, and a `docs/_site/build-manifest.json` recording the renderer versions,
+the lock digest and a site digest. GitHub Pages publishes the artifact that
+same script builds (`.github/workflows/pages.yml`, issue #386) — there is no
+separate deployment-time renderer; `docs/_config.yml` declares the Pages
+`url`/`baseurl`, so local builds use the published `/mmt-dpi` prefix too.
 
 No application `.env` file is required: this is a Make-built SDK, configured
 through make variables (`sdk/Makefile:8-13`, `rules/common.mk:3-8`), and the
