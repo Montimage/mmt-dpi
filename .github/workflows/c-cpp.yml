@@ -211,7 +211,7 @@ jobs:
         bash tools/ci/check-typed-accessors.sh
         bash tools/ci/lint-markers.sh --strict
     - name: Set up Ruby for the docs-site build
-      uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1.323.0
+      uses: ruby/setup-ruby@e8944e80fb94b20106697132f8c20c665fab29e9 # v1.325.0
       with:
         ruby-version: "3.3"
         working-directory: docs
