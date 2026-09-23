@@ -168,6 +168,7 @@ struct mmt_segblk_s; /* tcp_segment.h — plugin-owned bump block chain */
 typedef struct mmt_tcp_reasm_s {
     void *seg_head[2];            /* pending tcp_seg_t list head, seq-sorted */
     void *seg_tail[2];            /* pending list tail — O(1) in-order append */
+    void *seg_root[2];            /* AVL index over the pending list (#382) */
     uint8_t *image[2];            /* flattened stream image (was session_payload) */
     uint32_t image_len[2];        /* valid bytes in image (was session_payload_len) */
     uint32_t image_cap[2];        /* allocated capacity of image */

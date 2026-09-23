@@ -9,13 +9,14 @@
  *
  *   A. in-order         — tail appends, 0 walk visits, incremental drains.
  *   B. reversed         — head prepends, 0 walk visits.
- *   C. interleaved      — evens then odds: interior locate walks. The exact
- *                         visit counts (261,632 at 1,024 segments and
- *                         67,100,672 at 16,384 — (n/2-1)*(n/2)) are recorded
- *                         as EVIDENCE of the current quadratic walk, not as
- *                         desired behavior: the follow-up that replaces the
- *                         insertion structure is expected to lower them and
- *                         must update these assertions deliberately.
+ *   C. interleaved      — evens then odds: interior inserts. Issue #381
+ *                         recorded the quadratic sorted-list walk as
+ *                         evidence (261,632 visits at 1,024 segments and
+ *                         67,100,672 at 16,384 — (n/2-1)*(n/2)); issue #382
+ *                         (F-PERF-003) replaced it with the AVL index, and
+ *                         the exact counts below (5,375 / 118,783) pin the
+ *                         O(n log n) index work: below that evidence, with
+ *                         at most 24-fold growth for 16x the segments.
  *   D. duplicate        — same sequence number: the first segment wins
  *                         (pending or already consumed), even when the later
  *                         one is longer or carries different bytes.
@@ -213,23 +214,30 @@ static uint64_t run_interleaved(uint32_t n, uint32_t len, uint32_t base) {
 }
 
 static void test_interleaved(void) {
-	/* Each odd segment 2k+1 walks the evens and odds before it up to even
-	 * 2k+2 (2k+2 visits); the last odd is a tail append (0 visits):
-	 * sum_{k=0}^{n/2-2} (2k+2) = (n/2 - 1) * (n/2). */
+	/* Issue #382 (F-PERF-003): the evens are tail appends (0 visits); the
+	 * first odd builds the AVL index over the n/2 evens (one visit each),
+	 * then every odd but the last (a tail append) descends it in O(log n).
+	 * 16 segments: 8 build visits + 27 descent visits. */
 	uint64_t v16 = run_interleaved(16, 8, 7000);
-	CHECK(v16 == 7u * 8u, "interleaved 16: %llu visits, expected 56",
+	CHECK(v16 == 35u, "interleaved 16: %llu visits, expected 35",
 	      (unsigned long long) v16);
 
-	/* Historical evidence, NOT desired behavior (F-PERF-003): the current
-	 * sorted-list locate walk is quadratic in the interleaved window. */
+	/* Issue #381 recorded the quadratic sorted-list walk as evidence:
+	 * 261,632 / 67,100,672 visits at 1,024 / 16,384 segments. The index
+	 * must stay below both with at most 24-fold growth. */
 	uint64_t v1k = run_interleaved(1024, 1, 5000);
 	uint64_t v16k = run_interleaved(16384, 1, 5000);
-	CHECK(v1k == 261632u, "interleaved 1,024: %llu visits, recorded evidence 261,632",
+	CHECK(v1k == 5375u, "interleaved 1,024: %llu visits, expected 5,375",
 	      (unsigned long long) v1k);
-	CHECK(v16k == 67100672u, "interleaved 16,384: %llu visits, recorded evidence 67,100,672",
+	CHECK(v16k == 118783u, "interleaved 16,384: %llu visits, expected 118,783",
 	      (unsigned long long) v16k);
+	CHECK(v1k < 261632u && v16k < 67100672u,
+	      "interleaved visits %llu / %llu not below the #381 evidence",
+	      (unsigned long long) v1k, (unsigned long long) v16k);
+	CHECK(v16k <= 24u * v1k, "interleaved growth %llu -> %llu exceeds 24-fold",
+	      (unsigned long long) v1k, (unsigned long long) v16k);
 	printf("  interleaved: 16 -> %llu, 1,024 -> %llu, 16,384 -> %llu visits"
-	       " (evidence, not a target); images in sequence order\n",
+	       " (#381 evidence 261,632 / 67,100,672); images in sequence order\n",
 	       (unsigned long long) v16, (unsigned long long) v1k, (unsigned long long) v16k);
 }
 
@@ -240,7 +248,7 @@ static void test_interleaved(void) {
 static void test_duplicates(void) {
 	const uint32_t S = 2000;
 	session_open();
-	/* Pending list 'A'x4 @S, 'C'x4 @S+8, 'E'x4 @S+16 (gap-free by seq). */
+	/* Pending list 'A'x4 @S, 'B'x4 @S+4, 'C'x4 @S+8 (gap-free by seq). */
 	CHECK(offer_fill(0, S, 'A', 4), "first A dropped");
 	CHECK(offer_fill(0, S + 4, 'B', 4), "first B dropped");
 	CHECK(offer_fill(0, S + 8, 'C', 4), "first C dropped");

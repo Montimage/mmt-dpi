@@ -98,6 +98,9 @@ typedef struct tcp_seg_struct
    * is not free()able, so tcp_seg_free() must not free() it (allocator
    * mismatch). */
   uint8_t in_arena;            // 1 = store-backed, 0 = malloc-backed
+  /* Issue #382 (F-PERF-003): AVL subtree height in the pending-list index;
+   * 0 = not indexed (fits the padding after in_arena). */
+  uint8_t idx_height;
   uint8_t *data;               // data of segment
   struct tcp_seg_struct *next; // Next segment in link-list
   struct tcp_seg_struct *prev; // Previous segment in link-list
@@ -105,6 +108,9 @@ typedef struct tcp_seg_struct
    * consumed prefix by releasing dead blocks early (in_arena == 1). */
   mmt_segblk_t *blk;
   uint32_t blk_size;
+  /* Issue #382 (F-PERF-003): AVL children in the pending-list index. */
+  struct tcp_seg_struct *idx_left;
+  struct tcp_seg_struct *idx_right;
 } tcp_seg_t;
 
 /**
@@ -161,6 +167,60 @@ tcp_seg_t *tcp_seg_insert(tcp_seg_t *root, tcp_seg_t *seg);
  * the same walk accounting as tcp_seg_insert().
  */
 tcp_seg_t *tcp_seg_locate(tcp_seg_t *root, uint64_t seq);
+
+/**
+ * Issue #382 (F-PERF-003): balanced (AVL) index over a seq-sorted pending
+ * list, so an out-of-order insert costs O(log n) node visits instead of an
+ * O(n) list walk. The list stays the source of truth (drain order); the
+ * index only answers "where does seq go". It is insert-only: nodes leave
+ * it all at once through tcp_seg_idx_reset() (or with the list itself).
+ * Callers index lazily — O(1) head/tail links need not touch it, and
+ * tcp_seg_idx_sync() indexes those nodes the next time a lookup needs it,
+ * at most once per node. The ordering is the wrap-aware tcp_seq_before(),
+ * a consistent order only while the pending seqs span less than 2^31 (as
+ * for the sorted list it replaces); beyond that the insert position is
+ * unspecified, but every node is still indexed exactly once, so the work
+ * bound and memory safety hold.
+ *
+ * AVL height <= 1.45 * log2(n + 2): 64 path slots cover any 32-bit count.
+ */
+#define TCP_SEG_IDX_MAX_DEPTH 64
+
+typedef struct tcp_seg_idx_path_s {
+  tcp_seg_t **link[TCP_SEG_IDX_MAX_DEPTH]; /* child slots from the root down */
+  int depth;                               /* link[depth] is the empty slot */
+} tcp_seg_idx_path_t;
+
+/**
+ * Descend the index at *root for `seq`, recording the path in *path.
+ * Returns the first indexed segment whose seq does not sort before `seq`
+ * (an equal seq is a duplicate) or NULL when every one sorts before it.
+ * Each node examined counts once in mmt_tcp_reasm_stat_visit(). When the
+ * returned segment's seq differs from `seq`, the path ends at the empty
+ * slot where tcp_seg_idx_link() can attach a new node.
+ */
+tcp_seg_t *tcp_seg_idx_locate(tcp_seg_t **root, uint64_t seq, tcp_seg_idx_path_t *path);
+
+/**
+ * Attach `seg` at the empty slot a tcp_seg_idx_locate() for seg->seq just
+ * recorded (the index must not change in between) and rebalance.
+ */
+void tcp_seg_idx_link(tcp_seg_idx_path_t *path, tcp_seg_t *seg);
+
+/**
+ * Bring the index at *root up to date with the list head..tail: an empty
+ * index is built from the whole list in O(n) (one visit per node);
+ * otherwise the unindexed head prefix and tail suffix (O(1) prepends and
+ * appends since the last sync) are inserted. Every list node is indexed on
+ * return.
+ */
+void tcp_seg_idx_sync(tcp_seg_t **root, tcp_seg_t *head, tcp_seg_t *tail);
+
+/**
+ * Drop the index at *root; every segment still listed from `head` is
+ * marked unindexed. O(list length), no visits counted.
+ */
+void tcp_seg_idx_reset(tcp_seg_t **root, tcp_seg_t *head);
 
 /**
  * Search in the given Link-list of tcp segment a node which has the seq equals with given seq

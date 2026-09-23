@@ -176,6 +176,9 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
     mmt_tcp_reasm_t *r = session->tcp_reasm;
     if (r == NULL) return;
     tcp_seg_t *seg = (tcp_seg_t *) r->seg_head[dir];
+    /* Issue #382: the drain empties the list from the head; the index is
+     * dropped with it (and rebuilt lazily if an OOM leaves a suffix). */
+    r->seg_root[dir] = NULL;
     while (seg != NULL) {
         tcp_seg_t *nx = seg->next;
         /* unlink seg from the pending list */
@@ -198,6 +201,7 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
                 if (r->seg_head[dir] != NULL) ((tcp_seg_t *) r->seg_head[dir])->prev = seg;
                 else r->seg_tail[dir] = seg;
                 r->seg_head[dir] = seg;
+                tcp_seg_idx_reset((tcp_seg_t **) &r->seg_root[dir], seg);
                 return;
             }
             if (n < seg->len) {
@@ -215,8 +219,9 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
 
 /* Offer a freshly arrived TCP payload segment to the direction's pending
  * store. In-order and descending arrivals take O(1) fast paths (tail /
- * head); other out-of-order segments fall back to a sorted-list locate walk
- * whose length is bounded by the ceiling-limited pending window. Issue #380
+ * head); other out-of-order segments are located through the AVL index
+ * (issue #382, F-PERF-003) in O(log n) visits — the index is synced lazily,
+ * so each fast-path node is indexed at most once. Issue #380
  * (F-PERF-002): the position — and so any duplicate — is found BEFORE any
  * storage is carved, and a carve is admitted only within the reserved-
  * storage budget (see the block comment above). */
@@ -242,6 +247,8 @@ static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
     tcp_seg_t *head = (tcp_seg_t *) r->seg_head[dir];
     tcp_seg_t *tail = (tcp_seg_t *) r->seg_tail[dir];
     tcp_seg_t *before = NULL;
+    tcp_seg_idx_path_t path;
+    int indexed = 0;
     if (tail != NULL && !tcp_seq_before(tail->seq, seq)) {
         /* Not an in-order append (F-PERF-004 keeps that path O(1)). */
         if (tcp_seq_equal(seq, tail->seq) || tcp_seq_equal(seq, head->seq)) {
@@ -250,8 +257,11 @@ static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
         if (tcp_seq_before(seq, head->seq)) {
             before = head;  /* descending order prepends at head — O(1) */
         } else {
-            before = tcp_seg_locate(head, seq);
+            tcp_seg_t **root = (tcp_seg_t **) &r->seg_root[dir];
+            tcp_seg_idx_sync(root, head, tail);
+            before = tcp_seg_idx_locate(root, seq, &path);
             if (before == NULL || tcp_seq_equal(before->seq, seq)) goto drop;
+            indexed = 1;
         }
     }
 
@@ -291,6 +301,9 @@ static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
     seg->prev = NULL;
     seg->blk = blk;
     seg->blk_size = carve;
+    seg->idx_height = 0;   /* issue #382: unindexed until linked/synced */
+    seg->idx_left = NULL;
+    seg->idx_right = NULL;
     memcpy(seg->data, payload, len);
 
     if (tail == NULL) {
@@ -306,6 +319,9 @@ static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
         if (before->prev != NULL) before->prev->next = seg;
         else r->seg_head[dir] = seg;
         before->prev = seg;
+        /* The index is untouched since the locate (admission and the
+         * carve never relink pending segments): attach at the found slot. */
+        if (indexed) tcp_seg_idx_link(&path, seg);
     }
     r->pending_len[dir] += len;
     r->live += carve;

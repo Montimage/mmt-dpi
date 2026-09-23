@@ -9,7 +9,9 @@
  *      call count, the block count, the bump offset and the reserved gauge
  *      unchanged; the whole workload makes exactly as many allocator calls
  *      as the same 1,024 offers without duplicates; reserved storage is the
- *      7-block minimum (114,912 B on LP64) instead of 1,024 blocks.
+ *      8-block minimum (131,328 B on LP64 with the 96-B index-carrying
+ *      node of issue #382; 7 blocks / 114,912 B with the 80-B node) instead
+ *      of 1,024 blocks.
  *   B. AC2 — with the 4 MiB budget, r->reserved equals a walk of the block
  *      chain (header + cap) plus both image capacities and never exceeds
  *      4,194,304 after ANY operation: the AC1 workload, undrained 8,129-B
@@ -257,8 +259,8 @@ static void test_ac1(void) {
 	      "blocks %u (baseline %u), expected %u", blk_dup, blk_base, want_blk);
 	CHECK(res_dup == want_res, "reserved %llu B before drain, expected %llu",
 	      (unsigned long long) res_dup, (unsigned long long) want_res);
-	if (sizeof(tcp_seg_t) == 80)
-		CHECK(res_dup == 114912u, "LP64 reserved %llu != 114,912", (unsigned long long) res_dup);
+	if (sizeof(tcp_seg_t) == 96)  /* LP64; issue #382 added the index links */
+		CHECK(res_dup == 131328u, "LP64 reserved %llu != 131,328", (unsigned long long) res_dup);
 	CHECK(visits > 0, "interior duplicates never walked the list");
 
 	printf("  AC1: %u offers (%u retained), allocator calls %llu (baseline %llu),\n"

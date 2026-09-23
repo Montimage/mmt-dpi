@@ -118,6 +118,9 @@ tcp_seg_t * tcp_seg_new(uint64_t packet_id, uint64_t seq, uint64_t next_seq, uin
 		new_seg->prev = NULL;
 		new_seg->blk = NULL;   /* Issue #245: not store-carved */
 		new_seg->blk_size = 0;
+		new_seg->idx_height = 0; /* Issue #382: not indexed */
+		new_seg->idx_left = NULL;
+		new_seg->idx_right = NULL;
 		return new_seg;
 	}
 }
@@ -146,6 +149,9 @@ tcp_seg_t * tcp_seg_new_in_arena(struct mmt_arena_s * arena, uint64_t packet_id,
 	new_seg->prev = NULL;
 	new_seg->blk = NULL;   /* Issue #245: arena-carved, not segblk-carved */
 	new_seg->blk_size = 0;
+	new_seg->idx_height = 0; /* Issue #382: not indexed */
+	new_seg->idx_left = NULL;
+	new_seg->idx_right = NULL;
 	return new_seg;
 }
 
@@ -276,6 +282,144 @@ tcp_seg_t * tcp_seg_locate(tcp_seg_t * root, uint64_t seq){
 		current_seg = current_seg->next;
 	}
 	return NULL;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  //
+//  Issue #382 (F-PERF-003): AVL index over the pending list                 //
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+static inline uint8_t tcp_seg_idx_h(const tcp_seg_t * n){
+	return (n != NULL) ? n->idx_height : 0;
+}
+
+static inline void tcp_seg_idx_fix(tcp_seg_t * n){
+	uint8_t l = tcp_seg_idx_h(n->idx_left), r = tcp_seg_idx_h(n->idx_right);
+	n->idx_height = (uint8_t) (1 + ((l > r) ? l : r));
+}
+
+static tcp_seg_t * tcp_seg_idx_rotate_right(tcp_seg_t * n){
+	tcp_seg_t * l = n->idx_left;
+	n->idx_left = l->idx_right;
+	l->idx_right = n;
+	tcp_seg_idx_fix(n);
+	tcp_seg_idx_fix(l);
+	return l;
+}
+
+static tcp_seg_t * tcp_seg_idx_rotate_left(tcp_seg_t * n){
+	tcp_seg_t * r = n->idx_right;
+	n->idx_right = r->idx_left;
+	r->idx_left = n;
+	tcp_seg_idx_fix(n);
+	tcp_seg_idx_fix(r);
+	return r;
+}
+
+/* Restore the AVL balance of the subtree at n; returns its new root. */
+static tcp_seg_t * tcp_seg_idx_balance(tcp_seg_t * n){
+	tcp_seg_idx_fix(n);
+	int bf = (int) tcp_seg_idx_h(n->idx_left) - (int) tcp_seg_idx_h(n->idx_right);
+	if (bf > 1) {
+		if (tcp_seg_idx_h(n->idx_left->idx_left) < tcp_seg_idx_h(n->idx_left->idx_right))
+			n->idx_left = tcp_seg_idx_rotate_left(n->idx_left);
+		return tcp_seg_idx_rotate_right(n);
+	}
+	if (bf < -1) {
+		if (tcp_seg_idx_h(n->idx_right->idx_right) < tcp_seg_idx_h(n->idx_right->idx_left))
+			n->idx_right = tcp_seg_idx_rotate_right(n->idx_right);
+		return tcp_seg_idx_rotate_left(n);
+	}
+	return n;
+}
+
+/* Descend for `seq`; an equal seq stops the descent (duplicate) only when
+ * stop_on_equal is set, otherwise it is passed on the right. */
+static tcp_seg_t * tcp_seg_idx_descend(tcp_seg_t ** root, uint64_t seq, tcp_seg_idx_path_t * path,
+                                       int stop_on_equal){
+	tcp_seg_t * succ = NULL;
+	tcp_seg_t ** link = root;
+	int d = 0;
+	/* The AVL height bound keeps d far below the path capacity. */
+	while (*link != NULL && d < TCP_SEG_IDX_MAX_DEPTH - 1) {
+		tcp_seg_t * n = *link;
+		mmt_tcp_reasm_stat_visit();
+		path->link[d++] = link;
+		if (stop_on_equal && tcp_seq_equal(n->seq, seq)) {
+			succ = n; /* duplicate */
+			break;
+		}
+		if (tcp_seq_before(seq, n->seq)) {
+			succ = n;
+			link = &n->idx_left;
+		} else {
+			link = &n->idx_right;
+		}
+	}
+	path->link[d] = link;
+	path->depth = d;
+	return succ;
+}
+
+tcp_seg_t * tcp_seg_idx_locate(tcp_seg_t ** root, uint64_t seq, tcp_seg_idx_path_t * path){
+	return tcp_seg_idx_descend(root, seq, path, 1);
+}
+
+void tcp_seg_idx_link(tcp_seg_idx_path_t * path, tcp_seg_t * seg){
+	seg->idx_left = NULL;
+	seg->idx_right = NULL;
+	seg->idx_height = 1;
+	*path->link[path->depth] = seg;
+	for (int d = path->depth - 1; d >= 0; d--) {
+		tcp_seg_t ** link = path->link[d];
+		uint8_t old = (*link)->idx_height;
+		*link = tcp_seg_idx_balance(*link);
+		/* Unchanged height (or a rotation, which restores the pre-insert
+		 * height): nothing above can change. */
+		if ((*link)->idx_height == old) break;
+	}
+}
+
+/* Build a perfectly balanced index from the next n list nodes at *cur. */
+static tcp_seg_t * tcp_seg_idx_build(tcp_seg_t ** cur, uint32_t n){
+	if (n == 0) return NULL;
+	tcp_seg_t * left = tcp_seg_idx_build(cur, n / 2);
+	tcp_seg_t * mid = *cur;
+	*cur = mid->next;
+	mmt_tcp_reasm_stat_visit();
+	mid->idx_left = left;
+	mid->idx_right = tcp_seg_idx_build(cur, n - n / 2 - 1);
+	tcp_seg_idx_fix(mid);
+	return mid;
+}
+
+static void tcp_seg_idx_insert(tcp_seg_t ** root, tcp_seg_t * seg){
+	/* Always link: a listed seq can repeat once pending seqs span 2^31 or
+	 * more (tcp_seq_before is then not transitive, and a head prepend is
+	 * only checked against head and tail). A skipped node would stay
+	 * unindexed in the head prefix and be re-walked by every sync. */
+	tcp_seg_idx_path_t path;
+	(void) tcp_seg_idx_descend(root, seg->seq, &path, 0);
+	tcp_seg_idx_link(&path, seg);
+}
+
+void tcp_seg_idx_sync(tcp_seg_t ** root, tcp_seg_t * head, tcp_seg_t * tail){
+	if (*root == NULL) {
+		uint32_t n = 0;
+		for (tcp_seg_t * s = head; s != NULL; s = s->next) n++;
+		tcp_seg_t * cur = head;
+		*root = tcp_seg_idx_build(&cur, n);
+		return;
+	}
+	for (tcp_seg_t * s = head; s != NULL && s->idx_height == 0; s = s->next)
+		tcp_seg_idx_insert(root, s);
+	for (tcp_seg_t * s = tail; s != NULL && s->idx_height == 0; s = s->prev)
+		tcp_seg_idx_insert(root, s);
+}
+
+void tcp_seg_idx_reset(tcp_seg_t ** root, tcp_seg_t * head){
+	*root = NULL;
+	for (tcp_seg_t * s = head; s != NULL; s = s->next)
+		s->idx_height = 0;
 }
 
 /**
