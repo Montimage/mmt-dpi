@@ -50,6 +50,7 @@ checklist requires a line here for every user-visible change.
 - core-engine unit suite part 1 — session lifecycle and arena allocator (#241)
 - business-app plugin suite plus crafted-input regression tests for the 1.8.0 syslog, PTP and DCERPC fixes; the contiguous-uncovered-run gate now holds at 10 lines (#243)
 - delete commented-out code and triage the marker backlog, enforced by lint gates (#232)
+- characterize TCP reassembly ordering, duplicates, overlaps, 32-bit sequence wrap, partial consumption and teardown with byte-exact output assertions — new `tcp_pending_order` suite; the interleaved-insert walk counts (261,632 at 1,024 segments, 67,100,672 at 16,384) are recorded as evidence ahead of the insertion-structure change (#381)
 
 Version 2.0.0 (unreleased — scheduled removals)
 - remove the four deprecated public symbols recorded under issues #149 and #237 (issue #232):

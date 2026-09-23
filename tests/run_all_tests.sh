@@ -179,6 +179,7 @@ DEFAULT_SUITES=(
     release_gates
     parser_boundaries
     resource_bounds
+    tcp_pending_order
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.
