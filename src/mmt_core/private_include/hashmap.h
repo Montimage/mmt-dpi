@@ -69,6 +69,22 @@ struct mmt_hent {
 typedef struct mmt_hent mmt_hent_t;
 
 
+/* Issue #383 (F-PERF-004): intrusive recency link for map values that need
+ * an eviction order (the ip_streams / ip6_streams fragment maps). Values
+ * embed one node; the map's owner keeps a sentinel node whose `key` is
+ * unused. An empty list is a self-linked sentinel, and an all-zero sentinel
+ * (a memset handler) is treated as empty. `key` lets the victim be removed
+ * from the map without scanning it. */
+
+struct mmt_hlru {
+   struct mmt_hlru *prev;
+   struct mmt_hlru *next;
+   mmt_key_t        key;
+};
+
+typedef struct mmt_hlru mmt_hlru_t;
+
+
 /* hash slot (linked list of entries) */
 
 LIST_HEAD( mmt_hslot, mmt_hent );

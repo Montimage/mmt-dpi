@@ -39,20 +39,32 @@
 #   test_tcp_order.c — same direct-include + counted-allocator build as
 #                      test_tcp_memory.c.
 #
+# Issue #383 (F-PERF-004) adds the "fragment-eviction" fixture: the IPv4/IPv6
+# fragment maps pick their ceiling-eviction victim from an intrusive recency
+# list, so 10,000 replacement arrivals at the 1,024-datagram ceiling examine
+# at most 10,000 victims (not 10,240,000 walker callbacks) with no map walk
+# on the arrival path; list order is checked against a reference model for
+# increasing, equal and backward timestamps, through sweep and teardown.
+#
+#   test_frag_eviction.c — includes proto_ip_dgram.c, proto_ipv6_dgram.c,
+#                          proto_ip_frag.c and hashmap.c directly, with the
+#                          index counters armed (-DMMT_IP_FRAG_INDEX_STATS)
+#                          and the counted allocator of tcp-memory.
+#
 # No SDK build is needed: every TU compiles straight from src/ — the same
 # standalone property the other unit suites keep (issue #367 contract).
 # Objects stay in a throwaway work dir; only the selected fixtures build.
 #
 # Usage: tests/resource_bounds/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "ipv6-hash" / "tcp-memory" / "tcp-order"
-#   select one.
+#   / "fragment-eviction" select one.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(ipv6-hash tcp-memory tcp-order)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction)
 
 TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -60,7 +72,8 @@ for f in "${FIXTURES[@]}"; do
         ipv6-hash) TESTS+=(ipv6_hash_bounds) ;;
         tcp-memory) TESTS+=(tcp_memory) ;;
         tcp-order) TESTS+=(tcp_order) ;;
-        *) echo "✗ unknown resource_bounds fixture '$f' (known: ipv6-hash, tcp-memory, tcp-order)" >&2
+        fragment-eviction) TESTS+=(frag_eviction) ;;
+        *) echo "✗ unknown resource_bounds fixture '$f' (known: ipv6-hash, tcp-memory, tcp-order, fragment-eviction)" >&2
            exit 2 ;;
     esac
 done
@@ -151,6 +164,25 @@ build_tcp_order() {
         "${WORK}/tcp_alloc_count_order.o" -lm
 }
 
+build_frag_eviction() {
+    # Same counted-allocator build as tcp-memory; the fragment-map sources
+    # are included by the test TU with the index counters armed.
+    local count=(-Dmalloc=tcm_malloc -Dcalloc=tcm_calloc
+                 -Drealloc=tcm_realloc -Dfree=tcm_free)
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -std=gnu11 \
+        -DMMT_IP_FRAG_INDEX_STATS "${count[@]}" "${INCS[@]}" \
+        -I"${REPO_ROOT}/src/mmt_tcpip/lib/protocols" \
+        -c "${SCRIPT_DIR}/test_frag_eviction.c" -o "${WORK}/test_frag_eviction.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
+        "${count[@]}" "${INCS[@]}" \
+        -c "${REPO_ROOT}/src/mmt_core/src/memory.c" -o "${WORK}/memory_counted_frag.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 \
+        -c "${SCRIPT_DIR}/tcp_alloc_count.c" -o "${WORK}/tcp_alloc_count_frag.o"
+    "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_frag_eviction" \
+        "${WORK}/test_frag_eviction.o" "${WORK}/memory_counted_frag.o" \
+        "${WORK}/tcp_alloc_count_frag.o"
+}
+
 echo "  [1/2] compiling ..."
 for name in "${TESTS[@]}"; do
     "build_${name}"
@@ -169,4 +201,4 @@ for name in "${TESTS[@]}"; do
 done
 
 [ "${rc}" -eq 0 ] || { echo "✗ resource bounds tests failed" >&2; exit 1; }
-echo "✓ resource bounds tests passed (issues #379, #380, #382)"
+echo "✓ resource bounds tests passed (issues #379, #380, #382, #383)"

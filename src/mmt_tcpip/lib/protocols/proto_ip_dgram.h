@@ -11,8 +11,14 @@
 /* Issue #201 (F-BUG-020): bounds for the shared ip_streams fragment map.
  *
  *  - MMT_IP_FRAG_MAP_MAX_ENTRIES caps the number of in-flight datagrams a
- *    handler will track; inserting past the ceiling evicts the stalest entry
- *    (mmt_ip_frag_map_evict_oldest).
+ *    handler will track; inserting past the ceiling evicts the least
+ *    recently updated entry (mmt_ip_frag_map_make_room). Issue #383
+ *    (F-PERF-004): the victim is the head of an intrusive recency list
+ *    (mmt_hlru_t, sentinel on the handler), so eviction is O(1) instead of a
+ *    walk of every in-flight datagram. Recency is update ORDER: with
+ *    non-decreasing packet timestamps it is exactly the smallest
+ *    last_activity (ties: the earliest updated), and a timestamp that runs
+ *    backwards neither promotes nor demotes a datagram.
  *  - MMT_IP_FRAG_TIMEOUT_SEC is the age, in seconds of packet timestamp, after
  *    which an unfinished datagram is swept by the session-expiry timer pass.
  *  - MMT_IP_FRAG_MAX_DGRAM bounds a single reassembled payload: an IPv4
@@ -62,6 +68,7 @@ struct ip_dgram {
     * age-based expiry. Keep this prefix identical to struct ipv6_dgram. */
    uint8_t     ip_version;    // 4 for ip_dgram_t
    uint32_t    last_activity; // tv_sec of the last fragment update
+   mmt_hlru_t  lru;           // issue #383: eviction-order link (shared prefix)
    uint8_t    *x;      // reassembly buffer
    unsigned    len;    // buffer length
    unsigned    nb_packets;
@@ -96,7 +103,25 @@ extern int         ip_dgram_is_complete  ( ip_dgram_t * );
  * timer pass and from mmt_close_handler(). */
 extern void        mmt_ip_frag_map_sweep        ( mmt_hashmap_t *, uint32_t now );
 extern void        mmt_ip_frag_map_drain        ( mmt_hashmap_t * );
-extern void        mmt_ip_frag_map_evict_oldest ( mmt_hashmap_t * );
+extern void        mmt_ip_frag_map_evict_oldest ( mmt_hashmap_t *, mmt_hlru_t *lru );
+/* Issue #383 (F-PERF-004): recency-list maintenance. make_room evicts from
+ * the list head until the map is below MMT_IP_FRAG_MAP_MAX_ENTRIES and
+ * returns 1 when a new datagram may be inserted, 0 otherwise. touch moves a
+ * datagram's node to the tail (most recent) and records its map key; the
+ * dgram deallocators unlink it, so every removal path keeps the list exact. */
+extern int         mmt_ip_frag_map_make_room    ( mmt_hashmap_t *, mmt_hlru_t *lru );
+extern void        mmt_ip_frag_lru_touch        ( mmt_hlru_t *lru, mmt_hlru_t *node, mmt_key_t key );
+extern void        mmt_ip_frag_lru_unlink       ( mmt_hlru_t *node );
+
+#ifdef MMT_IP_FRAG_INDEX_STATS
+/* Test-only work counters (tests/resource_bounds fragment-eviction). */
+struct mmt_ip_frag_index_stats {
+   uint64_t victim_visits;  /* list nodes examined to pick eviction victims */
+   uint64_t links;          /* node insertions at the list tail */
+   uint64_t unlinks;        /* node removals from the list */
+};
+extern struct mmt_ip_frag_index_stats mmt_ip_frag_index_stats;
+#endif
 
 
 #endif /*_MMT_IP_DGRAM_H*/

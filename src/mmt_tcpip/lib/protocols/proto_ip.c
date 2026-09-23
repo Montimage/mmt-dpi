@@ -693,16 +693,10 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     key = ip_fragment_key( (const struct iphdr *) ip );
     if ( !hashmap_get( map, key, (void**)&dg )) {
         /* Issue #201 (F-BUG-020): bound the map BEFORE allocating a new
-         * datagram — at the ceiling, evict the stalest entry instead of
-         * growing without bound for the handler's lifetime. */
-        while (map->nkeys >= MMT_IP_FRAG_MAP_MAX_ENTRIES) {
-            unsigned before = map->nkeys;
-            mmt_ip_frag_map_evict_oldest( map );
-            if (map->nkeys >= before)
-                break; /* nothing evictable left — refuse to grow */
-        }
-        if (map->nkeys >= MMT_IP_FRAG_MAP_MAX_ENTRIES)
-            return 0;
+         * datagram — at the ceiling, evict the least recently updated entry
+         * (O(1) list head, issue #383) instead of growing without bound. */
+        if (!mmt_ip_frag_map_make_room(map, &mmt->ip_streams_lru))
+            return 0; /* nothing evictable left — refuse to grow */
         dg = ip_dgram_alloc();
         if (dg == NULL)
             return 0; /* OOM: treat like an incomplete datagram — drop the fragment */
@@ -731,6 +725,8 @@ static inline int ip_process_fragment( ipacket_t *ipacket, unsigned index )
     }
     /* Track the most recent fragment for the age-based sweep. */
     dg->last_activity = (uint32_t) ipacket->p_hdr->ts.tv_sec;
+    /* Issue #383: move to the recency-list tail (eviction order). */
+    mmt_ip_frag_lru_touch( &mmt->ip_streams_lru, &dg->lru, key );
     if(dgram_update_result == 2 || dgram_update_result == 6 ){
         fire_evasion_event(ipacket,PROTO_IP,index,EVA_IP_FRAGMENT_DUPLICATED,(void*)&(dgram_update_result));
     }else if (dgram_update_result > 0 ) {

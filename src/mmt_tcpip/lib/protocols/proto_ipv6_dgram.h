@@ -5,6 +5,7 @@
 #include "mmt_core.h"
 #include "mmt_common_internal_include.h"
 #include "proto_ip_frag.h"
+#include "hashmap.h"  /* issue #383: mmt_hlru_t eviction-order link */
 #include "ipv6.h" /* issue #59: mmt_una_ipv6hdr_t alignment-safe view */
 #define MMT_MAX_NUMBER_FRAGMENT 64 // Maximum number of fragments packet in an IP packets
 
@@ -44,6 +45,7 @@ struct ipv6_dgram
     * 6) selects the deallocator, last_activity drives the age-based expiry. */
    uint8_t ip_version;    // 6 for ipv6_dgram_t
    uint32_t last_activity; // tv_sec of the last fragment update
+   mmt_hlru_t  lru;           // issue #383: eviction-order link (shared prefix)
    uint8_t *x;   // reassembly buffer
    unsigned len; // buffer length
    unsigned nb_packets;

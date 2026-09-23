@@ -604,6 +604,12 @@ struct mmt_handler_struct {
      * plugin-agnostic on purpose. */
     void (*frag_map_sweep_fct)(mmt_hashmap_t *map, uint32_t now);
     void (*frag_map_drain_fct)(mmt_hashmap_t *map);
+    /* Issue #383 (F-PERF-004): recency-list sentinels of ip_streams and
+     * ip6_streams (least recently updated datagram first). Maintained by the
+     * TCP/IP plugin so ceiling eviction picks its victim in O(1) instead of
+     * walking the whole map; zeroed with the handler, which reads as empty. */
+    mmt_hlru_t ip_streams_lru;
+    mmt_hlru_t ip6_streams_lru;
     /* Issue #245: per-flow ceiling on TCP reassembly bytes. Issue #380
      * (F-PERF-002): it bounds reserved storage (pending-segment blocks incl.
      * headers + both image capacities), not just content. Set via

@@ -39,6 +39,9 @@ ipv6_dgram_t *ipv6_dgram_alloc()
 
 void ipv6_dgram_free(ipv6_dgram_t *dg)
 {
+   /* Issue #383: leave the eviction-order list before the node is freed. */
+   if (dg != NULL)
+      mmt_ip_frag_lru_unlink(&dg->lru);
    ipv6_dgram_cleanup(dg);
    mmt_free(dg);
 }
@@ -56,6 +59,8 @@ int ipv6_dgram_init(ipv6_dgram_t *dg)
     * hooks — must stay the leading layout shared with struct ip_dgram. */
    dg->ip_version = 6;
    dg->last_activity = 0;
+   dg->lru.prev = dg->lru.next = &dg->lru; /* issue #383: not listed yet */
+   dg->lru.key = 0;
    dg->x = 0;
    dg->len = 0;
    dg->nb_packets = 0;

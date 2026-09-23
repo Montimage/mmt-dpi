@@ -39,6 +39,9 @@ ip_dgram_t *ip_dgram_alloc()
 
 void ip_dgram_free( ip_dgram_t *dg )
 {
+   /* Issue #383: leave the eviction-order list before the node is freed. */
+   if( dg != NULL )
+      mmt_ip_frag_lru_unlink( &dg->lru );
    ip_dgram_cleanup( dg );
    mmt_free( dg );
 }
@@ -56,6 +59,8 @@ int ip_dgram_init( ip_dgram_t *dg )
     * hooks — must stay the leading layout shared with struct ipv6_dgram. */
    dg->ip_version    = 4;
    dg->last_activity = 0;
+   dg->lru.prev = dg->lru.next = &dg->lru; /* issue #383: not listed yet */
+   dg->lru.key  = 0;
    dg->x   = 0;
    dg->len = 0;
    dg->nb_packets = 0;
@@ -436,8 +441,9 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
 
 /* Issue #201 (F-BUG-020): shared ip_streams fragment-map maintenance.
  *
- * The map holds both ip_dgram_t and ipv6_dgram_t values; both structs share
- * the same leading {ip_version, last_activity, x, len} layout, so the walkers
+ * The maps (ip_streams, ip6_streams) hold ip_dgram_t / ipv6_dgram_t values;
+ * both structs share the same leading {ip_version, last_activity, lru, x, len}
+ * layout, so the walkers
  * below can read the metadata and pick the right deallocator through an
  * ip_dgram_t view. Removal inside hashmap_walk() is safe: the walk caches the
  * successor before invoking the callback (hashmap.c). */
@@ -492,38 +498,86 @@ void mmt_ip_frag_map_drain( mmt_hashmap_t *map )
    hashmap_walk( map, _frag_drain_walker, NULL );
 }
 
-struct _frag_oldest_ctx {
-   int        found;
-   uint32_t   last_activity;
-   mmt_key_t  key;
-};
+/* Issue #383 (F-PERF-004): maintained eviction order. Every in-flight
+ * datagram is threaded on a circular recency list whose sentinel lives on the
+ * handler; the head (sentinel->next) is the least recently updated datagram.
+ * The old victim selection walked the whole map (one callback per entry,
+ * 1,024 per eviction at the ceiling); the list makes it O(1). */
 
-static void _frag_oldest_walker( mmt_hashmap_t *map, mmt_hent_t *he, void *arg )
+#ifdef MMT_IP_FRAG_INDEX_STATS
+struct mmt_ip_frag_index_stats mmt_ip_frag_index_stats;
+#define FRAG_INDEX_STAT( field ) ( mmt_ip_frag_index_stats.field++ )
+#else
+#define FRAG_INDEX_STAT( field ) ( (void) 0 )
+#endif
+
+/* A zeroed sentinel (memset handler) reads as an empty list. */
+static inline void _frag_lru_ensure( mmt_hlru_t *lru )
 {
-   (void) map;
-   struct _frag_oldest_ctx *ctx = (struct _frag_oldest_ctx *) arg;
-   ip_dgram_t *dg = (ip_dgram_t *) he->val;
-   uint32_t    act = (dg != NULL) ? dg->last_activity : 0;
-   if( !ctx->found || act < ctx->last_activity ) {
-      ctx->found         = 1;
-      ctx->last_activity = act;
-      ctx->key           = he->key;
+   if( lru->next == NULL || lru->prev == NULL )
+      lru->prev = lru->next = lru;
+}
+
+void mmt_ip_frag_lru_unlink( mmt_hlru_t *node )
+{
+   if( node == NULL || node->next == NULL || node->next == node )
+      return;
+   node->prev->next = node->next;
+   node->next->prev = node->prev;
+   node->prev = node->next = node;
+   FRAG_INDEX_STAT( unlinks );
+}
+
+void mmt_ip_frag_lru_touch( mmt_hlru_t *lru, mmt_hlru_t *node, mmt_key_t key )
+{
+   if( lru == NULL || node == NULL )
+      return;
+   _frag_lru_ensure( lru );
+   if( node->next == NULL )
+      node->prev = node->next = node;
+   node->key = key;
+   if( lru->prev == node )
+      return; /* already the most recent: nothing to move */
+   mmt_ip_frag_lru_unlink( node );
+   node->prev       = lru->prev;
+   node->next       = lru;
+   lru->prev->next  = node;
+   lru->prev        = node;
+   FRAG_INDEX_STAT( links );
+}
+
+void mmt_ip_frag_map_evict_oldest( mmt_hashmap_t *map, mmt_hlru_t *lru )
+{
+   if( map == NULL || map->slots == NULL || lru == NULL )
+      return;
+   _frag_lru_ensure( lru );
+   mmt_hlru_t *victim = lru->next;
+   if( victim == lru )
+      return; /* nothing listed */
+   FRAG_INDEX_STAT( victim_visits );
+   void *val = NULL;
+   if( hashmap_get( map, victim->key, &val ) && val != NULL
+    && &((ip_dgram_t *) val)->lru == victim ) {
+      hashmap_remove( map, victim->key );
+      _frag_dgram_free( val ); /* unlinks victim */
+   } else {
+      /* Stale node (cannot happen while every removal frees through the
+       * dgram deallocators): drop it so the next call makes progress. */
+      mmt_ip_frag_lru_unlink( victim );
    }
 }
 
-void mmt_ip_frag_map_evict_oldest( mmt_hashmap_t *map )
+int mmt_ip_frag_map_make_room( mmt_hashmap_t *map, mmt_hlru_t *lru )
 {
-   if( map == NULL || map->slots == NULL )
-      return;
-   struct _frag_oldest_ctx ctx = { 0, 0, 0 };
-   hashmap_walk( map, _frag_oldest_walker, &ctx );
-   if( !ctx.found )
-      return;
-   void *val = NULL;
-   if( hashmap_get( map, ctx.key, &val ) ) {
-      hashmap_remove( map, ctx.key );
-      _frag_dgram_free( val );
+   if( map == NULL )
+      return 0;
+   while( map->nkeys >= MMT_IP_FRAG_MAP_MAX_ENTRIES ) {
+      unsigned before = map->nkeys;
+      mmt_ip_frag_map_evict_oldest( map, lru );
+      if( map->nkeys >= before )
+         break; /* nothing evictable left — refuse to grow */
    }
+   return map->nkeys < MMT_IP_FRAG_MAP_MAX_ENTRIES;
 }
 
 
