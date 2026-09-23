@@ -23,6 +23,7 @@ checklist requires a line here for every user-visible change.
 - pin the asn1c generator and gate the regenerated tree weekly (#223)
 - add CodeQL SAST and a bounded mutation-fuzz gate (#224)
 - repin the centos-stream9 base image after an upstream digest GC (#310)
+- measure resolved dependency advisory status — docs gems, pinned actions and the release-distro runtime packages — with `tools/ci/check-dependency-advisories.sh`, which fails closed when a required scanner did not run (#384)
 
 ### Core and protocols
 - bound the parsers and core APIs against short and attacker-controlled buffers — caplen guards for attribute extraction and packet-data reads, bounded header and stream walkers, and hardening of the FTP, RADIUS, S1AP/NGAP and NAS IE decoders plus the rule-engine command-injection fix (#127–#137, #146, #192, #193, #205)
