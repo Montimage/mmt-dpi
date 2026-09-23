@@ -29,6 +29,7 @@ tools/phase0/ci/regen_pcaps.sh (issue #216).
 Usage:
     tools/phase0/gen_tcpip_pcap.py --out-dir /tmp/tcpip-pcaps
     tools/phase0/gen_tcpip_pcap.py --out-dir /tmp/tcpip-pcaps --pcap http
+    tools/phase0/gen_tcpip_pcap.py --out-dir tools/phase0/ci/accuracy --accuracy
 """
 import argparse
 import os
@@ -516,6 +517,257 @@ def gen_ips_data_pcap(path):
     print("wrote %s (IPS_DATA linktype 801)" % path)
 
 
+# --- accuracy corpus (issue #389, F-TEST-003) --------------------------------
+# Reviewed positive and negative/ambiguous cases for DNS, TLS, QUIC and HTTP/2,
+# vendored under tools/phase0/ci/accuracy/ and listed (with expected handling,
+# provenance and review notes) in tools/phase0/ci/accuracy/corpus.json. They are
+# deliberately NOT part of ci/golden_pcaps.txt: the golden classification
+# fingerprint's input set stays unchanged. Addresses are RFC 5737 documentation
+# ranges and names are RFC 2606/6761 reserved, so the captures carry no real
+# identity. Regenerate with:
+#   tools/phase0/gen_tcpip_pcap.py --out-dir tools/phase0/ci/accuracy --accuracy
+
+ACC_CLIENT = struct.pack("!I", 0xC0000201)   # 192.0.2.1   (TEST-NET-1)
+ACC_SERVER = struct.pack("!I", 0xC6336402)   # 198.51.100.2 (TEST-NET-2)
+ACC_CLIENT_MAC = b"\x02\x00\x00\x00\x02\x01"
+ACC_SERVER_MAC = b"\x02\x00\x00\x00\x64\x02"
+
+
+class _AccFlow:
+    """One bidirectional flow with consistent addressing (and, for TCP,
+    consistent sequence/acknowledgement numbers) between the accuracy client
+    and server. Packets are written with strictly increasing timestamps."""
+
+    def __init__(self, f, proto, cport, sport, ts_us=0):
+        self.f, self.proto = f, proto
+        self.cport, self.sport = cport, sport
+        self.seq = {"cli": 1000, "srv": 50000}
+        self.ts_us = ts_us
+        self.ident = 0
+
+    def _l3l4(self, side, payload, flags):
+        if side == "cli":
+            smac, dmac = ACC_CLIENT_MAC, ACC_SERVER_MAC
+            sip, dip, sp, dp = ACC_CLIENT, ACC_SERVER, self.cport, self.sport
+        else:
+            smac, dmac = ACC_SERVER_MAC, ACC_CLIENT_MAC
+            sip, dip, sp, dp = ACC_SERVER, ACC_CLIENT, self.sport, self.cport
+        other = "srv" if side == "cli" else "cli"
+        if self.proto == 6:
+            l4 = struct.pack("!HHIIBBHHH", sp, dp, self.seq[side],
+                             self.seq[other] if flags & 0x10 else 0,
+                             (TCP_HLEN // 4) << 4, flags, 65535, 0, 0)
+            self.seq[side] += len(payload) + (1 if flags & 0x03 else 0)
+        else:
+            l4 = udp_header(sp, dp, len(payload))
+        return (eth_header(smac, dmac)
+                + ip_header(sip, dip, self.proto, len(l4) + len(payload),
+                            ident=self.ident)
+                + l4 + payload)
+
+    def send(self, side, payload=b"", flags=0x18):
+        pcap_write(self.f, self._l3l4(side, payload, flags), ts_us=self.ts_us)
+        self.ts_us += 1000
+        self.ident += 1
+
+    def handshake(self):
+        self.send("cli", flags=0x02)   # SYN
+        self.send("srv", flags=0x12)   # SYN|ACK
+        self.send("cli", flags=0x10)   # ACK
+
+
+def _dns_message(ident, flags, qname, answers=b"", ancount=0):
+    labels = b"".join(bytes([len(p)]) + p for p in qname.split(b".")) + b"\x00"
+    return (struct.pack("!HHHHHH", ident, flags, 1, ancount, 0, 0)
+            + labels + struct.pack("!HH", 1, 1) + answers)
+
+
+def gen_acc_dns_positive_pcap(path):
+    """DNS query + response over UDP/53: A record for accuracy.example."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 53124, 53)
+    flow.send("cli", _dns_message(0x3a51, 0x0100, b"accuracy.example"))
+    # answer: name pointer to offset 12, TYPE A, CLASS IN, TTL 300, 192.0.2.10
+    answer = (b"\xc0\x0c" + struct.pack("!HHIH", 1, 1, 300, 4)
+              + bytes([192, 0, 2, 10]))
+    flow.send("srv", _dns_message(0x3a51, 0x8180, b"accuracy.example",
+                                  answer, ancount=1))
+    f.close()
+    print("wrote %s (accuracy: DNS query+response)" % path)
+
+
+def gen_acc_dns_negative_pcap(path):
+    """Plain text over UDP/53 in both directions — port 53 alone must not
+    yield a DNS verdict."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 53125, 53)
+    flow.send("cli", b"hello, this datagram is not a DNS message at all\n")
+    flow.send("srv", b"and neither is this reply, despite the port\n")
+    f.close()
+    print("wrote %s (accuracy: non-DNS text on UDP/53)" % path)
+
+
+def _tls_client_hello(sni):
+    body = (b"\x03\x03" + bytes(range(32))            # version, random
+            + b"\x00"                                  # session id len 0
+            + b"\x00\x04\x00\x2f\x00\x35"              # 2 TLS 1.2 suites
+            + b"\x01\x00")                             # null compression
+    ext = b""
+    if sni is not None:
+        host = sni.encode()
+        sni_list = b"\x00" + struct.pack("!H", len(host)) + host
+        sni_ext = struct.pack("!H", len(sni_list)) + sni_list
+        ext += struct.pack("!HH", 0, len(sni_ext)) + sni_ext
+    body += struct.pack("!H", len(ext)) + ext
+    hs = b"\x01" + struct.pack("!I", len(body))[1:] + body
+    return struct.pack("!BHH", 22, 0x0301, len(hs)) + hs
+
+
+def _tls_server_hello():
+    body = (b"\x03\x03" + bytes(range(32, 64)) + b"\x00"   # version, random, sid
+            + b"\x00\x2f" + b"\x00" + b"\x00\x00")         # suite, comp, no ext
+    hs = b"\x02" + struct.pack("!I", len(body))[1:] + body
+    return struct.pack("!BHH", 22, 0x0303, len(hs)) + hs
+
+
+def _acc_tls_pcap(path, sni, note):
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49321, 443)
+    flow.handshake()
+    flow.send("cli", _tls_client_hello(sni))
+    flow.send("srv", _tls_server_hello())
+    f.close()
+    print("wrote %s (accuracy: %s)" % (path, note))
+
+
+def gen_acc_tls_positive_pcap(path):
+    """TCP/443 handshake + TLS ClientHello (SNI accuracy.example) and
+    ServerHello."""
+    _acc_tls_pcap(path, "accuracy.example", "TLS ClientHello+ServerHello")
+
+
+def gen_acc_tls_sni_attribution_pcap(path):
+    """Same TLS exchange, SNI www.google.com: the wire protocol is still TLS;
+    any application name the SDK derives from the SNI is heuristic attribution
+    and is reported separately by the accuracy oracle."""
+    _acc_tls_pcap(path, "www.google.com", "TLS with attributable SNI")
+
+
+def gen_acc_tls_negative_pcap(path):
+    """Plaintext HTTP/1.1 on TCP/443 — port 443 alone must not yield a TLS
+    verdict."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49322, 443)
+    flow.handshake()
+    flow.send("cli", b"GET / HTTP/1.1\r\nHost: accuracy.example\r\n\r\n")
+    flow.send("srv", b"HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n")
+    f.close()
+    print("wrote %s (accuracy: plaintext HTTP on TCP/443)" % path)
+
+
+def _quic_long_header(version, ptype, dcid, scid, fill, initial=False,
+                      pad_to=0):
+    """Long-header packet; `initial` adds the Initial-only Token Length field
+    (the Initial type code differs per version: 0b00 in v1, 0b01 in v2).
+    `pad_to` pads the payload so the datagram reaches that many bytes (RFC
+    9000 §14.1: client Initial datagrams carry at least 1200 bytes)."""
+    # byte0: header form (1) | fixed bit (1) | long packet type (2 bits) | pn
+    # length - 1 (2 bits, here 3 -> 4-byte packet number)
+    first = 0xC0 | (ptype << 4) | 0x03
+    head = (bytes([first]) + struct.pack("!I", version)
+            + bytes([len(dcid)]) + dcid + bytes([len(scid)]) + scid
+            + (b"\x00" if initial else b""))        # Initial: token length 0
+    body = b"\x00\x00\x00\x01" + fill               # packet number + payload
+    body += b"\x00" * max(0, pad_to - len(head) - 2 - len(body))  # PADDING
+    return head + struct.pack("!H", 0x4000 | len(body)) + body
+
+
+def gen_acc_quic_positive_pcap(path):
+    """QUIC v1 (RFC 9000) over UDP/443: client Initial, server Initial, then
+    one client short-header (1-RTT) packet on the same flow."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 51820, 443)
+    dcid, scid = bytes(range(0xA0, 0xA8)), bytes(range(0xB0, 0xB8))
+    flow.send("cli", _quic_long_header(1, 0, dcid, scid, b"\x5a" * 40,
+                                       initial=True, pad_to=1200))
+    # the server's Initial carries its chosen connection ID (dcid) as SCID
+    flow.send("srv", _quic_long_header(1, 0, scid, dcid, b"\x5b" * 40,
+                                       initial=True))
+    # short header: form 0, fixed bit 1, DCID (8 bytes, the server-chosen
+    # connection ID), 4-byte packet number, protected payload
+    flow.send("cli", b"\x43" + dcid + b"\x00\x00\x00\x02" + b"\x5c" * 24)
+    f.close()
+    print("wrote %s (accuracy: QUIC v1 Initial x2 + 1-RTT)" % path)
+
+
+def gen_acc_quic_v2_ambiguous_pcap(path):
+    """QUIC version 2 (RFC 9369, version 0x6b3343cf) Initial exchange on
+    UDP/443. It is genuine QUIC, but the SDK only recognises version 1
+    (TODO #333), so the expected handling is an abstention — ambiguous, not a
+    false negative the gate should hide."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 51821, 443)
+    dcid, scid = bytes(range(0xC0, 0xC8)), bytes(range(0xD0, 0xD8))
+    # QUIC v2 encodes Initial as long packet type 0b01
+    flow.send("cli", _quic_long_header(0x6B3343CF, 1, dcid, scid,
+                                       b"\x6a" * 40, initial=True,
+                                       pad_to=1200))
+    flow.send("srv", _quic_long_header(0x6B3343CF, 1, scid, dcid,
+                                       b"\x6b" * 40, initial=True))
+    f.close()
+    print("wrote %s (accuracy: QUIC v2 Initial x2)" % path)
+
+
+def _h2_frame(ftype, flags, stream, payload):
+    return (struct.pack("!I", len(payload))[1:] + bytes([ftype, flags])
+            + struct.pack("!I", stream) + payload)
+
+
+def gen_acc_http2_positive_pcap(path):
+    """Prior-knowledge cleartext HTTP/2 (RFC 9113 §3.3) on TCP/8080: client
+    preface+SETTINGS+HEADERS, server SETTINGS+SETTINGS-ACK."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49323, 8080)
+    flow.handshake()
+    # HPACK static-table indices: :method GET (2), :scheme http (6), :path /
+    # (4), :authority literal (1) "accuracy.example"
+    hpack = b"\x82\x86\x84\x41" + bytes([16]) + b"accuracy.example"
+    flow.send("cli", b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+              + _h2_frame(4, 0, 0, struct.pack("!HI", 3, 100))
+              + _h2_frame(1, 0x05, 1, hpack))
+    flow.send("srv", _h2_frame(4, 0, 0, b"") + _h2_frame(4, 0x01, 0, b""))
+    f.close()
+    print("wrote %s (accuracy: HTTP/2 prior knowledge on TCP/8080)" % path)
+
+
+def gen_acc_http2_negative_pcap(path):
+    """HTTP/1.1 request offering an h2c upgrade (RFC 7540 §3.2) that the
+    server declines — the flow stays HTTP/1.1 and must not be labelled
+    HTTP/2."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 6, 49324, 80)
+    flow.handshake()
+    flow.send("cli", b"GET / HTTP/1.1\r\nHost: accuracy.example\r\n"
+              b"Connection: Upgrade, HTTP2-Settings\r\nUpgrade: h2c\r\n"
+              b"HTTP2-Settings: AAMAAABkAAQAAP__\r\n\r\n")
+    flow.send("srv", b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok")
+    f.close()
+    print("wrote %s (accuracy: declined h2c upgrade)" % path)
+
+
+ACC_GENS = {
+    "acc_dns_positive": gen_acc_dns_positive_pcap,
+    "acc_dns_negative": gen_acc_dns_negative_pcap,
+    "acc_tls_positive": gen_acc_tls_positive_pcap,
+    "acc_tls_sni_attribution": gen_acc_tls_sni_attribution_pcap,
+    "acc_tls_negative": gen_acc_tls_negative_pcap,
+    "acc_quic_positive": gen_acc_quic_positive_pcap,
+    "acc_quic_v2_ambiguous": gen_acc_quic_v2_ambiguous_pcap,
+    "acc_http2_positive": gen_acc_http2_positive_pcap,
+    "acc_http2_negative": gen_acc_http2_negative_pcap,
+}
+
+
 GENS = {
     "http": gen_http_pcap,
     "dns": gen_dns_pcap,
@@ -538,15 +790,25 @@ def main():
     ap = argparse.ArgumentParser(description="Generate TCP/IP synthetic pcaps (issue #143)")
     ap.add_argument("--out-dir", default="/tmp/tcpip-pcaps",
                     help="output directory (default: /tmp/tcpip-pcaps)")
-    ap.add_argument("--pcap", choices=list(GENS.keys()), default=None,
-                    help="generate only this pcap type")
+    sel = ap.add_mutually_exclusive_group()
+    sel.add_argument("--pcap", choices=list(GENS.keys()) + list(ACC_GENS.keys()),
+                     default=None, help="generate only this pcap type")
+    sel.add_argument("--accuracy", action="store_true",
+                     help="generate every accuracy-corpus capture (issue #389) "
+                          "instead of the default harness set")
     args = ap.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
-    targets = [args.pcap] if args.pcap else sorted(GENS.keys())
+    gens = dict(GENS, **ACC_GENS)
+    if args.pcap:
+        targets = [args.pcap]
+    elif args.accuracy:
+        targets = sorted(ACC_GENS.keys())
+    else:
+        targets = sorted(GENS.keys())
     for name in targets:
         out = os.path.join(args.out_dir, "%s.pcap" % name)
-        GENS[name](out)
+        gens[name](out)
     total = len(targets)
     print("done: %d pcap(s) under %s" % (total, args.out_dir))
 

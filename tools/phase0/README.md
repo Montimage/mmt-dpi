@@ -22,6 +22,7 @@ Phase 0 changes **no production code** — it adds tooling and captured baseline
 | `baseline/classification/` | Per-pcap fingerprints (one file each), for granular diffs. |
 | `baseline/throughput.txt` | Throughput reference snapshot (environment-dependent — compare relative deltas). |
 | `baseline/perf/throughput.txt` | Same-machine throughput + RSS reference for the `throughput_pcaps.txt` benchmark set (issue #251). |
+| `ci/accuracy/` | Reviewed DNS/TLS/QUIC/HTTP-2 accuracy corpus (issue #389, F-TEST-003): synthetic captures plus `corpus.json`, which records per capture the family, the case (positive / negative / ambiguous), the expected per-packet handling, the sha256 of the reviewed bytes, redistribution provenance and review notes. Checked by `tools/ci/tests/check-accuracy-corpus.py`; deliberately **not** in `ci/golden_pcaps.txt`, so the golden fingerprint's input set is unchanged. Regenerate with `gen_tcpip_pcap.py --out-dir ci/accuracy --accuracy`. |
 | `ci/baseline/memory.txt` | The M4 library-RSS ceiling (KiB), enforced by `tests/run_memory_ceiling_test.sh` in the CI harness matrix (issue #251). |
 | `baseline/valgrind.txt` | Valgrind leak baseline, or a SKIPPED note + exact command when valgrind is absent. |
 
@@ -135,6 +136,19 @@ What each gate asserts:
   `precision.txt` diff never requires regenerating `classification.txt`, and
   vice versa — but every corrected baseline carries its explanation in the PR
   body (issue #373, F-TEST-002).
+  The same job then runs `tools/ci/tests/check-accuracy-corpus.py` against
+  the SDK it just installed (issue #389, F-TEST-003). The oracle runs every
+  capture listed in `ci/accuracy/corpus.json` and fails on a missing capture,
+  an unlabelled one, a missing label/provenance/review field, a sha256 or
+  generator-reproducibility mismatch, a family without both a positive and a
+  negative/ambiguous case, or any verdict that differs from the reviewed
+  expectation. Its report gives per-family support, wire-protocol hits,
+  abstentions and false accepts, and lists heuristic application attribution
+  (e.g. `ssl.google` derived from a TLS SNI) **separately** — attribution never
+  counts as wire-protocol accuracy. `python3 tools/ci/tests/check-accuracy-corpus.py`
+  builds its own throwaway prefix locally; `--offline` checks the manifest
+  only. When a classifier change intentionally alters a case's handling,
+  update that case's `expected` block and review notes in the same PR.
 - **`list-harnesses` / `harness-*` matrix** — the setup job enumerates
   `tools/phase0/tests/run_*.sh` and fans out one `harness-<script>` job per
   file (issue #182), so a newly added harness is gated with no workflow

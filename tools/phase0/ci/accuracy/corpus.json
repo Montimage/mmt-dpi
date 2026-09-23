@@ -1,0 +1,313 @@
+{
+  "_comment": [
+    "Issue #389 (F-TEST-003): reviewed DNS, TLS, QUIC and HTTP/2 accuracy cases.",
+    "Checked by tools/ci/tests/check-accuracy-corpus.py; NOT part of ci/golden_pcaps.txt,",
+    "so the golden classification fingerprint's input set is unchanged.",
+    "expected counts are per packet: wire = carries the family's wire-protocol label,",
+    "other = attributed to a different application protocol, abstain = no application verdict;",
+    "attribution = application names the SDK derives heuristically beneath the wire label.",
+    "abstain counts include payload-less packets (e.g. TCP SYN/SYN-ACK/ACK), which carry no application data."
+  ],
+  "schema": 1,
+  "families": {
+    "dns": {
+      "wire_labels": [
+        "dns"
+      ]
+    },
+    "tls": {
+      "wire_labels": [
+        "ssl"
+      ]
+    },
+    "quic": {
+      "wire_labels": [
+        "quic_ietf"
+      ]
+    },
+    "http2": {
+      "wire_labels": [
+        "http2"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "pcap": "acc_dns_positive.pcap",
+      "family": "dns",
+      "case": "positive",
+      "description": "DNS query and matching response (A accuracy.example -> 192.0.2.10) on UDP/53.",
+      "sha256": "4d7dcef7a99e79a4616b0a03655879b85826cf377d0d4304a9d773aad5278141",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_dns_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "RFC 1035 \u00a74.1 header, question and answer RR (compression pointer 0xc00c) decoded by hand",
+          "QR/RD/RA flags and ANCOUNT=1 consistent with the answer section"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_dns_negative.pcap",
+      "family": "dns",
+      "case": "negative",
+      "description": "Plain ASCII text exchanged over UDP/53 in both directions; the port alone must not yield a DNS verdict.",
+      "sha256": "b89036ac61da45b7c9c2dcf6b07845138d90a4b02d17e20a0b01b326791cfbd4",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_dns_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "payload is not a parseable DNS header+question (QDCOUNT/label structure invalid)",
+          "expected handling: abstention (udp.unknown), never dns"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tls_positive.pcap",
+      "family": "tls",
+      "case": "positive",
+      "description": "TCP/443 three-way handshake, TLS ClientHello (SNI accuracy.example) and ServerHello.",
+      "sha256": "eb8df17b3e480463eff16bf26ad98a88c98d0bb1ea63a02214eb90ef59c74cfc",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "RFC 5246 \u00a77.4.1.2/\u00a77.4.1.3 TLS 1.2 ClientHello (suites 0x002f, 0x0035) and ServerHello; record and handshake lengths consistent; SNI extension per RFC 6066 \u00a73",
+          "SYN/SYN-ACK/ACK carry no payload: their abstention is correct, not a miss"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tls_sni_attribution.pcap",
+      "family": "tls",
+      "case": "positive",
+      "description": "Same TLS exchange with SNI www.google.com: the wire protocol is TLS; the application name the SDK derives from the SNI is heuristic attribution.",
+      "sha256": "e62ece63537889a60a627e52ebb711f5e06d5475cc45ae03d9f6d379cf3b476b",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {
+          "google": 2
+        }
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_sni_attribution"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "bytes identical to acc_tls_positive except the SNI host name and the lengths that depend on it",
+          "attribution (ssl.google) is reported separately and never counted as wire-protocol accuracy"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_tls_negative.pcap",
+      "family": "tls",
+      "case": "negative",
+      "description": "Plaintext HTTP/1.1 request and response on TCP/443; the port alone must not yield a TLS verdict.",
+      "sha256": "65590c6129f06568edaf5791d682cc6e19bf6166f188cd2ffdd317e3aba8cadb",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 3,
+        "other": {
+          "http": 2
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_tls_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "payload starts with an ASCII request line, not a TLS record header (content type 0x47 is invalid)",
+          "expected handling: http for the two data packets, abstention for the handshake"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_positive.pcap",
+      "family": "quic",
+      "case": "positive",
+      "description": "QUIC v1 (RFC 9000) client and server Initial packets on UDP/443 followed by a client 1-RTT short-header packet on the same flow.",
+      "sha256": "25d6d2f3249cb0a10921821fdb6b8deb27b84cee6db86239a6c5da9456f24883",
+      "expected": {
+        "packets": 3,
+        "wire": 3,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "RFC 9000 \u00a717.2 long header: form+fixed bits, version 0x00000001, CID lengths, Initial token length, varint Length match",
+          "client Initial padded to a 1200-byte UDP payload (RFC 9000 \u00a714.1)",
+          "RFC 9000 \u00a717.3 short header carries the server-chosen connection ID (the server Initial's SCID) as DCID"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_v2_ambiguous.pcap",
+      "family": "quic",
+      "case": "ambiguous",
+      "description": "QUIC version 2 (RFC 9369, 0x6b3343cf) Initial exchange on UDP/443. Genuine QUIC, but the SDK recognises only version 1 (TODO #333), so the expected handling is an abstention.",
+      "sha256": "4085c9e4422346ff1b02938d6dae00de70e191e8bb8de9c691144c596df252de",
+      "expected": {
+        "packets": 2,
+        "wire": 0,
+        "abstain": 2,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_v2_ambiguous"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "RFC 9369 \u00a73.2 long packet type 0b01 = Initial for version 2, with Token Length field; client Initial padded to 1200 bytes",
+          "abstention is the documented, accepted handling until #333 adds v2; it is reported, not hidden"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_http2_positive.pcap",
+      "family": "http2",
+      "case": "positive",
+      "description": "Prior-knowledge cleartext HTTP/2 (RFC 9113 \u00a73.3) on TCP/8080: client preface+SETTINGS+HEADERS, server SETTINGS+SETTINGS ACK.",
+      "sha256": "c851764149be239b83afc525383372292d84ed72768d41afa5c2becf07a571f4",
+      "expected": {
+        "packets": 5,
+        "wire": 2,
+        "abstain": 3,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_http2_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "RFC 9113 \u00a73.4 preface, \u00a76.5 SETTINGS (MAX_CONCURRENT_STREAMS=100) and \u00a76.2 HEADERS (END_STREAM|END_HEADERS) framing",
+          "HPACK block uses static-table indices 2/6/4 and a literal :authority (RFC 7541)"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_http2_negative.pcap",
+      "family": "http2",
+      "case": "negative",
+      "description": "HTTP/1.1 request offering an h2c upgrade that the server declines with 200 OK; the flow stays HTTP/1.1 and must not be labelled HTTP/2.",
+      "sha256": "06ab485da4f9593a854122231e1038d476fb392af9ad890eeadfd89dd806c979",
+      "expected": {
+        "packets": 5,
+        "wire": 0,
+        "abstain": 3,
+        "other": {
+          "http": 2
+        },
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_http2_negative"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #389",
+        "date": "2026-09-23",
+        "checks": [
+          "RFC 7540 \u00a73.2 Upgrade/HTTP2-Settings headers; no 101 Switching Protocols, no preface (RFC 9113 \u00a73.1 deprecates h2c upgrade, but clients still send it)",
+          "expected handling: http for the two data packets, abstention for the handshake"
+        ]
+      }
+    }
+  ]
+}
