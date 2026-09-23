@@ -13,7 +13,10 @@
 #                   means the library, issue #185), print the library-only
 #                   line-coverage percentage and instrumented-file count, and
 #                   write both to tests/coverage/summary.json. Needs gcov
-#                   (shipped with gcc) and jq.
+#                   (shipped with gcc) and jq. Suites that build the SDK
+#                   build it with BUILD=coverage (SDK_BUILD_PROFILE); its
+#                   counters are harvested after each suite and reported as
+#                   separate cohorts in summary.json (issue #387).
 #   SANITIZE=asan   Compile the suites with AddressSanitizer + UBSan, mirroring
 #                   the SDK's BUILD=asan profile (rules/common.mk). Suites that
 #                   build the SDK internally inherit BUILD=asan via
@@ -98,7 +101,14 @@ case "${SANITIZE:-}" in
 esac
 
 if [ "$COVERAGE" -eq 1 ]; then
+    # SDK_BUILD_PROFILE names ONE SDK profile, so --coverage (BUILD=coverage,
+    # issue #387) cannot be combined with a sanitizer profile.
+    if [ -n "${SANITIZE:-}" ]; then
+        echo "✗ --coverage cannot be combined with SANITIZE=${SANITIZE} (one SDK build profile per run)" >&2
+        exit 2
+    fi
     extra_flags="${extra_flags:+${extra_flags} }--coverage"
+    export SDK_BUILD_PROFILE=coverage
 fi
 
 if [ -n "$extra_flags" ] || [ -n "${EXTRA_CFLAGS:-}" ]; then
@@ -121,6 +131,14 @@ if [ "$COVERAGE" -eq 1 ]; then
     # Drop stale gcov data from previous runs/profiles so the report only
     # reflects this invocation's binaries.
     find "$SCRIPT_DIR" \( -name '*.gcda' -o -name '*.gcno' \) -delete
+    # SDK counters land next to the in-tree objects under src/ (physical
+    # path: sdk/Makefile resolves TOPDIR with realpath). Stale ones would be
+    # harvested into the first suite; the raw harvest stays out of
+    # tests/coverage/, which CI uploads.
+    REPO_ROOT_PHYS="$(cd "$REPO_ROOT" && pwd -P)"
+    find "$REPO_ROOT_PHYS/src" -name '*.gcda' -delete
+    SDK_COV_DIR="$(mktemp -d)"
+    trap 'rm -rf "$SDK_COV_DIR"' EXIT
     echo "Mode: coverage report -> ${COVERAGE_DIR#"$REPO_ROOT"/}/coverage.info"
 fi
 echo ""
@@ -141,7 +159,17 @@ run_test_suite() {
     fi
 
     echo "--- Running: $suite_name ---"
-    if bash "$test_script" 2>&1; then
+    local ok=1
+    bash "$test_script" 2>&1 || ok=0
+    # Harvest this suite's SDK counters before the next suite's SDK rebuild
+    # deletes them (issue #387); --consume keeps them from being counted twice.
+    if [ "$COVERAGE" -eq 1 ] && ! bash "$REPO_ROOT/tools/ci/sdk-coverage.sh" harvest \
+            --gcda-root "$REPO_ROOT_PHYS" --gcno-root "$REPO_ROOT_PHYS" \
+            --repo-root "$REPO_ROOT" --out "$SDK_COV_DIR/$suite_name" --consume; then
+        echo "  ✗ $suite_name: SDK coverage harvest failed"
+        ok=0
+    fi
+    if [ "$ok" -eq 1 ]; then
         echo "  ✓ $suite_name: PASSED"
         PASS=$((PASS + 1))
     else
@@ -180,6 +208,7 @@ DEFAULT_SUITES=(
     parser_boundaries
     resource_bounds
     tcp_pending_order
+    sdk_coverage
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.
@@ -270,6 +299,7 @@ write_coverage_report() {
     ' > "$trace"
 
     read -r lines_total lines_hit < "$totals"
+    cp "$tsv" "$SDK_COV_DIR/unit.tsv"
     rm -rf "$tmp"
 
     if [ "${lines_total:-0}" -eq 0 ]; then
@@ -295,6 +325,13 @@ write_coverage_report() {
     echo "Library line coverage: ${pct}% (${lines_hit}/${lines_total} executable lines, ${instrumented} instrumented files under src/)"
     echo "Coverage report: ${trace#"$REPO_ROOT"/} (lcov tracefile format)"
     echo "Coverage summary: ${COVERAGE_DIR#"$REPO_ROOT"/}/summary.json"
+    # Cohorts (issue #387): unit, SDK integration, combined and generated
+    # ASN.1, each with its own denominator; the top-level keys above stay the
+    # unit-only numbers the floor checks.
+    bash "$REPO_ROOT/tools/ci/sdk-coverage.sh" report \
+        --unit-tsv "$SDK_COV_DIR/unit.tsv" --harvest-dir "$SDK_COV_DIR" \
+        --repo-root "$REPO_ROOT" --summary "$COVERAGE_DIR/summary.json" \
+        --combined-info "$COVERAGE_DIR/coverage-combined.info"
 }
 
 if [ "$COVERAGE" -eq 1 ]; then

@@ -11,7 +11,7 @@
 #      Nth allocation to fail and asserts NULL propagation, no double free
 #      and zero net leaked blocks. hashmap.c joins through mmt_malloc.
 #
-#   2. fi-engine (default profile only): libfi_alloc.so is LD_PRELOADed so
+#   2. fi-engine (default or coverage profile): libfi_alloc.so is LD_PRELOADed so
 #      the installed SDK's allocations — including C++ new — are counted;
 #      the sweep covers the hardened mmt_init_handler() allocation sites
 #      (the second-allocation-failure ip_streams branch fixed by task 2.1)
@@ -73,8 +73,8 @@ export ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=0}:allocator_may_return_null=1
 export TSAN_OPTIONS="${TSAN_OPTIONS:+${TSAN_OPTIONS}:}allocator_may_return_null=1"
 "${BIN_CORE}"
 
-# --- 2. engine-level sweep (LD_PRELOAD, default profile only) ---------------
-if [ -n "${SDK_BUILD_PROFILE:-}" ]; then
+# --- 2. engine-level sweep (LD_PRELOAD, not under sanitizer profiles) -------
+if [[ "${SDK_BUILD_PROFILE:-}" =~ ^(asan|tsan)$ ]]; then
     echo "  [2/2] fi-engine skipped: SDK_BUILD_PROFILE=${SDK_BUILD_PROFILE}" \
          "(sanitizer runtimes own malloc; the unit layer above still ran)"
     echo "Fault-injection tests: PASSED"
@@ -87,9 +87,9 @@ if [ -z "${MMT_FI_PREFIX:-}" ]; then
     trap 'rm -rf "${PREFIX}"' EXIT
 fi
 
-make -C "${REPO_ROOT}/sdk" clean >/dev/null
-make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" -j"${JOBS}" >/dev/null
-make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" install >/dev/null
+make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} clean >/dev/null
+make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} MMT_BASE="${PREFIX}" -j"${JOBS}" >/dev/null
+make -C "${REPO_ROOT}/sdk" ${SDK_BUILD_PROFILE:+"BUILD=${SDK_BUILD_PROFILE}"} MMT_BASE="${PREFIX}" install >/dev/null
 
 "${CC}" -Wall -Wextra -std=c11 -g -O1 -fPIC -shared \
     -DFI_INTERPOSE -I"${SCRIPT_DIR}" \

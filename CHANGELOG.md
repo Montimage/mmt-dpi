@@ -52,6 +52,7 @@ checklist requires a line here for every user-visible change.
 - business-app plugin suite plus crafted-input regression tests for the 1.8.0 syslog, PTP and DCERPC fixes; the contiguous-uncovered-run gate now holds at 10 lines (#243)
 - delete commented-out code and triage the marker backlog, enforced by lint gates (#232)
 - characterize TCP reassembly ordering, duplicates, overlaps, 32-bit sequence wrap, partial consumption and teardown with byte-exact output assertions — new `tcp_pending_order` suite; the interleaved-insert walk counts (261,632 at 1,024 segments, 67,100,672 at 16,384) are recorded as evidence ahead of the insertion-structure change (#381)
+- measure SDK code reached by integration suites: `--coverage` now builds their SDK with the new `BUILD=coverage` profile, harvests its counters after each suite (before the next rebuild or prefix cleanup loses them) and adds `unit`, `sdk_integration`, `combined` and `generated_asn1c` cohorts, each with its own denominator, to `tests/coverage/summary.json`, leaving the unit-only top-level keys and floor unchanged; new `sdk_coverage` suite proves a controlled SDK call raises its hit count and removing it restores zero (#387)
 
 Version 2.0.0 (unreleased — scheduled removals)
 - remove the four deprecated public symbols recorded under issues #149 and #237 (issue #232):

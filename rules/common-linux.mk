@@ -73,9 +73,9 @@ endif
 ifeq ($(BUILD),asan)
 MMT_RELEASE_BUILD :=
 endif
-# BUILD=tsan (issue #65): like asan, disable release hardening/LTO/FORTIFY so the
-# ThreadSanitizer runtime and its instrumentation are not perturbed.
-ifeq ($(BUILD),tsan)
+# BUILD=tsan (issue #65) and BUILD=coverage (#387): like asan, no hardening/LTO
+# so the TSan runtime and gcov's line/function attribution are not perturbed.
+ifneq (,$(filter tsan coverage,$(BUILD)))
 MMT_RELEASE_BUILD :=
 endif
 

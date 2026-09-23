@@ -12,10 +12,10 @@ repository itself; the authoritative sources are:
 
 | Source of truth | What it defines |
 |-----------------|-----------------|
-| `rules/common.mk` | Compiler flags, `MMT_BASE`, `BUILD=asan`/`tsan`, `ENABLESEC`, debug/valgrind toggles |
+| `rules/common.mk` | Compiler flags, `MMT_BASE`, `BUILD=asan`/`tsan`/`coverage`, `ENABLESEC`, debug/valgrind toggles |
 | `rules/common-linux.mk` | Linux link rules, release hardening, `ENABLESEC` engines |
 | `sdk/Makefile` | Build entry point, `install`/`test` targets, default `MMT_BASE` |
-| `tests/run_all_tests.sh` | Master test runner and the 27 standalone suites |
+| `tests/run_all_tests.sh` | Master test runner and the 28 standalone suites |
 
 ## 1. Toolchain Requirements
 
@@ -32,7 +32,7 @@ the QoE demo, the prebuilt ZIP, the Debian packaging checklist).
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnghttp2-dev bash git pkg-config
+sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnghttp2-dev bash git pkg-config jq
 ```
 
 | Package | Why it is needed |
@@ -42,6 +42,7 @@ sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnght
 | `libxml2-dev` | Only needed with `ENABLESEC=1` (`rules/common.mk:76-84`) |
 | `libnghttp2-dev` | Optional at build time — the Makefile auto-detects its absence and keeps building (`rules/common.mk:56-74`) |
 | `bash` | Test scripts are bash (`tests/run_all_tests.sh`) |
+| `jq` | JSON checks in the `release_gates` and `sdk_coverage` suites and in `--coverage` mode |
 
 CI builds and tests on `ubuntu-24.04` (GCC 13) — see
 `.github/workflows/c-cpp.yml`. That is the reference toolchain.
@@ -115,7 +116,7 @@ separate deployment-time renderer; `docs/_config.yml` declares the Pages
 No application `.env` file is required: this is a Make-built SDK, configured
 through make variables (`sdk/Makefile:8-13`, `rules/common.mk:3-8`), and the
 test runner takes shell variables such as `SANITIZE`
-(`tests/run_all_tests.sh:8-98`). No application service setup is needed for
+(`tests/run_all_tests.sh:8-101`). No application service setup is needed for
 the build/test commands below.
 
 ## 2. Building
@@ -168,14 +169,14 @@ here for the expected result.
 bash tests/run_all_tests.sh
 ```
 
-Expected result: **27/27 suites pass**, total runtime roughly **90–360 s** on
-a typical development machine (measured: 113 s for the full run) — the wall
+Expected result: **28/28 suites pass**, total runtime roughly **90–360 s** on
+a typical development machine (measured: 135 s for the full run) — the wall
 clock is dominated by the suites
 that build+install the SDK internally (`rule_engine`, `installer`,
 `installed_consumer`, …), not by the assertions. Exit code `0` on
-success, `1` on any failure. The runner has no `-j` option: the 27 suites run
+success, `1` on any failure. The runner has no `-j` option: the 28 suites run
 sequentially. The suite list lives in `DEFAULT_SUITES`
-(`tests/run_all_tests.sh:155-183`)
+(`tests/run_all_tests.sh:183-212`)
 (`tests/run_all_tests.sh`):
 `hashmap`, `memory`, `fault_injection`, `core_engine`, `hexdump`, `mmt_utils`,
 `mmt_inet_ntop`,
@@ -184,13 +185,15 @@ sequentially. The suite list lives in `DEFAULT_SUITES`
 `dicom_dissector`, `ndn_dissector`, `business_app`, `proto_classifiers`,
 `dpi_profiles`, `fuzz_verdicts`, `precision_metrics`, `installed_consumer`,
 `release_gates`, `parser_boundaries`, `resource_bounds`,
-`tcp_pending_order`.
-`fuzz_verdicts`, `precision_metrics` and `release_gates` are
+`tcp_pending_order`, `sdk_coverage`.
+`fuzz_verdicts`, `precision_metrics`, `release_gates` and `sdk_coverage` are
 delegate suites for CI self-tests living under `tools/ci/tests/` — the fuzz
 gate's verdict handling (`test-fuzz-verdicts.sh`, issue #370), the
-precision-gate metric accounting (`test-precision-metrics.py`, issue #373)
-and the exact-release-SHA publish gate (`test-release-gates.py`, issue
-#371); all three build nothing. `installed_consumer` (issue #374) drives the
+precision-gate metric accounting (`test-precision-metrics.py`, issue #373),
+the exact-release-SHA publish gate (`test-release-gates.py`, issue
+#371) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+#387); the first three build nothing, `sdk_coverage` builds its own
+`BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other
 `tools/ci/tests/` payload — `run-installed-consumer.sh` +
 `installed_consumer.c` — against a throwaway ENABLESEC=1 install prefix.
@@ -198,9 +201,9 @@ other
 Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
 directly against sources under `src/` with plain `gcc`; suites that need the
-built SDK (`citrix_ica_detection`, `http_header_case`, `s1ap_ngap_decode`,
-`rule_engine`, `nas_ies_tail`, `installer`, `installed_consumer`,
-`parser_boundaries`, and the default-profile engine
+built SDK (`hashmap`, `citrix_ica_detection`, `http_header_case`,
+`s1ap_ngap_decode`, `rule_engine`, `nas_ies_tail`, `installer`,
+`installed_consumer`, `parser_boundaries`, `sdk_coverage`, and the engine
 leg of `fault_injection`, `tests/fault_injection/run_tests.sh:90-92`) run `make -C sdk clean` and build
 it themselves into a throwaway prefix, so running them discards an existing
 `sdk/` build. You
@@ -215,7 +218,7 @@ skipped — the runner exits non-zero (issue #186).
 
 ### Suite modes: sanitizers and coverage
 
-`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-98`):
+`tests/run_all_tests.sh` has two opt-in modes (`tests/run_all_tests.sh:8-101`):
 
 - `SANITIZE=asan bash tests/run_all_tests.sh` — compiles every suite with
   ASan + UBSan (same flag set as the SDK's `BUILD=asan`,
@@ -226,21 +229,31 @@ skipped — the runner exits non-zero (issue #186).
 - `SANITIZE=tsan bash tests/run_all_tests.sh` — same with TSan
   (`rules/common.mk:150-157`). On kernels with high-entropy ASLR the runner
   re-execs itself once under `setarch -R`
-  (`tests/run_all_tests.sh:86-89`).
+  (`tests/run_all_tests.sh:89-92`).
 - `bash tests/run_all_tests.sh --coverage` — instruments the suites with gcov,
   aggregates all `.gcda`, and writes an lcov-format tracefile of **library
   (`src/`) sources only** to `tests/coverage/coverage.info` plus the library
   line percentage, instrumented-file count/list and
   `tests/coverage/summary.json` in stdout
-  (`tests/run_all_tests.sh:196-305`). Requires `gcov` (shipped with
+  (`tests/run_all_tests.sh:225-342`). Requires `gcov` (shipped with
   gcc) and `jq`; no lcov install needed. The coverage CI job enforces the
   committed floor `tests/coverage/floor.json` — both counters plus the
   required sources it names — via `tools/ci/check-coverage-floor.sh`.
+  The mode also exports `SDK_BUILD_PROFILE=coverage`
+  (`tests/run_all_tests.sh:103-112`), so every SDK-building suite builds the
+  `BUILD=coverage` profile (§5). Their consumers write counters next to the
+  in-tree objects under `src/`, which survive the throwaway prefix's
+  deletion; the runner harvests them with `tools/ci/sdk-coverage.sh`
+  after each suite, before the next suite's SDK rebuild would delete them
+  (`tests/run_all_tests.sh:164-171`). `summary.json` then gains a `cohorts`
+  object and `tests/coverage/coverage-combined.info` is written; the
+  top-level keys and `coverage.info` stay unit-only. `--coverage` cannot be
+  combined with `SANITIZE` (exit 2): both select the SDK profile.
 - `bash tests/run_all_tests.sh --with-harnesses` — after the suites, runs
   every phase0 harness (`tools/phase0/tests/run_*.sh`) via the aggregate
   runner `tools/phase0/run_all_harnesses.sh`, which builds the SDK once per
   required profile (asan / tsan / default) into a shared prefix and replays
-  all harnesses against it (`tests/run_all_tests.sh:307-323`). The arm counts
+  all harnesses against it (`tests/run_all_tests.sh:344-360`). The arm counts
   as one extra entry in the result table; any harness failure fails the
   invocation. Runtime is minutes, not seconds — the suites build nothing for
   it, the runner's shared builds dominate.
@@ -251,13 +264,24 @@ The 2026-09-22 audit at commit `2ab7b73516113009622cb3d32194d20121457010`
 reported 82.9% (5,660/6,831 lines) over those 30 files; this is historical
 evidence, not a new measurement (provenance recorded in [DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md)).
 Coverage includes only the `src/` files represented in emitted gcov data
-(`tests/run_all_tests.sh:220-224`); its percentage uses the lines in that
+(`tests/run_all_tests.sh:249-253`); its percentage uses the lines in that
 subset, so it must not be reported as whole-library coverage. The current
 run's exact scope is `instrumented_sources` and `instrumented_files` in
-`summary.json` (`tests/run_all_tests.sh:280-294`). The committed minimum is
+`summary.json` (`tests/run_all_tests.sh:310-324`). The committed minimum is
 **29 instrumented files**, alongside an **80.0%** line floor and required
 source names (`tests/coverage/floor.json:2-10`); a 30-file measurement does
 not change that floor. Consult a fresh summary for the current count.
+
+The `cohorts` object (issue #387) names four denominators, each stated in
+its `denominator` field; none of them is whole-SDK coverage (sources whose
+objects wrote no `.gcda` are absent — that belongs to issue #388):
+
+| Cohort | Denominator |
+|--------|-------------|
+| `unit` | `src/` lines recorded by the unit-suite binaries — the records the top-level keys and the floor measure |
+| `sdk_integration` | `src/` lines recorded by the `BUILD=coverage` SDK builds the integration consumers loaded, with a per-suite breakdown in `suites` |
+| `combined` | the union of both, one record per repo-relative path and line (logical and physical checkout paths are merged), counts summed |
+| `generated_asn1c` | lines under `src/mmt_mobile/asn1c/` from any cohort, excluded from the three above |
 
 CI runs both modes on every push/PR to main (`.github/workflows/c-cpp.yml`,
 jobs `sanitizer-tests` and `coverage`); the coverage job uploads
@@ -322,8 +346,9 @@ build/install invocations so compilation and installation use one path.
 
 ## 5. Sanitizer Build Profiles
 
-Two verification profiles exist in `rules/common.mk` (both add flags to
-`CFLAGS` and `CXXFLAGS` so they reach the shared-library link lines):
+Two sanitizer profiles exist in `rules/common.mk`, plus the `BUILD=coverage`
+profile below (all add flags to `CFLAGS` and `CXXFLAGS` so they reach the
+shared-library link lines):
 
 > **⚠ Always `make -C sdk clean` before switching build profiles.**
 > *(This warning is the single source for the rule; other documents link here.)*
@@ -380,6 +405,17 @@ RELRO — `rules/common-linux.mk:66-163`) is automatically disabled, and the
 `-Wl,-z,defs` self-containedness guard is skipped because sanitizer runtime
 symbols are intentionally left undefined (`rules/common-linux.mk:202-214`).
 
+### `BUILD=coverage` — gcov instrumentation
+
+Defined at `rules/common.mk:548-566` (issue #387): `-g -O0 --coverage`, with
+the release-hardening block disabled as for the sanitizers; the
+`-Wl,-z,defs` guard stays on, because `--coverage` links libgcov into each
+library. `bash tests/run_all_tests.sh --coverage` selects it for every
+SDK-building suite (§3). Counters are written next to the in-tree objects
+under `src/` (redirect them with `GCOV_PREFIX`/`GCOV_PREFIX_STRIP`), and the
+next build of any profile deletes them, so harvest them first with
+`tools/ci/sdk-coverage.sh harvest`. The clean-before-switching rule applies.
+
 ## 6. `ENABLESEC=1` Security Engines Flag
 
 `ENABLESEC` gates two optional libraries — `libmmt_security` and
@@ -404,7 +440,7 @@ Run this after setting up a fresh environment; all four commands must succeed:
 
 ```bash
 make -C sdk -j$(nproc)          # exit 0, green build (seconds to ~2 min depending on machine)
-bash tests/run_all_tests.sh     # 27/27 suites PASSED, exit 0 (90–360 s)
+bash tests/run_all_tests.sh     # 28/28 suites PASSED, exit 0 (90–360 s)
 make -C sdk ENABLESEC=1 -j$(nproc)   # exit 0 (optional engines build)
 make -C sdk clean && make -C sdk BUILD=asan -j$(nproc)   # exit 0 (sanitizer profile)
 ```

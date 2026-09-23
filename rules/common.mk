@@ -544,3 +544,23 @@ ifneq ($(MMT_SEED_OK),)
 MMT_REPRO_SEED = -frandom-seed=$(subst $(TOPDIR)/,,$<)
 endif
 
+
+# BUILD=coverage to compile the SDK with gcov instrumentation (issue #387).
+#   `bash tests/run_all_tests.sh --coverage` exports SDK_BUILD_PROFILE=coverage,
+#   so every suite that builds the SDK builds this profile, and the runner
+#   harvests the SDK's counters (written next to the in-tree objects under
+#   src/, not into the throwaway install prefix) after each suite.
+#
+#   Usage:
+#     make BUILD=coverage MMT_BASE=/tmp/mmt-cov
+#     make BUILD=coverage MMT_BASE=/tmp/mmt-cov install
+#
+#   -O0 keeps line and function attribution exact (no inlining); the flags go
+#   on both CFLAGS and CXXFLAGS so --coverage also reaches the .so link lines
+#   and links libgcov in. Release hardening/LTO is switched off in
+#   common-linux.mk, as for the sanitizer profiles.
+ifeq ($(BUILD),coverage)
+COVERAGE_FLAGS := -g -O0 --coverage
+CFLAGS   += $(COVERAGE_FLAGS)
+CXXFLAGS += $(COVERAGE_FLAGS)
+endif
