@@ -114,6 +114,15 @@ jobs:
       # Issue #185 (F-CI-014): the job fails when the library line percentage
       # or the instrumented-file count drops below tests/coverage/floor.json.
       run: bash tools/ci/check-coverage-floor.sh
+    - name: Enforce whole-SDK coverage accounting
+      # Issue #388 (F-TEST-004): per-family line coverage (core, tcpip,
+      # mobile, business_app, dicom, optional ENABLESEC=1 security_fuzz) over
+      # every handwritten build source, zero-hit sources included. Fails on a
+      # source disappearing from the denominator, a missing family, the
+      # original 30-file audit cohort below 82.9% or whole-SDK coverage below
+      # the floor in tests/coverage/floor.json ("sdk"). Writes
+      # tests/coverage/sdk-coverage.json into the uploaded artifact.
+      run: bash tools/ci/check-sdk-coverage.sh
     - name: Report contiguous uncovered runs
       # Issue #190 helper wiring (consumed by #243): lists contiguous runs of
       # uncovered lines from the lcov tracefile. Report-only today — the gate
@@ -121,6 +130,9 @@ jobs:
       # tracefile still fails the step (exit 2): a broken helper must fail CI.
       run: bash tools/ci/report-uncovered-runs.sh --report-only
     - name: Upload coverage report
+      # Also after a failed gate: sdk-coverage.json names the vanished source
+      # or the broken floor (issue #388).
+      if: success() || failure()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: unit-suite-coverage

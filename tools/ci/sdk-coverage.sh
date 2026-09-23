@@ -12,6 +12,7 @@
 # deletes the harvested .gcda so a later suite cannot count them again.
 #
 #   harvest --gcda-root DIR --gcno-root DIR --repo-root DIR --out DIR [--consume]
+#           [--unexecuted]
 #       Pairs every DIR(gcda-root)/src/**/*.gcda with the .gcno at the same
 #       relative path under --gcno-root (the two differ when a consumer ran
 #       with GCOV_PREFIX), runs `gcov -j` per source directory (asn1c reuses
@@ -19,7 +20,16 @@
 #       paths (logical and physical --repo-root both stripped):
 #         OUT/lines.tsv      file <TAB> line <TAB> count
 #         OUT/functions.tsv  file <TAB> function <TAB> execution_count
-#       No .gcda under src/ = nothing to harvest: exit 0 and OUT is not created.
+#       --unexecuted (issue #388) also reads every --gcno-root/src/**/*.gcno
+#       that has no .gcda: an object the build compiled but no consumer ever
+#       loaded. gcov reports its executable lines at count 0, so zero-hit
+#       sources enter the denominator instead of being absent; with --consume
+#       those .gcno are deleted too (the next SDK build rewrites them), so a
+#       later suite does not read the same build again. This relies on every
+#       SDK build running `make -C sdk clean` first (all SDK-building suites
+#       do): an incremental coverage build would keep objects whose notes are
+#       gone, and their next .gcda would fail the pairing above.
+#       Nothing to harvest = exit 0 and OUT is not created.
 #
 #   report --unit-tsv FILE --harvest-dir DIR --repo-root DIR --summary FILE
 #          [--combined-info FILE]
@@ -63,14 +73,15 @@ physical() {
 
 # --- harvest -------------------------------------------------------------------
 harvest() {
-    local gcda_root="" gcno_root="" repo_root="" out="" consume=0
+    local gcda_root="" gcno_root="" repo_root="" out="" consume=0 unexecuted=0
     while [ $# -gt 0 ]; do
         case "$1" in
-            --gcda-root) gcda_root="${2:-}"; shift 2 ;;
-            --gcno-root) gcno_root="${2:-}"; shift 2 ;;
-            --repo-root) repo_root="${2:-}"; shift 2 ;;
-            --out)       out="${2:-}"; shift 2 ;;
-            --consume)   consume=1; shift ;;
+            --gcda-root)  gcda_root="${2:-}"; shift 2 ;;
+            --gcno-root)  gcno_root="${2:-}"; shift 2 ;;
+            --repo-root)  repo_root="${2:-}"; shift 2 ;;
+            --out)        out="${2:-}"; shift 2 ;;
+            --consume)    consume=1; shift ;;
+            --unexecuted) unexecuted=1; shift ;;
             *) usage ;;
         esac
     done
@@ -85,15 +96,12 @@ harvest() {
     if [ -d "$gcda_root/src" ]; then
         mapfile -d '' gcda_list < <(find "$gcda_root/src" -name '*.gcda' -print0 | sort -z)
     fi
-    [ "${#gcda_list[@]}" -gt 0 ] || return 0
-
-    local tmp="$WORK/harvest"
-    mkdir -p "$tmp"
 
     # Stage each .gcda beside the .gcno of the same build, keeping the
     # src-relative tree so identical basenames in different directories stay
     # apart.
-    local gcda rel rels=() dirs=()
+    local gcda gcno rel rels=() dirs=() zero_rels=() zero_list=()
+    declare -A paired=()
     for gcda in "${gcda_list[@]}"; do
         rel="${gcda#"$gcda_root"/}"
         rel="${rel%.gcda}"
@@ -102,17 +110,35 @@ harvest() {
             return 1
         fi
         rels+=("$rel")
+        paired["$rel"]=1
     done
-    mkdir -p "$tmp/stage"
-    printf '%s.gcda\0' "${rels[@]}" | (cd "$gcda_root" && xargs -0 cp --parents -t "$tmp/stage")
-    printf '%s.gcno\0' "${rels[@]}" | (cd "$gcno_root" && xargs -0 cp --parents -t "$tmp/stage")
-    mapfile -t dirs < <(cd "$tmp/stage" && find . -name '*.gcda' -printf '%h\n' | sort -u)
+    if [ "$unexecuted" -eq 1 ] && [ -d "$gcno_root/src" ]; then
+        while IFS= read -r -d '' gcno; do
+            rel="${gcno#"$gcno_root"/}"
+            rel="${rel%.gcno}"
+            [ -n "${paired[$rel]:-}" ] && continue
+            zero_rels+=("$rel")
+            zero_list+=("$gcno")
+        done < <(find "$gcno_root/src" -name '*.gcno' -print0 | sort -z)
+    fi
+    [ "$((${#rels[@]} + ${#zero_rels[@]}))" -gt 0 ] || return 0
 
+    local tmp="$WORK/harvest"
+    mkdir -p "$tmp/stage"
+    if [ "${#rels[@]}" -gt 0 ]; then
+        printf '%s.gcda\0' "${rels[@]}" | (cd "$gcda_root" && xargs -0 cp --parents -t "$tmp/stage")
+    fi
+    printf '%s.gcno\0' "${rels[@]}" "${zero_rels[@]}" \
+        | (cd "$gcno_root" && xargs -0 cp --parents -t "$tmp/stage")
+    mapfile -t dirs < <(cd "$tmp/stage" && find . -name '*.gcno' -printf '%h\n' | sort -u)
+
+    # gcov is named by .gcno: a note file with no .gcda beside it is reported
+    # as not executed (every line count 0), which is what --unexecuted wants.
     local i=0 dir files=()
     for dir in "${dirs[@]}"; do
         i=$((i + 1))
         mkdir -p "$tmp/json/$i"
-        mapfile -t files < <(find "$tmp/stage/$dir" -maxdepth 1 -name '*.gcda' | sort)
+        mapfile -t files < <(find "$tmp/stage/$dir" -maxdepth 1 -name '*.gcno' | sort)
         if ! (cd "$tmp/json/$i" && gcov -j "${files[@]}" >"$tmp/gcov.err" 2>&1); then
             echo "✗ sdk-coverage.sh: gcov failed in $dir" >&2
             cat "$tmp/gcov.err" >&2
@@ -149,9 +175,15 @@ harvest() {
     ' "$tmp/rows.tsv"
 
     if [ "$consume" -eq 1 ]; then
-        rm -f -- "${gcda_list[@]}"
+        [ "${#gcda_list[@]}" -eq 0 ] || rm -f -- "${gcda_list[@]}"
+        if [ "$unexecuted" -eq 1 ]; then
+            # The paired notes go too: once their .gcda is consumed, a later
+            # --unexecuted harvest would read them again as zero-hit objects.
+            [ "${#zero_list[@]}" -eq 0 ] || rm -f -- "${zero_list[@]}"
+            for rel in "${rels[@]}"; do rm -f -- "$gcno_root/$rel.gcno"; done
+        fi
     fi
-    echo "SDK coverage harvested: ${#gcda_list[@]} .gcda -> ${out}"
+    echo "SDK coverage harvested: ${#gcda_list[@]} .gcda + ${#zero_rels[@]} unexecuted .gcno -> ${out}"
 }
 
 # --- report --------------------------------------------------------------------
@@ -258,7 +290,7 @@ report() {
         "executable src/ lines recorded by the unit-suite binaries (tests/**/*.gcda), ${GENERATED_PREFIX} excluded; the top-level library_* keys and floor.json measure these same unit records" \
         >"$tmp/unit.json"
     stats "$tmp/sdk.tsv" \
-        "executable src/ lines recorded by the BUILD=coverage SDK builds that the SDK-building suites' integration consumers loaded (src/**/*.gcda harvested after each suite), ${GENERATED_PREFIX} excluded; sources whose objects wrote no .gcda are absent" \
+        "executable src/ lines of the BUILD=coverage SDK builds made by the SDK-building suites (harvested after each suite): lines their integration consumers ran (src/**/*.gcda) plus, from the .gcno of objects that wrote no .gcda, the zero-hit sources at count 0 (issue #388); ${GENERATED_PREFIX} excluded" \
         >"$tmp/sdk.json"
     stats "$tmp/combined.tsv" \
         "union of the unit and sdk_integration records, ${GENERATED_PREFIX} excluded" \

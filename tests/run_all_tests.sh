@@ -135,8 +135,11 @@ if [ "$COVERAGE" -eq 1 ]; then
     # path: sdk/Makefile resolves TOPDIR with realpath). Stale ones would be
     # harvested into the first suite; the raw harvest stays out of
     # tests/coverage/, which CI uploads.
+    # Stale .gcno go too: the zero-hit harvest (issue #388) reads every note
+    # file, so only this run's SDK builds may leave them.
     REPO_ROOT_PHYS="$(cd "$REPO_ROOT" && pwd -P)"
-    find "$REPO_ROOT_PHYS/src" -name '*.gcda' -delete
+    find "$REPO_ROOT_PHYS/src" \( -name '*.gcda' -o -name '*.gcno' \) -delete
+    SDK_COV_BUILT=0
     SDK_COV_DIR="$(mktemp -d)"
     trap 'rm -rf "$SDK_COV_DIR"' EXIT
     echo "Mode: coverage report -> ${COVERAGE_DIR#"$REPO_ROOT"/}/coverage.info"
@@ -163,9 +166,13 @@ run_test_suite() {
     bash "$test_script" 2>&1 || ok=0
     # Harvest this suite's SDK counters before the next suite's SDK rebuild
     # deletes them (issue #387); --consume keeps them from being counted twice.
+    # --unexecuted adds the objects no consumer loaded at count 0 (issue #388).
+    if [ "$COVERAGE" -eq 1 ] && [ -n "$(find "$REPO_ROOT_PHYS/src" -name '*.gcno' -print -quit)" ]; then
+        SDK_COV_BUILT=1
+    fi
     if [ "$COVERAGE" -eq 1 ] && ! bash "$REPO_ROOT/tools/ci/sdk-coverage.sh" harvest \
             --gcda-root "$REPO_ROOT_PHYS" --gcno-root "$REPO_ROOT_PHYS" \
-            --repo-root "$REPO_ROOT" --out "$SDK_COV_DIR/$suite_name" --consume; then
+            --repo-root "$REPO_ROOT" --out "$SDK_COV_DIR/$suite_name" --consume --unexecuted; then
         echo "  ✗ $suite_name: SDK coverage harvest failed"
         ok=0
     fi
@@ -335,6 +342,12 @@ write_coverage_report() {
 }
 
 if [ "$COVERAGE" -eq 1 ]; then
+    # A BUILD=coverage tree left in sdk/ would be relinked by a later plain
+    # `make -C sdk` (object rules depend on source timestamps only), so a run
+    # that built one — a suite subset included — cleans it before exiting.
+    if [ "$SDK_COV_BUILT" -eq 1 ]; then
+        make -C "$REPO_ROOT/sdk" clean >/dev/null 2>&1 || true
+    fi
     if ! write_coverage_report; then
         exit 1
     fi

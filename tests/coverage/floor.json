@@ -8,5 +8,57 @@
     "src/mmt_business_app/mmt_business_app.c",
     "src/mmt_business_app/proto_ips_data.c"
   ],
-  "note": "Floor enforced by tools/ci/check-coverage-floor.sh in the coverage CI job (issues #185 and #244). Current measurement: 82.1% over 29 instrumented src/ files; the percentage floor carries a small margin for gcov attribution differences between gcc versions. Raise the floor as coverage improves — never lower it to silence a failure. required_instrumented_files (issue #244, M3 clause 1) pins by name the sources that must stay instrumented — the core engine (packet_processing.c, hash_utils.cpp), the classifier helpers (mmt_tcpip_classif_utils.c) and the business-app plugin (mmt_business_app.c, proto_ips_data.c) — matched against summary.json's instrumented_sources, so a suite silently dropping one fails even when the raw count still holds. Baseline history: the #177 integration re-baselined this floor — the new dicom, ndn_dissector and avl suites widened instrumentation from 6 to 9 files, and the #200 hash_utils.cpp rewrite added defensive paths the suites do not yet exercise, moving the aggregate from 87.1% to 78.2%. The #241 core_engine suite widened instrumentation from 9 to 17 files (packet_processing.c, hash_utils.cpp and their link closure) at 78.3%. The #243 business_app and proto_classifiers suites widened instrumentation from 17 to 29 files (mmt_business_app.c, proto_ips_data.c, proto_dcerpc.c, proto_ptp.c, proto_syslog.c plus their link closure) at 82.1%; the instrumented-files floor was raised to 29 and the line floor to 80.0. The instrumented-files counter remains the guard against suites silently losing instrumentation. See docs/DECISIONS.md."
+  "note": "Floor enforced by tools/ci/check-coverage-floor.sh in the coverage CI job (issues #185 and #244). Current measurement: 82.1% over 29 instrumented src/ files; the percentage floor carries a small margin for gcov attribution differences between gcc versions. Raise the floor as coverage improves — never lower it to silence a failure. required_instrumented_files (issue #244, M3 clause 1) pins by name the sources that must stay instrumented — the core engine (packet_processing.c, hash_utils.cpp), the classifier helpers (mmt_tcpip_classif_utils.c) and the business-app plugin (mmt_business_app.c, proto_ips_data.c) — matched against summary.json's instrumented_sources, so a suite silently dropping one fails even when the raw count still holds. Baseline history: the #177 integration re-baselined this floor — the new dicom, ndn_dissector and avl suites widened instrumentation from 6 to 9 files, and the #200 hash_utils.cpp rewrite added defensive paths the suites do not yet exercise, moving the aggregate from 87.1% to 78.2%. The #241 core_engine suite widened instrumentation from 9 to 17 files (packet_processing.c, hash_utils.cpp and their link closure) at 78.3%. The #243 business_app and proto_classifiers suites widened instrumentation from 17 to 29 files (mmt_business_app.c, proto_ips_data.c, proto_dcerpc.c, proto_ptp.c, proto_syslog.c plus their link closure) at 82.1%; the instrumented-files floor was raised to 29 and the line floor to 80.0. The instrumented-files counter remains the guard against suites silently losing instrumentation. See docs/DECISIONS.md.",
+  "sdk": {
+    "note": "Whole-SDK accounting enforced by tools/ci/check-sdk-coverage.sh in the coverage CI job (issue #388, F-TEST-004) over tests/coverage/coverage-combined.info. whole_sdk_line_pct floors the default-build families (core, tcpip, handwritten mobile, business_app, dicom; generated asn1c, vendored llhttp and the optional ENABLESEC=1 security_fuzz cohort excluded): first measurement 46.03% (15,126/32,858 lines, 715 files), floor set 1 point lower for gcov attribution differences between gcc versions and architectures. original_cohort pins by name the 30 sources of the audit's 82.9% (5,660/6,831) unit-suite measurement at commit 2ab7b73 (list recovered by re-running tests/run_all_tests.sh --coverage at that commit); it is measured on the combined records: 83.29% (5,854/7,028) at issue #388, unit-only 82.87%. excluded_sources justifies every tracked handwritten source that has no measured record. Raise floors as coverage improves \u2014 never lower them to silence a failure.",
+    "whole_sdk_line_pct": 45.0,
+    "original_cohort": {
+      "commit": "2ab7b73516113009622cb3d32194d20121457010",
+      "audit": "MODERNIZATION_REPORT.md: 82.9% = 5,660/6,831 executable lines over 30 instrumented library files; branch coverage Not Assessed",
+      "line_pct": 82.9,
+      "sources": [
+        "src/mmt_business_app/mmt_business_app.c",
+        "src/mmt_business_app/proto_ips_data.c",
+        "src/mmt_core/private_include/packet_processing.h",
+        "src/mmt_core/public_include/data_defs.h",
+        "src/mmt_core/public_include/mmt_core.h",
+        "src/mmt_core/src/dpi_profiles.c",
+        "src/mmt_core/src/extraction_lib.c",
+        "src/mmt_core/src/hashmap.c",
+        "src/mmt_core/src/hash_utils.cpp",
+        "src/mmt_core/src/hexdump.c",
+        "src/mmt_core/src/memory.c",
+        "src/mmt_core/src/mmt_data.c",
+        "src/mmt_core/src/mmt_inet_ntop.c",
+        "src/mmt_core/src/mmt_init.c",
+        "src/mmt_core/src/mmt_utils.c",
+        "src/mmt_core/src/packet_pipeline.c",
+        "src/mmt_core/src/packet_processing.c",
+        "src/mmt_core/src/packet_registry.c",
+        "src/mmt_core/src/packet_session.c",
+        "src/mmt_core/src/packet_stats.c",
+        "src/mmt_core/src/plugins_engine.c",
+        "src/mmt_core/src/proto_meta.c",
+        "src/mmt_dicom/dicom.c",
+        "src/mmt_tcpip/lib/avltree.c",
+        "src/mmt_tcpip/lib/mmt_tcpip_classif_utils.c",
+        "src/mmt_tcpip/lib/mmt_tcpip_internal_defs_macros.h",
+        "src/mmt_tcpip/lib/protocols/ndn.c",
+        "src/mmt_tcpip/lib/protocols/proto_dcerpc.c",
+        "src/mmt_tcpip/lib/protocols/proto_ptp.c",
+        "src/mmt_tcpip/lib/protocols/proto_syslog.c"
+      ]
+    },
+    "excluded_sources": {
+      "src/examples/attribute_handler_session_counter.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
+      "src/examples/extract_all.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
+      "src/examples/MAC_extraction.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
+      "src/examples/mmt_export_info.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
+      "src/examples/packet_handler.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
+      "src/examples/proto_attributes_iterator.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
+      "src/examples/simple_traffic_reporting.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
+      "src/mmt_core/src/mmt_tcpip_init.c": "filtered out of CORE_OBJECTS (rules/common.mk) and listed by no other object list: not linked into any SDK library",
+      "src/mmt_mobile/nas/util/decoder.c": "built into libmmt_tmobile but has no executable lines (a single global definition), so gcov emits no record for it"
+    }
+  }
 }

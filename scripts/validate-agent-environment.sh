@@ -180,22 +180,22 @@ sdk/Makefile:140-141	ln -s .*libmmt_fuzz\.so	ln -s .*libmmt_security\.so	the dis
 sdk/Makefile:316-321	^test:	\./proto_attributes_iterator	the make test target builds from the installed prefix	\$\(MMT_EXAMS\)/proto_attributes_iterator\.c
 tests/run_all_tests.sh:8-101	^# Modes:	^esac	the runner has two opt-in sanitizer modes	\-fsanitize=thread
 tests/run_all_tests.sh:89-92	command -v setarch	^ *fi$	TSan re-execs once with ASLR disabled	exec setarch .*\-R
-tests/run_all_tests.sh:183-212	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	sdk_coverage
-tests/run_all_tests.sh:225-342	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
+tests/run_all_tests.sh:190-219	^DEFAULT_SUITES=\(	^\)$	the default suite list lives in DEFAULT_SUITES	sdk_coverage
+tests/run_all_tests.sh:232-355	^# --- coverage report	^fi$	--coverage writes an lcov tracefile and a line rate	coverage\.info
 tests/run_all_tests.sh:103-112	^if \[ "\$COVERAGE" -eq 1 \]	^fi$	--coverage selects the BUILD=coverage SDK profile	SDK_BUILD_PROFILE=coverage
-tests/run_all_tests.sh:164-171	^ *# Harvest this suite	^    fi$	SDK counters are harvested after each suite	sdk-coverage\.sh" harvest
+tests/run_all_tests.sh:167-178	^ *# Harvest this suite	^    fi$	SDK counters are harvested after each suite	sdk-coverage\.sh" harvest
 rules/common.mk:548-566	^# BUILD=coverage to compile the SDK	^endif	the BUILD=coverage profile is defined here	\-\-coverage
-tests/run_all_tests.sh:344-360	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
+tests/run_all_tests.sh:357-373	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
 sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
 rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
-.github/workflows/c-cpp.yml:213-218	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.3	ruby-version: "3.3"
+.github/workflows/c-cpp.yml:225-230	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.3	ruby-version: "3.3"
 docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
-.github/workflows/c-cpp.yml:231	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
+.github/workflows/c-cpp.yml:243	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
 tests/fault_injection/run_tests.sh:90-92	^make .* clean	^make .* install	fault injection builds and installs SDK
 tests/fault_injection/run_tests.sh:77-82	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0
-tests/run_all_tests.sh:249-253	json_file=	select\(	coverage restricts emitted records to src	/src/
-tests/run_all_tests.sh:310-324	Instrumented files	scope:	coverage summary exposes measured scope	instrumented_sources
+tests/run_all_tests.sh:256-260	json_file=	select\(	coverage restricts emitted records to src	/src/
+tests/run_all_tests.sh:317-331	Instrumented files	scope:	coverage summary exposes measured scope	instrumented_sources
 tests/coverage/floor.json:2-10	"library_line_pct": 80.0	  ]	coverage floor and required sources	"instrumented_files": 29
 rules/common.mk:187-206	^SRCDIR	^SDKXAM	artifacts remain in checkout	SDKLIB
 CITATIONS
