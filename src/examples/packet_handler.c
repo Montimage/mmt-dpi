@@ -5,13 +5,15 @@
  * Compile this example with:
  * 
  * $ gcc -g -o packet_handler packet_handler.c -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap
+ *
+ * (replace /opt/mmt with your MMT_BASE install prefix when it differs)
  * 
  * 
  * And get a data file (.pcap file) by using wireShark application to capture some packet.
  * 
  * Then execute the program:
  * 
- * $ ./packet_handler tcp_plugin_image.pcap > packhdler_output.txt
+ * $ ./packet_handler google-fr.pcap > packhdler_output.txt
  * 
  * The example output result in the file: packhdler_output.txt
  * 
@@ -21,6 +23,7 @@
  
  #include <stdio.h>
  #include <stdlib.h>
+ #include <string.h>
  #include <pcap.h>
  #include "mmt_core.h"
 
@@ -40,30 +43,57 @@ int main(int argc, char ** argv){
 	pcap_t *pcap;
 	const unsigned char *data;
 	struct pcap_pkthdr p_pkthdr;
-	char errbuf[1024];
+	char errbuf[PCAP_ERRBUF_SIZE];
 
-	//Initialize MMT
-	init_extraction();
-
-	//Initialize MMT handler
-	mmt_handler =mmt_init_handler(DLT_EN10MB,0,mmt_errbuf);
-	if(!mmt_handler){
-		fprintf(stderr, "MMT handler init failed for the following reason: %s\n",mmt_errbuf );
+	if(argc != 2){
+		fprintf(stderr, "Usage: %s <pcap file>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	/* Embedding lifecycle (docs/USER_GUIDE.md, section 3):
+	 *   1. init_extraction()   once per process, before any handler exists
+	 *   2. mmt_init_handler()  one handler per worker (here: one)
+	 *   3. register attributes/handlers, then packet_process() per packet
+	 *   4. mmt_close_handler() for every handler created in step 2
+	 *   5. close_extraction()  last, once no handler is in use
+	 * Every failure path below releases exactly what was acquired so far,
+	 * in the reverse order. */
+
+	//Initialize MMT (global state: protocol registry and plugins)
+	if(!init_extraction()){
+		fprintf(stderr, "MMT extraction init failed\n");
+		return EXIT_FAILURE;
+	}
+
+	//Initialize MMT handler
+	mmt_handler = mmt_init_handler(DLT_EN10MB, 0, mmt_errbuf);
+	if(!mmt_handler){
+		fprintf(stderr, "MMT handler init failed for the following reason: %s\n", mmt_errbuf);
+		close_extraction();
+		return EXIT_FAILURE;
+	}
+
 	//Register the protocol attributes we need
-	register_extraction_attribute_by_name(mmt_handler,"META","PACKET_LEN"); //Request packet length. This is a META attribute
+	//Request packet length. This is a META attribute
+	if(!register_extraction_attribute_by_name(mmt_handler, "META", "PACKET_LEN")
+		//Register a packet handler, it will be called for every processed packet
+		|| !register_packet_handler(mmt_handler, 1, packet_handler, NULL)){
+		fprintf(stderr, "MMT attribute/packet handler registration failed\n");
+		mmt_close_handler(mmt_handler);
+		close_extraction();
+		return EXIT_FAILURE;
+	}
 
-	//Register a packet handler, it will be called for every processed packet
-	register_packet_handler(mmt_handler,1,packet_handler, NULL);
-
-	pcap = pcap_open_offline(argv[1],errbuf); // open offline trace
+	pcap = pcap_open_offline(argv[1], errbuf); // open offline trace
 	if(!pcap){ /* pcap error? */
 		fprintf(stderr, "pcap_open failed for the following reason: %s\n", errbuf);
+		mmt_close_handler(mmt_handler);
+		close_extraction();
 		return EXIT_FAILURE;
 	}
 
 	while((data=pcap_next(pcap,&p_pkthdr))){
+		memset(&header, 0, sizeof(header)); // no stale metadata fields
 		header.ts = p_pkthdr.ts;
 		header.caplen = p_pkthdr.caplen;
 		header.len = p_pkthdr.len;
@@ -72,14 +102,13 @@ int main(int argc, char ** argv){
 		}
 	}
 
-	//Close the MMT handler
-	mmt_close_handler(mmt_handler);
-
-	//Close MMT
-	close_extraction();
-
 	pcap_close(pcap);
 
-	return EXIT_SUCCESS;
+	//Close the MMT handler (before the global teardown)
+	mmt_close_handler(mmt_handler);
 
+	//Close MMT (global teardown, last)
+	close_extraction();
+
+	return EXIT_SUCCESS;
 }

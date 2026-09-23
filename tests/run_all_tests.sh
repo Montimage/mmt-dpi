@@ -216,6 +216,7 @@ DEFAULT_SUITES=(
     resource_bounds
     tcp_pending_order
     sdk_coverage
+    docs_lifecycle
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.

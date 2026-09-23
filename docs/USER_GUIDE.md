@@ -90,18 +90,80 @@ Other ready-to-build examples in the same directory:
 
 ## 3. Minimum embedding pattern
 
-The typical lifecycle when embedding the library is:
+The library has two levels of state, and the lifecycle follows them:
+**global** state (the protocol registry and the loaded plugins), created once
+per process, and **per-handler** state (sessions, registered attributes and
+callbacks, statistics), one `mmt_handler_t` per packet stream. The order is:
 
-1. Initialise a handler with `mmt_init_handler()`.
-2. Register the attributes you care about with
-   `register_extraction_attribute()` (by protocol id and attribute id, or
-   by name with `register_extraction_attribute_by_name()`).
-3. Optionally register packet-, attribute-, or session-level callbacks.
-4. Feed packets in with `packet_process()`.
-5. Tear down with `mmt_close_handler()` and `close_extraction()`.
+1. Initialise the global state once with `init_extraction()`, **before any
+   handler exists**, and check its return value — it returns `false` on
+   failure (`src/mmt_core/src/packet_registry.c:1255`). It builds the
+   protocol registry, loads the plugins and creates the map that tracks live
+   handlers (`src/mmt_core/src/packet_registry.c:1303-1304`); nothing else
+   in the API works before it. If it fails, do not call anything else,
+   including `close_extraction()`.
+2. Create a handler with `mmt_init_handler()` and check it for `NULL` — on
+   failure it fills the `errbuf` you pass in (at least `MMT_ERRBUF_SIZE`
+   bytes) (`src/mmt_core/src/packet_registry.c:950`). Each new handler is
+   recorded in the global handler map
+   (`src/mmt_core/src/packet_registry.c:1097`).
+3. Register the attributes you care about with
+   `register_extraction_attribute()` (by protocol id and attribute id) or
+   `register_extraction_attribute_by_name()`, and optionally packet-,
+   attribute- or session-level callbacks. Each returns `false` on failure.
+4. Feed packets in with `packet_process()`
+   (`src/mmt_core/src/packet_pipeline.c:1389`); it returns `false` when a
+   packet could not be processed, and later packets can still be fed.
+5. Release every handler with `mmt_close_handler()`: it expires the
+   handler's sessions, frees everything the handler owns and removes it from
+   the global handler map (`src/mmt_core/src/packet_registry.c:1130`,
+   `src/mmt_core/src/packet_registry.c:1180`).
+6. Tear down the global state last, once, with `close_extraction()`
+   (`src/mmt_core/src/packet_registry.c:1333`). It force-closes any handler
+   still registered (`src/mmt_core/src/packet_registry.c:1336`) and then
+   unloads the plugins (`src/mmt_core/src/packet_registry.c:1350`), so a
+   handler pointer is dangling afterwards: never call `mmt_close_handler()`
+   or `packet_process()` on it once `close_extraction()` has run.
 
-Skim `src/examples/extract_all.c` for the most complete reference;
-`src/examples/packet_handler.c` shows the callback registration shape.
+On an error part-way through, release only what was acquired, in reverse
+order: a failed `mmt_init_handler()` is followed by `close_extraction()`
+alone; a failure after the handler exists closes the handler and then the
+global state.
+
+**Worker ownership.** Handlers are not shared: each worker thread owns its
+own `mmt_handler_t` and feeds packets only to it. `init_extraction()` and
+all protocol/plugin registration run on one thread before any worker starts;
+handlers may then be created on the main thread or inside the workers.
+Shutdown stops every worker first, closes each worker's handler with
+`mmt_close_handler()`, then calls `close_extraction()` once on a single
+thread. The full contract, the locks behind it and the ThreadSanitizer
+harness that checks it are in [THREADING.md](./THREADING.md).
+
+`src/examples/packet_handler.c` is the runnable reference for this order:
+it checks `init_extraction()` (`src/examples/packet_handler.c:63`) before
+creating its handler (`src/examples/packet_handler.c:69`), unwinds each
+failure path, processes a pcap (`src/examples/packet_handler.c:100`) and
+closes the handler (`src/examples/packet_handler.c:108`) before the global
+state (`src/examples/packet_handler.c:111`). Against an install prefix
+(`/opt/mmt` or your `MMT_BASE`, see
+[AGENT_ENVIRONMENT.md §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior)):
+
+```bash
+gcc -o packet_handler "$MMT_BASE/examples/packet_handler.c" \
+    -I "$MMT_BASE/dpi/include" -L "$MMT_BASE/dpi/lib" -lmmt_core -ldl -lpcap
+LD_LIBRARY_PATH="$MMT_BASE/dpi/lib" ./packet_handler src/examples/google-fr.pcap
+```
+
+`init_extraction()` loads the protocol plugins from a `plugins` directory
+in the current working directory when one exists, and from
+`$MMT_BASE/plugins` only otherwise
+(`src/mmt_core/src/plugins_engine.c:43-50`), so run the program from a
+directory without a stale `./plugins`.
+
+The `docs_lifecycle` test suite builds and installs the SDK into a
+throwaway prefix, compiles and runs this example against it, and checks
+every `path:line` citation in this section. `src/examples/extract_all.c`
+is the most complete attribute-extraction reference.
 
 ## 4. Where to look next
 

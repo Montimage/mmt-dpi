@@ -53,7 +53,7 @@ These are written only at these moments:
 | Plugin load      | `load_plugin()` / `load_plugins()` (append to `plugin_handlers_list`)      |
 | (Un)registration | `register_protocol()`, `unregister_protocol_by_id()`, `unregister_protocol_by_name()` |
 | Handler create/destroy | `mmt_init_handler()` (insert), `mmt_close_handler()` (delete) — mutate `mmt_configured_handlers_map` |
-| Teardown         | `close_plugins()`, `free_registered_protocols()`, `close_extraction()`     |
+| Teardown         | `close_extraction()` (internally `close_plugins()`, `free_registered_protocols()`) |
 
 ### Locking
 
@@ -153,8 +153,13 @@ so they need no locking as long as the "one handler per worker" rule holds:
    from cold.
 3. Each worker feeds packets only to *its own* handler.
 4. On shutdown: stop all workers first, free each handler with
-   `mmt_close_handler()`, then call the global teardown
-   (`close_plugins()` / `free_registered_protocols()`) on a single thread.
+   `mmt_close_handler()`, then call the public global teardown
+   `close_extraction()` once, on a single thread. It force-closes any handler
+   still registered and runs the internal `close_plugins()` /
+   `free_registered_protocols()` steps itself
+   (`src/mmt_core/src/packet_registry.c:1333-1351`); a handler must not be
+   used or closed after it returns. The single-threaded embedding sequence is
+   in [USER_GUIDE.md §3](./USER_GUIDE.md#3-minimum-embedding-pattern).
 
 ## Verification (ThreadSanitizer harness)
 

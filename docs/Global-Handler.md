@@ -28,21 +28,21 @@ Get current version of `MMT-DPI`:
 char * mmt_version();
 ```
 
-(`sdk/include/mmt_core.h:1045`)
+(`src/mmt_core/public_include/mmt_core.h:1228`)
 
-`init_extraction()` / `close_extraction()`: (`sdk/include/mmt_core.h:165,178`)
+`init_extraction()` / `close_extraction()`: (`src/mmt_core/public_include/mmt_core.h:185,198`)
 
 ### User API ###
 #### Initialization
 ```c
-   int init_extraction();
+   bool init_extraction();
 ```
-Initializes MMT global context. This function MUST be called before any use of MMT. It returns a positive value on success and zero on failure (`sdk/include/mmt_core.h:165`).
+Initializes MMT global context. This function MUST be called before any use of MMT, including `mmt_init_handler()`. It returns `true` on success and `false` on failure (`src/mmt_core/public_include/mmt_core.h:185`).
 
 #### Cleanup
 ```c
-   int close_extraction();
+   void close_extraction();
 ```
-Closes MMT global context and frees any previously allocated memory (`sdk/include/mmt_core.h:178`). 
+Closes MMT global context and frees any previously allocated memory (`src/mmt_core/public_include/mmt_core.h:198`). Call it last, after `mmt_close_handler()` on every handler; it force-closes any handler still open, so no handler may be used afterwards. The full lifecycle is in [USER_GUIDE.md §3](./USER_GUIDE.md#3-minimum-embedding-pattern). 
 
 ## Open Issues ##

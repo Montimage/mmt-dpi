@@ -12,6 +12,7 @@ checklist requires a line here for every user-visible change.
 - align the contributor and user docs with the code — the agent-runnable environment guide, tracked CLAUDE.md/AGENTS.md role briefs, user-guide anchor fixes and the http_parser→llhttp migration guide (#119, #120, #157, #178, #179, #180, #196, #211, #221)
 - publish the Jekyll guides on the docs site, fix landing navigation and the trunk link check (#247)
 - close the remaining documentation drift (#249)
+- correct the documented embedding lifecycle: `init_extraction()` before any handler, checked failures, handler teardown before `close_extraction()` and one handler per worker, with source citations; `packet_handler.c` now follows that order on every path, and the new `docs_lifecycle` suite compiles and runs it against a throwaway installed SDK (#392)
 - reconcile the version, protocol-count and changelog claims: one canonical feature list, quick-start and first example shared between README and the site, and a CI gate that the quoted counts match the built SDK (#248)
 
 ### Build, CI and packaging
