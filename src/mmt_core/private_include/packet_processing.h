@@ -153,10 +153,17 @@ struct mmt_segblk_s; /* tcp_segment.h — plugin-owned bump block chain */
  * lives in a geometrically-grown buffer capped by the handler's
  * tcp_reassembly_limit, and the not-yet-flattened segments live in a
  * seq-sorted doubly-linked list backed by bump blocks (see mmt_segblk_t in
- * tcp_segment.h). `live` counts pending carved bytes plus image bytes and is
- * the quantity bounded by the ceiling; consumed segments are released
- * promptly (dead blocks are recycled/freed) so the prefix already emitted
- * does not pin memory until teardown.
+ * tcp_segment.h). `live` counts pending carved bytes plus image bytes (the
+ * content gauge); consumed segments are released promptly (dead blocks are
+ * recycled/freed) so the prefix already emitted does not pin memory until
+ * teardown.
+ *
+ * Issue #380 (F-PERF-002): `reserved` is the storage actually held — every
+ * block's header + capacity plus both image capacities — and it is the
+ * quantity bounded by the ceiling: content (`live`) <= reserved <= limit.
+ * Admission also keeps room for the image growth still owed to flatten the
+ * pending bytes (`pending_len`), so a drain never needs storage the budget
+ * cannot give. This struct itself is per-flow metadata outside the budget.
  */
 typedef struct mmt_tcp_reasm_s {
     void *seg_head[2];            /* pending tcp_seg_t list head, seq-sorted */
@@ -166,8 +173,10 @@ typedef struct mmt_tcp_reasm_s {
     uint32_t image_cap[2];        /* allocated capacity of image */
     uint32_t consumed_seq[2];     /* seq of the byte just past the image end */
     uint8_t consumed_valid[2];    /* 1 once the direction emitted ≥1 segment */
-    uint64_t live;                /* pending carved bytes + image bytes (≤ limit) */
-    uint64_t dropped;             /* payload bytes dropped by ceiling/late-arrival */
+    uint32_t pending_len[2];      /* payload bytes of pending segs (issue #380) */
+    uint64_t live;                /* pending carved bytes + image bytes (content) */
+    uint64_t reserved;            /* block hdr+cap + image caps (≤ limit, #380) */
+    uint64_t dropped;             /* payload bytes dropped: ceiling/late/duplicate */
     struct mmt_segblk_s *blocks;  /* bump-block chain backing pending segs */
 } mmt_tcp_reasm_t;
 
@@ -594,9 +603,11 @@ struct mmt_handler_struct {
      * plugin-agnostic on purpose. */
     void (*frag_map_sweep_fct)(mmt_hashmap_t *map, uint32_t now);
     void (*frag_map_drain_fct)(mmt_hashmap_t *map);
-    /* Issue #245: per-flow ceiling on TCP reassembly content bytes (pending
-     * segments + flattened image). Set via set_tcp_reassembly_limit(); the
-     * default is MMT_TCP_REASSEMBLY_LIMIT_DEFAULT. */
+    /* Issue #245: per-flow ceiling on TCP reassembly bytes. Issue #380
+     * (F-PERF-002): it bounds reserved storage (pending-segment blocks incl.
+     * headers + both image capacities), not just content. Set via
+     * set_tcp_reassembly_limit(); the default is
+     * MMT_TCP_REASSEMBLY_LIMIT_DEFAULT. */
     uint32_t tcp_reassembly_limit;
     /* Issue #245: freelist of mmt_ipacket_slot_t recycled by
      * process_packet_with_reassembly()/clean_packet_with_reassembly() —

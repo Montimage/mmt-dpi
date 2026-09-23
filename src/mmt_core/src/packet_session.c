@@ -164,8 +164,9 @@ bool set_live_session_timed_out(mmt_handler_t *mmt_handler,uint32_t timedout_val
 }
 
 /* Issue #245 (F-PERF-006 / F-BUG-038): configure the per-flow ceiling on TCP
- * reassembly content bytes (pending segments + flattened image). Passing 0
- * restores the default. */
+ * reassembly bytes. Issue #380 (F-PERF-002): it bounds reserved storage —
+ * pending-segment blocks incl. headers + both image capacities (see
+ * mmt_core.h). Passing 0 restores the default. */
 bool set_tcp_reassembly_limit(mmt_handler_t *mmt_handler,uint32_t bytes){
     if(mmt_handler == NULL) return 0;
     mmt_handler->tcp_reassembly_limit =

@@ -497,16 +497,30 @@ MMTAPI bool MMTCALL set_default_session_timed_out(
 );
 
 /* Issue #245 (F-PERF-006, F-BUG-038): per-flow ceiling on TCP reassembly
- * content bytes — pending segments plus the flattened session-payload image.
- * A flow never holds more than this many reassembly bytes; segments beyond
- * the ceiling are dropped (see the TCP session-payload attributes). */
+ * bytes; segments beyond the ceiling are dropped (see the TCP session-payload
+ * attributes). Issue #380 (F-PERF-002): the ceiling bounds RESERVED storage —
+ * the pending-segment blocks including their headers plus both directions'
+ * image capacities — so content <= reserved <= limit. */
 #define MMT_TCP_REASSEMBLY_LIMIT_DEFAULT (4u * 1024u * 1024u)
 
 /**
- * Set the per-flow ceiling on TCP reassembly content bytes. Only meaningful
+ * Set the per-flow ceiling on TCP reassembly storage. Only meaningful
  * for handlers running with enable_mmt_reassembly() plus TCP segment
  * reassembly (update_protocol(PROTO_TCP, TCP_ENABLE_REASSEMBLE)). Passing 0
  * restores MMT_TCP_REASSEMBLY_LIMIT_DEFAULT.
+ *
+ * Issue #380 (F-PERF-002) budget contract: a flow's reserved storage
+ * (segment blocks incl. headers + both image capacities) never exceeds
+ * `bytes`. A segment is admitted only while the reservations plus the image
+ * growth still needed to flatten every pending byte fit; otherwise it is
+ * dropped and counted by mmt_tcp_reasm_bytes_dropped(). Duplicate sequence
+ * numbers are rejected before any storage is allocated (the first segment
+ * wins). Speculative image growth takes at most half of the free budget,
+ * and idle image capacity is reclaimed before a segment is refused, so one
+ * direction cannot starve the other. Lowering the ceiling mid-flow refuses new reservations until usage
+ * falls below it; the next flatten keeps what fits and drops (counts) the
+ * rest. Transient realloc() copies and the small per-flow state record are
+ * metadata outside the budget. Session teardown releases all of it.
  * @param  mmt_handler    handler
  * @param  bytes          ceiling in bytes
  * @return                1 if successful

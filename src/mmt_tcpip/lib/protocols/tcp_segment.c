@@ -18,21 +18,37 @@
 //  prefix no longer pins memory until session teardown.                    //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define MMT_SEGBLK_HDR ((uint32_t)MMT_SEGBLK_ALIGN_UP(sizeof(mmt_segblk_t)))
-
 static inline uint8_t *mmt_segblk_data(mmt_segblk_t *b) {
 	return (uint8_t *)b + MMT_SEGBLK_HDR;
 }
 
-uint8_t *mmt_segblk_carve(mmt_segblk_t **head, uint32_t size, mmt_segblk_t **blk_out) {
-	if (head == NULL || blk_out == NULL || size == 0) return NULL;
+uint8_t *mmt_segblk_carve(mmt_segblk_t **head, uint32_t size, mmt_segblk_t **blk_out,
+                          uint64_t *reserved, uint64_t room) {
+	if (head == NULL || blk_out == NULL || reserved == NULL || size == 0) return NULL;
 	uint32_t need = MMT_SEGBLK_ALIGN_UP(size);
 	mmt_segblk_t *b = *head;
 	/* used <= cap is the invariant, so cap - used cannot wrap. */
 	if (b == NULL || b->used > b->cap || need > b->cap - b->used) {
+		/* Issue #380 (F-PERF-002): a fresh block must fit the caller's
+		 * remaining storage room, header included; right-size it down to
+		 * that room, but never below the aligned carve. An emptied head
+		 * (recycled in place by mmt_segblk_release) that the carve does not
+		 * fit is freed first and its storage credited to the room — left
+		 * behind the new head it would stay reserved until teardown. */
+		if (b != NULL && b->live == 0) {
+			*head = b->next;
+			if (b->next != NULL) b->next->prev = NULL;
+			*reserved -= MMT_SEGBLK_HDR + b->cap;
+			room += MMT_SEGBLK_HDR + b->cap;
+			free(b);
+		}
+		if ((uint64_t) MMT_SEGBLK_HDR + need > room) return NULL;
 		uint32_t cap = (need > MMT_SEGBLK_PAYLOAD) ? need : MMT_SEGBLK_PAYLOAD;
+		if ((uint64_t) MMT_SEGBLK_HDR + cap > room)
+			cap = (uint32_t) (room - MMT_SEGBLK_HDR) & ~(uint32_t)(MMT_SEGBLK_ALIGN - 1u);
 		mmt_segblk_t *nb = (mmt_segblk_t *) malloc(MMT_SEGBLK_HDR + cap);
 		if (nb == NULL) return NULL;
+		*reserved += MMT_SEGBLK_HDR + cap;
 		nb->cap = cap;
 		nb->used = 0;
 		nb->live = 0;
@@ -49,8 +65,9 @@ uint8_t *mmt_segblk_carve(mmt_segblk_t **head, uint32_t size, mmt_segblk_t **blk
 	return p;
 }
 
-void mmt_segblk_release(mmt_segblk_t **head, mmt_segblk_t *blk, uint32_t carve) {
-	if (head == NULL || blk == NULL || carve == 0) return;
+void mmt_segblk_release(mmt_segblk_t **head, mmt_segblk_t *blk, uint32_t carve,
+                        uint64_t *reserved) {
+	if (head == NULL || blk == NULL || reserved == NULL || carve == 0) return;
 	uint32_t need = MMT_SEGBLK_ALIGN_UP(carve);
 	if (blk->live < need) need = blk->live; /* defensive: never wrap live */
 	blk->live -= need;
@@ -61,12 +78,14 @@ void mmt_segblk_release(mmt_segblk_t **head, mmt_segblk_t *blk, uint32_t carve) 
 	}
 	if (blk->prev != NULL) blk->prev->next = blk->next;
 	if (blk->next != NULL) blk->next->prev = blk->prev;
+	*reserved -= MMT_SEGBLK_HDR + blk->cap; /* issue #380 */
 	free(blk);
 }
 
-void mmt_segblk_free_all(mmt_segblk_t *head) {
+void mmt_segblk_free_all(mmt_segblk_t *head, uint64_t *reserved) {
 	while (head != NULL) {
 		mmt_segblk_t *nx = head->next;
+		if (reserved != NULL) *reserved -= MMT_SEGBLK_HDR + head->cap; /* issue #380 */
 		free(head);
 		head = nx;
 	}
@@ -207,8 +226,9 @@ tcp_seg_t * tcp_seg_insert(tcp_seg_t * root, tcp_seg_t * seg){
 		 * reach this walk, so a runaway counter means a regression. */
 		mmt_tcp_reasm_stat_visit();
 		if (current_seg->seq == seg->seq) {
-			// Duplicated segment
-			// TODO(#245): discuss whether to override duplicate segment or keep first
+			// Duplicated segment. Issue #380 (F-PERF-002) settles the #245
+			// policy: the first segment is kept and later duplicates are
+			// rejected (proto_tcp.c does so before allocating any storage).
 			mmt_debug_log("[tcp_seg_insert] Duplicated segment: seq %lu - packets: %lu, %lu (ignored)\n", seg->seq, current_seg->packet_id, seg->packet_id);
 			return NULL; // duplicated segment
 		}
@@ -245,6 +265,18 @@ tcp_seg_t * tcp_seg_insert(tcp_seg_t * root, tcp_seg_t * seg){
 }
 
 
+
+tcp_seg_t * tcp_seg_locate(tcp_seg_t * root, uint64_t seq){
+	/* Issue #380 (F-PERF-002): the tcp_seg_insert() walk without the node —
+	 * the caller detects duplicates before carving any storage. */
+	tcp_seg_t * current_seg = root;
+	while (current_seg) {
+		mmt_tcp_reasm_stat_visit();
+		if (!tcp_seq_before(current_seg->seq, seq)) return current_seg;
+		current_seg = current_seg->next;
+	}
+	return NULL;
+}
 
 /**
  * Search in the given Link-list of tcp segment a node which has the seq equals with given seq

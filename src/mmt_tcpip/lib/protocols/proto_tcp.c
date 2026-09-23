@@ -37,6 +37,26 @@
 /* released block frees the consumed prefix instead of pinning it to   */
 /* session teardown. r->live (pending carve bytes + image bytes) never */
 /* exceeds the ceiling: segments are dropped when it would overflow.   */
+/*                                                                    */
+/* Issue #380 (F-PERF-002): the ceiling bounds RESERVED storage, not   */
+/* just content. r->reserved = every block's header + capacity + both  */
+/* image capacities, and an offer is admitted only while               */
+/*   reserved (+ any new block) + owed[0] + owed[1] <= limit,          */
+/* where owed[d] is the image growth still needed to flatten the       */
+/* direction's pending bytes — so the drain can always absorb what was */
+/* admitted, and image growth is clamped to what the budget leaves.   */
+/* Speculative growth (the x4 step beyond the bytes being flattened)   */
+/* takes at most half of the budget still free, and an offer that the  */
+/* invariant would refuse first trims both images' idle capacity back  */
+/* to their content + pending bytes — so one direction's headroom can  */
+/* never starve the other while content is below the limit.           */
+/* Exhaustion policy: offers that would break the budget are dropped   */
+/* and counted in r->dropped / mmt_tcp_reasm_bytes_dropped(). Duplicate */
+/* sequence numbers are rejected before any storage is carved (the     */
+/* first segment wins). Lowering the limit mid-flow refuses new        */
+/* reservations until usage drops below it. Transient realloc copies   */
+/* and this mmt_tcp_reasm_t itself (metadata) are outside the budget;  */
+/* clean_session_payload() releases every block, image and the state.  */
 /* ------------------------------------------------------------------ */
 
 /* Lazily allocate the session's reassembly extension. */
@@ -53,32 +73,91 @@ static mmt_tcp_reasm_t *tcp_reasm_state(mmt_session_t *session) {
 static void tcp_reasm_seg_release(mmt_tcp_reasm_t *r, tcp_seg_t *seg) {
     r->live -= seg->blk_size;
     mmt_tcp_reasm_stat_live(-(int64_t) seg->blk_size);
-    mmt_segblk_release(&r->blocks, seg->blk, seg->blk_size);
+    mmt_segblk_release(&r->blocks, seg->blk, seg->blk_size, &r->reserved);
+}
+
+/* Issue #380 (F-PERF-002): image growth direction `dir` still owes to
+ * flatten its pending bytes (0 when the current capacity covers them). */
+static uint64_t tcp_reasm_owed(const mmt_tcp_reasm_t *r, int dir) {
+    uint64_t want = (uint64_t) r->image_len[dir] + r->pending_len[dir];
+    return (want > r->image_cap[dir]) ? want - r->image_cap[dir] : 0;
+}
+
+/* Issue #380 (F-PERF-002): give back image capacity neither direction
+ * needs — anything beyond image_len + pending_len (16-B rounded) — and
+ * credit r->reserved. Called only when an offer would otherwise be
+ * refused, i.e. at packet arrival: attribute readers hold an image pointer
+ * only within the current packet callback, the same contract the growth
+ * realloc in tcp_reasm_image_append() already relies on. A failed shrink
+ * keeps the old buffer and the accounting unchanged. */
+static void tcp_reasm_trim(mmt_tcp_reasm_t *r) {
+    for (int d = 0; d < 2; d++) {
+        /* Round in 64 bits: MMT_SEGBLK_ALIGN_UP's 32-bit mask would wrap a
+         * sum near UINT32_MAX to 0 and free a non-empty image. */
+        uint64_t want = ((uint64_t) r->image_len[d] + r->pending_len[d]
+                         + (MMT_SEGBLK_ALIGN - 1u)) & ~(uint64_t) (MMT_SEGBLK_ALIGN - 1u);
+        if (want >= r->image_cap[d]) continue;
+        if (want == 0) {
+            free(r->image[d]);
+            r->image[d] = NULL;
+        } else {
+            uint8_t *nb = (uint8_t *) realloc(r->image[d], (size_t) want);
+            if (nb == NULL) continue;
+            r->image[d] = nb;
+        }
+        r->reserved -= r->image_cap[d] - want;
+        r->image_cap[d] = (uint32_t) want;
+    }
 }
 
 /* Append bytes to the direction's image buffer, growing it geometrically
  * (x4 from a 16 KiB floor) but never past the per-flow ceiling. Returns the
  * number of bytes appended; the caller's segment is only released for what
- * was appended or intentionally dropped. */
+ * was appended or intentionally dropped. Issue #380 (F-PERF-002): growth is
+ * also clamped to what the reserved-storage budget leaves once the other
+ * reservations and the other direction's owed growth are counted; bytes
+ * that do not fit are the caller's to drop. The speculative part of a step
+ * (beyond the direction's image + pending bytes) takes at most half of the
+ * budget still free. *oom is set (and 0 returned) only when realloc()
+ * fails — a budget clamp is never reported as OOM. */
 static uint32_t tcp_reasm_image_append(mmt_session_t *session, mmt_tcp_reasm_t *r,
-                                       int dir, const uint8_t *data, uint32_t len) {
+                                       int dir, const uint8_t *data, uint32_t len,
+                                       int *oom) {
     uint32_t limit = session->mmt_handler->tcp_reassembly_limit;
     uint32_t room = (r->image_len[dir] < limit) ? limit - r->image_len[dir] : 0;
+    *oom = 0;
     if (len > room) len = room;
     if (len == 0) return 0;
     uint32_t need = r->image_len[dir] + len;
     if (need > r->image_cap[dir]) {
-        /* ncap must be 64-bit: a x4 step past 1 GiB wraps a uint32_t to 0 and
-         * the while loop would never terminate (reviewer lane, run r3). */
-        uint64_t ncap = (r->image_cap[dir] != 0) ? r->image_cap[dir] : (16u * 1024u);
-        while (ncap < need) ncap *= 4;
-        if (ncap > limit) ncap = limit;
-        /* need <= limit by construction (len <= room), so ncap >= need and
-         * ncap <= limit <= UINT32_MAX — the cast back to uint32_t is safe. */
-        uint8_t *nb = (uint8_t *) realloc(r->image[dir], (size_t) ncap);
-        if (nb == NULL) return 0;   /* OOM — leave the segment pending */
-        r->image[dir] = nb;
-        r->image_cap[dir] = (uint32_t) ncap;
+        /* reserved always includes image_cap[dir], so this cannot wrap. */
+        uint64_t others = r->reserved - r->image_cap[dir] + tcp_reasm_owed(r, !dir);
+        uint64_t cap_max = (limit > others) ? limit - others : 0;
+        if (cap_max > r->image_cap[dir]) {
+            /* ncap must be 64-bit: a x4 step past 1 GiB wraps a uint32_t to 0
+             * and the while loop would never terminate (reviewer lane, run r3). */
+            uint64_t ncap = (r->image_cap[dir] != 0) ? r->image_cap[dir] : (16u * 1024u);
+            while (ncap < need) ncap *= 4;
+            /* Issue #380 review: size for every pending byte (pending_len
+             * still counts this segment), then let the speculative rest
+             * use at most half of the budget left free. */
+            uint64_t base = (uint64_t) r->image_len[dir] + r->pending_len[dir];
+            if (base < need) base = need;
+            if (base > cap_max) base = cap_max;
+            if (ncap > base) {
+                uint64_t spec = (cap_max - base) / 2;
+                if (ncap - base > spec) ncap = base + spec;
+            }
+            if (ncap > cap_max) ncap = cap_max;
+            /* cap_max <= limit <= UINT32_MAX — the cast back is safe. */
+            uint8_t *nb = (uint8_t *) realloc(r->image[dir], (size_t) ncap);
+            if (nb == NULL) { *oom = 1; return 0; }  /* leave the segment pending */
+            r->reserved += ncap - r->image_cap[dir];
+            r->image[dir] = nb;
+            r->image_cap[dir] = (uint32_t) ncap;
+        }
+        if (need > r->image_cap[dir]) len = r->image_cap[dir] - r->image_len[dir];
+        if (len == 0) return 0;
     }
     memcpy(r->image[dir] + r->image_len[dir], data, len);
     r->image_len[dir] += len;
@@ -108,9 +187,9 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
             r->dropped += seg->len;
             mmt_tcp_reasm_stat_drop(seg->len);
         } else {
-            uint32_t n = tcp_reasm_image_append(session, r, dir, seg->data, seg->len);
-            if (n == 0 && r->image_len[dir] + seg->len <= session->mmt_handler->tcp_reassembly_limit
-                      && r->image_cap[dir] < r->image_len[dir] + seg->len) {
+            int oom;
+            uint32_t n = tcp_reasm_image_append(session, r, dir, seg->data, seg->len, &oom);
+            if (oom) {
                 /* OOM growing the image — re-link at head and stop: the
                  * pending list keeps the segment for the next read. The
                  * bytes are NOT counted dropped — the segment survives. */
@@ -128,6 +207,7 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
             r->consumed_seq[dir] = (uint32_t) seg->next_seq;
             r->consumed_valid[dir] = 1;
         }
+        r->pending_len[dir] -= seg->len;
         tcp_reasm_seg_release(r, seg);
         seg = nx;
     }
@@ -135,8 +215,11 @@ static void tcp_reasm_drain(mmt_session_t *session, int dir) {
 
 /* Offer a freshly arrived TCP payload segment to the direction's pending
  * store. In-order and descending arrivals take O(1) fast paths (tail /
- * head); other out-of-order segments fall back to the sorted-list insert
- * whose walk is bounded by the ceiling-limited pending window. */
+ * head); other out-of-order segments fall back to a sorted-list locate walk
+ * whose length is bounded by the ceiling-limited pending window. Issue #380
+ * (F-PERF-002): the position — and so any duplicate — is found BEFORE any
+ * storage is carved, and a carve is admitted only within the reserved-
+ * storage budget (see the block comment above). */
 static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
                             uint32_t seq, uint32_t ack, const uint8_t *payload,
                             uint32_t len) {
@@ -151,24 +234,51 @@ static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
      * is still appended in full, preserving the pre-#245 sorted-concat
      * semantics for overlapping ranges. */
     if (r->consumed_valid[dir] && !tcp_seq_before(r->consumed_seq[dir], seq + len)) {
-        r->dropped += len;
-        mmt_tcp_reasm_stat_drop(len);
-        return;
+        goto drop;
     }
+
+    /* Locate the insert position: `before` is the node the new segment is
+     * linked in front of, NULL for a tail append (or an empty list). */
+    tcp_seg_t *head = (tcp_seg_t *) r->seg_head[dir];
+    tcp_seg_t *tail = (tcp_seg_t *) r->seg_tail[dir];
+    tcp_seg_t *before = NULL;
+    if (tail != NULL && !tcp_seq_before(tail->seq, seq)) {
+        /* Not an in-order append (F-PERF-004 keeps that path O(1)). */
+        if (tcp_seq_equal(seq, tail->seq) || tcp_seq_equal(seq, head->seq)) {
+            goto drop;  /* duplicate: first segment wins, nothing carved */
+        }
+        if (tcp_seq_before(seq, head->seq)) {
+            before = head;  /* descending order prepends at head — O(1) */
+        } else {
+            before = tcp_seg_locate(head, seq);
+            if (before == NULL || tcp_seq_equal(before->seq, seq)) goto drop;
+        }
+    }
+
     uint32_t carve = MMT_SEGBLK_ALIGN_UP(sizeof(tcp_seg_t)) + MMT_SEGBLK_ALIGN_UP(len);
     /* Bounded: pending carve bytes + image bytes never exceed the ceiling. */
-    if (r->live + carve > limit) {
-        r->dropped += len;
-        mmt_tcp_reasm_stat_drop(len);
-        return;
+    if (r->live + carve > limit) goto drop;
+    /* Issue #380 (F-PERF-002): admission invariant — reserved storage plus
+     * the image growth owed to flatten every pending byte (this segment
+     * included) must stay within the limit; what is left is the room a new
+     * block may take. */
+    uint64_t want = (uint64_t) r->image_len[dir] + r->pending_len[dir] + len;
+    uint64_t owed = tcp_reasm_owed(r, !dir)
+                  + ((want > r->image_cap[dir]) ? want - r->image_cap[dir] : 0);
+    if (r->reserved + owed + MMT_SEGBLK_HDR + carve > limit) {
+        /* Issue #380 review: reclaim idle image capacity before refusing.
+         * The trim sizes caps to image + pending WITHOUT this segment, so
+         * owed[dir] can grow — recompute it before the re-check. */
+        tcp_reasm_trim(r);
+        owed = tcp_reasm_owed(r, !dir)
+             + ((want > r->image_cap[dir]) ? want - r->image_cap[dir] : 0);
     }
+    if (r->reserved + owed > limit) goto drop;
     mmt_segblk_t *blk = NULL;
-    uint8_t *p = mmt_segblk_carve(&r->blocks, carve, &blk);
-    if (p == NULL || blk == NULL) {
-        r->dropped += len;
-        mmt_tcp_reasm_stat_drop(len);
-        return;
-    }
+    uint8_t *p = mmt_segblk_carve(&r->blocks, carve, &blk, &r->reserved,
+                                  limit - r->reserved - owed);
+    if (p == NULL || blk == NULL) goto drop;
+
     tcp_seg_t *seg = (tcp_seg_t *) p;
     seg->packet_id = packet_id;
     seg->seq = seq;
@@ -183,47 +293,25 @@ static void tcp_reasm_offer(mmt_session_t *session, int dir, uint64_t packet_id,
     seg->blk_size = carve;
     memcpy(seg->data, payload, len);
 
-    tcp_seg_t *head = (tcp_seg_t *) r->seg_head[dir];
-    tcp_seg_t *tail = (tcp_seg_t *) r->seg_tail[dir];
     if (tail == NULL) {
         r->seg_head[dir] = seg;
         r->seg_tail[dir] = seg;
-        r->live += carve;
-        mmt_tcp_reasm_stat_live((int64_t) carve);
-        return;
-    }
-    if (tcp_seq_before(tail->seq, seg->seq)) {
-        /* F-PERF-004: in-order append through the tail — O(1). */
+    } else if (before == NULL) {
         tail->next = seg;
         seg->prev = tail;
         r->seg_tail[dir] = seg;
-        r->live += carve;
-        mmt_tcp_reasm_stat_live((int64_t) carve);
-        return;
+    } else {
+        seg->next = before;
+        seg->prev = before->prev;
+        if (before->prev != NULL) before->prev->next = seg;
+        else r->seg_head[dir] = seg;
+        before->prev = seg;
     }
-    if (tcp_seq_equal(seg->seq, tail->seq) || tcp_seq_equal(seg->seq, head->seq)) {
-        goto release_dup;
-    }
-    if (tcp_seq_before(seg->seq, head->seq)) {
-        /* Descending order prepends at head — O(1). */
-        seg->next = head;
-        head->prev = seg;
-        r->seg_head[dir] = seg;
-        r->live += carve;
-        mmt_tcp_reasm_stat_live((int64_t) carve);
-        return;
-    }
-    {
-        tcp_seg_t *root = tcp_seg_insert(head, seg);
-        if (root == NULL) goto release_dup;
-        r->seg_head[dir] = root;
-        r->live += carve;
-        mmt_tcp_reasm_stat_live((int64_t) carve);
-        return;
-    }
-release_dup:
-    /* Duplicate sequence — abandon the segment; the carve is released. */
-    mmt_segblk_release(&r->blocks, blk, carve);
+    r->pending_len[dir] += len;
+    r->live += carve;
+    mmt_tcp_reasm_stat_live((int64_t) carve);
+    return;
+drop:
     r->dropped += len;
     mmt_tcp_reasm_stat_drop(len);
 }
@@ -706,7 +794,8 @@ void clean_session_payload(mmt_session_t * session, unsigned index){
     mmt_tcp_reasm_t *r = session->tcp_reasm;
     if (r != NULL) {
         mmt_tcp_reasm_stat_live(-(int64_t) r->live);
-        mmt_segblk_free_all(r->blocks);
+        mmt_segblk_free_all(r->blocks, &r->reserved);
+        r->reserved -= (uint64_t) r->image_cap[0] + r->image_cap[1]; /* issue #380: now 0 */
         free(r->image[0]);
         free(r->image[1]);
         free(r);

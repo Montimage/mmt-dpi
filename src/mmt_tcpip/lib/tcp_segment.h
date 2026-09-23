@@ -48,23 +48,40 @@ typedef struct mmt_segblk_s {
 #define MMT_SEGBLK_PAYLOAD  (16u * 1024u)  /* default block payload bytes */
 #define MMT_SEGBLK_ALIGN    16u
 #define MMT_SEGBLK_ALIGN_UP(n) (((n) + (MMT_SEGBLK_ALIGN - 1u)) & ~(uint32_t)(MMT_SEGBLK_ALIGN - 1u))
+/* Issue #380 (F-PERF-002): aligned block header — a block reserves
+ * MMT_SEGBLK_HDR + cap bytes of the flow's storage budget. */
+#define MMT_SEGBLK_HDR ((uint32_t)MMT_SEGBLK_ALIGN_UP(sizeof(mmt_segblk_t)))
 
 /**
  * Carve `size` bytes from the chain headed by *head (allocating a fresh block
  * when needed). On success returns the carved pointer, stores the owning
  * block in *blk_out, and charges the aligned carve size to blk->live.
  * Returns NULL on OOM (the chain is left unchanged).
+ *
+ * Issue #380 (F-PERF-002): *reserved is the caller's reserved-storage gauge
+ * (MMT_SEGBLK_HDR + cap of every block in the chain, plus whatever else the
+ * caller charges to it). A fresh block is only allocated when its
+ * MMT_SEGBLK_HDR + cap fits in `room`; its cap is right-sized down to that
+ * room (never below the aligned carve) and added to *reserved. Returns NULL
+ * without allocating when even the aligned carve does not fit. An empty head
+ * block (no live carve) that the carve does not fit is freed first — its
+ * storage leaves *reserved and is added to `room` — so it is never stranded
+ * behind the new head; that holds even when the new block cannot be had.
  */
-uint8_t *mmt_segblk_carve(mmt_segblk_t **head, uint32_t size, mmt_segblk_t **blk_out);
+uint8_t *mmt_segblk_carve(mmt_segblk_t **head, uint32_t size, mmt_segblk_t **blk_out,
+                          uint64_t *reserved, uint64_t room);
 
 /**
  * Release a carve of `carve` bytes previously taken from blk. When the block
- * empties it is recycled in place (chain head) or unlinked and freed.
+ * empties it is recycled in place (chain head, stays reserved) or unlinked
+ * and freed (its MMT_SEGBLK_HDR + cap leaves *reserved — issue #380).
  */
-void mmt_segblk_release(mmt_segblk_t **head, mmt_segblk_t *blk, uint32_t carve);
+void mmt_segblk_release(mmt_segblk_t **head, mmt_segblk_t *blk, uint32_t carve,
+                        uint64_t *reserved);
 
-/** Free every block in the chain (session teardown). */
-void mmt_segblk_free_all(mmt_segblk_t *head);
+/** Free every block in the chain (session teardown); each freed block's
+ * MMT_SEGBLK_HDR + cap leaves *reserved (issue #380). */
+void mmt_segblk_free_all(mmt_segblk_t *head, uint64_t *reserved);
 
 /**
  * Present a TCP segment
@@ -133,6 +150,17 @@ void tcp_seg_free_list(tcp_seg_t *head);
  * @return      new root of the Link-list of tcp segment
  */
 tcp_seg_t *tcp_seg_insert(tcp_seg_t *root, tcp_seg_t *seg);
+
+/**
+ * Issue #380 (F-PERF-002): locate the insert position for `seq` WITHOUT
+ * allocating a node — the first segment of the seq-sorted list at `root`
+ * whose seq does not sort before `seq` (wrap-aware). The caller treats an
+ * equal seq as a duplicate and otherwise links the new node before the
+ * returned one. Returns NULL when every segment sorts before `seq` (append
+ * at the tail). Each node examined counts once in mmt_tcp_reasm_stat_visit(),
+ * the same walk accounting as tcp_seg_insert().
+ */
+tcp_seg_t *tcp_seg_locate(tcp_seg_t *root, uint64_t seq);
 
 /**
  * Search in the given Link-list of tcp segment a node which has the seq equals with given seq
