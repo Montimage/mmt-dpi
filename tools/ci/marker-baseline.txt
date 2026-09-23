@@ -26,4 +26,9 @@
 # count windows, REPEAT) and intentionally unsupported data types were
 # consolidated into marker-free fall-through cases; the remaining drop is
 # dead commentary removed with them.
-107
+#
+# #391: re-baselined 107 -> 80 — the cleanup-ratchet validation after the
+# coverage/accuracy tests (#388, #390) found the count already at 80: the
+# error-propagation work in #327 resolved 26 markers and #380 one more, but
+# neither tightened this file. Every surviving marker is still issue-linked.
+80
