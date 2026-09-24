@@ -41,4 +41,9 @@
 # src/mmt_core/src/packet_processing.c that emitted a literal "TODO"
 # (mmt_stats_snprintf/fprintf/format and the mmt_attr_snprintf default arm)
 # now render the protocol statistics or return a documented negative code.
-72
+#
+# #329: re-baselined 72 -> 70 — the two `TODO(#329)` "Throughout metrics"
+# markers in src/mmt_core/src/packet_stats.c were resolved by a decision to
+# keep cumulative per-packet protocol counters polled by the application
+# (docs/DECISIONS.md, 2026-09-24).
+70

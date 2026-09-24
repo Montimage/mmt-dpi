@@ -455,7 +455,7 @@ void reset_proto_stats(protocol_instance_t * proto) {
 */
 proto_statistics_internal_t * update_proto_stats_on_packet(ipacket_t * ipacket, protocol_instance_t * configured_protocol, proto_statistics_internal_t * parent_stats, uint32_t proto_offset, unsigned index) {
     if (likely(isProtocolStatisticsEnabled(ipacket->mmt_handler))) {
-        /* TODO(#329): Throughout metrics should be replaced by periodic handlers! */
+        /* Cumulative per-packet counters; the application polls/resets them (docs/DECISIONS.md, #329). */
         proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
 
         if (likely(proto_stats)) {
@@ -505,7 +505,7 @@ proto_statistics_internal_t * update_proto_stats_on_new_session(ipacket_t * ipac
         return NULL;
     }
 
-    /* TODO(#329): Throughout metrics should be replaced by periodic handlers! */
+    /* Cumulative per-packet counters; the application polls/resets them (docs/DECISIONS.md, #329). */
     proto_statistics_internal_t * proto_stats = _get_protocol_stats_from_parent(configured_protocol, parent_stats);
 
     if (likely(proto_stats)) {
