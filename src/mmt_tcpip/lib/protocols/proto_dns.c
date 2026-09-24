@@ -58,6 +58,22 @@ static size_t dns_name_wire_length(const u_char *p, const u_char *end){
     return 0;
 }
 
+/*
+ * Bytes an owner name occupies before the fixed fields of a question or
+ * resource record (issue #409). A name dns_name_wire_length() cannot measure
+ * (a label running past the capture, or no terminator) is taken to consume
+ * the rest of the capture, so the caller's bounded read of the fixed fields
+ * fails and the record is treated as truncated instead of being read from
+ * inside the malformed name.
+ */
+static size_t dns_name_consumed(const u_char *p, const u_char *payload_end){
+    size_t len = dns_name_wire_length(p, payload_end);
+    if(len == 0 && p != NULL && payload_end != NULL && p < payload_end){
+        len = (size_t)(payload_end - p);
+    }
+    return len;
+}
+
 uint16_t bytes_to_int_extraction(const u_char *payload,int nb_bytes){
     if(payload==NULL) return -1;
     uint16_t ret = 0,i =0;
@@ -446,13 +462,15 @@ dns_query_t * dns_extract_queries(const u_char * dns_queries_payload,int nb_quer
         }
         memcpy(dq->name,current_name->value,current_name->length);
         dq->name[current_name->length]='\0';
-        int name_offset = 0;
-        name_offset = current_name->real_length;
+        /* Issue #409: advance by the name's consumed wire length. The old
+           real_length + 1 convention was one byte too long for a mixed name
+           (literal labels ending in a compression pointer). */
+        size_t name_len = dns_name_consumed(dns_queries_payload,payload_end);
 
-        /* QTYPE(2) + QCLASS(2) follow the name at name_offset+1. Bound them;
-           on a truncated record keep the name and stop the chain. */
-        const u_char * rr = dns_queries_payload + name_offset + 1;
-        dq->qlength = name_offset + 5;
+        /* QTYPE(2) + QCLASS(2) follow the name. Bound them; on a truncated
+           record keep the name and stop the chain. */
+        const u_char * rr = dns_queries_payload + name_len;
+        dq->qlength = (uint16_t)(name_len + 4);
         if(!dns_can_read(rr, 4, payload_end)){
             dq->type = 0;
             dq->qclass = 0;
@@ -687,22 +705,19 @@ dns_answer_t * dns_extract_answers(const u_char *dns_answers_payload,int nb_answ
         }
         memcpy(da->name,current_name->value,current_name->length);
         da->name[current_name->length]='\0';
-        int name_offset = 0;
-        // if(current_name->real_length==2){
-        //     name_offset = 1;
-        // }else{
-            name_offset = current_name->real_length;
-        // }
+        /* Issue #409: advance by the name's consumed wire length (see
+           dns_extract_queries()). */
+        size_t name_len = dns_name_consumed(dns_answers_payload,payload_end);
         /* Fixed RR fields after the name: TYPE(2) CLASS(2) TTL(4) RDLENGTH(2)
-           = 10 bytes starting at name_offset+1. */
-        const u_char * rr = dns_answers_payload + name_offset + 1;
+           = 10 bytes starting at name_len. */
+        const u_char * rr = dns_answers_payload + name_len;
         if(!dns_can_read(rr, 10, payload_end)){
             da->type = 0;
             da->aclass = 0;
             da->a_ttl = 0;
             da->data_length = 0;
             da->data = NULL;
-            da->a_length = name_offset + 11;
+            da->a_length = (uint16_t)(name_len + 10);
             da->next = NULL;
             dns_free_name(current_name);
             return da;
@@ -711,18 +726,18 @@ dns_answer_t * dns_extract_answers(const u_char *dns_answers_payload,int nb_answ
         da->aclass = bytes_to_int_extraction(rr + 2,2);
         da->a_ttl =  bytes_to_uint64_extraction(rr + 4,4);
         da->data_length = bytes_to_int_extraction(rr + 8,2);
-        /* RDATA starts at name_offset+11 and is data_length bytes long. If it
+        /* RDATA starts at name_len+10 and is data_length bytes long. If it
            is truncated, keep the parsed header but don't read the data. */
         const u_char * rdata = rr + 10;
         if(!dns_can_read(rdata, da->data_length, payload_end)){
             da->data = NULL;
-            da->a_length = name_offset + 11 + da->data_length;
+            da->a_length = (uint16_t)(name_len + 10 + da->data_length);
             da->next = NULL;
             dns_free_name(current_name);
             return da;
         }
         da->data = dns_extract_answer_data(da->type,da->data_length,rdata,dns_payload,payload_end);
-        da->a_length = name_offset + 11 + da->data_length;
+        da->a_length = (uint16_t)(name_len + 10 + da->data_length);
         da->next = dns_extract_answers(dns_answers_payload + da->a_length,nb_answers - 1,dns_payload,payload_end);
         dns_free_name(current_name);
         return da;

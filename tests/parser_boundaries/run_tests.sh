@@ -51,6 +51,17 @@
 #                               DNS_ANSWERS attribute back via
 #                               get_attribute_extracted_data().
 #
+# Issue #409 adds the "dns-names" fixture: dns_extract_queries() and
+# dns_extract_answers() must advance past an owner name by its consumed wire
+# length — a mixed name (literal labels ending in a compression pointer) was
+# counted one byte too long, misaligning every following field and record.
+#
+#   test_dns_mixed_name_length.c — packet/API path: crafted
+#                               Ethernet/IPv4/UDP/DNS responses through
+#                               mmt_init_handler + packet_process, reading the
+#                               DNS_QUERIES / DNS_ANSWERS attributes back via
+#                               get_attribute_extracted_data().
+#
 # Issue #407 adds the "nfs" fixture: the NFS extractors in proto_nfs.c must
 # bound every fixed-offset u32 of the ONC-RPC call header (msg_type at +8,
 # rpc_version/program/prog_version/procedure at +12/+16/+20/+24) with
@@ -61,7 +72,7 @@
 #                               caplen-sized heap captures.
 #
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
-#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"nfs"
+#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"
 #   select a fixture family.
 set -euo pipefail
 
@@ -70,7 +81,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt nfs)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -88,11 +99,14 @@ for f in "${FIXTURES[@]}"; do
         dns-txt)
             API_TESTS+=(dns_txt_rdata_bounds)
             ;;
+        dns-names)
+            API_TESTS+=(dns_mixed_name_length)
+            ;;
         nfs)
             API_TESTS+=(nfs_rpc_header_bounds)
             ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt nfs)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs)" >&2
             exit 2
             ;;
     esac
@@ -199,4 +213,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #375, #376, #377, #378, #407)"
+echo "✓ parser boundary tests passed (issues #375, #376, #377, #378, #407, #409)"
