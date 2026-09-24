@@ -7,7 +7,7 @@
  * Covers F-BUG-202,203,204,205,206,214,215:
  * - pdn_address_information.len validated against pdn_type minimum before UE-IP read (ielen 0..10)
  * - ielen=0 rejected before reading pdn_type
- * - GUTI(11)/IMSI/IMEI(9) bounded by remaining len
+ * - GUTI(11)/IMSI/IMEI(8, issue #427) bounded by remaining len
  * - TAI list ielen>=6
  * - EPS QoS operator-precedence and buffer+decoded for QCI
  * - t3412value buffer+decoded in attach-accept
@@ -82,6 +82,28 @@ static void test_mobile_identity_tail(void) {
             CHECK(d2, ret2 < 0);
         }
     }
+}
+
+/* issue #427: a 15-digit IMSI is 8 value octets (TS 24.301 §9.9.3.12);
+ * the decoder used to demand 9 and rejected every spec-valid IMSI. */
+static void test_mobile_identity_imsi_15_digits(void) {
+    printf("eps_mobile_identity 15-digit IMSI (8 octets):\n");
+    const uint8_t buf[9] = { 0x08, 0x09, 0x10, 0x10, 0x10, 0x32, 0x54, 0x76, 0x98 };
+    nas_eps_mobile_identity_t ident; memset(&ident, 0, sizeof(ident));
+    int ret = nas_decode_eps_mobile_identity(&ident, 0, buf, sizeof(buf));
+    CHECK("imsi ielen=8 decodes (#427)", ret == 9);
+    CHECK("imsi typeofidentity", ident.imsi.typeofidentity == EPS_MOBILE_IDENTITY_IMSI);
+    CHECK("imsi digits 001010123456789",
+          ident.imsi.digit1 == 0 && ident.imsi.digit2 == 0 && ident.imsi.digit3 == 1
+          && ident.imsi.digit4 == 0 && ident.imsi.digit5 == 1 && ident.imsi.digit6 == 0
+          && ident.imsi.digit9 == 3 && ident.imsi.digit14 == 8 && ident.imsi.digit15 == 9);
+    memset(&ident, 0, sizeof(ident));
+    CHECK("imsi truncated value rejected",
+          nas_decode_eps_mobile_identity(&ident, 0, buf, sizeof(buf) - 1) < 0);
+    uint8_t short_ie[9]; memcpy(short_ie, buf, sizeof(short_ie));
+    short_ie[0] = 7;
+    CHECK("imsi ielen=7 rejected",
+          nas_decode_eps_mobile_identity(&ident, 0, short_ie, sizeof(short_ie)) < 0);
 }
 
 static void test_tai_tail(void) {
@@ -250,7 +272,22 @@ static void test_nas5g_decode(void) {
     CHECK("nas5g NULL msg", !nas_5g_decode(NULL, buf, 4));
     CHECK("nas5g NULL buffer", !nas_5g_decode(&m, NULL, 4));
     memset(&m, 0, sizeof(m));
-    CHECK("nas5g len<4 rejected", !nas_5g_decode(&m, buf, 3));
+    CHECK("nas5g len=0 rejected", !nas_5g_decode(&m, buf, 0));
+    CHECK("nas5g 5GMM len=2 rejected", !nas_5g_decode(&m, buf, 2));
+    /* issue #427: the plain 5GMM header is 3 octets — a minimal 5GMM
+     * message (e.g. Authentication Response, type 0x57) must decode, and
+     * the union octet past the header is zeroed, not left stale. */
+    uint8_t auth_resp[3] = { 0x7E, 0x00, 0x57 };
+    memset(&m, 0xAA, sizeof(m));
+    CHECK("nas5g 5GMM len=3 decodes (#427)", nas_5g_decode(&m, auth_resp, 3));
+    CHECK("nas5g 5GMM len=3 message_type", m.mmm.message_type == 0x57);
+    CHECK("nas5g 5GMM len=3 tail octet zeroed", m.smm.message_type == 0);
+    /* the 5GSM header is 4 octets: a 3-octet 5GSM message is still short */
+    uint8_t smm[4] = { 0x2E, 0x01, 0x02, 0xC1 };
+    CHECK("nas5g 5GSM len=3 rejected", !nas_5g_decode(&m, smm, 3));
+    memset(&m, 0xAA, sizeof(m));
+    CHECK("nas5g 5GSM len=4 decodes", nas_5g_decode(&m, smm, 4));
+    CHECK("nas5g 5GSM message_type", m.smm.message_type == 0xC1);
     memset(&m, 0xAA, sizeof(m));
     CHECK("nas5g len=4 decodes", nas_5g_decode(&m, buf, 4));
     CHECK("nas5g protocol_discriminator", m.protocol_discriminator == 0x7E);
@@ -265,6 +302,7 @@ static void test_nas5g_decode(void) {
 int main(void) {
     test_pdn_tail();
     test_mobile_identity_tail();
+    test_mobile_identity_imsi_15_digits();
     test_tai_tail();
     test_qos_tail();
     test_attach_request_tail();

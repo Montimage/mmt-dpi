@@ -358,7 +358,7 @@
           "TS 36.413 InitiatingMessage procedureCode 12 with eNB-UE-S1AP-ID, NAS-PDU, TAI, EUTRAN-CGI and RRC-Establishment-Cause (all mandatory IEs); APER bytes equal an independent pycrate encoding of the message and round-trip through its decoder unchanged",
           "NAS-PDU is a TS 24.301 plain EMM Attach Request (KSI 7, EPS attach, IMSI, UE network capability, ESM PDN Connectivity Request) decoded by pycrate",
           "SCTP common header + one DATA chunk (B/E set, chunk length excludes padding) with a valid RFC 9260 CRC32c; PPID 18 = S1AP (IANA), destination port 36412",
-          "observed while reviewing: the SDK's vendored S1AP decoder rejects this InitialUEMessage's IEs ('Decoding of S1ap_InitialUEMessage failed'), so s1ap.* attributes stay empty; classification is by PPID and unaffected"
+          "observed while reviewing: the SDK's vendored S1AP decoder rejected this InitialUEMessage's IEs ('Decoding of S1ap_InitialUEMessage failed'), so s1ap.* attributes stayed empty; fixed in issue #427 (s1ap.procedure_code 12, s1ap.enb_ue_id 1, s1ap.imsi 001010123456789 are now extracted); classification is by PPID and unaffected"
         ]
       }
     },
@@ -482,7 +482,7 @@
           "TS 38.413 DownlinkNASTransport (procedureCode 4: AMF-UE-NGAP-ID, RAN-UE-NGAP-ID, NAS-PDU) and UplinkNASTransport (procedureCode 46: the same plus UserLocationInformation); APER bytes equal an independent pycrate encoding of the message and round-trip through its decoder unchanged",
           "NAS-PDUs are TS 24.501 plain 5GMM Authentication Request (ngKSI 0, ABBA 0x0000) and Authentication Response, decoded by pycrate",
           "wire label is nas_5g, the only NAS protocol the SDK exposes (EPS NAS is decoded inside S1AP, see acc_nas_eps_ambiguous)",
-          "observed while reviewing: nas_5g.message_type is extracted for the Authentication Request (86) but not for the 3-byte Authentication Response; classification is unaffected"
+          "observed while reviewing: nas_5g.message_type was extracted for the Authentication Request (86) but not for the 3-byte Authentication Response; fixed in issue #427 (the Response now yields 87); classification is unaffected"
         ]
       }
     },

@@ -11,6 +11,35 @@
 #include "nas/nas_msg.h"
 #include "proto_s1ap.h"
 
+static inline const asn_codec_ctx_t * _aper_codec_ctx( void );
+
+/*
+ * ANY_to_type_aper() decodes with a NULL codec context, i.e. with the
+ * default stack guard that always trips under ASan (see _aper_codec_ctx()).
+ * Once the open types decode (issue #427), every IE value goes through this
+ * path, so decode them with the same context as the outer S1AP-PDU.
+ */
+static int _any_to_type_aper(ANY_t *st, asn_TYPE_descriptor_t *td, void **struct_ptr){
+	asn_dec_rval_t rval;
+	void *newst = NULL;
+
+	if( st == NULL || td == NULL || struct_ptr == NULL )
+		return -1;
+	if( st->buf == NULL ){
+		/* nothing to convert */
+		*struct_ptr = NULL;
+		return 0;
+	}
+	rval = aper_decode( _aper_codec_ctx(), td, &newst, st->buf, st->size, 0, 0 );
+	if( rval.code == RC_OK ){
+		*struct_ptr = newst;
+		return 0;
+	}
+	/* remove the partially decoded data */
+	ASN_STRUCT_FREE( *td, newst );
+	return -1;
+}
+
 static inline uint32_t _octet_string_to_uint32_t( const OCTET_STRING_t *t){
 	if( t->size != 4 || t->buf == NULL )
 		return 0;
@@ -37,7 +66,7 @@ static inline int _decode_mme_enb_ue_id(
 			case S1ap_ProtocolIE_ID_id_MME_UE_S1AP_ID:
 			{
 				S1ap_MME_UE_S1AP_ID_t *s1apMMEUES1APID_p = NULL;
-				tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_MME_UE_S1AP_ID, (void**)&s1apMMEUES1APID_p);
+				tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_MME_UE_S1AP_ID, (void**)&s1apMMEUES1APID_p);
 				if (tempDecoded < 0 || s1apMMEUES1APID_p == NULL) {
 					S1AP_ERROR("Decoding of IE mme_ue_s1ap_id failed\n");
 					if (s1apMMEUES1APID_p)
@@ -56,7 +85,7 @@ static inline int _decode_mme_enb_ue_id(
 			case S1ap_ProtocolIE_ID_id_eNB_UE_S1AP_ID:
 			{
 				S1ap_ENB_UE_S1AP_ID_t *s1apENBUES1APID_p = NULL;
-				tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_ENB_UE_S1AP_ID, (void**)&s1apENBUES1APID_p);
+				tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_ENB_UE_S1AP_ID, (void**)&s1apENBUES1APID_p);
 				if (tempDecoded < 0 || s1apENBUES1APID_p == NULL) {
 					S1AP_ERROR("Decoding of IE eNB_UE_S1AP_ID failed\n");
 					if (s1apENBUES1APID_p)
@@ -98,7 +127,7 @@ static inline int _decode_s1ap_e_rabsetuplistctxtsures(
 		case S1ap_ProtocolIE_ID_id_E_RABSetupItemCtxtSURes:
 		{
 			S1ap_E_RABSetupItemCtxtSURes_t *s1apERABSetupItemCtxtSURes_p = NULL;
-			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABSetupItemCtxtSURes, (void**)&s1apERABSetupItemCtxtSURes_p);
+			tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABSetupItemCtxtSURes, (void**)&s1apERABSetupItemCtxtSURes_p);
 			if (tempDecoded < 0 || s1apERABSetupItemCtxtSURes_p == NULL) {
 				S1AP_ERROR("Decoding of IE e_RABSetupItemCtxtSURes for message S1ap_E_RABSetupListCtxtSURes failed\n");
 				if (s1apERABSetupItemCtxtSURes_p)
@@ -145,7 +174,7 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 		case S1ap_ProtocolIE_ID_id_E_RABToBeSetupItemCtxtSUReq:
 		{
 			S1ap_E_RABToBeSetupItemCtxtSUReq_t *s1apERABToBeSetupItemCtxtSUReq_p = NULL;
-			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, (void**)&s1apERABToBeSetupItemCtxtSUReq_p);
+			tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, (void**)&s1apERABToBeSetupItemCtxtSUReq_p);
 			if (tempDecoded < 0 || s1apERABToBeSetupItemCtxtSUReq_p == NULL) {
 				S1AP_ERROR("Decoding of IE e_RABToBeSetupItemCtxtSUReq for message S1ap_E_RABToBeSetupListCtxtSUReq failed\n");
 				if (s1apERABToBeSetupItemCtxtSUReq_p)
@@ -183,7 +212,15 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 					if( octet->len > 0 ){
 						nas_msg_t  mm;
 						memset( &mm, 0, sizeof( mm ) );
-						if( nas_decode( &mm, octet->data, octet->len) > 0 ){
+						/* issue #427 review: only read the ESM view of an
+						 * Activate Default EPS Bearer Context Request — any other
+						 * layout aliases unrelated union bytes as the PDN address.
+						 * nas_decode() routes every ESM PDU to the plain decoder;
+						 * octet 1's upper nibble is the EPS bearer identity, not a
+						 * security header type, so nas_is_plain_msg() must not gate */
+						if( nas_decode( &mm, octet->data, octet->len) > 0
+								&& mm.plain_msg.header.protocol_discriminator == NAS_EPS_SESSION_MANAGEMENT_MESSAGE
+								&& mm.plain_msg.esm.header.message_type == NAS_ESM_ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST ){
 							// F-BUG-202: bound UE-IP read by pdn_type-implied minimum
 							nas_pdn_address_t *pdn = &mm.plain_msg.esm.active_default_esp_bearer_context_request.pdn_address;
 							if( pdn && pdn->pdn_type_value == NAS_PDN_VALUE_TYPE_IPV4
@@ -228,7 +265,7 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 
 	S1AP_DEBUG("Decoding message S1ap_InitialContextSetupRequestIEs (%s:%d)\n", __FILE__, __LINE__);
 
-	tempDecoded = ANY_to_type_aper(any_p, &asn_DEF_S1ap_InitialContextSetupRequest, (void**)&s1ap_InitialContextSetupRequest_p);
+	tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_InitialContextSetupRequest, (void**)&s1ap_InitialContextSetupRequest_p);
 	if (tempDecoded < 0 || s1ap_InitialContextSetupRequest_p == NULL) {
 		S1AP_ERROR("Decoding of S1ap_InitialContextSetupRequest failed\n");
 		if (s1ap_InitialContextSetupRequest_p)
@@ -250,7 +287,7 @@ static inline int _decode_s1ap_initialContextSetupRequest(
 		case S1ap_ProtocolIE_ID_id_E_RABToBeSetupListCtxtSUReq:
 		{
 			S1ap_E_RABToBeSetupListCtxtSUReq_t *s1apERABToBeSetupListCtxtSUReq_p = NULL;
-			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, (void**)&s1apERABToBeSetupListCtxtSUReq_p);
+			tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, (void**)&s1apERABToBeSetupListCtxtSUReq_p);
 			if (tempDecoded < 0 || s1apERABToBeSetupListCtxtSUReq_p == NULL) {
 				S1AP_ERROR("Decoding of IE e_RABToBeSetupListCtxtSUReq failed\n");
 				if (s1apERABToBeSetupListCtxtSUReq_p)
@@ -300,7 +337,7 @@ static inline int _decode_s1ap_initialContextSetupResponse(
 
 	S1AP_DEBUG("Decoding message S1ap_InitialContextSetupResponseIEs (%s:%d)\n", __FILE__, __LINE__);
 
-	tempDecoded = ANY_to_type_aper(any_p, &asn_DEF_S1ap_InitialContextSetupResponse, (void**)&s1ap_InitialContextSetupResponse_p);
+	tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_InitialContextSetupResponse, (void**)&s1ap_InitialContextSetupResponse_p);
 	if (tempDecoded < 0 || s1ap_InitialContextSetupResponse_p == NULL) {
 		S1AP_ERROR("Decoding of S1ap_InitialContextSetupResponse failed\n");
 		if (s1ap_InitialContextSetupResponse_p)
@@ -322,7 +359,7 @@ static inline int _decode_s1ap_initialContextSetupResponse(
 		case S1ap_ProtocolIE_ID_id_E_RABSetupListCtxtSURes:
 		{
 			S1ap_E_RABSetupListCtxtSURes_t *s1apERABSetupListCtxtSURes_p = NULL;
-			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABSetupListCtxtSURes, (void**)&s1apERABSetupListCtxtSURes_p);
+			tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_E_RABSetupListCtxtSURes, (void**)&s1apERABSetupListCtxtSURes_p);
 			if (tempDecoded < 0 || s1apERABSetupListCtxtSURes_p == NULL) {
 				S1AP_ERROR("Decoding of IE e_RABSetupListCtxtSURes failed\n");
 				if (s1apERABSetupListCtxtSURes_p)
@@ -367,7 +404,7 @@ static inline int _decode_s1ap_initialuemessageies(
 
 	S1AP_DEBUG("Decoding message S1ap_InitialUEMessageIEs (%s:%d)\n", __FILE__, __LINE__);
 
-	tempDecoded = ANY_to_type_aper(any_p, &asn_DEF_S1ap_InitialUEMessage, (void**)&s1ap_InitialUEMessage_p);
+	tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_InitialUEMessage, (void**)&s1ap_InitialUEMessage_p);
 	if (tempDecoded < 0 || s1ap_InitialUEMessage_p == NULL) {
 		S1AP_ERROR("Decoding of S1ap_InitialUEMessage failed\n");
 		if (s1ap_InitialUEMessage_p)
@@ -389,7 +426,7 @@ static inline int _decode_s1ap_initialuemessageies(
 		case S1ap_ProtocolIE_ID_id_NAS_PDU:
 		{
 			S1ap_NAS_PDU_t *s1apNASPDU_p = NULL;
-			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_NAS_PDU, (void**)&s1apNASPDU_p);
+			tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_NAS_PDU, (void**)&s1apNASPDU_p);
 			if (tempDecoded < 0 || s1apNASPDU_p == NULL) {
 				S1AP_ERROR("Decoding of IE nas_pdu failed\n");
 				if (s1apNASPDU_p)
@@ -431,6 +468,10 @@ static inline int _decode_s1ap_initialuemessageies(
 						message->imsi[13] ='0' + imsi->digit14;
 						message->imsi[14] ='0' + imsi->digit15;
 						message->imsi[15] = '\0';
+						/* an even digit count ends with the 0xF filler
+						 * (TS 24.301 §9.9.3.12): 14 digits, not a '?' */
+						if( imsi->oddeven == EPS_MOBILE_IDENTITY_EVEN )
+							message->imsi[14] = '\0';
 						message->has_imsi = 1;
 						//printf("Got IMSI: %.*s\n", 15, message->imsi );
 						break;
@@ -450,7 +491,7 @@ static inline int _decode_s1ap_initialuemessageies(
 
 		case S1ap_ProtocolIE_ID_id_S_TMSI: {
             S1ap_S_TMSI_t *s1apSTMSI_p = NULL;
-            tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_S_TMSI, (void**)&s1apSTMSI_p);
+            tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_S_TMSI, (void**)&s1apSTMSI_p);
             if (tempDecoded < 0 || s1apSTMSI_p == NULL) {
                 S1AP_ERROR("Decoding of IE s_tmsi failed\n");
                 if (s1apSTMSI_p)
@@ -494,7 +535,7 @@ static inline int _decode_s1ap_S1SetupRequest(
 
 	S1AP_DEBUG("Decoding message S1ap_S1SetupRequestIEs (%s:%d)\n", __FILE__, __LINE__);
 
-	tempDecoded = ANY_to_type_aper(any_p, &asn_DEF_S1ap_S1SetupRequest, (void**)&s1ap_S1SetupRequest_p);
+	tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_S1SetupRequest, (void**)&s1ap_S1SetupRequest_p);
 	if (tempDecoded < 0 || s1ap_S1SetupRequest_p == NULL) {
 		S1AP_ERROR("Decoding of S1ap_S1SetupRequest failed\n");
 		if (s1ap_S1SetupRequest_p)
@@ -517,7 +558,7 @@ static inline int _decode_s1ap_S1SetupRequest(
 		{
 			S1ap_ENBname_t *s1apENBname_p = NULL;
 
-			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_ENBname, (void**)&s1apENBname_p);
+			tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_ENBname, (void**)&s1apENBname_p);
 			if (tempDecoded < 0 || s1apENBname_p == NULL) {
 				S1AP_ERROR("Decoding of IE eNBname failed\n");
 				if (s1apENBname_p)
@@ -566,7 +607,7 @@ static inline int _decode_s1ap_S1SetupResponse(
 
 	S1AP_DEBUG("Decoding message S1ap_S1SetupResponseIEs (%s:%d)\n", __FILE__, __LINE__);
 
-	tempDecoded = ANY_to_type_aper(any_p, &asn_DEF_S1ap_S1SetupResponse, (void**)&s1ap_S1SetupResponse_p);
+	tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_S1SetupResponse, (void**)&s1ap_S1SetupResponse_p);
 	if (tempDecoded < 0 || s1ap_S1SetupResponse_p == NULL) {
 		S1AP_ERROR("Decoding of S1ap_S1SetupResponse failed\n");
 		if (s1ap_S1SetupResponse_p)
@@ -590,7 +631,7 @@ static inline int _decode_s1ap_S1SetupResponse(
 		{
 			S1ap_MMEname_t *s1apMMEname_p = NULL;
 
-			tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_MMEname, (void**)&s1apMMEname_p);
+			tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_MMEname, (void**)&s1apMMEname_p);
 			if (tempDecoded < 0 || s1apMMEname_p == NULL) {
 				S1AP_ERROR("Decoding of IE mmEname failed\n");
 				if (s1apMMEname_p)
@@ -633,7 +674,7 @@ static inline int _decode_s1ap_cause(
 
 	int decoded = 0;
 	S1ap_Cause_t *s1apCause_p = NULL;
-	decoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_Cause, (void**)&s1apCause_p);
+	decoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_Cause, (void**)&s1apCause_p);
 	if (decoded < 0 || s1apCause_p == NULL) {
 		S1AP_ERROR("Decoding of IE cause failed\n");
 		if (s1apCause_p)
@@ -691,7 +732,7 @@ static inline int _decode_s1ap_uecontextrelease(
 
     S1AP_DEBUG("Decoding message S1ap_UEContextReleaseCommandIEs (%s:%d)\n", __FILE__, __LINE__);
 
-    tempDecoded = ANY_to_type_aper(any_p, &asn_DEF_S1ap_UEContextReleaseCommand, (void**)&s1ap_UEContextReleaseCommand_p);
+    tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_UEContextReleaseCommand, (void**)&s1ap_UEContextReleaseCommand_p);
     if (tempDecoded < 0 || s1ap_UEContextReleaseCommand_p == NULL) {
         S1AP_ERROR("Decoding of S1ap_UEContextReleaseCommand failed\n");
         if (s1ap_UEContextReleaseCommand_p)
@@ -706,7 +747,7 @@ static inline int _decode_s1ap_uecontextrelease(
             case S1ap_ProtocolIE_ID_id_UE_S1AP_IDs: {
 
                 S1ap_UE_S1AP_IDs_t *s1apUES1APIDs_p = NULL;
-                tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_S1ap_UE_S1AP_IDs, (void**)&s1apUES1APIDs_p);
+                tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_UE_S1AP_IDs, (void**)&s1apUES1APIDs_p);
                 if (tempDecoded < 0 || s1apUES1APIDs_p == NULL) {
                     S1AP_ERROR("Decoding of IE uE_S1AP_IDs failed\n");
                     if (s1apUES1APIDs_p)
@@ -768,7 +809,7 @@ static inline int _decode_s1ap_UEContextReleaseRequest(
 
 	S1AP_DEBUG("Decoding message S1ap_UEContextReleaseRequestIEs (%s:%d)\n", __FILE__, __LINE__);
 
-	tempDecoded = ANY_to_type_aper(any_p, &asn_DEF_S1ap_UEContextReleaseRequest, (void**)&s1ap_UEContextReleaseRequest_p);
+	tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_UEContextReleaseRequest, (void**)&s1ap_UEContextReleaseRequest_p);
 	if (tempDecoded < 0 || s1ap_UEContextReleaseRequest_p == NULL) {
 		S1AP_ERROR("Decoding of S1ap_UEContextReleaseRequest failed\n");
 		if (s1ap_UEContextReleaseRequest_p)
@@ -862,6 +903,80 @@ static int _decode_s1ap_successfulOutcomeMessage(s1ap_message_t *message,
 
 	return ret;
 }
+
+/*
+ * Issue #427: every S1AP open type (S1AP-PDU value, ProtocolIE value) is
+ * generated as an ANY, and the vendored ANY_decode_aper() asks
+ * aper_get_length() for its length determinant with ebits = 0
+ * (src/mmt_mobile/asn1c/common/ANY.c). That returns per_get_few_bits(pd, 0)
+ * == 0 without reading the octet-aligned X.691 §11.2 length, so each ANY
+ * decodes as empty and consumes nothing: the message handlers then fail on
+ * the empty IE container ("Decoding of S1ap_InitialUEMessage failed") and no
+ * s1ap.* attribute is ever extracted. The generated tree must not be edited,
+ * so the corrected decoder below (the same body with ebits = -1, i.e. read
+ * the general length determinant) is installed into the shared asn_OP_ANY
+ * operation table once, when the library is loaded — before any thread can
+ * decode — so the table is never written concurrently with a read.
+ */
+#undef RETURN
+#define RETURN(_code)                       \
+	do {                                    \
+		asn_dec_rval_t tmprval;             \
+		tmprval.code = _code;               \
+		tmprval.consumed = consumed_myself; \
+		return tmprval;                     \
+	} while(0)
+
+static asn_dec_rval_t _any_decode_aper_open_type(
+		const asn_codec_ctx_t *opt_codec_ctx,
+		const asn_TYPE_descriptor_t *td,
+		const asn_per_constraints_t *constraints, void **sptr,
+		asn_per_data_t *pd) {
+	const asn_OCTET_STRING_specifics_t *specs =
+		td->specifics ? (const asn_OCTET_STRING_specifics_t *)td->specifics
+		              : &asn_SPC_ANY_specs;
+	size_t consumed_myself = 0;
+	int repeat;
+	ANY_t *st = (ANY_t *)*sptr;
+
+	(void)opt_codec_ctx;
+	(void)constraints;
+
+	if(!st) {
+		st = (ANY_t *)(*sptr = CALLOC(1, specs->struct_size));
+		if(!st) RETURN(RC_FAIL);
+	}
+
+	st->size = 0;
+	do {
+		ssize_t raw_len;
+		void *p;
+
+		/* unconstrained, octet-aligned length determinant (X.691 §11.9) */
+		raw_len = aper_get_length(pd, -1, -1, &repeat);
+		if(raw_len < 0) RETURN(RC_WMORE);
+		if(raw_len == 0 && st->buf) break;
+
+		p = REALLOC(st->buf, st->size + (size_t)raw_len + 1);
+		if(!p) RETURN(RC_FAIL);
+		st->buf = (uint8_t *)p;
+
+		if(per_get_many_bits(pd, &st->buf[st->size], 0, raw_len * 8) < 0)
+			RETURN(RC_WMORE);
+		consumed_myself += raw_len * 8;
+		st->size += raw_len;
+	} while(repeat);
+	st->buf[st->size] = 0; /* nul-terminate */
+
+	RETURN(RC_OK);
+}
+#undef RETURN
+
+__attribute__((constructor))
+static void _install_any_aper_decoder( void ){
+	asn_OP_ANY.aper_decoder = _any_decode_aper_open_type;
+}
+
 /**
  * This function tries to fill information to all field of s1ap_message_t from S1AP packets
  *

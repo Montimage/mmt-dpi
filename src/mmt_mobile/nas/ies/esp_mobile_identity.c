@@ -155,9 +155,11 @@ int nas_decode_eps_mobile_identity(nas_eps_mobile_identity_t *ident, uint8_t iei
 
 	switch( typeofidentity){
 	case EPS_MOBILE_IDENTITY_IMSI:
-		// IMSI requires 9 bytes (F-BUG-203)
-		CHECK_LENGTH_DECODER(ielen, 9);
-		CHECK_LENGTH_DECODER((int32_t)len - decoded, 9);
+		// F-BUG-203: the IMSI decoder reads 8 octets (identity octet +
+		// 7 BCD octets, 15 digits). Issue #427: this used to demand 9,
+		// rejecting every spec-valid 15-digit IMSI (TS 24.301 §9.9.3.12).
+		CHECK_LENGTH_DECODER(ielen, 8);
+		CHECK_LENGTH_DECODER((int32_t)len - decoded, 8);
 		decoded_rc = _decode_imsi_eps_mobile_identity(&ident->imsi,
 				buffer + decoded);
 		break;
@@ -169,9 +171,9 @@ int nas_decode_eps_mobile_identity(nas_eps_mobile_identity_t *ident, uint8_t iei
 				buffer + decoded);
 		break;
 	case EPS_MOBILE_IDENTITY_IMEI:
-		// IMEI requires 9 bytes
-		CHECK_LENGTH_DECODER(ielen, 9);
-		CHECK_LENGTH_DECODER((int32_t)len - decoded, 9);
+		// IMEI (15 digits) is read as 8 octets, like the IMSI (issue #427)
+		CHECK_LENGTH_DECODER(ielen, 8);
+		CHECK_LENGTH_DECODER((int32_t)len - decoded, 8);
 		decoded_rc = _decode_imei_eps_mobile_identity(&ident->imei,
 				buffer + decoded);
 		break;
