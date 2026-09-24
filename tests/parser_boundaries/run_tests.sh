@@ -51,9 +51,18 @@
 #                               DNS_ANSWERS attribute back via
 #                               get_attribute_extracted_data().
 #
+# Issue #407 adds the "nfs" fixture: the NFS extractors in proto_nfs.c must
+# bound every fixed-offset u32 of the ONC-RPC call header (msg_type at +8,
+# rpc_version/program/prog_version/procedure at +12/+16/+20/+24) with
+# mmt_have_bytes(), so a truncated capture never reads past caplen.
+#
+#   test_nfs_rpc_header_bounds.c — calls the exported nfs_*_extraction()
+#                               functions of the linked SDK over exactly
+#                               caplen-sized heap captures.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
-#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt" select
-#   a fixture family.
+#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"nfs"
+#   select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -61,7 +70,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt nfs)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -79,8 +88,11 @@ for f in "${FIXTURES[@]}"; do
         dns-txt)
             API_TESTS+=(dns_txt_rdata_bounds)
             ;;
+        nfs)
+            API_TESTS+=(nfs_rpc_header_bounds)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt nfs)" >&2
             exit 2
             ;;
     esac
@@ -187,4 +199,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #375, #376, #377, #378)"
+echo "✓ parser boundary tests passed (issues #375, #376, #377, #378, #407)"
