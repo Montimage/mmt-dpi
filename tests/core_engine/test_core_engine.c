@@ -299,6 +299,8 @@ static void test_timer_handler(const mmt_session_t *head, void *args) {
     (void) head; (void) args;
     g_timer_calls++;
 }
+/* expected MMT_STATS report of test_stats_extract()'s chain (issue #328) */
+#define CE_STATS_REPORT "packets=7,data_volume=120,payload_volume=15,sessions=3,timedout_sessions=1"
 static int g_pkt_once;
 static FILE *g_null_fp;
 
@@ -348,7 +350,10 @@ static int test_packet_handler(const ipacket_t *ipacket, void *args) {
         for (uint32_t at = 1; at <= 22; at++) {
             attribute_t *a = get_extracted_attribute(ipacket, TEST_PROTO_A, at);
             if (a == NULL) continue;
-            (void) mmt_attr_snprintf(buf, sizeof(buf), a);
+            int n = mmt_attr_snprintf(buf, sizeof(buf), a);
+            if (at == 19)
+                CHECK(n > 0 && strcmp(buf, CE_STATS_REPORT) == 0,
+                      "extracted MMT_STATS attribute renders the statistics report");
             if (g_null_fp != NULL) {
                 (void) mmt_attr_fprintf(g_null_fp, a);
                 (void) mmt_attr_format(g_null_fp, a);
@@ -408,6 +413,21 @@ static int test_u64arr_extract(const ipacket_t *ipacket, unsigned proto_index, a
     (void) ipacket; (void) proto_index;
     mmt_u64_array_t *b = (mmt_u64_array_t *) out->data;
     b->len = 2; b->data[0] = 17; b->data[1] = 42;
+    return 1;
+}
+/* MMT_STATS attributes point at a chain of per-path statistics instances,
+ * exactly like proto_stats_extraction() in packet_stats.c (issue #328). */
+static proto_statistics_internal_t g_ce_stats[2];
+static int test_stats_extract(const ipacket_t *ipacket, unsigned proto_index, attribute_t *out) {
+    (void) ipacket; (void) proto_index;
+    memset(g_ce_stats, 0, sizeof(g_ce_stats));
+    g_ce_stats[0].packets_count = 3;  g_ce_stats[1].packets_count = 4;
+    g_ce_stats[0].data_volume = 100;  g_ce_stats[1].data_volume = 20;
+    g_ce_stats[0].payload_volume = 10; g_ce_stats[1].payload_volume = 5;
+    g_ce_stats[0].sessions_count = 1; g_ce_stats[1].sessions_count = 2;
+    g_ce_stats[1].timedout_sessions_count = 1;
+    g_ce_stats[0].next = &g_ce_stats[1];
+    out->data = (void *) g_ce_stats;
     return 1;
 }
 static int test_strptr_extract(const ipacket_t *ipacket, unsigned proto_index, attribute_t *out) {
@@ -772,7 +792,7 @@ static void test_session_lifecycle(void) {
             { 16, "ce_bin64", MMT_BINARY_DATA,           BINARY_64DATA_TYPE_LEN, test_var_extract },
             { 17, "ce_str",   MMT_STRING_DATA,           BINARY_64DATA_TYPE_LEN, test_var_extract },
             { 18, "ce_strp",  MMT_STRING_DATA_POINTER,   (int) sizeof(void *), test_strptr_extract },
-            { 19, "ce_stats", MMT_STATS,                 (int) sizeof(void *), test_fill_extract },
+            { 19, "ce_stats", MMT_STATS,                 (int) sizeof(void *), test_stats_extract },
             { 20, "ce_a16",   MMT_U16_ARRAY,             (int) U16_ARRAY_TYPE_LEN, test_u16arr_extract },
             { 21, "ce_a32",   MMT_U32_ARRAY,             (int) U32_ARRAY_TYPE_LEN, test_u32arr_extract },
             { 22, "ce_a64",   MMT_U64_ARRAY,             (int) U64_ARRAY_TYPE_LEN, test_u64arr_extract },
@@ -1273,6 +1293,94 @@ static void test_helpers(void) {
     CHECK(update_protocol(TEST_PROTO_A, 0) == 0, "update_protocol without fct returns 0");
 }
 
+/* ===================== attribute report output (#328) ===================== */
+
+/* Runs one formatter into a temporary stream and returns what it wrote. */
+static int capture_stream(int (*fn)(FILE *, attribute_t *), attribute_t *a,
+                          char *out, size_t out_len, int *ret) {
+    FILE *f = tmpfile();
+    if (f == NULL) return 0;
+    *ret = fn(f, a);
+    fflush(f);
+    rewind(f);
+    size_t n = fread(out, 1, out_len - 1, f);
+    out[n] = '\0';
+    fclose(f);
+    return 1;
+}
+
+static void test_attr_report_output(void) {
+    fprintf(stderr, "  test: attribute report/dump output (#328)\n");
+    char buf[256], out[512];
+    int ret = 0;
+    attribute_internal_t attr;
+    memset(&attr, 0, sizeof(attr));
+    attr.proto_id = PROTO_META;
+    attr.field_id = META_P_LEN;
+    attribute_t *a = (attribute_t *) &attr;
+
+    /* MMT_STATS: totals over the per-path statistics chain */
+    (void) test_stats_extract(NULL, 0, a);
+    attr.data_type = MMT_STATS;
+    int n = mmt_attr_snprintf(buf, sizeof(buf), a);
+    CHECK(n == (int) strlen(CE_STATS_REPORT) && strcmp(buf, CE_STATS_REPORT) == 0,
+          "MMT_STATS snprintf renders the summed statistics");
+    CHECK(capture_stream(mmt_attr_fprintf, a, out, sizeof(out), &ret)
+              && ret == (int) strlen(CE_STATS_REPORT) && strcmp(out, CE_STATS_REPORT) == 0,
+          "MMT_STATS fprintf writes the summed statistics");
+    CHECK(capture_stream(mmt_attr_format, a, out, sizeof(out), &ret) && ret > 0
+              && strncmp(out, "Attribute ", 10) == 0
+              && strstr(out, " = " CE_STATS_REPORT "\n") != NULL,
+          "MMT_STATS format dumps the summed statistics");
+
+    /* truncation follows the snprintf contract: full length returned */
+    char small[8];
+    n = mmt_attr_snprintf(small, sizeof(small), a);
+    CHECK(n == (int) strlen(CE_STATS_REPORT) && strlen(small) == sizeof(small) - 1,
+          "MMT_STATS snprintf truncates and reports the full length");
+    CHECK(mmt_attr_snprintf(NULL, 16, a) < 0, "MMT_STATS snprintf rejects a NULL buffer");
+
+    /* no statistics yet: a NULL chain reports zeros */
+    attr.data = NULL;
+    n = mmt_attr_snprintf(buf, sizeof(buf), a);
+    CHECK(n > 0 && strcmp(buf, "packets=0,data_volume=0,payload_volume=0,sessions=0,timedout_sessions=0") == 0,
+          "MMT_STATS with no statistics reports zeros");
+
+    /* a data type with no text form: documented negative return, no output */
+    attr.data_type = 0x7fff;
+    attr.data = (void *) g_ce_stats;
+    strcpy(buf, "sentinel");
+    CHECK(mmt_attr_snprintf(buf, sizeof(buf), a) < 0 && buf[0] == '\0',
+          "unsupported type: snprintf returns negative with an empty string");
+    CHECK(capture_stream(mmt_attr_fprintf, a, out, sizeof(out), &ret) && ret < 0 && out[0] == '\0',
+          "unsupported type: fprintf returns negative and writes nothing");
+    CHECK(capture_stream(mmt_attr_format, a, out, sizeof(out), &ret) && ret < 0 && out[0] == '\0',
+          "unsupported type: format returns negative and writes nothing");
+
+    /* types without a dedicated stream writer reuse their snprintf text */
+    float fv = 1.5f;
+    attr.data_type = MMT_DATA_FLOAT;
+    attr.data = &fv;
+    CHECK(capture_stream(mmt_attr_fprintf, a, out, sizeof(out), &ret) && strcmp(out, "1.500") == 0,
+          "MMT_DATA_FLOAT fprintf writes the snprintf text form");
+    CHECK(capture_stream(mmt_attr_format, a, out, sizeof(out), &ret)
+              && strstr(out, " = 1.500\n") != NULL,
+          "MMT_DATA_FLOAT format dumps the snprintf text form");
+    mmt_u16_array_t arr;
+    memset(&arr, 0, sizeof(arr));
+    arr.len = 2; arr.data[0] = 17; arr.data[1] = 42;
+    attr.data_type = MMT_U16_ARRAY;
+    attr.data = &arr;
+    CHECK(capture_stream(mmt_attr_fprintf, a, out, sizeof(out), &ret) && strcmp(out, "17,42") == 0,
+          "MMT_U16_ARRAY fprintf writes the snprintf text form");
+    arr.len = 0;
+    CHECK(capture_stream(mmt_attr_fprintf, a, out, sizeof(out), &ret) && ret == 0 && out[0] == '\0',
+          "empty MMT_U16_ARRAY fprintf writes nothing");
+    CHECK(capture_stream(mmt_attr_format, a, out, sizeof(out), &ret)
+              && ret > 0 && strstr(out, " = \n") != NULL,
+          "empty MMT_U16_ARRAY format dumps an empty value");
+}
+
 static int g_proto_seen, g_attr_seen;
 static void count_proto(mmt_proto_id_t proto_id, void *args) {
     (void) args;
@@ -1654,6 +1762,7 @@ int main(void) {
     test_children_stats_extension();
     test_alloc_no_prefix();
     test_helpers();
+    test_attr_report_output();
     test_iteration();
 
     /* Issue #242 part 2: classification utilities + offset memoization.

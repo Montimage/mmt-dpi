@@ -297,8 +297,36 @@ int mmt_string_pointer_snprintf(char * buff, int len, attribute_internal_t * att
     return snprintf(buff, (size_t)len, "%s", (char *) attr->data);
 }
 
+/* Issue #328: an MMT_STATS attribute points at the protocol's chain of
+ * per-path statistics instances (proto_stats_extraction). Report the totals
+ * over the chain — the same aggregation the PROTO_PACKET_COUNT /
+ * PROTO_DATA_VOLUME / PROTO_PAYLOAD_VOLUME extractors apply. A NULL chain
+ * (no statistics yet) reports zeros. */
+#define MMT_STATS_REPORT_FMT "packets=%"PRIu64",data_volume=%"PRIu64",payload_volume=%"PRIu64 \
+                             ",sessions=%"PRIu64",timedout_sessions=%"PRIu64
+
+typedef struct mmt_stats_report_struct {
+    uint64_t packets, data_volume, payload_volume, sessions, timedout_sessions;
+} mmt_stats_report_t;
+
+static void mmt_stats_report_sum(const attribute_internal_t * attr, mmt_stats_report_t * r) {
+    memset(r, 0, sizeof(*r));
+    const proto_statistics_internal_t * s = (const proto_statistics_internal_t *) attr->data;
+    for (; s != NULL; s = s->next) {
+        r->packets += s->packets_count;
+        r->data_volume += s->data_volume;
+        r->payload_volume += s->payload_volume;
+        r->sessions += s->sessions_count;
+        r->timedout_sessions += s->timedout_sessions_count;
+    }
+}
+
 int mmt_stats_snprintf(char * buff, int len, attribute_internal_t * attr) {
-    return snprintf(buff, len, "%s", "TODO"); /* unimplemented report output — issue #328 */
+    if (buff == NULL || len <= 0 || attr == NULL) return -1;
+    mmt_stats_report_t r;
+    mmt_stats_report_sum(attr, &r);
+    return snprintf(buff, (size_t) len, MMT_STATS_REPORT_FMT,
+                    r.packets, r.data_volume, r.payload_volume, r.sessions, r.timedout_sessions);
 }
 
 int mmt_header_line_pointer_snprintf(char * buff, int len, attribute_internal_t * attr) {
@@ -401,7 +429,10 @@ int mmt_attr_snprintf(char * buff, int len, attribute_t * a) {
     case MMT_U64_ARRAY:
         return mmt_u64_array_snprintf( buff, len, attr );
     default:
-        return mmt_stats_snprintf(buff, len, attr); //TODO(#328)
+        /* Issue #328: no text form for this data type — report "not
+         * supported" (negative, empty string) instead of a placeholder. */
+        if (buff != NULL && len > 0) buff[0] = '\0';
+        return -1;
     }
 }
 
@@ -489,7 +520,11 @@ int mmt_header_line_pointer_fprintf(FILE * f, attribute_internal_t * attr) {
 }
 
 int mmt_stats_fprintf(FILE *f, attribute_internal_t * attr) {
-    return mmt_stream_printf(f, "%s", "TODO"); /* unimplemented report output — issue #328 */
+    if (attr == NULL) return -1;
+    mmt_stats_report_t r;
+    mmt_stats_report_sum(attr, &r);
+    return mmt_stream_printf(f, MMT_STATS_REPORT_FMT,
+                             r.packets, r.data_volume, r.payload_volume, r.sessions, r.timedout_sessions);
 }
 
 int mmt_attr_fprintf(FILE * f, attribute_t * a) {
@@ -531,8 +566,15 @@ int mmt_attr_fprintf(FILE * f, attribute_t * a) {
         return mmt_header_line_pointer_fprintf(f, attr);
     case MMT_STATS:
         return mmt_stats_fprintf(f, attr);
-    default:
-        return mmt_stats_fprintf(f, attr);
+    default: {
+        /* Issue #328: types without a dedicated stream writer (MMT_DATA_FLOAT,
+         * MMT_U16/U32/U64_ARRAY) reuse their mmt_attr_snprintf() text form; a
+         * type with no text form returns -1 and writes nothing. */
+        char buff[MMT_BINARYVAR_STRLEN];
+        buff[0] = '\0'; /* an empty MMT_U*_ARRAY writes no terminator */
+        if (mmt_attr_snprintf(buff, (int) sizeof(buff), a) < 0) return -1;
+        return mmt_stream_printf(f, "%s", buff);
+    }
     }
 }
 
@@ -636,8 +678,12 @@ int mmt_header_line_pointer_format(FILE * f, attribute_internal_t * attr) {
 }
 
 int mmt_stats_format(FILE *f, attribute_internal_t * attr) {
-    return mmt_stream_printf(f, "Attribute %s.%s = %s\n",
-                   get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), "TODO"); /* unimplemented report output — issue #328 */
+    if (attr == NULL) return -1;
+    mmt_stats_report_t r;
+    mmt_stats_report_sum(attr, &r);
+    return mmt_stream_printf(f, "Attribute %s.%s = " MMT_STATS_REPORT_FMT "\n",
+                   get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id),
+                   r.packets, r.data_volume, r.payload_volume, r.sessions, r.timedout_sessions);
 }
 
 int mmt_attr_format(FILE * f, attribute_t * a) {
@@ -679,8 +725,14 @@ int mmt_attr_format(FILE * f, attribute_t * a) {
         return mmt_header_line_pointer_format(f, attr);
     case MMT_STATS:
         return mmt_stats_format(f, attr);
-    default:
-        return mmt_stats_format(f, attr);
+    default: {
+        /* Issue #328: same text-form fallback as mmt_attr_fprintf(). */
+        char buff[MMT_BINARYVAR_STRLEN];
+        buff[0] = '\0'; /* an empty MMT_U*_ARRAY writes no terminator */
+        if (mmt_attr_snprintf(buff, (int) sizeof(buff), a) < 0) return -1;
+        return mmt_stream_printf(f, "Attribute %s.%s = %s\n",
+                       get_protocol_name_by_id(attr->proto_id), get_attribute_name_by_protocol_and_attribute_ids(attr->proto_id, attr->field_id), buff);
+    }
     }
 }
 

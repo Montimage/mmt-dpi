@@ -1309,19 +1309,23 @@ MMTAPI int MMTCALL mmt_strncmp(
 
 /**
  * Writes in a friendly format the attribute pointed by \attr to the stream pointed by \p.
+ * The value is rendered as by mmt_attr_fprintf().
  * @param f Pointer to a FILE object that identifies an output stream.
  * @param attr Pointer to the attribute to format.
  * @return On success, the total number of characters written is returned. <br>
- * If a writing error occurs, a negative value is returned.
+ * If a writing error occurs, or the attribute's data type has no text form, a negative value is returned;
+ * for a data type with no text form nothing is written.
  */
 MMTAPI int MMTCALL mmt_attr_format(FILE * f, attribute_t * attr);
 
 /**
  * Writes the string value of the attribute pointed by \attr to the stream pointed by \p.
+ * The value is the same text mmt_attr_snprintf() produces.
  * @param f Pointer to a FILE object that identifies an output stream.
  * @param attr Pointer to the attribute to format.
  * @return On success, the total number of characters written is returned. <br>
- * If a writing error occurs, a negative value is returned.
+ * If a writing error occurs, or the attribute's data type has no text form, a negative value is returned;
+ * for a data type with no text form nothing is written.
  */
 MMTAPI int MMTCALL mmt_attr_fprintf(FILE * f, attribute_t * attr);
 
@@ -1336,8 +1340,12 @@ MMTAPI int MMTCALL mmt_attr_fprintf(FILE * f, attribute_t * attr);
  * @param attr Pointer to the attribute to print.
  * @return On success, the total number of characters that would have been written if \len had been sufficiently
  * large, not counting the terminating null character.<br>
- * If a writing error occurs, a negative value is returned.<br>
- * Notice that only when the returned value is positive and less than \len, the string has been completely written.
+ * If a writing error occurs, or the attribute's data type has no text form, a negative value is returned
+ * (and \buff, when non-NULL, holds an empty string).<br>
+ * Notice that only when the returned value is positive and less than \len, the string has been completely written.<br>
+ * An MMT_STATS attribute (protocol statistics) is written as
+ * "packets=N,data_volume=N,payload_volume=N,sessions=N,timedout_sessions=N", totalled over all the
+ * protocol's statistics instances (one per protocol path).
  */
 MMTAPI int MMTCALL mmt_attr_sprintf(char * buff, int len, attribute_t * attr);
 

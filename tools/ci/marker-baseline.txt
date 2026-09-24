@@ -36,4 +36,9 @@
 # markers in the fuzz engine's built-in VoIP model became named constants
 # (VOIP_METRIC_ID_*), and the commented-out `kpi_value >= 0` range check in
 # trapezoid_left() was answered (no lower bound, by design) and removed.
-76
+#
+# #328: re-baselined 76 -> 72 — the four report/dump stubs in
+# src/mmt_core/src/packet_processing.c that emitted a literal "TODO"
+# (mmt_stats_snprintf/fprintf/format and the mmt_attr_snprintf default arm)
+# now render the protocol statistics or return a documented negative code.
+72
