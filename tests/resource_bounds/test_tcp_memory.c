@@ -43,6 +43,9 @@
 #include "../../src/mmt_tcpip/lib/protocols/tcp_segment.c"
 
 #include "tcp_alloc_count.h"
+#include "rb_result.h"
+
+#define RB "tcp-memory"   /* issue #394: results.json fixture id */
 
 static int checks;
 static int failures;
@@ -66,6 +69,7 @@ static int failures;
 static mmt_handler_t g_handler;
 static mmt_session_t g_session;
 static uint64_t g_peak_reserved;
+static uint64_t g_max_reserved;   /* over every operation of every run */
 
 static void session_open(uint32_t limit) {
 	memset(&g_session, 0, sizeof(g_session));
@@ -100,6 +104,7 @@ static void check_budget(const char *what) {
 	chain_blocks(r, &blocks);
 	uint64_t walked = blocks + r->image_cap[0] + r->image_cap[1];
 	if (walked > g_peak_reserved) g_peak_reserved = walked;
+	if (walked > g_max_reserved) g_max_reserved = walked;
 	/* Only the head (bump target) may sit empty; any other block with no
 	 * live carve is stranded reserved storage. */
 	uint32_t stranded = 0;
@@ -173,6 +178,8 @@ static void teardown(int64_t outstanding0, const char *what) {
 #define AC1_SEGS 1024u
 #define AC1_DUPS 169u
 
+static uint32_t g_ac1_accepted, g_ac1_refused;
+
 static uint64_t run_retained(int with_dups, uint64_t *reserved_out, uint32_t *blocks_out) {
 	const uint32_t S = 5000;
 	int64_t o0 = tcm_outstanding;
@@ -180,8 +187,11 @@ static uint64_t run_retained(int with_dups, uint64_t *reserved_out, uint32_t *bl
 	uint64_t d0 = g_dropped;
 	uint32_t dup_viol = 0;
 	session_open(BUDGET);
+	uint32_t acc = 0, ref = 0;
 	for (uint32_t i = 0; i < AC1_SEGS; i++) {
-		CHECK(offer(0, S + i, i, 1), "retained seg %u dropped", i);
+		int adm = offer(0, S + i, i, 1);
+		acc += adm; ref += !adm;
+		CHECK(adm, "retained seg %u dropped", i);
 		if (!with_dups) continue;
 		for (uint32_t k = 0; k < AC1_DUPS; k++) {
 			/* tail duplicates dominate; every 5th hits the head and every
@@ -194,7 +204,9 @@ static uint64_t run_retained(int with_dups, uint64_t *reserved_out, uint32_t *bl
 			uint32_t nblk = chain_blocks(r, NULL);
 			uint32_t used = r->blocks ? r->blocks->used : 0;
 			uint64_t res = r->reserved, live = r->live;
-			CHECK(!offer(0, S + t, t, 1), "duplicate of seq %u admitted", S + t);
+			adm = offer(0, S + t, t, 1);
+			acc += adm; ref += !adm;
+			CHECK(!adm, "duplicate of seq %u admitted", S + t);
 			if (tcm_calls != calls || chain_blocks(r, NULL) != nblk
 			    || (r->blocks ? r->blocks->used : 0) != used
 			    || r->reserved != res || r->live != live) {
@@ -213,6 +225,8 @@ static uint64_t run_retained(int with_dups, uint64_t *reserved_out, uint32_t *bl
 	*reserved_out = r->reserved;
 	*blocks_out = chain_blocks(r, NULL);
 	if (with_dups) {
+		g_ac1_accepted = acc;
+		g_ac1_refused = ref;
 		CHECK(dup_viol == 0, "%u duplicate offers allocated or burned block space", dup_viol);
 		CHECK(g_dropped - d0 == (uint64_t) AC1_SEGS * AC1_DUPS,
 		      "dropped %llu B, expected %u", (unsigned long long) (g_dropped - d0),
@@ -276,6 +290,15 @@ static void test_ac1(void) {
 	printf("       metadata (outside the budget): mmt_tcp_reasm_t %zu B, node headers"
 	       " %u x %u B inside the carves\n",
 	       sizeof(mmt_tcp_reasm_t), AC1_SEGS, (unsigned) MMT_SEGBLK_ALIGN_UP(sizeof(tcp_seg_t)));
+	rb_metric(RB, "dup.retained_segments", AC1_SEGS);
+	rb_metric(RB, "dup.offers", (uint64_t) AC1_SEGS * (AC1_DUPS + 1));
+	rb_metric(RB, "dup.accepted", g_ac1_accepted);
+	rb_metric(RB, "dup.refused", g_ac1_refused);
+	rb_metric(RB, "dup.allocator_calls", calls_dup);
+	rb_metric(RB, "dup.allocator_calls_without_duplicates", calls_base);
+	rb_metric(RB, "dup.blocks", blk_dup);
+	rb_metric(RB, "dup.reserved_bytes", res_dup);
+	rb_metric(RB, "dup.locate_visits", visits);
 }
 
 /* ------------------------------------------------------------------ */
@@ -300,12 +323,13 @@ static void test_large_exhaustion(void) {
 	const uint32_t LEN = 8129, N = 2000;
 	int64_t o0 = tcm_outstanding;
 	uint64_t d0 = g_dropped;
-	uint32_t nadm = 0;
+	uint32_t nadm = 0, nref = 0;
 	g_peak_reserved = 0;
 	session_open(BUDGET);
 	for (uint32_t i = 0; i < N; i++) {
 		uint64_t off = (uint64_t) i * LEN;
 		if (offer(0, 1 + (uint32_t) off, off, LEN)) g_adm[0][nadm++] = off;
+		else nref++;
 	}
 	uint64_t peak = g_peak_reserved;
 	CHECK(nadm > 0 && nadm < N, "admitted %u of %u", nadm, N);
@@ -319,6 +343,10 @@ static void test_large_exhaustion(void) {
 	printf("  8,129-B exhaustion: admitted %u/%u, peak reserved %llu B (<= %u),"
 	       " image %u B\n", nadm, N, (unsigned long long) peak, BUDGET,
 	       g_session.tcp_reasm->image_len[0]);
+	rb_metric(RB, "exhaustion.offers", N);
+	rb_metric(RB, "exhaustion.accepted", nadm);
+	rb_metric(RB, "exhaustion.refused", nref);
+	rb_metric(RB, "exhaustion.peak_reserved_bytes", peak);
 	teardown(o0, "large exhaustion");
 }
 
@@ -326,17 +354,19 @@ static void test_large_exhaustion(void) {
 /* B3/B4 — two-direction images and image-plus-pending fill            */
 /* ------------------------------------------------------------------ */
 
-static void run_stream(const char *name, int dirs, uint32_t len, uint32_t n,
-                       uint32_t drain_every) {
+static void run_stream(const char *name, const char *key, int dirs, uint32_t len,
+                       uint32_t n, uint32_t drain_every) {
 	int64_t o0 = tcm_outstanding;
-	uint32_t nadm[2] = {0, 0};
+	uint32_t nadm[2] = {0, 0}, acc = 0, ref = 0;
 	uint64_t drain_drops = 0;
 	g_peak_reserved = 0;
 	session_open(BUDGET);
 	for (uint32_t i = 0; i < n; i++) {
 		for (int d = 0; d < dirs; d++) {
 			uint64_t off = (uint64_t) i * len;
-			if (offer(d, 7 + (uint32_t) off, off, len) && nadm[d] < 16384)
+			int adm = offer(d, 7 + (uint32_t) off, off, len);
+			acc += adm; ref += !adm;
+			if (adm && nadm[d] < 16384)
 				g_adm[d][nadm[d]++] = off;
 		}
 		if ((i + 1) % drain_every == 0) {
@@ -365,6 +395,11 @@ static void run_stream(const char *name, int dirs, uint32_t len, uint32_t n,
 	       " peak reserved %llu B\n", name, nadm[0], nadm[1], n, len,
 	       r->image_len[0], r->image_len[1], r->image_cap[0], r->image_cap[1],
 	       (unsigned long long) g_peak_reserved);
+	char k[64];
+	snprintf(k, sizeof k, "%s.offers", key);   rb_metric(RB, k, (uint64_t) n * dirs);
+	snprintf(k, sizeof k, "%s.accepted", key); rb_metric(RB, k, acc);
+	snprintf(k, sizeof k, "%s.refused", key);  rb_metric(RB, k, ref);
+	snprintf(k, sizeof k, "%s.peak_reserved_bytes", key); rb_metric(RB, k, g_peak_reserved);
 	teardown(o0, name);
 }
 
@@ -386,9 +421,11 @@ static void test_lowered_limit(void) {
 
 	g_handler.tcp_reassembly_limit = LOW;   /* set_tcp_reassembly_limit() */
 	uint64_t calls = tcm_calls;
+	uint32_t over_refused = 0;
 	for (uint32_t k = 0; k < 64; k++, i++) {
 		uint64_t d0 = g_dropped;
 		tcp_reasm_offer(&g_session, 0, 1, 1 + i * LEN, 0, g_seg_buf, LEN);
+		over_refused += (g_dropped - d0 == LEN);
 		CHECK(g_dropped - d0 == LEN, "offer admitted over a lowered limit");
 		CHECK(r->reserved == res_hi, "reserved moved over a lowered limit");
 	}
@@ -418,6 +455,11 @@ static void test_lowered_limit(void) {
 	printf("  lowered limit: %llu B reserved at 4 MiB, drained to image %u B"
 	       " (%u B dropped), reserved %llu B (<= %u)\n", (unsigned long long) res_hi,
 	       r->image_len[0], pend - r->image_len[0], (unsigned long long) r->reserved, LOW);
+	rb_metric(RB, "lowered.offers_over_limit", 64);
+	rb_metric(RB, "lowered.refused_over_limit", over_refused);
+	rb_metric(RB, "lowered.drain_dropped_bytes", pend - r->image_len[0]);
+	rb_metric(RB, "lowered.limit_bytes", LOW);
+	rb_metric(RB, "lowered.reserved_bytes_after_drain", r->reserved);
 	teardown(o0, "lowered limit");
 }
 
@@ -432,6 +474,7 @@ static void test_lowered_limit(void) {
 
 static uint64_t g_fair_off[2];
 static uint32_t g_fair_refused, g_fair_growths;
+static uint32_t g_fair_offers, g_fair_accepted, g_fair_dropped;
 
 /* Offer the next `len` stream bytes of `dir` and drain it (an extraction
  * per packet). An offer must be admitted while the flow's content plus
@@ -443,7 +486,10 @@ static void fair_step(int dir, uint32_t len) {
 	uint32_t cap = (r != NULL) ? r->image_cap[dir] : 0;
 	int must = live + carve + FAIR_MARGIN <= BUDGET;
 	uint64_t off = g_fair_off[dir];
-	if (offer(dir, 11 + (uint32_t) off, off, len)) g_fair_off[dir] += len;
+	g_fair_offers++;
+	int adm = offer(dir, 11 + (uint32_t) off, off, len);
+	g_fair_accepted += adm; g_fair_dropped += !adm;
+	if (adm) g_fair_off[dir] += len;
 	else if (must && g_fair_refused++ < 5)
 		fprintf(stderr, "  dir %d refused %u B at content %llu B (caps %u/%u, reserved %llu)\n",
 		        dir, len, (unsigned long long) live, g_session.tcp_reasm->image_cap[0],
@@ -457,10 +503,11 @@ static void fair_step(int dir, uint32_t len) {
 static void fair_open(void) {
 	g_fair_off[0] = g_fair_off[1] = 0;
 	g_fair_refused = g_fair_growths = 0;
+	g_fair_offers = g_fair_accepted = g_fair_dropped = 0;
 	session_open(BUDGET);
 }
 
-static void fair_close(const char *name, int64_t o0) {
+static void fair_close(const char *name, const char *key, int64_t o0) {
 	const mmt_tcp_reasm_t *r = g_session.tcp_reasm;
 	for (int d = 0; d < 2; d++) {
 		uint32_t n = (uint32_t) g_fair_off[d];
@@ -473,6 +520,12 @@ static void fair_close(const char *name, int64_t o0) {
 	       " image growths %u\n", name, r->image_len[0], r->image_len[1],
 	       r->image_cap[0], r->image_cap[1], (unsigned long long) r->reserved,
 	       g_fair_refused, g_fair_growths);
+	char k[64];
+	snprintf(k, sizeof k, "%s.offers", key);   rb_metric(RB, k, g_fair_offers);
+	snprintf(k, sizeof k, "%s.accepted", key); rb_metric(RB, k, g_fair_accepted);
+	snprintf(k, sizeof k, "%s.refused", key);  rb_metric(RB, k, g_fair_dropped);
+	snprintf(k, sizeof k, "%s.refused_below_budget", key); rb_metric(RB, k, g_fair_refused);
+	snprintf(k, sizeof k, "%s.image_growths", key); rb_metric(RB, k, g_fair_growths);
 	teardown(o0, name);
 }
 
@@ -488,7 +541,7 @@ static void test_fairness(void) {
 	CHECK(g_session.tcp_reasm->image_len[0] + g_session.tcp_reasm->image_len[1]
 	      + FAIR_MARGIN >= BUDGET, "keep-alive: flow stopped at %u+%u B",
 	      g_session.tcp_reasm->image_len[0], g_session.tcp_reasm->image_len[1]);
-	fair_close("keep-alive fairness", o0);
+	fair_close("keep-alive fairness", "fair_keepalive", o0);
 
 	/* One direction sends 1.08 MB and stops; the other must still reach
 	 * the budget instead of stopping at its own 1 MiB capacity step. */
@@ -499,7 +552,7 @@ static void test_fairness(void) {
 	CHECK(g_session.tcp_reasm->image_len[1] + g_session.tcp_reasm->image_len[0]
 	      + FAIR_MARGIN >= BUDGET, "idle-peer: dir 1 stopped at %u B",
 	      g_session.tcp_reasm->image_len[1]);
-	fair_close("idle-peer fairness", o0);
+	fair_close("idle-peer fairness", "fair_idle_peer", o0);
 
 	/* Amortized growth: a single in-order stream filled to the budget
 	 * reallocates its image a logarithmic number of times. */
@@ -507,7 +560,7 @@ static void test_fairness(void) {
 	fair_open();
 	for (uint32_t i = 0; i < 3000; i++) fair_step(0, 1460);
 	CHECK(g_fair_growths <= 24, "single stream: %u image reallocations", g_fair_growths);
-	fair_close("single-stream growth", o0);
+	fair_close("single-stream growth", "fair_single_stream", o0);
 }
 
 /* Randomized two-direction offer/drain at a small limit: trimming at
@@ -515,7 +568,8 @@ static void test_fairness(void) {
  * every admitted byte must still flatten in order without a gap. */
 static void test_random_small_limit(void) {
 	const uint32_t LIMIT = 64u * 1024u, FLOWS = 300, OFFERS = 120;
-	uint32_t rng = 0x380380u, nadm = 0;
+	const uint32_t SEED = 0x380380u;
+	uint32_t rng = SEED, nadm = 0, nref = 0;
 	uint64_t drain_drops = 0, bytes = 0;
 	int bad = 0;
 	for (uint32_t f = 0; f < FLOWS; f++) {
@@ -527,6 +581,7 @@ static void test_random_small_limit(void) {
 			int dir = (int) ((rng >> 16) & 1u);
 			uint32_t len = 1 + ((rng >> 17) % 1460u);
 			if (offer(dir, 3 + (uint32_t) off[dir], off[dir], len)) { off[dir] += len; nadm++; }
+			else nref++;
 			if (((rng >> 28) & 3u) == 0) {
 				uint64_t dd = g_dropped;
 				drain(dir);
@@ -552,6 +607,13 @@ static void test_random_small_limit(void) {
 	CHECK(bad == 0, "random: %d images are not the admitted stream", bad);
 	printf("  random 64 KiB: %u flows, %u of %u offers admitted, %llu B flattened\n",
 	       FLOWS, nadm, FLOWS * OFFERS, (unsigned long long) bytes);
+	rb_seed(RB, "random.lcg", SEED);
+	rb_metric(RB, "random.flows", FLOWS);
+	rb_metric(RB, "random.limit_bytes", LIMIT);
+	rb_metric(RB, "random.offers", FLOWS * OFFERS);
+	rb_metric(RB, "random.accepted", nadm);
+	rb_metric(RB, "random.refused", nref);
+	rb_metric(RB, "random.flattened_bytes", bytes);
 }
 
 /* An emptied head block that a larger carve does not fit must be freed,
@@ -613,13 +675,17 @@ int main(void) {
 	printf("tcp-memory (issue #380): reserved-storage budget %u B\n", BUDGET);
 	test_ac1();
 	test_large_exhaustion();
-	run_stream("two-direction", 2, 1460, 3000, 32);
-	run_stream("image+pending", 1, 1460, 6000, 1000);
+	run_stream("two-direction", "two_direction", 2, 1460, 3000, 32);
+	run_stream("image+pending", "image_pending", 1, 1460, 6000, 1000);
 	test_lowered_limit();
 	test_fairness();
 	test_random_small_limit();
 	test_recycled_head();
 	test_oom();
+	rb_metric(RB, "budget_bytes", BUDGET);
+	rb_metric(RB, "max_reserved_bytes", g_max_reserved);
+	rb_metric(RB, "checks.total", (uint64_t) checks);
+	rb_metric(RB, "checks.failed", (uint64_t) failures);
 	printf("  checks: %d, failures: %d\n", checks, failures);
 	return failures ? 1 : 0;
 }

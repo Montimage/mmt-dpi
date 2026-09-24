@@ -48,6 +48,9 @@ void     test_ipv6_ctx_destroy(void *ctx);
 /* The production table, same TU — internals (seed, cap, counters) visible. */
 #include "../../src/mmt_core/src/hash_utils.cpp"
 
+#include "rb_result.h"
+#define RB "ipv6-hash"   /* issue #394: results.json fixture id */
+
 static int checks = 0;
 static int failures = 0;
 #define CHECK(cond, msg) do { \
@@ -153,6 +156,8 @@ static void test_independent_keying_and_lookup(void) {
     CHECK(s1 != s2, "two handler maps are keyed with different seeds");
     fprintf(stderr, "    table seeds: %016llx vs %016llx\n",
             (unsigned long long) s1, (unsigned long long) s2);
+    rb_seed(RB, "keyed.table_a", s1);
+    rb_seed(RB, "keyed.table_b", s2);
 
     fill_and_verify(m1, addrs, N);
     fill_and_verify(m2, addrs, N);
@@ -202,16 +207,29 @@ static uint64_t workload_comp_calls(int n) {
 
     void *map = init_map_space(counting_ipv6_comp, test_ipv6_addr_hash);
     if (map == NULL) { failures++; return UINT64_MAX; }
+    uint64_t seed = ((mmt_oa_table *) map)->seed;
 
     uint64_t c0 = comp_calls();
-    for (int i = 0; i < n; i++)
-        if (insert_key_value(map, addrs[i], addrs[i]) != 1) failures++;
+    uint64_t accepted = 0, refused = 0, hits = 0;
+    for (int i = 0; i < n; i++) {
+        if (insert_key_value(map, addrs[i], addrs[i]) == 1) accepted++;
+        else { refused++; failures++; }
+    }
     uint64_t c_ins = comp_calls() - c0;
-    for (int i = 0; i < n; i++)
-        if (find_key_value(map, addrs[i]) != addrs[i]) failures++;
+    for (int i = 0; i < n; i++) {
+        if (find_key_value(map, addrs[i]) == addrs[i]) hits++;
+        else failures++;
+    }
     uint64_t c_find = comp_calls() - c0 - c_ins;
 
     delete_map_space(map);
+    char k[64];
+    snprintf(k, sizeof k, "n%d.table", n);            rb_seed(RB, k, seed);
+    snprintf(k, sizeof k, "n%d.inputs", n);           rb_metric(RB, k, (uint64_t) n);
+    snprintf(k, sizeof k, "n%d.inserts_accepted", n); rb_metric(RB, k, accepted);
+    snprintf(k, sizeof k, "n%d.inserts_refused", n);  rb_metric(RB, k, refused);
+    snprintf(k, sizeof k, "n%d.lookups_hit", n);      rb_metric(RB, k, hits);
+    snprintf(k, sizeof k, "n%d.comparator_calls", n); rb_metric(RB, k, c_ins + c_find);
     fprintf(stderr, "    n=%5d: insert %" PRIu64 " + find %" PRIu64
             " = %" PRIu64 " comparator calls\n",
             n, (uint64_t) c_ins, (uint64_t) c_find, (uint64_t) (c_ins + c_find));
@@ -257,13 +275,14 @@ static void test_forced_collision_bound(void) {
     fprintf(stderr, "    table cap=%zu, per-op comparator bound=%llu\n",
             cap, (unsigned long long) bound);
 
-    uint64_t c0, delta;
+    uint64_t c0, delta, worst = 0;
 
     /* find hit — worst case: the last key sits at the cluster tail. */
     c0 = comp_calls();
     CHECK(find_key_value(map, addrs[K - 1]) == addrs[K - 1],
           "collided lookup still resolves");
     delta = comp_calls() - c0;
+    if (delta > worst) worst = delta;
     CHECK(delta <= bound, "find hit within the per-op bound");
     fprintf(stderr, "    find hit : %llu comp calls\n",
             (unsigned long long) delta);
@@ -273,6 +292,7 @@ static void test_forced_collision_bound(void) {
     c0 = comp_calls();
     CHECK(find_key_value(map, absent) == NULL, "absent key misses");
     delta = comp_calls() - c0;
+    if (delta > worst) worst = delta;
     CHECK(delta <= bound, "find miss within the per-op bound");
     fprintf(stderr, "    find miss: %llu comp calls\n",
             (unsigned long long) delta);
@@ -281,6 +301,7 @@ static void test_forced_collision_bound(void) {
     c0 = comp_calls();
     CHECK(delete_key_value(map, addrs[0]) == 1, "delete succeeds");
     delta = comp_calls() - c0;
+    if (delta > worst) worst = delta;
     CHECK(delta <= bound, "delete within the per-op bound");
     fprintf(stderr, "    delete   : %llu comp calls\n",
             (unsigned long long) delta);
@@ -290,9 +311,14 @@ static void test_forced_collision_bound(void) {
     CHECK(insert_key_value(map, absent, absent) == 1,
           "insert into cluster succeeds");
     delta = comp_calls() - c0;
+    if (delta > worst) worst = delta;
     CHECK(delta <= bound, "insert within the per-op bound");
     fprintf(stderr, "    insert   : %llu comp calls\n",
             (unsigned long long) delta);
+    rb_metric(RB, "forced_collision.keys", K);
+    rb_metric(RB, "forced_collision.cap", cap);
+    rb_metric(RB, "forced_collision.per_op_bound", bound);
+    rb_metric(RB, "forced_collision.worst_op_comparator_calls", worst);
 
     delete_map_space(map);
 }
@@ -330,6 +356,10 @@ static void test_saturated_table_bounded_fail(void) {
           "saturated insert is bounded by cap slot visits");
     fprintf(stderr, "    saturated insert: rc=%d after %llu comp calls (cap=%zu)\n",
             rc, (unsigned long long) delta, cap);
+    rb_metric(RB, "saturated.inserts_offered", 1);
+    rb_metric(RB, "saturated.inserts_refused", rc == 0 ? 1 : 0);
+    rb_metric(RB, "saturated.cap", cap);
+    rb_metric(RB, "saturated.comparator_calls", delta);
 
     /* restore consistency before teardown */
     t->used = cap;
@@ -347,6 +377,8 @@ int main(void) {
     test_forced_collision_bound();
     test_saturated_table_bounded_fail();
 
+    rb_metric(RB, "checks.total", (uint64_t) checks);
+    rb_metric(RB, "checks.failed", (uint64_t) failures);
     if (failures == 0) {
         fprintf(stderr, "ALL CHECKS PASSED (%d checks)\n", checks);
         return 0;

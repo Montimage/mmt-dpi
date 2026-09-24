@@ -51,32 +51,57 @@
 #                          index counters armed (-DMMT_IP_FRAG_INDEX_STATS)
 #                          and the counted allocator of tcp-memory.
 #
+# Issue #394 (F-PERF-001..004) consolidates the four fixtures into
+# reproducible adversarial resource budgets: every fixture reports its
+# workload scales, fixed seeds, accepted/refused work and counters as
+# "@rb" lines (rb_result.h); this runner collects them into a
+# machine-readable results.json (schema: results.schema.json) and evaluates
+# the budgets committed in budgets.json against them. Budgets are
+# deterministic counts and bytes — no pps or timing guarantee is asserted.
+# A missing or duplicated metric, a failed budget or a failed fixture fails
+# the run. RESOURCE_BOUNDS_RESULTS=<path> redirects the results file
+# (default: tests/resource_bounds/results.json, git-ignored). Requires jq.
+#
 # No SDK build is needed: every TU compiles straight from src/ — the same
 # standalone property the other unit suites keep (issue #367 contract).
 # Objects stay in a throwaway work dir; only the selected fixtures build.
 #
-# Usage: tests/resource_bounds/run_tests.sh [fixture ...]
-#   no arguments runs every fixture; "ipv6-hash" / "tcp-memory" / "tcp-order"
-#   / "fragment-eviction" select one.
+# Usage: tests/resource_bounds/run_tests.sh [all | fixture ...]
+#   no arguments (or "all") runs every fixture; "ipv6-hash" / "tcp-memory" /
+#   "tcp-order" / "fragment-eviction" select one.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction)
+ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction)
+FIXTURES=()
+for f in "$@"; do
+    if [ "$f" = "all" ]; then FIXTURES+=("${ALL_FIXTURES[@]}"); else FIXTURES+=("$f"); fi
+done
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=("${ALL_FIXTURES[@]}")
 
 TESTS=()
+FIXTURE_IDS=()
 for f in "${FIXTURES[@]}"; do
+    case " ${FIXTURE_IDS[*]} " in *" $f "*) continue ;; esac
     case "$f" in
         ipv6-hash) TESTS+=(ipv6_hash_bounds) ;;
         tcp-memory) TESTS+=(tcp_memory) ;;
         tcp-order) TESTS+=(tcp_order) ;;
         fragment-eviction) TESTS+=(frag_eviction) ;;
-        *) echo "✗ unknown resource_bounds fixture '$f' (known: ipv6-hash, tcp-memory, tcp-order, fragment-eviction)" >&2
+        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction)" >&2
            exit 2 ;;
     esac
+    FIXTURE_IDS+=("$f")
 done
+
+BUDGETS="${SCRIPT_DIR}/budgets.json"
+RESULTS="${RESOURCE_BOUNDS_RESULTS:-${SCRIPT_DIR}/results.json}"
+if ! command -v jq >/dev/null 2>&1; then
+    echo "✗ jq is required to evaluate the resource budgets (apt-get install jq)" >&2
+    exit 2
+fi
 
 CC="${CC:-gcc}"
 CXX="${CXX:-g++}"
@@ -183,22 +208,108 @@ build_frag_eviction() {
         "${WORK}/tcp_alloc_count_frag.o"
 }
 
-echo "  [1/2] compiling ..."
+echo "  [1/3] compiling ..."
 for name in "${TESTS[@]}"; do
     "build_${name}"
 done
 
-echo "  [2/2] running ..."
+echo "  [2/3] running ..."
 rc=0
-for name in "${TESTS[@]}"; do
-    if "${SCRIPT_DIR}/test_${name}"; then
+: > "${WORK}/rb.lines"
+: > "${WORK}/status"
+for i in "${!TESTS[@]}"; do
+    name="${TESTS[$i]}"
+    status=0
+    "${SCRIPT_DIR}/test_${name}" > "${WORK}/${name}.log" 2>&1 || status=$?
+    # Human log without the machine-readable lines, which go to results.json.
+    grep -v '^@rb ' "${WORK}/${name}.log" || true
+    grep '^@rb ' "${WORK}/${name}.log" >> "${WORK}/rb.lines" || true
+    printf '%s %s\n' "${FIXTURE_IDS[$i]}" "${status}" >> "${WORK}/status"
+    if [ "${status}" -eq 0 ]; then
         echo "  ✓ test_${name}: PASSED"
     else
-        echo "  ✗ test_${name}: FAILED" >&2
+        echo "  ✗ test_${name}: FAILED (exit ${status})" >&2
         rc=1
     fi
     echo
 done
 
+# ---- [3/3] results.json + budget evaluation (issue #394) --------------------
+echo "  [3/3] evaluating budgets (${BUDGETS#"${REPO_ROOT}/"}) ..."
+mkdir -p "$(dirname "${RESULTS}")"
+jq -n -R --slurpfile budgets "${BUDGETS}" --rawfile status "${WORK}/status" \
+      --arg budgets_path "${BUDGETS#"${REPO_ROOT}/"}" '
+  $budgets[0] as $B
+  | [inputs | split(" ") | select(.[0] == "@rb")] as $raw
+  | def wellformed: length == 5 and (.[3] | test("^[a-z0-9_.-]+$"))
+        and ((.[2] == "metric" and (.[4] | test("^[0-9]+$")))
+             or (.[2] == "seed" and (.[4] | test("^0x[0-9a-f]{16}$"))));
+    [$raw[] | select(wellformed | not) | join(" ")] as $malformed
+  | [$raw[] | select(wellformed)] as $L
+  | [$L | group_by(.[1:4])[] | select(length > 1) | .[0][1:4] | join(" ")] as $dups
+  | [$status | split("\n")[] | select(length > 0) | split(" ")
+     | {key: .[0], value: (.[1] | tonumber)}] as $S
+  | (reduce $L[] as $l ({};
+        if $l[2] == "metric" then .[$l[1]].metrics[$l[3]] = ($l[4] | tonumber)
+        else .[$l[1]].seeds[$l[3]] = $l[4] end)) as $M
+  | def mval($f; $k): $M[$f].metrics[$k];
+    [ $S[].key as $f | ($B.fixtures[$f].checks // [])[] | . as $c
+      | mval($f; $c.metric) as $v
+      | (if $c.op == "sum" then
+           [$c.parts[] | mval($f; .)] as $p
+           | (if ($p | any(. == null)) then null else ($p | add) end)
+         elif ($c | has("limit_metric")) then
+           mval($f; $c.limit_metric) as $lm
+           | (if $lm == null then null else $lm * ($c.factor // 1) end)
+         else $c.limit end) as $lim
+      | {fixture: $f, id: $c.id, metric: $c.metric, op: $c.op, value: $v,
+         limit: $lim, baseline: ($c.baseline // null),
+         pass: (if $v == null or $lim == null then false
+                elif $c.op == "eq" or $c.op == "sum" then $v == $lim
+                elif $c.op == "le" then $v <= $lim
+                elif $c.op == "lt" then $v < $lim
+                else false end)}
+      + (if $v == null or $lim == null then {error: "missing metric"}
+         elif ($c.op | IN("eq", "sum", "le", "lt") | not) then {error: "unknown op"}
+         else {} end) ] as $C
+  | [$S[] | select(($B.fixtures[.key].checks // []) | length == 0) | .key] as $unbudgeted
+  | ([$S[].key]) as $ran
+  | [$L[] | .[1] | select(. as $f | $ran | index($f) | not)] | unique as $stray
+  | {
+      schema: "mmt-dpi/resource-bounds-result/v1",
+      budgets: $budgets_path,
+      timing_asserted: false,
+      fixtures: ([$S[] | .key as $f | {key: $f, value: {
+          issue: $B.fixtures[$f].issue, finding: $B.fixtures[$f].finding,
+          workload: $B.fixtures[$f].workload, exit_status: .value,
+          seeds: ($M[$f].seeds // {}), metrics: ($M[$f].metrics // {})}}]
+        | from_entries),
+      checks: $C,
+      errors: ([$malformed[] | "malformed line: \(.)"]
+               + [$dups[] | "duplicate key: \(.)"]
+               + [$unbudgeted[] | "fixture without budgets: \(.)"]
+               + [$stray[] | "results for a fixture that did not run: \(.)"]),
+      summary: {
+        fixtures: ($S | length),
+        failed_fixtures: ([$S[] | select(.value != 0)] | length),
+        checks: ($C | length),
+        failed_checks: ([$C[] | select(.pass | not)] | length)
+      }
+    }
+  | .summary.pass = (.summary.failed_fixtures == 0 and .summary.failed_checks == 0
+                     and (.errors | length) == 0)
+' < "${WORK}/rb.lines" > "${WORK}/results.json"
+mv "${WORK}/results.json" "${RESULTS}"
+
+jq -r '.fixtures | to_entries[] | .key as $f
+       | "    \($f): \(.value.metrics | length) counters, \(.value.seeds | length) seed(s)"' "${RESULTS}"
+jq -r '.checks[] | select(.pass | not)
+       | "  ✗ budget \(.fixture)/\(.id): \(.metric) = \(.value) \(.op) \(.limit)\(if .error then " (" + .error + ")" else "" end)"' \
+    "${RESULTS}" >&2
+jq -r '.errors[] | "  ✗ \(.)"' "${RESULTS}" >&2
+jq -r '.summary | "  budgets: \(.checks - .failed_checks)/\(.checks) within limits"' "${RESULTS}"
+echo "  results: ${RESULTS}"
+jq -e '.summary.pass' "${RESULTS}" >/dev/null || rc=1
+
 [ "${rc}" -eq 0 ] || { echo "✗ resource bounds tests failed" >&2; exit 1; }
-echo "✓ resource bounds tests passed (issues #379, #380, #382, #383)"
+echo "✓ resource bounds tests passed (issues #379, #380, #382, #383; budgets #394)"

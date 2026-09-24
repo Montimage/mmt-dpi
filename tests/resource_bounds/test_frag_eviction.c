@@ -57,6 +57,9 @@ static void counted_hashmap_walk(mmt_hashmap_t *map, mmt_hashmap_walker_t w, voi
 #include "../../src/mmt_core/src/hashmap.c"
 
 #include "tcp_alloc_count.h"
+#include "rb_result.h"
+
+#define RB "fragment-eviction"   /* issue #394: results.json fixture id */
 
 static int checks;
 static int failures;
@@ -150,19 +153,27 @@ static void test_ceiling_work(void)
 	memset(&mmt_ip_frag_index_stats, 0, sizeof mmt_ip_frag_index_stats);
 	walk_callbacks = 0;
 	int order_ok = 1, bounded = 1;
+	unsigned accepted = 0, refused = 0, peak = 0;
+	uint64_t unl0 = mmt_ip_frag_index_stats.unlinks;
 	for (unsigned i = 0; i < ARRIVALS; i++) {
 		mmt_key_t k = (mmt_key_t) (CEIL + i);
 		/* the head is the oldest arrival still in the map */
 		mmt_key_t expect_victim = (mmt_key_t) i;
 		if (lru.next->key != expect_victim)
 			order_ok = 0;
-		if (arrive(map, &lru, k, 1000 + i / 8, i & 1) == NULL)
+		if (arrive(map, &lru, k, 1000 + i / 8, i & 1) == NULL) {
 			bounded = 0;
+			refused++;
+		} else {
+			accepted++;
+		}
 		void *v = NULL;
 		if (hashmap_get(map, expect_victim, &v))
 			order_ok = 0;
 		if (map->nkeys > CEIL)
 			bounded = 0;
+		if (map->nkeys > peak)
+			peak = map->nkeys;
 	}
 	uint64_t visits = mmt_ip_frag_index_stats.victim_visits;
 	uint64_t ops = index_ops();
@@ -171,6 +182,15 @@ static void test_ceiling_work(void)
 	       ARRIVALS, CEIL, (unsigned long long) visits,
 	       (unsigned long long) ARRIVALS * CEIL,
 	       (unsigned long long) walk_callbacks, (unsigned long long) ops);
+	rb_metric(RB, "ceiling", CEIL);
+	rb_metric(RB, "arrivals", ARRIVALS);
+	rb_metric(RB, "arrivals.accepted", accepted);
+	rb_metric(RB, "arrivals.refused", refused);
+	rb_metric(RB, "evictions", mmt_ip_frag_index_stats.unlinks - unl0);
+	rb_metric(RB, "victim_visits", visits);
+	rb_metric(RB, "walker_callbacks", walk_callbacks);
+	rb_metric(RB, "index_ops", ops);
+	rb_metric(RB, "peak_entries", peak);
 	CHECK(bounded, "every arrival admitted, map never above the ceiling");
 	CHECK(order_ok, "victims leave in arrival order");
 	CHECK(visits <= ARRIVALS, "victim visits %llu > %u",
@@ -205,6 +225,8 @@ static void test_ceiling_work(void)
 /* ------------------------------------------------------------------ */
 
 #define REF_N 64
+#define REF_SEED 383u
+#define REF_STEPS 6000u
 static mmt_key_t ref[CEIL];   /* reference recency order, oldest first */
 static unsigned  ref_n;
 
@@ -253,12 +275,12 @@ static void test_reference_order(enum ts_mode mode, const char *name)
 	mmt_hashmap_t *map = hashmap_alloc();
 	mmt_hlru_t lru = { &lru, &lru, 0 };
 	uint32_t ts = (mode == TS_BACKWARD) ? 4000000000u : 100;
-	unsigned seed = 383;
+	unsigned seed = REF_SEED;
 	int match = 1, min_ok = 1, victim_ok = 1;
 	mmt_key_t next_key = 1;
 	ref_n = 0;
 
-	for (unsigned step = 0; step < 6000; step++) {
+	for (unsigned step = 0; step < REF_STEPS; step++) {
 		seed = seed * 1103515245u + 12345u;
 		unsigned r = (seed >> 16) & 0x7fff;
 		mmt_key_t k;
@@ -310,7 +332,7 @@ stamped:
 	hashmap_free(map);
 	CHECK(tcm_outstanding == base, "%s: leaked %lld allocations", name,
 	      (long long) (tcm_outstanding - base));
-	printf("    B. %-10s reference order held over 6000 operations\n", name);
+	printf("    B. %-10s reference order held over %u operations\n", name, REF_STEPS);
 }
 
 /* ------------------------------------------------------------------ */
@@ -372,6 +394,10 @@ int main(void)
 	test_reference_order(TS_BACKWARD, "backward");
 	test_removal_paths();
 
+	rb_seed(RB, "reference_order.lcg", REF_SEED);
+	rb_metric(RB, "reference_order.operations_per_mode", REF_STEPS);
+	rb_metric(RB, "checks.total", (uint64_t) checks);
+	rb_metric(RB, "checks.failed", (uint64_t) failures);
 	printf("  %d checks, %d failures\n", checks, failures);
 	return failures ? 1 : 0;
 }

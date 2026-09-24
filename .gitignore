@@ -83,6 +83,8 @@ tests/*/test_*
 !tests/*/test_*.c
 !tests/*/test_*.cpp
 !tests/*/test_*.h
+# resource_bounds budget results (issue #394) — a run artifact
+tests/resource_bounds/results.json
 
 # gcov intermediate data + generated coverage reports (--coverage mode)
 *.gcda

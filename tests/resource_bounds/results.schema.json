@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mmt-dpi/resource-bounds-result/v1",
+  "title": "resource_bounds results (issue #394)",
+  "description": "Written by tests/resource_bounds/run_tests.sh from the fixtures' @rb lines (rb_result.h) and the budgets in budgets.json. Every number is a deterministic count or byte total; no timing is recorded or asserted.",
+  "type": "object",
+  "required": ["schema", "budgets", "timing_asserted", "fixtures", "checks", "errors", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "mmt-dpi/resource-bounds-result/v1" },
+    "budgets": { "type": "string", "description": "Repository-relative path of the budgets file evaluated." },
+    "timing_asserted": { "const": false },
+    "fixtures": {
+      "type": "object",
+      "description": "One entry per fixture that ran, keyed by fixture id (ipv6-hash, tcp-memory, tcp-order, fragment-eviction).",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["issue", "finding", "workload", "exit_status", "seeds", "metrics"],
+        "additionalProperties": false,
+        "properties": {
+          "issue": { "type": ["integer", "null"] },
+          "finding": { "type": ["string", "null"] },
+          "workload": { "type": ["string", "null"] },
+          "exit_status": { "type": "integer", "description": "Fixture process exit status; 0 when every in-fixture check passed." },
+          "seeds": {
+            "type": "object",
+            "description": "Fixed seeds and deterministic table keys the workload used, as 64-bit hex strings.",
+            "additionalProperties": { "type": "string", "pattern": "^0x[0-9a-f]{16}$" }
+          },
+          "metrics": {
+            "type": "object",
+            "description": "Workload scales, accepted/refused work and counters, keyed by dot-separated name.",
+            "additionalProperties": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "description": "One entry per budget in budgets.json for the fixtures that ran.",
+      "items": {
+        "type": "object",
+        "required": ["fixture", "id", "metric", "op", "value", "limit", "baseline", "pass"],
+        "additionalProperties": false,
+        "properties": {
+          "fixture": { "type": "string" },
+          "id": { "type": "string" },
+          "metric": { "type": "string" },
+          "op": { "enum": ["eq", "le", "lt", "sum"] },
+          "value": { "type": ["integer", "null"] },
+          "limit": { "type": ["number", "null"], "description": "Resolved limit: the literal limit, factor x limit_metric, or the sum of parts." },
+          "baseline": { "type": ["integer", "null"], "description": "Reported pre-fix figure the budget improves on, when one exists." },
+          "pass": { "type": "boolean" },
+          "error": { "enum": ["missing metric", "unknown op"] }
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "description": "Malformed @rb lines, duplicate keys, fixtures without budgets and results for fixtures that did not run; any entry fails the run.",
+      "items": { "type": "string" }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["fixtures", "failed_fixtures", "checks", "failed_checks", "pass"],
+      "additionalProperties": false,
+      "properties": {
+        "fixtures": { "type": "integer", "minimum": 0 },
+        "failed_fixtures": { "type": "integer", "minimum": 0 },
+        "checks": { "type": "integer", "minimum": 0 },
+        "failed_checks": { "type": "integer", "minimum": 0 },
+        "pass": { "type": "boolean" }
+      }
+    }
+  }
+}

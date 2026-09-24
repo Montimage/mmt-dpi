@@ -1,0 +1,112 @@
+{
+  "schema": "mmt-dpi/resource-bounds-budgets/v1",
+  "description": "Reproducible adversarial resource budgets (issue #394, F-PERF-001..004). Every value is a deterministic count or byte total from fixed-seed workloads; no packets-per-second or production timing guarantee is asserted. Checks: eq/le/lt compare `metric` with `limit`, or with `factor` x `limit_metric`; sum requires `metric` to equal the sum of `parts` (every refusal accounted). `baseline` is the reported pre-fix figure a budget improves on.",
+  "fixtures": {
+    "ipv6-hash": {
+      "issue": 379,
+      "finding": "F-PERF-001",
+      "workload": "Insert then look up n distinct IPv6 addresses (splitmix64-derived keys) in the interned-address table; forced collisions through a constant hash; one insert into a slot-saturated table.",
+      "checks": [
+        { "id": "scale-small", "metric": "n1024.inputs", "op": "eq", "limit": 1024 },
+        { "id": "scale-large", "metric": "n16384.inputs", "op": "eq", "limit": 16384 },
+        { "id": "accounted-small", "metric": "n1024.inputs", "op": "sum", "parts": ["n1024.inserts_accepted", "n1024.inserts_refused"] },
+        { "id": "accounted-large", "metric": "n16384.inputs", "op": "sum", "parts": ["n16384.inserts_accepted", "n16384.inserts_refused"] },
+        { "id": "no-refusal-small", "metric": "n1024.inserts_refused", "op": "eq", "limit": 0 },
+        { "id": "no-refusal-large", "metric": "n16384.inserts_refused", "op": "eq", "limit": 0 },
+        { "id": "lookups-small", "metric": "n1024.lookups_hit", "op": "eq", "limit_metric": "n1024.inputs" },
+        { "id": "lookups-large", "metric": "n16384.lookups_hit", "op": "eq", "limit_metric": "n16384.inputs" },
+        { "id": "comparator-small", "metric": "n1024.comparator_calls", "op": "lt", "limit": 751360, "baseline": 751360 },
+        { "id": "comparator-large", "metric": "n16384.comparator_calls", "op": "lt", "limit": 200273920, "baseline": 200273920 },
+        { "id": "comparator-growth", "metric": "n16384.comparator_calls", "op": "le", "factor": 24, "limit_metric": "n1024.comparator_calls" },
+        { "id": "collision-per-op", "metric": "forced_collision.worst_op_comparator_calls", "op": "le", "limit_metric": "forced_collision.per_op_bound" },
+        { "id": "saturated-refused", "metric": "saturated.inserts_offered", "op": "sum", "parts": ["saturated.inserts_refused"] },
+        { "id": "saturated-bounded", "metric": "saturated.comparator_calls", "op": "le", "factor": 2, "limit_metric": "saturated.cap" },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
+    },
+    "tcp-memory": {
+      "issue": 380,
+      "finding": "F-PERF-002",
+      "workload": "1,024 retained one-byte segments each followed by 169 duplicates; 8,129-B segments to exhaustion; two-direction and image-plus-pending fills; a limit lowered mid-flow; keep-alive, idle-peer and single-stream fairness; 300 randomized flows at 64 KiB.",
+      "checks": [
+        { "id": "dup-offers", "metric": "dup.offers", "op": "eq", "limit": 174080 },
+        { "id": "dup-retained", "metric": "dup.accepted", "op": "eq", "limit": 1024 },
+        { "id": "dup-accounted", "metric": "dup.offers", "op": "sum", "parts": ["dup.accepted", "dup.refused"] },
+        { "id": "dup-no-allocations", "metric": "dup.allocator_calls", "op": "le", "limit_metric": "dup.allocator_calls_without_duplicates" },
+        { "id": "dup-reserved", "metric": "dup.reserved_bytes", "op": "le", "limit": 4194304, "baseline": 16809984 },
+        { "id": "reserved-budget", "metric": "max_reserved_bytes", "op": "le", "limit": 4194304, "baseline": 16809984 },
+        { "id": "budget-configured", "metric": "budget_bytes", "op": "eq", "limit": 4194304 },
+        { "id": "exhaustion-accounted", "metric": "exhaustion.offers", "op": "sum", "parts": ["exhaustion.accepted", "exhaustion.refused"] },
+        { "id": "exhaustion-reserved", "metric": "exhaustion.peak_reserved_bytes", "op": "le", "limit": 4194304 },
+        { "id": "two-direction-accounted", "metric": "two_direction.offers", "op": "sum", "parts": ["two_direction.accepted", "two_direction.refused"] },
+        { "id": "two-direction-reserved", "metric": "two_direction.peak_reserved_bytes", "op": "le", "limit": 4194304 },
+        { "id": "image-pending-accounted", "metric": "image_pending.offers", "op": "sum", "parts": ["image_pending.accepted", "image_pending.refused"] },
+        { "id": "image-pending-reserved", "metric": "image_pending.peak_reserved_bytes", "op": "le", "limit": 4194304 },
+        { "id": "lowered-refused", "metric": "lowered.offers_over_limit", "op": "sum", "parts": ["lowered.refused_over_limit"] },
+        { "id": "lowered-reserved", "metric": "lowered.reserved_bytes_after_drain", "op": "le", "limit_metric": "lowered.limit_bytes" },
+        { "id": "fair-keepalive-accounted", "metric": "fair_keepalive.offers", "op": "sum", "parts": ["fair_keepalive.accepted", "fair_keepalive.refused"] },
+        { "id": "fair-keepalive-no-starvation", "metric": "fair_keepalive.refused_below_budget", "op": "eq", "limit": 0 },
+        { "id": "fair-idle-peer-accounted", "metric": "fair_idle_peer.offers", "op": "sum", "parts": ["fair_idle_peer.accepted", "fair_idle_peer.refused"] },
+        { "id": "fair-idle-peer-no-starvation", "metric": "fair_idle_peer.refused_below_budget", "op": "eq", "limit": 0 },
+        { "id": "fair-single-stream-accounted", "metric": "fair_single_stream.offers", "op": "sum", "parts": ["fair_single_stream.accepted", "fair_single_stream.refused"] },
+        { "id": "fair-single-stream-growths", "metric": "fair_single_stream.image_growths", "op": "le", "limit": 24 },
+        { "id": "random-accounted", "metric": "random.offers", "op": "sum", "parts": ["random.accepted", "random.refused"] },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
+    },
+    "tcp-order": {
+      "issue": 382,
+      "finding": "F-PERF-003",
+      "workload": "One-byte segments at 1,024 and 16,384: interleaved (evens then odds), tail-anchored and fixed-seed shuffled arrivals; interior duplicates; pending sequence numbers spanning 2^31.",
+      "checks": [
+        { "id": "interleaved-scale-small", "metric": "interleaved.n1024.offers", "op": "eq", "limit": 1024 },
+        { "id": "interleaved-scale-large", "metric": "interleaved.n16384.offers", "op": "eq", "limit": 16384 },
+        { "id": "tail-anchor-scale-small", "metric": "tail-anchor.n1024.offers", "op": "eq", "limit": 1024 },
+        { "id": "tail-anchor-scale-large", "metric": "tail-anchor.n16384.offers", "op": "eq", "limit": 16384 },
+        { "id": "shuffled-scale-small", "metric": "shuffled.n1024.offers", "op": "eq", "limit": 1024 },
+        { "id": "shuffled-scale-large", "metric": "shuffled.n16384.offers", "op": "eq", "limit": 16384 },
+        { "id": "interleaved-accounted-small", "metric": "interleaved.n1024.offers", "op": "sum", "parts": ["interleaved.n1024.accepted", "interleaved.n1024.refused"] },
+        { "id": "interleaved-accounted-large", "metric": "interleaved.n16384.offers", "op": "sum", "parts": ["interleaved.n16384.accepted", "interleaved.n16384.refused"] },
+        { "id": "tail-anchor-accounted-small", "metric": "tail-anchor.n1024.offers", "op": "sum", "parts": ["tail-anchor.n1024.accepted", "tail-anchor.n1024.refused"] },
+        { "id": "tail-anchor-accounted-large", "metric": "tail-anchor.n16384.offers", "op": "sum", "parts": ["tail-anchor.n16384.accepted", "tail-anchor.n16384.refused"] },
+        { "id": "shuffled-accounted-small", "metric": "shuffled.n1024.offers", "op": "sum", "parts": ["shuffled.n1024.accepted", "shuffled.n1024.refused"] },
+        { "id": "shuffled-accounted-large", "metric": "shuffled.n16384.offers", "op": "sum", "parts": ["shuffled.n16384.accepted", "shuffled.n16384.refused"] },
+        { "id": "interleaved-full-small", "metric": "interleaved.n1024.refused", "op": "eq", "limit": 0 },
+        { "id": "interleaved-full-large", "metric": "interleaved.n16384.refused", "op": "eq", "limit": 0 },
+        { "id": "tail-anchor-full-small", "metric": "tail-anchor.n1024.refused", "op": "eq", "limit": 0 },
+        { "id": "tail-anchor-full-large", "metric": "tail-anchor.n16384.refused", "op": "eq", "limit": 0 },
+        { "id": "shuffled-full-small", "metric": "shuffled.n1024.refused", "op": "eq", "limit": 0 },
+        { "id": "shuffled-full-large", "metric": "shuffled.n16384.refused", "op": "eq", "limit": 0 },
+        { "id": "interleaved-visits-small", "metric": "interleaved.n1024.visits", "op": "lt", "limit": 261632, "baseline": 261632 },
+        { "id": "interleaved-visits-large", "metric": "interleaved.n16384.visits", "op": "lt", "limit": 67100672, "baseline": 67100672 },
+        { "id": "tail-anchor-visits-small", "metric": "tail-anchor.n1024.visits", "op": "lt", "limit": 261632, "baseline": 261632 },
+        { "id": "tail-anchor-visits-large", "metric": "tail-anchor.n16384.visits", "op": "lt", "limit": 67100672, "baseline": 67100672 },
+        { "id": "shuffled-visits-small", "metric": "shuffled.n1024.visits", "op": "lt", "limit": 261632, "baseline": 261632 },
+        { "id": "shuffled-visits-large", "metric": "shuffled.n16384.visits", "op": "lt", "limit": 67100672, "baseline": 67100672 },
+        { "id": "interleaved-growth", "metric": "interleaved.n16384.visits", "op": "le", "factor": 24, "limit_metric": "interleaved.n1024.visits" },
+        { "id": "tail-anchor-growth", "metric": "tail-anchor.n16384.visits", "op": "le", "factor": 24, "limit_metric": "tail-anchor.n1024.visits" },
+        { "id": "shuffled-growth", "metric": "shuffled.n16384.visits", "op": "le", "factor": 24, "limit_metric": "shuffled.n1024.visits" },
+        { "id": "duplicates-accounted", "metric": "duplicates.offers", "op": "sum", "parts": ["duplicates.accepted", "duplicates.refused"] },
+        { "id": "duplicates-refused", "metric": "duplicates.accepted", "op": "eq", "limit": 0 },
+        { "id": "wide-span-growth", "metric": "wide_span.n8192.visits", "op": "le", "factor": 12, "limit_metric": "wide_span.n1024.visits" },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
+    },
+    "fragment-eviction": {
+      "issue": 383,
+      "finding": "F-PERF-004",
+      "workload": "Fill the IPv4/IPv6 fragment map to its 1,024-datagram ceiling, then 10,000 replacement arrivals; fixed-seed reference-order runs for increasing, equal and backward timestamps; completion, sweep and teardown.",
+      "checks": [
+        { "id": "ceiling", "metric": "ceiling", "op": "eq", "limit": 1024 },
+        { "id": "replacements", "metric": "arrivals", "op": "eq", "limit": 10000 },
+        { "id": "arrivals-accounted", "metric": "arrivals", "op": "sum", "parts": ["arrivals.accepted", "arrivals.refused"] },
+        { "id": "evictions-counted", "metric": "evictions", "op": "eq", "limit_metric": "arrivals.accepted" },
+        { "id": "victim-callbacks", "metric": "victim_visits", "op": "le", "limit": 10000, "baseline": 10240000 },
+        { "id": "no-map-walk", "metric": "walker_callbacks", "op": "eq", "limit": 0 },
+        { "id": "index-maintenance", "metric": "index_ops", "op": "le", "factor": 2, "limit_metric": "arrivals" },
+        { "id": "ceiling-held", "metric": "peak_entries", "op": "le", "limit_metric": "ceiling" },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
+    }
+  }
+}

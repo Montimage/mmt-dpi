@@ -42,7 +42,7 @@ sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnght
 | `libxml2-dev` | Only needed with `ENABLESEC=1` (`rules/common.mk:76-84`) |
 | `libnghttp2-dev` | Optional at build time — the Makefile auto-detects its absence and keeps building (`rules/common.mk:56-74`) |
 | `bash` | Test scripts are bash (`tests/run_all_tests.sh`) |
-| `jq` | JSON checks in the `release_gates` and `sdk_coverage` suites and in `--coverage` mode |
+| `jq` | JSON checks in the `release_gates`, `sdk_coverage` and `resource_bounds` suites and in `--coverage` mode |
 
 CI builds and tests on `ubuntu-24.04` (GCC 13) — see
 `.github/workflows/c-cpp.yml`. That is the reference toolchain.
