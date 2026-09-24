@@ -13,6 +13,7 @@ checklist requires a line here for every user-visible change.
 - publish the Jekyll guides on the docs site, fix landing navigation and the trunk link check (#247)
 - close the remaining documentation drift (#249)
 - correct the documented embedding lifecycle: `init_extraction()` before any handler, checked failures, handler teardown before `close_extraction()` and one handler per worker, with source citations; `packet_handler.c` now follows that order on every path, and the new `docs_lifecycle` suite compiles and runs it against a throwaway installed SDK (#392)
+- publish a first run that works from an empty directory: the site serves a complete `hello_packet.c` (processing loop, checked lifecycle, clear missing-capture error) and a synthetic, redistributable `traffic.pcap`; the README/site first example and the landing-page copy controls show the exact fetch, compile and run steps and the output to expect, and the new `docs_onboarding` suite runs those steps verbatim against a throwaway installed SDK (#393)
 - reconcile the version, protocol-count and changelog claims: one canonical feature list, quick-start and first example shared between README and the site, and a CI gate that the quoted counts match the built SDK (#248)
 
 ### Build, CI and packaging

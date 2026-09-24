@@ -76,6 +76,14 @@ gcc -o extract_all extract_all.c \
 A sample pcap (`google-fr.pcap`) is shipped under `src/examples/` for
 quick smoke testing.
 
+No checkout at hand? A complete first program,
+[`hello_packet.c`](first-run/hello_packet.c), and the synthetic,
+redistributable capture it runs on, [`traffic.pcap`](first-run/traffic.pcap),
+are published with the documentation site; the README's *Basic Packet
+Processing* section and the site's landing page give the exact steps to
+fetch, compile and run them from an empty directory, and the output to
+expect.
+
 Other ready-to-build examples in the same directory:
 
 | File | Purpose |
@@ -151,8 +159,14 @@ state (`src/examples/packet_handler.c:111`). Against an install prefix
 ```bash
 gcc -o packet_handler "$MMT_BASE/examples/packet_handler.c" \
     -I "$MMT_BASE/dpi/include" -L "$MMT_BASE/dpi/lib" -lmmt_core -ldl -lpcap
-LD_LIBRARY_PATH="$MMT_BASE/dpi/lib" ./packet_handler src/examples/google-fr.pcap
+curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap
+LD_LIBRARY_PATH="$MMT_BASE/dpi/lib" ./packet_handler traffic.pcap
 ```
+
+Any Ethernet pcap works; the `curl` line fetches the published
+[`traffic.pcap`](first-run/traffic.pcap) into the current directory, so the
+commands run from any directory — a checkout's `src/examples/google-fr.pcap`
+works too when passed by its full path.
 
 `init_extraction()` loads the protocol plugins from a `plugins` directory
 in the current working directory when one exists, and from

@@ -240,6 +240,7 @@
     .term-body .cmd { color: var(--text); }
     .term-body .out { color: var(--text-mute); }
     .term-body .ok { color: var(--green); }
+    .term-body .out a { text-decoration: underline; } /* links distinguishable without colour */
     /* each command gets its own labelled copy control — one button must never
        silently copy a different command (F-UX-013) */
     .cmd-group { display: flex; align-items: center; gap: 14px; }
@@ -483,7 +484,7 @@
         <div class="term">
         <div class="term-bar">
           <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
-          <span class="term-title">install — three steps</span>
+          <span class="term-title">first run — four steps</span>
           <span id="copyStatus" class="sr-only" role="status" aria-live="polite"></span>
         </div>
         <div class="term-body">
@@ -496,7 +497,15 @@
           </div>
           <div class="cmd-group">
             <div class="cmd-lines">
-              <div><span class="out"># 2 — compile your program against libmmt_core</span></div>
+              <div><span class="out"># 2 — in an empty directory, get the <a href="first-run/hello_packet.c" download>source</a> and the <a href="first-run/traffic.pcap" download>capture</a></span></div>
+              <div><span class="pr">$ </span><span class="cmd">curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c \</span></div>
+              <div><span class="cmd">     -O https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap</span></div>
+            </div>
+            <button class="copy-btn" data-cmd="curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c -O https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap" aria-label="Copy the download command">copy download</button>
+          </div>
+          <div class="cmd-group">
+            <div class="cmd-lines">
+              <div><span class="out"># 3 — compile it against libmmt_core</span></div>
               <div><span class="pr">$ </span><span class="cmd">gcc -o hello_packet hello_packet.c \</span></div>
               <div><span class="cmd">      -I /opt/mmt/dpi/include -L /opt/mmt/dpi/lib -lmmt_core -ldl -lpcap</span></div>
             </div>
@@ -504,9 +513,11 @@
           </div>
           <div class="cmd-group">
             <div class="cmd-lines">
-              <div><span class="out"># 3 — run it on a capture</span></div>
+              <div><span class="out"># 4 — run it on the capture</span></div>
               <div><span class="pr">$ </span><span class="cmd">./hello_packet traffic.pcap</span></div>
-              <div><span class="ok">packet size: 1514</span></div>
+              <div><span class="ok">packet 1: 71 bytes, meta.ethernet.ip.udp.dns</span></div>
+              <div><span class="ok">packet 6: 130 bytes, meta.ethernet.ip.tcp.http</span></div>
+              <div><span class="ok">10 packets processed</span></div>
             </div>
             <button class="copy-btn" data-cmd="./hello_packet traffic.pcap" aria-label="Copy the run command">copy run</button>
           </div>
@@ -618,7 +629,7 @@
               {% capture first_example %}{% include first-example.md %}{% endcapture %}
               {{ first_example | markdownify }}
             </div>
-            <p class="api-note">The handler returns <code>int</code> (the callback contract) — non-zero aborts the packet loop early.</p>
+            <p class="api-note">The handler returns <code>int</code> (the callback contract) — returning <code>1</code> skips the remaining handlers for that packet.</p>
           </div>
 
           <!-- TIER 2 -->
@@ -813,7 +824,7 @@
         <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi/tree/main/src/examples" target="_blank" rel="noopener">Browse examples</a>
       </div>
       <p class="api-note" style="margin-top:22px;">
-        The three commands above the fold install to <code>/opt/mmt/dpi</code>. Prefer a package? Grab the
+        The install command above the fold installs to <code>/opt/mmt/dpi</code>, and the first-run steps beside it compile and run the published <a href="first-run/hello_packet.c">hello_packet.c</a> against that prefix. Prefer a package? Grab the
         <code>.deb</code>/<code>.rpm</code> from <a href="https://github.com/montimage-projects/mmt-dpi/releases" target="_blank" rel="noopener">Releases</a>;
         building from source or cross-compiling is covered in the
         <a href="Compilation-and-Installation-Instructions.html">install guide</a>. Every guide lives in the

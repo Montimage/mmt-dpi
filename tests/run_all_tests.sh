@@ -217,6 +217,7 @@ DEFAULT_SUITES=(
     tcp_pending_order
     sdk_coverage
     docs_lifecycle
+    docs_onboarding
 )
 
 # Run the requested suites, or all of them if none were named on the CLI.
