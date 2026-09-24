@@ -6,9 +6,10 @@ name: Build & release packages
 #   - RedHat / Rocky / CentOS -> .rpm  (rpmbuild, via `make rpm`)
 #
 # Each distribution is built inside its own container image (GitHub-hosted
-# runners only provide Ubuntu/macOS/Windows), for both amd64 and arm64
-# (arm64 via QEMU emulation). Every run uploads the packages as CI artifacts;
-# pushing a `v*` tag additionally attaches them all to a GitHub Release.
+# runners only provide Ubuntu/macOS/Windows), for both amd64 and arm64.
+# The arm64 legs run on GitHub's native arm64 runner (see the build job).
+# Every run uploads the packages as CI artifacts; pushing a `v*` tag
+# additionally attaches them all to a GitHub Release.
 #
 # Every published asset is verifiable (issue #198, F-SEC-005/F-SEC-015):
 # the build job writes a SPDX-JSON SBOM next to each package, and the
@@ -67,9 +68,15 @@ permissions:
 jobs:
   build:
     name: ${{ matrix.distro.name }} (${{ matrix.arch }})
-    runs-on: ubuntu-24.04
-    # arm64 builds run the whole toolchain under QEMU emulation and can be slow;
-    # cap them so a stuck emulated job can't burn the 6-hour default limit.
+    # Each leg runs on a host of its own architecture (issue #421): arm64 on
+    # the native ubuntu-24.04-arm runner (free for public repositories), so
+    # no instruction is emulated. QEMU user emulation used to run the arm64
+    # containers here, and its emulated ldconfig from the Ubuntu 22.04 image
+    # (glibc 2.35) intermittently crashed with `qemu: uncaught target signal
+    # 11` — in the libc-bin trigger and in the explicit ldconfig in
+    # tools/ci/build-package.sh — failing the job on a correct package.
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    # Cap every leg so a stuck build can't burn the 6-hour default limit.
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -91,12 +98,6 @@ jobs:
       # unrecorded image (issue #217; check-image-digests.sh gates the same).
       - name: Verify pinned base image is recorded
         run: grep -Fx "${{ matrix.distro.image }}" tools/ci/base-images.txt
-
-      - name: Set up QEMU
-        if: matrix.arch == 'arm64'
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-        with:
-          platforms: arm64
 
       # -e CI forwards the runner's CI=true marker into the container so a
       # missing git history there is the hard error rules/common.mk intends

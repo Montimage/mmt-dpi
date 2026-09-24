@@ -92,8 +92,7 @@ log "Building SDK (GIT_VERSION=$GIT_VERSION, SOURCE_DATE_EPOCH=${SOURCE_DATE_EPO
 # output (see `--private-prepare-build-dir`), not from an installed /opt/mmt —
 # so `make install` is deliberately NOT run here. Skipping it keeps /opt/mmt
 # empty until the package itself is installed, which is what makes the smoke
-# test below a genuine check of the package's contents (and saves build time,
-# especially under arm64 emulation).
+# test below a genuine check of the package's contents (and saves build time).
 # ENABLESEC=1 (issue #219, F-DEP-205): the containers install libxml2-dev —
 # without this the security/fuzz engines were never compiled and the package
 # shipped dangling libmmt_fuzz/libmmt_security symlinks. It must be passed to

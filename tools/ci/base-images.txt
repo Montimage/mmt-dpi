@@ -9,7 +9,8 @@
 # file to flag upstream drift.
 #
 # Pins are name:tag@sha256:<index-digest>; the index digest must cover both
-# linux/amd64 and linux/arm64 (the arm64 matrix leg runs under QEMU).
+# linux/amd64 and linux/arm64 (the arm64 matrix leg runs natively on the
+# ubuntu-24.04-arm runner, issue #421).
 # Refresh a pin with:
 digest-source: docker buildx imagetools inspect <image>:<tag>
 ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
