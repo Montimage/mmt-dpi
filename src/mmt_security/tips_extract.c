@@ -220,7 +220,7 @@ char *get_my_data(void *data1, short size, long type) {
                 if (data_size > max_elems) data_size = max_elems;
                 for (j = 0; j < data_size && off < 99; j++) {
                     int n = snprintf(buff1 + off, 100 - off, "%s%02X",
-                            j ? ":" : "", *(unsigned char*) (data2 + j));
+                            j ? ":" : "", *((unsigned char*) data2 + j));
                     if (n < 0) break;
                     off += ((size_t) n < 100 - off) ? (size_t) n : (99 - off);
                 }

@@ -358,10 +358,10 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
                                 snprintf(json_buff1, json_cap1, "{\"%s.%s\":%2.2X", proto_name,
-                                        att_name, *(unsigned char*) (data2 + j));
+                                        att_name, *((unsigned char*) data2 + j));
                                 close_tag=YES;
                             } else {
-                                snprintf(json_buff1, json_cap1, ":%2.2X", *(unsigned char*) (data2 + j));
+                                snprintf(json_buff1, json_cap1, ":%2.2X", *((unsigned char*) data2 + j));
                             }
                             json_grow_append(&json_buff, &json_cap, json_buff1);
                         }
@@ -372,10 +372,10 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
                                 snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%02X", proto_name,
-                                        att_name, *(unsigned char*) (data2 + j));
+                                        att_name, *((unsigned char*) data2 + j));
                                 close_tag=YES;
                             } else {
-                                snprintf(json_buff1, json_cap1, ":%02X", *(unsigned char*) (data2 + j));
+                                snprintf(json_buff1, json_cap1, ":%02X", *((unsigned char*) data2 + j));
                             }
                             json_grow_append(&json_buff, &json_cap, json_buff1);
                         }
