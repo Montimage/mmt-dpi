@@ -79,6 +79,9 @@ static int failures;
 /* ------------------------------------------------------------------ */
 /* Arrival path — mirrors ip_process_fragment()/ipv6 on the map side:  */
 /* lookup, make room, allocate, insert, then stamp + touch.           */
+/* Only the map-side steps are modelled here; real IPv4/IPv6          */
+/* fragments past the ceiling and the timer sweep of both maps run in */
+/* tools/phase0/tests/ip_frag_bounds_test.c (issue #418).              */
 /* ------------------------------------------------------------------ */
 
 static ip_dgram_t *arrive(mmt_hashmap_t *map, mmt_hlru_t *lru, mmt_key_t key,

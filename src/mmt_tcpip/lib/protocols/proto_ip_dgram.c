@@ -1,4 +1,5 @@
 
+#include <stddef.h> // offsetof() (issue #418 layout assertions)
 #include <string.h> // memcpy()
 
 #include "proto_ip_dgram.h"
@@ -447,6 +448,19 @@ int ip_dgram_update_holes( ip_dgram_t *dg, const uint8_t *x, unsigned off, unsig
  * below can read the metadata and pick the right deallocator through an
  * ip_dgram_t view. Removal inside hashmap_walk() is safe: the walk caches the
  * successor before invoking the callback (hashmap.c). */
+
+/* Issue #418: the shared prefix is a compile-time invariant, not a comment —
+ * the walkers and the LRU victim check read either struct through an
+ * ip_dgram_t view, so every shared field must sit at the same offset. */
+_Static_assert( offsetof( ip_dgram_t, ip_version ) == offsetof( ipv6_dgram_t, ip_version ),
+                "ip_dgram_t/ipv6_dgram_t: ip_version offset differs" );
+_Static_assert( offsetof( ip_dgram_t, last_activity ) == offsetof( ipv6_dgram_t, last_activity ),
+                "ip_dgram_t/ipv6_dgram_t: last_activity offset differs" );
+_Static_assert( offsetof( ip_dgram_t, lru ) == offsetof( ipv6_dgram_t, lru ),
+                "ip_dgram_t/ipv6_dgram_t: lru offset differs" );
+_Static_assert( offsetof( ip_dgram_t, x ) == offsetof( ipv6_dgram_t, x )
+             && offsetof( ip_dgram_t, len ) == offsetof( ipv6_dgram_t, len ),
+                "ip_dgram_t/ipv6_dgram_t: x/len offset differs" );
 
 static void _frag_dgram_free( void *val )
 {

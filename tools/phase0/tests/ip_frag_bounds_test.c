@@ -23,6 +23,7 @@
  *   F-BUG-039  tcp_seg_free()/free_list() free()d arena-carved nodes.
  *   F-BUG-040  uint16_t IPv6 extension-header offset accumulator wrap.
  *   F-BUG-106  802.1Q/802.1ad classify overlaid a 4-byte struct past caplen.
+ *   #418       ip6_streams: real IPv6 fragments past the ceiling, age sweep.
  *
  * Build (see run_ip_frag_bounds_test.sh):
  *   gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all ...
@@ -144,9 +145,23 @@ static void map_stats_walker(mmt_hashmap_t *map, mmt_hent_t *he, void *arg) {
     s->payload_bytes += ((ip_dgram_t *) he->val)->len;
 }
 
-static void map_stats(mmt_handler_t *h, struct map_stats *s) {
+static void map_stats_of(mmt_hashmap_t *map, struct map_stats *s) {
     memset(s, 0, sizeof(*s));
-    hashmap_walk(h->ip_streams, map_stats_walker, s);
+    hashmap_walk(map, map_stats_walker, s);
+}
+
+static void map_stats(mmt_handler_t *h, struct map_stats *s) {
+    map_stats_of(h->ip_streams, s);
+}
+
+/* Issue #418: the recency list must hold exactly the map's datagrams. */
+static unsigned lru_len(const mmt_hlru_t *lru) {
+    unsigned n = 0;
+    if (lru->next == NULL)
+        return 0; /* zeroed sentinel: empty */
+    for (const mmt_hlru_t *p = lru->next; p != lru && n <= 2u * MMT_IP_FRAG_MAP_MAX_ENTRIES; p = p->next)
+        n++;
+    return n;
 }
 
 /* ====================================================================== */
@@ -329,6 +344,53 @@ int main(void) {
         CHECK(s.entries <= 16,
               "F-BUG-020: stale dgrams swept by the session timer");
         printf("       (map after sweep tick: %u entries)\n", s.entries);
+    }
+
+    /* ---------------------------------------------------------------
+     * Issue #418: the same ceiling + age sweep for real IPv6 fragments.
+     * Unique first fragments (distinct Fragment-header idents → distinct
+     * ip6_streams keys) are pushed past the 1,024 ceiling through the real
+     * packet path, then a later tick must sweep the stale ones — before the
+     * fix the session timer only swept ip_streams. The recency list must
+     * mirror the map throughout.
+     */
+    {
+        enum { FLOOD6 = 5000 };
+        const uint32_t t0 = 1 + MMT_IP_FRAG_TIMEOUT_SEC + 1; /* after the v4 tick */
+        struct map_stats s;
+        for (int i = 0; i < FLOOD6; i++) {
+            off  = put_eth(pkt, 0x86dd);
+            off += put_ip6(pkt + off, 44 /*Fragment*/, 8 + 8);
+            /* Fragment header: nexthdr=UDP, offset 0, MF=1, unique ident */
+            pkt[off] = 17; pkt[off + 1] = 0; put_be16(pkt + off + 2, 0x0001);
+            put_be32(pkt + off + 4, 0x60000000u + (uint32_t) i); off += 8;
+            memset(pkt + off, 'S', 8); off += 8;
+            run_packet_at(h, pkt, off, off, t0);
+        }
+        map_stats_of(h->ip6_streams, &s);
+        CHECK(s.entries == MMT_IP_FRAG_MAP_MAX_ENTRIES,
+              "#418: IPv6 map held at the ceiling under 5k unique first fragments");
+        CHECK(lru_len(&h->ip6_streams_lru) == s.entries,
+              "#418: IPv6 recency list mirrors the map at the ceiling");
+        printf("       (ip6 map: %u entries, %llu payload bytes)\n",
+               s.entries, (unsigned long long) s.payload_bytes);
+
+        /* Fresh IPv6 fragments one timeout later drive the session timer:
+         * every datagram stamped at t0 must be swept from ip6_streams. */
+        for (int i = 0; i < 8; i++) {
+            off  = put_eth(pkt, 0x86dd);
+            off += put_ip6(pkt + off, 44, 8 + 8);
+            pkt[off] = 17; pkt[off + 1] = 0; put_be16(pkt + off + 2, 0x0001);
+            put_be32(pkt + off + 4, 0x70000000u + (uint32_t) i); off += 8;
+            memset(pkt + off, 'N', 8); off += 8;
+            run_packet_at(h, pkt, off, off, t0 + MMT_IP_FRAG_TIMEOUT_SEC + 1);
+        }
+        map_stats_of(h->ip6_streams, &s);
+        CHECK(s.entries == 8,
+              "#418: stale IPv6 dgrams swept by the session timer");
+        CHECK(lru_len(&h->ip6_streams_lru) == s.entries,
+              "#418: IPv6 recency list mirrors the map after the sweep");
+        printf("       (ip6 map after sweep tick: %u entries)\n", s.entries);
     }
 
     /* ---------------------------------------------------------------

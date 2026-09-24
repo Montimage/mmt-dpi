@@ -123,9 +123,14 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
                 force_sessions_timeout);
         /* Issue #201 (F-BUG-020): piggyback the fragment-map expiry sweep on
          * this existing once-per-second expiry pass — armed by the TCP/IP
-         * plugin the first time a fragment is reassembled. */
-        if (mmt_handler->frag_map_sweep_fct != NULL && mmt_handler->ip_streams != NULL) {
-            mmt_handler->frag_map_sweep_fct(mmt_handler->ip_streams, current_seconds);
+         * plugin the first time a fragment is reassembled. Issue #418: the
+         * IPv6 map (ip6_streams) is swept too — stale partial IPv6 datagrams
+         * used to linger until completion, eviction or handler close. */
+        if (mmt_handler->frag_map_sweep_fct != NULL) {
+            if (mmt_handler->ip_streams != NULL)
+                mmt_handler->frag_map_sweep_fct(mmt_handler->ip_streams, current_seconds);
+            if (mmt_handler->ip6_streams != NULL)
+                mmt_handler->frag_map_sweep_fct(mmt_handler->ip6_streams, current_seconds);
         }
     }
     mmt_handler->last_expiry_timeout = current_seconds;
