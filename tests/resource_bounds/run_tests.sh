@@ -62,6 +62,15 @@
 # the run. RESOURCE_BOUNDS_RESULTS=<path> redirects the results file
 # (default: tests/resource_bounds/results.json, git-ignored). Requires jq.
 #
+# Issue #395 (M4) makes the budgets a CI gate: tools/ci/check-resource-budgets.py
+# validates results.json against results.schema.json and re-evaluates every
+# budget independently of the jq evaluation below (a missing dimension,
+# workload record or metric, or any breach, fails), and its --self-test
+# proves each failure mode is detected. Both run at the end of this script;
+# a subset run is checked with --partial. results.json also carries labelled
+# "observations" (uname -m, per-fixture wall-clock) that no budget reads.
+# Requires python3.
+#
 # No SDK build is needed: every TU compiles straight from src/ — the same
 # standalone property the other unit suites keep (issue #367 contract).
 # Objects stay in a throwaway work dir; only the selected fixtures build.
@@ -102,6 +111,11 @@ if ! command -v jq >/dev/null 2>&1; then
     echo "✗ jq is required to evaluate the resource budgets (apt-get install jq)" >&2
     exit 2
 fi
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "✗ python3 is required to check the resource budgets (apt-get install python3)" >&2
+    exit 2
+fi
+CHECKER="${REPO_ROOT}/tools/ci/check-resource-budgets.py"
 
 CC="${CC:-gcc}"
 CXX="${CXX:-g++}"
@@ -217,10 +231,14 @@ echo "  [2/3] running ..."
 rc=0
 : > "${WORK}/rb.lines"
 : > "${WORK}/status"
+: > "${WORK}/wall"
 for i in "${!TESTS[@]}"; do
     name="${TESTS[$i]}"
     status=0
+    t0="$(date +%s%N)"
     "${SCRIPT_DIR}/test_${name}" > "${WORK}/${name}.log" 2>&1 || status=$?
+    # Observation only (issue #395): recorded, never budgeted.
+    printf '%s %s\n' "${FIXTURE_IDS[$i]}" "$(( ($(date +%s%N) - t0) / 1000000 ))" >> "${WORK}/wall"
     # Human log without the machine-readable lines, which go to results.json.
     grep -v '^@rb ' "${WORK}/${name}.log" || true
     grep '^@rb ' "${WORK}/${name}.log" >> "${WORK}/rb.lines" || true
@@ -238,6 +256,7 @@ done
 echo "  [3/3] evaluating budgets (${BUDGETS#"${REPO_ROOT}/"}) ..."
 mkdir -p "$(dirname "${RESULTS}")"
 jq -n -R --slurpfile budgets "${BUDGETS}" --rawfile status "${WORK}/status" \
+      --rawfile wall "${WORK}/wall" --arg platform "$(uname -m)" \
       --arg budgets_path "${BUDGETS#"${REPO_ROOT}/"}" '
   $budgets[0] as $B
   | [inputs | split(" ") | select(.[0] == "@rb")] as $raw
@@ -255,7 +274,15 @@ jq -n -R --slurpfile budgets "${BUDGETS}" --rawfile status "${WORK}/status" \
   | def mval($f; $k): $M[$f].metrics[$k];
     [ $S[].key as $f | ($B.fixtures[$f].checks // [])[] | . as $c
       | mval($f; $c.metric) as $v
-      | (if $c.op == "sum" then
+      # A malformed budget (no/non-integer limit, no parts) is reported as
+      # "invalid budget", not as a missing metric (issue #395).
+      | (if ($c.op | IN("eq", "le", "lt", "sum") | not) then false
+         elif $c.op == "sum" then (($c.parts | type) == "array" and ($c.parts | length) > 0)
+         elif ($c | has("limit_metric")) then (($c.limit_metric | type) == "string"
+              and (($c.factor // 1) | type == "number" and . == floor and . > 0))
+         else ($c.limit | type == "number" and . == floor) end) as $valid
+      | (if ($valid | not) then null
+         elif $c.op == "sum" then
            [$c.parts[] | mval($f; .)] as $p
            | (if ($p | any(. == null)) then null else ($p | add) end)
          elif ($c | has("limit_metric")) then
@@ -264,13 +291,14 @@ jq -n -R --slurpfile budgets "${BUDGETS}" --rawfile status "${WORK}/status" \
          else $c.limit end) as $lim
       | {fixture: $f, id: $c.id, metric: $c.metric, op: $c.op, value: $v,
          limit: $lim, baseline: ($c.baseline // null),
-         pass: (if $v == null or $lim == null then false
+         pass: (if ($valid | not) or $v == null or $lim == null then false
                 elif $c.op == "eq" or $c.op == "sum" then $v == $lim
                 elif $c.op == "le" then $v <= $lim
                 elif $c.op == "lt" then $v < $lim
                 else false end)}
-      + (if $v == null or $lim == null then {error: "missing metric"}
-         elif ($c.op | IN("eq", "sum", "le", "lt") | not) then {error: "unknown op"}
+      + (if ($c.op | IN("eq", "sum", "le", "lt") | not) then {error: "unknown op"}
+         elif ($valid | not) then {error: "invalid budget"}
+         elif $v == null or $lim == null then {error: "missing metric"}
          else {} end) ] as $C
   | [$S[] | select(($B.fixtures[.key].checks // []) | length == 0) | .key] as $unbudgeted
   | ([$S[].key]) as $ran
@@ -289,6 +317,11 @@ jq -n -R --slurpfile budgets "${BUDGETS}" --rawfile status "${WORK}/status" \
                + [$dups[] | "duplicate key: \(.)"]
                + [$unbudgeted[] | "fixture without budgets: \(.)"]
                + [$stray[] | "results for a fixture that did not run: \(.)"]),
+      observations: {
+        platform: $platform,
+        wall_ms: ([$wall | split("\n")[] | select(length > 0) | split(" ")
+                   | {key: .[0], value: (.[1] | tonumber)}] | from_entries)
+      },
       summary: {
         fixtures: ($S | length),
         failed_fixtures: ([$S[] | select(.value != 0)] | length),
@@ -311,5 +344,13 @@ jq -r '.summary | "  budgets: \(.checks - .failed_checks)/\(.checks) within limi
 echo "  results: ${RESULTS}"
 jq -e '.summary.pass' "${RESULTS}" >/dev/null || rc=1
 
+# ---- CI gate (issue #395): independent re-evaluation + detector self-test ---
+echo "  checking budgets independently (${CHECKER#"${REPO_ROOT}/"}) ..."
+partial=()
+[ "${#FIXTURE_IDS[@]}" -eq "${#ALL_FIXTURES[@]}" ] || partial=(--partial)
+python3 "${CHECKER}" "${partial[@]}" "${RESULTS}" || rc=1
+python3 "${CHECKER}" --self-test > "${WORK}/selftest.log" 2>&1 || { cat "${WORK}/selftest.log"; rc=1; }
+tail -n 1 "${WORK}/selftest.log"
+
 [ "${rc}" -eq 0 ] || { echo "✗ resource bounds tests failed" >&2; exit 1; }
-echo "✓ resource bounds tests passed (issues #379, #380, #382, #383; budgets #394)"
+echo "✓ resource bounds tests passed (issues #379, #380, #382, #383; budgets #394, gate #395)"

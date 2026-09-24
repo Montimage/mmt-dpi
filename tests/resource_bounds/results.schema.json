@@ -51,7 +51,7 @@
           "limit": { "type": ["number", "null"], "description": "Resolved limit: the literal limit, factor x limit_metric, or the sum of parts." },
           "baseline": { "type": ["integer", "null"], "description": "Reported pre-fix figure the budget improves on, when one exists." },
           "pass": { "type": "boolean" },
-          "error": { "enum": ["missing metric", "unknown op"] }
+          "error": { "enum": ["missing metric", "unknown op", "invalid budget"] }
         }
       }
     },
@@ -59,6 +59,19 @@
       "type": "array",
       "description": "Malformed @rb lines, duplicate keys, fixtures without budgets and results for fixtures that did not run; any entry fails the run.",
       "items": { "type": "string" }
+    },
+    "observations": {
+      "type": "object",
+      "description": "Optional platform observations (issue #395): the runner architecture and per-fixture wall-clock. Labelled observations only — no budget resolves against them and tools/ci/check-resource-budgets.py never compares them.",
+      "additionalProperties": false,
+      "properties": {
+        "platform": { "type": "string", "description": "uname -m of the machine that ran the fixtures." },
+        "wall_ms": {
+          "type": "object",
+          "description": "Wall-clock milliseconds per fixture process, keyed by fixture id.",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
     },
     "summary": {
       "type": "object",

@@ -500,3 +500,42 @@ jobs:
         path: fuzz-artifacts/
         if-no-files-found: ignore
         retention-days: 14
+
+  resource-budgets:
+    # Resource-budget gate (issue #395, M4): run every resource_bounds fixture
+    # on each supported architecture (amd64 and arm64, the release package
+    # matrix) and check the committed deterministic budgets
+    # (tests/resource_bounds/budgets.json) with tools/ci/check-resource-budgets.py:
+    # results.json schema validation, an independent re-evaluation of every
+    # budget, and failure on an over-budget count or a missing dimension,
+    # workload record or metric. The checker's --self-test proves each of
+    # those failures is detected. Wall-clock is recorded as a labelled
+    # observation only; no budget reads it.
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Ensure jq and python3
+      run: command -v jq >/dev/null && command -v python3 >/dev/null || { sudo apt-get update -y && sudo apt-get install -y jq python3; }
+    - name: Self-test the budget checker (breach and missing-record fixtures)
+      run: python3 tools/ci/check-resource-budgets.py --self-test
+    - name: Run the resource_bounds fixtures and check every budget
+      env:
+        RESOURCE_BOUNDS_RESULTS: ${{ runner.temp }}/resource-bounds/results.json
+      run: bash tests/resource_bounds/run_tests.sh all
+    - name: Re-check the published results (all dimensions required)
+      # Explicit full-mode re-check of the uploaded file, independent of the
+      # runner's own invocation.
+      run: python3 tools/ci/check-resource-budgets.py "${{ runner.temp }}/resource-bounds/results.json"
+    - name: Upload resource-bound results
+      if: success() || failure()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: resource-bounds-results-${{ runner.arch }}
+        path: ${{ runner.temp }}/resource-bounds/results.json
+        if-no-files-found: warn
+        retention-days: 14
