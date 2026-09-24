@@ -99,7 +99,10 @@ enum int_report_attributes {
 	INT_REPORT_FLOW_PORT_DST,
 
 	INT_REPORT_HOP_LATENCY, //total latency of all hops (= sum_of(INT_REPORT_HOP_LATENCIES))
-	INT_REPORT_SINK_TIME
+	INT_REPORT_SINK_TIME,
+	//IPv6 src/dst of the reported flow (INT_REPORT_FLOW_IP_SRC/DST are IPv4 only)
+	INT_REPORT_FLOW_IP6_SRC,
+	INT_REPORT_FLOW_IP6_DST
 };
 
 
@@ -109,6 +112,8 @@ enum int_report_attributes {
 
 #define INT_REPORT_FLOW_IP_SRC_ALIAS   "ip_src"
 #define INT_REPORT_FLOW_IP_DST_ALIAS   "ip_dst"
+#define INT_REPORT_FLOW_IP6_SRC_ALIAS  "ip6_src"
+#define INT_REPORT_FLOW_IP6_DST_ALIAS  "ip6_dst"
 #define INT_REPORT_FLOW_PORT_SRC_ALIAS "port_src"
 #define INT_REPORT_FLOW_PORT_DST_ALIAS "port_dst"
 

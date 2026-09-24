@@ -11,54 +11,48 @@
 
 #include "../mmt_common_internal_include.h"
 
-// indicates an INT header in the packet
-#define IPv4_DSCP_INT 0x20
+// indicates an INT header in the packet: the DSCP of the carrier IP header
+// (IPv4 TOS byte, IPv6 Traffic Class) is set to this value
+#define INT_DSCP 0x20
 
-struct _iphdr {
-#if BYTE_ORDER == LITTLE_ENDIAN
-	uint8_t
-		ihl     : 4,
-		version : 4,
-		ecn     : 2,
-		dscp    : 6;
-#elif BYTE_ORDER == BIG_ENDIAN
-	uint8_t
-		version : 4,
-		ihl     : 4,
-		dscp    : 6,
-		enc     : 2;
-#else
-#error "BYTE_ORDER must be defined"
-#endif
-	uint16_t tot_len;
-	uint16_t id;
-	uint16_t frag_off;
-	uint8_t ttl;
-	uint8_t protocol;
-	uint16_t check;
-	uint32_t saddr;
-	uint32_t daddr;
-}__attribute__((packed));
+//Historical INT length: the QUIC_IETF-over-INT checker still assumes it
+#define INT_DEFAULT_LENGTH 56
 
 #define NOT_FOUND 0
 #define FOUND     1
+
+/**
+ * Reads the DSCP of the IPv4/IPv6 header at the given protocol index with byte
+ * loads (the IP header is only byte-aligned in the capture).
+ * @return true if the header lies in the capture and its DSCP marks INT
+ */
+static bool _is_int_dscp(const ipacket_t *ipacket, unsigned ip_index) {
+	uint32_t ip_proto = get_protocol_id_at_index(ipacket, ip_index);
+	if( ip_proto != PROTO_IP && ip_proto != PROTO_IPV6 )
+		return false;
+
+	int ip_offset = get_packet_offset_at_index(ipacket, ip_index);
+	//need the first 2 bytes of the IP header
+	if( ip_offset < 0 || !mmt_have_bytes(ipacket, (size_t)ip_offset, 2) )
+		return false;
+
+	const u_char *ip = &ipacket->data[ip_offset];
+	uint8_t dscp;
+	if( ip_proto == PROTO_IP )
+		//TOS byte: DSCP(6) | ECN(2)
+		dscp = ip[1] >> 2;
+	else
+		//Version(4) | Traffic Class(8) | Flow Label(20); Traffic Class = DSCP(6) | ECN(2)
+		dscp = (uint8_t)((((ip[0] & 0x0f) << 4) | (ip[1] >> 4)) >> 2);
+	return dscp == INT_DSCP;
+}
 
 static int _classify_int_from_udp_or_tcp(ipacket_t * ipacket, unsigned index, bool is_udp) {
 	//need IP.UDP/TCP
 	if( index <=1 )
 		return 0;
-	//must be preceded by IPv4 (TODO(#332): need to support IPv6)
-	if( get_protocol_id_at_index(ipacket, index - 1) != PROTO_IP )
-		goto _not_found_int;
-
-	int offset = get_packet_offset_at_index(ipacket, index);
-	//must be enough room for ipv4
-	if( offset <= sizeof( struct _iphdr ) )
-		goto _not_found_int;
-
-	const struct _iphdr *ip = (struct _iphdr *) & ipacket->data[offset - sizeof(struct _iphdr)];
-	//not found specific DSCP in IP
-	if( ip->dscp != IPv4_DSCP_INT )
+	//must be preceded by IPv4 or IPv6 whose DSCP marks INT
+	if( ! _is_int_dscp( ipacket, index - 1 ) )
 		goto _not_found_int;
 
 	//return set_classified_proto(ipacket, index + 1, retval);
@@ -81,10 +75,32 @@ static int _classify_int_from_tcp(ipacket_t * ipacket, unsigned index) {
 	return _classify_int_from_udp_or_tcp( ipacket, index, false );
 }
 
+/**
+ * Length in bytes of the INT header stack (shim + metadata header + metadata
+ * stack) at the given index: the shim Length field counts 4-byte words and
+ * includes the shim and the 8-byte metadata header (3 words at least).
+ * Falls back to the historical 56 bytes when the shim is absent or invalid
+ * (the QUIC_IETF-over-INT checker still probes at 56 bytes, see #333).
+ */
+static int _int_header_length(const ipacket_t *ipacket, unsigned index) {
+	int offset = get_packet_offset_at_index(ipacket, index);
+	if( offset < 0 || !mmt_have_bytes(ipacket, (size_t)offset, sizeof(int_shim_tcpudp_v10_t)) )
+		return INT_DEFAULT_LENGTH;
+	const int_shim_tcpudp_v10_t *shim = (const int_shim_tcpudp_v10_t *) &ipacket->data[offset];
+	//same shim types as the attribute extraction accepts
+	if( shim->type > 1 || shim->length < 3 )
+		return INT_DEFAULT_LENGTH;
+	return shim->length * 4;
+}
+
 static int _int_classify_me(ipacket_t * ipacket, unsigned index) {
+	//INT does not say what it carries: mark the payload as unknown and let the
+	// checkers registered under PROTO_INT identify it; QUIC_IETF does so via
+	// _classify_quic_ietf_from_int (proto_quic_ietf.c), which reclassifies
+	// this layer. Hard-coding QUIC_IETF here would mislabel any other payload.
 	classified_proto_t retval;
-	retval.offset = 56;
-	retval.proto_id = 0; //FIXME(#332): need to update to QUIC_IETF
+	retval.offset = _int_header_length( ipacket, index );
+	retval.proto_id = PROTO_UNKNOWN;
 	retval.status = NonClassified;
 	set_classified_proto(ipacket, index+1, retval);
 	return NOT_FOUND;
@@ -247,7 +263,7 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 
 	int num_hops = 0;
 	//3 is sizeof INT shim and md fix headers in words
-	if( shim->length >= 3 )
+	if( shim->length >= 3 && hbh_report->hop_ml != 0 )
 		num_hops = (shim->length - 3)/hbh_report->hop_ml;
 
 	uint16_t ins_bits = ntohs( hbh_report->instructions );
@@ -273,6 +289,15 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	uint8_t is_tx_utilizes       = (ins_bits >>  8) & 0x1;
 	uint8_t is_l4s_mark_drop     = (ins_bits >>  7) & 0x1;
 	uint8_t is_cloud_gaming_meta = (ins_bits >>  6) & 0x1;
+
+	//Words (4 bytes) per hop with a 4-byte LV2 Ingress+Egress Port ID word
+	// (16 bits each, as the GEANT int-platforms implementation does)
+	unsigned hop_words = is_switches_id + is_in_e_port_ids + is_hop_latencies + is_queue_occups
+			+ 2 * is_ingr_times + 2 * is_egr_times + is_lv2_in_e_port_ids + is_tx_utilizes
+			+ 2 * is_l4s_mark_drop + is_cloud_gaming_meta * (sizeof(cloud_gaming_data_t) / 4);
+	//The INT spec (4.7) gives LV2 Ingress and Egress Port IDs 4 bytes each:
+	// one more word per hop, which the Hop ML field tells apart
+	bool is_lv2_spec_layout = is_lv2_in_e_port_ids && hbh_report->hop_ml == hop_words + 1;
 
 
 	switch( extracted_data->field_id ){
@@ -318,10 +343,9 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 
 	memset( &data, 0, sizeof(data) );
 
-	//TODO(#332): limit number of hops by 64
-	//we can increase size of "data" in "mmt_u32_array_t" to contain more hops
-	// but 64 should be further than enough
-	//This check is to avoid overflow attack that should never occurs in a normal condition
+	//The hop count is capped at 64 (BINARY_64DATA_LEN), the capacity of the
+	// "data" arrays of mmt_u32_array_t/mmt_u64_array_t: that is further than
+	// enough, and it avoids an overflow from a forged shim length
 	if( num_hops > BINARY_64DATA_LEN )
 		num_hops = BINARY_64DATA_LEN;
 
@@ -330,72 +354,78 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	for( i=0; i<num_hops; i++ ){
 		if( is_switches_id ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No SW_IDS");
-			data.sw_ids.data[i] = ntohl( *u32 );
+			data.sw_ids.data[i] = ntohl( get_u32(u32, 0) );
 		}
 
 		if( is_in_e_port_ids ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No In Egress port IDs");
-			data.in_port_ids.data[i] = (ntohl( *u32 ) >> 16) & 0xffff;
-			data.e_port_ids.data[i]  = (ntohl( *u32 ) ) & 0xffff;
+			data.in_port_ids.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
+			data.e_port_ids.data[i]  = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
 		}
 
 		if( is_hop_latencies ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No Hop latencies");
-			data.hop_latencies.data[i] = ntohl( *u32 );
-			total_latency += ntohl( *u32 );
+			data.hop_latencies.data[i] = ntohl( get_u32(u32, 0) );
+			total_latency += ntohl( get_u32(u32, 0) );
 		}
 
 		if( is_queue_occups ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No queue occups");
-			data.queue_ids.data[i]    = (ntohl( *u32 ) >> 24) & 0xffff;
-			data.queue_occups.data[i] = (ntohl( *u32 ) ) & 0xffff;
+			data.queue_ids.data[i]    = (ntohl( get_u32(u32, 0) ) >> 24) & 0xffff;
+			data.queue_occups.data[i] = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
 		}
 
 		//Some implementation uses 64 bit to store timestamp
 		//https://github.com/GEANT-DataPlaneProgramming/int-platforms/blob/master/p4src/int_v1.0/include/headers.p4#L124
 		if( is_ingr_times ){
 			advance_pointer( u64, uint64_t, cursor, end_cursor, "No Ingress time");
-			data.ingress_times.data[i] = ntohll( *u64 );
+			data.ingress_times.data[i] = ntohll( get_u64(u64, 0) );
 		}
 
 		if( is_egr_times ){
 			advance_pointer( u64, uint64_t, cursor, end_cursor, "No Egress Time");
-			data.egress_times.data[i] = ntohll( *u64 );
+			data.egress_times.data[i] = ntohll( get_u64(u64, 0) );
 		}
 
 		if( is_lv2_in_e_port_ids ){
-			//TODO(#332): somehow no LV2 Egress Port in
 			//4.7 INT Hop-by-Hop Metadata Header Format (page 15)
 			//Level 2 Ingress Port ID + Egress Port ID (4 bytes each)
 			//
-			//In this implementation:
+			//This implementation uses 16 bits for ingress and 16 bits for egress:
 			//https://github.com/GEANT-DataPlaneProgramming/int-platforms/blob/master/p4src/int_v1.0/include/headers.p4#L131
-			// they use 16bits for ingress, and 16 bit for egress
-			// we adapt here to test their pcap files
+			//Hop ML selects the layout (see is_lv2_spec_layout)
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Ingress");
-			data.lv2_in_port_ids.data[i] = (ntohl( *u32 ) >> 16) & 0xffff;
-			//advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Egress");
-			data.lv2_e_port_ids.data[i]  = (ntohl( *u32 ) ) & 0xffff;
+			if( is_lv2_spec_layout ){
+				data.lv2_in_port_ids.data[i] = ntohl( get_u32(u32, 0) );
+				advance_pointer( u32, uint32_t, cursor, end_cursor, "No LV2 Egress");
+				data.lv2_e_port_ids.data[i]  = ntohl( get_u32(u32, 0) );
+			} else {
+				data.lv2_in_port_ids.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
+				data.lv2_e_port_ids.data[i]  = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
+			}
 		}
 
 		if( is_tx_utilizes ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No TX Utilize");
-			data.tx_utilizes.data[i] = ntohl( *u32 );
+			data.tx_utilizes.data[i] = ntohl( get_u32(u32, 0) );
 		}
 		if( is_l4s_mark_drop ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark-Drop");
-			data.l4s_mark.data[i] = (ntohl( *u32 ) >> 16) & 0xffff;
-			data.l4s_drop.data[i] = (ntohl( *u32 ) ) & 0xffff;
+			data.l4s_mark.data[i] = (ntohl( get_u32(u32, 0) ) >> 16) & 0xffff;
+			data.l4s_drop.data[i] = (ntohl( get_u32(u32, 0) ) ) & 0xffff;
 
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No L4S Mark Probability");
-			data.l4s_mark_probability.data[i] = ntohl( *u32 );
+			data.l4s_mark_probability.data[i] = ntohl( get_u32(u32, 0) );
 		}
 
 		//specific data for cloudgaming reports
 		if( is_cloud_gaming_meta ){
-			cloud_gaming_data_t *p_cg;
+			const cloud_gaming_data_t *p_cg;
+			cloud_gaming_data_t cg;
 			advance_pointer( p_cg, cloud_gaming_data_t, cursor, end_cursor, "No CloudGaming data" );
-			if( _extraction_int_cloud_gaming_report_att(p_cg, ipacket, index, extracted_data) == FOUND)
+			//copy out: the packet bytes are not aligned for cloud_gaming_data_t
+			memcpy( &cg, p_cg, sizeof(cg) );
+			if( _extraction_int_cloud_gaming_report_att(&cg, ipacket, index, extracted_data) == FOUND)
 				return FOUND;
 		}
 	}

@@ -26,11 +26,64 @@
 	#define debug(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
-#define ETH_TYPE_IP 0x0800
+#define ETH_TYPE_IP   0x0800
+#define ETH_TYPE_IPV6 0x86DD
 #define IP_PROTO_UDP 17
 #define IP_PROTO_TCP  6
 #define TCP_HDR_SIZE (sizeof(struct tcphdr))
 #define UDP_HDR_SIZE (sizeof(struct udphdr))
+#define IPV4_MIN_HDR_SIZE 20
+#define IPV6_HDR_SIZE     40
+#define IPV6_ADDR_LEN     16
+
+/* Network layer of the reported (inner) packet. The fields are read with byte
+ * loads: the inner headers are only byte-aligned inside the report. */
+typedef struct {
+	uint8_t version;     //4 or 6
+	uint8_t l4_proto;    //IPv4 Protocol / IPv6 Next Header
+	const u_char *src;   //4 bytes for IPv4, 16 bytes for IPv6
+	const u_char *dst;
+} _inner_ip_t;
+
+/**
+ * Parses the inner IPv4 (options included) or IPv6 header at *cursor and moves
+ * *cursor past it. IPv6 extension headers are not walked: the Next Header must
+ * be the transport protocol.
+ * @return false if the EtherType is neither IPv4 nor IPv6 or the header is
+ *         truncated or malformed
+ */
+static bool _parse_inner_ip(uint16_t eth_type, const u_char **cursor, const u_char *end_cursor, _inner_ip_t *ip) {
+	const u_char *p = *cursor;
+	size_t avail = (end_cursor > p) ? (size_t)(end_cursor - p) : 0;
+	size_t hdr_len;
+
+	switch( eth_type ){
+	case ETH_TYPE_IP:
+		if( avail < IPV4_MIN_HDR_SIZE || (p[0] >> 4) != 4 )
+			return false;
+		hdr_len = (size_t)(p[0] & 0x0f) * 4; //IHL in 4-byte words
+		if( hdr_len < IPV4_MIN_HDR_SIZE || hdr_len > avail )
+			return false;
+		ip->version  = 4;
+		ip->l4_proto = p[9];
+		ip->src      = p + 12;
+		ip->dst      = p + 16;
+		break;
+	case ETH_TYPE_IPV6:
+		if( avail < IPV6_HDR_SIZE || (p[0] >> 4) != 6 )
+			return false;
+		hdr_len = IPV6_HDR_SIZE;
+		ip->version  = 6;
+		ip->l4_proto = p[6];
+		ip->src      = p + 8;
+		ip->dst      = p + 24;
+		break;
+	default:
+		return false;
+	}
+	*cursor = p + hdr_len;
+	return true;
+}
 
 
 /**
@@ -57,31 +110,28 @@ size_t proto_int_get_int_report_header_size(const u_char *cursor, const u_char *
 	const struct ethhdr *eth;
 	advance_pointer(eth, struct ethhdr, cursor, end_cursor, "No INT.Ethernet");
 
-	if( ntohs(eth->h_proto) != ETH_TYPE_IP ){
-		//TODO(#332) support IPv6?
-		debug("No IPv4 after Ethernet");
+	_inner_ip_t ip;
+	if( !_parse_inner_ip( ntohs(eth->h_proto), &cursor, end_cursor, &ip ) ){
+		debug("No IPv4/IPv6 after INT.Ethernet");
 		return 0;
 	}
 
-	const struct iphdr *ip;
-	advance_pointer( ip, struct iphdr, cursor, end_cursor, "No INT.Ethernet.IP");
-
-	switch( ip->protocol ){
+	switch( ip.l4_proto ){
 	case IP_PROTO_UDP:
-		//jump over UDP header
-		cursor += UDP_HDR_SIZE;
-		if( cursor >= end_cursor ){
+		//jump over UDP header: need also at least one byte after it
+		if( (size_t)(end_cursor - cursor) <= UDP_HDR_SIZE ){
 			debug("No INT.Ethernet.IP.UDP");
 			return 0;
 		}
+		cursor += UDP_HDR_SIZE;
 		break;
 	case IP_PROTO_TCP:
-		//jump over TCP header
-		cursor += TCP_HDR_SIZE;
-		if( cursor >= end_cursor ){
+		//jump over TCP header: need also at least one byte after it
+		if( (size_t)(end_cursor - cursor) <= TCP_HDR_SIZE ){
 			debug("No INT.Ethernet.IP.TCP");
 			return 0;
 		}
+		cursor += TCP_HDR_SIZE;
 		break;
 	default:
 		debug("Neither UDP, nor TCP is found after IP. Need to support INT over other protocol than TCP/UDP over IP");
@@ -94,12 +144,13 @@ size_t proto_int_get_int_report_header_size(const u_char *cursor, const u_char *
 static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsigned index) {
 	//the current (index) protocol is UDP
 	int offset = get_packet_offset_at_index(ipacket, index);
+	if( offset < 0 || !mmt_have_bytes(ipacket, (size_t)offset, UDP_HDR_SIZE) )
+		goto _not_found_int_report;
 
-	const struct udphdr *udp = (struct udphdr *) & ipacket->data[offset];
 	const u_char *cursor = &ipacket->data[offset + UDP_HDR_SIZE], *end_cursor = &ipacket->data[ipacket->p_hdr->caplen];
 
-	//the port is correct?
-	if( ntohs(udp->dest) != INT_UDP_DST_PORT )
+	//the port is correct? (UDP destination port at offset 2)
+	if( ntohs( get_u16(&ipacket->data[offset], 2) ) != INT_UDP_DST_PORT )
 		goto _not_found_int_report;
 	//the size is correct?
 	// INT Raport structure
@@ -158,20 +209,17 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	const struct ethhdr *eth;
 	advance_pointer(eth, struct ethhdr, cursor, end_cursor, "No INT.Ethernet");
 
-	if( ntohs(eth->h_proto) != ETH_TYPE_IP ){
-		//TODO(#332) support IPv6?
-		debug("No IPv4 after Ethernet");
+	_inner_ip_t ip;
+	if( !_parse_inner_ip( ntohs(eth->h_proto), &cursor, end_cursor, &ip ) ){
+		debug("No IPv4/IPv6 after INT.Ethernet");
 		return NOT_FOUND;
 	}
-
-	const struct iphdr *ip;
-	advance_pointer( ip, struct iphdr, cursor, end_cursor, "No INT.Ethernet.IP");
 
 	//Although the next proto can be TCP but we can use UDP to get src/dst ports
 	//as the src/dst ports of TCP are in the same position as the ones of UDP
 	const struct udphdr *ports;
 	advance_pointer( ports, struct udphdr, cursor, end_cursor, "No INT.Ethernet.IP.UDP");
-	switch( ip->protocol ){
+	switch( ip.l4_proto ){
 	case IP_PROTO_UDP:
 		break;
 	case IP_PROTO_TCP:
@@ -199,16 +247,30 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		return FOUND;
 	//flow info
 	case INT_REPORT_FLOW_IP_SRC:
-		(*(uint32_t *) extracted_data->data) = ntohl( ip->saddr );
+		if( ip.version != 4 )
+			return NOT_FOUND;
+		(*(uint32_t *) extracted_data->data) = ntohl( get_u32(ip.src, 0) );
 		return FOUND;
 	case INT_REPORT_FLOW_IP_DST:
-		(*(uint32_t *) extracted_data->data) = ntohl( ip->daddr );
+		if( ip.version != 4 )
+			return NOT_FOUND;
+		(*(uint32_t *) extracted_data->data) = ntohl( get_u32(ip.dst, 0) );
+		return FOUND;
+	case INT_REPORT_FLOW_IP6_SRC:
+		if( ip.version != 6 )
+			return NOT_FOUND;
+		memcpy( extracted_data->data, ip.src, IPV6_ADDR_LEN );
+		return FOUND;
+	case INT_REPORT_FLOW_IP6_DST:
+		if( ip.version != 6 )
+			return NOT_FOUND;
+		memcpy( extracted_data->data, ip.dst, IPV6_ADDR_LEN );
 		return FOUND;
 	case INT_REPORT_FLOW_PORT_SRC:
-		(*(uint16_t *) extracted_data->data) = ntohs( ports->source );
+		(*(uint16_t *) extracted_data->data) = ntohs( get_u16(ports, 0) );
 		return FOUND;
 	case INT_REPORT_FLOW_PORT_DST:
-		(*(uint16_t *) extracted_data->data) = ntohs( ports->dest );
+		(*(uint16_t *) extracted_data->data) = ntohs( get_u16(ports, 2) );
 		return FOUND;
 
 	case INT_REPORT_SINK_TIME:
@@ -228,6 +290,8 @@ static attribute_metadata_t _attributes_metadata[] = {
 
 	def_att( INT_REPORT_FLOW_IP_SRC,   MMT_DATA_IP_ADDR, sizeof( uint32_t) ),
 	def_att( INT_REPORT_FLOW_IP_DST,   MMT_DATA_IP_ADDR, sizeof( uint32_t) ),
+	def_att( INT_REPORT_FLOW_IP6_SRC,  MMT_DATA_IP6_ADDR, IPV6_ADDR_LEN ),
+	def_att( INT_REPORT_FLOW_IP6_DST,  MMT_DATA_IP6_ADDR, IPV6_ADDR_LEN ),
 	def_att( INT_REPORT_FLOW_PORT_SRC, MMT_U16_DATA,     sizeof( uint16_t) ),
 	def_att( INT_REPORT_FLOW_PORT_DST, MMT_U16_DATA,     sizeof( uint16_t) ),
 

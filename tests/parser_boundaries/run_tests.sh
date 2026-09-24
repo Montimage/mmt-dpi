@@ -71,8 +71,19 @@
 #                               functions of the linked SDK over exactly
 #                               caplen-sized heap captures.
 #
+# Issue #332 adds the "int" fixture: the INT dissector (proto_int.c) must
+# detect INT from an IPv6 carrier's Traffic Class as well as the IPv4 TOS,
+# size the layer after INT from the shim Length, survive a zero Hop ML and
+# decode both LV2 port-ID layouts; the INT-report dissector
+# (proto_int_report.c) must parse an IPv6 (or optioned IPv4) inner packet.
+#
+#   test_int_ipv6_parser.c — packet/API path: crafted Ethernet/IPv{4,6}/UDP
+#                               INT frames and INT reports through
+#                               mmt_init_handler + packet_process, reading the
+#                               INT/INT-report attributes back.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
-#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"
+#   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"
 #   select a fixture family.
 set -euo pipefail
 
@@ -81,7 +92,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -105,8 +116,11 @@ for f in "${FIXTURES[@]}"; do
         nfs)
             API_TESTS+=(nfs_rpc_header_bounds)
             ;;
+        int)
+            API_TESTS+=(int_ipv6_parser)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int)" >&2
             exit 2
             ;;
     esac
@@ -213,4 +227,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #375, #376, #377, #378, #407, #409)"
+echo "✓ parser boundary tests passed (issues #332, #375, #376, #377, #378, #407, #409)"

@@ -11,12 +11,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MMT-DPI — Deep packet inspection for 670 protocols, in C</title>
   <link rel="icon" href="favicon.ico">
-  <meta name="description" content="MMT-DPI is a high-performance C library for deep packet inspection: classify 670 protocols, extract 7,445 named attributes, and track sessions at line rate. Apache-2.0. Linux. Plugin-extensible.">
+  <meta name="description" content="MMT-DPI is a high-performance C library for deep packet inspection: classify 670 protocols, extract 7,447 named attributes, and track sessions at line rate. Apache-2.0. Linux. Plugin-extensible.">
 
   <!-- Open Graph / social -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="MMT-DPI — Deep packet inspection, in C">
-  <meta property="og:description" content="Classify 670 protocols, extract 7,445 named attributes, track sessions at line rate. Open-source C library by Montimage.">
+  <meta property="og:description" content="Classify 670 protocols, extract 7,447 named attributes, track sessions at line rate. Open-source C library by Montimage.">
   <meta property="og:url" content="https://montimage-projects.github.io/mmt-dpi/">
   <meta name="theme-color" content="#131110">
 
@@ -475,7 +475,7 @@
         <p class="hero-sub">
           Link <code>libmmt_core</code>, register the protocol fields you need, and process packets from a
           pcap or a live interface. MMT&#8209;DPI classifies <strong>670 protocols</strong>, extracts
-          <strong>7,445 typed attributes</strong>, and tracks per-flow sessions — all behind one callback API.
+          <strong>7,447 typed attributes</strong>, and tracks per-flow sessions — all behind one callback API.
         </p>
         <div class="cta-row">
           <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
@@ -534,7 +534,7 @@
     <section class="stats">
       <div class="wrap stats-grid">
         <div class="stat"><div class="num">670</div><div class="lbl">protocols classified</div></div>
-        <div class="stat"><div class="num">7,445</div><div class="lbl">named attributes</div></div>
+        <div class="stat"><div class="num">7,447</div><div class="lbl">named attributes</div></div>
         <div class="stat"><div class="num">5G</div><div class="lbl">LTE &amp; mobile core</div></div>
         <div class="stat"><div class="num">5+</div><div class="lbl">Linux distros</div></div>
       </div>
@@ -675,7 +675,7 @@
     <span class="t-com">// ... same pcap / packet_process() loop as Tier 1 ...</span>
 }</pre>
             </div>
-            <p class="api-note">Each attribute has a typed value — numeric fields come back as <code>uint*_t*</code>, while header strings like <code>http/host</code> are <code>mmt_header_line_t*</code> (a <code>ptr</code>+<code>len</code> pair, not null-terminated). Names map to MMT's 7,445 attributes; the engine classifies by payload signature, so these resolve regardless of port. See <a href="MMT-Attributes.html">MMT-Attributes</a>.</p>
+            <p class="api-note">Each attribute has a typed value — numeric fields come back as <code>uint*_t*</code>, while header strings like <code>http/host</code> are <code>mmt_header_line_t*</code> (a <code>ptr</code>+<code>len</code> pair, not null-terminated). Names map to MMT's 7,447 attributes; the engine classifies by payload signature, so these resolve regardless of port. See <a href="MMT-Attributes.html">MMT-Attributes</a>.</p>
           </div>
 
           <!-- TIER 3 -->
@@ -844,7 +844,7 @@
       <div class="faq">
         <details open>
           <summary>What exactly is MMT-DPI?</summary>
-          <p>A high-performance C library for deep packet inspection. It classifies network traffic into 670 protocols and lets you extract 7,445 named, typed attributes from packets, server logs, and structured events — for real-time analysis. It's the extraction core inside the broader Montimage Monitoring Tool (MMT) suite.</p>
+          <p>A high-performance C library for deep packet inspection. It classifies network traffic into 670 protocols and lets you extract 7,447 named, typed attributes from packets, server logs, and structured events — for real-time analysis. It's the extraction core inside the broader Montimage Monitoring Tool (MMT) suite.</p>
         </details>
         <details>
           <summary>Which platforms are supported?</summary>
@@ -872,7 +872,7 @@
     <!-- FINAL CTA -->
     <section class="final wrap">
       <h2>Stop writing byte-offset parsers.<br><span class="accent">Start querying packets by name.</span></h2>
-      <p>670 protocols, 7,445 attributes, plugin-extensible — open source under Apache-2.0. One command and you're running.</p>
+      <p>670 protocols, 7,447 attributes, plugin-extensible — open source under Apache-2.0. One command and you're running.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="#quick-start">▸ Install MMT-DPI</a>
         <a class="btn btn-ghost" href="https://github.com/montimage-projects/mmt-dpi" target="_blank" rel="noopener">★ Star on GitHub</a>
