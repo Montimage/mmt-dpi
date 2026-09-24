@@ -1802,9 +1802,10 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
 
     uint16_t filename_start;
 
-    /* Open question moved to issue #334: whether the stage-based
-     * "payload seen on both directions ⇒ not HTTP" exclude strategy
-     * should be enforced. */
+    /* The stage-based "payload seen on both directions => not HTTP"
+     * exclude strategy is deliberately not enforced: the request-line
+     * checks below decide. Decision and rationale: docs/DECISIONS.md
+     * (issue #334). */
 
     MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "search http\n");
 
@@ -1869,8 +1870,9 @@ void mmt_classify_http(ipacket_t * ipacket, unsigned index) {
 
                 MMT_LOG(PROTO_HTTP, MMT_LOG_DEBUG, "http structure detected, adding\n");
 
-                /* Whether CONNECT should classify as a distinct PROTO_HTTP_CONNECT
-                 * is an open question — see issue #334. */
+                /* CONNECT stays PROTO_HTTP (the method is still exposed through
+                 * the http.method attribute); a distinct protocol ID was
+                 * decided against — see docs/DECISIONS.md (issue #334). */
                 mmt_int_http_add_connection(ipacket, PROTO_HTTP);
 
                 check_content_type_and_change_protocol(ipacket);
