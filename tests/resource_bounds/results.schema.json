@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "mmt-dpi/resource-bounds-result/v1",
   "title": "resource_bounds results (issue #394)",
-  "description": "Written by tests/resource_bounds/run_tests.sh from the fixtures' @rb lines (rb_result.h) and the budgets in budgets.json. Every number is a deterministic count or byte total; no timing is recorded or asserted.",
+  "description": "Written by tests/resource_bounds/run_tests.sh from the fixtures' @rb lines (rb_result.h) and the budgets in budgets.json. Every budgeted number is a deterministic count or byte total; no timing is asserted — per-fixture wall-clock appears only as a labelled observation that no budget reads.",
   "type": "object",
   "required": ["schema", "budgets", "timing_asserted", "fixtures", "checks", "errors", "summary"],
   "additionalProperties": false,

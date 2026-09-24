@@ -249,8 +249,13 @@ def gate(results, budgets, schema, partial=False):
                              % (fx, check["id"], r["pass"], r["value"], r["limit"], ok, value, limit))
         report.append("  %s: %d/%d budgets hold (%d counters, %d seed(s))"
                       % (fx, held, len(spec["checks"]), len(rec["metrics"]), len(rec["seeds"])))
+    budgeted = {(fx, c["id"]) for fx, spec in bfx.items() for c in spec["checks"]}
     for key in sorted(set(runner) - expected):
-        fails.append("check %s/%s: reported by the runner but not in budgets.json" % key)
+        if key in budgeted:
+            fails.append("check %s/%s: reported by the runner but fixture %s has no results record"
+                         % (key[0], key[1], key[0]))
+        else:
+            fails.append("check %s/%s: reported by the runner but not in budgets.json" % key)
 
     fails += ["runner error: %s" % e for e in results["errors"]]
     s = results["summary"]
@@ -379,6 +384,9 @@ def self_test():
          expect="budget cpu/wall: missing metric wall_ms")
     case("unrun resource dimension fails", edited(lambda r: r["fixtures"].pop("cpu")),
          expect="fixture cpu: resource dimension not run")
+    case("checks of an unrun fixture name the missing record (issue #433)",
+         edited(lambda r: r["fixtures"].pop("cpu")),
+         expect="check cpu/visits: reported by the runner but fixture cpu has no results record")
     single = _runner_results({"schema": BUDGETS_SCHEMA_ID,
                               "fixtures": {"mem": budgets["fixtures"]["mem"]}}, metrics)
     case("--partial accepts a single-fixture run", single, partial=True)

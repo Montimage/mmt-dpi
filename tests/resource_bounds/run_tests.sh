@@ -237,8 +237,11 @@ for i in "${!TESTS[@]}"; do
     status=0
     t0="$(date +%s%N)"
     "${SCRIPT_DIR}/test_${name}" > "${WORK}/${name}.log" 2>&1 || status=$?
-    # Observation only (issue #395): recorded, never budgeted.
-    printf '%s %s\n' "${FIXTURE_IDS[$i]}" "$(( ($(date +%s%N) - t0) / 1000000 ))" >> "${WORK}/wall"
+    # Observation only (issue #395): recorded, never budgeted. The clock is
+    # not monotonic, so a backwards step is clamped to 0 (issue #433).
+    wall_ms=$(( ($(date +%s%N) - t0) / 1000000 ))
+    [ "${wall_ms}" -ge 0 ] || wall_ms=0
+    printf '%s %s\n' "${FIXTURE_IDS[$i]}" "${wall_ms}" >> "${WORK}/wall"
     # Human log without the machine-readable lines, which go to results.json.
     grep -v '^@rb ' "${WORK}/${name}.log" || true
     grep '^@rb ' "${WORK}/${name}.log" >> "${WORK}/rb.lines" || true
@@ -272,15 +275,20 @@ jq -n -R --slurpfile budgets "${BUDGETS}" --rawfile status "${WORK}/status" \
         if $l[2] == "metric" then .[$l[1]].metrics[$l[3]] = ($l[4] | tonumber)
         else .[$l[1]].seeds[$l[3]] = $l[4] end)) as $M
   | def mval($f; $k): $M[$f].metrics[$k];
+    def name: type == "string" and length > 0;
     [ $S[].key as $f | ($B.fixtures[$f].checks // [])[] | . as $c
-      | mval($f; $c.metric) as $v
-      # A malformed budget (no/non-integer limit, no parts) is reported as
-      # "invalid budget", not as a missing metric (issue #395).
+      # A malformed budget (no/non-string metric, no/non-integer limit, no or
+      # non-string parts) is reported as "invalid budget", not as a missing
+      # metric (issue #395) -- and is judged before any metric lookup, so a
+      # non-string name cannot crash jq (issue #433).
       | (if ($c.op | IN("eq", "le", "lt", "sum") | not) then false
-         elif $c.op == "sum" then (($c.parts | type) == "array" and ($c.parts | length) > 0)
+         elif ($c.metric | name | not) then false
+         elif $c.op == "sum" then (($c.parts | type) == "array" and ($c.parts | length) > 0
+              and ($c.parts | all(name)))
          elif ($c | has("limit_metric")) then (($c.limit_metric | type) == "string"
               and (($c.factor // 1) | type == "number" and . == floor and . > 0))
          else ($c.limit | type == "number" and . == floor) end) as $valid
+      | (if ($c.metric | name) then mval($f; $c.metric) else null end) as $v
       | (if ($valid | not) then null
          elif $c.op == "sum" then
            [$c.parts[] | mval($f; .)] as $p
@@ -289,7 +297,8 @@ jq -n -R --slurpfile budgets "${BUDGETS}" --rawfile status "${WORK}/status" \
            mval($f; $c.limit_metric) as $lm
            | (if $lm == null then null else $lm * ($c.factor // 1) end)
          else $c.limit end) as $lim
-      | {fixture: $f, id: $c.id, metric: $c.metric, op: $c.op, value: $v,
+      | {fixture: $f, id: ($c.id | if type == "string" then . else tojson end),
+         metric: ($c.metric | if type == "string" then . else tojson end), op: $c.op, value: $v,
          limit: $lim, baseline: ($c.baseline // null),
          pass: (if ($valid | not) or $v == null or $lim == null then false
                 elif $c.op == "eq" or $c.op == "sum" then $v == $lim
