@@ -8,19 +8,19 @@ application_quality_estimation_t * init_voip_quality_estimation_struct() {
     application = init_new_application_quality_estimation_struct(VoIP);
 
     //initialize loss metric
-    voip_loss = init_new_metric_struct(12, 0.0, 100.0); //TODO(#336): just a test the metric ID should be defined
+    voip_loss = init_new_metric_struct(VOIP_METRIC_ID_LOSS, 0.0, 100.0);
     register_grade_membership_function_with_metric(voip_loss, init_trapez_right_grade_membership_function(3, 2, 5));
     register_grade_membership_function_with_metric(voip_loss, init_trapez_center_grade_membership_function(2, 0.5, 2.0, 2.0, 5));
     register_grade_membership_function_with_metric(voip_loss, init_trapez_left_grade_membership_function(1, 0.5, 1));
 
     //initialize jitter metric
-    voip_jitter = init_new_metric_struct(15, 0.0, 100); //TODO(#336): just a test the metric ID should be defined
+    voip_jitter = init_new_metric_struct(VOIP_METRIC_ID_JITTER, 0.0, 100);
     register_grade_membership_function_with_metric(voip_jitter, init_trapez_right_grade_membership_function(3, 5, 20));
     register_grade_membership_function_with_metric(voip_jitter, init_trapez_center_grade_membership_function(2, 2, 5, 5, 20));
     register_grade_membership_function_with_metric(voip_jitter, init_trapez_left_grade_membership_function(1, 2, 5));
 
     //initialize quality index evaluation metric
-    voip_index = init_new_metric_struct(3, 1.0, 5.0); //TODO(#336): just a test the metric ID should be defined
+    voip_index = init_new_metric_struct(VOIP_METRIC_ID_QUALITY_INDEX, 1.0, 5.0);
     register_grade_membership_function_with_metric(voip_index, init_trapez_left_grade_membership_function(5, 2, 2.5));
     register_grade_membership_function_with_metric(voip_index, init_trapez_center_grade_membership_function(4, 2, 2.5, 2.5, 3));
     register_grade_membership_function_with_metric(voip_index, init_trapez_center_grade_membership_function(3, 2.5, 3, 3, 3.5));
@@ -53,41 +53,41 @@ application_quality_estimation_t * init_voip_quality_estimation_struct() {
     rule8 = init_new_rule_struct(AND_RULE);
     rule9 = init_new_rule_struct(AND_RULE);
 
-    register_metric_with_grade_to_rule_struct(application, rule1, 15, 1);
-    register_metric_with_grade_to_rule_struct(application, rule1, 12, 1);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule1, 3, 1);
+    register_metric_with_grade_to_rule_struct(application, rule1, VOIP_METRIC_ID_JITTER, 1);
+    register_metric_with_grade_to_rule_struct(application, rule1, VOIP_METRIC_ID_LOSS, 1);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule1, VOIP_METRIC_ID_QUALITY_INDEX, 1);
 
-    register_metric_with_grade_to_rule_struct(application, rule2, 15, 1);
-    register_metric_with_grade_to_rule_struct(application, rule2, 12, 2);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule2, 3, 2);
+    register_metric_with_grade_to_rule_struct(application, rule2, VOIP_METRIC_ID_JITTER, 1);
+    register_metric_with_grade_to_rule_struct(application, rule2, VOIP_METRIC_ID_LOSS, 2);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule2, VOIP_METRIC_ID_QUALITY_INDEX, 2);
 
-    register_metric_with_grade_to_rule_struct(application, rule3, 15, 2);
-    register_metric_with_grade_to_rule_struct(application, rule3, 12, 1);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule3, 3, 2);
+    register_metric_with_grade_to_rule_struct(application, rule3, VOIP_METRIC_ID_JITTER, 2);
+    register_metric_with_grade_to_rule_struct(application, rule3, VOIP_METRIC_ID_LOSS, 1);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule3, VOIP_METRIC_ID_QUALITY_INDEX, 2);
 
-    register_metric_with_grade_to_rule_struct(application, rule4, 15, 2);
-    register_metric_with_grade_to_rule_struct(application, rule4, 12, 2);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule4, 3, 3);
+    register_metric_with_grade_to_rule_struct(application, rule4, VOIP_METRIC_ID_JITTER, 2);
+    register_metric_with_grade_to_rule_struct(application, rule4, VOIP_METRIC_ID_LOSS, 2);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule4, VOIP_METRIC_ID_QUALITY_INDEX, 3);
 
-    register_metric_with_grade_to_rule_struct(application, rule5, 15, 1);
-    register_metric_with_grade_to_rule_struct(application, rule5, 12, 3);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule5, 3, 4);
+    register_metric_with_grade_to_rule_struct(application, rule5, VOIP_METRIC_ID_JITTER, 1);
+    register_metric_with_grade_to_rule_struct(application, rule5, VOIP_METRIC_ID_LOSS, 3);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule5, VOIP_METRIC_ID_QUALITY_INDEX, 4);
 
-    register_metric_with_grade_to_rule_struct(application, rule6, 15, 3);
-    register_metric_with_grade_to_rule_struct(application, rule6, 12, 1);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule6, 3, 4);
+    register_metric_with_grade_to_rule_struct(application, rule6, VOIP_METRIC_ID_JITTER, 3);
+    register_metric_with_grade_to_rule_struct(application, rule6, VOIP_METRIC_ID_LOSS, 1);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule6, VOIP_METRIC_ID_QUALITY_INDEX, 4);
 
-    register_metric_with_grade_to_rule_struct(application, rule7, 15, 3);
-    register_metric_with_grade_to_rule_struct(application, rule7, 12, 3);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule7, 3, 5);
+    register_metric_with_grade_to_rule_struct(application, rule7, VOIP_METRIC_ID_JITTER, 3);
+    register_metric_with_grade_to_rule_struct(application, rule7, VOIP_METRIC_ID_LOSS, 3);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule7, VOIP_METRIC_ID_QUALITY_INDEX, 5);
 
-    register_metric_with_grade_to_rule_struct(application, rule8, 15, 3);
-    register_metric_with_grade_to_rule_struct(application, rule8, 12, 2);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule8, 3, 5);
+    register_metric_with_grade_to_rule_struct(application, rule8, VOIP_METRIC_ID_JITTER, 3);
+    register_metric_with_grade_to_rule_struct(application, rule8, VOIP_METRIC_ID_LOSS, 2);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule8, VOIP_METRIC_ID_QUALITY_INDEX, 5);
 
-    register_metric_with_grade_to_rule_struct(application, rule9, 15, 2);
-    register_metric_with_grade_to_rule_struct(application, rule9, 12, 3);
-    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule9, 3, 5);
+    register_metric_with_grade_to_rule_struct(application, rule9, VOIP_METRIC_ID_JITTER, 2);
+    register_metric_with_grade_to_rule_struct(application, rule9, VOIP_METRIC_ID_LOSS, 3);
+    register_quality_estimation_metric_with_grade_to_rule_struct(application, rule9, VOIP_METRIC_ID_QUALITY_INDEX, 5);
 
     register_application_quality_estimation_rule(quality_estimation_rules, rule1);
     register_application_quality_estimation_rule(quality_estimation_rules, rule5);
@@ -99,7 +99,7 @@ application_quality_estimation_t * init_voip_quality_estimation_struct() {
     register_application_quality_estimation_rule(quality_estimation_rules, rule8);
     register_application_quality_estimation_rule(quality_estimation_rules, rule9);
 
-    register_estimation_rules_with_quality_metric(application, quality_estimation_rules, 3);
+    register_estimation_rules_with_quality_metric(application, quality_estimation_rules, VOIP_METRIC_ID_QUALITY_INDEX);
 
     return application;
 }

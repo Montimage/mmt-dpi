@@ -31,4 +31,9 @@
 # coverage/accuracy tests (#388, #390) found the count already at 80: the
 # error-propagation work in #327 resolved 26 markers and #380 one more, but
 # neither tightened this file. Every surviving marker is still issue-linked.
-80
+#
+# #336: re-baselined 80 -> 76 — the three `TODO(#336)` placeholder-metric-ID
+# markers in the fuzz engine's built-in VoIP model became named constants
+# (VOIP_METRIC_ID_*), and the commented-out `kpi_value >= 0` range check in
+# trapezoid_left() was answered (no lower bound, by design) and removed.
+76

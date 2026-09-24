@@ -527,7 +527,10 @@ double trapezoid_left(double kpi_value, metric_grade_membership_function_t * mfp
     double membershipvalue;
     //a = parameter 0,beta = parameter 1
 
-    //if (kpi_value <= mfp_parameters->membership_function_parameters[0] && kpi_value >= 0) { //TODO(#336): why kpi_value >=0
+    /* No lower bound: the left shoulder is fully open, so every value up
+     * to parameter 0 has membership 1 -- including values below 0 or below
+     * the metric's range_low, which may itself be negative in an XML model.
+     * A "kpi_value >= 0" bound would leave such values in no grade at all. */
     if (kpi_value <= mfp_parameters->membership_function_parameters[0]) {
         membershipvalue = 1;
     } else if ((kpi_value >= mfp_parameters->membership_function_parameters[0]) && kpi_value <= (mfp_parameters->membership_function_parameters[0] + mfp_parameters->membership_function_parameters[1])) {

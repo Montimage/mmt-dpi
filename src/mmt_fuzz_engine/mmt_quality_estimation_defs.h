@@ -16,6 +16,14 @@ extern "C" {
 
 #define VoIP     1
 
+/* Metric identifiers of the built-in VoIP model
+ * (init_voip_quality_estimation_struct). They are model-local keys, matched
+ * against the metric_id attributes of XML models and the ids passed to the
+ * rule-registration helpers, so the values are part of the model contract. */
+#define VOIP_METRIC_ID_QUALITY_INDEX  3   /* MOS-like index, range [1, 5]  */
+#define VOIP_METRIC_ID_LOSS          12   /* packet loss (%), [0, 100]     */
+#define VOIP_METRIC_ID_JITTER        15   /* jitter, [0, 100]              */
+
 #define SINGLE_QUALITY_METRIC 1
 #define MULTI_QUALITY_METRICS 2
 

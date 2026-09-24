@@ -243,7 +243,23 @@ int main(void) {
                     mg; mg = mg->next)
                 touched += (int) mg->membership_function_parameters[0];
         CHECK(touched != 0, "VoIP grade parameters are readable");
+        /* #336: the model's metrics are keyed by the named ids. */
+        CHECK(get_metric_by_id(voip, VOIP_METRIC_ID_LOSS) != NULL &&
+              get_metric_by_id(voip, VOIP_METRIC_ID_JITTER) != NULL,
+              "VoIP loss/jitter metrics registered under their named ids");
+        CHECK(voip->estimation_metrics != NULL &&
+              voip->estimation_metrics->metric_id ==
+                  VOIP_METRIC_ID_QUALITY_INDEX,
+              "VoIP quality index registered under its named id");
     }
+
+    /* #336: trapezoid_left has no lower bound -- a value below 0 (or below
+     * the metric range) still belongs fully to the left-shoulder grade. */
+    g = init_trapez_left_grade_membership_function(1, 0.5, 1.0);
+    CHECK(g != NULL && trapezoid_left(-1.0, g) == 1.0 &&
+          trapezoid_left(0.5, g) == 1.0 && trapezoid_left(2.0, g) == 0.0,
+          "trapezoid_left: open left shoulder, zero past the slope");
+    free(g);
 
     /* --- F-BUG-100/101: XML parser entry point ------------------------ */
 
