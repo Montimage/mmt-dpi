@@ -83,7 +83,17 @@ if [ -n "${SDK_BUILD_PROFILE:-}" ]; then
         # malloc/free/fopen shims forward through dlsym(RTLD_NEXT) into
         # libasan's allocator. With an uninstrumented exe libasan must be
         # preloaded so the runtime is first in the library list.
-        ASAN_RT="$(${CC} -print-file-name=libasan.so)"
+        SAN_RT="$(${CC} -print-file-name=libasan.so)"
+    elif [[ "${SDK_BUILD_PROFILE}" == *tsan* ]]; then
+        # Same for ThreadSanitizer (#412): without the preload libtsan only
+        # arrives transitively (via libmmt_security/libmmt_core), after libc
+        # and ld.so in the link map. The runtime then initialises from the
+        # first instrumented .so constructor and InitTlsSize() calls
+        # dlsym(RTLD_NEXT, "_dl_get_tls_static_info"), which returns NULL
+        # because ld.so precedes libtsan — a jump to address 0 (SIGSEGV)
+        # before main(). Observed on aarch64; preloading puts the runtime
+        # first, as the instrumented test binaries already do.
+        SAN_RT="$(${CC} -print-file-name=libtsan.so)"
     fi
 else
     set --
@@ -166,8 +176,8 @@ run_expect_fail() { # <label> <expected-error-substring> <logfile> <cmd...>
 }
 
 LD_ENV=(env "LD_LIBRARY_PATH=${LIB}:${LD_LIBRARY_PATH:-}")
-if [ -n "${ASAN_RT:-}" ]; then
-    LD_ENV+=("LD_PRELOAD=${ASAN_RT}")
+if [ -n "${SAN_RT:-}" ]; then
+    LD_ENV+=("LD_PRELOAD=${SAN_RT}")
 fi
 BIN="${SCRIPT_DIR}/test_rule_engine"
 
@@ -187,7 +197,7 @@ ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${INJECTION_BIN}" "${INJECTION_SRC}"
 # compiled with ${extra_cflags}: under SANITIZE=asan the .so stays ASan-
 # instrumented (overflows in library code are still caught) while the test's
 # own shims keep forwarding through dlsym(RTLD_NEXT), which resolves to
-# libasan's allocator — so the fault-injection checks work in every profile.
+# the preloaded sanitizer runtime's allocator (libasan/libtsan) — so the fault-injection checks work in every profile.
 echo "  [2c/7] compiling overflow-family test ..."
 OVERFLOW_SRC="${SCRIPT_DIR}/test_overflow_family.c"
 OVERFLOW_BIN="${SCRIPT_DIR}/test_overflow_family"
