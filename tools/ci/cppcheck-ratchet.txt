@@ -2,5 +2,8 @@
 # Total findings in cppcheck-report.xml must not exceed this count; the
 # lint job fails the step when it does. Lower the number when findings are
 # fixed — never raise it without a recorded justification.
+# Measured with cppcheck 2.13 (ubuntu-24.04, the CI lint job); the count is
+# only comparable under that release — see CPPCHECK_PINNED_VERSION in
+# tools/ci/run-cppcheck.sh (issue #345). Never raise it to absorb drift.
 # Re-measure: bash tools/ci/run-cppcheck.sh
 24

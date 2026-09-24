@@ -19,8 +19,29 @@
 # Writes the pass-1 findings to cppcheck-report.xml at the repo root (override
 # with $CPPCHECK_REPORT) — the same artifact the lint job publishes.
 #
+# Pinned cppcheck version (issue #345): the ratchet baseline is only
+# meaningful for the cppcheck release it was measured with — a different
+# release adds or drops checks, so the total drifts on unchanged code (e.g.
+# 2.21 reports 35 findings where the baseline of 24 was measured with 2.13).
+# CPPCHECK_PINNED_VERSION below is the major.minor the lint job gets from the
+# ubuntu-24.04 cppcheck package (.github/workflows/c-cpp.yml, `lint` job).
+# The script compares `cppcheck --version` with it:
+#   - match      -> both gates are enforced;
+#   - mismatch in CI (CI=true) -> exit 2: the runner image changed; re-measure
+#     tools/ci/cppcheck-ratchet.txt with the new release and bump the pin in
+#     the same change;
+#   - mismatch locally -> warning; the ratchet verdict is advisory only (the
+#     count is not comparable) while the error-severity gate stays enforced
+#     (another release may also add or drop error checks, so a local error
+#     verdict may not reproduce in CI). Only CI=true (GitHub Actions) counts
+#     as CI.
+# For a verdict that matches CI, run cppcheck $CPPCHECK_PINNED_VERSION.x
+# locally (e.g. in an ubuntu:24.04 container: apt-get install -y cppcheck).
+# Never raise the baseline to absorb version drift.
+#
 # Exit codes: 0 = both gates pass, 1 = a gate tripped, 2 = the helper itself
-# is broken (cppcheck missing, unreadable baseline, unparseable report).
+# is broken (cppcheck missing or at an unexpected version in CI, unreadable
+# baseline, unparseable report).
 #
 # Usage: bash tools/ci/run-cppcheck.sh
 
@@ -32,6 +53,7 @@ cd "$ROOT"
 REPORT="${CPPCHECK_REPORT:-cppcheck-report.xml}"
 RATCHET="${CPPCHECK_RATCHET:-tools/ci/cppcheck-ratchet.txt}"
 JOBS="${CPPCHECK_JOBS:-$(nproc 2>/dev/null || echo 2)}"
+CPPCHECK_PINNED_VERSION="2.13"   # major.minor of ubuntu-24.04's cppcheck (CI)
 SCAN_DIRS=(src)
 EXCLUDE=(-i src/mmt_mobile/asn1c)   # generated ASN.1 tree — never scanned
 
@@ -48,6 +70,28 @@ if ! command -v cppcheck >/dev/null 2>&1; then
     echo "✗ cppcheck is not installed" >&2
     echo "To fix:  apt-get install -y cppcheck" >&2
     exit 2
+fi
+
+# `cppcheck --version` prints e.g. "Cppcheck 2.13.0"; compare major.minor.
+version_out="$(cppcheck --version 2>/dev/null || true)"
+if ! [[ "$version_out" =~ ([0-9]+)\.([0-9]+) ]]; then
+    echo "✗ cannot parse cppcheck version from: ${version_out:-<no output>}" >&2
+    exit 2
+fi
+found_version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+ratchet_enforced=1
+if [ "$found_version" != "$CPPCHECK_PINNED_VERSION" ]; then
+    if [ "${CI:-}" = "true" ]; then
+        echo "✗ cppcheck $found_version found, the ratchet is pinned to $CPPCHECK_PINNED_VERSION" >&2
+        echo "To fix:  re-measure $RATCHET with cppcheck $found_version and" >&2
+        echo "         update CPPCHECK_PINNED_VERSION in $0 in the same change" >&2
+        exit 2
+    fi
+    echo "⚠ cppcheck $found_version differs from the CI-pinned $CPPCHECK_PINNED_VERSION —"
+    echo "  the finding count is not comparable with the baseline, so the"
+    echo "  ratchet is advisory in this run (the error-severity gate still applies)."
+    echo "  For a CI-equivalent verdict, run cppcheck $CPPCHECK_PINNED_VERSION.x."
+    ratchet_enforced=0
 fi
 
 if [ ! -f "$RATCHET" ]; then
@@ -84,7 +128,10 @@ echo "    findings: $total total, $errors error-severity (ratchet baseline: $bas
 
 rc=0
 
-if [ "$total" -gt "$baseline" ]; then
+if [ "$ratchet_enforced" -eq 0 ]; then
+    echo "⚠ ratchet not enforced: $total findings under cppcheck $found_version are not"
+    echo "  comparable with the $CPPCHECK_PINNED_VERSION baseline ($baseline) — do not re-baseline from this run"
+elif [ "$total" -gt "$baseline" ]; then
     echo "✗ cppcheck findings rose above the ratchet: $total > $baseline" >&2
     echo "To fix:  resolve the new findings, or — only with a recorded" >&2
     echo "         justification — raise $RATCHET" >&2

@@ -88,6 +88,15 @@ Notes:
   (rule files in `rules/arch-*.mk`). GCC is the default and best-tested path.
 - A C++ compiler (`g++`, pulled in by `build-essential`) is required because
   shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:237`).
+- `cppcheck` is not in the toolchain line: only the `lint` job needs it.
+  `tools/ci/run-cppcheck.sh` pins the release its findings ratchet
+  (`tools/ci/cppcheck-ratchet.txt`) was measured with —
+  `CPPCHECK_PINNED_VERSION`, the major.minor of ubuntu-24.04's package
+  (2.13) — because other releases report a different total on unchanged
+  code (issue #345). Under `CI=true` a different version fails the script
+  (exit 2); locally it warns and treats the ratchet as advisory while the
+  error-severity gate stays enforced. For a CI-equivalent local verdict,
+  run it with cppcheck 2.13 (e.g. in an `ubuntu:24.04` container).
 
 ### Documentation-site toolchain
 
@@ -192,7 +201,8 @@ gate's verdict handling (`test-fuzz-verdicts.sh`, issue #370), the
 precision-gate metric accounting (`test-precision-metrics.py`, issue #373,
 plus the accuracy-corpus oracle self-test `test-accuracy-corpus.py`, issues #389/#390),
 the exact-release-SHA publish gate (`test-release-gates.py`, issue
-#371) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+#371, plus the cppcheck version-pin self-test `test-cppcheck-version.sh`,
+issue #345) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other
