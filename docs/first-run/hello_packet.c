@@ -33,10 +33,10 @@ int main(int argc, char **argv) {
     // Open the capture first: a missing file needs no MMT state to report.
     pcap_t *pcap = pcap_open_offline(argv[1], errbuf);
     if (!pcap) {
-        fprintf(stderr, "hello_packet: cannot open capture '%s': %s\n"
-                "  to fetch the sample capture into the current directory:\n"
-                "  curl -fsSLO https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap\n",
-                argv[1], errbuf);
+        fprintf(stderr, "hello_packet: cannot open capture '%s': %s\n", argv[1], errbuf);
+        if (strcmp(argv[1], "traffic.pcap") == 0) // only the sample has a download
+            fprintf(stderr, "  to fetch the sample capture into the current directory:\n"
+                    "  curl -fsSLO https://montimage-projects.github.io/mmt-dpi/first-run/traffic.pcap\n");
         return 1;
     }
     if (pcap_datalink(pcap) != DLT_EN10MB) {

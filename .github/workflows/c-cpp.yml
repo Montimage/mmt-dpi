@@ -539,3 +539,31 @@ jobs:
         path: ${{ runner.temp }}/resource-bounds/results.json
         if-no-files-found: warn
         retention-days: 14
+
+  site-onboarding:
+    # Onboarding through the built site artifact (issue #396, M4): build the
+    # site with the same recipe Pages publishes (tools/ci/build-docs-site.sh —
+    # built-site link check + manifest), then run the docs_onboarding suite
+    # against docs/_site: the landing page is checked as rendered, both
+    # download links must serve files byte-identical to docs/first-run/, and
+    # the displayed fetch/compile/run steps are executed verbatim in an empty
+    # directory against a throwaway SDK install, output diffed.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+    - name: Set up Ruby for the docs-site build
+      uses: ruby/setup-ruby@e8944e80fb94b20106697132f8c20c665fab29e9 # v1.325.0
+      with:
+        ruby-version: "3.3"
+        working-directory: docs
+        bundler-cache: true
+      env:
+        BUNDLE_FROZEN: "true"
+    - name: Build the site artifact
+      run: bash tools/ci/build-docs-site.sh
+    - name: Run the documented first run against the built site
+      env:
+        DOCS_SITE_DIR: docs/_site
+      run: bash tests/docs_onboarding/run_tests.sh

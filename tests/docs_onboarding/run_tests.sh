@@ -17,27 +17,29 @@
 #   [3/5] the SDK builds and installs into a throwaway MMT_BASE prefix;
 #   [4/5] the displayed commands, run verbatim in an empty directory, obtain
 #         both files, compile and print exactly the displayed output;
-#   [5/5] a missing capture exits 1 with a clear message and the fetch hint.
+#   [5/5] a missing capture exits 1 with a clear message; the fetch hint is
+#         given for the sample capture only.
 #
 # Only two substitutions are made to the displayed commands: the site URL
 # https://montimage-projects.github.io/mmt-dpi/ becomes file://$DOCS_SITE_DIR/
 # (default: the docs/ source tree, whose files the site serves verbatim — set
 # DOCS_SITE_DIR=docs/_site, relative to the repository root, to verify a built
-# site artifact instead), and
+# site artifact instead; CI does, in the site-onboarding job, issue #396), and
 # /opt/mmt becomes the throwaway prefix. $EXTRA_CFLAGS (sanitizer modes) is
-# added to the compile line.
+# added to the compile line. The landing page checked in [2/5] is the one
+# under $DOCS_SITE_DIR, so a built site is checked as rendered.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 FRAGMENT="${REPO_ROOT}/docs/_includes/first-example.md"
-INDEX="${REPO_ROOT}/docs/index.html"
 SOURCE="${REPO_ROOT}/docs/first-run/hello_packet.c"
 FIXTURE="${REPO_ROOT}/docs/first-run/traffic.pcap"
 SITE_URL="https://montimage-projects.github.io/mmt-dpi/"
 SITE_DIR="${DOCS_SITE_DIR:-docs}"
 case "${SITE_DIR}" in /*) ;; *) SITE_DIR="${REPO_ROOT}/${SITE_DIR}" ;; esac  # relative = repo root
 SITE_DIR="$(cd "${SITE_DIR}" && pwd)"
+INDEX="${SITE_DIR}/index.html"
 
 ERRORS=0
 ok()   { echo "    ✓ $1"; }
@@ -101,8 +103,10 @@ fi
 # Every site URL the fragment names resolves to a published file.
 while IFS= read -r url; do
     rel="${url#"${SITE_URL}"}"
-    if [ -f "${SITE_DIR}/${rel}" ]; then
-        ok "${url} is published (${rel})"
+    if [ -f "${SITE_DIR}/${rel}" ] && cmp -s "${SITE_DIR}/${rel}" "${REPO_ROOT}/docs/${rel}"; then
+        ok "${url} is published (${rel}, identical to docs/${rel})"
+    elif [ -f "${SITE_DIR}/${rel}" ]; then
+        fail "${url} — ${SITE_DIR}/${rel} differs from docs/${rel}"
     else
         fail "${url} — no ${rel} under ${SITE_DIR}"
     fi
@@ -142,6 +146,20 @@ report("@media (prefers-reduced-motion: reduce)" in page,
        "reduced-motion preference is honoured")
 for rel in ("first-run/hello_packet.c", "first-run/traffic.pcap"):
     report(f'href="{rel}"' in page, f"landing page links {rel} (checked by check-site-links.sh)")
+# Copy feedback and the mobile menu (issue #396): the markup contract the
+# recorded browser checks exercised (docs/DECISIONS.md).
+report(re.search(r'<span id="copyStatus"[^>]*role="status"[^>]*aria-live="polite"', page)
+       is not None and "status.textContent = ok ?" in page,
+       "copy result is announced through a polite role=status live region")
+toggle = re.search(r"<(\w+)[^>]*\bclass=\"nav-toggle\"([^>]*)>", page)
+report(toggle is not None and toggle.group(1) == "button"
+       and 'aria-expanded="false"' in toggle.group(2)
+       and 'aria-controls="navLinks"' in toggle.group(2)
+       and 'id="navLinks"' in page,
+       "mobile menu toggle is a <button> with aria-expanded/aria-controls=navLinks")
+report("btn.setAttribute('aria-expanded', open ? 'false' : 'true')" in page
+       and "links.classList.remove('open')" in page,
+       "menu toggle updates aria-expanded and a section link closes the menu")
 sys.exit(1 if bad else 0)
 PYEOF
 
@@ -193,12 +211,18 @@ fi
 echo "  [4/5] running the displayed steps in an empty directory ..."
 RUN_DIR="${WORK}/empty"
 mkdir -p "${RUN_DIR}"
-python3 - "${WORK}/commands.txt" "${WORK}/steps.sh" "${SITE_URL}" "file://${SITE_DIR}/" "${PREFIX}" <<'PYEOF'
+python3 - "${WORK}/commands.txt" "${WORK}/steps.sh" "${SITE_URL}" "${SITE_DIR}" "${PREFIX}" <<'PYEOF'
+import shlex
 import sys
-src, dst, site_url, local_url, prefix = sys.argv[1:6]
+import urllib.parse
+src, dst, site_url, site_dir, prefix = sys.argv[1:6]
+# Percent-encode the file URL and shell-quote the prefix, so checkouts and
+# temp dirs whose paths contain spaces or shell metacharacters still work.
+local_url = "file://" + urllib.parse.quote(site_dir) + "/"
 lines = []
 for cmd in open(src, encoding="utf-8").read().splitlines():
-    cmd = cmd.replace(site_url, local_url).replace("/opt/mmt/", prefix + "/")
+    # prefix first: a checkout under /opt/mmt/ must not have its file URL rewritten
+    cmd = cmd.replace("/opt/mmt/", shlex.quote(prefix) + "/").replace(site_url, local_url)
     if cmd.startswith("gcc "):
         cmd = '${CC:-gcc} ${EXTRA_CFLAGS:-} ' + cmd[len("gcc "):]
     lines.append(cmd)
@@ -236,6 +260,16 @@ if [ "$rc" -eq 1 ] && [ ! -s "${WORK}/out.txt" ] \
     ok "missing traffic.pcap exits 1, names the file and how to fetch it"
 else
     fail "missing traffic.pcap: expected exit 1 with a clear message, got exit ${rc}"
+    cat "${WORK}/err.txt" >&2 || true
+fi
+rc=0
+(cd "${RUN_DIR}" && LD_LIBRARY_PATH="${PREFIX}/dpi/lib:${LD_LIBRARY_PATH:-}" ./hello_packet other.pcap) \
+    >"${WORK}/out.txt" 2>"${WORK}/err.txt" || rc=$?
+if [ "$rc" -eq 1 ] && grep -qF "hello_packet: cannot open capture 'other.pcap'" "${WORK}/err.txt" \
+   && ! grep -qF "curl" "${WORK}/err.txt"; then
+    ok "another missing capture exits 1 without the sample's fetch hint"
+else
+    fail "missing other.pcap: expected exit 1 and no traffic.pcap fetch hint, got exit ${rc}"
     cat "${WORK}/err.txt" >&2 || true
 fi
 

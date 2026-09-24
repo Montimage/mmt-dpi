@@ -30,7 +30,9 @@ fail() { echo "    ✗ $1"; ERRORS=$((ERRORS + 1)); }
 echo "  [1/4] checking lifecycle doc citations ..."
 
 # Docs whose path:line citations this suite owns.
-CITING_DOCS=(docs/USER_GUIDE.md docs/THREADING.md docs/Global-Handler.md)
+# docs/MMT-Handler.md: handler teardown, session count and the fragment
+# resource limits (issue #396).
+CITING_DOCS=(docs/USER_GUIDE.md docs/THREADING.md docs/Global-Handler.md docs/MMT-Handler.md)
 
 # <path>:<start>[-<end>] <TAB> <regex the start line must match>
 #   [<TAB> <regex the end line must match>]
@@ -54,6 +56,14 @@ src/examples/packet_handler.c:111	^	close_extraction\(\);
 src/mmt_core/public_include/mmt_core.h:185	MMTAPI bool MMTCALL init_extraction\(\);
 src/mmt_core/public_include/mmt_core.h:198	MMTAPI void MMTCALL close_extraction\(\);
 src/mmt_core/public_include/mmt_core.h:1228	MMTAPI char\* MMTCALL mmt_version\(\);
+src/mmt_core/public_include/mmt_core.h:106-110	^#define EVA_IP_FRAGMENT_PACKET 1	^#define EVA_IP_FRAGMENT_DUPLICATED 5
+src/mmt_core/public_include/mmt_core.h:125	^typedef void \(\*generic_evasion_handler_callback\)
+src/mmt_core/public_include/mmt_core.h:218	^MMTAPI void MMTCALL mmt_close_handler\(
+src/mmt_core/public_include/mmt_core.h:229	^MMTAPI uint64_t MMTCALL get_active_session_count\(
+src/mmt_core/public_include/mmt_core.h:331	^MMTAPI bool MMTCALL register_evasion_handler\(
+src/mmt_core/public_include/mmt_core.h:580	^MMTAPI bool MMTCALL set_fragment_in_packet\(
+src/mmt_core/public_include/mmt_core.h:592	^MMTAPI bool MMTCALL set_fragmented_packet_in_session\(
+src/mmt_core/public_include/mmt_core.h:604	^MMTAPI bool MMTCALL set_fragment_in_session\(
 src/mmt_core/src/plugins_engine.c:43-50	scandir\( PLUGINS_REPOSITORY,	scandir\( PLUGINS_REPOSITORY_OPT,
 TABLE
 )"

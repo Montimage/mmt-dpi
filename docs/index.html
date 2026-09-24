@@ -10,6 +10,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MMT-DPI — Deep packet inspection for 670 protocols, in C</title>
+  <link rel="icon" href="favicon.ico">
   <meta name="description" content="MMT-DPI is a high-performance C library for deep packet inspection: classify 670 protocols, extract 7,445 named attributes, and track sessions at line rate. Apache-2.0. Linux. Plugin-extensible.">
 
   <!-- Open Graph / social -->
@@ -340,7 +341,7 @@
     .code-head .fn { font-family: var(--mono); font-size: .78rem; color: var(--text-mute); }
     pre.code { margin: 0; padding: 18px; overflow-x: auto; font-size: .84rem; line-height: 1.7; }
     /* canonical first-example.md include rendered inside the card (#248) */
-    .code-card p { margin: 0; padding: 14px 18px 0; font-size: .88rem; color: var(--text-dim); }
+    .code-card p { margin: 0; padding: 14px 18px 0; font-size: .88rem; color: var(--text-dim); overflow-wrap: anywhere; }
     .code-card p code { color: var(--amber); font-size: .9em; }
     .code-card .highlight pre { margin: 0; padding: 18px; overflow-x: auto; font-size: .84rem; line-height: 1.7; background: transparent; }
     .t-key { color: var(--magenta); }
@@ -351,8 +352,10 @@
     .t-ty  { color: #2ee6d6; } /* type tokens — kept cyan so syntax categories stay distinct (not a brand accent) */
 
     /* ---------- API tabs ---------- */
-    .api-grid { display: grid; grid-template-columns: 320px 1fr; gap: 30px; margin-top: 44px; align-items: start; }
-    @media (max-width: 920px){ .api-grid { grid-template-columns: 1fr; } }
+    /* minmax(0, …): the full first-example source must scroll inside its
+       card, not widen the column past the viewport (#396) */
+    .api-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 30px; margin-top: 44px; align-items: start; }
+    @media (max-width: 920px){ .api-grid { grid-template-columns: minmax(0, 1fr); } }
     .api-tabs { display: flex; flex-direction: column; gap: 10px; }
     @media (max-width: 920px){ .api-tabs { flex-direction: row; flex-wrap: wrap; } }
     .api-tab {
