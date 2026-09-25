@@ -13,7 +13,17 @@
 #define NOT_FOUND 0
 #define FOUND     1
 
-#define QUIC_IETF_VERSION_1 0x00000001
+#define QUIC_IETF_VERSION_1 0x00000001 /* RFC 9000 */
+#define QUIC_IETF_VERSION_2 0x6b3343cf /* RFC 9369 */
+
+/* RFC 9000 §17.2: a v1/v2 connection ID is at most 20 bytes. */
+#define QUIC_IETF_MAX_CID_LENGTH 20
+/* Short-header DCID length used when the flow's long headers did not announce
+ * one (e.g. capture started mid-connection): the historical fixed 8 bytes. */
+#define QUIC_IETF_DEFAULT_SHORT_HEADER_DCID_LENGTH 8
+/* INT shim + metadata header offset probed when the INT shim Length is
+ * unusable (the historical fixed INT header size). */
+#define QUIC_IETF_INT_DEFAULT_LENGTH 56
 
 static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -54,6 +64,100 @@ static int _quic_ietf_parse_long_header(const uint8_t *data, size_t len,
 	return 1;
 }
 
+static inline int _quic_ietf_is_supported_version(uint32_t version) {
+	return version == QUIC_IETF_VERSION_1 || version == QUIC_IETF_VERSION_2;
+}
+
+/* Long packet type in RFC 9000 terms (enum quic_ietf_long_packet_types).
+ * RFC 9369 §3.2 rotates the v2 codepoints: Initial=0b01, 0-RTT=0b10,
+ * Handshake=0b11, Retry=0b00 — map them back so every consumer (attribute,
+ * session analysis, coalesced-packet walk) reasons about one numbering. */
+static inline uint8_t _quic_ietf_long_packet_type(uint8_t flags, uint32_t version) {
+	uint8_t type = (flags >> 4) & 3;
+	if( version == QUIC_IETF_VERSION_2 )
+		type = (uint8_t)((type + 3) & 3);
+	return type;
+}
+
+/* RFC 9000 §16 variable-length integer at data[*cursor..len). Advances the
+ * cursor only when the whole encoding is inside len. */
+static int _quic_ietf_read_varint(const uint8_t *data, size_t len, size_t *cursor,
+		uint64_t *value) {
+	if( *cursor >= len )
+		return 0;
+	size_t n = (size_t)1 << (data[*cursor] >> 6);
+	if( n > len - *cursor )
+		return 0;
+	uint64_t v = data[*cursor] & 0x3f;
+	for( size_t i = 1; i < n; i++ )
+		v = (v << 8) | data[*cursor + i];
+	*cursor += n;
+	*value = v;
+	return 1;
+}
+
+/* Size of the first QUIC packet of the datagram at data[0..len) when it is a
+ * supported-version long header carrying a Length field (Initial, 0-RTT,
+ * Handshake — RFC 9000 §17.2); 0 otherwise (short header and Retry packets
+ * run to the end of the datagram, RFC 9000 §12.2), or when the declared spans
+ * do not fit inside len. */
+static size_t _quic_ietf_long_packet_size(const uint8_t *data, size_t len) {
+	quic_ietf_long_header_t hdr;
+	uint64_t v;
+	if( len == 0 || !(data[0] & 0x80) )
+		return 0;
+	if( ! _quic_ietf_parse_long_header(data, len, &hdr) )
+		return 0;
+	if( ! _quic_ietf_is_supported_version(hdr.version) )
+		return 0;
+	size_t cursor = hdr.types_pecific_payload_offset;
+	switch( _quic_ietf_long_packet_type(hdr.flags, hdr.version) ){
+	case QUIC_IETF_INITIAL_PACKET_TYPE:
+		//Token Length (i) + Token precede the Length field
+		if( ! _quic_ietf_read_varint(data, len, &cursor, &v) || v > len - cursor )
+			return 0;
+		cursor += (size_t)v;
+		/* fall through */
+	case QUIC_IETF_0RTT_PACKET_TYPE:
+	case QUIC_IETF_HANDSHAKE_PACKET_TYPE:
+		//Length (i): Packet Number + Packet Payload
+		if( ! _quic_ietf_read_varint(data, len, &cursor, &v) || v > len - cursor )
+			return 0;
+		return cursor + (size_t)v;
+	default:
+		return 0;
+	}
+}
+
+/* Session lookup: a chained (coalesced) QUIC layer belongs to the connection
+ * of the first QUIC layer of its datagram, whose session_data holds the
+ * per-flow state. */
+static quic_ietf_session_t *_quic_ietf_session_lookup(const ipacket_t *ipacket, unsigned index) {
+	if( ipacket->session == NULL || index >= PROTO_PATH_SIZE )
+		return NULL;
+	const proto_hierarchy_t *path = ipacket->proto_hierarchy;
+	while( path != NULL && index > 0 && (int)index < path->len
+			&& path->proto_path[index - 1] == PROTO_QUIC_IETF )
+		index--;
+	return ipacket->session->session_data[index];
+}
+
+/* Length of the destination connection ID of a short-header packet. Short
+ * headers omit it (RFC 9000 §5.1, §17.3): it is the source connection ID the
+ * receiving endpoint announced in its own long headers, remembered per
+ * endpoint by _quic_ietf_learn_cid_length(). Falls back to the historical 8
+ * bytes when the flow's long headers were not seen. */
+static uint8_t _quic_ietf_short_header_dcid_length(const ipacket_t *ipacket,
+		const quic_ietf_session_t *session) {
+	if( session != NULL && ipacket->internal_packet != NULL
+			&& ipacket->internal_packet->dst != NULL ){
+		for( int i = 0; i < 2; i++ )
+			if( session->announced_cid[i].endpoint == ipacket->internal_packet->dst )
+				return session->announced_cid[i].length;
+	}
+	return QUIC_IETF_DEFAULT_SHORT_HEADER_DCID_LENGTH;
+}
+
 /* non-static: driven directly by tools/phase0/tests/quic_dtls_extractor_test.c
    (declared in internal_decls.h — internal seam, not a public API) */
 int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
@@ -67,7 +171,7 @@ int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 	// first octet: header_form bit7
 	uint8_t flags = data[ offset ];
 	uint32_t u32;
-	quic_ietf_session_t * session_data = ipacket->session->session_data[index];
+	quic_ietf_session_t * session_data = _quic_ietf_session_lookup(ipacket, index);
 	//extract session's attributes
 	if( session_data != NULL ){
 		int dir = (ipacket->internal_packet->src == session_data->quic_client ? CLIENT_TO_SERVER : SERVER_TO_CLIENT );
@@ -94,7 +198,8 @@ int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 			(*(uint8_t *) extracted_data->data) = (hdr.flags >> 7) & 1;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_LONG_PACKET_TYPE:
-			(*(uint8_t *) extracted_data->data) = (hdr.flags >> 4) & 3;
+			//RFC 9000 numbering for every supported version (RFC 9369 §3.2)
+			(*(uint8_t *) extracted_data->data) = _quic_ietf_long_packet_type(hdr.flags, hdr.version);
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_VERSION:
 			(*(uint32_t *) extracted_data->data) = hdr.version;
@@ -108,7 +213,7 @@ int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 		}
 
 		//for each type of packet
-		switch( (hdr.flags >> 4) & 3 ){
+		switch( _quic_ietf_long_packet_type(hdr.flags, hdr.version) ){
 		//Initial: https://datatracker.ietf.org/doc/html/rfc9000#packet-initial
 		case QUIC_IETF_INITIAL_PACKET_TYPE:
 			switch( extracted_data->field_id ){
@@ -132,10 +237,11 @@ int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 			break;
 		}
 	} else {
-		//Short header — flag bits are in data[offset]; the fixed 8-byte
-		//destination connection id is at offset+1, the packet number at
-		//offset+9 (the quic_ietf_1_rtt_packet_t layout notes the field is
-		//fixed at 8 bytes).
+		//Short header — flag bits are in data[offset], the destination
+		//connection id at offset+1 (its length learned from the flow's long
+		//headers), then the packet number (RFC 9000 §17.3).
+		size_t dcid_len = _quic_ietf_short_header_dcid_length(ipacket, session_data);
+		size_t pn_len   = (size_t)(flags & 3) + 1;
 		switch( extracted_data->field_id ){
 		case QUIC_IETF_HEADER_FORM:
 			(*(uint8_t *) extracted_data->data) = (flags >> 7) & 1;
@@ -147,32 +253,24 @@ int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 			(*(uint8_t *) extracted_data->data) = flags & 3;
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_DESTINATION_CONNECTION_ID:
-			if( avail < 1 + 8 )
+			if( avail < 1 + dcid_len )
 				return ATTRIBUTE_UNSET;
 			{
 				mmt_string_data_t *string = (mmt_string_data_t *) extracted_data->data;
-				string->len = 8;
-				memcpy( string->data, &data[ offset + 1 ], 8 );
-				string->data[8] = '\0';
+				string->len = (uint32_t) dcid_len;
+				memcpy( string->data, &data[ offset + 1 ], dcid_len );
+				string->data[dcid_len] = '\0';
 			}
 			return ATTRIBUTE_SET;
 		case QUIC_IETF_PACKET_NUMBER:
-			if( avail < 1 + 8 + 4 )
+			//the Packet Number field is QUIC_IETF_PACKET_NUMBER_LENGTH + 1
+			//bytes, big-endian
+			if( avail < 1 + dcid_len + pn_len )
 				return ATTRIBUTE_UNSET;
-			//the length of the Packet Number field is the value of QUIC_IETF_PACKET_NUMBER_LENGTH plus one
-			memcpy((char*)&u32, &data[ offset + 1 + 8 ], 4);
-
-			switch( (flags & 3) + 1 ){
-			case 1:
-				((char*)&u32)[1] = 0; //no break here as we need to clear 2nd and 3rd elements
-			case 2:
-				((char*)&u32)[2] = 0; //no break here as we need to clear 3rd element
-			case 3:
-				((char*)&u32)[3] = 0;
-				break;
-			}
-
-			(*(uint32_t *) extracted_data->data) = ntohl(u32);
+			u32 = 0;
+			for( size_t i = 0; i < pn_len; i++ )
+				u32 = (u32 << 8) | data[ offset + 1 + dcid_len + i ];
+			(*(uint32_t *) extracted_data->data) = u32;
 			return ATTRIBUTE_SET;
 		}
 	}
@@ -186,7 +284,15 @@ int _extraction_quic_ietf_att(const ipacket_t *ipacket, unsigned index,
 #define QUIC_IETF_LONG_HEADER_WIRE_MIN  31
 #define QUIC_IETF_SHORT_HEADER_WIRE_MIN 21
 
-static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned parent_proto_index, size_t offset) {
+static void _quic_ietf_session_data_init(ipacket_t * ipacket, unsigned index);
+static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index);
+static void _quic_ietf_learn_cid_length(ipacket_t * ipacket, unsigned index,
+		quic_ietf_session_t * session);
+
+/* session_index: protocol index whose QUIC session proves this flow already
+ * showed a long header — the new QUIC layer's own index for a datagram
+ * payload, the enclosing QUIC layer's index for a coalesced packet. */
+static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned session_index, size_t offset) {
 	if( offset >= ipacket->p_hdr->caplen )
 		return NOT_FOUND;
 	size_t payload_len = ipacket->p_hdr->caplen - offset;
@@ -202,25 +308,23 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 		// https://datatracker.ietf.org/doc/html/rfc9000#section-17.2
 		if( !(flags & 0x40) )
 			goto _not_found_quic_ietf;
-		//TODO(#333): support only version 1 for now
+		//versions 1 (RFC 9000) and 2 (RFC 9369) share this wire image
 		{
 			uint32_t version;
 			memcpy(&version, &ipacket->data[offset + 1], sizeof(version));
-			if( ntohl(version) != QUIC_IETF_VERSION_1 )
+			if( ! _quic_ietf_is_supported_version( ntohl(version) ) )
 				goto _not_found_quic_ietf;
 		}
 
 	} else {
 		//Short Header
 
-		unsigned quick_proto_index = parent_proto_index+1; //index of QUIC protocol if it is available
-
 		//must have enough room to contain QUIC
-		if( quick_proto_index >= PROTO_PATH_SIZE )
+		if( session_index >= PROTO_PATH_SIZE || ipacket->session == NULL )
 			goto _not_found_quic_ietf;
 
 		//QUIC session must be initialized (must be seen long header first)
-		if( ipacket->session->session_data[quick_proto_index] == NULL )
+		if( ipacket->session->session_data[session_index] == NULL )
 			goto _not_found_quic_ietf;
 
 		// must have enough room
@@ -230,10 +334,11 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 		if( !(flags & 0x40) ) //fixed_bit is set to 1
 			goto _not_found_quic_ietf;
 
-		//FIXME(#333): not sure why this value can be non-zero
-		//The value included prior to protection MUST be set to 0.
-		//if( (flags & 0x18) != 0 ) //reserved_bits
-		//	goto _not_found_quic_ietf;
+		//The reserved bits (0x18) are NOT checked: they are zero only
+		//"prior to protection" — header protection (RFC 9001 §5.4.1) masks
+		//them together with the packet number length, so on the wire they
+		//carry arbitrary values until the header protection key removes the
+		//mask, which a passive observer does not have.
 
 		//check correct packet length
 	}
@@ -250,26 +355,97 @@ static int _classify_quic_ietf_from_data_offset(ipacket_t *ipacket, unsigned par
 	return NOT_FOUND;
 }
 
-static void _quic_ietf_session_data_init(ipacket_t * ipacket, unsigned index);
-static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index);
+/* The protocol path is session-backed, so a QUIC-after-QUIC layer detected
+ * on one datagram would stick to every later datagram of the flow. When the
+ * current datagram carries no further coalesced packet, drop the trailing
+ * chained QUIC layers (and any session data the core attached to them, which
+ * the timeout cleanup — walking the path — would no longer reach). Only a
+ * tail made purely of QUIC layers is ever touched. */
+static void _quic_ietf_drop_chained_layers(ipacket_t *ipacket, unsigned index) {
+	proto_hierarchy_t *path = ipacket->proto_hierarchy;
+	if( path == NULL || path->len <= (int)index + 1 )
+		return;
+	int len = path->len > PROTO_PATH_SIZE ? PROTO_PATH_SIZE : path->len;
+	for( int i = (int)index + 1; i < len; i++ )
+		if( path->proto_path[i] != PROTO_QUIC_IETF )
+			return;
+	if( ipacket->session != NULL ){
+		for( int i = (int)index + 1; i < len; i++ ){
+			mmt_free( ipacket->session->session_data[i] );
+			ipacket->session->session_data[i] = NULL;
+		}
+	}
+	path->len = (int)index + 1;
+	if( ipacket->proto_headers_offset != NULL )
+		ipacket->proto_headers_offset->len = path->len;
+	if( ipacket->proto_classif_status != NULL )
+		ipacket->proto_classif_status->len = path->len;
+	ipacket->internal_cumulative_offset_valid = 0;
+}
 
+/* Coalesced packets (RFC 9000 §12.2): a UDP datagram may carry several QUIC
+ * packets back to back — every one but the last is a long header whose
+ * Length field delimits it. Each valid QUIC packet after the one at
+ * quic_index is classified as QUIC after QUIC (bounded by the protocol path
+ * and the handler's classification depth); zero padding after the last
+ * packet fails the fixed-bit check and is left alone. The chained layers
+ * share the connection's session (the first QUIC layer's), which learns
+ * their announced connection IDs. */
+static void _quic_ietf_classify_coalesced(ipacket_t *ipacket, unsigned quic_index,
+		quic_ietf_session_t *session) {
+	unsigned index = quic_index;
+	while( index + 1 < PROTO_PATH_SIZE ){
+		int base = get_packet_offset_at_index(ipacket, index);
+		if( base < 0 || (size_t)base >= ipacket->p_hdr->caplen )
+			break;
+		size_t avail = ipacket->p_hdr->caplen - (size_t)base;
+		size_t first = _quic_ietf_long_packet_size( ipacket->data + base, avail );
+		if( first == 0 || first >= avail )
+			break;
+		if( _classify_quic_ietf_from_data_offset( ipacket, quic_index, (size_t)base + first ) != FOUND )
+			break;
+		classified_proto_t retval;
+		retval.offset = first;
+		retval.proto_id = PROTO_QUIC_IETF;
+		retval.status = Classified;
+		if( ! set_classified_proto(ipacket, index + 1, retval) )
+			break;
+		index++;
+		if( session != NULL )
+			_quic_ietf_learn_cid_length( ipacket, index, session );
+	}
+	_quic_ietf_drop_chained_layers( ipacket, index );
+}
+
+/* Session init and analysis run from here, the classification entry point:
+ * the UDP post-classification (udp_post_classification_function) ends the
+ * pipeline walk at UDP for a layer it did not detect through the tcpip
+ * protocol stack, so the core does not process this QUIC layer — its
+ * registered session_data_init/analysis hooks would not run. The UDP checker
+ * is dispatched on every packet of the flow, so this is the per-packet
+ * analysis point; the registered hooks cover paths where the core does
+ * process the layer (both are idempotent for one packet). */
 static int _classified_quic_ietf(ipacket_t *ipacket, unsigned index, size_t offset){
 	classified_proto_t retval;
 	retval.offset = offset;
 	retval.proto_id = PROTO_QUIC_IETF;
 	retval.status = Classified;
 
-	//TODO(#333): need to find a suitable place to put these 2 functions
+	int ret = set_classified_proto(ipacket, index+1, retval);
+	if( ! ret )
+		return ret;
 	_quic_ietf_session_data_init( ipacket, index+1 );
 	_quic_ietf_session_data_analysis( ipacket, index+1 );
-	return set_classified_proto(ipacket, index+1, retval);
+	_quic_ietf_classify_coalesced( ipacket, index+1,
+			ipacket->session ? ipacket->session->session_data[index+1] : NULL );
+	return ret;
 }
 static int _classify_quic_ietf_from_udp(ipacket_t *ipacket, unsigned index) {
 	int base = get_packet_offset_at_index(ipacket, index);
 	if( base < 0 || (size_t)base + 8 > ipacket->p_hdr->caplen )
 		return NOT_FOUND;
 	size_t offset = (size_t)base + 8; //8 bytes of UDP header
-	if( _classify_quic_ietf_from_data_offset( ipacket, index, offset ) == FOUND )
+	if( _classify_quic_ietf_from_data_offset( ipacket, index + 1, offset ) == FOUND )
 		return _classified_quic_ietf( ipacket, index, 8 );
 	return NOT_FOUND;
 }
@@ -283,14 +459,24 @@ static int _classify_quic_ietf_from_int(ipacket_t *ipacket, unsigned index) {
 		return NOT_FOUND;
 
 	int base = get_packet_offset_at_index(ipacket, index);
-	if( base < 0 || (size_t)base + 56 > ipacket->p_hdr->caplen )
+	if( base < 0 || (size_t)base >= ipacket->p_hdr->caplen )
 		return NOT_FOUND;
-	size_t offset = (size_t)base + 56; //56 bytes of INT
+	//the INT shim Length (byte 2) counts the shim, metadata header and
+	//metadata stack in 4-byte words (INT v1.0 §4.6.1); fall back to the
+	//historical fixed size when the shim is absent, of a type the INT
+	//dissector does not parse (> 1) or smaller than shim + header — the
+	//same rule as _int_header_length() in proto_int.c, so both agree on
+	//where the layer after INT starts
+	size_t int_len = QUIC_IETF_INT_DEFAULT_LENGTH;
+	if( (size_t)base + 4 <= ipacket->p_hdr->caplen
+			&& ipacket->data[ base ] <= 1 && ipacket->data[ base + 2 ] >= 3 )
+		int_len = (size_t)ipacket->data[ base + 2 ] * 4;
+	size_t offset = (size_t)base + int_len;
 	if( offset >= ipacket->p_hdr->caplen )
 		return NOT_FOUND;
 
-	if( _classify_quic_ietf_from_data_offset( ipacket, index, offset ) == FOUND )
-		return _classified_quic_ietf( ipacket, index, 56 );
+	if( _classify_quic_ietf_from_data_offset( ipacket, index + 1, offset ) == FOUND )
+		return _classified_quic_ietf( ipacket, index, int_len );
 	return NOT_FOUND;
 }
 
@@ -306,6 +492,36 @@ static void _quic_ietf_session_data_init(ipacket_t * ipacket, unsigned index) {
 
 		session_data->quic_client = packet->src;
 	}
+}
+
+/* Remember the source connection ID length an endpoint announces in its long
+ * headers: its peer uses that connection ID as the DCID of the short-header
+ * packets it sends to the endpoint (RFC 9000 §7.2). */
+static void _quic_ietf_learn_cid_length(ipacket_t * ipacket, unsigned index,
+		quic_ietf_session_t * session) {
+	int ioff = get_packet_offset_at_index(ipacket, index);
+	const void *src = ipacket->internal_packet ? ipacket->internal_packet->src : NULL;
+	if( src == NULL || ioff < 0 || (size_t)ioff >= ipacket->p_hdr->caplen )
+		return;
+	const uint8_t *data = ipacket->data + ioff;
+	size_t avail = ipacket->p_hdr->caplen - (size_t)ioff;
+	quic_ietf_long_header_t hdr;
+	if( !(data[0] & 0x80) || ! _quic_ietf_parse_long_header(data, avail, &hdr) )
+		return;
+	if( ! _quic_ietf_is_supported_version(hdr.version)
+			|| hdr.source_connection_id_length > QUIC_IETF_MAX_CID_LENGTH )
+		return;
+	int slot = -1;
+	for( int i = 0; i < 2 && slot < 0; i++ )
+		if( session->announced_cid[i].endpoint == src )
+			slot = i;
+	for( int i = 0; i < 2 && slot < 0; i++ )
+		if( session->announced_cid[i].endpoint == NULL )
+			slot = i;
+	if( slot < 0 )
+		slot = 1;
+	session->announced_cid[slot].endpoint = src;
+	session->announced_cid[slot].length   = hdr.source_connection_id_length;
 }
 
 
@@ -382,6 +598,7 @@ static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index)
 	if( session_data == NULL )
 		return MMT_CONTINUE;
 
+	_quic_ietf_learn_cid_length( ipacket, index, session_data );
 	_quic_ietf_calculate_rtts( ipacket, index, session_data );
 	return MMT_CONTINUE;
 }
@@ -421,8 +638,9 @@ int init_proto_quic_ietf_struct() {
 		}
 	}
 
-	//QUIC is after UDP, so we classify it once we got UDP
-	//TODO(#333): need to classify QUIC after QUIC
+	//QUIC is after UDP, so we classify it once we got UDP; coalesced
+	//QUIC-after-QUIC packets are classified by the same checker
+	//(_quic_ietf_classify_coalesced)
 	if( !register_classification_function_with_parent_protocol( PROTO_UDP, _classify_quic_ietf_from_udp, 100 ) ){
 		log_err("Need mmt_tcpip library containing PROTO_UDP having id = %d", PROTO_UDP);
 		return PROTO_NOT_REGISTERED;
@@ -438,7 +656,8 @@ int init_proto_quic_ietf_struct() {
 			MMT_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
 			PROTO_INT, PROTO_QUIC_IETF);
 
-	//TODO(#333): need to get QUIC session
+	//per-flow QUIC session (index-keyed session_data of the owning layer):
+	//client endpoint, announced connection-ID lengths, spin-bit RTT
 	register_session_data_initialization_function(protocol_struct, _quic_ietf_session_data_init);
 	register_session_data_cleanup_function(protocol_struct, _quic_ietf_session_data_cleanup);
 	register_session_data_analysis_function(protocol_struct, _quic_ietf_session_data_analysis);

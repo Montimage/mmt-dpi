@@ -82,35 +82,25 @@ typedef struct quic_ietf_retry_packet {
 	uint8_t retry_integrity_tag[16];
 }quic_ietf_retry_packet_t;
 
-//https://datatracker.ietf.org/doc/html/rfc9000#name-short-header-packets
-typedef struct quic_ietf_1_rtt_packet {
-#ifdef __BIG_ENDIAN_BITFIELD
-	uint8_t header_form         : 1; //is set to 0
-	uint8_t fixed_bit           : 1; //is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded
-	uint8_t spin_bit            : 1;
-	uint8_t reserved_bits       : 2; //MUST be set to 0
-	uint8_t key_phase           : 1;
-	uint8_t packet_number_length: 2; //the length of the Packet Number field is the value of this field plus one
-#else
-	uint8_t packet_number_length: 2; //the length of the Packet Number field is the value of this field plus one
-	uint8_t key_phase           : 1;
-	uint8_t reserved_bits       : 2; //MUST be set to 0
-	uint8_t spin_bit            : 1;
-	uint8_t fixed_bit           : 1; //is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded
-	uint8_t header_form         : 1; //is set to 0
-#endif
-
-	//https://datatracker.ietf.org/doc/html/rfc9000#section-5.1
-	// Packets with short headers (Section 17.3) only include the Destination Connection ID
-	//  and omit the explicit length
-	uint8_t destination_connection_id[8]; //0..160, TODO(#333): fixed 8 bytes for now
-	uint8_t packet_number[4]; // (8..32),
-	const uint8_t *packet_payload;
-} __attribute__((packed))
-quic_ietf_1_rtt_packet_t;
-
-typedef quic_ietf_1_rtt_packet_t quic_ietf_short_packet_t;
-
+/*
+https://datatracker.ietf.org/doc/html/rfc9000#name-short-header-packets
+1-RTT Packet {
+  Header Form (1) = 0,
+  Fixed Bit (1) = 1,
+  Spin Bit (1),
+  Reserved Bits (2),        // header-protected (RFC 9001 §5.4.1)
+  Key Phase (1),
+  Packet Number Length (2), // Packet Number is this value + 1 bytes
+  Destination Connection ID (0..160),
+  Packet Number (8..32),
+  Packet Payload (8..),
+}
+The short header does not carry the Destination Connection ID length
+(RFC 9000 §5.1): the parser takes it from the source connection ID length the
+receiving endpoint announced in its long headers (quic_ietf_session_t
+.announced_cid), and assumes 8 bytes when the flow's long headers were not
+seen.
+*/
 
 #define CLIENT_TO_SERVER 0
 #define SERVER_TO_CLIENT 1
@@ -121,10 +111,12 @@ typedef struct {
 } spinbit_edge_t;
 
 typedef struct quic_ietf_session {
-	//we need to remember the length of connection ID so that we can get them in packets of short header form
-	uint16_t destination_connection_id_length;
-	uint16_t source_connection_id_length;
-	uint8_t packet_number_length;
+	//per endpoint: the source connection ID length it announced in its long
+	//headers = the DCID length of the short-header packets sent to it
+	struct {
+		const void *endpoint; //ipacket->internal_packet->src of the announcer
+		uint8_t length;
+	} announced_cid[2];
 	const void *quic_client; //the client that init QUIC connection
 
 	spinbit_edge_t spinbit_edge[2];

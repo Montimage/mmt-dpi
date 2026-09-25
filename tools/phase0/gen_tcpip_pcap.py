@@ -701,11 +701,9 @@ def gen_acc_quic_positive_pcap(path):
     print("wrote %s (accuracy: QUIC v1 Initial x2 + 1-RTT)" % path)
 
 
-def gen_acc_quic_v2_ambiguous_pcap(path):
+def gen_acc_quic_v2_positive_pcap(path):
     """QUIC version 2 (RFC 9369, version 0x6b3343cf) Initial exchange on
-    UDP/443. It is genuine QUIC, but the SDK only recognises version 1
-    (TODO #333), so the expected handling is an abstention — ambiguous, not a
-    false negative the gate should hide."""
+    UDP/443 -- recognised alongside version 1 since issue #333."""
     f = pcap_open(path)
     flow = _AccFlow(f, 17, 51821, 443)
     dcid, scid = bytes(range(0xC0, 0xC8)), bytes(range(0xD0, 0xD8))
@@ -717,6 +715,24 @@ def gen_acc_quic_v2_ambiguous_pcap(path):
                                        b"\x6b" * 40, initial=True))
     f.close()
     print("wrote %s (accuracy: QUIC v2 Initial x2)" % path)
+
+
+def gen_acc_quic_draft29_ambiguous_pcap(path):
+    """QUIC draft-29 (version 0xff00001d) Initial exchange on UDP/443. It is
+    genuine (pre-RFC) QUIC, but the SDK recognises only the final versions 1
+    and 2, so the expected handling is an abstention -- ambiguous, not a
+    false negative the gate should hide."""
+    f = pcap_open(path)
+    flow = _AccFlow(f, 17, 51822, 443)
+    dcid, scid = bytes(range(0xE0, 0xE8)), bytes(range(0xF0, 0xF8))
+    # draft-29 uses the v1 long packet types: Initial is 0b00
+    flow.send("cli", _quic_long_header(0xFF00001D, 0, dcid, scid,
+                                       b"\x7a" * 40, initial=True,
+                                       pad_to=1200))
+    flow.send("srv", _quic_long_header(0xFF00001D, 0, scid, dcid,
+                                       b"\x7b" * 40, initial=True))
+    f.close()
+    print("wrote %s (accuracy: QUIC draft-29 Initial x2)" % path)
 
 
 def _h2_frame(ftype, flags, stream, payload):
@@ -798,7 +814,8 @@ ACC_GENS = {
     "acc_tls_sni_attribution": gen_acc_tls_sni_attribution_pcap,
     "acc_tls_negative": gen_acc_tls_negative_pcap,
     "acc_quic_positive": gen_acc_quic_positive_pcap,
-    "acc_quic_v2_ambiguous": gen_acc_quic_v2_ambiguous_pcap,
+    "acc_quic_v2_positive": gen_acc_quic_v2_positive_pcap,
+    "acc_quic_draft29_ambiguous": gen_acc_quic_draft29_ambiguous_pcap,
     "acc_http2_positive": gen_acc_http2_positive_pcap,
     "acc_http2_negative": gen_acc_http2_negative_pcap,
     "acc_unknown_udp": gen_acc_unknown_udp_pcap,

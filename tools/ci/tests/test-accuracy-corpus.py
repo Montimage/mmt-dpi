@@ -61,7 +61,8 @@ GOOD_FP = {
     "acc_tls_negative.pcap": "2\tmeta.ethernet.ip.tcp.http\n"
                              "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_quic_positive.pcap": "3\tmeta.ethernet.ip.udp.quic_ietf\n",
-    "acc_quic_v2_ambiguous.pcap": "2\tmeta.ethernet.ip.udp.unknown\n",
+    "acc_quic_v2_positive.pcap": "2\tmeta.ethernet.ip.udp.quic_ietf\n",
+    "acc_quic_draft29_ambiguous.pcap": "2\tmeta.ethernet.ip.udp.unknown\n",
     "acc_http2_positive.pcap": "2\tmeta.ethernet.ip.tcp.http2\n"
                                "3\tmeta.ethernet.ip.tcp.unknown\n",
     "acc_http2_negative.pcap": "2\tmeta.ethernet.ip.tcp.http\n"
@@ -342,7 +343,7 @@ with Scratch() as s:
           out)
 
 with Scratch() as s:
-    s.write_fp("acc_quic_v2_ambiguous.pcap",
+    s.write_fp("acc_quic_draft29_ambiguous.pcap",
                "2\tmeta.ethernet.ip.udp.quic_ietf\n")
     rc, out = s.run()
     check("false accept on an ambiguous case fails", rc == 1, out)

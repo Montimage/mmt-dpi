@@ -15,7 +15,7 @@
 // (IPv4 TOS byte, IPv6 Traffic Class) is set to this value
 #define INT_DSCP 0x20
 
-//Historical INT length: the QUIC_IETF-over-INT checker still assumes it
+//Historical INT length, used when the shim Length is absent or invalid
 #define INT_DEFAULT_LENGTH 56
 
 #define NOT_FOUND 0
@@ -80,7 +80,7 @@ static int _classify_int_from_tcp(ipacket_t * ipacket, unsigned index) {
  * stack) at the given index: the shim Length field counts 4-byte words and
  * includes the shim and the 8-byte metadata header (3 words at least).
  * Falls back to the historical 56 bytes when the shim is absent or invalid
- * (the QUIC_IETF-over-INT checker still probes at 56 bytes, see #333).
+ * (the QUIC_IETF-over-INT checker applies the same rule, see #333).
  */
 static int _int_header_length(const ipacket_t *ipacket, unsigned index) {
 	int offset = get_packet_offset_at_index(ipacket, index);

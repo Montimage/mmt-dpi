@@ -239,11 +239,41 @@
       }
     },
     {
-      "pcap": "acc_quic_v2_ambiguous.pcap",
+      "pcap": "acc_quic_v2_positive.pcap",
+      "family": "quic",
+      "case": "positive",
+      "description": "QUIC version 2 (RFC 9369, 0x6b3343cf) Initial exchange on UDP/443, recognised alongside version 1 since issue #333 (formerly the ambiguous case acc_quic_v2_ambiguous.pcap; same bytes).",
+      "sha256": "4085c9e4422346ff1b02938d6dae00de70e191e8bb8de9c691144c596df252de",
+      "expected": {
+        "packets": 2,
+        "wire": 2,
+        "abstain": 0,
+        "other": {},
+        "attribution": {}
+      },
+      "provenance": {
+        "origin": "synthetic",
+        "generator": {
+          "script": "tools/phase0/gen_tcpip_pcap.py",
+          "pcap": "acc_quic_v2_positive"
+        },
+        "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
+      },
+      "review": {
+        "reviewed_in": "issue #333",
+        "date": "2026-09-25",
+        "checks": [
+          "RFC 9369 \u00a73.2 long packet type 0b01 = Initial for version 2, with Token Length field; client Initial padded to 1200 bytes",
+          "RFC 9369 \u00a73.1 version 0x6b3343cf shares the RFC 9000 \u00a717.2 long-header wire image, so both packets carry the quic_ietf wire label"
+        ]
+      }
+    },
+    {
+      "pcap": "acc_quic_draft29_ambiguous.pcap",
       "family": "quic",
       "case": "ambiguous",
-      "description": "QUIC version 2 (RFC 9369, 0x6b3343cf) Initial exchange on UDP/443. Genuine QUIC, but the SDK recognises only version 1 (TODO #333), so the expected handling is an abstention.",
-      "sha256": "4085c9e4422346ff1b02938d6dae00de70e191e8bb8de9c691144c596df252de",
+      "description": "QUIC draft-29 (0xff00001d) Initial exchange on UDP/443. Genuine pre-RFC QUIC, but the SDK recognises only the final versions 1 (RFC 9000) and 2 (RFC 9369), so the expected handling is an abstention.",
+      "sha256": "0a1c40d8aa53d2a2b0defbe21054fccfdfe71a83cf129a158b0c00c047566820",
       "expected": {
         "packets": 2,
         "wire": 0,
@@ -255,16 +285,16 @@
         "origin": "synthetic",
         "generator": {
           "script": "tools/phase0/gen_tcpip_pcap.py",
-          "pcap": "acc_quic_v2_ambiguous"
+          "pcap": "acc_quic_draft29_ambiguous"
         },
         "redistribution": "Synthetic: every byte is produced by the generator from constants in the source tree (RFC 5737 documentation addresses, RFC 2606/6761 reserved names, locally administered MACs); no captured traffic, no third-party data. Redistributable under the repository licence."
       },
       "review": {
-        "reviewed_in": "issue #389",
-        "date": "2026-09-23",
+        "reviewed_in": "issue #333",
+        "date": "2026-09-25",
         "checks": [
-          "RFC 9369 \u00a73.2 long packet type 0b01 = Initial for version 2, with Token Length field; client Initial padded to 1200 bytes",
-          "abstention is the documented, accepted handling until #333 adds v2; it is reported, not hidden"
+          "draft-ietf-quic-transport-29 \u00a717.2 long header with version 0xff00001d and the v1 long packet type 0b00 = Initial, with Token Length field; client Initial padded to 1200 bytes",
+          "abstention on draft versions is the documented, accepted handling (only final versions are recognised); it is reported, not hidden"
         ]
       }
     },

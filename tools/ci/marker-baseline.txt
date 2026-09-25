@@ -63,4 +63,11 @@
 # (features already present) were deleted. The nine design-dependent markers
 # (GRE sequence/loss, GTP per-message detail, struct realignment, RTP QoE
 # helper) were retargeted to #455.
-54
+#
+# #333: re-baselined 54 -> 48 — the six `TODO/FIXME(#333)` markers in
+# proto_quic_ietf.{c,h} were resolved: QUIC v2 (RFC 9369) support, the
+# header-protected reserved bits explained, session init/analysis documented
+# at the classifier, coalesced QUIC-after-QUIC classification, a session
+# lookup for chained layers and the short-header DCID length learned from
+# the flow's long headers.
+48
