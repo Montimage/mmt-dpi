@@ -27,6 +27,7 @@ checklist requires a line here for every user-visible change.
 - add CodeQL SAST and a bounded mutation-fuzz gate (#224)
 - repin the centos-stream9 base image after an upstream digest GC (#310)
 - measure resolved dependency advisory status — docs gems, pinned actions and the release-distro runtime packages — with `tools/ci/check-dependency-advisories.sh`, which fails closed when a required scanner did not run (#384)
+- the fuzz gate's quality-estimation driver frees every model it parses, and `tools/ci/run-fuzz.sh` runs that target with LeakSanitizer on (`detect_leaks=1`), so a model the XML parser leaks on a mutated input is a finding; the pcap target keeps `detect_leaks=0` (#470)
 
 ### Core and protocols
 - bound the parsers and core APIs against short and attacker-controlled buffers — caplen guards for attribute extraction and packet-data reads, bounded header and stream walkers, and hardening of the FTP, RADIUS, S1AP/NGAP and NAS IE decoders plus the rule-engine command-injection fix (#127–#137, #146, #192, #193, #205)

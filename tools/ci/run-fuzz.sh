@@ -30,7 +30,10 @@
 # still exits 0/1/2, which the exit code alone would silently pass (issue
 # #370, F-TEST-001). Ordinary refusals (rc 1/2 — libpcap or libxml2 cleanly
 # rejecting the mutant) carry no sanitizer banner, are not findings and are
-# counted separately so a refusal never reads as a crash. An exit code of
+# counted separately so a refusal never reads as a crash. The QE target runs
+# with LeakSanitizer on (detect_leaks=1, issue #470) — its driver frees every
+# parsed model, so a LeakSanitizer report is a finding too; the pcap target
+# keeps detect_leaks=0. An exit code of
 # 125/126/127 means the driver (or timeout itself) could not be executed —
 # harness breakage, never a finding. On a finding the
 # reproducer file and the driver's stderr are copied into the artifacts
@@ -208,13 +211,14 @@ refusals=0
 SANITIZER_MARKERS='runtime error:|ERROR: (Address|UndefinedBehavior|Leak|Memory|Thread)Sanitizer|SUMMARY: (Address|UndefinedBehavior|Leak|Memory|Thread)Sanitizer'
 
 run_driver() {
-    # $1 = binary, $2 = mutant file, $3 = per-run stderr log
+    # $1 = binary, $2 = mutant file, $3 = per-run stderr log,
+    # $4 = detect_leaks (0/1)
     # cwd is the install prefix because mmt_init_handler loads plugins
     # (plugins/libmmt_tcpip.so) relative to the working directory.
     set +e
     ( cd "${PREFIX}" && \
       LD_PRELOAD="${ASAN_RT}" \
-      ASAN_OPTIONS="abort_on_error=1:detect_leaks=0:detect_odr_violation=0" \
+      ASAN_OPTIONS="abort_on_error=1:detect_leaks=$4:detect_odr_violation=0" \
       UBSAN_OPTIONS="print_stacktrace=1" \
       LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \
       timeout -k 5 "${PER_INPUT_TIMEOUT}" "$1" "$2" ) > /dev/null 2>"$3"
@@ -232,10 +236,17 @@ while [ "$(date +%s)" -lt "${deadline}" ] && [ "${findings}" -lt "${MAX_FINDINGS
         seed_file="${PCAPS[$(( (iter / 2) % ${#PCAPS[@]} ))]}"
         bin="${CLASSIFY_BIN}"
         tag="pcap"
+        leaks=0
     else
         seed_file="${QE_SEED}"
         bin="${QE_BIN}"
         tag="qexml"
+        # LeakSanitizer is on for the QE target only (issue #470): the driver
+        # frees every model it parses, so a leak there is a parser ownership
+        # regression — reported through the LeakSanitizer banner below. The
+        # pcap target keeps the project's detect_leaks=0 policy (leaks are
+        # the Valgrind leak gate's job, tools/phase0/tests).
+        leaks=1
     fi
     mutant="${WORK}/mutant.${tag}"
     mseed=$((SEED + iter))
@@ -250,7 +261,7 @@ while [ "$(date +%s)" -lt "${deadline}" ] && [ "${findings}" -lt "${MAX_FINDINGS
     fi
 
     log="${WORK}/run.log"
-    run_driver "${bin}" "${mutant}" "${log}" && rc=0 || rc=$?
+    run_driver "${bin}" "${mutant}" "${log}" "${leaks}" && rc=0 || rc=$?
     runs=$((runs + 1))
 
     # The driver failing to execute at all — or timeout itself failing —

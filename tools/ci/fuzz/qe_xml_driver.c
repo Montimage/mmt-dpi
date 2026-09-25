@@ -12,6 +12,12 @@
  * a NULL return is a clean refusal (exit 0); any memory-safety fault or UB
  * aborts the process and is what the fuzz gate treats as a finding.
  *
+ * The driver owns every model it parses (it never hands one to
+ * init_application_quality_estimation_context()), so it frees each one with
+ * free_application_quality_estimation_struct(). That lets run-fuzz.sh run
+ * this target with LeakSanitizer on: a block the parser loses on a mutated
+ * model is a finding (issue #470).
+ *
  * Usage:
  *   qe_xml_driver <model.xml>
  */
@@ -28,6 +34,7 @@ int main(int argc, char **argv) {
     }
     /* Mutated XML is the hostile input: a NULL refusal is the expected
      * healthy outcome for malformed models; a crash is the fuzz finding. */
-    (void) application_quality_estimation_xml_parser(argv[1]);
+    free_application_quality_estimation_struct(
+            application_quality_estimation_xml_parser(argv[1]));
     return 0;
 }
