@@ -111,9 +111,18 @@
 #                               packet_process, reading the path and the
 #                               QUIC attributes back per layer.
 #
+# Issue #455 adds the "gre" fixture: gre.seq_out, gre.seq_in, gre.seq_gap and
+# gre.loss are deprecated — their ids stay reserved and registrable but are
+# never extracted, while gre.key and gre.seqnb keep extracting within caplen.
+#
+#   test_gre_deprecated_attrs_api.c — packet/API path: crafted
+#                               Ethernet/IPv4/GRE/IPv4/UDP frames (full and
+#                               cut inside the sequence number) through
+#                               mmt_init_handler + packet_process.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
-#   "tcp-options"/"radius-dns"/"quic" select a fixture family.
+#   "tcp-options"/"radius-dns"/"quic"/"gre" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -121,7 +130,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -157,8 +166,11 @@ for f in "${FIXTURES[@]}"; do
         quic)
             API_TESTS+=(quic_ietf_coalesced)
             ;;
+        gre)
+            API_TESTS+=(gre_deprecated_attrs_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre)" >&2
             exit 2
             ;;
     esac
@@ -265,4 +277,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #331, #332, #333, #375, #376, #377, #378, #407, #409, #453)"
+echo "✓ parser boundary tests passed (issues #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455)"

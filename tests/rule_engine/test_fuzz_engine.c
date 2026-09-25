@@ -18,6 +18,11 @@
  *  - #447: a model and its estimation context had no destructor, so the
  *    RTP session cleanup leaked both. The free functions must release
  *    every allocation exactly once (heap balance; ASan double-free).
+ *  - #455: init_application_quality_estimation_context() is the generic
+ *    per-session setup media protocols share (RTP uses it). It binds one
+ *    caller value per model metric, refuses a model whose metric count
+ *    does not match (estimate_quality_index() dereferences every slot),
+ *    and frees the model on every failure path.
  *
  * Under SANITIZE=asan this binary and libmmt_fuzz are both instrumented
  * (run_all_tests.sh -> EXTRA_CFLAGS + SDK_BUILD_PROFILE=asan), so the
@@ -32,6 +37,7 @@
 
 #include "fuzz/mmt_quality_estimation_defs.h"
 #include "fuzz/mmt_quality_estimation_utilities.h"
+#include "fuzz/mmt_quality_estimation_calculation.h"
 
 /* init_voip_quality_estimation_struct() is exported by libmmt_fuzz but
  * not declared in its public headers. */
@@ -287,6 +293,68 @@ int main(void) {
         size_t after = mallinfo2().uordblks;
         CHECK(after <= before,
               "repeated VoIP model/context build+free does not grow the heap");
+    }
+#endif
+
+    /* #455: the generic context helper binds every metric slot and owns
+     * its model. Each refused call must still free the model: the heap
+     * balance loop below repeats the success and failure paths. */
+    {
+        double jitter = 10.0, loss = 1.0;
+        double * const two[] = { &jitter, &loss };
+        double * const three[] = { &jitter, &loss, &loss };
+        double * const with_null[] = { &jitter, NULL };
+
+        CHECK(init_application_quality_estimation_context(NULL, two, 2) == NULL,
+              "context helper refuses a NULL model");
+        CHECK(init_application_quality_estimation_context(
+                  init_voip_quality_estimation_struct(), NULL, 2) == NULL,
+              "context helper refuses NULL metric values");
+        CHECK(init_application_quality_estimation_context(
+                  init_voip_quality_estimation_struct(), two, 1) == NULL,
+              "context helper refuses fewer values than model metrics");
+        CHECK(init_application_quality_estimation_context(
+                  init_voip_quality_estimation_struct(), three, 3) == NULL,
+              "context helper refuses more values than model metrics");
+        CHECK(init_application_quality_estimation_context(
+                  init_voip_quality_estimation_struct(), two, 0) == NULL,
+              "context helper refuses a zero value count");
+        CHECK(init_application_quality_estimation_context(
+                  init_voip_quality_estimation_struct(), with_null, 2) == NULL,
+              "context helper refuses a NULL value slot");
+        free_application_quality_estimation_context(NULL);
+
+        application_quality_estimation_internal_t *ctx =
+            init_application_quality_estimation_context(
+                init_voip_quality_estimation_struct(), two, 2);
+        CHECK(ctx != NULL && ctx->application_quality_estimation != NULL &&
+              ctx->metric_values[0] == &jitter && ctx->metric_values[1] == &loss,
+              "context helper binds value i to model metric i");
+        if (ctx) {
+            const metric_t *q = ctx->application_quality_estimation->estimation_metrics;
+            double qi = estimate_quality_index(ctx);
+            CHECK(q != NULL && qi >= q->metric_range_low && qi <= q->metric_range_high,
+                  "bound context estimates a quality index inside its range");
+            free_application_quality_estimation_context(ctx);
+        }
+    }
+#if !defined(__SANITIZE_ADDRESS__) && !defined(__SANITIZE_THREAD__)
+    if (mallinfo2().uordblks != 0) {
+        double v0 = 0.0, v1 = 0.0;
+        double * const two[] = { &v0, &v1 };
+        size_t before = 0;
+        for (int i = 0; i < 65; i++) {
+            if (i == 1)
+                before = mallinfo2().uordblks;   /* after one warm-up cycle */
+            free_application_quality_estimation_context(
+                init_application_quality_estimation_context(
+                    init_voip_quality_estimation_struct(), two, 2));
+            (void) init_application_quality_estimation_context(
+                init_voip_quality_estimation_struct(), two, 1);
+        }
+        size_t after = mallinfo2().uordblks;
+        CHECK(after <= before,
+              "context helper frees its model on success and refusal");
     }
 #endif
 

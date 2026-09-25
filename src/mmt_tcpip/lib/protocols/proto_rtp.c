@@ -537,16 +537,17 @@ int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
      */
     rtp_session_data->mime_type = &static_rtp_payload_mime_types[rtp_hdr->pt];
 
-    ////////////////////////////////////////////TODO(#455): replace by generic function
 #ifndef _MMT_BUILD_SDK
-    application_quality_estimation_internal_t * app_internal_struct;
-    app_internal_struct = init_new_internal_application_quality_estimation_struct(init_application_quality_estimation_structures("rtp_q_inf_rules.xml"));
+    //The RTP model's metric 0 is the jitter, metric 1 the loss rate
+    double * const rtp_metric_values[] = {
+        &rtp_session_data->rtp_quality_index_context.jitter_ms,
+        &rtp_session_data->rtp_quality_index_context.loss_rate,
+    };
+    application_quality_estimation_internal_t * app_internal_struct = init_application_quality_estimation_context(
+            init_application_quality_estimation_structures("rtp_q_inf_rules.xml"),
+            rtp_metric_values, (int) (sizeof (rtp_metric_values) / sizeof (rtp_metric_values[0])));
     if (app_internal_struct != NULL) {
-        //These are part of the initialization for a given protocol
         rtp_session_data->rtp_quality_index_context.quality_index_internal_struct = app_internal_struct;
-        app_internal_struct->metric_values[1] = &rtp_session_data->rtp_quality_index_context.loss_rate;
-        app_internal_struct->metric_values[0] = &rtp_session_data->rtp_quality_index_context.jitter_ms;
-
         //Every thing is OK, Set the quality estimation routine
         rtp_session_data->rtp_quality_index_estimation = estimate_quality_index;
     }
@@ -571,21 +572,15 @@ void rtp_session_data_init(ipacket_t * ipacket, unsigned index) {
 
 #ifndef _MMT_BUILD_SDK
     rtp_session_data->rtp_quality_index_estimation = dummy_estimation;
-    //////////////////////////////////////////////////End replace by generic function
 #endif /* _MMT_BUILD_SDK */
 }
 
 void rtp_session_data_cleanup(mmt_session_t * session, unsigned index) {
     if (session->session_data[index] != NULL) {
 #ifndef _MMT_BUILD_SDK
-        //Free the fuzz quality estimation context before its owning session data
+        //Free the fuzz quality estimation context (and its model) before its owning session data
         struct rtp_session_data_struct * rtp_session_data = (struct rtp_session_data_struct *) session->session_data[index];
-        application_quality_estimation_internal_t * app_internal_struct = rtp_session_data->rtp_quality_index_context.quality_index_internal_struct;
-        if (app_internal_struct != NULL) {
-            application_quality_estimation_t * app_q_est = app_internal_struct->application_quality_estimation;
-            free_internal_application_quality_estimation_struct(app_internal_struct);
-            free_application_quality_estimation_struct(app_q_est);
-        }
+        free_application_quality_estimation_context(rtp_session_data->rtp_quality_index_context.quality_index_internal_struct);
 #endif /* _MMT_BUILD_SDK */
         mmt_free(session->session_data[index]);
     }

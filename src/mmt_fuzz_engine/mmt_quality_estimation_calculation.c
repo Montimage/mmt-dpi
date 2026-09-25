@@ -81,7 +81,9 @@ void calculate_index_array(metric_grade_rule_element_t * output_element,
 
     step = (quality_metric->metric_range_high - quality_metric->metric_range_low) / sample_nb;
 
-    for (step_nb = 0; step_nb <= sample_nb; step_nb++) {
+    /* sample_nb samples, indexes 0..sample_nb-1: rule_index_array holds
+     * exactly sample_nb entries (#455 -- `<=` wrote one past the end). */
+    for (step_nb = 0; step_nb < sample_nb; step_nb++) {
         x = quality_metric->metric_range_low + step_nb*step;
 
         value = (get_function_by_type(quality_metric_grade->membership_function_type)(x, quality_metric_grade)) * index_value;

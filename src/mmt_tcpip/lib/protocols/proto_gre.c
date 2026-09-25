@@ -237,7 +237,8 @@ static attribute_metadata_t gre_attributes_metadata[GRE_ATTRIBUTES_NB] = {
     {GRE_KEY, GRE_KEY_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, gre_key_extraction},
     {GRE_SEQ_NB, GRE_SEQ_NB_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, gre_seqnb_extraction},
 
-    //TODO(#455): support for the following attributes: we need a hash map that links the GRE keys and the sequence numbers
+    /* Deprecated (#455): registered so their reserved ids stay valid, never
+     * extracted -- see the gre_attributes enum. */
     {GRE_OUT_SEQENCE, GRE_OUT_SEQENCE_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, silent_extraction},
     {GRE_IN_SEQENCE, GRE_IN_SEQENCE_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, silent_extraction},
     {GRE_SEQENCE_GAP, GRE_SEQENCE_GAP_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_SESSION_CHANGING, silent_extraction},

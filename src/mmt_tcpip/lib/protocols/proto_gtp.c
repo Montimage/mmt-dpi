@@ -179,7 +179,13 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		return set_classified_proto(ipacket, index + 1, retval);
 	case 1: //echo request
 	case 2: //echo response
-	default: //TODO(#455): to go into detail of each GTP message
+	default:
+		/* Only a G-PDU carries a T-PDU (3GPP TS 29.281 §5.1, §7.1); every
+		 * other GTP-U message (echo, error indication, supported extension
+		 * headers notification, end marker) and every GTP-C message carries
+		 * information elements only, so none of them encapsulates a further
+		 * protocol and one arm serves them all. The message type is exported
+		 * as gtp.msg_type (#455). */
 		//MMT initializes the proto_path of this packet by the one of the previous packet in the same session
 		//For example, if the previous proto_path = {len = 6, proto_path = {1, 99, 178, 376, 141, 178} //META.ETH.IP.UDP.GTP.IP
 		// mean while, in the current packet we are at GTP (index = 5) and we are going to classify the next protocol which normally is IP

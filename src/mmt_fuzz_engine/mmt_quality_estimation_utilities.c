@@ -753,3 +753,45 @@ void free_internal_application_quality_estimation_struct(application_quality_est
     free(app_q_est_internal->quality_metrics_estimated_values);
     free(app_q_est_internal);
 }
+
+application_quality_estimation_internal_t * init_application_quality_estimation_context(
+        application_quality_estimation_t * model, double * const metric_values[], int nb_values) {
+    if (model == NULL)
+        return NULL;
+    /* Validate everything init_new_internal_application_quality_estimation_struct()
+     * would exit() on, and every slot estimate_quality_index() dereferences:
+     * one bound, non-NULL value per model metric, indexed by metric_index. */
+    int valid = metric_values != NULL && nb_values > 0 && model->nb_metrics == nb_values
+            && (QUALITY_ESTIMATION_MODE == SINGLE_QUALITY_METRIC
+                ? model->nb_estimation_metrics == 1 : model->nb_estimation_metrics >= 1)
+            && model->estimation_metrics != NULL;
+    int count = 0;
+    const metric_t * metric;
+    for (metric = valid ? model->metrics : NULL; metric != NULL; metric = metric->next, count++)
+        if (metric->metric_index < 0 || metric->metric_index >= nb_values)
+            valid = 0;
+    if (valid && count != nb_values)
+        valid = 0;
+    for (count = 0; valid && count < nb_values; count++)
+        if (metric_values[count] == NULL)
+            valid = 0;
+
+    application_quality_estimation_internal_t * context = valid
+            ? init_new_internal_application_quality_estimation_struct(model) : NULL;
+    if (context == NULL) {
+        free_application_quality_estimation_struct(model);
+        return NULL;
+    }
+    for (count = 0; count < nb_values; count++)
+        context->metric_values[count] = metric_values[count];
+    return context;
+}
+
+void free_application_quality_estimation_context(application_quality_estimation_internal_t * context) {
+    if (context == NULL)
+        return;
+    application_quality_estimation_t * model = context->application_quality_estimation;
+    /* The context reads the model's metric list while it is freed: context first. */
+    free_internal_application_quality_estimation_struct(context);
+    free_application_quality_estimation_struct(model);
+}

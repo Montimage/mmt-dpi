@@ -346,7 +346,11 @@ enum arp_attributes {
 /**
  * GRE protocol: extraction of ann of the protocol fields.
  * <p>
- * TODO(#455): Link sequence numbers and Keys to extract attributes like: out of sequence, in sequence, sequence gap, loss.
+ * GRE_OUT_SEQENCE, GRE_IN_SEQENCE, GRE_SEQENCE_GAP and GRE_LOSS are
+ * deprecated (#455, docs/DECISIONS.md): they are never extracted. Their ids
+ * stay reserved and registered so existing attribute registrations keep
+ * working. Per-tunnel sequence tracking can be derived by the application
+ * from GRE_KEY and GRE_SEQ_NB.
  */
 
 enum gre_attributes {
@@ -359,10 +363,10 @@ enum gre_attributes {
     GRE_K_FLAG,
     GRE_S_FLAG,
     GRE_VERSION,
-    GRE_OUT_SEQENCE, //TODO(#455)
-    GRE_IN_SEQENCE, //TODO(#455)
-    GRE_SEQENCE_GAP, //TODO(#455)
-    GRE_LOSS, //TODO(#455)
+    GRE_OUT_SEQENCE, /* deprecated (#455): reserved, never extracted */
+    GRE_IN_SEQENCE, /* deprecated (#455): reserved, never extracted */
+    GRE_SEQENCE_GAP, /* deprecated (#455): reserved, never extracted */
+    GRE_LOSS, /* deprecated (#455): reserved, never extracted */
 };
 
 #define GRE_ATTRIBUTES_NB GRE_LOSS

@@ -74,4 +74,10 @@
 # #447: re-baselined 48 -> 47 — the stale `TODO(#336)` in
 # rtp_session_data_cleanup() was resolved: the RTP session cleanup now frees
 # the fuzz quality-estimation context and its model.
-47
+#
+# #455: re-baselined 47 -> 38 — the nine `TODO(#455)` markers were resolved:
+# the four GRE sequence/loss attributes are deprecated (ids reserved, never
+# extracted), the GTP non-G-PDU arm is documented as complete, the struct
+# realignment note was dropped without profiling data, and the RTP
+# quality-estimation setup uses the new generic fuzz-engine context helper.
+38
