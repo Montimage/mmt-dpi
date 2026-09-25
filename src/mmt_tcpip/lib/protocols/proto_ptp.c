@@ -36,7 +36,6 @@ static int _classify_ptp_from_udp( ipacket_t * ipacket, unsigned index ){
 }
 /////////////// END OF PROTOCOL INTERNAL CODE    ///////////////////
 
-//TODO(#331): Classification of PTP over UDP
 int init_proto_ptp_struct() {
 	protocol_t *protocol_struct = init_protocol_struct_for_registration(
 			PROTO_PTP, PROTO_PTP_ALIAS);

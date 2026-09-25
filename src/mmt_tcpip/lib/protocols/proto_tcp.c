@@ -381,6 +381,24 @@ int tcp_syn_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     // return 0;
 }
 
+/* Issue #331: TCP_SYN_RCV is declared MMT_U32_DATA (4 bytes) but used to
+ * share tcp_syn_flag_extraction, which stores a single byte — the upper three
+ * bytes of the result were whatever the buffer held before, and on a
+ * big-endian host the flag landed in the most significant byte. Store the
+ * SYN bit as the full declared width. */
+int tcp_syn_rcv_extraction(const ipacket_t * packet, unsigned proto_index,
+    attribute_t * extracted_data) {
+
+    /* Caplen prologue — see tcp_fin_flag_extraction. */
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return 0;
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (proto_offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset + 13, sizeof(uint8_t))) return 0;
+    mmt_una_tcphdr_t * tcp_hdr = (mmt_una_tcphdr_t *) & packet->data[proto_offset];
+    *((uint32_t *) extracted_data->data) = (uint32_t) tcp_hdr->syn;
+    return 1;
+}
+
 int tcp_rst_flag_extraction(const ipacket_t * packet, unsigned proto_index,
     attribute_t * extracted_data) {
 
@@ -721,6 +739,27 @@ int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attrib
             if (opt_field->length < 2) return 0;
             if (option_offset + opt_field->length > end_of_option) return 0;
             if (!mmt_have_bytes(ipacket, (size_t) option_offset, (size_t) opt_field->length)) return 0;
+            /* Issue #331: MSS/window-scale/SACK-permitted values. Each option
+             * has a fixed length (4/3/2, RFC 9293 §3.2, RFC 7323 §2.2,
+             * RFC 2018 §2); a mis-sized one is skipped, never read. The whole
+             * option is inside the capture (checked above) and the MSS is
+             * assembled byte-wise, so no unaligned load happens. */
+            if (opt_field->kind == 2 && opt_field->length == 4
+                    && extracted_data->field_id == TCP_OPT_MSS) {
+                *((uint16_t *) extracted_data->data) =
+                    (uint16_t) ((opt_field->data[0] << 8) | opt_field->data[1]);
+                return 1;
+            }
+            if (opt_field->kind == 3 && opt_field->length == 3
+                    && extracted_data->field_id == TCP_OPT_WSCALE) {
+                *((uint8_t *) extracted_data->data) = opt_field->data[0];
+                return 1;
+            }
+            if (opt_field->kind == 4 && opt_field->length == 2
+                    && extracted_data->field_id == TCP_OPT_SACK_PERMITTED) {
+                *((uint8_t *) extracted_data->data) = 1;
+                return 1;
+            }
             option_offset += opt_field->length; //jump over this option
             break;
         case 8: //Timestamp and echo of previous timestamp
@@ -762,6 +801,13 @@ int tcp_option_extraction(const ipacket_t *ipacket, unsigned proto_index, attrib
     case TCP_TSECR:
         *((uint32_t*) extracted_data->data) = 0;
         break;
+    case TCP_OPT_MSS:
+        *((uint16_t *) extracted_data->data) = 0;
+        break;
+    case TCP_OPT_WSCALE:
+    case TCP_OPT_SACK_PERMITTED:
+        *((uint8_t *) extracted_data->data) = 0;
+        break;
     default:
         break;
     }
@@ -787,7 +833,7 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_CHECKSUM, TCP_CHECKSUM_ALIAS, MMT_U16_DATA, sizeof (short), 16, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_URG_PTR, TCP_URG_PTR_ALIAS, MMT_U16_DATA, sizeof (short), 18, SCOPE_PACKET, general_short_extraction_with_ordering_change},
     {TCP_RTT, TCP_RTT_ALIAS, MMT_DATA_TIMEVAL, sizeof (struct timeval), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_session_rtt_extraction},
-    {TCP_SYN_RCV, TCP_SYN_RCV_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_flag_extraction},//TODO(#331): extract function not correct
+    {TCP_SYN_RCV, TCP_SYN_RCV_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_syn_rcv_extraction},
     {TCP_PAYLOAD_LEN, TCP_PAYLOAD_LEN_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_payload_len_extraction},
     {TCP_RETRANSMISSION, TCP_RETRANSMISSION_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_retransmission_extraction},
     {TCP_OUTOFORDER, TCP_OUTOFORDER_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_outoforder_extraction},
@@ -801,6 +847,9 @@ static attribute_metadata_t tcp_attributes_metadata[TCP_ATTRIBUTES_NB] = {
     {TCP_CONN_CLOSED, TCP_CONN_CLOSED_ALIAS, MMT_U8_DATA, sizeof (char), POSITION_NOT_KNOWN, SCOPE_EVENT, tcp_connection_closed_extraction},
 	{TCP_TSVAL, TCP_TSVAL_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_option_extraction},
 	{TCP_TSECR, TCP_TSECR_ALIAS, MMT_U32_DATA, sizeof (int), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_option_extraction},
+    {TCP_OPT_MSS, TCP_OPT_MSS_ALIAS, MMT_U16_DATA, sizeof (uint16_t), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_option_extraction},
+    {TCP_OPT_WSCALE, TCP_OPT_WSCALE_ALIAS, MMT_U8_DATA, sizeof (uint8_t), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_option_extraction},
+    {TCP_OPT_SACK_PERMITTED, TCP_OPT_SACK_PERMITTED_ALIAS, MMT_U8_DATA, sizeof (uint8_t), POSITION_NOT_KNOWN, SCOPE_PACKET, tcp_option_extraction},
 };
 
 void clean_session_payload(mmt_session_t * session, unsigned index){

@@ -251,9 +251,11 @@ int is_http_valid_attribute(int proto_id, int attribute_id) {
     return false;
 }
 
-//TODO(#331): needs to be changed to take the correct scope from the attribute information
-
 int get_http_attribute_scope(int proto_id, int attribute_id) {
+    /* Issue #331: report each attribute's own scope from the table (the
+     * request-line and timing attributes are SCOPE_SESSION_CHANGING). */
+    if (attribute_id && attribute_id <= HTTP_ATTRIBUTES_NB)
+        return http_attributes_info[attribute_id - 1].scope;
     return SCOPE_SESSION;
 }
 

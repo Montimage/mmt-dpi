@@ -537,7 +537,7 @@ int rtp_initial_data_processing(ipacket_t * ipacket, unsigned index) {
      */
     rtp_session_data->mime_type = &static_rtp_payload_mime_types[rtp_hdr->pt];
 
-    ////////////////////////////////////////////TODO(#331): replace by generic function
+    ////////////////////////////////////////////TODO(#455): replace by generic function
 #ifndef _MMT_BUILD_SDK
     application_quality_estimation_internal_t * app_internal_struct;
     app_internal_struct = init_new_internal_application_quality_estimation_struct(init_application_quality_estimation_structures("rtp_q_inf_rules.xml"));

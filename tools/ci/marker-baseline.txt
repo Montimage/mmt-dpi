@@ -56,4 +56,11 @@
 # list types and the Attach Accept decoder walks every optional IE, which
 # resolved the `XXX(#335)` and `TODO(#335)` extraction markers; the NAS
 # decryption marker was retargeted to follow-up #452.
-62
+#
+# #331: re-baselined 62 -> 54 — the TCP-options, tcp.syn_received,
+# radius.dns_ipv6 and HTTP-scope markers were implemented, and the stale
+# RTP inter-arrival/inter-delay, PTP-over-UDP and HTTP_ATTRIBUTES_NB markers
+# (features already present) were deleted. The nine design-dependent markers
+# (GRE sequence/loss, GTP per-message detail, struct realignment, RTP QoE
+# helper) were retargeted to #455.
+54

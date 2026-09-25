@@ -81,7 +81,6 @@ enum {
    HTTP_Time_of_response,
 };
 
-    //TODO(#331): update this when the http attributes are defined
 #define HTTP_ATTRIBUTES_NB HTTP_Time_of_response
 
 #define HTTP_VERSION_LABEL "VERSION"

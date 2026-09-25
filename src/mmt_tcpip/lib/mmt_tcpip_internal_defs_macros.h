@@ -358,7 +358,7 @@ typedef struct udphdr __attribute__((aligned(1))) mmt_una_udphdr_t;
      */
 #define MMT_FLOW_PROTOCOL_EXCLUDED(flow,protocol) ((flow) != NULL && (MMT_COMPARE_PROTOCOL_TO_BITMASK((flow)->excluded_protocol_bitmask, (protocol)) != 0 ) )
 
-    /* TODO(#331): rebuild all memory areas to have a more aligned memory block here */
+    /* TODO(#455): rebuild all memory areas to have a more aligned memory block here */
 
 
 

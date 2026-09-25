@@ -196,10 +196,16 @@ enum {
     TCP_CONN_CLOSED,
     TCP_CONN_ESTABLISHED,
     TCP_TSVAL,
-    TCP_TSECR
+    TCP_TSECR,
+    /* Issue #331: TCP options (RFC 9293 §3.2, RFC 7323 §2.2), appended so no
+     * existing attribute id moves. Prefixed TCP_OPT_ because glibc's
+     * <netinet/tcp.h> already defines TCP_MSS as a macro. */
+    TCP_OPT_MSS,            /* option kind 2: Maximum Segment Size */
+    TCP_OPT_WSCALE,         /* option kind 3: window scale shift count */
+    TCP_OPT_SACK_PERMITTED, /* option kind 4: 1 when SACK-Permitted is present */
 };
 
-#define TCP_ATTRIBUTES_NB    TCP_TSECR
+#define TCP_ATTRIBUTES_NB    TCP_OPT_SACK_PERMITTED
 
 #define TCP_SRC_PORT_ALIAS    "src_port"
 #define TCP_DEST_PORT_ALIAS   "dest_port"
@@ -233,7 +239,9 @@ enum {
 #define TCP_CONN_ESTABLISHED_ALIAS "established"
 #define TCP_TSVAL_ALIAS "tsval" //timestamp value
 #define TCP_TSECR_ALIAS "tsecr" //timestamp echo reply
-//TODO(#331): addition of the tcp options
+#define TCP_OPT_MSS_ALIAS "mss"
+#define TCP_OPT_WSCALE_ALIAS "wscale"
+#define TCP_OPT_SACK_PERMITTED_ALIAS "sack_permitted"
 
 enum {
     UDP_SRC_PORT = 1,
@@ -338,7 +346,7 @@ enum arp_attributes {
 /**
  * GRE protocol: extraction of ann of the protocol fields.
  * <p>
- * TODO(#331): Link sequence numbers and Keys to extract attributes like: out of sequence, in sequence, sequence gap, loss.
+ * TODO(#455): Link sequence numbers and Keys to extract attributes like: out of sequence, in sequence, sequence gap, loss.
  */
 
 enum gre_attributes {
@@ -351,10 +359,10 @@ enum gre_attributes {
     GRE_K_FLAG,
     GRE_S_FLAG,
     GRE_VERSION,
-    GRE_OUT_SEQENCE, //TODO(#331)
-    GRE_IN_SEQENCE, //TODO(#331)
-    GRE_SEQENCE_GAP, //TODO(#331)
-    GRE_LOSS, //TODO(#331)
+    GRE_OUT_SEQENCE, //TODO(#455)
+    GRE_IN_SEQENCE, //TODO(#455)
+    GRE_SEQENCE_GAP, //TODO(#455)
+    GRE_LOSS, //TODO(#455)
 };
 
 #define GRE_ATTRIBUTES_NB GRE_LOSS
@@ -438,8 +446,8 @@ enum {
     RTP_CSRC,
     RTP_QUALITY_INDEX,
     RTP_JITTER,
-    RTP_INTER_ARRIVAL_JITTER, //TODO(#331)
-    RTP_INTER_DELAY, //TODO(#331)
+    RTP_INTER_ARRIVAL_JITTER,
+    RTP_INTER_DELAY,
     RTP_LOSS,
     RTP_BURST_LOSS,
     RTP_UNORDER,

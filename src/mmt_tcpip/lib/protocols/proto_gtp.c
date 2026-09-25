@@ -179,7 +179,7 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 		return set_classified_proto(ipacket, index + 1, retval);
 	case 1: //echo request
 	case 2: //echo response
-	default: //TODO(#331): to go into detail of each GTP message
+	default: //TODO(#455): to go into detail of each GTP message
 		//MMT initializes the proto_path of this packet by the one of the previous packet in the same session
 		//For example, if the previous proto_path = {len = 6, proto_path = {1, 99, 178, 376, 141, 178} //META.ETH.IP.UDP.GTP.IP
 		// mean while, in the current packet we are at GTP (index = 5) and we are going to classify the next protocol which normally is IP

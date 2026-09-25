@@ -41,6 +41,7 @@ checklist requires a line here for every user-visible change.
 - flatten and deduplicate IRC classification (#237); repair the business-app header install and strip the decoy API surface (#229)
 - security engine: thread `verify()`'s invariant arguments through a context struct (#233) and split `verify()` into one handler per node type (#234)
 - configurable DPI profiles: four named presets (`default`/`minimal`/`balanced`/`full`) plus operator-defined profiles bundle the detection levers — classification-depth cap, application/hostname detection, port-based and IP-range hints — applied per handler via API, `MMT_DPI_PROFILE`/`MMT_DPI_PROFILES_FILE` env vars or a profiles file; a depth cap also skips the per-layer checker walk for the CPU saving (#87)
+- implement advertised TCP/IP attribute extractions: new `tcp.mss`, `tcp.wscale` and `tcp.sack_permitted` option attributes (appended ids; 7,450 attribute registrations), `tcp.syn_received` now fills its declared 4-byte width, `radius.dns_ipv6` reports the primary 3GPP IPv6 DNS server, and the (currently uncalled) legacy HTTP attribute-scope getter reads each attribute's own scope; GRE sequence/loss tracking and the other design-dependent items move to #455 (#331)
 
 ### Performance
 - remove unconditional packet-path writes to stdout/stderr (#246)
