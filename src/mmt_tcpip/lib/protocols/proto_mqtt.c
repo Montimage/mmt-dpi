@@ -13,6 +13,21 @@ static void mmt_int_mqtt_add_connection(ipacket_t * ipacket) {
     mmt_internal_add_connection(ipacket, PROTO_MQTT, MMT_REAL_PROTOCOL);
 }
 
+/* An MQTT control packet starts with a 2..5-byte fixed header: a packet-type
+ * nibble (0 is reserved) and a Remaining Length varint of 1..4 bytes whose
+ * last byte has the continuation bit clear. Returns 1 when the payload starts
+ * with such a header, 0 otherwise. */
+static int mmt_mqtt_fixed_header_ok(const uint8_t *payload, uint32_t len) {
+    uint32_t i;
+    if (len < 2 || (payload[0] >> 4) == 0)
+        return 0;
+    for (i = 1; i < len && i <= 4; i++) {
+        if ((payload[i] & 0x80) == 0)
+            return 1;
+    }
+    return 0;
+}
+
 int mmt_check_mqtt(ipacket_t * ipacket, unsigned index) {
     // debug("mqtt: mmt_check_mqtt of ipacket: %lu",ipacket->packet_id);
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
@@ -28,10 +43,12 @@ int mmt_check_mqtt(ipacket_t * ipacket, unsigned index) {
 
         MMT_LOG(PROTO_MQTT, MMT_LOG_DEBUG, "mqtt tcp start\n");
 
-        /* destination port must be 1883 or 8883 - ports reserved for MQTT http://mqtt.org/faq */
-        if (dport == 1883 || dport == 8883) {
-            // TODO(#330): Check the header length: > 2 bytes and < 5 bytes
-            MMT_LOG(PROTO_MQTT, MMT_LOG_DEBUG, "found mqtt with destination port 139\n");
+        /* destination port must be 1883 or 8883 - ports reserved for MQTT http://mqtt.org/faq
+         * On 1883 (plain MQTT) the payload must also start with a well-formed
+         * fixed header; 8883 carries MQTT over TLS, whose bytes are encrypted. */
+        if ((dport == 1883 && mmt_mqtt_fixed_header_ok(packet->payload, packet->payload_packet_len))
+                || dport == 8883) {
+            MMT_LOG(PROTO_MQTT, MMT_LOG_DEBUG, "found mqtt with destination port %u\n", dport);
             mmt_int_mqtt_add_connection(ipacket);
             return 1;
         }

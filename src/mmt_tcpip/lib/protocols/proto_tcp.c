@@ -933,9 +933,10 @@ int tcp_pre_classification_function(ipacket_t * ipacket, unsigned index) {
         && ipacket->session->packet_count == 0 /*First packet of the flow*/
         && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN) {
 
-        memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO(#330): Is this memset needed? the syn should be
-        //seen at the start of the flow, this should have been set to zero
-        //at the creation of the flow!!! Check this out
+        /* Redundant on a flow fresh from allocation (zeroed there), but
+         * kept: it costs one memset per new flow and guarantees a clean
+         * detection state whatever ran on this packet before. */
+        memset(packet->flow, 0, sizeof (*(packet->flow)));
         MMT_LOG(PROTO_UNKNOWN, packet,
                 MMT_LOG_DEBUG,
                 "%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
@@ -1047,9 +1048,10 @@ int tcp_pre_classification_function_with_reassemble(ipacket_t * ipacket, unsigne
         && ipacket->session->packet_count == 0 /*First packet of the flow*/
         && packet->flow->detected_protocol_stack[0] == PROTO_UNKNOWN) {
 
-        memset(packet->flow, 0, sizeof (*(packet->flow))); //BW - TODO(#330): Is this memset needed? the syn should be
-        //seen at the start of the flow, this should have been set to zero
-        //at the creation of the flow!!! Check this out
+        /* Redundant on a flow fresh from allocation (zeroed there), but
+         * kept: it costs one memset per new flow and guarantees a clean
+         * detection state whatever ran on this packet before. */
+        memset(packet->flow, 0, sizeof (*(packet->flow)));
         MMT_LOG(PROTO_UNKNOWN, packet,
                 MMT_LOG_DEBUG,
                 "%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
@@ -1159,7 +1161,7 @@ int tcp_post_classification_function(ipacket_t * ipacket, unsigned index) {
                     retval.proto_id = packet->flow->detected_protocol_stack[a];
                     retval.status = Classified;
                     new_retval = set_classified_proto(ipacket, index, retval);
-                    retval.offset = 0; //From the second proto the offset is the same! //TODO(#330): check this out
+                    retval.offset = 0; // verified: stacked application ids share the payload, so offset 0 past the first
                 }
             }
         }

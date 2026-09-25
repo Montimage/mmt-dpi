@@ -211,6 +211,10 @@ void free_ftp_tuple6(ftp_tuple6_t *t6) {
  * @return         a tuple6
  */
 ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
+    /* The IPv6 address buffers hold the 16 raw address bytes but are sized
+     * and zero-filled to 33 bytes: ftp_copy_tupl6() and ftp_compare_tuple6()
+     * handle every c_addr_v6/s_addr_v6 as 32 bytes (the EPRT path stores the
+     * address text there), which overran the former 17-byte buffers. */
     ftp_tuple6_t *t6;
     t6 = ftp_new_tuple6();
     if(t6 == NULL) return NULL;
@@ -228,8 +232,8 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
                 t6->s_addr = ipacket->internal_packet->iph->saddr;
                 t6->c_addr = ipacket->internal_packet->iph->daddr;    
             }else{
-                t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
-                t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
+                t6->c_addr_v6 = (char*)calloc(33, sizeof(char));
+                t6->s_addr_v6 = (char*)calloc(33, sizeof(char));
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL){
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->saddr.mmt_v6_u.u6_addr8, 16);
                     memcpy(t6->c_addr_v6, &ipacket->internal_packet->iphv6->daddr.mmt_v6_u.u6_addr8, 16);
@@ -247,8 +251,8 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
                 t6->s_addr = ipacket->internal_packet->iph->daddr;
                 t6->c_addr = ipacket->internal_packet->iph->saddr;    
             }else{
-                t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
-                t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
+                t6->c_addr_v6 = (char*)calloc(33, sizeof(char));
+                t6->s_addr_v6 = (char*)calloc(33, sizeof(char));
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL)
                 {
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->daddr.mmt_v6_u.u6_addr8, 16);
@@ -267,8 +271,8 @@ ftp_tuple6_t *ftp_get_tuple6(const ipacket_t * ipacket) {
                 t6->s_addr = ipacket->internal_packet->iph->saddr;
                 t6->c_addr = ipacket->internal_packet->iph->daddr;    
             }else{
-                t6->c_addr_v6 = (char*)malloc(17*sizeof(char));
-                t6->s_addr_v6 = (char*)malloc(17*sizeof(char));
+                t6->c_addr_v6 = (char*)calloc(33, sizeof(char));
+                t6->s_addr_v6 = (char*)calloc(33, sizeof(char));
                 if (t6->c_addr_v6 != NULL && t6->s_addr_v6 != NULL)
                 {
                     memcpy(t6->s_addr_v6, &ipacket->internal_packet->iphv6->saddr.mmt_v6_u.u6_addr8, 16);
@@ -1862,7 +1866,9 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
     uint8_t i;
     uint32_t ftp_ip;
 
-    // TODO(#330) check if normal passive mode also needs adaption for ipv6
+    /* PASV (227) carries an IPv4 address. On an IPv6 control connection
+     * (packet->iph == NULL) the reply is handled like EPSV (229): the data
+     * connection goes to the control connection's server address. */
     if (packet->payload_packet_len > 3 && mmt_mem_cmp(packet->payload, "227 ", 4) == 0) {
         MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "FTP passive mode initial string\n");
 
@@ -1908,13 +1914,16 @@ static void search_passive_ftp_mode(ipacket_t * ipacket) {
 
         }
         if (dst != NULL) {
-            dst->ftp_ip.ipv4 = htonl(ftp_ip);
+            if (packet->iph != NULL)
+                dst->ftp_ip.ipv4 = htonl(ftp_ip);
+            else
+                mmt_get_source_ip_from_packet(packet, &dst->ftp_ip);
             dst->ftp_timer = packet->tick_timestamp;
             dst->ftp_timer_set = 1;
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to dst");
         }
         if (src != NULL) {
-            src->ftp_ip.ipv4 = packet->iph->daddr;
+            mmt_get_destination_ip_from_packet(packet, &src->ftp_ip);
             src->ftp_timer = packet->tick_timestamp;
             src->ftp_timer_set = 1;
             MMT_LOG(PROTO_FTP, MMT_LOG_DEBUG, "saved ftp_ip, ftp_timer, ftp_timer_set to src");
@@ -2900,7 +2909,7 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
         current_data_session->data_conn_mode = MMT_FTP_DATA_ACTIVE_MODE;
         if(current_data_session->data_conn->is_ipv6==1){
             char *ipv6_address_from_EPRT = ftp_get_data_client_addr_v6_from_EPRT(payload, payload_len);
-            current_data_session->data_conn->c_addr_v6 = (char*)malloc(33*sizeof(char));
+            current_data_session->data_conn->c_addr_v6 = (char*)calloc(33, sizeof(char));
             if (current_data_session->data_conn->c_addr_v6!=NULL){
                 /* Bounded copy into the fixed 33-byte buffer: an EPRT address
                  * field longer than 32 chars must not overflow it. Always leave
@@ -2932,7 +2941,7 @@ void ftp_request_packet(ipacket_t *ipacket, unsigned index, ftp_control_session_
         if(current_data_session->data_conn->is_ipv6==1){
             char *ipv6_address_from_LPRT = ftp_get_data_client_addr_v6_from_LPRT(payload, payload_len);
             debug("[PROTO_FTP] %lu ipv6_address_from_LPRT: %s",ipacket->packet_id,ipv6_address_from_LPRT);
-            current_data_session->data_conn->c_addr_v6 = (char*)malloc(33*sizeof(char));
+            current_data_session->data_conn->c_addr_v6 = (char*)calloc(33, sizeof(char));
             if (current_data_session->data_conn->c_addr_v6 !=NULL){
                 /* Bounded copy into the fixed 33-byte buffer. Always leave a
                  * valid NUL-terminated string, even on malformed input. */

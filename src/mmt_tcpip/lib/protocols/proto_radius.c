@@ -1942,7 +1942,14 @@ int radius_alloc_ip_type_extraction(const ipacket_t * ipacket, unsigned proto_in
     return 0;
 }
 
-int mmt_check_radius(ipacket_t * ipacket, unsigned index) { //BW: TODO(#330): check this out
+/* RADIUS packet codes a flow may start with: RFC 2865/2866 (1-5, 11-13)
+ * and the RFC 5176 dynamic-authorization codes (40-45). */
+static int mmt_radius_code_is_valid(uint8_t code) {
+    return (code >= 1 && code <= 5) || (code >= 11 && code <= 13)
+            || (code >= 40 && code <= 45);
+}
+
+int mmt_check_radius(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
@@ -1956,11 +1963,12 @@ int mmt_check_radius(ipacket_t * ipacket, unsigned index) { //BW: TODO(#330): ch
 
         mmt_una_radius_header_t *h = (mmt_una_radius_header_t*) packet->payload;
 
-        uint32_t h_len = ntohs(h->len);
-
-        if ((payload_len > sizeof (struct radius_header))
-                && (h->code <= 5)
-                && (h_len == payload_len)) {
+        /* The length field is read only once the payload is known to hold
+         * the whole header; a RADIUS packet is at least 20 bytes (code,
+         * identifier, length and the 16-byte authenticator, RFC 2865 §3). */
+        if ((payload_len >= 20)
+                && mmt_radius_code_is_valid(h->code)
+                && (ntohs(h->len) == payload_len)) {
             MMT_LOG(PROTO_RADIUS, MMT_LOG_DEBUG, "Found radius.\n");
             mmt_internal_add_connection(ipacket, PROTO_RADIUS, MMT_REAL_PROTOCOL);
             return 1;

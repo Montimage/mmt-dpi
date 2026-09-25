@@ -91,8 +91,8 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
         } else if (packet->payload_packet_len > 50
                 && (mmt_memcmp(packet->payload, "GET /", 5) == 0
                 || mmt_memcmp(packet->payload, "POST /", 6) == 0)) {
-            /* TODO(#330) to avoid searching currently only a specific length and offset is used
-             * that might be changed later */
+            /* The Zattoo/4 client User-Agent has a fixed length and offset;
+             * matching exactly avoids scanning every HTTP User-Agent. */
             mmt_parse_packet_line_info(ipacket);
             if (mmt_int_zattoo_user_agent_set(ipacket)) {
                 mmt_int_zattoo_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);

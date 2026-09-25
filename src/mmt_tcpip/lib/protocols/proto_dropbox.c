@@ -15,7 +15,8 @@ static void mmt_int_dropbox_add_connection(ipacket_t * ipacket, uint8_t due_to_c
             due_to_correlation ? MMT_CORRELATED_PROTOCOL : MMT_REAL_PROTOCOL);
 }
 
-//BW: TODO(#330): add dropbox classification for TCP traffic
+/* Dropbox over TCP is TLS/HTTP and is classified by the .dropbox.com host
+ * name table (mmt_tcpip_classif_doted_host_names.inc), not here. */
 
 int mmt_check_dropbox_udp(ipacket_t * ipacket, unsigned index)
 {

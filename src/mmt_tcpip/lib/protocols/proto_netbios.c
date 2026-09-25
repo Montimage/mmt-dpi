@@ -384,7 +384,9 @@ int mmt_check_netbios_udp(ipacket_t * ipacket, unsigned index) {
                     }
                 }
             }
-            /* TODO(#330): extend according to rfc1002 */
+            /* Only the name query/response forms above are matched; the other
+             * RFC 1002 name-service opcodes (registration, release, refresh,
+             * WACK) are left unclassified rather than matched on a weaker test. */
         }
 
         /*check standard NETBIOS over udp to port 138 */

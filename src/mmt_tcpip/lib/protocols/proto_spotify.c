@@ -8,7 +8,10 @@ static MMT_PROTOCOL_BITMASK detection_bitmask;
 static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
-int mmt_check_spotify(ipacket_t * ipacket, unsigned index) { //BW: TODO(#330): check this out
+/* Spotify's own 78.31.8.0/22 network classifies at once; otherwise the
+ * two-packet payload heuristic only confirms a source already seen talking
+ * Spotify (src may be NULL, hence the guard below). */
+int mmt_check_spotify(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
@@ -46,7 +49,7 @@ int mmt_check_spotify(ipacket_t * ipacket, unsigned index) { //BW: TODO(#330): c
                 /* first octet is 00 */
                 if ((payload_len >= 16) && (packet->payload[0] == 0x00)) {
                     //Now check if SPOTIFY was already detected for the source address
-                    if (MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_SPOTIFY)) {
+                    if (src != NULL && MMT_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, PROTO_SPOTIFY)) {
                         flow->l4.tcp.spotify_stage = 2;
                         MMT_LOG(PROTO_SPOTIFY, MMT_LOG_DEBUG, "Found spotify.\n");
                         mmt_internal_add_connection(ipacket, PROTO_SPOTIFY, MMT_REAL_PROTOCOL);

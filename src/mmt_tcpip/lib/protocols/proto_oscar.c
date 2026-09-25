@@ -250,7 +250,14 @@ int mmt_check_oscar(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_oscar(ipacket, index); //BW: TODO(#330): the classification of oscar seems to be for TCP only
+        /* Every OSCAR signature needs TCP (mmt_classify_oscar() does nothing
+         * else): exclude a UDP flow at once instead of re-running the checker
+         * on each of its packets. */
+        if (packet->tcp == NULL) {
+            MMT_ADD_PROTOCOL_TO_BITMASK(packet->flow->excluded_protocol_bitmask, PROTO_OSCAR);
+            return 0;
+        }
+        mmt_classify_oscar(ipacket, index);
     }
     return 4;
 }

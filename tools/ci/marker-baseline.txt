@@ -84,4 +84,11 @@
 # #452: re-baselined 38 -> 37 — the `TODO(#452)` NAS decryption marker was
 # resolved: decryption stays out of scope (docs/DECISIONS.md) and a PDU
 # ciphered with a known non-null algorithm is no longer parsed as plain text.
-37
+# #330: re-baselined 37 -> 0 — the classifier-audit markers were resolved:
+# each of the 37 `TODO/XXX(#330)` sites in src/mmt_tcpip was fixed (OSCAR
+# UDP exclusion, MQTT fixed-header check, IPFIX header, sFlow agent-address
+# check, RADIUS codes and header read, FTP PASV on IPv6, Spotify NULL guard)
+# or replaced by a plain comment recording the verified verdict. The nine
+# trailing markers in inter_proto_classif_list.def (not counted, see #238)
+# were resolved the same way.
+0

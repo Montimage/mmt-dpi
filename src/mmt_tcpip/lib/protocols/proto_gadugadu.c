@@ -440,7 +440,9 @@ int mmt_check_gadugadu(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_search_gadugadu_tcp(ipacket); //BW: TODO(#330): this seems to be only tcp, the bitmask is UDP as well, check this out
+        /* Every signature needs TCP: a UDP flow reaches the final exclusion
+         * on its first packet, so the UDP registration cannot misclassify. */
+        mmt_search_gadugadu_tcp(ipacket);
     }
     return 4;
 }

@@ -76,7 +76,8 @@ int mmt_check_pando(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_pando(ipacket, index); //BW: TODO(#330): split it into udp and tcp functions
+        /* search_pando() already branches on packet->tcp/udp. */
+        mmt_classify_pando(ipacket, index);
     }
     return 4;
 }

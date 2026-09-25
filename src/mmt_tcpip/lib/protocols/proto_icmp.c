@@ -132,7 +132,9 @@ int init_proto_icmp_struct() {
             register_attribute_with_protocol(protocol_struct, &icmp_attributes_metadata[i]);
         }
 
-        register_classification_function(protocol_struct, NULL); //TODO(#330): do not classify what comes next! Check this out
+        /* Deliberately none: an ICMP error quotes the offending IP header, which
+         * must not be classified as a new nested session. */
+        register_classification_function(protocol_struct, NULL);
 
         return register_protocol(protocol_struct, PROTO_ICMP);
     } else {

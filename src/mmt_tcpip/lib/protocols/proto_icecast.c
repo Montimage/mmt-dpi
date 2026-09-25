@@ -57,9 +57,8 @@ int mmt_check_icecast(ipacket_t * ipacket, unsigned index) {
             if (packet->server_line.ptr != NULL && packet->server_line.len > 7 &&
                     mmt_memcmp(packet->server_line.ptr, "Icecast", 7) == 0) {
                 MMT_LOG(PROTO_ICECAST, MMT_LOG_DEBUG, "Icecast detected.\n");
-                /* TODO(#330) maybe store the previous protocol type as subtype?
-                 *      e.g. ogg or mpeg
-                 */
+                /* The stream format (ogg, mpeg) is not recorded: there is no
+                 * sub-type attribute to carry it. */
                 mmt_int_icecast_add_connection(ipacket);
                 return 1;
             }

@@ -42,7 +42,8 @@ int mmt_check_tds(ipacket_t * ipacket, unsigned index) {
                         } else {
                             goto exclude_tds;
                         }
-                        //BW: TODO(#330): add more cases for other versions
+                    /* Only the TDS 7.1+ pre-login exchange (0x12) is confirmed;
+                     * other login versions are excluded rather than guessed. */
                     default:
                         goto exclude_tds;
                 }
@@ -56,7 +57,6 @@ int mmt_check_tds(ipacket_t * ipacket, unsigned index) {
                         } else {
                             goto exclude_tds;
                         }
-                        //BW: TODO(#330): add more cases for other versions
                     default:
                         goto exclude_tds;
                 }

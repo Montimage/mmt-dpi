@@ -247,7 +247,8 @@ int mmt_check_sip(ipacket_t * ipacket, unsigned index) {
 
         /* skip marked packets */
         if (packet->detected_protocol_stack[0] != PROTO_SIP) {
-            if (packet->tcp_retransmission == 0) { //BW: TODO(#330): shouldn't we change the bitmask to indicate no retransmissions?
+            /* Same effect as a ..._WITHOUT_RETRANSMISSION selection bitmask. */
+            if (packet->tcp_retransmission == 0) {
                 mmt_search_sip_handshake(ipacket);
             }
         }

@@ -78,10 +78,12 @@ static inline int get_header_index_by_header_id(int header_id) {
     return header_id - 1;
 }
 
+/* Only reached from parse_message_header_lines(), which is unreachable (see
+ * there); max bounds the compare, so no length is recomputed per entry. */
 static inline int get_header_id_by_field_name(const char * header_field, int max) {
     int count = 0;
     for (; count < HTTP_HEADERS_NB; count++) {
-        if (mmt_strncasecmp(header_field, http_header_fields[count], max) == 0) { //TODO(#330): this is consuming (calculating len every time)
+        if (mmt_strncasecmp(header_field, http_header_fields[count], max) == 0) {
             return count + 1; //The header indexes start at 1
         }
     }
@@ -392,8 +394,11 @@ static inline int get_response_code_offset(const char *msg, int msg_len, char **
 /**
  * Parse the HTTP HEADER.
  */
+/* Unreachable: its only caller, http_session_data_analysis(), is registered by
+ * init_http_proto_struct(), which nothing calls (proto_http.c owns HTTP), so
+ * this legacy parser gets no optimisation work. */
 static inline int
-parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) { //TODO(#330): optimization work required here! VERY IMPORTANT
+parse_message_header_lines(ipacket_t * ipacket, unsigned index, int offset) {
     int code, hlen;
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     int base_offset = get_packet_offset_at_index(ipacket, index);

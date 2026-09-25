@@ -31,8 +31,8 @@ void mmt_classify_meebo(ipacket_t * ipacket, unsigned index) {
 #endif
             ) {
 
-        /* TODO(#330): once we have an amf decoder we can more directly access the rtmp fields
-         *       if so, we may also exclude earlier */
+        /* Without an AMF decoder the tokbox/ marker is matched at the two
+         * fixed offsets it was observed at. */
         if (packet->payload_packet_len > 900) {
             if (mmt_memcmp(packet->payload + 116, "tokbox/", 7) == 0 ||
                     mmt_memcmp(packet->payload + 316, "tokbox/", 7) == 0) {

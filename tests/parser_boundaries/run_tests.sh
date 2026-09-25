@@ -120,9 +120,21 @@
 #                               cut inside the sequence number) through
 #                               mmt_init_handler + packet_process.
 #
+# Issue #330 adds the "classifier-audit" fixture: the weak-classifier audit
+# fixes — MQTT needs a well-formed fixed header on port 1883, IPFIX is read
+# with its own header layout, sFlow needs a valid agent address type, every
+# RFC 2865/5176 RADIUS code classifies (code 0 does not, short payloads are
+# not read past) and a PASV reply on an IPv6 FTP control connection no
+# longer dereferences the NULL IPv4 header (nor overruns the IPv6 session
+# tuple buffers).
+#
+#   test_classifier_audit_api.c — packet/API path: crafted
+#                               Ethernet/IPv{4,6}/{TCP,UDP} frames through
+#                               mmt_init_handler + packet_process.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
-#   "tcp-options"/"radius-dns"/"quic"/"gre" select a fixture family.
+#   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -130,7 +142,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -169,8 +181,11 @@ for f in "${FIXTURES[@]}"; do
         gre)
             API_TESTS+=(gre_deprecated_attrs_api)
             ;;
+        classifier-audit)
+            API_TESTS+=(classifier_audit_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit)" >&2
             exit 2
             ;;
     esac
@@ -277,4 +292,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455)"

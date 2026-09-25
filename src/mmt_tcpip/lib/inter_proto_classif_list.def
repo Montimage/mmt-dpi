@@ -74,7 +74,7 @@
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_zattoo_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_qq_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_feidian_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_popo, 50)                           //BW: TODO(#330): check this out
+    MMT_INTER_PROTO(PROTO_TCP, mmt_check_popo, 50)                           // verified: TCP login signature + @163.com pattern
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_thunder_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_vnc, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_teamviewer_tcp, 50)
@@ -87,9 +87,9 @@
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_flash, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_bgp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_secondlife_tcp, 50)
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_pcanywhere, 50)                     //BW: TODO(#330): The classification of PCANYWHERE seems to be for UDP only, check this out
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_icecast, 50)                        //BW: TODO(#330): Check out the classification --- dependence on http
-    MMT_INTER_PROTO(PROTO_TCP, mmt_check_shoutcast, 50)                      //BW: TODO(#330): Check out the classification --- dependence on http
+    MMT_INTER_PROTO(PROTO_TCP, mmt_check_pcanywhere, 50)                     // verified: UDP-only signature, a TCP flow is excluded on its first packet
+    MMT_INTER_PROTO(PROTO_TCP, mmt_check_icecast, 50)                        // verified: Icecast is HTTP-framed, the HTTP dependence is intended
+    MMT_INTER_PROTO(PROTO_TCP, mmt_check_shoutcast, 50)                      // verified: SHOUTcast is HTTP-framed, the HTTP dependence is intended
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_veohtv_tcp, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_openft, 50)
     MMT_INTER_PROTO(PROTO_TCP, mmt_check_syslog, 50)
@@ -152,13 +152,13 @@
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_stun_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_rtp_udp, 50)                        //Check STUN before RTP
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_sip, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_edonkey, 50)                        //BW: TODO(#330): Edonkey classification seems limited to TCP! Check this out
+    MMT_INTER_PROTO(PROTO_UDP, mmt_check_edonkey, 50)                        // verified: mmt_int_edonkey_udp() handles the UDP opcodes
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_gnutella, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_directconnect_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_msn_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_yahoo_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_oscar, 50)                          //BW: TODO(#330): the classification of oscar seems to be for TCP only
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_jabber, 50)                         //BW: TODO(#330): the classification of jabber seems to be for TCP only
+    MMT_INTER_PROTO(PROTO_UDP, mmt_check_oscar, 50)                          // fixed: TCP-only signatures, the checker excludes a UDP flow at once
+    MMT_INTER_PROTO(PROTO_UDP, mmt_check_jabber, 50)                         // verified: the XML stanza match does not depend on TCP
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_gtp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_manolito_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_imesh_udp, 50)
@@ -170,11 +170,11 @@
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_pplive_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_iax, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_mgcp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_gadugadu, 50)                       //BW: TODO(#330): the classification of gadugadu seems to be for TCP only
+    MMT_INTER_PROTO(PROTO_UDP, mmt_check_gadugadu, 50)                       // verified: TCP-only signatures, a UDP flow is excluded on its first packet
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_zattoo_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_qq_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_feidian_udp, 50)
-    MMT_INTER_PROTO(PROTO_UDP, mmt_check_popo, 50)                           //BW: TODO(#330): check this out
+    MMT_INTER_PROTO(PROTO_UDP, mmt_check_popo, 50)                           // verified: the @163.com pattern is transport-independent
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_thunder_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_teamviewer_udp, 50)
     MMT_INTER_PROTO(PROTO_UDP, mmt_check_socrates_udp, 50)

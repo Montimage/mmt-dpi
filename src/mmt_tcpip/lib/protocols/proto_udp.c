@@ -184,7 +184,7 @@ int udp_post_classification_function(ipacket_t * ipacket, unsigned index) {
                     retval.proto_id = packet->flow->detected_protocol_stack[a];
                     retval.status = Classified;
                     new_retval = set_classified_proto(ipacket, index, retval);
-                    retval.offset = 0; //From the second proto the offset is the same! //TODO(#330): check this out
+                    retval.offset = 0; // verified: stacked application ids share the payload, so offset 0 past the first
                 }
             }
         }

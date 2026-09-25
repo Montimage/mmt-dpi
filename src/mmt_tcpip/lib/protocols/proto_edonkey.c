@@ -14,9 +14,6 @@ static MMT_PROTOCOL_BITMASK excluded_protocol_bitmask;
 static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
 static uint32_t edonkey_upper_ports_only = MMT_EDONKEY_UPPER_PORTS_ONLY;
-/* unused - see below in mmt_int_edonkey_tcp()
-static uint32_t edonkey_safe_mode = MMT_PROTOCOL_PLAIN_DETECTION; //BW TODO(#330): Check this out
-*/
 
 static int mmt_edonkey_payload_check(const u_int8_t *data, u_int32_t len) {
   
@@ -194,21 +191,6 @@ int mmt_int_edonkey_tcp(ipacket_t * ipacket) {
 
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     struct mmt_internal_tcpip_session_struct *flow = packet->flow;
-    /* unused
-    int edk_stage2_len;
-    */
-
-    /*len range increase if safe mode and also only once */
-    /* unused
-    if (edonkey_safe_mode == 0)
-        edk_stage2_len = 140;
-    else if (!flow->l4.tcp.edk_ext || packet->payload_packet_len == 212) {
-        edk_stage2_len = 300;
-
-    } else
-        edk_stage2_len = 140;
-    */
-
     /* skip excluded connections */
     if (MMT_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_EDONKEY) != 0)
         return 0;

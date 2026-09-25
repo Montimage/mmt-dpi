@@ -315,7 +315,9 @@ int mmt_check_jabber(ipacket_t * ipacket, unsigned index) {
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
 
-        mmt_classify_jabber_tcp(ipacket, index); //BW: TODO(#330): this seems to be limited to tcp, check this out
+        /* Despite the name, the XML stanza match below does not depend on
+         * TCP, which is why the checker is also registered on UDP. */
+        mmt_classify_jabber_tcp(ipacket, index);
     }
     return 4;
 }

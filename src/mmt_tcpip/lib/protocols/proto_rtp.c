@@ -853,20 +853,16 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
             return 4;
         }
 #ifdef PROTO_STUN
-        /* TODO(#330) the rtp detection sometimes doesn't exclude rtp
-         * so for TCP flows only run the detection if STUN has been
-         * detected (or RTP is already detected)
-         * If flows will be seen which start directly with RTP
-         * we can remove this restriction
-         */
+        /* RTP over TCP is only searched once STUN (or RTP) is detected on
+         * the flow: the RTP test alone is too weak to run on any TCP flow. */
 
         if (packet->detected_protocol_stack[0] == PROTO_STUN
                 || packet->detected_protocol_stack[0] == PROTO_RTP) {
 
             /* RTP may be encapsulated in TCP packets */
             if (packet->payload_packet_len >= 2 && ntohs(get_u16(packet->payload, 0)) + 2 == packet->payload_packet_len) {
-                /* TODO(#330) there could be several RTP packets in a single TCP packet so maybe the detection could be
-                 * improved by checking only the RTP packet of given length */
+                /* The framing length must cover the whole segment (strict on
+                 * purpose, like the STUN-over-TCP check). */
                 mmt_rtp_search(ipacket, packet->payload + 2, packet->payload_packet_len - 2);
                 return 4;
             }
@@ -874,8 +870,7 @@ int mmt_check_rtp_tcp(ipacket_t * ipacket, unsigned index) {
         if (flow != NULL && packet->detected_protocol_stack[0] == PROTO_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1)
         {
             if (packet->payload_packet_len >= 4 && ntohl(get_u32(packet->payload, 0)) + 4 == packet->payload_packet_len) {
-                /* TODO(#330) there could be several RTP packets in a single TCP packet so maybe the detection could be
-                 * improved by checking only the RTP packet of given length */
+                /* Same whole-segment framing rule as above. */
                 mmt_rtp_search(ipacket, packet->payload + 4, packet->payload_packet_len - 4);
                 return 4;
             }

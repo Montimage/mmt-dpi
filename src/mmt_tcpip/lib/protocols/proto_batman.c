@@ -26,7 +26,9 @@ int batman_packet_format_extraction(const ipacket_t * packet, unsigned proto_ind
     struct batman_packet * b_packet = (struct batman_packet *) &packet->data[proto_offset];
     */
 
-    //TODO(#330): check if packet is well formatted
+    /* Unreachable: init_proto_batman_struct() registers only the bare
+     * batman protocol, never this attribute table, so no well-formedness
+     * check is implemented here. */
 
     *((unsigned int *) extracted_data->data) = 1;
 

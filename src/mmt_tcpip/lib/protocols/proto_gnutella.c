@@ -362,7 +362,8 @@ int mmt_check_gnutella(ipacket_t * ipacket, unsigned index) {
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
             && MMT_BITMASK_COMPARE(detection_bitmask, packet->detection_bitmask) != 0) {
-        mmt_classify_gnutella(ipacket, index); //BW: TODO(#330): this can be improved by splitting the classification into TCP and UDP
+        /* mmt_classify_gnutella() already branches on packet->tcp/udp. */
+        mmt_classify_gnutella(ipacket, index);
     }
     return 4;
 }

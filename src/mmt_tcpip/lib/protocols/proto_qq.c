@@ -183,7 +183,7 @@ static uint8_t mmt_is_valid_qq_ft_packet(const struct mmt_tcpip_internal_packet_
             return 0;
         }
     } else if (packet->payload[0] == 0x03) {
-        /* TODO(#330) currently not detected */
+        /* 0x03-tagged packets have no known reliable pattern: not QQ. */
         return 0;
     } else if (packet->payload[0] == 0x00) {
 

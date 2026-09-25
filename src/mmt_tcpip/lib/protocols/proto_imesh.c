@@ -177,7 +177,7 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
                     mmt_memcmp(packet->host_line.ptr, "login.bearshare.com",
                     19) == 0 &&
                     mmt_memcmp(packet->line[4].ptr, "Accept-Encoding: identity",
-                    25 == 0)) {
+                    25) == 0) {
                 MMT_LOG(PROTO_IMESH, MMT_LOG_DEBUG, "iMesh Login detected\n");
                 mmt_int_imesh_add_connection(ipacket, MMT_CORRELATED_PROTOCOL);
                 return 1;
@@ -197,7 +197,7 @@ int mmt_check_imesh_tcp(ipacket_t * ipacket, unsigned index) {
         MMT_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, PROTO_IMESH);
         MMT_LOG(PROTO_IMESH, MMT_LOG_DEBUG, "iMesh excluded at stage %d\n",
                 packet->tcp != NULL ? flow->l4.tcp.imesh_stage : 0);
-        // XXX(#330) return 0 here ?
+        /* Excluded: falls through to the return 0 (not iMesh) below. */
     }
     return 0;
 }

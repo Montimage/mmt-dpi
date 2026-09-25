@@ -55,7 +55,9 @@ int mmt_check_skype_tcp(ipacket_t * ipacket, unsigned index) {
     return 0;
 }
 
-int mmt_check_skype_udp(ipacket_t * ipacket, unsigned index) { //BW: TODO(#330): Check this out
+/* Not registered since issue #102 (see inter_proto_classif_list.def): kept as
+ * a no-op that only excludes SKYPE, so a re-registration cannot misclassify. */
+int mmt_check_skype_udp(ipacket_t * ipacket, unsigned index) {
     struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
     if ((selection_bitmask & packet->mmt_selection_packet) == selection_bitmask
             && MMT_BITMASK_COMPARE(excluded_protocol_bitmask, packet->flow->excluded_protocol_bitmask) == 0
