@@ -697,6 +697,12 @@ static void free_app_quality_estimation_rules(application_quality_estimation_rul
     free(app_rules);
 }
 
+void free_application_quality_estimation_rules(application_quality_estimation_rules_t * app_rules) {
+    if (app_rules == NULL)
+        return;
+    free_app_quality_estimation_rules(app_rules);
+}
+
 /* Whether a metric after `metric` in its list, or in `other_list`, still
  * references `app_rules`: a rules set registered with several quality
  * metrics is freed once, with the last metric that holds it. */

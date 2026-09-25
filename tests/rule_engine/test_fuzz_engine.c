@@ -23,6 +23,12 @@
  *    caller value per model metric, refuses a model whose metric count
  *    does not match (estimate_quality_index() dereferences every slot),
  *    and frees the model on every failure path.
+ *  - #466: the XML parser built a rules set per <rules> node and kept
+ *    only the last one, then attached it to the hard-coded quality
+ *    metric id 3 and ignored a failed attach. Every set it builds must
+ *    end up on the parsed quality metric or be freed. run_tests.sh runs
+ *    this binary with detect_leaks=1 under SANITIZE=asan; the mallinfo2
+ *    loop covers the unsanitised runs.
  *
  * Under SANITIZE=asan this binary and libmmt_fuzz are both instrumented
  * (run_all_tests.sh -> EXTRA_CFLAGS + SDK_BUILD_PROFILE=asan), so the
@@ -191,6 +197,68 @@ static const char * XML_FEW_PARAMS =
     "  </kpis>\n"
     "</application>\n";
 
+/* #466 fixtures: one metric (12) with one grade, a quality index with one
+ * grade, and <rules> sets built from RULE_XML. */
+#define KPI_XML \
+    "    <kpi metric_id=\"12\" metric_range_low=\"0.0\" metric_range_high=\"100.0\">\n" \
+    "      <grades>\n" \
+    "        <grade grade_value=\"1\">\n" \
+    "          <membership_function_type>3</membership_function_type>\n" \
+    "          <parameters>\n" \
+    "            <membership_function_parameters>2.0</membership_function_parameters>\n" \
+    "            <membership_function_parameters>5.0</membership_function_parameters>\n" \
+    "          </parameters>\n" \
+    "        </grade>\n" \
+    "      </grades>\n" \
+    "    </kpi>\n"
+#define INDEX_XML(id) \
+    "    <indexs metric_id=\"" id "\" metric_range_low=\"1.0\" metric_range_high=\"5.0\">\n" \
+    "      <index>\n" \
+    "        <grade grade_value=\"1\">\n" \
+    "          <membership_function_type>1</membership_function_type>\n" \
+    "          <parameters>\n" \
+    "            <membership_function_parameters>2.0</membership_function_parameters>\n" \
+    "            <membership_function_parameters>2.5</membership_function_parameters>\n" \
+    "          </parameters>\n" \
+    "        </grade>\n" \
+    "      </index>\n" \
+    "    </indexs>\n"
+#define RULE_XML(id) \
+    "    <rule>\n" \
+    "      <rules_elements>\n" \
+    "        <element metric_id=\"12\" grade_value=\"1\"/>\n" \
+    "      </rules_elements>\n" \
+    "      <output_elements>\n" \
+    "        <element metric_id=\"" id "\" grade_value=\"1\"/>\n" \
+    "      </output_elements>\n" \
+    "    </rule>\n"
+
+/* Two <rules> nodes (1 rule, then 2): pre-fix the first set leaked. */
+static const char * XML_TWO_RULES_NODES =
+    "<?xml version=\"1.0\"?>\n"
+    "<application app_id=\"1\">\n"
+    "  <kpis>\n" KPI_XML INDEX_XML("3") "  </kpis>\n"
+    "  <rules>\n" RULE_XML("3") "  </rules>\n"
+    "  <rules>\n" RULE_XML("3") RULE_XML("3") "  </rules>\n"
+    "</application>\n";
+
+/* Quality index with an id other than 3: pre-fix the set was attached to
+ * id 3 only, so it matched nothing and leaked (rules stayed NULL). */
+static const char * XML_QUALITY_ID_7 =
+    "<?xml version=\"1.0\"?>\n"
+    "<application app_id=\"1\">\n"
+    "  <kpis>\n" KPI_XML INDEX_XML("7") "  </kpis>\n"
+    "  <rules>\n" RULE_XML("7") "  </rules>\n"
+    "</application>\n";
+
+/* <rules> but no quality index: there is nothing to attach the set to. */
+static const char * XML_RULES_NO_INDEX =
+    "<?xml version=\"1.0\"?>\n"
+    "<application app_id=\"1\">\n"
+    "  <kpis>\n" KPI_XML "  </kpis>\n"
+    "  <rules>\n" RULE_XML("3") "  </rules>\n"
+    "</application>\n";
+
 static void write_fixture(char *path, size_t size, const char *dir,
         const char *name, const char *content) {
     snprintf(path, size, "%s/%s", dir, name);
@@ -203,6 +271,9 @@ static void write_fixture(char *path, size_t size, const char *dir,
 int main(void) {
     char dir[] = "/tmp/mmt_fuzz_test.XXXXXX";
     char path[512];
+    /* Line-buffered: LeakSanitizer ends the process with _exit(), which
+     * would drop the buffered "ok -" lines from the log. */
+    setvbuf(stdout, NULL, _IOLBF, 0);
     if (!mkdtemp(dir)) { perror("mkdtemp"); return 2; }
 
     /* --- F-BUG-094: parameter storage must live inside the allocation -- */
@@ -413,11 +484,13 @@ int main(void) {
     write_fixture(path, sizeof(path), dir, "many_params.xml", XML_MANY_PARAMS);
     app = application_quality_estimation_xml_parser(path);
     CHECK(app != NULL, "model with 6 parameter elements parses (bounded)");
+    free_application_quality_estimation_struct(app);
 
     /* Self-closing elements: children == NULL; pre-fix dereferenced it. */
     write_fixture(path, sizeof(path), dir, "empty_elem.xml", XML_EMPTY_ELEMENTS);
     app = application_quality_estimation_xml_parser(path);
     CHECK(app != NULL, "model with empty elements parses (NULL-safe)");
+    free_application_quality_estimation_struct(app);
 
     /* 2 params for a 4-parameter function: post-fix the tail of the
      * stack array is zero-initialised, so parameters[2..3] are 0.0. */
@@ -437,6 +510,75 @@ int main(void) {
               mg->membership_function_parameters[3] == 0.0,
               "missing parameters read as initialised zeros");
     }
+    free_application_quality_estimation_struct(app);
+
+    /* --- #466: every parsed rules set is attached or freed ------------ */
+
+    /* The standalone destructor is NULL-safe and frees a detached set with
+     * its rules (LSan checks the latter under SANITIZE=asan). */
+    free_application_quality_estimation_rules(NULL);
+    {
+        application_quality_estimation_rules_t *rs =
+            init_new_app_quality_estimation_rules(SUM_AGGREGATION);
+        CHECK(rs != NULL &&
+              register_application_quality_estimation_rule(rs, init_new_rule_struct(AND_RULE)) &&
+              register_application_quality_estimation_rule(rs, init_new_rule_struct(AND_RULE)) &&
+              rs->nb_rules == 2,
+              "detached rules set with two rules builds");
+        free_application_quality_estimation_rules(rs);
+    }
+
+    /* Several <rules> nodes: the last set is kept, the earlier ones are
+     * freed (LSan under SANITIZE=asan, the heap loop below otherwise). */
+    write_fixture(path, sizeof(path), dir, "two_rules.xml", XML_TWO_RULES_NODES);
+    app = application_quality_estimation_xml_parser(path);
+    CHECK(app != NULL && app->estimation_metrics != NULL &&
+          app->estimation_metrics->quality_estimation_rules != NULL &&
+          app->estimation_metrics->quality_estimation_rules->nb_rules == 2,
+          "several <rules> nodes: the last set is attached");
+    free_application_quality_estimation_struct(app);
+
+    /* The rules set goes to the parsed quality metric, whatever its id. */
+    write_fixture(path, sizeof(path), dir, "quality_id_7.xml", XML_QUALITY_ID_7);
+    app = application_quality_estimation_xml_parser(path);
+    CHECK(app != NULL && app->estimation_metrics != NULL &&
+          app->estimation_metrics->metric_id == 7 &&
+          app->estimation_metrics->quality_estimation_rules != NULL &&
+          app->estimation_metrics->quality_estimation_rules->nb_rules == 1,
+          "rules attach to the parsed quality metric (id 7, not 3)");
+    free_application_quality_estimation_struct(app);
+
+    /* No quality metric: the model still parses, the set is freed. */
+    write_fixture(path, sizeof(path), dir, "rules_no_index.xml", XML_RULES_NO_INDEX);
+    app = application_quality_estimation_xml_parser(path);
+    CHECK(app != NULL && app->estimation_metrics == NULL,
+          "rules without a quality metric: model parses, set not attached");
+    free_application_quality_estimation_struct(app);
+
+    /* Heap balance for the models above. libxml2 and the allocator settle
+     * over the first cycles (a few hundred bytes in total), so the check
+     * allows 16 B per cycle on average: one leaked rules set is several
+     * times that on every cycle. */
+#if !defined(__SANITIZE_ADDRESS__) && !defined(__SANITIZE_THREAD__)
+    if (mallinfo2().uordblks != 0) {
+        static const char * const names[] = {
+            "two_rules.xml", "quality_id_7.xml", "rules_no_index.xml"
+        };
+        size_t before = 0;
+        for (int i = 0; i < 65; i++) {
+            if (i == 1)
+                before = mallinfo2().uordblks;   /* after one warm-up cycle */
+            for (size_t k = 0; k < sizeof(names) / sizeof(names[0]); k++) {
+                snprintf(path, sizeof(path), "%s/%s", dir, names[k]);
+                free_application_quality_estimation_struct(
+                    application_quality_estimation_xml_parser(path));
+            }
+        }
+        size_t after = mallinfo2().uordblks;
+        CHECK(after <= before + 64 * 16,
+              "repeated parse+free of the #466 models does not grow the heap");
+    }
+#endif
 
     printf("----------------------------------------\n");
     printf("%d checks, %d failures\n", g_checks, g_failures);

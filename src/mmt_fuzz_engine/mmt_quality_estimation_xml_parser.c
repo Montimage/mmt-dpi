@@ -394,6 +394,11 @@ application_quality_estimation_t * application_quality_estimation_xml_parser(cha
 
 
         if ((xmlStrcmp(cur->name, (const xmlChar *) "rules")) == 0) {
+            /* #466: only one rules set is attached; free the earlier ones */
+            if (quality_estimation_rules != NULL) {
+                die("Several <rules> nodes: keeping the last one\n");
+                free_application_quality_estimation_rules(quality_estimation_rules);
+            }
             quality_estimation_rules = parseNoderules(cur, application);
         }
 
@@ -401,7 +406,18 @@ application_quality_estimation_t * application_quality_estimation_xml_parser(cha
 
     }
 
-    register_estimation_rules_with_quality_metric(application, quality_estimation_rules, 3);
+    /* #466: attach the rules to the parsed quality metric (the QUALITY_INDEX
+     * metric registered by parseNodekpis), or free them. */
+    if (quality_estimation_rules != NULL) {
+        if (application->estimation_metrics == NULL) {
+            die("<rules> without a quality metric: rules ignored\n");
+            free_application_quality_estimation_rules(quality_estimation_rules);
+        } else if (!register_estimation_rules_with_quality_metric(application,
+                quality_estimation_rules, application->estimation_metrics->metric_id)) {
+            die("Cannot attach <rules> to the quality metric: rules ignored\n");
+            free_application_quality_estimation_rules(quality_estimation_rules);
+        }
+    }
 
     xmlFreeDoc(doc);
 
