@@ -384,24 +384,70 @@ static void _quic_ietf_drop_chained_layers(ipacket_t *ipacket, unsigned index) {
 	ipacket->internal_cumulative_offset_valid = 0;
 }
 
+/* A QUIC checker that found no QUIC on a flow already classified as QUIC
+ * (path[quic_index] is QUIC): this datagram carries no coalesced packet, so
+ * the chained tail left by an earlier datagram must not stick to it. */
+static void _quic_ietf_drop_stale_chain(ipacket_t *ipacket, unsigned quic_index) {
+	const proto_hierarchy_t *path = ipacket->proto_hierarchy;
+	if( path != NULL && quic_index < PROTO_PATH_SIZE && (int)quic_index < path->len
+			&& path->proto_path[quic_index] == PROTO_QUIC_IETF )
+		_quic_ietf_drop_chained_layers( ipacket, quic_index );
+}
+
+/* RFC 9000 §12.2: senders never coalesce packets with different connection
+ * IDs, and receivers ignore a later packet whose destination connection ID
+ * differs from the first packet's. A short header carries no DCID length:
+ * it is the first packet's (same connection ID). With a zero-length
+ * connection ID there is nothing to compare. */
+static int _quic_ietf_same_dcid(const uint8_t *pkt, size_t avail,
+		const uint8_t *dcid, size_t dcid_len) {
+	if( pkt[0] & 0x80 ){
+		quic_ietf_long_header_t hdr;
+		if( ! _quic_ietf_parse_long_header(pkt, avail, &hdr)
+				|| hdr.destination_connection_id_length != dcid_len )
+			return 0;
+		return memcmp( pkt + hdr.destination_connection_id_offset, dcid, dcid_len ) == 0;
+	}
+	if( avail < 1 + dcid_len )
+		return 0;
+	return memcmp( pkt + 1, dcid, dcid_len ) == 0;
+}
+
 /* Coalesced packets (RFC 9000 §12.2): a UDP datagram may carry several QUIC
  * packets back to back — every one but the last is a long header whose
  * Length field delimits it. Each valid QUIC packet after the one at
  * quic_index is classified as QUIC after QUIC (bounded by the protocol path
- * and the handler's classification depth); zero padding after the last
- * packet fails the fixed-bit check and is left alone. The chained layers
- * share the connection's session (the first QUIC layer's), which learns
- * their announced connection IDs. */
+ * and the handler's classification depth) when it carries the first
+ * packet's destination connection ID; zero padding after the last packet
+ * fails the fixed-bit check, and trailing bytes with another DCID fail the
+ * DCID match — both are left alone. The chained layers share the
+ * connection's session (the first QUIC layer's), which learns their
+ * announced connection IDs. */
 static void _quic_ietf_classify_coalesced(ipacket_t *ipacket, unsigned quic_index,
 		quic_ietf_session_t *session) {
 	unsigned index = quic_index;
-	while( index + 1 < PROTO_PATH_SIZE ){
+	const uint8_t *dcid = NULL;
+	size_t dcid_len = 0;
+	{
+		int qoff = get_packet_offset_at_index(ipacket, quic_index);
+		quic_ietf_long_header_t hdr;
+		if( qoff >= 0 && (size_t)qoff < ipacket->p_hdr->caplen
+				&& (ipacket->data[qoff] & 0x80)
+				&& _quic_ietf_parse_long_header( ipacket->data + qoff,
+						ipacket->p_hdr->caplen - (size_t)qoff, &hdr ) ){
+			dcid = ipacket->data + qoff + hdr.destination_connection_id_offset;
+			dcid_len = hdr.destination_connection_id_length;
+		}
+	}
+	while( dcid != NULL && index + 1 < PROTO_PATH_SIZE ){
 		int base = get_packet_offset_at_index(ipacket, index);
 		if( base < 0 || (size_t)base >= ipacket->p_hdr->caplen )
 			break;
 		size_t avail = ipacket->p_hdr->caplen - (size_t)base;
 		size_t first = _quic_ietf_long_packet_size( ipacket->data + base, avail );
 		if( first == 0 || first >= avail )
+			break;
+		if( ! _quic_ietf_same_dcid( ipacket->data + base + first, avail - first, dcid, dcid_len ) )
 			break;
 		if( _classify_quic_ietf_from_data_offset( ipacket, quic_index, (size_t)base + first ) != FOUND )
 			break;
@@ -423,9 +469,11 @@ static void _quic_ietf_classify_coalesced(ipacket_t *ipacket, unsigned quic_inde
  * pipeline walk at UDP for a layer it did not detect through the tcpip
  * protocol stack, so the core does not process this QUIC layer — its
  * registered session_data_init/analysis hooks would not run. The UDP checker
- * is dispatched on every packet of the flow, so this is the per-packet
- * analysis point; the registered hooks cover paths where the core does
- * process the layer (both are idempotent for one packet). */
+ * is dispatched on every packet of the flow up to the classification
+ * threshold, so this is the per-packet analysis point; past the threshold
+ * the core processes the layer and the registered hooks take over (both are
+ * idempotent for one packet). The analysis also walks the coalesced
+ * packets of the datagram. */
 static int _classified_quic_ietf(ipacket_t *ipacket, unsigned index, size_t offset){
 	classified_proto_t retval;
 	retval.offset = offset;
@@ -437,8 +485,6 @@ static int _classified_quic_ietf(ipacket_t *ipacket, unsigned index, size_t offs
 		return ret;
 	_quic_ietf_session_data_init( ipacket, index+1 );
 	_quic_ietf_session_data_analysis( ipacket, index+1 );
-	_quic_ietf_classify_coalesced( ipacket, index+1,
-			ipacket->session ? ipacket->session->session_data[index+1] : NULL );
 	return ret;
 }
 static int _classify_quic_ietf_from_udp(ipacket_t *ipacket, unsigned index) {
@@ -448,6 +494,7 @@ static int _classify_quic_ietf_from_udp(ipacket_t *ipacket, unsigned index) {
 	size_t offset = (size_t)base + 8; //8 bytes of UDP header
 	if( _classify_quic_ietf_from_data_offset( ipacket, index + 1, offset ) == FOUND )
 		return _classified_quic_ietf( ipacket, index, 8 );
+	_quic_ietf_drop_stale_chain( ipacket, index + 1 );
 	return NOT_FOUND;
 }
 
@@ -472,16 +519,28 @@ static int _classify_quic_ietf_from_int(ipacket_t *ipacket, unsigned index) {
 	if( int_len == 0 )
 		int_len = QUIC_IETF_INT_DEFAULT_LENGTH;
 	size_t offset = (size_t)base + int_len;
-	if( offset >= ipacket->p_hdr->caplen )
-		return NOT_FOUND;
-
-	if( _classify_quic_ietf_from_data_offset( ipacket, index + 1, offset ) == FOUND )
+	if( offset < ipacket->p_hdr->caplen
+			&& _classify_quic_ietf_from_data_offset( ipacket, index + 1, offset ) == FOUND )
 		return _classified_quic_ietf( ipacket, index, int_len );
+	_quic_ietf_drop_stale_chain( ipacket, index + 1 );
 	return NOT_FOUND;
+}
+
+/* A chained (coalesced) QUIC layer: the QUIC layer before it owns the
+ * connection's session (_quic_ietf_session_lookup). */
+static inline int _quic_ietf_is_chained(const ipacket_t *ipacket, unsigned index) {
+	const proto_hierarchy_t *path = ipacket->proto_hierarchy;
+	return path != NULL && index > 0 && index < PROTO_PATH_SIZE && (int)index < path->len
+			&& path->proto_path[index - 1] == PROTO_QUIC_IETF;
 }
 
 static void _quic_ietf_session_data_init(ipacket_t * ipacket, unsigned index) {
 	struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+
+	//a chained layer shares the owning layer's session: allocating one here
+	//would leave an orphan the owning layer never updates
+	if( _quic_ietf_is_chained( ipacket, index ) )
+		return;
 
 	quic_ietf_session_t * session_data = ipacket->session->session_data[index];
 	if( session_data == NULL ){
@@ -592,14 +651,22 @@ static void _quic_ietf_calculate_rtts(ipacket_t * ipacket, unsigned index, quic_
 	edge->pkt_us  = us;
 }
 
+/* Per-packet analysis of the owning QUIC layer; chained layers are analysed
+ * by the owning layer's coalesced-packet walk. The walk re-derives the
+ * chain from the current datagram on every packet — including past the
+ * classification threshold, when the checker no longer runs and the core
+ * calls this hook — so a chain classified on an earlier datagram never
+ * persists on a later one. */
 static int _quic_ietf_session_data_analysis(ipacket_t * ipacket, unsigned index) {
 	//debug("QUIC session analysis");
-	quic_ietf_session_t * session_data = ipacket->session->session_data[index];
-	if( session_data == NULL )
+	if( _quic_ietf_is_chained( ipacket, index ) )
 		return MMT_CONTINUE;
-
-	_quic_ietf_learn_cid_length( ipacket, index, session_data );
-	_quic_ietf_calculate_rtts( ipacket, index, session_data );
+	quic_ietf_session_t * session_data = ipacket->session->session_data[index];
+	if( session_data != NULL ){
+		_quic_ietf_learn_cid_length( ipacket, index, session_data );
+		_quic_ietf_calculate_rtts( ipacket, index, session_data );
+	}
+	_quic_ietf_classify_coalesced( ipacket, index, session_data );
 	return MMT_CONTINUE;
 }
 

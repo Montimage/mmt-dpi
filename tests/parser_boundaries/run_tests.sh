@@ -102,7 +102,9 @@
 # Issue #333 adds the "quic" fixture: QUIC-IETF version 2 (RFC 9369), the
 # short-header DCID length learned from the flow's long headers, and
 # coalesced packets (RFC 9000 §12.2) classified as QUIC after QUIC, every
-# Length/varint bounded by the captured bytes.
+# Length/varint bounded by the captured bytes. Issue #458 extends it: a
+# chained packet must carry the first packet's DCID, and the chained tail
+# never outlives its datagram — also past the classification threshold.
 #
 #   test_quic_ietf_coalesced.c — packet/API path: crafted Ethernet/IPv4/UDP
 #                               QUIC frames through mmt_init_handler +

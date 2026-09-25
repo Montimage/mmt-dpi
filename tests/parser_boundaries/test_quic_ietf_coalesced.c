@@ -12,6 +12,13 @@
  *     the chained layer is dropped again on a later non-coalesced datagram,
  *     zero padding and a Length running past the capture add no layer, and
  *     a long chain stays bounded by the protocol path;
+ *   - a chained packet must carry the destination connection ID of the
+ *     datagram's first packet (RFC 9000 §12.2): a trailer with another DCID
+ *     adds no layer (#458);
+ *   - the chained tail never outlives its datagram: it is dropped when the
+ *     checker finds no QUIC on a QUIC flow, and when the last classified
+ *     datagram (the 40th, CFG_CLASSIFICATION_THRESHOLD * 2) was coalesced,
+ *     later datagrams are walked again past the threshold (#458);
  *   - QUIC over INT starts at the INT shim Length, by the same rule as the
  *     INT dissector (type <= 1, at least 3 words, metadata header Ver 1;
  *     else the historical 56); DSCP 0x20 (CS4) traffic without a valid shim
@@ -303,6 +310,75 @@ int main(void) {
     n = quic_long(q, 0x00000001, 2, 0, CID_B, 8, CID_A, 8, 100);
     run_udp(h, 0, 50004, q, n, t++);
     CHECK(g_quic_layers == 1, "after the long chain: back to one quic_ietf layer");
+
+    /* --- 5b. chained packets must carry the first packet's DCID (#458) --- */
+    n1 = quic_long(q, 0x00000001, 2, 0, CID_A, 8, CID_B, 8, 100);
+    n = n1 + quic_short(q + n1, CID_B, 8, 7, 40);
+    run_udp(h, 1, 50004, q, n, t++);
+    CHECK(g_quic_layers == 1, "Handshake + 1-RTT with another DCID: no chained layer");
+
+    n1 = quic_long(q, 0x00000001, 2, 0, CID_A, 8, CID_B, 8, 100);
+    memset(q + n1, 0x5c, 40);                    /* fixed bit set, garbage */
+    run_udp(h, 1, 50004, q, n1 + 40, t++);
+    CHECK(g_quic_layers == 1, "Handshake + 40 garbage bytes with the fixed bit: no chained layer");
+
+    n1 = quic_long(q, 0x00000001, 0, 1, CID_B, 8, CID_A, 8, 200);
+    n = n1 + quic_long(q + n1, 0x00000001, 2, 0, CID_A, 8, CID_A, 8, 100);
+    run_udp(h, 0, 50004, q, n, t++);
+    CHECK(g_quic_layers == 1, "Initial + Handshake with another DCID: no chained layer");
+
+    n1 = quic_long(q, 0x00000001, 0, 1, CID_B, 8, CID_A, 8, 200);
+    n = n1 + quic_long(q + n1, 0x00000001, 2, 0, CID_B, 5, CID_A, 8, 100);
+    run_udp(h, 0, 50004, q, n, t++);
+    CHECK(g_quic_layers == 1, "Initial + Handshake with a shorter DCID prefix: no chained layer");
+
+    /* --- 5c. a non-QUIC datagram on a QUIC flow drops the chain (#458) --- */
+    n1 = quic_long(q, 0x00000001, 2, 0, CID_A, 8, CID_B, 8, 100);
+    n = n1 + quic_short(q + n1, CID_A, 8, 7, 40);
+    run_udp(h, 1, 50004, q, n, t++);
+    CHECK(g_quic_layers == 2, "Handshake + 1-RTT, same DCID: QUIC after QUIC");
+    memset(q, 0x01, 12);                         /* fixed bit clear: not QUIC */
+    run_udp(h, 1, 50004, q, 12, t++);
+    CHECK(g_quic_layers == 1, "non-QUIC datagram on the QUIC flow: chained layer dropped");
+    n1 = quic_long(q, 0x00000001, 2, 0, CID_A, 8, CID_B, 8, 100);
+    n = n1 + quic_short(q + n1, CID_A, 8, 8, 40);
+    run_udp(h, 1, 50004, q, n, t++);
+    CHECK(g_quic_layers == 2, "coalesced again: QUIC after QUIC");
+    n = quic_short(q, CID_A, 8, 9, 4);           /* 15 bytes: too short */
+    run_udp(h, 1, 50004, q, n, t++);
+    CHECK(g_quic_layers == 1, "too-short short header on the QUIC flow: chained layer dropped");
+
+    /* --- 5d. the 40th (last classified) datagram is coalesced (#458) ----- */
+    {
+        const uint16_t sport = 50005;
+        int single_ok = 1;
+        for (int i = 1; i < 40; i++) {
+            n = quic_long(q, 0x00000001, i == 1 ? 0 : 2, i == 1, CID_B, 8, CID_A, 8, 100);
+            run_udp(h, 0, sport, q, n, t++);
+            if (g_quic_layers != 1)
+                single_ok = 0;
+        }
+        CHECK(single_ok, "packets 1-39 of a new flow: one quic_ietf layer each");
+        n1 = quic_long(q, 0x00000001, 2, 0, CID_B, 8, CID_A, 8, 100);
+        n = n1 + quic_short(q + n1, CID_B, 8, 9, 40);
+        run_udp(h, 0, sport, q, n, t++);
+        CHECK(g_quic_layers == 2, "packet 40 coalesced: QUIC after QUIC");
+
+        n = quic_long(q, 0x00000001, 2, 0, CID_B, 8, CID_A, 8, 100);
+        run_udp(h, 0, sport, q, n, t++);
+        CHECK(g_quic_layers == 1, "packet 41 (past the threshold), single packet: chain dropped");
+        n1 = quic_long(q, 0x00000001, 2, 0, CID_B, 8, CID_A, 8, 100);
+        n = n1 + quic_short(q + n1, CID_B, 8, 10, 40);
+        run_udp(h, 0, sport, q, n, t++);
+        CHECK(g_quic_layers == 2 && g_type_set[0] && g_type[0] == QUIC_IETF_HANDSHAKE_PACKET_TYPE,
+              "packet 42 coalesced past the threshold: chain walked from this datagram");
+        memset(q, 0x01, 12);
+        run_udp(h, 0, sport, q, 12, t++);
+        CHECK(g_quic_layers == 1, "packet 43 not QUIC past the threshold: no chained layer");
+        n = quic_short(q, CID_B, 8, 11, 30);
+        run_udp(h, 0, sport, q, n, t++);
+        CHECK(g_quic_layers == 1, "packet 44, 1-RTT past the threshold: one quic_ietf layer");
+    }
 
     /* --- 6. QUIC over INT (UDP carrier with DSCP 0x20) -------------------- */
     {
