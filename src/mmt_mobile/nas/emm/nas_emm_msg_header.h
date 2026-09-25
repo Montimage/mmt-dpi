@@ -17,6 +17,7 @@
 #define NAS_EMM_ATTACH_REQUEST                0b01000001 /* 65 = 0x41 */
 #define NAS_EMM_ATTACH_ACCEPT                 0b01000010 /* 66 = 0x42 */
 #define NAS_EMM_ATTACH_COMPLETE               0b01000011 /* 67 = 0x43 */
+#define NAS_EMM_SECURITY_MODE_COMMAND         0b01011101 /* 93 = 0x5D */
 
 /*
  * General message organization example for a normal EMM NAS message:

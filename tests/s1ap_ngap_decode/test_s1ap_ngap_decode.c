@@ -15,6 +15,10 @@
  *  - F-BUG-220: IMSI is NUL-terminated within its 16-byte buffer.
  *  - Issue #443: spec-valid S1Setup, InitialContextSetup, UEContextRelease
  *    vectors, unknown later-release IEs skipped, open types >= 16K.
+ *  - Issue #452: the NAS ciphering algorithm a Security Mode Command
+ *    (DownlinkNASTransport) selects is kept per S1 connection in a bounded
+ *    table; a ciphered Attach Accept is not parsed for EEA1-3, is parsed for
+ *    EEA0, and is parsed best-effort when the algorithm is unknown.
  *  - F-BUG-221: NGAP hygiene - explicit codes instead of false-from-pointer
  *    functions, encode_ngap() NULL-check, act-aware NAS_PDU handling.
  */
@@ -24,6 +28,7 @@
 #include <unistd.h>
 
 #include "s1ap_common.h"
+#include "nas/nas_msg.h"
 #include "mobile/proto_s1ap.h"
 #include "ngap.h"
 #include "NGAP_ProtocolIE-Field.h"
@@ -283,7 +288,14 @@ static size_t put_ie(uint8_t *out, uint16_t id, const uint8_t *content, size_t l
 	return 3 + put_open_type(out + 3, content, len);
 }
 
-static ssize_t build_s1ap_ics_request(uint8_t *out, size_t cap) {
+/* ProtocolIE-Field: id (16-bit aligned), criticality reject, open value */
+static size_t put_ie(uint8_t *out, uint16_t id, const uint8_t *content, size_t len);
+
+/* InitialContextSetupRequest carrying nas in its one E-RAB; with_ids adds
+ * MME-UE-S1AP-ID mme_ue_id and eNB-UE-S1AP-ID enb_ue_id (both < 256) */
+static ssize_t build_s1ap_ics_request_nas(uint8_t *out, size_t cap,
+		const uint8_t *nas, size_t nas_len, int with_ids,
+		uint8_t mme_ue_id, uint8_t enb_ue_id) {
 	S1ap_E_RABToBeSetupItemCtxtSUReq_t *item = calloc(1, sizeof(*item));
 	static const uint8_t teid[4] = { 0x00, 0x00, 0x00, 0x01 };
 	static const uint8_t gw[4]   = { 192, 168, 0, 1 };
@@ -302,7 +314,7 @@ static ssize_t build_s1ap_ics_request(uint8_t *out, size_t cap) {
 	item->transportLayerAddress.size = sizeof(gw);
 	OCTET_STRING_fromBuf(&item->gTP_TEID, (const char *)teid, sizeof(teid));
 	item->nAS_PDU = OCTET_STRING_new_fromBuf(&asn_DEF_S1ap_NAS_PDU,
-			(const char *)NAS_ATTACH_ACCEPT_EBI5, sizeof(NAS_ATTACH_ACCEPT_EBI5));
+			(const char *)nas, (int)nas_len);
 	enc = aper_encode_to_buffer(&asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq,
 			NULL, item, item_enc, sizeof(item_enc));
 	ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, item);
@@ -314,17 +326,30 @@ static ssize_t build_s1ap_ics_request(uint8_t *out, size_t cap) {
 	tmp[0] = 0x00;
 	n = 1 + put_ie(tmp + 1, S1ap_ProtocolIE_ID_id_E_RABToBeSetupItemCtxtSUReq,
 			item_enc, item_len);
-	/* InitialContextSetupRequest: ext bit, IE count 1, the list IE */
+	/* InitialContextSetupRequest: ext bit, IE count, [the UE IDs,] the
+	 * list IE */
 	tmp2[0] = 0x00;
 	tmp2[1] = 0x00;
-	tmp2[2] = 0x01;
-	m = 3 + put_ie(tmp2 + 3, S1ap_ProtocolIE_ID_id_E_RABToBeSetupListCtxtSUReq,
+	tmp2[2] = with_ids ? 0x03 : 0x01;
+	m = 3;
+	if (with_ids) {
+		const uint8_t mme[2] = { 0x00, mme_ue_id };
+		const uint8_t enb[2] = { 0x00, enb_ue_id };
+		m += put_ie(tmp2 + m, S1ap_ProtocolIE_ID_id_MME_UE_S1AP_ID, mme, sizeof(mme));
+		m += put_ie(tmp2 + m, S1ap_ProtocolIE_ID_id_eNB_UE_S1AP_ID, enb, sizeof(enb));
+	}
+	m += put_ie(tmp2 + m, S1ap_ProtocolIE_ID_id_E_RABToBeSetupListCtxtSUReq,
 			tmp, n);
 	/* S1AP-PDU: initiatingMessage, id-InitialContextSetup, reject */
 	out[0] = 0x00;
 	out[1] = S1ap_ProcedureCode_id_InitialContextSetup;
 	out[2] = 0x00;
 	return (ssize_t)(3 + put_open_type(out + 3, tmp2, m));
+}
+
+static ssize_t build_s1ap_ics_request(uint8_t *out, size_t cap) {
+	return build_s1ap_ics_request_nas(out, cap, NAS_ATTACH_ACCEPT_EBI5,
+			sizeof(NAS_ATTACH_ACCEPT_EBI5), 0, 0, 0);
 }
 
 static void test_s1ap_ics_request_ue_ipv4(void) {
@@ -437,6 +462,157 @@ static size_t put_s1ap_pdu(uint8_t *out, uint8_t choice, uint8_t procedure,
 	out[1] = procedure;
 	out[2] = criticality;
 	return 3 + put_open_type(out + 3, scratch, ies_len + 3);
+}
+
+/* ------------------------------------------------------------------ */
+/* Issue #452: NAS ciphering algorithm learned from the Security Mode   */
+/* Command of a DownlinkNASTransport, per S1 connection                 */
+/* ------------------------------------------------------------------ */
+
+/* DownlinkNASTransport: MME-UE-S1AP-ID, eNB-UE-S1AP-ID (< 256) and a
+ * NAS-PDU holding an EMM Security Mode Command (security header type 3)
+ * whose Selected NAS security algorithms octet is algorithms */
+static size_t build_s1ap_dl_nas_smc(uint8_t *out, uint16_t mme_ue_id,
+		uint8_t enb_ue_id, uint8_t algorithms) {
+	/* INTEGER (0..2^32-1), APER: 2-bit octet count - 1, then the octets */
+	const uint8_t mme[3] = { mme_ue_id < 256 ? 0x00 : 0x40,
+			(uint8_t)(mme_ue_id < 256 ? mme_ue_id : mme_ue_id >> 8),
+			(uint8_t)(mme_ue_id & 0xFF) };
+	const uint8_t enb[2] = { 0x00, enb_ue_id };
+	/* NAS-PDU OCTET STRING: length determinant + SMC (TS 24.301 §8.2.20:
+	 * algorithms, NAS key set identifier, replayed UE security caps) */
+	const uint8_t nas[] = { 13,
+		0x37, 0x5a, 0x6b, 0x7c, 0x8d, 0x00,  /* sec hdr 3, MAC, SQN 0 */
+		0x07, 0x5D, algorithms, 0x00,          /* EMM, SMC, algs, KSI */
+		0x02, 0xE0, 0xE0 };                    /* UE security caps   */
+	uint8_t ies[64], scratch[96];
+	size_t n = 0;
+	n += put_ie(ies + n, S1ap_ProtocolIE_ID_id_MME_UE_S1AP_ID, mme,
+			mme_ue_id < 256 ? 2 : 3);
+	n += put_ie(ies + n, S1ap_ProtocolIE_ID_id_eNB_UE_S1AP_ID, enb, sizeof(enb));
+	n += put_ie(ies + n, S1ap_ProtocolIE_ID_id_NAS_PDU, nas, sizeof(nas));
+	return put_s1ap_pdu(out, 0x00, S1ap_ProcedureCode_id_downlinkNASTransport,
+			0x40, 3, ies, n, scratch);
+}
+
+/* decode an ICS request carrying nas for (mme_ue_id, enb_ue_id); 1 when
+ * the UE IPv4 was extracted from its Attach Accept */
+static int ics_extracts_ue_ipv4(const uint8_t *nas, size_t nas_len,
+		uint8_t mme_ue_id, uint8_t enb_ue_id) {
+	s1ap_message_t msg;
+	uint8_t buf[512];
+	ssize_t len = build_s1ap_ics_request_nas(buf, sizeof(buf), nas, nas_len,
+			1, mme_ue_id, enb_ue_id);
+	if (len <= 0)
+		return -1;
+	memset(&msg, 0, sizeof(msg));
+	if (s1ap_decode(&msg, buf, (uint32_t)len) != 0
+			|| msg.mme_ue_id != mme_ue_id || msg.enb_ue_id != enb_ue_id
+			|| msg.qos_qci != 9 || msg.gtp_teid != 1)
+		return -1;
+	return memcmp(&msg.ue_ipv4, UE_IPV4, sizeof(UE_IPV4)) == 0;
+}
+
+static int decode_smc_id(uint16_t mme_ue_id, uint8_t enb_ue_id, uint8_t algorithms) {
+	s1ap_message_t msg;
+	uint8_t buf[128];
+	size_t len = build_s1ap_dl_nas_smc(buf, mme_ue_id, enb_ue_id, algorithms);
+	memset(&msg, 0, sizeof(msg));
+	int ret = s1ap_decode(&msg, buf, (uint32_t)len);
+	/* the DownlinkNASTransport only feeds the ciphering table */
+	if (ret == 0 && (msg.procedure_code != S1ap_ProcedureCode_id_downlinkNASTransport
+			|| msg.mme_ue_id != 0 || msg.enb_ue_id != 0))
+		return -1;
+	return ret;
+}
+
+static int decode_smc(uint8_t mme_ue_id, uint8_t enb_ue_id, uint8_t algorithms) {
+	return decode_smc_id(mme_ue_id, enb_ue_id, algorithms);
+}
+
+static void test_s1ap_nas_ciphering(void) {
+	uint8_t ciphered[sizeof(NAS_ATTACH_ACCEPT_EBI5)];
+	s1ap_message_t msg;
+	uint32_t id;
+
+	printf("S1AP NAS ciphering algorithm per S1 connection (issue #452):\n");
+	/* the same Attach Accept, security header type 2 (ciphered) */
+	memcpy(ciphered, NAS_ATTACH_ACCEPT_EBI5, sizeof(ciphered));
+	ciphered[0] = 0x27;
+	s1ap_nas_ciphering_reset();
+
+	CHECK("no SMC seen: algorithm unknown",
+			s1ap_nas_ciphering_algorithm(7, 1) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+	CHECK("unknown: plausible ciphered Attach Accept parsed (best effort)",
+			ics_extracts_ue_ipv4(ciphered, sizeof(ciphered), 7, 1) == 1);
+
+	CHECK("SMC selecting EEA2/EIA2 decodes", decode_smc(7, 1, 0x22) == 0);
+	CHECK("EEA2 learned for (7, 1)", s1ap_nas_ciphering_algorithm(7, 1) == 2);
+	CHECK("another eNB-UE-S1AP-ID is another connection",
+			s1ap_nas_ciphering_algorithm(7, 2) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+	CHECK("EEA2: ciphered Attach Accept not parsed, other IEs still are",
+			ics_extracts_ue_ipv4(ciphered, sizeof(ciphered), 7, 1) == 0);
+	CHECK("EEA2: integrity-only Attach Accept still parsed",
+			ics_extracts_ue_ipv4(NAS_ATTACH_ACCEPT_EBI5, sizeof(NAS_ATTACH_ACCEPT_EBI5), 7, 1) == 1);
+	CHECK("EEA2 of (7, 1) does not affect (8, 2)",
+			ics_extracts_ue_ipv4(ciphered, sizeof(ciphered), 8, 2) == 1);
+
+	CHECK("SMC selecting EEA0/EIA2 decodes", decode_smc(7, 1, 0x02) == 0);
+	CHECK("EEA0 learned for (7, 1)", s1ap_nas_ciphering_algorithm(7, 1) == NAS_CIPHERING_ALGORITHM_EEA0);
+	CHECK("EEA0: ciphered Attach Accept parsed",
+			ics_extracts_ue_ipv4(ciphered, sizeof(ciphered), 7, 1) == 1);
+
+	CHECK("SMC selecting EEA3/EIA3 decodes", decode_smc(7, 1, 0x33) == 0);
+	CHECK("EEA3: ciphered Attach Accept not parsed",
+			ics_extracts_ue_ipv4(ciphered, sizeof(ciphered), 7, 1) == 0);
+
+	/* UEContextReleaseCommand names the pair (MME 7, eNB 1): slot freed */
+	memset(&msg, 0, sizeof(msg));
+	CHECK("UEContextReleaseCommand decodes",
+			s1ap_decode(&msg, VECTOR_UE_CONTEXT_RELEASE_COMMAND,
+					sizeof(VECTOR_UE_CONTEXT_RELEASE_COMMAND)) == 0);
+	CHECK("release forgets the algorithm",
+			s1ap_nas_ciphering_algorithm(7, 1) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+
+	/* the entity-store reset (handler cleanup) also clears the table */
+	CHECK("SMC selecting EEA1 decodes", decode_smc(7, 1, 0x11) == 0);
+	CHECK("EEA1 learned", s1ap_nas_ciphering_algorithm(7, 1) == 1);
+	s1ap_entities_reset();
+	CHECK("s1ap_entities_reset forgets the algorithm",
+			s1ap_nas_ciphering_algorithm(7, 1) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+
+	/* a DownlinkNASTransport without an SMC learns nothing */
+	{
+		uint8_t buf[128];
+		size_t len = build_s1ap_dl_nas_smc(buf, 7, 1, 0x22);
+		/* turn the NAS message type 0x5D into 0x62 (EMM Information) */
+		uint8_t *p = memchr(buf, 0x5D, len);
+		CHECK("SMC octet found in the vector", p != NULL);
+		if (p != NULL) {
+			*p = 0x62;
+			memset(&msg, 0, sizeof(msg));
+			CHECK("non-SMC DownlinkNASTransport decodes",
+					s1ap_decode(&msg, buf, (uint32_t)len) == 0);
+			CHECK("non-SMC DownlinkNASTransport learns nothing",
+					s1ap_nas_ciphering_algorithm(7, 1) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+		}
+	}
+
+	/* bounded: a later connection mapping to the same slot evicts (7, 1),
+	 * which then falls back to unknown, never to another UE's algorithm */
+	CHECK("SMC selecting EEA2 decodes again", decode_smc(7, 1, 0x22) == 0);
+	int smc_failures = 0;
+	for (id = 8; id < 65536; id++) {
+		smc_failures += decode_smc_id((uint16_t)id, 1, 0x11) != 0;
+		if (s1ap_nas_ciphering_algorithm(7, 1) != 2)
+			break;
+	}
+	CHECK("SMCs of other connections decode", smc_failures == 0);
+	CHECK("a colliding connection evicts (7, 1) to unknown",
+			id < 65536 && s1ap_nas_ciphering_algorithm(7, 1) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+	CHECK("the colliding connection holds its own algorithm",
+			id < 65536 && s1ap_nas_ciphering_algorithm(id, 1) == 1);
+	s1ap_nas_ciphering_reset();
 }
 
 static void test_s1ap_spec_vectors(void) {
@@ -980,6 +1156,7 @@ int main(void) {
 	test_s1ap_valid_vectors();
 	test_s1ap_corpus_initial_ue_message();
 	test_s1ap_ics_request_ue_ipv4();
+	test_s1ap_nas_ciphering();
 	test_s1ap_spec_vectors();
 	test_open_type_split_length();
 	test_s1ap_split_length_message();

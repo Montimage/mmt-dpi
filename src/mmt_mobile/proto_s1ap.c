@@ -43,6 +43,8 @@ static inline void _free_entities_list(){
 	}
 	entities_count = 0;
 	pthread_mutex_unlock( &mutex );
+	//the NAS ciphering algorithms learned per UE go with the entities (#452)
+	s1ap_nas_ciphering_reset();
 }
 
 

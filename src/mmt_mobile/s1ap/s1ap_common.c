@@ -7,11 +7,79 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include "s1ap_common.h"
 #include "nas/nas_msg.h"
 #include "proto_s1ap.h"
 
 static inline const asn_codec_ctx_t * _aper_codec_ctx( void );
+
+/*
+ * Issue #452: NAS ciphering algorithm per UE-associated S1 connection,
+ * learned from the Security Mode Command a DownlinkNASTransport carries, so
+ * that a NAS PDU ciphered with EEA1-EEA3 is not parsed as plain text.
+ * The table is process-global and fed by attacker-controlled packets, so it
+ * is a fixed-size, direct-mapped array indexed by MME-UE-S1AP-ID: a new
+ * connection overwrites the slot it maps to, and a UEContextReleaseCommand
+ * frees the slot of its connection. A connection whose slot was taken over
+ * falls back to the unknown algorithm.
+ */
+typedef struct {
+	uint32_t mme_ue_id;
+	uint32_t enb_ue_id;
+	uint8_t  in_use;
+	uint8_t  ciphering_algorithm;
+} _nas_ciphering_slot_t;
+
+static _nas_ciphering_slot_t _nas_ciphering_slots[ S1AP_NAS_CIPHERING_SLOTS ];
+static pthread_mutex_t       _nas_ciphering_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static inline _nas_ciphering_slot_t *_nas_ciphering_slot( uint32_t mme_ue_id ){
+	/* MME-UE-S1AP-IDs are often allocated sequentially: mix the bits so
+	 * that neighbouring IDs spread over the table */
+	uint32_t h = mme_ue_id * 2654435761u;
+	return &_nas_ciphering_slots[ (h >> 16) % S1AP_NAS_CIPHERING_SLOTS ];
+}
+
+static void _nas_ciphering_set( uint32_t mme_ue_id, uint32_t enb_ue_id, int algorithm ){
+	pthread_mutex_lock( &_nas_ciphering_mutex );
+	_nas_ciphering_slot_t *slot = _nas_ciphering_slot( mme_ue_id );
+	slot->mme_ue_id           = mme_ue_id;
+	slot->enb_ue_id           = enb_ue_id;
+	slot->ciphering_algorithm = (uint8_t) algorithm;
+	slot->in_use              = 1;
+	pthread_mutex_unlock( &_nas_ciphering_mutex );
+}
+
+static int _nas_ciphering_get( uint32_t mme_ue_id, uint32_t enb_ue_id ){
+	int algorithm = NAS_CIPHERING_ALGORITHM_UNKNOWN;
+	pthread_mutex_lock( &_nas_ciphering_mutex );
+	const _nas_ciphering_slot_t *slot = _nas_ciphering_slot( mme_ue_id );
+	if( slot->in_use && slot->mme_ue_id == mme_ue_id && slot->enb_ue_id == enb_ue_id )
+		algorithm = slot->ciphering_algorithm;
+	pthread_mutex_unlock( &_nas_ciphering_mutex );
+	return algorithm;
+}
+
+/* has_enb_ue_id == 0: the release names the connection by MME-UE-S1AP-ID only */
+static void _nas_ciphering_release( uint32_t mme_ue_id, uint32_t enb_ue_id, int has_enb_ue_id ){
+	pthread_mutex_lock( &_nas_ciphering_mutex );
+	_nas_ciphering_slot_t *slot = _nas_ciphering_slot( mme_ue_id );
+	if( slot->in_use && slot->mme_ue_id == mme_ue_id
+			&& ( !has_enb_ue_id || slot->enb_ue_id == enb_ue_id ))
+		slot->in_use = 0;
+	pthread_mutex_unlock( &_nas_ciphering_mutex );
+}
+
+void s1ap_nas_ciphering_reset( void ){
+	pthread_mutex_lock( &_nas_ciphering_mutex );
+	memset( _nas_ciphering_slots, 0, sizeof( _nas_ciphering_slots ));
+	pthread_mutex_unlock( &_nas_ciphering_mutex );
+}
+
+int s1ap_nas_ciphering_algorithm( uint32_t mme_ue_id, uint32_t enb_ue_id ){
+	return _nas_ciphering_get( mme_ue_id, enb_ue_id );
+}
 
 /*
  * ANY_to_type_aper() decodes with a NULL codec context, i.e. with the
@@ -200,8 +268,11 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 			if( nas_pdu != NULL ){
 				nas_msg_t  m;
 				memset( &m, 0, sizeof( m ) );
+				/* issue #452: an Attach Accept ciphered with EEA1-EEA3 is
+				 * not parsed as plain text */
+				const int ciphering = _nas_ciphering_get( message->mme_ue_id, message->enb_ue_id );
 				//HN: get UE IP here
-				if( nas_decode( &m, nas_pdu->buf, nas_pdu->size ) > 0
+				if( nas_decode_ciphered( &m, nas_pdu->buf, nas_pdu->size, ciphering ) > 0
 						&& nas_is_security_protected_msg( &m )
 						&& m.protected_msg.header.protocol_discriminator == NAS_EPS_MOBILITY_MANAGEMENT_MESSAGE
 						&& m.protected_msg.msg.emm.header.message_type   == NAS_EMM_ATTACH_ACCEPT
@@ -755,10 +826,12 @@ static inline int _decode_s1ap_uecontextrelease(
                 switch( s1apUES1APIDs_p->present ){
                 case S1ap_UE_S1AP_IDs_PR_mME_UE_S1AP_ID:
                 	message->mme_ue_id = s1apUES1APIDs_p->choice.mME_UE_S1AP_ID;
+                	_nas_ciphering_release( message->mme_ue_id, 0, 0 );
                 	break;
                 case S1ap_UE_S1AP_IDs_PR_uE_S1AP_ID_pair:
                 	message->mme_ue_id = s1apUES1APIDs_p->choice.uE_S1AP_ID_pair.mME_UE_S1AP_ID;
                 	message->enb_ue_id = s1apUES1APIDs_p->choice.uE_S1AP_ID_pair.eNB_UE_S1AP_ID;
+                	_nas_ciphering_release( message->mme_ue_id, message->enb_ue_id, 1 );
                 	break;
                 case S1ap_UE_S1AP_IDs_PR_NOTHING:
                 	break;
@@ -855,6 +928,68 @@ static inline int _decode_s1ap_UEContextReleaseRequest(
 	return decoded;
 }
 
+/*
+ * Issue #452: a DownlinkNASTransport is decoded only to learn the NAS
+ * ciphering algorithm a Security Mode Command selects for its UE-associated
+ * S1 connection. The message fields are left untouched.
+ */
+static inline int _decode_s1ap_downlinkNASTransport(
+		ANY_t *any_p) {
+
+	S1ap_DownlinkNASTransport_t *s1ap_DownlinkNASTransport_p = NULL;
+	s1ap_message_t ids;
+	int i, algorithm = NAS_CIPHERING_ALGORITHM_UNKNOWN;
+	int has_mme_ue_id = 0, has_enb_ue_id = 0;
+	int tempDecoded = 0;
+	/* failures return 0: nothing of the message depends on this decode, so
+	 * a DownlinkNASTransport keeps its attributes as before #452 */
+	if (any_p == NULL) {
+		S1AP_ERROR("NULL ANY_t value\n");
+		return 0;
+	}
+
+	tempDecoded = _any_to_type_aper(any_p, &asn_DEF_S1ap_DownlinkNASTransport, (void**)&s1ap_DownlinkNASTransport_p);
+	if (tempDecoded < 0 || s1ap_DownlinkNASTransport_p == NULL) {
+		S1AP_ERROR("Decoding of S1ap_DownlinkNASTransport failed\n");
+		if (s1ap_DownlinkNASTransport_p)
+			ASN_STRUCT_FREE(asn_DEF_S1ap_DownlinkNASTransport, s1ap_DownlinkNASTransport_p);
+		return 0;
+	}
+
+	memset( &ids, 0, sizeof( ids ));
+	for (i = 0; i < s1ap_DownlinkNASTransport_p->s1ap_DownlinkNASTransport_ies.list.count; i++) {
+		S1ap_IE_t *ie_p = s1ap_DownlinkNASTransport_p->s1ap_DownlinkNASTransport_ies.list.array[i];
+
+		switch(ie_p->id) {
+		case S1ap_ProtocolIE_ID_id_MME_UE_S1AP_ID:
+			has_mme_ue_id = ( _decode_mme_enb_ue_id( &ids, ie_p ) == 0 );
+			break;
+		case S1ap_ProtocolIE_ID_id_eNB_UE_S1AP_ID:
+			has_enb_ue_id = ( _decode_mme_enb_ue_id( &ids, ie_p ) == 0 );
+			break;
+		case S1ap_ProtocolIE_ID_id_NAS_PDU:
+		{
+			S1ap_NAS_PDU_t *s1apNASPDU_p = NULL;
+			tempDecoded = _any_to_type_aper(&ie_p->value, &asn_DEF_S1ap_NAS_PDU, (void**)&s1apNASPDU_p);
+			if (tempDecoded >= 0 && s1apNASPDU_p != NULL)
+				algorithm = nas_get_security_mode_command_ciphering( s1apNASPDU_p->buf, s1apNASPDU_p->size );
+			if (s1apNASPDU_p)
+				ASN_STRUCT_FREE(asn_DEF_S1ap_NAS_PDU, s1apNASPDU_p);
+		}
+		break;
+		default:
+			/* other IEs are not needed */
+			break;
+		}
+	}
+
+	if( has_mme_ue_id && has_enb_ue_id && algorithm != NAS_CIPHERING_ALGORITHM_UNKNOWN )
+		_nas_ciphering_set( ids.mme_ue_id, ids.enb_ue_id, algorithm );
+
+	ASN_STRUCT_FREE( asn_DEF_S1ap_DownlinkNASTransport, s1ap_DownlinkNASTransport_p );
+	return 0;
+}
+
 static int _decode_s1ap_initiatingMessage(s1ap_message_t *message,
 		S1ap_InitiatingMessage_t *initiating_p){
 	int ret = 0;
@@ -877,6 +1012,9 @@ static int _decode_s1ap_initiatingMessage(s1ap_message_t *message,
 		break;
 	case S1ap_ProcedureCode_id_UEContextReleaseRequest:
 		return _decode_s1ap_UEContextReleaseRequest( message, &initiating_p->value);
+		break;
+	case S1ap_ProcedureCode_id_downlinkNASTransport:
+		return _decode_s1ap_downlinkNASTransport( &initiating_p->value );
 		break;
 	}
 

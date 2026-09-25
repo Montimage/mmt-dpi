@@ -41,6 +41,17 @@
 #define S1AP_ENTITY_MME_ALIAS     "mme_entity"  //current entity concerning the packet
 
 
+/*
+ * NAS ciphering (issue #452): ue_ipv4, m_tmsi and imsi are read from the NAS
+ * PDUs S1AP carries. The SDK does not decrypt NAS: it has no API through
+ * which the host could supply the per-UE NAS security context (K_NASenc,
+ * NAS COUNT). A ciphered NAS PDU is read as plain text only when the Security
+ * Mode Command of its S1 connection selected EEA0 (null ciphering), or, when
+ * no Security Mode Command was seen, if its first octet is the one of a plain
+ * NAS message. After EEA1/EEA2/EEA3 these attributes are not extracted from
+ * ciphered PDUs. See docs/DECISIONS.md.
+ */
+
 //protocol attributes
 enum{
 	S1AP_ATT_PROCEDURE_CODE = 1,

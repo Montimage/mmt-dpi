@@ -61,6 +61,7 @@ LIB="${PREFIX}/dpi/lib"
 # s1ap_common.h / ngap.h are internal headers (not installed), so the test
 # compiles against the repo tree; the generated asn1c trees are never edited.
 SRC_INC=(
+    -I "${REPO_ROOT}/src/mmt_mobile"
     -I "${REPO_ROOT}/src/mmt_mobile/s1ap"
     -I "${REPO_ROOT}/src/mmt_mobile/ngap"
     -I "${REPO_ROOT}/src/mmt_mobile/asn1c/common"

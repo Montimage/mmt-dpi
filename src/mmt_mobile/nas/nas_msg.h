@@ -106,6 +106,22 @@ static inline bool nas_is_security_protected_msg( const nas_msg_t *msg ){
 		&&  msg->header.security_header_type   != NAS_SECURITY_HEADER_TYPE_NOT_PROTECTED);
 }
 
+/* Security header types whose NAS message is ciphered (TS 24.301 §9.3.1) */
+static inline bool nas_is_ciphered_security_header( uint8_t security_header_type ){
+	return security_header_type == NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED
+		|| security_header_type == NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW;
+}
+
+/*
+ * EPS NAS ciphering algorithm of a UE (issue #452): the 3-bit "type of
+ * ciphering algorithm" of the Selected NAS security algorithms IE
+ * (TS 24.301 §9.9.3.23) — 0 is EEA0 (null ciphering), 1-3 are EEA1-EEA3,
+ * 4-7 are reserved and treated as non-null — or UNKNOWN when no Security
+ * Mode Command of the UE was seen.
+ */
+#define NAS_CIPHERING_ALGORITHM_UNKNOWN (-1)
+#define NAS_CIPHERING_ALGORITHM_EEA0      0
+
 /**
  * Decode layer 3 NAS message
  *
@@ -121,5 +137,26 @@ static inline bool nas_is_security_protected_msg( const nas_msg_t *msg ){
  *  Otherwise, a negative number representing code error
  */
 int nas_decode( nas_msg_t *msg, const uint8_t *buffer, int length );
+
+/**
+ * Same as nas_decode(), for a UE whose NAS ciphering algorithm is
+ * ciphering_algorithm (NAS_CIPHERING_ALGORITHM_*, or 1-7 for a non-null one).
+ * The SDK never decrypts (issue #452, docs/DECISIONS.md), so a ciphered
+ * message (security header type 2 or 4):
+ * - EEA0: is decoded as plain text;
+ * - non-null algorithm: is not decoded, DECODE_CIPHERED_PAYLOAD is returned;
+ * - UNKNOWN: is decoded only if its first octet is the one of a plain EMM or
+ *   ESM message, otherwise DECODE_CIPHERED_PAYLOAD is returned.
+ * nas_decode() uses NAS_CIPHERING_ALGORITHM_UNKNOWN.
+ */
+int nas_decode_ciphered( nas_msg_t *msg, const uint8_t *buffer, int length,
+		int ciphering_algorithm );
+
+/**
+ * If buffer holds an integrity-protected EMM Security Mode Command, return
+ * the ciphering algorithm it selects (0-7); otherwise
+ * NAS_CIPHERING_ALGORITHM_UNKNOWN.
+ */
+int nas_get_security_mode_command_ciphering( const uint8_t *buffer, int length );
 
 #endif /* SRC_MMT_5G_NAS_NAS_MSG_H_ */

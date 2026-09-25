@@ -431,4 +431,15 @@ typedef struct s1ap_message{
 
 int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 		const uint32_t length);
+
+/* Issue #452: slots of the NAS ciphering algorithm table (one per
+ * UE-associated S1 connection, direct-mapped by MME-UE-S1AP-ID) */
+#define S1AP_NAS_CIPHERING_SLOTS 1024
+
+/* NAS ciphering algorithm s1ap_decode() learned for the S1 connection
+ * (mme_ue_id, enb_ue_id) from its Security Mode Command, or
+ * NAS_CIPHERING_ALGORITHM_UNKNOWN */
+int  s1ap_nas_ciphering_algorithm( uint32_t mme_ue_id, uint32_t enb_ue_id );
+/* forget every learned algorithm */
+void s1ap_nas_ciphering_reset( void );
 #endif /* S1AP_COMMON_H_ */

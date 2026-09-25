@@ -31,6 +31,15 @@ Protocol implementations are organized into shared libraries loaded at runtime:
 | **mmt_business_app** | `libmmt_business_app.so` | Business application protocols |
 | **mmt_security** | `libmmt_security.so` | Security protocol handling |
 
+The LTE NAS decoder does not decrypt ciphered NAS messages (EEA1/EEA2/EEA3):
+the per-UE NAS keys cannot be derived from the traffic, and the SDK has no API
+for a host to supply them. A ciphered NAS PDU is decoded as plain text only
+when its S1 connection's Security Mode Command selected EEA0 (null ciphering),
+or, when that command was not seen, if its first octet is the one of a plain
+NAS message. So after EEA1/EEA2/EEA3, `s1ap.ue_ipv4` and `s1ap.m_tmsi` are not
+read from a ciphered Attach Accept. Background in the
+[decision log](DECISIONS.md) (issue #452).
+
 ### Build System (`rules/`, `sdk/`)
 
 Platform-specific build rules supporting Linux (GCC, Clang, ICC) and ARM cross-compilation.

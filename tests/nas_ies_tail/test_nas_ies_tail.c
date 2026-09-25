@@ -29,6 +29,12 @@
  * - Attach Accept: every optional IE walked by its format (TV, TLV,
  *   TLV-E, type 1), the GUTI found after a multi-TAC TAI list
  *
+ * Issue #452 adds:
+ * - a ciphered PDU (security header type 2/4) is decoded as plain text for
+ *   EEA0, not decoded for a non-null algorithm, and decoded for an unknown
+ *   algorithm only when its first octet is the one of a plain EMM/ESM message
+ * - the ciphering algorithm selected by an EMM Security Mode Command
+ *
  * Verifies crafted Attach-Accept/Request tail cases (ielen 0..10 at buffer end)
  * pass without AddressSanitizer errors.
  */
@@ -44,6 +50,7 @@
 #include "ies/tracking_area_identity_list.h"
 #include "ies/eps_quality_of_service.h"
 #include "nas_msg.h"
+#include "util/decoder.h"
 #include "nas_5g/nas_5g.h"
 
 static int failures = 0;
@@ -562,6 +569,111 @@ static void test_attach_accept_in_nas_pdu(void) {
           && m.protected_msg.msg.emm.attach_accept.guti.guti.mtmsi == 0xDEADBEEF);
 }
 
+/* issue #452: ciphered PDUs are not parsed as plain text when the
+ * algorithm is known to be non-null */
+static void test_nas_ciphering(void) {
+    printf("ciphered NAS PDUs and Security Mode Command (#452):\n");
+    uint8_t pdu[6 + 2 + sizeof(attach_accept_body)];
+    const uint8_t hdr[8] = { 0x27, 0x11, 0x22, 0x33, 0x44, 0x01, 0x07, 0x42 };
+    nas_msg_t m;
+    memcpy(pdu, hdr, sizeof(hdr));
+    memcpy(pdu + sizeof(hdr), attach_accept_body, sizeof(attach_accept_body));
+
+    memset(&m, 0, sizeof(m));
+    CHECK("EEA0: ciphered attach accept decoded",
+          nas_decode_ciphered(&m, pdu, sizeof(pdu), NAS_CIPHERING_ALGORITHM_EEA0) == (int)sizeof(pdu)
+          && m.protected_msg.msg.emm.attach_accept.guti.guti.mtmsi == 0xDEADBEEF);
+    int alg;
+    for (alg = 1; alg <= 7; alg++) {
+        memset(&m, 0, sizeof(m));
+        CHECK("EEA1-7: ciphered attach accept not decoded",
+              nas_decode_ciphered(&m, pdu, sizeof(pdu), alg) == DECODE_CIPHERED_PAYLOAD
+              && m.protected_msg.msg.emm.header.message_type == 0
+              && m.protected_msg.msg.emm.attach_accept.guti.guti.mtmsi == 0);
+    }
+    /* security header type 4 (ciphered, new context) behaves the same */
+    pdu[0] = 0x47;
+    memset(&m, 0, sizeof(m));
+    CHECK("EEA2: type 4 not decoded",
+          nas_decode_ciphered(&m, pdu, sizeof(pdu), 2) == DECODE_CIPHERED_PAYLOAD);
+    memset(&m, 0, sizeof(m));
+    CHECK("EEA0: type 4 decoded",
+          nas_decode_ciphered(&m, pdu, sizeof(pdu), NAS_CIPHERING_ALGORITHM_EEA0) == (int)sizeof(pdu));
+    /* integrity protected only (type 1): never ciphered, decoded whatever
+     * the algorithm */
+    pdu[0] = 0x17;
+    memset(&m, 0, sizeof(m));
+    CHECK("EEA2: integrity-only PDU still decoded",
+          nas_decode_ciphered(&m, pdu, sizeof(pdu), 2) == (int)sizeof(pdu));
+
+    /* unknown algorithm: a plausible plain message is decoded ... */
+    pdu[0] = 0x27;
+    memset(&m, 0, sizeof(m));
+    CHECK("unknown: plausible plain EMM decoded",
+          nas_decode(&m, pdu, sizeof(pdu)) == (int)sizeof(pdu)
+          && m.protected_msg.msg.emm.attach_accept.guti.guti.mtmsi == 0xDEADBEEF);
+    memset(&m, 0, sizeof(m));
+    CHECK("unknown (explicit): plausible plain EMM decoded",
+          nas_decode_ciphered(&m, pdu, sizeof(pdu), NAS_CIPHERING_ALGORITHM_UNKNOWN) == (int)sizeof(pdu));
+    /* ... but a first octet no plain EMM/ESM message has is ciphertext:
+     * EMM with a non-zero security header type, or another discriminator */
+    const uint8_t bad_first[] = { 0x17, 0x27, 0xC7, 0x09, 0x9C, 0x00 };
+    size_t i;
+    for (i = 0; i < sizeof(bad_first); i++) {
+        pdu[6] = bad_first[i];
+        memset(&m, 0, sizeof(m));
+        CHECK("unknown: implausible first octet not decoded",
+              nas_decode(&m, pdu, sizeof(pdu)) == DECODE_CIPHERED_PAYLOAD);
+    }
+    /* an ESM first octet (EBI 5, PD 2) is plausible: it is handed to the
+     * plain decoder */
+    pdu[6] = 0x52;
+    memset(&m, 0, sizeof(m));
+    int ret = nas_decode(&m, pdu, sizeof(pdu));
+    CHECK("unknown: ESM first octet reaches the plain decoder",
+          ret > 0 && m.protected_msg.msg.esm.header.message_type == attach_accept_body[0]);
+    pdu[6] = 0x07;
+    /* a reserved security header type (5) is not reported as ciphered */
+    pdu[0] = 0x57;
+    memset(&m, 0, sizeof(m));
+    CHECK("reserved security header type: MAC mismatch, not ciphered",
+          nas_decode_ciphered(&m, pdu, sizeof(pdu), 2) == DECODE_MAC_MISMATCH);
+    pdu[0] = 0x27;
+    /* header-only ciphered PDU with unknown algorithm: still a clean error */
+    uint8_t hdr_only[6] = { 0x27, 0, 0, 0, 0, 0 };
+    memset(&m, 0, sizeof(m));
+    CHECK("unknown: header-only ciphered PDU rejected",
+          nas_decode(&m, hdr_only, sizeof(hdr_only)) < 0);
+
+    /* Security Mode Command (TS 24.301 §8.2.20): selected algorithms octet,
+     * ciphering in bits 7-5, integrity in bits 3-1 */
+    uint8_t smc[] = { 0x37, 0x11, 0x22, 0x33, 0x44, 0x00, 0x07, 0x5D, 0x22, 0x00, 0x02, 0xE0, 0xE0 };
+    CHECK("SMC selects EEA2", nas_get_security_mode_command_ciphering(smc, sizeof(smc)) == 2);
+    smc[8] = 0x02;
+    CHECK("SMC selects EEA0", nas_get_security_mode_command_ciphering(smc, sizeof(smc)) == NAS_CIPHERING_ALGORITHM_EEA0);
+    smc[8] = 0x71;
+    CHECK("SMC selects reserved EEA7", nas_get_security_mode_command_ciphering(smc, sizeof(smc)) == 7);
+    smc[0] = 0x17;
+    CHECK("SMC with security header type 1", nas_get_security_mode_command_ciphering(smc, sizeof(smc)) == 7);
+    smc[0] = 0x27;
+    CHECK("ciphered PDU is not read as an SMC",
+          nas_get_security_mode_command_ciphering(smc, sizeof(smc)) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+    smc[0] = 0x07;
+    CHECK("plain PDU is not read as an SMC",
+          nas_get_security_mode_command_ciphering(smc, sizeof(smc)) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+    smc[0] = 0x32;
+    CHECK("non-EMM PDU is not read as an SMC",
+          nas_get_security_mode_command_ciphering(smc, sizeof(smc)) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+    smc[0] = 0x37; smc[7] = 0x42;
+    CHECK("other EMM message is not read as an SMC",
+          nas_get_security_mode_command_ciphering(smc, sizeof(smc)) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+    smc[7] = 0x5D;
+    CHECK("SMC truncated before the algorithms octet",
+          nas_get_security_mode_command_ciphering(smc, 8) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+    CHECK("SMC NULL buffer",
+          nas_get_security_mode_command_ciphering(NULL, 13) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
+}
+
 int main(void) {
     test_pdn_tail();
     test_mobile_identity_tail();
@@ -579,6 +691,7 @@ int main(void) {
     test_tai_list_types();
     test_attach_accept_full();
     test_attach_accept_in_nas_pdu();
+    test_nas_ciphering();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }

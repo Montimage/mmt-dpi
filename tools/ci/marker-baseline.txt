@@ -80,4 +80,8 @@
 # extracted), the GTP non-G-PDU arm is documented as complete, the struct
 # realignment note was dropped without profiling data, and the RTP
 # quality-estimation setup uses the new generic fuzz-engine context helper.
-38
+#
+# #452: re-baselined 38 -> 37 — the `TODO(#452)` NAS decryption marker was
+# resolved: decryption stays out of scope (docs/DECISIONS.md) and a PDU
+# ciphered with a known non-null algorithm is no longer parsed as plain text.
+37
