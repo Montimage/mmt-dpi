@@ -12,7 +12,9 @@
 #include "../mmt_common_internal_include.h"
 
 // indicates an INT header in the packet: the DSCP of the carrier IP header
-// (IPv4 TOS byte, IPv6 Traffic Class) is set to this value
+// (IPv4 TOS byte, IPv6 Traffic Class) is set to this value. 0x20 is also the
+// standard CS4 class, so INT is claimed only when the TCP/UDP payload starts
+// with a valid INT v1.0 shim + metadata header too (issue #453)
 #define INT_DSCP 0x20
 
 //Historical INT length, used when the shim Length is absent or invalid
@@ -47,12 +49,33 @@ static bool _is_int_dscp(const ipacket_t *ipacket, unsigned ip_index) {
 	return dscp == INT_DSCP;
 }
 
+uint32_t proto_int_valid_shim_length(const uint8_t *p, uint32_t avail) {
+	if( p == NULL || avail < INT_SHIM_MD_HEADER_LENGTH )
+		return 0;
+	//shim Type: 1 = hop-by-hop; 0 is kept for compatibility (not a v1.0 value)
+	if( p[0] > 1 )
+		return 0;
+	//shim Length in 4-byte words, shim and metadata header included
+	uint32_t len = (uint32_t)p[2] * 4;
+	if( p[2] < 3 || len > avail )
+		return 0;
+	//metadata header Ver (high nibble of its first byte)
+	if( (p[4] >> 4) != 1 )
+		return 0;
+	return len;
+}
+
 static int _classify_int_from_udp_or_tcp(ipacket_t * ipacket, unsigned index, bool is_udp) {
 	//need IP.UDP/TCP
 	if( index <=1 )
 		return 0;
 	//must be preceded by IPv4 or IPv6 whose DSCP marks INT
 	if( ! _is_int_dscp( ipacket, index - 1 ) )
+		goto _not_found_int;
+	//the DSCP alone is the CS4 class: the payload must be an INT stack
+	const struct mmt_tcpip_internal_packet_struct *packet = ipacket->internal_packet;
+	if( packet->payload == NULL
+			|| proto_int_valid_shim_length( packet->payload, packet->payload_packet_len ) == 0 )
 		goto _not_found_int;
 
 	//return set_classified_proto(ipacket, index + 1, retval);
@@ -79,18 +102,19 @@ static int _classify_int_from_tcp(ipacket_t * ipacket, unsigned index) {
  * Length in bytes of the INT header stack (shim + metadata header + metadata
  * stack) at the given index: the shim Length field counts 4-byte words and
  * includes the shim and the 8-byte metadata header (3 words at least).
- * Falls back to the historical 56 bytes when the shim is absent or invalid
- * (the QUIC_IETF-over-INT checker applies the same rule, see #333).
+ * Falls back to the historical 56 bytes when the captured bytes are not a
+ * valid shim, e.g. a later packet of a flow already classified as INT (the
+ * QUIC_IETF-over-INT checker applies the same rule, see #333 and #453).
  */
 static int _int_header_length(const ipacket_t *ipacket, unsigned index) {
 	int offset = get_packet_offset_at_index(ipacket, index);
-	if( offset < 0 || !mmt_have_bytes(ipacket, (size_t)offset, sizeof(int_shim_tcpudp_v10_t)) )
+	if( offset < 0 || (size_t)offset >= ipacket->p_hdr->caplen )
 		return INT_DEFAULT_LENGTH;
-	const int_shim_tcpudp_v10_t *shim = (const int_shim_tcpudp_v10_t *) &ipacket->data[offset];
-	//same shim types as the attribute extraction accepts
-	if( shim->type > 1 || shim->length < 3 )
+	uint32_t len = proto_int_valid_shim_length( &ipacket->data[offset],
+			ipacket->p_hdr->caplen - (uint32_t)offset );
+	if( len == 0 )
 		return INT_DEFAULT_LENGTH;
-	return shim->length * 4;
+	return (int)len;
 }
 
 static int _int_classify_me(ipacket_t * ipacket, unsigned index) {
@@ -244,6 +268,8 @@ static int _extraction_int_cloud_gaming_report_att(const cloud_gaming_data_t *p_
 static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
 	int i, offset = get_packet_offset_at_index(ipacket, index);
+	if( offset < 0 || !mmt_have_bytes(ipacket, (size_t)offset, INT_SHIM_MD_HEADER_LENGTH) )
+		return NOT_FOUND;
 	const u_char *cursor = &ipacket->data[offset], *end_cursor = &ipacket->data[ipacket->p_hdr->caplen];
 
 	// INT over TCP/UDP structure
@@ -351,7 +377,11 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 
 	uint32_t total_latency = 0;
 
+	//bytes of one hop given by Hop ML
+	size_t hop_stride = (size_t)hbh_report->hop_ml * 4;
+
 	for( i=0; i<num_hops; i++ ){
+		const u_char *hop_start = cursor;
 		if( is_switches_id ){
 			advance_pointer( u32, uint32_t, cursor, end_cursor, "No SW_IDS");
 			data.sw_ids.data[i] = ntohl( get_u32(u32, 0) );
@@ -427,6 +457,16 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 			memcpy( &cg, p_cg, sizeof(cg) );
 			if( _extraction_int_cloud_gaming_report_att(&cg, ipacket, index, extracted_data) == FOUND)
 				return FOUND;
+		}
+
+		//Hop ML covers the parsed fields: the next hop starts Hop ML words after
+		// this one (fields this dissector does not parse are skipped). A smaller
+		// Hop ML keeps the parsed fields as the stride.
+		if( hop_stride != 0 && hop_stride >= (size_t)(cursor - hop_start) ){
+			if( hop_stride > (size_t)(end_cursor - hop_start) )
+				cursor = end_cursor;
+			else
+				cursor = hop_start + hop_stride;
 		}
 	}
 

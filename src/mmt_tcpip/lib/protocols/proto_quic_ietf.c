@@ -6,6 +6,7 @@
  */
 
 #include "proto_quic_ietf.h"
+#include "proto_int.h"
 #include "mmt_tcpip_protocols.h"
 #include "../mmt_common_internal_include.h"
 #include <arpa/inet.h>
@@ -463,14 +464,13 @@ static int _classify_quic_ietf_from_int(ipacket_t *ipacket, unsigned index) {
 		return NOT_FOUND;
 	//the INT shim Length (byte 2) counts the shim, metadata header and
 	//metadata stack in 4-byte words (INT v1.0 §4.6.1); fall back to the
-	//historical fixed size when the shim is absent, of a type the INT
-	//dissector does not parse (> 1) or smaller than shim + header — the
-	//same rule as _int_header_length() in proto_int.c, so both agree on
-	//where the layer after INT starts
-	size_t int_len = QUIC_IETF_INT_DEFAULT_LENGTH;
-	if( (size_t)base + 4 <= ipacket->p_hdr->caplen
-			&& ipacket->data[ base ] <= 1 && ipacket->data[ base + 2 ] >= 3 )
-		int_len = (size_t)ipacket->data[ base + 2 ] * 4;
+	//historical fixed size when the captured bytes are not a valid shim —
+	//the same validator as _int_header_length() in proto_int.c, so both
+	//agree on where the layer after INT starts
+	size_t int_len = proto_int_valid_shim_length( &ipacket->data[ base ],
+			ipacket->p_hdr->caplen - (uint32_t)base );
+	if( int_len == 0 )
+		int_len = QUIC_IETF_INT_DEFAULT_LENGTH;
 	size_t offset = (size_t)base + int_len;
 	if( offset >= ipacket->p_hdr->caplen )
 		return NOT_FOUND;

@@ -6,6 +6,7 @@
  */
 
 #include "proto_int_report.h"
+#include "proto_int.h"
 #include "mmt_tcpip_protocols.h"
 
 #include "../mmt_common_internal_include.h"
@@ -49,8 +50,9 @@ typedef struct {
  * Parses the inner IPv4 (options included) or IPv6 header at *cursor and moves
  * *cursor past it. IPv6 extension headers are not walked: the Next Header must
  * be the transport protocol.
- * @return false if the EtherType is neither IPv4 nor IPv6 or the header is
- *         truncated or malformed
+ * @return false if the EtherType is neither IPv4 nor IPv6, the header is
+ *         truncated or malformed, or the IPv4 packet is a non-first fragment
+ *         (it carries no transport header)
  */
 static bool _parse_inner_ip(uint16_t eth_type, const u_char **cursor, const u_char *end_cursor, _inner_ip_t *ip) {
 	const u_char *p = *cursor;
@@ -63,6 +65,9 @@ static bool _parse_inner_ip(uint16_t eth_type, const u_char **cursor, const u_ch
 			return false;
 		hdr_len = (size_t)(p[0] & 0x0f) * 4; //IHL in 4-byte words
 		if( hdr_len < IPV4_MIN_HDR_SIZE || hdr_len > avail )
+			return false;
+		//Fragment Offset (13 low bits of bytes 6-7) not 0
+		if( (((p[6] << 8) | p[7]) & 0x1fff) != 0 )
 			return false;
 		ip->version  = 4;
 		ip->l4_proto = p[9];
@@ -125,14 +130,22 @@ size_t proto_int_get_int_report_header_size(const u_char *cursor, const u_char *
 		}
 		cursor += UDP_HDR_SIZE;
 		break;
-	case IP_PROTO_TCP:
-		//jump over TCP header: need also at least one byte after it
+	case IP_PROTO_TCP: {
+		//jump over TCP header, including its options (data offset in
+		// 4-byte words): need also at least one byte after it
 		if( (size_t)(end_cursor - cursor) <= TCP_HDR_SIZE ){
 			debug("No INT.Ethernet.IP.TCP");
 			return 0;
 		}
-		cursor += TCP_HDR_SIZE;
+		size_t tcp_hdr_len = (size_t)(cursor[12] >> 4) * 4;
+		if( tcp_hdr_len < TCP_HDR_SIZE
+				|| (size_t)(end_cursor - cursor) <= tcp_hdr_len ){
+			debug("Invalid INT.Ethernet.IP.TCP data offset");
+			return 0;
+		}
+		cursor += tcp_hdr_len;
 		break;
+	}
 	default:
 		debug("Neither UDP, nor TCP is found after IP. Need to support INT over other protocol than TCP/UDP over IP");
 		return 0;
@@ -172,6 +185,8 @@ static int _classify_inband_network_telemetry_from_udp(ipacket_t * ipacket, unsi
 static int _classify_int_report_next(ipacket_t * ipacket, unsigned index) {
 	//the current (index) protocol is PROT_INT_REPORT
 	int offset = get_packet_offset_at_index(ipacket, index);
+	if( offset < 0 || !mmt_have_bytes(ipacket, (size_t)offset, 1) )
+		return 0;
 	const u_char *cursor = &ipacket->data[offset], *end_cursor = &ipacket->data[ipacket->p_hdr->caplen];
 
 	size_t int_report_len = proto_int_get_int_report_header_size(cursor, end_cursor);
@@ -180,6 +195,11 @@ static int _classify_int_report_next(ipacket_t * ipacket, unsigned index) {
 	classified_proto_t retval;
 
 	if( int_report_len == 0 )
+		return 0;
+	//the inner transport payload must be an INT stack, as for the INT
+	// dissector itself (proto_int.c)
+	if( proto_int_valid_shim_length( cursor + int_report_len,
+			(uint32_t)(end_cursor - (cursor + int_report_len)) ) == 0 )
 		return 0;
 
 	retval.proto_id = PROTO_INT;
@@ -192,6 +212,8 @@ static int _classify_int_report_next(ipacket_t * ipacket, unsigned index) {
 static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 		attribute_t * extracted_data) {
 	int offset = get_packet_offset_at_index(ipacket, index);
+	if( offset < 0 || !mmt_have_bytes(ipacket, (size_t)offset, 1) )
+		return 0;
 	const u_char *cursor = &ipacket->data[offset], *end_cursor = &ipacket->data[ipacket->p_hdr->caplen];
 
 	const int FOUND = 1, NOT_FOUND = 0;
@@ -249,12 +271,13 @@ static int _extraction_int_report_att(const ipacket_t *ipacket, unsigned index,
 	case INT_REPORT_FLOW_IP_SRC:
 		if( ip.version != 4 )
 			return NOT_FOUND;
-		(*(uint32_t *) extracted_data->data) = ntohl( get_u32(ip.src, 0) );
+		//network byte order, as ip.src and the MMT_DATA_IP_ADDR printer expect
+		memcpy( extracted_data->data, ip.src, sizeof(uint32_t) );
 		return FOUND;
 	case INT_REPORT_FLOW_IP_DST:
 		if( ip.version != 4 )
 			return NOT_FOUND;
-		(*(uint32_t *) extracted_data->data) = ntohl( get_u32(ip.dst, 0) );
+		memcpy( extracted_data->data, ip.dst, sizeof(uint32_t) );
 		return FOUND;
 	case INT_REPORT_FLOW_IP6_SRC:
 		if( ip.version != 6 )

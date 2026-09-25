@@ -76,6 +76,10 @@
 # size the layer after INT from the shim Length, survive a zero Hop ML and
 # decode both LV2 port-ID layouts; the INT-report dissector
 # (proto_int_report.c) must parse an IPv6 (or optioned IPv4) inner packet.
+# Issue #453 extends it: DSCP 0x20 (CS4) alone is not INT — the payload must
+# start with a valid INT v1.0 shim + metadata header, over UDP or TCP; the hop
+# stride follows Hop ML; the INT-report inner packet rejects non-first IPv4
+# fragments and invalid shims and exposes ip_src/ip_dst in network order.
 #
 #   test_int_ipv6_parser.c — packet/API path: crafted Ethernet/IPv{4,6}/UDP
 #                               INT frames and INT reports through
@@ -259,4 +263,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #331, #332, #333, #375, #376, #377, #378, #407, #409)"
+echo "✓ parser boundary tests passed (issues #331, #332, #333, #375, #376, #377, #378, #407, #409, #453)"

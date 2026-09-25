@@ -13,7 +13,10 @@
  *     zero padding and a Length running past the capture add no layer, and
  *     a long chain stays bounded by the protocol path;
  *   - QUIC over INT starts at the INT shim Length, by the same rule as the
- *     INT dissector (type <= 1, at least 3 words; else the historical 56).
+ *     INT dissector (type <= 1, at least 3 words, metadata header Ver 1;
+ *     else the historical 56); DSCP 0x20 (CS4) traffic without a valid shim
+ *     is not INT (#453), but a flow already classified as INT keeps the
+ *     56-byte fallback for its later packets.
  *
  * Crafted Ethernet/IPv4/UDP frames go through mmt_init_handler +
  * packet_process; the packet handler reads the protocol path and the
@@ -51,6 +54,7 @@ static int g_checks   = 0;
 static int      g_quic_layers;              /* number of quic_ietf layers */
 static int      g_quic_index[MAX_LAYERS];   /* their protocol indexes */
 static int      g_path_len;
+static int      g_int_seen;                 /* PROTO_INT in the path */
 static int      g_quic_off;                 /* header offset of the first quic layer */
 static uint8_t  g_ip_tos;                   /* IPv4 TOS of the next frame */
 static int      g_version_set[MAX_LAYERS];
@@ -66,8 +70,11 @@ static uint32_t g_pn;
 static int packet_handler(const ipacket_t *ipacket, void *user_args) {
     (void) user_args;
     g_quic_layers = 0;
+    g_int_seen = 0;
     g_path_len = ipacket->proto_hierarchy ? ipacket->proto_hierarchy->len : 0;
     for (int i = 0; i < g_path_len && i < PROTO_PATH_SIZE; i++) {
+        if (ipacket->proto_hierarchy->proto_path[i] == PROTO_INT)
+            g_int_seen = 1;
         if (ipacket->proto_hierarchy->proto_path[i] != PROTO_QUIC_IETF)
             continue;
         int n = g_quic_layers++;
@@ -172,6 +179,7 @@ static void run_udp(mmt_handler_t *h, int dir, uint16_t sport,
     hdr.caplen = (unsigned) len;
     hdr.len = (unsigned) len;
     g_quic_layers = 0;
+    g_int_seen = 0;
     g_path_len = 0;
     packet_process(h, &hdr, f);
     free(f);
@@ -299,19 +307,33 @@ int main(void) {
     /* --- 6. QUIC over INT (UDP carrier with DSCP 0x20) -------------------- */
     {
         const int l4 = 14 + 20 + 8;
-        struct { uint8_t type, words; size_t bytes; int quic_at; const char *msg; } c[] = {
-            { 1, 5,  20, 20, "INT shim type 1, 5 words: QUIC at 20 bytes" },
-            { 1, 2,  56, 56, "INT shim length < 3 words: QUIC at the historical 56" },
-            { 2, 5,  56, 56, "INT shim type 2: QUIC at the historical 56, like the INT layer" },
+        /* sport 0: a new flow per case; else the INT flow of 50110 */
+        struct { uint8_t type, words; size_t bytes; uint16_t sport; int is_int, quic_at; const char *msg; } c[] = {
+            { 1, 5,  20, 50100, 1, 20, "INT shim type 1, 5 words: QUIC at 20 bytes" },
+            { 1, 2,  56, 50101, 0, -1, "CS4, shim length < 3 words: not INT" },
+            { 2, 5,  56, 50102, 0, -1, "CS4, shim type 2: not INT" },
+            { 1, 5,  20, 50110, 1, 20, "INT flow, valid shim: QUIC at 20 bytes" },
+            { 1, 2,  56, 50110, 1, 56, "INT flow, shim length < 3 words: QUIC at the historical 56" },
+            { 2, 5,  56, 50110, 1, 56, "INT flow, shim type 2: QUIC at the historical 56" },
         };
         g_ip_tos = 0x20 << 2;
         for (size_t k = 0; k < sizeof(c) / sizeof(c[0]); k++) {
             memset(q, 0, c[k].bytes);
             q[0] = c[k].type; q[2] = c[k].words;
+            q[4] = 0x10;                                 /* metadata header Ver 1 */
             n = c[k].bytes + quic_long(q + c[k].bytes, 0x00000001, 0, 1, CID_B, 8, CID_A, 8, 300);
-            run_udp(h, 0, (uint16_t)(50100 + k), q, n, t++);
-            CHECK(g_quic_layers == 1 && g_quic_off == l4 + c[k].quic_at, c[k].msg);
+            run_udp(h, 0, c[k].sport, q, n, t++);
+            if (c[k].is_int)
+                CHECK(g_int_seen && g_quic_layers == 1 && g_quic_off == l4 + c[k].quic_at, c[k].msg);
+            else
+                CHECK(!g_int_seen && g_quic_layers == 0, c[k].msg);
         }
+
+        /* a CS4-marked QUIC Initial is QUIC right after UDP, not INT */
+        n = quic_long(q, 0x00000001, 0, 1, CID_B, 8, CID_A, 8, 300);
+        run_udp(h, 0, 50120, q, n, t++);
+        CHECK(!g_int_seen && g_quic_layers == 1 && g_quic_off == l4,
+              "CS4 QUIC Initial without INT: QUIC right after UDP");
         g_ip_tos = 0;
     }
 

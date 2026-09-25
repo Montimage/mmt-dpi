@@ -191,4 +191,19 @@ enum int_attributes {
 #define INT_CLOUD_GAMING_MEAN_IAT_UP_ALIAS        "cg_mean_iat_up"
 #define INT_CLOUD_GAMING_SUM_PKT_SIZE_UP_ALIAS    "cg_sum_ptk_size_up"
 
+//INT shim (4 bytes) + hop-by-hop metadata header (8 bytes)
+#define INT_SHIM_MD_HEADER_LENGTH 12
+
+/**
+ * Checks that the bytes at p start an INT v1.0 stack: a shim of type 1
+ * (hop-by-hop; 0 is accepted for compatibility) whose Length (4-byte words,
+ * shim and metadata header included) is at least 3 and fits in avail bytes,
+ * followed by a metadata header of Ver 1. Only byte loads are used.
+ * @param p     first byte of the shim, may be NULL
+ * @param avail number of bytes available from p
+ * @return the length in bytes of the INT stack (shim Length * 4), or 0 when
+ *         the bytes are not a valid INT v1.0 shim + metadata header
+ */
+uint32_t proto_int_valid_shim_length(const uint8_t *p, uint32_t avail);
+
 #endif /* SRC_MMT_TCPIP_LIB_PROTOCOLS_INBAND_TELEMETRY_H_ */
