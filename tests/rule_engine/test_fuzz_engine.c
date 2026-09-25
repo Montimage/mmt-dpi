@@ -29,6 +29,12 @@
  *    end up on the parsed quality metric or be freed. run_tests.sh runs
  *    this binary with detect_leaks=1 under SANITIZE=asan; the mallinfo2
  *    loop covers the unsanitised runs.
+ *  - #468: a second <indexs> quality metric (SINGLE_QUALITY_METRIC mode
+ *    holds one) was dropped with its grades; it must be freed and reported.
+ *  - #469: a quality metric without usable rules (no <rules>, <rules>
+ *    before <kpis>, a rule element without a metric) crashed
+ *    estimate_quality_index(); the context helper must refuse the model and
+ *    the estimation path must not dereference the missing parts.
  *
  * Under SANITIZE=asan this binary and libmmt_fuzz are both instrumented
  * (run_all_tests.sh -> EXTRA_CFLAGS + SDK_BUILD_PROFILE=asan), so the
@@ -257,6 +263,29 @@ static const char * XML_RULES_NO_INDEX =
     "<application app_id=\"1\">\n"
     "  <kpis>\n" KPI_XML "  </kpis>\n"
     "  <rules>\n" RULE_XML("3") "  </rules>\n"
+    "</application>\n";
+
+/* #468: two quality metrics; the model keeps the first (id 3). */
+static const char * XML_TWO_INDEXS =
+    "<?xml version=\"1.0\"?>\n"
+    "<application app_id=\"1\">\n"
+    "  <kpis>\n" KPI_XML INDEX_XML("3") INDEX_XML("4") "  </kpis>\n"
+    "  <rules>\n" RULE_XML("3") "  </rules>\n"
+    "</application>\n";
+
+/* #469: a quality metric without rules. */
+static const char * XML_NO_RULES =
+    "<?xml version=\"1.0\"?>\n"
+    "<application app_id=\"1\">\n"
+    "  <kpis>\n" KPI_XML INDEX_XML("3") "  </kpis>\n"
+    "</application>\n";
+
+/* #469: <rules> before <kpis>: the rule is built without elements. */
+static const char * XML_RULES_BEFORE_KPIS =
+    "<?xml version=\"1.0\"?>\n"
+    "<application app_id=\"1\">\n"
+    "  <rules>\n" RULE_XML("3") "  </rules>\n"
+    "  <kpis>\n" KPI_XML INDEX_XML("3") "  </kpis>\n"
     "</application>\n";
 
 static void write_fixture(char *path, size_t size, const char *dir,
@@ -555,6 +584,102 @@ int main(void) {
           "rules without a quality metric: model parses, set not attached");
     free_application_quality_estimation_struct(app);
 
+    /* --- #468: a quality metric the model cannot hold is freed -------- */
+
+    free_metric_struct(NULL);
+    write_fixture(path, sizeof(path), dir, "two_indexs.xml", XML_TWO_INDEXS);
+    app = application_quality_estimation_xml_parser(path);
+    CHECK(app != NULL && app->nb_estimation_metrics == 1 &&
+          app->estimation_metrics != NULL &&
+          app->estimation_metrics->metric_id == 3 &&
+          app->estimation_metrics->next == NULL &&
+          app->estimation_metrics->quality_estimation_rules != NULL,
+          "two <indexs>: the first quality metric is kept with its rules");
+    free_application_quality_estimation_struct(app);
+
+    /* --- #469: a quality metric without usable rules ------------------ */
+    {
+        double v = 50.0;
+        double * const one[] = { &v };
+
+        /* Positive control: a complete parsed model gets a context. */
+        write_fixture(path, sizeof(path), dir, "quality_id_7.xml", XML_QUALITY_ID_7);
+        application_quality_estimation_internal_t *ctx =
+            init_application_quality_estimation_context(
+                application_quality_estimation_xml_parser(path), one, 1);
+        CHECK(ctx != NULL, "context helper accepts a parsed model with rules");
+        if (ctx) {
+            double qi = estimate_quality_index(ctx);
+            CHECK(qi >= 1.0 && qi <= 5.0,
+                  "parsed model estimates a quality index inside its range");
+            free_application_quality_estimation_context(ctx);
+        }
+
+        write_fixture(path, sizeof(path), dir, "no_rules.xml", XML_NO_RULES);
+        app = application_quality_estimation_xml_parser(path);
+        CHECK(app != NULL && app->estimation_metrics != NULL &&
+              app->estimation_metrics->quality_estimation_rules == NULL,
+              "model without <rules> parses, quality metric has no rules");
+        CHECK(init_application_quality_estimation_context(app, one, 1) == NULL,
+              "context helper refuses a model without <rules>");
+
+        write_fixture(path, sizeof(path), dir, "rules_before_kpis.xml", XML_RULES_BEFORE_KPIS);
+        app = application_quality_estimation_xml_parser(path);
+        CHECK(app != NULL && app->estimation_metrics != NULL &&
+              app->estimation_metrics->quality_estimation_rules != NULL &&
+              app->estimation_metrics->quality_estimation_rules->rules != NULL &&
+              app->estimation_metrics->quality_estimation_rules->rules->metric_elements == NULL,
+              "<rules> before <kpis>: the rule has no elements");
+        CHECK(init_application_quality_estimation_context(app, one, 1) == NULL,
+              "context helper refuses <rules> placed before <kpis>");
+
+        /* A rule element without a metric: refused by the helper ... */
+        write_fixture(path, sizeof(path), dir, "quality_id_7.xml", XML_QUALITY_ID_7);
+        app = application_quality_estimation_xml_parser(path);
+        CHECK(app != NULL && app->estimation_metrics != NULL &&
+              app->estimation_metrics->quality_estimation_rules != NULL &&
+              app->estimation_metrics->quality_estimation_rules->rules != NULL &&
+              app->estimation_metrics->quality_estimation_rules->rules->metric_elements != NULL,
+              "parsed model has a rule with an input element");
+        if (app && app->estimation_metrics && app->estimation_metrics->quality_estimation_rules
+                && app->estimation_metrics->quality_estimation_rules->rules
+                && app->estimation_metrics->quality_estimation_rules->rules->metric_elements) {
+            app->estimation_metrics->quality_estimation_rules->rules->metric_elements->metric = NULL;
+            CHECK(init_application_quality_estimation_context(app, one, 1) == NULL,
+                  "context helper refuses a rule element without a metric");
+        } else {
+            free_application_quality_estimation_struct(app);
+        }
+
+        /* ... and skipped by the estimation path, which also tolerates a
+         * rule without elements and a quality metric without rules (the
+         * unvalidated init_new_internal_* context). */
+        static const char * const unusable[] = {
+            "quality_id_7.xml", "rules_before_kpis.xml", "no_rules.xml"
+        };
+        for (size_t k = 0; k < sizeof(unusable) / sizeof(unusable[0]); k++) {
+            snprintf(path, sizeof(path), "%s/%s", dir, unusable[k]);
+            app = application_quality_estimation_xml_parser(path);
+            if (app == NULL || app->estimation_metrics == NULL) {
+                CHECK(0, "unusable-rules fixture parses");
+                free_application_quality_estimation_struct(app);
+                continue;
+            }
+            if (k == 0 && app->estimation_metrics->quality_estimation_rules
+                    && app->estimation_metrics->quality_estimation_rules->rules
+                    && app->estimation_metrics->quality_estimation_rules->rules->metric_elements)
+                app->estimation_metrics->quality_estimation_rules->rules->metric_elements->metric = NULL;
+            ctx = init_new_internal_application_quality_estimation_struct(app);
+            if (ctx) {
+                ctx->metric_values[0] = &v;
+                CHECK(estimate_quality_index(ctx) == 0.5,
+                      "estimation skips rules it cannot evaluate (no crash)");
+                free_internal_application_quality_estimation_struct(ctx);
+            }
+            free_application_quality_estimation_struct(app);
+        }
+    }
+
     /* Heap balance for the models above. libxml2 and the allocator settle
      * over the first cycles (a few hundred bytes in total), so the check
      * allows 16 B per cycle on average: one leaked rules set is several
@@ -562,7 +687,8 @@ int main(void) {
 #if !defined(__SANITIZE_ADDRESS__) && !defined(__SANITIZE_THREAD__)
     if (mallinfo2().uordblks != 0) {
         static const char * const names[] = {
-            "two_rules.xml", "quality_id_7.xml", "rules_no_index.xml"
+            "two_rules.xml", "quality_id_7.xml", "rules_no_index.xml",
+            "two_indexs.xml", "no_rules.xml", "rules_before_kpis.xml"
         };
         size_t before = 0;
         for (int i = 0; i < 65; i++) {
@@ -576,7 +702,7 @@ int main(void) {
         }
         size_t after = mallinfo2().uordblks;
         CHECK(after <= before + 64 * 16,
-              "repeated parse+free of the #466 models does not grow the heap");
+              "repeated parse+free of the #466/#468/#469 models does not grow the heap");
     }
 #endif
 

@@ -41,20 +41,33 @@ void get_index_value(application_quality_estimation_internal_t * app_internal_st
     double index_value;
     double rule_index_array[SAMPLES_NB] = {0};
 
+    /* #469: no rules, a rule without input/output elements, or an element
+     * without a metric or grade contributes nothing instead of crashing.
+     * init_application_quality_estimation_context() refuses such models. */
+    if (quality_metric == NULL || quality_metric->quality_estimation_rules == NULL)
+        return;
+
     rule_t * rule = quality_metric->quality_estimation_rules->rules;
 
     while (rule != NULL) {
         metric_grade_rule_element_t * rule_element = rule->metric_elements;
         metric_grade_rule_element_t * output_element = rule->quality_metric_elements;
+        int has_input = 0;
 
-        index_value = app_internal_struct->metrics_membership_function_values_matrix [rule_element->metric->metric_index][rule_element->metric_grade->grade_index];
-
+        index_value = 0;
         while (rule_element != NULL) {
-            index_value = get_rule_function_by_rule_type(rule->rule_type)(
-                    app_internal_struct->metrics_membership_function_values_matrix [rule_element->metric->metric_index][rule_element->metric_grade->grade_index],
-                    index_value);
-
+            if (rule_element->metric != NULL && rule_element->metric_grade != NULL) {
+                double value = app_internal_struct->metrics_membership_function_values_matrix [rule_element->metric->metric_index][rule_element->metric_grade->grade_index];
+                index_value = has_input ? get_rule_function_by_rule_type(rule->rule_type)(value, index_value) : value;
+                has_input = 1;
+            }
             rule_element = rule_element->next;
+        }
+
+        if (!has_input || output_element == NULL
+                || output_element->metric == NULL || output_element->metric_grade == NULL) {
+            rule = rule->next;
+            continue;
         }
 
         calculate_index_array(output_element, index_value, SAMPLES_NB, rule_index_array);

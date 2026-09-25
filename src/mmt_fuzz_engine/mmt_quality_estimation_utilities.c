@@ -736,6 +736,13 @@ static void free_metric_list(metric_t * metric, const metric_t * other_list) {
     }
 }
 
+void free_metric_struct(metric_t * metric) {
+    if (metric == NULL)
+        return;
+    metric->next = NULL;   /* one metric, not the list it may point into */
+    free_metric_list(metric, NULL);
+}
+
 void free_application_quality_estimation_struct(application_quality_estimation_t * app_q_est) {
     if (app_q_est == NULL)
         return;
@@ -760,6 +767,28 @@ void free_internal_application_quality_estimation_struct(application_quality_est
     free(app_q_est_internal);
 }
 
+static int rule_elements_usable(const metric_grade_rule_element_t * element) {
+    if (element == NULL)
+        return 0;
+    for (; element != NULL; element = element->next)
+        if (element->metric == NULL || element->metric_grade == NULL)
+            return 0;
+    return 1;
+}
+
+/* #469: the quality metric has a rules set with at least one rule, and every
+ * rule has input and output elements that each name a metric and a grade. */
+static int quality_metric_rules_usable(const metric_t * quality_metric) {
+    const application_quality_estimation_rules_t * app_rules = quality_metric->quality_estimation_rules;
+    if (app_rules == NULL || app_rules->rules == NULL)
+        return 0;
+    for (const rule_t * rule = app_rules->rules; rule != NULL; rule = rule->next)
+        if (!rule_elements_usable(rule->metric_elements)
+                || !rule_elements_usable(rule->quality_metric_elements))
+            return 0;
+    return 1;
+}
+
 application_quality_estimation_internal_t * init_application_quality_estimation_context(
         application_quality_estimation_t * model, double * const metric_values[], int nb_values) {
     if (model == NULL)
@@ -780,6 +809,11 @@ application_quality_estimation_internal_t * init_application_quality_estimation_
         valid = 0;
     for (count = 0; valid && count < nb_values; count++)
         if (metric_values[count] == NULL)
+            valid = 0;
+    /* #469: estimate_quality_index() walks every rule of the quality
+     * metric and dereferences each rule's first input and output element. */
+    for (metric = valid ? model->estimation_metrics : NULL; metric != NULL; metric = metric->next)
+        if (!quality_metric_rules_usable(metric))
             valid = 0;
 
     application_quality_estimation_internal_t * context = valid

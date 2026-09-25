@@ -262,8 +262,10 @@ FUZZ_LOG="${WORK}/fuzz.log"
 run_expect_ok "fuzz-engine regression (trailing-storage params, XML NULL guards)" "${FUZZ_LOG}" \
     "${LD_ENV[@]}" "ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_leaks=1" "${FUZZ_BIN}"
 grep '^ok - ' "${FUZZ_LOG}" | sed 's/^/  /'
-# #466: the parser reports the rules sets it drops instead of leaking them.
-for msg in "Several <rules> nodes" "<rules> without a quality metric"; do
+# #466/#468: the parser reports the rules sets and quality metrics it drops
+# instead of leaking them.
+for msg in "Several <rules> nodes" "<rules> without a quality metric" \
+        "Cannot register the <indexs> quality metric"; do
     if ! grep -qF "${msg}" "${FUZZ_LOG}"; then
         echo "✗ fuzz-engine: parser did not report '${msg}'" >&2; exit 1
     fi

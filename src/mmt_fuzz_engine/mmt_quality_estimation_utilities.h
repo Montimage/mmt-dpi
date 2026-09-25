@@ -95,6 +95,11 @@ extern "C" {
     /* Frees a model and everything it owns (metrics, grades, rules). */
     void free_application_quality_estimation_struct(application_quality_estimation_t * app_q_est);
 
+    /* Frees one metric that no model holds, with its grades and rules
+     * (NULL-safe); its next link is ignored. A registered metric is freed
+     * with its model instead (#468). */
+    void free_metric_struct(metric_t * metric);
+
     /* Frees a rules set no metric references (NULL-safe); a set attached
      * to a metric is freed with its model instead. */
     void free_application_quality_estimation_rules(application_quality_estimation_rules_t * app_rules);
@@ -108,7 +113,9 @@ extern "C" {
      * metric whose metric_index is i. The context owns the model. On failure
      * -- NULL model or values, nb_values not equal to the model's metric
      * count, a NULL value, a metric_index outside 0..nb_values-1, an invalid
-     * estimation-metric set -- the model is
+     * estimation-metric set, or a quality metric without usable rules (no
+     * rules set, no rule, or a rule without input or output elements, or an
+     * element without a metric or grade, #469) -- the model is
      * freed and NULL is returned. */
     application_quality_estimation_internal_t * init_application_quality_estimation_context(
             application_quality_estimation_t * model, double * const metric_values[], int nb_values);

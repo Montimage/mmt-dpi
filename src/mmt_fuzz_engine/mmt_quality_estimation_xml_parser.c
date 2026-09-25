@@ -176,7 +176,12 @@ void parseNodeIndexs(xmlNodePtr cur, application_quality_estimation_t * applicat
         }
         cur = cur->next;
     }
-    register_metric_with_application_struct(application, metric, QUALITY_INDEX);
+    /* #468: a quality metric the model cannot hold (a second <indexs> in
+     * SINGLE_QUALITY_METRIC mode) is freed with its grades and reported. */
+    if (!register_metric_with_application_struct(application, metric, QUALITY_INDEX)) {
+        die("Cannot register the <indexs> quality metric: metric ignored\n");
+        free_metric_struct(metric);
+    }
     return;
 }
 
