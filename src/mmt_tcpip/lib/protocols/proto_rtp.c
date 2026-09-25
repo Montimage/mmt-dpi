@@ -577,11 +577,17 @@ void rtp_session_data_init(ipacket_t * ipacket, unsigned index) {
 
 void rtp_session_data_cleanup(mmt_session_t * session, unsigned index) {
     if (session->session_data[index] != NULL) {
-        mmt_free(session->session_data[index]);
 #ifndef _MMT_BUILD_SDK
-        //TODO(#336): free the fuzz quality estimation context
-        //rtp_session_data->rtp_quality_index_context.quality_index_internal_struct
+        //Free the fuzz quality estimation context before its owning session data
+        struct rtp_session_data_struct * rtp_session_data = (struct rtp_session_data_struct *) session->session_data[index];
+        application_quality_estimation_internal_t * app_internal_struct = rtp_session_data->rtp_quality_index_context.quality_index_internal_struct;
+        if (app_internal_struct != NULL) {
+            application_quality_estimation_t * app_q_est = app_internal_struct->application_quality_estimation;
+            free_internal_application_quality_estimation_struct(app_internal_struct);
+            free_application_quality_estimation_struct(app_q_est);
+        }
 #endif /* _MMT_BUILD_SDK */
+        mmt_free(session->session_data[index]);
     }
 }
 

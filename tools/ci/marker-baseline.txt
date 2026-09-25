@@ -70,4 +70,8 @@
 # at the classifier, coalesced QUIC-after-QUIC classification, a session
 # lookup for chained layers and the short-header DCID length learned from
 # the flow's long headers.
-48
+#
+# #447: re-baselined 48 -> 47 — the stale `TODO(#336)` in
+# rtp_session_data_cleanup() was resolved: the RTP session cleanup now frees
+# the fuzz quality-estimation context and its model.
+47

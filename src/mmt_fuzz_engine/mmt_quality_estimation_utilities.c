@@ -675,3 +675,81 @@ generic_aggregation_index_array get_aggregation_function(int aggregation_type)
 
     return maximum_aggregation;
 }
+
+static void free_rule_elements(metric_grade_rule_element_t * element) {
+    while (element != NULL) {
+        metric_grade_rule_element_t * next = element->next;
+        free(element);
+        element = next;
+    }
+}
+
+static void free_app_quality_estimation_rules(application_quality_estimation_rules_t * app_rules) {
+    rule_t * rule = app_rules->rules;
+    while (rule != NULL) {
+        rule_t * next = rule->next;
+        /* Rule elements only reference metrics and grades owned by the model */
+        free_rule_elements(rule->metric_elements);
+        free_rule_elements(rule->quality_metric_elements);
+        free(rule);
+        rule = next;
+    }
+    free(app_rules);
+}
+
+/* Whether a metric after `metric` in its list, or in `other_list`, still
+ * references `app_rules`: a rules set registered with several quality
+ * metrics is freed once, with the last metric that holds it. */
+static int rules_referenced_later(const metric_t * metric, const metric_t * other_list,
+        const application_quality_estimation_rules_t * app_rules) {
+    const metric_t * m;
+    for (m = metric->next; m != NULL; m = m->next)
+        if (m->quality_estimation_rules == app_rules)
+            return 1;
+    for (m = other_list; m != NULL; m = m->next)
+        if (m->quality_estimation_rules == app_rules)
+            return 1;
+    return 0;
+}
+
+static void free_metric_list(metric_t * metric, const metric_t * other_list) {
+    while (metric != NULL) {
+        metric_t * next = metric->next;
+        metric_grade_membership_function_t * grade = metric->metric_grades;
+        while (grade != NULL) {
+            /* membership_function_parameters is trailing storage of the grade block */
+            metric_grade_membership_function_t * next_grade = grade->next;
+            free(grade);
+            grade = next_grade;
+        }
+        if (metric->quality_estimation_rules != NULL
+                && !rules_referenced_later(metric, other_list, metric->quality_estimation_rules))
+            free_app_quality_estimation_rules(metric->quality_estimation_rules);
+        free(metric);
+        metric = next;
+    }
+}
+
+void free_application_quality_estimation_struct(application_quality_estimation_t * app_q_est) {
+    if (app_q_est == NULL)
+        return;
+    free_metric_list(app_q_est->metrics, app_q_est->estimation_metrics);
+    free_metric_list(app_q_est->estimation_metrics, NULL);
+    free(app_q_est);
+}
+
+void free_internal_application_quality_estimation_struct(application_quality_estimation_internal_t * app_q_est_internal) {
+    if (app_q_est_internal == NULL)
+        return;
+    /* One membership-value row was allocated per metric of the model */
+    if (app_q_est_internal->metrics_membership_function_values_matrix != NULL) {
+        const metric_t * metric = app_q_est_internal->application_quality_estimation->metrics;
+        int count = 0;
+        for (; metric != NULL; metric = metric->next, count++)
+            free(app_q_est_internal->metrics_membership_function_values_matrix[count]);
+        free(app_q_est_internal->metrics_membership_function_values_matrix);
+    }
+    free(app_q_est_internal->metric_values);
+    free(app_q_est_internal->quality_metrics_estimated_values);
+    free(app_q_est_internal);
+}

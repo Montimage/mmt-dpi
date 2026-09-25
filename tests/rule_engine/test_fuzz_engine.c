@@ -15,6 +15,9 @@
  *    by the XML child count (5+ elements overflowed the 4-double stack
  *    array; fewer left entries uninitialised) and read
  *    children->content without checking the child exists.
+ *  - #447: a model and its estimation context had no destructor, so the
+ *    RTP session cleanup leaked both. The free functions must release
+ *    every allocation exactly once (heap balance; ASan double-free).
  *
  * Under SANITIZE=asan this binary and libmmt_fuzz are both instrumented
  * (run_all_tests.sh -> EXTRA_CFLAGS + SDK_BUILD_PROFILE=asan), so the
@@ -25,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <malloc.h>
 
 #include "fuzz/mmt_quality_estimation_defs.h"
 #include "fuzz/mmt_quality_estimation_utilities.h"
@@ -253,6 +257,39 @@ int main(void) {
               "VoIP quality index registered under its named id");
     }
 
+    /* #447: the model and its estimation context free every allocation
+     * exactly once. ASan reports a double free or a use after free. The
+     * leak check repeats the build/free cycle: after a warm-up cycle the
+     * allocator reuses the same (tcache/fastbin) chunks, so the in-use heap
+     * byte count stays flat, while a leak grows it on every cycle. It is
+     * skipped when a sanitizer replaces the allocator (mallinfo2 reads 0). */
+    free_internal_application_quality_estimation_struct(NULL);
+    free_application_quality_estimation_struct(NULL);
+    if (voip) {
+        application_quality_estimation_internal_t *ctx =
+            init_new_internal_application_quality_estimation_struct(voip);
+        CHECK(ctx != NULL, "VoIP estimation context allocates");
+        free_internal_application_quality_estimation_struct(ctx);
+        free_application_quality_estimation_struct(voip);
+        voip = NULL;
+    }
+#if !defined(__SANITIZE_ADDRESS__) && !defined(__SANITIZE_THREAD__)
+    if (mallinfo2().uordblks != 0) {
+        size_t before = mallinfo2().uordblks;
+        for (int i = 0; i < 64; i++) {
+            application_quality_estimation_t *model =
+                init_voip_quality_estimation_struct();
+            application_quality_estimation_internal_t *ctx =
+                init_new_internal_application_quality_estimation_struct(model);
+            free_internal_application_quality_estimation_struct(ctx);
+            free_application_quality_estimation_struct(model);
+        }
+        size_t after = mallinfo2().uordblks;
+        CHECK(after <= before,
+              "repeated VoIP model/context build+free does not grow the heap");
+    }
+#endif
+
     /* #336: trapezoid_left has no lower bound -- a value below 0 (or below
      * the metric range) still belongs fully to the left-shoulder grade. */
     g = init_trapez_left_grade_membership_function(1, 0.5, 1.0);
@@ -288,6 +325,13 @@ int main(void) {
               c->membership_function_parameters[2] == 2.0 &&
               c->membership_function_parameters[3] == 2.0,
               "XML-parsed trapez_center parameters stored in-bounds");
+        /* #447: an XML-parsed model (rules on the quality index) frees
+         * cleanly with its estimation context. */
+        application_quality_estimation_internal_t *ctx =
+            init_new_internal_application_quality_estimation_struct(app);
+        CHECK(ctx != NULL, "XML model estimation context allocates");
+        free_internal_application_quality_estimation_struct(ctx);
+        free_application_quality_estimation_struct(app);
     }
 
     /* Missing app_id: pre-fix NULL-deref inside
