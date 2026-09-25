@@ -564,3 +564,15 @@ COVERAGE_FLAGS := -g -O0 --coverage
 CFLAGS   += $(COVERAGE_FLAGS)
 CXXFLAGS += $(COVERAGE_FLAGS)
 endif
+
+# Issue #443 (appended so no cited line range moves): the generated asn1c
+# runtime (asn_OP_ANY, aper_decode, asn_DEF_*, ...) is an implementation
+# detail of libmmt_tmobile. With default visibility it was exported, so a
+# host process linking its own asn1c runtime could interpose those symbols,
+# and the load-time ANY decoder patch in s1ap/s1ap_common.c would then write
+# the host's asn_OP_ANY. Compiling the asn1c objects with hidden visibility
+# keeps them linkable inside the library (and from the static archive) but
+# out of the .so dynamic symbol table, so every reference binds to the
+# library's own copy. The generated sources themselves are never edited.
+LIBMOBILE_ASN1C_OBJECTS := $(filter $(SRCDIR)/mmt_mobile/asn1c/%,$(LIBMOBILE_OBJECTS))
+$(LIBMOBILE_ASN1C_OBJECTS): CFLAGS += -fvisibility=hidden

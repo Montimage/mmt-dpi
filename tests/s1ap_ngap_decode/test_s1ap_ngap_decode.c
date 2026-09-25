@@ -13,6 +13,8 @@
  *    supplied buffer size.
  *  - F-BUG-218: presence flags are set for decoded optional IEs.
  *  - F-BUG-220: IMSI is NUL-terminated within its 16-byte buffer.
+ *  - Issue #443: spec-valid S1Setup, InitialContextSetup, UEContextRelease
+ *    vectors, unknown later-release IEs skipped, open types >= 16K.
  *  - F-BUG-221: NGAP hygiene - explicit codes instead of false-from-pointer
  *    functions, encode_ngap() NULL-check, act-aware NAS_PDU handling.
  */
@@ -249,8 +251,20 @@ static const uint8_t NAS_ATTACH_ACCEPT_EBI5[] = {
 		0x05, 0x01, 10, 45, 0, 2            /* PDN address: IPv4       */
 };
 
+/* Unconstrained, octet-aligned length determinant + content (X.691
+ * §11.9.3.6-8). From 16K octets on the content is split into fragments of
+ * m * 16K octets (m = 1..4, header 0xC0 | m); the remainder, possibly 0,
+ * then gets an ordinary determinant (issue #443: the split-length path). */
 static size_t put_open_type(uint8_t *out, const uint8_t *content, size_t len) {
 	size_t n = 0;
+	while (len >= 16384) {
+		size_t m = len / 16384 > 4 ? 4 : len / 16384;
+		out[n++] = 0xC0 | (uint8_t)m;
+		memcpy(out + n, content, m * 16384);
+		n += m * 16384;
+		content += m * 16384;
+		len -= m * 16384;
+	}
 	if (len < 128)
 		out[n++] = (uint8_t)len;
 	else {
@@ -331,6 +345,347 @@ static void test_s1ap_ics_request_ue_ipv4(void) {
 	CHECK("GTP TEID 1 extracted", msg.gtp_teid == 1);
 	CHECK("UE IPv4 10.45.0.2 extracted from ESM container with EBI 5",
 			memcmp(&msg.ue_ipv4, UE_IPV4, sizeof(UE_IPV4)) == 0);
+}
+
+/* ------------------------------------------------------------------ */
+/* Issue #443: spec-valid vectors for the other handled procedures.    */
+/* Each one was encoded with pycrate from the TS 36.413 Rel-16 ASN.1   */
+/* (an encoder independent of the vendored asn1c tree), so the later-  */
+/* release IEs are real ones the Rel-10 decoder has never heard of.    */
+/* ------------------------------------------------------------------ */
+
+/* S1SetupRequest: Global-ENB-ID (PLMN 001/01, macro eNB 1), eNBname
+ * "enb01", SupportedTAs (TAC 1), DefaultPagingDRX v128 */
+static const uint8_t VECTOR_S1SETUP_REQUEST[] = {
+		0x00, 0x11, 0x00, 0x2a, 0x00, 0x00, 0x04, 0x00, 0x3b, 0x00,
+		0x08, 0x00, 0x00, 0xf1, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00,
+		0x3c, 0x40, 0x07, 0x02, 0x00, 0x65, 0x6e, 0x62, 0x30, 0x31,
+		0x00, 0x40, 0x00, 0x07, 0x00, 0x00, 0x00, 0x40, 0x00, 0xf1,
+		0x10, 0x00, 0x89, 0x40, 0x01, 0x40
+};
+
+/* S1SetupResponse: MMEname "mme01", ServedGUMMEIs (PLMN 001/01, group 1,
+ * MMEC 1), RelativeMMECapacity 10 */
+static const uint8_t VECTOR_S1SETUP_RESPONSE[] = {
+		0x20, 0x11, 0x00, 0x22, 0x00, 0x00, 0x03, 0x00, 0x3d, 0x40,
+		0x07, 0x02, 0x00, 0x6d, 0x6d, 0x65, 0x30, 0x31, 0x00, 0x69,
+		0x00, 0x0b, 0x00, 0x00, 0x00, 0xf1, 0x10, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x01, 0x00, 0x57, 0x40, 0x01, 0x0a
+};
+
+/* InitialContextSetupRequest with every mandatory IE: MME-UE-S1AP-ID 7,
+ * eNB-UE-S1AP-ID 1, UE-AMBR, one E-RAB (id 5, QCI 9, SGW 192.168.0.1,
+ * TEID 1, NAS-PDU = NAS_ATTACH_ACCEPT_EBI5), UESecurityCapabilities,
+ * SecurityKey */
+static const uint8_t VECTOR_ICS_REQUEST[] = {
+		0x00, 0x09, 0x00, 0x80, 0x85, 0x00, 0x00, 0x06, 0x00, 0x00,
+		0x00, 0x02, 0x00, 0x07, 0x00, 0x08, 0x00, 0x02, 0x00, 0x01,
+		0x00, 0x42, 0x00, 0x0a, 0x18, 0x3b, 0x9a, 0xca, 0x00, 0x60,
+		0x1d, 0xcd, 0x65, 0x00, 0x00, 0x18, 0x00, 0x37, 0x00, 0x00,
+		0x34, 0x00, 0x32, 0x45, 0x00, 0x09, 0x04, 0x0f, 0x80, 0xc0,
+		0xa8, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x23, 0x17, 0x11,
+		0x22, 0x33, 0x44, 0x01, 0x07, 0x42, 0x01, 0x21, 0x06, 0x00,
+		0x00, 0xf1, 0x10, 0x00, 0x01, 0x00, 0x10, 0x52, 0x01, 0xc1,
+		0x01, 0x09, 0x04, 0x03, 0x61, 0x70, 0x6e, 0x05, 0x01, 0x0a,
+		0x2d, 0x00, 0x02, 0x00, 0x6b, 0x00, 0x05, 0x1c, 0x00, 0x0e,
+		0x00, 0x00, 0x00, 0x49, 0x00, 0x20, 0x11, 0x11, 0x11, 0x11,
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11
+};
+
+/* InitialContextSetupResponse: MME-UE-S1AP-ID 7, eNB-UE-S1AP-ID 1,
+ * E-RABSetupListCtxtSURes (E-RAB 5, eNB 192.168.0.2, TEID 2) */
+static const uint8_t VECTOR_ICS_RESPONSE[] = {
+		0x20, 0x09, 0x00, 0x22, 0x00, 0x00, 0x03, 0x00, 0x00, 0x40,
+		0x02, 0x00, 0x07, 0x00, 0x08, 0x40, 0x02, 0x00, 0x01, 0x00,
+		0x33, 0x40, 0x0f, 0x00, 0x00, 0x32, 0x40, 0x0a, 0x0a, 0x1f,
+		0xc0, 0xa8, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02
+};
+
+/* UEContextReleaseCommand: UE-S1AP-ID pair (MME 7, eNB 1), Cause nas
+ * detach */
+static const uint8_t VECTOR_UE_CONTEXT_RELEASE_COMMAND[] = {
+		0x00, 0x17, 0x00, 0x10, 0x00, 0x00, 0x02, 0x00, 0x63, 0x00,
+		0x04, 0x00, 0x07, 0x00, 0x01, 0x00, 0x02, 0x40, 0x01, 0x24
+};
+
+/* UEContextReleaseRequest: MME-UE-S1AP-ID 7, eNB-UE-S1AP-ID 1, Cause
+ * radio-connection-with-ue-lost, GWContextReleaseIndication true, and the
+ * Rel-15 SecondaryRATDataUsageReportList (id 264, criticality ignore) */
+static const uint8_t VECTOR_UE_CONTEXT_RELEASE_REQUEST[] = {
+		0x00, 0x12, 0x40, 0x38, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00,
+		0x02, 0x00, 0x07, 0x00, 0x08, 0x00, 0x02, 0x00, 0x01, 0x00,
+		0x02, 0x40, 0x02, 0x02, 0xa0, 0x00, 0xa4, 0x00, 0x01, 0x00,
+		0x01, 0x08, 0x40, 0x1a, 0x00, 0x01, 0x09, 0x40, 0x15, 0x0a,
+		0x00, 0x01, 0x0b, 0x40, 0x0f, 0x00, 0xe3, 0x00, 0x00, 0x00,
+		0xe3, 0x00, 0x00, 0x3c, 0x20, 0x03, 0xe8, 0x20, 0x07, 0xd0
+};
+
+/* S1AP-PDU around a ProtocolIE-Container: CHOICE octet (0x00 initiating,
+ * 0x20 successful), procedureCode, criticality (0x00 reject, 0x40 ignore),
+ * then the open-type value: extension bit + padding, 16-bit IE count, the
+ * IEs. */
+static size_t put_s1ap_pdu(uint8_t *out, uint8_t choice, uint8_t procedure,
+		uint8_t criticality, uint16_t ie_count, const uint8_t *ies,
+		size_t ies_len, uint8_t *scratch) {
+	scratch[0] = 0x00;
+	scratch[1] = (uint8_t)(ie_count >> 8);
+	scratch[2] = (uint8_t)(ie_count & 0xFF);
+	memcpy(scratch + 3, ies, ies_len);
+	out[0] = choice;
+	out[1] = procedure;
+	out[2] = criticality;
+	return 3 + put_open_type(out + 3, scratch, ies_len + 3);
+}
+
+static void test_s1ap_spec_vectors(void) {
+	static const uint8_t SGW_IPV4[4] = { 192, 168, 0, 1 };
+	static const uint8_t ENB_IPV4[4] = { 192, 168, 0, 2 };
+	/* id 264, criticality ignore, 3 opaque value octets */
+	static const uint8_t UNKNOWN_IE[] = { 0x01, 0x08, 0x40, 0x03, 0xAA, 0xBB, 0xCC };
+	uint8_t ies[64], scratch[128], buf[128];
+	s1ap_message_t msg;
+	size_t n;
+	int ret;
+
+	printf("S1AP spec-valid procedure vectors (issue #443):\n");
+
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, VECTOR_S1SETUP_REQUEST, sizeof(VECTOR_S1SETUP_REQUEST));
+	CHECK("S1SetupRequest decodes", ret == 0);
+	CHECK("S1SetupRequest: procedure 17, initiatingMessage",
+			msg.procedure_code == 17 && msg.pdu_present == S1AP_PDU_PR_initiatingMessage);
+	CHECK("S1SetupRequest: eNB name enb01",
+			msg.has_enb_name && strcmp(msg.enb_name, "enb01") == 0);
+	CHECK("S1SetupRequest: eNB/MME attaching",
+			msg.enb_status == S1AP_ENTITY_STATUS_ATTACHING
+			&& msg.mme_status == S1AP_ENTITY_STATUS_ATTACHING);
+
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, VECTOR_S1SETUP_RESPONSE, sizeof(VECTOR_S1SETUP_RESPONSE));
+	CHECK("S1SetupResponse decodes", ret == 0);
+	CHECK("S1SetupResponse: successfulOutcome",
+			msg.pdu_present == S1AP_PDU_PR_successfulOutcome);
+	CHECK("S1SetupResponse: MME name mme01",
+			msg.has_mme_name && strcmp(msg.mme_name, "mme01") == 0);
+	CHECK("S1SetupResponse: eNB/MME attached",
+			msg.enb_status == S1AP_ENTITY_STATUS_ATTACHED
+			&& msg.mme_status == S1AP_ENTITY_STATUS_ATTACHED);
+
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, VECTOR_ICS_REQUEST, sizeof(VECTOR_ICS_REQUEST));
+	CHECK("InitialContextSetupRequest (all mandatory IEs) decodes", ret == 0);
+	CHECK("InitialContextSetupRequest: MME/eNB UE ids 7/1",
+			msg.mme_ue_id == 7 && msg.enb_ue_id == 1);
+	CHECK("InitialContextSetupRequest: QCI 9, TEID 1",
+			msg.qos_qci == 9 && msg.gtp_teid == 1);
+	CHECK("InitialContextSetupRequest: SGW 192.168.0.1",
+			memcmp(&msg.gw_ipv4, SGW_IPV4, 4) == 0);
+	CHECK("InitialContextSetupRequest: UE IPv4 10.45.0.2",
+			memcmp(&msg.ue_ipv4, UE_IPV4, sizeof(UE_IPV4)) == 0);
+
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, VECTOR_ICS_RESPONSE, sizeof(VECTOR_ICS_RESPONSE));
+	CHECK("InitialContextSetupResponse decodes", ret == 0);
+	CHECK("InitialContextSetupResponse: MME/eNB UE ids 7/1",
+			msg.mme_ue_id == 7 && msg.enb_ue_id == 1);
+	CHECK("InitialContextSetupResponse: TEID 2, eNB 192.168.0.2",
+			msg.gtp_teid == 2 && memcmp(&msg.enb_ipv4, ENB_IPV4, 4) == 0);
+	CHECK("InitialContextSetupResponse: UE attached",
+			msg.ue_status == S1AP_ENTITY_STATUS_ATTACHED);
+
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, VECTOR_UE_CONTEXT_RELEASE_COMMAND,
+			sizeof(VECTOR_UE_CONTEXT_RELEASE_COMMAND));
+	CHECK("UEContextReleaseCommand decodes", ret == 0);
+	CHECK("UEContextReleaseCommand: UE id pair 7/1",
+			msg.mme_ue_id == 7 && msg.enb_ue_id == 1);
+	CHECK("UEContextReleaseCommand: cause detach => UE detached",
+			msg.ue_status == S1AP_ENTITY_STATUS_DETACHED);
+
+	/* the same command with an IE the Rel-10 decoder does not know
+	 * appended: it used to reject the whole message */
+	memcpy(ies, VECTOR_UE_CONTEXT_RELEASE_COMMAND + 7,
+			sizeof(VECTOR_UE_CONTEXT_RELEASE_COMMAND) - 7);
+	memcpy(ies + sizeof(VECTOR_UE_CONTEXT_RELEASE_COMMAND) - 7,
+			UNKNOWN_IE, sizeof(UNKNOWN_IE));
+	n = put_s1ap_pdu(buf, 0x00, S1ap_ProcedureCode_id_UEContextRelease, 0x00, 3, ies,
+			sizeof(VECTOR_UE_CONTEXT_RELEASE_COMMAND) - 7 + sizeof(UNKNOWN_IE),
+			scratch);
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, buf, (uint32_t)n);
+	CHECK("UEContextReleaseCommand + unknown IE 264 still decodes", ret == 0);
+	CHECK("UEContextReleaseCommand + unknown IE: ids and cause kept",
+			msg.mme_ue_id == 7 && msg.enb_ue_id == 1
+			&& msg.ue_status == S1AP_ENTITY_STATUS_DETACHED);
+
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, VECTOR_UE_CONTEXT_RELEASE_REQUEST,
+			sizeof(VECTOR_UE_CONTEXT_RELEASE_REQUEST));
+	CHECK("UEContextReleaseRequest with Rel-15 IE 264 decodes (was -1)", ret == 0);
+	CHECK("UEContextReleaseRequest: MME/eNB UE ids 7/1",
+			msg.mme_ue_id == 7 && msg.enb_ue_id == 1);
+	CHECK("UEContextReleaseRequest: cause radio link lost",
+			msg.ue_status == S1AP_ENTITY_STATUS_LOST_SIGNAL);
+}
+
+/* ------------------------------------------------------------------ */
+/* Issue #443: the open-type decoder's split-length path. An open type */
+/* of 16K octets or more is sent as fragments of m * 16K (X.691        */
+/* §11.9.3.8) followed by a final length determinant, possibly 0.      */
+/* ------------------------------------------------------------------ */
+static void test_open_type_split_length(void) {
+	static const size_t sizes[] = { 16383, 16384, 2 * 16384 + 5, 65536 + 4464, 65536 + 16384 };
+	const size_t cap = 90000;
+	asn_codec_ctx_t ctx; /* max_stack_size 0: no ASan-hostile stack guard */
+	uint8_t *content = malloc(cap), *wire = malloc(cap + 16);
+	size_t i, j, n;
+
+	printf("S1AP open type, split-length (>= 16K) path (issue #443):\n");
+	if (content == NULL || wire == NULL) {
+		CHECK("allocation", 0);
+		free(content);
+		free(wire);
+		return;
+	}
+	memset(&ctx, 0, sizeof(ctx));
+	for (j = 0; j < cap; j++)
+		content[j] = (uint8_t)(j * 7 + 3);
+
+	for (i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
+		ANY_t *any = NULL;
+		asn_dec_rval_t rv;
+		char desc[96];
+
+		n = put_open_type(wire, content, sizes[i]);
+		rv = aper_decode(&ctx, &asn_DEF_ANY, (void **)&any, wire, n, 0, 0);
+		snprintf(desc, sizeof(desc), "%zu-octet open type decodes whole (%zu wire octets)",
+				sizes[i], n);
+		CHECK(desc, rv.code == RC_OK && any != NULL && any->size == (int)sizes[i]
+				&& memcmp(any->buf, content, sizes[i]) == 0
+				&& rv.consumed == n * 8);
+		ASN_STRUCT_FREE(asn_DEF_ANY, any);
+	}
+
+	/* a fragment cut short is an error, not a partial value */
+	{
+		ANY_t *any = NULL;
+		asn_dec_rval_t rv;
+		n = put_open_type(wire, content, 2 * 16384 + 5);
+		rv = aper_decode(&ctx, &asn_DEF_ANY, (void **)&any, wire, 16384, 0, 0);
+		CHECK("truncated fragment rejected", rv.code != RC_OK);
+		ASN_STRUCT_FREE(asn_DEF_ANY, any);
+	}
+	/* m = 5 is not a valid fragment multiplier (X.691 §11.9.3.8.1) */
+	{
+		ANY_t *any = NULL;
+		asn_dec_rval_t rv;
+		wire[0] = 0xC5;
+		rv = aper_decode(&ctx, &asn_DEF_ANY, (void **)&any, wire, cap, 0, 0);
+		CHECK("fragment multiplier 5 rejected", rv.code != RC_OK);
+		ASN_STRUCT_FREE(asn_DEF_ANY, any);
+	}
+	free(content);
+	free(wire);
+}
+
+/* InitialUEMessage carrying the given NAS-PDU; the other IEs are those
+ * of the corpus vector: eNB-UE-S1AP-ID 1 (octets 7..12), then TAI,
+ * EUTRAN-CGI and RRC-Establishment-Cause (octets 39..end). Returns the
+ * PDU length; the buffers must hold nas_len + 192 octets. */
+static size_t build_initial_ue_message(uint8_t *pdu, const uint8_t *nas,
+		size_t nas_len, uint8_t *octs, uint8_t *ies, uint8_t *scratch) {
+	const size_t tail_len = sizeof(VECTOR_CORPUS_INITIAL_UE_MESSAGE) - 39;
+	size_t n, k;
+
+	/* NAS-PDU ::= OCTET STRING: its own length determinant, inside the
+	 * ProtocolIE value open type */
+	k = put_open_type(octs, nas, nas_len);
+	memcpy(ies, VECTOR_CORPUS_INITIAL_UE_MESSAGE + 7, 6);
+	n = 6 + put_ie(ies + 6, S1ap_ProtocolIE_ID_id_NAS_PDU, octs, k);
+	memcpy(ies + n, VECTOR_CORPUS_INITIAL_UE_MESSAGE + 39, tail_len);
+	n += tail_len;
+	return put_s1ap_pdu(pdu, 0x00, S1ap_ProcedureCode_id_initialUEMessage,
+			0x40, 5, ies, n, scratch);
+}
+
+/* TS 24.301 Attach Request with IMSI 001010123456789 */
+static const uint8_t NAS_ATTACH_REQUEST_IMSI15[] = {
+	0x07, 0x41, 0x71, 0x08, 0x09, 0x10, 0x10, 0x10, 0x32, 0x54,
+	0x76, 0x98, 0x02, 0xe0, 0xe0, 0x00, 0x04, 0x02, 0x01, 0xd0, 0x11
+};
+
+/* End to end: an InitialUEMessage whose NAS-PDU is 20000 octets, so the
+ * NAS-PDU OCTET STRING, its ProtocolIE value and the S1AP-PDU value are
+ * all fragmented. The encoding is byte-identical to pycrate's. */
+static void test_s1ap_split_length_message(void) {
+	const size_t nas_len = 20000;
+	uint8_t *nas = calloc(1, nas_len), *octs = malloc(nas_len + 192);
+	uint8_t *ies = malloc(nas_len + 192), *scratch = malloc(nas_len + 192);
+	uint8_t *pdu = malloc(nas_len + 192);
+	s1ap_message_t msg;
+	size_t n;
+	int ret;
+
+	printf("S1AP InitialUEMessage with a 20000-octet NAS-PDU (issue #443):\n");
+	if (!nas || !octs || !ies || !scratch || !pdu) {
+		CHECK("allocation", 0);
+		goto out;
+	}
+	/* the attach request, then zero padding */
+	memcpy(nas, NAS_ATTACH_REQUEST_IMSI15, sizeof(NAS_ATTACH_REQUEST_IMSI15));
+	n = build_initial_ue_message(pdu, nas, nas_len, octs, ies, scratch);
+	CHECK("outer value is fragmented", pdu[3] == 0xC1);
+
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, pdu, (uint32_t)n);
+	CHECK("fragmented InitialUEMessage decodes", ret == 0);
+	CHECK("eNB-UE-S1AP-ID 1", msg.enb_ue_id == 1);
+	CHECK("IMSI read from the reassembled NAS-PDU",
+			msg.has_imsi && strcmp(msg.imsi, "001010123456789") == 0);
+
+	memset(&msg, 0, sizeof(msg));
+	ret = s1ap_decode(&msg, pdu, (uint32_t)(n - 100));
+	CHECK("fragmented InitialUEMessage cut short rejected", ret < 0);
+out:
+	free(nas);
+	free(octs);
+	free(ies);
+	free(scratch);
+	free(pdu);
+}
+
+/* Issue #443: IMSIs of 13 digits or fewer (IE length <= 7) reach the
+ * s1ap.imsi attribute (TS 24.301 §9.9.3.12). */
+static void test_s1ap_short_imsi(void) {
+	uint8_t nas[sizeof(NAS_ATTACH_REQUEST_IMSI15)];
+	uint8_t octs[256], ies[256], scratch[256], pdu[256];
+	s1ap_message_t msg;
+	size_t n;
+
+	printf("S1AP InitialUEMessage with short IMSIs (issue #443):\n");
+
+	/* 13 digits 0010101234567: odd, IE length 7 — the last digit octet of
+	 * the 15-digit IMSI is dropped and the rest shifts down */
+	memcpy(nas, NAS_ATTACH_REQUEST_IMSI15, 3);
+	nas[3] = 0x07;
+	memcpy(nas + 4, NAS_ATTACH_REQUEST_IMSI15 + 4, 7);
+	memcpy(nas + 11, NAS_ATTACH_REQUEST_IMSI15 + 12, sizeof(nas) - 12);
+	n = build_initial_ue_message(pdu, nas, sizeof(nas) - 1, octs, ies, scratch);
+	memset(&msg, 0, sizeof(msg));
+	CHECK("13-digit IMSI message decodes", s1ap_decode(&msg, pdu, (uint32_t)n) == 0);
+	CHECK("13-digit IMSI 0010101234567",
+			msg.has_imsi && strcmp(msg.imsi, "0010101234567") == 0);
+
+	/* 12 digits 001010123456: even, IE length 7, filler in the last octet */
+	nas[4] = 0x01;
+	nas[10] = 0xF6;
+	memset(&msg, 0, sizeof(msg));
+	n = build_initial_ue_message(pdu, nas, sizeof(nas) - 1, octs, ies, scratch);
+	CHECK("12-digit IMSI message decodes", s1ap_decode(&msg, pdu, (uint32_t)n) == 0);
+	CHECK("12-digit IMSI 001010123456",
+			msg.has_imsi && strcmp(msg.imsi, "001010123456") == 0);
 }
 
 /* ------------------------------------------------------------------ */
@@ -625,6 +980,10 @@ int main(void) {
 	test_s1ap_valid_vectors();
 	test_s1ap_corpus_initial_ue_message();
 	test_s1ap_ics_request_ue_ipv4();
+	test_s1ap_spec_vectors();
+	test_open_type_split_length();
+	test_s1ap_split_length_message();
+	test_s1ap_short_imsi();
 	test_ngap_get_nas_pdu();
 	test_s1ap_decode_failure_no_leak();
 	test_s1ap_entity_store_cap();

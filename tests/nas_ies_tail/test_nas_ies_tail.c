@@ -8,6 +8,7 @@
  * - pdn_address_information.len validated against pdn_type minimum before UE-IP read (ielen 0..10)
  * - ielen=0 rejected before reading pdn_type
  * - GUTI(11)/IMSI/IMEI(8, issue #427) bounded by remaining len
+ * - IMSIs shorter than 14 digits (ielen 4..7) decode (issue #443)
  * - TAI list ielen>=6
  * - EPS QoS operator-precedence and buffer+decoded for QCI
  * - t3412value buffer+decoded in attach-accept
@@ -107,10 +108,67 @@ static void test_mobile_identity_imsi_15_digits(void) {
     memset(&ident, 0, sizeof(ident));
     CHECK("imsi truncated value rejected",
           nas_decode_eps_mobile_identity(&ident, 0, buf, sizeof(buf) - 1) < 0);
-    uint8_t short_ie[9]; memcpy(short_ie, buf, sizeof(short_ie));
-    short_ie[0] = 7;
-    CHECK("imsi ielen=7 rejected",
-          nas_decode_eps_mobile_identity(&ident, 0, short_ie, sizeof(short_ie)) < 0);
+}
+
+/* issue #443: IMSIs shorter than 14 digits are fewer value octets
+ * (TS 24.301 §9.9.3.12 / TS 24.008 §10.5.1.4); they used to be rejected.
+ * Digits past the IMSI's end read back as the 0xF end mark. */
+static void test_mobile_identity_imsi_short(void) {
+    printf("eps_mobile_identity short IMSIs (issue #443):\n");
+    nas_eps_mobile_identity_t ident;
+
+    /* 13 digits 0010101234567: odd, 7 octets */
+    const uint8_t imsi13[8] = { 0x07, 0x09, 0x10, 0x10, 0x10, 0x32, 0x54, 0x76 };
+    memset(&ident, 0, sizeof(ident));
+    CHECK("13-digit imsi (ielen=7) decodes",
+          nas_decode_eps_mobile_identity(&ident, 0, imsi13, sizeof(imsi13)) == 8);
+    CHECK("13-digit imsi digits",
+          ident.imsi.digit1 == 0 && ident.imsi.digit3 == 1 && ident.imsi.digit7 == 1
+          && ident.imsi.digit8 == 2 && ident.imsi.digit12 == 6 && ident.imsi.digit13 == 7);
+    CHECK("13-digit imsi: digits 14..15 are end marks",
+          ident.imsi.digit14 == 0xf && ident.imsi.digit15 == 0xf);
+
+    /* 12 digits 001010123456: even, 7 octets, filler in the last one */
+    const uint8_t imsi12[8] = { 0x07, 0x01, 0x10, 0x10, 0x10, 0x32, 0x54, 0xf6 };
+    memset(&ident, 0, sizeof(ident));
+    CHECK("12-digit imsi (ielen=7, filler) decodes",
+          nas_decode_eps_mobile_identity(&ident, 0, imsi12, sizeof(imsi12)) == 8);
+    CHECK("12-digit imsi digits and end marks",
+          ident.imsi.digit12 == 6 && ident.imsi.digit13 == 0xf
+          && ident.imsi.digit14 == 0xf && ident.imsi.digit15 == 0xf);
+
+    /* 6 digits 001010 (MCC + 2-digit MNC): even, 4 octets */
+    const uint8_t imsi6[5] = { 0x04, 0x01, 0x10, 0x10, 0xf0 };
+    memset(&ident, 0, sizeof(ident));
+    CHECK("6-digit imsi (ielen=4) decodes",
+          nas_decode_eps_mobile_identity(&ident, 0, imsi6, sizeof(imsi6)) == 5);
+    CHECK("6-digit imsi: digit7 is an end mark",
+          ident.imsi.digit6 == 0 && ident.imsi.digit7 == 0xf);
+
+    /* the length octet bounds the read: a trailing IE is not taken as digits */
+    const uint8_t imsi13_tail[9] = { 0x07, 0x09, 0x10, 0x10, 0x10, 0x32, 0x54, 0x76, 0x55 };
+    memset(&ident, 0, sizeof(ident));
+    CHECK("short imsi does not read past ielen",
+          nas_decode_eps_mobile_identity(&ident, 0, imsi13_tail, sizeof(imsi13_tail)) == 8
+          && ident.imsi.digit14 == 0xf);
+
+    uint8_t bad[8];
+    memcpy(bad, imsi12, sizeof(bad));
+    bad[7] = 0x76; /* even indicator without the filler */
+    CHECK("even imsi without filler rejected",
+          nas_decode_eps_mobile_identity(&ident, 0, bad, sizeof(bad)) < 0);
+    memcpy(bad, imsi13, sizeof(bad));
+    bad[4] = 0xf1; /* end mark inside the digit string */
+    CHECK("end mark inside the digits rejected",
+          nas_decode_eps_mobile_identity(&ident, 0, bad, sizeof(bad)) < 0);
+    const uint8_t imsi5[4] = { 0x03, 0x09, 0x10, 0x10 };
+    CHECK("imsi below MCC+MNC (ielen=3) rejected",
+          nas_decode_eps_mobile_identity(&ident, 0, imsi5, sizeof(imsi5)) < 0);
+    /* more than 15 digits is not an IMSI (and reading only 8 of the 9
+     * octets would desync the caller's offset) */
+    const uint8_t imsi17[10] = { 0x09, 0x09, 0x10, 0x10, 0x10, 0x32, 0x54, 0x76, 0x98, 0x11 };
+    CHECK("imsi ielen=9 rejected",
+          nas_decode_eps_mobile_identity(&ident, 0, imsi17, sizeof(imsi17)) < 0);
 }
 
 static void test_tai_tail(void) {
@@ -508,6 +566,7 @@ int main(void) {
     test_pdn_tail();
     test_mobile_identity_tail();
     test_mobile_identity_imsi_15_digits();
+    test_mobile_identity_imsi_short();
     test_tai_tail();
     test_qos_tail();
     test_attach_request_tail();

@@ -74,9 +74,15 @@ SRC_INC=(
 # (.gcno/.gcda) survives for the coverage report.
 echo "  [2/3] compiling tests ..."
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
+# The decode test calls the asn1c runtime (aper_decode, asn_DEF_*) directly.
+# Issue #443 keeps those symbols out of libmmt_tmobile.so's dynamic symbol
+# table, so the test links the installed static archive, where the hidden
+# asn1c objects stay linkable. --whole-archive, as for the .so itself: the
+# release archive holds slim LTO objects that plain `ar` indexes no symbol of.
 ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${SCRIPT_DIR}/test_s1ap_ngap_decode" \
-    "${TEST_SRC}" "${SRC_INC[@]}" \
-    -I "${INC}" -L "${LIB}" -lmmt_tmobile -lmmt_core
+    "${TEST_SRC}" "${SRC_INC[@]}" -I "${INC}" \
+    -Wl,--whole-archive "${LIB}/libmmt_tmobile.a" -Wl,--no-whole-archive \
+    -L "${LIB}" -lmmt_core -lm
 
 # The packet-level test drives packet_process() with the real plugins, so it
 # links libmmt_core only — the mobile plugin is loaded via dlopen from the
@@ -88,6 +94,35 @@ ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${SCRIPT_DIR}/test_s1ap_ngap_packets" \
 
 # --- 3. run -----------------------------------------------------------------
 echo "  [3/3] running tests ..."
+
+# Issue #443: no asn1c runtime symbol is exported from the shipped mobile
+# library (a host linking its own asn1c runtime must not interpose them, nor
+# see the load-time asn_OP_ANY patch), while the plugin entry points and the
+# handwritten decoders still are. The asn1c symbol set is read from the
+# in-tree objects the build just produced.
+MOBILE_SO="${LIB}/libmmt_tmobile.so"
+ASN1C_SYMS="${WORK}/asn1c.syms"
+EXPORTED_SYMS="${WORK}/exported.syms"
+# gcc-nm reads the slim LTO objects of the release profile (plain nm cannot).
+NM_OBJ="$(command -v gcc-nm || command -v nm)"
+find "${REPO_ROOT}/src/mmt_mobile/asn1c" -name '*.o' -exec "${NM_OBJ}" -g --defined-only {} + 2>/dev/null \
+    | awk 'NF == 3 { print $3 }' | sort -u > "${ASN1C_SYMS}"
+nm -D --defined-only "${MOBILE_SO}" | awk 'NF == 3 { print $3 }' | sort -u > "${EXPORTED_SYMS}"
+if ! grep -qx 'asn_OP_ANY' "${ASN1C_SYMS}"; then
+    echo "✗ asn1c symbol list looks wrong (no asn_OP_ANY in the asn1c objects)" >&2; exit 1
+fi
+leaked="$(comm -12 "${ASN1C_SYMS}" "${EXPORTED_SYMS}")"
+if [ -n "${leaked}" ]; then
+    echo "✗ libmmt_tmobile.so exports $(wc -l <<<"${leaked}") asn1c symbol(s), e.g.:" >&2
+    head -5 <<<"${leaked}" >&2
+    exit 1
+fi
+for sym in init_proto cleanup_proto s1ap_decode; do
+    if ! grep -qx "${sym}" "${EXPORTED_SYMS}"; then
+        echo "✗ libmmt_tmobile.so no longer exports ${sym}" >&2; exit 1
+    fi
+done
+echo "  ok   no asn1c runtime symbol exported from libmmt_tmobile.so ($(wc -l < "${ASN1C_SYMS}") hidden)"
 # The malformed-S1AP loop is the F-BUG-078 regression; LSAN is its oracle.
 # run_all_tests.sh exports ASAN_OPTIONS=detect_leaks=0 for SANITIZE=asan
 # (project policy: leak detection via Valgrind) — this suite deliberately

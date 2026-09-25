@@ -451,28 +451,22 @@ static inline int _decode_s1ap_initialuemessageies(
 					switch( eps_id->guti.typeofidentity ){
 					case EPS_MOBILE_IDENTITY_IMSI: {
 						const nas_imsi_eps_mobile_identity_t *imsi = & eps_id->imsi;
-						//imsi.digitX are numbers
-						//=> we convert them to char, e.g., 7 => '7'
-						message->imsi[0] = '0' + imsi->digit1;
-						message->imsi[1] = '0' + imsi->digit2;
-						message->imsi[2] = '0' + imsi->digit3;
-						message->imsi[3] = '0' + imsi->digit4;
-						message->imsi[4] = '0' + imsi->digit5;
-						message->imsi[5] = '0' + imsi->digit6;
-						message->imsi[6] = '0' + imsi->digit7;
-						message->imsi[7] = '0' + imsi->digit8;
-						message->imsi[8] = '0' + imsi->digit9;
-						message->imsi[9] = '0' + imsi->digit10;
-						message->imsi[10] ='0' + imsi->digit11;
-						message->imsi[11] ='0' + imsi->digit12;
-						message->imsi[12] ='0' + imsi->digit13;
-						message->imsi[13] ='0' + imsi->digit14;
-						message->imsi[14] ='0' + imsi->digit15;
-						message->imsi[15] = '\0';
-						/* an even digit count ends with the 0xF filler
-						 * (TS 24.301 §9.9.3.12): 14 digits, not a '?' */
-						if( imsi->oddeven == EPS_MOBILE_IDENTITY_EVEN )
-							message->imsi[14] = '\0';
+						/* imsi->digitN are BCD numbers: convert them to
+						 * chars, e.g. 7 => '7'. The decoder marks every
+						 * digit past the IMSI's end with 0xF — the even
+						 * filler and the absent digits of a short IMSI
+						 * (TS 24.301 §9.9.3.12, issue #443) — so the
+						 * string stops at the first 0xF. */
+						const uint8_t digits[15] = {
+							imsi->digit1,  imsi->digit2,  imsi->digit3,
+							imsi->digit4,  imsi->digit5,  imsi->digit6,
+							imsi->digit7,  imsi->digit8,  imsi->digit9,
+							imsi->digit10, imsi->digit11, imsi->digit12,
+							imsi->digit13, imsi->digit14, imsi->digit15 };
+						int d;
+						for( d = 0; d < 15 && digits[d] != 0x0f; d++ )
+							message->imsi[d] = '0' + digits[d];
+						memset( &message->imsi[d], 0, sizeof( message->imsi ) - d );
 						message->has_imsi = 1;
 						//printf("Got IMSI: %.*s\n", 15, message->imsi );
 						break;
@@ -785,9 +779,11 @@ static inline int _decode_s1ap_uecontextrelease(
             	decoded += tempDecoded;
             	break;
             default:
-                S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uecontextreleasecommandies\n", (int)ie_p->id);
-                decoded = -1;
-                goto _finish;
+                /* Issue #443: an IE this (Rel-10) decoder does not know,
+                 * e.g. one added by a later release, is skipped: the IDs
+                 * and Cause already extracted stay valid. */
+                S1AP_DEBUG("Skipping unknown protocol IE id (%d) for message s1ap_uecontextreleasecommandies\n", (int)ie_p->id);
+                break;
         }
     }
 
@@ -846,9 +842,11 @@ static inline int _decode_s1ap_UEContextReleaseRequest(
 		case S1ap_ProtocolIE_ID_id_GWContextReleaseIndication:
 			break;
 		default:
-			S1AP_ERROR("Unknown protocol IE id (%d) for message s1ap_uecontextreleaserequesties\n", (int)ie_p->id);
-			decoded = -1;
-			goto _finish;
+			/* Issue #443: an unknown optional IE from a later release
+			 * (e.g. id 264, SecondaryRATDataUsageReportList) is skipped
+			 * instead of rejecting the whole message. */
+			S1AP_DEBUG("Skipping unknown protocol IE id (%d) for message s1ap_uecontextreleaserequesties\n", (int)ie_p->id);
+			break;
 		}
 	}
 
@@ -918,6 +916,9 @@ static int _decode_s1ap_successfulOutcomeMessage(s1ap_message_t *message,
  * the general length determinant) is installed into the shared asn_OP_ANY
  * operation table once, when the library is loaded — before any thread can
  * decode — so the table is never written concurrently with a read.
+ * Issue #443: the asn1c objects are built with hidden visibility
+ * (rules/common.mk), so asn_OP_ANY here is always this library's own copy,
+ * never an asn1c runtime the host process links itself.
  */
 #undef RETURN
 #define RETURN(_code)                       \

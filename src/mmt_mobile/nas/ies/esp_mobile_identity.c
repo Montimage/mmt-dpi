@@ -41,50 +41,80 @@ static int _decode_guti_eps_mobile_identity(nas_guti_eps_mobile_identity_t *guti
 	return decoded;
 }
 
-static int _decode_imsi_eps_mobile_identity(nas_imsi_eps_mobile_identity_t *imsi, const uint8_t *buffer)
+/*
+ * IMSI (TS 24.301 §9.9.3.12, coded as TS 24.008 §10.5.1.4): octet 1 holds
+ * digit 1, the odd/even indicator and the identity type; every further
+ * octet holds two BCD digits, low nibble first. An IMSI has at most 15
+ * digits (TS 23.003 §2.2), so the value is 1 + ceil((n - 1) / 2) octets:
+ * 8 for 14..15 digits, 7 for 12..13, and so on. With an even digit count
+ * the high nibble of the last octet is the "1111" filler.
+ *
+ * Issue #443: the value used to be read as exactly 8 octets, so IMSIs of
+ * 13 digits or fewer (ielen <= 7) were rejected. Only ielen octets are
+ * read now; every digit past the IMSI's end is set to 0xF, the same value
+ * as the filler, so consumers find the end at the first 0xF digit.
+ */
+#define IMSI_MAX_OCTETS 8
+
+static int _decode_imsi_eps_mobile_identity(nas_imsi_eps_mobile_identity_t *imsi,
+		const uint8_t *buffer, uint8_t ielen)
 {
-	int decoded = 0;
-	imsi->typeofidentity = *(buffer + decoded) & 0x7;
+	uint8_t digits[15];
+	int ndigits, i, octets;
+
+	imsi->typeofidentity = *buffer & 0x7;
 
 	if (imsi->typeofidentity != EPS_MOBILE_IDENTITY_IMSI) {
 		return (DECODE_VALUE_DOESNT_MATCH);
 	}
 
-	imsi->oddeven = (*(buffer + decoded) >> 3) & 0x1;
-	imsi->digit1 = (*(buffer + decoded) >> 4) & 0xf;
-	decoded++;
-	imsi->digit2 = *(buffer + decoded) & 0xf;
-	imsi->digit3 = (*(buffer + decoded) >> 4) & 0xf;
-	decoded++;
-	imsi->digit4 = *(buffer + decoded) & 0xf;
-	imsi->digit5 = (*(buffer + decoded) >> 4) & 0xf;
-	decoded++;
-	imsi->digit6 = *(buffer + decoded) & 0xf;
-	imsi->digit7 = (*(buffer + decoded) >> 4) & 0xf;
-	decoded++;
-	imsi->digit8 = *(buffer + decoded) & 0xf;
-	imsi->digit9 = (*(buffer + decoded) >> 4) & 0xf;
-	decoded++;
-	imsi->digit10 = *(buffer + decoded) & 0xf;
-	imsi->digit11 = (*(buffer + decoded) >> 4) & 0xf;
-	decoded++;
-	imsi->digit12 = *(buffer + decoded) & 0xf;
-	imsi->digit13 = (*(buffer + decoded) >> 4) & 0xf;
-	decoded++;
-	imsi->digit14 = *(buffer + decoded) & 0xf;
-	imsi->digit15 = (*(buffer + decoded) >> 4) & 0xf;
+	/* more than 15 digits is not an IMSI; reading only 8 of the ielen
+	 * octets would also desync the caller's offset */
+	if (ielen > IMSI_MAX_OCTETS)
+		return (DECODE_VALUE_DOESNT_MATCH);
+	octets = ielen;
+	imsi->oddeven = (*buffer >> 3) & 0x1;
+
+	memset(digits, 0x0f, sizeof(digits));
+	digits[0] = (*buffer >> 4) & 0xf;
+	for (i = 1; i < octets; i++) {
+		digits[2 * i - 1] = buffer[i] & 0xf;
+		digits[2 * i]     = (buffer[i] >> 4) & 0xf;
+	}
 
 	/*
 	 * IMSI is coded using BCD coding. If the number of identity digits is
 	 * even then bits 5 to 8 of the last octet shall be filled with an end
 	 * mark coded as "1111".
 	 */
-	if ((imsi->oddeven == EPS_MOBILE_IDENTITY_EVEN) && (imsi->digit15 != 0x0f)) {
-		return (DECODE_VALUE_DOESNT_MATCH);
+	ndigits = 2 * octets - 1;
+	if (imsi->oddeven == EPS_MOBILE_IDENTITY_EVEN) {
+		if (digits[ndigits - 1] != 0x0f)
+			return (DECODE_VALUE_DOESNT_MATCH);
+		ndigits--;
 	}
+	/* no end mark inside the digit string */
+	for (i = 0; i < ndigits; i++)
+		if (digits[i] == 0x0f)
+			return (DECODE_VALUE_DOESNT_MATCH);
 
-	decoded++;
-	return decoded;
+	imsi->digit1  = digits[0];
+	imsi->digit2  = digits[1];
+	imsi->digit3  = digits[2];
+	imsi->digit4  = digits[3];
+	imsi->digit5  = digits[4];
+	imsi->digit6  = digits[5];
+	imsi->digit7  = digits[6];
+	imsi->digit8  = digits[7];
+	imsi->digit9  = digits[8];
+	imsi->digit10 = digits[9];
+	imsi->digit11 = digits[10];
+	imsi->digit12 = digits[11];
+	imsi->digit13 = digits[12];
+	imsi->digit14 = digits[13];
+	imsi->digit15 = digits[14];
+
+	return octets;
 }
 
 static int _decode_imei_eps_mobile_identity(nas_imei_eps_mobile_identity_t *imei, const uint8_t *buffer)
@@ -155,13 +185,15 @@ int nas_decode_eps_mobile_identity(nas_eps_mobile_identity_t *ident, uint8_t iei
 
 	switch( typeofidentity){
 	case EPS_MOBILE_IDENTITY_IMSI:
-		// F-BUG-203: the IMSI decoder reads 8 octets (identity octet +
-		// 7 BCD octets, 15 digits). Issue #427: this used to demand 9,
-		// rejecting every spec-valid 15-digit IMSI (TS 24.301 §9.9.3.12).
-		CHECK_LENGTH_DECODER(ielen, 8);
-		CHECK_LENGTH_DECODER((int32_t)len - decoded, 8);
+		// F-BUG-203: the IMSI decoder reads exactly ielen octets, which
+		// CHECK_LENGTH_DECODER above bounded by the buffer, and rejects
+		// more than 8 (identity octet + 7 BCD octets, 15 digits).
+		// Issue #427: 15 digits are 8 octets, not 9. Issue #443: shorter
+		// IMSIs are fewer octets (TS 24.301 §9.9.3.12) — at least 4, the
+		// 6 digits of MCC + MNC.
+		CHECK_LENGTH_DECODER(ielen, 4);
 		decoded_rc = _decode_imsi_eps_mobile_identity(&ident->imsi,
-				buffer + decoded);
+				buffer + decoded, ielen);
 		break;
 	case EPS_MOBILE_IDENTITY_GUTI:
 		// GUTI requires 11 bytes
