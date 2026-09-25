@@ -77,7 +77,11 @@ static inline const uint8_t* _nas_msg_decrypt(
 
 	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED:
 	case NAS_SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED_CYPHERED_NEW:
-		//TODO(#335): decrypt
+		/* The payload is passed through unchanged: correct for EEA0 (null
+		 * ciphering). EEA1-3 need the NAS security context (K_NASenc, NAS
+		 * COUNT, algorithm), which cannot be derived from the traffic and
+		 * no API supplies — see docs/DECISIONS.md (issue #335). */
+		//TODO(#452): decrypt once a key-material API exists
 		dest = src;
 		break;
 	default:

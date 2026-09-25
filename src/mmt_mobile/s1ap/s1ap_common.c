@@ -232,7 +232,8 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 						}
 					}
 					//parse EPS mobile identity to get m_tmsi
-					if( m.protected_msg.msg.emm.attach_accept.guti.guti.typeofidentity == EPS_MOBILE_IDENTITY_GUTI ){
+					if( (m.protected_msg.msg.emm.attach_accept.present & NAS_EMM_ATTACH_ACCEPT_HAS_GUTI)
+							&& m.protected_msg.msg.emm.attach_accept.guti.guti.typeofidentity == EPS_MOBILE_IDENTITY_GUTI ){
 						message->m_tmsi = m.protected_msg.msg.emm.attach_accept.guti.guti.mtmsi;
 					}
 				}

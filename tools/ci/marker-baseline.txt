@@ -51,4 +51,9 @@
 # IPv6 carriers and inner packets are parsed, the payload after INT stays
 # PROTO_UNKNOWN for the QUIC_IETF-over-INT checker to reclassify, the stale
 # 64-hop cap note and the LV2 egress-port gap (both layouts decoded) went away.
-64
+#
+# #335: re-baselined 64 -> 62 — the TAI-list decoder now handles all three
+# list types and the Attach Accept decoder walks every optional IE, which
+# resolved the `XXX(#335)` and `TODO(#335)` extraction markers; the NAS
+# decryption marker was retargeted to follow-up #452.
+62

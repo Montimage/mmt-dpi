@@ -22,12 +22,19 @@
  * - eps_quality_of_service bit rates read buffer+decoded (four distinct bytes)
  * - nas_5g_decode rejects NULL/short input and never reinterprets the wire
  *
+ * Issue #335 adds:
+ * - TAI list: all three list types and several partial lists, the whole
+ *   IE consumed, malformed partial lists bounded by the IE length
+ * - Attach Accept: every optional IE walked by its format (TV, TLV,
+ *   TLV-E, type 1), the GUTI found after a multi-TAC TAI list
+ *
  * Verifies crafted Attach-Accept/Request tail cases (ielen 0..10 at buffer end)
  * pass without AddressSanitizer errors.
  */
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "emm/nas_emm_attach_accept.h"
 #include "emm/nas_emm_attach_request.h"
 #include "ies/pdn_address.h"
@@ -299,6 +306,204 @@ static void test_nas5g_decode(void) {
      * whether the including TU saw __LITTLE_ENDIAN__ — not asserted here. */
 }
 
+
+/* issue #335: TAI list types 00/01/10, several partial lists, IE size */
+static void test_tai_list_types(void) {
+    printf("TAI list types and partial lists (#335):\n");
+    nas_tracking_area_identity_list_t lst;
+
+    /* type 00, 3 TACs of PLMN 001/01 (ielen = 1 + 3 + 6 = 10) */
+    const uint8_t t00[] = { 10, 0x02, 0x00, 0xF1, 0x10, 0x00, 0x01, 0x00, 0x05, 0x12, 0x34 };
+    memset(&lst, 0, sizeof(lst));
+    CHECK("type00 consumes the whole IE",
+          nas_decode_tracking_area_identity_list(&lst, 0, t00, sizeof(t00)) == 11);
+    CHECK("type00 header", lst.typeoflist == TRACKING_AREA_IDENTITY_LIST_ONE_PLMN_NON_CONSECUTIVE_TACS
+          && lst.numberofelements == 2 && lst.partial_lists == 1 && !lst.malformed);
+    CHECK("type00 3 TAIs", lst.tai_count == 3 && lst.tai[0].tac == 0x0001
+          && lst.tai[1].tac == 0x0005 && lst.tai[2].tac == 0x1234);
+    CHECK("type00 PLMN digits", lst.tai[2].mccdigit1 == 0 && lst.tai[2].mccdigit2 == 0
+          && lst.tai[2].mccdigit3 == 1 && lst.tai[2].mncdigit1 == 0
+          && lst.tai[2].mncdigit2 == 1 && lst.tai[2].mncdigit3 == 0xF);
+    CHECK("type00 first TAI mirrored", lst.tac == 0x0001 && lst.mccdigit3 == 1);
+
+    /* type 01, 4 consecutive TACs starting at 0x00FE (ielen = 6) */
+    const uint8_t t01[] = { 6, 0x23, 0x21, 0x43, 0x65, 0x00, 0xFE };
+    memset(&lst, 0, sizeof(lst));
+    CHECK("type01 decodes 7",
+          nas_decode_tracking_area_identity_list(&lst, 0, t01, sizeof(t01)) == 7);
+    CHECK("type01 expanded to 4 TAIs", lst.tai_count == 4 && lst.tai[0].tac == 0x00FE
+          && lst.tai[3].tac == 0x0101 && lst.tai[3].mccdigit1 == 1 && lst.tai[3].mncdigit1 == 5);
+
+    /* type 10 (2 PLMNs) followed by a type 00 partial list with one TAC
+     * (ielen = 1 + 10 + 1 + 3 + 2 = 17), IEI 0x54 */
+    const uint8_t t10[] = { 0x54, 17,
+        0x41, 0x00, 0xF1, 0x10, 0x00, 0x07,   0x13, 0x00, 0x62, 0x00, 0x08,
+        0x00, 0x21, 0xF3, 0x54, 0xAB, 0xCD };
+    memset(&lst, 0, sizeof(lst));
+    CHECK("type10 + type00 decodes 19 with IEI",
+          nas_decode_tracking_area_identity_list(&lst, 0x54, t10, sizeof(t10)) == 19);
+    CHECK("two partial lists, three TAIs", lst.partial_lists == 2 && lst.tai_count == 3 && !lst.malformed);
+    CHECK("type10 header kept from first partial list",
+          lst.typeoflist == TRACKING_AREA_IDENTITY_LIST_MANY_PLMNS && lst.numberofelements == 1);
+    CHECK("type10 second PLMN", lst.tai[1].mccdigit1 == 3 && lst.tai[1].mccdigit2 == 1
+          && lst.tai[1].mccdigit3 == 0 && lst.tai[1].mncdigit2 == 6
+          && lst.tai[1].mncdigit1 == 2 && lst.tai[1].tac == 0x0008);
+    CHECK("type00 after type10", lst.tai[2].mccdigit1 == 1 && lst.tai[2].mncdigit1 == 4
+          && lst.tai[2].tac == 0xABCD);
+
+    /* partial list overrunning the IE: type 00 claims 3 TACs, ielen 8 */
+    const uint8_t over[] = { 8, 0x02, 0x00, 0xF1, 0x10, 0x00, 0x01, 0x00, 0x05, 0xEE, 0xEE };
+    memset(&lst, 0, sizeof(lst));
+    CHECK("overrunning partial list: IE still consumed",
+          nas_decode_tracking_area_identity_list(&lst, 0, over, sizeof(over)) == 9);
+    CHECK("overrunning partial list flagged, nothing stored",
+          lst.malformed && lst.tai_count == 0 && lst.partial_lists == 0);
+
+    /* reserved type 11 after a valid partial list */
+    const uint8_t rsv[] = { 7, 0x20, 0x00, 0xF1, 0x10, 0x00, 0x09, 0x60 };
+    memset(&lst, 0, sizeof(lst));
+    CHECK("reserved type decodes IE",
+          nas_decode_tracking_area_identity_list(&lst, 0, rsv, sizeof(rsv)) == 8);
+    CHECK("reserved type flagged, prefix kept", lst.malformed && lst.tai_count == 1
+          && lst.tai[0].tac == 0x0009);
+
+    /* 17 TAIs: two consecutive lists of 16 and 1 — the 17th is refused */
+    const uint8_t many[] = { 12, 0x2F, 0x00, 0xF1, 0x10, 0x00, 0x00,
+                                 0x20, 0x00, 0xF1, 0x10, 0x01, 0x00 };
+    memset(&lst, 0, sizeof(lst));
+    CHECK("17 TAIs decodes IE",
+          nas_decode_tracking_area_identity_list(&lst, 0, many, sizeof(many)) == 13);
+    CHECK("17 TAIs capped at 16 and flagged", lst.tai_count == 16 && lst.malformed
+          && lst.tai[15].tac == 15);
+
+    /* number of elements 11111 (unused) is read as 16 (TS 24.301 §9.9.3.33) */
+    const uint8_t unused_n[] = { 6, 0x3F, 0x00, 0xF1, 0x10, 0x00, 0x10 };
+    memset(&lst, 0, sizeof(lst));
+    CHECK("unused number of elements decodes IE",
+          nas_decode_tracking_area_identity_list(&lst, 0, unused_n, sizeof(unused_n)) == 7);
+    CHECK("unused number of elements read as 16", lst.tai_count == 16 && !lst.malformed
+          && lst.tai[15].tac == 0x001F);
+
+    /* a malformed first partial list leaves no stale flat fields */
+    memset(&lst, 0xA5, sizeof(lst));
+    CHECK("stale struct: overrunning list decodes IE",
+          nas_decode_tracking_area_identity_list(&lst, 0, over, sizeof(over)) == 9);
+    CHECK("stale struct: flat fields cleared", lst.malformed && lst.tai_count == 0
+          && lst.tac == 0 && lst.typeoflist == 0 && lst.mccdigit1 == 0);
+
+    /* the IE length is still checked against the buffer */
+    memset(&lst, 0, sizeof(lst));
+    CHECK("ielen beyond buffer rejected",
+          nas_decode_tracking_area_identity_list(&lst, 0, t00, sizeof(t00) - 1) < 0);
+}
+
+/* A plain Attach Accept (after the 2-byte EMM header) with a 2-TAC TAI list:
+ * the old decoder consumed only the first TAI (7 bytes of the 9-byte list)
+ * and read the ESM container from the wrong offset. */
+static const uint8_t attach_accept_body[] = {
+    0x02,                                           /* EPS attach result */
+    0x21,                                           /* T3412 */
+    8, 0x01, 0x00, 0xF1, 0x10, 0x00, 0x01, 0x00, 0x02, /* TAI list: 2 TACs */
+    0x00, 0x03, 0x52, 0x01, 0xC1,                   /* ESM container (LV-E) */
+    0x50, 11, 0xF6, 0x00, 0xF1, 0x10, 0x80, 0x01, 0x01,
+          0xDE, 0xAD, 0xBE, 0xEF,                   /* GUTI */
+    0x13, 0x00, 0xF1, 0x10, 0x12, 0x34,             /* LAI (TV) */
+    0x23, 5, 0xF4, 0x11, 0x22, 0x33, 0x44,          /* MS identity */
+    0x53, 0x10,                                     /* EMM cause */
+    0x17, 0x2C,                                     /* T3402 */
+    0x59, 0x49,                                     /* T3423 */
+    0x4A, 3, 0x00, 0xF2, 0x10,                      /* equivalent PLMNs */
+    0x34, 3, 0x02, 0x11, 0x99,                      /* emergency numbers */
+    0x64, 1, 0x01,                                  /* network features */
+    0xF2,                                           /* additional update result */
+    0x5E, 1, 0x21,                                  /* T3412 extended */
+    0x7A, 0x00, 0x02, 0xAA, 0xBB,                   /* TLV-E, not decoded */
+    0x66, 2, 0xCC, 0xDD,                            /* unknown TLV */
+    0xC1,                                           /* unknown type-1 */
+    0x50, 11, 0xF6, 0x00, 0xF1, 0x10, 0x80, 0x01, 0x01,
+          0x00, 0x00, 0x00, 0x01,                   /* repeated GUTI */
+};
+
+static void test_attach_accept_full(void) {
+    printf("Attach Accept full extraction (#335):\n");
+    nas_emm_attach_accept_t acc;
+    const uint32_t len = sizeof(attach_accept_body);
+    memset(&acc, 0, sizeof(acc));
+    int ret = nas_emm_decode_attach_accept(&acc, attach_accept_body, len);
+    CHECK("whole message consumed", ret == (int)len);
+    CHECK("TAI list has 2 TAIs", acc.tailist.tai_count == 2 && acc.tailist.tai[1].tac == 2);
+    CHECK("ESM container at the right offset", acc.esm_message_container.len == 3
+          && acc.esm_message_container.data == attach_accept_body + 13);
+    CHECK("GUTI decoded, first occurrence kept",
+          (acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_GUTI)
+          && acc.guti.guti.typeofidentity == EPS_MOBILE_IDENTITY_GUTI
+          && acc.guti.guti.mtmsi == 0xDEADBEEF);
+    CHECK("LAI", (acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_LAI) && acc.lai.len == 5
+          && acc.lai.data[3] == 0x12 && acc.lai.data[4] == 0x34);
+    CHECK("MS identity", (acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_MS_IDENTITY)
+          && acc.ms_identity.len == 5 && acc.ms_identity.data[4] == 0x44);
+    CHECK("EMM cause / T3402 / T3423",
+          acc.emm_cause == 0x10 && acc.t3402value == 0x2C && acc.t3423value == 0x49
+          && (acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_EMM_CAUSE)
+          && (acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_T3402_VALUE)
+          && (acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_T3423_VALUE));
+    CHECK("equivalent PLMNs", acc.equivalent_plmns.len == 3 && acc.equivalent_plmns.data[1] == 0xF2);
+    CHECK("emergency number list", acc.emergency_number_list.len == 3
+          && acc.emergency_number_list.data[2] == 0x99);
+    CHECK("EPS network feature support", acc.eps_network_feature_support.len == 1
+          && acc.eps_network_feature_support.data[0] == 0x01);
+    CHECK("additional update result", (acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_ADDITIONAL_UPDATE_RESULT)
+          && acc.additional_update_result == 2);
+    CHECK("T3412 extended", (acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_T3412_EXTENDED_VALUE)
+          && acc.t3412_extended_value.len == 1 && acc.t3412_extended_value.data[0] == 0x21);
+    CHECK("TLV-E, unknown TLV and unknown type-1 skipped", acc.unknown_ies == 3);
+    CHECK("not truncated", !(acc.present & NAS_EMM_ATTACH_ACCEPT_TRUNCATED));
+
+    /* every truncation of the optional part: never an error, never an
+     * over-read (ASan), fields before the cut stay decoded */
+    int bad = 0;
+    for (uint32_t cut = 16; cut < len; cut++) {
+        uint8_t *copy = malloc(cut);            /* exact-size heap copy */
+        memcpy(copy, attach_accept_body, cut);
+        memset(&acc, 0, sizeof(acc));
+        ret = nas_emm_decode_attach_accept(&acc, copy, cut);
+        if (ret < 0 || ret > (int)cut || acc.esm_message_container.len != 3)
+            bad++;
+        free(copy);
+    }
+    CHECK("every optional-part truncation decodes the mandatory part", bad == 0);
+
+    /* GUTI cut inside its value: flagged, no half-filled identity */
+    memset(&acc, 0, sizeof(acc));
+    ret = nas_emm_decode_attach_accept(&acc, attach_accept_body, 25);
+    CHECK("truncated GUTI flagged", ret == 16 && (acc.present & NAS_EMM_ATTACH_ACCEPT_TRUNCATED)
+          && !(acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_GUTI) && acc.guti.guti.mtmsi == 0);
+
+    /* GUTI with a wrong length: skipped whole, identity cleared */
+    uint8_t bad_guti[] = { 0x02, 0x21, 6, 0x20, 0x00, 0xF1, 0x10, 0x00, 0x01,
+        0x00, 0x00, 0x50, 4, 0xF6, 0x00, 0xF1, 0x10, 0x53, 0x07 };
+    memset(&acc, 0, sizeof(acc));
+    ret = nas_emm_decode_attach_accept(&acc, bad_guti, sizeof(bad_guti));
+    CHECK("short GUTI skipped, next IE decoded", ret == (int)sizeof(bad_guti)
+          && !(acc.present & NAS_EMM_ATTACH_ACCEPT_HAS_GUTI)
+          && acc.guti.guti.typeofidentity == 0 && acc.emm_cause == 0x07);
+}
+
+/* The same message wrapped in an integrity-protected+ciphered NAS PDU, as
+ * s1ap_common.c decodes it to extract the M-TMSI. */
+static void test_attach_accept_in_nas_pdu(void) {
+    printf("Attach Accept through nas_decode (#335):\n");
+    uint8_t pdu[6 + 2 + sizeof(attach_accept_body)];
+    const uint8_t hdr[8] = { 0x27, 0x11, 0x22, 0x33, 0x44, 0x01, 0x07, 0x42 };
+    memcpy(pdu, hdr, sizeof(hdr));
+    memcpy(pdu + sizeof(hdr), attach_accept_body, sizeof(attach_accept_body));
+    nas_msg_t m; memset(&m, 0, sizeof(m));
+    CHECK("protected attach accept decodes", nas_decode(&m, pdu, sizeof(pdu)) == (int)sizeof(pdu));
+    CHECK("M-TMSI after multi-TAC TAI list",
+          m.protected_msg.msg.emm.header.message_type == NAS_EMM_ATTACH_ACCEPT
+          && m.protected_msg.msg.emm.attach_accept.guti.guti.mtmsi == 0xDEADBEEF);
+}
+
 int main(void) {
     test_pdn_tail();
     test_mobile_identity_tail();
@@ -312,6 +517,9 @@ int main(void) {
     test_qos_bit_rates();
     test_nas_msg_min();
     test_nas5g_decode();
+    test_tai_list_types();
+    test_attach_accept_full();
+    test_attach_accept_in_nas_pdu();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }
