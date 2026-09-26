@@ -10,7 +10,7 @@ or using `wget`:
 wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 ```
 
-The installer clones the pinned release tag (`v1.8.0`) and verifies it after
+The installer clones the pinned release tag (`v1.9.0`) and verifies it after
 checkout; moving branches are refused unless explicitly opted in. It supports
 **Linux** distributions: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, and openSUSE.
 

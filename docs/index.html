@@ -18,11 +18,11 @@
   <meta property="og:title" content="MMT-DPI — Deep packet inspection, in C">
   <meta property="og:description" content="Classify 670 protocols, extract 7,450 named attributes, track sessions at line rate. Open-source C library by Montimage.">
   <meta property="og:url" content="https://montimage-projects.github.io/mmt-dpi/">
-  <meta name="theme-color" content="#131110">
+  <meta name="theme-color" content="#1A1A1A">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -33,15 +33,15 @@
       --mi-amber-light: #F0BC52;
 
       /* Warm dark surfaces, tuned toward Montimage dark (#1A1A1A / #2A2520) */
-      --bg:        #131110;
-      --bg-soft:   #181513;
-      --panel:     #1d1916;
-      --panel-2:   #241f1a;
-      --border:    #312a23;
-      --border-2:  #463c30;
-      --text:      #ece4d8;
-      --text-dim:  #b3a690;
-      --text-mute: #9a8c70;   /* warm mute — lifted to WCAG AA (>=4.5:1 on bg & panel) */
+      --bg:        #1A1A1A;
+      --bg-soft:   #211e1b;
+      --panel:     #2A2520;
+      --panel-2:   #302a23;
+      --border:    #40382e;
+      --border-2:  #62523b;
+      --text:      #F5F0EB;
+      --text-dim:  #c9bba7;
+      --text-mute: #b7a68e;   /* readable on warm dark surfaces */
 
       /* Accent aliases now point at Golden Amber (was cyan) */
       --cyan:      var(--mi-amber);
@@ -54,7 +54,8 @@
       --blue:      #57b6ff;
       --radius:    12px;
       --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-      --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+      --display: 'Fraunces', Georgia, serif;
     }
 
     * { box-sizing: border-box; }
@@ -73,7 +74,7 @@
     code, kbd, pre { font-family: var(--mono); }
     .mono { font-family: var(--mono); }
 
-    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
     section { position: relative; }
 
     /* anchored section tops clear the 60px sticky nav */
@@ -105,7 +106,7 @@
       html { scroll-behavior: auto; }
     }
 
-    /* ---------- ambient grid + glow ---------- */
+    /* ---------- signal trace: a restrained nod to packet inspection ---------- */
     .bg-fx {
       position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background:
@@ -113,12 +114,11 @@
         radial-gradient(560px 360px at 8% 4%, rgba(240,188,82,.07), transparent 70%);
     }
     .bg-grid {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .35;
-      background-image:
-        linear-gradient(rgba(233,171,52,.10) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(233,171,52,.10) 1px, transparent 1px);
-      background-size: 46px 46px;
-      mask-image: radial-gradient(circle at 50% 0%, #000 0%, transparent 72%);
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .32;
+      /* The line resolves into a heartbeat, then returns to silence. */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='120' viewBox='0 0 480 120'%3E%3Cpath d='M0 60h130l12-14 14 34 16-60 15 55 12-15h281' fill='none' stroke='%23E9AB34' stroke-width='1'/%3E%3C/svg%3E");
+      background-size: 480px 120px;
+      mask-image: linear-gradient(to bottom, #000, transparent 82%);
     }
     .content { position: relative; z-index: 1; }
 
@@ -126,7 +126,7 @@
     nav {
       position: sticky; top: 0; z-index: 50;
       backdrop-filter: blur(10px);
-      background: rgba(19,17,16,.72);   /* warm-dark, matches --bg (was a cool blue) */
+      background: rgba(26,26,26,.9);
       border-bottom: 1px solid var(--border);
     }
     .nav-inner { display: flex; align-items: center; gap: 20px; height: 60px; }
@@ -175,7 +175,7 @@
     }
 
     /* ---------- hero ---------- */
-    .hero { padding: 86px 0 60px; }
+    .hero { padding: clamp(76px, 9vw, 130px) 0 88px; }
     .eyebrow {
       display: inline-flex; align-items: center; gap: 9px;
       font-family: var(--mono); font-size: .76rem; color: var(--cyan);
@@ -187,8 +187,9 @@
     @keyframes pulse { 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
 
     h1.hero-title {
-      font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1.04; letter-spacing: -.035em;
-      font-weight: 800; margin: 0 0 22px; max-width: 16ch;
+      font-family: var(--display);
+      font-size: clamp(2.7rem, 5.8vw, 5.5rem); line-height: 1.08; letter-spacing: -.045em;
+      font-weight: 600; margin: 0 0 26px; max-width: 15ch;
     }
     h1.hero-title .accent {
       background: linear-gradient(100deg, var(--mi-amber), var(--mi-amber-light));
@@ -198,7 +199,7 @@
     .hero-sub strong { color: var(--text); font-weight: 600; }
 
     /* hero: text left, code right */
-    .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
     .hero-grid .hero-code { min-width: 0; }                 /* let the code-card shrink instead of overflowing */
     .hero-grid .hero-code .code-card { margin: 0; }
     .hero-grid .hero-code .term { margin-top: 0; max-width: none; }       /* the hero card IS the install terminal */
@@ -228,8 +229,8 @@
     /* ---------- terminal install ---------- */
     .term {
       margin-top: 40px; border: 1px solid var(--border-2); border-radius: var(--radius);
-      background: linear-gradient(180deg, var(--panel), #100d0b); overflow: hidden;
-      box-shadow: 0 30px 60px -30px rgba(0,0,0,.8);
+      background: linear-gradient(160deg, var(--panel), #1b1917); overflow: hidden;
+      box-shadow: 0 32px 76px -34px rgba(0,0,0,.9), 0 0 0 6px rgba(233,171,52,.025);
       max-width: 720px;
     }
     .term-bar { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02); }
@@ -260,14 +261,14 @@
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
     .stat { padding: 30px 18px; text-align: center; border-right: 1px solid var(--border); }
     .stat:last-child { border-right: none; }
-    .stat .num { font-family: var(--mono); font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 700; color: var(--cyan); letter-spacing: -.02em; }
-    .stat .lbl { font-size: .82rem; color: var(--text-dim); margin-top: 6px; }
+    .stat .num { font-family: var(--mono); font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 700; color: var(--cyan); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+    .stat .lbl { font-family: var(--mono); font-size: .72rem; color: var(--text-dim); margin-top: 8px; letter-spacing: .04em; text-transform: uppercase; }
     @media (max-width: 640px){ .stats-grid{ grid-template-columns: repeat(2,1fr); } .stat:nth-child(2){ border-right:none } .stat:nth-child(1),.stat:nth-child(2){ border-bottom:1px solid var(--border) } }
 
     /* ---------- section headers ---------- */
     .sec { padding: 84px 0; }
     .sec-tag { font-family: var(--mono); font-size: .8rem; color: var(--cyan-dim); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 14px; }
-    .sec-title { font-size: clamp(1.6rem, 3.6vw, 2.3rem); font-weight: 800; letter-spacing: -.03em; margin: 0 0 16px; max-width: 24ch; }
+    .sec-title { font-family: var(--display); font-size: clamp(2rem, 4vw, 3.1rem); font-weight: 600; line-height: 1.13; letter-spacing: -.035em; margin: 0 0 20px; max-width: 24ch; }
     .sec-lead { color: var(--text-dim); font-size: 1.08rem; max-width: 62ch; margin: 0 0 8px; }
 
     /* ---------- problem cards ---------- */
@@ -418,7 +419,7 @@
 
     /* ---------- final CTA ---------- */
     .final { text-align: center; padding: 96px 0; }
-    .final h2 { font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 800; letter-spacing: -.03em; margin: 0 0 16px; }
+    .final h2 { font-family: var(--display); font-size: clamp(2rem, 4.5vw, 3.4rem); font-weight: 600; letter-spacing: -.035em; margin: 0 0 16px; }
     .final h2 .accent { background: linear-gradient(100deg, var(--mi-amber), var(--mi-amber-light)); -webkit-background-clip: text; background-clip: text; color: transparent; }
     .final p { color: var(--text-dim); font-size: 1.1rem; max-width: 50ch; margin: 0 auto 30px; }
     .final .cta-row { justify-content: center; }
@@ -470,8 +471,8 @@
     <section class="hero wrap" id="top">
       <div class="hero-grid">
        <div class="hero-text">
-        <span class="eyebrow"><span class="pulse"></span>v1.8.0 · Apache&#8209;2.0 · Linux · C/C++</span>
-        <h1 class="hero-title">A deep packet inspection <span class="accent">engine for C.</span></h1>
+        <span class="eyebrow"><span class="pulse"></span>v1.9.0 · Apache&#8209;2.0 · Linux · C/C++</span>
+        <h1 class="hero-title">See the traffic.<br><span class="accent">Understand the signal.</span></h1>
         <p class="hero-sub">
           Link <code>libmmt_core</code>, register the protocol fields you need, and process packets from a
           pcap or a live interface. MMT&#8209;DPI classifies <strong>670 protocols</strong>, extracts
