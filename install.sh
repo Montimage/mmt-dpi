@@ -45,7 +45,7 @@ REPO_URL="https://github.com/montimage-projects/mmt-dpi.git"
 # Default ref: the pinned release tag, never a moving branch (issue #197,
 # F-SEC-006 / F-BUG-118). RELEASE_TAG_SHA pins the commit the tag must resolve
 # to, so a moved or re-created tag fails verification right after cloning.
-RELEASE_TAG="v1.8.0"
+RELEASE_TAG="v1.9.0"
 RELEASE_TAG_SHA="af4c3cd7c4d04307411ef17bb16971a0df47f3d1"
 
 BRANCH="${BRANCH:-}"           # opt-in moving ref (env BRANCH or --branch)

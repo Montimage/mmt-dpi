@@ -5,7 +5,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![C/C++ CI](https://github.com/montimage-projects/mmt-dpi/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/montimage-projects/mmt-dpi/actions/workflows/c-cpp.yml)
 
-A high-performance C library for deep packet inspection (DPI), designed to extract data attributes from network packets, server logs, and structured events for real-time traffic analysis. Current release: [v1.8.0](CHANGELOG.md).
+A high-performance C library for deep packet inspection (DPI), designed to extract data attributes from network packets, server logs, and structured events for real-time traffic analysis. Current release: [v1.9.0](CHANGELOG.md).
 
 ## Key Features
 
@@ -39,7 +39,7 @@ or using `wget`:
 wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 ```
 
-The installer clones the pinned release tag (`v1.8.0`) and verifies it after
+The installer clones the pinned release tag (`v1.9.0`) and verifies it after
 checkout; moving branches are refused unless explicitly opted in. It supports
 **Linux** distributions: Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, and openSUSE.
 

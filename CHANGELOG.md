@@ -1,7 +1,7 @@
 RELEASE NOTES
 ---
 
-Unreleased
+Version 1.9.0 (19 July 2026)
 ---
 
 Changes on `main` since the v1.8.0 tag, grouped by theme; parenthetical
