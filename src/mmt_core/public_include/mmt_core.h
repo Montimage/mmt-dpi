@@ -91,7 +91,7 @@ typedef enum {
                             the packet will be skipped afterwards. */
 #define MMT_PRINT_INFO "\n\t* * * * * * * * * * * * * * * *\n\t*     M M T - L I B R A R Y   *\n\t* * * * * * * * * * * * * * * *\n\t\n\tWebsite: http://montimage.eu\n\tContact: contact@montimage.eu\n\n\n"
 #ifndef VERSION
-#define VERSION "1.8.0"
+#define VERSION "1.9.0"
 #endif
 
 #ifdef GIT_VERSION
