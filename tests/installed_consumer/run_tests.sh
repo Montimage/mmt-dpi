@@ -121,6 +121,17 @@ check_fail "missing fixture pcap fails" \
     env FIXTURES="${WORK}/fixtures-missing.txt" \
         bash "${DRIVER}" --prefix "${PREFIX}" --distro suite-local
 
+# The root-install leg (issue #485) must refuse a prefix the loader does not
+# know: this throwaway prefix was installed unprivileged, so no drop-in names
+# it and the consumer cannot rely on LD_LIBRARY_PATH.
+check_fail "--root-install fails on a prefix not registered with the loader" \
+    env LDCONF_FILE="${WORK}/no-such-dropin.conf" \
+        bash "${DRIVER}" --prefix "${PREFIX}" --distro suite-local --root-install
+printf '%s\n' "${PREFIX}/dpi/lib" > "${WORK}/dropin.conf"
+check_fail "--root-install fails when ldconfig cannot resolve libmmt_core" \
+    env LDCONF_FILE="${WORK}/dropin.conf" \
+        bash "${DRIVER}" --prefix "${PREFIX}" --distro suite-local --root-install
+
 # --- 4. wiring ------------------------------------------------------------------
 echo "  [4/4] packaging wiring"
 check "build-package.sh invokes the installed consumer" \
@@ -129,6 +140,16 @@ check "build-package.sh --dry-run documents the consumer step" \
     bash -c "bash '${REPO_ROOT}/tools/ci/build-package.sh' --dry-run | grep -q 'installed consumer'"
 check "driver is executable-compatible via bash" \
     bash -n "${DRIVER}"
+check "driver replays with LD_LIBRARY_PATH unset under --root-install" \
+    grep -q 'env -u LD_LIBRARY_PATH' "${DRIVER}"
+check "CI runs the root-install leg in a container" \
+    grep -q 'tools/ci/tests/run-root-install.sh' "${REPO_ROOT}/.github/workflows/c-cpp.yml"
+check "root-install leg invokes the driver with --root-install" \
+    grep -q -- '--root-install' "${REPO_ROOT}/tools/ci/tests/run-root-install.sh"
+if [ "$(id -u)" -ne 0 ]; then
+    check_fail "root-install leg refuses to run unprivileged" \
+        bash "${REPO_ROOT}/tools/ci/tests/run-root-install.sh"
+fi
 check "driver compiles the consumer source" \
     bash -c "grep -q 'installed_consumer.c' '${DRIVER}'"
 

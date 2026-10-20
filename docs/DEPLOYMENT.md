@@ -17,9 +17,11 @@ sudo make install
 
 Default installation directory: `/opt/mmt/dpi/`
 
-To install to a custom directory:
+To install to a custom directory, build and install with the same
+`MMT_BASE` (`make install` refuses a build made for another prefix):
 
 ```bash
+make -j$(nproc) MMT_BASE=/path/to/install
 sudo make install MMT_BASE=/path/to/install
 ```
 
@@ -35,7 +37,7 @@ sudo dpkg -i mmt-dpi_*.deb
 
 ```bash
 cd sdk
-sudo make dist-clean
+sudo make uninstall    # same MMT_BASE as the install; removes the loader drop-in too
 ```
 
 ## Installed Files
@@ -51,7 +53,7 @@ After installation, the following files are placed:
 └── examples/        # Example sources (rules/common.mk:8)
 ```
 
-The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:89,145`).
+The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:126,290`): a root `make install` writes it whatever the prefix (opt out with `LDCONF=0`), and `make uninstall` removes it — see [Agent Environment Notes §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 
 ## Linking Against MMT-DPI
 

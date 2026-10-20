@@ -14,6 +14,7 @@
 #
 # Options:
 #   --dry-run              - Print the install plan and exit without changes
+#   --uninstall            - Remove an installed MMT-DPI (from --prefix/MMT_BASE)
 #   --prefix <dir>         - Install to <dir> (same as MMT_BASE=<dir>)
 #   --branch <ref>         - Build a specific branch instead of the release tag
 #   --unverified-branch    - Required to permit a moving ref (no verification)
@@ -24,12 +25,15 @@
 #   BRANCH=dev             - Same as --branch dev (requires --unverified-branch)
 #   JOBS=4                 - Number of parallel build jobs (default: auto-detected)
 #   SKIP_DEPS=1            - Skip dependency installation
+#   LDCONF=0               - Do not register the libraries with the dynamic
+#                            loader on a root install (default: auto)
 #
 # Examples:
 #   curl -fsSL https://...install.sh | bash
 #   curl -fsSL https://...install.sh | bash -s -- --dry-run
 #   curl -fsSL https://...install.sh | MMT_BASE=/usr/local/mmt bash
 #   curl -fsSL https://...install.sh | BRANCH=dev bash -s -- --unverified-branch
+#   curl -fsSL https://...install.sh | bash -s -- --uninstall
 #
 
 set -euo pipefail
@@ -41,6 +45,7 @@ set -euo pipefail
 # (issue #197). scripts/validate-install-origin.sh fails CI if this constant
 # and the README clone URL ever diverge again.
 REPO_URL="https://github.com/montimage-projects/mmt-dpi.git"
+INSTALLER_URL="https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh"
 
 # Default ref: the pinned release tag, never a moving branch (issue #197,
 # F-SEC-006 / F-BUG-118). RELEASE_TAG_SHA pins the commit the tag must resolve
@@ -55,6 +60,8 @@ RELEASE_TAG_SHA="04649942afe490da81f72f4c112558447caad91e"
 BRANCH="${BRANCH:-}"           # opt-in moving ref (env BRANCH or --branch)
 UNVERIFIED_BRANCH=0            # set by --unverified-branch
 DRY_RUN=0                      # set by --dry-run
+UNINSTALL=0                    # set by --uninstall
+LDCONF="${LDCONF:-auto}"       # auto = register the loader on root installs
 MMT_BASE="${MMT_BASE:-/opt/mmt}"
 SKIP_DEPS="${SKIP_DEPS:-0}"
 BUILD_DIR=""
@@ -90,6 +97,12 @@ validate_skip_deps() {
     fi
 }
 
+validate_ldconf() {
+    if [[ "$1" != "auto" && "$1" != "0" ]]; then
+        printf 'ERROR: LDCONF must be auto or 0: %s\n' "$1" >&2; exit 1
+    fi
+}
+
 usage() {
     cat <<'EOF'
 MMT-DPI Installation Script — https://github.com/montimage-projects/mmt-dpi
@@ -99,6 +112,8 @@ Usage:
 
 Options:
   --dry-run              Print the install plan and exit without changes.
+  --uninstall            Remove MMT-DPI from the prefix (--prefix/MMT_BASE)
+                         and its dynamic-loader registration.
   --prefix <dir>         Install to <dir> instead of /opt/mmt (same as
                          setting MMT_BASE=<dir> in the environment).
   --branch <ref>         Build a specific branch instead of the pinned
@@ -113,6 +128,8 @@ Environment variables:
   BRANCH=dev             Same as --branch dev (requires --unverified-branch)
   JOBS=4                 Number of parallel build jobs (default: auto)
   SKIP_DEPS=1            Skip dependency installation
+  LDCONF=0               Do not register the libraries with the dynamic
+                         loader on a root install (default: auto)
 EOF
 }
 
@@ -120,6 +137,7 @@ parse_args() {
     while [ $# -gt 0 ]; do
         case "$1" in
             --dry-run)            DRY_RUN=1 ;;
+            --uninstall)          UNINSTALL=1 ;;
             --unverified-branch)  UNVERIFIED_BRANCH=1 ;;
             --prefix)
                 if [ $# -lt 2 ]; then
@@ -163,6 +181,7 @@ parse_args "$@"
 resolve_ref
 validate_branch "$REF"
 validate_skip_deps "$SKIP_DEPS"
+validate_ldconf "$LDCONF"
 
 # ---------------------------------------------------------------------------
 # Shared install definitions (single source of truth — issue #211, F-BUG-121)
@@ -216,6 +235,11 @@ validate_mmt_base() {
     fi
     if [[ "$p" == */ ]]; then
         echo "ERROR: MMT_BASE must not have trailing slash: $p" >&2; return 1
+    fi
+    # An empty or '.' component would alias another directory (//, /.,
+    # /opt/./mmt): uninstall removes paths under the prefix (issue #485).
+    if [[ "$p/" == *//* || "$p/" == */./* ]]; then
+        echo "ERROR: MMT_BASE must not contain empty or . components: $p" >&2; return 1
     fi
 }
 
@@ -466,6 +490,126 @@ preflight_checks() {
 }
 
 # ---------------------------------------------------------------------------
+# Dynamic-loader registration (issue #485, F-CI-104)
+# ---------------------------------------------------------------------------
+# A root install registers <prefix>/dpi/lib with the dynamic loader, whatever
+# the prefix: the same rule as `make -C sdk install` (LDCONF=auto). The
+# installer writes the drop-in itself too, because the pinned release tag's
+# sdk/Makefile only registered the loader when MMT_BASE was unset — and this
+# script always passes it. LDCONF=0 opts out.
+LD_DROPIN="/etc/ld.so.conf.d/mmt-dpi.conf"
+LD_DROPIN_LEGACY="/etc/ld.so.conf.d/mmt.conf"
+
+# True when the install runs as root: directly, or through sudo because the
+# prefix is not writable by this user.
+installs_as_root() {
+    [ "$(id -u)" -eq 0 ] || ! prefix_writable "$MMT_BASE"
+}
+
+will_register_loader() {
+    [ "$LDCONF" != "0" ] && [ "$OS" = "linux" ] && installs_as_root
+}
+
+# ---------------------------------------------------------------------------
+# Uninstall (issue #485, F-UX-007) — mirrors `make -C sdk uninstall`
+# ---------------------------------------------------------------------------
+# The build checkout is gone after an install, so the installer mirrors
+# `make uninstall` itself: it removes exactly the entries listed in
+# <prefix>/.mmt-dpi-manifest (written at install time) — never a whole
+# directory tree, so another product's files under the prefix survive — then
+# every SDK directory left empty (rmdir, deepest first), and the loader
+# drop-in when it names this prefix. An install that predates the manifest
+# loses only its libmmt_* libraries and plugins; its include and examples
+# trees are kept with a warning, since nothing records which files are ours.
+MANIFEST_NAME=".mmt-dpi-manifest"
+MMT_PLUGIN_SET="libmmt_tcpip libmmt_tmobile libmmt_tdicom libmmt_business_app"
+
+uninstall_mmt() {
+    local lib="$MMT_BASE/dpi/lib" run="" f removed=0 rel p r entries rbase
+    local manifest="$MMT_BASE/$MANIFEST_NAME"
+    step "Uninstalling mmt-dpi from $MMT_BASE"
+
+    # Privilege is needed for a root-owned prefix, or to drop a loader
+    # registration that names this prefix from a directory we cannot write.
+    if installs_as_root || { [ "$(cat "$LD_DROPIN" 2>/dev/null)" = "$lib" ] \
+                             && [ ! -w "$(dirname "$LD_DROPIN")" ]; }; then
+        run="$SUDO"
+        if [ "$(id -u)" -ne 0 ] && [ -z "$run" ]; then
+            fatal "Uninstalling $MMT_BASE needs root and sudo is unavailable — re-run as root"
+        fi
+    fi
+
+    if [ ! -d "$MMT_BASE/dpi" ] && [ ! -d "$MMT_BASE/plugins" ] && [ ! -d "$MMT_BASE/examples" ]; then
+        warn "No MMT-DPI install found under $MMT_BASE"
+    fi
+    if [ -L "$manifest" ]; then
+        fatal "$manifest is a symlink — refusing to uninstall"
+    fi
+    # Entries are removed only when their directory resolves inside the real
+    # prefix: a directory symlink planted under the prefix cannot redirect
+    # the removal elsewhere.
+    rbase="$(resolve_dir "$MMT_BASE")" || rbase="$MMT_BASE"
+    if [ -f "$manifest" ]; then
+        entries="$(grep -v '^#' "$manifest" || true)"
+    else
+        warn "No install manifest ($manifest): the install predates it — removing only the libmmt_* libraries and plugins"
+        warn "Kept $MMT_BASE/dpi/include and $MMT_BASE/examples — remove them by hand"
+        entries="$( (cd "$lib" 2>/dev/null && ls -d libmmt_*.so libmmt_*.so.* libmmt_*.a 2>/dev/null) | sed 's|^|dpi/lib/|'
+                    for f in $MMT_PLUGIN_SET; do echo "plugins/$f.so"; done )"
+    fi
+    # Refuse the whole list before touching anything if one entry could
+    # leave the prefix.
+    while IFS= read -r rel; do
+        case "$rel" in
+            '') ;;
+            /*|.|..|./*|../*|*/.|*/..|*/./*|*/../*|*//*|*[!A-Za-z0-9._/+-]*)
+                fatal "Unsafe manifest entry '$rel' in $manifest — refusing to uninstall" ;;
+        esac
+    done <<< "$entries"
+    while IFS= read -r rel; do
+        [ -n "$rel" ] || continue
+        p="$MMT_BASE/$rel"
+        if [ -L "$p" ] || { [ -e "$p" ] && [ ! -d "$p" ]; }; then
+            r="$(resolve_dir "${p%/*}")" || r=""
+            case "$r" in
+                "$rbase"|"$rbase"/*) $run rm -f -- "$p" ;;
+                *) warn "Skipped $p — its directory resolves outside $rbase" ;;
+            esac
+        fi
+    done <<< "$entries"
+    {
+        while IFS= read -r rel; do
+            [ -n "$rel" ] && [ -d "$MMT_BASE/$rel" ] && [ ! -L "$MMT_BASE/$rel" ] && echo "$rel"
+        done <<< "$entries"
+        printf '%s\n' dpi/include examples dpi/lib plugins dpi
+    } | LC_ALL=C sort -r -u | while IFS= read -r rel; do
+        p="$MMT_BASE/$rel"
+        r="$(resolve_dir "$p")" || continue
+        case "$r" in "$rbase"|"$rbase"/*) ;; *) continue ;; esac
+        if [ ! -L "$p" ]; then
+            $run rmdir -- "$p" 2>/dev/null || warn "Kept non-empty $p"
+        fi
+    done
+    $run rm -f -- "$manifest"
+    if [ -d "$MMT_BASE" ]; then
+        $run rmdir -- "$MMT_BASE" 2>/dev/null || warn "Kept non-empty $MMT_BASE"
+    fi
+
+    for f in "$LD_DROPIN" "$LD_DROPIN_LEGACY"; do
+        if [ -f "$f" ] && [ "$(cat "$f")" = "$lib" ]; then
+            $run rm -f "$f"
+            removed=1
+            success "Removed loader registration $f"
+        fi
+    done
+    if [ "$removed" = "1" ] && check_command ldconfig; then
+        $run ldconfig
+    fi
+
+    success "MMT-DPI removed from $MMT_BASE"
+}
+
+# ---------------------------------------------------------------------------
 # Dry-run plan
 # ---------------------------------------------------------------------------
 print_plan() {
@@ -482,6 +626,11 @@ print_plan() {
         printf "  Elevation  : not needed (prefix writable by this user)\n"
     else
         printf "  Elevation  : sudo (prefix not writable by this user)\n"
+    fi
+    if will_register_loader; then
+        printf "  Loader     : %s + ldconfig (root install)\n" "$LD_DROPIN"
+    else
+        printf "  Loader     : not registered — run programs with LD_LIBRARY_PATH=%s/dpi/lib\n" "$MMT_BASE"
     fi
     printf "  Jobs       : %s\n" "$JOBS"
     if [ "$SKIP_DEPS" = "1" ]; then
@@ -563,17 +712,59 @@ install_mmt() {
     # post-install ldconfig escalation.
     if prefix_writable "$MMT_BASE"; then
         info "Installing to user-writable prefix $MMT_BASE"
-        make ARCH="linux" MMT_BASE="$MMT_BASE" install
+        make ARCH="linux" MMT_BASE="$MMT_BASE" LDCONF="$LDCONF" install
     else
         if [ -z "$SUDO" ]; then
             fatal "Prefix $MMT_BASE is not writable by this user and sudo is unavailable — set MMT_BASE to a user-writable directory or re-run as root"
         fi
         ELEVATED=1
         info "Prefix $MMT_BASE is not writable — installing via sudo"
-        $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" install
+        $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" LDCONF="$LDCONF" install
+    fi
+
+    # The pinned release tag's Makefile writes no install manifest: record
+    # what it copied from this build so --uninstall can remove exactly that.
+    if [ ! -f "$MMT_BASE/$MANIFEST_NAME" ]; then
+        local priv=""
+        [ "$ELEVATED" = "1" ] && priv="$SUDO"
+        write_manifest "$BUILD_DIR/mmt-dpi/sdk" "$priv"
     fi
 
     success "Installation completed"
+}
+
+# write_manifest <sdk dir> [priv] — the same list `make install` records in
+# <prefix>/.mmt-dpi-manifest (sdk/Makefile MMT_LIST_INSTALLED): every entry
+# copied from <sdk dir>, relative to the prefix.
+write_manifest() {
+    local sdk="$1" priv="${2:-}" f
+    local manifest="$MMT_BASE/$MANIFEST_NAME" tmp
+    # Never write through a symlink planted at the manifest name: write a
+    # fresh mktemp file and rename it into place.
+    if [ -L "$manifest" ]; then
+        fatal "$manifest is a symlink — refusing to write the install manifest"
+    fi
+    tmp="$($priv mktemp "$manifest.XXXXXX")" || fatal "Cannot create a temporary manifest under $MMT_BASE"
+    {
+        echo "# mmt-dpi install manifest: paths relative to $MMT_BASE, read by make uninstall"
+        {
+            (cd "$sdk/lib" && ls -d ./*.so.* ./*.a) | sed 's|^\./|dpi/lib/|'
+            for f in libmmt_core libmmt_fuzz libmmt_security $MMT_PLUGIN_SET; do
+                echo "dpi/lib/$f.so"
+            done
+            for f in $MMT_PLUGIN_SET; do echo "plugins/$f.so"; done
+            (cd "$sdk/include" && find . -mindepth 1) | sed 's|^\./|dpi/include/|'
+            (cd "$sdk/examples" && find . -mindepth 1) | sed 's|^\./|examples/|'
+        } | LC_ALL=C sort -u
+    } | $priv tee "$tmp" >/dev/null
+    $priv chmod 0644 "$tmp"
+    $priv mv -f -- "$tmp" "$manifest"
+}
+
+# resolve_dir <dir> — the physical path of an existing directory (cd -P), so
+# symlinked components are resolved; fails when <dir> does not exist.
+resolve_dir() {
+    (cd -P -- "$1" 2>/dev/null && pwd -P)
 }
 
 # ---------------------------------------------------------------------------
@@ -582,19 +773,29 @@ install_mmt() {
 post_install() {
     step "Post-installation setup"
 
-    # Refresh the shared library cache only when the install escalated — a
-    # user-local prefix never wrote to system paths, so ldconfig would be a
-    # pointless privilege grab (issue #211, F-BUG-116).
-    if [ "$ELEVATED" = "1" ]; then
-        if [ "$OS" = "linux" ] && check_command ldconfig; then
-            $SUDO ldconfig 2>/dev/null || true
+    # Register the loader only when the install ran as root — elevated
+    # (ELEVATED = 1) or invoked by root. A user-local prefix never writes to
+    # system paths, so ldconfig would be a pointless privilege grab (issue
+    # #211, F-BUG-116); a root install always registers (issue #485).
+    local lib_dir="$MMT_BASE/dpi/lib"
+    local registered=0
+    if will_register_loader && check_command ldconfig; then
+        local priv=""
+        [ "$ELEVATED" = "1" ] && priv="$SUDO"
+        if [ "$(cat "$LD_DROPIN" 2>/dev/null)" != "$lib_dir" ]; then
+            printf '%s\n' "$lib_dir" | $priv tee "$LD_DROPIN" >/dev/null
+            $priv chmod 0644 "$LD_DROPIN"
         fi
+        $priv ldconfig
+        registered=1
+        success "Registered $lib_dir with the dynamic loader ($LD_DROPIN)"
+    elif [ "$LDCONF" = "0" ]; then
+        info "LDCONF=0: loader not registered — use LD_LIBRARY_PATH=$lib_dir"
     else
-        info "User-local install: skipping ldconfig — use LD_LIBRARY_PATH=$MMT_BASE/dpi/lib"
+        info "User-local install: skipping ldconfig — use LD_LIBRARY_PATH=$lib_dir"
     fi
 
     # Verify installation
-    local lib_dir="$MMT_BASE/dpi/lib"
     if [ -f "$lib_dir/libmmt_core.so" ]; then
         success "Libraries found in $lib_dir"
     else
@@ -621,10 +822,16 @@ post_install() {
     printf "  gcc -o extract_all %s/examples/extract_all.c \\\\\n" "$MMT_BASE"
     printf "      -I %s/dpi/include -L %s/dpi/lib -lmmt_core -ldl -lpcap\n" "$MMT_BASE" "$MMT_BASE"
     printf "\n"
-    printf '%b\n' "${BOLD}Add to your linker path:${NC}"
-    printf "  export LD_LIBRARY_PATH=%s/dpi/lib:\$LD_LIBRARY_PATH\n" "$MMT_BASE"
-    printf "\n"
-    printf "To uninstall:  cd mmt-dpi/sdk && sudo make dist-clean\n"
+    if [ "$registered" = "0" ]; then
+        printf '%b\n' "${BOLD}Add to your linker path:${NC}"
+        printf "  export LD_LIBRARY_PATH=%s/dpi/lib:\$LD_LIBRARY_PATH\n" "$MMT_BASE"
+        printf "\n"
+    fi
+    if [ "$MMT_BASE" = "/opt/mmt" ]; then
+        printf "To uninstall:  curl -fsSL %s | bash -s -- --uninstall\n" "$INSTALLER_URL"
+    else
+        printf "To uninstall:  curl -fsSL %s | bash -s -- --uninstall --prefix %s\n" "$INSTALLER_URL" "$MMT_BASE"
+    fi
     printf "\n"
 }
 
@@ -637,6 +844,17 @@ main() {
     printf "Deep Packet Inspection Library by Montimage\n"
     printf "https://github.com/montimage-projects/mmt-dpi\n"
     printf "\n"
+
+    if [ "$UNINSTALL" = "1" ]; then
+        if [ "$DRY_RUN" = "1" ]; then
+            step "Uninstall plan (dry run — no changes made)"
+            printf "  Prefix     : %s (SDK files, then empty directories)\n" "$MMT_BASE"
+            printf "  Loader     : %s removed when it names %s/dpi/lib\n" "$LD_DROPIN" "$MMT_BASE"
+            return 0
+        fi
+        uninstall_mmt
+        return 0
+    fi
 
     if [ "$DRY_RUN" = "1" ]; then
         print_plan

@@ -4,6 +4,8 @@ sftp-config.json
 .DS_Store
 src/c-doxygen.conf
 *.o
+# plugin-directory stamp of plugins_engine.o (sdk/Makefile, issue #485)
+src/mmt_core/src/plugins_engine.path
 *.lo
 *.la
 *.so*

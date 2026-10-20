@@ -26,7 +26,7 @@ curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/ins
 
 This script (`install.sh`):
 1. Detects your distribution and installs an equivalent distro-specific build
-   dependency set (`install.sh:341-435`); the reference list is
+   dependency set (`install.sh:381-454`); the reference list is
    [Agent Environment Notes §1 Toolchain Requirements](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).
 2. Clones the pinned release tag into a temporary directory and verifies it
    (commit pin, plus the tag signature when present — issue #197).
@@ -34,8 +34,12 @@ This script (`install.sh`):
 4. Installs to `/opt/mmt/dpi/` (override with `MMT_BASE=/custom/path` or
    `--prefix /custom/path`), elevating with `sudo` only when the prefix is not
    writable by the current user (issue #211).
-5. Refreshes the dynamic linker cache (`ldconfig`) only when the install
-   escalated — a user-local prefix skips it.
+5. Registers the libraries with the dynamic loader
+   (`/etc/ld.so.conf.d/mmt-dpi.conf` + `ldconfig`) whenever the install ran
+   as root — elevated or invoked by root — whatever the prefix, and then
+   prints no `LD_LIBRARY_PATH` advice; a user-local prefix skips it.
+   `LDCONF=0` opts out. Uninstall with `bash install.sh --uninstall`
+   (add `--prefix` for a custom prefix).
 
 Manual build:
 

@@ -21,6 +21,12 @@
 #   4. every log line carries the package filename, SHA-256, distro and
 #      architecture so a failure is attributable to one matrix row.
 #
+# With --root-install (issue #485, F-CI-104) the run is the root-install leg:
+# the prefix must be registered with the dynamic loader — the drop-in names
+# <prefix>/dpi/lib and `ldconfig -p` resolves libmmt_core.so there — and every
+# fixture replays with LD_LIBRARY_PATH unset, so the consumer can only find
+# the SDK through the loader cache a root `make install` wrote.
+#
 # Usage:
 #   run-installed-consumer.sh [--prefix DIR] [--package FILE] \
 #       [--distro ID] [--arch ARCH] [--expect-engines|--no-engines]
@@ -33,6 +39,8 @@
 #   --expect-engines   require libmmt_fuzz/libmmt_security (default: on —
 #                      release packages are always built ENABLESEC=1)
 #   --no-engines       skip the engine check (non-ENABLESEC installs)
+#   --root-install     require loader registration; replay with
+#                      LD_LIBRARY_PATH unset (root-install leg)
 #
 # Env:
 #   CC                 compiler (default gcc)
@@ -40,6 +48,8 @@
 #   REQUIRED_PROTOS    override the required-protocol CSV
 #   FIXTURES           override the fixture list (tests, exotic layouts)
 #   PCAP_DIR           override the vendored-pcap directory
+#   LDCONF_FILE        loader drop-in --root-install checks
+#                      (default /etc/ld.so.conf.d/mmt-dpi.conf)
 #
 # Exit: 0 = every check passed; 1 = a check failed; 2 = usage error.
 set -euo pipefail
@@ -57,6 +67,8 @@ PACKAGE="-"
 DISTRO="unknown"
 ARCH="$(uname -m)"
 EXPECT_ENGINES=1
+ROOT_INSTALL=0
+LDCONF_FILE="${LDCONF_FILE:-/etc/ld.so.conf.d/mmt-dpi.conf}"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -66,8 +78,9 @@ while [ $# -gt 0 ]; do
         --arch)           ARCH="${2:?--arch needs a value}"; shift 2 ;;
         --expect-engines) EXPECT_ENGINES=1; shift ;;
         --no-engines)     EXPECT_ENGINES=0; shift ;;
+        --root-install)   ROOT_INSTALL=1; shift ;;
         -h|--help)
-            sed -n '2,40p' "$0"; exit 0 ;;
+            sed -n '2,54p' "$0"; exit 0 ;;
         *) echo "✗ unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -99,7 +112,7 @@ say()  { printf 'installed-consumer[%s|%s|%s|%s] %s\n' \
             "${PKG_NAME}" "${PKG_SHA:0:12}" "${DISTRO}" "${ARCH}" "$*"; }
 fail() { say "✗ $*"; exit 1; }
 
-say "prefix=${PREFIX} engines_expected=${EXPECT_ENGINES}"
+say "prefix=${PREFIX} engines_expected=${EXPECT_ENGINES} root_install=${ROOT_INSTALL}"
 
 LIB="${PREFIX}/dpi/lib"
 INC="${PREFIX}/dpi/include"
@@ -130,6 +143,18 @@ while read -r rel expected _rest; do
 done < "${FIXTURES}"
 say "layout OK — libs, plugins, headers and fixtures present"
 
+# --- 1b. root-install leg: the loader must already know the prefix -----------
+if [ "${ROOT_INSTALL}" -eq 1 ]; then
+    [ -f "${LDCONF_FILE}" ] \
+        || fail "loader drop-in missing: ${LDCONF_FILE} (root install did not register ${LIB})"
+    grep -qxF "${LIB}" "${LDCONF_FILE}" \
+        || fail "loader drop-in ${LDCONF_FILE} does not name ${LIB}"
+    LDCONFIG_BIN="$(command -v ldconfig 2>/dev/null || echo /sbin/ldconfig)"
+    "${LDCONFIG_BIN}" -p 2>/dev/null | grep -F 'libmmt_core.so' | grep -qF "=> ${LIB}/" \
+        || fail "ldconfig -p does not resolve libmmt_core.so under ${LIB}"
+    say "loader OK — ${LDCONF_FILE} registers ${LIB}; ldconfig -p resolves libmmt_core.so"
+fi
+
 # --- 2. compile the consumer against the packaged SDK -------------------------
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
@@ -147,7 +172,13 @@ say "consumer compiled against ${INC} + ${LIB}"
 failures=0
 while read -r rel expected _rest; do
     case "${rel}" in ''|'#'*) continue ;; esac
-    if (cd "${WORK}/run" && LD_LIBRARY_PATH="${LIB}" "${BIN}" \
+    # The root-install leg must resolve the SDK through the loader cache alone.
+    if [ "${ROOT_INSTALL}" -eq 1 ]; then
+        run_env=(env -u LD_LIBRARY_PATH)
+    else
+        run_env=(env LD_LIBRARY_PATH="${LIB}")
+    fi
+    if (cd "${WORK}/run" && "${run_env[@]}" "${BIN}" \
             "${PCAP_DIR}/${rel}" "${expected}" "${REQUIRED_PROTOS}") \
             >"${WORK}/out.log" 2>"${WORK}/err.log"; then
         say "✓ ${rel} -> ${expected} :: $(tail -1 "${WORK}/out.log")"

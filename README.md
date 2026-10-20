@@ -131,7 +131,7 @@ make -j$(nproc)
 sudo make install
 ```
 
-To uninstall: `sudo make dist-clean`
+To uninstall: `sudo make uninstall` (same `MMT_BASE` as the install), or `curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --uninstall` after a one-command install
 
 ### Verify Installation
 

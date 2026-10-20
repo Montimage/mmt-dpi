@@ -133,7 +133,7 @@ separate deployment-time renderer; `docs/_config.yml` declares the Pages
 `url`/`baseurl`, so local builds use the published `/mmt-dpi` prefix too.
 
 No application `.env` file is required: this is a Make-built SDK, configured
-through make variables (`sdk/Makefile:8-13`, `rules/common.mk:3-8`), and the
+through make variables (`sdk/Makefile:8-12`, `rules/common.mk:3-8`), and the
 test runner takes shell variables such as `SANITIZE`
 (`tests/run_all_tests.sh:8-101`). No application service setup is needed for
 the build/test commands below.
@@ -154,7 +154,7 @@ The build produces versioned shared libraries and static archives under
 `sdk/lib/` (`libmmt_core.so.$(VERSION)`, `libmmt_tcpip.so.$(VERSION)`,
 `libmmt_tmobile.so.$(VERSION)`, `libmmt_business_app.so.$(VERSION)`,
 `libmmt_tdicom.so.$(VERSION)`, plus matching `.a` files; the unversioned
-`.so` symlinks are created by `make install`, `sdk/Makefile:53-59`), copies
+`.so` symlinks are created by `make install`, `sdk/Makefile:88-94`), copies
 public headers under `sdk/include/` and example sources under
 `sdk/examples/` (`sdk/bin/` stays empty in a plain build). It does **not**
 require root and does **not** install anything.
@@ -353,13 +353,60 @@ documents link here.
 `MMT_BASE` is the install prefix. Defaults:
 
 - `rules/common.mk:3` — `MMT_BASE ?=/opt/mmt` (used by compile-time paths)
-- `sdk/Makefile:8-13` — when `MMT_BASE` is unset, `make install` targets
-  `/opt/mmt` and sets `NEED_ROOT_PERMISSION := 1` (writes
-  `/etc/ld.so.conf.d/mmt-dpi.conf` and runs `ldconfig`)
+- `sdk/Makefile:8-12` — when `MMT_BASE` is unset, `make install` targets
+  `/opt/mmt`
+
+### Install, loader registration and uninstall (issue #485)
+
+- **`make install` never compiles.** It consumes the artifacts of a prior
+  `make -C sdk` and refuses (`--check-built`, `sdk/Makefile:70-80`) when
+  there is no build, or when the build's baked-in plugin directory is not
+  this install's `$(MMT_PLUGINS)` — build and install with the same
+  `MMT_BASE`. So `sudo make install` runs no compiler as root.
+- **The loader is registered by privilege, not by prefix**
+  (`sdk/Makefile:58-68`). `LDCONF=auto` (default): an install run as root
+  writes `/etc/ld.so.conf.d/mmt-dpi.conf` naming `$(MMT_LIB)` and runs
+  `ldconfig`, whatever `MMT_BASE` is; an unprivileged install touches no
+  system path and prints the `LD_LIBRARY_PATH` to use. `LDCONF=0` opts a
+  root install out; `LDCONF=1` forces registration; `LDCONF_DIR` and
+  `LDCONFIG` relocate the drop-in and the command (the installer suite uses
+  a staged directory and a fake `ldconfig`).
+- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:160-201`)
+  removes exactly the entries `install` recorded in
+  `<prefix>/.mmt-dpi-manifest` (one path per line, relative to the prefix,
+  merged across reinstalls), then the SDK directories left empty (`rmdir`,
+  deepest first — never `rm -rf` on a tree and never a directory above the
+  prefix), and the drop-in when it names that prefix's `dpi/lib`; files
+  another product put under the prefix — even inside `examples/` or
+  `dpi/include/` — survive. A symlinked manifest is refused, the manifest
+  is written via `mktemp` + rename (never through a planted symlink), and an
+  entry is removed only when its directory resolves (`cd -P`) inside the
+  real prefix, so a directory symlink under the prefix cannot redirect a
+  root uninstall; keep the prefix writable only by the installing user.
+  An install that predates the manifest is
+  reconstructed from the checkout's `sdk/include` and `sdk/examples` when
+  they exist; otherwise only the `libmmt_*` libraries and plugins go and the
+  include/examples trees are kept with a warning. `dist-clean` is kept as an
+  alias. From the one-command installer:
+  `bash install.sh --uninstall [--prefix <dir>]`, which applies the same
+  manifest rules (and writes the manifest itself after installing from the
+  pinned tag, whose Makefile predates it).
+- **Prefix guard.** `install` and `uninstall` refuse an unsafe layout before
+  touching anything: `MMT_BASE` and each of `MMT_DPI`, `MMT_LIB`, `MMT_INC`,
+  `MMT_PLUGINS`, `MMT_EXAMS` must be absolute, at most 256 characters of
+  `[A-Za-z0-9._/-]` (no whitespace or glob character), without an empty,
+  `.` or `..` component or a trailing slash (so `/`, `//`, `/.` and
+  `/opt/*` are refused), and each SDK directory must lie strictly under
+  `MMT_BASE`. `install.sh`'s `validate_mmt_base` applies the same rules.
+- The root leg (install as root → drop-in + `ldconfig -p`, the installed
+  consumer with `LD_LIBRARY_PATH` unset, uninstall → nothing left) writes
+  `/etc`, so it runs only in a disposable container:
+  `tools/ci/tests/run-root-install.sh`, the `root-install` job of
+  `.github/workflows/c-cpp.yml`. Never run it on a development host.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:316-321`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:453-458`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -397,10 +444,12 @@ and restores a clean default build on exit:
 
 The plugin repository path is baked into compiled code as
 `PLUGINS_REPOSITORY_OPT` (`-DPLUGINS_REPOSITORY_OPT=\"$(MMT_PLUGINS)\"`,
-`rules/common.mk:30`). Every SDK target invocation
-refreshes `plugins_engine.o` (`sdk/Makefile:28-35`), including during install;
-this is not conditional on a detected prefix change. Keep `MMT_BASE` identical across
-build/install invocations so compilation and installation use one path.
+`rules/common.mk:30`). `plugins_engine.o` depends on a stamp file holding
+the plugin directory it was compiled with (`sdk/Makefile:25-29`): a build
+with a different `MMT_BASE` recompiles exactly that object, a rebuild with
+the same one compiles nothing, and `make install` — which never builds —
+refuses a mismatch. Keep `MMT_BASE` identical across build/install
+invocations so compilation and installation use one path.
 
 ## 5. Sanitizer Build Profiles
 
@@ -481,7 +530,7 @@ next build of any profile deletes them, so harvest them first with
 
 - Object/header selection: `rules/common.mk:201-203, 225-228, 310-313`
 - Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 215-218, 226-230, 263-279`
-- Install symlinks for both engines: `sdk/Makefile:54-55, 140-141`
+- Install symlinks for both engines: `sdk/Makefile:89-90, 282-283`
 
 Usage (requires `libxml2-dev`):
 

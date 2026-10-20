@@ -170,7 +170,7 @@ endif   # release builds only
 # is loud. The warning is a BUILD warning: goals that never compile (clean,
 # dist-clean) keep quiet.
 ifeq (,$(MMT_RELEASE_BUILD))
-ifneq (,$(filter-out clean dist-clean,$(MAKECMDGOALS)))
+ifneq (,$(filter-out clean dist-clean uninstall,$(MAKECMDGOALS)))
 $(warning MMT-DPI: release hardening DISABLED for this build (DEBUG/VALGRIND/BUILD=$(BUILD)) - the libraries get no _FORTIFY_SOURCE, stack protector, -fcf-protection or LTO; do not ship this build)
 endif
 ifeq (,$(MAKECMDGOALS))

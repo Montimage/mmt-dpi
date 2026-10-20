@@ -44,7 +44,7 @@ make
 sudo make install
 ```
 
-To uninstall run `sudo make dist-clean`
+To uninstall run `sudo make uninstall` (pass the same `MMT_BASE` as the install). A root install registers the libraries with the dynamic loader; `make install` never compiles, so run `make` first.
 
 # [Compile MMT-DPI for ARM architecture by cross-compiler](./Compiling-mmt-sdk-for-ARM-architecture-by-cross-compiler.md)
 

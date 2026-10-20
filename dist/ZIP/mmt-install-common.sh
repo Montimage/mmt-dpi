@@ -69,6 +69,11 @@ validate_mmt_base() {
     if [[ "$p" == */ ]]; then
         echo "ERROR: MMT_BASE must not have trailing slash: $p" >&2; return 1
     fi
+    # An empty or '.' component would alias another directory (//, /.,
+    # /opt/./mmt): uninstall removes paths under the prefix (issue #485).
+    if [[ "$p/" == *//* || "$p/" == */./* ]]; then
+        echo "ERROR: MMT_BASE must not contain empty or . components: $p" >&2; return 1
+    fi
 }
 
 # True when the current user can create/write inside prefix "$1": walks up to

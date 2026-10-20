@@ -24,7 +24,7 @@ include $(RULESDIR)/common-linux.mk
 #
 # `clean`/`dist-clean` are exempt so an old toolchain can still wipe the
 # tree.
-ifeq ($(filter clean dist-clean,$(MAKECMDGOALS)),)
+ifeq ($(filter clean dist-clean uninstall,$(MAKECMDGOALS)),)
 MMT_GCC_MAJOR := $(shell echo | $(CC) -dM -E -x c - 2>/dev/null | \
     grep -q -e '__clang__' -e '__INTEL_COMPILER' || \
     echo | $(CC) -dM -E -x c - 2>/dev/null | \

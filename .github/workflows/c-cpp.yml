@@ -410,6 +410,24 @@ jobs:
       # stack actually landed on the binaries CI would ship.
       run: bash tools/ci/check-hardening-flags.sh --built
 
+  root-install:
+    # Issue #485 (F-CI-104, F-UX-007, F-SEC-005, F-CI-116): a root
+    # `make install` with an explicit MMT_BASE must register the loader, the
+    # installed consumer must run with LD_LIBRARY_PATH unset, `make uninstall`
+    # must leave neither the prefix nor the drop-in, and `make -n install`
+    # must not compile. It writes /etc, so it runs in a throwaway container
+    # (the ubuntu:24.04 pin recorded in tools/ci/base-images.txt).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Root install / uninstall round trip in ubuntu:24.04
+      run: |
+        docker run --rm -v "$PWD":/work -w /work \
+          "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254" \
+          bash tools/ci/tests/run-root-install.sh --install-deps
+
   assertions-live:
     # Issue #214 (F-SEC-011): the default build defines -DNDEBUG, which
     # compiles every assert() out — CI was green while exercising a library
