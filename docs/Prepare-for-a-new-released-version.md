@@ -35,7 +35,7 @@ dated `CHANGELOG.md` entry:
 
 | Site | What the check reads |
 |------|----------------------|
-| `install.sh` | `RELEASE_TAG="vx.y.z"` (update `RELEASE_TAG_SHA`, the commit the tag resolves to, alongside it — not compared) |
+| `install.sh` | `RELEASE_TAG="vx.y.z"` (with `RELEASE_TAG_SHA`, the peeled commit the tag resolves to — `tools/ci/check-release-tag.sh` fails when it is not) |
 | `README.md` | `Current release: [vx.y.z]` and `` pinned release tag (`vx.y.z`) `` |
 | `docs/_includes/quick-start.md` | `` pinned release tag (`vx.y.z`) `` |
 | `docs/index.html` | the hero eyebrow `vx.y.z · Apache-2.0 · …` |
@@ -47,8 +47,10 @@ Release order:
 2. When cutting the release, replace `(unreleased)` with the release date,
    then tag that commit `vx.y.z`.
 3. After the tag is published, update the published-release sites in one
-   follow-up PR: `RELEASE_TAG`, `RELEASE_TAG_SHA` (`git rev-parse vx.y.z^{commit}`)
-   and the README/site mentions.
+   follow-up PR: run `bash tools/ci/check-release-tag.sh --write-pin vx.y.z`,
+   which writes `RELEASE_TAG` and `RELEASE_TAG_SHA` from the peeled tag
+   (`git rev-parse vx.y.z^{commit}`, never the annotated tag object), then
+   update the README/site mentions.
 
 ## Verify the classification
 

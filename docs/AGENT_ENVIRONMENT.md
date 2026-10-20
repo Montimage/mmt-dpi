@@ -80,7 +80,10 @@ sums. A missing git history is a hard error under `CI=true` — it used to
 silently downgrade the package revision to a date stamp; local tarball
 builds get the deterministic `nogit` revision and a warning instead. Release
 tags are gated by `tools/ci/check-release-tag.sh`, which requires the pushed
-tag to equal `v$(VERSION)` before the publish job runs.
+tag to equal `v$(VERSION)` before the publish job runs; run without a tag
+it checks that `install.sh`'s `RELEASE_TAG_SHA` is the peeled commit of its
+`RELEASE_TAG` (issue #484 — skipped when the tag is not fetched, fatal under
+`REQUIRE_RELEASE_TAG=1`, as the `version-agreement` job runs it).
 
 Notes:
 

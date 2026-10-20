@@ -30,7 +30,7 @@ A high-performance C library for deep packet inspection (DPI), designed to extra
 Install MMT-DPI with a single command (installs dependencies, builds, and installs automatically):
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 ```
 
 or using `wget`:
@@ -54,16 +54,16 @@ full install walkthrough is the
 
 ```bash
 # Preview the install plan without changing anything
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --dry-run
+curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash -s -- --dry-run
 
 # Install to a custom directory
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
+curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | MMT_BASE=/usr/local/mmt bash
 
 # Build a development branch instead of the pinned release (unverified — explicit opt-in)
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=dev bash -s -- --unverified-branch
+curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | BRANCH=dev bash -s -- --unverified-branch
 
 # Skip automatic dependency installation
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
+curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | SKIP_DEPS=1 bash
 ```
 
 ### Pre-built packages

@@ -110,6 +110,22 @@ check "install.sh runs standalone (no sibling repo files)" \
     bash -c "cd '${SA}' && bash install.sh --prefix '${WORK}/sa-prefix' --dry-run"
 check_fail "standalone run still rejects a metachar prefix" \
     bash -c "cd '${SA}' && bash install.sh --prefix '/tmp/x;id' --dry-run"
+# Real `curl | bash` (script on stdin) from a directory that looks like a
+# checkout: BASH_SOURCE[0] is empty there, and the installer must not resolve
+# its own directory to the caller's cwd and source a foreign common file
+# (issue #484, F-UX-003). The decoy would announce itself and disable the
+# prefix validator.
+DECOY="${WORK}/decoy"; mkdir -p "$DECOY/dist/ZIP"; touch "$DECOY/install.sh"
+printf 'echo DECOY-SOURCED\nvalidate_mmt_base() { return 0; }\n' \
+    > "$DECOY/dist/ZIP/mmt-install-common.sh"
+check "piped install.sh ignores a checkout-shaped cwd" \
+    bash -c "cd '${DECOY}' && bash -s -- --dry-run < '${REPO_ROOT}/install.sh' > out.txt 2>&1 && ! grep -q DECOY-SOURCED out.txt"
+check_fail "piped install.sh still rejects a metachar prefix" \
+    bash -c "cd '${DECOY}' && bash -s -- --prefix '/tmp/x;id' --dry-run < '${REPO_ROOT}/install.sh'"
+# EL8/EL9 keep libpcap-devel in a disabled repo: both RHEL-family branches
+# must enable CRB / PowerTools before installing (issue #484, F-CI-106).
+check "dnf and yum branches enable CRB first" \
+    bash -c "[ \"\$(awk '/^install_deps_linux/,/^}/' '${REPO_ROOT}/install.sh' | grep -c 'enable_el_builder_repo \(dnf\|yum\)')\" -eq 2 ]"
 
 # --- 4. build-package.sh: --dry-run + tracked artifact ---------------------
 echo "--- build-package.sh ---"

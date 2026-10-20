@@ -366,6 +366,16 @@ jobs:
       run: bash scripts/validate-release-prep.sh
     - name: Version agreement self-test (mismatch fixtures must fail)
       run: bash tools/ci/tests/test-version-agreement.sh
+    - name: Installer pin is the peeled release-tag commit (issue #484)
+      # The checkout is shallow and tagless: fetch exactly the tag install.sh
+      # pins, then require it — a RELEASE_TAG_SHA that is not
+      # `git rev-parse "$RELEASE_TAG^{commit}"` aborts every one-liner install.
+      run: |
+        tag="$(sed -n 's/^RELEASE_TAG="\([^"]*\)".*/\1/p' install.sh | head -n 1)"
+        git fetch --no-tags --depth=1 origin "+refs/tags/${tag}:refs/tags/${tag}"
+        REQUIRE_RELEASE_TAG=1 bash tools/ci/check-release-tag.sh
+    - name: Release-tag gate self-test (stale-pin fixtures must fail)
+      run: bash tools/ci/tests/test-release-tag-pin.sh
 
   build:
 

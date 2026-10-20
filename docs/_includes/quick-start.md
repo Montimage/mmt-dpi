@@ -1,7 +1,7 @@
 Install MMT-DPI with a single command (installs dependencies, builds, and installs automatically):
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 ```
 
 or using `wget`:

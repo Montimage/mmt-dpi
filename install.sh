@@ -4,7 +4,7 @@
 # https://github.com/montimage-projects/mmt-dpi
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 #   wget -qO- https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/install.sh | bash
 #
 # By default the installer clones the pinned release tag below and verifies it
@@ -26,10 +26,10 @@
 #   SKIP_DEPS=1            - Skip dependency installation
 #
 # Examples:
-#   curl -sSL https://...install.sh | bash
-#   curl -sSL https://...install.sh | bash -s -- --dry-run
-#   curl -sSL https://...install.sh | MMT_BASE=/usr/local/mmt bash
-#   curl -sSL https://...install.sh | BRANCH=dev bash -s -- --unverified-branch
+#   curl -fsSL https://...install.sh | bash
+#   curl -fsSL https://...install.sh | bash -s -- --dry-run
+#   curl -fsSL https://...install.sh | MMT_BASE=/usr/local/mmt bash
+#   curl -fsSL https://...install.sh | BRANCH=dev bash -s -- --unverified-branch
 #
 
 set -euo pipefail
@@ -45,8 +45,12 @@ REPO_URL="https://github.com/montimage-projects/mmt-dpi.git"
 # Default ref: the pinned release tag, never a moving branch (issue #197,
 # F-SEC-006 / F-BUG-118). RELEASE_TAG_SHA pins the commit the tag must resolve
 # to, so a moved or re-created tag fails verification right after cloning.
+# It must be the PEELED commit (`git rev-parse "$RELEASE_TAG^{commit}"`), never
+# the annotated tag object: write both lines with
+# `bash tools/ci/check-release-tag.sh --write-pin vX.Y.Z`, and
+# `bash tools/ci/check-release-tag.sh` fails CI when they disagree (issue #484).
 RELEASE_TAG="v1.9.0"
-RELEASE_TAG_SHA="af4c3cd7c4d04307411ef17bb16971a0df47f3d1"
+RELEASE_TAG_SHA="04649942afe490da81f72f4c112558447caad91e"
 
 BRANCH="${BRANCH:-}"           # opt-in moving ref (env BRANCH or --branch)
 UNVERIFIED_BRANCH=0            # set by --unverified-branch
@@ -223,7 +227,14 @@ load_common_defs() {
     COMMON_FILE="$f"
 }
 
-_INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
+# Only a script read from a file has a directory. Under `curl | bash` the
+# script comes from stdin: BASH_SOURCE[0] is empty and $0 is "bash", whose
+# dirname is "." — the caller's working directory, which must never be
+# trusted as the installer's checkout (issue #484, F-UX-003).
+_INSTALLER_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+    _INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+fi
 if [ -n "$_INSTALLER_DIR" ] && [ -f "$_INSTALLER_DIR/install.sh" ]; then
     load_common_defs "$_INSTALLER_DIR/dist/ZIP/mmt-install-common.sh" || true
 fi
@@ -322,6 +333,32 @@ if [ "$(id -u)" -ne 0 ]; then
     fi
 fi
 
+# EL8/EL9 ship libpcap-devel in a repository that is disabled by default —
+# CRB (CodeReady Builder) on EL9, PowerTools on EL8 — so the dnf/yum install
+# below fails with "No match for argument: libpcap-devel" unless it is enabled
+# first. Same logic as tools/ci/install-build-deps.sh (issue #484, F-CI-106);
+# Fedora carries the package in its main repository and is left untouched.
+enable_el_builder_repo() {
+    local pm="$1" ids=""
+    if [ -r /etc/os-release ]; then
+        # shellcheck disable=SC1091  # runtime file, sourced in a subshell
+        ids="$(. /etc/os-release && printf ' %s %s ' "${ID:-}" "${ID_LIKE:-}")"
+    fi
+    case "$ids" in
+        *" rhel "*|*" centos "*) ;;
+        *) return 0 ;;
+    esac
+    info "Enabling the CRB / PowerTools repository (libpcap-devel lives there on EL8/EL9)"
+    $SUDO "$pm" install -y dnf-plugins-core || true
+    if $SUDO "$pm" config-manager --set-enabled crb 2>/dev/null \
+        || $SUDO "$pm" config-manager --set-enabled powertools 2>/dev/null; then
+        success "CRB / PowerTools repository enabled"
+    else
+        warn "Could not enable CRB / PowerTools — on RHEL run:"
+        warn "  subscription-manager repos --enable codeready-builder-for-rhel-\$(rpm -E %rhel)-\$(uname -m)-rpms"
+    fi
+}
+
 install_deps_linux() {
     step "Installing build dependencies (Linux)"
 
@@ -339,6 +376,7 @@ install_deps_linux() {
             libnghttp2-dev
     elif check_command dnf; then
         info "Detected Fedora/RHEL (dnf)"
+        enable_el_builder_repo dnf
         $SUDO dnf install -y \
             gcc \
             gcc-c++ \
@@ -349,6 +387,7 @@ install_deps_linux() {
             libnghttp2-devel
     elif check_command yum; then
         info "Detected CentOS/RHEL (yum)"
+        enable_el_builder_repo yum
         $SUDO yum install -y \
             gcc \
             gcc-c++ \

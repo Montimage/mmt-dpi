@@ -7,9 +7,13 @@
 # tools/ci/run-cppcheck.sh (issue #345), which drives the real gate with a
 # stub cppcheck on PATH, and the version-agreement self-test beside
 # scripts/validate-release-prep.sh (issue #483), which runs the real validator
-# on fixtures where one version site disagrees with rules/common.mk.
+# on fixtures where one version site disagrees with rules/common.mk, and the
+# release-tag gate self-test beside tools/ci/check-release-tag.sh (issue
+# #484), which asserts install.sh's RELEASE_TAG_SHA is the peeled tag commit
+# on a fixture repository with an annotated tag.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
 bash "${TESTS_DIR}/test-cppcheck-version.sh"
 bash "${TESTS_DIR}/test-version-agreement.sh"
+bash "${TESTS_DIR}/test-release-tag-pin.sh"
