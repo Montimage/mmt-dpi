@@ -1,6 +1,12 @@
 RELEASE NOTES
 ---
 
+Unreleased
+---
+
+### Build, CI and packaging
+- give the secret scan real detection rules: `.gitleaks.toml` loaded no rules (only a legacy `[allowlist]`), so the scan passed on any secret; it now extends gitleaks' default ruleset, uses `[[allowlists]]` (the S1AP regex matches the whole finding via `regexTarget = "match"`), suppresses the 52 history-only `.ep` false positives by fingerprint in `.gitleaksignore`, and `tools/ci/check-gitleaks-allowlist.sh` fails a rule-less config; the new `tools/ci/tests/test-gitleaks-canary.sh` (secret-scan job) asserts a planted AWS key fails `tools/ci/run-gitleaks.sh`; SECURITY.md and CONTRIBUTING.md describe the actual pinned v8.30.1 scan (#488)
+
 Version 1.9.0 (19 July 2026)
 ---
 

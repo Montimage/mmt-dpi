@@ -1,7 +1,63 @@
-# Gitleaks allowlist — one fingerprint per line.
-# Add entries here only after triage confirms a false positive.
-# Format examples:
-#   generic-api-key:src/mmt_mobile/s1ap/s1ap_common.c:687
-#   linear-client-secret:docs/DOCTOR/system_architecture.ep:203
-# Path/regex allowlists live in .gitleaks.toml; use this file for
-# historical fingerprint suppressions that cannot be expressed as a path/regex.
+# Gitleaks allowlist — one fingerprint per line (<commit>:<path>:<rule>:<line>).
+# Add entries here only after triage confirms a false positive, with a comment
+# saying why. Path/regex allowlists live in .gitleaks.toml; this file holds
+# suppressions that cannot be expressed as a path or regex without widening
+# the scan — chiefly findings in files that exist only in git history.
+
+# docs/DOCTOR/system_architecture.ep (history only — the file is no longer
+# tracked): SVG `linearGradient id="..."` attributes, which the default
+# linear-client-secret rule reads as Linear OAuth secrets. Triaged as false
+# positives in issue #488. A path rule for docs/DOCTOR/ would also exempt any
+# future file there, so each finding is pinned by fingerprint instead.
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:203
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:207
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:215
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:216
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:220
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:221
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:222
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:223
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:227
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:231
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:244
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:248
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:252
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:373
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:377
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:385
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:386
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:390
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:391
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:392
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:393
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:397
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:401
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:414
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:418
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:422
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:611
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:615
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:623
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:624
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:628
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:629
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:630
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:631
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:635
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:639
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:652
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:656
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:660
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:781
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:785
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:793
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:794
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:798
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:799
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:800
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:801
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:805
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:809
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:822
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:826
+488fa35295ba6052f1a00dc25c2e7dd6524b6192:docs/DOCTOR/system_architecture.ep:linear-client-secret:830

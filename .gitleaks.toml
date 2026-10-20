@@ -7,8 +7,23 @@ title = "mmt-dpi gitleaks config"
 # to cover the whole tree — an unanchored `.*\.ep$` allowlisted every file
 # with that extension anywhere in the repository (issue #191, F-SEC-013).
 
-[allowlist]
-description = "false positives and non-secret fixtures"
+# Detection rules: gitleaks' built-in default ruleset. Without this table a
+# config file that defines no [[rules]] scans with *zero* rules, so every
+# secret passes (issue #488, F-SEC-001). tools/ci/check-gitleaks-allowlist.sh
+# fails the secret-scan job if it is removed, and
+# tools/ci/tests/test-gitleaks-canary.sh proves a planted key is caught.
+[extend]
+useDefault = true
+
+# Allowlists use the gitleaks >= 8.25 [[allowlists]] array; the legacy
+# singular [allowlist] table is deprecated.
+#
+# Fingerprint suppressions for findings that exist only in git history (no
+# path or regex can express them without widening the scan) live in
+# .gitleaksignore.
+
+[[allowlists]]
+description = "non-secret fixtures: generated codecs, packet captures, diagrams"
 paths = [
     # Generated ASN.1 codecs: high-entropy constant tables, no secrets.
     '''^src/mmt_mobile/asn1c/''',
@@ -30,7 +45,13 @@ paths = [
     '''^docs/docs/.*\.ep$''',
     '''^docs/images/.*\.ep$''',
 ]
+
+[[allowlists]]
+description = "S1AP field access that trips the generic-api-key heuristic"
+# Match the regex against the whole finding ("s1apUES1APIDs_p->choice..."),
+# not just the extracted secret: the default target is the secret, which
+# never contains the variable name, so the entry suppressed nothing.
+regexTarget = "match"
 regexes = [
-    # S1AP field access that trips the generic-api-key heuristic.
     '''s1apUES1APIDs_p->choice''',
 ]

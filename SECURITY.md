@@ -63,9 +63,10 @@ In scope: the MMT-DPI library and its first-party SDK/plugins shipped in this re
 
 ## Automated Secret Scanning
 
-- **CI:** every push and pull request runs `gitleaks detect --no-banner --redact --verbose` via `gitleaks/gitleaks-action@v2` (see `c-cpp.yml:secret-scan`). The job fails the workflow if a new secret is detected.
-- **Local:** `pre-commit run --all-files` runs the same `gitleaks protect --staged --redact --verbose` check before commit. Install hooks with `pre-commit install`.
-- False positives can be allowlisted in `.gitleaksignore` at the repository root (one fingerprint per line — add a comment explaining why).
+- **CI:** every push and pull request runs the `secret-scan` job in `.github/workflows/c-cpp.yml`. It scans the full git history with `gitleaks/gitleaks-action` (v3.0.0, pinned by commit SHA); where that action cannot run — it needs a `GITLEAKS_LICENSE` secret on organization accounts — `tools/ci/run-gitleaks.sh` runs the pinned gitleaks **v8.30.1** binary, verified by SHA-256 before use, and `tools/ci/assert-gitleaks-ran.sh` fails the job if neither scanner ran. Any finding fails the workflow.
+- **Detection rules:** `.gitleaks.toml` extends gitleaks' built-in default ruleset (`[extend] useDefault = true`) and adds only `[[allowlists]]` for non-secret fixtures. `tools/ci/check-gitleaks-allowlist.sh` fails the job if the rules are dropped or an allowlist entry stops matching a tracked file, and `tools/ci/tests/test-gitleaks-canary.sh` plants a synthetic AWS key in a throwaway repository and asserts `tools/ci/run-gitleaks.sh` exits non-zero.
+- **Local:** `bash tools/ci/run-gitleaks.sh` runs the CI scan on your checkout; `pre-commit run --all-files` runs the `gitleaks git --staged` hook (gitleaks v8.30.1, `.pre-commit-config.yaml`) with the same `.gitleaks.toml`. Install hooks with `pre-commit install`.
+- False positives are suppressed by fingerprint (`<commit>:<path>:<rule>:<line>`) in `.gitleaksignore` at the repository root, one per line with a comment explaining why — only after triage confirms the finding is not a secret.
 
 ## Past Advisories
 

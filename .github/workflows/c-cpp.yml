@@ -449,6 +449,11 @@ jobs:
     - name: Check the gitleaks allowlist for drift
       run: bash tools/ci/check-gitleaks-allowlist.sh
 
+    # A config with no detection rules passes on any secret (issue #488,
+    # F-SEC-001): prove the scan catches a planted key before trusting it.
+    - name: Canary — the secret scan catches a planted key
+      run: bash tools/ci/tests/test-gitleaks-canary.sh
+
     - name: Secret scan (gitleaks-action)
       id: action-scan
       continue-on-error: true
@@ -456,6 +461,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        # The action defaults to gitleaks 8.24.3, which predates [[allowlists]]
+        # (8.25); run the same release as tools/ci/run-gitleaks.sh (#488).
+        GITLEAKS_VERSION: 8.30.1
 
     - name: Secret scan (pinned gitleaks binary, fallback)
       if: steps.action-scan.outcome != 'success'

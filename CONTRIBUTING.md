@@ -111,7 +111,7 @@ See the [Add New Protocol](docs/Add-New-Protocol.md) guide for detailed instruct
 
 ## Security and Secret Scanning
 
-- **Never commit secrets** (API keys, tokens, private keys, credentials). CI runs [Gitleaks](https://github.com/gitleaks/gitleaks) on every push/PR (`.github/workflows/c-cpp.yml:secret-scan` with config `.gitleaks.toml`); the same check runs locally via `pre-commit` (`.pre-commit-config.yaml:gitleaks` → `gitleaks git --staged`). Install hooks with `pre-commit install` and run `pre-commit run --all-files` before pushing.
+- **Never commit secrets** (API keys, tokens, private keys, credentials). CI runs [Gitleaks](https://github.com/gitleaks/gitleaks) on every push/PR (`.github/workflows/c-cpp.yml:secret-scan` with config `.gitleaks.toml`, which extends gitleaks' default ruleset); run the same full-history scan locally with `bash tools/ci/run-gitleaks.sh` (pinned v8.30.1). The staged-changes check runs via `pre-commit` (`.pre-commit-config.yaml:gitleaks` → `gitleaks git --staged`). Install hooks with `pre-commit install` and run `pre-commit run --all-files` before pushing.
 - If you suspect a secret was committed, follow [SECURITY.md](SECURITY.md) and notify maintainers **privately** (GitHub Security Advisory or `contact@montimage.eu`) — do not open a public issue — and rotate the credential immediately.
 
 ## Reporting Issues

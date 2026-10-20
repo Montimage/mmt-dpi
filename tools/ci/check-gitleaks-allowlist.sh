@@ -10,6 +10,11 @@
 # file class. Both are caught here: a `paths` entry must match at least one
 # tracked file, and a `regexes` entry must match content in at least one.
 #
+# It also asserts the config has detection rules at all (issue #488,
+# F-SEC-001): a config with no [[rules]] and no `[extend] useDefault = true`
+# scans with zero rules, so the scan passes on any secret. The legacy
+# singular `[allowlist]` table is rejected in favour of `[[allowlists]]`.
+#
 # Exit 0 when every pattern matches, 1 otherwise.
 #
 # Usage: bash tools/ci/check-gitleaks-allowlist.sh [path/to/.gitleaks.toml]
@@ -52,11 +57,12 @@ stripped = "\n".join(lines)
 
 
 def block(name):
-    """Return the ''' ''' quoted entries of the named array, or None if absent."""
-    m = re.search(name + r"\s*=\s*\[(.*?)\]", stripped, re.S)
-    if not m:
+    """Return the ''' ''' quoted entries of every array with this name (one
+    per [[allowlists]] table), or None if there is none."""
+    arrays = re.findall(r"^\s*" + name + r"\s*=\s*\[(.*?)\]", stripped, re.S | re.M)
+    if not arrays:
         return None
-    return re.findall(r"'''(.*?)'''", m.group(1), re.S)
+    return [e for a in arrays for e in re.findall(r"'''(.*?)'''", a, re.S)]
 
 
 def compile_or_fail(pat, kind, failures):
@@ -69,6 +75,26 @@ def compile_or_fail(pat, kind, failures):
 
 failures = []
 checked = 0
+
+# Detection rules: without them every allowlist below is moot.
+extend = re.search(r"^\s*\[extend\]\s*$(.*?)(?=^\s*\[|\Z)", stripped, re.S | re.M)
+use_default = bool(extend and re.search(r"^\s*useDefault\s*=\s*true\s*$",
+                                        extend.group(1), re.M))
+own_rules = bool(re.search(r"^\s*\[\[rules\]\]\s*$", stripped, re.M))
+if use_default:
+    print("  ok  rules   [extend] useDefault = true (gitleaks default ruleset)")
+elif own_rules:
+    print("  ok  rules   config defines its own [[rules]]")
+else:
+    failures.append(
+        "config has no detection rules: no `[extend] useDefault = true` and no [[rules]]\n"
+        "      gitleaks then scans with zero rules and passes on any secret (issue #488)"
+    )
+
+if re.search(r"^\s*\[allowlist\]\s*$", stripped, re.M):
+    failures.append(
+        "legacy `[allowlist]` table found — use `[[allowlists]]` (gitleaks >= 8.25)"
+    )
 
 paths = block("paths")
 if paths is None:
@@ -121,13 +147,14 @@ if checked == 0:
 
 if failures:
     print("")
-    print(f"✗ {len(failures)} stale gitleaks allowlist pattern(s) in {config_path}:")
+    print(f"✗ {len(failures)} gitleaks config problem(s) in {config_path}:")
     for f in failures:
         print(f"    - {f}")
     print("")
-    print("To fix:  remove the dead entry from .gitleaks.toml, or correct its path")
+    print("To fix:  restore the detection rules, migrate to [[allowlists]], or remove")
+    print("         the dead entry from .gitleaks.toml / correct its path")
     sys.exit(1)
 
 print("")
-print(f"✓ all {checked} gitleaks allowlist pattern(s) still match tracked files")
+print(f"✓ detection rules present; all {checked} gitleaks allowlist pattern(s) still match tracked files")
 PYEOF
