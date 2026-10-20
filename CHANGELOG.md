@@ -1,14 +1,15 @@
 RELEASE NOTES
 ---
 
-Unreleased
+Version 1.9.1 (unreleased)
 ---
 
 ### Build, CI and packaging
 - give the secret scan real detection rules: `.gitleaks.toml` loaded no rules (only a legacy `[allowlist]`), so the scan passed on any secret; it now extends gitleaks' default ruleset, uses `[[allowlists]]` (the S1AP regex matches the whole finding via `regexTarget = "match"`), suppresses the 52 history-only `.ep` false positives by fingerprint in `.gitleaksignore`, and `tools/ci/check-gitleaks-allowlist.sh` fails a rule-less config; the new `tools/ci/tests/test-gitleaks-canary.sh` (secret-scan job) asserts a planted AWS key fails `tools/ci/run-gitleaks.sh`; SECURITY.md and CONTRIBUTING.md describe the actual pinned v8.30.1 scan (#488)
+- make `rules/common.mk` `VERSION` the single version source: bump to 1.9.1 (the v1.9.0 tag shipped `VERSION := 1.8.0`); `scripts/validate-release-prep.sh` now compares every version site with it — `mmt_core.h`, the ZIP fallback, this file's topmost heading, `debian/changelog` when present, and the installer's pinned `RELEASE_TAG` with the README and site mentions of it — and runs as its own blocking PR job, `version-agreement`, with a mismatch-fixture self-test; the release checklist lists exactly those sites, the v1.9.0 date is corrected to its tag date, and PRs now add their line to the topmost `Version x.y.z (unreleased)` section (#483)
 - repin the centos-stream9 base image twice after upstream digest GCs; quay retags `stream9` about weekly and drops old manifests (#587, #590)
 
-Version 1.9.0 (19 July 2026)
+Version 1.9.0 (26 September 2026)
 ---
 
 Changes on `main` since the v1.8.0 tag, grouped by theme; parenthetical

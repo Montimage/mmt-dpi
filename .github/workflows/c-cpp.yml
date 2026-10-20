@@ -347,6 +347,26 @@ jobs:
           bash "$s"
         done
 
+  version-agreement:
+    # Single version source (issue #483): every version site must agree with
+    # rules/common.mk VERSION — mmt_core.h, the ZIP fallback, the CHANGELOG
+    # heading, debian/changelog when present, and the installer pin with the
+    # README/site mentions of it. A dedicated job so the verdict carries its
+    # own status-check name; it needs no dependencies and no write access.
+    name: Version sites agree with rules/common.mk
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Version agreement check
+      run: bash scripts/validate-release-prep.sh
+    - name: Version agreement self-test (mismatch fixtures must fail)
+      run: bash tools/ci/tests/test-version-agreement.sh
+
   build:
 
     runs-on: ubuntu-24.04

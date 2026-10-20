@@ -7,13 +7,48 @@ title: "Things need to be done before releasing a new stable version"
 
 ## Update the new version number
 
-Update the new version number in these files:
+`VERSION` in `rules/common.mk` is the single version source: the build passes
+it to every object (`-DVERSION`) and names the libraries after it
+(`sdk/lib/libmmt_core.so.<VERSION>`). `bash scripts/validate-release-prep.sh`
+compares every site below with it and fails on any disagreement; it runs on
+every pull request (the `version-agreement` job in
+`.github/workflows/c-cpp.yml`) and again in the release workflow's
+`verify-tag` job, which also requires the pushed tag to equal `v<VERSION>`
+(`tools/ci/check-release-tag.sh`).
 
-```
-dist/ZIP/install.sh
-rules/common.mk
-src/mmt_core/public_include/mmt_core.h
-```
+**Declared version** — bump these together, at the start of the release
+cycle, to the version being prepared; each must equal `VERSION` exactly:
+
+| Site | What the check reads |
+|------|----------------------|
+| `rules/common.mk` | `VERSION := x.y.z` (the source) |
+| `src/mmt_core/public_include/mmt_core.h` | `#define VERSION "x.y.z"` (fallback for consumers that do not pass `-DVERSION`) |
+| `dist/ZIP/mmt-install-common.sh` | `VERSION="${VERSION:-x.y.z}"` (`make zip` restamps it) |
+| `CHANGELOG.md` | the topmost `Version x.y.z (...)` heading — `(unreleased)` until the tag, then the release date |
+| `debian/changelog` | the first entry's upstream version — checked only when the file exists |
+
+**Published release** — the one-command installer pins the latest
+*published* tag, so these lag `VERSION` between the bump and the tag (a
+tagged commit cannot pin its own commit SHA). They must all name the same
+tag as `install.sh`, and that tag must be at or below `v<VERSION>` and have a
+dated `CHANGELOG.md` entry:
+
+| Site | What the check reads |
+|------|----------------------|
+| `install.sh` | `RELEASE_TAG="vx.y.z"` (update `RELEASE_TAG_SHA`, the commit the tag resolves to, alongside it — not compared) |
+| `README.md` | `Current release: [vx.y.z]` and `` pinned release tag (`vx.y.z`) `` |
+| `docs/_includes/quick-start.md` | `` pinned release tag (`vx.y.z`) `` |
+| `docs/index.html` | the hero eyebrow `vx.y.z · Apache-2.0 · …` |
+
+Release order:
+
+1. Bump the declared-version sites and open the new
+   `Version x.y.z (unreleased)` section in `CHANGELOG.md`.
+2. When cutting the release, replace `(unreleased)` with the release date,
+   then tag that commit `vx.y.z`.
+3. After the tag is published, update the published-release sites in one
+   follow-up PR: `RELEASE_TAG`, `RELEASE_TAG_SHA` (`git rev-parse vx.y.z^{commit}`)
+   and the README/site mentions.
 
 ## Verify the classification
 

@@ -5,8 +5,11 @@
 # check-run payloads, so the suite exercises the real verdict logic.
 # It also runs the cppcheck lint gate's version-pin self-test beside
 # tools/ci/run-cppcheck.sh (issue #345), which drives the real gate with a
-# stub cppcheck on PATH.
+# stub cppcheck on PATH, and the version-agreement self-test beside
+# scripts/validate-release-prep.sh (issue #483), which runs the real validator
+# on fixtures where one version site disagrees with rules/common.mk.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
 bash "${TESTS_DIR}/test-cppcheck-version.sh"
+bash "${TESTS_DIR}/test-version-agreement.sh"
