@@ -29,6 +29,13 @@
 #     needs results exported, holds `checks: read`, and the release job
 #     `needs` it — so failed/skipped/cancelled/wrong-SHA prerequisite
 #     evidence cannot publish
+#   - single publisher (issue #489, F-CI-002): the release job publishes
+#     only through tools/ci/publish-release.sh on the release/ asset set
+#     (no third-party release action), verify-tag fetches origin/main and
+#     passes the tag explicitly so the ancestry gate runs, and a
+#     release-alert job — tag-gated, failure()-triggered, holding a
+#     job-scoped issues: write that no other job holds — runs
+#     tools/ci/release-alert.sh
 #
 # Exit codes: 0 = verifiable wiring present, 1 = a violation, 2 = helper
 # broken.
@@ -132,12 +139,58 @@ if re.search(r"sha256sum\b[^|\n>]*>\s*SHA256SUMS", release_job or wf) \
 else:
     fail("no SHA256SUMS manifest generated for the release")
 
-pub = re.search(r"(?m)^\s*files:\s*([^\n#]+)", release_job or "")
-if pub and re.search(r"release/\*|release/\*\*", pub.group(1)):
-    ok("published file glob covers the manifest and SBOMs (release/*)")
+if re.search(r"publish-release\.sh\"?\s+\"?\$GITHUB_REF_NAME\"?\s+release\b",
+             release_job or ""):
+    ok("publish-release.sh publishes the release/ set (manifest and SBOMs)")
 else:
-    fail("release files glob does not cover release/* — manifest/SBOMs "
-         "would not be attached")
+    fail("release job does not run publish-release.sh on release/ — "
+         "manifest/SBOMs would not be attached (issue #489)")
+
+# --- single publisher (issue #489, F-CI-002) ---------------------------------
+if re.search(r"action-gh-release|uses:\s*[^\n]*release-action", wf):
+    fail("a third-party release action publishes — publish-release.sh must "
+         "be the only publisher (issue #489)")
+else:
+    ok("no third-party release action: publish-release.sh is the only "
+       "publisher")
+
+m = re.search(r"(?m)^  verify-tag:\n(.*?)(?=^  [a-zA-Z_][a-zA-Z0-9_-]*:[^\S\n]*$|\Z)",
+              wf, re.S)
+verify_job = m.group(1) if m else ""
+if re.search(r"refs/heads/main:refs/remotes/origin/main", verify_job) \
+        and re.search(r"fetch-depth:\s*0", verify_job) \
+        and re.search(r"check-release-tag\.sh\s+\"\$GITHUB_REF_NAME\"",
+                      verify_job):
+    ok("verify-tag fetches origin/main with full history and passes the "
+       "tag explicitly (ancestry gate runs)")
+else:
+    fail("verify-tag does not fetch origin/main (fetch-depth: 0) and pass "
+         "the tag to check-release-tag.sh — the ancestry gate is unwired")
+
+m = re.search(r"(?m)^  release-alert:\n(.*?)(?=^  [a-zA-Z_][a-zA-Z0-9_-]*:[^\S\n]*$|\Z)",
+              wf, re.S)
+alert_job = m.group(1) if m else ""
+if not alert_job:
+    fail("no `release-alert:` job — a failed tag run alerts nobody "
+         "(issue #489)")
+else:
+    if re.search(r"failure\(\)", alert_job) \
+            and re.search(r"refs/tags/v", alert_job) \
+            and re.search(r"needs:\s*\[[^\]]*\brelease\b", alert_job):
+        ok("release-alert runs on a failed tag run, after release")
+    else:
+        fail("release-alert is not tag-gated on failure() after release")
+    if re.search(r"(?m)^\s*issues:\s*write\b", alert_job) \
+            and re.search(r"release-alert\.sh", alert_job):
+        ok("release-alert holds issues: write and runs release-alert.sh")
+    else:
+        fail("release-alert lacks issues: write or release-alert.sh")
+    others = wf.replace(alert_job, "")
+    if re.search(r"(?m)^\s*issues:\s*write\b", others):
+        fail("issues: write granted outside release-alert — keep it "
+             "job-scoped")
+    else:
+        ok("issues: write is scoped to release-alert alone")
 
 # --- exact-release-SHA gate (issue #371, F-CI-001) ----------------------------
 if gates_job:

@@ -16,6 +16,12 @@ the positive contract and every negative the acceptance criteria name:
   - same-run needs result failed / cancelled / skipped / missing -> exit 1
   - malformed evidence / bad arguments -> exit 2
 
+It also drives the REAL tag gate (tools/ci/check-release-tag.sh) on a
+throwaway fixture repository for the ancestry check of issue #489
+(F-CI-002): a tag whose commit is not an ancestor of origin/main -- the
+stale release/v1.9.0 commit v1.9.0 was cut from -- is rejected (exit 1),
+and a tag or base ref that is not available locally fails closed (exit 2).
+
 Usage: python3 tools/ci/tests/test-release-gates.py
 Exit: 0 = all checks passed, 1 = at least one failed, 2 = self-test broke.
 """
@@ -245,6 +251,112 @@ proc = subprocess.run(["bash", GATE, "--check-runs", "/nonexistent.json", SHA],
                       capture_output=True, text=True)
 check("missing evidence file -> helper broken (2)", proc.returncode == 2,
       f"rc={proc.returncode}")
+
+# --- tag ancestry gate (issue #489, F-CI-002) ---------------------------------
+TAG_GATE = os.path.join(REPO_ROOT, "tools", "ci", "check-release-tag.sh")
+print()
+print("check-release-tag.sh ancestry self-test (issue #489, F-CI-002)")
+
+
+def git(fx, *args):
+    return subprocess.run(
+        ["git", "-C", fx, "-c", "user.name=fixture",
+         "-c", "user.email=fixture@example.invalid",
+         "-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false", *args],
+        capture_output=True, text=True, check=True).stdout.strip()
+
+
+def tag_gate(fx, args, env_extra=None):
+    e = {k: v for k, v in os.environ.items()
+         if k not in ("GITHUB_REF_TYPE", "GITHUB_REF_NAME",
+                      "RELEASE_BASE_REF", "REQUIRE_RELEASE_TAG")}
+    e["ROOT_DIR"] = fx
+    e.update(env_extra or {})
+    proc = subprocess.run(["bash", TAG_GATE, *args], capture_output=True,
+                          text=True, env=e)
+    return proc.returncode, proc.stdout + proc.stderr
+
+
+def expect_tag(name, want_rc, fx, args, env_extra=None, needle=None):
+    rc, out = tag_gate(fx, args, env_extra)
+    check(name, rc == want_rc, f"(rc={rc})\n{out[-600:]}")
+    if needle is not None:
+        check(f"{name} -- reports /{needle}/", needle in out, out[-400:])
+
+
+def retag(fx, ref):
+    """Point the annotated fixture tag v1.2.3 at `ref`."""
+    if git(fx, "tag", "-l", "v1.2.3"):
+        git(fx, "tag", "-d", "v1.2.3")
+    git(fx, "tag", "-a", "v1.2.3", "-m", "release v1.2.3", ref)
+
+
+with tempfile.TemporaryDirectory() as work:
+    fx = os.path.join(work, "repo")
+    os.makedirs(os.path.join(fx, "rules"))
+    git(fx, "init", "-q")
+    with open(os.path.join(fx, "rules", "common.mk"), "w") as f:
+        f.write("VERSION := 1.2.3\n")
+    # The installer pin names a tag that does not exist here, so the pin
+    # gate skips and each verdict below is the ancestry gate's alone.
+    with open(os.path.join(fx, "install.sh"), "w") as f:
+        f.write('RELEASE_TAG="v0.0.0"\nRELEASE_TAG_SHA="%s"\n' % ("0" * 40))
+    git(fx, "add", "-A")
+    git(fx, "commit", "-q", "-m", "main: base")
+    main_old = git(fx, "rev-parse", "HEAD")
+    # The stale release branch: forked from main, never merged back.
+    git(fx, "checkout", "-q", "-b", "release/v1.2.3")
+    with open(os.path.join(fx, "stale.txt"), "w") as f:
+        f.write("only on the release branch\n")
+    git(fx, "add", "-A")
+    git(fx, "commit", "-q", "-m", "release branch only")
+    stale = git(fx, "rev-parse", "HEAD")
+    git(fx, "checkout", "-q", "-")
+    with open(os.path.join(fx, "later.txt"), "w") as f:
+        f.write("main moved on\n")
+    git(fx, "add", "-A")
+    git(fx, "commit", "-q", "-m", "main: later")
+    main_tip = git(fx, "rev-parse", "HEAD")
+    git(fx, "update-ref", "refs/remotes/origin/main", main_tip)
+
+    retag(fx, stale)
+    expect_tag("tag on a commit not an ancestor of origin/main -> 1", 1, fx,
+               ["v1.2.3"], needle="is not an ancestor of origin/main")
+    # The GITHUB_REF_NAME default (no argument) is the version gate only:
+    # c-cpp.yml's version-agreement job runs it from a shallow tag checkout.
+    expect_tag("no argument on a tag run: version gate only, no ancestry", 0,
+               fx, [], {"GITHUB_REF_TYPE": "tag", "GITHUB_REF_NAME": "v1.2.3"})
+
+    retag(fx, main_tip)
+    expect_tag("annotated tag at the origin/main tip -> 0", 0, fx, ["v1.2.3"],
+               needle="is on origin/main")
+
+    retag(fx, main_old)
+    expect_tag("tag on an older origin/main commit -> 0", 0, fx, ["v1.2.3"])
+
+    expect_tag("RELEASE_BASE_REF selects the base (stale branch tip) -> 0", 0,
+               fx, ["v1.2.3"], {"RELEASE_BASE_REF": "release/v1.2.3"})
+    expect_tag("release base ref unavailable -> fails closed (2)", 2, fx,
+               ["v1.2.3"], {"RELEASE_BASE_REF": "origin/missing"},
+               needle="not available locally")
+
+    git(fx, "tag", "-d", "v1.2.3")
+    expect_tag("tag not available locally -> fails closed (2)", 2, fx,
+               ["v1.2.3"], needle="not available locally")
+    tree = git(fx, "rev-parse", "HEAD^{tree}")
+    retag(fx, main_old)
+    expect_tag("release base ref is not a commit -> fails closed (2)", 2, fx,
+               ["v1.2.3"], {"RELEASE_BASE_REF": tree})
+
+    # A shallow clone can make merge-base report "not an ancestor" for a
+    # commit that is on main: refused as helper-broken, never exit 1.
+    shallow = os.path.join(work, "shallow")
+    subprocess.run(["git", "clone", "-q", "--depth", "1", "file://" + fx,
+                    shallow], capture_output=True, check=True)
+    git(shallow, "tag", "-a", "v1.2.3", "-m", "release v1.2.3")
+    git(shallow, "update-ref", "refs/remotes/origin/main", "HEAD")
+    expect_tag("shallow clone -> fails closed (2)", 2, shallow, ["v1.2.3"],
+               needle="shallow clone")
 
 print()
 print(f"release-gates self-test: {PASS} passed, {FAIL} failed ({TESTED} checks)")

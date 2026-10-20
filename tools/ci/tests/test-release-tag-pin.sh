@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # test-release-tag-pin.sh — self-test for tools/ci/check-release-tag.sh
-# (issues #220 and #484).
+# (issues #220 and #484; the ancestry gate of issue #489 has its own cases in
+# test-release-gates.py).
 #
 # It builds a throwaway git repository with an annotated release tag, points
 # the REAL gate at it with ROOT_DIR, and asserts each verdict. Needs no SDK
@@ -47,6 +48,10 @@ TAG_OBJECT="$(g rev-parse v1.2.2)"
 printf '\n' >> "${FX}/rules/common.mk"
 g commit -q -am later || exit 2
 LATER="$(g rev-parse HEAD)"
+# The version-gate cases name v1.2.3: the ancestry gate (issue #489) needs it
+# tagged locally and on the release base, origin/main.
+g tag -a v1.2.3 -m "release v1.2.3" || exit 2
+g update-ref refs/remotes/origin/main "${LATER}" || exit 2
 [ "${TAG_OBJECT}" != "${TAGGED}" ] || { echo "✗ fixture tag is not annotated" >&2; exit 2; }
 
 pin() { # pin <tag> <sha>

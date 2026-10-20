@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# check-release-tag.sh — release-tag gates (issues #220 and #484).
+# check-release-tag.sh — release-tag gates (issues #220, #484 and #489).
 #
 #  1. Version gate (issue #220, F-CI-010): the pushed v* tag must equal the
 #     VERSION declared in rules/common.mk. release-packages.yml publishes on
@@ -9,7 +9,18 @@
 #     `VERSION := 1.8.0` would ship packages labelled 1.8.0 under a 1.9.0
 #     release. The verify-tag job runs this before any publish step.
 #
-#  2. Installer pin gate (issue #484, F-UX-001): install.sh's RELEASE_TAG_SHA
+#  2. Ancestry gate (issue #489, F-CI-002): the tagged commit must be an
+#     ancestor of the release base, origin/main — `git merge-base
+#     --is-ancestor`. v1.9.0 was tagged on a stale release/v1.9.0 commit
+#     that main never contained; only the version gate happened to catch it.
+#     Runs when the tag is passed as an ARGUMENT (the verify-tag job does),
+#     and fails closed there: a tag or base ref that is not available
+#     locally, or a shallow clone (where merge-base can wrongly say "not an
+#     ancestor"), is exit 2, never a skip. The GITHUB_REF_NAME default below
+#     runs the version gate only — c-cpp.yml's version-agreement job calls
+#     this script without an argument on tag pushes from a shallow checkout.
+#
+#  3. Installer pin gate (issue #484, F-UX-001): install.sh's RELEASE_TAG_SHA
 #     must be the PEELED commit of its RELEASE_TAG (`git rev-parse
 #     "$RELEASE_TAG^{commit}"`). install.sh aborts when the clone resolves to
 #     any other commit, so a stale pin (v1.9.0 pinned to the v1.8.0 commit)
@@ -20,20 +31,24 @@
 #
 # Usage:
 #   check-release-tag.sh             installer pin gate only (any branch)
-#   check-release-tag.sh <tag>       version gate for <tag> + installer pin gate
+#   check-release-tag.sh <tag>       version + ancestry gates for <tag>, then
+#                                    the installer pin gate
 #   check-release-tag.sh --write-pin <tag>
 #                                    rewrite install.sh's RELEASE_TAG and
 #                                    RELEASE_TAG_SHA from the peeled <tag>
 #                                    (the post-release follow-up step)
 # With no argument on a tag-triggered GitHub Actions run (GITHUB_REF_TYPE=tag)
-# the tag defaults to $GITHUB_REF_NAME. An explicitly empty argument is an
-# error, never a silent skip of the version gate.
+# the tag defaults to $GITHUB_REF_NAME for the version gate only (no
+# ancestry gate). An explicitly empty argument is an error, never a silent
+# skip of the version gate.
 #
 # Environment: ROOT_DIR overrides the checkout root (the self-test points it
-# at a fixture repository).
+# at a fixture repository). RELEASE_BASE_REF overrides the ancestry base
+# (default origin/main; the verify-tag job fetches it explicitly).
 #
-# Exit codes: 0 = gates passed, 1 = mismatch, 2 = helper broken (empty tag,
-# VERSION or install.sh pin unreadable, required tag missing).
+# Exit codes: 0 = gates passed, 1 = mismatch (incl. a tag not on the base),
+# 2 = helper broken (empty tag, VERSION or install.sh pin unreadable,
+# required tag or base ref missing).
 #
 set -euo pipefail
 
@@ -76,8 +91,10 @@ fi
 
 # --- 1. Version gate (only when a tag is given) -------------------------------
 TAG=""
+ANCESTRY=0
 if [ $# -ge 1 ]; then
   TAG="$1"
+  ANCESTRY=1
   if [ -z "$TAG" ]; then
     echo "✗ empty tag argument (is GITHUB_REF_NAME unset?)" >&2
     exit 2
@@ -115,7 +132,42 @@ if [ -n "$TAG" ]; then
   echo "✓ tag $TAG matches declared VERSION $VERSION"
 fi
 
-# --- 2. Installer pin gate ----------------------------------------------------
+# --- 2. Ancestry gate (explicit tag argument only) ---------------------------
+if [ "$ANCESTRY" = "1" ]; then
+  if [ "$(git -C "$ROOT" rev-parse --is-shallow-repository 2>/dev/null)" != "false" ]; then
+    echo "✗ $ROOT is a shallow clone or not a git repository — the ancestry" >&2
+    echo "  check needs the full history (actions/checkout fetch-depth: 0)" >&2
+    exit 2
+  fi
+  BASE="${RELEASE_BASE_REF:-origin/main}"
+  TAG_COMMIT="$(peel "$TAG")"
+  if [ -z "$TAG_COMMIT" ]; then
+    echo "✗ tag $TAG is not available locally — cannot check it is on $BASE" >&2
+    echo "  (git fetch origin tag $TAG)" >&2
+    exit 2
+  fi
+  BASE_COMMIT="$(git -C "$ROOT" rev-parse -q --verify "$BASE^{commit}" 2>/dev/null || true)"
+  if [ -z "$BASE_COMMIT" ]; then
+    echo "✗ release base $BASE is not available locally" >&2
+    echo "  (git fetch origin +refs/heads/main:refs/remotes/origin/main)" >&2
+    exit 2
+  fi
+  ANC=0
+  git -C "$ROOT" merge-base --is-ancestor "$TAG_COMMIT" "$BASE_COMMIT" || ANC=$?
+  if [ "$ANC" -gt 1 ]; then
+    echo "✗ git merge-base failed (exit $ANC) for $TAG against $BASE" >&2
+    exit 2
+  fi
+  if [ "$ANC" -eq 1 ]; then
+    echo "✗ tag $TAG ($TAG_COMMIT) is not an ancestor of $BASE ($BASE_COMMIT)" >&2
+    echo "  — release tags are cut from main only: delete the tag and retag" >&2
+    echo "  a commit on main" >&2
+    exit 1
+  fi
+  echo "✓ tag $TAG ($TAG_COMMIT) is on $BASE"
+fi
+
+# --- 3. Installer pin gate ----------------------------------------------------
 read_pin
 ACTUAL="$(peel "$RELEASE_TAG")"
 if [ -z "$ACTUAL" ]; then

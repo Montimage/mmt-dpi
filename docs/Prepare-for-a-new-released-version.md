@@ -14,7 +14,22 @@ compares every site below with it and fails on any disagreement; it runs on
 every pull request (the `version-agreement` job in
 `.github/workflows/c-cpp.yml`) and again in the release workflow's
 `verify-tag` job, which also requires the pushed tag to equal `v<VERSION>`
+and its commit to be on `main` — an ancestor of `origin/main`
 (`tools/ci/check-release-tag.sh`).
+
+**The release workflow is the only publisher.** Never create a GitHub
+Release by hand (`gh release create`, the web UI's *Draft a new release*,
+an upload of assets): pushing the tag is the whole publication step. Once
+every gate passes, the `release` job of
+`.github/workflows/release-packages.yml` creates the Release with
+`tools/ci/publish-release.sh` — as a draft carrying every package, SBOM and
+`SHA256SUMS` (each covered by the build-provenance attestation), then
+published — and it **refuses to
+run when a Release for the tag already exists**. When any job of a tag run
+fails, the `release-alert` job opens (or comments on) an issue titled
+`Release workflow failed for vx.y.z`; nothing is published, so fix the
+cause and re-run the workflow, or delete the tag and push it again. Do not
+publish around a failed run.
 
 **Declared version** — bump these together, at the start of the release
 cycle, to the version being prepared; each must equal `VERSION` exactly:
@@ -44,8 +59,11 @@ Release order:
 
 1. Bump the declared-version sites and open the new
    `Version x.y.z (unreleased)` section in `CHANGELOG.md`.
-2. When cutting the release, replace `(unreleased)` with the release date,
-   then tag that commit `vx.y.z`.
+2. When cutting the release, replace `(unreleased)` with the release date
+   in a pull request, merge it, then tag that merged commit **on `main`**
+   `vx.y.z` (never a release branch: a tag that is not an ancestor of
+   `origin/main` fails `verify-tag`) and push the tag. The workflow
+   publishes the Release.
 3. After the tag is published, update the published-release sites in one
    follow-up PR: run `bash tools/ci/check-release-tag.sh --write-pin vx.y.z`,
    which writes `RELEASE_TAG` and `RELEASE_TAG_SHA` from the peeled tag
@@ -80,8 +98,14 @@ A sample pcap (`src/examples/google-fr.pcap`) is included for smoke testing.
 
 ## Set a tag for the new version
 
+Tag the release commit on `main`, then push the tag — that push starts
+the release workflow, which creates and publishes the GitHub Release
+(see *The release workflow is the only publisher* above):
+
 ```
-git tag -a v1.4 -m "my version 1.4"
+git fetch origin main
+git tag -a v1.4 -m "my version 1.4" origin/main
+git merge-base --is-ancestor v1.4 origin/main && echo "on main"
 ```
 
 Sharing tag:

@@ -80,7 +80,14 @@ sums. A missing git history is a hard error under `CI=true` — it used to
 silently downgrade the package revision to a date stamp; local tarball
 builds get the deterministic `nogit` revision and a warning instead. Release
 tags are gated by `tools/ci/check-release-tag.sh`, which requires the pushed
-tag to equal `v$(VERSION)` before the publish job runs; run without a tag
+tag to equal `v$(VERSION)` and, given the tag as an argument as the
+`verify-tag` job does, its commit to be an ancestor of `origin/main`
+(issue #489 — fail-closed on a missing tag or base ref or a shallow clone)
+before the publish job runs. That job alone creates the GitHub Release
+(`tools/ci/publish-release.sh`: draft with every asset, then published;
+refused when a Release for the tag already exists), and the
+`release-alert` job opens an issue when a tag run fails
+(`tools/ci/release-alert.sh`). Run without a tag
 it checks that `install.sh`'s `RELEASE_TAG_SHA` is the peeled commit of its
 `RELEASE_TAG` (issue #484 — skipped when the tag is not fetched, fatal under
 `REQUIRE_RELEASE_TAG=1`, as the `version-agreement` job runs it).
@@ -207,7 +214,9 @@ plus the accuracy-corpus oracle self-test `test-accuracy-corpus.py`, issues #389
 the exact-release-SHA publish gate (`test-release-gates.py`, issue
 #371, plus the cppcheck version-pin self-test `test-cppcheck-version.sh`,
 issue #345, and the version-agreement self-test `test-version-agreement.sh`,
-issue #483) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+issue #483, the release-tag pin self-test `test-release-tag-pin.sh`, issue
+#484, and the single-publisher self-test `test-release-publish.sh`, issue
+#489) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other

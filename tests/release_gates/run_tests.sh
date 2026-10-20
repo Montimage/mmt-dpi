@@ -10,10 +10,14 @@
 # on fixtures where one version site disagrees with rules/common.mk, and the
 # release-tag gate self-test beside tools/ci/check-release-tag.sh (issue
 # #484), which asserts install.sh's RELEASE_TAG_SHA is the peeled tag commit
-# on a fixture repository with an annotated tag.
+# on a fixture repository with an annotated tag, and the single-publisher
+# self-test beside tools/ci/publish-release.sh and tools/ci/release-alert.sh
+# (issue #489), which drives both against a stub gh. The ancestry gate of
+# check-release-tag.sh (issue #489) is covered in test-release-gates.py.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
 bash "${TESTS_DIR}/test-cppcheck-version.sh"
 bash "${TESTS_DIR}/test-version-agreement.sh"
 bash "${TESTS_DIR}/test-release-tag-pin.sh"
+bash "${TESTS_DIR}/test-release-publish.sh"

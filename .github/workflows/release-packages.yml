@@ -36,6 +36,13 @@ name: Build & release packages
 # that this run's own build/reproducibility/verify-tag jobs succeeded —
 # evidence that is failed, skipped, cancelled or recorded for a different
 # SHA blocks publication (`release` needs `release-gates` too).
+#
+# Single publisher (issue #489, F-CI-002): verify-tag also requires the
+# tagged commit to be an ancestor of origin/main (v1.9.0 was cut from a
+# stale release branch), the `release` job creates the Release itself —
+# as a draft, assets attached, then published — and refuses when one
+# already exists (a hand-made Release), and the `release-alert` job opens
+# an issue whenever a tag run fails, so a blocked release is never silent.
 
 on:
   push:
@@ -52,6 +59,8 @@ on:
       - "tools/ci/check-reproducible-build.sh"
       - "tools/ci/check-release-tag.sh"
       - "tools/ci/check-release-gates.sh"
+      - "tools/ci/publish-release.sh"
+      - "tools/ci/release-alert.sh"
       - "tools/ci/base-images.txt"
       - ".github/workflows/release-packages.yml"
 
@@ -136,8 +145,8 @@ jobs:
       # the manifest records exactly what the artifact ships. Generated here —
       # not in the tag-only release job — so the pull_request trigger exercises
       # it on every packaging change. upload-* are off: the package artifact
-      # upload below ships the .sbom.json, and action-gh-release stays the
-      # single publisher.
+      # upload below ships the .sbom.json, and the release job's
+      # tools/ci/publish-release.sh stays the single publisher (issue #489).
       - name: Generate SBOM for the package
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
@@ -201,7 +210,12 @@ jobs:
         with:
           fetch-depth: 0   # GIT_VERSION derivation needs the git history
 
-      - name: Tag matches the declared VERSION
+      # The ancestry gate (issue #489) needs origin/main: fetch it
+      # explicitly rather than rely on what a tag checkout happens to fetch.
+      - name: Fetch main for the ancestry check
+        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: Tag matches the declared VERSION and is on main
         run: bash tools/ci/check-release-tag.sh "$GITHUB_REF_NAME"
 
       - name: Release-prep validators
@@ -299,9 +313,52 @@ jobs:
         with:
           subject-path: release/*
 
-      - name: Create / update GitHub Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+      # The only publisher (issue #489): refuses when a Release for the tag
+      # already exists (made by hand), creates it as a draft with release/*
+      # attached, then publishes it — never a Release without its assets.
+      # This job has no source tree of its own: a sparse checkout fetches
+      # just the script, at the tag's commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          files: release/*
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+          path: src
+          sparse-checkout: tools/ci/publish-release.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Create and publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash src/tools/ci/publish-release.sh "$GITHUB_REF_NAME" release
+
+  release-alert:
+    # A failed tag run gets an owner (issue #489, F-CI-002): v1.9.0's run
+    # failed verify-tag and nobody noticed for 24 days. failure() is true
+    # when any job in this chain failed, including one that made `release`
+    # skip; cancelled() covers a cancelled run. A separate job so the
+    # issues: write token never reaches a job that builds or publishes; tag
+    # pushes only — a pull request's failure is visible on the pull request.
+    name: Alert on a failed tag run
+    needs: [build, reproducibility, verify-tag, release-gates, release]
+    if: (failure() || cancelled()) && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read   # actions/checkout
+      issues: write    # open or comment on the release-failure issue
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Open or update the release-failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          NEEDS_RESULT_BUILD: ${{ needs.build.result }}
+          NEEDS_RESULT_REPRODUCIBILITY: ${{ needs.reproducibility.result }}
+          NEEDS_RESULT_VERIFY_TAG: ${{ needs.verify-tag.result }}
+          NEEDS_RESULT_RELEASE_GATES: ${{ needs.release-gates.result }}
+          NEEDS_RESULT_RELEASE: ${{ needs.release.result }}
+        run: bash tools/ci/release-alert.sh "$GITHUB_REF_NAME" "$RUN_URL"
