@@ -423,6 +423,40 @@ void free_ftp_data_session(ftp_data_session_t *ftp_data) {
 }
 
 /**
+ * Start the next transfer on the same data session object (issue #487).
+ *
+ * A data flow keeps its ftp_data_session_t in session_data[] without owning
+ * it — the control session does. Freeing the object when a transfer ended
+ * (226) left those aliases dangling, and the flow's next packet read freed
+ * memory in ftp_session_data_analysis(). The object therefore lives as long
+ * as its control session and is reset here to the state
+ * ftp_new_data_connection() gives a fresh one; a flow of the finished
+ * transfer no longer matches the new tuple and detaches itself on its next
+ * packet (ftp_session_data_analysis()).
+ * @return 0 on success, -1 when allocation failed (the session is unchanged)
+ */
+static int ftp_reset_data_session(ftp_data_session_t *ftp_data) {
+    ftp_tuple6_t *conn = ftp_new_tuple6();
+    ftp_file_t *file = ftp_new_file();
+    if (conn == NULL || file == NULL) {
+        free_ftp_tuple6(conn);
+        free_ftp_file(file);
+        return -1;
+    }
+    conn->conn_type = MMT_FTP_DATA_CONNECTION;
+    free_ftp_tuple6(ftp_data->data_conn);
+    ftp_data->data_conn = conn;
+    free_ftp_file(ftp_data->file);
+    ftp_data->file = file;
+    free(ftp_data->data_transfer_type);
+    ftp_data->data_transfer_type = NULL;
+    ftp_data->data_conn_mode = 0;
+    ftp_data->data_type = 0;
+    ftp_data->data_direction = MMT_FTP_PACKET_UNKNOWN_DIRECTION;
+    return 0;
+}
+
+/**
  * Create new ftp control session
  * @param  tuple6 control connection tuple6
  * @return        a ftp control connection
@@ -3131,11 +3165,10 @@ void ftp_response_packet(ipacket_t *ipacket, unsigned index, ftp_control_session
         case MMT_FTP_226_CODE:
             ftp_control->status = MMT_FTP_STATUS_DATA_CLOSED;
             debug("FTP: Data has transferred completed -> Going to reset data connection");
-            if(ftp_control->current_data_session->data_conn!=NULL){
-                free_ftp_data_session(ftp_control->current_data_session);
-                ftp_control->current_data_session = ftp_new_data_connection();
-                if (ftp_control->current_data_session != NULL)
-                    ftp_control->current_data_session->control_session = ftp_control;
+            /* Reset in place, never free: data flows still point at this
+             * object through their session_data[] (issue #487). */
+            if (current_data_session->data_conn != NULL) {
+                (void) ftp_reset_data_session(current_data_session);
             }
             break;
         case MMT_FTP_221_CODE:
@@ -3233,6 +3266,13 @@ int ftp_session_data_analysis(ipacket_t * ipacket, unsigned index) {
                         break;
                     }
                     temp = temp->next;
+                }
+                if (temp == NULL || temp->current_data_session == NULL) {
+                    /* The transfer this flow belonged to has ended — its data
+                     * session was reset for the next one (226): detach rather
+                     * than attribute this flow to that next transfer. */
+                    ipacket->session->session_data[index] = NULL;
+                    ftp_data = NULL;
                 }
             }
         } else {

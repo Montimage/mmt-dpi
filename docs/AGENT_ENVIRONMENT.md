@@ -197,7 +197,8 @@ sequentially. The suite list lives in `DEFAULT_SUITES`
 `tcp_pending_order`, `sdk_coverage`, `docs_lifecycle`, `docs_onboarding`.
 `fuzz_verdicts`, `precision_metrics`, `release_gates` and `sdk_coverage` are
 delegate suites for CI self-tests living under `tools/ci/tests/` — the fuzz
-gate's verdict handling (`test-fuzz-verdicts.sh`, issue #370), the
+gate's verdict handling and regression replay (`test-fuzz-verdicts.sh`,
+issues #370/#486) and its scheduled-failure alert (`test-fuzz-alert.sh`), the
 precision-gate metric accounting (`test-precision-metrics.py`, issue #373,
 plus the accuracy-corpus oracle self-test `test-accuracy-corpus.py`, issues #389/#390),
 the exact-release-SHA publish gate (`test-release-gates.py`, issue

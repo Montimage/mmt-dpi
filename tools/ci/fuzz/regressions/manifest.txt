@@ -1,0 +1,12 @@
+# Committed fuzz reproducers — replayed by tools/ci/run-fuzz.sh on every run
+# (pull request and schedule) before the mutation loop; see its header.
+#
+# Format: <sha256>  <file>   one line per file in this directory; '#' starts
+# a comment. Record above each entry how the input was produced and the
+# issue that tracks it. A reproducer stays here after its bug is fixed: it is
+# the regression test that keeps the bug fixed.
+
+# Issue #486/#487 — FTP data-session heap-use-after-free in
+# ftp_session_data_analysis (weekly fuzz run 36412709200).
+#   python3 tools/ci/fuzz/mutate.py tools/phase0/ci/pcaps/ftp_multiple_session.pcap out --seed 36412723701
+7b292b34abab71ddbfead47ccf47f8f018814d6505cc9eb6e7753e17ff7a4d6d  ftp_multiple_session-seed36412723701.pcap

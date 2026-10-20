@@ -25,6 +25,13 @@
 #   driver not executable/missing (125-127) -> 2 (harness breakage)
 #   infrastructure failure (mutate dies)  -> 2 (harness breakage)
 #
+# Regression replay (issue #486) — the committed reproducers in
+# tools/ci/fuzz/regressions run before the mutation loop:
+#   --replay-only, clean replay           -> 0
+#   --replay-only, replay crashes (ASan)  -> 1 (finding + artifact log)
+#   default run replays before fuzzing    -> "replayed N regression(s)"
+#   digest drift / unlisted / missing file / empty manifest -> 2
+#
 # Usage: bash tools/ci/tests/test-fuzz-verdicts.sh
 # Exit: 0 = all checks passed, 1 = at least one failed, 2 = self-test broke.
 
@@ -117,6 +124,7 @@ chmod +x "${STUBS}/python3"
 PASS=0
 FAIL=0
 TESTED=0
+EXTRA_ARGS=()
 
 run_gate() {
     # Runs the REAL wrapper against the stubs; prints its exit code.
@@ -127,7 +135,7 @@ run_gate() {
         FUZZ_STUB_NO_DRIVER="${STUB_NO_DRIVER:-0}" \
         FUZZ_STUB_MUTATE_RC="${STUB_MUTATE_RC:-0}" \
         bash "${RUN_FUZZ}" --seconds 5 --iterations 1 \
-             --artifacts "${ARTIFACTS}" --prefix "${PREFIX}" \
+             --artifacts "${ARTIFACTS}" --prefix "${PREFIX}" "${EXTRA_ARGS[@]}" \
         >"${WORK}/out.log" 2>&1
     got=$?
     set -e
@@ -220,6 +228,60 @@ expect_rc "driver missing (exec rc 126/127) -> harness exit 2" 2
 # --- infrastructure failure: mutate.py dies ------------------------------------
 set_control 0 "" 0 2
 expect_rc "mutate.py failure -> harness exit 2" 2
+
+# --- regression replay (issue #486) ------------------------------------------
+REAL_REGRESSIONS="${REPO_ROOT}/tools/ci/fuzz/regressions"
+nreg="$(grep -cE '^[0-9a-f]{64}  ' "${REAL_REGRESSIONS}/manifest.txt")"
+
+set_control 0
+EXTRA_ARGS=( --replay-only )
+expect_rc "--replay-only, committed reproducers clean -> 0" 0
+expect_grep "replay PASS banner" "regression replay PASS — ${nreg} committed"
+
+set_control 1 '==4242==ERROR: AddressSanitizer: heap-use-after-free on address 0x5040000abed0
+    #0 0x1 in ftp_session_data_analysis proto_ftp.c:3222'
+expect_rc "--replay-only, reproducer crashes again -> 1" 1
+expect_grep "replay FAIL banner" "regression replay FAIL"
+TESTED=$((TESTED + 1))
+if ls "${ARTIFACTS}"/regression-*.log >/dev/null 2>&1 \
+        && grep -q 'heap-use-after-free' "${ARTIFACTS}"/regression-*.log; then
+    PASS=$((PASS + 1)); printf '  ✓ %-52s\n' "replay finding carries reproducer + stderr log"
+else
+    FAIL=$((FAIL + 1)); printf '  ✗ %-52s\n' "replay finding carries reproducer + stderr log"
+fi
+
+set_control 0
+EXTRA_ARGS=()
+expect_rc "default run replays regressions, then fuzzes -> 0" 0
+expect_grep "replay ran before the loop" "replayed ${nreg} regression"
+
+# Corpus integrity: each broken manifest is harness breakage (exit 2).
+REG="${WORK}/regressions"
+reset_reg() { rm -rf "${REG}"; cp -r "${REAL_REGRESSIONS}" "${REG}"; }
+EXTRA_ARGS=( --replay-only --regressions "${REG}" )
+
+reset_reg; reg_pcaps=( "${REG}"/*.pcap ); printf 'x' >> "${reg_pcaps[0]}"
+expect_rc "reproducer drifted from its sha256 -> exit 2" 2
+expect_grep "digest mismatch reported" "sha256 .* != manifest"
+
+reset_reg; printf 'stray\n' > "${REG}/stray.pcap"
+expect_rc "file not listed in the manifest -> exit 2" 2
+
+reset_reg; rm -f "${REG}"/*.pcap
+expect_rc "listed reproducer missing -> exit 2" 2
+
+# A relative --regressions path is resolved before the drivers run from
+# inside the prefix, so the replay reads the files it just verified.
+reset_reg; EXTRA_ARGS=( --replay-only --regressions "${REG##*/}" )
+cd "${REG%/*}"
+expect_rc "relative --regressions path -> replayed, 0" 0
+expect_grep "relative path resolved to absolute" "committed reproducer\(s\) in ${REG}\$"
+cd - >/dev/null
+EXTRA_ARGS=( --replay-only --regressions "${REG}" )
+
+reset_reg; rm -f "${REG}"/*.pcap; grep -v '^[0-9a-f]' "${REAL_REGRESSIONS}/manifest.txt" > "${REG}/manifest.txt"
+expect_rc "--replay-only with an empty manifest -> exit 2" 2
+EXTRA_ARGS=()
 
 echo ""
 echo "verdict self-test: ${PASS} passed, ${FAIL} failed (${TESTED} checks)"

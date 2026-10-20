@@ -53,9 +53,21 @@
 # request; suppressions keep a pre-existing bug tracked-and-visible without
 # making CI permanently red.
 #
+# Regression replay (issue #486): before the mutation loop, every input
+# listed in tools/ci/fuzz/regressions/manifest.txt — committed reproducers
+# of past findings — is replayed through its driver (*.pcap through
+# phase0_classify, *.xml through the QE driver) under the same finding rule.
+# A regression that crashes again is a finding like any other, so a fixed
+# bug cannot come back silently and a scheduled-run crash, once committed
+# there, is gated on every pull request whatever seed the run uses. Each
+# entry carries its sha256: a file that drifts from its digest, a file in
+# the directory the manifest does not list, or a listed file that is
+# missing is harness breakage (exit 2), never a silent skip.
+#
 # Usage:
 #   bash tools/ci/run-fuzz.sh [--seconds N] [--seed N] [--artifacts DIR]
 #                             [--iterations N] [--prefix DIR]
+#                             [--replay-only] [--regressions DIR]
 #
 #   --seconds N      fuzzing wall-clock budget AFTER the build (default 300)
 #   --seed N         base seed for mutate.py (default 224 — deterministic)
@@ -67,6 +79,9 @@
 #   --artifacts D    reproducer output dir (default ./fuzz-artifacts)
 #   --prefix D       reuse an existing BUILD=asan+ENABLESEC install prefix
 #                    instead of building (local iteration helper)
+#   --replay-only    replay the committed regressions, then stop (no
+#                    mutation loop); exit 1 when any of them is a finding
+#   --regressions D  regression directory (default tools/ci/fuzz/regressions)
 #
 # Used by .github/workflows/c-cpp.yml (fuzz job). Runnable locally too.
 
@@ -78,6 +93,8 @@ CORPUS_DIR="${REPO_ROOT}/tools/phase0/ci/pcaps"
 QE_SEED="${SCRIPT_DIR}/fuzz/seed_qe.xml"
 MUTATE="${SCRIPT_DIR}/fuzz/mutate.py"
 SUPPRESSIONS="${SCRIPT_DIR}/fuzz/suppressions.txt"
+REGRESSIONS="${SCRIPT_DIR}/fuzz/regressions"
+REPLAY_ONLY=0
 QE_DRIVER_SRC="${SCRIPT_DIR}/fuzz/qe_xml_driver.c"
 CLASSIFY_SRC="${REPO_ROOT}/tools/phase0/phase0_classify.c"
 
@@ -96,6 +113,8 @@ while [ $# -gt 0 ]; do
         --iterations) MAX_ITER="$2"; shift 2 ;;
         --artifacts)  ARTIFACTS="$2"; shift 2 ;;
         --prefix)     PREFIX="$2"; shift 2 ;;
+        --replay-only) REPLAY_ONLY=1; shift ;;
+        --regressions) REGRESSIONS="$2"; shift 2 ;;
         -h|--help)   grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Unknown argument: $1" >&2; exit 2 ;;
     esac
@@ -112,7 +131,7 @@ done
 for f in "${MUTATE}" "${QE_DRIVER_SRC}" "${CLASSIFY_SRC}" "${QE_SEED}"; do
     [ -f "$f" ] || { echo "✗ missing fuzz component: $f" >&2; exit 2; }
 done
-for cmd in python3 timeout gcc make; do
+for cmd in python3 timeout gcc make sha256sum; do
     command -v "${cmd}" >/dev/null 2>&1 || { echo "✗ ${cmd} not found" >&2; exit 2; }
 done
 
@@ -120,6 +139,49 @@ shopt -s nullglob
 PCAPS=( "${CORPUS_DIR}"/*.pcap )
 if [ "${#PCAPS[@]}" -eq 0 ]; then
     echo "✗ golden corpus empty: ${CORPUS_DIR}" >&2
+    exit 2
+fi
+
+# Absolute, like --artifacts: the drivers run from inside the prefix, so a
+# relative path would pass the manifest checks here, then fail to open in
+# the driver and read as a parser refusal — a silent false PASS.
+[ -d "${REGRESSIONS}" ] || { echo "✗ regression directory missing: ${REGRESSIONS}" >&2; exit 2; }
+REGRESSIONS="$(cd "${REGRESSIONS}" && pwd)"
+
+# The regression manifest is checked before the (minutes-long) SDK build so
+# a broken corpus fails fast. Format: "<sha256>  <file>" per line, '#'
+# comments allowed; every file in the directory must be listed.
+MANIFEST="${REGRESSIONS}/manifest.txt"
+[ -f "${MANIFEST}" ] || { echo "✗ regression manifest missing: ${MANIFEST}" >&2; exit 2; }
+REG_FILES=()
+declare -A REG_LISTED=()
+while IFS= read -r line; do
+    line="${line%%#*}"
+    read -r want name rest <<<"${line}" || true
+    [ -z "${want:-}" ] && continue
+    if [ -z "${name:-}" ] || [ -n "${rest:-}" ] || ! [[ "${want}" =~ ^[0-9a-f]{64}$ ]]; then
+        echo "✗ malformed regression manifest line: ${line}" >&2; exit 2
+    fi
+    f="${REGRESSIONS}/${name}"
+    [ -f "${f}" ] || { echo "✗ regression listed but missing: ${f}" >&2; exit 2; }
+    got="$(sha256sum "${f}")"; got="${got%% *}"
+    if [ "${got}" != "${want}" ]; then
+        echo "✗ regression ${name}: sha256 ${got} != manifest ${want}" >&2; exit 2
+    fi
+    case "${name}" in
+        *.pcap|*.xml) ;;
+        *) echo "✗ regression ${name}: no driver for this extension (.pcap/.xml)" >&2; exit 2 ;;
+    esac
+    REG_FILES+=( "${f}" )
+    REG_LISTED["${name}"]=1
+done < "${MANIFEST}"
+for f in "${REGRESSIONS}"/*; do
+    b="${f##*/}"
+    [ "${b}" = "manifest.txt" ] && continue
+    [ -n "${REG_LISTED["${b}"]:-}" ] || { echo "✗ regression ${b} is not in ${MANIFEST}" >&2; exit 2; }
+done
+if [ "${REPLAY_ONLY}" -eq 1 ] && [ "${#REG_FILES[@]}" -eq 0 ]; then
+    echo "✗ --replay-only with an empty regression manifest: ${MANIFEST}" >&2
     exit 2
 fi
 
@@ -143,6 +205,7 @@ say "repo root      : ${REPO_ROOT}"
 say "install prefix : ${PREFIX}"
 say "corpus         : ${#PCAPS[@]} golden pcaps + 1 QE model seed"
 say "budget         : ${BUDGET}s fuzzing (seed base ${SEED}, iteration cap ${MAX_ITER:-0})"
+say "regressions    : ${#REG_FILES[@]} committed reproducer(s) in ${REGRESSIONS}"
 say "artifacts      : ${ARTIFACTS}"
 
 # --- 1. build + install the SDK (asan + security/fuzz engines) --------------
@@ -227,6 +290,82 @@ run_driver() {
     return "${rc}"
 }
 
+# record_verdict <tag> <name> <input> <rc> <seed-file> <repro-hint>
+# Classifies one driver run (see the finding rule in the header) and, on a
+# finding, copies the input and its stderr into the artifacts directory.
+# Returns 0 when the run was a finding, 1 otherwise.
+record_verdict() {
+    local tag="$1" name="$2" input="$3" rc="$4" from="$5" hint="$6" kind repro
+    # The driver failing to execute at all — or timeout itself failing —
+    # (timeout reports 125/126/127) is the harness breaking, never a finding
+    # on hostile input: a missing binary must not masquerade as a crash.
+    if [ "${rc}" -eq 125 ] || [ "${rc}" -eq 126 ] || [ "${rc}" -eq 127 ]; then
+        echo "✗ fuzz driver could not be executed: ${bin} (rc=${rc})" >&2
+        cat "${log}" >&2 || true
+        exit 2
+    fi
+
+    # Classify the outcome. rc >= 124 stays a finding (124 = per-input
+    # timeout/hang, >= 128 = signal/crash). Below that band the run is
+    # normally an expected parser refusal — except when the log carries a
+    # sanitizer banner, which is a real memory/UB finding the exit code
+    # alone would have passed (issue #370, F-TEST-001). rc 0 is a tested-
+    # clean run, counted via `runs`, never a refusal.
+    if [ "${rc}" -ge 124 ]; then
+        if [ "${rc}" -eq 124 ]; then kind="hang/timeout"; else kind="signal/crash"; fi
+    elif grep -qE "${SANITIZER_MARKERS}" "${log}"; then
+        kind="sanitizer-error"
+    elif [ "${rc}" -gt 0 ]; then
+        # Expected parser refusal — counted so it stays separately
+        # identifiable from both a tested-clean run and a finding.
+        refusals=$((refusals + 1))
+        return 1
+    else
+        return 1
+    fi
+
+    findings=$((findings + 1))
+    repro="${ARTIFACTS}/${name}"
+    [ "${input}" = "${repro}" ] || cp "${input}" "${repro}"
+    {
+        echo "driver   : $(basename "${bin}") ${repro}"
+        echo "seed file: ${from}"
+        echo "mutant   : ${hint}"
+        echo "exit code: ${rc} (${kind})"
+        echo "--- stderr ---"
+        cat "${log}"
+    } > "${repro}.log"
+    say "  ✗ finding #${findings}: ${tag} (rc=${rc}, ${kind}) -> ${repro}"
+    return 0
+}
+
+# Replay the committed regressions first: they gate every run, whatever the
+# seed, and do not consume the mutation budget.
+reg_findings=0
+for f in "${REG_FILES[@]}"; do
+    case "${f}" in
+        *.pcap) bin="${CLASSIFY_BIN}"; leaks=0 ;;
+        *.xml)  bin="${QE_BIN}";       leaks=1 ;;
+    esac
+    log="${WORK}/run.log"
+    run_driver "${bin}" "${f}" "${log}" "${leaks}" && rc=0 || rc=$?
+    if record_verdict "regression ${f##*/}" "regression-${f##*/}" "${f}" "${rc}" "${f}" \
+            "committed regression (bash tools/ci/run-fuzz.sh --replay-only)"; then
+        reg_findings=$((reg_findings + 1))
+    fi
+done
+say "      replayed ${#REG_FILES[@]} regression(s): ${reg_findings} finding(s)"
+if [ "${REPLAY_ONLY}" -eq 1 ]; then
+    if [ "${findings}" -gt 0 ]; then
+        echo "✗ regression replay FAIL — ${findings} committed reproducer(s) still crash; logs in ${ARTIFACTS}" >&2
+        exit 1
+    fi
+    echo "✓ regression replay PASS — ${#REG_FILES[@]} committed reproducer(s) clean"
+    exit 0
+fi
+
+# The mutation budget starts after the replay.
+deadline=$(( $(date +%s) + BUDGET ))
 while [ "$(date +%s)" -lt "${deadline}" ] && [ "${findings}" -lt "${MAX_FINDINGS}" ] \
       && { [ "${MAX_ITER}" -eq 0 ] || [ "${iter}" -lt "${MAX_ITER}" ]; }; do
     iter=$((iter + 1))
@@ -263,47 +402,9 @@ while [ "$(date +%s)" -lt "${deadline}" ] && [ "${findings}" -lt "${MAX_FINDINGS
     log="${WORK}/run.log"
     run_driver "${bin}" "${mutant}" "${log}" "${leaks}" && rc=0 || rc=$?
     runs=$((runs + 1))
-
-    # The driver failing to execute at all — or timeout itself failing —
-    # (timeout reports 125/126/127) is the harness breaking, never a finding
-    # on hostile input: a missing binary must not masquerade as a crash.
-    if [ "${rc}" -eq 125 ] || [ "${rc}" -eq 126 ] || [ "${rc}" -eq 127 ]; then
-        echo "✗ fuzz driver could not be executed: ${bin} (rc=${rc})" >&2
-        cat "${log}" >&2 || true
-        exit 2
-    fi
-
-    # Classify the outcome. rc >= 124 stays a finding (124 = per-input
-    # timeout/hang, >= 128 = signal/crash). Below that band the run is
-    # normally an expected parser refusal — except when the log carries a
-    # sanitizer banner, which is a real memory/UB finding the exit code
-    # alone would have passed (issue #370, F-TEST-001). rc 0 is a tested-
-    # clean run, counted via `runs`, never a refusal.
-    if [ "${rc}" -ge 124 ]; then
-        if [ "${rc}" -eq 124 ]; then kind="hang/timeout"; else kind="signal/crash"; fi
-    elif grep -qE "${SANITIZER_MARKERS}" "${log}"; then
-        kind="sanitizer-error"
-    elif [ "${rc}" -gt 0 ]; then
-        # Expected parser refusal — counted so it stays separately
-        # identifiable from both a tested-clean run and a finding.
-        refusals=$((refusals + 1))
-        continue
-    else
-        continue
-    fi
-
-    findings=$((findings + 1))
-    repro="${ARTIFACTS}/crash-${tag}-${seed_base}-seed${mseed}"
-    cp "${mutant}" "${repro}"
-    {
-        echo "driver   : $(basename "${bin}") ${repro}"
-        echo "seed file: ${seed_file}"
-        echo "mutant   : mutate.py --seed ${mseed} (repro: python3 ${MUTATE} \"${seed_file}\" out --seed ${mseed})"
-        echo "exit code: ${rc} (${kind})"
-        echo "--- stderr ---"
-        cat "${log}"
-    } > "${repro}.log"
-    say "  ✗ finding #${findings}: ${tag} mutant of ${seed_base} (seed ${mseed}, rc=${rc}, ${kind}) -> ${repro}"
+    record_verdict "${tag} mutant of ${seed_base} (seed ${mseed})" \
+        "crash-${tag}-${seed_base}-seed${mseed}" "${mutant}" "${rc}" "${seed_file}" \
+        "mutate.py --seed ${mseed} (repro: python3 ${MUTATE} \"${seed_file}\" out --seed ${mseed})" || true
 done
 
 elapsed=$(( $(date +%s) - (deadline - BUDGET) ))
@@ -311,9 +412,10 @@ elapsed=$(( $(date +%s) - (deadline - BUDGET) ))
     echo "run-fuzz summary"
     echo "iterations: ${iter}  driver runs: ${runs}  suppressed: ${suppressed_count}  refusals: ${refusals}  elapsed: ${elapsed}s  findings: ${findings}"
     echo "seed base: ${SEED}  corpus: ${#PCAPS[@]} pcaps + seed_qe.xml"
+    echo "regressions replayed: ${#REG_FILES[@]}  regression findings: ${reg_findings}"
 } > "${ARTIFACTS}/SUMMARY.txt"
 
-say "[4/4] ${runs} mutated inputs in ${elapsed}s, ${findings} finding(s), ${refusals} parser refusal(s), ${suppressed_count} suppressed"
+say "[4/4] ${runs} mutated inputs in ${elapsed}s (+ ${#REG_FILES[@]} regression replay(s)), ${findings} finding(s), ${refusals} parser refusal(s), ${suppressed_count} suppressed"
 if [ "${findings}" -gt 0 ]; then
     echo "✗ fuzz gate FAIL — ${findings} crash(es); reproducers in ${ARTIFACTS}" >&2
     exit 1
