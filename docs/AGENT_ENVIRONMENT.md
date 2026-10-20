@@ -493,3 +493,50 @@ If any of these fails, fix the environment before attempting code changes —
 upstream tasks assume this baseline is green. After sanitizer/`ENABLESEC`
 experiments, restore the default tree with `make -C sdk clean &&
 make -C sdk -j$(nproc)`.
+
+## 8. Working-Tree, Gate and Access Notes
+
+Facts a later agent cannot infer from the build system alone (issue #480).
+
+- **The maintainer's #475 Debian work is not on `main`.** It lives on the
+  open PR #476 (branch `feat/475-publish-mmt-dpi-through-official-ubuntu`)
+  and, while it is in progress, in the maintainer's local checkout as
+  uncommitted changes: about a dozen modified tracked files plus the untracked
+  `debian/`, `tools/ci/build-debian-package.sh` and
+  `tools/ci/build-source-tarball.sh`. Run `git status --short` before
+  starting any modernization task; if that work is in the tree, land it on its
+  own branch (`git switch -c <branch> && git add -A && git commit`) or stash
+  it (`git stash push -u -m "#475 Debian work"`) before P0 starts. Never
+  overwrite, reset, `git clean`, pop or drop it — and never pop, apply or drop
+  a stash entry you did not create.
+- **Phase0 gate commands.** Both gates build and install the SDK themselves;
+  give each a scratch prefix (default `/tmp/mmt-phase0`, shared between runs):
+
+  ```bash
+  MMT_PREFIX=$(mktemp -d) bash tools/phase0/ci/check_classification.sh   # golden fingerprint
+  MMT_PREFIX=$(mktemp -d) bash tools/phase0/ci/check_precision.sh        # precision/recall
+  ```
+
+  **Baseline-regeneration rule** (`tools/phase0/README.md`, *What each gate
+  asserts*): a fingerprint mismatch is a stop — flag it. Only for an
+  intentional classification change, copy
+  `tools/phase0/ci/baseline/classification.actual.txt` over
+  `tools/phase0/ci/baseline/classification.txt` (likewise
+  `precision.actual.txt` over `precision.txt`) in the same PR, with the reason
+  in the PR body. The two baselines are reviewed separately: one changing
+  never requires regenerating the other.
+- **Pre-push tier.** `bash tests/run_all_tests.sh --with-harnesses` — the 30
+  suites plus every phase0 harness (§3). Run it before pushing a change to
+  core sources, `rules/*.mk` or anything a harness exercises; it takes
+  minutes.
+- **`gh` CLI with admin access.** The release and branch-protection tasks
+  (plan phases 0.x/1.x) call `gh release …` and
+  `gh api repos/montimage-projects/mmt-dpi/branches/main/protection`, which
+  need a `gh` login with admin permission on the repository and a token with
+  the `repo` and `workflow` scopes. Check before starting:
+  `gh auth status` (scopes) and
+  `gh api repos/montimage-projects/mmt-dpi --jq .permissions.admin` (prints
+  `true`). Without it, stop and hand those tasks back.
+- **No `.env`.** No `.env` file exists in the repository
+  (`git ls-files '.env*'` prints nothing) and none is needed — the build is
+  configured through make variables (§1).

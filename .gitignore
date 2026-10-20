@@ -51,6 +51,8 @@ rsync.sh
 
 # Build output
 build/
+# package builds (tools/ci/build-package.sh); dist/ZIP/ is tracked source (F-DOCS-017)
+dist/packages/
 *.dylib
 *.dll
 *.exe

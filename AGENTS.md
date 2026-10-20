@@ -1,17 +1,67 @@
-# MMT-DPI Agent & Role Guide
+# MMT-DPI Agent Guide
 
-Etiquette and focused role briefs for autonomous work in this repo.
-Project context and commands: [CLAUDE.md](CLAUDE.md) · Environment: [docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md)
+C deep-packet-inspection SDK (plain Make, no autotools/cmake). Linux only;
+GCC is the supported toolchain. Environment, install and test-runner details:
+[docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md) — the single source for
+the toolchain line, the `MMT_BASE` prefix contract and the sanitizer rules.
 
-This guide states no build, test or install command of its own — every one of
-them lives in the two documents above. Quote them from there, never from here.
+## Commands
 
-## Etiquette for all agents
+- Build (there is no top-level Makefile): `make -C sdk -j$(nproc)` — exit 0 = green; warnings are informational (never `-Werror`)
+- Test: `bash tests/run_all_tests.sh` — 30/30 suites pass; standalone (no prior build or install); the SDK-building suites run `make -C sdk clean` first, so a run discards an existing `sdk/` build. Count, runtime band and exit codes: [docs/AGENT_ENVIRONMENT.md §3](docs/AGENT_ENVIRONMENT.md#3-testing)
+- One suite or a subset: `bash tests/run_all_tests.sh hashmap memory`
+- Sanitized suites: `SANITIZE=asan|tsan bash tests/run_all_tests.sh` (mirrors `BUILD=asan`/`BUILD=tsan`; tsan re-execs under `setarch -R`)
+- Coverage: `bash tests/run_all_tests.sh --coverage` — line coverage of the instrumented `src/` subset, not the whole SDK; whole-SDK per-family numbers: `bash tools/ci/check-sdk-coverage.sh` after that run
+- Phase0 gates (golden fingerprint, precision/recall): `MMT_PREFIX=$(mktemp -d) bash tools/phase0/ci/check_classification.sh` and `MMT_PREFIX=$(mktemp -d) bash tools/phase0/ci/check_precision.sh`
+- Pre-push tier (minutes): `bash tests/run_all_tests.sh --with-harnesses`
+- Lint: `shellcheck $(git ls-files '*.sh')`; cppcheck via `bash tools/ci/run-cppcheck.sh` (pinned version, see [docs/AGENT_ENVIRONMENT.md §1](docs/AGENT_ENVIRONMENT.md#1-toolchain-requirements))
+- Doc validators: `for s in scripts/validate-*.sh; do bash "$s" || exit 1; done`
+- Optional security engines: `make -C sdk ENABLESEC=1 -j$(nproc)` (requires libxml2-dev)
+- Clean: `make -C sdk clean`
+
+## Layout
+
+| Path | Contents |
+|------|----------|
+| `sdk/Makefile` | Build entry point; `install` and `test` targets |
+| `src/mmt_core`, `src/mmt_tcpip` | Core engine and TCP/IP protocol detection |
+| `src/mmt_mobile` | Mobile protocol dissectors; `asn1c/` subtree is generated code |
+| `src/mmt_business_app`, `src/mmt_dicom` | Business-app and DICOM dissectors |
+| `src/mmt_security`, `src/mmt_fuzz_engine` | Compiled only with `ENABLESEC=1` |
+| `rules/*.mk` | Every build flag: `MMT_BASE`, `BUILD=asan\|tsan\|coverage`, `ENABLESEC`, `DEBUG`, `SHOWLOG` |
+| `tests/` | Standalone unit suites (list in `DEFAULT_SUITES` of `tests/run_all_tests.sh`) |
+| `tools/phase0/` | CI baseline gates: golden-pcap classification fingerprint, precision/recall, ASan/TSan harnesses |
+| `dist/ZIP/` | Hand-maintained installer sources for the prebuilt ZIP — tracked, edit like any source |
+
+## Constraints
+
+### Never
+
+- Hand-edit the asn1c-generated sources under `src/mmt_mobile/asn1c/` — they are regenerated from ASN.1 specs, so manual edits are silently lost.
+- Switch `BUILD=` profiles without the clean step of [docs/AGENT_ENVIRONMENT.md §5](docs/AGENT_ENVIRONMENT.md#5-sanitizer-build-profiles).
+- Build or install outside the `MMT_BASE` prefix contract of [docs/AGENT_ENVIRONMENT.md §4](docs/AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
+- Use `make -C sdk test` as a smoke test: it compiles examples from the installed prefix and fails without a prior `sudo make install`.
+- Commit generated artifacts: `sdk/lib/`, `sdk/include/`, `sdk/examples/`, `sdk/bin/`, `build/`, `dist/packages/`.
+- Change the phase0 golden-pcap fingerprint silently. The `classification-gate` job ("Golden classification fingerprint unchanged", `.github/workflows/phase0-baseline.yml`) is a required check on `main` (issue #184), so a mismatch blocks the merge.
+- Overwrite, reset, clean or drop work you did not create — uncommitted changes or stash entries (see [docs/AGENT_ENVIRONMENT.md §8](docs/AGENT_ENVIRONMENT.md#8-working-tree-gate-and-access-notes)).
+
+### Ask first
+
+- Any golden-fingerprint change: stop and flag the diff. An intentional behavior change regenerates the baselines per `tools/phase0/README.md`.
+- Release or branch-protection work: it needs `gh` with admin access ([docs/AGENT_ENVIRONMENT.md §8](docs/AGENT_ENVIRONMENT.md#8-working-tree-gate-and-access-notes)).
+
+## Conventions
 
 - Branches `<type>/<issue>-<short-desc>`; commits follow Conventional Commits with a trailing `(#N)`.
+- Minimal diffs: change only what the task requires; never reformat or mass-rename unrelated code.
 - Docs are reconciled to code: cite `file:line` when documenting behavior; record resolved ambiguities append-only in `docs/DECISIONS.md`.
-- Never edit generated trees (`src/mmt_mobile/asn1c/`) or commit build outputs (`sdk/lib/`, `sdk/include/`, `sdk/examples/`, `sdk/bin/`, `build/`, `dist/`).
-- Classification changes must keep the phase0 golden-pcap fingerprint unchanged (`tools/phase0/README.md`). The `classification-gate` job ("Golden classification fingerprint unchanged", `.github/workflows/phase0-baseline.yml`) runs on every PR into `main` and — since issue #184 made the phase0 gates required status checks on `main` — a mismatch blocks the merge.
+
+## Done when
+
+- `bash tests/run_all_tests.sh` exits 0 after any source change; new behavior gets a test in the matching `tests/` suite.
+- After touching `rules/*.mk` or core sources, `make -C sdk -j$(nproc)` (default profile) also exits 0 before pushing.
+- A classification-logic change leaves `bash tools/phase0/ci/check_classification.sh` passing.
+- A docs change leaves every `scripts/validate-*.sh` passing (the `doc-validators` job runs them as a required `main` check).
 
 ## Roles
 
@@ -25,7 +75,7 @@ Adopt a brief by reading it.
 Scope: `src/mmt_tcpip`, `src/mmt_mobile`, `src/mmt_business_app`, `src/mmt_dicom`.
 
 - Model new signatures on existing dissectors; reuse match-condition helpers instead of ad-hoc byte scans.
-- After every change run the test command of record ([CLAUDE.md](CLAUDE.md) → *Critical commands*) plus the relevant phase0 checks (`tools/phase0/README.md`).
+- After every change run the test command of record (*Commands* above) plus the phase0 gates.
 - Report: files changed, suites run, fingerprint impact. If the golden fingerprint changes, stop — flag it as an intentional behavior change needing baseline regeneration.
 
 ### doc-reconciler — documentation verified against code
@@ -34,16 +84,15 @@ Scope: `docs/`, root Markdown, `docs/DECISIONS.md`.
 
 - Verify each doc claim against sources (`rules/*.mk`, `sdk/Makefile`, `src/`, `tests/`); fix or flag unverifiable claims.
 - Every non-trivial resolution gets one append-only entry in `docs/DECISIONS.md`: question, answer, source.
-- Facts that have a single home stay there: link to [docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md) rather than restating it, and keep `scripts/validate-agent-environment.sh` green — the `doc-validators` job (`.github/workflows/c-cpp.yml`) runs every `scripts/validate-*.sh` as a required `main` check.
+- Facts that have a single home stay there: link to [docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md) rather than restating it, and keep `scripts/validate-agent-environment.sh` green.
 - Report: files fixed, claims verified, entries appended. Do not reformat docs beyond what the fix requires.
 
 ### sanitizer-verifier — memory- and thread-safety verification
 
 Scope: the sanitizer build profiles and the phase0 harnesses.
 
-- Follow the profile-switch clean rule and the `MMT_BASE` prefix contract as stated in [docs/AGENT_ENVIRONMENT.md §5](docs/AGENT_ENVIRONMENT.md#5-sanitizer-build-profiles) and [§4](docs/AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior); this guide states neither of its own.
-- Use the recipes in that document (§5–§7) and the TSan harness `tools/phase0/tests/run_mt_tsan_test.sh`.
-- Report: profile built, commands run, findings with reproducer input. Restore the default tree when done ([CLAUDE.md](CLAUDE.md) → *Critical commands*).
+- Use the recipes in [docs/AGENT_ENVIRONMENT.md](docs/AGENT_ENVIRONMENT.md) §5–§7 and the TSan harness `tools/phase0/tests/run_mt_tsan_test.sh`.
+- Report: profile built, commands run, findings with reproducer input. Restore the default tree when done (`make -C sdk clean && make -C sdk -j$(nproc)`).
 
 ## Token Efficiency
 

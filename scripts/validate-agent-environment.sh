@@ -385,6 +385,75 @@ if [ "$anchor_errors" -eq 0 ]; then
     ok "every #anchor linked into $DOC_REL resolves to a heading"
 fi
 
+# -----------------------------------------------------------------------------
+# 4. Working-tree, gate and access notes (issue #480)
+# -----------------------------------------------------------------------------
+echo ""
+echo "-- working-tree, gate and access notes --"
+
+check "records that the #475 Debian work lives outside main" \
+      "grep -q '#475 Debian work' '$DOC' && grep -qF 'PR #476' '$DOC'"
+check "names the classification gate with a scratch MMT_PREFIX" \
+      "grep -qE 'MMT_PREFIX=.*tools/phase0/ci/check_classification\.sh' '$DOC'"
+check "names the precision gate with a scratch MMT_PREFIX" \
+      "grep -qE 'MMT_PREFIX=.*tools/phase0/ci/check_precision\.sh' '$DOC'"
+check "states the baseline-regeneration rule" \
+      "grep -qF 'Baseline-regeneration rule' '$DOC' && grep -qF 'classification.actual.txt' '$DOC'"
+check "names --with-harnesses as the pre-push tier" \
+      "grep -qE 'Pre-push tier.*bash tests/run_all_tests.sh --with-harnesses' '$DOC'"
+check "states the gh admin requirement" \
+      "grep -qF 'gh api repos/montimage-projects/mmt-dpi --jq .permissions.admin' '$DOC'"
+check "states that no .env exists or is needed" \
+      "grep -qF 'No \`.env\` file exists' '$DOC' && [ -z \"\$(git -C '$ROOT' ls-files '.env*' 2>/dev/null)\" ]"
+
+# -----------------------------------------------------------------------------
+# 5. AGENTS.md is the cross-agent source of truth (issue #481)
+# -----------------------------------------------------------------------------
+echo ""
+echo "-- AGENTS.md source of truth --"
+
+AGENTS="$ROOT/AGENTS.md"
+check "AGENTS.md exists at the repository root" "[ -f '$AGENTS' ]"
+check "AGENTS.md names the build command of record" \
+      "grep -qF 'make -C sdk -j\$(nproc)' '$AGENTS'"
+check "AGENTS.md names the test command with the ${suite_count}/${suite_count} suite count" \
+      "grep -qF 'bash tests/run_all_tests.sh' '$AGENTS' && grep -qF '${suite_count}/${suite_count} suites' '$AGENTS'"
+check "AGENTS.md names both phase0 gate commands" \
+      "grep -qF 'tools/phase0/ci/check_classification.sh' '$AGENTS' && grep -qF 'tools/phase0/ci/check_precision.sh' '$AGENTS'"
+# shellcheck disable=SC2016  # backticks are Markdown syntax inside the pattern
+check "AGENTS.md no longer defers project context and commands to CLAUDE.md" \
+      "! grep -qF 'Project context and commands: [CLAUDE.md]' '$AGENTS'"
+check "AGENTS.md has no @imports (Claude-only syntax)" \
+      "! grep -qE '^@' '$AGENTS'"
+check "the never-commit rule names dist/packages/, and dist/packages/ is ignored" \
+      "grep -qF 'dist/packages/' '$AGENTS' && grep -qx 'dist/packages/' '$ROOT/.gitignore'"
+# shellcheck disable=SC2016  # backticks are Markdown syntax inside the pattern
+check "no agent file forbids committing all of dist/ (dist/ZIP/ is tracked source)" \
+      "! grep -qF '\`dist/\`' '$AGENTS' && ! grep -qF '\`dist/\`' '$ROOT/CLAUDE.md'"
+
+# -----------------------------------------------------------------------------
+# 6. CLAUDE.md is a thin @AGENTS.md wrapper (issue #482)
+# -----------------------------------------------------------------------------
+echo ""
+echo "-- CLAUDE.md wrapper --"
+
+CLAUDE="$ROOT/CLAUDE.md"
+check "CLAUDE.md exists and its first line is @AGENTS.md" \
+      "[ -f '$CLAUDE' ] && [ \"\$(head -1 '$CLAUDE')\" = '@AGENTS.md' ]"
+check "CLAUDE.md carries no commands or hard-rules block of its own" \
+      "! grep -qE '^#+ *(Critical commands|Commands|Hard rules|Constraints|Done when)' '$CLAUDE' && ! grep -qF 'make -C sdk' '$CLAUDE' && ! grep -qF 'run_all_tests.sh' '$CLAUDE'"
+# Every substantive line (not blank, not an @import, not an HTML comment) of
+# CLAUDE.md must be absent from AGENTS.md, so no rule is stated twice.
+dup_lines="$(sed -e '/^<!--/,/-->/d' -e '/^@/d' -e '/^[[:space:]]*$/d' "$CLAUDE" \
+    | while IFS= read -r line; do
+          grep -qxF -- "$line" "$AGENTS" && printf '%s\n' "$line"
+      done || true)"
+if [ -z "$dup_lines" ]; then
+    ok "CLAUDE.md repeats no line of AGENTS.md"
+else
+    fail "CLAUDE.md repeats AGENTS.md lines: $(printf '%s' "$dup_lines" | head -3 | tr '\n' '|')"
+fi
+
 echo ""
 if [ "$ERRORS" -eq 0 ]; then
     echo "Result: PASS (all checks passed)"
