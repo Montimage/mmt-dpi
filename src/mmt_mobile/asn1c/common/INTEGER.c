@@ -868,7 +868,16 @@ INTEGER_decode_aper(const asn_codec_ctx_t *opt_codec_ctx,
 				int max_range_bytes = (ct->range_bits >> 3) +
 				                      (((ct->range_bits % 8) > 0) ? 1 : 0);
 				int length = 0, i;
-				long value = 0;
+				unsigned long offset = 0;
+				long value;
+
+				/*
+				 * GHSA-x882-jvjm-xxh9 (mmt-dpi #513): the octets are
+				 * accumulated in an unsigned long, so reject constraint
+				 * metadata wider than it can hold.
+				 */
+				if((size_t)ct->range_bits > 8 * sizeof(offset))
+					ASN__DECODE_FAILED;
 
 				for (i = 1; ; i++) {
 					int upper = 1 << i;
@@ -884,16 +893,27 @@ INTEGER_decode_aper(const asn_codec_ctx_t *opt_codec_ctx,
 				/* X.691 #12.2.6 length determinant + lb (1) */
 				length += 1;
 				ASN_DEBUG("Got length %d", length);
+				/*
+				 * GHSA-x882-jvjm-xxh9 (mmt-dpi #513): the determinant
+				 * field is rounded up to a power of two, so it can
+				 * declare more octets than the constraint permits.
+				 * Reject such a length before aligning or reading any
+				 * payload octet: it would over-shift the accumulator and
+				 * desynchronise every field that follows.
+				 */
+				if (length > max_range_bytes)
+					ASN__DECODE_FAILED;
 				if (aper_get_align(pd) != 0)
 					ASN__DECODE_FAILED;
 				while (length--) {
 					int buf = per_get_few_bits(pd, 8);
 					if (buf < 0)
 						ASN__DECODE_FAILED;
-					value += (((long)buf) << (8 * length));
+					offset += (((unsigned long)buf) << (8 * length));
 				}
 
-				value += ct->lower_bound;
+				/* Unsigned arithmetic: no signed overflow on the add */
+				value = (long)(offset + (unsigned long)ct->lower_bound);
 				if((specs && specs->field_unsigned)
 				        ? asn_uint642INTEGER(st, (unsigned long)value)
 				        : asn_int642INTEGER(st, value))

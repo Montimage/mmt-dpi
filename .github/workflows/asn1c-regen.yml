@@ -16,13 +16,15 @@ on:
   schedule:
     - cron: '17 4 * * 1'
   workflow_dispatch:
-  # Also guard the inputs themselves: recipe, pin and ASN.1 support files.
+  # Also guard the inputs themselves: recipe, pin, ASN.1 support files and
+  # the runtime patches the recipe applies (issue #513).
   pull_request:
     branches: [ main ]
     paths:
       - 'src/mmt_mobile/asn1c/Makefile'
       - 'src/mmt_mobile/asn1c/ASN1C_VERSION'
       - 'src/mmt_mobile/asn1c/support/**'
+      - 'src/mmt_mobile/asn1c/patches/**'
       - '.github/workflows/asn1c-regen.yml'
 
 # A newer push cancels the superseded run of the same ref (issue #188,

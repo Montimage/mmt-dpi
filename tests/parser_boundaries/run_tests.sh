@@ -141,9 +141,22 @@
 #                               connections (handshake + close) through
 #                               mmt_init_handler + packet_process.
 #
+# Issue #513 adds the "s1ap-integer" fixture: the recipe-applied asn1c
+# runtime patches (src/mmt_mobile/asn1c/patches/) — an APER INTEGER length
+# determinant longer than the constraint permits (GHSA-x882-jvjm-xxh9) is
+# rejected without a signed overshift, and OPEN_TYPE_aper_get() fails on a
+# selector result it cannot use (GHSA-rcj5-gcvg-x796).
+#
+#   test_s1ap_integer_length.c — crafted S1AP InitialContextSetupRequest
+#                               PDUs through s1ap_decode() plus direct
+#                               BitRate / open-type decodes, linked against
+#                               libmmt_tmobile.a whole-archive (the shared
+#                               library hides the asn1c symbols).
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
-#   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events" select a fixture family.
+#   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events"/"s1ap-integer"
+#   select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -151,9 +164,10 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer)
 UNIT_TESTS=()
 API_TESTS=()
+MOBILE_TESTS=()
 for f in "${FIXTURES[@]}"; do
     case "$f" in
         udp)
@@ -196,8 +210,11 @@ for f in "${FIXTURES[@]}"; do
         tcp-events)
             API_TESTS+=(tcp_event_payload_api)
             ;;
+        s1ap-integer)
+            MOBILE_TESTS+=(s1ap_integer_length)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events s1ap-integer)" >&2
             exit 2
             ;;
     esac
@@ -267,6 +284,16 @@ for name in "${API_TESTS[@]}"; do
         -I"${INC}" -I"${REPO_ROOT}/src/mmt_tcpip/lib" "${UNIT_INCS[@]}" \
         -L"${LIB}" -lmmt_tcpip -lmmt_core -ldl -lpcap -lpthread -lm
 done
+for name in "${MOBILE_TESTS[@]}"; do
+    "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
+        -o "${SCRIPT_DIR}/test_${name}" "${SCRIPT_DIR}/test_${name}.c" \
+        -I"${REPO_ROOT}/src/mmt_mobile" -I"${REPO_ROOT}/src/mmt_mobile/s1ap" \
+        -I"${REPO_ROOT}/src/mmt_mobile/asn1c/common" \
+        -I"${REPO_ROOT}/src/mmt_mobile/asn1c/s1ap" \
+        -I"${REPO_ROOT}/src/mmt_mobile/asn1c/ngap" -I"${INC}" \
+        -Wl,--whole-archive "${LIB}/libmmt_tmobile.a" -Wl,--no-whole-archive \
+        -L"${LIB}" -lmmt_core -lm
+done
 
 # --- [3/3] run ---------------------------------------------------------------
 # The protocol plugins are loaded at run time via dlopen, so under a
@@ -295,7 +322,7 @@ run_one() {
     fi
 }
 
-for name in "${UNIT_TESTS[@]}" "${API_TESTS[@]}"; do
+for name in "${UNIT_TESTS[@]}" "${API_TESTS[@]}" "${MOBILE_TESTS[@]}"; do
     run_one "${name}"
     echo
 done
@@ -304,4 +331,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505, #513)"

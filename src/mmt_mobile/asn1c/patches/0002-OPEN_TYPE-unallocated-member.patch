@@ -1,0 +1,85 @@
+Fail an open-type decode on an unallocated member (GHSA-rcj5-gcvg-x796)
+
+Targeted backport of the decoder guard for GHSA-rcj5-gcvg-x796
+(mouse07410/asn1c, fixed in e9600cf7f2 and the cleanup commits before it)
+onto the pinned 2020 skeleton, applied by the gen-s1ap/gen-ngap recipe
+(mmt-dpi issue #513).
+
+OPEN_TYPE_{ber,xer,uper,aper}_get() only reset the member when *memb_ptr2
+was non-NULL, then formed inner_value as (char *)*memb_ptr2 + offset
+unconditionally: for an ATF_POINTER member that was never allocated the
+inner decoder wrote through NULL + offset.  They also indexed
+elm->type->elements[] with the selector result without bounding it.  Fail
+the decode instead.  Every open type in the committed S1AP/NGAP tree is
+ATF_NOFLAGS, so valid input decodes exactly as before.
+
+--- a/common/OPEN_TYPE.c
++++ b/common/OPEN_TYPE.c
+@@ -83,6 +83,16 @@
+         }
+     }
+ 
++    /*
++     * GHSA-rcj5-gcvg-x796 (mmt-dpi #513): an unallocated pointer member or
++     * a selector result outside this open type's alternatives must fail
++     * the decode instead of forming a NULL + offset inner_value.
++     */
++    if(*memb_ptr2 == NULL || !selected.type_descriptor
++       || selected.presence_index > elm->type->elements_count) {
++        ASN__DECODE_FAILED;
++    }
++
+     inner_value =
+         (char *)*memb_ptr2
+         + elm->type->elements[selected.presence_index - 1].memb_offset;
+@@ -205,6 +215,16 @@
+         ASN__DECODE_FAILED;
+     }
+ 
++    /*
++     * GHSA-rcj5-gcvg-x796 (mmt-dpi #513): an unallocated pointer member or
++     * a selector result outside this open type's alternatives must fail
++     * the decode instead of forming a NULL + offset inner_value.
++     */
++    if(*memb_ptr2 == NULL || !selected.type_descriptor
++       || selected.presence_index > elm->type->elements_count) {
++        ASN__DECODE_FAILED;
++    }
++
+     inner_value =
+         (char *)*memb_ptr2
+         + elm->type->elements[selected.presence_index - 1].memb_offset;
+@@ -327,6 +347,16 @@
+         }
+     }
+ 
++    /*
++     * GHSA-rcj5-gcvg-x796 (mmt-dpi #513): an unallocated pointer member or
++     * a selector result outside this open type's alternatives must fail
++     * the decode instead of forming a NULL + offset inner_value.
++     */
++    if(*memb_ptr2 == NULL || !selected.type_descriptor
++       || selected.presence_index > elm->type->elements_count) {
++        ASN__DECODE_FAILED;
++    }
++
+     inner_value =
+         (char *)*memb_ptr2
+         + elm->type->elements[selected.presence_index - 1].memb_offset;
+@@ -437,6 +467,16 @@
+         }
+     }
+ 
++    /*
++     * GHSA-rcj5-gcvg-x796 (mmt-dpi #513): an unallocated pointer member or
++     * a selector result outside this open type's alternatives must fail
++     * the decode instead of forming a NULL + offset inner_value.
++     */
++    if(*memb_ptr2 == NULL || !selected.type_descriptor
++       || selected.presence_index > elm->type->elements_count) {
++        ASN__DECODE_FAILED;
++    }
++
+     inner_value =
+         (char *)*memb_ptr2
+         + elm->type->elements[selected.presence_index - 1].memb_offset;

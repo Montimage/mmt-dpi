@@ -83,6 +83,16 @@ OPEN_TYPE_ber_get(const asn_codec_ctx_t *opt_codec_ctx,
         }
     }
 
+    /*
+     * GHSA-rcj5-gcvg-x796 (mmt-dpi #513): an unallocated pointer member or
+     * a selector result outside this open type's alternatives must fail
+     * the decode instead of forming a NULL + offset inner_value.
+     */
+    if(*memb_ptr2 == NULL || !selected.type_descriptor
+       || selected.presence_index > elm->type->elements_count) {
+        ASN__DECODE_FAILED;
+    }
+
     inner_value =
         (char *)*memb_ptr2
         + elm->type->elements[selected.presence_index - 1].memb_offset;
@@ -202,6 +212,16 @@ OPEN_TYPE_xer_get(const asn_codec_ctx_t *opt_codec_ctx,
         break;
     case XCT_BROKEN:
     default:
+        ASN__DECODE_FAILED;
+    }
+
+    /*
+     * GHSA-rcj5-gcvg-x796 (mmt-dpi #513): an unallocated pointer member or
+     * a selector result outside this open type's alternatives must fail
+     * the decode instead of forming a NULL + offset inner_value.
+     */
+    if(*memb_ptr2 == NULL || !selected.type_descriptor
+       || selected.presence_index > elm->type->elements_count) {
         ASN__DECODE_FAILED;
     }
 
@@ -327,6 +347,16 @@ OPEN_TYPE_uper_get(const asn_codec_ctx_t *opt_codec_ctx,
         }
     }
 
+    /*
+     * GHSA-rcj5-gcvg-x796 (mmt-dpi #513): an unallocated pointer member or
+     * a selector result outside this open type's alternatives must fail
+     * the decode instead of forming a NULL + offset inner_value.
+     */
+    if(*memb_ptr2 == NULL || !selected.type_descriptor
+       || selected.presence_index > elm->type->elements_count) {
+        ASN__DECODE_FAILED;
+    }
+
     inner_value =
         (char *)*memb_ptr2
         + elm->type->elements[selected.presence_index - 1].memb_offset;
@@ -435,6 +465,16 @@ OPEN_TYPE_aper_get(const asn_codec_ctx_t *opt_codec_ctx,
            != 0) {
             ASN__DECODE_FAILED;
         }
+    }
+
+    /*
+     * GHSA-rcj5-gcvg-x796 (mmt-dpi #513): an unallocated pointer member or
+     * a selector result outside this open type's alternatives must fail
+     * the decode instead of forming a NULL + offset inner_value.
+     */
+    if(*memb_ptr2 == NULL || !selected.type_descriptor
+       || selected.presence_index > elm->type->elements_count) {
+        ASN__DECODE_FAILED;
     }
 
     inner_value =

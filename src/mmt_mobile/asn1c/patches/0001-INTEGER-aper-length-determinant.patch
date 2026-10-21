@@ -1,0 +1,65 @@
+Reject an over-long APER INTEGER length determinant (GHSA-x882-jvjm-xxh9)
+
+Targeted backport of mouse07410/asn1c ce45145ad4 ("Harden APER wide INTEGER
+length decoding", fixed in v1.5.2) onto the pinned 2020 skeleton, applied by
+the gen-s1ap/gen-ngap recipe (mmt-dpi issue #513).
+
+INTEGER_decode_aper() read an i-bit length determinant for a constrained
+INTEGER wider than 16 bits but never bounded it by the octets the
+constraint permits: the field is rounded up to a power of two, so a 33..64
+bit range (S1AP BitRate, NGAP BitRate) may declare 8 octets.  The decoder
+then shifted a signed long by up to 56 places (undefined behaviour) and
+accepted over-long encodings that displace every following field.  Reject
+constraints wider than the accumulator and lengths above max_range_bytes
+before aligning or consuming payload, and accumulate unsigned.
+
+--- a/common/INTEGER.c
++++ b/common/INTEGER.c
+@@ -868,7 +868,16 @@
+ 				int max_range_bytes = (ct->range_bits >> 3) +
+ 				                      (((ct->range_bits % 8) > 0) ? 1 : 0);
+ 				int length = 0, i;
+-				long value = 0;
++				unsigned long offset = 0;
++				long value;
++
++				/*
++				 * GHSA-x882-jvjm-xxh9 (mmt-dpi #513): the octets are
++				 * accumulated in an unsigned long, so reject constraint
++				 * metadata wider than it can hold.
++				 */
++				if((size_t)ct->range_bits > 8 * sizeof(offset))
++					ASN__DECODE_FAILED;
+ 
+ 				for (i = 1; ; i++) {
+ 					int upper = 1 << i;
+@@ -884,16 +893,27 @@
+ 				/* X.691 #12.2.6 length determinant + lb (1) */
+ 				length += 1;
+ 				ASN_DEBUG("Got length %d", length);
++				/*
++				 * GHSA-x882-jvjm-xxh9 (mmt-dpi #513): the determinant
++				 * field is rounded up to a power of two, so it can
++				 * declare more octets than the constraint permits.
++				 * Reject such a length before aligning or reading any
++				 * payload octet: it would over-shift the accumulator and
++				 * desynchronise every field that follows.
++				 */
++				if (length > max_range_bytes)
++					ASN__DECODE_FAILED;
+ 				if (aper_get_align(pd) != 0)
+ 					ASN__DECODE_FAILED;
+ 				while (length--) {
+ 					int buf = per_get_few_bits(pd, 8);
+ 					if (buf < 0)
+ 						ASN__DECODE_FAILED;
+-					value += (((long)buf) << (8 * length));
++					offset += (((unsigned long)buf) << (8 * length));
+ 				}
+ 
+-				value += ct->lower_bound;
++				/* Unsigned arithmetic: no signed overflow on the add */
++				value = (long)(offset + (unsigned long)ct->lower_bound);
+ 				if((specs && specs->field_unsigned)
+ 				        ? asn_uint642INTEGER(st, (unsigned long)value)
+ 				        : asn_int642INTEGER(st, value))
