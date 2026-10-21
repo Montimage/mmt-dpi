@@ -141,7 +141,7 @@ jobs:
     # definite leak fails the gate. The same harness also runs in the generic
     # harness matrix above — on hosts without valgrind it falls back to an
     # ASan detect_leaks=1 build — but this job pins the Valgrind oracle.
-    name: Leak regression over the golden corpus (Valgrind)
+    # It reports under its job id, a short stable required context (#490).
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:

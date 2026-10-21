@@ -49,33 +49,72 @@ on:
   push:
     tags: ["v*"]            # v1.0, v1.7.10, ... -> build + publish a release
   workflow_dispatch:        # manual build of the full matrix (no release)
+  # Every pull request runs this workflow so the always-reporting
+  # `packages-gate` aggregate can be a required check (issue #490, F-CI-004):
+  # a workflow-level `paths:` filter left the context unreported on PRs that
+  # touch no packaging path, so it could never be required. The path filter
+  # moved into the `changes` job; build and reproducibility run only when it
+  # matches.
   pull_request:             # validate packaging changes without releasing
-    paths:
-      - "sdk/**"
-      - "src/**"
-      - "rules/**"
-      - "tools/ci/build-package.sh"
-      - "tools/ci/tests/**"
-      - "tools/ci/install-build-deps.sh"
-      - "tools/ci/check-reproducible-build.sh"
-      - "tools/ci/check-release-tag.sh"
-      - "tools/ci/check-release-gates.sh"
-      - "tools/ci/publish-release.sh"
-      - "tools/ci/release-alert.sh"
-      - "tools/ci/base-images.txt"
-      - ".github/workflows/release-packages.yml"
 
 # Release builds must run to completion — a re-run of the same tag queues
 # behind the in-flight one instead of cancelling it (issue #188, F-CI-007:
 # the tag-release workflow is the exception to cancel-in-progress).
+# Pull-request runs do cancel their superseded run (issue #490): every PR now
+# runs this workflow, and only tag and dispatch runs must run to completion.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    # Packaging path filter (issue #490): on a pull request, does the change
+    # touch anything the package build reads? The checkout is the PR merge
+    # commit, so HEAD^1 is the base branch tip and HEAD^1..HEAD is exactly the
+    # PR's change. Tag pushes and manual dispatches always build.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      packaging: ${{ steps.filter.outputs.packaging }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Match the changed files against the packaging paths
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "packaging=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Fail closed: a diff that cannot run aborts the job (packages-gate
+          # then fails) instead of reading as "no packaging change", and
+          # --no-renames lists a file moved out of a packaging path under its
+          # old name too, as the former workflow-level paths filter did.
+          files=$(git diff --no-renames --name-only HEAD^1 HEAD)
+          packaging=false
+          while IFS= read -r f; do
+            case "$f" in
+              sdk/*|src/*|rules/*|tools/ci/tests/*|\
+              tools/ci/build-package.sh|tools/ci/install-build-deps.sh|\
+              tools/ci/check-reproducible-build.sh|tools/ci/check-release-tag.sh|\
+              tools/ci/check-release-gates.sh|tools/ci/publish-release.sh|\
+              tools/ci/release-alert.sh|tools/ci/base-images.txt|\
+              .github/workflows/release-packages.yml)
+                echo "packaging path changed: $f"
+                packaging=true ;;
+            esac
+          done <<< "$files"
+          echo "packaging=${packaging}" >> "$GITHUB_OUTPUT"
+
   build:
     name: ${{ matrix.distro.name }} (${{ matrix.arch }})
     # Each leg runs on a host of its own architecture (issue #421): arm64 on
@@ -85,6 +124,8 @@ jobs:
     # (glibc 2.35) intermittently crashed with `qemu: uncaught target signal
     # 11` — in the libc-bin trigger and in the explicit ldconfig in
     # tools/ci/build-package.sh — failing the job on a correct package.
+    needs: changes
+    if: needs.changes.outputs.packaging == 'true'
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     # Cap every leg so a stuck build can't burn the 6-hour default limit.
     timeout-minutes: 60
@@ -172,6 +213,8 @@ jobs:
     # is byte-identity, and this job is the gate that proves it. One amd64
     # leg per package format on images already pinned in the build matrix.
     name: Reproducible ${{ matrix.pkg }} build (${{ matrix.distro }})
+    needs: changes
+    if: needs.changes.outputs.packaging == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
@@ -194,6 +237,41 @@ jobs:
             -v "$PWD":/work -w /work \
             "${{ matrix.image }}" \
             bash tools/ci/check-reproducible-build.sh --install-deps "${{ matrix.distro }}" "${{ matrix.pkg }}"
+
+  packages-gate:
+    # Required-check aggregate (issue #490, F-CI-004): one context that
+    # reports on every pull request, whatever paths it touches. It passes
+    # when the PR touches no packaging path and build + reproducibility were
+    # skipped, and otherwise requires every package leg to have succeeded —
+    # a failed, cancelled or unexpectedly skipped leg fails it.
+    needs: [changes, build, reproducibility]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Package legs succeeded, or were skipped for a non-packaging change
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          PACKAGING: ${{ needs.changes.outputs.packaging }}
+          BUILD: ${{ needs.build.result }}
+          REPRO: ${{ needs.reproducibility.result }}
+        run: |
+          set -euo pipefail
+          echo "changes=${CHANGES} packaging=${PACKAGING:-} build=${BUILD} reproducibility=${REPRO}"
+          if [ "$CHANGES" != "success" ]; then
+            echo "::error::the packaging path filter did not succeed (${CHANGES})"
+            exit 1
+          fi
+          if [ "$PACKAGING" = "true" ]; then
+            want=success
+          else
+            want=skipped
+          fi
+          if [ "$BUILD" != "$want" ] || [ "$REPRO" != "$want" ]; then
+            echo "::error::expected build and reproducibility ${want}, got ${BUILD} / ${REPRO}"
+            exit 1
+          fi
+          echo "packages-gate: ok (packaging=${PACKAGING})"
 
   verify-tag:
     # F-CI-010 (issue #220): gate every tag publish. The tag must equal the

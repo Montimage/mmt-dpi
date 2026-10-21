@@ -21,6 +21,11 @@
 # tools/ci/check-dependency-advisories.sh (issue #492), which drives the real
 # script on fixture trees against a local stub of the advisory feeds
 # (tools/ci/tests/dependency-advisories-feeds.json; no docker, no network).
+# It also runs the required-checks self-test beside
+# tools/ci/check-required-checks.sh (issue #490), which drives the real
+# checker on the committed .github/required-checks.txt and on fixture
+# workflows (no network: --live runs against a stub gh). It skips without
+# PyYAML; the verify-helpers job runs it with PyYAML required.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -30,3 +35,4 @@ bash "${TESTS_DIR}/test-release-tag-pin.sh"
 bash "${TESTS_DIR}/test-release-publish.sh"
 bash "${TESTS_DIR}/test-image-pins.sh"
 python3 "${TESTS_DIR}/test-dependency-advisories.py"
+bash "${TESTS_DIR}/test-required-checks.sh"

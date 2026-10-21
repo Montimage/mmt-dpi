@@ -88,7 +88,44 @@ docs: Update compilation instructions for ARM
 4. Fill out the PR template completely
 5. Request review from at least one maintainer
 
-PRs require **1 approving review** before merging.
+PRs require **1 approving review** from a code owner before merging — the
+intended setting recorded in [`.github/CODEOWNERS`](.github/CODEOWNERS); see
+below for how it is applied and checked.
+
+### Required checks and review
+
+Branch protection on `main` requires the status-check contexts listed in
+[`.github/required-checks.txt`](.github/required-checks.txt) — the reviewed
+record of the gates a PR must pass, spelled exactly as the check runs report.
+The `verify-helpers` job runs `tools/ci/check-required-checks.sh`, which fails
+when a listed context names no workflow job, or names a job that never reports
+on a pull request into `main` (a path-filtered workflow, a tag- or
+schedule-only job) — such a context would leave every PR waiting forever.
+Path-filtered work reports through an always-running aggregate instead:
+`packages-gate` in `release-packages.yml` passes when a PR touches no
+packaging path and otherwise requires every package leg.
+
+Renaming a job whose check is required: update `.github/required-checks.txt`
+in the same PR, and swap the context in branch protection when that PR merges.
+
+The file does not change protection by itself. A maintainer with admin access
+applies it (after the PR that changed it has merged, so every context exists):
+
+```bash
+# Required status checks: exactly the committed list, from GitHub Actions.
+jq -Rn '{strict: true, checks: [inputs | select(test("^\\s*(#|$)") | not)
+        | {context: ., app_id: 15368}]}' .github/required-checks.txt \
+  | gh api -X PATCH repos/montimage-projects/mmt-dpi/branches/main/protection/required_status_checks --input -
+# Reviews: 1 approving code-owner review, stale approvals dismissed.
+gh api -X PATCH repos/montimage-projects/mmt-dpi/branches/main/protection/required_pull_request_reviews \
+  -F required_approving_review_count=1 -F require_code_owner_reviews=true -F dismiss_stale_reviews=true
+# Check: live protection against the committed list (read-only).
+bash tools/ci/check-required-checks.sh --live montimage-projects/mmt-dpi
+```
+
+A deliberate relaxation of the review setting is recorded by editing the
+"Intended setting" lines of `.github/CODEOWNERS` and this section in the same
+change.
 
 ## Coding Standards
 

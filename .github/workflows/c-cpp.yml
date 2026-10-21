@@ -253,6 +253,20 @@ jobs:
       # this helper runs as an ordinary blocking step, not in the advisory
       # loop. With no argument it scans every workflow and composite action.
       run: bash tools/ci/check-image-digests.sh
+    - name: Required checks name pull-request jobs (blocking — issue #490)
+      # .github/required-checks.txt is the committed list of contexts branch
+      # protection on main must require. A context that names no job, or a
+      # job that never reports on a pull request (path-filtered workflow,
+      # tag/schedule-only job), would block every PR — fail here instead.
+      # PyYAML is installed explicitly so the result never depends on the
+      # runner image; REQUIRE_PYYAML=1 makes its absence fatal for the
+      # self-test (the run_all_tests.sh copy skips without it).
+      run: |
+        python3 -c 'import yaml' 2>/dev/null || {
+          sudo apt-get update && sudo apt-get install -y python3-yaml
+        }
+        bash tools/ci/check-required-checks.sh
+        REQUIRE_PYYAML=1 bash tools/ci/tests/test-required-checks.sh
     - name: Package-declaration consistency (blocking — issue #219)
       # Was advisory until the .deb/.rpm declarations were reconciled with
       # the build; the contradictions it tracked are closed, so a regression
@@ -353,7 +367,8 @@ jobs:
     # heading, debian/changelog when present, and the installer pin with the
     # README/site mentions of it. A dedicated job so the verdict carries its
     # own status-check name; it needs no dependencies and no write access.
-    name: Version sites agree with rules/common.mk
+    # It reports under its job id: the old `name:` quoted a path, and every
+    # required context is kept short and stable (issue #490, F-CI-014).
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

@@ -1,13 +1,37 @@
-# Code owners — merge governance (issue #184, F-CI-005).
+# Code owners — merge governance (issues #184, #490; F-CI-005, F-SEC-011).
 #
-# Branch protection on main requires one approving review from a matching
-# code owner (require_code_owner_reviews), so an entry here is a review
-# gate, not just an auto-request list. Keep owner lists to active
-# maintainers with admin/maintain access to the repository.
+# Intended setting: 1 approving review from a matching code owner
+# (required_approving_review_count: 1, require_code_owner_reviews: true) —
+# applied by a maintainer, see CONTRIBUTING.md "Required checks and review".
+# Keep owner lists to active maintainers with admin/maintain access.
 
 # Core engine and TCP/IP protocol detection — the classifier-critical trees.
 src/mmt_core/   @luongnv89 @dev-montimage @nhnghia
 src/mmt_tcpip/  @luongnv89 @dev-montimage @nhnghia
 
-# Workflows, templates, actions and this file — CI/governance changes.
+# Workflows, templates, actions, this file and the required-checks list —
+# CI/governance changes.
 .github/        @luongnv89 @dev-montimage @nhnghia
+
+# The scripts and configs that decide what CI enforces: gate helpers and
+# their baselines/self-tests, the secret-scan config and allowlist, the
+# pre-commit hook manifest and the doc validators. Editing one of these can
+# weaken a gate as surely as editing a workflow.
+tools/ci/               @luongnv89 @dev-montimage @nhnghia
+tools/phase0/ci/        @luongnv89 @dev-montimage @nhnghia
+scripts/                @luongnv89 @dev-montimage @nhnghia
+.gitleaks.toml          @luongnv89 @dev-montimage @nhnghia
+.gitleaksignore         @luongnv89 @dev-montimage @nhnghia
+.pre-commit-config.yaml @luongnv89 @dev-montimage @nhnghia
+.shellcheckrc           @luongnv89 @dev-montimage @nhnghia
+
+# What users run as root, and what builds and ships the release: installers,
+# build flags, the SDK Makefile and the Debian packaging.
+install.sh              @luongnv89 @dev-montimage @nhnghia
+dist/ZIP/               @luongnv89 @dev-montimage @nhnghia
+rules/                  @luongnv89 @dev-montimage @nhnghia
+sdk/Makefile            @luongnv89 @dev-montimage @nhnghia
+debian/                 @luongnv89 @dev-montimage @nhnghia
+
+# Vulnerability-disclosure policy.
+SECURITY.md             @luongnv89 @dev-montimage @nhnghia

@@ -1,0 +1,58 @@
+# Required status checks for pull requests into main (issue #490,
+# F-CI-004/F-CI-014).
+#
+# One context per line, spelled exactly as the check run reports it: a job's
+# `name:` (matrix expressions substituted), else its job id, plus the
+# ` (v1, v2)` matrix suffix. Blank lines and `#` lines are ignored.
+#
+# This file is the reviewed record of what branch protection on main must
+# require; it does not change protection by itself. A maintainer applies it
+# with the command in CONTRIBUTING.md ("Required checks and review").
+# tools/ci/check-required-checks.sh (verify-helpers job, blocking) fails when
+# a context here names no job that reports on a pull request into main — a
+# renamed job, a path-filtered workflow, a tag- or schedule-only job — and
+# `--live montimage-projects/mmt-dpi` compares this list with the live one.
+#
+# Renaming a job listed here: update this file in the same PR, and swap the
+# context in branch protection when that PR merges (the old name is never
+# reported again, so every later PR would wait on it).
+
+# --- c-cpp.yml -------------------------------------------------------------
+build
+unit-tests
+# Fragile: the suffix is the matrix suite list (rename: a follow-up that
+# swaps the context at its merge, #490).
+unit-tests (-fsigned-char, hashmap memory hexdump mmt_utils mmt_inet_ntop)
+toolchain-floor
+sanitizer-tests (BUILD=asan, asan)
+sanitizer-tests (BUILD=tsan, tsan)
+coverage
+lint
+codeql
+verify-helpers
+pre-commit
+doc-validators
+version-agreement
+root-install
+assertions-live
+enablesec
+secret-scan
+# Replays tools/ci/fuzz/regressions before fuzzing (issue #486).
+fuzz
+resource-budgets (ubuntu-24.04)
+resource-budgets (ubuntu-24.04-arm)
+site-onboarding
+
+# --- phase0-baseline.yml ---------------------------------------------------
+ASan/UBSan profile compiles
+Golden classification fingerprint unchanged
+# Fragile: `#74` in the unquoted YAML name is a comment, so the context is
+# truncated (rename: a follow-up that swaps the context at its merge, #490).
+Labelled-pcap precision/recall holds or improves (M9, issue
+harness-gate
+leak-gate
+
+# --- release-packages.yml --------------------------------------------------
+# Always reports: passes when a PR touches no packaging path (build and
+# reproducibility skipped), else requires every package leg to succeed.
+packages-gate
