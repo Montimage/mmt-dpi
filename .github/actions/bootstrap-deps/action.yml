@@ -37,5 +37,6 @@ runs:
         set -euo pipefail
         sudo apt-get update -y
         # extra-packages is a space-separated word list by contract — word
-        # splitting is intended here.
+        # splitting is intended here. The base set is checked against
+        # tools/ci/build-deps.txt by tools/ci/check-dependency-lists.sh.
         sudo apt-get install -y libxml2-dev libpcap-dev ${{ inputs.extra-packages }}

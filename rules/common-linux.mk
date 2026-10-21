@@ -221,10 +221,10 @@ endif
 #  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Link libraries now live on the link line (the .so recipes append $(LDLIBS),
 # and $(LDFLAGS) for linker options). $(LDLIBS) defaults to -lm (common.mk);
-# the protocol libs that historically declared nghttp2, and the ENABLESEC
-# engines that use libxml2, add theirs here.
-$(SDKLIB)/$(LIBTCPIP).so.$(VERSION):  LDLIBS += $(NGHTTP2_LIBS)
-$(SDKLIB)/$(LIBMOBILE).so.$(VERSION): LDLIBS += $(NGHTTP2_LIBS)
+# libmmt_core and the ENABLESEC engines (libxml2) add theirs here. No protocol
+# library links an external library: the HTTP/2 library tcpip and tmobile
+# once declared was never called, so its -l flag is gone (issue #495;
+# `objdump -p` shows no NEEDED entry for it).
 # libmmt_core dlopen()s the protocol plugins; keep -ldl explicit so the link is
 # self-contained under -Wl,-z,defs even on toolchains that split libdl out of
 # libc.

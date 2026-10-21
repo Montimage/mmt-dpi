@@ -301,7 +301,7 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	# objects (issue #219, F-DEP-203/204): tools/ci/shlib-deps.sh maps each
 	# soname to the Debian package providing it and fails on an unmapped
 	# soname, so the declaration can never drift from the payload again.
-	# libpcap/libnghttp2 are deliberately absent — nothing shipped links them.
+	# libpcap is deliberately absent — nothing shipped links it.
 	$(QUIET) deps=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' deb '$(BUILD_DIR)$(MMT_LIB)' '$(BUILD_DIR)$(MMT_PLUGINS)'` \
 	    && echo "Package: mmt-dpi \
         \nVersion: $(VERSION)-$(GIT_VERSION)\
@@ -348,8 +348,8 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	# reports it, not the git hash — and Release: carries $(GIT_VERSION).
 	# Requires: is derived from the shipped .so NEEDED entries through the
 	# same tools/ci/shlib-deps.sh mapping the deb Depends uses (F-DEP-206);
-	# BuildRequires: mirrors the packages install_build_deps_rhel()
-	# (tools/ci/build-package.sh) installs, floored at $(MMT_GCC_MIN).
+	# BuildRequires: is checked against tools/ci/build-deps.txt (issue #495),
+	# floored at $(MMT_GCC_MIN); no shipped library links libpcap.
 	$(QUIET) reqs=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' rpm '$(BUILD_DIR)$(MMT_LIB)' '$(BUILD_DIR)$(MMT_PLUGINS)'` \
 	    && echo -e\
 	    "Summary:  MMT-DPI\
@@ -360,7 +360,7 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	    \nGroup: Development/Libraries\
 	    \nURL: http://montimage.eu/\
 	    \nRequires: $$reqs\
-	    \nBuildRequires: gcc >= $(MMT_GCC_MIN), gcc-c++ >= $(MMT_GCC_MIN), make, git, file, findutils, which, binutils, libxml2-devel, libpcap-devel, rpm-build\
+	    \nBuildRequires: gcc >= $(MMT_GCC_MIN), gcc-c++ >= $(MMT_GCC_MIN), make, git, file, findutils, which, binutils, libxml2-devel, rpm-build\
 	    \n\
 	    \nBuildRoot: %{_topdir}/BUILD/$(BUILD_DIR)\
 	    \n\

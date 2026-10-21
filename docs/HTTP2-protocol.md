@@ -8,7 +8,8 @@ title: "HTTP2 protocol"
 ## Overview
 
 HTTP/2 protocol classification and attribute extraction in MMT-DPI. The implementation
-uses nghttp2 for HTTP/2 parsing. HTTP/2 is identified via:
+is the in-tree dissector `src/mmt_tcpip/lib/protocols/http2.c`; it links no
+HTTP/2 library. HTTP/2 is identified via:
 - TCP with `h2` TLS ALPN (port 443)
 - Cleartext TCP with `h2c` (HTTP/1.1 Upgrade header, port 80)
 

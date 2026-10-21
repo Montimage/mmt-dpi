@@ -18,7 +18,7 @@ older GCC; the contract and the matching glibc/libstdc++ floors are stated in
 # Pre-requisites
 
 Required packages: `libxml2-dev` (only for `ENABLESEC=1` — `rules/common.mk:76-84`),
-`libpcap-dev` (for examples), `libnghttp2-dev` (optional, auto-detected — `rules/common.mk:56-74`).
+`libpcap-dev` (for examples). The libraries link no other third-party library.
 
 ### Get source code
 ```bash

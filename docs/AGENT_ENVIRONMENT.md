@@ -32,17 +32,23 @@ the QoE demo, the prebuilt ZIP, the Debian packaging checklist).
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential gcc make libxml2-dev libpcap-dev libnghttp2-dev bash git pkg-config jq
+sudo apt-get install -y build-essential gcc g++ make git libxml2-dev libpcap-dev bash pkg-config jq
 ```
 
 | Package | Why it is needed |
 |---------|------------------|
 | `gcc`, `make` | The whole build (`rules/common-linux.mk:62` enables LTO for GCC only) |
-| `libpcap-dev` | Examples that read pcap files (`src/examples/`) |
+| `libpcap-dev` | Examples that read pcap files (`src/examples/`); no SDK library links it |
 | `libxml2-dev` | Only needed with `ENABLESEC=1` (`rules/common.mk:76-84`) |
-| `libnghttp2-dev` | Optional at build time — the Makefile auto-detects its absence and keeps building (`rules/common.mk:56-74`) |
 | `bash` | Test scripts are bash (`tests/run_all_tests.sh`) |
 | `jq` | JSON checks in the `release_gates`, `sdk_coverage` and `resource_bounds` suites and in `--coverage` mode |
+
+The build links no other third-party library (issue #495). This line and the
+executable lists — `install.sh`, `tools/ci/install-build-deps.sh`, the rpm
+`BuildRequires:` in `sdk/Makefile` and `.github/actions/bootstrap-deps` — are
+each checked against `tools/ci/build-deps.txt`, which records what every list
+must hold, by `tools/ci/check-dependency-lists.sh`: change a package there
+first.
 
 CI builds and tests on `ubuntu-24.04` (GCC 13) — see
 `.github/workflows/c-cpp.yml`. That is the reference toolchain.
@@ -60,7 +66,9 @@ suite on `ubuntu-22.04` (GCC 11.4) so the floor is exercised, not just
 asserted.
 
 **Package dependency declarations (issue #219):** the `.deb` `Depends:` and
-the `.rpm` `Requires:`/`BuildRequires:` are not hand-maintained lists —
+the `.rpm` `Requires:` are not hand-maintained lists (the `.rpm`
+`BuildRequires:` is a literal list, checked against `tools/ci/build-deps.txt`
+by `tools/ci/check-dependency-lists.sh` — issue #495) —
 `tools/ci/shlib-deps.sh` derives them at package-build time from the NEEDED
 entries `objdump -p` reports for the shipped `.so` files (the floors above
 survive as the `libc6`/`glibc` and `libstdc++6`/`libstdc++` entries).

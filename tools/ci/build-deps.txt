@@ -1,0 +1,74 @@
+# build-deps.txt — the single source for the build-dependency lists
+# (issue #495, F-DEP-003/F-DEP-304).
+#
+# Five files install packages for this build, each for a different job, in
+# its own package manager's names. They used to be maintained by hand and
+# drifted from the code (an HTTP/2 library nothing calls, libxml2 for a
+# profile that never builds the engines). This file says what each list
+# must hold; tools/ci/check-dependency-lists.sh extracts every list from the
+# file that installs it and fails unless it equals the union of the roles
+# its `list` row names — so a package is added, renamed or dropped here
+# first, and the lint then names every list that falls behind.
+#
+# Rows (whitespace-separated, `#` starts a comment):
+#   role <role> <manager> <package>...   the packages a role needs on that
+#                                        package manager
+#   list <id> <manager> <role>...        one extracted list and the roles it
+#                                        must cover — nothing more, nothing less
+#
+# Roles:
+#   build      the default-profile SDK build: C/C++ compiler, make, git
+#   enablesec  the optional ENABLESEC=1 engines (libxml2, rules/common.mk)
+#   examples   programs that read captures — src/examples/, the documented
+#              first run, the installed-consumer check, the phase0 harnesses.
+#              No SDK library links libpcap.
+#   package    turning the build into a .deb/.rpm
+#   verify     check-package-deps.sh --verify-package
+#   devtools   the test runner and its helpers
+
+role  build      apt     build-essential gcc g++ make git
+role  build      dnf     gcc gcc-c++ make git
+role  build      pacman  base-devel git
+role  build      apk     build-base gcc g++ make git
+role  build      zypper  gcc gcc-c++ make git
+
+role  enablesec  apt     libxml2-dev
+role  enablesec  dnf     libxml2-devel
+
+role  examples   apt     libpcap-dev
+role  examples   dnf     libpcap-devel
+role  examples   pacman  libpcap
+role  examples   apk     libpcap-dev
+role  examples   zypper  libpcap-devel
+
+role  package    apt     ca-certificates file binutils dpkg-dev
+role  package    dnf     file findutils which binutils rpm-build
+
+role  verify     apt     python3
+role  verify     dnf     python3
+
+role  devtools   apt     bash pkg-config jq
+
+# The one-command installer builds the default profile and leaves the user
+# able to compile the examples (install.sh, install_deps_linux).
+list  install.sh:apt                 apt     build examples
+list  install.sh:dnf                 dnf     build examples
+list  install.sh:yum                 dnf     build examples
+list  install.sh:pacman              pacman  build examples
+list  install.sh:apk                 apk     build examples
+list  install.sh:zypper              zypper  build examples
+
+# Release containers: ENABLESEC=1 package build, then the installed-consumer
+# check and --verify-package (tools/ci/install-build-deps.sh).
+list  install-build-deps.sh:deb      apt     build enablesec examples package verify
+list  install-build-deps.sh:rpm      dnf     build enablesec examples package verify
+
+# What rpmbuild itself needs (sdk/Makefile, rpm target).
+list  sdk/Makefile:BuildRequires     dnf     build enablesec package
+
+# CI runners already carry the toolchain; jobs add the ENABLESEC library and
+# libpcap for the suites and harnesses (.github/actions/bootstrap-deps).
+list  bootstrap-deps                 apt     enablesec examples
+
+# The documented toolchain install line (docs/AGENT_ENVIRONMENT.md §1).
+list  AGENT_ENVIRONMENT.md           apt     build enablesec examples devtools

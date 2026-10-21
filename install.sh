@@ -383,6 +383,12 @@ enable_el_builder_repo() {
     fi
 }
 
+# The package sets below install the default-profile build (compiler, make,
+# git) plus libpcap, which no SDK library links: the example programs and the
+# first run in the docs read captures through it. libxml2 is left out — only
+# ENABLESEC=1 needs it, and this installer builds the default profile. Each
+# list is checked against tools/ci/build-deps.txt by
+# tools/ci/check-dependency-lists.sh (issue #495).
 install_deps_linux() {
     step "Installing build dependencies (Linux)"
 
@@ -395,9 +401,7 @@ install_deps_linux() {
             g++ \
             make \
             git \
-            libxml2-dev \
-            libpcap-dev \
-            libnghttp2-dev
+            libpcap-dev
     elif check_command dnf; then
         info "Detected Fedora/RHEL (dnf)"
         enable_el_builder_repo dnf
@@ -406,9 +410,7 @@ install_deps_linux() {
             gcc-c++ \
             make \
             git \
-            libxml2-devel \
-            libpcap-devel \
-            libnghttp2-devel
+            libpcap-devel
     elif check_command yum; then
         info "Detected CentOS/RHEL (yum)"
         enable_el_builder_repo yum
@@ -417,17 +419,13 @@ install_deps_linux() {
             gcc-c++ \
             make \
             git \
-            libxml2-devel \
-            libpcap-devel \
-            libnghttp2-devel
+            libpcap-devel
     elif check_command pacman; then
         info "Detected Arch Linux (pacman)"
         $SUDO pacman -Sy --noconfirm \
             base-devel \
             git \
-            libxml2 \
-            libpcap \
-            nghttp2
+            libpcap
     elif check_command apk; then
         info "Detected Alpine Linux (apk)"
         $SUDO apk add --no-cache \
@@ -436,9 +434,7 @@ install_deps_linux() {
             g++ \
             make \
             git \
-            libxml2-dev \
-            libpcap-dev \
-            nghttp2-dev
+            libpcap-dev
     elif check_command zypper; then
         info "Detected openSUSE (zypper)"
         $SUDO zypper install -y \
@@ -446,12 +442,10 @@ install_deps_linux() {
             gcc-c++ \
             make \
             git \
-            libxml2-devel \
-            libpcap-devel \
-            libnghttp2-devel
+            libpcap-devel
     else
         warn "Could not detect package manager. Please install manually:"
-        warn "  gcc, g++, make, git, libxml2-dev, libpcap-dev, libnghttp2-dev"
+        warn "  gcc, g++, make, git, and libpcap-dev for the example programs"
         return 1
     fi
 

@@ -158,7 +158,6 @@ rules/common.mk:3	^MMT_BASE \?=/opt/mmt	-	MMT_BASE defaults to /opt/mmt
 rules/common.mk:21-24	^ifndef VERBOSE	^endif	VERBOSE=1 prints full compile commands	QUIET := @
 rules/common.mk:30	^CFLAGS .*-DPLUGINS_REPOSITORY_OPT=	-	the plugin repository path is baked into the objects
 rules/common.mk:38-43	^ifdef NDEBUG	^endif	NDEBUG=1 keeps assert()/debug() active	\+= \-DNDEBUG
-rules/common.mk:56-74	^# nghttp2: prefer pkg-config	^endif	libnghttp2 is auto-detected and optional	libnghttp2
 rules/common.mk:76-84	^# libxml2 \(only the ENABLESEC	^endif	libxml2 is resolved for the ENABLESEC engines	libxml-2\.0
 rules/common.mk:87-93	^ifdef DEBUG	^endif	DEBUG=1 swaps -O3 for -g	\+= \-g$
 rules/common.mk:94-98	^# VALGRIND = 1	^endif	VALGRIND=1 adds Valgrind-friendly instrumentation	\-\-gstabs
@@ -342,7 +341,7 @@ defined_once() {
 # Debian packaging checklist) are a different fact, not a copy of this one, and
 # executable package lists are exempt because they have to be runnable.
 defined_once "toolchain install line" \
-             'apt-get install' 'build-essential' 'libnghttp2-dev'
+             'apt-get install' 'build-essential' 'pkg-config' 'jq'
 defined_once "MMT_BASE default declaration" \
              'MMT_BASE \?=/opt/mmt'
 # shellcheck disable=SC2016  # backticks are Markdown syntax inside the pattern

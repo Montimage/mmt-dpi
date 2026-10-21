@@ -24,16 +24,17 @@ install_build_deps_debian() {
   log "Installing build dependencies (Debian/Ubuntu: $DISTRO_ID)"
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -y
-  # Compile-time deps only (issue #219): libxml2-dev is linked by the
-  # ENABLESEC engines built below; libpcap-dev provides <pcap/pcap.h> for
-  # src/mmt_security/public_defs.h — neither lands in the package's Depends,
-  # which is derived from the shipped libraries' NEEDED entries instead.
-  # binutils provides objdump for that derivation (tools/ci/shlib-deps.sh).
-  # libnghttp2-dev is intentionally absent: no built library references any
-  # nghttp2_* symbol, so the linker's --as-needed would drop it anyway.
-  # python3 runs the --verify-package leg of check-package-deps.sh.
+  # Build-time deps only (issues #219, #495): libxml2-dev is linked by the
+  # ENABLESEC engines built below; libpcap-dev is for the installed-consumer
+  # check build-package.sh compiles against the package (no SDK library
+  # links libpcap) — neither lands in the package's Depends, which is derived
+  # from the shipped libraries' NEEDED entries instead. binutils provides
+  # objdump for that derivation (tools/ci/shlib-deps.sh); python3 runs the
+  # --verify-package leg of check-package-deps.sh. Both lists in this file
+  # are checked against tools/ci/build-deps.txt by
+  # tools/ci/check-dependency-lists.sh.
   apt-get install -y --no-install-recommends \
-    build-essential g++ make git ca-certificates file binutils \
+    build-essential gcc g++ make git ca-certificates file binutils \
     libxml2-dev libpcap-dev dpkg-dev python3
 }
 
@@ -45,6 +46,8 @@ install_build_deps_rhel() {
   # EL9, which ships disabled — enable it before installing the -devel packages.
   # binutils provides objdump for the NEEDED -> Requires derivation (issue
   # #219); see install_build_deps_debian for the libxml2/libpcap rationale.
+  # libpcap-devel and python3 are not in the spec's BuildRequires (sdk/Makefile):
+  # building the rpm needs neither, only the checks after it do.
   "$pm" install -y dnf-plugins-core || true
   "$pm" config-manager --set-enabled crb 2>/dev/null \
     || "$pm" config-manager --set-enabled powertools 2>/dev/null || true

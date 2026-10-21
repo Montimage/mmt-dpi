@@ -34,6 +34,9 @@
 # tools/ci/check-hardening-flags.sh (issue #508), which evaluates the real
 # makefiles with a print goal (no SDK compile) to pin that hardening is keyed
 # on compiler identity, and drives --built DIR on fixture shared objects.
+# It also runs the dependency-list self-test beside
+# tools/ci/check-dependency-lists.sh (issue #495), which runs the real lint
+# on fixture trees where one list or tools/ci/build-deps.txt row diverges.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -46,3 +49,4 @@ python3 "${TESTS_DIR}/test-dependency-advisories.py"
 bash "${TESTS_DIR}/test-required-checks.sh"
 python3 "${TESTS_DIR}/test-vendored-components.py"
 bash "${TESTS_DIR}/test-hardening-identity.sh"
+bash "${TESTS_DIR}/test-dependency-lists.sh"
