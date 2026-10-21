@@ -35,6 +35,12 @@
  *   algorithm only when its first octet is the one of a plain EMM/ESM message
  * - the ciphering algorithm selected by an EMM Security Mode Command
  *
+ * Issue #507 (F-BUG-220): the decoders return their error code directly; the
+ * process-global errorCodeDecoder every decoding thread wrote is gone. Two
+ * threads decoding malformed IEs concurrently must each get their error code
+ * back. The old global was written but never returned on these paths, so the
+ * regression oracle is SANITIZE=tsan: it reported the write-write race.
+ *
  * Verifies crafted Attach-Accept/Request tail cases (ielen 0..10 at buffer end)
  * pass without AddressSanitizer errors.
  */
@@ -42,6 +48,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "emm/nas_emm_attach_accept.h"
 #include "emm/nas_emm_attach_request.h"
 #include "ies/pdn_address.h"
@@ -674,6 +681,52 @@ static void test_nas_ciphering(void) {
           nas_get_security_mode_command_ciphering(NULL, 13) == NAS_CIPHERING_ALGORITHM_UNKNOWN);
 }
 
+/* --- Issue #507: decoder errors are per call, not process-global --- */
+
+#define CONCURRENT_DECODES 5000
+
+static void *decode_malformed_ies(void *arg) {
+    long mismatches = 0;
+    (void)arg;
+    for (int i = 0; i < CONCURRENT_DECODES; i++) {
+        nas_pdn_address_t addr;
+        nas_eps_mobile_identity_t ident;
+        /* ielen 0: the decoder's own early return */
+        const uint8_t pdn_ielen0[2] = { 0x00, NAS_PDN_VALUE_TYPE_IPV4 };
+        /* ielen 5 with 1 byte left: CHECK_LENGTH_DECODER's return */
+        const uint8_t pdn_short[3] = { 0x05, NAS_PDN_VALUE_TYPE_IPV4, 0x0a };
+        const uint8_t ident_ielen0[2] = { 0x00, 0x00 };
+
+        memset(&addr, 0, sizeof(addr));
+        memset(&ident, 0, sizeof(ident));
+        if (nas_decode_pdn_address(&addr, 0, pdn_ielen0, sizeof(pdn_ielen0)) != DECODE_BUFFER_TOO_SHORT)
+            mismatches++;
+        if (nas_decode_pdn_address(&addr, 0, pdn_short, sizeof(pdn_short)) != DECODE_BUFFER_TOO_SHORT)
+            mismatches++;
+        if (nas_decode_eps_mobile_identity(&ident, 0, ident_ielen0, sizeof(ident_ielen0)) != DECODE_BUFFER_TOO_SHORT)
+            mismatches++;
+    }
+    return (void *)mismatches;
+}
+
+static void test_concurrent_decode_errors(void) {
+    pthread_t t[2];
+    long total = 0;
+    int started = 0;
+
+    printf("concurrent malformed-IE decodes (issue #507):\n");
+    for (int i = 0; i < 2; i++)
+        if (pthread_create(&t[i], NULL, decode_malformed_ies, NULL) == 0)
+            started++;
+    for (int i = 0; i < started; i++) {
+        void *r = NULL;
+        pthread_join(t[i], &r);
+        total += (long)r;
+    }
+    CHECK("two decoding threads started", started == 2);
+    CHECK("each concurrent decode returns DECODE_BUFFER_TOO_SHORT (race oracle: SANITIZE=tsan)", total == 0);
+}
+
 int main(void) {
     test_pdn_tail();
     test_mobile_identity_tail();
@@ -692,6 +745,7 @@ int main(void) {
     test_attach_accept_full();
     test_attach_accept_in_nas_pdu();
     test_nas_ciphering();
+    test_concurrent_decode_errors();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }

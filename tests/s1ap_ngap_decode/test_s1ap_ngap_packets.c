@@ -19,6 +19,14 @@
  *    F-BUG-080: PPID 46 classifies Diameter only when the whole 20-byte
  *      Diameter header is captured; the port-based fallback must prove the
  *      header too.
+ *
+ * Issue #507 (F-BUG-201): S1AP attribute extraction caches the parsed packet
+ * per thread. The cache used to be keyed by packet_id alone — a per-handler
+ * counter — and held raw pointers into the process-global entity store, so
+ * a second handler on the same thread was served the first handler's packet
+ * and, once a handler close had freed the store, read freed entities. The
+ * two-handler scenario below asserts each handler sees its own packet, and
+ * under SANITIZE=asan that no freed entity is read.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +35,8 @@
 
 #include "mmt_core.h"
 #include "tcpip/mmt_tcpip.h"
+#include "mobile/mmt_mobile.h"
+#include "mobile/proto_s1ap.h"
 
 static int failures = 0;
 static int checks   = 0;
@@ -45,9 +55,26 @@ static const uint8_t NGAP_WIRE[] = {
 	0x55, 0x00, 0x03, 0x40, 0x30, 0x39
 };
 
+/* S1SetupRequest: Global-ENB-ID (PLMN 001/01, macro eNB 1), eNBname
+ * "enb01", SupportedTAs (TAC 1), DefaultPagingDRX v128 — the pycrate vector
+ * of test_s1ap_ngap_decode.c. S1SETUP_NAME_DIGIT indexes the name's last
+ * character, so the same PDU names another eNodeB ("enb02"). */
+static const uint8_t S1SETUP_REQUEST[] = {
+	0x00, 0x11, 0x00, 0x2a, 0x00, 0x00, 0x04, 0x00, 0x3b, 0x00,
+	0x08, 0x00, 0x00, 0xf1, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00,
+	0x3c, 0x40, 0x07, 0x02, 0x00, 0x65, 0x6e, 0x62, 0x30, 0x31,
+	0x00, 0x40, 0x00, 0x07, 0x00, 0x00, 0x00, 0x40, 0x00, 0xf1,
+	0x10, 0x00, 0x89, 0x40, 0x01, 0x40
+};
+#define S1SETUP_NAME_DIGIT 29
+
 /* ------------------------------------------------------------------ */
 
 static char g_path[512];
+
+/* what the S1AP packet handler extracted from the last packet */
+static char g_enb_name[64];
+static char g_enb_entity_name[S1AP_ENTITY_NAME_LENGTH];
 
 static int packet_handler(const ipacket_t *ipacket, void *user_args) {
 	(void)user_args;
@@ -65,6 +92,42 @@ static int packet_handler(const ipacket_t *ipacket, void *user_args) {
 		len += n;
 	}
 	return 0;
+}
+
+static int s1ap_packet_handler(const ipacket_t *ipacket, void *user_args) {
+	const mmt_binary_data_t *name;
+	const mmt_binary_var_data_t *ent;
+	(void)user_args;
+	g_enb_name[0] = '\0';
+	g_enb_entity_name[0] = '\0';
+	name = get_attribute_extracted_data(ipacket, PROTO_S1AP, S1AP_ATT_ENB_NAME);
+	if (name != NULL && name->len < sizeof(g_enb_name)) {
+		memcpy(g_enb_name, name->data, name->len);
+		g_enb_name[name->len] = '\0';
+	}
+	/* the entity is copied out of the extraction cache: under ASan this
+	 * read is the use-after-free oracle */
+	ent = get_attribute_extracted_data(ipacket, PROTO_S1AP, S1AP_ATT_ENTITY_ENODEB);
+	if (ent != NULL && ent->len == sizeof(s1ap_entity_t)) {
+		s1ap_entity_t e;
+		memcpy(&e, ent->data, sizeof(e));
+		memcpy(g_enb_entity_name, e.data.enb.name, sizeof(g_enb_entity_name));
+		g_enb_entity_name[sizeof(g_enb_entity_name) - 1] = '\0';
+	}
+	return 0;
+}
+
+static mmt_handler_t *s1ap_handler(void) {
+	char errbuf[1024];
+	mmt_handler_t *h = mmt_init_handler(1 /*DLT_EN10MB*/, 0, errbuf);
+	if (h == NULL) {
+		fprintf(stderr, "mmt_init_handler: %s\n", errbuf);
+		exit(1);
+	}
+	register_extraction_attribute(h, PROTO_S1AP, S1AP_ATT_ENB_NAME);
+	register_extraction_attribute(h, PROTO_S1AP, S1AP_ATT_ENTITY_ENODEB);
+	register_packet_handler(h, 1, s1ap_packet_handler, NULL);
+	return h;
 }
 
 /*
@@ -158,6 +221,64 @@ static void drive(mmt_handler_t *h, const uint8_t *frame, size_t len) {
 	hdr.len    = len;
 	g_path[0] = '\0';
 	packet_process(h, &hdr, frame);
+}
+
+/* feed an S1SetupRequest naming eNodeB "enb0<digit>" to h, then assert the
+ * extracted eNB name and eNodeB entity are that packet's */
+static void expect_s1ap_enb(mmt_handler_t *h, const char *label, char digit) {
+	uint8_t pdu[sizeof(S1SETUP_REQUEST)];
+	char want[8], desc[512];
+	size_t flen;
+	uint8_t *f;
+
+	memcpy(pdu, S1SETUP_REQUEST, sizeof(pdu));
+	pdu[S1SETUP_NAME_DIGIT] = (uint8_t)digit;
+	snprintf(want, sizeof(want), "enb0%c", digit);
+	f = build_sctp_data_frame(&flen, 36412, 36412, 18, 16 + sizeof(pdu),
+			pdu, sizeof(pdu));
+	drive(h, f, flen);
+	free(f);
+	snprintf(desc, sizeof(desc), "%s: enb_name %s (got \"%s\"), enb_entity %s (got \"%s\")",
+			label, want, g_enb_name, want, g_enb_entity_name);
+	CHECK(desc, strcmp(g_enb_name, want) == 0 &&
+			strcmp(g_enb_entity_name, want) == 0);
+}
+
+/*
+ * Issue #507 (F-BUG-201): two handlers on one thread with identical packet
+ * ids. Each must be served its own packet, never the other handler's cached
+ * one; and after a handler close frees the shared entity store, a handler
+ * reaching the same packet id must not read the freed entities.
+ */
+static void test_s1ap_two_handlers(void) {
+	mmt_handler_t *a = s1ap_handler();
+	mmt_handler_t *b = s1ap_handler();
+	mmt_handler_t *c;
+	size_t flen;
+	uint8_t *f;
+
+	expect_s1ap_enb(a, "S1AP handler A packet 1", '1');
+	expect_s1ap_enb(b, "S1AP handler B packet 1 (same id as A's)", '2');
+	expect_s1ap_enb(a, "S1AP handler A packet 2", '2');
+	expect_s1ap_enb(b, "S1AP handler B packet 2 (same id as A's)", '1');
+
+	/* closing B runs the S1AP cleanup, which frees the entity store the
+	 * cached packet 2 points into. C differs from B here, so the handler
+	 * part of the cache key causes the miss; the store generation is the
+	 * guard when the allocator hands C B's address (never under ASan's
+	 * quarantine), so this sequence does not single it out. */
+	mmt_close_handler(b);
+	c = s1ap_handler();
+	/* C's packet 1 carries no S1AP, so its packet 2 is the first one that
+	 * reaches the extraction — with the cached packet's id */
+	f = build_sctp_short_chunk_frame(&flen, 36412, 36412, 8);
+	drive(c, f, flen);
+	free(f);
+	expect_s1ap_enb(c, "S1AP handler C packet 2 after B closed", '3');
+	expect_s1ap_enb(a, "S1AP handler A packet 3 after B closed", '4');
+
+	mmt_close_handler(c);
+	mmt_close_handler(a);
 }
 
 /* feed a frame, then assert the classified path does/doesn't contain a
@@ -288,6 +409,10 @@ int main(void) {
 	free(f);
 
 	mmt_close_handler(h);
+
+	/* ---------------- #507: S1AP extraction cache ------------------- */
+	test_s1ap_two_handlers();
+
 	close_extraction();
 
 	printf("\n%d checks, %d failure(s)\n", checks, failures);

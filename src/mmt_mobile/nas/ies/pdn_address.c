@@ -22,7 +22,6 @@ int nas_decode_pdn_address(nas_pdn_address_t *addr, uint8_t iei, const uint8_t *
 
   // F-BUG-206: reject ielen=0 before reading pdn_type byte (enabler for 202)
   if (ielen == 0) {
-    errorCodeDecoder = DECODE_BUFFER_TOO_SHORT;
     return DECODE_BUFFER_TOO_SHORT;
   }
   CHECK_LENGTH_DECODER((int32_t)len - decoded, 1);

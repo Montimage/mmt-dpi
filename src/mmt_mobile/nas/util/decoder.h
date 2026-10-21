@@ -91,7 +91,8 @@ typedef enum {
 #define DECODE_FATAL_ERROR  (DECODE_VALUE_DOESNT_MATCH)
 #define LOG(fmt, args...) fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__,##args)
 
-extern int errorCodeDecoder;
+/* Issue #507 (F-BUG-220): the decoders return their error code; there is no
+ * process-global error variable, which every decoding thread used to write. */
 #define CHECK_RESULT_DECODER( ret, decoded )                                   \
 		if( unlikely( ret <0 )) return ret;                                    \
 		else                    decoded += ret;
@@ -104,29 +105,25 @@ extern int errorCodeDecoder;
         {                                                                      \
                 LOG("(%s:%d) Got NULL pointer for the payload\n",              \
                 __FILE__, __LINE__);                                           \
-                errorCodeDecoder = DECODE_BUFFER_NULL;                         \
                 return (DECODE_BUFFER_NULL);                                   \
         }                                                                      \
 		while (unlikely( length < minimumlength))                              \
         {                                                                      \
                 LOG("(%s:%d) Expecting at least %d bytes, got %d\n",           \
                       __FILE__, __LINE__, (int) minimumlength, (int) length);  \
-                errorCodeDecoder = DECODE_BUFFER_TOO_SHORT;                    \
                 return (DECODE_BUFFER_TOO_SHORT);                              \
         }
 
 #define CHECK_LENGTH_DECODER(bufferlength, length)                             \
         while (unlikely( bufferlength < length ))                              \
         {                                                                      \
-                errorCodeDecoder = DECODE_BUFFER_TOO_SHORT;                    \
                 return (DECODE_BUFFER_TOO_SHORT);                              \
         }
 
 #define CHECK_MESSAGE_TYPE(message_type, buffer)                               \
 		while (unlikely( message_type != buffer ))                             \
 		{                                                                      \
-				errorCodeDecoder = DECODE_WRONG_MESSAGE_TYPE;                  \
-				return (errorCodeDecoder);                                     \
+				return (DECODE_WRONG_MESSAGE_TYPE);                            \
 		}
 
 #define CHECK_IEI_DECODER(iei, buffer)                                         \
@@ -134,7 +131,6 @@ extern int errorCodeDecoder;
         {                                                                      \
                 LOG("IEI is different than the one expected."                  \
                 "(Got: 0x%x, expecting: 0x%x)\n", buffer, iei);                \
-                errorCodeDecoder = DECODE_UNEXPECTED_IEI;                      \
         }
 
 

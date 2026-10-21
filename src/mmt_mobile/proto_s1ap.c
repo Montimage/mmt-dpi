@@ -27,7 +27,10 @@ typedef struct s1ap_entities_struct{
  */
 static s1ap_entities_t *list_heads[ S1AP_ENTITY_TYPE_GW + 1 ] = { NULL };
 static uint32_t         entities_count = 0;
-//the access to list_heads and entities_count must be synchronized by this mutex
+//bumped each time the store is freed, so that a per-thread extraction cache
+//filled before that (issue #507) is never taken for a later packet
+static uint64_t         entities_generation = 0;
+//the access to list_heads, entities_count and entities_generation must be synchronized by this mutex
 static pthread_mutex_t      mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //this is called when mmt_dpi releasing to free memory
@@ -42,6 +45,7 @@ static inline void _free_entities_list(){
 		}
 	}
 	entities_count = 0;
+	entities_generation ++;
 	pthread_mutex_unlock( &mutex );
 	//the NAS ciphering algorithms learned per UE go with the entities (#452)
 	s1ap_nas_ciphering_reset();
@@ -385,39 +389,69 @@ static inline void _copy_binary_data_type( void *dst, const s1ap_entity_t *src )
 		return ret_val;                           \
 	}
 
+/*
+ * Per-thread cache of the packet being extracted (issue #507, F-BUG-201).
+ *
+ * A packet is parsed once (into msg), then each of its attributes is served
+ * from there.
+ * packet_id is a per-handler counter, so the key also holds the handler and
+ * the store generation: a thread driving several handlers, or a handler
+ * created after another one's close freed the store, never reads another
+ * packet's cache. The entities are copies taken under the mutex, never
+ * pointers into the process-global store, which any handler close frees.
+ */
+typedef struct {
+	const mmt_handler_t *handler;
+	uint64_t packet_id;
+	uint64_t generation;
+	bool     valid;
+	//entities concerning the packet; NULL when the packet names none
+	const s1ap_entity_t *ue, *mme, *enb;
+	s1ap_entity_t ue_copy, mme_copy, enb_copy;
+}s1ap_extraction_cache_t;
+
+static inline const s1ap_entity_t* _snapshot_entity( s1ap_entity_t *copy, const s1ap_entities_t *node ){
+	if( node == NULL )
+		return NULL;
+	*copy = node->entity;
+	return copy;
+}
+
 /**
  * Extract attribute
  */
 static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 		attribute_t * extracted_data) {
-//printf("packet_id: %"PRIu64"\n", packet->packet_id );
-	//static variables for each thread
-	//these variables are used to keep information between extracting different attributes of a packet
-	//they must be updated for each packet
+	//one cache per thread: it is refreshed for each packet, see above
 	static __thread s1ap_message_t msg;
-	static __thread uint64_t packet_id = 0;
-	static __thread s1ap_entities_t *node_ue = NULL, *node_mme = NULL, *node_enb = NULL;
+	static __thread s1ap_extraction_cache_t cache;
 
 	//in case of multi-threading
 	pthread_mutex_lock( &mutex );
 
 	//to increase performance, we parse S1AP only once for a packet
 	//thus when this function is called again to extract other attribute,
-	// we can get information from the static __thread variables above.
-	if( packet_id != packet->packet_id ){
-		//remember the id of packet being parsed
-		packet_id = packet->packet_id;
+	// we can get information from the cache above.
+	if( !cache.valid
+			|| cache.handler    != packet->mmt_handler
+			|| cache.packet_id  != packet->packet_id
+			|| cache.generation != entities_generation ){
+		//remember the key of packet being parsed
+		cache.handler    = packet->mmt_handler;
+		cache.packet_id  = packet->packet_id;
+		cache.generation = entities_generation;
+		cache.valid      = true;
 
 		int ret = _parse_s1ap_packet( &msg, packet, proto_index );
 
 		//clear the current value of the caches, if the parsing is fail
-		node_ue = node_mme = node_enb = NULL;
+		cache.ue = cache.mme = cache.enb = NULL;
 
 		IF_TRUE_UNLOCK_AND_RETURN( ret < 0, 0 );
 
-		node_enb = _update_entities_list( S1AP_ENTITY_TYPE_ENODEB, &msg );
-		node_mme = _update_entities_list( S1AP_ENTITY_TYPE_MME,    &msg );
-		node_ue  = _update_entities_list( S1AP_ENTITY_TYPE_UE,     &msg );
+		s1ap_entities_t *node_enb = _update_entities_list( S1AP_ENTITY_TYPE_ENODEB, &msg );
+		s1ap_entities_t *node_mme = _update_entities_list( S1AP_ENTITY_TYPE_MME,    &msg );
+		s1ap_entities_t *node_ue  = _update_entities_list( S1AP_ENTITY_TYPE_UE,     &msg );
 
 
 		//once an entity is changed to ATTACHED => we need to indicate its parent (the entity it is attaching to)
@@ -426,6 +460,11 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 		if( node_ue  && node_enb && node_ue->entity.status == S1AP_ENTITY_STATUS_ATTACHED )
 				node_ue->entity.parent = node_enb->entity.id;
+
+		//copy the entities while the mutex still guards them
+		cache.enb = _snapshot_entity( &cache.enb_copy, node_enb );
+		cache.mme = _snapshot_entity( &cache.mme_copy, node_mme );
+		cache.ue  = _snapshot_entity( &cache.ue_copy,  node_ue );
 	}
 
 	mmt_binary_data_t *b;
@@ -518,16 +557,16 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 
 	case S1AP_ATT_ENB_ID:
-		IF_TRUE_UNLOCK_AND_RETURN( !node_enb, 0 );
-		*((uint32_t *) extracted_data->data) = node_enb->entity.id;
+		IF_TRUE_UNLOCK_AND_RETURN( !cache.enb, 0 );
+		*((uint32_t *) extracted_data->data) = cache.enb->id;
 		break;
 	case S1AP_ATT_MME_ID:
-		IF_TRUE_UNLOCK_AND_RETURN( !node_mme, 0 );
-		*((uint32_t *) extracted_data->data) = node_mme->entity.id;
+		IF_TRUE_UNLOCK_AND_RETURN( !cache.mme, 0 );
+		*((uint32_t *) extracted_data->data) = cache.mme->id;
 		break;
 	case S1AP_ATT_UE_ID:
-		IF_TRUE_UNLOCK_AND_RETURN( !node_ue, 0 );
-		*((uint32_t *) extracted_data->data) = node_ue->entity.id;
+		IF_TRUE_UNLOCK_AND_RETURN( !cache.ue, 0 );
+		*((uint32_t *) extracted_data->data) = cache.ue->id;
 		break;
 
 
@@ -538,16 +577,16 @@ static int _extraction_att(const ipacket_t * packet, unsigned proto_index,
 
 
 	case S1AP_ATT_ENTITY_UE:
-		IF_TRUE_UNLOCK_AND_RETURN( !node_ue, 0 );
-		_copy_binary_data_type( extracted_data->data, &node_ue->entity );
+		IF_TRUE_UNLOCK_AND_RETURN( !cache.ue, 0 );
+		_copy_binary_data_type( extracted_data->data, cache.ue );
 		break;
 	case S1AP_ATT_ENTITY_ENODEB:
-		IF_TRUE_UNLOCK_AND_RETURN( !node_enb, 0 );
-		_copy_binary_data_type( extracted_data->data, &node_enb->entity );
+		IF_TRUE_UNLOCK_AND_RETURN( !cache.enb, 0 );
+		_copy_binary_data_type( extracted_data->data, cache.enb );
 		break;
 	case S1AP_ATT_ENTITY_MME:
-		IF_TRUE_UNLOCK_AND_RETURN( !node_mme, 0 );
-		_copy_binary_data_type( extracted_data->data, &node_mme->entity );
+		IF_TRUE_UNLOCK_AND_RETURN( !cache.mme, 0 );
+		_copy_binary_data_type( extracted_data->data, cache.mme );
 		break;
 	}//end of switch
 

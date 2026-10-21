@@ -57,8 +57,7 @@
       "src/examples/packet_handler.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
       "src/examples/proto_attributes_iterator.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
       "src/examples/simple_traffic_reporting.c": "example program: installed as source under the prefix's examples/ (sdk/Makefile), never linked into an SDK library",
-      "src/mmt_core/src/mmt_tcpip_init.c": "filtered out of CORE_OBJECTS (rules/common.mk) and listed by no other object list: not linked into any SDK library",
-      "src/mmt_mobile/nas/util/decoder.c": "built into libmmt_tmobile but has no executable lines (a single global definition), so gcov emits no record for it"
+      "src/mmt_core/src/mmt_tcpip_init.c": "filtered out of CORE_OBJECTS (rules/common.mk) and listed by no other object list: not linked into any SDK library"
     }
   }
 }

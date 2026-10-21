@@ -175,7 +175,6 @@ int nas_decode_eps_mobile_identity(nas_eps_mobile_identity_t *ident, uint8_t iei
 
 	// F-BUG-203: bound fixed-size decodes by remaining length
 	if (ielen == 0) {
-		errorCodeDecoder = DECODE_BUFFER_TOO_SHORT;
 		return DECODE_BUFFER_TOO_SHORT;
 	}
 	CHECK_LENGTH_DECODER(ielen, 1);
@@ -216,7 +215,6 @@ int nas_decode_eps_mobile_identity(nas_eps_mobile_identity_t *ident, uint8_t iei
 
 	// Ensure we do not return more than ielen allows
 	if ((uint32_t)decoded_rc > ielen) {
-		errorCodeDecoder = DECODE_BUFFER_TOO_SHORT;
 		return DECODE_BUFFER_TOO_SHORT;
 	}
 
