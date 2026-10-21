@@ -375,7 +375,12 @@ struct attribute_internal_struct {
      * head-insert order. */
     attribute_handler_t * attribute_handlers;
     uint32_t attribute_handlers_cap;
-    attribute_internal_t * next; /**< next attribute */
+    /* Issue #501 (F-BUG-017): the handler whose registration created this
+     * extraction slot and counted in registration_count — NULL when
+     * register_extraction_attribute() created it or the owner has left.
+     * Only that handler's unregistration gives the count back. */
+    attribute_handler_function extraction_owner;
+    attribute_internal_t * next; /**< Issue #501: links the attributes in mmt_handler_t.attr_free_pending */
 };
 
 /**
@@ -580,6 +585,14 @@ struct mmt_handler_struct {
     attribute_handler_element_t * proto_registered_attribute_handlers[PROTO_MAX_IDENTIFIER];
     uint32_t proto_registered_attribute_handlers_len[PROTO_MAX_IDENTIFIER];
     uint32_t proto_registered_attribute_handlers_cap[PROTO_MAX_IDENTIFIER];
+    /* Issue #501 (F-BUG-004): an attribute handler may unregister handlers
+     * from inside its callback. While attr_dispatch_depth > 0 (an attribute
+     * dispatch loop is running), an attribute released by unregistration is
+     * unlinked from the arrays at once but its memory is chained here
+     * through attribute_internal_t.next and freed when the outermost
+     * dispatch returns (flush_deferred_attribute_frees()). */
+    unsigned attr_dispatch_depth;
+    attribute_internal_t * attr_free_pending;
     packet_handler_t * packet_handlers;
     uint32_t packet_handlers_len;
     uint32_t packet_handlers_cap;
@@ -837,6 +850,8 @@ void mmt_dpi_profile_apply_env(mmt_handler_t *mmt_handler);
 bool attribute_ids_comparison_fct(uint32_t l_id, uint32_t r_id);
 struct attribute_internal_struct * get_registered_attribute_internal_struct(const ipacket_t * ipacket, uint32_t proto_id, uint32_t attribute_id, unsigned index);
 struct attribute_internal_struct * get_registered_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id);
+/* Issue #501: frees the attributes released during an attribute dispatch. */
+void flush_deferred_attribute_frees(mmt_handler_t *mmt_handler);
 
 /* Issue #245 (F-PERF-003/004/005/006): TCP-reassembly instrumentation. The
  * counters live in libmmt_core (packet_pipeline.c) — the one shared object

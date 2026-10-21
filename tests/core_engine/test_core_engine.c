@@ -2005,6 +2005,369 @@ static void test_direction_bound(void) {
     free(s);
 }
 
+/* ===== issue #501: handler unregistration + event payloads during dispatch ===== */
+
+#define DS_ATTR_PKT   30 /* packet scope: dispatched by proto_process_attribute_handlers() */
+#define DS_ATTR_EVT   31 /* event scope: dispatched by fire_attribute_event() */
+#define DS_ATTR_EXT   32 /* registered for extraction before any handler */
+#define DS_ATTR_RE    33 /* packet scope: a lone handler re-registers itself */
+#define DS_ATTR_SW    34 /* event scope: two handlers swap each other in */
+#define DS_ATTR_P     35 /* packet scope: P < Q < R by field_id, Q re-registers */
+#define DS_ATTR_Q     36
+#define DS_ATTR_R     37
+#define DS_ATTR_AXB   38 /* event scope: handlers [A, X, B], X re-registers */
+#define DS_ATTR_MP    40 /* packet scope: MP < MQ < MS < MR by field_id; MQ's */
+#define DS_ATTR_MQ    42 /* callback moves MP's handler to the new field MS */
+#define DS_ATTR_MS    43
+#define DS_ATTR_MR    45
+#define DS_CHURN_CAP  1000 /* the churn handlers stop here so a regression fails, not hangs */
+
+static mmt_handler_t *g_ds_handler;
+static int g_ds_self_calls;
+static int g_ds_other_calls;
+static int g_ds_evt_calls;
+static int g_ds_evt_saw_payload;
+static uint32_t g_ds_other_value;
+static void *g_ds_evt_expected;
+
+/* Unregisters itself from inside its own callback — the dispatch loop must
+ * neither touch a freed attribute nor skip the handler that shifts into its
+ * slot. */
+static void ds_self_unregister(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) user_args;
+    g_ds_self_calls++;
+    unregister_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_self_unregister);
+}
+static void ds_other(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) user_args;
+    g_ds_other_calls++;
+    if (attribute->data != NULL) g_ds_other_value = *(uint32_t *) attribute->data;
+}
+static void ds_other_self_unregister(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) user_args;
+    g_ds_other_calls++;
+    unregister_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_other_self_unregister);
+}
+static void ds_event(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) user_args;
+    g_ds_evt_calls++;
+    if (attribute->data == g_ds_evt_expected) g_ds_evt_saw_payload++;
+}
+static void ds_event_self_unregister(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) user_args;
+    g_ds_evt_calls++;
+    unregister_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_event_self_unregister);
+}
+
+/* Re-derived dispatch must terminate when a callback removes and re-adds
+ * entries: a lone handler re-registering itself lands in the slot it just
+ * left, and two handlers swapping each other in always find their
+ * predecessor gone. */
+static int g_ds_rereg_calls;
+static int g_ds_swap_calls;
+static void ds_reregister(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) user_args;
+    if (++g_ds_rereg_calls > DS_CHURN_CAP) return;
+    unregister_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_reregister);
+    register_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_reregister, NULL, NULL);
+}
+static void ds_swap_y(const ipacket_t *ipacket, attribute_t *attribute, void *user_args);
+static void ds_swap_x(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) user_args;
+    if (++g_ds_swap_calls > DS_CHURN_CAP) return;
+    unregister_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_swap_x);
+    register_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_swap_y, NULL, NULL);
+}
+static void ds_swap_y(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) user_args;
+    if (++g_ds_swap_calls > DS_CHURN_CAP) return;
+    unregister_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_swap_y);
+    register_attribute_handler(g_ds_handler, attribute->proto_id, attribute->field_id, ds_swap_x, NULL, NULL);
+}
+
+/* Bystanders: count their calls through user_args (two functions so both
+ * can sit on one attribute). */
+static void ds_count(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) attribute;
+    (*(int *) user_args)++;
+}
+static void ds_count2(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) attribute;
+    (*(int *) user_args)++;
+}
+
+/* Moves the ds_count handler from DS_ATTR_MP (already run) to the new field
+ * DS_ATTR_MS: the element count stays the same while the walk must still
+ * reach both MS and the bystander MR. */
+static int g_ds_mover_calls, g_ds_n_mp, g_ds_n_ms, g_ds_n_mr;
+static void ds_mover(const ipacket_t *ipacket, attribute_t *attribute, void *user_args) {
+    (void) ipacket; (void) attribute; (void) user_args;
+    g_ds_mover_calls++;
+    if (is_registered_attribute_handler(g_ds_handler, TEST_PROTO_A, DS_ATTR_MP, ds_count)) {
+        unregister_attribute_handler(g_ds_handler, TEST_PROTO_A, DS_ATTR_MP, ds_count);
+        register_attribute_handler(g_ds_handler, TEST_PROTO_A, DS_ATTR_MS, ds_count, NULL, &g_ds_n_ms);
+    }
+}
+
+/* fire_attribute_event() with a pointer to a stack local, as the HTTP parser
+ * callbacks (http_parser_integration.c) and the IPv4/IPv6 RTT events
+ * (proto_ip.c, proto_ipv6.c) do: the local dies when this returns. */
+static void ds_fire_stack_event(ipacket_t *ip, uint32_t attr_id) {
+    uint32_t local = 0x5EED5EEDu;
+    g_ds_evt_expected = &local;
+    fire_attribute_event(ip, TEST_PROTO_A, attr_id, 1, &local);
+    g_ds_evt_expected = NULL;
+}
+
+static void test_attr_dispatch_safety(void) {
+    fprintf(stderr, "  test: attribute handler unregistration and event payloads during dispatch\n");
+    char errbuf[256];
+    u_char pkt[64];
+    pkthdr_t hdr;
+
+    static const struct { uint32_t id; const char *alias; int scope; } ds_attrs[] = {
+        { DS_ATTR_PKT, "ce_ds_pkt", SCOPE_PACKET },
+        { DS_ATTR_EVT, "ce_ds_evt", SCOPE_EVENT },
+        { DS_ATTR_EXT, "ce_ds_ext", SCOPE_PACKET },
+        { DS_ATTR_RE,  "ce_ds_re",  SCOPE_PACKET },
+        { DS_ATTR_SW,  "ce_ds_sw",  SCOPE_EVENT },
+        { DS_ATTR_P,   "ce_ds_p",   SCOPE_PACKET },
+        { DS_ATTR_Q,   "ce_ds_q",   SCOPE_PACKET },
+        { DS_ATTR_R,   "ce_ds_r",   SCOPE_PACKET },
+        { DS_ATTR_AXB, "ce_ds_axb", SCOPE_EVENT },
+        { DS_ATTR_MP,  "ce_ds_mp",  SCOPE_PACKET },
+        { DS_ATTR_MQ,  "ce_ds_mq",  SCOPE_PACKET },
+        { DS_ATTR_MS,  "ce_ds_ms",  SCOPE_PACKET },
+        { DS_ATTR_MR,  "ce_ds_mr",  SCOPE_PACKET },
+    };
+    for (size_t i = 0; i < sizeof(ds_attrs) / sizeof(ds_attrs[0]); i++) {
+        attribute_metadata_t meta;
+        memset(&meta, 0, sizeof(meta));
+        meta.id = ds_attrs[i].id;
+        strncpy(meta.alias, ds_attrs[i].alias, Max_Alias_Len);
+        meta.data_type = MMT_U32_DATA;
+        meta.data_len = (int) sizeof(uint32_t);
+        meta.position_in_packet = 0;
+        meta.scope = ds_attrs[i].scope;
+        meta.extraction_function = (ds_attrs[i].scope == SCOPE_EVENT) ? silent_extraction : test_attr_extract;
+        CHECK(register_attribute_with_protocol(get_protocol_struct_by_id(TEST_PROTO_A), &meta) == 1,
+              "register a dispatch-safety attribute");
+    }
+
+    mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler init for dispatch-safety test");
+    if (h == NULL) return;
+    g_ds_handler = h;
+
+    /* (1) packet-scope dispatch: index 0 is the most recently registered
+     * handler, so the array is [ds_self_unregister, ds_other]. */
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_PKT, ds_other, NULL, NULL) == 1,
+          "register the surviving packet-scope handler");
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_PKT, ds_self_unregister, NULL, NULL) == 1,
+          "register the self-unregistering packet-scope handler");
+    make_packet(&hdr, pkt, sizeof(pkt), 0xD5D5D5D5u, 3000, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "packet processed");
+    CHECK(g_ds_self_calls == 1, "self-unregistering handler ran once");
+    CHECK(g_ds_other_calls == 1, "the handler shifted into the freed slot still ran");
+    CHECK(g_ds_other_value == 0xD5D5D5D5u, "surviving handler saw the extracted value");
+    CHECK(is_registered_attribute_handler(h, TEST_PROTO_A, DS_ATTR_PKT, ds_self_unregister) == 0,
+          "self-unregistering handler is gone");
+    make_packet(&hdr, pkt, sizeof(pkt), 0xD6D6D6D6u, 3001, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "second packet processed");
+    CHECK(g_ds_self_calls == 1 && g_ds_other_calls == 2, "only the surviving handler runs afterwards");
+
+    /* The last handler unregisters itself: the attribute slot is released
+     * mid-dispatch — its free must wait until the dispatch loop is done
+     * (ASan reports the use-after-free otherwise). */
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_PKT, ds_other) == 1,
+          "drop the surviving handler");
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_PKT, ds_other_self_unregister, NULL, NULL) == 1,
+          "register a lone self-unregistering handler");
+    g_ds_other_calls = 0;
+    make_packet(&hdr, pkt, sizeof(pkt), 0xD7D7D7D7u, 3002, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "third packet processed");
+    CHECK(g_ds_other_calls == 1, "lone handler ran");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_PKT) == NULL,
+          "attribute slot released once its last handler left");
+    CHECK(h->attr_free_pending == NULL && h->attr_dispatch_depth == 0,
+          "deferred frees flushed when dispatch ended");
+
+    /* (2) event dispatch with stack-local payloads. */
+    ipacket_t ip;
+    memset(&ip, 0, sizeof(ip));
+    ip.mmt_handler = h;
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EVT, ds_event, NULL, NULL) == 1,
+          "register the event handler");
+    attribute_internal_t *evt = get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EVT);
+    CHECK(evt != NULL, "event attribute registered");
+    ds_fire_stack_event(&ip, DS_ATTR_EVT);
+    CHECK(g_ds_evt_calls == 1 && g_ds_evt_saw_payload == 1, "event handler saw the payload");
+    CHECK(evt != NULL && evt->data == NULL, "attr->data is NULL after event dispatch");
+    CHECK(evt != NULL && evt->status == ATTRIBUTE_CONSUMED, "event attribute consumed");
+
+    /* A self-unregistering event handler that is the attribute's last one. */
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EVT, ds_event_self_unregister, NULL, NULL) == 1,
+          "register the self-unregistering event handler");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EVT, ds_event) == 1,
+          "leave the self-unregistering event handler alone");
+    g_ds_evt_calls = 0;
+    ds_fire_stack_event(&ip, DS_ATTR_EVT);
+    CHECK(g_ds_evt_calls == 1, "self-unregistering event handler ran");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EVT) == NULL,
+          "event attribute released after dispatch");
+    CHECK(h->attr_free_pending == NULL, "event dispatch flushed its deferred free");
+
+    /* An event fired on a packet-scope attribute must not leave its
+     * extraction writing through the dead stack pointer: the next
+     * extraction gets its own scratch area back. */
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_PKT, ds_other, NULL, NULL) == 1,
+          "re-register the packet-scope handler");
+    attribute_internal_t *pa = get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_PKT);
+    ds_fire_stack_event(&ip, DS_ATTR_PKT);
+    CHECK(pa != NULL && pa->data == NULL, "attr->data is NULL after an event on a packet attribute");
+    g_ds_other_value = 0;
+    make_packet(&hdr, pkt, sizeof(pkt), 0xD8D8D8D8u, 3003, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "fourth packet processed");
+    CHECK(g_ds_other_value == 0xD8D8D8D8u, "extraction after an event writes its own scratch area");
+    CHECK(pa != NULL && pa->data == (void *) (pa + 1), "data points back at the scratch area");
+
+    /* (3) registration ownership: a handler added to an attribute already
+     * registered for extraction did not register it, so unregistering the
+     * handler must not drop that registration. */
+    CHECK(register_extraction_attribute(h, TEST_PROTO_A, DS_ATTR_EXT) == 1,
+          "register the extraction attribute");
+    attribute_internal_t *ext = get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EXT);
+    CHECK(ext != NULL && ext->registration_count == 1, "one extraction registration");
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EXT, ds_other, NULL, NULL) == 1,
+          "handler on an already-registered attribute");
+    CHECK(ext != NULL && ext->registration_count == 1, "handler did not add an extraction registration");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EXT, ds_other) == 1,
+          "unregister that handler");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EXT) == ext,
+          "the extraction registration survives the handler");
+    CHECK(ext->registration_count == 1, "registration_count unchanged by the handler unregister");
+    CHECK(unregister_extraction_attribute(h, TEST_PROTO_A, DS_ATTR_EXT) == 1,
+          "unregister the extraction attribute");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EXT) == NULL,
+          "attribute released by its own registration");
+
+    /* The handler that created the slot owns that registration: another
+     * handler leaving first does not release it, the owner leaving does. */
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EXT, ds_other, NULL, NULL) == 1,
+          "owner handler creates the slot");
+    ext = get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EXT);
+    CHECK(ext != NULL && ext->registration_count == 1, "the owner's registration is counted");
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EXT, ds_event, NULL, NULL) == 1,
+          "second handler joins");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EXT, ds_event) == 1,
+          "second handler leaves");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EXT) == ext && ext->registration_count == 1,
+          "non-owner leaving keeps the owner's registration");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_EXT, ds_other) == 1,
+          "owner leaves");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_EXT) == NULL,
+          "slot released with its owner");
+
+    /* (4) bounded dispatch: a lone packet-scope handler that unregisters and
+     * re-registers itself from its callback runs once per packet. */
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_RE, ds_reregister, NULL, NULL) == 1,
+          "register the self-re-registering handler");
+    g_ds_rereg_calls = 0;
+    make_packet(&hdr, pkt, sizeof(pkt), 0xD9D9D9D9u, 3004, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "fifth packet processed");
+    CHECK(g_ds_rereg_calls == 1, "self-re-registering handler ran exactly once for the packet");
+    CHECK(h->attr_free_pending == NULL && h->attr_dispatch_depth == 0,
+          "re-registration dispatch flushed its deferred free");
+    CHECK(is_registered_attribute_handler(h, TEST_PROTO_A, DS_ATTR_RE, ds_reregister) == 1,
+          "the re-registered handler stays registered");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_RE, ds_reregister) == 1,
+          "unregister the self-re-registering handler");
+
+    /* Two event handlers that swap each other in: [ds_swap_x, ds_event].
+     * The dispatch must terminate within the handler count it started
+     * with instead of ping-ponging between the pair. */
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_SW, ds_event, NULL, NULL) == 1,
+          "register the bystander event handler");
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_SW, ds_swap_x, NULL, NULL) == 1,
+          "register the swapping event handler");
+    g_ds_swap_calls = 0;
+    g_ds_evt_calls = 0;
+    ds_fire_stack_event(&ip, DS_ATTR_SW);
+    CHECK(g_ds_swap_calls >= 1 && g_ds_swap_calls <= 2, "swapping handlers ran a bounded number of times");
+    CHECK(g_ds_evt_calls == 1, "the bystander after the swapping handler ran");
+    CHECK(h->attr_free_pending == NULL && h->attr_dispatch_depth == 0,
+          "swap dispatch closed its bracket");
+    unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_SW, ds_swap_x);
+    unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_SW, ds_swap_y);
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_SW, ds_event) == 1,
+          "unregister the bystander event handler");
+    CHECK(get_registered_attribute(h, TEST_PROTO_A, DS_ATTR_SW) == NULL,
+          "swap attribute released");
+
+    /* (5) a re-registering entry followed by a bystander: the replay of the
+     * re-created entry must not take the bystander's turn. Element level:
+     * attributes P < Q < R, Q's handler re-registers itself. */
+    int n_p = 0, n_r = 0;
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_P, ds_count, NULL, &n_p) == 1,
+          "register the P bystander");
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_Q, ds_reregister, NULL, NULL) == 1,
+          "register the re-registering Q handler");
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_R, ds_count, NULL, &n_r) == 1,
+          "register the R bystander");
+    for (uint32_t i = 0; i < 2; i++) {
+        n_p = n_r = 0;
+        g_ds_rereg_calls = 0;
+        make_packet(&hdr, pkt, sizeof(pkt), 0xDADADADAu, 3005 + i, 0);
+        CHECK(packet_process(h, &hdr, pkt) == 1, "P/Q/R packet processed");
+        CHECK(n_p == 1 && g_ds_rereg_calls == 1 && n_r == 1,
+              "P, re-registering Q and R each ran exactly once");
+    }
+    CHECK(h->attr_free_pending == NULL && h->attr_dispatch_depth == 0,
+          "P/Q/R dispatch flushed its deferred free");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_P, ds_count) == 1 &&
+          unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_Q, ds_reregister) == 1 &&
+          unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_R, ds_count) == 1,
+          "unregister the P/Q/R handlers");
+
+    /* Handler level: one attribute holding [A, X, B] (index 0 is the most
+     * recent registration); X re-registers itself and moves to index 0. */
+    int n_a = 0, n_b = 0;
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_count2, NULL, &n_b) == 1 &&
+          register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_reregister, NULL, NULL) == 1 &&
+          register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_count, NULL, &n_a) == 1,
+          "register [A, X, B]");
+    g_ds_rereg_calls = 0;
+    ds_fire_stack_event(&ip, DS_ATTR_AXB);
+    CHECK(n_a == 1 && g_ds_rereg_calls == 1 && n_b == 1, "A, re-registering X and B each ran exactly once");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_count) == 1 &&
+          unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_reregister) == 1 &&
+          unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_AXB, ds_count2) == 1,
+          "unregister [A, X, B]");
+
+    /* A callback moves a handler from an element already run to a new
+     * field between itself and a bystander: the element count is
+     * unchanged, yet the new field and the bystander must each run once. */
+    CHECK(register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_MP, ds_count, NULL, &g_ds_n_mp) == 1 &&
+          register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_MQ, ds_mover, NULL, NULL) == 1 &&
+          register_attribute_handler(h, TEST_PROTO_A, DS_ATTR_MR, ds_count, NULL, &g_ds_n_mr) == 1,
+          "register MP, MQ (mover) and MR");
+    g_ds_mover_calls = g_ds_n_mp = g_ds_n_ms = g_ds_n_mr = 0;
+    make_packet(&hdr, pkt, sizeof(pkt), 0xDBDBDBDBu, 3007, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "mover packet processed");
+    CHECK(g_ds_n_mp == 1 && g_ds_mover_calls == 1, "MP and the mover ran once");
+    CHECK(g_ds_n_ms == 1, "the field added between the mover and the bystander ran once");
+    CHECK(g_ds_n_mr == 1, "the bystander after the mover ran once");
+    CHECK(h->attr_free_pending == NULL && h->attr_dispatch_depth == 0,
+          "mover dispatch flushed its deferred free");
+    CHECK(unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_MQ, ds_mover) == 1 &&
+          unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_MS, ds_count) == 1 &&
+          unregister_attribute_handler(h, TEST_PROTO_A, DS_ATTR_MR, ds_count) == 1,
+          "unregister MQ, MS and MR");
+
+    mmt_close_handler(h);
+    g_ds_handler = NULL;
+}
+
 /* ================================ main ==================================== */
 
 int main(void) {
@@ -2030,6 +2393,7 @@ int main(void) {
     test_attr_report_output();
     test_iteration();
     test_direction_bound();
+    test_attr_dispatch_safety();
 
     /* Issue #242 part 2: classification utilities + offset memoization.
      * These run while ce_proto_a/b are still registered (the ranges-file

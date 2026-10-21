@@ -174,6 +174,16 @@ void mmt_classify_stats_reset(void) {
 #endif
 }
 
+/* Issue #501 (F-BUG-008): an event dispatch leaves attr->data NULL; an
+ * extractor that writes through data gets the attribute's own scratch area
+ * (allocated right after the struct by register_extraction_attribute())
+ * back instead of a NULL or stale pointer. */
+static inline void rearm_attribute_scratch(struct attribute_internal_struct * attr) {
+    if (attr->data == NULL) {
+        attr->data = (void *) (attr + 1);
+    }
+}
+
 /**
  * Internal function for extracting attribute data.
  * @param ipacket pointer to internal packet structure
@@ -232,6 +242,7 @@ int internal_extract_attribute(const ipacket_t * ipacket, struct attribute_inter
 #if MMT_CAPLEN_GUARD_STATS
     if (!caplen_validated) __atomic_add_fetch(&mmt_caplen_guard_unvalidated, 1, __ATOMIC_RELAXED);
 #endif
+    rearm_attribute_scratch(tmp_attr_ref);
     if (tmp_attr_ref->extraction_function(ipacket, index, (attribute_t *) tmp_attr_ref) > 0) {
         //We set the status of the protocol
         tmp_attr_ref->status = ATTRIBUTE_SET;
@@ -800,6 +811,81 @@ int proto_packet_classify_next(ipacket_t * ipacket, protocol_instance_t * config
     return 1;
 }
 
+/* Issue #501 (F-BUG-004): attribute dispatch bracket. Inside it an
+ * attribute released by unregister_attribute_handler() (called from a
+ * handler callback) stays allocated; the outermost leave frees it. */
+static inline void attr_dispatch_enter(mmt_handler_t * mmt_handler) {
+    mmt_handler->attr_dispatch_depth++;
+}
+
+static inline void attr_dispatch_leave(mmt_handler_t * mmt_handler) {
+    if (--mmt_handler->attr_dispatch_depth == 0 && mmt_handler->attr_free_pending != NULL) {
+        flush_deferred_attribute_frees(mmt_handler);
+    }
+}
+
+/* Issue #501: index of the handler to run after `called`, which ran at slot
+ * h with `succ` (NULL when `called` was the last one) right after it. A
+ * callback may have unregistered handlers (memmove closes the slot) or
+ * registered one (inserted at index 0, possibly `called` itself again), so
+ * the walk continues from where `succ` sits now (handler functions are
+ * unique per attribute); if `succ` left, from where `called` sits, and if
+ * both left, the following handler has shifted into slot h. */
+static inline int next_attribute_handler(const struct attribute_internal_struct * attr, int h,
+        attribute_handler_function called, attribute_handler_function succ) {
+    if (succ == NULL) {
+        return attr->handlers_count;
+    }
+    if (h + 1 < attr->handlers_count && attr->attribute_handlers[h + 1].handler_fct == succ) {
+        return h + 1;
+    }
+    for (int j = 0; j < attr->handlers_count; j++) {
+        if (attr->attribute_handlers[j].handler_fct == succ) {
+            return j;
+        }
+    }
+    for (int j = 0; j < attr->handlers_count; j++) {
+        if (attr->attribute_handlers[j].handler_fct == called) {
+            return j + 1;
+        }
+    }
+    return h;
+}
+
+/* Issue #501: index of the per-protocol handler element to run after
+ * `attribute`, which ran at slot e. The elements stay sorted by field_id
+ * (one per field of the protocol), so the walk continues at the first
+ * element past that field: a slot released and re-created for the same
+ * field mid-dispatch counts as the entry just run, and an element added
+ * past it still gets its turn. */
+static inline uint32_t next_attribute_element(const mmt_handler_t * mmt_handler, uint32_t proto, uint32_t e,
+        const struct attribute_internal_struct * attribute) {
+    const attribute_handler_element_t * elems = mmt_handler->proto_registered_attribute_handlers[proto];
+    uint32_t n = mmt_handler->proto_registered_attribute_handlers_len[proto];
+    if (e < n && elems[e].attribute == attribute) {
+        return e + 1;
+    }
+    uint32_t j = 0;
+    while (j < n && elems[j].attribute->field_id <= attribute->field_id) {
+        j++;
+    }
+    return j;
+}
+
+/* Issue #501: iteration budget of a handler dispatch loop. Re-deriving the
+ * next slot means a callback that removes and re-adds handlers (e.g. a handler
+ * re-registering itself) could make the loop revisit them forever, so each
+ * loop runs at most as many iterations as the list's high-water length
+ * since the dispatch started: entries added past the start length still
+ * get their turn, a churn that keeps the length unchanged cannot extend
+ * the walk, and the high-water length is bounded by the distinct entries. */
+static inline void dispatch_budget_update(uint32_t len, uint32_t * high, uint32_t * budget) {
+    if (len > *high) {
+        *budget += len - *high;
+        *high = len;
+    }
+}
+
 /**
  * Fires an attribute detection event. If the attribute is registered, this function will extract its value.
  * If the attribute has any registered handlers, they will be called. This function will do nothing if the
@@ -819,11 +905,27 @@ void fire_attribute_event(ipacket_t * ipacket, uint32_t proto_id, uint32_t attri
         attr->packet_id = mmt_handler->last_received_packet.packet_id;
         //We set the index of the protocol
         attr->protocol_index = index;
-        /* Issue #252 (F-PERF-017): contiguous handler array. */
-        for (int h = 0; h < attr->handlers_count; h++) {
-            attr->attribute_handlers[h].handler_fct(ipacket, (attribute_t *) attr, attr->attribute_handlers[h].args);
+        /* Issue #252 (F-PERF-017): contiguous handler array. Issue #501: a
+         * callback may unregister handlers (see next_attribute_handler());
+         * data is re-set per handler so a nested event on the same
+         * attribute cannot leave the rest of this dispatch without it. */
+        attr_dispatch_enter(mmt_handler);
+        uint32_t high = (uint32_t) attr->handlers_count, budget = high;
+        for (int h = 0; h < attr->handlers_count && budget > 0; budget--) {
+            attribute_handler_function called = attr->attribute_handlers[h].handler_fct;
+            attribute_handler_function succ = (h + 1 < attr->handlers_count)
+                    ? attr->attribute_handlers[h + 1].handler_fct : NULL;
+            attr->data = data;
+            called(ipacket, (attribute_t *) attr, attr->attribute_handlers[h].args);
+            h = next_attribute_handler(attr, h, called, succ);
+            dispatch_budget_update((uint32_t) attr->handlers_count, &high, &budget);
         }
         attr->status = ATTRIBUTE_CONSUMED;
+        /* Issue #501 (F-BUG-008): the payload belongs to the caller — often
+         * a stack local (the HTTP parser and IP/IPv6 RTT events) — and is
+         * dead once this returns; never leave it reachable. */
+        attr->data = NULL;
+        attr_dispatch_leave(mmt_handler);
     }
 }
 
@@ -855,18 +957,32 @@ void proto_process_attribute_handlers(ipacket_t * ipacket, unsigned index) {
      * ->next chasing through separately allocated nodes. Base and length are
      * re-read every iteration because a handler_fct callback may
      * register/unregister attribute handlers, relocating or shifting the
-     * array (same contract as process_packet_handler()). */
+     * array (same contract as process_packet_handler()). Issue #501: the
+     * next element/handler is re-derived after each callback, and an
+     * attribute released meanwhile stays allocated until the dispatch
+     * bracket closes. */
     uint32_t proto = ipacket->proto_hierarchy->proto_path[index];
-    for (uint32_t e = 0; e < mmt_handler->proto_registered_attribute_handlers_len[proto]; e++) {
+    attr_dispatch_enter(mmt_handler);
+    /* No budget here: next_attribute_element() moves to a strictly greater
+     * field_id every iteration, so the walk ends on field order alone. */
+    for (uint32_t e = 0; e < mmt_handler->proto_registered_attribute_handlers_len[proto]; ) {
         attribute_internal_t * attribute = mmt_handler->proto_registered_attribute_handlers[proto][e].attribute;
         internal_extract_attribute(ipacket, attribute, index);
         if (attribute->status == ATTRIBUTE_SET) {
-            for (int h = 0; h < attribute->handlers_count; h++) {
-                attribute->attribute_handlers[h].handler_fct(ipacket, (attribute_t *) attribute, attribute->attribute_handlers[h].args);
+            uint32_t high = (uint32_t) attribute->handlers_count, budget = high;
+            for (int h = 0; h < attribute->handlers_count && budget > 0; budget--) {
+                attribute_handler_function called = attribute->attribute_handlers[h].handler_fct;
+                attribute_handler_function succ = (h + 1 < attribute->handlers_count)
+                        ? attribute->attribute_handlers[h + 1].handler_fct : NULL;
+                called(ipacket, (attribute_t *) attribute, attribute->attribute_handlers[h].args);
+                h = next_attribute_handler(attribute, h, called, succ);
+                dispatch_budget_update((uint32_t) attribute->handlers_count, &high, &budget);
             }
             attribute->status = ATTRIBUTE_CONSUMED;
         }
+        e = next_attribute_element(mmt_handler, proto, e, attribute);
     }
+    attr_dispatch_leave(mmt_handler);
 }
 /**
  * Analysis protocol of packet
@@ -1429,6 +1545,7 @@ void generic_data_extraction(unsigned protocol_index, ipacket_t * ipacket) {
      * the array (same contract as process_packet_handler()). */
     for (uint32_t a = 0; a < mmt_handler->proto_registered_attributes_len[proto_id]; a++) {
         struct attribute_internal_struct * tmp_attr_ref = mmt_handler->proto_registered_attributes[proto_id][a];
+        rearm_attribute_scratch(tmp_attr_ref);
         if (tmp_attr_ref->extraction_function(ipacket, protocol_index, (attribute_t *) tmp_attr_ref) > 0) {
             //We set the status of the protocol
             tmp_attr_ref->status = ATTRIBUTE_SET;

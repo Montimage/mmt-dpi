@@ -1416,7 +1416,32 @@ bool is_registered_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_
     return 0;
 }
 
+/* Issue #501 (F-BUG-004): release an attribute unlinked from the registry.
+ * Inside an attribute dispatch loop the loop may still hold the pointer, so
+ * the free waits for flush_deferred_attribute_frees(). */
+static void release_registered_attribute(mmt_handler_t *mmt_handler, attribute_internal_t *attr) {
+    if (mmt_handler->attr_dispatch_depth > 0) {
+        attr->next = mmt_handler->attr_free_pending;
+        mmt_handler->attr_free_pending = attr;
+        return;
+    }
+    mmt_free(attr->attribute_handlers);
+    mmt_free(attr);
+}
+
+void flush_deferred_attribute_frees(mmt_handler_t *mmt_handler) {
+    attribute_internal_t *attr = mmt_handler->attr_free_pending;
+    mmt_handler->attr_free_pending = NULL;
+    while (attr != NULL) {
+        attribute_internal_t *next = attr->next;
+        mmt_free(attr->attribute_handlers);
+        mmt_free(attr);
+        attr = next;
+    }
+}
+
 void free_registered_extraction_attributes(mmt_handler_t *mmt_handler) {
+    flush_deferred_attribute_frees(mmt_handler);
     for (int i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
         attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[i];
         uint32_t n = mmt_handler->proto_registered_attributes_len[i];
@@ -1477,14 +1502,19 @@ bool unregister_extraction_attribute_by_name(mmt_handler_t *mmt_handler, const c
     return unregister_extraction_attribute(mmt_handler, proto_id, attribute_id);
 }
 
-bool unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
+/* Issue #501 (F-BUG-017): drop_registration is false when the caller never
+ * counted a registration — a handler that joined an existing slot — so the
+ * count is left alone and the slot is only released once both counts are
+ * zero. */
+static void release_extraction_registration(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id,
+        int drop_registration) {
 
     struct attribute_internal_struct * temp_attr_proto_list;
     struct attribute_internal_struct * safe_to_delete_attr_for_proto = NULL;
 
     temp_attr_proto_list = get_registered_attribute(mmt_handler, proto_id, field_id);
     if (!temp_attr_proto_list) { //The attribute does not exist, return with no further action
-        return 1;
+        return;
     }
 
     // The attribute exists, two cases are possible
@@ -1493,7 +1523,7 @@ bool unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_
     //       2.1- the attribute's handlers_count equal to zero, the attribute can be safely deleted
     //       2.1- the attribute's handlers_count is positive, no further action is required.
 
-    if (temp_attr_proto_list->registration_count) {
+    if (drop_registration && temp_attr_proto_list->registration_count) {
         // We decrement the value only if it is positive! to avoid negative values
         temp_attr_proto_list->registration_count--;
     }
@@ -1515,11 +1545,13 @@ bool unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_
         }
 
         if (safe_to_delete_attr_for_proto != NULL) {
-            mmt_free(safe_to_delete_attr_for_proto->attribute_handlers);
-            mmt_free(safe_to_delete_attr_for_proto);
+            release_registered_attribute(mmt_handler, safe_to_delete_attr_for_proto);
         }
     }
+}
 
+bool unregister_extraction_attribute(mmt_handler_t *mmt_handler, uint32_t proto_id, uint32_t field_id) {
+    release_extraction_registration(mmt_handler, proto_id, field_id, 1);
     return 1;
 }
 
@@ -1584,8 +1616,13 @@ bool unregister_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id,
 
     //Decrement by one the handlers count of the attribute
     temp_attr->handlers_count -= 1;
-    // We unregister the attribute associated with this handler
-    unregister_extraction_attribute(mmt_handler, proto_id, attribute_id);
+    /* Issue #501 (F-BUG-017): give back the extraction registration only if
+     * this handler's registration created the slot (and counted it). */
+    int owned = (temp_attr->extraction_owner == handler_fct);
+    if (owned) {
+        temp_attr->extraction_owner = NULL;
+    }
+    release_extraction_registration(mmt_handler, proto_id, attribute_id, owned);
     return 1;
 }
 
@@ -1747,6 +1784,10 @@ bool register_attribute_handler(mmt_handler_t *mmt_handler, uint32_t proto_id, u
 
     // The attribute handler was successfully created, we increment the handlers count of the attribute
     attr->handlers_count++;
+    if (retval) {
+        /* Issue #501 (F-BUG-017): this registration created the slot. */
+        attr->extraction_owner = handler_fct;
+    }
     return 1;
 }
 
