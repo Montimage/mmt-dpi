@@ -62,6 +62,25 @@ endif
 # -flto=auto is GCC-only (Clang rejects the "auto" argument), so LTO is enabled
 # for GCC alone; the remaining flags are accepted by both GCC and Clang. icc is
 # excluded from the whole block.
+#
+# Compiler identity (issue #508): the block is keyed on what $(CC) IS, not on
+# how it is spelled. A literal `gcc`/`clang` filter silently skipped the whole
+# block for CC=/usr/bin/gcc, CC=gcc-13 or a wrapper. One preprocessor probe
+# per compiler reads the builtin macros on empty input (it never compiles);
+# __INTEL_COMPILER (icc) wins over __clang__, which wins over the __GNUC__
+# that Clang and icc also define. rules/arch-linux.mk derives its GCC floor
+# check from the same probe. An unknown or failing compiler leaves the
+# identity empty, and the block is then skipped with a $(warning) below.
+mmt_cc_probe = $(shell echo | $(1) -dM -E -x $(2) - 2>/dev/null | \
+    sed -n -E 's/^#define (__INTEL_COMPILER|__clang__|__GNUC__|__GNUC_MINOR__|__GNUC_PATCHLEVEL__) +([0-9]+).*/\1=\2/p')
+mmt_cc_id = $(if $(filter __INTEL_COMPILER=%,$(1)),icc,$(if $(filter __clang__=%,$(1)),clang,$(if $(filter __GNUC__=%,$(1)),gcc)))
+MMT_CC_MACROS  := $(call mmt_cc_probe,$(CC),c)
+MMT_CXX_MACROS := $(call mmt_cc_probe,$(CXX),c++)
+MMT_CC_ID      := $(call mmt_cc_id,$(MMT_CC_MACROS))
+MMT_CXX_ID     := $(call mmt_cc_id,$(MMT_CXX_MACROS))
+# Goals that compile (or install) something: the default goal or any goal
+# but the cleaning ones. The hardening warnings below fire only for these.
+MMT_BUILD_GOALS := $(if $(MAKECMDGOALS),$(filter-out clean dist-clean uninstall,$(MAKECMDGOALS)),default)
 
 MMT_RELEASE_BUILD := 1
 ifdef DEBUG
@@ -80,7 +99,7 @@ MMT_RELEASE_BUILD :=
 endif
 
 ifeq ($(MMT_RELEASE_BUILD),1)
-ifneq (,$(filter gcc clang,$(CC)))
+ifneq (,$(filter gcc clang,$(MMT_CC_ID)))
 
 # _FORTIFY_SOURCE level probe (F-SEC-010, issue #214): the stronger level =3
 # needs a compiler that implements __builtin_dynamic_object_size-based
@@ -140,10 +159,19 @@ MMT_HARDEN_LDFLAGS := \
 # reaches those stubs (observed: every installed-tree suite dies at startup).
 # The protection is therefore in the codegen, not the merged ELF note.
 
-# LTO must be present at BOTH compile and link; -flto=auto is GCC-only.
-ifneq (,$(filter gcc,$(CC)))
+# LTO must be present at BOTH compile and link; -flto=auto is GCC-only. The
+# objects are compiled by $(CC) and the libraries linked by $(CXX), and LTO
+# bytecode does not cross GCC releases, so both must be the same GCC release
+# (issue #508) — otherwise LTO alone is dropped, with a warning below.
+ifeq ($(MMT_CC_ID)/$(MMT_CXX_ID),gcc/gcc)
+ifeq ($(sort $(filter __GNUC%,$(MMT_CC_MACROS))),$(sort $(filter __GNUC%,$(MMT_CXX_MACROS))))
 MMT_HARDEN_CFLAGS  += -flto=auto
 MMT_HARDEN_LDFLAGS += -flto=auto
+else
+MMT_HARDEN_SKIPPED_LTO := 1
+endif
+else ifeq ($(MMT_CC_ID),gcc)
+MMT_HARDEN_SKIPPED_LTO := 1
 endif
 
 # TUNE=native (opt-in, NEVER the default - B5). When explicitly requested on the
@@ -159,6 +187,8 @@ endif
 CFLAGS   += $(MMT_HARDEN_CFLAGS)
 CXXFLAGS += $(MMT_HARDEN_CFLAGS) $(MMT_HARDEN_LDFLAGS)
 
+else
+MMT_HARDEN_SKIPPED := 1
 endif   # gcc/clang only
 endif   # release builds only
 
@@ -168,13 +198,17 @@ endif   # release builds only
 # inspect the objects. Silent divergence between the tested and the shipped
 # configuration is exactly the failure mode the finding reports, so the switch
 # is loud. The warning is a BUILD warning: goals that never compile (clean,
-# dist-clean) keep quiet.
+# dist-clean) keep quiet. Issue #508: a release build whose $(CC) is not
+# identified as GCC or Clang, or whose LTO is dropped, says so too.
+ifneq (,$(MMT_BUILD_GOALS))
 ifeq (,$(MMT_RELEASE_BUILD))
-ifneq (,$(filter-out clean dist-clean uninstall,$(MAKECMDGOALS)))
 $(warning MMT-DPI: release hardening DISABLED for this build (DEBUG/VALGRIND/BUILD=$(BUILD)) - the libraries get no _FORTIFY_SOURCE, stack protector, -fcf-protection or LTO; do not ship this build)
 endif
-ifeq (,$(MAKECMDGOALS))
-$(warning MMT-DPI: release hardening DISABLED for this build (DEBUG/VALGRIND/BUILD=$(BUILD)) - the libraries get no _FORTIFY_SOURCE, stack protector, -fcf-protection or LTO; do not ship this build)
+ifdef MMT_HARDEN_SKIPPED
+$(warning MMT-DPI: release hardening SKIPPED - CC=$(CC) is not identified as GCC or Clang (preprocessor probe: $(or $(MMT_CC_ID),unknown)) - the libraries get no _FORTIFY_SOURCE, stack protector, -fcf-protection, full RELRO or LTO; do not ship this build)
+endif
+ifdef MMT_HARDEN_SKIPPED_LTO
+$(warning MMT-DPI: LTO SKIPPED - CC=$(CC) and CXX=$(CXX) are not the same GCC release (LTO bytecode does not cross releases); the rest of the hardening set still applies)
 endif
 endif
 

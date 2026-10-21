@@ -22,9 +22,17 @@ PHASE0_DIR="$(cd "${CI_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${PHASE0_DIR}/../.." && pwd)"
 EXPECTED="${CI_DIR}/baseline/classification.txt"
 ACTUAL="${CI_DIR}/baseline/classification.actual.txt"
-PREFIX="${MMT_PREFIX:-/tmp/mmt-phase0}"
+# Install prefix: MMT_PREFIX overrides; by default a fresh, private mktemp
+# directory removed on exit — never a fixed, predictable /tmp path another
+# user could pre-create (issue #508).
 OUT_DIR="$(mktemp -d)"
-trap 'rm -rf "${OUT_DIR}"' EXIT
+if [ -n "${MMT_PREFIX:-}" ]; then
+    PREFIX="${MMT_PREFIX}"
+    trap 'rm -rf "${OUT_DIR}"' EXIT
+else
+    PREFIX="$(mktemp -d /tmp/mmt-phase0.XXXXXX)"
+    trap 'rm -rf "${OUT_DIR}" "${PREFIX}"' EXIT
+fi
 
 if [ ! -f "${EXPECTED}" ]; then
     echo "✗ committed CI baseline missing: ${EXPECTED}" >&2

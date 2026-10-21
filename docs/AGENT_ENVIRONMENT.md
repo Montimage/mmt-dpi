@@ -97,7 +97,7 @@ Notes:
 - Clang is available via `make ARCH=linux-clang`; icc via `ARCH=linux-icc`
   (rule files in `rules/arch-*.mk`). GCC is the default and best-tested path.
 - A C++ compiler (`g++`, pulled in by `build-essential`) is required because
-  shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:237`).
+  shared libraries are linked with `$(CXX)` (`rules/common-linux.mk:271`).
 - `cppcheck` is not in the toolchain line: only the `lint` job needs it.
   `tools/ci/run-cppcheck.sh` pins the release its findings ratchet
   (`tools/ci/cppcheck-ratchet.txt`) was measured with —
@@ -175,7 +175,7 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 | `NDEBUG=1` | Keep debug/assert active (suppress `-DNDEBUG`; default build defines `-DNDEBUG`) | `rules/common.mk:38-43` |
 | `SHOWLOG=1` | Show `MMT_LOG()` output (`-DDEBUG`). ⚠ Prints decoded, subscriber-identifying fields (IMSI, M-TMSI, UE/eNB IPs, URLs) — build only for captures you may expose, never ship where output is collected (F-SEC-016, #214) | `rules/common.mk:159-171` |
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
-| `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:149-157` |
+| `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:177-185` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
 
 ## 3. Testing
@@ -216,8 +216,10 @@ the exact-release-SHA publish gate (`test-release-gates.py`, issue
 issue #345, and the version-agreement self-test `test-version-agreement.sh`,
 issue #483, the release-tag pin self-test `test-release-tag-pin.sh`, issue
 #484, the single-publisher self-test `test-release-publish.sh`, issue
-#489, and the vendored-inventory self-test `test-vendored-components.py`,
-issue #496) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+#489, the vendored-inventory self-test `test-vendored-components.py`,
+issue #496, and the release-hardening self-test
+`test-hardening-identity.sh`, issue #508, which evaluates the makefiles
+without compiling) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other
@@ -509,9 +511,16 @@ harness must be built with this profile — see
 ```
 
 In both profiles the release-hardening block (LTO, FORTIFY, stack protector,
-RELRO — `rules/common-linux.mk:66-163`) is automatically disabled, and the
+RELRO — `rules/common-linux.mk:85-193`) is automatically disabled, and the
 `-Wl,-z,defs` self-containedness guard is skipped because sanitizer runtime
-symbols are intentionally left undefined (`rules/common-linux.mk:202-214`).
+symbols are intentionally left undefined (`rules/common-linux.mk:236-248`).
+In a release build the block is keyed on the compiler's identity, read from
+its preprocessor macros, so `CC=/usr/bin/gcc` or `CC=gcc-13` is hardened like
+`CC=gcc`; a `$(CC)` identified as neither GCC nor Clang skips it with a build
+`$(warning)`, and LTO needs `$(CC)` and `$(CXX)` to be the same GCC release
+(issue #508). `bash tools/ci/check-hardening-flags.sh --built [DIR...]`
+checks built libraries (default `sdk/lib/`); the release workflow runs it
+on the installed packages.
 
 ### `BUILD=coverage` — gcov instrumentation
 
@@ -530,7 +539,7 @@ next build of any profile deletes them, so harvest them first with
 `libmmt_fuzz` — which are otherwise not built at all:
 
 - Object/header selection: `rules/common.mk:201-203, 225-228, 310-313`
-- Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 215-218, 226-230, 263-279`
+- Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 249-252, 260-264, 297-313`
 - Install symlinks for both engines: `sdk/Makefile:89-90, 282-283`
 
 Usage (requires `libxml2-dev`):
@@ -574,7 +583,8 @@ Facts a later agent cannot infer from the build system alone (issue #480).
   overwrite, reset, `git clean`, pop or drop it — and never pop, apply or drop
   a stash entry you did not create.
 - **Phase0 gate commands.** Both gates build and install the SDK themselves;
-  give each a scratch prefix (default `/tmp/mmt-phase0`, shared between runs):
+  give each a scratch prefix (`MMT_PREFIX`; unset, each gate installs into a
+  fresh `mktemp -d /tmp/mmt-phase0.XXXXXX` it removes on exit — issue #508):
 
   ```bash
   MMT_PREFIX=$(mktemp -d) bash tools/phase0/ci/check_classification.sh   # golden fingerprint

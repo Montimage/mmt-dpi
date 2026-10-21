@@ -107,6 +107,7 @@ jobs:
               tools/ci/build-package.sh|tools/ci/install-build-deps.sh|\
               tools/ci/check-reproducible-build.sh|tools/ci/check-release-tag.sh|\
               tools/ci/check-release-gates.sh|tools/ci/publish-release.sh|\
+              tools/ci/check-hardening-flags.sh|\
               tools/ci/release-alert.sh|tools/ci/base-images.txt|\
               tools/ci/vendored-components.*|\
               .github/workflows/release-packages.yml)
@@ -154,13 +155,18 @@ jobs:
       # -e CI forwards the runner's CI=true marker into the container so a
       # missing git history there is the hard error rules/common.mk intends
       # (issue #220) instead of a silently date-stamped package.
+      # Hardening of what ships (issue #508): build-package.sh installs the
+      # package it just built into this same container, so the hardening
+      # check then runs on the packaged libraries and plugins — on every
+      # distro and both architectures — not only on an unshipped host build.
       - name: Build ${{ matrix.distro.pkg }} in ${{ matrix.distro.image }}
         run: |
           docker run --rm --platform "linux/${{ matrix.arch }}" \
             -e CI \
             -v "$PWD":/work -w /work \
             "${{ matrix.distro.image }}" \
-            bash tools/ci/build-package.sh "${{ matrix.distro.name }}" "${{ matrix.distro.pkg }}"
+            bash -c 'bash tools/ci/build-package.sh "$1" "$2" && bash tools/ci/check-hardening-flags.sh --built /opt/mmt/dpi/lib /opt/mmt/plugins' \
+            _ "${{ matrix.distro.name }}" "${{ matrix.distro.pkg }}"
 
       - name: Locate the built package
         id: pkg

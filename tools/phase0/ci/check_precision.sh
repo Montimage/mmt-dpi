@@ -41,9 +41,18 @@ LABELS="${CI_DIR}/labels.txt"
 PCAPS_DIR="${CI_DIR}/pcaps"
 EXPECTED="${CI_DIR}/baseline/precision.txt"
 ACTUAL="${CI_DIR}/baseline/precision.actual.txt"
-PREFIX="${MMT_PREFIX:-/tmp/mmt-phase0}"
+# Install prefix: MMT_PREFIX overrides (the precision-gate workflow job sets
+# it to share the install with the accuracy oracle); by default a fresh,
+# private mktemp directory removed on exit — never a fixed, predictable /tmp
+# path another user could pre-create (issue #508).
 BUILD_DIR="$(mktemp -d)"
-trap 'rm -rf "${BUILD_DIR}"' EXIT
+if [ -n "${MMT_PREFIX:-}" ]; then
+    PREFIX="${MMT_PREFIX}"
+    trap 'rm -rf "${BUILD_DIR}"' EXIT
+else
+    PREFIX="$(mktemp -d /tmp/mmt-phase0.XXXXXX)"
+    trap 'rm -rf "${BUILD_DIR}" "${PREFIX}"' EXIT
+fi
 
 if [ ! -f "${LABELS}" ]; then
     echo "✗ labelled-pcap manifest missing: ${LABELS}" >&2

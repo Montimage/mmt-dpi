@@ -147,13 +147,13 @@ while IFS=$'\t' read -r cite head tail claim body; do
 done <<'CITATIONS'
 rules/common-linux.mk:62	^# -flto=auto is GCC-only	-	LTO is enabled for GCC only
 rules/common-linux.mk:6-12	^ifdef ENABLESEC	^endif	ENABLESEC objects get -fPIC and the libxml2 include path	LIBXML2_CFLAGS
-rules/common-linux.mk:66-163	^MMT_RELEASE_BUILD := 1	^endif +# release builds only	release hardening, disabled for sanitizer profiles	MMT_HARDEN_CFLAGS
-rules/common-linux.mk:149-157	^# TUNE=native \(opt-in, NEVER the default	^endif	TUNE=native is opt-in, never the default	ifeq \(\$\(TUNE\),native\)
-rules/common-linux.mk:202-214	^# -Wl,-z,defs	^endif	the self-containedness guard, skipped for sanitizers	filter asan tsan,\$\(BUILD\)
-rules/common-linux.mk:215-218	^ifdef ENABLESEC	^endif	the ENABLESEC engines link against libxml2	LIBXML2_LIBS
-rules/common-linux.mk:226-230	^ifdef ENABLESEC	^endif	ENABLESEC adds both engines to the libraries target	LIBSECURITY
-rules/common-linux.mk:237	\$\(CXX\) .*-shared .*\$\(LIBCORE\)\.so	-	shared libraries are linked with $(CXX)
-rules/common-linux.mk:263-279	^ifdef ENABLESEC	^endif	the engine link rules are ENABLESEC-gated	LIBSECURITY
+rules/common-linux.mk:85-193	^MMT_RELEASE_BUILD := 1	^endif +# release builds only	release hardening, disabled for sanitizer profiles	MMT_HARDEN_CFLAGS
+rules/common-linux.mk:177-185	^# TUNE=native \(opt-in, NEVER the default	^endif	TUNE=native is opt-in, never the default	ifeq \(\$\(TUNE\),native\)
+rules/common-linux.mk:236-248	^# -Wl,-z,defs	^endif	the self-containedness guard, skipped for sanitizers	filter asan tsan,\$\(BUILD\)
+rules/common-linux.mk:249-252	^ifdef ENABLESEC	^endif	the ENABLESEC engines link against libxml2	LIBXML2_LIBS
+rules/common-linux.mk:260-264	^ifdef ENABLESEC	^endif	ENABLESEC adds both engines to the libraries target	LIBSECURITY
+rules/common-linux.mk:271	\$\(CXX\) .*-shared .*\$\(LIBCORE\)\.so	-	shared libraries are linked with $(CXX)
+rules/common-linux.mk:297-313	^ifdef ENABLESEC	^endif	the engine link rules are ENABLESEC-gated	LIBSECURITY
 rules/common.mk:3	^MMT_BASE \?=/opt/mmt	-	MMT_BASE defaults to /opt/mmt
 rules/common.mk:21-24	^ifndef VERBOSE	^endif	VERBOSE=1 prints full compile commands	QUIET := @
 rules/common.mk:30	^CFLAGS .*-DPLUGINS_REPOSITORY_OPT=	-	the plugin repository path is baked into the objects

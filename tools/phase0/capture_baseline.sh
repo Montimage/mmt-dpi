@@ -22,6 +22,8 @@
 #   tools/phase0/capture_baseline.sh [--prefix DIR] [--iterations N] [--jobs N]
 #                                    [--golden FILE] [--out DIR] [--datasets DIR]
 #
+#   --prefix DIR    install prefix (default: a fresh mktemp directory under
+#                   /tmp, removed on exit — issue #508)
 #   --golden FILE   golden pcap manifest (default: tools/phase0/golden_pcaps.txt)
 #   --out DIR       output directory for the baseline (default: tools/phase0/baseline)
 #   --datasets DIR  pcap dataset root (overrides $MMT_TEST_DATASETS)
@@ -38,7 +40,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-PREFIX="/tmp/mmt"
+PREFIX=""
 ITERATIONS=200
 JOBS="$(nproc 2>/dev/null || echo 4)"
 GOLDEN_LIST="${SCRIPT_DIR}/golden_pcaps.txt"
@@ -75,7 +77,17 @@ case "${GOLDEN_LIST}" in
 esac
 CLASS_DIR="${OUT_DIR}/classification"
 BUILD_DIR="$(mktemp -d)"
-trap 'rm -rf "${BUILD_DIR}"' EXIT
+# No --prefix: install into a private mktemp directory, never a fixed /tmp
+# path (issue #508). The valgrind SKIPPED note then names a placeholder,
+# since this prefix is gone once the script exits.
+PREFIX_HINT="${PREFIX}"
+if [ -z "${PREFIX}" ]; then
+    PREFIX="$(mktemp -d /tmp/mmt-baseline.XXXXXX)"
+    PREFIX_HINT='<prefix>'
+    trap 'rm -rf "${BUILD_DIR}" "${PREFIX}"' EXIT
+else
+    trap 'rm -rf "${BUILD_DIR}"' EXIT
+fi
 
 say() { printf '  %s\n' "$*"; }
 
@@ -197,10 +209,10 @@ else
     {
         printf '# Valgrind leak baseline — SKIPPED: valgrind not installed on this host.\n'
         printf '#\n# To capture on a host with valgrind:\n'
-        printf '#   make -C sdk clean && make -C sdk MMT_BASE=%s && make -C sdk MMT_BASE=%s install\n' "${PREFIX}" "${PREFIX}"
+        printf '#   make -C sdk clean && make -C sdk MMT_BASE=%s && make -C sdk MMT_BASE=%s install\n' "${PREFIX_HINT}" "${PREFIX_HINT}"
         printf '#   gcc -O2 -o phase0_classify tools/phase0/phase0_classify.c \\\n'
-        printf '#       -I %s/dpi/include -L %s/dpi/lib -lmmt_core -ldl -lpcap\n' "${PREFIX}" "${PREFIX}"
-        printf '#   LD_LIBRARY_PATH=%s/dpi/lib valgrind --leak-check=full \\\n' "${PREFIX}"
+        printf '#       -I %s/dpi/include -L %s/dpi/lib -lmmt_core -ldl -lpcap\n' "${PREFIX_HINT}" "${PREFIX_HINT}"
+        printf '#   LD_LIBRARY_PATH=%s/dpi/lib valgrind --leak-check=full \\\n' "${PREFIX_HINT}"
         printf '#       --show-leak-kinds=all ./phase0_classify %s\n' "${VG_PCAP}"
     } > "${VG}"
     say "      ⚠ valgrind not found — wrote SKIPPED note to ${VG}"

@@ -39,10 +39,12 @@ while IFS= read -r p; do
     vendor_excludes+=(":!:$p")
 done < "$VENDOR_LIST"
 
-git ls-files -z 'src/*.[ch]' ':!:src/mmt_mobile/asn1c/*' "${vendor_excludes[@]}" > /tmp/ccode-tracked.$$
-trap 'rm -f /tmp/ccode-tracked.$$' EXIT
+# A private mktemp file, not a predictable /tmp/<name>.$$ path (issue #508).
+TRACKED="$(mktemp)"
+trap 'rm -f "$TRACKED"' EXIT
+git ls-files -z 'src/*.[ch]' ':!:src/mmt_mobile/asn1c/*' "${vendor_excludes[@]}" > "$TRACKED"
 
-python3 - /tmp/ccode-tracked.$$ <<'PYEOF'
+python3 - "$TRACKED" <<'PYEOF'
 import re
 import sys
 

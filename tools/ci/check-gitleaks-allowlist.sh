@@ -33,13 +33,15 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
-git ls-files -z > /tmp/gitleaks-tracked.$$ || {
+# A private mktemp file, not a predictable /tmp/<name>.$$ path (issue #508).
+TRACKED="$(mktemp)"
+trap 'rm -f "$TRACKED"' EXIT
+git ls-files -z > "$TRACKED" || {
     echo "✗ not a git repository (or git ls-files failed)" >&2
     exit 1
 }
-trap 'rm -f /tmp/gitleaks-tracked.$$' EXIT
 
-python3 - "$CONFIG" /tmp/gitleaks-tracked.$$ <<'PYEOF'
+python3 - "$CONFIG" "$TRACKED" <<'PYEOF'
 import re
 import sys
 
