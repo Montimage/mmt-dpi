@@ -65,7 +65,6 @@ typedef enum {
 
 #define MTU_BIG               (16*1024)
 
-void init_options ();
 void print_summary ();
 FILE *open_file (char *name, char *mode);
 

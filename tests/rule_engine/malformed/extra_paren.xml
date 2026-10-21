@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- tests/rule_engine (#511/#512): a closing parenthesis too many inside an expression (climbed above the event to a NULL father)
+     run_tests.sh step 4 expects init_sec_lib() to return an error. -->
+<beginning>
+  <property value="THEN" property_id="1" description="extra_paren">
+    <event event_id="1" description="A" boolean_expression="(UDP.dest_port == 1001)) &amp;&amp; (META.packet_len &gt; 100)"/>
+    <event event_id="2" description="B" boolean_expression="(UDP.dest_port == 1002)"/>
+  </property>
+</beginning>

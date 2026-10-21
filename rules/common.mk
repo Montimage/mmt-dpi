@@ -576,3 +576,12 @@ endif
 # library's own copy. The generated sources themselves are never edited.
 LIBMOBILE_ASN1C_OBJECTS := $(filter $(SRCDIR)/mmt_mobile/asn1c/%,$(LIBMOBILE_OBJECTS))
 $(LIBMOBILE_ASN1C_OBJECTS): CFLAGS += -fvisibility=hidden
+
+# Default folder of the rule engine's reaction scripts and detection files
+# (issue #512); the MMT_SEC_REACTION_DIR environment variable overrides it at
+# run time — a different name, so an exported run-time value is not baked in.
+# sdk/Makefile recompiles tips_report.o when it changes.
+ifdef ENABLESEC
+MMT_SEC_REACTION_DIR_DEFAULT ?= $(MMT_BASE)/probe/conf
+$(SECURITY_OBJECTS): CFLAGS += -DMMT_SEC_REACTION_DIR_OPT=\"$(MMT_SEC_REACTION_DIR_DEFAULT)\"
+endif

@@ -37,6 +37,20 @@ extern "C" {
 #define LIB_NAME "libembedded_functions.so"
 #define SIZE_CAUSE 1000
 
+/* An embedded #function(...) takes at most this many parameters: the call
+ * goes through one exact per-arity signature, void *f(void *, ...) with
+ * 0..4 void * parameters (#511). */
+#define EMBEDDED_FUNCT_MAX_PARAMS 4
+typedef void *(*embedded_funct_t)(void);
+
+/* Default directory of the reaction scripts and their detection_<n>.data
+ * files: $(MMT_BASE)/probe/conf, baked in by rules/common.mk; the
+ * MMT_SEC_REACTION_DIR environment variable (an absolute path) overrides it
+ * at run time (#512). */
+#ifndef MMT_SEC_REACTION_DIR_OPT
+#define MMT_SEC_REACTION_DIR_OPT "/opt/mmt/probe/conf"
+#endif
+
 /* ===== Engine state =======================================================
  * One definition site each — all in tips.c. The writer set spans every
  * unit, so file-local `static` is not an option: op is set by
@@ -85,22 +99,30 @@ void * xcalloc(unsigned long num, unsigned long size);
 void * xmalloc(unsigned long size);
 void xfree(void *freeable);
 void close_file(FILE *file);
-void init_sec_lib( mmt_handler_t *mmt, char *property_file, enum_print print_option, result_callback cont_funct, void *user_args );
+/* Loads the rule file and registers the packet handler on mmt. Returns 0, or
+ * -1 with the reason on stderr — a malformed rule file, a missing embedded
+ * function, a failed registration, or a second call: the engine state is
+ * process-global, so a process runs at most one engine (docs/THREADING.md).
+ * A failed load frees what it built and leaves the engine uninitialised. */
+int init_sec_lib( mmt_handler_t *mmt, char *property_file, enum_print print_option, result_callback cont_funct, void *user_args );
 
 /* ===== tips_xml.c — XML loading, called by tips.c and the others =========*/
 
-void read_rules( mmt_handler_t *mmt );
+int read_rules( mmt_handler_t *mmt );
+void free_rules( void );
 rule * create_rule();
 void convert_mac_bytes_to_string(char **pszMACAddress, unsigned char *pbyMacAddressInBytes);
 char * funct_extract_name(char * input);
-char * funct_get_info_param( mmt_handler_t *mmt, enum_yes reg_tuple, char * input, tuple *a_tuple);
+int funct_get_info_param( mmt_handler_t *mmt, enum_yes reg_tuple, char * input, tuple *a_tuple, char **next);
+int funct_count_params( const char *call );
 
 /* ===== tips_extract.c — pcap extraction and leaf evaluation ==============*/
 
 long get_seconds( const ipacket_t *pkt );
 long get_useconds( const ipacket_t *pkt );
 char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, tuple *list_of_tuples );
-void * funct_get_params_and_execute( verify_ctx_t *ctx, char *funct_name, int data_size, tuple *tt, tuple *list_of_tuples, enum_found *found );
+embedded_funct_t embedded_funct_resolve( const char *funct_name );
+void * funct_get_params_and_execute( verify_ctx_t *ctx, embedded_funct_t funct, int data_size, tuple *tt, tuple *list_of_tuples, enum_found *found );
 int exists_or_not (const ipacket_t *pkt, enum_operation operator, rule *r);
 int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_value, enum_operation operator, rule *r1, rule *r2);
 

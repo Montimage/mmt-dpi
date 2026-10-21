@@ -125,6 +125,8 @@ typedef struct RULE_struct{
 
   char * description;   //Only used by a ROOT or a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify it.
   char * funct_name;    //Used by XFUNCT nodes to hold function_name
+  void *(*funct)(void); //Used by XFUNCT nodes: funct_name resolved at load (#511); called through
+                        //the signature of its arity, never through this placeholder type
   char * if_satisfied; //Only used by a ROOT node. Function call done  when a conclusion for the rule is reached.
   char * if_not_satisfied; //Only used by a ROOT node. Function call done  when a conclusion for the rule is reached.
   //char * history;       //Only used by a ROOT_INSTANCE node. Printed when a conclusion for the rule is reached so that the user can identify the causes.

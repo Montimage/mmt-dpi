@@ -5,29 +5,34 @@
   — split out of tips.c in issue #235).
 
   The schema is derived directly from tips_xml.c:
-    - document root is ignored, <beginning> is skipped;
-      each <property> opens a new rule tree (processNode, tips_xml.c:950)
+    - <beginning> is skipped, any element other than <beginning>,
+      <property>, <operator> and <event> is rejected (#512);
+      each <property> opens a new rule tree (processNode, tips_xml.c)
     - <operator> nodes carry value= boolean connectors (THEN/OR/AND/NOT/
       REPEAT/COMPUTE), nested operators build the event sub-tree
       (tips_xml.c:989, tips_xml.c:997+)
     - the boolean_expression= attribute is compiled into condition leaves;
       identifiers follow PROTO.FIELD [.EVENT_REF] and operators are
       == != > >= < <= && || (create_boolean_expression, tips_xml.c:537)
-    - referencing an unknown protocol/attribute aborts parsing with
-      Error 9 (tips_xml.c:686), so the expressions below resolve against
-      the always-present META protocol only.
+    - referencing an unknown protocol/attribute fails the load with
+      Error 9a (init_sec_lib() returns an error, #512), so the expressions
+      below resolve against the always-present META protocol only.
 -->
 <beginning>
 
-  <!-- Simple SECURITY_RULE over two constant comparisons on META
-       attributes: proves the full parse -> condition-tree construction ->
-       register_extraction_attribute chain succeeds end-to-end. -->
+  <!-- Simple SECURITY_RULE over constant comparisons on META attributes:
+       proves the full parse -> condition-tree construction ->
+       register_extraction_attribute chain succeeds end-to-end. A THEN
+       property needs both of its branches, and a constant must be readable
+       as its operand's type (#512: the loader rejects a one-branch THEN,
+       which verify() dereferenced, and a timeval constant such as
+       META.utime > 0, which had no value to copy). META.utime itself is
+       registered by every load: verdicts are stamped from it. -->
   <property property_id="100001" type_property="SECURITY_RULE"
             description="Rule engine self-test: META timestamps must exist"
             if_satisfied="OK" if_not_satisfied="VIOLATION">
-    <event event_id="1">
-      <operator value="AND" boolean_expression="((META.utime &gt; 0)&amp;&amp;(META.packet_len &gt; 0))"/>
-    </event>
+    <event event_id="1" boolean_expression="((META.packet_len &gt; 0)&amp;&amp;(META.packet_index &gt; 0))"/>
+    <event event_id="2" boolean_expression="(META.packet_len &gt; 0)"/>
   </property>
 
   <!-- Second property: exercises numeric comparison on another
@@ -35,9 +40,8 @@
   <property property_id="100002" type_property="TEST"
             description="Rule engine self-test: single comparison"
             if_satisfied="OK" if_not_satisfied="VIOLATION">
-    <event event_id="1">
-      <operator value="GT" boolean_expression="(META.packet_index &gt; 0)"/>
-    </event>
+    <event event_id="1" boolean_expression="(META.packet_index &gt; 0)"/>
+    <event event_id="2" boolean_expression="(META.packet_index &gt; 0)"/>
   </property>
 
 </beginning>

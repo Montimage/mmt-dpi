@@ -172,6 +172,7 @@ rule *create_instance(rule **root_inst, rule *r, rule* father)
         a_rule->t.next = r->t.next;
         if (r->value == XFUNCT && r->funct_name != NULL) {
             a_rule->funct_name = strdup(r->funct_name);
+            a_rule->funct = r->funct; //resolved at load (#511)
         }
         if (r->value == XCON) {
             a_rule->t.data = xmalloc(a_rule->t.data_size);
@@ -1250,11 +1251,14 @@ static int verify_not_backtrack( verify_ctx_t *ctx, rule *r, rule *curr_r )
     short result = 0;
     rule *curr_r_NOT = curr_r;
     //EDMO!
+    //Never climb past the rule instance: its next is the following instance
+    //of the rule, not a branch of this one, and its father is NULL — a NOT
+    //as the right son of the root THEN dereferenced it (#512).
     curr_r = r->list_of_sons->father;
-    while(curr_r != NULL && curr_r->next == NULL){
+    while(curr_r != NULL && curr_r->father != NULL && curr_r->next == NULL){
         curr_r = curr_r->father;
     }
-    if(curr_r != NULL && curr_r->next != NULL){
+    if(curr_r != NULL && curr_r->father != NULL && curr_r->next != NULL){
         curr_r = curr_r->next;
         curr_r->father = r;
         result = verify( ctx, BEFORE, curr_r );
@@ -1266,7 +1270,7 @@ static int verify_not_backtrack( verify_ctx_t *ctx, rule *r, rule *curr_r )
             return VALID;
         }
     }
-    curr_r->valid = NOT_YET;
+    if (curr_r != NULL && curr_r->father != NULL) curr_r->valid = NOT_YET;
     r->valid = NOT_YET;
     return NOT_YET;
 }

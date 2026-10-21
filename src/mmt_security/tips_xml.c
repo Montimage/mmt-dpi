@@ -90,6 +90,11 @@
     static father *top_father = NULL;
     static father *bot_father = NULL;
 
+    /* The node whose boolean_expression create_boolean_expression() is
+     * compiling: the parser may climb back to it but never above it (#512). */
+    static rule *expr_root = NULL;
+    static const char *expr_text = NULL;
+
 rule * create_rule()
 {
     rule * a_rule = (rule *) xmalloc(sizeof (rule));
@@ -109,6 +114,7 @@ rule * create_rule()
     a_rule->t.next = NULL;
     a_rule->description = NULL; //Only if ROOT or ROOT_INSTANCE node
     a_rule->funct_name = NULL; //Only if XFUNCT leaf node
+    a_rule->funct = NULL; //Only if XFUNCT leaf node: funct_name resolved at load
     a_rule->if_satisfied = NULL; //Only if ROOT or ROOT_INSTANCE node
     a_rule->if_not_satisfied = NULL; //Only if ROOT or ROOT_INSTANCE node
     a_rule->already_satisfied = NO; //Only if ROOT_INSTANCE node
@@ -144,7 +150,7 @@ rule * create_rule()
     return a_rule;
 }
 
-void create_father(rule *a_rule, short depth, enum_clean clean)
+int create_father(rule *a_rule, short depth, enum_clean clean)
 {
     father *temp = top_father;
     if (clean == CLEAN) {
@@ -156,7 +162,7 @@ void create_father(rule *a_rule, short depth, enum_clean clean)
     }
     if (top_father == NULL) {
         top_father = (father *) xmalloc(sizeof (father));
-        if(top_father == NULL) return;
+        if(top_father == NULL) return -1;
         top_father->node = a_rule;
         top_father->depth = depth;
         top_father->next = NULL;
@@ -165,7 +171,7 @@ void create_father(rule *a_rule, short depth, enum_clean clean)
     } else {
         temp = (father *) xmalloc(sizeof (father));
         if (temp == NULL)
-            return;
+            return -1;
         temp->node = a_rule;
         temp->depth = depth;
         temp->next = NULL;
@@ -173,6 +179,7 @@ void create_father(rule *a_rule, short depth, enum_clean clean)
         bot_father->next = temp;
         bot_father = temp;
     }
+    return 0;
 }
 
 void eliminate_bot_father()
@@ -254,7 +261,7 @@ void *get_xdata(long type, int size, void *str, short is_string_data)
      * (is_string_data == NO). */
     unsigned char c = 0;
     unsigned short s = 0;
-    unsigned long l = 0;
+    uint32_t l = 0;
     unsigned long long ll = 0L;
     /* enum_yes is {YES=0, NO=1}: compare explicitly, never test truthily */
     const char *txt = (is_string_data == YES) ? (const char *) str + sizeof(uint32_t) : (const char *) str;
@@ -286,7 +293,8 @@ void *get_xdata(long type, int size, void *str, short is_string_data)
             return (void *) data;
             break;
         case MMT_U32_DATA:
-            l = (unsigned long) atol(txt);
+            /* a 4-byte attribute: never an LP64 unsigned long (#511) */
+            l = (uint32_t) atol(txt);
             memcpy(data, (void *) (&l), size);
             return (void *) data;
             break;
@@ -403,8 +411,10 @@ void *get_xdata(long type, int size, void *str, short is_string_data)
              return NULL;
              break;
         default:
-            (void)fprintf(stderr, "Error 2: Type [%ld], size [%d] not implemented yet, data type unknown.\n [%s]\n", type, size, (char *)data);
-            exit(-1);
+            /* the caller rejects the rule (#512) */
+            (void)fprintf(stderr, "Error 2: Type [%ld], size [%d] not implemented yet, data type unknown.\n", type, size);
+            xfree(data);
+            return NULL;
     }//end of switch
 }
 
@@ -427,8 +437,8 @@ char *tokenize(char *temp, char **ltoken2, char **ltoken3, short *ref)
     (*ltoken2)[i] = '\0';
     while (isalpha(*temp2) || *temp2 == '_' || isdigit(*temp2)) temp2++;
     if (*temp2 != '.') {
-        (void)fprintf(stderr, "Error 3b: Incorrect name in PROTO.FIELD.EVENT: %s", temp);
-        exit(-1);
+        (void)fprintf(stderr, "Error 3b: Incorrect name in PROTO.FIELD.EVENT: %s\n", temp);
+        return NULL;
     }
     temp2++; //skip the point
     i = 0;
@@ -454,7 +464,7 @@ char *tokenize(char *temp, char **ltoken2, char **ltoken3, short *ref)
     return temp2;
 }
 
-void register_tuple(mmt_handler_t *mmt, tuple * a_tuple)
+int register_tuple(mmt_handler_t *mmt, tuple * a_tuple)
 {
     int ret = 1;
     if (is_registered_attribute(mmt, a_tuple->protocol_id, a_tuple->field_id) == 0) {
@@ -462,8 +472,9 @@ void register_tuple(mmt_handler_t *mmt, tuple * a_tuple)
     }
     if (ret <= 0) {
         (void)fprintf(stderr, "Error 9b: in register_extraction_attribute proto=%ld, field=%ld. Value not available.\n", a_tuple->protocol_id, a_tuple->field_id);
-        exit(-1);
+        return -1;
     }
+    return 0;
 }
 
 void add_tuple_to_list_of_tuples(tuple *a_tuple)
@@ -509,7 +520,12 @@ char * funct_extract_name(char * input)
     char * end = input;
     while (*start == ' ' || *start == '#')start++;
     end = start;
-    while (*end != '(' && *end != ' ')end++;
+    while (*end != '(' && *end != ' ' && *end != '\0')end++;
+    if (end == start || *end == '\0') {
+        /* no name, or no parameter list: never scan past the string (#512) */
+        (void)fprintf(stderr, "Error 3d: Incorrect function call: %s\n", input);
+        return NULL;
+    }
     output = xmalloc(end - start + 1);
     if(output == NULL) return NULL;
     strncpy(output, start, end - start);
@@ -518,74 +534,171 @@ char * funct_extract_name(char * input)
     return output;
 }
 
-int funct_get_return_type_and_size(int *size, char *lib_name, char *funct_name)
+/* Number of parameters of the call "name(p1, ..., pn)": 0 for "name()",
+ * -1 without a '(' ... ')' list. Parameters never contain ',' or ')'. */
+int funct_count_params( const char *call )
 {
-    void * lib_pointer;
-    void *(*embedded_function)();
-    int type = 0;
-    lib_pointer = dlopen(lib_name, RTLD_LAZY);
-    if (lib_pointer != NULL) {
-        *(void **) (&embedded_function) = dlsym(lib_pointer, "get_data_type_of_funct_return_value");
-        int * temph = (int*) embedded_function(funct_name, size);
-        type = *temph;
-        xfree(temph);
+    const char *p = strchr(call, '(');
+    int n = 1;
+    if (p == NULL || strchr(p, ')') == NULL) return -1;
+    p++;
+    while (*p == ' ') p++;
+    if (*p == ')') return 0;
+    for (; *p != ')'; p++) {
+        if (*p == ',') n++;
     }
+    return n;
+}
+
+/* Type of the value funct_name returns, as the library's
+ * get_data_type_of_funct_return_value() reports it; -1 when the library or
+ * that symbol is missing or it returns nothing (#511). */
+static int funct_get_return_type_and_size(int *size, char *funct_name)
+{
+    int *(*type_of)(char *, int *);
+    int type;
+    embedded_funct_t f = embedded_funct_resolve("get_data_type_of_funct_return_value");
+    if (f == NULL) return -1;
+    type_of = (int *(*)(char *, int *)) f;
+    int * temph = type_of(funct_name, size);
+    if (temph == NULL) {
+        (void)fprintf(stderr, "Error 3h: No return type for embedded function %s\n", funct_name);
+        return -1;
+    }
+    type = *temph;
+    xfree(temph);
     return type;
 }
 
-char * funct_get_info_param( mmt_handler_t *mmt, enum_yes reg_tuple, char * input, tuple *a_tuple)
+/* Embedded #function(...) call, checked once at load (#511): the call has
+ * a parameter list of at most EMBEDDED_FUNCT_MAX_PARAMS entries and the
+ * library exports the function. Returns it, or NULL with the reason on
+ * stderr. Used for expression leaves and for #function reactions. */
+static embedded_funct_t funct_check_call(const char *call, const char *funct_name)
+{
+    int n = funct_count_params(call);
+    if (n < 0) {
+        (void)fprintf(stderr, "Error 3d: Incorrect function call: %s\n", call);
+        return NULL;
+    }
+    if (n > EMBEDDED_FUNCT_MAX_PARAMS) {
+        (void)fprintf(stderr, "Error 3e: Embedded function %s takes %d parameters, at most %d are supported\n",
+                funct_name, n, EMBEDDED_FUNCT_MAX_PARAMS);
+        return NULL;
+    }
+    return embedded_funct_resolve(funct_name);
+}
+
+int funct_get_info_param( mmt_handler_t *mmt, enum_yes reg_tuple, char * input, tuple *a_tuple, char **next)
 {
     //input: param1,...) or param1) or )
-    //output: NULL if no params left or paramx) or paramx,...)
+    //*next: NULL if no params left, else the text after the ','
+    //returns 0, or -1 when the parameter cannot be parsed (#512) — the old
+    //NULL return also stood for "last parameter", so errors were invisible
     short ref = 0;
     char *start = input;
-    char *end = strchr(input, ',');
-    if (end == NULL) end = strchr(input, ')');
+    char *end = NULL;
+    *next = NULL;
     while (*start == ' ')start++;
+    end = strpbrk(start, ",)");
+    if (end == NULL) {
+        (void)fprintf(stderr, "Error 3f: Unterminated parameter list: %s\n", input);
+        return -1;
+    }
     if (isalpha(*start)) {
         //PROTO.FIELD or PROTO.FIELD.EVENT
         ref = 0;
-        tokenize(input, &token2, &token3, &ref);
+        if (tokenize(start, &token2, &token3, &ref) == NULL) return -1;
         a_tuple->protocol_id = get_protocol_id_by_name(token2);
         a_tuple->field_id = get_attribute_id_by_protocol_id_and_attribute_name(a_tuple->protocol_id, token3);
+        if (a_tuple->protocol_id <= 0 || a_tuple->field_id <= 0) {
+            (void)fprintf(stderr, "Error 9a: Unknown attribute %s.%s\n", token2, token3);
+            return -1;
+        }
         a_tuple->data_type_id = mmt_attribute_get_data_type_typed(a_tuple->protocol_id, a_tuple->field_id);
         a_tuple->data_size = get_data_size_by_proto_and_field_ids(a_tuple->protocol_id, a_tuple->field_id);
         a_tuple->event_id = ref;
         if (ref > 0 || reg_tuple == YES) {
-            register_tuple( mmt, a_tuple );
+            if (register_tuple( mmt, a_tuple ) != 0) return -1;
             add_tuple_to_list_of_tuples(a_tuple);
         }
-        //if not NULL then next param exists, if NULL then there is no next param
-        if (*end == ',') {
-            end++;
-            return end;
-        }
-        return NULL;
-    }
-
-    if (isdigit(*start)) {
+    } else if (isdigit(*start)) {
         a_tuple->data = xmalloc(end - start + 1);
         if(a_tuple->data == NULL){
-            return NULL;
+            return -1;
         }
         strncpy(a_tuple->data, start, end - start);
         ((char *) a_tuple->data)[end - start] = '\0';
-        if (*end == ',') {
-            end++;
-            return end;
-        }
-        return NULL;
+    } else if (start == end && *end == ')') {
+        /* ')' closes an empty parameter list: nothing to parse */
+        return 0;
+    } else {
+        (void)fprintf(stderr, "Error 3f: Unsupported function parameter: %s\n", input);
+        return -1;
     }
-
-    if (*end == ')')
-        /* ')' closes the parameter list: nothing more to parse, so the
-         * caller stops iterating — returning NULL is intentional. */
-        return NULL;
-
-    return NULL;
+    //not NULL: a next param exists
+    if (*end == ',') {
+        const char *after = end + 1;
+        while (*after == ' ') after++;
+        if (*after == ')' || *after == ',') {
+            (void)fprintf(stderr, "Error 3f: Empty parameter in function call: %s\n", input);
+            return -1;
+        }
+        *next = end + 1;
+    }
+    return 0;
 }
 
-void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_rule, char *expression)
+static void append_son(rule *a_rule, rule *new_rule)
+{
+    if (a_rule->list_of_sons == NULL) {
+        a_rule->list_of_sons = new_rule;
+        new_rule->prev = NULL;
+        new_rule->next = NULL;
+    } else {
+        rule *a_temp = a_rule->list_of_sons;
+        while (a_temp->next != NULL) a_temp = a_temp->next;
+        a_temp->next = new_rule;
+        new_rule->prev = a_temp;
+    }
+    new_rule->father = a_rule;
+}
+
+static tuple *new_param_tuple(void)
+{
+    tuple *t = (tuple *) xmalloc(sizeof (tuple));
+    if (t == NULL) return NULL;
+    t->protocol_id = -1;
+    t->field_id = -1;
+    t->data_type_id = -1;
+    t->data_size = -1;
+    t->event_id = -1;
+    t->valid = NOT_YET; //not used in this context
+    t->data = NULL;
+    t->next = NULL;
+    return t;
+}
+
+static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_rule, char *expression);
+
+/* An operator applies to the node holding its left operand's father: climb
+ * one level — never above the node the expression belongs to (#512: a
+ * leading operator or a surplus ')' used to dereference a NULL father or
+ * rewrite the enclosing operator). value < 0 climbs without setting. */
+static int climb_with_operator(mmt_handler_t *mmt, rule *a_rule, short value, char *rest)
+{
+    if (a_rule == expr_root || a_rule->father == NULL) {
+        (void)fprintf(stderr, "Error 37b: Unbalanced boolean expression: %s\n", expr_text);
+        return -1;
+    }
+    if (value >= 0) a_rule->father->value = value;
+    return create_boolean_expression(mmt, NO, a_rule->father, rest);
+}
+
+/* Returns 0, or -1 with the reason on stderr (#512: no more process exits).
+ * Each node is linked into the tree as soon as it is created, so the caller
+ * frees a failed expression by freeing the tree it belongs to. */
+static int create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_rule, char *expression)
 {
     //parse expression and create sub-tree, a_rule->value = top operator
     //((ARP.OPCODE == 2)&&(ARP.SRC_PROTO == ARP.SRC_PROTO.1))
@@ -603,86 +716,59 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
     if (*temp == '(') {
         temp2 = temp + 1;
         if (first_time == YES) {
-            create_boolean_expression(mmt, NO, a_rule, temp2);
-        } else {
-            //create new_rule
-            new_rule = create_rule();
-            if(new_rule == NULL) return;
-            new_rule->type = SON;
-            new_rule->value = NOP;
-            if (a_rule->list_of_sons == NULL) {
-                a_rule->list_of_sons = new_rule;
-                new_rule->prev = NULL;
-                new_rule->next = NULL;
-            } else {
-                rule *a_temp = a_rule->list_of_sons;
-                while (a_temp->next != NULL) a_temp = a_temp->next;
-                a_temp->next = new_rule;
-                new_rule->prev = a_temp;
-            }
-            new_rule->father = a_rule;
-            create_boolean_expression(mmt, NO, new_rule, temp2);
+            return create_boolean_expression(mmt, NO, a_rule, temp2);
         }
+        //create new_rule
+        new_rule = create_rule();
+        if(new_rule == NULL) return -1;
+        new_rule->type = SON;
+        new_rule->value = NOP;
+        append_son(a_rule, new_rule);
+        return create_boolean_expression(mmt, NO, new_rule, temp2);
     } else if (*temp == ')') {
-        temp2 = temp + 1;
-        //go up one
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        //go up one; a surplus ')' that ends the expression is tolerated, as
+        //it always was (the old parser stopped on the empty rest)
+        if (a_rule == expr_root || a_rule->father == NULL) {
+            char *rest = temp + 1;
+            while (isspace(*rest)) rest++;
+            if (*rest == '\0') return 0;
+        }
+        return climb_with_operator(mmt, a_rule, -1, temp + 1);
     } else if (*temp == '\0') {
         //do nothing
+        return 0;
     } else if (*temp == 'X' && *(temp + 1) == 'E' && *(temp + 2) == ' ') {
         //XE (identical to a string)
-        temp2 = temp + 2;
-        //set value
-        a_rule->father->value = XE;
-        //go up one
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, XE, temp + 2);
     } else if (*temp == 'X' && *(temp + 1) == 'C' && *(temp + 2) == ' ') {
-        //XC
-        temp2 = temp + 2;
-        a_rule->father->value = XC;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, XC, temp + 2);
     } else if (*temp == 'X' && *(temp + 1) == 'D' && *(temp + 2) == ' ') {
-        //XD
-        temp2 = temp + 2;
-        a_rule->father->value = XD;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, XD, temp + 2);
     } else if (*temp == 'X' && *(temp + 1) == 'C' && *(temp + 2) == 'E' && *(temp + 3) == ' ') {
-        //XCE
-        temp2 = temp + 3;
-        a_rule->father->value = XCE;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, XCE, temp + 3);
     } else if (*temp == 'X' && *(temp + 1) == 'D' && *(temp + 2) == 'E' && *(temp + 3) == ' ') {
-        //XDE
-        temp2 = temp + 3;
-        a_rule->father->value = XDE;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, XDE, temp + 3);
     } else if (*temp == 'I' && *(temp + 1) == 'N' && *(temp + 2) == ' ') {
         //IN+blank
-        temp2 = temp + 3;
-        a_rule->father->value = XIN;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, XIN, temp + 3);
     } else if (*temp == 'D' && *(temp + 1) == 'E' && (*(temp + 2) == ' ' || *(temp + 2) == ')')) {
         // DE (Does Exitst)
-        temp2 = temp + 3;
-        a_rule->father->value = DE;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, DE, temp + 3);
     } else if (*temp == 'D' && *(temp + 1) == 'N' && *(temp + 2) == 'E' && (*(temp + 3) == ' ' || *(temp + 3) == ')')) {
         // DE (Does Not  Exitst)
-        temp2 = temp + 4;
-        a_rule->father->value = DNE;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, DNE, temp + 4);
     } else if (*temp == '\'') {
         // 'string'
         temp++;
         temp2 = temp;
         i = 0;
-        while (*temp2 != '\'' && i < 1000) {
+        while (*temp2 != '\'' && *temp2 != '\0' && i < 1000) {
             temp2++;
             i++;
         }
-        if (i > 999) {
-            (void)fprintf(stderr, "Error 3a: Incorrect string in boolean expression: %s", expression);
-            exit(-1);
+        if (i > 999 || *temp2 != '\'') {
+            (void)fprintf(stderr, "Error 3a: Incorrect string in boolean expression: %s\n", expression);
+            return -1;
         }
         i = temp2 - temp;
         mmt_string_data_t s;
@@ -692,6 +778,7 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
         s.len = i + 1;
         //create new_rule
         new_rule = create_rule();
+        if (new_rule == NULL) return -1;
         new_rule->type = LEAF;
         new_rule->value = XCON;
         //need to find a right handed LEAF to determine the type
@@ -705,29 +792,29 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
         new_rule->t.event_id = temp_rule->t.event_id;
         new_rule->t.data_size = temp_rule->t.data_size;
         new_rule->t.valid = VALID;
+        append_son(a_rule, new_rule);
         new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) (&s), YES);
-        ;
-        if (a_rule->list_of_sons == NULL) {
-            a_rule->list_of_sons = new_rule;
-            new_rule->prev = NULL;
-            new_rule->next = NULL;
-        } else {
-            rule *a_temp = a_rule->list_of_sons;
-            while (a_temp->next != NULL) a_temp = a_temp->next;
-            a_temp->next = new_rule;
-            new_rule->prev = a_temp;
+        if (new_rule->t.data == NULL) {
+            (void)fprintf(stderr, "Error 3g: Constant '%s' cannot be read as the type of its operand in: %s\n", (char *)s.data, expression);
+            return -1;
         }
-        new_rule->father = a_rule;
-        create_boolean_expression(mmt, NO, new_rule, temp2);
+        return create_boolean_expression(mmt, NO, new_rule, temp2);
     } else if (isalpha(*temp) || *temp == '_') {
         //PROTO.FIELD.EVENT
         temp2 = tokenize(temp, &token2, &token3, &ref);
+        if (temp2 == NULL) return -1;
         //create new_rule
         new_rule = create_rule();
+        if (new_rule == NULL) return -1;
         new_rule->type = LEAF;
         new_rule->value = XVAR;
         new_rule->t.protocol_id = get_protocol_id_by_name(token2);
         new_rule->t.field_id = get_attribute_id_by_protocol_id_and_attribute_name(new_rule->t.protocol_id, token3);
+        append_son(a_rule, new_rule);
+        if (new_rule->t.protocol_id <= 0 || new_rule->t.field_id <= 0) {
+            (void)fprintf(stderr, "Error 9a: Unknown attribute %s.%s in boolean expression: %s\n", token2, token3, expression);
+            return -1;
+        }
         new_rule->t.data_type_id = mmt_attribute_get_data_type_typed(new_rule->t.protocol_id, new_rule->t.field_id);
         int ret = 1;
         if (is_registered_attribute(mmt, new_rule->t.protocol_id, new_rule->t.field_id) == 0) {
@@ -735,14 +822,13 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
         }
         if (ret <= 0) {
             (void)fprintf(stderr, "Error 9: in register_extraction_attribute proto=%ld, field=%ld.Value not available.\n", new_rule->t.protocol_id, new_rule->t.field_id);
-            exit(-1);
+            return -1;
         }
         if (ref > 0) {
             new_rule->t.event_id = ref;
             tuple * a_tuple = (tuple *) xmalloc(sizeof (tuple));
             if(a_tuple == NULL) {
-                xfree(new_rule);
-                return;
+                return -1;
             }
             a_tuple->protocol_id = new_rule->t.protocol_id;
             a_tuple->field_id = new_rule->t.field_id;
@@ -775,33 +861,33 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
         new_rule->t.data_size = get_data_size_by_proto_and_field_ids(new_rule->t.protocol_id, new_rule->t.field_id);
         new_rule->t.valid = NOT_YET;
         new_rule->t.data = NULL;
-        if (a_rule->list_of_sons == NULL) {
-            a_rule->list_of_sons = new_rule;
-            new_rule->prev = NULL;
-            new_rule->next = NULL;
-        } else {
-            rule *a_temp = a_rule->list_of_sons;
-            while (a_temp->next != NULL) a_temp = a_temp->next;
-            a_temp->next = new_rule;
-            new_rule->prev = a_temp;
-        }
-        new_rule->father = a_rule;
-        create_boolean_expression(mmt, NO, new_rule, temp2);
+        return create_boolean_expression(mmt, NO, new_rule, temp2);
     } else if (*temp == '#') {
         //Embedded function: #function_name(param1,param2,...) where param is a numeric constant or of the form PROTO.FIELD.EVENT_ID
         char *what_to_do = temp;
         char * funct_name = funct_extract_name(what_to_do);
         //funct_name is a malloc that contains the name
         int data_size = 0;
+        if (funct_name == NULL) return -1;
 
         //create new_rule
         //new_rule->t contains info on return value and new_rule->t.next... contains info on parameters
         new_rule = create_rule();
+        if (new_rule == NULL) {
+            xfree(funct_name);
+            return -1;
+        }
         new_rule->type = LEAF;
         new_rule->value = XFUNCT;
         new_rule->funct_name = funct_name; //do not free funct_name
+        append_son(a_rule, new_rule);
 
-        int return_type = funct_get_return_type_and_size(&data_size, LIB_NAME, funct_name);
+        //#511: resolve the symbol and bound the arity once, here, instead
+        //of an unchecked dlsym() and an unbounded data[] on every packet
+        new_rule->funct = funct_check_call(what_to_do, funct_name);
+        if (new_rule->funct == NULL) return -1;
+        int return_type = funct_get_return_type_and_size(&data_size, funct_name);
+        if (return_type < 0) return -1;
         char * command = strchr(what_to_do, '(');
         command++;
         while (*command == ' ') command++;
@@ -816,56 +902,24 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
         new_rule->t.valid = NOT_YET;
         new_rule->t.data = NULL; //will be calculated
 
-        char * command2;
-        tuple * top_tuple = (tuple *) xmalloc(sizeof (tuple)); //top of parameter list
-        if(top_tuple == NULL) {
-            xfree(new_rule);
-            return ;
-        }
-        new_rule->t.next = top_tuple; //attach to list_of_tuples (first one is info on return value and the reste info on each param)
-        top_tuple->protocol_id = -1;
-        top_tuple->field_id = -1;
-        top_tuple->data_type_id = -1;
-        top_tuple->data_size = -1;
-        top_tuple->event_id = -1;
-        top_tuple->valid = NOT_YET; //not used in this context
-        top_tuple->data = NULL;
-        top_tuple->next = NULL;
-        tuple * a_tuple = top_tuple;
-        tuple * new_tuple;
-        command2 = command;
+        //t.next lists one tuple per parameter; an empty list leaves it
+        //NULL so the function is called without arguments
+        char * command2 = command;
+        tuple ** link = &new_rule->t.next;
         enum_yes reg_tuple = YES;
-
-        command2 = funct_get_info_param( mmt, reg_tuple, command2, a_tuple );
-        while( command2 ) {
-            new_tuple = (tuple *)xmalloc(sizeof (tuple));
-            if(new_tuple == NULL){
-                return;
+        while (*command2 != ')') {
+            tuple * new_tuple = new_param_tuple();
+            if (new_tuple == NULL) return -1;
+            *link = new_tuple;
+            link = &new_tuple->next;
+            if (funct_get_info_param( mmt, reg_tuple, command2, new_tuple, &command2 ) != 0) return -1;
+            if (new_tuple->protocol_id == -1 && new_tuple->data == NULL) {
+                (void)fprintf(stderr, "Error 3f: Empty parameter in function call: %s\n", what_to_do);
+                return -1;
             }
-            new_tuple->protocol_id = -1;
-            new_tuple->field_id = -1;
-            new_tuple->data_type_id = -1;
-            new_tuple->data_size = -1;
-            new_tuple->event_id = -1;
-            new_tuple->valid = NOT_YET; //not used in this context
-            new_tuple->data = NULL;
-            new_tuple->next = NULL;
-            a_tuple->next = new_tuple;
-            a_tuple = new_tuple;
-            command2 = funct_get_info_param( mmt, reg_tuple, command2, a_tuple );
+            if (command2 == NULL) break;
         }
-        if (a_rule->list_of_sons == NULL) {
-            a_rule->list_of_sons = new_rule;
-            new_rule->prev = NULL;
-            new_rule->next = NULL;
-        } else {
-            rule *a_temp = a_rule->list_of_sons;
-            while (a_temp->next != NULL) a_temp = a_temp->next;
-            a_temp->next = new_rule;
-            new_rule->prev = a_temp;
-        }
-        new_rule->father = a_rule;
-        create_boolean_expression(mmt, NO, new_rule, strchr(command, ')') + 1);
+        return create_boolean_expression(mmt, NO, new_rule, strchr(command, ')') + 1);
     } else if (isdigit(*temp)) {
         // 1.0
         temp2 = temp;
@@ -875,15 +929,15 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
          * is rejected instead of overflowing it (same convention as the
          * over-long quoted string above). */
         if (i >= (int)sizeof(token)) {
-            (void)fprintf(stderr, "Error 3c: Number too long in boolean expression: %s", expression);
-            exit(-1);
+            (void)fprintf(stderr, "Error 3c: Number too long in boolean expression: %s\n", expression);
+            return -1;
         }
         strncpy(token, temp, i);
         token[i] = '\0';
 
         // create new_rule
         new_rule = create_rule();
-        if(new_rule == NULL) return;
+        if(new_rule == NULL) return -1;
         new_rule->type = LEAF;
         new_rule->value = XCON;
         // need to find a right handed LEAF to determine the type
@@ -897,89 +951,48 @@ void create_boolean_expression(mmt_handler_t *mmt, enum_yes first_time, rule *a_
         new_rule->t.event_id = temp_rule->t.event_id;
         new_rule->t.data_size = temp_rule->t.data_size;
         new_rule->t.valid = VALID;
+        append_son(a_rule, new_rule);
         new_rule->t.data = (void *) get_xdata(new_rule->t.data_type_id, new_rule->t.data_size, (void *) token, NO);
-        ;
-        if (a_rule->list_of_sons == NULL) {
-            a_rule->list_of_sons = new_rule;
-            new_rule->prev = NULL;
-            new_rule->next = NULL;
-        } else {
-            rule *a_temp = a_rule->list_of_sons;
-            while (a_temp->next != NULL) a_temp = a_temp->next;
-            a_temp->next = new_rule;
-            new_rule->prev = a_temp;
+        if (new_rule->t.data == NULL) {
+            (void)fprintf(stderr, "Error 3g: Constant %s cannot be read as the type of its operand in: %s\n", token, expression);
+            return -1;
         }
-        new_rule->father = a_rule;
-        create_boolean_expression(mmt, NO, new_rule, temp2);
+        return create_boolean_expression(mmt, NO, new_rule, temp2);
     } else if (*temp == '=' && *(temp + 1) == '=') {
         // ==
-        temp2 = temp + 2;
-        // set value
-        a_rule->father->value = EQ;
-        // go up one
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, EQ, temp + 2);
     } else if (*temp == '|' && *(temp + 1) == '|') {
         // ||
-        temp2 = temp + 2;
-        // set value
-        a_rule->father->value = XOR;
-        // go up one
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, XOR, temp + 2);
     } else if (*temp == '!' && *(temp + 1) == '=') {
         // !=
-        temp2 = temp + 2;
-        a_rule->father->value = NEQ;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, NEQ, temp + 2);
     } else if (*temp == '>' && *(temp + 1) != '=') {
         // >
-        temp2 = temp + 1;
-        a_rule->father->value = GT;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, GT, temp + 1);
     } else if (*temp == '>' && *(temp + 1) == '=') {
         // >=
-        temp2 = temp + 2;
-        a_rule->father->value = GTE;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, GTE, temp + 2);
     } else if (*temp == '<' && *(temp + 1) != '=') {
         // <
-        temp2 = temp + 1;
-        a_rule->father->value = LT;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, LT, temp + 1);
     } else if (*temp == '<' && *(temp + 1) == '=') {
         // <=
-        temp2 = temp + 2;
-        a_rule->father->value = LTE;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, LTE, temp + 2);
     } else if (*temp == '&' && *(temp + 1) == '&') {
         // &&
-        temp2 = temp + 2;
-        a_rule->father->value = XAND;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, XAND, temp + 2);
     } else if (*temp == '+') {
-        // +
-        temp2 = temp + 1;
-        a_rule->father->value = ADD;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, ADD, temp + 1);
     } else if (*temp == '-') {
-        // -
-        temp2 = temp + 1;
-        a_rule->father->value = SUB;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, SUB, temp + 1);
     } else if (*temp == '*') {
-        // *
-        temp2 = temp + 1;
-        a_rule->father->value = MUL;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
+        return climb_with_operator(mmt, a_rule, MUL, temp + 1);
     } else if (*temp == '/') {
-        // '/'
-        temp2 = temp + 1;
-        a_rule->father->value = DIV;
-        create_boolean_expression(mmt, NO, a_rule->father, temp2);
-    } else {
-        (void)fprintf(stderr, "Error 37: Illegal character found in boolean expression: %c%c.\n", *temp, *(temp + 1));
-        exit(-1);
+        return climb_with_operator(mmt, a_rule, DIV, temp + 1);
     }
-    return;
+    (void)fprintf(stderr, "Error 37: Illegal character found in boolean expression: %c%c.\n", *temp, *(temp + 1));
+    return -1;
 }
 
 double get_double_in_sec (char * units,long long ll)
@@ -998,62 +1011,243 @@ double get_double_in_sec (char * units,long long ll)
   return dd;
 }
 
-short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
+static void free_tuple_list(tuple *t)
 {
-    static int first_time = YES;
+    while (t != NULL) {
+        tuple *n = t->next;
+        xfree(t->data);
+        xfree(t);
+        t = n;
+    }
+}
+
+/* Frees a rule tree the loader built (#512: a failed load releases what it
+ * built). Rule instances are not trees of this kind — they share t.next and
+ * delay_units with their template — so this never runs on one. */
+static void free_rule_tree(rule *r)
+{
+    rule *s, *n;
+    if (r == NULL) return;
+    for (s = r->list_of_sons; s != NULL; s = n) {
+        n = s->next;
+        free_rule_tree(s);
+    }
+    if (r->value == XCON && r->t.data != NULL) {
+        /* get_xdata() constants that own a second allocation */
+        if (r->t.data_type_id == MMT_HEADER_LINE)
+            xfree((void *) ((mmt_header_line_t *) r->t.data)->ptr);
+        else if (r->t.data_type_id == MMT_STRING_DATA_POINTER && r->t.data_size >= (int) sizeof (char *))
+            xfree(*(char **) r->t.data);
+    }
+    xfree(r->t.data);
+    free_tuple_list(r->t.next);
+    free_tuple_list(r->list_of_tuples);
+    free_tuple_list(r->list_of_tuples_to_print);
+    xfree(r->description);
+    xfree(r->funct_name);
+    xfree(r->if_satisfied);
+    xfree(r->if_not_satisfied);
+    xfree(r->delay_units);
+    xfree(r->keep_state);
+    xfree(r->json_history);
+    xfree(r);
+}
+
+void free_rules( void )
+{
+    rule *r = top_rule, *n;
+    while (r != NULL) {
+        n = r->next;
+        free_rule_tree(r);
+        r = n;
+    }
+    top_rule = NULL;
+    bot_rule = NULL;
+    root_rule = NULL;
+    while (bot_father != NULL) eliminate_bot_father();
+    expr_root = NULL;
+    expr_text = NULL;
+}
+
+/* A #function(...) reaction is checked at load like an expression leaf
+ * (#511): a missing function or too many parameters reject the rule. */
+static int check_reaction(const char *what_to_do)
+{
+    char *funct_name;
+    embedded_funct_t f;
+    if (what_to_do == NULL) return -1; /* strdup() failed */
+    if (strchr(what_to_do, '#') == NULL) return 0;
+    funct_name = funct_extract_name(strchr(what_to_do, '#'));
+    if (funct_name == NULL) return -1;
+    f = funct_check_call(what_to_do, funct_name);
+    xfree(funct_name);
+    return (f == NULL) ? -1 : 0;
+}
+
+/* delay_min/delay_max: "<num>", "<num>-" or "<num>+" — never empty (#512:
+ * the suffix test read index -1 of an empty value) */
+static int read_delay(rule *a_rule, const xmlChar *value, const char *name, char suffix, short *not_equal, double *delay)
+{
+    int len = xmlStrlen(value);
+    if (len == 0) {
+        (void)fprintf(stderr, "Error 12b: Empty %s attribute.\n", name);
+        return -1;
+    }
+    if (value[len - 1] == (xmlChar) suffix) {
+        *not_equal = YES;
+    }
+    long long ll = atoll((const char*)value);
+    if (ll == 0) *delay = 0;
+    else *delay = get_double_in_sec (a_rule->delay_units, ll);
+    return 0;
+}
+
+/* Applies one XML attribute to a_rule. Returns 0, or -1 with the reason on
+ * stderr. */
+static int apply_attribute(mmt_handler_t *mmt, rule *a_rule, const xmlChar *attribute_name, const xmlChar *v)
+{
+    if (xmlStrcmp(attribute_name, (const xmlChar*)"value") == 0) {
+        if (xmlStrcmp(v, (const xmlChar*)"THEN") == 0) a_rule->value = THEN;
+        else if (xmlStrcmp(v, (const xmlChar*)"COMPUTE") == 0) a_rule->value = COMPUTE;
+        else if (xmlStrcmp(v, (const xmlChar*)"OR") == 0) a_rule->value = OR;
+        else if (xmlStrcmp(v, (const xmlChar*)"AND") == 0) a_rule->value = AND;
+        else if (xmlStrcmp(v, (const xmlChar*)"NOT") == 0) a_rule->value = NOT;
+        else if (xmlStrcmp(v, (const xmlChar*)"REPEAT") == 0) a_rule->value = REPEAT;
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"event_id") == 0) {
+        a_rule->event_id = atol((const char*)v);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"keep_state") == 0) {
+        a_rule->keep_state = strdup((const char*)v);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"boolean_expression") == 0) {
+        expr_root = a_rule;
+        expr_text = (const char *) v;
+        return create_boolean_expression(mmt, YES, a_rule, (char *) v);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_units") == 0) {
+        a_rule->delay_units = strdup((const char*)v); //Y,M,D,H,m,s(default),ms,mms
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_max") == 0) {
+        //<num>,<num>-
+        return read_delay(a_rule, v, "delay_max", '-', &a_rule->not_equal_max, &a_rule->delay_max);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"description") == 0) {
+        a_rule->description = strdup((const char*)v);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"property_id") == 0) {
+        a_rule->property_id = atoi((const char*)v);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"if_not_satisfied") == 0) {
+        a_rule->if_not_satisfied = strdup((const char*)v);
+        return check_reaction(a_rule->if_not_satisfied);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"if_satisfied") == 0) {
+        a_rule->if_satisfied = strdup((const char*)v);
+        return check_reaction(a_rule->if_satisfied);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"type_property") == 0) {
+        if (xmlStrncmp(v, (const xmlChar*)"ATTACK", 3) == 0) a_rule->type_rule = ATTACK;
+        else if (xmlStrncmp(v, (const xmlChar*)"EVASION", 3) == 0) a_rule->type_rule = EVASION;
+        else if (xmlStrncmp(v, (const xmlChar*)"SECURITY_RULE", 3) == 0) a_rule->type_rule = SECURITY_RULE;
+        else if (xmlStrncmp(v, (const xmlChar*)"TEST", 3) == 0) a_rule->type_rule = TEST;
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_min") == 0) {
+        //<num>,<num>+
+        return read_delay(a_rule, v, "delay_min", '+', &a_rule->not_equal_min, &a_rule->delay_min);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"counter_max") == 0) {
+        a_rule->counter_max = atoi((const char*)v);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"counter_min") == 0) {
+        a_rule->counter_min = atoi((const char*)v);
+    } else if (xmlStrcmp(attribute_name, (const xmlChar*)"repeat_times") == 0) {
+        a_rule->repeat_times = atoi((const char*)v);
+    }
+    return 0;
+}
+
+/* Attaches an <operator>/<event> node to its parent on the father stack.
+ * Returns -1 when the tree has no parent for it (#512: an element outside
+ * a <property>, or at its property's depth, underflowed the stack). */
+static int attach_to_father(rule *a_rule, short depth)
+{
+    rule *los = NULL;
+    if (bot_father == NULL) {
+        los = NULL;
+    } else if (bot_father->depth < depth) {
+        los = bot_father->node;
+        if (create_father(a_rule, depth, DONT_CLEAN) != 0) return -1;
+    } else if (bot_father->depth == depth) {
+        if (bot_father->prev != NULL) {
+            los = bot_father->prev->node;
+            bot_father->node = a_rule;
+        }
+    } else if (bot_father->prev != NULL && bot_father->prev->prev != NULL) {
+        los = bot_father->prev->prev->node;
+        bot_father->prev->node = a_rule;
+        eliminate_bot_father();
+    }
+    if (los == NULL) {
+        (void)fprintf(stderr, "Error 12c: <operator>/<event> outside a <property> branch.\n");
+        return -1;
+    }
+    append_son(los, a_rule);
+    return 0;
+}
+
+/* Returns 0, or -1 when the node makes the rule file invalid (#512: the
+ * loader used to trust any well-formed XML and end the process on the rest). */
+static int processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
+{
     const xmlChar *name, *attribute_value[100], *attribute_name;
     rule *a_rule = NULL;
-    rule *a_temp = NULL;
     int state = 0;
     int ret;
+    int err = 0;
     short depth = 0;
     attribute_name = NULL;
     for (ret = 0; ret < 100; ret++)attribute_value[ret] = NULL;
     name = xmlTextReaderConstName(reader);
-    if (name == NULL) return 1;
-        (void)xmlTextReaderConstValue(reader);
-    if (name[0] != '#') {
-        ret = xmlTextReaderNodeType(reader);
-        depth = xmlTextReaderDepth(reader);
-        if (ret == 15) {
-            while (bot_father != NULL && bot_father->depth >= depth) eliminate_bot_father();
-            return 0;
+    if (name == NULL || name[0] == '#') return 0;
+    ret = xmlTextReaderNodeType(reader);
+    depth = xmlTextReaderDepth(reader);
+    if (ret == XML_READER_TYPE_END_ELEMENT) {
+        while (bot_father != NULL && bot_father->depth >= depth) eliminate_bot_father();
+        return 0;
+    }
+    if (ret != XML_READER_TYPE_ELEMENT) return 0;
+    if (xmlStrcmp(name, (const xmlChar*)"beginning") == 0) {
+        return 0;
+    } else if (xmlStrcmp(name, (const xmlChar*)"property") == 0) {
+        a_rule = create_rule();
+        if(a_rule == NULL){
+            return -1;
         }
-        if (xmlStrcmp(name, (const xmlChar*)"beginning") == 0) {
-        } else if (xmlStrcmp(name, (const xmlChar*)"property") == 0) {
-            a_rule = create_rule();
-            if(a_rule == NULL){
-                return 0;
-            }
-            a_rule->type = ROOT;
-            if (top_rule == NULL) {
-                top_rule = a_rule;
-                bot_rule = a_rule;
-            } else {
-                bot_rule->next = a_rule;
-                a_rule->prev = bot_rule;
-                bot_rule = a_rule;
-            }
-            root_rule = a_rule;
-            state = ROOT;
-            create_father(a_rule, depth, CLEAN);
-        } else if (xmlStrcmp(name, (const xmlChar*)"operator") == 0) {
-            a_rule = create_rule();
-            if (a_rule == NULL)
-            {
-                return 0;
-            }
-            a_rule->type = SON;
-            state = SON;
-        } else if (xmlStrcmp(name, (const xmlChar*)"event") == 0) {
-            a_rule = create_rule();
-            if (a_rule == NULL)
-            {
-                return 0;
-            }
-            a_rule->type = SON;
-            state = EVENT;
+        a_rule->type = ROOT;
+        if (top_rule == NULL) {
+            top_rule = a_rule;
+            bot_rule = a_rule;
+        } else {
+            bot_rule->next = a_rule;
+            a_rule->prev = bot_rule;
+            bot_rule = a_rule;
         }
+        root_rule = a_rule;
+        state = ROOT;
+        if (create_father(a_rule, depth, CLEAN) != 0) return -1;
+    } else if (xmlStrcmp(name, (const xmlChar*)"operator") == 0) {
+        a_rule = create_rule();
+        if (a_rule == NULL)
+        {
+            return -1;
+        }
+        a_rule->type = SON;
+        state = SON;
+    } else if (xmlStrcmp(name, (const xmlChar*)"event") == 0) {
+        a_rule = create_rule();
+        if (a_rule == NULL)
+        {
+            return -1;
+        }
+        a_rule->type = SON;
+        state = EVENT;
+    } else {
+        (void)fprintf(stderr, "Error 12a: Unknown element <%s>.\n", (const char *) name);
+        return -1;
+    }
+    if (state != ROOT && root_rule == NULL) {
+        /* expressions file their event references in root_rule */
+        (void)fprintf(stderr, "Error 12c: <%s> outside a <property>.\n", (const char *) name);
+        free_rule_tree(a_rule);
+        return -1;
     }
     int i;
     int count;
@@ -1062,113 +1256,27 @@ short processNode( mmt_handler_t *mmt, xmlTextReaderPtr reader)
     for (i = 0; i < count; i++) {
         attribute_value[i] = xmlTextReaderGetAttributeNo(reader, i);
     }
-    for (i = 0; i < count && i < 100; i++) {
+    for (i = 0; i < count && err == 0; i++) {
         xmlTextReaderMoveToAttributeNo(reader, i);
         attribute_name = xmlTextReaderConstName(reader);
-        if (xmlStrcmp(attribute_name, (const xmlChar*)"value") == 0) {
-            if (xmlStrcmp(attribute_value[i], (const xmlChar*)"THEN") == 0) a_rule->value = THEN;
-            else if (xmlStrcmp(attribute_value[i], (const xmlChar*)"COMPUTE") == 0) a_rule->value = COMPUTE;
-            else if (xmlStrcmp(attribute_value[i], (const xmlChar*)"OR") == 0) a_rule->value = OR;
-            else if (xmlStrcmp(attribute_value[i], (const xmlChar*)"AND") == 0) a_rule->value = AND;
-            else if (xmlStrcmp(attribute_value[i], (const xmlChar*)"NOT") == 0){
-                a_rule->value = NOT;
-            }
-            else if (xmlStrcmp(attribute_value[i], (const xmlChar*)"REPEAT") == 0) a_rule->value = REPEAT;
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"event_id") == 0) {
-            a_rule->event_id = atol((const char*)attribute_value[i]);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"keep_state") == 0) {
-            a_rule->keep_state = strdup((const char*)attribute_value[i]);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"boolean_expression") == 0) {
-            create_boolean_expression(mmt, YES, a_rule, (char *) attribute_value[i]);
-            //register attributes needed:
-            if (first_time == YES) {
-                if (is_registered_attribute(mmt, p_meta, a_utime) != 1) {
-                    ret = register_extraction_attribute(mmt, p_meta, a_utime);
-                    if (ret <= 0) {
-                        (void)fprintf(stderr, "Error 8: in register_extraction_attribute proto=META, field=UTIME. Timestamp not available.\n");
-                        exit(-1);
-                    }
-                }
-                first_time = NO;
-            }
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_units") == 0) {
-            a_rule->delay_units = strdup((const char*)attribute_value[i]); //Y,M,D,H,m,s(default),ms,mms
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_max") == 0) {
-            //<num>,<num>-
-            if(attribute_value[i][xmlStrlen(attribute_value[i])-1]=='-'){
-              a_rule->not_equal_max = YES;
-            }
-            long long ll= atoll((const char*)attribute_value[i]);
-            if(ll==0) a_rule->delay_max =0;
-            else a_rule->delay_max = get_double_in_sec (a_rule->delay_units,ll);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"description") == 0) {
-            a_rule->description = strdup((const char*)attribute_value[i]);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"property_id") == 0) {
-            a_rule->property_id = atoi((const char*)attribute_value[i]);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"if_not_satisfied") == 0) {
-            a_rule->if_not_satisfied = strdup((const char*)attribute_value[i]);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"if_satisfied") == 0) {
-            a_rule->if_satisfied = strdup((const char*)attribute_value[i]);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"type_property") == 0) {
-            if (xmlStrncmp(attribute_value[i], (const xmlChar*)"ATTACK", 3) == 0) a_rule->type_rule = ATTACK;
-            else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"EVASION", 3) == 0) a_rule->type_rule = EVASION;
-            else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"SECURITY_RULE", 3) == 0) a_rule->type_rule = SECURITY_RULE;
-            else if (xmlStrncmp(attribute_value[i], (const xmlChar*)"TEST", 3) == 0) a_rule->type_rule = TEST;
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"delay_min") == 0) {
-            //<num>,<num>+
-            if(attribute_value[i][xmlStrlen(attribute_value[i])-1]=='+'){
-              a_rule->not_equal_min = YES;
-            }
-            long long ll= atoll((const char*)attribute_value[i]);
-            if(ll==0) a_rule->delay_min =0;
-            else a_rule->delay_min = get_double_in_sec (a_rule->delay_units,ll);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"counter_max") == 0) {
-            a_rule->counter_max = atoi((const char*)attribute_value[i]);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"counter_min") == 0) {
-            a_rule->counter_min = atoi((const char*)attribute_value[i]);
-        } else if (xmlStrcmp(attribute_name, (const xmlChar*)"repeat_times") == 0) {
-            a_rule->repeat_times = atoi((const char*)attribute_value[i]);
-        }
+        if (attribute_name == NULL || attribute_value[i] == NULL) continue;
+        err = apply_attribute(mmt, a_rule, attribute_name, attribute_value[i]);
     }
+    expr_root = NULL;
+    expr_text = NULL;
     for (i = 0; i < count && i < 100; i++) {
         if (attribute_value[i] != NULL) {
             xfree((char *) attribute_value[i]);
             attribute_value[i] = NULL;
         }
     }
-    if (state == SON || state == LEAF || state == EVENT) {
-        rule *los = NULL;
-        if (bot_father != NULL) {
-            if (bot_father->depth < depth) {
-                los = bot_father->node;
-                create_father(a_rule, depth, DONT_CLEAN);
-            } else if (bot_father->depth == depth) {
-                los = bot_father->prev->node;
-                bot_father->node = a_rule;
-            } else {
-                los = bot_father->prev->prev->node;
-                bot_father->prev->node = a_rule;
-                eliminate_bot_father();
-            }
-        }
-        if(los!=NULL){
-            if (los->list_of_sons == NULL)
-            {
-                los->list_of_sons = a_rule;
-                a_rule->father = los;
-            }
-            else
-            {
-                a_temp = los->list_of_sons;
-                while (a_temp->next != NULL)
-                    a_temp = a_temp->next;
-                a_temp->next = a_rule;
-                a_rule->father = los;
-                a_rule->prev = a_temp;
-            }
-        }
+    if (state == ROOT) {
+        /* already on the rule list: free_rules() releases it */
+        return err;
     }
-    return 0;
+    if (err == 0) err = attach_to_father(a_rule, depth);
+    if (err != 0) free_rule_tree(a_rule);
+    return err;
 }
 
 void recuperate_attributes(rule* root, rule *r)
@@ -1219,35 +1327,86 @@ void recuperate_attributes(rule* root, rule *r)
     }
 }
 
-void read_rules( mmt_handler_t *mmt )
+/* THEN needs both branches, AND two sons, OR/REPEAT one, NOT exactly one:
+ * verify() dereferences them unchecked (#512). Expression nodes (the
+ * comparison/arithmetic operators and their leaves) are not checked. */
+static int validate_rule_tree(const rule *r, int property_id)
+{
+    const rule *s;
+    int n = 0;
+    for (s = r->list_of_sons; s != NULL; s = s->next) n++;
+    if ((r->value == THEN && n != 2) || (r->value == AND && n < 2) ||
+            ((r->value == OR || r->value == REPEAT) && n < 1) || (r->value == NOT && n != 1)) {
+        (void)fprintf(stderr, "Error 12d: %s node with %d branch(es) in property %d.\n",
+                r->value == THEN ? "THEN" : r->value == AND ? "AND" : r->value == OR ? "OR" :
+                r->value == NOT ? "NOT" : "REPEAT", n, property_id);
+        return -1;
+    }
+    if (r->value == THEN || r->value == AND || r->value == OR || r->value == NOT || r->value == REPEAT) {
+        for (s = r->list_of_sons; s != NULL; s = s->next)
+            if (validate_rule_tree(s, property_id) != 0) return -1;
+    }
+    return 0;
+}
+
+/* Returns 0, or -1 with the reason on stderr after freeing every rule the
+ * failed load built (#512). */
+int read_rules( mmt_handler_t *mmt )
 {
     LIBXML_TEST_VERSION
     xmlTextReaderPtr reader;
     int ret;
+    int invalid = 0;
+    rule * temp;
 
     op->timestamp_proto_id = p_meta;
     op->timestamp_field_id = a_utime;
 
+    /* every verdict is stamped from META.UTIME — registered on this handler
+     * (it used to be registered once per process, from the first
+     * expression, through a function-static flag) */
+    if (is_registered_attribute(mmt, p_meta, a_utime) != 1 &&
+            register_extraction_attribute(mmt, p_meta, a_utime) <= 0) {
+        (void)fprintf(stderr, "Error 8: in register_extraction_attribute proto=META, field=UTIME. Timestamp not available.\n");
+        return -1;
+    }
+
     reader = xmlReaderForFile(op->RuleFileName, NULL, 0);
-    if (reader != NULL) {
-        ret = xmlTextReaderRead(reader);
-        while (ret == 1) {
-            processNode( mmt, reader );
-            ret = xmlTextReaderRead(reader);
-        }
-        xmlFreeTextReader(reader);
-        if (ret != 0) {
-            (void)fprintf(stderr, "Error 13: in XML properties file: %s. Parsing failed.\n", op->RuleFileName);
-            exit(-1);
-        }
-    } else {
+    if (reader == NULL) {
         (void)fprintf(stderr, "Error 14: Unable to open the XML properties file: %s.\n", op->RuleFileName);
-        exit(-1);
+        return -1;
+    }
+    ret = xmlTextReaderRead(reader);
+    while (ret == 1) {
+        if (processNode( mmt, reader ) != 0) {
+            invalid = 1;
+            break;
+        }
+        ret = xmlTextReaderRead(reader);
+    }
+    xmlFreeTextReader(reader);
+    if (invalid) {
+        (void)fprintf(stderr, "Error 13b: in XML properties file: %s. Invalid rule.\n", op->RuleFileName);
+        free_rules();
+        return -1;
+    }
+    if (ret != 0) {
+        (void)fprintf(stderr, "Error 13: in XML properties file: %s. Parsing failed.\n", op->RuleFileName);
+        free_rules();
+        return -1;
+    }
+    for (temp = top_rule; temp != NULL; temp = temp->next) {
+        if (validate_rule_tree(temp, temp->property_id) != 0) {
+            (void)fprintf(stderr, "Error 13b: in XML properties file: %s. Invalid rule.\n", op->RuleFileName);
+            free_rules();
+            return -1;
+        }
     }
     //Need to recuperate what attributes will need to be printed out (<proto_id, field_id, data_type_id>)
-    rule * temp = top_rule;
+    temp = top_rule;
     while (temp) {
         recuperate_attributes(temp, temp);
         temp = temp->next;
     }
+    return 0;
 }

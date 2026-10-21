@@ -102,8 +102,8 @@ FILE *open_file(char *name, char *mode)
     file = fopen(name, mode);
     int saveerrno = errno;
     if (file == NULL) {
-        printf("Error 100: Can't open file \"%s\" using mode \"%s\" gives error: %s\n", name, mode, strerror(saveerrno));
-        exit(1);
+        /* the caller handles the failure (#512: this used to exit) */
+        (void)fprintf(stderr, "Error 100: Can't open file \"%s\" using mode \"%s\" gives error: %s\n", name, mode, strerror(saveerrno));
     }
     return file;
 }
@@ -113,8 +113,7 @@ void close_file(FILE *file) {
     ret = fclose(file);
     int saveerrno = errno;
     if (ret != 0) {
-        printf("Error 100b: Can't close file, returns: %d, gives error: %s\n", ret, strerror(saveerrno));
-        exit(1);
+        (void)fprintf(stderr, "Error 100b: Can't close file, returns: %d, gives error: %s\n", ret, strerror(saveerrno));
     }
 }
 
@@ -182,8 +181,10 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
             verify_ctx_t vctx = { ipacket, curr_rule, curr_rule_instance->list_of_tuples, cause, current_packet_time, NO, NO };
             result = verify(&vctx, SAME, curr_rule_instance);
             if (result == NOT_VALID) {
+                /* reported, then eliminated below like any other final
+                 * result — the `continue` here re-verified the same
+                 * instance forever (#511) */
                 (void)fprintf(stderr, "Error 41: Problem in packet number: %lld\n", packet_count);
-                continue;
             }
             temp = curr_rule_instance->next;
             //if instance is VALID or NOT_VALID then eliminate it
@@ -202,7 +203,11 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
                 }
                 if (result == COUNT_NOT_SATISFIED_ELIMINATE || result == ELIMINATE || result == COUNT_SATISFIED_ELIMINATE ||
                         result == NOT_VALID || result == VALID || result == NOT_YET) {
-                    copy_instance(&root_inst, curr_rule, NULL, curr_rule_instance);
+                    /* keep_state keeps the state of a satisfied instance;
+                     * an expired or failed one is not re-created — its copy
+                     * expired again on every later packet (#510 follow-up) */
+                    if (result == COUNT_SATISFIED_ELIMINATE)
+                        copy_instance(&root_inst, curr_rule, NULL, curr_rule_instance);
                     eliminate_instance(&curr_rule, &curr_rule_instance, "instance");
                 } else {
                     (void)fprintf(stderr, "Should not be here\n");
@@ -261,17 +266,25 @@ int analyse_incoming_packet(const ipacket_t * ipacket, void* arg)
     return 0;
 }
 
-void init_options( mmt_handler_t *mmt )
+/* One engine per process (#512): the rule list, the loader and the
+ * reporters keep their state in process globals (top_rule, op, ...), so a
+ * second init_sec_lib() used to leak op and append a duplicate rule set.
+ * 0 = no engine, 1 = loading, 2 = loaded. Claimed atomically, so a
+ * concurrent second call fails instead of racing the first. */
+static int engine_state = 0;
+
+static int init_options( mmt_handler_t *mmt )
 {
     int ret;
 
     if (p_meta == 0) {
         p_meta = get_protocol_id_by_name("META");
         a_utime = get_attribute_id_by_protocol_id_and_attribute_name(p_meta, "UTIME");
-        token2 = xmalloc(30);
-        token3 = xmalloc(30);
     }
-    read_rules( mmt );
+    if (token2 == NULL) token2 = xmalloc(30);
+    if (token3 == NULL) token3 = xmalloc(30);
+    if (token2 == NULL || token3 == NULL) return -1;
+    if (read_rules( mmt ) != 0) return -1;
 
     //we now have registered extraction attributes
     // The next function is to be called with the right parameters
@@ -279,27 +292,51 @@ void init_options( mmt_handler_t *mmt )
     ret = register_packet_handler( mmt, 1, analyse_incoming_packet, (u_char *) op );
     if (ret <= 0) {
         (void)fprintf(stderr, "Error 42: in registering packet handler function.\n");
-        exit(-1);
+        free_rules();
+        return -1;
     }
     //register_packet_handler(mmt, 2, debug_extracted_attributes_printout_handler, NULL);
-
+    return 0;
 }
 
-void init_sec_lib( mmt_handler_t *mmt, char * property_file,
+int init_sec_lib( mmt_handler_t *mmt, char * property_file,
         enum_print print_option, result_callback cont_funct, void * user_args)
 {
+    int expected = 0;
+    if (mmt == NULL || property_file == NULL) {
+        (void)fprintf(stderr, "Error 104: init_sec_lib() needs a handler and a rule file.\n");
+        return -1;
+    }
+    if (!__atomic_compare_exchange_n(&engine_state, &expected, 1, 0, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+        (void)fprintf(stderr, "Error 105: init_sec_lib() called again: a process runs one security engine.\n");
+        return -1;
+    }
     op = (OPTIONS_struct *)xcalloc(1, sizeof (OPTIONS_struct));
-    if(op == NULL) return ;
+    if(op == NULL) goto fail;
     op->StartTime = time(NULL);
     op->Print = print_option;
     op->user_args = (void *)user_args;
     op->RuleFileName = strdup(property_file);
     op->callback_funct = cont_funct;
+    if (op->RuleFileName == NULL) goto fail;
     op->RuleFile = open_file(op->RuleFileName, "r");
-    op->user_args = (void *)user_args;
     if (op->RuleFile == NULL) {
         (void)fprintf(stderr, "Error 104: Input rule file not found or incorrect file name: %s.\n", op->RuleFileName);
-        exit(1);
+        goto fail;
     }
-    init_options( mmt );
+    /* only proves the file can be read: libxml2 opens it by name */
+    close_file(op->RuleFile);
+    op->RuleFile = NULL;
+    if (init_options( mmt ) != 0) goto fail;
+    __atomic_store_n(&engine_state, 2, __ATOMIC_RELEASE);
+    return 0;
+fail:
+    /* nothing of a failed load survives: a later call may try again */
+    if (op != NULL) {
+        xfree(op->RuleFileName);
+        xfree(op);
+        op = NULL;
+    }
+    __atomic_store_n(&engine_state, 0, __ATOMIC_RELEASE);
+    return -1;
 }

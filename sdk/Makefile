@@ -462,3 +462,13 @@ ifneq ($(filter sdk default,$(MAKECMDGOALS)),)
 install: | sdk
 --check-built: | sdk
 endif
+
+# The rule engine's default reaction folder (issue #512) is baked into
+# tips_report.o as MMT_SEC_REACTION_DIR_OPT (rules/common.mk): like
+# plugins_engine.o above, that object depends on a stamp holding the value.
+ifdef ENABLESEC
+REACTION_DIR_STAMP := $(SRCDIR)/mmt_security/tips_report.path
+$(REACTION_DIR_STAMP): FORCE
+	$(QUIET) if [ "`cat $@ 2>/dev/null`" != "$(MMT_SEC_REACTION_DIR_DEFAULT)" ]; then echo "$(MMT_SEC_REACTION_DIR_DEFAULT)" > $@; fi
+$(SRCDIR)/mmt_security/tips_report.o: $(REACTION_DIR_STAMP)
+endif

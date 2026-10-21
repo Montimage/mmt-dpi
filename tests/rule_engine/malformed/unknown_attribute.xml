@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- tests/rule_engine (#511/#512): an attribute no protocol registers (Error 9 used to exit the process)
+     run_tests.sh step 4 expects init_sec_lib() to return an error. -->
+<beginning>
+  <property value="THEN" property_id="1" description="unknown_attribute">
+    <event event_id="1" description="A" boolean_expression="(NOPROTO.nofield == 1001)"/>
+    <event event_id="2" description="B" boolean_expression="(UDP.dest_port == 1002)"/>
+  </property>
+</beginning>

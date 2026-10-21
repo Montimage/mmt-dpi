@@ -80,6 +80,7 @@ typedef struct {
     long exp_not_satisfied;/* ROOT nb_not_satisfied after the script */
     int cb_silent;         /* verdicts counted but not passed to the
                             * callback (no history on the instance) */
+    int timeout_s;         /* alarm for the scenario; 0 = SCENARIO_TIMEOUT_S */
 } scenario_t;
 
 #define F(p, l, t) { (p), (l), (t) }
@@ -249,14 +250,47 @@ static const scenario_t scenarios[] = {
       { F(PORT_A, 60, 0), F(PORT_B, 60, 500), F(PORT_B, 60, 1700) }, 3, 2, 0 },
     { "keep_state not satisfied: the kept A's window still ends 2 s after A", "keep_state.xml",
       { F(PORT_A, 60, 0), F(PORT_B, 60, 500), F(PORT_B, 60, 4000) }, 3, 1, 1 },
-    /* Quirk pinned: copy_instance() also keeps the state of an instance
-     * that expired, timer included, so the copy expires again on every
-     * later frame — one not_satisfied per frame after the window.
-     * Restricting the copy to satisfied verdicts is a follow-up of #510
-     * (it changes tips.c, which #511/#512 rework). */
-    { "keep_state expired copy reports on every later frame (current behaviour)", "keep_state.xml",
+    /* Expectation changed on purpose by #511/#512 (was 1 satisfied + 2 not
+     * satisfied, pinned as "current behaviour" by #510): only a satisfied
+     * instance is re-created with its kept state, so the copy that expires
+     * at 4 s reports once and is not copied again. */
+    { "keep_state expired copy reports once, then is dropped", "keep_state.xml",
       { F(PORT_A, 60, 0), F(PORT_B, 60, 500), F(PORT_X, 60, 4000),
-        F(PORT_X, 60, 5000) }, 4, 1, 2 },
+        F(PORT_X, 60, 5000) }, 4, 1, 1 },
+
+    /* ---- #511: an existing instance that verify() fails (NOT_VALID) —
+     * here a root AND whose no-delay timer reads as expired on the next
+     * frame — is eliminated without a verdict. analyse_incoming_packet()
+     * used to `continue` without advancing, retrying it forever; the 5 s
+     * alarm is the acceptance bound. */
+    { "root AND: a NOT_VALID existing instance is eliminated, no endless loop", "and_root.xml",
+      { F(PORT_A, 60, 0), F(PORT_X, 60, 1000) }, 2, 0, 0, 0, 5 },
+
+    /* ---- #512 (carry-over of #509): NOT as the right son of a root THEN,
+     * A THEN AFTER (NOT B) within 2 s. The backtrack used to climb past the
+     * rule instance and dereference NULL. Quirk pinned: the NOT node has no
+     * delay of its own, so its timer reads as expired on the frame after A
+     * whatever that frame is (the not.xml quirk) — even B satisfies it. */
+    { "NOT right son satisfied: A then a non-B frame (current behaviour)", "then_not.xml",
+      { F(PORT_A, 60, 0), F(PORT_X, 60, 1000) }, 2, 1, 0 },
+    { "NOT right son satisfied: A then B, the NOT timer expires first (current behaviour)", "then_not.xml",
+      { F(PORT_A, 60, 0), F(PORT_B, 60, 1000) }, 2, 1, 0 },
+    { "NOT right son no verdict: A alone", "then_not.xml",
+      { F(PORT_A, 60, 0) }, 1, 0, 0 },
+
+    /* ---- #511: embedded functions resolved once at load from the
+     * libembedded_functions.so run_tests.sh builds; B calls the
+     * four-parameter maximum */
+    { "embedded functions satisfied: #echo_port A then #sum_ports B", "embedded_funct.xml",
+      { F(PORT_A, 60, 0), F(PORT_B, 60, 1000) }, 2, 1, 0 },
+    { "embedded functions not satisfied: no B before the timeout", "embedded_funct.xml",
+      { F(PORT_A, 60, 0), F(PORT_X, 60, 3000) }, 2, 0, 1 },
+
+    /* ---- #511/#512: the satisfied verdict runs record(...) from
+     * MMT_SEC_REACTION_DIR; run_tests.sh checks the recorded arguments and
+     * the detection_<n>.data file */
+    { "reaction: a satisfied verdict runs the script from the reaction folder", "reaction.xml",
+      { F(PORT_A, 120, 0) }, 1, 1, 0 },
 };
 
 static int g_cb_respected;
@@ -322,7 +356,7 @@ static void run_scenario(const scenario_t *s, const char *dir)
     char errbuf[MMT_ERRBUF_SIZE];
     int i;
 
-    alarm(SCENARIO_TIMEOUT_S);
+    alarm(s->timeout_s > 0 ? (unsigned) s->timeout_s : SCENARIO_TIMEOUT_S);
     if (dir != NULL)
         snprintf(path, sizeof path, "%s/%s", dir, s->fixture);
     else
@@ -332,7 +366,10 @@ static void run_scenario(const scenario_t *s, const char *dir)
     mmt_handler_t *mmt = mmt_init_handler(DLT_EN10MB, 0, errbuf);
     if (mmt == NULL) { printf("FAIL - %s: mmt_init_handler: %s\n", s->name, errbuf); exit(3); }
 
-    init_sec_lib(mmt, path, BOTH, on_verdict, NULL);
+    if (init_sec_lib(mmt, path, BOTH, on_verdict, NULL) != 0) {
+        printf("FAIL - %s: init_sec_lib() rejected %s\n", s->name, s->fixture);
+        exit(3);
+    }
     if (top_rule == NULL || top_rule->next != NULL) {
         printf("FAIL - %s: %s must load exactly one property\n", s->name, s->fixture);
         exit(3);

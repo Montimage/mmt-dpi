@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!-- tests/rule_engine (#511): a root AND (A and a long frame) with no delay
+     of its own. An existing instance that the next frame fails comes back
+     NOT_VALID from verify(); analyse_incoming_packet() must eliminate it
+     and move on (it used to retry the same instance forever). -->
+<beginning>
+  <property value="AND" property_id="20" type_property="SECURITY_RULE" description="and_root">
+    <event event_id="1" description="A" boolean_expression="(UDP.dest_port == 1001)"/>
+    <event event_id="2" description="long" boolean_expression="(META.packet_len &gt; 100)"/>
+  </property>
+</beginning>

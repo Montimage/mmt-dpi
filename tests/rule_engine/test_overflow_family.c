@@ -29,7 +29,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include "mmt_core.h"
 
@@ -768,7 +770,9 @@ static void test_contains_unterminated_operands(void)
 /* F-BUG-102: generate_command sized its buffer from the parameter names while
  * substitutions append escaped values; with 40 header-line substitutions the
  * old fixed buffer overflows. Malformed input must return NULL without
- * leaking the command buffer. */
+ * leaking the command buffer. Since #512 the detection_<n>.data file goes
+ * to MMT_SEC_REACTION_DIR — a scratch folder here — and a failed command
+ * removes the one it claimed. */
 static void test_generate_command_bounded(void)
 {
     rule r;
@@ -776,10 +780,19 @@ static void test_generate_command_bounded(void)
     mmt_header_line_t hl;
     char line[100];
     char input[1024];
+    char dir[] = "/tmp/mmt-reaction.XXXXXX";
+    char path[sizeof dir + 32];
+    struct stat st;
     char *cmd;
     long proto, field;
     size_t pos;
     int i;
+
+    if (mkdtemp(dir) == NULL || setenv("MMT_SEC_REACTION_DIR", dir, 1) != 0) {
+        printf("FAIL - cannot create a scratch reaction folder\n");
+        failures++;
+        return;
+    }
 
     proto = get_protocol_id_by_name("http");
     field = get_attribute_id_by_protocol_id_and_attribute_name((uint32_t)proto, "Host");
@@ -836,6 +849,15 @@ static void test_generate_command_bounded(void)
     CHECK(fi_live_n == 0 && !fi_double_free,
           "error path frees the command buffer (no leak)");
     fi_tracking = 0;
+
+    snprintf(path, sizeof path, "%s/detection_1.data", dir);
+    CHECK(stat(path, &st) == 0 && (st.st_mode & 0777) == 0600,
+          "detection_1.data is created in MMT_SEC_REACTION_DIR with mode 0600");
+    unlink(path);
+    snprintf(path, sizeof path, "%s/detection_2.data", dir);
+    CHECK(stat(path, &st) != 0, "the failed command removes the detection file it claimed");
+    unsetenv("MMT_SEC_REACTION_DIR");
+    CHECK(rmdir(dir) == 0, "the reaction folder holds nothing else");
 }
 
 /* compare_in_table (reached via compare_values when a rule uses XIN on a

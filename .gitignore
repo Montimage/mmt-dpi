@@ -6,6 +6,8 @@ src/c-doxygen.conf
 *.o
 # plugin-directory stamp of plugins_engine.o (sdk/Makefile, issue #485)
 src/mmt_core/src/plugins_engine.path
+# reaction-folder stamp of tips_report.o (sdk/Makefile, issue #512)
+src/mmt_security/tips_report.path
 *.lo
 *.la
 *.so*

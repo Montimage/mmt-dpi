@@ -126,7 +126,6 @@ char *get_my_data(void *data1, short size, long type) {
         
     void * data2 = NULL;
     struct timeval t1;
-    unsigned long L1=0,L2=0,L3=0,L4=0;
     mmt_binary_data_t *db1 = NULL;
     //mmt_header_line_t *t;
     int data_size=0, j=0, stop=0;
@@ -155,7 +154,8 @@ char *get_my_data(void *data1, short size, long type) {
             (void)snprintf(buff1, 100, "%d", *(unsigned short*) (data1));
             break;
         case MMT_U32_DATA:
-            (void)snprintf(buff1, 100, "%lu", *(unsigned long*) (data1));
+            /* 4 bytes: an LP64 unsigned long read 4 more (#511) */
+            (void)snprintf(buff1, 100, "%"PRIu32, *(uint32_t*) (data1));
             break;
         case MMT_U64_DATA:
         case MMT_DATA_POINT:
@@ -208,11 +208,9 @@ char *get_my_data(void *data1, short size, long type) {
             data_size = db1->len;
             data2 = db1->data;
             if (data_size == 4) {
-                L1 = (*(unsigned long*)(data2)&0x000000ff);
-                L2 = (*(unsigned long*)(data2)&0x0000ff00)>>8;
-                L3 = (*(unsigned long*)(data2)&0x00ff0000)>>16;
-                L4 = (*(unsigned long*)(data2)&0xff000000)>>24;
-                (void)snprintf(buff1, 100, "%lu.%lu.%lu.%lu", L1, L2, L3, L4);
+                /* byte by byte: an LP64 unsigned long read 8 (#511) */
+                const uint8_t *b = (const uint8_t *) data2;
+                (void)snprintf(buff1, 100, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
             } else {
                 /* hex-dump into the remaining space: first element 2 chars,
                  * each further one 3 — stop when the buffer is full. */
@@ -411,71 +409,105 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
     return output;
 }
 
-void * funct_get_params_and_execute( verify_ctx_t *ctx, char *funct_name, int data_size, tuple *tt, tuple *list_of_tuples, enum_found *found )
+/* The embedded-function library is opened once, on first use — at load
+ * time, by the rule loader — and stays open for the process, like the one
+ * engine it serves (#511: it was dlopen'ed, and leaked on the SKIP path,
+ * once per evaluated leaf). */
+static void *embedded_lib = NULL;
+
+embedded_funct_t embedded_funct_resolve( const char *funct_name )
 {
-    void *lib_pointer = NULL;
-    void *(*embedded_function)();
+    embedded_funct_t f;
+    void *sym;
+    if (embedded_lib == NULL) {
+        embedded_lib = dlopen(LIB_NAME, RTLD_NOW);
+        if (embedded_lib == NULL) {
+            (void)fprintf(stderr, "Error 3h: Cannot load %s for embedded function %s: %s\n", LIB_NAME, funct_name, dlerror());
+            return NULL;
+        }
+    }
+    (void)dlerror();
+    sym = dlsym(embedded_lib, funct_name);
+    if (sym == NULL) {
+        (void)fprintf(stderr, "Error 3h: Embedded function %s not found in %s\n", funct_name, LIB_NAME);
+        return NULL;
+    }
+    *(void **) (&f) = sym;
+    return f;
+}
+
+/* Calls funct — resolved at load — with its parameters through the exact
+ * signature of its arity, at most EMBEDDED_FUNCT_MAX_PARAMS void * (#511:
+ * the old variadic-style call had no bound on the count and passed
+ * uninitialised slots for references it could not find). */
+void * funct_get_params_and_execute( verify_ctx_t *ctx, embedded_funct_t funct, int data_size, tuple *tt, tuple *list_of_tuples, enum_found *found )
+{
     void * ihandle = NULL;
     void * result_data = NULL;
     tuple *temp_tuple2;
+    short param_count = 0;
+    void *data[EMBEDDED_FUNCT_MAX_PARAMS] = { NULL };
 
-    lib_pointer = dlopen(LIB_NAME, RTLD_NOW);
-    //lib_pointer = dlopen(LIB_NAME, RTLD_LAZY);
-    if (lib_pointer != NULL) {
-        *(void **) (&embedded_function) = dlsym(lib_pointer, funct_name);
-        short param_count = 0;
-        void *data[4];
-        while (tt != NULL) {
-            if (tt->data == NULL && tt->event_id == 0) {
-                data[param_count] = get_attribute_extracted_data( ctx->pkt, tt->protocol_id, tt->field_id );
-            } else if (tt->data == NULL && tt->event_id != 0) {
-                if (ctx->skip_refs == YES || list_of_tuples == NULL) {
-                    *found = SKIP;
-                    return NULL;
-                } else {
-                    temp_tuple2 = list_of_tuples;
-                    while (temp_tuple2 != NULL) {
-                        if (tt->protocol_id == temp_tuple2->protocol_id)
-                            if (tt->field_id == temp_tuple2->field_id)
-                                if (temp_tuple2->event_id == tt->event_id)
-                                    if (temp_tuple2->data_size > 0)
-                                        if (temp_tuple2->data != NULL) {
-                                            data[param_count] = temp_tuple2->data;
-                                            break;
-                                        }
-                        temp_tuple2 = temp_tuple2->next;
-                    }
-                }
-            } else if (tt->data != NULL)data[param_count] = tt->data;
-            param_count++;
-            tt = tt->next;
-        }
-        switch (param_count) {
-            case 0: ihandle = embedded_function();
-                break;
-            case 1: ihandle = embedded_function(data[0]);
-                break;
-            case 2: ihandle = embedded_function(data[0], data[1]);
-                break;
-            case 3: ihandle = embedded_function(data[0], data[1], data[2]);
-                break;
-            case 4: ihandle = embedded_function(data[0], data[1], data[2], data[3]);
-                break;
-        }
-        result_data = (void *) xmalloc(data_size);
-        if(result_data == NULL){
-            xfree(ihandle);
+    *found = NOT_FOUND;
+    if (funct == NULL || data_size < 0) return NULL;
+    while (tt != NULL) {
+        if (param_count == EMBEDDED_FUNCT_MAX_PARAMS) {
+            (void)fprintf(stderr, "Error 3e: Embedded function call with more than %d parameters\n", EMBEDDED_FUNCT_MAX_PARAMS);
             return NULL;
         }
-        memcpy(result_data, ihandle, data_size);
-        xfree(ihandle);
-        dlclose(lib_pointer);
-        *found = FOUND;
-        //caller needs to free return value
-        return result_data;
+        if (tt->data == NULL && tt->event_id == 0) {
+            data[param_count] = get_attribute_extracted_data( ctx->pkt, tt->protocol_id, tt->field_id );
+        } else if (tt->data == NULL && tt->event_id != 0) {
+            if (ctx->skip_refs == YES || list_of_tuples == NULL) {
+                *found = SKIP;
+                return NULL;
+            } else {
+                temp_tuple2 = list_of_tuples;
+                while (temp_tuple2 != NULL) {
+                    if (tt->protocol_id == temp_tuple2->protocol_id)
+                        if (tt->field_id == temp_tuple2->field_id)
+                            if (temp_tuple2->event_id == tt->event_id)
+                                if (temp_tuple2->data_size > 0)
+                                    if (temp_tuple2->data != NULL) {
+                                        data[param_count] = temp_tuple2->data;
+                                        break;
+                                    }
+                    temp_tuple2 = temp_tuple2->next;
+                }
+            }
+        } else if (tt->data != NULL)data[param_count] = tt->data;
+        param_count++;
+        tt = tt->next;
     }
-    *found = NOT_FOUND;
-    return NULL;
+    switch (param_count) {
+        case 0: ihandle = ((void *(*)(void)) funct)();
+            break;
+        case 1: ihandle = ((void *(*)(void *)) funct)(data[0]);
+            break;
+        case 2: ihandle = ((void *(*)(void *, void *)) funct)(data[0], data[1]);
+            break;
+        case 3: ihandle = ((void *(*)(void *, void *, void *)) funct)(data[0], data[1], data[2]);
+            break;
+        default: ihandle = ((void *(*)(void *, void *, void *, void *)) funct)(data[0], data[1], data[2], data[3]);
+            break;
+    }
+    if (ihandle == NULL) return NULL;
+    if (data_size == 0) {
+        /* a reaction: the result is not used */
+        xfree(ihandle);
+        *found = FOUND;
+        return NULL;
+    }
+    result_data = (void *) xmalloc(data_size);
+    if(result_data == NULL){
+        xfree(ihandle);
+        return NULL;
+    }
+    memcpy(result_data, ihandle, data_size);
+    xfree(ihandle);
+    *found = FOUND;
+    //caller needs to free return value
+    return result_data;
 }
 
 //#define THALES
@@ -540,7 +572,7 @@ int compare_in_table(compare_value v1, compare_value v2, enum_operation ope)
 {
     int i = 0, j = 0;
     unsigned short s1 = 0;
-    unsigned long l1 = 0;
+    uint32_t l1 = 0;
     unsigned long long ll1 = 0;
     double f1 = 0;
     unsigned char c1 = 0;
@@ -579,10 +611,11 @@ int compare_in_table(compare_value v1, compare_value v2, enum_operation ope)
             }
             break;
         case MMT_U32_DATA:
-            l1 = *((unsigned long *) (v1.data));
+            /* 4-byte elements, not LP64 unsigned long (#511) */
+            l1 = *((uint32_t *) (v1.data));
             j = 0;
-            for (i = 0; i + (int)sizeof(unsigned long) <= size; i = i + sizeof (unsigned long)) {
-                if (l1 == ((unsigned long *) (v2.data))[j++])
+            for (i = 0; i + (int)sizeof(uint32_t) <= size; i = i + sizeof (uint32_t)) {
+                if (l1 == ((uint32_t *) (v2.data))[j++])
                     return VALID;
             }
             break;
@@ -655,7 +688,7 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
 {
     int idx = 0, needle = 0;
     unsigned short u16_1 = 0, u16_2 = 0;
-    unsigned long u32_1 = 0, u32_2 = 0;
+    uint32_t u32_1 = 0, u32_2 = 0;
     unsigned long long u64_1 = 0, u64_2 = 0;
     double fval_1 = 0, fval_2 = 0;
     unsigned char u8_1 = 0, u8_2 = 0;
@@ -734,8 +767,8 @@ int compare_values(compare_value v1, compare_value v2, enum_operation ope)
                 return VALID;
             break;
         case MMT_U32_DATA:
-            u32_1 = (*((unsigned long *) (v1.data)));
-            u32_2 = (*((unsigned long *) (v2.data)));
+            u32_1 = (*((uint32_t *) (v1.data)));
+            u32_2 = (*((uint32_t *) (v2.data)));
             if ((ope == NEQ && u32_1 != u32_2) || (ope == EQ && u32_1 == u32_2) || (ope == LT && u32_1 < u32_2) || (ope == LTE && u32_1 <= u32_2) || (ope == GT && u32_1 > u32_2) || (ope == GTE && u32_1 >= u32_2))
                 return VALID;
             break;
@@ -893,7 +926,8 @@ void * compute(compare_value v1, compare_value v2, enum_operation operator)
 {
     unsigned char uc = 0, uc1 = 0, uc2 = 0, *uc0 = NULL;
     unsigned short us1 = 0, us2 = 0, *us0 = NULL;
-    unsigned long ul1 = 0, ul2 = 0, *ul0 = NULL;
+    uint32_t ul1 = 0, ul2 = 0;
+    void *ul0 = NULL;
     unsigned long long ull1 = 0, ull2 = 0, *ull0 = NULL;
     void * data1 = NULL;
     void * data2 = NULL;
@@ -975,23 +1009,27 @@ void * compute(compare_value v1, compare_value v2, enum_operation operator)
             break;
         case MMT_U32_DATA:
         case MMT_DATA_PORT:
-            ul1 = *((unsigned long *) (data1));
-            ul2 = *((unsigned long *) (data2));
-            ul0 = xmalloc(sizeof (unsigned long));
+            /* 4-byte operands (#511); the result is widened to the 8 bytes
+             * verify_segment() copies out of every compute() result */
+            ul1 = *((uint32_t *) (data1));
+            ul2 = *((uint32_t *) (data2));
+            ul0 = xcalloc(1, sizeof (uint64_t));
             if (ul0 == NULL)
             {
                 xfree(ull0);
                 return NULL;
             }
+            /* in 64 bits, like the integer path above: the result is typed
+             * MMT_U64_DATA */
             if (operator == ADD)
-                *ul0 = ul1 + ul2;
+                *(uint64_t *) ul0 = (uint64_t) ul1 + ul2;
             else if (operator == SUB)
-                *ul0 = ul1 - ul2;
+                *(uint64_t *) ul0 = (uint64_t) ul1 - ul2;
             else if (operator == DIV) {
                 if (ul2 == 0) { xfree(ul0); xfree(ull0); return NULL; }
-                *ul0 = ul1 / ul2;
+                *(uint64_t *) ul0 = ul1 / ul2;
             } else if (operator == MUL)
-                *ul0 = ul1 * ul2;
+                *(uint64_t *) ul0 = (uint64_t) ul1 * ul2;
             return (void *)ul0;
             break;
         case MMT_U64_DATA:
@@ -1258,12 +1296,16 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
     if (r1->value == XFUNCT || r2->value == XFUNCT) {
        enum_found found = NOT_FOUND;
        tmp_v->found = NOT_FOUND;
-            void *data = funct_get_params_and_execute( ctx, tmp_r->funct_name, tmp_r->t.data_size, tmp_r->t.next, ctx->list_of_tuples, &found);
+            void *data = funct_get_params_and_execute( ctx, tmp_r->funct, tmp_r->t.data_size, tmp_r->t.next, ctx->list_of_tuples, &found);
             if(found != FOUND || data == NULL){
               if (ctx->skip_refs == YES) tmp_v->found = SKIP;
               else {
+                /* the condition fails; it no longer ends the process (#511) */
                 (void)fprintf(stderr, "Error 123: Function %s not found or returned NULL\n", tmp_r->funct_name);
-                exit(-1);
+                xfree(data);
+                xfree(v1.data);
+                xfree(v2.data);
+                return NOT_VALID;
               }
             }
             if(tmp_v->found != SKIP){

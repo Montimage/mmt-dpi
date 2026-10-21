@@ -299,10 +299,11 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                 }
                 case MMT_DATA_IP_ADDR:
                     if(proto_name!=NULL && att_name!=NULL && *((char*)data1)!=0){
-                       L1 = (*(unsigned long*)(data1)&0x000000ff);
-                       L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
-                       L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
-                       L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
+                       /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
+                       L1 = ((const uint8_t *) (data1))[0];
+                       L2 = ((const uint8_t *) (data1))[1];
+                       L3 = ((const uint8_t *) (data1))[2];
+                       L4 = ((const uint8_t *) (data1))[3];
                        snprintf(json_buff1, json_cap1,"{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
                     }else
                        snprintf(json_buff1, json_cap1,"{\"x.x\":\"0.0.0.0\"},");
@@ -382,10 +383,11 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                     if (data_size < 0) data_size = 0;
                     data2 = db1->data;
                     if (data_size == 4) {
-                        L1 = (*(unsigned long*)(data2)&0x000000ff);
-                        L2 = (*(unsigned long*)(data2)&0x0000ff00)>>8;
-                        L3 = (*(unsigned long*)(data2)&0x00ff0000)>>16;
-                        L4 = (*(unsigned long*)(data2)&0xff000000)>>24;
+                        /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
+                        L1 = ((const uint8_t *) (data2))[0];
+                        L2 = ((const uint8_t *) (data2))[1];
+                        L3 = ((const uint8_t *) (data2))[2];
+                        L4 = ((const uint8_t *) (data2))[3];
                         snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%lu.%lu.%lu.%lu\"},", proto_name, att_name, L1, L2, L3, L4);
                         json_grow_append(&json_buff, &json_cap, json_buff1);
                     } else if (data_size == 6) {
@@ -499,10 +501,11 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
             data1 = NULL;
         	data1 = get_attribute_extracted_data(ctx->pkt, 178, 12);
             if(data1!= NULL && *((char*)data1)!=0){
-                L1 = (*(unsigned long*)(data1)&0x000000ff);
-                L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
-                L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
-                L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
+                /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
+                L1 = ((const uint8_t *) (data1))[0];
+                L2 = ((const uint8_t *) (data1))[1];
+                L3 = ((const uint8_t *) (data1))[2];
+                L4 = ((const uint8_t *) (data1))[3];
         		snprintf(json_buff1, json_cap1,"{\"ip.src\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
         	    json_grow_append(&json_buff, &json_cap, json_buff1);
        	   }else if( having_mac_src == 0 ){
@@ -522,10 +525,11 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
             data1 = NULL;
             data1 = get_attribute_extracted_data(ctx->pkt, 178, 13);
             if(data1!=NULL && *((char*)data1)!=0){
-                L1 = (*(unsigned long*)(data1)&0x000000ff);
-                L2 = (*(unsigned long*)(data1)&0x0000ff00)>>8;
-                L3 = (*(unsigned long*)(data1)&0x00ff0000)>>16;
-                L4 = (*(unsigned long*)(data1)&0xff000000)>>24;
+                /* byte by byte: an LP64 unsigned long read 8 bytes (#511) */
+                L1 = ((const uint8_t *) (data1))[0];
+                L2 = ((const uint8_t *) (data1))[1];
+                L3 = ((const uint8_t *) (data1))[2];
+                L4 = ((const uint8_t *) (data1))[3];
 				snprintf(json_buff1, json_cap1,"{\"ip.dst\":\"%lu.%lu.%lu.%lu\"},", L1, L2, L3, L4);
 			    json_grow_append(&json_buff, &json_cap, json_buff1);
 		    }else if( having_mac_dst == 0 ){
@@ -881,6 +885,53 @@ static int gc_append(char **buf, size_t *cap, size_t *len, const char *src, size
     return 0;
 }
 
+/* The reaction folder: MMT_SEC_REACTION_DIR when it holds an absolute path,
+ * else $(MMT_BASE)/probe/conf as baked in at build time
+ * (MMT_SEC_REACTION_DIR_OPT, rules/common.mk) — #512: it was a hard-coded
+ * /opt/mmt/probe/conf/. */
+static const char *reaction_dir(void)
+{
+    const char *d = secure_getenv("MMT_SEC_REACTION_DIR");
+    if (d != NULL && d[0] == '/') return d;
+    if (d != NULL && d[0] != '\0')
+        (void)fprintf(stderr, "Error 22c: MMT_SEC_REACTION_DIR is not an absolute path, using %s\n", MMT_SEC_REACTION_DIR_OPT);
+    return MMT_SEC_REACTION_DIR_OPT;
+}
+
+#define DETECTION_FILE_TRIES 1000
+
+/* Claims the next free detection_<n>.data in dir. The file is created with
+ * O_CREAT|O_EXCL|O_NOFOLLOW and mode 0600, so an existing file or a planted
+ * symlink is never truncated or followed: its number is skipped (#512 — the
+ * predictable name used to be fopen'ed "w+"). The path is left in path. */
+static FILE *open_detection_file(const char *dir, char *path, size_t cap)
+{
+    int i;
+    for (i = 0; i < DETECTION_FILE_TRIES; i++) {
+        int fd;
+        counter_detection++;
+        if (snprintf(path, cap, "%s/detection_%ld.data", dir, counter_detection) >= (int) cap) {
+            (void)fprintf(stderr, "Error 22d: Reaction directory path too long: %s\n", dir);
+            return NULL;
+        }
+        fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
+        if (fd >= 0) {
+            FILE *f = fdopen(fd, "w");
+            if (f == NULL) {
+                (void)close(fd);
+                (void)unlink(path);
+            }
+            return f;
+        }
+        if (errno != EEXIST && errno != ELOOP) {
+            (void)fprintf(stderr, "Error 22d: Cannot create %s: %s\n", path, strerror(errno));
+            return NULL;
+        }
+    }
+    (void)fprintf(stderr, "Error 22d: No free detection_<n>.data in %s\n", dir);
+    return NULL;
+}
+
 char *generate_command( const ipacket_t *pkt, rule *r, char * input )
 {
     //input: "name_of_script parameters" where parameters can be constants or variables (e.g., script(1,META.PROTO.3) )
@@ -891,6 +942,10 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     size_t out_cap = 0, out_len = 0;
     int oom = 0;
     tuple *list_of_tuples = r->list_of_tuples;
+    const char *dir = reaction_dir();
+    char *dir_arg = NULL;
+    char pythonDataFileName[4096];
+    FILE * pythonDataFile = NULL;
 
     // Start with expansion room for quoting; the buffer grows further on
     // demand so escaped substitutions can never overrun it.
@@ -906,7 +961,12 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     //Copy input to output, replacing the variables with the values recovered below
     // if a value is not available then print an error and return NULL!
 
-    oom |= gc_append(&output, &out_cap, &out_len, "/opt/mmt/probe/conf/./", 22);
+    /* the folder is configuration, not rule text: quoted as one shell word */
+    dir_arg = escape_shell_arg(dir);
+    if (dir_arg == NULL) goto fail;
+    oom |= gc_append(&output, &out_cap, &out_len, dir_arg, strlen(dir_arg));
+    oom |= gc_append(&output, &out_cap, &out_len, "/./", 3);
+    xfree(dir_arg);
 
     tempi = input;
     while (*tempi == ' ') tempi++;
@@ -926,7 +986,10 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     tempi++; //skip '('
     oom |= gc_append(&output, &out_cap, &out_len, " ", 1);
     //we have: "script_name "
-    counter_detection++;
+    //Put data in file with name: detection_<counter_detection>.data
+    //Will be used by python script
+    pythonDataFile = open_detection_file(dir, pythonDataFileName, sizeof pythonDataFileName);
+    if (pythonDataFile == NULL) goto fail;
     snprintf(numbuf, sizeof(numbuf), "%ld ", counter_detection);
     oom |= gc_append(&output, &out_cap, &out_len, numbuf, strlen(numbuf));
 
@@ -985,13 +1048,7 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
         if (!closed) (void)fprintf(stderr, "Error 22x: missing ')' in: %s\n", input);
         goto fail;
     }
-    //Put data in file with name: detection_<counter_detection>.data
-    //Will be used by python script
-    FILE * pythonDataFile;
-    char pythonDataFileName[50];
     rule * rr = NULL;
-    snprintf(pythonDataFileName, 50, "/opt/mmt/probe/conf/detection_%ld.data", counter_detection);
-    pythonDataFile = open_file(pythonDataFileName, "w+");
     if(r->root != NULL) rr = r->root;
     else rr = r;
     if(rr->type_rule == ATTACK)             fprintf(pythonDataFile,"attack\n"); 
@@ -1004,9 +1061,18 @@ char *generate_command( const ipacket_t *pkt, rule *r, char * input )
     else                                    fprintf(pythonDataFile,"history\n");
     fprintf(pythonDataFile,"%d\n", rr->property_id);
     fprintf(pythonDataFile,"detected");
-    close_file(pythonDataFile);
+    if (fclose(pythonDataFile) != 0) {
+        (void)fprintf(stderr, "Error 22d: Cannot write %s: %s\n", pythonDataFileName, strerror(errno));
+        (void)unlink(pythonDataFileName);
+        xfree(output);
+        return NULL;
+    }
     return output;
 fail:
+    if (pythonDataFile != NULL) {
+        (void)fclose(pythonDataFile);
+        (void)unlink(pythonDataFileName);
+    }
     xfree(output);
     return NULL;
 }
@@ -1106,8 +1172,9 @@ void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state ) {
     }
 
     /* Reaction scripts are resolved from the folder generate_command
-     * prepends (/opt/mmt/probe/conf/) and run in the current working
-     * directory of the engine process. */
+     * prepends (reaction_dir(): MMT_SEC_REACTION_DIR or
+     * $(MMT_BASE)/probe/conf) and run in the current working directory of
+     * the engine process. */
     void *data = NULL;
     short do_it = 0;
     char * what_to_do = NULL;
@@ -1143,33 +1210,27 @@ void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state ) {
             } else {
                 char * funct_name = funct_extract_name(what_to_do);
                 int data_size = 0;
+                if (funct_name == NULL) return;
+                /* checked when the rule was loaded (#511) */
+                embedded_funct_t funct = embedded_funct_resolve(funct_name);
                 char * command = strchr(what_to_do, '(');
-                command++;
-                while (*command == ' ') command++;
-                char * command2;
-                tuple * top_tuple = (tuple *) xmalloc(sizeof (tuple));
-                if(top_tuple == NULL){
+                if (funct == NULL || command == NULL) {
                     xfree(funct_name);
                     return;
                 }
-                top_tuple->protocol_id = -1;
-                top_tuple->field_id = -1;
-                top_tuple->data_type_id = -1;
-                top_tuple->data_size = -1;
-                top_tuple->event_id = -1;
-                top_tuple->valid = NOT_YET; //not used in this context
-                top_tuple->data = NULL;
-                top_tuple->next = NULL;
-                tuple * a_tuple = top_tuple;
+                command++;
+                while (*command == ' ') command++;
+                char * command2 = command;
+                tuple * top_tuple = NULL;
+                tuple ** link = &top_tuple;
+                tuple * a_tuple;
                 tuple * new_tuple;
-
-                command2 = funct_get_info_param( ctx->pkt->mmt_handler, NOT_USED, command, a_tuple);
-                while( command2 ) {
+                int bad = 0;
+                while (*command2 != ')') {
                     new_tuple = (tuple *)xmalloc(sizeof (tuple));
                     if(new_tuple == NULL){
-                        xfree(top_tuple);
-                        xfree(funct_name);
-                        return;
+                        bad = 1;
+                        break;
                     }
                     new_tuple->protocol_id = -1;
                     new_tuple->field_id = -1;
@@ -1179,15 +1240,21 @@ void rule_is_satisfied_or_not( verify_ctx_t *ctx, rule *r, enum_print state ) {
                     new_tuple->valid = NOT_YET; //not used in this context
                     new_tuple->data = NULL;
                     new_tuple->next = NULL;
-                    if(a_tuple != NULL){
-                        a_tuple->next = new_tuple;
-                        a_tuple = new_tuple;
-                        command2 = funct_get_info_param(ctx->pkt->mmt_handler, NOT_USED, command2, a_tuple);
+                    *link = new_tuple;
+                    link = &new_tuple->next;
+                    if (funct_get_info_param(ctx->pkt->mmt_handler, NOT_USED, command2, new_tuple, &command2) != 0) {
+                        bad = 1;
+                        break;
                     }
+                    if (command2 == NULL) break;
                 }
-                enum_found found = NOT_FOUND; //not used in this context
-                data = funct_get_params_and_execute( ctx, funct_name, data_size, top_tuple, r->list_of_tuples, &found);
-                xfree(data);
+                if (bad == 0) {
+                    enum_found found = NOT_FOUND; //not used in this context
+                    data = funct_get_params_and_execute( ctx, funct, data_size, top_tuple, r->list_of_tuples, &found);
+                    xfree(data);
+                } else {
+                    (void)fprintf(stderr, "Error 22b: Reaction \"%s\" not executed.\n", what_to_do);
+                }
                 a_tuple = top_tuple;
                 while (a_tuple != NULL) {
                     new_tuple = a_tuple;

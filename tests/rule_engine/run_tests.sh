@@ -44,7 +44,15 @@
 #      windows, AND, OR, NOT, REPEAT, nested THEN, event references,
 #      ||/arithmetic expressions — and the reported verdicts are pinned to
 #      the current behaviour — test_rule_eval.c; since #510 also keep_state
-#      and the verdict JSON, which jq must parse (step 8).
+#      and the verdict JSON, which jq must parse (step 8);
+#   8. #511/#512: a malformed rule file (malformed/*.xml) or a missing or
+#      over-long embedded-function call makes init_sec_lib() return an error
+#      and free what it built (LSan), a second init_sec_lib() is refused
+#      (one engine per process, also under a two-thread race), embedded
+#      functions resolve at load from a test libembedded_functions.so, a
+#      NOT_VALID instance no longer loops forever, and a reaction runs from
+#      MMT_SEC_REACTION_DIR, printing U32/IP attributes from 4 bytes and
+#      claiming detection_<n>.data with O_CREAT|O_EXCL|O_NOFOLLOW (step 8).
 #
 # Usage: tests/rule_engine/run_tests.sh
 set -euo pipefail
@@ -143,10 +151,18 @@ done
 # --- 2. compile the test ----------------------------------------------------
 echo "  [2/8] compiling test ..."
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
-${CC} "${extra_cflags[@]}" -O2 -Wall \
+${CC} "${extra_cflags[@]}" -O2 -Wall -pthread \
     -I "${INC}" -I "${REPO_ROOT}/src/mmt_security" -o "${SCRIPT_DIR}/test_rule_engine" \
     "${TEST_SRC}" -L "${LIB}" \
     -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm
+
+# The libembedded_functions.so the engine dlopens for #function(...) calls
+# (#511): built uninstrumented — it only computes on the values it is
+# handed — and found through LD_LIBRARY_PATH.
+EMBEDDED_DIR="${WORK}/embedded"
+mkdir -p "${EMBEDDED_DIR}"
+${CC} -O2 -Wall -shared -fPIC -I "${INC}" -o "${EMBEDDED_DIR}/libembedded_functions.so" \
+    "${SCRIPT_DIR}/embedded_functions.c"
 
 # Fixtures exercising the parser error paths (schema derived from
 # read_rules / create_boolean_expression in src/mmt_security/tips_xml.c).
@@ -182,7 +198,7 @@ run_expect_fail() { # <label> <expected-error-substring> <logfile> <cmd...>
     return 1
 }
 
-LD_ENV=(env "LD_LIBRARY_PATH=${LIB}:${LD_LIBRARY_PATH:-}")
+LD_ENV=(env "LD_LIBRARY_PATH=${LIB}:${EMBEDDED_DIR}:${LD_LIBRARY_PATH:-}")
 if [ -n "${SAN_RT:-}" ]; then
     LD_ENV+=("LD_PRELOAD=${SAN_RT}")
 fi
@@ -232,6 +248,61 @@ run_expect_fail "missing rule file" "Error 100" "${NEGATIVE_LOG}" \
 run_expect_fail "malformed rule XML" "Error 13" "${NEGATIVE_LOG}" \
     "${LD_ENV[@]}" "${BIN}" parse "${MALFORMED_XML}"
 echo "  2 error paths verified"
+
+# #511/#512: well-formed XML the engine cannot run is rejected by an error
+# return — the loader used to exit() or dereference NULL — and the failed
+# load frees what it built. LSan is the leak oracle (detect_leaks=1 is
+# appended last, as for the fuzz engine in step 7; ignored outside ASan).
+# Each fixture names the reason the engine reports.
+# The suppression is the libmmt_tcpip constructor's protocol trees
+# (_init_proto_avltrees): the test links libmmt_tcpip and the handler loads
+# it again as a plugin, and nothing frees the trees the first copy built —
+# unrelated to the rule engine.
+LSAN_SUPP="${WORK}/lsan.supp"
+printf 'leak:_init_proto_avltrees\n' > "${LSAN_SUPP}"
+LSAN_ENV=("ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_leaks=1" "LSAN_OPTIONS=suppressions=${LSAN_SUPP}")
+declare -A LOAD_ERRORS=(
+    [empty_delay_max]="Error 12b: Empty delay_max"
+    [unknown_element]="Error 12a: Unknown element <rule>"
+    [unbalanced_then]="Error 12d: THEN node with 1 branch"
+    [outside_property]="Error 12c"
+    [leading_operator]="Error 37b: Unbalanced boolean expression"
+    [extra_paren]="Error 37b: Unbalanced boolean expression"
+    [illegal_char]="Error 37: Illegal character"
+    [unknown_attribute]="Error 9a: Unknown attribute NOPROTO.nofield"
+    [funct_five_params]="Error 3e: Embedded function echo_port takes 5 parameters"
+    [funct_missing]="Error 3h: Embedded function no_such_function not found"
+    [funct_trailing_comma]="Error 3f: Empty parameter"
+)
+for fixture in "${SCRIPT_DIR}"/malformed/*.xml; do
+    name="$(basename "${fixture}" .xml)"
+    expected="${LOAD_ERRORS[${name}]:-}"
+    if [ -z "${expected}" ]; then
+        echo "✗ malformed/${name}.xml has no expected error in run_tests.sh" >&2; exit 1
+    fi
+    LOAD_LOG="${WORK}/load-${name}.log"
+    run_expect_ok "load error: ${name}" "${LOAD_LOG}" \
+        "${LD_ENV[@]}" "${LSAN_ENV[@]}" "${BIN}" load-error "${fixture}"
+    if ! grep -qF "${expected}" "${LOAD_LOG}"; then
+        echo "✗ load error: ${name}: '${expected}' not reported — output:" >&2
+        cat "${LOAD_LOG}" >&2; exit 1
+    fi
+    echo "  ok - malformed/${name}.xml rejected: ${expected}"
+done
+echo "  ${#LOAD_ERRORS[@]} invalid rule files return a load error"
+
+# One engine per process: a second init_sec_lib() is refused without a leak
+# (LSan) and two racing threads get exactly one engine (TSan under
+# SANITIZE=tsan).
+REINIT_LOG="${WORK}/reinit.log"
+run_expect_ok "second init_sec_lib()" "${REINIT_LOG}" \
+    "${LD_ENV[@]}" "${LSAN_ENV[@]}" "${BIN}" reinit "${RULES_XML}"
+grep -q "Error 105" "${REINIT_LOG}" || { echo "✗ reinit: Error 105 not reported" >&2; cat "${REINIT_LOG}" >&2; exit 1; }
+grep '^ok - ' "${REINIT_LOG}" | sed 's/^/  /'
+RACE_LOG="${WORK}/race.log"
+run_expect_ok "concurrent init_sec_lib()" "${RACE_LOG}" \
+    "${LD_ENV[@]}" "${BIN}" race "${RULES_XML}"
+grep '^ok - ' "${RACE_LOG}" | tail -1 | sed 's/^/  /'
 
 echo "  [5/8] metacharacter injection test (F-BUG-207 / #136) ..."
 INJECTION_LOG="${WORK}/injection.log"
@@ -306,8 +377,26 @@ ${CC} "${extra_cflags[@]}" -O2 -Wall \
 EVAL_LOG="${WORK}/eval.log"
 HIST_LOG="${WORK}/histories.jsonl"
 : > "${HIST_LOG}"
+# reaction.xml's record(...) script runs from this folder (#512). A planted
+# detection_1.data symlink must be neither followed nor truncated: the
+# engine skips to detection_2.data.
+REACTION_DIR="${WORK}/reactions"
+mkdir -p "${REACTION_DIR}"
+# shellcheck disable=SC2016 # the script's own "$@"/$0, expanded when it runs
+printf '#!/bin/sh\nprintf "%%s\\n" "$@" > "$(dirname "$0")/record.out"\n' > "${REACTION_DIR}/record"
+chmod +x "${REACTION_DIR}/record"
+: > "${WORK}/victim"
+ln -s "${WORK}/victim" "${REACTION_DIR}/detection_1.data"
+# The evaluator is instrumented like the SDK, so it needs no sanitizer
+# preload — and the reaction's /bin/sh must not inherit it: a shell with
+# libtsan preloaded dies with SIGSEGV before running the script (aarch64).
+EVAL_ENV=("${LD_ENV[@]}")
+if [ -n "${SAN_RT:-}" ]; then
+    EVAL_ENV+=("LD_PRELOAD=")
+fi
 run_expect_ok "rule evaluator characterisation" "${EVAL_LOG}" \
-    "${LD_ENV[@]}" "RULE_EVAL_HISTORY_LOG=${HIST_LOG}" "${EVAL_BIN}" "${SCRIPT_DIR}/eval"
+    "${EVAL_ENV[@]}" "RULE_EVAL_HISTORY_LOG=${HIST_LOG}" "MMT_SEC_REACTION_DIR=${REACTION_DIR}" \
+    "${EVAL_BIN}" "${SCRIPT_DIR}/eval"
 grep '^ok - ' "${EVAL_LOG}" | sed 's/^/  /'
 echo "  $(grep -c '^ok - ' "${EVAL_LOG}") scenarios passed (rule evaluator)"
 
@@ -341,6 +430,23 @@ if [ "$(printf '%s\n' "${KEPT_LINE}" | grep -c .)" -ne 1 ] ||
     printf '%s\n' "${KEPT_LINE}" >&2; exit 1
 fi
 echo "  $(jq -s length "${HIST_LOG}") verdict histories parsed by jq (escaped descriptions round-trip, keep_state history kept)"
+
+# #511/#512: the reaction ran from MMT_SEC_REACTION_DIR with its detection
+# number, the 4-byte META.packet_len and both IP addresses printed right.
+if [ "$(cat "${REACTION_DIR}/record.out" 2>/dev/null)" != "$(printf '2\n120\n10.0.0.1\n10.0.0.2')" ]; then
+    echo "✗ reaction: record(...) arguments are not '2 120 10.0.0.1 10.0.0.2' — got:" >&2
+    cat "${REACTION_DIR}/record.out" >&2 2>/dev/null; exit 1
+fi
+DATA_FILE="${REACTION_DIR}/detection_2.data"
+if [ -L "${DATA_FILE}" ] || [ "$(stat -c %a "${DATA_FILE}" 2>/dev/null)" != "600" ] ||
+   [ "$(sed -n 2p "${DATA_FILE}")" != "reaction" ] || [ "$(tail -1 "${DATA_FILE}")" != "detected" ]; then
+    echo "✗ reaction: ${DATA_FILE} is not a 0600 detection file" >&2
+    ls -l "${REACTION_DIR}" >&2; exit 1
+fi
+if [ -s "${WORK}/victim" ] || [ ! -L "${REACTION_DIR}/detection_1.data" ]; then
+    echo "✗ reaction: the planted detection_1.data symlink was followed or replaced" >&2; exit 1
+fi
+echo "  ok - reaction ran from MMT_SEC_REACTION_DIR: U32/IP arguments printed right, detection_2.data created 0600, planted symlink skipped"
 
 echo
 echo "✓ Rule-engine tests passed"

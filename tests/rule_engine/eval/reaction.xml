@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!-- tests/rule_engine (#511/#512): a satisfied verdict runs the reaction
+     record(...) from the reaction folder (MMT_SEC_REACTION_DIR, set by
+     run_tests.sh) and writes detection_<n>.data there with
+     O_CREAT|O_EXCL|O_NOFOLLOW. The script records its arguments, so
+     run_tests.sh can check the U32 (META.packet_len) and IP attributes are
+     printed from 4 bytes, not from an LP64 unsigned long. -->
+<beginning>
+  <property value="THEN" property_id="23" type_property="SECURITY_RULE" description="reaction" if_satisfied="record(META.packet_len, IP.src, IP.dst)">
+    <event event_id="1" description="A" boolean_expression="((UDP.dest_port == 1001)&amp;&amp;(IP.src == 10.0.0.1))"/>
+    <event event_id="2" description="long" boolean_expression="((META.packet_len &gt; 100)&amp;&amp;(IP.dst == 10.0.0.2))"/>
+  </property>
+</beginning>
