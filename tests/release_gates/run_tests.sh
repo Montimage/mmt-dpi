@@ -14,6 +14,9 @@
 # self-test beside tools/ci/publish-release.sh and tools/ci/release-alert.sh
 # (issue #489), which drives both against a stub gh. The ancestry gate of
 # check-release-tag.sh (issue #489) is covered in test-release-gates.py.
+# It also runs the image-pin self-test beside tools/ci/check-image-digests.sh
+# and tools/ci/refresh-base-images.sh (issue #491), which drives both against
+# a fixture repository and a stub registry inspector (no docker, no network).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -21,3 +24,4 @@ bash "${TESTS_DIR}/test-cppcheck-version.sh"
 bash "${TESTS_DIR}/test-version-agreement.sh"
 bash "${TESTS_DIR}/test-release-tag-pin.sh"
 bash "${TESTS_DIR}/test-release-publish.sh"
+bash "${TESTS_DIR}/test-image-pins.sh"

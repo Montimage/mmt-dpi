@@ -1,20 +1,32 @@
-# Base container images that compile the shipped MMT-DPI packages
-# (issue #217, F-DEP-101/F-CI-012/F-SEC-007).
+# Container images CI pulls (issues #217 and #491, F-DEP-101/F-DEP-202/
+# F-CI-012/F-SEC-007).
 #
-# Every non-comment line is the exact image reference consumed by the build
-# matrix in .github/workflows/release-packages.yml — the workflow greps this
-# file for its matrix pin before building, and tools/ci/check-image-digests.sh
-# gates on every workflow image being recorded here, so the two cannot drift
-# apart silently. The dependency bot and the weekly scheduled run diff this
-# file to flag upstream drift.
+# Every non-comment line is the exact image reference a workflow consumes:
+# the build matrix in .github/workflows/release-packages.yml (which greps
+# this file for its matrix pin before building), the root-install job of
+# .github/workflows/c-cpp.yml and the asn1c gate container of
+# .github/workflows/asn1c-regen.yml. tools/ci/check-image-digests.sh scans
+# every workflow and fails when an image is floating, unrecorded here, or
+# recorded here but unused, so the two cannot drift apart silently.
+#
+# Dependabot cannot see these pins (they are not in a Dockerfile), so drift
+# is detected by .github/workflows/base-image-refresh.yml: once a day it runs
+# tools/ci/refresh-base-images.sh --check, which resolves every tag below to
+# its current upstream digest and fails on a moved tag or on a pinned digest
+# the registry no longer serves (quay.io drops the previous
+# centos:stream9 manifest on every retag, issues #587/#590); it then proposes
+# the --write repin as one pull request (or, without a dedicated token, one
+# issue carrying the diff).
 #
 # Pins are name:tag@sha256:<index-digest>; the index digest must cover both
 # linux/amd64 and linux/arm64 (the arm64 matrix leg runs natively on the
 # ubuntu-24.04-arm runner, issue #421).
-# Refresh a pin with:
+# Refresh every pin with: bash tools/ci/refresh-base-images.sh --write
+# Refresh a single pin with:
 digest-source: docker buildx imagetools inspect <image>:<tag>
 ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
 ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254
 debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443
 rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6
 quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c
+buildpack-deps:bookworm@sha256:b22578185ebfdbd9a4050f697638b9c9696b70616d9b01bddfa79145db2b6dfd

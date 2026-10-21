@@ -5,3 +5,10 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+  # The documentation site's gems (issue #491, F-DEP-201): docs/Gemfile.lock
+  # is verified frozen in CI, so updates arrive as lock-bumping PRs.
+  - package-ecosystem: "bundler"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

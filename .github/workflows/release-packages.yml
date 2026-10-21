@@ -21,7 +21,8 @@ name: Build & release packages
 # The five build container images are pinned by index digest
 # (issue #217, F-DEP-101/F-CI-012/F-SEC-007) — the same digest resolves both
 # the amd64 and arm64 matrix legs — and mirrored in the tracked
-# tools/ci/base-images.txt, which the dependency bot diffs for drift.
+# tools/ci/base-images.txt, which the daily base-image-refresh.yml workflow
+# resolves against upstream to flag drift and open the repin PR (issue #491).
 #
 # Reproducibility + tag gates (issue #220, F-CI-010/F-CI-011): the
 # `reproducibility` job builds the package twice inside the same container

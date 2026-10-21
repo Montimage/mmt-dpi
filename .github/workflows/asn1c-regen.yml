@@ -42,8 +42,9 @@ jobs:
     timeout-minutes: 30
     # buildpack-deps already ships git, curl, gcc, make and autotools;
     # libtool/bison/flex (the yacc/lex aliases the asn1c build calls) are
-    # installed below.
-    container: buildpack-deps:bookworm
+    # installed below. Digest-pinned and recorded in tools/ci/base-images.txt
+    # (issue #491); base-image-refresh.yml repins it when the tag moves.
+    container: buildpack-deps:bookworm@sha256:b22578185ebfdbd9a4050f697638b9c9696b70616d9b01bddfa79145db2b6dfd
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

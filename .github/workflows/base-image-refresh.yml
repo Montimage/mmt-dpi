@@ -1,0 +1,172 @@
+name: Base image refresh
+
+# Digest-drift job for the container images CI pulls (issue #491,
+# F-DEP-202/F-DEP-201). Dependabot only sees images in Dockerfiles, so the
+# name:tag@sha256 pins recorded in tools/ci/base-images.txt are resolved here
+# instead: tools/ci/refresh-base-images.sh asks each registry for the digest
+# the tag points at today and whether the pinned digest still exists.
+#
+# Daily, not weekly: quay.io retags centos/centos:stream9 about weekly and
+# 404s the previous manifest at once (issues #587/#590), so a weekly diff
+# would leave the release build broken for up to a week.
+#
+# On drift or a missing digest the `drift` job fails (the visible signal) and
+# the `repin` job rewrites every drifted pin with --write. Those pins are
+# quoted in workflow files, and the built-in GITHUB_TOKEN can never push a
+# change under .github/workflows/ (it cannot be granted the `workflows`
+# scope), so the job proposes the repin one of two ways:
+#   - with the repository secret BASE_IMAGE_REFRESH_TOKEN set (a fine-grained
+#     token or GitHub App token with contents, pull-requests and workflows
+#     write on this repository) it force-pushes ci/base-image-refresh and
+#     opens or updates one pull request — which, unlike a GITHUB_TOKEN PR,
+#     also starts CI;
+#   - without it, it opens or updates one issue titled "Base image pins out
+#     of date" carrying the exact diff and the command to apply it.
+# Creating that secret is a maintainer decision; nothing here requires it.
+# An inconclusive check (a registry did not answer, exit 2) fails the drift
+# job without proposing anything — rerun the workflow.
+
+on:
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+
+# One refresh at a time; a dispatched run never races the scheduled one on
+# the shared repin branch or issue.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+# Least-privilege default (F-SEC-005): only the repin job gets a write scope.
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Resolve every pinned base image tag
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      rc: ${{ steps.check.outputs.rc }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Every recorded pin matches its upstream tag
+        id: check
+        continue-on-error: true
+        run: |
+          set +e
+          bash tools/ci/refresh-base-images.sh --check
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit "$rc"
+
+      - name: Fail on drift, a missing digest or an inconclusive check
+        if: steps.check.outputs.rc != '0'
+        env:
+          RC: ${{ steps.check.outputs.rc }}
+        run: |
+          if [ "$RC" = 1 ]; then
+            echo "::error title=base image drift::a pinned base image tag moved or its digest is gone upstream — see the step above; the repin job proposes the fix"
+          else
+            echo "::error title=base image check inconclusive::a registry did not answer or the helper broke (exit ${RC:-none}) — nothing proposed; rerun the workflow"
+          fi
+          exit 1
+
+  repin:
+    name: Propose the repin
+    needs: drift
+    if: always() && needs.drift.outputs.rc == '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read   # actions/checkout; the push uses the dedicated token
+      issues: write    # open or update the repin issue when there is none
+    env:
+      BRANCH: ci/base-image-refresh
+      HAS_REPIN_TOKEN: ${{ secrets.BASE_IMAGE_REFRESH_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ secrets.BASE_IMAGE_REFRESH_TOKEN || github.token }}
+          persist-credentials: ${{ secrets.BASE_IMAGE_REFRESH_TOKEN != '' }}
+
+      - name: Rewrite every drifted pin
+        run: |
+          set +e
+          bash tools/ci/refresh-base-images.sh --write > "$RUNNER_TEMP/repin.txt" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/repin.txt"
+          if git diff --quiet; then
+            echo "::error title=base image repin::no pin could be rewritten (exit $rc) — see the output above"
+            exit 1
+          fi
+          git diff > "$RUNNER_TEMP/repin.diff"
+          bash tools/ci/check-image-digests.sh
+
+      - name: Open or update the repin pull request
+        if: env.HAS_REPIN_TOKEN == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.BASE_IMAGE_REFRESH_TOKEN }}
+          BASE: ${{ github.event.repository.default_branch || 'main' }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git commit -qam "ci(images): repin drifted base images (#491)"
+          git push --force origin "$BRANCH"
+          {
+            echo "Automated repin from \`tools/ci/refresh-base-images.sh --write\` (issue #491)."
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/repin.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/body.md"
+          # Same-repository PRs only: a fork PR whose branch is also named
+          # ci/base-image-refresh must never have its body rewritten.
+          pr="$(gh pr list --head "$BRANCH" --state open --json number,isCrossRepository \
+                  --jq 'map(select(.isCrossRepository | not)) | .[0].number // empty')"
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --base "$BASE" --head "$BRANCH" \
+              --title "ci(images): repin drifted base images" \
+              --body-file "$RUNNER_TEMP/body.md"
+          fi
+
+      - name: Open or update the repin issue
+        if: env.HAS_REPIN_TOKEN != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          title="Base image pins out of date"
+          {
+            echo "The scheduled [base-image-refresh run]($RUN_URL) found drifted or garbage-collected base image pins (issue #491)."
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/repin.txt"
+            echo '```'
+            echo
+            echo "Apply with \`bash tools/ci/refresh-base-images.sh --write\` and open a pull request, or set the \`BASE_IMAGE_REFRESH_TOKEN\` secret (contents, pull-requests and workflows write) so this job opens it. The rewrite:"
+            echo
+            echo '```diff'
+            cat "$RUNNER_TEMP/repin.diff"
+            echo '```'
+          } > "$RUNNER_TEMP/body.md"
+          # Only an issue this job opened: anyone can file an issue with the
+          # same title, and its author could later rewrite the body the job
+          # put there (a forged "apply this diff").
+          issue="$(gh issue list --state open --limit 200 --author app/github-actions \
+                    --json number,title,author \
+                    --jq ".[] | select(.title == \"$title\" and .author.is_bot) | .number" | head -n1)"
+          if [ -n "$issue" ]; then
+            gh issue edit "$issue" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi
