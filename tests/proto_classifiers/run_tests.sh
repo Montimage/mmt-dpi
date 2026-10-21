@@ -2,7 +2,8 @@
 # run_tests.sh — crafted-input regression tests for three 1.8.0 classifier
 # fixes (issue #243, F-TEST-014): the syslog RFC 3164/5424 format split
 # (#80), the PTP-over-UDP classifier, and the DCERPC packet-type offset +
-# payload-threshold fix (#86). Each test pins the behaviour its fix added —
+# payload-threshold fix (#86). test_diameter_flags pins the Diameter command
+# flag decoding (issue #504). Each test pins the behaviour its fix added —
 # reverting the fix fails the suite.
 #
 # Each proto source is compiled into its own test binary (the per-protocol
@@ -29,12 +30,15 @@ INCS=(
     # fuzz-engine include dir for mmt_quality_estimation_utilities.h (same as
     # tests/core_engine).
     -I"${REPO_ROOT}/src/mmt_fuzz_engine"
+    # test_diameter_flags includes src/mmt_mobile/proto_diameter.c (#504).
+    -I"${REPO_ROOT}/src/mmt_mobile"
+    -I"${REPO_ROOT}/src/mmt_mobile/include"
 )
 
 echo "  repo root : ${REPO_ROOT}"
 
 rc=0
-for name in dcerpc_offset ptp_classify syslog_format; do
+for name in dcerpc_offset ptp_classify syslog_format diameter_flags; do
     src="${SCRIPT_DIR}/test_${name}.c"
     bin="${SCRIPT_DIR}/test_${name}"
     echo "  compiling test_${name} ..."

@@ -5,7 +5,12 @@
  *      Author: nhnghia
  */
 
+#include <stddef.h>
 #include "mmt_mobile_internal.h"
+
+//issue #504: the flags byte stays at offset 4 of the 20-byte wire header
+_Static_assert( sizeof( struct diameter_header ) == 20, "diameter_header must match the 20-byte wire header" );
+_Static_assert( offsetof( struct diameter_header, flags ) == 4, "Diameter command flags are byte 4 of the header" );
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
@@ -29,16 +34,16 @@ static int _extraction_att(const ipacket_t * ipacket, unsigned proto_index, attr
 		*((uint32_t *) extracted_data->data) = copy_4bytes_order(hdr->length, 3);
 		break;
 	case DIAMETER_FLAG_R:
-		*((uint8_t *) extracted_data->data) = hdr->flag_r;
+		*((uint8_t *) extracted_data->data) = DIAMETER_HDR_FLAG(hdr, DIAMETER_HDR_FLAG_R_MASK);
 		break;
 	case DIAMETER_FLAG_P:
-		*((uint8_t *) extracted_data->data) = hdr->flag_p;
+		*((uint8_t *) extracted_data->data) = DIAMETER_HDR_FLAG(hdr, DIAMETER_HDR_FLAG_P_MASK);
 		break;
 	case DIAMETER_FLAG_E:
-		*((uint8_t *) extracted_data->data) = hdr->flag_e;
+		*((uint8_t *) extracted_data->data) = DIAMETER_HDR_FLAG(hdr, DIAMETER_HDR_FLAG_E_MASK);
 		break;
 	case DIAMETER_FLAG_T:
-		*((uint8_t *) extracted_data->data) = hdr->flag_t;
+		*((uint8_t *) extracted_data->data) = DIAMETER_HDR_FLAG(hdr, DIAMETER_HDR_FLAG_T_MASK);
 		break;
 	case DIAMETER_COMMAND_CODE:
 		*((uint32_t *) extracted_data->data) = copy_4bytes_order( hdr->command_code, 3);

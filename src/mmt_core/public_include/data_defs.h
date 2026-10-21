@@ -44,7 +44,17 @@ typedef struct mmt_tcpip_internal_packet_struct mmt_tcpip_internal_packet_t;
 typedef struct protocol_struct                  protocol_t;
 typedef struct ipacket_struct                   ipacket_t;
 typedef struct proto_statistics_struct          proto_statistics_t;
-/* NOTE: Custom swab/ntohl overrides provide a consistent, header-independent byte-order implementation. */
+/*
+ * Byte order (issue #504, F-BUG-009): ntohl/ntohs/htonl/htons come from the
+ * system's <arpa/inet.h> — this header used to #undef them and redefine them
+ * as unconditional byte swaps that evaluated their argument more than once,
+ * which was wrong on big-endian hosts and for every consumer including it.
+ * swab16/swab32/swab64 stay unconditional byte swaps; ntohll is a no-op on
+ * big-endian hosts.
+ */
+#include <arpa/inet.h>  /* ntohl, ntohs, htonl, htons */
+#include <endian.h>     /* __BYTE_ORDER, __BIG_ENDIAN */
+
 /** Switches the order of bytes of a short int value */
 #define swab16(x) ((uint16_t)(                         \
       (((uint16_t)(x) & (uint16_t)0x00ffU) << 8) |            \
@@ -57,37 +67,18 @@ typedef struct proto_statistics_struct          proto_statistics_t;
       (((uint32_t)(x) & (uint32_t)0x00ff0000UL) >>  8) |      \
       (((uint32_t)(x) & (uint32_t)0xff000000UL) >> 24)))
 
-#undef ntohl
-#undef ntohs
-
-#define ntohl(x) swab32(x) /**< Redefinition of network to host byte ordering change of a long value (4 bytes)*/
-#define ntohs(x) swab16(x) /**< Redefinition of network to host byte ordering change of a short value (2 bytes)*/
-
-
-
 #ifndef ntohll
-/* Function to byteswap big endian 64bit unsigned integers
- * back to little endian host order on little endian machines.
- * As above, on big endian machines this will be a null macro.
- * The macro ntohll() is defined in byteorder64.h, and if needed,
- * refers to _ntohll() here.
- */
-
+/** Switches the order of bytes of a 64-bit value (always, whatever the host). */
 static inline uint64_t swab64(uint64_t x){
-	/* Structure used to swap the bytes in a 64-bit unsigned long long. */
-	union {
-		uint64_t a;
-		uint32_t b[2];
-	} u1, u2;
-
-	u1.a = x;
-	u2.b[1] = ntohl(u1.b[0]);
-	u2.b[0] = ntohl(u1.b[1]);
-
-	return u2.a;
+	return ((uint64_t)swab32((uint32_t)x) << 32) | swab32((uint32_t)(x >> 32));
 }
 
-#define ntohll swab64
+/** Network (big-endian) to host byte order of a 64-bit value; evaluates x once. */
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define ntohll(x) ((uint64_t)(x))
+#else
+#define ntohll(x) swab64(x)
+#endif
 #endif
 
 typedef uint64_t mmt_key_t;

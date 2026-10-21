@@ -47,16 +47,24 @@ int init_proto_nas_5g_struct();
 struct diameter_header {
 	uint8_t version        :  8; //0-7
 	uint32_t length        : 24; //9-31 ;//length of the Diameter message in bytes, including the header, always a multiple of 4 bytes
-	uint8_t flag_r         :  1; //32
-	uint8_t flag_p         :  1; //33
-	uint8_t flag_e         :  1; //34
-	uint8_t flag_t         :  1; //35
-	uint8_t padding        :  4; //  4 bit padding
+	/* Command flags byte (bits 32-39): R P E T r r r r, most significant
+	 * bit first. Kept whole and decoded with DIAMETER_HDR_FLAG() — C
+	 * bitfields are allocated LSB-first on little-endian GCC, so per-flag
+	 * bitfields in wire order read the reserved bits (issue #504, F-BUG-202). */
+	uint8_t flags;
 	uint32_t command_code  : 24;
 	uint32_t application_id: 32;
 	uint32_t hop_to_hop_id : 32;
 	uint32_t end_to_end_id : 32;
 } __PACKED;
+
+/* Diameter command flag masks within diameter_header.flags (RFC 6733 §3) */
+#define DIAMETER_HDR_FLAG_R_MASK 0x80 /* Request */
+#define DIAMETER_HDR_FLAG_P_MASK 0x40 /* Proxiable */
+#define DIAMETER_HDR_FLAG_E_MASK 0x20 /* Error */
+#define DIAMETER_HDR_FLAG_T_MASK 0x10 /* Potentially re-transmitted */
+/* 1 when the flag selected by mask is set in hdr->flags, else 0 */
+#define DIAMETER_HDR_FLAG(hdr, mask) ((uint8_t)(((hdr)->flags & (mask)) != 0))
 
 //https://www.etsi.org/deliver/etsi_ts/129200_129299/129274/12.06.00_60/ts_129274v120600p.pdf
 //page 20

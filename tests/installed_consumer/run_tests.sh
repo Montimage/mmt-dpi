@@ -11,6 +11,8 @@
 #   2. the script compiles the consumer against only the installed
 #      headers/libraries, then every vendored fixture must classify to its
 #      known label through the installed plugins;
+#      the installed headers leave ntohl/ntohs to <arpa/inet.h> and a
+#      consumer gets single-evaluation, host-correct byte order (#504);
 #   3. failure legs: a missing required plugin, an absent ENABLESEC engine,
 #      a wrong expected label and an unregistered required protocol must all
 #      make the script fail (acceptance criterion 2);
@@ -79,6 +81,24 @@ fi
 echo "  [2/4] installed consumer over the installed prefix"
 check "installed consumer passes on the installed prefix" \
     bash "${DRIVER}" --prefix "${PREFIX}" --distro suite-local
+
+# Byte order (issue #504, F-BUG-009): the installed public headers must not
+# override ntohl/ntohs, and a consumer including mmt_core.h then
+# <arpa/inet.h> must get single-evaluation, host-correct byte-order macros —
+# at -O0 (glibc's out-of-line ntohl) and -O2 (its inline bswap).
+check_fail "installed headers carry no ntohl/ntohs override" \
+    grep -rn 'undef ntoh' "${PREFIX}/dpi/include"
+read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
+byte_order_consumer() {
+    local opt="$1" bin="${WORK}/byte_order$1"
+    "${CC:-gcc}" "${extra_cflags[@]}" "${opt}" -Wall -Wextra -o "${bin}" \
+        "${SCRIPT_DIR}/test_byte_order.c" \
+        -I "${PREFIX}/dpi/include" -L "${PREFIX}/dpi/lib" -lmmt_core -ldl -lpcap \
+        && LD_LIBRARY_PATH="${PREFIX}/dpi/lib" "${bin}"
+}
+for opt in -O0 -O2; do
+    check "byte-order consumer compiles and passes (${opt})" byte_order_consumer "${opt}"
+done
 
 # Provenance: a real file is hashed and every log line is tagged.
 : > "${WORK}/mmt-dpi_test.deb"
