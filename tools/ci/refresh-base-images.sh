@@ -15,7 +15,10 @@
 #            — every job that pulls the pin now fails
 # A repin target must be an index that covers linux/amd64 and linux/arm64
 # (the arm64 release leg runs natively, issue #421); a tag that resolves to
-# anything narrower is reported as a violation and never written.
+# anything narrower is reported as a violation and never written. An entry
+# whose image is only ever pulled on amd64 runners and has no arm64 build
+# upstream (archlinux, issue #493) narrows its own requirement with a
+# trailing `# platforms: linux/amd64` comment on its baseline line.
 #
 # Modes:
 #   --check (default)  report; exit 1 on any drift, missing digest or
@@ -77,6 +80,7 @@ mode, baseline_path = sys.argv[1], sys.argv[2]
 inspect_cmd = os.environ.get("IMAGE_INSPECT")
 REQUIRED = ("linux/amd64", "linux/arm64")
 PIN = re.compile(r'^(?P<name>[^\s@]+):(?P<tag>[^\s:@/]+)@(?P<digest>sha256:[0-9a-f]{64})$')
+PLATFORMS = re.compile(r'platforms:\s*([A-Za-z0-9/_,\s-]+)')
 
 
 class Unreachable(Exception):
@@ -117,7 +121,8 @@ def inspect(ref):
 
 entries = []
 for no, raw in enumerate(open(baseline_path, encoding="utf-8"), 1):
-    line = raw.split("#", 1)[0].strip()
+    line, _, comment = raw.partition("#")
+    line = line.strip()
     if not line or line.startswith("digest-source"):
         continue
     m = PIN.match(line)
@@ -125,13 +130,16 @@ for no, raw in enumerate(open(baseline_path, encoding="utf-8"), 1):
         print(f"✗ {baseline_path}:{no}: not name:tag@sha256:<digest>: {line}",
               file=sys.stderr)
         sys.exit(2)
-    entries.append(m)
+    pm = PLATFORMS.search(comment)
+    required = (tuple(p.strip() for p in pm.group(1).split(",") if p.strip())
+                if pm else REQUIRED)
+    entries.append((m, required))
 if not entries:
     print(f"✗ {baseline_path} records no image", file=sys.stderr)
     sys.exit(2)
 
 violations, repins, unreachable = 0, {}, 0
-for m in entries:
+for m, required in entries:
     name, tag, pinned = m["name"], m["tag"], m["digest"]
     old = m.group(0)
     try:
@@ -148,7 +156,7 @@ for m in entries:
         unreachable += 1
         continue
     digest, platforms = current
-    lacking = [p for p in REQUIRED if p not in platforms]
+    lacking = [p for p in required if p not in platforms]
     if digest == pinned:
         print(f"  ✓ ok       {old}")
         continue

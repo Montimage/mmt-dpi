@@ -142,6 +142,11 @@ NO_FEED_REASON = ("CentOS Stream publishes no security advisories "
 # release runtime: nothing the packages ship runs on them.
 EXCLUDED_IMAGES = {
     "buildpack-deps": "CI tooling image (the asn1c regeneration gate container), not a release runtime",
+    # Install smoke matrix only (issue #493): no package ships for these.
+    "quay.io/fedora/fedora": "install-smoke target (issue #493), not a release runtime",
+    "registry.opensuse.org/opensuse/leap": "install-smoke target (issue #493), not a release runtime",
+    "alpine": "install-smoke target (issue #493), not a release runtime",
+    "archlinux": "install-smoke target (issue #493), not a release runtime",
 }
 
 SEV_ORDER = ["NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
@@ -678,8 +683,9 @@ def parse_actions(files):
 
 
 def parse_base_images(text):
-    return [ln.strip() for ln in text.splitlines()
-            if ln.strip() and not ln.startswith("#") and not ln.startswith("digest-source:")]
+    # Trailing comments (`# platforms: linux/amd64`, issue #493) are dropped.
+    lines = (ln.split("#", 1)[0].strip() for ln in text.splitlines())
+    return [ln for ln in lines if ln and not ln.startswith("digest-source:")]
 
 
 def distro_of(image):
@@ -1199,6 +1205,10 @@ def self_test():
     check("tooling image excluded", distro_of("buildpack-deps:bookworm@sha256:ab") is None
           and excluded_reason("buildpack-deps:bookworm@sha256:ab") is not None
           and excluded_reason("debian:12@sha256:ab") is None)
+    smoke = parse_base_images("# c\ndigest-source: x\n"
+                              "archlinux:base@sha256:ab  # platforms: linux/amd64\n")
+    check("annotated smoke image parsed and excluded",
+          smoke == ["archlinux:base@sha256:ab"] and excluded_reason(smoke[0]) is not None)
     check("version order", vcmp("2.9.0", "2.9.1") < 0 and vcmp("1.0", "1.0.0") == 0
           and vcmp("1.0.a", "1.0") < 0 and vcmp("0.10.0", "0.9.9") > 0)
     check("range", in_range("2.9.0", ">= 2.5.0, <= 2.9.0") and not in_range("2.9.1", ">= 2.5.0, <= 2.9.0")

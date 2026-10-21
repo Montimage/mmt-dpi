@@ -69,6 +69,43 @@ Release order:
    which writes `RELEASE_TAG` and `RELEASE_TAG_SHA` from the peeled tag
    (`git rev-parse vx.y.z^{commit}`, never the annotated tag object), then
    update the README/site mentions.
+4. Once that follow-up PR is merged, the published one-liner installs the
+   new tag: run the **Install smoke** workflow
+   (`.github/workflows/install-smoke.yml`, *Run workflow*, `source:
+   published`) and check that every `supported` leg passed. The workflow
+   also runs by itself after the tag run and weekly, but the run after the
+   tag still exercises the previous pin until step 3 lands. A failing
+   supported leg on a scheduled or post-release run opens (or comments on)
+   an issue titled `Install smoke matrix failing`.
+
+### Cutting v1.9.1 (issue #493)
+
+`VERSION` is already `1.9.1` and `CHANGELOG.md` opens with
+`Version 1.9.1 (unreleased)` (#483, #592), while `install.sh` still pins
+`v1.9.0`. Neither the date nor the repin can land before the tag exists:
+`--write-pin` needs the tag's peeled commit. In order:
+
+1. **Date the changelog.** A PR replacing `(unreleased)` with the release
+   date in `CHANGELOG.md`; merge it once `version-agreement` is green.
+2. **Tag that merged commit on `main`:**
+   `git fetch origin main && git tag -a v1.9.1 -m "MMT-DPI 1.9.1" origin/main`,
+   then `git merge-base --is-ancestor v1.9.1 origin/main && echo "on main"`.
+3. **Push the tag:** `git push origin v1.9.1`. This starts
+   `release-packages.yml`; do not create the Release by hand.
+4. **Check the tag run:** `verify-tag`, `release-gates` and
+   `Publish GitHub Release` all succeeded (none skipped);
+   `gh release view v1.9.1 --json assets --jq '.assets | length'` is at
+   least 12 (10 packages, `SHA256SUMS`, the SBOM); and
+   `gh attestation verify mmt-dpi_*_ubuntu-24.04_x86_64.deb --repo montimage-projects/mmt-dpi`
+   passes on a downloaded `.deb`.
+5. **Repin the installer** in a follow-up PR:
+   `bash tools/ci/check-release-tag.sh --write-pin v1.9.1`, then update
+   `Current release: [v1.9.1]` and `` pinned release tag (`v1.9.1`) `` in
+   `README.md` / `docs/_includes/quick-start.md` (then
+   `bash tools/ci/check-doc-includes.sh --write`) and the hero eyebrow in
+   `docs/index.html`; `bash scripts/validate-release-prep.sh` must pass.
+6. **Run the smoke matrix** against the published one-liner once that PR is
+   merged (step 4 of *Release order* above).
 
 ## Verify the classification
 

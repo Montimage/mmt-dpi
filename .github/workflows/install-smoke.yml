@@ -1,0 +1,188 @@
+name: Install smoke
+
+# One-command install smoke matrix (issue #493, F-CI-113).
+#
+# README and the docs advertise a one-line install (`curl -fsSL … | bash`)
+# and a landing-page first run (docs/_includes/first-example.md); install.sh
+# carries a package-manager branch per advertised distribution family. This
+# workflow runs both, end to end, in a fresh container per distribution the
+# docs name, with LD_LIBRARY_PATH unset: tools/ci/smoke-install.sh installs
+# the one-liner's own prerequisites (curl, bash), pipes the installer into
+# bash, then runs the three displayed first-run steps in an empty directory
+# and compares the output with the displayed one.
+#
+# Source of the installer (tools/ci/smoke-install.sh --source):
+#   pull_request        local — install.sh is read from the PR checkout over a
+#                       file:// URL (the published script is never fetched)
+#                       and its clone is redirected to the checkout, so the
+#                       PR's installer builds the PR's SDK
+#   schedule, release,  published — the README one-liner verbatim: main's
+#   workflow_run        install.sh from raw.githubusercontent.com, which
+#                       clones and verifies the pinned release tag, and the
+#                       first-run files from the documentation site
+#   workflow_dispatch   either (input `source`, default published)
+#
+# Tiers: `supported` legs must pass; `best-effort` legs (distributions the
+# docs label best-effort — README "Supported Platforms") run their smoke step
+# with continue-on-error, so a regression there is a warning, never red.
+#
+# Not a required check: the pull_request trigger is path-filtered, so it does
+# not report on every PR (tools/ci/check-required-checks.sh, issue #490).
+
+on:
+  pull_request:
+    paths:
+      - install.sh
+      - dist/ZIP/mmt-install-common.sh
+      - sdk/Makefile
+      - docs/first-run/**
+      - docs/_includes/first-example.md
+      - tools/ci/smoke-install.sh
+      - .github/workflows/install-smoke.yml
+  schedule:
+    - cron: "17 5 * * 1"          # weekly, Monday 05:17 UTC
+  # After every published release. A release created by the release workflow
+  # with GITHUB_TOKEN raises no `release` event (GitHub suppresses events
+  # caused by that token), so the completed tag run is the trigger that
+  # fires; `release: published` covers a release published by a person.
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["Build & release packages"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "published = the README one-liner; local = this ref's install.sh and SDK"
+        type: choice
+        options: [published, local]
+        default: published
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Least-privilege default (F-SEC-005): only the report job writes (issues).
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: ${{ matrix.name }} (${{ matrix.tier }})
+    # workflow_run: only a successful tag run of the release workflow (its
+    # pull_request and workflow_dispatch runs publish nothing).
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Every image is digest-pinned and recorded in
+          # tools/ci/base-images.txt (check-image-digests.sh, refreshed daily
+          # by base-image-refresh.yml).
+          - { name: ubuntu-22.04, tier: supported, image: "ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7" }
+          - { name: ubuntu-24.04, tier: supported, image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254" }
+          - { name: debian-12, tier: supported, image: "debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443" }
+          - { name: rocky-9, tier: supported, image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6" }
+          - { name: centos-stream9, tier: supported, image: "quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c" }
+          - { name: fedora-44, tier: supported, image: "quay.io/fedora/fedora:44@sha256:12151022b0ec7cb4d70ae14e4a4d319377323265d7198b69dd53ec92713198d5" }
+          - { name: opensuse-leap-16.0, tier: supported, image: "registry.opensuse.org/opensuse/leap:16.0@sha256:230a53aa81c3d1e4318ba8c73a942f0f330383c229ae64dd116d4fee1a6a16ab" }
+          # Best-effort: Arch is rolling (no arm64 image upstream); Alpine is
+          # musl, which the SDK does not build on today.
+          - { name: archlinux, tier: best-effort, image: "archlinux:base@sha256:e43f1fd80e073992c5f173efbbbf65144170bf60aeb7369940087d63eacea8f4" }
+          - { name: alpine-3.23, tier: best-effort, image: "alpine:3.23@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select the installer source
+        id: source
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_SOURCE: ${{ inputs.source }}
+        run: |
+          case "$EVENT" in
+            pull_request)      source=local ;;
+            workflow_dispatch) source="${INPUT_SOURCE:-published}" ;;
+            *)                 source=published ;;
+          esac
+          echo "source=$source" >> "$GITHUB_OUTPUT"
+          # local: the installer clones this branch from the checkout.
+          if [ "$source" = local ]; then git branch -f install-smoke HEAD; fi
+          echo "Installer source: $source"
+
+      - name: One-command install + first run in ${{ matrix.name }}
+        id: smoke
+        # Step-level, so a best-effort failure leaves the job (and the report
+        # job's needs.smoke.result) green while the step still shows red.
+        continue-on-error: ${{ matrix.tier == 'best-effort' }}
+        # Below the job's 45 minutes, so a hung best-effort leg times out
+        # here, where continue-on-error absorbs it, not as a red job.
+        timeout-minutes: 40
+        env:
+          IMAGE: ${{ matrix.image }}
+          SOURCE: ${{ steps.source.outputs.source }}
+        run: |
+          args=(--source "$SOURCE")
+          [ "$SOURCE" = local ] && args+=(--ref install-smoke)
+          # bash is not in every base image (Alpine): add it before the
+          # script, which needs it to run at all.
+          docker run --rm -e JOBS=4 -v "$PWD":/work:ro -w /work "$IMAGE" \
+            sh -c '[ -x /bin/bash ] || apk add --no-cache bash >/dev/null; exec bash tools/ci/smoke-install.sh "$@"' \
+            _ "${args[@]}"
+
+      - name: Record the verdict
+        if: always()
+        env:
+          NAME: ${{ matrix.name }}
+          TIER: ${{ matrix.tier }}
+          SOURCE: ${{ steps.source.outputs.source }}
+          OUTCOME: ${{ steps.smoke.outcome }}
+        run: |
+          echo "| $NAME | $TIER | $SOURCE | $OUTCOME |" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$TIER" = best-effort ] && [ "$OUTCOME" != success ]; then
+            echo "::warning title=best-effort distribution failed::$NAME: the one-command install or first run failed ($OUTCOME) — labelled best-effort in README, not gating"
+          fi
+
+  report:
+    name: Report a failing supported distribution
+    needs: smoke
+    # Scheduled and post-release runs only: a pull request shows its own red.
+    if: >-
+      always() && needs.smoke.result == 'failure' &&
+      github.event_name != 'pull_request' && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write    # open or update the tracking issue
+    steps:
+      - name: Open or update the install smoke issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          title="Install smoke matrix failing"
+          {
+            echo "The [install smoke run]($RUN_URL) (\`$EVENT\`) failed on at least one **supported** distribution (issue #493)."
+            echo
+            echo "The README one-liner or the landing-page first run no longer works there. Open the run for the failing leg's log, and reproduce it by running \`bash tools/ci/smoke-install.sh --source published\` as root in that leg's pinned image (the matrix in \`.github/workflows/install-smoke.yml\`), with this checkout mounted."
+          } > "$RUNNER_TEMP/body.md"
+          # Only an issue this job opened: anyone can file an issue with the
+          # same title, and its author could later rewrite the body (#598).
+          issue="$(gh issue list --state open --limit 200 --author app/github-actions \
+                    --json number,title,author \
+                    --jq ".[] | select(.title == \"$title\" and .author.is_bot) | .number" | head -n1)"
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi

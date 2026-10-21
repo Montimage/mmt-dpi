@@ -25,6 +25,7 @@
 #   tag moved, old digest still served (drift)                 -> 1
 #   tag moved, old digest gone (missing — the quay.io case)    -> 1
 #   new digest lacks linux/arm64                               -> 1, not written
+#   ... unless the entry says `# platforms: linux/amd64`       -> 0, written
 #   tag does not resolve at all                                -> 2
 #   registry error on the pinned digest (not "not found")      -> 2, not missing
 #   --write repins baseline + workflow, then both gates pass   -> 0
@@ -221,6 +222,16 @@ expect 1 "repin target without linux/arm64 is refused" refresh --write
 expect_out "names the missing platform" "lacks linux/arm64"
 expect 1 "refused repin left the baseline untouched" \
     grep -q "centos:stream9@${C}" "${FX}/tools/ci/base-images.txt"
+
+# An amd64-only entry (archlinux, issue #493) narrows its own requirement.
+sed -i "s|^\(quay.io/centos/centos:stream9@${B}\)\$|\1  # platforms: linux/amd64|" \
+    "${FX}/tools/ci/base-images.txt"
+expect 0 "an entry annotated platforms: linux/amd64 repins an amd64-only index" \
+    refresh --write
+expect 0 "the annotated entry carries the new pin" \
+    grep -q "^quay.io/centos/centos:stream9@${C}  # platforms: linux/amd64\$" \
+    "${FX}/tools/ci/base-images.txt"
+reset_fixture
 
 reset_registry
 rm "$(regfile "ubuntu:24.04")"

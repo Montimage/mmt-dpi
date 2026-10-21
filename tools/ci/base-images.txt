@@ -4,8 +4,9 @@
 # Every non-comment line is the exact image reference a workflow consumes:
 # the build matrix in .github/workflows/release-packages.yml (which greps
 # this file for its matrix pin before building), the root-install job of
-# .github/workflows/c-cpp.yml and the asn1c gate container of
-# .github/workflows/asn1c-regen.yml. tools/ci/check-image-digests.sh scans
+# .github/workflows/c-cpp.yml, the asn1c gate container of
+# .github/workflows/asn1c-regen.yml and the per-distribution install smoke
+# matrix of .github/workflows/install-smoke.yml (issue #493). tools/ci/check-image-digests.sh scans
 # every workflow and fails when an image is floating, unrecorded here, or
 # recorded here but unused, so the two cannot drift apart silently.
 #
@@ -20,7 +21,10 @@
 #
 # Pins are name:tag@sha256:<index-digest>; the index digest must cover both
 # linux/amd64 and linux/arm64 (the arm64 matrix leg runs natively on the
-# ubuntu-24.04-arm runner, issue #421).
+# ubuntu-24.04-arm runner, issue #421). An image with no arm64 build upstream,
+# pulled only on amd64 runners (archlinux: the install smoke matrix), says so
+# with a trailing `# platforms: linux/amd64`, which refresh-base-images.sh
+# honours instead.
 # Refresh every pin with: bash tools/ci/refresh-base-images.sh --write
 # Refresh a single pin with:
 digest-source: docker buildx imagetools inspect <image>:<tag>
@@ -30,3 +34,10 @@ debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a0144
 rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6
 quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c
 buildpack-deps:bookworm@sha256:b22578185ebfdbd9a4050f697638b9c9696b70616d9b01bddfa79145db2b6dfd
+# Install smoke matrix only (issue #493): the advertised distributions outside
+# the release matrix. quay.io / registry.opensuse.org where upstream publishes
+# there, to stay clear of Docker Hub pull limits.
+quay.io/fedora/fedora:44@sha256:12151022b0ec7cb4d70ae14e4a4d319377323265d7198b69dd53ec92713198d5
+registry.opensuse.org/opensuse/leap:16.0@sha256:230a53aa81c3d1e4318ba8c73a942f0f330383c229ae64dd116d4fee1a6a16ab
+alpine:3.23@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
+archlinux:base@sha256:e43f1fd80e073992c5f173efbbbf65144170bf60aeb7369940087d63eacea8f4  # platforms: linux/amd64

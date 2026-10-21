@@ -4,4 +4,4 @@
 - **Extensible Plugin Architecture** - Add new protocol support via modular plugins
 - **Wide Protocol Coverage** - TCP/IP stack, HTTP/HTTP2, QUIC (RFC 9000), DNS, FTP, DTLS, GTP, MQTT, OSPF, RADIUS, DICOM, syslog (RFC 3164/5424), PTP, and more
 - **5G/LTE Mobile Protocols** - NAS, S1AP, NGAP, GTPv2, Diameter for mobile network monitoring
-- **Linux-Based** - Supports major Linux distributions (Debian/Ubuntu, Fedora/RHEL, Arch, Alpine, openSUSE)
+- **Linux-Based** - Supports major Linux distributions (Debian/Ubuntu, Rocky Linux/CentOS Stream, Fedora, openSUSE; Arch, Alpine and RHEL best-effort)
