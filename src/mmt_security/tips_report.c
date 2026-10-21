@@ -614,19 +614,21 @@ void store_tuples( verify_ctx_t *ctx, enum_operation_type context, rule *curr_ru
                     temp_tuple->protocol_id, temp_tuple->field_id);
             //exit(-1);
         } else {
-            temp_tuple->data_size = get_data_size_by_proto_and_field_ids(temp_tuple->protocol_id, temp_tuple->field_id);
+            /* a pointer-typed attribute's datum is the NUL-terminated string
+             * itself (#326). Its storage belongs to the packet or session —
+             * released when the next packet starts (#506) — so the tuple
+             * keeps a copy of the string, terminator included, not the
+             * pointer: a reference outlives the packet it came from. */
+            if (temp_tuple->data_type_id == MMT_STRING_DATA_POINTER)
+                temp_tuple->data_size = (int) (strlen((const char *) data) + 1);
+            else
+                temp_tuple->data_size = get_data_size_by_proto_and_field_ids(temp_tuple->protocol_id, temp_tuple->field_id);
             temp_tuple->valid = FOUND;
             temp_tuple->data = (void *) xmalloc(temp_tuple->data_size);
             if (temp_tuple->data == NULL) {
                 return;
             }
-            /* a pointer-typed attribute's datum is the pointer itself —
-             * store the pointer value so references can compare the
-             * pointed-to string (#326) */
-            if (temp_tuple->data_type_id == MMT_STRING_DATA_POINTER)
-                memcpy(temp_tuple->data, &data, temp_tuple->data_size);
-            else
-                memcpy(temp_tuple->data, data, temp_tuple->data_size);
+            memcpy(temp_tuple->data, data, temp_tuple->data_size);
         }
         temp_tuple = temp_tuple->next;
     }

@@ -1442,6 +1442,7 @@ void flush_deferred_attribute_frees(mmt_handler_t *mmt_handler) {
 
 void free_registered_extraction_attributes(mmt_handler_t *mmt_handler) {
     flush_deferred_attribute_frees(mmt_handler);
+    mmt_packet_scratch_destroy(mmt_handler); // issue #506: adopted attribute values
     for (int i = 0; i < PROTO_MAX_IDENTIFIER; i++) {
         attribute_internal_t ** attrs = mmt_handler->proto_registered_attributes[i];
         uint32_t n = mmt_handler->proto_registered_attributes_len[i];

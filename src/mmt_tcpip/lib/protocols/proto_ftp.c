@@ -984,6 +984,16 @@ char * ftp_get_command_param(char* payload, int payload_len) {
     return NULL;
 }
 
+/* Issue #506: ftp_get_command_str() returns a heap string on every path so
+ * its caller can free it (the extractor hands it to the handler). */
+static char * ftp_unknown_command(void){
+    char * command = (char*)malloc(sizeof("UNKNOWN_CMD"));
+    if (command != NULL) {
+        memcpy(command, "UNKNOWN_CMD", sizeof("UNKNOWN_CMD"));
+    }
+    return command;
+}
+
 char * ftp_get_command_str(char* payload, int payload_len){
     char * command = NULL;
 
@@ -1007,7 +1017,7 @@ char * ftp_get_command_str(char* payload, int payload_len){
         command[3] = '\0';
     } else {
         if (!mmt_int_check_possible_ftp_command(payload, payload_len)) {
-            command = "UNKNOWN_CMD";
+            command = ftp_unknown_command();
         }else{
             if (payload_len >= 4 && payload[3] == ' ') {
                 command = (char*)malloc(4);
@@ -1029,7 +1039,7 @@ char * ftp_get_command_str(char* payload, int payload_len){
                 /* Possible command whose verb is not 3/4 letters + space
                  * (e.g. a bare "ABC") — report it, mirroring the
                  * not-a-command branch above (#206). */
-                command = "UNKNOWN_CMD";
+                command = ftp_unknown_command();
             }
         }
     }
@@ -2764,7 +2774,8 @@ int ftp_packet_request_extraction(const ipacket_t * ipacket, unsigned proto_inde
             return 0;
         }
         char * ret = ftp_get_command_str(payload,payload_len);
-        if(ret){
+        /* Issue #506: the handler owns the string until the next packet. */
+        if(mmt_packet_scratch_adopt(ipacket, ret, free)){
             extracted_data->data = (void*)ret;
             return 1;
         }
@@ -2789,7 +2800,8 @@ int ftp_packet_request_parameter_extraction(const ipacket_t * ipacket, unsigned 
             return 0;
         }
         char * ret = ftp_get_command_param(payload,payload_len);
-        if(ret){
+        /* Issue #506: the handler owns the string until the next packet. */
+        if(mmt_packet_scratch_adopt(ipacket, ret, free)){
             extracted_data->data = (void*)ret;
             return 1;
         }
@@ -2836,7 +2848,8 @@ int ftp_packet_response_value_extraction(const ipacket_t * ipacket, unsigned pro
             return 0;
         }
         char * ret = ftp_get_response_value(payload,payload_len);
-        if(ret){
+        /* Issue #506: the handler owns the string until the next packet. */
+        if(mmt_packet_scratch_adopt(ipacket, ret, free)){
             extracted_data->data = (void*)ret;
             return 1;
         }

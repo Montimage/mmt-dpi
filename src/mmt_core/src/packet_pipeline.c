@@ -1515,6 +1515,8 @@ bool packet_process(mmt_handler_t *mmt, struct pkthdr *header, const u_char * pa
     //Testing packet header and data integrity
     if (likely(header && packet)){
         if (likely(header->caplen > 0  && header->len > 0 && header->len >= header->caplen && header->caplen <= 65535)){
+            /* Issue #506: the previous packet's adopted attribute values die here. */
+            if (mmt->packet_scratch_head != NULL) mmt_packet_scratch_release(mmt);
             mmt->process_packet(mmt,header,packet);
             return 1;
         }
@@ -1559,3 +1561,60 @@ void generic_data_extraction(unsigned protocol_index, ipacket_t * ipacket) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Issue #506 (F-PERF-103, F-PERF-109): per-packet scratch ownership for
+ * attribute values that live on the heap. The DNS, FTP and NDN extractors
+ * returned malloc()ed objects through attribute_t.data that nothing freed —
+ * a leak on every read. They now hand each value to the handler, which
+ * releases it when the next packet starts (packet_process()) or the handler
+ * closes. The records are bump-allocated from a per-handler arena created on
+ * first use, so a handler that never reads such an attribute pays nothing and
+ * one that does allocates no record memory once the arena has warmed up. */
+struct mmt_packet_scratch_entry_struct {
+    mmt_opaque_t value;
+    mmt_packet_scratch_release_function release;
+    struct mmt_packet_scratch_entry_struct * next;
+};
+
+#define MMT_PACKET_SCRATCH_BLOCK 1024 /* 32 aligned records per arena block */
+
+bool mmt_packet_scratch_adopt(const ipacket_t *ipacket, mmt_opaque_t value,
+        mmt_packet_scratch_release_function release) {
+    if (value == NULL || release == NULL) return false;
+    mmt_handler_t * mmt_handler = (ipacket != NULL) ? ipacket->mmt_handler : NULL;
+    if (mmt_handler == NULL) {
+        release(value);
+        return false;
+    }
+    if (mmt_handler->packet_scratch == NULL) {
+        mmt_handler->packet_scratch = mmt_arena_create(MMT_PACKET_SCRATCH_BLOCK);
+    }
+    struct mmt_packet_scratch_entry_struct * entry = (struct mmt_packet_scratch_entry_struct *)
+            mmt_arena_alloc(mmt_handler->packet_scratch, sizeof(*entry));
+    if (entry == NULL) {
+        release(value);
+        return false;
+    }
+    entry->value = value;
+    entry->release = release;
+    entry->next = mmt_handler->packet_scratch_head;
+    mmt_handler->packet_scratch_head = entry;
+    return true;
+}
+
+void mmt_packet_scratch_release(mmt_handler_t *mmt_handler) {
+    struct mmt_packet_scratch_entry_struct * entry = mmt_handler->packet_scratch_head;
+    mmt_handler->packet_scratch_head = NULL;
+    while (entry != NULL) {
+        struct mmt_packet_scratch_entry_struct * next = entry->next;
+        entry->release(entry->value);
+        entry = next;
+    }
+    mmt_arena_reset(mmt_handler->packet_scratch);
+}
+
+void mmt_packet_scratch_destroy(mmt_handler_t *mmt_handler) {
+    mmt_packet_scratch_release(mmt_handler);
+    mmt_arena_destroy(mmt_handler->packet_scratch);
+    mmt_handler->packet_scratch = NULL;
+}

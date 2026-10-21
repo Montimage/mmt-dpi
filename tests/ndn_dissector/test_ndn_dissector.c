@@ -57,6 +57,35 @@ void fire_attribute_event(ipacket_t *ipacket, uint32_t proto_id,
 	(void) data;
 }
 
+/* Issue #506: the extractors hand their heap strings to the handler
+ * (mmt_packet_scratch_adopt). The stub plays the handler: it keeps what it
+ * adopted until scratch_release() — the next-packet release. */
+#define SCRATCH_MAX 64
+static void *scratch_values[SCRATCH_MAX];
+static mmt_packet_scratch_release_function scratch_fns[SCRATCH_MAX];
+static int scratch_n;
+static int scratch_adopted;
+
+bool mmt_packet_scratch_adopt(const ipacket_t *ipacket, mmt_opaque_t value,
+		mmt_packet_scratch_release_function release) {
+	if (value == NULL || release == NULL) return false;
+	if (ipacket == NULL || ipacket->mmt_handler == NULL || scratch_n == SCRATCH_MAX) {
+		release(value);
+		return false;
+	}
+	scratch_values[scratch_n] = value;
+	scratch_fns[scratch_n++] = release;
+	scratch_adopted++;
+	return true;
+}
+
+static void scratch_release(void) {
+	while (scratch_n > 0) {
+		scratch_n--;
+		scratch_fns[scratch_n](scratch_values[scratch_n]);
+	}
+}
+
 /* ---- helpers ---- */
 
 /* Heap buffer holding exactly `len` payload bytes plus a trailing NUL: the
@@ -523,9 +552,12 @@ static void test_ipacket_extraction(void) {
 	CHECK(ndn_interest_lifetime_extraction(&f.pkt, 2, &attr) == 0,
 			"absent lifetime via ipacket -> 0");
 	memset(&attr, 0, sizeof(attr)); attr.data = NULL;
+	scratch_adopted = 0;
 	CHECK(ndn_name_components_extraction(&f.pkt, 2, &attr) == 1
-			&& attr.data != NULL, "name components extracted");
-	free(attr.data);
+			&& attr.data != NULL && scratch_adopted == 1
+			&& scratch_values[0] == attr.data,
+			"name components extracted and adopted by the handler");
+	scratch_release();
 	memset(&attr, 0, sizeof(attr)); attr.data = &iv;
 	CHECK(ndn_interest_min_suffix_component_extraction(&f.pkt, 2, &attr) == 0,
 			"absent min-suffix via ipacket -> 0");
@@ -545,13 +577,11 @@ static void test_ipacket_extraction(void) {
 	ndn_data_signature_type_extraction(&f.pkt, 2, &attr);
 	memset(&attr, 0, sizeof(attr)); attr.data = NULL;
 	ndn_data_content_extraction(&f.pkt, 2, &attr);
-	free(attr.data);
 	memset(&attr, 0, sizeof(attr)); attr.data = NULL;
 	ndn_data_key_locator_extraction(&f.pkt, 2, &attr);
-	free(attr.data);
 	memset(&attr, 0, sizeof(attr)); attr.data = NULL;
 	ndn_data_signature_value_extraction(&f.pkt, 2, &attr);
-	free(attr.data);
+	scratch_release();
 	fixture_free(&f);
 
 	/* proto_index != 2: NDN over TCP, payload_len from internal_packet */
@@ -729,12 +759,59 @@ static void test_sessions(void) {
 	}
 }
 
+/* Issue #506: error exits that used to leak the parsed TLV nodes (the
+ * leak itself is caught by tools/phase0/tests/run_leak_regression_test.sh;
+ * here the verdicts stay what they were). */
+static void test_issue506_error_exits(void) {
+	/* Data packet holding only a name: no content, key locator or
+	 * signature value. */
+	uint8_t bare[] = { 0x06, 0x0D, 0x07, 0x0B, 0x08, 0x04, 't', 'e', 's',
+		't', 0x08, 0x03, 'a', 'b', 'c' };
+	/* Interest whose exclude filter holds a nonce TLV, not name components. */
+	uint8_t bad_exclude[] = { 0x05, 0x1A,
+		0x07, 0x0B, 0x08, 0x04, 't', 'e', 's', 't', 0x08, 0x03, 'a', 'b', 'c',
+		0x09, 0x05, 0x10, 0x03, 0x0A, 0x01, 0x00,
+		0x0A, 0x04, 0x01, 0x02, 0x03, 0x04 };
+	char *p = dup_payload(bare, sizeof(bare));
+	CHECK(ndn_data_content_extraction_payload(p, sizeof(bare)) == NULL,
+			"Data without content -> NULL");
+	CHECK(ndn_data_key_locator_extraction_payload(p, sizeof(bare)) == NULL,
+			"Data without signature info -> NULL");
+	CHECK(ndn_data_signature_value_extraction_payload(p, sizeof(bare)) == NULL,
+			"Data without signature value -> NULL");
+	free(p);
+
+	p = dup_payload(bad_exclude, sizeof(bad_exclude));
+	/* the exclude value starts at offset 19: a nonce (0x0A) TLV */
+	CHECK(ndn_TLV_parser_name_comp(p, sizeof(bad_exclude), 19, 3) == NULL,
+			"non-name-component TLV -> NULL");
+	CHECK(mmt_check_ndn_payload(p, sizeof(bad_exclude)) == 1,
+			"well-formed Interest accepted (root released)");
+	free(p);
+
+	uint8_t frame[14 + sizeof(bad_exclude)];
+	int layers[3] = { 0, 0, 14 };
+	int protos[3] = { 1, 99, PROTO_NDN };
+	ndn_fixture_t f;
+	attribute_t attr;
+	memset(frame, 0, 14);
+	memcpy(frame + 14, bad_exclude, sizeof(bad_exclude));
+	fixture_init(&f, layers, protos, 3, frame, sizeof(frame));
+	memset(&attr, 0, sizeof(attr));
+	scratch_adopted = 0;
+	CHECK(ndn_interest_exclude_extraction(&f.pkt, 2, &attr) == 0
+			&& scratch_adopted == 0,
+			"exclude without name components -> 0, nothing adopted");
+	fixture_free(&f);
+}
+
 int main(void) {
 	test_tlv_basics();
 	test_check_payload();
 	test_find_and_names();
 	test_extraction_payloads();
 	test_ipacket_extraction();
+	test_issue506_error_exits();
 	test_sessions();
 	printf("=== %d checks, %d failures ===\n", checks, failures);
 	return failures == 0 ? 0 : 1;

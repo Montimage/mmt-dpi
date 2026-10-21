@@ -13,6 +13,7 @@
 #   session_evasion_ownership sessions/hashmap/evasion-handler ownership
 #   golden_corpus_teardown    fresh handler per capture over the CI corpus
 #   non_en10mb_reassembly     IP-fragment reassembly on the SLL stack (#505)
+#   extractor_heap_attrs      DNS/FTP/NDN heap-returning attributes (#506)
 #
 # Oracle selection (the gate fails on ANY definite leak):
 #   - the aggregate runner (tools/phase0/run_all_harnesses.sh) groups this
@@ -96,6 +97,7 @@ ALL_PCAS="$(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "${GOLDEN_LIST}" \
             | while read -r p; do echo "${PCAP_DIR}/${p}"; done | tr '\n' ' ')"
 TCP_PCAS="$(pcap_list tcp_bbc-out-of-order.pcap tcp_ecn_sample.pcap tcp_tpncp_tcp.pcap ip_ping_local_ip_fragmentation.pcap ip_teardrop_overlaping_ip_fragments.pcap)"
 FTP_PCAS="$(pcap_list ftp_txt.pcap ftp_login_fail.pcap ftp_multiple_session.pcap)"
+DNS_PCAS="$(pcap_list dns_query.pcap)"
 FRAG_PCAS="$(pcap_list ip_ping_local_ip_fragmentation.pcap ip_teardrop_overlaping_ip_fragments.pcap)"
 
 echo "[3/3] running cases (${MODE})"
@@ -136,6 +138,7 @@ run_case ftp_context_teardown      "${FTP_PCAS}"
 run_case session_evasion_ownership "${TCP_PCAS} ${FTP_PCAS}"
 run_case golden_corpus_teardown    "${ALL_PCAS}"
 run_case non_en10mb_reassembly     "${FRAG_PCAS}"
+run_case extractor_heap_attrs      "${DNS_PCAS} ${FTP_PCAS}"
 
 if [ "${FAIL}" -ne 0 ]; then
     echo "✗ leak regression: FAILED" >&2

@@ -285,6 +285,7 @@ int mmt_check_ndn_payload(char* payload, int packet_len){
         ndn_TLV_free(root);
         return 0;
     }
+    ndn_TLV_free(root); // Issue #506 (F-PERF-109): the root leaked on every match
     return 1;
 }
 
@@ -296,6 +297,7 @@ ndn_tlv_t * ndn_TLV_parser_name_comp(char* payload, int total_length, int offset
     if(name_com == NULL) return NULL;
 
     if(name_com->type != NDN_NAME_COMPONENTS) {
+        ndn_TLV_free(name_com); // Issue #506
         return NULL;
     }
 
@@ -749,7 +751,8 @@ int ndn_name_components_extraction(const ipacket_t * ipacket, unsigned proto_ind
     }
 
     char *ret_v = ndn_name_components_extraction_payload(payload,payload_len);
-    if(ret_v != NULL){
+    /* Issue #506: the handler owns the string until the next packet. */
+    if(mmt_packet_scratch_adopt(ipacket, ret_v, free)){
         extracted_data->data = (void*)ret_v;
         return 1;
     }
@@ -1024,7 +1027,8 @@ int ndn_interest_publisher_publickey_locator_extraction(const ipacket_t * ipacke
 
     ndn_TLV_free(root);
 
-    if(str_str != NULL){
+    /* Issue #506: the handler owns the string until the next packet. */
+    if(mmt_packet_scratch_adopt(ipacket, str_str, free)){
         extracted_data->data = (void*)str_str;
         return 1;
     }
@@ -1077,7 +1081,13 @@ int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_in
 
     char * ret_v = ndn_TVL_get_name_components(name_com, payload, payload_len);
 
-    if(name_com == NULL ) return 0;
+    if(name_com == NULL ) {
+        /* Issue #506: release the parsed nodes on this exit too. */
+        ndn_TLV_free(ndn_exclude);
+        ndn_TLV_free(ndn_selectors);
+        ndn_TLV_free(root);
+        return 0;
+    }
 
     char *str_str = str_hex2str(ret_v,0,name_com->length-1);
 
@@ -1091,7 +1101,8 @@ int ndn_interest_exclude_extraction(const ipacket_t * ipacket, unsigned proto_in
 
     ndn_TLV_free(root);
 
-    if(str_str != NULL){
+    /* Issue #506: the handler owns the string until the next packet. */
+    if(mmt_packet_scratch_adopt(ipacket, str_str, free)){
         extracted_data->data = (void*)str_str;
         return 1;
     }
@@ -1313,7 +1324,10 @@ char* ndn_data_content_extraction_payload(char *payload,int total_length){
     
     char *ret = ndn_TLV_get_string(ndn_data_content,payload,total_length);
 
-    if( ndn_data_content == NULL ) return NULL;
+    if( ndn_data_content == NULL ) {
+        ndn_TLV_free(root); // Issue #506
+        return NULL;
+    }
 
     char * str_str = str_hex2str(ret,0,ndn_data_content->length-1);
     
@@ -1348,7 +1362,8 @@ int ndn_data_content_extraction(const ipacket_t * ipacket, unsigned proto_index,
     }
 
     char *ret_v = ndn_data_content_extraction_payload(payload,payload_len);
-    if(ret_v != NULL){
+    /* Issue #506: the handler owns the string until the next packet. */
+    if(mmt_packet_scratch_adopt(ipacket, ret_v, free)){
         extracted_data->data = (void*)ret_v;
         return 1;
     }
@@ -1523,7 +1538,8 @@ int ndn_data_final_block_id_extraction(const ipacket_t * ipacket, unsigned proto
 
     ndn_TLV_free(root);
 
-    if(ret_v != NULL){
+    /* Issue #506: the handler owns the string until the next packet. */
+    if(mmt_packet_scratch_adopt(ipacket, ret_v, free)){
         extracted_data->data = (void*)ret_v;
         return 1;
     }
@@ -1616,7 +1632,11 @@ char* ndn_data_key_locator_extraction_payload(char *payload,int total_length){
 
     char *ret = ndn_TLV_get_string(ndn_data_key_locator,payload,total_length);
 
-    if( ndn_data_key_locator == NULL ) return NULL;
+    if( ndn_data_key_locator == NULL ) {
+        ndn_TLV_free(ndn_data_signature_info); // Issue #506
+        ndn_TLV_free(root);
+        return NULL;
+    }
 
     char *str_str = str_hex2str(ret,0,ndn_data_key_locator->length-1);
 
@@ -1653,7 +1673,8 @@ int ndn_data_key_locator_extraction(const ipacket_t * ipacket, unsigned proto_in
     }
 
     char *ret_v = ndn_data_key_locator_extraction_payload(payload,payload_len);
-    if(ret_v != NULL){
+    /* Issue #506: the handler owns the string until the next packet. */
+    if(mmt_packet_scratch_adopt(ipacket, ret_v, free)){
         extracted_data->data = (void*)ret_v;
         return 1;
     }
@@ -1675,7 +1696,10 @@ char* ndn_data_signature_value_extraction_payload(char *payload,int payload_len)
     
     char *ret = ndn_TLV_get_string(ndn_data_signature_value,payload,payload_len);
 
-    if( ndn_data_signature_value == NULL ) return NULL;
+    if( ndn_data_signature_value == NULL ) {
+        ndn_TLV_free(root); // Issue #506
+        return NULL;
+    }
 
     char *str_str = str_hex2str(ret,0,ndn_data_signature_value->length-1);
 
@@ -1710,7 +1734,8 @@ int ndn_data_signature_value_extraction(const ipacket_t * ipacket, unsigned prot
     }
 
     char *ret_v = ndn_data_signature_value_extraction_payload(payload,payload_len);
-    if(ret_v != NULL){
+    /* Issue #506: the handler owns the string until the next packet. */
+    if(mmt_packet_scratch_adopt(ipacket, ret_v, free)){
         extracted_data->data = (void*)ret_v;
         return 1;
     }

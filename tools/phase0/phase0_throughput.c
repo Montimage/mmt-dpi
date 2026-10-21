@@ -44,6 +44,15 @@
  *
  * Output (one line, tab-separated, stable/diffable; -1 = RSS unavailable):
  *   <packets>\t<iterations>\t<elapsed_s>\t<pps>\t<harness_rss_kib>\t<library_rss_kib>\t<peak_rss_kib>
+ *
+ * Attribute reads (issue #506, opt-in): PHASE0_ATTRS="proto.attr,..." (e.g.
+ * "dns.queries,ftp.packet_request") registers those attributes on every
+ * iteration's handler and reads each one from a packet handler, so the cost
+ * of extracting them — and any memory they retain — is part of the run. The
+ * reads sit inside the timed window. With PHASE0_ATTRS set, one extra line
+ * per iteration goes to stderr: rss\t<iteration>\t<library_rss_kib>, the
+ * live RSS above the preloaded trace after that pass — flat across
+ * iterations when the extractors release what they allocate.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,6 +87,40 @@ static long peak_rss_kib(void) {
     struct rusage ru;
     if (getrusage(RUSAGE_SELF, &ru) != 0) return -1;
     return ru.ru_maxrss;
+}
+
+/* Issue #506: the PHASE0_ATTRS attributes, read once per packet. */
+#define PHASE0_MAX_ATTRS 32
+static uint32_t g_attr_proto[PHASE0_MAX_ATTRS], g_attr_id[PHASE0_MAX_ATTRS];
+static int      g_attr_n;
+
+static int read_attrs_cb(const ipacket_t *ipacket, void *args) {
+    (void)args;
+    for (int a = 0; a < g_attr_n; a++)
+        (void)get_attribute_extracted_data(ipacket, g_attr_proto[a], g_attr_id[a]);
+    return 0;
+}
+
+/* Parses PHASE0_ATTRS after init_extraction(); returns -1 on a bad entry. */
+static int parse_attrs(const char *spec) {
+    char buf[1024];
+    if (strlen(spec) >= sizeof(buf)) return -1;
+    strcpy(buf, spec);
+    for (char *save = NULL, *tok = strtok_r(buf, ",", &save); tok != NULL;
+         tok = strtok_r(NULL, ",", &save)) {
+        char *dot = strchr(tok, '.');
+        if (dot == NULL || g_attr_n == PHASE0_MAX_ATTRS) return -1;
+        *dot = '\0';
+        uint32_t proto = get_protocol_id_by_name(tok);
+        uint32_t attr  = get_attribute_id_by_protocol_id_and_attribute_name(proto, dot + 1);
+        if (proto == 0 || attr == 0) {
+            fprintf(stderr, "PHASE0_ATTRS: unknown attribute %s.%s\n", tok, dot + 1);
+            return -1;
+        }
+        g_attr_proto[g_attr_n] = proto;
+        g_attr_id[g_attr_n++]  = attr;
+    }
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -147,6 +190,12 @@ int main(int argc, char **argv) {
     }
 
     init_extraction();
+    const char *attrs_spec = getenv("PHASE0_ATTRS");
+    if (attrs_spec != NULL && *attrs_spec != '\0' && parse_attrs(attrs_spec) != 0) {
+        free(pkts);
+        close_extraction();
+        return EXIT_FAILURE;
+    }
     /* Probe once so an unsupported link-type fails cleanly before timing. */
     mmt_handler = mmt_init_handler(datalink, 0, mmt_errbuf);
     if (mmt_handler == NULL) {
@@ -167,6 +216,11 @@ int main(int argc, char **argv) {
     for (it = 0; it < iterations; it++) {
         mmt_handler = mmt_init_handler(datalink, 0, mmt_errbuf);
         if (mmt_handler == NULL) break;
+        if (g_attr_n > 0) {
+            for (int a = 0; a < g_attr_n; a++)
+                register_extraction_attribute(mmt_handler, g_attr_proto[a], g_attr_id[a]);
+            register_packet_handler(mmt_handler, 1, read_attrs_cb, NULL);
+        }
         clock_gettime(CLOCK_MONOTONIC, &t0);
         for (i = 0; i < (long)n; i++) {
             packet_process(mmt_handler, &pkts[i].header, pkts[i].data);
@@ -179,6 +233,11 @@ int main(int argc, char **argv) {
         rss_now = current_rss_kib();
         if (rss_now > rss_lib_peak) rss_lib_peak = rss_now;
         mmt_close_handler(mmt_handler);
+        if (g_attr_n > 0 && rss_preloaded >= 0) {
+            rss_now = current_rss_kib();
+            fprintf(stderr, "rss\t%ld\t%ld\n", it + 1,
+                    rss_now >= 0 ? rss_now - rss_preloaded : -1L);
+        }
     }
     mmt_handler = NULL;
     pps = (elapsed > 0.0) ? ((double)n * (double)iterations / elapsed) : 0.0;

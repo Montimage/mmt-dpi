@@ -335,10 +335,10 @@ char * get_value( const ipacket_t *pkt, char *input, short *jump, short *size, t
                     && temp_tuple2->event_id == event_id && temp_tuple2->data_size > 0 && temp_tuple2->data != NULL) {
                 long type = temp_tuple2->data_type_id;
                 *size = temp_tuple2->data_size;
-                /* pointer-typed tuples store the char* — unwrap it so `data`
-                 * is the string itself, matching the packet-side convention */
-                void *data = (type == MMT_STRING_DATA_POINTER)
-                        ? *(void **)temp_tuple2->data : temp_tuple2->data;
+                /* a pointer-typed tuple holds its own copy of the string
+                 * (store_tuples), so `data` is the string itself, matching
+                 * the packet-side convention */
+                void *data = temp_tuple2->data;
                 if (type == MMT_STRING_DATA || type == MMT_STRING_LONG_DATA || type == MMT_BINARY_DATA || type == MMT_BINARY_VAR_DATA ) {
                     /* declared byte count from the record prefix — clamp it
                      * to the record's payload so a forged prefix cannot make
@@ -469,6 +469,8 @@ void * funct_get_params_and_execute( verify_ctx_t *ctx, embedded_funct_t funct, 
                             if (temp_tuple2->event_id == tt->event_id)
                                 if (temp_tuple2->data_size > 0)
                                     if (temp_tuple2->data != NULL) {
+                                        /* the stored value, as the packet path passes it:
+                                         * for MMT_STRING_DATA_POINTER the string itself */
                                         data[param_count] = temp_tuple2->data;
                                         break;
                                     }
@@ -1198,7 +1200,14 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                     v1.found = FOUND;
                     v1.size = temp_tuple2->data_size;
                     void *data = temp_tuple2->data;
-                    if (v1.type == MMT_STRING_DATA || v1.type == MMT_STRING_LONG_DATA || v1.type == MMT_BINARY_DATA || v1.type == MMT_BINARY_VAR_DATA || v1.type == MMT_DATA_PATH) {
+                    if (v1.type == MMT_STRING_DATA_POINTER) {
+                        /* the tuple owns a copy of the string (store_tuples);
+                         * the operand slot holds its char*, as for a packet
+                         * value — compare_values() dereferences it */
+                        v1.size = (int) sizeof (char *);
+                        data = &temp_tuple2->data;
+                    }
+                    else if (v1.type == MMT_STRING_DATA || v1.type == MMT_STRING_LONG_DATA || v1.type == MMT_BINARY_DATA || v1.type == MMT_BINARY_VAR_DATA || v1.type == MMT_DATA_PATH) {
                         if (v1.type == MMT_DATA_PATH)
                             v1.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size) * (int)sizeof (int);
                         else
@@ -1261,7 +1270,12 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                                         v2.found = FOUND;
                                         v2.size = temp_tuple2->data_size;
                                         void *data = temp_tuple2->data;
-                                        if (v2.type == MMT_STRING_DATA || v2.type == MMT_STRING_LONG_DATA || v2.type == MMT_BINARY_DATA || v2.type == MMT_BINARY_VAR_DATA || v2.type == MMT_DATA_PATH) {
+                                        if (v2.type == MMT_STRING_DATA_POINTER) {
+                                            /* same as v1: the slot holds the copy's char* */
+                                            v2.size = (int) sizeof (char *);
+                                            data = &temp_tuple2->data;
+                                        }
+                                        else if (v2.type == MMT_STRING_DATA ||v2.type == MMT_STRING_LONG_DATA || v2.type == MMT_BINARY_DATA || v2.type == MMT_BINARY_VAR_DATA || v2.type == MMT_DATA_PATH) {
                                             if (v2.type == MMT_DATA_PATH)
                                                 v2.size = clamp_path_count(*(int*) (data), temp_tuple2->data_size) * (int)sizeof (int);
                                             else

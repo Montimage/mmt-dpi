@@ -1184,6 +1184,107 @@ static void test_get_xdata_filled_branches(void)
           "get_xdata rejects a negative declared size");
 }
 
+/* #506: store_tuples() kept the raw char* of a MMT_STRING_DATA_POINTER
+ * reference (ftp.packet_request.2). The handler releases that string when
+ * the next packet starts, so a later event's comparison and substitution
+ * read freed memory (an ASan heap-use-after-free). The rule instance must
+ * hold its own copy of the string. */
+static void test_reference_string_outlives_packet(void)
+{
+    static const char req[] = "RETR secret.txt";
+    struct { uint32_t len; char data[64]; } same_rec, other_rec;
+    rule root, inst, ref_leaf, const_leaf;
+    tuple ref;
+    void *same, *other;
+    char *pkt_str, *out;
+    short jump = 0, size = 0;
+    long proto, field;
+    int ret;
+
+    proto = get_protocol_id_by_name("ftp");
+    field = get_attribute_id_by_protocol_id_and_attribute_name((uint32_t)proto, "packet_request");
+    pkt_str = malloc(sizeof req);
+    if (!(proto > 0 && field > 0) || pkt_str == NULL) {
+        printf("FAIL - cannot build the ftp.packet_request reference\n");
+        failures++;
+        free(pkt_str);
+        return;
+    }
+    memcpy(pkt_str, req, sizeof req);
+
+    memset(&root, 0, sizeof root);
+    memset(&inst, 0, sizeof inst);
+    memset(&ref, 0, sizeof ref);
+    ref.protocol_id = proto;
+    ref.field_id = field;
+    ref.data_type_id = MMT_STRING_DATA_POINTER;
+    ref.data_size = (int)sizeof(char *);
+    ref.event_id = 2;
+    inst.list_of_tuples = &ref;
+
+    /* event 2's packet: the extractor hands out the heap string */
+    fi_ptr_proto = (uint32_t)proto;
+    fi_ptr_field = (uint32_t)field;
+    fi_ptr_val = pkt_str;
+    fi_tvp.tv_sec = 1;
+    fi_tvp.tv_usec = 2;
+    fi_fake_extract = 1;
+    verify_ctx_t sctx = { NULL, &root, NULL, NULL, { 0, 0 }, NO, NO };
+    store_tuples(&sctx, SAME, &inst, 2, "test-cause");
+    fi_fake_extract = 0;
+    fi_ptr_val = NULL;
+    CHECK(ref.valid == FOUND && ref.data != NULL,
+          "store_tuples stores the referenced pointer string");
+
+    /* the next packet starts: the handler releases the string */
+    memset(pkt_str, 'X', sizeof req - 1);
+    free(pkt_str);
+
+    memset(&same_rec, 0, sizeof same_rec);
+    strcpy(same_rec.data, req);
+    same_rec.len = (uint32_t)sizeof req;
+    memset(&other_rec, 0, sizeof other_rec);
+    strcpy(other_rec.data, "RETR other.txt");
+    other_rec.len = (uint32_t)strlen(other_rec.data) + 1;
+    same = get_xdata(MMT_STRING_DATA_POINTER, (int)sizeof(char *), &same_rec, YES);
+    other = get_xdata(MMT_STRING_DATA_POINTER, (int)sizeof(char *), &other_rec, YES);
+    if (same == NULL || other == NULL) {
+        printf("FAIL - string-pointer constants for the reference test\n");
+        failures++;
+    } else {
+        verify_ctx_t cctx = { NULL, &root, &ref, NULL, { 0, 0 }, NO, NO };
+        memset(&ref_leaf, 0, sizeof ref_leaf);
+        memset(&const_leaf, 0, sizeof const_leaf);
+        ref_leaf.value = XVAR;
+        ref_leaf.t.protocol_id = proto;
+        ref_leaf.t.field_id = field;
+        ref_leaf.t.data_type_id = MMT_STRING_DATA_POINTER;
+        ref_leaf.t.event_id = 2;
+        const_leaf.value = XCON;
+        const_leaf.t.data_type_id = MMT_STRING_DATA_POINTER;
+        const_leaf.t.data_size = (int)sizeof(char *);
+
+        const_leaf.t.data = same;
+        ret = get_data_from_pcap(&cctx, COMPARE, NULL, EQ, &ref_leaf, &const_leaf);
+        CHECK(ret == VALID,
+              "a reference to an earlier packet's pointer string equals its value");
+        const_leaf.t.data = other;
+        ret = get_data_from_pcap(&cctx, COMPARE, NULL, EQ, &ref_leaf, &const_leaf);
+        CHECK(ret == NOT_VALID,
+              "a reference to an earlier packet's pointer string differs from another value");
+    }
+
+    out = get_value((const ipacket_t *)NULL, "ftp.packet_request.2", &jump, &size, &ref);
+    CHECK(out != NULL && strcmp(out, req) == 0,
+          "get_value substitutes the stored copy of an earlier packet's pointer string");
+    free(out);
+
+    if (same != NULL) { free(*(char **)same); free(same); }
+    if (other != NULL) { free(*(char **)other); free(other); }
+    free(ref.data);
+    free(inst.json_history);
+}
+
 static void test_countout_window(void)
 {
     rule r;
@@ -1258,6 +1359,7 @@ int main(void)
     test_xin_fixed_width_membership();
     test_compute_float();
     test_get_xdata_filled_branches();
+    test_reference_string_outlives_packet();
     test_countout_window();
     test_path_xc_membership();
 

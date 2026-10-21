@@ -28,6 +28,36 @@ typedef int (*generic_attribute_extraction_function) (
 typedef generic_attribute_extraction_function(*generic_get_attribute_extraction_function) (mmt_proto_id_t proto_id, uint32_t attribute_id);
 
 /**
+ * Releases a value adopted with mmt_packet_scratch_adopt() (free() for a
+ * plain heap block).
+ */
+typedef void (*mmt_packet_scratch_release_function)(mmt_opaque_t value);
+
+/**
+ * Hands a heap value an attribute extraction function returns through
+ * attribute_t.data over to the handler that processes ipacket (issue #506).
+ *
+ * The handler releases the value with release() when the next
+ * packet_process() call on it starts, or when mmt_close_handler() runs — so
+ * the value stays valid while the current packet is processed and its
+ * handlers run, and the caller of the extraction function never frees it.
+ * An extractor returns its value only when this returns true.
+ *
+ * @param ipacket the packet being processed (supplies the handler)
+ * @param value   the heap value to adopt; NULL adopts nothing
+ * @param release the function that frees value
+ * @return true when the handler now owns value. false when value is NULL or
+ *         release is NULL (nothing was done), or when the handler cannot take
+ *         it — ipacket has no handler or the scratch record could not be
+ *         allocated — in which case value has already been released.
+ */
+MMTAPI bool MMTCALL mmt_packet_scratch_adopt(
+    const ipacket_t *ipacket,
+    mmt_opaque_t value,
+    mmt_packet_scratch_release_function release
+);
+
+/**
  * Defines the attribute meta data.
  */
 typedef struct attribute_metadata_struct {

@@ -593,6 +593,12 @@ struct mmt_handler_struct {
      * dispatch returns (flush_deferred_attribute_frees()). */
     unsigned attr_dispatch_depth;
     attribute_internal_t * attr_free_pending;
+    /* Issue #506 (F-PERF-103): per-packet scratch. Values an attribute
+     * extractor hands over with mmt_packet_scratch_adopt() are chained here
+     * (records bump-allocated from the arena, created on first use) and
+     * released when the next packet_process() starts or the handler closes. */
+    mmt_arena_t * packet_scratch;
+    struct mmt_packet_scratch_entry_struct * packet_scratch_head;
     packet_handler_t * packet_handlers;
     uint32_t packet_handlers_len;
     uint32_t packet_handlers_cap;
@@ -671,6 +677,21 @@ int package_dependent_init();
  * @param mmt_handler pointer to the mmt handler we want to unregister the extraction attributes from
  */
 void free_registered_extraction_attributes(mmt_handler_t *mmt_handler);
+
+/**
+ * Issue #506: releases every value adopted with mmt_packet_scratch_adopt()
+ * since the last release and rewinds the scratch arena (kept for reuse).
+ * Called when packet_process() starts; a no-op when nothing was adopted.
+ * @param mmt_handler the handler whose per-packet scratch is released
+ */
+void mmt_packet_scratch_release(mmt_handler_t *mmt_handler);
+
+/**
+ * Issue #506: releases the adopted values and frees the scratch arena itself.
+ * Called from mmt_close_handler() (via free_registered_extraction_attributes()).
+ * @param mmt_handler the handler being closed
+ */
+void mmt_packet_scratch_destroy(mmt_handler_t *mmt_handler);
 
 /**
  * Cleanup function that frees the registered attribute handlers.

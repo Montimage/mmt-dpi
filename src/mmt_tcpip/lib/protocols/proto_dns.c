@@ -1022,6 +1022,27 @@ int dns_rcode_extraction(const ipacket_t * ipacket, unsigned proto_index,
     return 0;
 }
 
+/* Issue #506 (F-PERF-103): release callbacks for mmt_packet_scratch_adopt()
+ * — the extracted query/answer lists belong to the handler, which frees the
+ * whole chain (dns_free_query()/dns_free_answer() free one node). */
+static void dns_free_query_list(mmt_opaque_t value){
+    dns_query_t * dq = (dns_query_t *) value;
+    while(dq != NULL){
+        dns_query_t * next = dq->next;
+        dns_free_query(dq);
+        dq = next;
+    }
+}
+
+static void dns_free_answer_list(mmt_opaque_t value){
+    dns_answer_t * da = (dns_answer_t *) value;
+    while(da != NULL){
+        dns_answer_t * next = da->next;
+        dns_free_answer(da);
+        da = next;
+    }
+}
+
 int dns_queries_extraction(const ipacket_t * ipacket, unsigned proto_index,
         attribute_t * extracted_data) {
     if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL || extracted_data == NULL) return 0;
@@ -1038,7 +1059,7 @@ int dns_queries_extraction(const ipacket_t * ipacket, unsigned proto_index,
         int queries_payload_offset = 12;
         const u_char * payload_end = ipacket->data + ipacket->p_hdr->caplen;
         dns_query_t * dq = dns_extract_queries(ipacket->data + proto_offset + queries_payload_offset,qdcount,ipacket->data + proto_offset,payload_end);
-        if(dq == NULL){
+        if(!mmt_packet_scratch_adopt(ipacket, dq, dns_free_query_list)){
             return 0;
         }else{
             extracted_data->data = (void*)dq;
@@ -1063,7 +1084,7 @@ int dns_answers_extraction(const ipacket_t * ipacket, unsigned proto_index,
         int answer_payload_offset = dns_get_answers_offset(ipacket,proto_index);
         const u_char * payload_end = ipacket->data + ipacket->p_hdr->caplen;
         dns_answer_t * da = dns_extract_answers(ipacket->data + proto_offset + answer_payload_offset,ancount,ipacket->data + proto_offset,payload_end);
-        if(da == NULL){
+        if(!mmt_packet_scratch_adopt(ipacket, da, dns_free_answer_list)){
             return 0;
         }else{
             extracted_data->data = (void*)da;
@@ -1088,7 +1109,7 @@ int dns_auth_records_extraction(const ipacket_t * ipacket, unsigned proto_index,
         int ns_records_payload_offset = dns_get_auth_records_payload_offset(ipacket,proto_index);
         const u_char * payload_end = ipacket->data + ipacket->p_hdr->caplen;
         dns_answer_t * da = dns_extract_answers(ipacket->data + proto_offset + ns_records_payload_offset,nscount,ipacket->data + proto_offset,payload_end);
-        if(da == NULL){
+        if(!mmt_packet_scratch_adopt(ipacket, da, dns_free_answer_list)){
             return 0;
         }else{
             extracted_data->data = (void*)da;
@@ -1113,7 +1134,7 @@ int dns_add_records_extraction(const ipacket_t * ipacket, unsigned proto_index,
         int add_records_payload_offset = dns_get_add_records_payload_offset(ipacket,proto_index);
         const u_char * payload_end = ipacket->data + ipacket->p_hdr->caplen;
         dns_answer_t * da = dns_extract_answers(ipacket->data + proto_offset + add_records_payload_offset,arcount,ipacket->data + proto_offset,payload_end);
-        if(da == NULL){
+        if(!mmt_packet_scratch_adopt(ipacket, da, dns_free_answer_list)){
             return 0;
         }else{
             extracted_data->data = (void*)da;
