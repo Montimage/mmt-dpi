@@ -1033,8 +1033,8 @@ int proto_packet_analyze(ipacket_t * ipacket, protocol_instance_t * configured_p
 }
 
 void clean_packet(ipacket_t *ipacket){
-    if ( (ipacket->data != ipacket->original_data) &&
-       (ipacket->mmt_handler->link_layer_stack->stack_id == DLT_EN10MB) ) {
+    if (ipacket->data != ipacket->original_data) {
+        // Issue #505 (F-BUG-019): any link-layer stack, not only DLT_EN10MB.
         // data was dynamically allocated during the reassembly process:
         //   . free dynamically allocated ipacket->data
         //   . reset ipacket->data to its original value

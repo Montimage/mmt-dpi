@@ -81,12 +81,19 @@ inline static void * close_stream_processor(stream_processor_t * sp) {
   return NULL;
 }
 
+inline static void * close_http_parser(stream_parser_t * sp);
+
 /**
- * Initializes an HTTP stream parser and returns a pointer to the initialized structure.
+ * Initializes an HTTP stream parser and returns a pointer to the initialized structure,
+ * or NULL when an allocation failed (nothing is left allocated then).
  **/
 inline static stream_parser_t * init_http_parser() {
   // printf("[HTTP_PARSER] init_http_parser\n");
   stream_parser_t * parser = (stream_parser_t *) mmt_malloc(sizeof(stream_parser_t));
+  /* Issue #505 (F-BUG-015): mmt_malloc() returns NULL on OOM (memory.c:8-17).
+   * Fail as a whole — the session keeps session_data NULL, which
+   * http_internal_session_data_analysis() already skips. */
+  if (parser == NULL) return NULL;
   /* llhttp_init() zeroes the whole parser struct (issue #222): data must be
    * assigned AFTER init, and the settings table is bound at init time —
    * get_settings() returns a static object that outlives every parser. */
@@ -94,6 +101,8 @@ inline static stream_parser_t * init_http_parser() {
   llhttp_init(& parser->parser[1], HTTP_BOTH, get_settings());
   parser->parser[0].data = init_stream_processor();
   parser->parser[1].data = init_stream_processor();
+  if (parser->parser[0].data == NULL || parser->parser[1].data == NULL)
+    return (stream_parser_t *) close_http_parser(parser); /* frees what was made, returns NULL */
   return parser;
 }
 

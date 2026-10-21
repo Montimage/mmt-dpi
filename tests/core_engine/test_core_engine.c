@@ -2370,6 +2370,51 @@ static void test_attr_dispatch_safety(void) {
 
 /* ================================ main ==================================== */
 
+/* Issue #505 (F-BUG-014): configured_protocols[] slots are NULL before
+ * init_extraction(), after close_extraction() and past the slot where an
+ * out-of-memory init_extraction() stopped. _is_registered_protocol() read
+ * ->is_registered through the slot unconditionally, so every lookup below
+ * crashed; registering into a NULL slot crashed in init_protocol_struct().
+ * Called with every slot NULL (after the final close_extraction()). */
+/* Defined in packet_registry.c and only reached through protocol_t's
+ * function pointers, so no header declares them. */
+protocol_t *get_protocol_struct_by_protocol_id(uint32_t proto_id);
+int get_attribute_id_by_name_from_protocol_map(uint32_t proto_id, const char *attribute_name);
+const char *get_attribute_name_by_id_from_protocol_map(uint32_t proto_id, uint32_t attribute_id);
+int get_attribute_data_type_by_id_from_protocol_map(uint32_t proto_id, uint32_t attribute_id);
+int get_attribute_length_from_protocol_map(uint32_t proto_id, uint32_t attribute_id);
+int get_attribute_scope_by_id_from_protocol_map(uint32_t proto_id, uint32_t attribute_id);
+int get_attribute_position_by_id_from_protocol_map(uint32_t proto_id, uint32_t attribute_id);
+int is_protocol_valid_attribute(uint32_t proto_id, uint32_t attribute_id);
+
+static void test_null_slot_lookups(void) {
+    fprintf(stderr, "  test: protocol lookups on NULL registry slots (#505)\n");
+    const uint32_t ids[] = { 0, 1, TEST_PROTO_A, PROTO_MAX_IDENTIFIER - 1 };
+    for (size_t i = 0; i < sizeof(ids) / sizeof(ids[0]); i++) {
+        uint32_t id = ids[i];
+        CHECK(is_registered_protocol(id) == 0, "is_registered_protocol on a NULL slot");
+        CHECK(get_protocol_struct_by_id(id) == NULL, "get_protocol_struct_by_id on a NULL slot");
+        CHECK(get_protocol_struct_by_protocol_id(id) == NULL,
+              "get_protocol_struct_by_protocol_id on a NULL slot");
+        CHECK(get_attribute_id_by_name_from_protocol_map(id, "x") == 0,
+              "attribute id lookup on a NULL slot");
+        CHECK(get_attribute_name_by_id_from_protocol_map(id, 1) == NULL,
+              "attribute name lookup on a NULL slot");
+        CHECK(get_attribute_data_type_by_id_from_protocol_map(id, 1) == MMT_UNDEFINED_TYPE,
+              "attribute type lookup on a NULL slot");
+        CHECK(get_attribute_length_from_protocol_map(id, 1) == 0,
+              "attribute length lookup on a NULL slot");
+        CHECK(get_attribute_scope_by_id_from_protocol_map(id, 1) == 0,
+              "attribute scope lookup on a NULL slot");
+        CHECK(get_attribute_position_by_id_from_protocol_map(id, 1) == POSITION_NOT_KNOWN,
+              "attribute position lookup on a NULL slot");
+        CHECK(is_protocol_valid_attribute(id, 1) == 0, "attribute validity on a NULL slot");
+        CHECK(init_protocol_struct_for_registration(id, "ce_null_slot") == NULL,
+              "registration into a NULL slot is refused");
+    }
+    CHECK(is_registered_protocol(PROTO_MAX_IDENTIFIER) == 0, "out-of-range id");
+}
+
 int main(void) {
     fprintf(stderr, "Core-engine test suite (session lifecycle + arena allocator)\n");
     g_null_fp = fopen("/dev/null", "w"); /* sink for the fprintf/format helpers */
@@ -2408,6 +2453,7 @@ int main(void) {
     close_extraction();
     CHECK(init_extraction() == 1, "second init_extraction after close");
     close_extraction();
+    test_null_slot_lookups();
 
     if (g_failures == 0) {
         fprintf(stderr, "ALL CHECKS PASSED\n");

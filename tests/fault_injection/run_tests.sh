@@ -36,12 +36,13 @@ read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 
 BIN_CORE="${SCRIPT_DIR}/test_fi_core"
 BIN_ENGINE="${SCRIPT_DIR}/test_fi_engine"
+BIN_HTTP="${SCRIPT_DIR}/test_fi_http"
 INTERPOSER="${SCRIPT_DIR}/libfi_alloc.so"
 
 echo "  repo root : ${REPO_ROOT}"
 
 # --- 1. unit-level sweep (source-compiled, every profile) -------------------
-echo "  [1/2] building + running fi-core (allocator/hashmap sweeps)"
+echo "  [1/2] building + running fi-core (allocator/hashmap/HTTP-parser sweeps)"
 # memory.c is the only translation unit whose libc allocation calls are
 # remapped to the counting front-end; mmt_malloc/mmt_free inside it keep
 # their public names so hashmap.c exercises them unchanged.
@@ -72,6 +73,25 @@ echo "  [1/2] building + running fi-core (allocator/hashmap sweeps)"
 export ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=0}:allocator_may_return_null=1"
 export TSAN_OPTIONS="${TSAN_OPTIONS:+${TSAN_OPTIONS}:}allocator_may_return_null=1"
 "${BIN_CORE}"
+
+# Issue #505: the HTTP stream-parser constructor (a static inline in
+# http_parser_integration.h) against the same fiu-remapped memory.c, linked
+# with the vendored llhttp it initialises -- built without gcov flags so it stays out of the unit coverage cohort.
+TCPIP_LIB="${REPO_ROOT}/src/mmt_tcpip/lib"
+fi_http_objs=(); vendor_cflags=()
+for f in "${extra_cflags[@]}"; do [[ "${f}" =~ ^(--coverage|-fprofile-arcs|-ftest-coverage)$ ]] || vendor_cflags+=("${f}"); done
+for src in llhttp.c llhttp_api.c llhttp_http.c; do
+    obj="${SCRIPT_DIR}/test_fi_$(basename "${src}" .c).o"
+    "${CC}" "${vendor_cflags[@]}" -std=gnu11 -g -I"${TCPIP_LIB}" \
+        -c "${TCPIP_LIB}/${src}" -o "${obj}"
+    fi_http_objs+=("${obj}"); done
+"${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 -g \
+    -I"${CORE_PRIV}" -I"${CORE_PUB}" -I"${TCPIP_LIB}" -I"${SCRIPT_DIR}" \
+    -c "${SCRIPT_DIR}/test_fi_http.c" -o "${SCRIPT_DIR}/test_fi_http.o"
+"${CC}" "${extra_cflags[@]}" -o "${BIN_HTTP}" \
+    "${SCRIPT_DIR}/test_fi_http.o" "${SCRIPT_DIR}/test_fi_alloc.o" \
+    "${SCRIPT_DIR}/test_fi_memory.o" "${fi_http_objs[@]}"
+"${BIN_HTTP}"
 
 # --- 2. engine-level sweep (LD_PRELOAD, not under sanitizer profiles) -------
 if [[ "${SDK_BUILD_PROFILE:-}" =~ ^(asan|tsan)$ ]]; then

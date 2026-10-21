@@ -132,9 +132,18 @@
 #                               Ethernet/IPv{4,6}/{TCP,UDP} frames through
 #                               mmt_init_handler + packet_process.
 #
+# Issue #505 adds the "tcp-events" fixture: tcp.syn_received (U32),
+# tcp.established and tcp.closed (U8) carry a payload of their declared width
+# that no handler, flow or thread shares — they used to point at one
+# `static int seen`, so a handler writing through it changed every later event.
+#
+#   test_tcp_event_payload_api.c — packet/API path: two crafted TCP
+#                               connections (handshake + close) through
+#                               mmt_init_handler + packet_process.
+#
 # Usage: tests/parser_boundaries/run_tests.sh [fixture ...]
 #   no arguments runs every fixture; "udp"/"dtls"/"dns-soa"/"dns-txt"/"dns-names"/"nfs"/"int"/
-#   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit" select a fixture family.
+#   "tcp-options"/"radius-dns"/"quic"/"gre"/"classifier-audit"/"tcp-events" select a fixture family.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -142,7 +151,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # --- fixture selection -----------------------------------------------------
 FIXTURES=( "$@" )
-[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit)
+[ "${#FIXTURES[@]}" -eq 0 ] && FIXTURES=(udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events)
 UNIT_TESTS=()
 API_TESTS=()
 for f in "${FIXTURES[@]}"; do
@@ -184,8 +193,11 @@ for f in "${FIXTURES[@]}"; do
         classifier-audit)
             API_TESTS+=(classifier_audit_api)
             ;;
+        tcp-events)
+            API_TESTS+=(tcp_event_payload_api)
+            ;;
         *)
-            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit)" >&2
+            echo "✗ unknown parser_boundaries fixture '$f' (known: udp dtls dns-soa dns-txt dns-names nfs int tcp-options radius-dns quic gre classifier-audit tcp-events)" >&2
             exit 2
             ;;
     esac
@@ -292,4 +304,4 @@ if [ "${rc}" -ne 0 ]; then
     echo "✗ parser boundary tests failed" >&2
     exit 1
 fi
-echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455)"
+echo "✓ parser boundary tests passed (issues #330, #331, #332, #333, #375, #376, #377, #378, #407, #409, #453, #455, #505)"

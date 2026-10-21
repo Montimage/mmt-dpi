@@ -151,7 +151,7 @@ bool is_valid_protocol_id(uint32_t proto_id) {
 
 static inline int _is_registered_protocol(uint32_t proto_id) {
     if (likely(_is_valid_protocol_id(proto_id) > 0))
-        if (configured_protocols[proto_id]->is_registered && configured_protocols[proto_id]->proto_id == proto_id)
+        if (configured_protocols[proto_id] != NULL /* #505: NULL before/after init */ && configured_protocols[proto_id]->is_registered && configured_protocols[proto_id]->proto_id == proto_id)
             return PROTO_REGISTERED;
     return PROTO_NOT_REGISTERED;
 }
@@ -769,7 +769,7 @@ void init_protocol_struct(protocol_t * proto) {
 }
 
 protocol_t *get_protocol_struct_for_registration_if_free(uint32_t proto_id) {
-    if (is_free_protocol_id_for_registractionl(proto_id)) {
+    if (is_free_protocol_id_for_registractionl(proto_id) && configured_protocols[proto_id] != NULL) { // #505: no slot to init
         init_protocol_struct(configured_protocols[proto_id]);
         return configured_protocols[proto_id];
     }

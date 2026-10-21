@@ -25,6 +25,14 @@
  *   golden_corpus_teardown    — fresh handler per capture over the whole CI
  *                               golden corpus; catches residual per-pcap
  *                               leaks outside the four named fixes.
+ *   non_en10mb_reassembly     — issue #505 (F-BUG-019): IP-fragment
+ *                               reassembly on a non-Ethernet link stack.
+ *                               clean_packet() freed the reassembled datagram
+ *                               buffer only on DLT_EN10MB, so every datagram
+ *                               rebuilt on another stack leaked. The Ethernet
+ *                               captures are replayed as Linux cooked (SLL)
+ *                               frames on the PROTO_SLL stack, without
+ *                               mmt reassembly enabled (clean_packet path).
  *
  * Usage: leak_regression_test <case> <pcap> [<pcap>...]
  */
@@ -131,6 +139,29 @@ static void evasion_cb(const ipacket_t *ip, uint32_t proto_id,
     g_events++;
 }
 
+/* Issue #505: rewrite an Ethernet frame as a Linux cooked (SLL) frame —
+ * 16-byte header carrying the same EtherType, then the same L3 bytes. */
+#define SLL_HDR_LEN 16
+static int to_sll(const stored_pkt_t *in, stored_pkt_t *out)
+{
+    if (in->header.caplen < 14)
+        return 0;
+    unsigned l3 = in->header.caplen - 14;
+    out->header = in->header;
+    out->header.caplen = SLL_HDR_LEN + l3;
+    out->header.len = in->header.len - 14 + SLL_HDR_LEN;
+    out->data = calloc(1, SLL_HDR_LEN + l3);
+    if (!out->data)
+        return 0;
+    out->data[1] = 4;                        /* packet type: sent by us     */
+    out->data[3] = 1;                        /* ARPHRD_ETHER                */
+    out->data[5] = 6;                        /* link-layer address length   */
+    memcpy(out->data + 6, in->data + 6, 6);  /* source MAC                  */
+    memcpy(out->data + 14, in->data + 12, 2);/* EtherType                   */
+    memcpy(out->data + SLL_HDR_LEN, in->data + 14, l3);
+    return 1;
+}
+
 static void configure_handler(mmt_handler_t *h, const char *pcase)
 {
     if (strcmp(pcase, "reassembly_drop_skip") == 0) {
@@ -169,6 +200,11 @@ static void configure_handler(mmt_handler_t *h, const char *pcase)
     } else if (strcmp(pcase, "golden_corpus_teardown") == 0) {
         /* whole-corpus guard: minimal handler + one attribute */
         register_extraction_attribute_by_name(h, "META", "PACKET_LEN");
+    } else if (strcmp(pcase, "non_en10mb_reassembly") == 0) {
+        /* #505: reassembled datagrams on the SLL stack, clean_packet path */
+        register_extraction_attribute_by_name(h, "META", "PACKET_LEN");
+        register_extraction_attribute_by_name(h, "IP", "SRC");
+        register_extraction_attribute_by_name(h, "IP", "DST");
     }
 }
 
@@ -187,7 +223,7 @@ int main(int argc, char **argv)
     static const char *known[] = {
         "reassembly_drop_skip", "embedded_session_offsets",
         "ftp_context_teardown", "session_evasion_ownership",
-        "golden_corpus_teardown", NULL
+        "golden_corpus_teardown", "non_en10mb_reassembly", NULL
     };
     int i, ok = 0;
     for (i = 0; known[i]; i++)
@@ -210,8 +246,23 @@ int main(int argc, char **argv)
             EXPECT(0, "load_pcap(%s): %s", argv[i], errbuf);
             continue;
         }
+        int sll = strcmp(pcase, "non_en10mb_reassembly") == 0;
+        if (sll) {
+            EXPECT(datalink == DLT_EN10MB, "%s: SLL replay needs an Ethernet capture", argv[i]);
+            for (long k = 0; k < npkts; k++) {
+                stored_pkt_t cooked = { .data = NULL };
+                EXPECT(to_sll(&pkts[k], &cooked), "to_sll(%s #%ld)", argv[i], k);
+                if (cooked.data == NULL)
+                    continue;
+                free(pkts[k].data);
+                pkts[k] = cooked;
+            }
+            datalink = PROTO_SLL;   /* the SLL stack id registered by mmt_tcpip */
+        }
         char mmt_errbuf[1024];
         mmt_handler_t *h = mmt_init_handler((uint32_t)datalink, 0, mmt_errbuf);
+        if (sll)
+            EXPECT(h != NULL, "mmt_init_handler(PROTO_SLL): %s", mmt_errbuf);
         if (!h) {
             /* unsupported link type — not a leak-relevant failure */
             printf("  skip %s (DLT=%d unsupported)\n", argv[i], datalink);

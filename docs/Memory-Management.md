@@ -31,22 +31,22 @@ Just use `mmt_malloc()`, `mmt_realloc()` and `mmt_free()` instead of `malloc()`,
 
 The memory allocator does the housekeeping in a (hopefully) transparent way.
 
-'''Don't check for allocation errors''', this is useless most of the time (see the following section).  Just assume that memory allocation was successful.
+**Check every allocation.** `mmt_malloc()` and `mmt_realloc()` return `NULL` when the allocation fails; they do not abort (`src/mmt_core/src/memory.c:8-17`). Test the result before using it.
 
 ## Failure Management ##
 
-The general rule is that any failed attempt to allocate memory should result in a call to `libc::abort()`.
+The contract is the standard `malloc()`/`realloc()` one, stated in `src/mmt_core/src/memory.c:8-17`:
 
-Recovery attempts are useless (unless part of a well-designed fail-safe architecture).
+* `mmt_malloc()` logs the failure and returns `NULL` (`src/mmt_core/src/memory.c:40-45`).
+* `mmt_realloc()` returns `NULL` and leaves the original block untouched, so the caller still owns it and must free it (`src/mmt_core/src/memory.c:73-79`).
+* `mmt_arena_alloc()` returns `NULL` on out-of-memory (`src/mmt_core/public_include/mmt_core.h:1252-1253`).
 
-There are several reasons for this:
+The library runs inside the host process. An allocation that a packet can trigger must not end that process. The library used to call `abort()` when an allocation failed, so a packet that triggered a huge allocation could crash the host: a remote denial of service (B5 in `src/mmt_core/src/memory.c:8-17`). Code that assumes success has the same effect, because the `NULL` it ignored crashes the process later.
 
-* Error conditions on memory allocation are typically very poorly handled (if handled at all), everybody gets lazy and forgets to check for NULL pointers at some point,
-* A supervised crash is always better than a dangling NULL pointer silently propagating through the code (that will eventually end up in a crash anyway, or worse: an incorrect result),
-* Even when properly handled, error conditions on memory allocation complicate the code considerably,
-* There are clear indicators that memory shortage is about to occur: by the time the kernel is actually unable to allocate memory, the system will be paging like crazy and performances will have long dropped (so the software won't be usable anyway),
-* Allocation failures often occur in the deepest parts of the code (low-level functions, such as lists of hash element allocation), in contrast, memory sizing is really a high-level (integration) issue.  When facing memory shortage issues, the correct course of action is not to try to have some clumsy/obscure indicators (NULL pointers) resurface from the depths of the code, the correct course of action is to buy more RAM ! :-)
+When an allocation fails, the caller must:
 
-On modern operating systems, with huge amounts of RAM and swap space, a virtually unlimited amount of memory should be assumed.
+1. Check the result. Never write through it or pass it on unchecked.
+2. Release whatever the function already allocated, so a partial failure leaks nothing. `init_http_parser()` shows the pattern: it frees the parser when a stream processor cannot be allocated (`src/mmt_tcpip/lib/http_parser_integration.h:90-107`).
+3. Report the failure upward: return `NULL`, `0` or an error code, or drop the packet or the session attribute that needed the memory. Keep processing the next packet.
 
-Let's concentrate on CPU usage instead, and remember:  **free the mallocs** ;-)
+The `fault_injection` suite tests this contract. It fails the Nth allocation of the allocator, the hashmap and the HTTP-parser constructor, then checks that the result is `NULL` or that the entry was dropped, that nothing leaked and that nothing was freed twice (`tests/fault_injection/run_tests.sh`).

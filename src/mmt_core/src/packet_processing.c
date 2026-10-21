@@ -330,7 +330,10 @@ int mmt_stats_snprintf(char * buff, int len, attribute_internal_t * attr) {
 }
 
 int mmt_header_line_pointer_snprintf(char * buff, int len, attribute_internal_t * attr) {
+    /* Issue #505 (F-BUG-007): len <= 0 used to write buff[-1]; same guard as the siblings. */
+    if (buff == NULL || len <= 0 || attr == NULL) return -1;
     mmt_header_line_t * data = (mmt_header_line_t *) attr->data;
+    if (data == NULL || data->ptr == NULL) { buff[0] = '\0'; return 0; }
     int copy_len = (data->len > (len - 1)) ? len - 1 : data->len;
     memcpy((void *) buff, (void *) data->ptr, copy_len);
     buff[copy_len] = '\0';

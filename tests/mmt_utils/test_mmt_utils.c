@@ -7,7 +7,7 @@
  *   - hex2dec
  *   - str_compare, str_index
  *   - str_sub, str_combine, str_copy
- *   - str_replace, str_subvalue
+ *   - str_replace (incl. adjacent/edge matches, #505), str_subvalue
  *   - str_get_indexes, str_print_array
  *
  * Edge cases: NULL inputs, empty strings, odd-length hex strings,
@@ -345,6 +345,34 @@ static void test_str_get_indexes(void) {
     }
 }
 
+/* ---- str_replace: adjacent and edge matches (issue #505, F-BUG-013) ----
+ * Adjacent matches leave an empty gap between them; str_sub_n() returns NULL
+ * for an empty range and str_replace() used to strcat() that NULL. */
+static void test_str_replace_adjacent_edges(void) {
+    fprintf(stderr, "  test: str_replace adjacent/edge matches (#505)\n");
+    static const struct { const char *str, *pat, *rep, *want; } cases[] = {
+        { "aa",      "a",  "b",   "bb"      }, /* adjacent, whole string    */
+        { "xaay",    "a",  "-",   "x--y"    }, /* adjacent, interior        */
+        { "abab",    "ab", "X",   "XX"      }, /* adjacent multi-char       */
+        { "aaa",     "a",  "",    ""        }, /* adjacent, empty rep       */
+        { "aaa",     "a",  "bc",  "bcbcbc"  }, /* adjacent, longer rep      */
+        { "a",       "a",  "b",   "b"       }, /* match is the whole string */
+        { "ab",      "a",  "X",   "Xb"      }, /* match at start only       */
+        { "ba",      "a",  "X",   "bX"      }, /* match at end only         */
+        { "a.b.c",   ".",  "::",  "a::b::c" }, /* separated matches         */
+        { "..a..",   ".",  "",    "a"       }, /* both edges, adjacent      */
+    };
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        char *r = str_replace((char *) cases[i].str, (char *) cases[i].pat,
+                              (char *) cases[i].rep);
+        char msg[96];
+        snprintf(msg, sizeof msg, "str_replace(\"%s\", \"%s\", \"%s\")",
+                 cases[i].str, cases[i].pat, cases[i].rep);
+        CHECK_STR_EQ(r, cases[i].want, msg);
+        free(r);
+    }
+}
+
 /* ---- str_replace ---- */
 static void test_str_replace(void) {
     fprintf(stderr, "  test: str_replace\n");
@@ -600,6 +628,7 @@ int main(int argc, char **argv) {
     test_str_copy();
     test_str_get_indexes();
     test_str_replace();
+    test_str_replace_adjacent_edges();
     test_str_subvalue();
     test_str_print_array();
     test_hex2str_printable();
