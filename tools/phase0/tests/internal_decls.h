@@ -282,6 +282,12 @@ int ip_opts_type_extraction(const ipacket_t *ipacket, unsigned proto_index, attr
 int ip_padding_check_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
 int _extract_jitter(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
 
+/* protocols/proto_ipv6.c (issue #502, F-BUG-102) */
+int ip6_version_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip6_traffic_class_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip6_flow_label_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+int ip6_next_proto_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
+
 /* protocols/proto_tcp.c */
 int tcp_data_offset_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);
 int tcp_fin_flag_extraction(const ipacket_t *ipacket, unsigned proto_index, attribute_t *extracted_data);

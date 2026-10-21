@@ -101,27 +101,36 @@ uint32_t mmt_bytestream_to_ipv4(const uint8_t * str, uint16_t max_chars_to_read,
     uint16_t oldread;
     uint32_t c;
     /* ip address must be X.X.X.X with each X between 0 and 255 */
+    /* Issue #502 (F-BUG-106): every str[read] below is preceded by its own
+     * `read >= max_chars_to_read` bound — the dereference no longer relies on
+     * an `==` disjunct short-circuiting earlier in the same condition. */
     oldread = read;
     c = mmt_bytestream_to_number(str, max_chars_to_read, &read);
-    if (c > 255 || oldread == read || max_chars_to_read == read || str[read] != '.')
+    if (c > 255 || oldread == read || read >= max_chars_to_read)
+        return 0;
+    if (str[read] != '.')
         return 0;
     read++;
     val = c << 24;
     oldread = read;
     c = mmt_bytestream_to_number(&str[read], max_chars_to_read - read, &read);
-    if (c > 255 || oldread == read || max_chars_to_read == read || str[read] != '.')
+    if (c > 255 || oldread == read || read >= max_chars_to_read)
+        return 0;
+    if (str[read] != '.')
         return 0;
     read++;
     val = val + (c << 16);
     oldread = read;
     c = mmt_bytestream_to_number(&str[read], max_chars_to_read - read, &read);
-    if (c > 255 || oldread == read || max_chars_to_read == read || str[read] != '.')
+    if (c > 255 || oldread == read || read >= max_chars_to_read)
+        return 0;
+    if (str[read] != '.')
         return 0;
     read++;
     val = val + (c << 8);
     oldread = read;
     c = mmt_bytestream_to_number(&str[read], max_chars_to_read - read, &read);
-    if (c > 255 || oldread == read || max_chars_to_read == read)
+    if (c > 255 || oldread == read || read >= max_chars_to_read)
         return 0;
     val = val + c;
 

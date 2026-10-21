@@ -105,7 +105,10 @@ int mmt_check_zattoo_tcp(ipacket_t * ipacket, unsigned index) {
                 uint32_t ip;
                 uint16_t bytes_read = 0;
 
-                ip = mmt_bytestream_to_ipv4(&packet->payload[12], packet->payload_packet_len, &bytes_read);
+                /* Issue #502 (F-BUG-106): the budget is what remains after
+                 * the 12-byte "POST http://" prefix (payload_packet_len > 50
+                 * here), not the whole payload length. */
+                ip = mmt_bytestream_to_ipv4(&packet->payload[12], packet->payload_packet_len - 12, &bytes_read);
 
                 // and now test the firt 5 bytes of the payload for zattoo pattern
                 if (ip == packet->iph->daddr

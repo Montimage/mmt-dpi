@@ -8,6 +8,7 @@
 #include "ip_session_id_management.h"
 #include "proto_ipv6_dgram.h"
 #include "proto_ip_dgram.h" /* Issue #201: frag-map sweep/evict helpers */
+#include "packet_processing.h" /* mmt_have_bytes() — issue #502 caplen prologues */
 /* Shared IPv4/IPv6 L4-protocol dispatch table — emits the file-local
  * `static const uint16_t mmt_ip_l4_proto_table[256]` (issue #238). */
 #include "ip_l4_proto_table.inc"
@@ -122,10 +123,24 @@ uint32_t get_next_header_offset(uint8_t current_header, const uint8_t * packet, 
     }
 }
 
+/* Issue #502 (F-BUG-102): the issue #202 caplen prologue of proto_ip.c —
+ * the `n` header bytes an ip6_* extractor reads from the start of the IPv6
+ * header must be captured before the header view is dereferenced. Returns
+ * the header offset, or -1 when the read must be refused. */
+static inline int ip6_header_prologue(const ipacket_t * packet, unsigned proto_index,
+        const attribute_t * extracted_data, size_t n) {
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL || extracted_data == NULL) return -1;
+    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    if (proto_offset < 0) return -1;
+    if (!mmt_have_bytes(packet, (size_t) proto_offset, n)) return -1;
+    return proto_offset;
+}
+
 int ip6_version_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    int proto_offset = ip6_header_prologue(packet, proto_index, extracted_data, sizeof(uint8_t));
+    if (proto_offset < 0) return 0;
     mmt_una_ipv6hdr_t * ip6_hdr = (mmt_una_ipv6hdr_t *) & packet->data[proto_offset];
 
     *((unsigned char *) extracted_data->data) = ip6_hdr->l1_1.version;
@@ -135,7 +150,9 @@ int ip6_version_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip6_traffic_class_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Issue #502: reads the 16-bit word at offset 0. */
+    int proto_offset = ip6_header_prologue(packet, proto_index, extracted_data, sizeof(uint16_t));
+    if (proto_offset < 0) return 0;
     mmt_una_ipv6hdr_t * ip6_hdr = (mmt_una_ipv6hdr_t *) & packet->data[proto_offset];
     uint8_t tc = (uint8_t) ((ip6_hdr->l1_2.short_word_1 & 0x0FF0) >> 4);
     *((unsigned char *) extracted_data->data) = tc;
@@ -145,7 +162,9 @@ int ip6_traffic_class_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip6_flow_label_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Issue #502: reads the 16-bit word at offset 0. */
+    int proto_offset = ip6_header_prologue(packet, proto_index, extracted_data, sizeof(uint16_t));
+    if (proto_offset < 0) return 0;
     mmt_una_ipv6hdr_t * ip6_hdr = (mmt_una_ipv6hdr_t *) & packet->data[proto_offset];
 
     *((unsigned int *) extracted_data->data) = (ip6_hdr->l1_2.short_word_1 & 0x000FFFFF);
@@ -155,7 +174,11 @@ int ip6_flow_label_extraction(const ipacket_t * packet, unsigned proto_index,
 int ip6_next_proto_extraction(const ipacket_t * packet, unsigned proto_index,
         attribute_t * extracted_data) {
 
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Issue #502: reads nexthdr at offset 6 — 7 bytes must be captured; the
+     * extension-header walk below bounds itself against caplen. */
+    int proto_offset = ip6_header_prologue(packet, proto_index, extracted_data,
+            offsetof(struct ipv6hdr, nexthdr) + sizeof(uint8_t));
+    if (proto_offset < 0) return 0;
     mmt_una_ipv6hdr_t * ip6_hdr = (mmt_una_ipv6hdr_t *) & packet->data[proto_offset];
 
     uint8_t  next_hdr    = ip6_hdr->nexthdr;

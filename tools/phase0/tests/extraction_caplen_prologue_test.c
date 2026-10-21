@@ -1,6 +1,8 @@
 /*
  * extraction_caplen_prologue_test — regression + coverage test for issue
- * #202 (F-BUG-033, F-BUG-010).
+ * #202 (F-BUG-033, F-BUG-010), extended by issue #502 (F-BUG-101..105:
+ * SLL, IPv6, ARP, the 17-chunk SCTP chain and the single IPv6 fragment —
+ * Part 1b).
  *
  * F-BUG-033: about 30 hand-written extraction callbacks in
  * src/mmt_tcpip/lib/protocols/proto_{ip,tcp,gre,gtp,icmp}.c indexed
@@ -537,6 +539,312 @@ static void test_icmp_callbacks(void) {
 }
 
 /* -------------------------------------------------------------------------
+ * Part 1b — issue #502 (F-BUG-101..105): the L2/L3 sites the #202 sweep
+ * missed — SLL ethertype, ip6_* extractors, ARP getters/extractors, the
+ * SCTP direct hierarchy-length write and the single-fragment IPv6 datagram.
+ * ------------------------------------------------------------------------- */
+
+static void test_ip6_callbacks(void) {
+    printf("[#502] proto_ipv6.c extraction callbacks\n");
+    /* IPv6 header at index 1, absolute offset 0 + 14 = 14. */
+    const int layers[2] = { 0, 14 };
+    fixture_t f;
+    attribute_t a;
+
+    fixture_init(&f, layers, 2, 14, 54); /* no IPv6 byte captured */
+    a = mk_attr(0, 1);
+    CHECK(ip6_version_extraction(&f.pkt, 1, &a) == 0,
+          "ip6_version refused when the IPv6 header is not captured");
+    fixture_free(&f);
+
+    fixture_init(&f, layers, 2, 15, 54); /* 1 byte: version only */
+    f.buf[14] = 0x60;
+    a = mk_attr(0, 1);
+    CHECK(ip6_version_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 6,
+          "ip6_version extracted from a 1-byte capture");
+    a = mk_attr(0, 1);
+    CHECK(ip6_traffic_class_extraction(&f.pkt, 1, &a) == 0,
+          "ip6_traffic_class refused when its 16-bit word is half captured");
+    a = mk_attr(0, 4);
+    CHECK(ip6_flow_label_extraction(&f.pkt, 1, &a) == 0,
+          "ip6_flow_label refused when its 16-bit word is half captured");
+    fixture_free(&f);
+
+    fixture_init(&f, layers, 2, 20, 54); /* nexthdr (offset 6) cut */
+    f.buf[14] = 0x60;
+    a = mk_attr(-2, 1);
+    CHECK(ip6_traffic_class_extraction(&f.pkt, 1, &a) == 1,
+          "ip6_traffic_class extracted inside caplen");
+    a = mk_attr(-2, 1);
+    CHECK(ip6_next_proto_extraction(&f.pkt, 1, &a) == 0,
+          "ip6_next_proto refused when nexthdr is not captured");
+    fixture_free(&f);
+
+    fixture_init(&f, layers, 2, 21, 54); /* exactly up to nexthdr */
+    f.buf[14] = 0x60;
+    f.buf[14 + 6] = 17; /* UDP */
+    a = mk_attr(-2, 1);
+    CHECK(ip6_next_proto_extraction(&f.pkt, 1, &a) == 1 && g_scratch[0] == 17,
+          "ip6_next_proto extracted when nexthdr is the last captured byte");
+    fixture_free(&f);
+}
+
+/* ARP callbacks are TU-static: reach them through the registered metadata. */
+typedef struct { int id; generic_attribute_extraction_function fn; } arp_lookup_t;
+
+static void arp_lookup_cb(attribute_metadata_t *attr, uint32_t proto_id, void *args) {
+    arp_lookup_t *l = (arp_lookup_t *)args;
+    (void)proto_id;
+    if (attr != NULL && attr->id == l->id) l->fn = attr->extraction_function;
+}
+
+static generic_attribute_extraction_function arp_fn(int id) {
+    arp_lookup_t l = { id, NULL };
+    iterate_through_protocol_attributes(PROTO_ARP, arp_lookup_cb, &l);
+    return l.fn;
+}
+
+static void test_arp_callbacks(void) {
+    printf("[#502] proto_arp.c extraction callbacks\n");
+    /* ARP at index 1, absolute offset 0 + 15 = 15 — odd on purpose, so the
+     * old (uint16_t *) reads of ar_hrd/ar_pro were misaligned as well. */
+    enum { O = 15 };
+    const int layers[2] = { 0, O };
+    fixture_t f;
+    attribute_t a;
+    generic_attribute_extraction_function sha = arp_fn(ARP_AR_SHA);
+    generic_attribute_extraction_function sip = arp_fn(ARP_AR_SIP);
+    generic_attribute_extraction_function src_hard = arp_fn(ARP_SRC_HARD);
+    generic_attribute_extraction_function dst_proto = arp_fn(ARP_DST_PROTO);
+    CHECK(sha && sip && src_hard && dst_proto, "ARP extraction callbacks found");
+    if (!(sha && sip && src_hard && dst_proto)) return;
+
+    /* F-BUG-103 headliner: 1 ARP byte captured — the hrd/pro getters used
+     * to read bytes 0..3 past the capture. */
+    fixture_init(&f, layers, 2, O + 1, O + 28);
+    a = mk_attr(-1, 6);
+    CHECK(sha(&f.pkt, 1, &a) == 0 && dst_proto(&f.pkt, 1, &a) == 0,
+          "ARP extractors refused when the fixed header is not captured");
+    fixture_free(&f);
+
+    /* Ethernet/IPv4 ARP cut after the sender MAC: SHA in, SIP out. */
+    fixture_init(&f, layers, 2, O + 14, O + 28);
+    f.buf[O + 1] = 0x01;                      /* hrd = 1 */
+    f.buf[O + 2] = 0x08; f.buf[O + 3] = 0x00; /* pro = 0x0800 */
+    f.buf[O + 4] = 6; f.buf[O + 5] = 4;
+    f.buf[O + 8] = 0xAA; f.buf[O + 13] = 0xBB;
+    a = mk_attr(-1, 6);
+    CHECK(sha(&f.pkt, 1, &a) == 1 && g_scratch[0] == 0xAA && g_scratch[5] == 0xBB,
+          "ARP SHA extracted inside caplen");
+    a = mk_attr(-1, 4);
+    CHECK(sip(&f.pkt, 1, &a) == 0,
+          "ARP SIP refused when the sender IP is not captured");
+    fixture_free(&f);
+
+    /* Generic (non Ethernet/IPv4) ARP: ar_hln = 200 exceeds the 64-byte
+     * BINARY_64DATA_TYPE_LEN payload even though it is fully captured. */
+    fixture_init(&f, layers, 2, O + 8 + 2 * 200 + 2 * 4, O + 8 + 2 * 200 + 2 * 4);
+    f.buf[O + 1] = 0x06;                      /* hrd = IEEE 802 */
+    f.buf[O + 2] = 0x08; f.buf[O + 3] = 0x00;
+    f.buf[O + 4] = 200; f.buf[O + 5] = 4;
+    a = mk_attr(-1, BINARY_64DATA_TYPE_LEN);
+    CHECK(src_hard(&f.pkt, 1, &a) == 0,
+          "ARP src_hard refused when ar_hln exceeds the binary scratch");
+    fixture_free(&f);
+
+    /* Generic ARP with a captured 6-byte address: extracted. */
+    fixture_init(&f, layers, 2, O + 28, O + 28);
+    f.buf[O + 1] = 0x06;
+    f.buf[O + 2] = 0x08; f.buf[O + 3] = 0x00;
+    f.buf[O + 4] = 6; f.buf[O + 5] = 4;
+    f.buf[O + 8] = 0xCC;
+    a = mk_attr(-1, BINARY_64DATA_TYPE_LEN);
+    CHECK(src_hard(&f.pkt, 1, &a) == 1 && *(uint32_t *)g_scratch == 6
+          && g_scratch[4] == 0xCC,
+          "ARP src_hard extracted inside caplen");
+    fixture_free(&f);
+
+    /* Same header, capture cut inside the target protocol address. */
+    fixture_init(&f, layers, 2, O + 26, O + 28);
+    f.buf[O + 1] = 0x06;
+    f.buf[O + 2] = 0x08; f.buf[O + 3] = 0x00;
+    f.buf[O + 4] = 6; f.buf[O + 5] = 4;
+    a = mk_attr(-1, BINARY_64DATA_TYPE_LEN);
+    CHECK(dst_proto(&f.pkt, 1, &a) == 0,
+          "ARP dst_proto refused when the target address is cut");
+    fixture_free(&f);
+}
+
+/* Whole-pipeline probes: one crafted frame through packet_process(), copied
+ * into an exactly caplen-sized heap buffer so ASan brackets it. */
+typedef struct {
+    unsigned packets;
+    unsigned max_len;   /* largest proto_hierarchy->len seen */
+    uint32_t want;      /* protocol to look for in the path */
+    int saw_want;
+    int saw_session;
+} path_probe_t;
+
+static int path_probe_cb(const ipacket_t *ipacket, mmt_opaque_t args) {
+    path_probe_t *p = (path_probe_t *)args;
+    unsigned len = ipacket->proto_hierarchy->len;
+    unsigned i;
+    p->packets++;
+    if (len > p->max_len) p->max_len = len;
+    for (i = 0; i < len && i < PROTO_PATH_SIZE; i++)
+        if (ipacket->proto_hierarchy->proto_path[i] == p->want) p->saw_want = 1;
+    if (ipacket->session != NULL) p->saw_session = 1;
+    return 0;
+}
+
+static int run_frame(uint32_t stack, const u_char *frame, unsigned caplen,
+        unsigned wirelen, path_probe_t *probe) {
+    char errbuf[1024];
+    mmt_handler_t *h = mmt_init_handler(stack, 0, errbuf);
+    if (h == NULL) return 0;
+    if (!register_packet_handler(h, 502, path_probe_cb, probe)) {
+        mmt_close_handler(h);
+        return 0;
+    }
+    u_char *buf = (u_char *)malloc(caplen ? caplen : 1);
+    if (!buf) { perror("malloc"); exit(2); }
+    memcpy(buf, frame, caplen);
+    struct pkthdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
+    hdr.ts.tv_sec = 1;
+    hdr.caplen = caplen;
+    hdr.len = wirelen;
+    packet_process(h, &hdr, buf);
+    mmt_close_handler(h);
+    free(buf);
+    return 1;
+}
+
+static void test_sll_frames(void) {
+    printf("[#502] proto_sll.c ethertype read\n");
+    u_char frame[16 + 28];
+    path_probe_t p;
+    memset(frame, 0, sizeof(frame));
+    frame[14] = 0x08; frame[15] = 0x06; /* ethertype ARP */
+
+    /* F-BUG-101: 15 bytes — the ethertype at 14..15 is half captured. */
+    memset(&p, 0, sizeof(p));
+    CHECK(run_frame(PROTO_SLL, frame, 15, 60, &p) && p.packets == 1,
+          "truncated SLL frame processed");
+    /* Path is META(0) / SLL(1): nothing may be classified above SLL. */
+    CHECK(p.max_len <= 2,
+          "truncated SLL frame: nothing classified from the uncaptured ethertype");
+
+    /* Control: a full SLL header + ARP body classifies ARP. */
+    memset(&p, 0, sizeof(p));
+    p.want = PROTO_ARP;
+    CHECK(run_frame(PROTO_SLL, frame, sizeof(frame), sizeof(frame), &p) && p.saw_want,
+          "complete SLL frame classifies the ARP ethertype");
+}
+
+static void test_sctp_chunk_chain(void) {
+    printf("[#502] proto_sctp.c hierarchy length bound\n");
+    enum { NCHUNK = 17, CHUNK = 16 };
+    u_char frame[14 + 20 + 12 + NCHUNK * CHUNK];
+    unsigned ip_len = 20 + 12 + NCHUNK * CHUNK;
+    unsigned i;
+    path_probe_t p;
+    memset(frame, 0, sizeof(frame));
+    frame[12] = 0x08; frame[13] = 0x00;          /* Ethernet: IPv4 */
+    frame[14] = 0x45;
+    frame[16] = (u_char)(ip_len >> 8); frame[17] = (u_char)ip_len;
+    frame[22] = 64; frame[23] = 132;             /* TTL, protocol SCTP */
+    frame[26] = 10; frame[29] = 1;               /* 10.0.0.1 */
+    frame[30] = 10; frame[33] = 2;               /* 10.0.0.2 */
+    frame[34] = 0x0b; frame[35] = 0x59;          /* SCTP ports 2905 -> 2905 */
+    frame[36] = 0x0b; frame[37] = 0x59;
+    for (i = 0; i < NCHUNK; i++) {
+        u_char *c = &frame[14 + 20 + 12 + i * CHUNK];
+        c[0] = 3;                                /* SACK */
+        c[3] = CHUNK;                            /* chunk length 16 */
+    }
+    /* F-BUG-104 smoke leg: META/ETH/IP/SCTP then SACK chunks fill the path
+     * through the engine. The engine's classification_max_depth stops the
+     * walk before index 15, so this leg cannot reach the overflow — the
+     * direct index-15 classifier calls below are the regression test. */
+    memset(&p, 0, sizeof(p));
+    p.want = PROTO_SCTP_SACK;
+    CHECK(run_frame(1 /* DLT_EN10MB */, frame, sizeof(frame), sizeof(frame), &p)
+          && p.packets == 1 && p.saw_want,
+          "17-chunk SCTP frame processed and SACK chunks classified");
+    CHECK(p.max_len <= PROTO_PATH_SIZE,
+          "17-chunk SCTP frame (smoke): hierarchy length stays within PROTO_PATH_SIZE");
+
+    /* The engine stops the classify walk at classification_max_depth
+     * (PROTO_PATH_SIZE - 1), so drive the SCTP and chunk classifiers
+     * directly at index 15 — the crafted-input (NULL-bound) path the
+     * direct len write was reachable from. */
+    int layers[PROTO_PATH_SIZE];
+    fixture_t f;
+    uint32_t ids[2] = { PROTO_SCTP, PROTO_SCTP_SACK };
+    unsigned k;
+    memset(layers, 0, sizeof(layers));
+    layers[PROTO_PATH_SIZE - 1] = 34;            /* layer 15 at offset 34 */
+    for (k = 0; k < 2; k++) {
+        protocol_t *proto = get_protocol_struct_by_protocol_id(ids[k]);
+        mmt_classify_proto_t *c = proto ? proto->classify_next.classify_protos : NULL;
+        CHECK(c != NULL, ids[k] == PROTO_SCTP ? "SCTP classifier registered"
+                                               : "SCTP SACK chunk classifier registered");
+        for (; c != NULL; c = c->next) {
+            fixture_init(&f, layers, PROTO_PATH_SIZE, 34 + 12 + 2 * CHUNK, 34 + 12 + 2 * CHUNK);
+            /* SCTP common header at 34 (first chunk type at +12) for PROTO_SCTP;
+             * for the chunk classifier the "current chunk" is at 34. */
+            u_char *base = &f.buf[34];
+            if (ids[k] == PROTO_SCTP) {
+                base[12] = 3; base[15] = CHUNK;
+            } else {
+                base[0] = 3; base[3] = CHUNK;
+                base[CHUNK] = 3; base[CHUNK + 3] = CHUNK;
+            }
+            (void) c->classify_me(&f.pkt, PROTO_PATH_SIZE - 1);
+            CHECK(f.hier.len <= PROTO_PATH_SIZE,
+                  ids[k] == PROTO_SCTP
+                  ? "SCTP classifier at index 15 keeps len within PROTO_PATH_SIZE"
+                  : "SCTP chunk classifier at index 15 keeps len within PROTO_PATH_SIZE");
+            fixture_free(&f);
+        }
+    }
+}
+
+static void test_ip6_single_fragment(void) {
+    printf("[#502] IPv6 single complete fragment (offset 0, M=0)\n");
+    u_char frame[14 + 40 + 8 + 8 + 4];
+    path_probe_t p;
+    memset(frame, 0, sizeof(frame));
+    frame[12] = 0x86; frame[13] = 0xDD;          /* Ethernet: IPv6 */
+    u_char *ip6 = &frame[14];
+    ip6[0] = 0x60;
+    ip6[5] = 8 + 8 + 4;                          /* payload_len: frag + UDP */
+    ip6[6] = 44;                                 /* nexthdr: Fragment */
+    ip6[7] = 64;
+    ip6[8] = 0x20; ip6[9] = 0x01; ip6[23] = 1;   /* 2001::1 */
+    ip6[24] = 0x20; ip6[25] = 0x01; ip6[39] = 2; /* 2001::2 */
+    u_char *fh = &ip6[40];
+    fh[0] = 17;                                  /* next: UDP; offset 0, M=0 */
+    fh[4] = 0x12; fh[5] = 0x34; fh[6] = 0x56; fh[7] = 0x78;
+    u_char *udp = &fh[8];
+    udp[0] = 0x30; udp[1] = 0x39;                /* 12345 -> 5353 */
+    udp[2] = 0x14; udp[3] = 0xe9;
+    udp[5] = 8 + 4;
+    memcpy(&udp[8], "mmt!", 4);
+
+    /* F-BUG-105: last_offset == 0 used to mean "last fragment not seen", so
+     * the datagram never completed and the packet produced no session. */
+    memset(&p, 0, sizeof(p));
+    p.want = PROTO_UDP;
+    CHECK(run_frame(1 /* DLT_EN10MB */, frame, sizeof(frame), sizeof(frame), &p)
+          && p.packets == 1,
+          "single-fragment IPv6 frame processed");
+    CHECK(p.saw_session && p.saw_want,
+          "single complete IPv6 fragment reassembles into a UDP session");
+}
+
+/* -------------------------------------------------------------------------
  * Part 2 — F-BUG-010: a declared data_len above the type size must be
  * refused at registration; the per-handler scratch buffer must cover the
  * declared length.
@@ -742,6 +1050,11 @@ int main(int argc, char **argv) {
     test_gre_callbacks();
     test_gtp_callbacks();
     test_icmp_callbacks();
+    test_ip6_callbacks();
+    test_arp_callbacks();
+    test_sll_frames();
+    test_sctp_chunk_chain();
+    test_ip6_single_fragment();
     test_registration();
     test_corpus(argv[1]);
 

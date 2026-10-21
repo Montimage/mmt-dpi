@@ -55,6 +55,10 @@ struct ipv6_dgram
    uint32_t last_offset; /* Issue #201: widened from uint16_t (F-BUG-040) */
    int packet_offsets[MMT_MAX_NUMBER_FRAGMENT];
    ip_frags_t holes; // list of holes
+   /* Issue #502 (F-BUG-105): set once the last fragment (M=0) arrived.
+    * last_offset alone cannot say so — it is 0 both before the last fragment
+    * and for a single complete fragment (offset 0, M=0). */
+   uint8_t has_last_fragment;
 };
 
 typedef struct ipv6_dgram ipv6_dgram_t;

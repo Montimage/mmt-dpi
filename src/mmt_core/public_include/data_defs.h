@@ -864,8 +864,11 @@ MMTAPI struct timeval MMTCALL get_session_last_activity_time(
 /**
  * Gets into \tv the session last data packet time of specific direction
  * @param session the session structure
- * @param direction The direction
+ * @param direction The direction: 0 (initiator) or 1 (remote). Any other
+ *        value (e.g. TO_INITIATOR / FROM_SERVER, which are 2) is rejected.
  * @param tv pointer to timeval struct where the session last activity time will be copied
+ * @return the timestamp, or a zero timeval when \p session is NULL or
+ *         \p direction is not 0 or 1.
  */
 MMTAPI struct timeval MMTCALL get_session_last_data_packet_time_by_direction(
     const mmt_session_t *session, uint8_t direction

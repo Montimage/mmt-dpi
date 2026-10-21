@@ -68,6 +68,7 @@ int ipv6_dgram_init(ipv6_dgram_t *dg)
    dg->max_packet_size = 0;
    dg->current_packet_size = 0;
    dg->last_offset = 0;
+   dg->has_last_fragment = 0;
    int i = 0;
    for (i = 0; i < MMT_MAX_NUMBER_FRAGMENT; i++)
    {
@@ -117,6 +118,7 @@ void ipv6_dgram_cleanup(ipv6_dgram_t *dg)
    dg->nb_packets = 0;
    dg->caplen = 0;
    dg->last_offset = 0;
+   dg->has_last_fragment = 0;
 }
 
 /**
@@ -176,6 +178,7 @@ int ipv6_dgram_update(ipv6_dgram_t *dg, const mmt_una_ipv6hdr_t *ip, unsigned av
    {
       dg->max_packet_size = fragment_offset * 8 + payload_len;
       dg->last_offset = fragment_offset;
+      dg->has_last_fragment = 1;
    }
 
    int i = 0;
@@ -220,7 +223,10 @@ int ipv6_dgram_update(ipv6_dgram_t *dg, const mmt_una_ipv6hdr_t *ip, unsigned av
 
 int ipv6_dgram_is_complete(ipv6_dgram_t *dg)
 {
-   if (dg->last_offset == 0)
+   /* Issue #502 (F-BUG-105): "last fragment seen", not last_offset != 0 —
+    * a single complete fragment (offset 0, M=0) has last_offset 0 and was
+    * never reported complete, so it lingered in the map until expiry. */
+   if (!dg->has_last_fragment)
       return 0;
    if (dg->current_packet_size < dg->max_packet_size)
       return 0;

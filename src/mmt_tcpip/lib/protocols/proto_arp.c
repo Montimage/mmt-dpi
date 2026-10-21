@@ -5,6 +5,7 @@
 #include "../mmt_common_internal_include.h"
 
 #include "arp.h"
+#include "packet_processing.h" /* mmt_have_bytes() — issue #502 caplen prologue */
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
@@ -13,6 +14,9 @@ static uint16_t arp_ar_hrd_get_value     (const ipacket_t * packet, unsigned pro
 static uint16_t arp_ar_pro_get_value     (const ipacket_t * packet, unsigned proto_index);
 static uint8_t  arp_ar_hln_get_value     (const ipacket_t * packet, unsigned proto_index);
 static uint8_t  arp_ar_pln_get_value     (const ipacket_t * packet, unsigned proto_index);
+
+static int arp_header_captured      (const ipacket_t * packet, unsigned proto_index, int * proto_offset);
+static int arp_var_field_fits       (const ipacket_t * packet, int proto_offset, int attribute_offset, int attribute_length);
 
 static int arp_ar_sha_extraction    (const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
 static int arp_ar_sip_extraction    (const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data);
@@ -25,17 +29,43 @@ static int arp_dst_proto_extraction (const ipacket_t * packet, unsigned proto_in
 
 
 /*
+ * Issue #502 (F-BUG-103): caplen prologue shared by every ARP extractor —
+ * the fixed 8-byte header (hrd/pro/hln/pln/op) every callback reads through
+ * the getters below must be captured before any of it is dereferenced.
+ */
+static int arp_header_captured(const ipacket_t * packet, unsigned proto_index, int * proto_offset)
+{
+    if (packet == NULL || packet->p_hdr == NULL || packet->data == NULL) return 0;
+    int offset = get_packet_offset_at_index(packet, proto_index);
+    if (offset < 0) return 0;
+    if (!mmt_have_bytes(packet, (size_t) offset, sizeof (struct arphdr))) return 0;
+    *proto_offset = offset;
+    return 1;
+}
+
+/* Issue #502: a variable-length address (length from ar_hln/ar_pln) must be
+ * captured and must fit the BINARY_64DATA_TYPE_LEN scratch after its int
+ * length prefix. */
+static int arp_var_field_fits(const ipacket_t * packet, int proto_offset, int attribute_offset, int attribute_length)
+{
+    if (attribute_length < 0 || (size_t) attribute_length > BINARY_64DATA_TYPE_LEN - sizeof (int)) return 0;
+    return mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, (size_t) attribute_length);
+}
+
+/*
  * ARP data extraction routines
  */
 
 int arp_ar_sha_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data)
 {
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Get the protocol offset — issue #502: only once the header is captured */
+    int proto_offset;
+    if (extracted_data == NULL || !arp_header_captured(packet, proto_index, &proto_offset)) return 0;
 
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         int attribute_offset = 8;
         int attribute_length = 6;
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, (size_t) attribute_length)) return 0;
         memcpy((u_char *) extracted_data->data, (char *) & packet->data[proto_offset + attribute_offset], attribute_length);
         return 1;
     }
@@ -45,12 +75,14 @@ int arp_ar_sha_extraction(const ipacket_t * packet, unsigned proto_index, attrib
 
 int arp_ar_sip_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data)
 {
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Get the protocol offset — issue #502: only once the header is captured */
+    int proto_offset;
+    if (extracted_data == NULL || !arp_header_captured(packet, proto_index, &proto_offset)) return 0;
 
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         int attribute_offset = 14;
         //int attribute_length = 4;
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, sizeof(unsigned int))) return 0;
         // Issue #193: memcpy, not an aligned-type dereference — the sender
         // protocol address can start at an unaligned packet offset.
         memcpy(extracted_data->data, & packet->data[proto_offset + attribute_offset], sizeof(unsigned int));
@@ -63,12 +95,14 @@ int arp_ar_sip_extraction(const ipacket_t * packet, unsigned proto_index, attrib
 
 int arp_ar_tha_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data)
 {
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Get the protocol offset — issue #502: only once the header is captured */
+    int proto_offset;
+    if (extracted_data == NULL || !arp_header_captured(packet, proto_index, &proto_offset)) return 0;
 
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         int attribute_offset = 18;
         int attribute_length = 6;
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, (size_t) attribute_length)) return 0;
         memcpy((u_char *) extracted_data->data, (char *) & packet->data[proto_offset + attribute_offset], attribute_length);
 
         return 1;
@@ -79,12 +113,14 @@ int arp_ar_tha_extraction(const ipacket_t * packet, unsigned proto_index, attrib
 
 int arp_ar_tip_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data)
 {
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Get the protocol offset — issue #502: only once the header is captured */
+    int proto_offset;
+    if (extracted_data == NULL || !arp_header_captured(packet, proto_index, &proto_offset)) return 0;
 
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         int attribute_offset = 24;
         //int attribute_length = 4;
+        if (!mmt_have_bytes(packet, (size_t) proto_offset + (size_t) attribute_offset, sizeof(unsigned int))) return 0;
         // Issue #193: memcpy, not an aligned-type dereference — the target
         // protocol address starts at an unaligned packet offset (e.g. 38 on
         // Ethernet), which UBSan flags and strict-arch builds fault on.
@@ -98,8 +134,9 @@ int arp_ar_tip_extraction(const ipacket_t * packet, unsigned proto_index, attrib
 
 int arp_src_hard_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data)
 {
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Get the protocol offset — issue #502: only once the header is captured */
+    int proto_offset;
+    if (extracted_data == NULL || !arp_header_captured(packet, proto_index, &proto_offset)) return 0;
 
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         ;
@@ -108,6 +145,7 @@ int arp_src_hard_extraction(const ipacket_t * packet, unsigned proto_index, attr
         int attribute_offset = sizeof (struct arphdr);
         /* Get the attribute data length */
         int attribute_length = arp_ar_hln_get_value(packet, proto_index);
+        if (!arp_var_field_fits(packet, proto_offset, attribute_offset, attribute_length)) return 0;
 
         *((unsigned int *) extracted_data->data) = attribute_length;
         memcpy(& ((u_char *) extracted_data->data)[sizeof (int) ], & packet->data[proto_offset + attribute_offset], attribute_length);
@@ -120,8 +158,9 @@ int arp_src_hard_extraction(const ipacket_t * packet, unsigned proto_index, attr
 
 int arp_src_proto_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data)
 {
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Get the protocol offset — issue #502: only once the header is captured */
+    int proto_offset;
+    if (extracted_data == NULL || !arp_header_captured(packet, proto_index, &proto_offset)) return 0;
 
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         ;
@@ -130,6 +169,7 @@ int arp_src_proto_extraction(const ipacket_t * packet, unsigned proto_index, att
         int attribute_offset = sizeof (struct arphdr) +arp_ar_hln_get_value(packet, proto_index);
         /* Get the attribute data length */
         int attribute_length = arp_ar_pln_get_value(packet, proto_index);
+        if (!arp_var_field_fits(packet, proto_offset, attribute_offset, attribute_length)) return 0;
 
         *((unsigned int *) extracted_data->data) = attribute_length;
         memcpy(& ((u_char *) extracted_data->data)[sizeof (int) ], & packet->data[proto_offset + attribute_offset], attribute_length);
@@ -142,8 +182,9 @@ int arp_src_proto_extraction(const ipacket_t * packet, unsigned proto_index, att
 
 int arp_dst_hard_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data)
 {
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Get the protocol offset — issue #502: only once the header is captured */
+    int proto_offset;
+    if (extracted_data == NULL || !arp_header_captured(packet, proto_index, &proto_offset)) return 0;
 
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         ;
@@ -152,6 +193,7 @@ int arp_dst_hard_extraction(const ipacket_t * packet, unsigned proto_index, attr
         int attribute_offset = sizeof (struct arphdr) +arp_ar_pln_get_value(packet, proto_index) + arp_ar_hln_get_value(packet, proto_index);
         /* Get the attribute data length */
         int attribute_length = arp_ar_hln_get_value(packet, proto_index);
+        if (!arp_var_field_fits(packet, proto_offset, attribute_offset, attribute_length)) return 0;
 
         *((unsigned int *) extracted_data->data) = attribute_length;
         memcpy(& ((u_char *) extracted_data->data)[sizeof (int) ], & packet->data[proto_offset + attribute_offset], attribute_length);
@@ -164,8 +206,9 @@ int arp_dst_hard_extraction(const ipacket_t * packet, unsigned proto_index, attr
 
 int arp_dst_proto_extraction(const ipacket_t * packet, unsigned proto_index, attribute_t * extracted_data)
 {
-    /* Get the protocol offset */
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    /* Get the protocol offset — issue #502: only once the header is captured */
+    int proto_offset;
+    if (extracted_data == NULL || !arp_header_captured(packet, proto_index, &proto_offset)) return 0;
 
     if (arp_ar_hrd_get_value(packet, proto_index) == 0x0001 && arp_ar_pro_get_value(packet, proto_index) == 0x0800) {
         ;
@@ -174,6 +217,7 @@ int arp_dst_proto_extraction(const ipacket_t * packet, unsigned proto_index, att
         int attribute_offset = sizeof (struct arphdr) +arp_ar_pln_get_value(packet, proto_index) + 2 * arp_ar_hln_get_value(packet, proto_index);
         /* Get the attribute data length */
         int attribute_length = arp_ar_pln_get_value(packet, proto_index);
+        if (!arp_var_field_fits(packet, proto_offset, attribute_offset, attribute_length)) return 0;
 
         *((unsigned int *) extracted_data->data) = attribute_length;
         memcpy(& ((u_char *) extracted_data->data)[sizeof (int) ], & packet->data[proto_offset + attribute_offset], attribute_length);
@@ -203,24 +247,25 @@ static attribute_metadata_t arp_attributes_metadata[ARP_ATTRIBUTES_NB] = {
 
 uint16_t arp_ar_hrd_get_value(const ipacket_t * packet, unsigned proto_index)
 {
-    uint16_t retval;
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    retval = ntohs(*(uint16_t *) & packet->data[proto_offset + arp_attributes_metadata[0].position_in_packet]);
-    return retval;
+    /* Issue #502 (F-BUG-103): bounded, alignment-safe 16-bit read. */
+    int proto_offset;
+    if (!arp_header_captured(packet, proto_index, &proto_offset)) return 0;
+    return ntohs(get_u16(packet->data, proto_offset + arp_attributes_metadata[0].position_in_packet));
 }
 
 uint16_t arp_ar_pro_get_value(const ipacket_t * packet, unsigned proto_index)
 {
-    uint16_t retval;
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
-    retval = ntohs(*(uint16_t *) & packet->data[proto_offset + arp_attributes_metadata[1].position_in_packet]);
-    return retval;
+    /* Issue #502 (F-BUG-103): bounded, alignment-safe 16-bit read. */
+    int proto_offset;
+    if (!arp_header_captured(packet, proto_index, &proto_offset)) return 0;
+    return ntohs(get_u16(packet->data, proto_offset + arp_attributes_metadata[1].position_in_packet));
 }
 
 uint8_t arp_ar_hln_get_value(const ipacket_t * packet, unsigned proto_index)
 {
     uint8_t retval;
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    int proto_offset;
+    if (!arp_header_captured(packet, proto_index, &proto_offset)) return 0;
     retval = *(uint8_t *) & packet->data[proto_offset + arp_attributes_metadata[2].position_in_packet];
     return retval;
 }
@@ -228,7 +273,8 @@ uint8_t arp_ar_hln_get_value(const ipacket_t * packet, unsigned proto_index)
 uint8_t arp_ar_pln_get_value(const ipacket_t * packet, unsigned proto_index)
 {
     uint8_t retval;
-    int proto_offset = get_packet_offset_at_index(packet, proto_index);
+    int proto_offset;
+    if (!arp_header_captured(packet, proto_index, &proto_offset)) return 0;
     retval = *(uint8_t *) & packet->data[proto_offset + arp_attributes_metadata[3].position_in_packet];
     return retval;
 }

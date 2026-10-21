@@ -1743,6 +1743,34 @@ static void test_reasm_stats(void) {
     mmt_tcp_reasm_stat_live((int64_t) r0 + 10);
 }
 
+/* Issue #502 (F-BUG-016): get_session_last_data_packet_time_by_direction()
+ * indexes a 2-slot array — TO_INITIATOR / FROM_SERVER (2) and any larger
+ * direction must be rejected (zero timeval), not read the next field. The
+ * session is poisoned with a non-zero pattern so an out-of-range read is
+ * visible as a non-zero result. */
+static void test_direction_bound(void) {
+    mmt_session_t *s = (mmt_session_t *) malloc(sizeof(mmt_session_t));
+    CHECK(s != NULL, "direction-bound session allocation");
+    if (s == NULL) return;
+    memset(s, 0xA5, sizeof(*s));
+    s->s_last_data_packet_time[0].tv_sec = 11; s->s_last_data_packet_time[0].tv_usec = 1;
+    s->s_last_data_packet_time[1].tv_sec = 22; s->s_last_data_packet_time[1].tv_usec = 2;
+
+    struct timeval t0 = get_session_last_data_packet_time_by_direction(s, 0);
+    struct timeval t1 = get_session_last_data_packet_time_by_direction(s, 1);
+    CHECK(t0.tv_sec == 11 && t0.tv_usec == 1, "direction 0 returns the initiator slot");
+    CHECK(t1.tv_sec == 22 && t1.tv_usec == 2, "direction 1 returns the remote slot");
+
+    struct timeval t2 = get_session_last_data_packet_time_by_direction(s, TO_INITIATOR);
+    struct timeval t255 = get_session_last_data_packet_time_by_direction(s, 255);
+    CHECK(t2.tv_sec == 0 && t2.tv_usec == 0, "direction 2 (TO_INITIATOR) rejected");
+    CHECK(t255.tv_sec == 0 && t255.tv_usec == 0, "direction 255 rejected");
+
+    struct timeval tn = get_session_last_data_packet_time_by_direction(NULL, 0);
+    CHECK(tn.tv_sec == 0 && tn.tv_usec == 0, "NULL session rejected");
+    free(s);
+}
+
 /* ================================ main ==================================== */
 
 int main(void) {
@@ -1764,6 +1792,7 @@ int main(void) {
     test_helpers();
     test_attr_report_output();
     test_iteration();
+    test_direction_bound();
 
     /* Issue #242 part 2: classification utilities + offset memoization.
      * These run while ce_proto_a/b are still registered (the ranges-file

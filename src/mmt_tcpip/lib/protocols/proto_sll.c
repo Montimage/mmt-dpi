@@ -4,6 +4,7 @@
 #include "plugin_defs.h"
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
+#include "packet_processing.h" /* mmt_have_bytes() — issue #502 caplen prologue */
 
 #include "proto_sll.h"
 #include "ip_session_id_management.h"
@@ -32,11 +33,22 @@ static attribute_metadata_t sll_attributes_metadata[SLL_ATTRIBUTES_NB] = {
 };
 
 
-uint16_t sll_protocol_get_value(const ipacket_t * ipacket, int proto_index) {
-    uint16_t retval;
+/* Issue #502 (F-BUG-101): the ethertype (offset 14) must be captured before
+ * it is read, and the capture buffer is byte-aligned — read through get_u16
+ * (memcpy) instead of a strict uint16_t* dereference. Returns 0 when the
+ * field is not captured. */
+static int sll_protocol_captured(const ipacket_t * ipacket, int proto_index) {
+    if (ipacket == NULL || ipacket->p_hdr == NULL || ipacket->data == NULL) return 0;
     int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
-    retval = ntohs(*(uint16_t *) & ipacket->data[proto_offset + sll_attributes_metadata[4].position_in_packet]);
-    return retval;
+    if (proto_offset < 0) return 0;
+    return mmt_have_bytes(ipacket, (size_t) proto_offset
+            + (size_t) sll_attributes_metadata[4].position_in_packet, sizeof(uint16_t));
+}
+
+uint16_t sll_protocol_get_value(const ipacket_t * ipacket, int proto_index) {
+    if (!sll_protocol_captured(ipacket, proto_index)) return 0;
+    int proto_offset = get_packet_offset_at_index(ipacket, proto_index);
+    return ntohs(get_u16(ipacket->data, proto_offset + sll_attributes_metadata[4].position_in_packet));
 }
 
 
@@ -46,6 +58,8 @@ int sll_classify_next_proto(ipacket_t * ipacket, unsigned index) {
     retval.proto_id = -1;
     retval.status = NonClassified;
 
+    /* Issue #502: a frame cut before the ethertype is not classified. */
+    if (!sll_protocol_captured(ipacket, (int) index)) return 0;
 
     switch(sll_protocol_get_value(ipacket, index)) {
             /* IPv4 */

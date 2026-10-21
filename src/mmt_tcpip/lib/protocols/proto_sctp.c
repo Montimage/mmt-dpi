@@ -133,6 +133,11 @@ static int sctp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 	// so we limit the length of hierarchy for now.
 	//This length will be increased by another classification function
 	//  if further protocols will classified latter.
+	/* Issue #502 (F-BUG-104): proto_path / offsets / classif_status hold
+	 * PROTO_PATH_SIZE entries — never set len past them (set_classified_proto
+	 * refuses index + 1 >= PROTO_PATH_SIZE anyway). */
+	if (index + 2 > PROTO_PATH_SIZE)
+		return 0;
 	ipacket->proto_hierarchy->len = index + 1 + 1;
 
 	return set_classified_proto(ipacket, index + 1, retval);
@@ -177,6 +182,10 @@ static int sctp_classify_next_chunk(ipacket_t * ipacket, unsigned index) {
 		retval.status   = Classified;
 		retval.offset   = next_chunk_advance; //the next chunk is just after this one (padding included)
 
+		/* Issue #502 (F-BUG-104): bound the direct len write — a long chunk
+		 * chain used to push len past PROTO_PATH_SIZE. */
+		if (index + 2 > PROTO_PATH_SIZE)
+			return 0;
 		ipacket->proto_hierarchy->len = index + 1 + 1;
 
 		return set_classified_proto(ipacket, index + 1, retval);
