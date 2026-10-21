@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- tests/rule_engine (#509): A THEN AFTER B inside the packet-counter window [3, 4].
+     A = UDP.dest_port 1001, B = 1002, C = 1003; scenarios in test_rule_eval.c. -->
+<beginning>
+  <property value="THEN" property_id="5" type_property="SECURITY_RULE" description="counter" counter_min="3" counter_max="4">
+    <event event_id="1" description="A" boolean_expression="(UDP.dest_port == 1001)"/>
+    <event event_id="2" description="B" boolean_expression="(UDP.dest_port == 1002)"/>
+  </property>
+</beginning>
