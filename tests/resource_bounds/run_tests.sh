@@ -51,6 +51,15 @@
 #                          index counters armed (-DMMT_IP_FRAG_INDEX_STATS)
 #                          and the counted allocator of tcp-memory.
 #
+# Issue #500 (F-BUG-003) adds the "timeout-sweep" fixture: the
+# out-of-memory forced sweep stops at its 65,000-session budget without
+# dropping the rest of the list it stopped in — every remaining session
+# stays linked and expires exactly once on the regular expiry pass.
+#
+#   test_timeout_sweep.c — links the real packet_session.c / hash_utils.cpp
+#                          and the core objects they need (the core_engine
+#                          suite's source set).
+#
 # Issue #394 (F-PERF-001..004) consolidates the four fixtures into
 # reproducible adversarial resource budgets: every fixture reports its
 # workload scales, fixed seeds, accepted/refused work and counters as
@@ -77,13 +86,13 @@
 #
 # Usage: tests/resource_bounds/run_tests.sh [all | fixture ...]
 #   no arguments (or "all") runs every fixture; "ipv6-hash" / "tcp-memory" /
-#   "tcp-order" / "fragment-eviction" select one.
+#   "tcp-order" / "fragment-eviction" / "timeout-sweep" select one.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction)
+ALL_FIXTURES=(ipv6-hash tcp-memory tcp-order fragment-eviction timeout-sweep)
 FIXTURES=()
 for f in "$@"; do
     if [ "$f" = "all" ]; then FIXTURES+=("${ALL_FIXTURES[@]}"); else FIXTURES+=("$f"); fi
@@ -99,7 +108,8 @@ for f in "${FIXTURES[@]}"; do
         tcp-memory) TESTS+=(tcp_memory) ;;
         tcp-order) TESTS+=(tcp_order) ;;
         fragment-eviction) TESTS+=(frag_eviction) ;;
-        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction)" >&2
+        timeout-sweep) TESTS+=(timeout_sweep) ;;
+        *) echo "✗ unknown resource_bounds fixture '$f' (known: all, ipv6-hash, tcp-memory, tcp-order, fragment-eviction, timeout-sweep)" >&2
            exit 2 ;;
     esac
     FIXTURE_IDS+=("$f")
@@ -220,6 +230,26 @@ build_frag_eviction() {
     "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_frag_eviction" \
         "${WORK}/test_frag_eviction.o" "${WORK}/memory_counted_frag.o" \
         "${WORK}/tcp_alloc_count_frag.o"
+}
+
+build_timeout_sweep() {
+    # The session-expiry code under test plus the core objects it links
+    # against (same source set as tests/core_engine), compiled into WORK.
+    local core="${REPO_ROOT}/src/mmt_core/src" objs=() src
+    for src in packet_processing.c packet_registry.c packet_pipeline.c \
+               packet_session.c packet_stats.c memory.c hashmap.c mmt_data.c \
+               mmt_inet_ntop.c proto_meta.c plugins_engine.c extraction_lib.c \
+               mmt_init.c dpi_profiles.c; do
+        "${CC}" "${extra_cflags[@]}" -std=gnu11 "${INCS[@]}" \
+            -c "${core}/${src}" -o "${WORK}/ts_${src%.c}.o"
+        objs+=("${WORK}/ts_${src%.c}.o")
+    done
+    "${CXX}" "${extra_cflags[@]}" -std=c++11 "${INCS[@]}" \
+        -c "${core}/hash_utils.cpp" -o "${WORK}/ts_hash_utils.o"
+    "${CC}" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+        -c "${SCRIPT_DIR}/test_timeout_sweep.c" -o "${WORK}/test_timeout_sweep.o"
+    "${CXX}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_timeout_sweep" \
+        "${WORK}/test_timeout_sweep.o" "${objs[@]}" "${WORK}/ts_hash_utils.o" -lm -lpthread -ldl
 }
 
 echo "  [1/3] compiling ..."
@@ -362,4 +392,4 @@ python3 "${CHECKER}" --self-test > "${WORK}/selftest.log" 2>&1 || { cat "${WORK}
 tail -n 1 "${WORK}/selftest.log"
 
 [ "${rc}" -eq 0 ] || { echo "✗ resource bounds tests failed" >&2; exit 1; }
-echo "✓ resource bounds tests passed (issues #379, #380, #382, #383; budgets #394, gate #395)"
+echo "✓ resource bounds tests passed (issues #379, #380, #382, #383, #500; budgets #394, gate #395)"

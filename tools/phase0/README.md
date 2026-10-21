@@ -107,7 +107,7 @@ list fails the build):
 - `classification-gate` — Golden classification fingerprint unchanged
 - `leak-gate` — leak-gate
 - `precision-gate` — Labelled-pcap precision/recall holds or improves (M9, issue #74)
-- matrix expansion: `harness-*` fans out to 49 jobs, one per `tools/phase0/tests/run_*.sh`
+- matrix expansion: `harness-*` fans out to 50 jobs, one per `tools/phase0/tests/run_*.sh`
 <!-- end-generated: ci-gates -->
 
 What each gate asserts:

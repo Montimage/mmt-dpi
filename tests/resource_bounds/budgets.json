@@ -107,6 +107,22 @@
         { "id": "ceiling-held", "metric": "peak_entries", "op": "le", "limit_metric": "ceiling" },
         { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
       ]
+    },
+    "timeout-sweep": {
+      "issue": 500,
+      "finding": "F-BUG-003",
+      "workload": "70,000 sessions on one timeout milestone (a list longer than the 65,000-session out-of-memory sweep budget) plus 10 on the next, inserted in a fixed-seed shuffled order; one forced sweep, then the regular expiry pass.",
+      "checks": [
+        { "id": "scale", "metric": "sessions", "op": "eq", "limit": 70010 },
+        { "id": "budget", "metric": "sweep_budget", "op": "eq", "limit": 65000 },
+        { "id": "sweep-bounded", "metric": "sweep.expired", "op": "eq", "limit_metric": "sweep_budget" },
+        { "id": "sweep-lossless", "metric": "sessions", "op": "sum", "parts": ["sweep.expired", "sweep.left_linked"], "baseline": 65000 },
+        { "id": "rest-expires", "metric": "later.expired", "op": "eq", "limit_metric": "sweep.left_linked" },
+        { "id": "all-expire-once", "metric": "expired_once", "op": "eq", "limit_metric": "sessions" },
+        { "id": "no-double-expiry", "metric": "expired_twice", "op": "eq", "limit": 0 },
+        { "id": "none-orphaned", "metric": "never_expired", "op": "eq", "limit": 0, "baseline": 5010 },
+        { "id": "checks", "metric": "checks.failed", "op": "eq", "limit": 0 }
+      ]
     }
   }
 }

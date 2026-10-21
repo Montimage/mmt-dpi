@@ -1234,6 +1234,240 @@ static void test_children_stats_extension(void) {
     mmt_close_handler(h); /* expires both sessions -> ctx cleanup frees the extension */
 }
 
+/* ===== issue #500: timeout-ring span overflow is not an out-of-memory ===== */
+
+static int g_range_dispatched;
+static void count_dispatch(void *milestone, void *list, void *args) {
+    (void) milestone; (void) args;
+    for (mmt_session_t *s = (mmt_session_t *) list; s != NULL; s = s->next)
+        g_range_dispatched++;
+}
+
+static void test_timeout_span_overflow(void) {
+    fprintf(stderr, "  test: out-of-span milestone is parked, not treated as OOM (#500)\n");
+    char errbuf[256];
+    u_char pkt[64];
+    pkthdr_t hdr;
+    /* 2^23 s is twice the ring's 2^22 s maximum span, and a multiple of the
+     * initial 1024-slot capacity, so the far milestone collides with the
+     * near one's slot and the forced growth cannot fit the span. */
+    const uint32_t far = 1u << 23;
+
+    mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler init for span-overflow test");
+    if (h == NULL) return;
+    CHECK(set_default_session_timed_out(h, TEST_TIMEOUT) == 1, "timeout set");
+    CHECK(register_session_timeout_handler(h, test_expiry_handler, NULL) == 1, "expiry handler");
+    int expiry_before = g_expiry_calls;
+
+    /* Ring level: insert reports the park distinctly, and a parked milestone
+     * is looked up, extended, unlinked and range-expired like a ring one. */
+    mmt_session_t fake[3];
+    memset(fake, 0, sizeof(fake));
+    CHECK(insert_session_timeout_milestone(h, 2000, &fake[0]) == MMT_TIMEOUT_INSERTED,
+          "near milestone takes a ring slot");
+    CHECK(insert_session_timeout_milestone(h, 2000 + far, &fake[1]) == MMT_TIMEOUT_PARKED,
+          "out-of-span milestone is parked, not refused");
+    CHECK(insert_session_timeout_milestone(h, 2000 + far, &fake[2]) == MMT_TIMEOUT_PARKED,
+          "a second session joins the parked milestone");
+    CHECK(get_timed_out_session_list(h, 2000 + far) == &fake[2], "parked list is reachable");
+    CHECK(get_timed_out_session_list(h, 2000) == &fake[0], "ring slot still owned by 2000");
+    fake[2].session_timeout_milestone = 2000 + far;
+    CHECK(force_session_timeout(h, &fake[2]) == 1, "a parked session unlinks");
+    CHECK(get_timed_out_session_list(h, 2000 + far) == &fake[1], "the rest stays parked");
+    g_range_dispatched = 0;
+    timeout_expire_milestones_range(h, 2000 + far, 2001 + far, count_dispatch);
+    CHECK(g_range_dispatched == 1, "stepping expiry dispatches the parked milestone");
+    CHECK(get_timed_out_session_list(h, 2000 + far) == NULL, "parked milestone gone once due");
+    CHECK(delete_timeout_milestone(h, 2000) == 1 && get_timed_out_session_list(h, 2000) == NULL,
+          "ring milestone deleted");
+
+    /* Packet path: A at t=1000 (milestone 1030); B, created with a delay
+     * 2^23 s longer, lands on 1030 + 2^23 — the same slot. Before the fix the
+     * insert failed as OOM and the forced sweep expired A on the spot. */
+    make_packet(&hdr, pkt, sizeof(pkt), 0x70707070u, 1000, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "session A processed");
+    CHECK(set_default_session_timed_out(h, far + TEST_TIMEOUT) == 1, "huge timeout set");
+    make_packet(&hdr, pkt, sizeof(pkt), 0x71717171u, 1000, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "session B processed");
+    CHECK(set_default_session_timed_out(h, TEST_TIMEOUT) == 1, "timeout restored");
+    CHECK(g_expiry_calls == expiry_before, "no forced out-of-memory sweep ran");
+    CHECK(get_active_session_count(h) == 2 && h->sessions_count == 2, "A and B both live");
+    CHECK(get_timed_out_session_list(h, 1030) != NULL, "A still on its milestone");
+    mmt_session_t *b = get_timed_out_session_list(h, 1030 + far);
+    CHECK(b != NULL, "B parked on its out-of-span milestone");
+
+    /* A's packet one second later: A's milestone moves to 1031 normally. */
+    make_packet(&hdr, pkt, sizeof(pkt), 0x70707070u, 1001, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "A refreshed");
+    CHECK(g_expiry_calls == expiry_before, "still nothing expired");
+
+    /* The session still expires: a packet past B's milestone sweeps both. */
+    make_packet(&hdr, pkt, sizeof(pkt), 0x72727272u, 1031 + far, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "advancer processed");
+    CHECK(g_expiry_calls == expiry_before + 2, "A and the parked B expired");
+    CHECK(get_timed_out_session_list(h, 1030 + far) == NULL, "parked milestone drained");
+    CHECK(get_active_session_count(h) == 1, "only the advancer remains");
+    mmt_close_handler(h);
+}
+
+/* ===== issue #499: a tunnel parent outlives its children ================== */
+
+#define TUN_MAX_EXPIRED 16
+static uint64_t g_tun_expired[TUN_MAX_EXPIRED];
+static int g_tun_nexpired;
+static int g_tun_parent_dead;     /* a child expired after its parent */
+static int g_tun_parent_unpinned; /* a child expired while its parent did not count it */
+
+static void tun_expiry_handler(const mmt_session_t *expired, void *args) {
+    (void) args;
+    mmt_session_t *parent = get_session_parent(expired);
+    if (parent != NULL) {
+        /* Read through the parent pointer — ASan turns a freed parent into a
+         * hard failure under SANITIZE=asan. */
+        uint64_t pid = get_session_id(parent);
+        for (int i = 0; i < g_tun_nexpired; i++)
+            if (g_tun_expired[i] == pid) g_tun_parent_dead++;
+        if (parent->live_children == 0) g_tun_parent_unpinned++;
+    }
+    if (g_tun_nexpired < TUN_MAX_EXPIRED)
+        g_tun_expired[g_tun_nexpired++] = expired->session_id;
+}
+
+static mmt_session_t *tun_lookup(mmt_handler_t *h, uint32_t proto, uint32_t key) {
+    return (mmt_session_t *) get_session_from_protocol_context_by_session_key(
+        &h->configured_protocols[proto], &key);
+}
+
+static void tun_packet(mmt_handler_t *h, uint32_t key, uint32_t sec) {
+    u_char pkt[64];
+    pkthdr_t hdr;
+    make_packet(&hdr, pkt, sizeof(pkt), key, sec, 0);
+    CHECK(packet_process(h, &hdr, pkt) == 1, "tunnel test packet processed");
+}
+
+static void test_tunnel_parent_lifetime(void) {
+    fprintf(stderr, "  test: tunnel parent never expires before its child (#499)\n");
+    char errbuf[256];
+    const uint32_t key = 0x80808080u, adv = 0x81818181u;
+
+    mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler init for tunnel lifetime test");
+    if (h == NULL) return;
+    CHECK(set_default_session_timed_out(h, TEST_TIMEOUT) == 1, "timeout set");
+    CHECK(register_session_timeout_handler(h, tun_expiry_handler, NULL) == 1, "expiry handler");
+    g_tun_nexpired = g_tun_parent_dead = g_tun_parent_unpinned = 0;
+
+    /* t=8000: A's classifier chains to B — child session under A's. */
+    g_classify_to_b = 1;
+    tun_packet(h, key, 8000);
+    mmt_session_t *parent = tun_lookup(h, TEST_PROTO_A, key);
+    mmt_session_t *child = tun_lookup(h, TEST_PROTO_B, key);
+    CHECK(parent != NULL && child != NULL, "parent and child sessions exist");
+    if (parent == NULL || child == NULL) { mmt_close_handler(h); return; }
+    CHECK(child->parent_session == parent, "child links to its parent");
+    CHECK(parent->live_children == 1, "the child pins its parent");
+    uint64_t parent_id = parent->session_id, child_id = child->session_id;
+
+    /* The inner flow gets a longer delay than the outer one (as a TCP/HTTP
+     * flow inside a GTP tunnel does): the parent's own refresh would
+     * expire it at t+30 while the child lives to t+600. */
+    set_session_timeout_delay(child, 600);
+    tun_packet(h, key, 8001);
+    CHECK(child->session_timeout_milestone == 8601, "child milestone follows its delay");
+    CHECK(parent->session_timeout_milestone == 8601, "parent raised to its child's milestone");
+    tun_packet(h, key, 8100);
+    CHECK(parent->session_timeout_milestone >= child->session_timeout_milestone,
+          "the parent's own refresh never shortens it below its child");
+
+    /* Past the parent's own delay: it must still be live. Before the fix it
+     * expired here and the next tunnel packet walked the freed parent. */
+    tun_packet(h, adv, 8200);
+    CHECK(g_tun_nexpired == 0, "nothing expired while the child lives");
+    uint64_t sessions_before = h->sessions_count;
+    tun_packet(h, key, 8201);
+    CHECK(h->sessions_count == sessions_before, "the tunnel packet reused the live parent");
+    CHECK(parent->session_timeout_milestone == 8801 && child->session_timeout_milestone == 8801,
+          "parent and child share the later milestone");
+
+    /* Both due in the same sweep, the parent at the head of the list: the
+     * child expires, the parent is deferred to the next second. */
+    tun_packet(h, adv, 8900);
+    CHECK(g_tun_nexpired == 1 && g_tun_expired[0] == child_id, "the child expired first");
+    CHECK(parent->live_children == 0, "the child released its parent");
+    tun_packet(h, adv, 8901);
+    CHECK(g_tun_nexpired == 2 && g_tun_expired[1] == parent_id, "then the parent expired");
+    CHECK(g_tun_parent_dead == 0 && g_tun_parent_unpinned == 0,
+          "a child never expired after (or unpinned from) its parent");
+
+    /* Teardown with a live tunnel: the close drain also takes the child
+     * first, whatever the milestone order. */
+    g_classify_to_b = 1;
+    tun_packet(h, key + 1, 9000);
+    parent = tun_lookup(h, TEST_PROTO_A, key + 1);
+    child = tun_lookup(h, TEST_PROTO_B, key + 1);
+    CHECK(parent != NULL && child != NULL && child->parent_session == parent,
+          "second tunnel created");
+    uint64_t parent_id2 = parent != NULL ? parent->session_id : 0;
+    int before_close = g_tun_nexpired;
+    mmt_close_handler(h);
+    CHECK(g_tun_nexpired == before_close + 2, "close expired both tunnel sessions");
+    CHECK(g_tun_nexpired >= 2 && g_tun_expired[g_tun_nexpired - 1] == parent_id2,
+          "the close drain took the parent last");
+    CHECK(g_tun_parent_dead == 0 && g_tun_parent_unpinned == 0,
+          "close expired every child before its parent");
+    g_classify_to_b = 0;
+}
+
+/* Issues #499/#500: the forced out-of-memory sweep skips a tunnel parent
+ * with live children; once it has freed the child, the parent must still be
+ * revisited by the next timer sweep instead of staying linked below
+ * last_expiry_timeout forever. */
+static void test_oom_sweep_revisits_skipped_parent(void) {
+    fprintf(stderr, "  test: forced sweep revisits a tunnel parent it skipped (#499/#500)\n");
+    char errbuf[256];
+    const uint32_t key = 0x82828282u;
+
+    mmt_handler_t *h = mmt_init_handler(TEST_STACK_ID, 0, errbuf);
+    CHECK(h != NULL, "handler init for forced-sweep parent test");
+    if (h == NULL) return;
+    CHECK(set_default_session_timed_out(h, TEST_TIMEOUT) == 1, "timeout set");
+    CHECK(register_session_timeout_handler(h, tun_expiry_handler, NULL) == 1, "expiry handler");
+    g_tun_nexpired = g_tun_parent_dead = g_tun_parent_unpinned = 0;
+
+    /* As in test_tunnel_parent_lifetime: the child's longer delay makes the
+     * refresh raise the parent onto the child's milestone, ahead of it. */
+    g_classify_to_b = 1;
+    tun_packet(h, key, 10000);
+    mmt_session_t *parent = tun_lookup(h, TEST_PROTO_A, key);
+    mmt_session_t *child = tun_lookup(h, TEST_PROTO_B, key);
+    CHECK(parent != NULL && child != NULL && child->parent_session == parent &&
+          parent->live_children == 1, "tunnel parent pinned by its child");
+    if (parent == NULL || child == NULL) { mmt_close_handler(h); g_classify_to_b = 0; return; }
+    set_session_timeout_delay(child, 60);
+    tun_packet(h, key, 10001);
+    g_classify_to_b = 0;
+    uint32_t m = parent->session_timeout_milestone;
+    CHECK(child->session_timeout_milestone == m && get_timed_out_session_list(h, m) == parent &&
+          parent->next == child, "parent ahead of its child on one milestone");
+    CHECK(h->last_expiry_timeout <= m, "the milestone is still ahead of the sweep");
+    uint64_t parent_id = parent->session_id, child_id = child->session_id;
+
+    /* The forced sweep skips the pinned parent and frees the child. */
+    process_outofmemory_force_sessions_timeout(h, NULL);
+    CHECK(g_tun_nexpired == 1 && g_tun_expired[0] == child_id, "forced sweep expired the child");
+    CHECK(parent->live_children == 0, "the child released its parent");
+    CHECK(h->last_expiry_timeout <= m, "the sweep resumes at the skipped milestone");
+
+    /* The next timer sweep, past the milestone, now expires the parent. */
+    process_timedout_sessions(h, m + 10);
+    CHECK(g_tun_nexpired == 2 && g_tun_expired[1] == parent_id,
+          "the released parent expired on the next sweep");
+    CHECK(g_tun_parent_dead == 0 && g_tun_parent_unpinned == 0,
+          "the child expired before its parent");
+    mmt_close_handler(h);
+}
+
 static void test_alloc_no_prefix(void) {
     fprintf(stderr, "  test: allocator passes natural sizes to libc (F-PERF-015)\n");
 
@@ -1788,6 +2022,9 @@ int main(void) {
     test_session_create_oom();
     test_analyse_verdict();
     test_children_stats_extension();
+    test_timeout_span_overflow();
+    test_tunnel_parent_lifetime();
+    test_oom_sweep_revisits_skipped_parent();
     test_alloc_no_prefix();
     test_helpers();
     test_attr_report_output();

@@ -196,6 +196,10 @@ struct mmt_session_struct {
     uint32_t tcp_outoforders;                 /**< number of TCP outoforder */
     /* tcp sequence number connection tracking and retransmissions counting */
     uint32_t next_tcp_seq_nr[2];
+    /* Issue #499 (F-BUG-001): live tunnel children whose parent_session is
+     * this session. While non-zero the session is never freed — its expiry
+     * is deferred — so a child never holds a dangling parent pointer. */
+    uint32_t live_children;
 
     uint64_t session_id;                     /**< session identifier */
     uint64_t fragmented_packet_count;        /**< number of fragmented packets which are in this session*/
@@ -672,6 +676,10 @@ void free_registered_packet_handlers(mmt_handler_t *mmt_handler);
  */
 void free_registered_protocols();
 
+/* Most sessions one out-of-memory sweep expires, and most milestones it
+ * scans; a stop mid-list leaves the rest linked (issue #500). */
+#define MMT_OOM_SWEEP_BUDGET 65000u
+
 /**
  * Forces the timeout of sessions associated to the least recent timeout slots. The minimum number
  * of sessions to timeout is given by the mmt_handler. This function is intended to be used in
@@ -797,6 +805,9 @@ static inline void proto_status_store(int *status, int value) {
 /* packet_session.c — session lifecycle, called by packet_registry.c and
  * packet_pipeline.c. */
 void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args);
+/* Issue #499: expire every session of the handler, tunnel children before
+ * their parents (used by mmt_close_handler). */
+void expire_all_sessions(mmt_handler_t * mmt_handler);
 void process_timedout_sessions(mmt_handler_t *mmt_handler, uint32_t current_seconds);
 int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configured_protocol, unsigned index);
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
+#include <map>
 #include <cstdint>
 #include <cstddef>
 
@@ -489,22 +490,37 @@ static void mmt_int_remove(mmt_int_map * m, uint32_t key) {
 // doubles until cap exceeds the span — which provably separates every live
 // milestone (two distinct milestones < cap apart cannot be congruent mod
 // cap). Insert/update/delete on the hot path are O(1) and perform zero
-// allocations; growth is the rare exception and its failure degrades to the
-// same 0 return the old map's bad_alloc path produced.
+// allocations; growth is the rare exception and its allocation failure
+// degrades to the same 0 return the old map's bad_alloc path produced.
+//
+// Issue #500 (F-BUG-002): a span the ring cannot reach (> MMT_RING_MAX_CAP,
+// e.g. a pcap timestamp stepping back or forward by more than ~48 days, or
+// a timeout delay that large) is not an allocation failure. Such an outlier
+// milestone is parked in an ordered side index instead — O(log n), allocating
+// only on that cold path — and insert returns MMT_TIMEOUT_PARKED, so callers
+// no longer mistake it for OOM and force-expire live sessions. A milestone
+// lives either in a ring slot or in the parked index, never in both; every
+// lookup, unlink, expiry and iteration below consults both.
 
 struct mmt_timeout_slot {
     mmt_session_t * head;      // session list of the owning milestone
     uint32_t        milestone; // owning milestone (valid while head != NULL)
 };
 
+typedef map<uint32_t, mmt_session_t *> mmt_parked_index; // milestone -> list head
+
 struct mmt_timeout_ring {
     mmt_timeout_slot * slots;
     size_t             cap;        // power of two
     size_t             milestones; // live (owned) slots
+    mmt_parked_index * parked;     // issue #500: out-of-span milestones (NULL until first used)
 };
 
 static const size_t MMT_RING_INITIAL_CAP = 1024;          // ~17 min of distinct seconds
-static const size_t MMT_RING_MAX_CAP     = 1u << 22;      // ~48 days of spread — beyond that, fail
+static const size_t MMT_RING_MAX_CAP     = 1u << 22;      // ~48 days of spread — beyond that, park
+
+// mmt_ring_grow() results (issue #500): the span overflow is distinct from OOM.
+enum { MMT_RING_GROW_NOMEM = 0, MMT_RING_GROW_OK = 1, MMT_RING_GROW_SPAN = 2 };
 
 // Grow the ring until no two live milestones share a slot. A collision-free
 // capacity is the first power of two strictly greater than the live span
@@ -520,11 +536,11 @@ static int mmt_ring_grow(mmt_timeout_ring * r, uint32_t new_key) {
     uint64_t span = (uint64_t) hi - (uint64_t) lo;
     size_t new_cap = r->cap;
     while (new_cap <= span) {
-        if (new_cap >= MMT_RING_MAX_CAP) return 0; // pathological spread — fail like the old bad_alloc
+        if (new_cap >= MMT_RING_MAX_CAP) return MMT_RING_GROW_SPAN; // the caller parks new_key
         new_cap <<= 1;
     }
     mmt_timeout_slot * fresh = (mmt_timeout_slot *) calloc(new_cap, sizeof(mmt_timeout_slot));
-    if (fresh == NULL) return 0;
+    if (fresh == NULL) return MMT_RING_GROW_NOMEM;
     for (size_t i = 0; i < r->cap; i++) {
         if (r->slots[i].head != NULL) {
             // distinct target slot guaranteed: |a - b| <= span < new_cap
@@ -535,25 +551,27 @@ static int mmt_ring_grow(mmt_timeout_ring * r, uint32_t new_key) {
     free(r->slots);
     r->slots = fresh;
     r->cap   = new_cap;
-    return 1;
+    return MMT_RING_GROW_OK;
 }
 
-// Unlink `session` from the slot owned by `milestone`. Returns 1 when the
-// milestone exists (matching the old map version, which reported success on
-// a found milestone even if the session was not linked into its list), 0 when
-// no such milestone is live.
-static int mmt_ring_unlink(mmt_timeout_ring * r, uint32_t milestone, mmt_session_t * session) {
-    mmt_timeout_slot * s = &r->slots[(size_t) milestone & (r->cap - 1)];
-    if (s->head == NULL || s->milestone != milestone) return 0;
-    if (s->head == session) {
+// Issue #500: the parked list head of `milestone`, or NULL when it is not parked.
+static mmt_session_t ** mmt_parked_head(mmt_timeout_ring * r, uint32_t milestone) {
+    if (r->parked == NULL || r->parked->empty()) return NULL;
+    mmt_parked_index::iterator it = r->parked->find(milestone);
+    return it == r->parked->end() ? NULL : &it->second;
+}
+
+// Unlink `session` from the intrusive list at *head. Returns true when the
+// list became empty (the milestone is gone).
+static bool mmt_list_unlink(mmt_session_t ** head, mmt_session_t * session) {
+    if (*head == session) {
         if (session->next == NULL) {
             // Only session on this milestone: the milestone is gone.
-            s->head = NULL;
-            r->milestones--;
-        } else {
-            s->head = session->next;
-            session->next->previous = NULL;
+            *head = NULL;
+            return true;
         }
+        *head = session->next;
+        session->next->previous = NULL;
     } else {
         // F-BUG-011 (issue #199): a session that is not the milestone head
         // should be mid-list, but a session that was never linked has
@@ -565,7 +583,35 @@ static int mmt_ring_unlink(mmt_timeout_ring * r, uint32_t milestone, mmt_session
             session->next->previous = session->previous;
         }
     }
+    return false;
+}
+
+// Unlink `session` from the slot (or parked entry) owned by `milestone`.
+// Returns 1 when the milestone exists (matching the old map version, which
+// reported success on a found milestone even if the session was not linked
+// into its list), 0 when no such milestone is live.
+static int mmt_ring_unlink(mmt_timeout_ring * r, uint32_t milestone, mmt_session_t * session) {
+    mmt_timeout_slot * s = &r->slots[(size_t) milestone & (r->cap - 1)];
+    if (s->head != NULL && s->milestone == milestone) {
+        if (mmt_list_unlink(&s->head, session)) r->milestones--;
+        return 1;
+    }
+    mmt_session_t ** parked = mmt_parked_head(r, milestone);
+    if (parked == NULL) return 0;
+    if (mmt_list_unlink(parked, session)) r->parked->erase(milestone);
     return 1;
+}
+
+// Issue #500: detach every parked milestone in [lo, hi) into `due`.
+static void mmt_parked_take_range(mmt_timeout_ring * r, uint32_t lo, uint32_t hi,
+        vector<pair<uint32_t, mmt_session_t *> > & due) {
+    if (r->parked == NULL || r->parked->empty()) return;
+    mmt_parked_index::iterator first = r->parked->lower_bound(lo);
+    mmt_parked_index::iterator last  = r->parked->lower_bound(hi);
+    for (mmt_parked_index::iterator it = first; it != last; ++it) {
+        due.push_back(make_pair(it->first, it->second));
+    }
+    r->parked->erase(first, last);
 }
 
 // Snapshot then dispatch the live milestone heads — the callbacks delete the
@@ -576,6 +622,11 @@ static void mmt_ring_iterate(mmt_timeout_ring * r, generic_mapspace_iteration_ca
     for (size_t i = 0; i < r->cap; i++) {
         if (r->slots[i].head != NULL) {
             heads.push_back((void *) r->slots[i].head);
+        }
+    }
+    if (r->parked != NULL) {
+        for (mmt_parked_index::iterator it = r->parked->begin(); it != r->parked->end(); ++it) {
+            heads.push_back((void *) it->second);
         }
     }
     for (size_t i = 0; i < heads.size(); i++) {
@@ -612,12 +663,23 @@ static void mmt_ring_expire_range(mmt_timeout_ring * r, uint32_t lo, uint32_t hi
                 slot->head = NULL;
                 r->milestones--;
                 fct(NULL, head, mmt_handler);
+                continue; // a milestone is never both in a slot and parked
+            }
+            // Issue #500: an out-of-span milestone is due at the same second.
+            mmt_session_t ** parked = mmt_parked_head(r, s);
+            if (parked != NULL) {
+                mmt_session_t * head = *parked;
+                r->parked->erase(s);
+                fct(NULL, head, mmt_handler);
             }
         }
         return;
     }
+    // Reserve for every live milestone before detaching any, so no push_back
+    // below can throw with slots already emptied.
     vector<pair<uint32_t, mmt_session_t *> > due;
-    due.reserve(r->milestones);
+    due.reserve(r->milestones + (r->parked != NULL ? r->parked->size() : 0));
+    mmt_parked_take_range(r, lo, hi, due);
     for (size_t i = 0; i < r->cap; i++) {
         mmt_timeout_slot * slot = &r->slots[i];
         if (slot->head != NULL && slot->milestone >= lo && slot->milestone < hi) {
@@ -630,6 +692,36 @@ static void mmt_ring_expire_range(mmt_timeout_ring * r, uint32_t lo, uint32_t hi
     for (size_t i = 0; i < due.size(); i++) {
         fct(NULL, due[i].second, mmt_handler);
     }
+}
+
+/* Issue #499: detach every live milestone (ring and parked) and dispatch them
+ * in ascending order. Unlike mmt_ring_iterate() the slots are emptied before
+ * dispatch, so a callback may re-arm a session (a tunnel parent whose
+ * children are still live) and a later drain picks it up. Returns the number
+ * of milestones dispatched. */
+static size_t mmt_ring_drain(mmt_timeout_ring * r, generic_mapspace_iteration_callback fct,
+        mmt_handler_t *mmt_handler) {
+    vector<pair<uint32_t, mmt_session_t *> > due;
+    due.reserve(r->milestones + (r->parked != NULL ? r->parked->size() : 0));
+    for (size_t i = 0; i < r->cap; i++) {
+        mmt_timeout_slot * slot = &r->slots[i];
+        if (slot->head != NULL) {
+            due.push_back(make_pair(slot->milestone, slot->head));
+            slot->head = NULL;
+        }
+    }
+    r->milestones = 0;
+    if (r->parked != NULL) {
+        for (mmt_parked_index::iterator it = r->parked->begin(); it != r->parked->end(); ++it) {
+            due.push_back(make_pair(it->first, it->second));
+        }
+        r->parked->clear();
+    }
+    sort(due.begin(), due.end());
+    for (size_t i = 0; i < due.size(); i++) {
+        fct(NULL, due[i].second, mmt_handler);
+    }
+    return due.size();
 }
 
 } // namespace
@@ -956,6 +1048,7 @@ extern "C" void * init_timeout_milestones_index(void) {
         mmt_timeout_ring * r = (mmt_timeout_ring *) malloc(sizeof(mmt_timeout_ring));
         if (r == NULL) return NULL;
         r->milestones = 0;
+        r->parked = NULL;
         r->slots = (mmt_timeout_slot *) calloc(MMT_RING_INITIAL_CAP, sizeof(mmt_timeout_slot));
         if (r->slots == NULL) { free(r); return NULL; }
         r->cap = MMT_RING_INITIAL_CAP;
@@ -1000,6 +1093,18 @@ extern "C" void timeout_expire_milestones_range(mmt_handler_t *mmt_handler, uint
     }
 }
 
+/* Issue #499: drain every live milestone, see mmt_ring_drain(). */
+extern "C" size_t timeout_drain_milestones(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct) {
+    try {
+        if (mmt_handler == NULL || fct == NULL) return 0;
+        mmt_timeout_ring * r = reinterpret_cast<mmt_timeout_ring *> (mmt_handler->timeout_milestones_map);
+        if (r == NULL || r->slots == NULL) return 0;
+        return mmt_ring_drain(r, fct, mmt_handler);
+    } catch (...) {
+        return 0;
+    }
+}
+
 
 extern "C" int update_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t new_timeout, uint32_t old_timeout, mmt_session_t * session) {
     try {
@@ -1033,6 +1138,15 @@ extern "C" int insert_session_timeout_milestone(mmt_handler_t *mmt_handler, uint
         if (r == NULL || r->slots == NULL) return 0;
 
         for (;;) {
+            // Issue #500: an already parked milestone keeps its sessions there.
+            mmt_session_t ** parked = mmt_parked_head(r, timeout);
+            if (parked != NULL) {
+                session->previous   = NULL;
+                session->next       = *parked;
+                (*parked)->previous = session;
+                *parked             = session;
+                return MMT_TIMEOUT_PARKED;
+            }
             mmt_timeout_slot * s = &r->slots[(size_t) timeout & (r->cap - 1)];
             if (s->head == NULL) {
                 // Fresh milestone: claim the slot. No allocation — the session
@@ -1042,7 +1156,7 @@ extern "C" int insert_session_timeout_milestone(mmt_handler_t *mmt_handler, uint
                 session->next     = NULL;
                 session->previous = NULL;
                 r->milestones++;
-                return 1;
+                return MMT_TIMEOUT_INSERTED;
             }
             if (s->milestone == timeout) {
                 // Existing milestone: prepend on its intrusive list.
@@ -1050,12 +1164,21 @@ extern "C" int insert_session_timeout_milestone(mmt_handler_t *mmt_handler, uint
                 session->next     = s->head;
                 s->head->previous = session;
                 s->head           = session;
-                return 1;
+                return MMT_TIMEOUT_INSERTED;
             }
             // Slot owned by a different live milestone: the live milestone span
             // reached the ring capacity — grow until the span fits (bounded,
             // single-relink) or fail cleanly like the old map's OOM.
-            if (mmt_ring_grow(r, timeout) == 0) return 0;
+            int grown = mmt_ring_grow(r, timeout);
+            if (grown == MMT_RING_GROW_OK) continue;
+            if (grown == MMT_RING_GROW_NOMEM) return MMT_TIMEOUT_NOMEM;
+            // Issue #500: the span cannot fit any ring — park the outlier
+            // milestone (a node allocation; bad_alloc is the only OOM here).
+            if (r->parked == NULL) r->parked = new mmt_parked_index();
+            session->previous = NULL;
+            session->next     = NULL;
+            (*r->parked)[timeout] = session;
+            return MMT_TIMEOUT_PARKED;
         }
     } catch (...) {
         return 0;
@@ -1071,7 +1194,8 @@ extern "C" mmt_session_t * get_timed_out_session_list(mmt_handler_t *mmt_handler
         if (s->head != NULL && s->milestone == timeout) {
             return s->head;
         }
-        return NULL;
+        mmt_session_t ** parked = mmt_parked_head(r, timeout);
+        return parked != NULL ? *parked : NULL;
     } catch (...) {
         return NULL;
     }
@@ -1086,6 +1210,8 @@ extern "C" int delete_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t tim
         if (s->head != NULL && s->milestone == timeout) {
             s->head = NULL;
             r->milestones--;
+        } else if (mmt_parked_head(r, timeout) != NULL) {
+            r->parked->erase(timeout);
         }
         return 1;
     } catch (...) {
@@ -1098,6 +1224,7 @@ extern "C" void clear_timeout_milestones(mmt_handler_t *mmt_handler) {
         if (mmt_handler == NULL) return;
         mmt_timeout_ring * r = reinterpret_cast<mmt_timeout_ring *> (mmt_handler->timeout_milestones_map);
         if (r != NULL) {
+            delete r->parked;
             free(r->slots);
             free(r);
             // Issue #200 (F-BUG-005): NULL the field after deleting so a second

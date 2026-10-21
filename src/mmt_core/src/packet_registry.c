@@ -1128,8 +1128,8 @@ static void free_ip_stream_value(mmt_hashmap_t * map, mmt_hent_t * he, void * ar
 }
 
 void mmt_close_handler(mmt_handler_t *mmt_handler) {
-    // Iterate over the timeout milestones and expticitly timeout all registered sessions
-    timeout_iteration_callback(mmt_handler, force_sessions_timeout);
+    // Explicitly time out all registered sessions, tunnel children first (issue #499)
+    expire_all_sessions(mmt_handler);
     // Clear timeout milestones
     clear_timeout_milestones(mmt_handler);
     // Free the protocol structs

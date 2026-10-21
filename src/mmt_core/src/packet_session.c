@@ -45,21 +45,81 @@ void cleanup_timedout_sessions(mmt_session_t * timed_out_session) {
     }
 }
 
-void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args) {
-    mmt_handler_t * mmt_handler = (mmt_handler_t *) args;
-    mmt_session_t * timed_out_session = (mmt_session_t *) milestone_sessions_list;
+/* Expire one session: user expiry handler, then cleanup (which frees it).
+ * Issue #499 (F-BUG-001): the session's reference on its tunnel parent is
+ * dropped only once the session is gone, so the parent is still alive while
+ * the expiry handler and the cleanup run. `release_parent` is 0 only on the
+ * last-resort teardown drain, which no longer trusts the parent pointer. */
+static void expire_session(mmt_handler_t * mmt_handler, mmt_session_t * session, int release_parent) {
+    mmt_session_t * parent = session->parent_session;
+
+    //Call user handler for timed out sessions
+    if (mmt_handler->session_expiry_handler.handler_fct) {
+        mmt_handler->session_expiry_handler.handler_fct(session, mmt_handler->session_expiry_handler.args);
+    }
+
+    cleanup_timedout_sessions(session);
+
+    if (release_parent && parent != NULL && parent->live_children > 0) {
+        parent->live_children--;
+    }
+}
+
+/* Issue #499: a tunnel parent whose children are still live is not expired;
+ * it is re-armed at the first second the current sweep has not covered
+ * (process_timedout_sessions() publishes it in last_expiry_timeout before
+ * sweeping), so the next sweep — or the next teardown drain round — sees it
+ * again once its children are gone. */
+static void defer_parent_expiry(mmt_handler_t * mmt_handler, mmt_session_t * session) {
+    uint32_t old_milestone = session->session_timeout_milestone;
+    uint32_t milestone = old_milestone + 1;
+    if (milestone < mmt_handler->last_expiry_timeout) milestone = mmt_handler->last_expiry_timeout;
+    if (milestone <= old_milestone) milestone = old_milestone; // uint32 wrap: stay put
+    if (insert_session_timeout_milestone(mmt_handler, milestone, session) != MMT_TIMEOUT_NOMEM) {
+        session->session_timeout_milestone = milestone;
+    } else if (insert_session_timeout_milestone(mmt_handler, old_milestone, session) == MMT_TIMEOUT_NOMEM) {
+        /* Freeing it would leave its children dangling: keep it alive and
+         * unreachable from the ring (a leak, never a use-after-free). */
+        mmt_debug_log("[error] defer_parent_expiry - cannot re-arm a tunnel parent\n");
+    }
+}
+
+static void expire_session_list(mmt_handler_t * mmt_handler, mmt_session_t * timed_out_session, int honour_children) {
     mmt_session_t * safe_to_delete_session;
     while (timed_out_session != NULL) {
         safe_to_delete_session = timed_out_session;
         timed_out_session = timed_out_session->next;
 
-        //Call user handler for timed out sessions
-        if (mmt_handler->session_expiry_handler.handler_fct) {
-            mmt_handler->session_expiry_handler.handler_fct(safe_to_delete_session, mmt_handler->session_expiry_handler.args);
+        if (honour_children && safe_to_delete_session->live_children > 0) {
+            defer_parent_expiry(mmt_handler, safe_to_delete_session);
+            continue;
         }
-
-        cleanup_timedout_sessions(safe_to_delete_session);
+        expire_session(mmt_handler, safe_to_delete_session, honour_children);
     }
+}
+
+void force_sessions_timeout(void * timeout_milestone, void * milestone_sessions_list, void * args) {
+    (void) timeout_milestone;
+    expire_session_list((mmt_handler_t *) args, (mmt_session_t *) milestone_sessions_list, 1);
+}
+
+static void force_sessions_timeout_unconditionally(void * timeout_milestone, void * milestone_sessions_list, void * args) {
+    (void) timeout_milestone;
+    expire_session_list((mmt_handler_t *) args, (mmt_session_t *) milestone_sessions_list, 0);
+}
+
+void expire_all_sessions(mmt_handler_t * mmt_handler) {
+    /* Issue #499: each drain round expires every session without live
+     * children and re-arms the parents that still have some, so a tunnel
+     * child always goes before its parent. A child sits at a deeper protocol
+     * index than its parent, so nesting is at most PROTO_PATH_SIZE deep and
+     * that many rounds empty the ring; the unconditional drain after them
+     * only runs if a parent reference count never drained. */
+    unsigned round;
+    for (round = 0; round <= PROTO_PATH_SIZE; round++) {
+        if (timeout_drain_milestones(mmt_handler, force_sessions_timeout) == 0) return;
+    }
+    timeout_drain_milestones(mmt_handler, force_sessions_timeout_unconditionally);
 }
 
 void session_timer_handler_callback(void * timeout_milestone, void * milestone_sessions_list, void * args) {
@@ -81,37 +141,69 @@ void session_timer_handler_callback(void * timeout_milestone, void * milestone_s
     }
 }
 
+/* 1 when `session` is one the packet being processed still uses: its
+ * current session or one of that session's tunnel ancestors. */
+static int is_packet_session(const ipacket_t * ipacket, const mmt_session_t * session) {
+    const mmt_session_t * p;
+    if (ipacket == NULL) return 0;
+    for (p = ipacket->session; p != NULL; p = p->parent_session) {
+        if (p == session) return 1;
+    }
+    return 0;
+}
+
 void process_outofmemory_force_sessions_timeout(mmt_handler_t * mmt_handler, ipacket_t * ipacket) {
     uint32_t timeout_slot_to_free = mmt_handler->last_expiry_timeout;
     uint32_t count = 0;
     uint32_t scanned = 0;
-    while (count < 65000 && scanned < 65000) {
+    uint32_t first_skipped = 0;
+    int skipped = 0;
+    while (count < MMT_OOM_SWEEP_BUDGET && scanned < MMT_OOM_SWEEP_BUDGET) {
         mmt_session_t * timed_out_session = get_timed_out_session_list(mmt_handler, timeout_slot_to_free);
         mmt_session_t * safe_to_delete_session;
-        while (timed_out_session != NULL) {
-            count++;
+        while (timed_out_session != NULL && count < MMT_OOM_SWEEP_BUDGET) {
             safe_to_delete_session = timed_out_session;
             timed_out_session = timed_out_session->next;
 
-            //Call user handler for timed out sessions
-            if (mmt_handler->session_expiry_handler.handler_fct) {
-                mmt_handler->session_expiry_handler.handler_fct(safe_to_delete_session, mmt_handler->session_expiry_handler.args);
+            /* Issue #499: a tunnel parent outlives its children, and the
+             * sessions of the packet in flight must survive this sweep. */
+            if (safe_to_delete_session->live_children > 0 ||
+                    is_packet_session(ipacket, safe_to_delete_session)) {
+                if (!skipped) {
+                    skipped = 1;
+                    first_skipped = timeout_slot_to_free;
+                }
+                continue;
             }
-
-            cleanup_timedout_sessions(safe_to_delete_session);
-            if (count >= 65000) break;
-
+            /* Issue #500 (F-BUG-003): unlink each session before freeing it —
+             * the milestone disappears with its last session, so a budget
+             * stop mid-list leaves the rest of the list linked and expirable
+             * (it used to delete the whole milestone, orphaning them). */
+            force_session_timeout(mmt_handler, safe_to_delete_session);
+            count++;
+            expire_session(mmt_handler, safe_to_delete_session, 1);
         }
-        //remove the timeout milestone from the hash
-        delete_timeout_milestone(mmt_handler, timeout_slot_to_free);
+        if (count >= MMT_OOM_SWEEP_BUDGET) break; // resume point keeps its remaining sessions
         timeout_slot_to_free++;
         scanned++;
     }
-    mmt_handler->last_expiry_timeout = timeout_slot_to_free;
+    /* Issues #499/#500: resume the next sweep at the first milestone this one
+     * skipped (milestones are walked in ascending order), not past it — the
+     * end-of-packet process_timedout_sessions() then revisits it, where
+     * force_sessions_timeout() expires a parent whose children this sweep
+     * freed, or re-arms it with defer_parent_expiry(). Advancing past it left
+     * an overdue skipped session linked below last_expiry_timeout forever. */
+    mmt_handler->last_expiry_timeout =
+        (skipped && first_skipped < timeout_slot_to_free) ? first_skipped : timeout_slot_to_free;
 }
 
 void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_seconds) {
     if (current_seconds > mmt_handler->last_expiry_timeout && mmt_handler->last_expiry_timeout != 0) {
+        uint32_t range_lo = mmt_handler->last_expiry_timeout;
+        /* Issue #499: publish the end of this sweep first — a tunnel parent
+         * deferred during it re-arms at or after current_seconds, where the
+         * next sweep starts. */
+        mmt_handler->last_expiry_timeout = current_seconds;
         /* Issue #306: the pcap record timestamp is attacker-controlled — a
          * mutated packet can jump billions of seconds ahead, and the old
          * per-second loop here iterated once per second across the whole
@@ -119,7 +211,7 @@ void process_timedout_sessions(mmt_handler_t * mmt_handler, uint32_t current_sec
          * expires exactly the same milestone range in a pass bounded by
          * O(min(gap, ring capacity)). */
         timeout_expire_milestones_range(mmt_handler,
-                mmt_handler->last_expiry_timeout, current_seconds,
+                range_lo, current_seconds,
                 force_sessions_timeout);
         /* Issue #201 (F-BUG-020): piggyback the fragment-map expiry sweep on
          * this existing once-per-second expiry pass — armed by the TCP/IP
@@ -201,6 +293,24 @@ void set_session_timeout_delay(mmt_session_t * session, uint32_t timeout_delay) 
     session->session_timeout_delay = timeout_delay;
 }
 
+/* Issue #499 (F-BUG-001): a tunnel parent never expires before its
+ * children — raise every ancestor whose milestone is earlier than this
+ * session's to it. Best effort: an ancestor that cannot be moved keeps its
+ * milestone, and its expiry is deferred while its children live. */
+static void hold_ancestors_milestone(mmt_handler_t * mmt_handler, mmt_session_t * session) {
+    uint32_t milestone = session->session_timeout_milestone;
+    mmt_session_t * p;
+    for (p = session->parent_session; p != NULL; p = p->parent_session) {
+        uint32_t old_milestone = p->session_timeout_milestone;
+        if (old_milestone >= milestone) continue;
+        if (update_session_timeout_milestone(mmt_handler, milestone, old_milestone, p) != MMT_TIMEOUT_NOMEM) {
+            p->session_timeout_milestone = milestone;
+        } else {
+            (void) insert_session_timeout_milestone(mmt_handler, old_milestone, p);
+        }
+    }
+}
+
 /**
  * Initialises the bookkeeping fields of a freshly detected session (issue
  * #240, F-CLEAN-008): the raw field zero-init half of the session
@@ -246,6 +356,7 @@ static void init_new_session_fields(mmt_handler_t * mmt_handler, mmt_session_t *
      * copies live in the lazily-allocated tunnel-parent extension — a fresh
      * session has no children, so it starts NULL. */
     session->children_stats = NULL;
+    session->live_children = 0; // issue #499: no tunnel child yet
 
     session->tcp_retransmissions = 0;
     session->tcp_outoforders = 0;
@@ -296,10 +407,19 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
     // session->session_timeout_delay = configured_protocol->protocol->session_timeout_delay;
     session->session_timeout_delay = mmt_handler->default_session_timed_out;
     session->session_timeout_milestone = session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec;
-    if (insert_session_timeout_milestone(mmt_handler, session->session_timeout_milestone, session) == 0) {
+
+    /* Issue #499: an embedded session pins its tunnel parent (the packet's
+     * current session) before anything can sweep — the OOM sweep below
+     * skips sessions with live children. */
+    session->parent_session = ipacket->session; // NULL: no session encapsulation
+    if (session->parent_session != NULL) {
+        session->parent_session->live_children++;
+    }
+
+    if (insert_session_timeout_milestone(mmt_handler, session->session_timeout_milestone, session) == MMT_TIMEOUT_NOMEM) {
         //If we get here, then there is an out of memory problem! we should deal with
         process_outofmemory_force_sessions_timeout(ipacket->mmt_handler, ipacket);
-        if (insert_session_timeout_milestone(mmt_handler, session->session_timeout_milestone, session) == 0) {
+        if (insert_session_timeout_milestone(mmt_handler, session->session_timeout_milestone, session) == MMT_TIMEOUT_NOMEM) {
             // Double OOM: remain without milestone => session never time-outable (F-BUG-023).
             // Destroy session so we do not leak a non-time-outable flow.
             if (configured_protocol->sessions_map &&
@@ -314,6 +434,9 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
                 ((generic_session_data_cleanup_function)configured_protocol->protocol->session_data_cleanup)(session, session->session_protocol_index);
             mmt_handler->active_sessions_count--;
             mmt_handler->sessions_count--;
+            if (session->parent_session != NULL) {
+                session->parent_session->live_children--; // issue #499: unpin
+            }
             /* Issue #255: NULL today (a fresh session is never a tunnel
              * parent) — kept for parity with the plugin destructor in case
              * extension allocation ever moves earlier. */
@@ -325,12 +448,12 @@ static int setup_new_session(ipacket_t * ipacket, protocol_instance_t * configur
 
     if (ipacket->session == NULL) {
         //No session encapsulation; parent is NULL
-        session->parent_session = NULL;
         ipacket->session = session;
     } else {
         /* Issue #327: embedded session — the packet's current session is the
-         * tunnel parent of this one (the case the old marker asked for). */
-        session->parent_session = ipacket->session;
+         * tunnel parent of this one (linked above). Issue #499: it must not
+         * expire before this child. */
+        hold_ancestors_milestone(mmt_handler, session);
         /* Issue #255 (F-PERF-010): this turns ipacket->session into a tunnel
          * parent — materialize its children-stats extension now so the
          * counter-update walk below and the per-direction path copies find it
@@ -393,9 +516,14 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                     //if(!session->force_timeout) { //Sessions with force timeout should not be updated! they need to timeout :)
                     uint32_t old_milestone = session->session_timeout_milestone;
                     uint32_t new_milestone = session->session_timeout_delay + ipacket->p_hdr->ts.tv_sec;
-                    if (update_session_timeout_milestone(mmt_handler, new_milestone, old_milestone, session) == 0) {
+                    /* Issue #499: never shorten a tunnel parent's milestone
+                     * below the one its children raised it to. */
+                    if (session->live_children > 0 && new_milestone < old_milestone) {
+                        new_milestone = old_milestone;
+                    }
+                    if (update_session_timeout_milestone(mmt_handler, new_milestone, old_milestone, session) == MMT_TIMEOUT_NOMEM) {
                         process_outofmemory_force_sessions_timeout(ipacket->mmt_handler, ipacket);
-                        if (insert_session_timeout_milestone(mmt_handler, new_milestone, session) == 0) {
+                        if (insert_session_timeout_milestone(mmt_handler, new_milestone, session) == MMT_TIMEOUT_NOMEM) {
                             // Double OOM: keep old milestone so session stays time-outable (F-BUG-023).
                             insert_session_timeout_milestone(mmt_handler, old_milestone, session);
                             // do not advance milestone
@@ -406,6 +534,10 @@ int proto_session_management(ipacket_t * ipacket, protocol_instance_t * configur
                         session->session_timeout_milestone = new_milestone;
                     }
                     //}
+                    /* Issue #499: carry a later child milestone up the tunnel. */
+                    if (session->parent_session != NULL) {
+                        hold_ancestors_milestone(mmt_handler, session);
+                    }
                 }
             }
 

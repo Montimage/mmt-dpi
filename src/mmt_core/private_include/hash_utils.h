@@ -64,6 +64,13 @@ extern "C" {
     // Session-timeout index: a timing-wheel ring bounded by the live
     // milestone span (issue #254, F-PERF-013) — insert/update/delete are O(1)
     // and allocate nothing on the hot path.
+    //
+    // insert/update return one of the MMT_TIMEOUT_* codes below (issue #500):
+    // a milestone outside the ring's maximum span is parked, which is a
+    // success — only MMT_TIMEOUT_NOMEM (0) is an allocation failure.
+#define MMT_TIMEOUT_NOMEM    0 /* allocation failure: the session is in no list */
+#define MMT_TIMEOUT_INSERTED 1 /* linked into a ring slot */
+#define MMT_TIMEOUT_PARKED   2 /* out-of-span milestone, linked into the parked index */
     void * init_timeout_milestones_index(void);
     int insert_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t timeout, mmt_session_t * session);
     int update_session_timeout_milestone(mmt_handler_t *mmt_handler, uint32_t new_timeout, uint32_t old_timeout, mmt_session_t * session);
@@ -74,6 +81,10 @@ extern "C" {
     // Issue #306: bounded range expiry — dispatches fct once per live
     // milestone in [range_lo, range_hi), cost O(min(gap, ring capacity)).
     void timeout_expire_milestones_range(mmt_handler_t *mmt_handler, uint32_t range_lo, uint32_t range_hi, generic_mapspace_iteration_callback fct);
+    // Issue #499: detach every live milestone and dispatch fct on each in
+    // ascending order; fct may re-arm sessions for a later drain. Returns the
+    // number of milestones dispatched.
+    size_t timeout_drain_milestones(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct);
     void timeout_iteration_callback(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct);
     void session_timer_iteration_callback(mmt_handler_t *mmt_handler, generic_mapspace_iteration_callback fct);
     int insert_protocol_stack_into_map(uint32_t key, void * value);
