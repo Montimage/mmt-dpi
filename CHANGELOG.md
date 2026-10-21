@@ -1,7 +1,7 @@
 RELEASE NOTES
 ---
 
-Version 1.9.1 (unreleased)
+Version 1.9.1 (21 October 2026)
 ---
 
 ### Build, CI and packaging
