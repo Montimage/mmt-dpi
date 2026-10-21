@@ -143,7 +143,7 @@ NO_FEED_REASON = ("CentOS Stream publishes no security advisories "
 EXCLUDED_IMAGES = {
     "buildpack-deps": "CI tooling image (the asn1c regeneration gate container), not a release runtime",
     # Install smoke matrix only (issue #493): no package ships for these.
-    "quay.io/fedora/fedora": "install-smoke target (issue #493), not a release runtime",
+    "fedora": "install-smoke target (issue #493), not a release runtime",
     "registry.opensuse.org/opensuse/leap": "install-smoke target (issue #493), not a release runtime",
     "alpine": "install-smoke target (issue #493), not a release runtime",
     "archlinux": "install-smoke target (issue #493), not a release runtime",

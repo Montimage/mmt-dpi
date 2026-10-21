@@ -90,7 +90,7 @@ jobs:
           - { name: debian-12, tier: supported, image: "debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443" }
           - { name: rocky-9, tier: supported, image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6" }
           - { name: centos-stream9, tier: supported, image: "quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c" }
-          - { name: fedora-44, tier: supported, image: "quay.io/fedora/fedora:44@sha256:12151022b0ec7cb4d70ae14e4a4d319377323265d7198b69dd53ec92713198d5" }
+          - { name: fedora-44, tier: supported, image: "fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80" }
           - { name: opensuse-leap-16.0, tier: supported, image: "registry.opensuse.org/opensuse/leap:16.0@sha256:230a53aa81c3d1e4318ba8c73a942f0f330383c229ae64dd116d4fee1a6a16ab" }
           # Best-effort: Arch is rolling (no arm64 image upstream); Alpine is
           # musl, which the SDK does not build on today.
