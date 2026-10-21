@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "description": "Third-party source vendored into the MMT-DPI tree (issue #496, F-DEP-305). One entry per component: where it lives, where it comes from, the pinned upstream revision and its licence. tools/ci/vendored-components.py check verifies the entries against the tree; tools/ci/vendored-components.py sbom adds them to the release SPDX SBOM as packages. tools/ci/vendor-paths.txt stays the list of files excluded from the clean-code metrics and the coverage denominators; every path it names must belong to a component here.",
+  "components": [
+    {
+      "name": "llhttp",
+      "spdx_id": "SPDXRef-Vendored-llhttp",
+      "version": "9.4.3",
+      "upstream": "https://github.com/nodejs/llhttp",
+      "pin": "release/v9.4.3",
+      "download_location": "https://github.com/nodejs/llhttp/tree/release/v9.4.3",
+      "purl": "pkg:github/nodejs/llhttp@release/v9.4.3",
+      "license": "MIT",
+      "copyright": "Copyright Fedor Indutny, 2018.",
+      "notice": "VENDORED banner at the top of each file; upstream LICENSE-MIT",
+      "paths": [
+        "src/mmt_tcpip/lib/llhttp.h",
+        "src/mmt_tcpip/lib/llhttp.c",
+        "src/mmt_tcpip/lib/llhttp_api.c",
+        "src/mmt_tcpip/lib/llhttp_http.c"
+      ],
+      "checks": [
+        {
+          "field": "version",
+          "file": "src/mmt_tcpip/lib/llhttp.h",
+          "pattern": "#define LLHTTP_VERSION_MAJOR (\\d+)\\s+#define LLHTTP_VERSION_MINOR (\\d+)\\s+#define LLHTTP_VERSION_PATCH (\\d+)"
+        }
+      ]
+    },
+    {
+      "name": "asn1c",
+      "spdx_id": "SPDXRef-Vendored-asn1c",
+      "version": "0.9.29",
+      "upstream": "https://github.com/mouse07410/asn1c",
+      "pin": "dbd0ed0983a7b412ada27cb279f7823dcb381e80",
+      "download_location": "git+https://github.com/mouse07410/asn1c@dbd0ed0983a7b412ada27cb279f7823dcb381e80",
+      "purl": "pkg:github/mouse07410/asn1c@dbd0ed0983a7b412ada27cb279f7823dcb381e80",
+      "license": "BSD-2-Clause",
+      "copyright": "Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info> and contributors.",
+      "notice": "per-file header in the runtime skeletons; upstream LICENSE",
+      "paths": [
+        "src/mmt_mobile/asn1c/common/"
+      ],
+      "checks": [
+        {
+          "field": "pin",
+          "file": "src/mmt_mobile/asn1c/ASN1C_VERSION",
+          "pattern": "(?m)^ASN1C_REF=(\\S+)$"
+        },
+        {
+          "field": "version",
+          "file": "src/mmt_mobile/asn1c/ASN1C_VERSION",
+          "pattern": "(?m)^ASN1C_VERSION=(\\S+)$"
+        }
+      ]
+    }
+  ]
+}

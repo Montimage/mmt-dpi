@@ -108,6 +108,7 @@ jobs:
               tools/ci/check-reproducible-build.sh|tools/ci/check-release-tag.sh|\
               tools/ci/check-release-gates.sh|tools/ci/publish-release.sh|\
               tools/ci/release-alert.sh|tools/ci/base-images.txt|\
+              tools/ci/vendored-components.*|\
               .github/workflows/release-packages.yml)
                 echo "packaging path changed: $f"
                 packaging=true ;;
@@ -198,6 +199,24 @@ jobs:
           artifact-name: sbom-${{ matrix.distro.name }}-${{ matrix.arch }}
           upload-artifact: false
           upload-release-assets: false
+
+      # Vendored components (issue #496, F-DEP-305): syft sees the package as
+      # one opaque file, so the SBOM would list only the package itself. Add
+      # the third-party sources compiled into it — llhttp, the asn1c runtime —
+      # from the tracked manifest tools/ci/vendored-components.json, before
+      # the upload below and before the release job hashes and attests it.
+      - name: Add vendored components to the SBOM
+        env:
+          SBOM: ${{ steps.pkg.outputs.sbom }}
+        run: |
+          set -euo pipefail
+          python3 tools/ci/vendored-components.py check
+          python3 tools/ci/vendored-components.py sbom "$SBOM"
+          jq -e --slurpfile m tools/ci/vendored-components.json \
+            '[.packages[].name] as $have
+             | all($m[0].components[].name; . as $n | $have | index($n) != null)' \
+            "$SBOM" > /dev/null
+          jq -c '[.packages[].name]' "$SBOM"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

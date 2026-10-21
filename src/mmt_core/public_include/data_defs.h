@@ -1355,6 +1355,8 @@ MMTAPI int MMTCALL mmt_attr_sprintf(char * buff, int len, attribute_t * attr);
  * @param src pointer to a struct in_addr / struct in6_addr
  * @param dst pointer to a C string where the result will be stored
  * @param len number of bytes available in dst
+ * @return dst holding the address text (IPv6 in the canonical RFC 5952 form of the C library's
+ * inet_ntop), or NULL when src or dst is NULL, af is unsupported or len is too small.
  */
 MMTAPI const char* MMTCALL mmt_inet_ntop( int af, mmt_const_opaque_t src, char *dst, socklen_t len );
 

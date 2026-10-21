@@ -215,8 +215,9 @@ the exact-release-SHA publish gate (`test-release-gates.py`, issue
 #371, plus the cppcheck version-pin self-test `test-cppcheck-version.sh`,
 issue #345, and the version-agreement self-test `test-version-agreement.sh`,
 issue #483, the release-tag pin self-test `test-release-tag-pin.sh`, issue
-#484, and the single-publisher self-test `test-release-publish.sh`, issue
-#489) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+#484, the single-publisher self-test `test-release-publish.sh`, issue
+#489, and the vendored-inventory self-test `test-vendored-components.py`,
+issue #496) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other

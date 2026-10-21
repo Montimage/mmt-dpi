@@ -247,6 +247,12 @@ jobs:
       # provenance attestation — so this helper runs as an ordinary blocking
       # step, not in the advisory loop.
       run: bash tools/ci/check-release-verification.sh
+    - name: Vendored-code inventory (blocking — issue #496)
+      # tools/ci/vendored-components.json records each vendored component's
+      # paths, upstream, pin and licence; the check fails on a recorded
+      # version/pin that drifts from the tree, a missing path, or a
+      # tools/ci/vendor-paths.txt entry no component covers.
+      run: python3 tools/ci/vendored-components.py check
     - name: Image digest pinning (blocking — issues #217, #491)
       # The gate condition holds — every image any workflow pulls is
       # name:tag@sha256-pinned and recorded in tools/ci/base-images.txt — so

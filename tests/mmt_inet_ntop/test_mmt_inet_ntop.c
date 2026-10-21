@@ -1,5 +1,6 @@
 /*
- * test_mmt_inet_ntop.c — comprehensive test suite for mmt_inet_ntop (src/mmt_core/src/mmt_inet_ntop.c).
+ * test_mmt_inet_ntop.c — comprehensive test suite for mmt_inet_ntop (src/mmt_core/src/mmt_inet_ntop.c),
+ * the exported wrapper over the C library's inet_ntop (issue #496).
  *
  * Tests cover:
  *   - IPv4 basic addresses (loopback, private, public)
@@ -13,6 +14,10 @@
  *   - NULL address (returns NULL)
  *   - Invalid address family (returns NULL)
  *   - Exact buffer size fit
+ *   - RFC 5952 canonical IPv6 text (issue #496): a single zero group is not
+ *     compressed, the longest zero run wins, the first of equal runs wins
+ *   - NULL destination buffer (returns NULL)
+ *   - IPv6 buffer one byte short / exact
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -208,6 +213,54 @@ static void test_ipv4_leading_zeros(void) {
     CHECK_STR_EQ(result, "0.0.0.1", "IPv4 0.0.0.1");
 }
 
+/* ---- Helper: IPv6 text round-trip through inet_pton ---- */
+static const char *ntop6_of(const char *text, char *buf, socklen_t len) {
+    struct in6_addr addr;
+    if (inet_pton(AF_INET6, text, &addr) != 1) return "(inet_pton failed)";
+    return mmt_inet_ntop(AF_INET6, &addr, buf, len);
+}
+
+/* ---- Test: RFC 5952 §4.2.2 — a single zero group is not shortened ---- */
+static void test_ipv6_single_zero_group(void) {
+    fprintf(stderr, "  test: IPv6 single zero group stays 0 (RFC 5952)\n");
+    char buf[INET6_ADDRSTRLEN];
+    CHECK_STR_EQ(ntop6_of("2001:db8:0:1:1:1:1:1", buf, sizeof(buf)),
+                 "2001:db8:0:1:1:1:1:1", "single zero group not compressed");
+}
+
+/* ---- Test: RFC 5952 §4.2.3 — the longest run of zero groups is shortened ---- */
+static void test_ipv6_longest_run(void) {
+    fprintf(stderr, "  test: IPv6 longest zero run compressed (RFC 5952)\n");
+    char buf[INET6_ADDRSTRLEN];
+    CHECK_STR_EQ(ntop6_of("2001:0:0:1:0:0:0:1", buf, sizeof(buf)),
+                 "2001:0:0:1::1", "longest zero run compressed");
+}
+
+/* ---- Test: RFC 5952 §4.2.3 — of equal runs, the first is shortened ---- */
+static void test_ipv6_first_of_equal_runs(void) {
+    fprintf(stderr, "  test: IPv6 first of equal zero runs compressed (RFC 5952)\n");
+    char buf[INET6_ADDRSTRLEN];
+    CHECK_STR_EQ(ntop6_of("2001:db8:0:0:1:0:0:1", buf, sizeof(buf)),
+                 "2001:db8::1:0:0:1", "first of equal zero runs compressed");
+}
+
+/* ---- Test: NULL destination buffer ---- */
+static void test_null_buffer(void) {
+    fprintf(stderr, "  test: NULL buffer returns NULL\n");
+    struct in_addr addr;
+    addr.s_addr = htonl(INADDR_LOOPBACK);
+    CHECK(mmt_inet_ntop(AF_INET, &addr, NULL, INET_ADDRSTRLEN) == NULL,
+          "NULL buffer should return NULL");
+}
+
+/* ---- Test: IPv6 buffer one byte short, then exact ---- */
+static void test_ipv6_buffer_bounds(void) {
+    fprintf(stderr, "  test: IPv6 buffer bounds (::1 needs 4 bytes)\n");
+    char buf[4];
+    CHECK(ntop6_of("::1", buf, 3) == NULL, "IPv6 buffer one byte short should return NULL");
+    CHECK_STR_EQ(ntop6_of("::1", buf, 4), "::1", "IPv6 exact buffer size should fit");
+}
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
@@ -228,6 +281,11 @@ int main(int argc, char **argv) {
     test_invalid_family();
     test_ipv6_compressed();
     test_ipv4_leading_zeros();
+    test_ipv6_single_zero_group();
+    test_ipv6_longest_run();
+    test_ipv6_first_of_equal_runs();
+    test_null_buffer();
+    test_ipv6_buffer_bounds();
 
     if (g_failures == 0) {
         fprintf(stderr, "ALL CHECKS PASSED\n");

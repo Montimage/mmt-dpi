@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 
-#include "queue.h"
+#include <sys/queue.h>
 #include "data_defs.h"
 
 

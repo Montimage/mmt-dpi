@@ -99,7 +99,8 @@ change.
 Installing a package runs its maintainer scripts as root, so authenticate the
 download first. Every release asset is verifiable: a `SHA256SUMS` manifest
 covers all published files, each package ships an SPDX SBOM
-(`<package>.sbom.json` listing what it was built and linked against), and the
+(`<package>.sbom.json` listing what it was built and linked against, plus the
+third-party sources vendored into it — `tools/ci/vendored-components.json`), and the
 workflow records a build-provenance attestation for every asset.
 
 Download `SHA256SUMS` and the package from the same release, then:

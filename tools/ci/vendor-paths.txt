@@ -12,6 +12,11 @@
 # lint-commented-code.sh, lint-packet-path-io.sh, count-init-wrappers.sh,
 # run-cppcheck.sh and scripts/validate-doc-drift.sh.
 #
+# Provenance (upstream, pin, licence) of every vendored component, these
+# files included, is recorded in tools/ci/vendored-components.json (issue
+# #496); tools/ci/vendored-components.py check fails when an entry here
+# belongs to no component there.
+#
 # nodejs/llhttp — pinned at tag release/v9.4.3 (generated release sources;
 # adopted per docs/llhttp-migration.md, issue #222, replacing the archived
 # nodejs/http-parser v2.9.4):

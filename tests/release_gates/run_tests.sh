@@ -26,6 +26,10 @@
 # checker on the committed .github/required-checks.txt and on fixture
 # workflows (no network: --live runs against a stub gh). It skips without
 # PyYAML; the verify-helpers job runs it with PyYAML required.
+# It also runs the vendored-inventory self-test beside
+# tools/ci/vendored-components.py (issue #496), which checks the committed
+# manifest, fixture manifests that must fail, and the SBOM injection on a
+# fixture SPDX document.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -36,3 +40,4 @@ bash "${TESTS_DIR}/test-release-publish.sh"
 bash "${TESTS_DIR}/test-image-pins.sh"
 python3 "${TESTS_DIR}/test-dependency-advisories.py"
 bash "${TESTS_DIR}/test-required-checks.sh"
+python3 "${TESTS_DIR}/test-vendored-components.py"

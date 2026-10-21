@@ -21,6 +21,8 @@
 #   - an SBOM is generated per package in the build job (sbom-action or a
 #     direct syft call), written under dist/packages so the upload glob
 #     ships it, and collected into the release asset set (*.sbom.json)
+#   - the vendored components of tools/ci/vendored-components.json are
+#     added to that SBOM (tools/ci/vendored-components.py sbom, issue #496)
 #   - README.md documents `sha256sum --check` and `gh attestation verify`
 #   - every `uses:` action reference stays SHA-pinned (repo convention)
 #   - the exact-release-SHA gate (issue #371, F-CI-001): a `release-gates`
@@ -247,6 +249,12 @@ if re.search(r"uses:\s*anchore/sbom-action@[0-9a-f]{40}", wf) \
     ok("SBOM generation step present in the workflow")
 else:
     fail("no SBOM generation step (sbom-action/syft) — F-SEC-015 unmet")
+
+if re.search(r"python3 tools/ci/vendored-components\.py sbom ", wf):
+    ok("SBOM gains the vendored components (tools/ci/vendored-components.py)")
+else:
+    fail("the SBOM step no longer adds the vendored components — run "
+         "tools/ci/vendored-components.py sbom on it (issue #496)")
 
 sbom_out = re.search(r"output-file:.*dist/packages", wf)
 if sbom_out or re.search(r"dist/packages/\*", wf):
