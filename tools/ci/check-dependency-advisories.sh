@@ -1,22 +1,31 @@
 #!/usr/bin/env bash
 #
 # check-dependency-advisories.sh — measure the advisory status of the
-# dependencies this repository actually resolves (issue #384, plan task 2.5).
+# dependencies this repository actually resolves (issue #384, plan task 2.5;
+# distro triage, dispositions and repository advisories: issue #492,
+# F-DEP-204).
 #
 # Three dependency surfaces are measured at their exact resolved revisions:
 #
 #   gems     every spec in docs/Gemfile.lock (the frozen docs toolchain),
-#            checked against OSV (RubyGems) AND the GitHub Advisory Database.
+#            checked against OSV (RubyGems) AND the GitHub Advisory Database;
+#            the direct dependencies (the lockfile's DEPENDENCIES) are also
+#            checked against the published security advisories of their own
+#            GitHub repository (found through the RubyGems API), which the
+#            global database may not carry yet.
 #   actions  every SHA-pinned `uses:` in .github/workflows and .github/actions,
 #            at the release named by its `# vX.Y.Z` pin comment, checked
 #            against the GitHub Advisory Database (OSV cannot evaluate
-#            versions in its GitHub Actions ecosystem).
+#            versions in its GitHub Actions ecosystem) and against the
+#            published security advisories of the action's own repository.
 #   native   the runtime packages the shipped .deb/.rpm declare (the
 #            tools/ci/shlib-deps.sh set for an ENABLESEC=1 build: libc,
 #            libstdc++, libgcc, libxml2), resolved inside every pinned
 #            release image of tools/ci/base-images.txt exactly as the package
 #            build resolves them (apt-get update / dnf repoquery), checked
-#            against the distro's own OSV feed.
+#            against the distro's own OSV feed. CI tooling images recorded
+#            there (buildpack-deps, the asn1c gate container) are listed as
+#            excluded: nothing the packages ship runs on them.
 #
 # Distro advisories are judged against the distro revision, so a fix the
 # distro backported into an older upstream version counts as fixed. The
@@ -28,6 +37,15 @@
 #                         version (gems/actions always fall here when affected)
 #   unfixed               affected; no fixed version published yet
 #
+# Blocking = an affected advisory rated High/Critical, unless
+#   - the distro's own triage says it has no security impact on that release:
+#     Debian urgency `unimportant` or Ubuntu priority `negligible` (listed,
+#     never blocking — an upstream CVSS score does not override the distro); or
+#   - an unexpired entry of tools/ci/advisory-dispositions.txt covers it
+#     (format and rules: that file's header). An EXPIRED entry fails the run
+#     (exit 1) whether or not its advisory is still reported, so every
+#     accepted risk is decided again by its date.
+#
 # Missing assessment is never reported as zero vulnerabilities: a required
 # scanner that did not run, an unreadable pin, or an affected advisory whose
 # severity cannot be established makes the verdict NOT ASSESSED / INCOMPLETE.
@@ -37,29 +55,40 @@
 #
 # Exit codes:
 #   0 = every required scanner ran; no affected High/Critical advisory
-#   1 = at least one confirmed, unresolved High/Critical advisory (blocks M1)
-#   2 = assessment incomplete: a required scanner/tool did not run, or an
-#       affected advisory has no determinable severity
+#   1 = at least one blocking High/Critical advisory, or an expired
+#       disposition (blocks M1)
+#   2 = assessment incomplete: a required scanner/tool did not run, an
+#       affected advisory has no determinable severity, or the disposition
+#       file is malformed
 #
 # Usage:
 #   bash tools/ci/check-dependency-advisories.sh [--out report.md]
-#        [--json report.json] [--only gems|actions|native]... [--self-test]
+#        [--json report.json] [--only gems|actions|native]...
+#        [--today YYYY-MM-DD] [--self-test]
 #
-# Requires python3 and network access to api.osv.dev and api.github.com;
-# the native surface also requires docker. GitHub API auth is taken from
-# GH_TOKEN / GITHUB_TOKEN, else `gh auth token`, else unauthenticated.
-# OSV_API / GHSA_API / OSV_DB_URL override the endpoints (used by --self-test).
+# The report is not committed: the weekly dependency-advisories workflow
+# (.github/workflows/dependency-advisories.yml) uploads it as an artifact.
+# Requires python3 and network access to api.osv.dev, rubygems.org and
+# api.github.com; the native surface also requires docker. GitHub API auth
+# is taken from GH_TOKEN / GITHUB_TOKEN, else `gh auth token`, else
+# unauthenticated.
+# Test seams (tools/ci/tests/test-dependency-advisories.py): OSV_API /
+# GHSA_API / OSV_DB_URL / RUBYGEMS_API override the endpoints, ROOT_DIR the
+# tree that is measured, ADVISORY_PROBE_FIXTURE (JSON) replaces the docker
+# probe, and --today pins the date dispositions expire against.
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+ROOT="${ROOT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$ROOT"
 
 command -v python3 >/dev/null 2>&1 || { echo "✗ python3 is required" >&2; exit 2; }
 
-exec python3 - "$0" "$@" <<'PYEOF'
+exec python3 - "$SCRIPT_PATH" "$@" <<'PYEOF'
 import argparse
 import datetime as dt
+import fnmatch
 import glob
 import json
 import math
@@ -79,10 +108,13 @@ OSV_API = os.environ.get("OSV_API", "https://api.osv.dev").rstrip("/")
 GHSA_API = os.environ.get("GHSA_API", "https://api.github.com").rstrip("/")
 OSV_DB_URL = os.environ.get(
     "OSV_DB_URL", "https://osv-vulnerabilities.storage.googleapis.com").rstrip("/")
+RUBYGEMS_API = os.environ.get("RUBYGEMS_API", "https://rubygems.org").rstrip("/")
+PROBE_FIXTURE = os.environ.get("ADVISORY_PROBE_FIXTURE")
 TIMEOUT = 60
 
 LOCKFILE = "docs/Gemfile.lock"
 BASE_IMAGES = "tools/ci/base-images.txt"
+DISPOSITIONS = "tools/ci/advisory-dispositions.txt"
 ACTION_GLOBS = [".github/workflows/*.yml", ".github/workflows/*.yaml",
                 ".github/actions/*/action.yml", ".github/actions/*/action.yaml"]
 
@@ -94,13 +126,23 @@ RPM_PKGS = ["glibc", "libstdc++", "libgcc", "libxml2"]
 # image repository (before ':' / '@') + tag -> (OSV ecosystem or None, family)
 DISTROS = {
     ("ubuntu", "22.04"): ("Ubuntu:22.04:LTS", "deb"),
+    ("ubuntu", "jammy"): ("Ubuntu:22.04:LTS", "deb"),
     ("ubuntu", "24.04"): ("Ubuntu:24.04:LTS", "deb"),
+    ("ubuntu", "noble"): ("Ubuntu:24.04:LTS", "deb"),
     ("debian", "12"): ("Debian:12", "deb"),
+    ("debian", "bookworm"): ("Debian:12", "deb"),
+    ("debian", "13"): ("Debian:13", "deb"),
+    ("debian", "trixie"): ("Debian:13", "deb"),
     ("rockylinux", "9"): ("Rocky Linux:9", "rpm"),
     ("quay.io/centos/centos", "stream9"): (None, "rpm"),
 }
 NO_FEED_REASON = ("CentOS Stream publishes no security advisories "
                   "(no OSV ecosystem, no errata feed)")
+# Image repositories recorded in base-images.txt that are CI tooling, not a
+# release runtime: nothing the packages ship runs on them.
+EXCLUDED_IMAGES = {
+    "buildpack-deps": "CI tooling image (the asn1c regeneration gate container), not a release runtime",
+}
 
 SEV_ORDER = ["NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
 BLOCKING = {"HIGH", "CRITICAL"}
@@ -201,20 +243,76 @@ def gh_token():
     return None
 
 
+def gh_headers(auth=True):
+    headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+    tok = gh_token() if auth else None
+    if tok:
+        headers["Authorization"] = f"Bearer {tok}"
+    return headers
+
+
+def http_code(exc):
+    cause = exc.__cause__
+    return cause.code if isinstance(cause, urllib.error.HTTPError) else None
+
+
 def ghsa_affecting(ecosystem, pkg_at_version):
     """Reviewed GitHub Advisory Database advisories affecting one name@version.
 
     One query per name@version, so every returned advisory affects exactly that
-    pin; pagination follows the Link rel="next" cursor (the endpoint ignores
-    `page`)."""
-    headers = {"Accept": "application/vnd.github+json",
-               "X-GitHub-Api-Version": "2022-11-28"}
-    tok = gh_token()
-    if tok:
-        headers["Authorization"] = f"Bearer {tok}"
-    out, date, seen = [], None, set()
+    pin."""
     url = (f"{GHSA_API}/advisories?type=reviewed&ecosystem={ecosystem}&per_page=100"
            f"&affects={urllib.parse.quote(pkg_at_version, safe='@/')}")
+    return gh_paged(url, gh_headers())
+
+
+_REPO_CACHE = {}
+
+
+def repo_advisories(repo):
+    """Published security advisories of one GitHub repository, or None when
+    the repository does not exist. A token scoped to another repository (the
+    workflow's GITHUB_TOKEN) may be refused where anonymous access to public
+    advisories works, so a 403/404 is retried once without credentials."""
+    if repo not in _REPO_CACHE:
+        url = f"{GHSA_API}/repos/{repo}/security-advisories?state=published&per_page=100"
+        attempts = [gh_headers(), gh_headers(auth=False)]
+        if "Authorization" not in attempts[0]:
+            attempts = attempts[1:]
+        for i, headers in enumerate(attempts):
+            try:
+                _REPO_CACHE[repo] = gh_paged(url, headers)[0]
+                break
+            except ScannerError as exc:
+                if http_code(exc) in (403, 404) and i + 1 < len(attempts):
+                    continue
+                if http_code(exc) != 404:
+                    raise
+                _REPO_CACHE[repo] = None
+    return _REPO_CACHE[repo]
+
+
+GITHUB_REPO_RE = re.compile(
+    r"^https?://(?:www\.)?github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?(?:[/#?].*)?$")
+
+
+def gem_repo(name):
+    """owner/repo of a gem's GitHub source repository (RubyGems metadata), or None."""
+    _, info = http("GET", f"{RUBYGEMS_API}/api/v1/gems/{urllib.parse.quote(name)}.json")
+    info = info if isinstance(info, dict) else {}
+    meta = info.get("metadata") or {}
+    for url in (info.get("source_code_uri"), meta.get("source_code_uri"),
+                info.get("homepage_uri"), meta.get("homepage_uri")):
+        m = GITHUB_REPO_RE.match(url or "")
+        if m:
+            return f"{m.group(1)}/{m.group(2)}"
+    return None
+
+
+def gh_paged(url, headers):
+    """Every item of a paginated GitHub list endpoint, and the last HTTP Date;
+    pagination follows the Link rel="next" cursor (/advisories ignores `page`)."""
+    out, date, seen = [], None, set()
     while url:
         hdrs, resp = http("GET", url, headers=headers)
         date = hdrs.get("Date", date)
@@ -227,6 +325,76 @@ def ghsa_affecting(ecosystem, pkg_at_version):
         m = re.search(r'<([^>]+)>;\s*rel="next"', hdrs.get("Link") or "")
         url = m.group(1) if m else None
     return out, date
+
+
+# --------------------------------------------------------------------------
+# Repository advisories: version ranges
+# --------------------------------------------------------------------------
+
+def _vparts(version):
+    out = []
+    for p in re.split(r"[.\-+_]", version.strip().lstrip("vV")):
+        if p:
+            # A string segment is a pre-release and sorts below any number
+            # (Gem::Version: 1.0.a < 1.0 == 1.0.0).
+            out.append((1, int(p), "") if p.isdigit() else (0, 0, p))
+    return out
+
+
+def vcmp(a, b):
+    pa, pb = _vparts(a), _vparts(b)
+    n = max(len(pa), len(pb))
+    pa += [(1, 0, "")] * (n - len(pa))
+    pb += [(1, 0, "")] * (n - len(pb))
+    return (pa > pb) - (pa < pb)
+
+
+RANGE_RE = re.compile(r"^\s*(>=|<=|==|!=|>|<|=)?\s*v?(\d[\w.+-]*)\s*$")
+
+
+def in_range(version, rng):
+    """True when version satisfies a GitHub vulnerable_version_range such as
+    ">= 2.5.0, <= 2.9.0" (comma or `and` = all of; repository advisories also
+    write alternatives: "... and <= 3.28.2, or >= 2.26.11 and < 3");
+    ValueError when the range cannot be read."""
+    if not isinstance(rng, str) or not rng.strip():
+        raise ValueError(f"no vulnerable_version_range ({rng!r})")
+    hit = False
+    for alt in re.split(r"\s*,?\s*\bor\b\s*", rng.strip()):
+        ok = True
+        for cons in re.split(r"\s*(?:,|\band\b)\s*", alt):
+            m = RANGE_RE.match(cons)
+            if not m:
+                raise ValueError(f"unreadable vulnerable_version_range {rng!r}")
+            r = vcmp(version, m.group(2))
+            ok = ok and {">=": r >= 0, "<=": r <= 0, ">": r > 0, "<": r < 0, "=": r == 0,
+                         "==": r == 0, "!=": r != 0}[m.group(1) or "="]
+        hit = hit or ok
+    return hit
+
+
+def repo_hits(advs, ecosystem, name, version, repo):
+    """The repository advisories whose vulnerable range for (ecosystem, name)
+    contains version, in the global GHSA record shape. An unreadable range
+    fails closed (ScannerError), never a silent miss."""
+    hits = []
+    for adv in advs or []:
+        for vul in adv.get("vulnerabilities") or []:
+            pkg = vul.get("package") or {}
+            if ((pkg.get("ecosystem") or "").lower() != ecosystem
+                    or (pkg.get("name") or "").lower() != name.lower()):
+                continue
+            try:
+                hit = in_range(version, vul.get("vulnerable_version_range"))
+            except ValueError as exc:
+                raise ScannerError(f"{repo} {adv.get('ghsa_id')}: {exc}") from exc
+            if hit:
+                rec = dict(adv)
+                rec["vulnerabilities"] = [dict(v, first_patched_version=v.get("patched_versions"))
+                                          for v in adv.get("vulnerabilities") or []]
+                hits.append(rec)
+                break
+    return hits
 
 
 # --------------------------------------------------------------------------
@@ -317,7 +485,9 @@ def ratings_of_ghsa(adv):
     lab = norm_label(adv.get("severity"))
     if lab:
         out.append((lab, "GHSA"))
-    v3 = ((adv.get("cvss_severities") or {}).get("cvss_v3") or {})
+    # Repository advisories may carry only the older `cvss` object.
+    v3 = next((v for v in (((adv.get("cvss_severities") or {}).get("cvss_v3")), adv.get("cvss"))
+               if isinstance(v, dict) and v.get("vector_string")), {})
     s = cvss3_score(v3.get("vector_string")) if v3.get("vector_string") else None
     if s is not None:
         out.append((score_label(s), f"CVSS {s}"))
@@ -339,6 +509,80 @@ def resolve_osv_rating(rec):
     for alias in sorted(set(rec.get("upstream") or []) | set(rec.get("aliases") or [])):
         ratings += [(lab, f"{src} via {alias}") for lab, src in ratings_of_osv(osv_vuln(alias))]
     return worst(ratings), ratings
+
+
+def distro_triage(rec, ecosystem, package=None):
+    """The distro's own "no security impact on this release" triage, or None.
+
+    Debian records it per release as `urgency: unimportant`
+    (affected[].ecosystem_specific), Ubuntu as priority `negligible` (a
+    severity entry of type Ubuntu). Such a record is listed but never blocks:
+    the distro security team decided it, and an upstream CVSS score merged in
+    from an alias does not override that decision."""
+    for aff in rec.get("affected") or []:
+        pkg = aff.get("package") or {}
+        if pkg.get("ecosystem") != ecosystem or (package and pkg.get("name") != package):
+            continue
+        urgency = str((aff.get("ecosystem_specific") or {}).get("urgency") or "").strip().lower()
+        if ecosystem.startswith("Debian:") and urgency == "unimportant":
+            return "Debian urgency unimportant"
+    if ecosystem.startswith("Ubuntu:"):
+        for sev in rec.get("severity") or []:
+            if sev.get("type") == "Ubuntu" and str(sev.get("score") or "").strip().lower() == "negligible":
+                return "Ubuntu priority negligible"
+    return None
+
+
+# --------------------------------------------------------------------------
+# Dispositions
+# --------------------------------------------------------------------------
+
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def parse_dispositions(text):
+    """([entry], [error]) from the disposition file: one entry per line,
+    `<advisory id> | <target glob> | <expires YYYY-MM-DD> | <tracking> | <reason>`."""
+    entries, errors = [], []
+    for n, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        fields = [f.strip() for f in line.split("|")]
+        if len(fields) != 5:
+            errors.append(f"line {n}: expected 5 '|'-separated fields, got {len(fields)}")
+            continue
+        vid, target, expires, tracking, reason = fields
+        if not re.match(r"^[A-Za-z0-9][A-Za-z0-9:._-]*$", vid):
+            errors.append(f"line {n}: unreadable advisory id {vid!r}")
+            continue
+        try:
+            if not DATE_RE.match(expires):
+                raise ValueError
+            dt.date.fromisoformat(expires)
+        except ValueError:
+            errors.append(f"line {n}: expiry {expires!r} is not a YYYY-MM-DD date")
+            continue
+        if not target or not tracking or not reason:
+            errors.append(f"line {n}: target, tracking and reason must all be set")
+            continue
+        entries.append({"line": n, "id": vid, "target": target, "expires": expires,
+                        "tracking": tracking, "reason": reason, "matched": 0})
+    return entries, errors
+
+
+def advisory_targets(adv):
+    return [t.split("@sha256:")[0] for t in adv["target"].split(", ")]
+
+
+def match_disposition(adv, entries):
+    """The disposition entry covering one advisory (by id or alias, and target
+    glob against the target without its digest), or None."""
+    ids = {adv["id"]} | set(adv.get("aliases") or [])
+    for e in entries:
+        if e["id"] in ids and any(fnmatch.fnmatchcase(t, e["target"]) for t in advisory_targets(adv)):
+            return e
+    return None
 
 
 # --------------------------------------------------------------------------
@@ -396,6 +640,21 @@ def parse_lockfile(text):
     return gems
 
 
+def parse_direct_deps(text):
+    """Names in the lockfile's DEPENDENCIES section (the Gemfile's direct gems)."""
+    out, inside = [], False
+    for line in text.splitlines():
+        if line.strip() == "DEPENDENCIES" and not line.startswith(" "):
+            inside = True
+            continue
+        if inside and line and not line.startswith(" "):
+            break
+        m = re.match(r"^  ([A-Za-z0-9_.\-]+)!?(?: \(.*\))?$", line) if inside else None
+        if m:
+            out.append(m.group(1))
+    return out
+
+
 USES_RE = re.compile(
     r"uses:\s*['\"]?([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)((?:/[^@\s'\"]*)?)@([^\s'\"#]+)"
     r"['\"]?\s*(?:#\s*(\S+))?")
@@ -429,6 +688,10 @@ def distro_of(image):
     return DISTROS.get((repo, tag))
 
 
+def excluded_reason(image):
+    return EXCLUDED_IMAGES.get(image.split("@", 1)[0].rpartition(":")[0])
+
+
 DEB_PROBE = r'''
 set -e
 apt-get update -qq >/dev/null 2>&1
@@ -449,16 +712,24 @@ def probe_image(image, family):
     """[(binary, binary_version, source, source_version)] resolved in image."""
     pkgs = DEB_PKGS if family == "deb" else RPM_PKGS
     probe = DEB_PROBE if family == "deb" else RPM_PROBE
-    try:
-        res = subprocess.run(["docker", "run", "--rm", image, "sh", "-c", probe, "probe"] + pkgs,
-                             capture_output=True, text=True, timeout=900)
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise ScannerError(f"docker run {image}: {exc}") from exc
-    if res.returncode != 0:
-        err = (res.stderr.strip().splitlines() or ["no output"])[-1]
-        raise ScannerError(f"docker run {image}: exit {res.returncode}: {err}")
+    if PROBE_FIXTURE:
+        # Test seam: {image: "<probe stdout>"} — a missing image is a failed probe.
+        with open(PROBE_FIXTURE, encoding="utf-8") as fh:
+            stdout = json.load(fh).get(image)
+        if stdout is None:
+            raise ScannerError(f"docker run {image}: exit 125: no such image in fixture")
+    else:
+        try:
+            res = subprocess.run(["docker", "run", "--rm", image, "sh", "-c", probe, "probe"] + pkgs,
+                                 capture_output=True, text=True, timeout=900)
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise ScannerError(f"docker run {image}: {exc}") from exc
+        if res.returncode != 0:
+            err = (res.stderr.strip().splitlines() or ["no output"])[-1]
+            raise ScannerError(f"docker run {image}: exit {res.returncode}: {err}")
+        stdout = res.stdout
     rows = {}
-    for line in res.stdout.splitlines():
+    for line in stdout.splitlines():
         parts = line.strip().split("|")
         if len(parts) != 3 or not parts[1] or parts[1] == "(none)":
             continue
@@ -481,19 +752,34 @@ def probe_image(image, family):
 # Measurement
 # --------------------------------------------------------------------------
 
-def measure(only):
+def measure(only, today):
     rep = {"started": now_utc(), "scanners": [], "failures": [], "not_assessed": [],
-           "gems": [], "actions": [], "native": [], "advisories": []}
+           "excluded": [], "gems": [], "actions": [], "native": [], "advisories": [],
+           "dispositions": [], "expired_dispositions": [], "today": today}
 
     def fail(surface, msg):
         rep["failures"].append(f"{surface}: {msg}")
 
+    # ---- dispositions ------------------------------------------------------
+    try:
+        with open(DISPOSITIONS, encoding="utf-8") as fh:
+            entries, errors = parse_dispositions(fh.read())
+    except FileNotFoundError:
+        entries, errors = [], []
+    except OSError as exc:
+        entries, errors = [], [f"cannot read: {exc}"]
+    for err in errors:
+        fail("dispositions", f"{DISPOSITIONS} {err}")
+    rep["dispositions"] = entries
+    rep["expired_dispositions"] = [e for e in entries if e["expires"] < today]
+
     # ---- gems --------------------------------------------------------------
     if "gems" in only:
         try:
-            gems = parse_lockfile(open(LOCKFILE, encoding="utf-8").read())
+            lock_text = open(LOCKFILE, encoding="utf-8").read()
+            gems = parse_lockfile(lock_text)
         except OSError as exc:
-            gems = {}
+            lock_text, gems = "", {}
             fail("gems", f"cannot read {LOCKFILE}: {exc}")
         if not gems:
             fail("gems", f"no specs parsed from {LOCKFILE}")
@@ -517,6 +803,36 @@ def measure(only):
                                         "database_date": f"live (HTTP Date {date})", "queried": now_utc()})
             except ScannerError as exc:
                 fail("gems", f"GitHub Advisory Database scanner did not run: {exc}")
+            # Repository advisories of the direct gems: published by the gem's
+            # own repository, possibly not (yet) in the reviewed database.
+            direct = [n for n in parse_direct_deps(lock_text) if n in gems]
+            if not direct:
+                fail("gems", f"no direct dependencies parsed from {LOCKFILE} DEPENDENCIES")
+            else:
+                try:
+                    date, queried = None, 0
+                    for name in sorted(direct):
+                        repo = gem_repo(name)
+                        if repo is None:
+                            rep["not_assessed"].append(
+                                f"gems: {name}: no GitHub source repository in its RubyGems metadata; "
+                                "repository advisories not queried")
+                            continue
+                        advs = repo_advisories(repo)
+                        if advs is None:
+                            rep["not_assessed"].append(
+                                f"gems: {name}: source repository {repo} not found; repository advisories not queried")
+                            continue
+                        queried += 1
+                        for adv in repo_hits(advs, "rubygems", name, gems[name], repo):
+                            found.setdefault((name, adv["ghsa_id"]), ("GHSA", adv))
+                    rep["scanners"].append({
+                        "surface": "gems",
+                        "scanner": f"GitHub repository advisories {GHSA_API}/repos/<repo>/security-advisories "
+                                   f"({queried}/{len(direct)} direct gems, repository via {RUBYGEMS_API})",
+                        "database_date": "live", "queried": now_utc()})
+                except ScannerError as exc:
+                    fail("gems", f"repository advisory scanner did not run: {exc}")
             seen_alias = set()
             for (name, vid), (src, rec) in sorted(found.items()):
                 aliases = set(rec.get("aliases") or []) if src == "OSV" else {
@@ -579,6 +895,42 @@ def measure(only):
                                         "database_date": f"live (HTTP Date {date})", "queried": now_utc()})
             except ScannerError as exc:
                 fail("actions", f"GitHub Advisory Database scanner did not run: {exc}")
+            # Repository advisories: an action's repository is its owner/name.
+            try:
+                queried = set()
+                for row in rep["actions"]:
+                    if not row["version"]:
+                        continue
+                    advs = repo_advisories(row["action"])
+                    if advs is None:
+                        rep["not_assessed"].append(
+                            f"actions: {row['action']}: repository not found; repository advisories not queried")
+                        continue
+                    queried.add(row["action"])
+                    known = {a["id"] for a in rep["advisories"]
+                             if a["surface"] == "actions" and a["package"] == row["action"]
+                             and a["installed"] == row["version"]}
+                    for adv in repo_hits(advs, "actions", row["action"], row["version"], row["action"]):
+                        if adv["ghsa_id"] in known:
+                            continue
+                        row["affected"] += 1
+                        ratings = ratings_of_ghsa(adv)
+                        fixes = sorted({v["first_patched_version"] for v in adv["vulnerabilities"]
+                                        if (v.get("package") or {}).get("name", "").lower() == row["action"].lower()
+                                        and v.get("first_patched_version")})
+                        rep["advisories"].append({
+                            "surface": "actions", "target": ", ".join(row["files"]), "package": row["action"],
+                            "installed": row["version"], "id": adv["ghsa_id"],
+                            "aliases": [adv["cve_id"]] if adv.get("cve_id") else [],
+                            "severity": worst(ratings), "ratings": [f"{l} ({s})" for l, s in ratings],
+                            "disposition": "upstream-version-gap" if fixes else "unfixed",
+                            "fixed": fixes})
+                rep["scanners"].append({"surface": "actions",
+                                        "scanner": f"GitHub repository advisories {GHSA_API}/repos/<action>/security-advisories "
+                                                   f"({len(queried)} repositories)",
+                                        "database_date": "live", "queried": now_utc()})
+            except ScannerError as exc:
+                fail("actions", f"repository advisory scanner did not run: {exc}")
         else:
             fail("actions", "no pinned `uses:` found")
 
@@ -591,9 +943,9 @@ def measure(only):
             fail("native", f"cannot read {BASE_IMAGES}: {exc}")
         if not images and not any(f.startswith("native:") for f in rep["failures"]):
             fail("native", f"no images parsed from {BASE_IMAGES}")
-        have_docker = shutil.which("docker") is not None
-        platform = None
-        if have_docker:
+        have_docker = bool(PROBE_FIXTURE) or shutil.which("docker") is not None
+        platform = "fixture" if PROBE_FIXTURE else None
+        if have_docker and not PROBE_FIXTURE:
             try:
                 platform = subprocess.run(["docker", "version", "-f", "{{.Server.Os}}/{{.Server.Arch}}"],
                                           capture_output=True, text=True, timeout=60).stdout.strip() or None
@@ -603,6 +955,9 @@ def measure(only):
         db_dates, listed = {}, set()
         for image in images:
             info = distro_of(image)
+            if info is None and excluded_reason(image):
+                rep["excluded"].append(f"{image}: {excluded_reason(image)}")
+                continue
             if info is None:
                 fail("native", f"{image}: no distro/ecosystem mapping in {os.path.basename(SCRIPT)}")
                 continue
@@ -661,7 +1016,8 @@ def measure(only):
                         "installed": qver, "id": vid,
                         "aliases": sorted(set(rec.get("aliases") or []) | set(rec.get("upstream") or [])),
                         "severity": label, "ratings": [f"{l} ({s})" for l, s in ratings],
-                        "disposition": classify_distro(qver, fixes, True, family), "fixed": fixes})
+                        "disposition": classify_distro(qver, fixes, True, family), "fixed": fixes,
+                        "triage": distro_triage(rec, ecosystem, qname)})
         for eco, date in sorted(db_dates.items()):
             rep["scanners"].append({"surface": "native", "scanner": f"OSV {OSV_API}/v1/query ({eco})",
                                     "database_date": date, "queried": now_utc()})
@@ -669,19 +1025,49 @@ def measure(only):
     for msg in ALIAS_FAILURES:
         fail("severity", msg)
     rep["finished"] = now_utc()
-    blocking = [a for a in rep["advisories"] if a["severity"] in BLOCKING]
-    unrated = [a for a in rep["advisories"] if a["severity"] is None]
-    if blocking:
-        rep["verdict"], rep["exit"] = "FAIL — confirmed unresolved High/Critical advisory (blocks M1)", 1
+    for a in rep["advisories"]:
+        apply_policy(a, entries, today)
+    blocking = [a for a in rep["advisories"] if a["blocking"]]
+    unrated = [a for a in rep["advisories"] if a["status"].startswith("NOT ASSESSED")]
+    expired = rep["expired_dispositions"]
+    if blocking or expired:
+        reasons = []
+        if blocking:
+            reasons.append(f"{len(blocking)} blocking High/Critical advisory(ies)")
+        if expired:
+            reasons.append(f"{len(expired)} expired disposition(s) in {DISPOSITIONS}")
+        rep["verdict"], rep["exit"] = f"FAIL — {', '.join(reasons)} (blocks M1)", 1
     elif rep["failures"] or unrated:
         rep["verdict"], rep["exit"] = "NOT ASSESSED — assessment incomplete (never a zero-vulnerability claim)", 2
     else:
         rep["verdict"], rep["exit"] = "PASS — no affected High/Critical advisory in the assessed scope", 0
         if rep["not_assessed"]:
             rep["verdict"] += f" ({len(rep['not_assessed'])} target(s) Not Assessed — see that section)"
-    if blocking and (rep["failures"] or unrated):
+    if (blocking or expired) and (rep["failures"] or unrated):
         rep["verdict"] += "; assessment also incomplete"
     return rep
+
+
+def apply_policy(adv, entries, today):
+    """Set adv["status"] / adv["blocking"]: distro triage first, then an
+    unexpired disposition; an expired one leaves the advisory blocking."""
+    adv.setdefault("triage", None)
+    entry = match_disposition(adv, entries)
+    if entry:
+        entry["matched"] += 1
+    sev = adv["severity"]
+    adv["blocking"] = False
+    if adv["triage"]:
+        adv["status"] = f"non-blocking: {adv['triage']}"
+    elif entry and entry["expires"] >= today:
+        adv["status"] = f"dispositioned until {entry['expires']} ({entry['tracking']})"
+    elif sev in BLOCKING or sev is None:
+        adv["blocking"] = sev in BLOCKING
+        adv["status"] = "BLOCKING" if sev else "NOT ASSESSED (no rating)"
+        if entry:
+            adv["status"] += f"; disposition expired {entry['expires']}"
+    else:
+        adv["status"] = "non-blocking: below High"
 
 
 # --------------------------------------------------------------------------
@@ -709,16 +1095,30 @@ def render(rep, only):
         lines += ["## Required scanners that did not run", ""] + [f"- {f}" for f in rep["failures"]] + [""]
     if rep["not_assessed"]:
         lines += ["## Not Assessed", ""] + [f"- {n}" for n in rep["not_assessed"]] + [""]
-    advs = sorted(rep["advisories"], key=lambda a: (-SEV_ORDER.index(a["severity"]) if a["severity"] else -9,
+    if rep["excluded"]:
+        lines += ["## Excluded images", ""] + [f"- {n}" for n in rep["excluded"]] + [""]
+    lines += [f"## Dispositions ({DISPOSITIONS}, judged on {rep['today']})", ""]
+    if rep["dispositions"]:
+        lines += [md_table(["Advisory", "Target", "Expires", "State", "Matched", "Tracking", "Reason"],
+                           [(e["id"], e["target"], e["expires"],
+                             "EXPIRED" if e["expires"] < rep["today"] else "active",
+                             e["matched"], e["tracking"], e["reason"]) for e in rep["dispositions"]]), ""]
+    else:
+        lines += ["None.", ""]
+    advs = sorted(rep["advisories"], key=lambda a: (not a["blocking"],
+                                                    -SEV_ORDER.index(a["severity"]) if a["severity"] else -9,
                                                     a["surface"], a["target"], a["package"], a["id"]))
     lines += ["## Affected advisories", "",
               "Severity is the highest of every available rating (advisory label, distro "
-              "priority, CVSS v3 base score); each rating is listed. Targets are the pinned "
-              "images of the distro table below.", ""]
+              "priority, CVSS v3 base score); each rating is listed. Status says why an "
+              "advisory does or does not block: distro triage (Debian `unimportant`, Ubuntu "
+              "`negligible`), an unexpired disposition, or a rating below High. Targets are "
+              "the pinned images of the distro table below.", ""]
     if advs:
-        lines += [md_table(["Severity", "Surface", "Target", "Package @ installed", "Advisory", "Aliases",
-                            "Ratings", "Disposition", "Fixed in"],
-                           [(a["severity"] or "NOT ASSESSED", a["surface"], a["target"].split("@sha256:")[0],
+        lines += [md_table(["Status", "Severity", "Surface", "Target", "Package @ installed", "Advisory",
+                            "Aliases", "Ratings", "Fix class", "Fixed in"],
+                           [(a["status"], a["severity"] or "NOT ASSESSED", a["surface"],
+                             a["target"].split("@sha256:")[0],
                              f"{a['package']} @ {a['installed']}", a["id"], ", ".join(a["aliases"]) or "—",
                              "; ".join(a["ratings"]) or "none", a["disposition"], ", ".join(a["fixed"]) or "—")
                             for a in advs]), ""]
@@ -794,6 +1194,44 @@ def self_test():
           [("actions/checkout", "7.0.1"), ("github/codeql-action", "4.38.0"), ("some/action", None)])
     check("distro map", distro_of("debian:12@sha256:ab") == ("Debian:12", "deb")
           and distro_of("quay.io/centos/centos:stream9@sha256:cd") == (None, "rpm"))
+    check("distro map trixie/13", distro_of("debian:13@sha256:ab") == ("Debian:13", "deb")
+          and distro_of("debian:trixie@sha256:ab") == ("Debian:13", "deb"))
+    check("tooling image excluded", distro_of("buildpack-deps:bookworm@sha256:ab") is None
+          and excluded_reason("buildpack-deps:bookworm@sha256:ab") is not None
+          and excluded_reason("debian:12@sha256:ab") is None)
+    check("version order", vcmp("2.9.0", "2.9.1") < 0 and vcmp("1.0", "1.0.0") == 0
+          and vcmp("1.0.a", "1.0") < 0 and vcmp("0.10.0", "0.9.9") > 0)
+    check("range", in_range("2.9.0", ">= 2.5.0, <= 2.9.0") and not in_range("2.9.1", ">= 2.5.0, <= 2.9.0")
+          and in_range("0.5.2", "< 0.6.1") and in_range("1.2", "= 1.2"))
+    alt = ">= 3.26.11 and <= 3.28.2, or >= 2.26.11 and < 3"
+    check("range alternatives", in_range("3.27.0", alt) and in_range("2.30.0", alt)
+          and not in_range("3.28.3", alt) and not in_range("4.38.0", alt))
+    try:
+        in_range("1.0", "~> 1.0")
+        check("unreadable range raises", False)
+    except ValueError:
+        check("unreadable range raises", True)
+    check("direct deps", parse_direct_deps("GEM\n  specs:\n    a (1)\n\nDEPENDENCIES\n  jekyll (~> 4.3)\n"
+                                           "  jekyll-seo-tag\n  local!\n\nBUNDLED WITH\n   2.6.9\n")
+          == ["jekyll", "jekyll-seo-tag", "local"])
+    deb = {"affected": [{"package": {"name": "glibc", "ecosystem": "Debian:12"},
+                         "ecosystem_specific": {"urgency": "unimportant"}},
+                        {"package": {"name": "libxml2", "ecosystem": "Debian:12"},
+                         "ecosystem_specific": {"urgency": "high"}}]}
+    check("debian unimportant", distro_triage(deb, "Debian:12", "glibc") == "Debian urgency unimportant"
+          and distro_triage(deb, "Debian:13", "glibc") is None
+          and distro_triage(deb, "Debian:12", "libxml2") is None)
+    check("ubuntu negligible", distro_triage({"severity": [{"type": "Ubuntu", "score": "negligible"}]},
+                                             "Ubuntu:22.04:LTS") == "Ubuntu priority negligible"
+          and distro_triage({"severity": [{"type": "Ubuntu", "score": "low"}]}, "Ubuntu:22.04:LTS") is None)
+    ents, errs = parse_dispositions("# c\nCVE-1 | debian:* | 2027-01-31 | #492 | why\n"
+                                    "CVE-2 | * | 2027-13-01 | #492 | bad date\nCVE-3 | * | x\n")
+    check("disposition parse", [e["id"] for e in ents] == ["CVE-1"] and len(errs) == 2)
+    adv = {"id": "DEBIAN-CVE-1", "aliases": ["CVE-1"], "target": "debian:12@sha256:ab", "severity": "HIGH"}
+    apply_policy(adv, ents, "2027-01-31")
+    check("active disposition", not adv["blocking"] and adv["status"].startswith("dispositioned"))
+    apply_policy(adv, ents, "2027-02-01")
+    check("expired disposition blocks", adv["blocking"] and "expired" in adv["status"])
     # Fail closed: an alias whose ratings could not be fetched is a failure,
     # not a silently weaker severity.
     saved_api, globals()["OSV_API"] = OSV_API, "http://127.0.0.1:9"
@@ -803,12 +1241,26 @@ def self_test():
     ALIAS_FAILURES.clear()
     _OSV_CACHE.clear()
     # Fail closed: an unreachable scanner must yield exit 2, never a PASS.
+    # Hermetic tree: the lockfile and one pinned action, no disposition file,
+    # so neither the live dispositions nor the clock can change the verdict.
+    import shutil as _sh
+    tree = tempfile.mkdtemp(prefix="advisories-failclosed.")
+    os.makedirs(os.path.join(tree, "docs"))
+    os.makedirs(os.path.join(tree, ".github", "workflows"))
+    with open(os.path.join(tree, "docs", "Gemfile.lock"), "w", encoding="utf-8") as fh:
+        fh.write(lock + "DEPENDENCIES\n  jekyll\n")
+    with open(os.path.join(tree, ".github", "workflows", "ci.yml"), "w", encoding="utf-8") as fh:
+        fh.write("    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n")
     env = dict(os.environ, OSV_API="http://127.0.0.1:9", GHSA_API="http://127.0.0.1:9",
-               OSV_DB_URL="http://127.0.0.1:9")
-    for surface in ("gems", "actions"):
-        res = subprocess.run(["bash", SCRIPT, "--only", surface], capture_output=True, text=True,
-                             env=env, timeout=300)
-        check(f"fail closed ({surface})", res.returncode == 2 and "NOT ASSESSED" in res.stdout)
+               OSV_DB_URL="http://127.0.0.1:9", RUBYGEMS_API="http://127.0.0.1:9", ROOT_DIR=tree)
+    env.pop("ADVISORY_PROBE_FIXTURE", None)
+    try:
+        for surface in ("gems", "actions"):
+            res = subprocess.run(["bash", SCRIPT, "--only", surface], capture_output=True, text=True,
+                                 env=env, timeout=300)
+            check(f"fail closed ({surface})", res.returncode == 2 and "NOT ASSESSED" in res.stdout)
+    finally:
+        _sh.rmtree(tree, ignore_errors=True)
     for name, ok in checks:
         print(f"{'✓' if ok else '✗'} {name}")
     bad = [n for n, ok in checks if not ok]
@@ -822,12 +1274,16 @@ def main():
     ap.add_argument("--json", help="also write the raw measurement as JSON")
     ap.add_argument("--only", action="append", choices=["gems", "actions", "native"],
                     help="restrict to one surface (repeatable)")
+    ap.add_argument("--today", help="date dispositions expire against (YYYY-MM-DD, default: today UTC)")
     ap.add_argument("--self-test", action="store_true", help="run the offline self-test")
     a = ap.parse_args(ARGS)
     if a.self_test:
         return self_test()
+    today = a.today or dt.datetime.now(dt.timezone.utc).date().isoformat()
+    if not DATE_RE.match(today):
+        ap.error(f"--today {today!r} is not YYYY-MM-DD")
     only = set(a.only or ["gems", "actions", "native"])
-    rep = measure(only)
+    rep = measure(only, today)
     text = render(rep, only)
     if a.out:
         with open(a.out, "w", encoding="utf-8") as fh:

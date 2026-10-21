@@ -1,0 +1,90 @@
+{
+  "_comment": "Advisory-feed fixture for tools/ci/tests/test-dependency-advisories.py (issue #492). Served by a local HTTP stub in place of api.osv.dev, api.github.com and rubygems.org. DEBIAN-CVE-2019-1010022 and the two repository advisories are trimmed copies of the live records (2026-10-21); every *-2099-* record is synthetic. osv_query keys are 'ecosystem|package' (every record the feed holds) and 'ecosystem|package|version' (the records affecting that version).",
+  "osv_query": {
+    "Debian:12|glibc": ["DEBIAN-CVE-2019-1010022"],
+    "Debian:12|glibc|2.36-9+deb12u14": ["DEBIAN-CVE-2019-1010022"],
+    "Debian:13|glibc": ["DEBIAN-CVE-2019-1010022", "DEBIAN-CVE-2099-0001"],
+    "Debian:13|glibc|2.41-12": ["DEBIAN-CVE-2019-1010022", "DEBIAN-CVE-2099-0001"],
+    "Ubuntu:22.04:LTS|glibc": ["UBUNTU-CVE-2099-0002"],
+    "Ubuntu:22.04:LTS|glibc|2.35-0ubuntu3.11": ["UBUNTU-CVE-2099-0002"]
+  },
+  "osv_vulns": {
+    "DEBIAN-CVE-2019-1010022": {
+      "id": "DEBIAN-CVE-2019-1010022",
+      "details": "GNU Libc current is affected by: Mitigation bypass. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.\"",
+      "upstream": ["CVE-2019-1010022"],
+      "severity": [{"type": "CVSS_V3", "score": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}],
+      "affected": [
+        {"package": {"name": "glibc", "ecosystem": "Debian:12"},
+         "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "0"}]}],
+         "ecosystem_specific": {"urgency": "unimportant"}},
+        {"package": {"name": "glibc", "ecosystem": "Debian:13"},
+         "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "0"}]}],
+         "ecosystem_specific": {"urgency": "unimportant"}}
+      ]
+    },
+    "CVE-2019-1010022": {
+      "id": "CVE-2019-1010022",
+      "severity": [{"type": "CVSS_V3", "score": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}]
+    },
+    "DEBIAN-CVE-2099-0001": {
+      "id": "DEBIAN-CVE-2099-0001",
+      "upstream": ["CVE-2099-0001"],
+      "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}],
+      "affected": [
+        {"package": {"name": "glibc", "ecosystem": "Debian:13"},
+         "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "0"}]}],
+         "ecosystem_specific": {"urgency": "not yet assigned"}}
+      ]
+    },
+    "UBUNTU-CVE-2099-0002": {
+      "id": "UBUNTU-CVE-2099-0002",
+      "upstream": ["CVE-2099-0002"],
+      "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+                   {"type": "Ubuntu", "score": "negligible"}],
+      "affected": [
+        {"package": {"name": "glibc", "ecosystem": "Ubuntu:22.04:LTS"},
+         "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "0"}]}]}
+      ]
+    }
+  },
+  "rubygems": {
+    "jekyll-seo-tag": {"name": "jekyll-seo-tag", "source_code_uri": null, "homepage_uri": "https://github.com/jekyll/jekyll-seo-tag"},
+    "jekyll-remote-theme": {"name": "jekyll-remote-theme", "source_code_uri": "https://github.com/benbalter/jekyll-remote-theme", "homepage_uri": "https://github.com/benbalter/jekyll-remote-theme"},
+    "jekyll-relative-links": {"name": "jekyll-relative-links", "source_code_uri": "https://github.com/benbalter/jekyll-relative-links", "homepage_uri": null},
+    "orphan-gem": {"name": "orphan-gem", "source_code_uri": null, "homepage_uri": "https://example.org/orphan-gem"}
+  },
+  "repo_advisories": {
+    "jekyll/jekyll-seo-tag": [
+      {"ghsa_id": "GHSA-572m-7cg5-6j5r", "cve_id": null, "state": "published", "severity": "medium",
+       "summary": "Unescaped metadata fields allow HTML and script injection",
+       "identifiers": [{"type": "GHSA", "value": "GHSA-572m-7cg5-6j5r"}],
+       "cvss_severities": {"cvss_v3": {"vector_string": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:N"}},
+       "vulnerabilities": [{"package": {"ecosystem": "rubygems", "name": "jekyll-seo-tag"},
+                            "vulnerable_version_range": ">= 2.5.0, <= 2.9.0", "patched_versions": "2.9.1"}]}
+    ],
+    "benbalter/jekyll-remote-theme": [
+      {"ghsa_id": "GHSA-3343-386p-v26g", "cve_id": null, "state": "published", "severity": "medium",
+       "summary": "Local-path remote_theme reads files outside the site source, even in safe mode",
+       "identifiers": [{"type": "GHSA", "value": "GHSA-3343-386p-v26g"}],
+       "cvss_severities": {"cvss_v3": {"vector_string": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N"}},
+       "vulnerabilities": [{"package": {"ecosystem": "rubygems", "name": "jekyll-remote-theme"},
+                            "vulnerable_version_range": ">= 0.5.0, <= 0.6.0", "patched_versions": "0.6.1"}]}
+    ],
+    "benbalter/jekyll-relative-links": [],
+    "fixture-org/setup-thing": [
+      {"ghsa_id": "GHSA-2099-aaaa-bbbb", "cve_id": "CVE-2099-0003", "state": "published", "severity": "high",
+       "summary": "Synthetic repository advisory for an action",
+       "identifiers": [{"type": "GHSA", "value": "GHSA-2099-aaaa-bbbb"}],
+       "cvss_severities": {"cvss_v3": {"vector_string": null}},
+       "vulnerabilities": [{"package": {"ecosystem": "actions", "name": "fixture-org/setup-thing"},
+                            "vulnerable_version_range": ">= 2.0.0 and < 2.4.1, or >= 1.0.0 and < 1.9.3",
+                            "patched_versions": "2.4.1, 1.9.3"}]}
+    ]
+  },
+  "probe": {
+    "debian:12@sha256:1111111111111111111111111111111111111111111111111111111111111111": "libc6|2.36-9+deb12u14|glibc\nlibstdc++6|12.2.0-14+deb12u1|gcc-12 (12.2.0-14+deb12u1)\nlibgcc-s1|12.2.0-14+deb12u1|gcc-12 (12.2.0-14+deb12u1)\nlibxml2|2.9.14+dfsg-1.3~deb12u6|libxml2 (2.9.14+dfsg-1.3~deb12u6)\n",
+    "debian:trixie@sha256:3333333333333333333333333333333333333333333333333333333333333333": "libc6|2.41-12|glibc\nlibstdc++6|14.2.0-19|gcc-14 (14.2.0-19)\nlibgcc-s1|14.2.0-19|gcc-14 (14.2.0-19)\nlibxml2|2.12.7+dfsg+really2.9.14-2.1|libxml2 (2.12.7+dfsg+really2.9.14-2.1)\n",
+    "ubuntu:22.04@sha256:2222222222222222222222222222222222222222222222222222222222222222": "libc6|2.35-0ubuntu3.11|glibc\nlibstdc++6|12.3.0-1ubuntu1~22.04.3|gcc-12 (12.3.0-1ubuntu1~22.04.3)\nlibgcc-s1|12.3.0-1ubuntu1~22.04.3|gcc-12 (12.3.0-1ubuntu1~22.04.3)\nlibxml2|2.9.13+dfsg-1ubuntu0.11|libxml2 (2.9.13+dfsg-1ubuntu0.11)\n"
+  }
+}

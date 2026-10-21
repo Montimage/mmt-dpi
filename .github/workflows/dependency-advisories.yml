@@ -1,0 +1,73 @@
+name: Dependency advisories
+
+# Weekly advisory measurement (issue #492, F-DEP-204; milestone M1's advisory
+# condition). tools/ci/check-dependency-advisories.sh measures the docs gems
+# (OSV, the GitHub Advisory Database and the direct gems' repository
+# advisories), the pinned actions and the runtime packages inside every
+# release image recorded in tools/ci/base-images.txt — the same list the
+# daily base-image-refresh workflow keeps current — against
+# tools/ci/advisory-dispositions.txt.
+#
+# The report is this run's artifact (and job summary); it is no longer
+# committed. The job is non-required — it runs on a schedule, never on a pull
+# request — and fails visibly on a blocking advisory or an expired disposition
+# (exit 1) or an incomplete assessment (exit 2); the artifact is uploaded
+# either way. The script's verdict logic is covered offline on every PR by
+# tools/ci/tests/test-dependency-advisories.py (release_gates suite).
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+# Least-privilege default (F-SEC-005): read-only, nothing here writes.
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: Measure dependency advisories
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Measure every surface
+        id: scan
+        env:
+          # Read-only GitHub API access (advisory database, repository
+          # advisories); it lifts the anonymous rate limit.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          mkdir -p advisory-report
+          bash tools/ci/check-dependency-advisories.sh \
+            --out advisory-report/dependency-advisories.md \
+            --json advisory-report/dependency-advisories.json
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          [ -f advisory-report/dependency-advisories.md ] && \
+            cat advisory-report/dependency-advisories.md >> "$GITHUB_STEP_SUMMARY"
+          case "$rc" in
+            0) ;;
+            1) echo "::error title=dependency advisories::a blocking High/Critical advisory or an expired disposition — see the report artifact; add or renew an entry in tools/ci/advisory-dispositions.txt only with a decision" ;;
+            *) echo "::error title=dependency advisories inconclusive::a scanner did not run, an advisory has no rating or the disposition file is malformed (exit $rc) — see the report artifact" ;;
+          esac
+          exit "$rc"
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dependency-advisories
+          path: advisory-report/
+          if-no-files-found: error
+          retention-days: 90

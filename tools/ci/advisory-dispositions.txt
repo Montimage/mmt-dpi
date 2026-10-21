@@ -1,0 +1,53 @@
+# Advisory dispositions for tools/ci/check-dependency-advisories.sh
+# (issue #492, F-DEP-204).
+#
+# An entry is a time-boxed decision about ONE advisory the script reports as
+# blocking (High/Critical) or unrated: while it is unexpired the advisory is
+# listed with its disposition and does not fail the run. On the day after
+# its expiry date the entry itself fails the run (exit 1) — whether or not the
+# advisory is still reported — so every accepted or tracked risk is decided
+# again, and an entry whose advisory went away is deleted rather than kept.
+#
+# Distro triage needs no entry: a Debian `unimportant` or Ubuntu `negligible`
+# record is already non-blocking.
+#
+# Format, one entry per line (blank lines and '#' comments ignored):
+#
+#   <advisory id> | <target glob> | <expires YYYY-MM-DD> | <tracking> | <reason>
+#
+#   advisory id  the id the report prints or any of its aliases (an upstream
+#                CVE id covers the distro's DEBIAN-/UBUNTU- record for it)
+#   target glob  fnmatch pattern against the report's Target without the
+#                digest: an image (debian:12, ubuntu:*), docs/Gemfile.lock, a
+#                workflow path, or * for every target
+#   expires      last day the entry holds (UTC); keep it short — weeks, not
+#                years — since the weekly run re-measures anyway
+#   tracking     the issue or PR that owns the follow-up
+#   reason       why the advisory does not block now
+#
+# Malformed lines make the assessment incomplete (exit 2).
+#
+# The entries below were measured on 2026-10-21 by the #492 run: every one is
+# `unfixed` in its distro (no fixed revision is published, so there is no
+# in-repo change to make — the package build installs whatever the distro
+# ships). They are tracked, not accepted: confirm or replace them, and drop
+# each as the distro publishes a fix (the weekly report shows the fix class
+# turning to backport-available).
+
+CVE-2026-102010 | debian:12 | 2026-12-31 | #492 | HIGH gcc-12 @ 12.2.0-14+deb12u1: unfixed in the distro, no fixed revision published
+CVE-2026-95619 | debian:12 | 2026-12-31 | #492 | HIGH gcc-12 @ 12.2.0-14+deb12u1: unfixed in the distro, no fixed revision published
+CVE-2026-19499 | debian:12 | 2026-12-31 | #492 | HIGH glibc @ 2.36-9+deb12u14: unfixed in the distro, no fixed revision published
+CVE-2026-5435 | debian:12 | 2026-12-31 | #492 | HIGH glibc @ 2.36-9+deb12u14: unfixed in the distro, no fixed revision published
+CVE-2026-5450 | debian:12 | 2026-12-31 | #492 | CRITICAL glibc @ 2.36-9+deb12u14: unfixed in the distro, no fixed revision published
+CVE-2026-5928 | debian:12 | 2026-12-31 | #492 | HIGH glibc @ 2.36-9+deb12u14: unfixed in the distro, no fixed revision published
+CVE-2026-6368 | debian:12 | 2026-12-31 | #492 | glibc @ 2.36-9+deb12u14: no rating in any source and unfixed in the distro
+CVE-2026-6791 | debian:12 | 2026-12-31 | #492 | glibc @ 2.36-9+deb12u14: no rating in any source and unfixed in the distro
+CVE-2026-6653 | debian:12 | 2026-12-31 | #492 | CRITICAL libxml2 @ 2.9.14+dfsg-1.3~deb12u6: unfixed in the distro, no fixed revision published
+CVE-2026-74860 | debian:12 | 2026-12-31 | #492 | HIGH libxml2 @ 2.9.14+dfsg-1.3~deb12u6: unfixed in the distro, no fixed revision published
+CVE-2026-86138 | debian:12 | 2026-12-31 | #492 | HIGH libxml2 @ 2.9.14+dfsg-1.3~deb12u6: unfixed in the distro, no fixed revision published
+CVE-2026-86140 | debian:12 | 2026-12-31 | #492 | HIGH libxml2 @ 2.9.14+dfsg-1.3~deb12u6: unfixed in the distro, no fixed revision published
+CVE-2026-86142 | debian:12 | 2026-12-31 | #492 | HIGH libxml2 @ 2.9.14+dfsg-1.3~deb12u6: unfixed in the distro, no fixed revision published
+CVE-2026-86143 | debian:12 | 2026-12-31 | #492 | HIGH libxml2 @ 2.9.14+dfsg-1.3~deb12u6: unfixed in the distro, no fixed revision published
+CVE-2026-86144 | debian:12 | 2026-12-31 | #492 | HIGH libxml2 @ 2.9.14+dfsg-1.3~deb12u6: unfixed in the distro, no fixed revision published
+CVE-2026-102010 | ubuntu:22.04 | 2026-12-31 | #492 | HIGH gcc-12 @ 12.3.0-1ubuntu1~22.04.3: unfixed in the distro, no fixed revision published
+CVE-2026-95619 | ubuntu:22.04 | 2026-12-31 | #492 | HIGH gcc-12 @ 12.3.0-1ubuntu1~22.04.3: unfixed in the distro, no fixed revision published

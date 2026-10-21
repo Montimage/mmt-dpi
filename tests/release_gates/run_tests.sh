@@ -17,6 +17,10 @@
 # It also runs the image-pin self-test beside tools/ci/check-image-digests.sh
 # and tools/ci/refresh-base-images.sh (issue #491), which drives both against
 # a fixture repository and a stub registry inspector (no docker, no network).
+# It also runs the dependency-advisory self-test beside
+# tools/ci/check-dependency-advisories.sh (issue #492), which drives the real
+# script on fixture trees against a local stub of the advisory feeds
+# (tools/ci/tests/dependency-advisories-feeds.json; no docker, no network).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -25,3 +29,4 @@ bash "${TESTS_DIR}/test-version-agreement.sh"
 bash "${TESTS_DIR}/test-release-tag-pin.sh"
 bash "${TESTS_DIR}/test-release-publish.sh"
 bash "${TESTS_DIR}/test-image-pins.sh"
+python3 "${TESTS_DIR}/test-dependency-advisories.py"
