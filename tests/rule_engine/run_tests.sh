@@ -43,7 +43,8 @@
 #      eval/ — THEN on the same packet, AFTER and BEFORE, delay and counter
 #      windows, AND, OR, NOT, REPEAT, nested THEN, event references,
 #      ||/arithmetic expressions — and the reported verdicts are pinned to
-#      the current behaviour — test_rule_eval.c.
+#      the current behaviour — test_rule_eval.c; since #510 also keep_state
+#      and the verdict JSON, which jq must parse (step 8).
 #
 # Usage: tests/rule_engine/run_tests.sh
 set -euo pipefail
@@ -240,9 +241,22 @@ echo "  injection test passed (packet-derived metachars treated literally)"
 
 echo "  [6/8] tips_extract.c overflow family (F-BUG-208 / F-BUG-212, #137; #326 fill-in branches) ..."
 OVERFLOW_LOG="${WORK}/overflow.log"
+OVERFLOW_JSON="${WORK}/packet_strings.json"
 run_expect_ok "overflow-family + #326 regression" "${OVERFLOW_LOG}" \
-    "${LD_ENV[@]}" "${OVERFLOW_BIN}"
+    "${LD_ENV[@]}" "OVERFLOW_JSON_OUT=${OVERFLOW_JSON}" "${OVERFLOW_BIN}"
 grep '^ok - ' "${OVERFLOW_LOG}" | sed 's/^/  /'
+# #510 (F-BUG-209): the verdict document built from packet strings holding
+# quotes and control bytes parses with jq and gives the bytes back.
+if ! command -v jq >/dev/null 2>&1; then
+    echo "✗ jq is required to validate the verdict JSON (apt-get install jq)" >&2; exit 1
+fi
+if ! jq -e --arg hl "$(printf 'Host: "evil"\\\n\001\t')" \
+        '.event_4.attributes | map(to_entries[0].value) | index($hl) != null' \
+        "${OVERFLOW_JSON}" >/dev/null; then
+    echo "✗ packet-string verdict JSON is invalid or lost the header line — document:" >&2
+    cat "${OVERFLOW_JSON}" >&2 2>/dev/null; exit 1
+fi
+echo "  ok - packet-string verdict JSON parses with jq and round-trips the header line"
 echo "  $(grep -c '^ok - ' "${OVERFLOW_LOG}") assertions passed (overflow family + #326)"
 
 # --- 7. fuzz-engine parser + parameter storage (F-BUG-094/100/101, #210)
@@ -290,10 +304,43 @@ ${CC} "${extra_cflags[@]}" -O2 -Wall \
     "${EVAL_SRC}" -L "${LIB}" \
     -lmmt_security -lmmt_core -lmmt_tcpip -lmmt_tmobile -lxml2 -lm
 EVAL_LOG="${WORK}/eval.log"
+HIST_LOG="${WORK}/histories.jsonl"
+: > "${HIST_LOG}"
 run_expect_ok "rule evaluator characterisation" "${EVAL_LOG}" \
-    "${LD_ENV[@]}" "${EVAL_BIN}" "${SCRIPT_DIR}/eval"
+    "${LD_ENV[@]}" "RULE_EVAL_HISTORY_LOG=${HIST_LOG}" "${EVAL_BIN}" "${SCRIPT_DIR}/eval"
 grep '^ok - ' "${EVAL_LOG}" | sed 's/^/  /'
 echo "  $(grep -c '^ok - ' "${EVAL_LOG}") scenarios passed (rule evaluator)"
+
+# #510 (F-BUG-209): every history the callback reported is a JSON document
+# jq parses, and json_escape.xml's quote/backslash/control-character
+# descriptions come back unchanged.
+if ! command -v jq >/dev/null 2>&1; then
+    echo "✗ jq is required to validate the verdict JSON (apt-get install jq)" >&2; exit 1
+fi
+if ! jq -e -s 'length > 0' "${HIST_LOG}" >/dev/null; then
+    echo "✗ verdict histories are not valid JSON — log:" >&2; cat "${HIST_LOG}" >&2; exit 1
+fi
+DESC1="$(printf 'A "quoted"\ttab\\back')"
+DESC2="$(printf 'line\nbreak\rctl')"
+if ! jq -e -s --arg d1 "${DESC1}" --arg d2 "${DESC2}" \
+        'map(select(.event_1.description == $d1 and .event_2.description == $d2)) | length == 1' \
+        "${HIST_LOG}" >/dev/null; then
+    echo "✗ json_escape.xml descriptions did not round-trip through the verdict JSON" >&2
+    cat "${HIST_LOG}" >&2; exit 1
+fi
+# keep_state.xml's second verdict (B at +1.7 s): copy_instance() kept A's
+# event_1 member and the new B added event_2 — each exactly once.
+KEPT_LINE="$(grep -F '"timestamp":1700000001.700000' "${HIST_LOG}" || true)"
+if [ "$(printf '%s\n' "${KEPT_LINE}" | grep -c .)" -ne 1 ] ||
+   [ "$(printf '%s' "${KEPT_LINE}" | grep -o '"event_1"' | wc -l)" -ne 1 ] ||
+   [ "$(printf '%s' "${KEPT_LINE}" | grep -o '"event_2"' | wc -l)" -ne 1 ] ||
+   ! printf '%s' "${KEPT_LINE}" | jq -e '(keys == ["event_1", "event_2"]) and
+        .event_1.description == "A" and .event_1.timestamp == 1700000000 and
+        .event_2.description == "B"' >/dev/null; then
+    echo "✗ keep_state: the kept history is not A's event_1 plus the new event_2 — got:" >&2
+    printf '%s\n' "${KEPT_LINE}" >&2; exit 1
+fi
+echo "  $(jq -s length "${HIST_LOG}") verdict histories parsed by jq (escaped descriptions round-trip, keep_state history kept)"
 
 echo
 echo "✓ Rule-engine tests passed"

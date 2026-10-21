@@ -244,6 +244,13 @@ static int fi_fake_extract = 0;
 static struct timeval fi_tvp;
 static mmt_header_line_t fi_hl;
 static char fi_hl_bytes[512];
+/* #510: one extra fabricated attribute (a string record) at fi_str_proto.
+ * fi_str_field; every other non-META attribute stays the header line. */
+static uint32_t fi_str_proto, fi_str_field;
+static void *fi_str_rec;
+/* and a pointer-typed string (MMT_STRING_DATA_POINTER) at fi_ptr_proto.fi_ptr_field */
+static uint32_t fi_ptr_proto, fi_ptr_field;
+static void *fi_ptr_val;
 
 static void fi_track(void *p)
 {
@@ -395,6 +402,10 @@ void *get_attribute_extracted_data(const ipacket_t *ipacket, uint32_t proto_id, 
 {
     if (fi_fake_extract) {
         if (proto_id == 1) return &fi_tvp;
+        if (fi_str_rec != NULL && proto_id == fi_str_proto && field_id == fi_str_field)
+            return fi_str_rec;
+        if (fi_ptr_val != NULL && proto_id == fi_ptr_proto && field_id == fi_ptr_field)
+            return fi_ptr_val;
         return &fi_hl;
     }
     if (real_extract_fn == NULL) fi_resolve();
@@ -561,6 +572,197 @@ static void test_store_history_alloc_failure(void)
     fi_fake_extract = 0;
     fi_tracking = 0;
     free(curr.json_history);
+}
+
+/* F-BUG-209 (#510): store_history() wrote header-line and string values
+ * (and the cause) into the verdict JSON raw — a quote ended the JSON string
+ * early and a control byte made the document invalid. The values below
+ * carry a quote, a backslash and control bytes; the history must hold them
+ * escaped. The third one is a 1504-byte control-byte string whose escaped
+ * form (9024 bytes) is longer than store_history()'s 8192-byte formatting
+ * buffer: it must be appended whole, not cut. With OVERFLOW_JSON_OUT set, the verdict document the callback
+ * would get ("{" history "}") is written there for run_tests.sh's jq pass. */
+static void test_store_history_escapes_strings(void)
+{
+    static const char hl_raw[] = "Host: \"evil\"\\\n\x01\t";
+    static const char str_raw[] = "tok\"en\x1f";
+    char cause[] = "cause \"q\"\x02";
+    rule root, curr;
+    tuple attrs[3];
+    mmt_string_data_t *rec;
+    char *hl_buf, *doc, *long_str;
+    const unsigned char *c;
+    long hproto, hfield, sproto, sfield, pproto, pfield;
+    int raw_ctl = 0;
+    size_t n;
+
+    hproto = get_protocol_id_by_name("http");
+    hfield = get_attribute_id_by_protocol_id_and_attribute_name((uint32_t)hproto, "Host");
+    sproto = get_protocol_id_by_name("quic_ietf");
+    sfield = get_attribute_id_by_protocol_id_and_attribute_name((uint32_t)sproto, "token");
+    pproto = get_protocol_id_by_name("ftp");
+    pfield = get_attribute_id_by_protocol_id_and_attribute_name((uint32_t)pproto, "user_name");
+    if (!(hproto > 0 && hfield > 0 && sproto > 0 && sfield > 0 && pproto > 0 && pfield > 0)) {
+        printf("FAIL - cannot resolve http.Host / quic_ietf.token / ftp.user_name\n");
+        failures++;
+        return;
+    }
+
+    memset(&root, 0, sizeof root);
+    memset(&curr, 0, sizeof curr);
+    memset(attrs, 0, sizeof attrs);
+    attrs[0].protocol_id = hproto;
+    attrs[0].field_id = hfield;
+    attrs[0].data_type_id = MMT_HEADER_LINE;
+    attrs[0].next = &attrs[1];
+    attrs[1].protocol_id = sproto;
+    attrs[1].field_id = sfield;
+    attrs[1].data_type_id = MMT_STRING_LONG_DATA;
+    attrs[1].next = &attrs[2];
+    attrs[2].protocol_id = pproto;
+    attrs[2].field_id = pfield;
+    attrs[2].data_type_id = MMT_STRING_DATA_POINTER;
+    root.list_of_tuples_to_print = &attrs[0];
+
+    /* header line: exactly its bytes, no terminator */
+    hl_buf = malloc(sizeof hl_raw - 1);
+    rec = calloc(1, sizeof *rec);
+    long_str = malloc(STRING_DATA_LEN + 1);
+    if (hl_buf == NULL || rec == NULL || long_str == NULL) {
+        printf("FAIL - allocation for the escaping test\n");
+        failures++;
+        free(hl_buf); free(rec); free(long_str);
+        return;
+    }
+    memset(long_str, 0x01, STRING_DATA_LEN);
+    long_str[STRING_DATA_LEN] = '\0';
+    fi_ptr_proto = (uint32_t)pproto;
+    fi_ptr_field = (uint32_t)pfield;
+    fi_ptr_val = long_str;
+    memcpy(hl_buf, hl_raw, sizeof hl_raw - 1);
+    fi_hl.ptr = hl_buf;
+    fi_hl.len = (uint16_t)(sizeof hl_raw - 1);
+    rec->len = (uint32_t)(sizeof str_raw - 1);
+    memcpy(rec->data, str_raw, sizeof str_raw - 1);
+    fi_str_proto = (uint32_t)sproto;
+    fi_str_field = (uint32_t)sfield;
+    fi_str_rec = rec;
+    fi_tvp.tv_sec = 1;
+    fi_tvp.tv_usec = 2;
+
+    fi_fake_extract = 1;
+    fi_reset();
+    verify_ctx_t hctx = { NULL, &root, NULL, NULL, { 0, 0 }, NO, NO };
+    store_history(&hctx, SAME, &curr, cause, 4);
+    fi_fake_extract = 0;
+    fi_tracking = 0;
+    fi_str_rec = NULL;
+    fi_ptr_val = NULL;
+
+    CHECK(curr.json_history != NULL, "store_history records a history for string attributes");
+    if (curr.json_history != NULL) {
+        for (c = (const unsigned char *)curr.json_history; *c != '\0'; c++)
+            if (*c < 0x20) raw_ctl = 1;
+        CHECK(!raw_ctl, "history carries no raw control byte");
+        CHECK(strstr(curr.json_history, "Host: \\\"evil\\\"\\\\\\n\\u0001\\t") != NULL,
+              "header-line quote, backslash and control bytes are escaped");
+        CHECK(strstr(curr.json_history, "tok\\\"en\\u001f") != NULL,
+              "string-record quote and control byte are escaped");
+        CHECK(strstr(curr.json_history, "\"description\":\"cause \\\"q\\\"\\u0002\"") != NULL,
+              "the cause is escaped");
+        {
+            /* 1504 escaped 0x01 bytes, then the closing quote and brace */
+            const char *v = strstr(curr.json_history, "\\u0001\\u0001");
+            size_t run = 0;
+            while (v != NULL && strncmp(v + run * 6, "\\u0001", 6) == 0) run++;
+            CHECK(run == STRING_DATA_LEN && v != NULL &&
+                  strncmp(v + run * 6, "\"},", 3) == 0,
+                  "a value escaped past the 8192-byte formatting buffer is appended whole");
+        }
+        /* the document rule_is_satisfied_or_not() hands the callback */
+        n = strlen(curr.json_history);
+        if (n > 0 && curr.json_history[n - 1] == ',') curr.json_history[n - 1] = '\0';
+        doc = malloc(strlen(curr.json_history) + 3);
+        if (doc != NULL) {
+            const char *out = getenv("OVERFLOW_JSON_OUT");
+            sprintf(doc, "{%s}", curr.json_history);
+            if (out != NULL && *out != '\0') {
+                FILE *f = fopen(out, "w");
+                CHECK(f != NULL, "verdict document written for jq");
+                if (f != NULL) { fprintf(f, "%s\n", doc); fclose(f); }
+            }
+            free(doc);
+        }
+        free(curr.json_history);
+    }
+    free(hl_buf);
+    free(rec);
+    free(long_str);
+}
+
+/* F-BUG-210 (#510): get_data_from_pcap() copied each operand by length into
+ * a buffer of exactly that length, then XC/XCE/XD/XDE ran strstr() on it —
+ * reading past the allocation (an ASan heap-buffer-overflow) whenever the
+ * packet bytes or the rule constant carry no terminator. Both operands here
+ * are unterminated: the packet header line (exactly 8 bytes, ASan-fenced)
+ * and the rule's string constant. */
+static void test_contains_unterminated_operands(void)
+{
+    static const struct { int op; const char *constant; int expect; const char *msg; } cases[] = {
+        { XC,  "def",          VALID,     "XC: unterminated header line contains the constant" },
+        { XCE, "xyz",          NOT_VALID, "XCE: unterminated header line lacks the constant" },
+        { XD,  "--abcdefgh--", VALID,     "XD: the constant contains the unterminated header line" },
+        { XDE, "abc",          NOT_VALID, "XDE: a shorter constant cannot contain the header line" },
+    };
+    static const char hay[] = "abcdefgh";
+    long proto, field;
+    char *hl_buf;
+    size_t i;
+
+    proto = get_protocol_id_by_name("http");
+    field = get_attribute_id_by_protocol_id_and_attribute_name((uint32_t)proto, "Host");
+    hl_buf = malloc(sizeof hay - 1);
+    if (!(proto > 0 && field > 0) || hl_buf == NULL) {
+        printf("FAIL - cannot build the XC/XD operands\n");
+        failures++;
+        free(hl_buf);
+        return;
+    }
+    memcpy(hl_buf, hay, sizeof hay - 1);
+
+    for (i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+        rule packet_leaf, const_leaf, root;
+        size_t clen = strlen(cases[i].constant);
+        /* rule constant record: [int len][bytes], no terminator */
+        char *crec = malloc(sizeof(int) + clen);
+        int len_prefix = (int)clen, ret;
+        if (crec == NULL) { printf("FAIL - %s: allocation\n", cases[i].msg); failures++; continue; }
+        memcpy(crec, &len_prefix, sizeof len_prefix);
+        memcpy(crec + sizeof(int), cases[i].constant, clen);
+
+        memset(&packet_leaf, 0, sizeof packet_leaf);
+        memset(&const_leaf, 0, sizeof const_leaf);
+        memset(&root, 0, sizeof root);
+        packet_leaf.value = XVAR;
+        packet_leaf.t.protocol_id = proto;
+        packet_leaf.t.field_id = field;
+        packet_leaf.t.data_type_id = MMT_HEADER_LINE;
+        const_leaf.value = XCON;
+        const_leaf.t.data_type_id = MMT_STRING_DATA;
+        const_leaf.t.data_size = (int)(sizeof(int) + clen);
+        const_leaf.t.data = crec;
+
+        fi_hl.ptr = hl_buf;
+        fi_hl.len = (uint16_t)(sizeof hay - 1);
+        fi_fake_extract = 1;
+        verify_ctx_t cctx = { NULL, &root, NULL, NULL, { 0, 0 }, NO, NO };
+        ret = get_data_from_pcap(&cctx, COMPARE, NULL, (enum_operation)cases[i].op,
+                                 &packet_leaf, &const_leaf);
+        fi_fake_extract = 0;
+        CHECK(ret == cases[i].expect, cases[i].msg);
+        free(crec);
+    }
+    free(hl_buf);
 }
 
 /* F-BUG-102: generate_command sized its buffer from the parameter names while
@@ -1022,6 +1224,8 @@ int main(void)
     test_json_escape_bounded();
     test_get_value_header_line_length();
     test_store_history_alloc_failure();
+    test_store_history_escapes_strings();
+    test_contains_unterminated_operands();
     test_generate_command_bounded();
     test_compare_in_table_bounded();
     test_tokenize_and_summary_bounded();

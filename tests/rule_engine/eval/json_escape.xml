@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!-- tests/rule_engine (#510): A frame THEN, on the same packet, a frame longer than 100 bytes. The event descriptions carry a quote, a backslash and
+     control characters (tab, newline, carriage return): they reach the verdict JSON as its "description" values and must arrive escaped.
+     A = UDP.dest_port 1001, B = 1002, C = 1003; scenarios in test_rule_eval.c. -->
+<beginning>
+  <property value="THEN" property_id="21" type_property="SECURITY_RULE" description="json_escape" >
+    <event event_id="1" description="A &quot;quoted&quot;&#9;tab\back" boolean_expression="(UDP.dest_port == 1001)"/>
+    <event event_id="2" description="line&#10;break&#13;ctl" boolean_expression="(META.packet_len &gt; 100)"/>
+  </property>
+</beginning>

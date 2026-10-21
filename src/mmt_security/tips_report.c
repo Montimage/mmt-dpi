@@ -84,30 +84,26 @@
 #include "types_defs.h"
 #define _STDC_FORMAT_MARCROS
 #include <inttypes.h>
+#include <math.h>
 
     static long long corr_mess = 0;
 
 /* F-BUG-092 (#209): control bytes escape as \u + 4 hex digits — up to 6
- * output bytes per
- * input byte — so the destination is size*6+1, non-positive sizes are
- * rejected, and the loop tracks the remaining capacity. */
-char * convert_string_to_json_compatible (char * p, int size){
-    char * result = NULL;
-    char *c = NULL;
-    char *r = NULL;
-    int pos = 0;
-    size_t remaining;
-    if (p == NULL || size <= 0) return NULL;
-    if ((size_t) size > (SIZE_MAX - 1) / 6) return NULL;
-    c = p;
-    result = xmalloc ((size_t) size * 6 + 1);
-    r = result;
-    if(r == NULL) return NULL;
-    *r = '\0';
-    remaining = (size_t) size * 6; /* keep the last byte for the terminator */
-    for (pos=0; pos<size && remaining > 0; pos++){
+ * output bytes per input byte — so the destination needs size*6+1 bytes.
+ * json_escape_into() writes at most cap-1 escaped bytes plus the
+ * terminator and never splits an escape sequence (a truncated tail is
+ * dropped whole). F-BUG-209 (#510): it is the one escaper every string
+ * value of the verdict JSON goes through. */
+static void json_escape_into(char *dst, size_t cap, const char *src, size_t n)
+{
+    size_t remaining, pos;
+    char *r = dst;
+    if (dst == NULL || cap == 0) return;
+    remaining = cap - 1; /* keep the last byte for the terminator */
+    for (pos = 0; src != NULL && pos < n && remaining > 0; pos++) {
         const char *esc = NULL;
-        switch (*c) {
+        unsigned char ch = (unsigned char) src[pos];
+        switch (ch) {
             case  '"': esc = "\\\""; break;
             case '\\': esc = "\\\\"; break;
             case '\b': esc = "\\b"; break;
@@ -116,29 +112,57 @@ char * convert_string_to_json_compatible (char * p, int size){
             case '\r': esc = "\\r"; break;
             case '\t': esc = "\\t"; break;
             default:
-                if ((unsigned char) *c <= '\x1f') {
-                    if (remaining < 6) { c++; goto done; }
-                    snprintf(r, 7, "\\u%04x", (int)(unsigned char)(*c));
+                if (ch <= 0x1f) {
+                    if (remaining < 6) goto done;
+                    snprintf(r, 7, "\\u%04x", (int) ch);
                     r += 6;
                     remaining -= 6;
-            	} else {
-                    *r = *c; r++;
+                } else {
+                    *r++ = (char) ch;
                     remaining--;
-            	}
+                }
                 break;
-        } //end of switch
+        }
         if (esc != NULL) {
-            if (remaining < 2) { c++; goto done; }
+            if (remaining < 2) goto done;
             memcpy(r, esc, 2); r += 2;
             remaining -= 2;
         }
-        //end string
-        *r = '\0';
-        c++;
-    } //end of for
+    }
 done:
     *r = '\0';
+}
+
+/* Heap form of json_escape_into(): non-positive sizes are rejected. */
+char * convert_string_to_json_compatible (char * p, int size){
+    char * result = NULL;
+    if (p == NULL || size <= 0) return NULL;
+    if ((size_t) size > (SIZE_MAX - 1) / 6) return NULL;
+    result = xmalloc ((size_t) size * 6 + 1);
+    if (result == NULL) return NULL;
+    json_escape_into(result, (size_t) size * 6 + 1, p, (size_t) size);
     return result;
+}
+
+static void json_grow_append(char **buf, size_t *cap, const char *src);
+
+/* {"<proto>.<att>":"<value>[: <value2>]"}, appended in pieces: an escaped
+ * payload or header can be longer than store_history()'s fixed json_buff1,
+ * where snprintf() would cut the closing quote and brace off (#510). */
+static void json_append_string_attr(char **buf, size_t *cap, const char *proto,
+        const char *att, const char *value, const char *value2)
+{
+    json_grow_append(buf, cap, "{\"");
+    json_grow_append(buf, cap, proto != NULL ? proto : "(null)");
+    json_grow_append(buf, cap, ".");
+    json_grow_append(buf, cap, att != NULL ? att : "(null)");
+    json_grow_append(buf, cap, "\":\"");
+    json_grow_append(buf, cap, value != NULL ? value : "");
+    if (value2 != NULL) {
+        json_grow_append(buf, cap, ": ");
+        json_grow_append(buf, cap, value2);
+    }
+    json_grow_append(buf, cap, "\"},");
 }
 
 static void json_grow_append(char **buf, size_t *cap, const char *src) {
@@ -196,7 +220,13 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
     const char *proto_name, *att_name;
 
     if (cause != NULL && *cause != '\0') {
-        snprintf(json_buff1, json_cap1, ",\"description\":\"%s\"", cause);
+        {
+            /* the cause quotes the rule's event description — escape it
+             * like every other string value (F-BUG-209, #510) */
+            char cause_esc[SIZE_CAUSE * 6 + 1];
+            json_escape_into(cause_esc, sizeof cause_esc, cause, strnlen(cause, SIZE_CAUSE));
+            snprintf(json_buff1, json_cap1, ",\"description\":\"%s\"", cause_esc);
+        }
         json_grow_append(&json_buff, &json_cap, json_buff1);
         json_grow_append(&json_buff, &json_cap, ",\"attributes\":[");
 
@@ -244,8 +274,12 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                     break;
                 }
                 case MMT_DATA_FLOAT:
-                    snprintf(json_buff1, json_cap1, "{\"%s.%s\":%f},", proto_name,
-                            att_name, (double) *(float*) (data1));
+                    /* %f prints nan/inf, which are not JSON values (#510) */
+                    if (isfinite(*(float*) (data1)))
+                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":%f},", proto_name,
+                                att_name, (double) *(float*) (data1));
+                    else
+                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":null},", proto_name, att_name);
                     json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 case MMT_DATA_MAC_ADDR:
@@ -302,7 +336,8 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                     int hl_len = ((mmt_header_line_t *)data1)->len;
                     if (hl_len < 0) hl_len = 0;
                     if (hl_len > 512) hl_len = 512;
-                    buff = xmalloc (hl_len + 1);
+                    /* packet bytes: escaped, not copied raw (F-BUG-209, #510) */
+                    buff = xmalloc ((size_t) hl_len * 6 + 1);
                     if(buff == NULL){
                         /* F-BUG-096 (#209): the old `break` only left the
                          * switch — the loop kept appending into the freed
@@ -311,8 +346,8 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                          * path now reaches the single cleanup exit. */
                         goto cleanup;
                     }
-                    memcpy(buff, ((mmt_header_line_t *)data1)->ptr, hl_len);
-                    buff[hl_len] ='\0';
+                    json_escape_into(buff, (size_t) hl_len * 6 + 1,
+                            ((mmt_header_line_t *)data1)->ptr, (size_t) hl_len);
 					snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name,
 							att_name, (char *)buff);
                     xfree(buff);
@@ -328,9 +363,9 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                     if (slen > data_size - (int)sizeof(int)) slen = data_size - (int)sizeof(int);
                     if (slen > 512) slen = 512;
                     if (slen < 0) slen = 0;
-                    char tmp_str[513];
-                    memcpy(tmp_str, (char*)(data1 + sizeof(int)), slen);
-                    tmp_str[slen]='\0';
+                    /* packet bytes: escaped, not copied raw (F-BUG-209, #510) */
+                    char tmp_str[512 * 6 + 1];
+                    json_escape_into(tmp_str, sizeof tmp_str, (char*)(data1 + sizeof(int)), (size_t) slen);
                     snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, tmp_str);
                     json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
@@ -357,7 +392,7 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
                             if (j == 0) {
-                                snprintf(json_buff1, json_cap1, "{\"%s.%s\":%2.2X", proto_name,
+                                snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%2.2X", proto_name,
                                         att_name, *((unsigned char*) data2 + j));
                                 close_tag=YES;
                             } else {
@@ -365,8 +400,9 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                             }
                             json_grow_append(&json_buff, &json_cap, json_buff1);
                         }
+                        /* quoted: a bare AA:BB:.. is not a JSON value */
                         if(close_tag==YES)
-                          json_grow_append(&json_buff, &json_cap, "},");
+                          json_grow_append(&json_buff, &json_cap, "\"},");
                     } else {
                         int close_tag=NO;
                         for (j = 0; j < data_size; j++) {
@@ -398,8 +434,7 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
 									  /* NULL on non-positive size or OOM — a NULL %s
 									   * argument is undefined; skip the attribute */
 									  if (new_data_pointer != NULL) {
-										  snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, (char*) (new_data_pointer));
-										  json_grow_append(&json_buff, &json_cap, json_buff1);
+										  json_append_string_attr(&json_buff, &json_cap, proto_name, att_name, new_data_pointer, NULL);
 										  xfree (new_data_pointer);
 									  }
 								  }
@@ -413,8 +448,7 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                         char *esc = convert_string_to_json_compatible((char *) data1,
                                 (int) strnlen((char *) data1, STRING_DATA_LEN));
                         if (esc != NULL) {
-                            snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s\"},", proto_name, att_name, esc);
-                            json_grow_append(&json_buff, &json_cap, json_buff1);
+                            json_append_string_attr(&json_buff, &json_cap, proto_name, att_name, esc, NULL);
                             xfree(esc);
                         }
                     }
@@ -429,9 +463,8 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                         char *esc2 = convert_string_to_json_compatible(
                                 ghl->hvalue != NULL ? (char *) ghl->hvalue : "",
                                 (int) (ghl->hvalue != NULL ? strlen(ghl->hvalue) : 0));
-                        snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%s: %s\"},", proto_name, att_name,
+                        json_append_string_attr(&json_buff, &json_cap, proto_name, att_name,
                                 esc != NULL ? esc : "", esc2 != NULL ? esc2 : "");
-                        json_grow_append(&json_buff, &json_cap, json_buff1);
                         if (esc != NULL) xfree(esc);
                         if (esc2 != NULL) xfree(esc2);
                     }

@@ -52,6 +52,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -211,22 +212,57 @@ short event_found(int buff_ids[100], short event_id)
   return NO;
 }
 
-char * eliminate_from(char *pt)
+/* F-BUG-211 (#510): store_history() (tips_report.c) writes an instance's
+ * history as a run of JSON members "event_<id>":{...}, each followed by a
+ * comma (rule_is_satisfied_or_not() strips the last one before reporting).
+ * The old filter searched it for XML tags and ran strchr() on the NULL
+ * strstr() returned, so every keep_state rule crashed here. Return a copy
+ * holding only the members whose <id> keep_state lists, each written back
+ * with its comma — the form store_history() appends to. A member's object is
+ * skipped by brace depth with JSON string escapes honoured, so escaped
+ * packet bytes in a value cannot end it early; a malformed tail is dropped.
+ * NULL on allocation failure. */
+static char *filter_json_history(const char *hist, int buff_ids[100])
 {
-  char * result = NULL;
-  char * pt_tmp = NULL;
-  char * pt2 = strstr(pt, "</event>");
-  char * pt3 = strchr(pt2, '>');
-  if(pt3 == NULL) return NULL;
-  result = pt;
-  pt_tmp = pt3 + 1;
-  while(*pt_tmp != '\0'){
-    *pt = *pt_tmp;
-    pt_tmp++;
-    pt++;
+  size_t o = 0;
+  const char *p = hist;
+  char *out = xmalloc(strlen(hist) + 2);
+  if (out == NULL) return NULL;
+  while (*p != '\0') {
+    const char *start = p, *q;
+    char *end = NULL;
+    long id;
+    int depth = 0, in_str = 0;
+    if (strncmp(p, "\"event_", 7) != 0) break;
+    id = strtol(p + 7, &end, 10);
+    if (end == p + 7 || strncmp(end, "\":{", 3) != 0) break;
+    for (q = end + 2; *q != '\0'; q++) {
+      if (in_str) {
+        if (*q == '\\' && q[1] != '\0') q++;
+        else if (*q == '"') in_str = 0;
+      } else if (*q == '"') {
+        in_str = 1;
+      } else if (*q == '{') {
+        depth++;
+      } else if (*q == '}' && --depth == 0) {
+        break;
+      }
+    }
+    if (*q != '}') break;
+    q++;
+    /* members are comma-separated: anything else is a malformed tail, and
+     * stopping here keeps strlen(hist) + 2 a hard bound on the output */
+    if (*q != ',' && *q != '\0') break;
+    if (id > 0 && id <= SHRT_MAX && event_found(buff_ids, (short) id) == YES) {
+      memcpy(out + o, start, (size_t) (q - start));
+      o += (size_t) (q - start);
+      out[o++] = ',';
+    }
+    if (*q == ',') q++;
+    p = q;
   }
-  *pt = '\0';
-  return result;
+  out[o] = '\0';
+  return out;
 }
 
 void set_events_to_not_yet(int buff_ids[100], rule * r, rule *orig_rule)
@@ -279,7 +315,7 @@ void set_events_to_not_yet(int buff_ids[100], rule * r, rule *orig_rule)
 
 rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
 {
-  char *pt = NULL, *pt2 = NULL, *pt3 = NULL;
+  char *pt = NULL, *pt2 = NULL;
   pt = orig_rule->keep_state;
   if(pt == NULL) return NULL;
   char *buff = xmalloc(10);
@@ -311,30 +347,15 @@ rule *copy_instance(rule **root_inst, rule *r, rule* father, rule *orig_rule)
 
   if(new_rule != NULL){
     if(orig_rule->json_history != NULL){
-      char * json_history = strdup(orig_rule->json_history);
+      char * json_history = filter_json_history(orig_rule->json_history, buff_ids);
       if(json_history == NULL){
           xfree(buff);
           return NULL;
       }
-      pt = strstr(json_history,"event");
-      while (pt != NULL){
-        pt2 = strstr(pt,"description");
-        if(pt2 != NULL){
-          pt2 = pt2 + 18;
-          pt3 = strchr(pt2,':');
-          if (pt3 != NULL){
-            size_t tok_len = (size_t)(pt3 - pt2);
-            if (tok_len > 9) tok_len = 9;
-            memcpy(buff,pt2,tok_len);
-            buff[tok_len]='\0';
-            if(event_found(buff_ids, atoi(buff)) == NO){
-              pt2 = eliminate_from(pt);
-            }
-          }
-        }
-        /* a malformed history without a "description" after an "event" leaves
-         * pt2 NULL — stop instead of strstr(NULL, ...) (F-BUG-103, #209) */
-        pt = (pt2 != NULL) ? strstr(pt2,"event") : NULL;
+      if (*json_history == '\0') {
+          /* no kept event: no history, like a fresh instance */
+          xfree(json_history);
+          json_history = NULL;
       }
       new_rule->json_history = json_history;
     }

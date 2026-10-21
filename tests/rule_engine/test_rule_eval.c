@@ -22,7 +22,10 @@
  *     tips_internal.h), incremented by analyse_incoming_packet() for every
  *     verdict whatever the print option;
  *   - the result callback given to init_sec_lib(): every reported verdict
- *     string ("respected" / "not_respected") with its property id.
+ *     string ("respected" / "not_respected") with its property id, and its
+ *     JSON history, which must carry no raw control byte (#510). With
+ *     RULE_EVAL_HISTORY_LOG set, each history is appended to that file, one
+ *     per line, for run_tests.sh to parse with jq.
  *
  * The engine keeps its rule list in process globals (top_rule, the static
  * XML-loader state) and has no unload entry point, so every scenario runs
@@ -225,19 +228,59 @@ static const scenario_t scenarios[] = {
       { F(PORT_B, 60, 0), F(PORT_A, 60, 1000), F(PORT_C, 60, 2000) }, 3, 0, 0 },
     { "nested BEFORE no verdict: A without B, then C", "nested_before.xml",
       { F(PORT_A, 60, 0), F(PORT_C, 60, 1000), F(PORT_X, 60, 9000) }, 3, 0, 0 },
+
+    /* ---- JSON history escaping (#510, F-BUG-209): the event descriptions
+     * carry a quote, a backslash, tab, newline and carriage return; the
+     * on_verdict() raw-control-byte check and run_tests.sh's jq pass over
+     * RULE_EVAL_HISTORY_LOG assert the reported history is valid JSON. */
+    { "JSON history escaped: quoted/control-character descriptions", "json_escape.xml",
+      { F(PORT_A, 120, 0) }, 1, 1, 0 },
+
+    /* ---- keep_state="1" on A THEN AFTER B within [0, 2] s (#510,
+     * F-BUG-211): copy_instance() re-creates the instance after each
+     * verdict with A's state (and A's timer) kept. Before #510 it parsed
+     * the JSON history as XML and every keep_state rule crashed on its
+     * first verdict. */
+    { "keep_state satisfied: A then B", "keep_state.xml",
+      { F(PORT_A, 60, 0), F(PORT_B, 60, 500) }, 2, 1, 0 },
+    /* run_tests.sh also checks the second verdict's history (the one
+     * stamped 1.7 s): the kept event_1 plus the new event_2, once each */
+    { "keep_state satisfied twice: the kept A matches a second B", "keep_state.xml",
+      { F(PORT_A, 60, 0), F(PORT_B, 60, 500), F(PORT_B, 60, 1700) }, 3, 2, 0 },
+    { "keep_state not satisfied: the kept A's window still ends 2 s after A", "keep_state.xml",
+      { F(PORT_A, 60, 0), F(PORT_B, 60, 500), F(PORT_B, 60, 4000) }, 3, 1, 1 },
+    /* Quirk pinned: copy_instance() also keeps the state of an instance
+     * that expired, timer included, so the copy expires again on every
+     * later frame — one not_satisfied per frame after the window.
+     * Restricting the copy to satisfied verdicts is a follow-up of #510
+     * (it changes tips.c, which #511/#512 rework). */
+    { "keep_state expired copy reports on every later frame (current behaviour)", "keep_state.xml",
+      { F(PORT_A, 60, 0), F(PORT_B, 60, 500), F(PORT_X, 60, 4000),
+        F(PORT_X, 60, 5000) }, 4, 1, 2 },
 };
 
 static int g_cb_respected;
 static int g_cb_not_respected;
 static int g_cb_other;
 static int g_cb_bad_prop;
+static int g_cb_raw_ctl;      /* histories holding an unescaped control byte */
 static int g_expected_prop;   /* the loaded ROOT rule's property_id */
 
 static void on_verdict(int prop_id, char *verdict, char *type, char *cause,
                        char *history, struct timeval ts, void *user_args)
 {
-    (void)type; (void)cause; (void)history; (void)ts; (void)user_args;
+    (void)type; (void)cause; (void)ts; (void)user_args;
     if (prop_id != g_expected_prop) g_cb_bad_prop++;
+    if (history != NULL) {
+        const char *log = getenv("RULE_EVAL_HISTORY_LOG");
+        const unsigned char *h;
+        for (h = (const unsigned char *) history; *h != '\0'; h++)
+            if (*h < 0x20) { g_cb_raw_ctl++; break; }
+        if (log != NULL && *log != '\0') {
+            FILE *f = fopen(log, "a");
+            if (f != NULL) { fprintf(f, "%s\n", history); fclose(f); }
+        }
+    }
     if (verdict == NULL) g_cb_other++;
     else if (strcmp(verdict, "respected") == 0) g_cb_respected++;
     else if (strcmp(verdict, "not_respected") == 0) g_cb_not_respected++;
@@ -332,12 +375,12 @@ static void run_scenario(const scenario_t *s, const char *dir)
      * the callback when the instance carries no JSON history) */
     if (g_cb_respected + g_cb_not_respected != sat + not_sat - s->cb_silent ||
         g_cb_respected > sat || g_cb_not_respected > not_sat ||
-        g_cb_other != 0 || g_cb_bad_prop != 0) bad = 1;
+        g_cb_other != 0 || g_cb_bad_prop != 0 || g_cb_raw_ctl != 0) bad = 1;
     if (bad) {
         printf("FAIL - %s: satisfied=%ld not_satisfied=%ld (expected %ld/%ld); "
-               "callback respected=%d not_respected=%d other=%d bad_prop=%d\n",
+               "callback respected=%d not_respected=%d other=%d bad_prop=%d raw_ctl=%d\n",
                s->name, sat, not_sat, s->exp_satisfied, s->exp_not_satisfied,
-               g_cb_respected, g_cb_not_respected, g_cb_other, g_cb_bad_prop);
+               g_cb_respected, g_cb_not_respected, g_cb_other, g_cb_bad_prop, g_cb_raw_ctl);
     } else {
         printf("ok - %s (satisfied=%ld not_satisfied=%ld)\n", s->name, sat, not_sat);
     }

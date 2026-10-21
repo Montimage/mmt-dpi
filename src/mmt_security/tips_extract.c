@@ -1090,6 +1090,17 @@ int exists_or_not (const ipacket_t *pkt, enum_operation operator, rule *r) {
     return NOT_VALID;
 }
 
+/* F-BUG-210 (#510): XC/XCE/XD/XDE and XE compare the operands with
+ * strstr()/strcmp(), but a packet string, a header line or a rule constant
+ * is copied by length and carries no terminator of its own. Every operand
+ * buffer gets one extra zero byte past its `size` bytes, so those calls stop
+ * inside the allocation; `size` itself is unchanged. */
+static void *alloc_operand(int size)
+{
+    if (size < 0) size = 0;
+    return xcalloc(1, (unsigned long) size + 1);
+}
+
 int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_value, enum_operation operator, rule *r1, rule *r2)
 {
     int ret = 0;
@@ -1133,7 +1144,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
             data = (void*)(((mmt_header_line_t *)data)->ptr);
         }
 
-        v1.data = (void *) xcalloc(1, v1.size);
+        v1.data = (void *) alloc_operand(v1.size);
         if(v1.data == NULL){
             return 0;
         }
@@ -1161,7 +1172,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                         v1.size = ((mmt_header_line_t *)data)->len;
                         data = (void*)(((mmt_header_line_t *)data)->ptr);
                     }
-                    v1.data = (void *) xcalloc(1, v1.size);
+                    v1.data = (void *) alloc_operand(v1.size);
                     if (v1.data == NULL || data == NULL) {
                         (void)fprintf(stderr, "Error 18: Problem in stored reference. Data is not available.\n");
                         exit(-1);
@@ -1191,7 +1202,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                         data = (void*)(((mmt_header_line_t *)data)->ptr);
         }
 
-        v2.data = (void *) xcalloc(1, v2.size);
+        v2.data = (void *) alloc_operand(v2.size);
         if (v2.data == NULL)
         {
             return 0;
@@ -1224,7 +1235,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                         v2.size = ((mmt_header_line_t *)data)->len;
                         data = (void*)(((mmt_header_line_t *)data)->ptr);
                                         }
-                                        v2.data = (void *) xcalloc(1, v2.size);
+                                        v2.data = (void *) alloc_operand(v2.size);
                                         if (v2.data == NULL || data == NULL) {
                                             (void)fprintf(stderr, "Error 19: Problem in stored reference. Data is not available.\n");
                                             exit(-1);
@@ -1259,7 +1270,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
               tmp_v->type = tmp_r->t.data_type_id;
               tmp_v->found = FOUND;
               tmp_v->size = tmp_r->t.data_size;
-              tmp_v->data = (void *) xcalloc(1, tmp_v->size);
+              tmp_v->data = (void *) alloc_operand(tmp_v->size);
               if (tmp_v->data == NULL)
               {
                   xfree(data);
@@ -1292,7 +1303,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                         tmp_v->size = ((mmt_header_line_t *)data)->len;
                         data = (void*)(((mmt_header_line_t *)data)->ptr);
             }
-            tmp_v->data = xcalloc(1, tmp_v->size);
+            tmp_v->data = alloc_operand(tmp_v->size);
             if(tmp_v->data == NULL){
                 /* `data` is the attribute's internal storage — not ours to
                  * free (the old xfree(data) here also hit an interior
@@ -1328,7 +1339,7 @@ int get_data_from_pcap( verify_ctx_t *ctx, enum_operation action, void** result_
                         tmp_v->size = ((mmt_header_line_t *)data)->len;
                         data = (void*)(((mmt_header_line_t *)data)->ptr);
             }
-            tmp_v->data = (void *) xcalloc(1, tmp_v->size);
+            tmp_v->data = (void *) alloc_operand(tmp_v->size);
             if(tmp_v->data == NULL){
                 xfree(v1.data);
                 xfree(v2.data);
