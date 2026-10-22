@@ -691,3 +691,32 @@ jobs:
       env:
         DOCS_SITE_DIR: docs/_site
       run: bash tests/docs_onboarding/run_tests.sh
+
+  toolchain-ceiling:
+    # Toolchain-ceiling gate (issue #514, F-DEP-301/F-DEP-307): the newest GCC
+    # the SDK is checked against. ubuntu-26.04 ships GCC 15, whose default C
+    # dialect is C23. The SDK pins gnu17 (rules/arch-linux.mk); this job
+    # overrides the pin with MMT_EXTRA_CFLAGS=-std=gnu23 so the SDK — the
+    # explicit ENABLESEC=1 build and every SDK-building suite's internal build
+    # (make imports the variable from the environment) — compiles as C23. The
+    # suites' own test programs keep the -std their run_tests.sh pins (GCC
+    # 15's C23 default where none is pinned) and get the GCC >= 15
+    # diagnostics. The floor job above is unchanged. ubuntu-26.04 is a
+    # GitHub preview runner label.
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    env:
+      MMT_EXTRA_CFLAGS: -std=gnu23
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+      with:
+        extra-packages: jq
+    - name: Assert the runner is at or above the GCC 15 ceiling
+      run: |
+        gcc --version | head -1
+        test "$(gcc -dumpfullversion | cut -d. -f1)" -ge 15
+    - name: Build the SDK with the security engines as C23 (ENABLESEC=1)
+      run: make -C sdk ENABLESEC=1 -j"$(nproc)"
+    - name: Run unit test suites
+      run: bash tests/run_all_tests.sh

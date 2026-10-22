@@ -680,10 +680,14 @@ int main(void) {
         }
     }
 
-    /* Heap balance for the models above. libxml2 and the allocator settle
-     * over the first cycles (a few hundred bytes in total), so the check
-     * allows 16 B per cycle on average: one leaked rules set is several
-     * times that on every cycle. */
+    /* Heap balance for the models above. libxml2 2.15 (ubuntu 26.04) grows
+     * its own heap over its first ~35 parse cycles (measured 15280 -> 17648
+     * B, then flat through 1024 cycles; a libxml2-only xmlParseFile/xmlFreeDoc
+     * loop reproduces the whole growth and the SDK loop after it is flat), so
+     * the baseline is taken after 64 warm-up cycles, once the parser has
+     * settled (#514). The 64 measured cycles after it may grow by 16 B per
+     * cycle on average: one leaked rules set is several times that on every
+     * cycle. */
 #if !defined(__SANITIZE_ADDRESS__) && !defined(__SANITIZE_THREAD__)
     if (mallinfo2().uordblks != 0) {
         static const char * const names[] = {
@@ -691,9 +695,9 @@ int main(void) {
             "two_indexs.xml", "no_rules.xml", "rules_before_kpis.xml"
         };
         size_t before = 0;
-        for (int i = 0; i < 65; i++) {
-            if (i == 1)
-                before = mallinfo2().uordblks;   /* after one warm-up cycle */
+        for (int i = 0; i < 128; i++) {
+            if (i == 64)
+                before = mallinfo2().uordblks;   /* after 64 warm-up cycles */
             for (size_t k = 0; k < sizeof(names) / sizeof(names[0]); k++) {
                 snprintf(path, sizeof(path), "%s/%s", dir, names[k]);
                 free_application_quality_estimation_struct(

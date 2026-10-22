@@ -16,6 +16,8 @@
 #        GCC minor release>
 #   BUILD=asan / tsan / coverage   -> no hardening flags + DISABLED warning
 #   clean goal                     -> no hardening warning
+#   default / CC=<absolute gcc>    -> last C -std is gnu17, none in CXXFLAGS
+#   MMT_EXTRA_CFLAGS=-std=gnu2x    -> gnu2x appended after the pin (#514)
 #
 # Part 2 runs tools/ci/check-hardening-flags.sh --built DIR on two fixture
 # shared objects compiled here: one with full RELRO and FORTIFY (must pass)
@@ -129,6 +131,30 @@ for b in asan tsan coverage; do
         "$(eval_make mmt-print-hardening CC="${GCC}" BUILD="$b")" \
         "release hardening DISABLED"
 done
+
+echo "-- C dialect pin (issue #514) --"
+# eval_dialect [VAR=VALUE...] — eval_make without a job-level
+# MMT_EXTRA_CFLAGS leaking in from the environment.
+eval_dialect() { (unset MMT_EXTRA_CFLAGS; eval_make mmt-print-hardening "$@"); }
+c_flags()   { grep -m1 '^CFLAGS=' <<<"$1" | sed 's/ CXXFLAGS=.*//'; }
+cxx_flags() { grep -m1 '^CFLAGS=' <<<"$1" | sed 's/^.* CXXFLAGS=//'; }
+std_seq()   { grep -o -- '-std=[^ ]*' <<<"$1" | tr '\n' ' ' || true; }
+last_std()  { grep -o -- '-std=[^ ]*' <<<"$1" | tail -n1 || true; }
+# expect_last_std DESC OUTPUT STD
+expect_last_std() {
+    local got; got="$(last_std "$(c_flags "$2")")"
+    if [ "$got" = "$3" ]; then pass "$1"; else fail "$1 (last C -std: '${got}')"; fi
+}
+o="$(eval_dialect CC=gcc)"
+expect_last_std "the default GCC toolchain compiles C as gnu17" "$o" "-std=gnu17"
+if has "$(cxx_flags "$o")" "-std=gnu17"; then fail "the C dialect pin does not reach CXXFLAGS"
+else pass "the C dialect pin does not reach CXXFLAGS"; fi
+o="$(eval_dialect CC=gcc MMT_EXTRA_CFLAGS=-std=gnu2x)"
+expect_last_std "MMT_EXTRA_CFLAGS=-std=gnu2x overrides the pin (last -std)" "$o" "-std=gnu2x"
+if has "$(std_seq "$(c_flags "$o")")" "-std=gnu17 -std=gnu2x "; then pass "MMT_EXTRA_CFLAGS is appended after the pin"
+else fail "MMT_EXTRA_CFLAGS is appended after the pin (C -std sequence: '$(std_seq "$(c_flags "$o")")')"; fi
+expect_last_std "CC=${GCC} (absolute path) keeps the gnu17 pin" \
+    "$(eval_dialect CC="${GCC}")" "-std=gnu17"
 
 echo "-- cleaning goals stay quiet --"
 # Dry run (-n): the clean recipe is printed, never executed.

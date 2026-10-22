@@ -65,6 +65,20 @@ the `toolchain-floor` job in `c-cpp.yml` builds the SDK and runs the full
 suite on `ubuntu-22.04` (GCC 11.4) so the floor is exercised, not just
 asserted.
 
+**C dialect and toolchain ceiling (issue #514, F-DEP-301/F-DEP-307):** the
+default GCC toolchain (`ARCH=linux`) compiles C as gnu17
+(`rules/arch-linux.mk:20-21`) — GCC 11–14 default to it, GCC 15 to gnu23.
+`MMT_EXTRA_CFLAGS` is appended after the pin, so its last `-std` wins:
+`make -C sdk ENABLESEC=1 MMT_EXTRA_CFLAGS=-std=gnu2x` builds the SDK as C23.
+Both apply to C only (C++ keeps `CXX`/`CXXFLAGS`) and to the GCC toolchain
+only (`ARCH=linux-clang`/`linux-icc` are unchanged). The `toolchain-ceiling`
+job in `c-cpp.yml` runs on `ubuntu-26.04` (GCC ≥ 15, a GitHub preview runner
+label) with `MMT_EXTRA_CFLAGS=-std=gnu23`: it builds the SDK with
+`ENABLESEC=1` and runs the full suite, whose SDK-building suites inherit the
+variable and build the SDK as C23; the suites' own test programs keep the
+`-std` their `run_tests.sh` pins (GCC 15's C23 default where none is
+pinned). The floor job above is unchanged.
+
 **Package dependency declarations (issue #219):** the `.deb` `Depends:` and
 the `.rpm` `Requires:` are not hand-maintained lists (the `.rpm`
 `BuildRequires:` is a literal list, checked against `tools/ci/build-deps.txt`
@@ -191,6 +205,7 @@ All flags are passed as make variables, e.g. `make -C sdk DEBUG=1`.
 | `VALGRIND=1` | Valgrind-friendly instrumentation | `rules/common.mk:94-98` |
 | `TUNE=native` | Opt-in `-march=native` (unsafe for redistributed binaries — off by default) | `rules/common-linux.mk:177-185` |
 | `VERBOSE=1` | Print full compile commands | `rules/common.mk:21-24` |
+| `MMT_EXTRA_CFLAGS=...` | Extra C flags appended after the gnu17 dialect pin (the last `-std` wins, e.g. `-std=gnu2x`); default GCC toolchain only | `rules/arch-linux.mk:20-21` |
 
 ## 3. Testing
 

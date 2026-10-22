@@ -24,6 +24,8 @@ unit-tests
 # swaps the context at its merge, #490).
 unit-tests (-fsigned-char, hashmap memory hexdump mmt_utils mmt_inet_ntop)
 toolchain-floor
+# Runs on the ubuntu-26.04 preview runner label (GCC >= 15, C23; #514).
+toolchain-ceiling
 sanitizer-tests (BUILD=asan, asan)
 sanitizer-tests (BUILD=tsan, tsan)
 coverage

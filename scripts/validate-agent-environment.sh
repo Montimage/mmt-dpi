@@ -190,6 +190,7 @@ rules/common.mk:548-566	^# BUILD=coverage to compile the SDK	^endif	the BUILD=co
 tests/run_all_tests.sh:359-375	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
 sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
 rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
+rules/arch-linux.mk:20-21	^CFLAGS \+= -std=gnu17$	^CFLAGS \+= \$\(MMT_EXTRA_CFLAGS\)$	the GCC toolchain pins gnu17, MMT_EXTRA_CFLAGS comes after
 .github/workflows/c-cpp.yml:225-230	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
 docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
 .github/workflows/c-cpp.yml:243	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll

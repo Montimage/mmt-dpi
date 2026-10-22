@@ -6,6 +6,21 @@ AR  := ar rcsD
 include $(RULESDIR)/common-linux.mk
 
 #  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#  C   D I A L E C T   P I N   ( i s s u e   # 5 1 4 ,   F - D E P - 3 0 1 )
+#  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# GCC 11-14 default to gnu17 and GCC 15 to gnu23; the pin keeps every
+# supported GCC on one C dialect. It sits after the include because
+# rules/common.mk resets CFLAGS with `:=`, which would wipe an earlier
+# assignment. MMT_EXTRA_CFLAGS comes last so the caller can override the pin
+# (the last -std wins), e.g. `make -C sdk MMT_EXTRA_CFLAGS=-std=gnu23`. Both
+# apply to C objects only (C++ uses CXX/CXXFLAGS) and only to this default
+# GCC toolchain (ARCH=linux); arch-linux-clang.mk and arch-linux-icc.mk are
+# unchanged.
+CFLAGS += -std=gnu17
+CFLAGS += $(MMT_EXTRA_CFLAGS)
+
+#  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #  G C C   F L O O R   E N F O R C E M E N T   ( i s s u e   # 2 1 8 )
 #  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #

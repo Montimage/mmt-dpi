@@ -19,6 +19,8 @@
 #include "mmt_core.h"
 
 int mmt_header_line_pointer_snprintf(char *buff, int len, attribute_internal_t *attr);
+/* No public header declares it; GCC >= 14 errors on implicit declarations (#514). */
+int mmt_attr_snprintf(char *buff, int len, attribute_t *a);
 
 const char *get_protocol_name_by_id(mmt_proto_id_t proto_id)
 { (void) proto_id; return "stub"; }
