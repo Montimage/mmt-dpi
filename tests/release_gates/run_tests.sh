@@ -37,6 +37,10 @@
 # It also runs the dependency-list self-test beside
 # tools/ci/check-dependency-lists.sh (issue #495), which runs the real lint
 # on fixture trees where one list or tools/ci/build-deps.txt row diverges.
+# It also runs the release-bootstrap self-test beside
+# tools/ci/make-release-bootstrap.sh and tools/ci/bootstrap-install.sh
+# (issue #498), which renders fixture release directories and drives the
+# rendered bootstrap's detection, lookup and digest check (no network).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -50,3 +54,4 @@ bash "${TESTS_DIR}/test-required-checks.sh"
 python3 "${TESTS_DIR}/test-vendored-components.py"
 bash "${TESTS_DIR}/test-hardening-identity.sh"
 bash "${TESTS_DIR}/test-dependency-lists.sh"
+bash "${TESTS_DIR}/test-release-bootstrap.sh"

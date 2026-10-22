@@ -1,0 +1,177 @@
+name: Bootstrap smoke
+
+# Verified bootstrap installer smoke (issue #498, F-CI-112).
+#
+# Every release publishes install.sh — tools/ci/bootstrap-install.sh rendered
+# by tools/ci/make-release-bootstrap.sh in the release job of
+# release-packages.yml — so that
+#   curl -fsSL https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh | sh
+# checks the embedded sha256 and the Sigstore attestation of the native
+# package for this distribution, then installs it with apt-get or dnf.
+# tools/ci/smoke-bootstrap.sh runs that in a fresh container per
+# distribution, as root, then checks `ldconfig -p` lists libmmt_core and runs
+# the landing-page first run (docs/_includes/first-example.md) with
+# LD_LIBRARY_PATH unset.
+#
+# No release is cut to test it. tools/ci/make-bootstrap-fixture.sh downloads
+# the latest published release's real packages and its real provenance
+# bundle, and renders the bootstrap from them with the release-job generator:
+#   - tampered legs, on every run: a package changed after rendering
+#     (sha256 refusal), a package changed before rendering (attestation
+#     refusal: the digest is in no attestation), and a bootstrap expecting
+#     another tag's provenance (attestation refusal: wrong source ref) must
+#     each exit non-zero and install nothing;
+#   - the install leg uses that fixture on pull requests, and the published
+#     one-liner verbatim on schedule / release / workflow_run once the latest
+#     release carries the bootstrap (releases after v1.9.1). For such a
+#     release a missing install.sh, manifest.json, provenance bundle or
+#     alias package is a failure, never a skip.
+#
+# Not a required check: the pull_request trigger is path-filtered
+# (tools/ci/check-required-checks.sh, issue #490).
+
+on:
+  pull_request:
+    paths:
+      - tools/ci/bootstrap-install.sh
+      - tools/ci/make-release-bootstrap.sh
+      - tools/ci/make-bootstrap-fixture.sh
+      - tools/ci/smoke-bootstrap.sh
+      - .github/workflows/release-packages.yml
+      - .github/workflows/bootstrap-smoke.yml
+      - docs/_includes/first-example.md
+      - docs/first-run/**
+  schedule:
+    - cron: "41 5 * * 1"          # weekly, Monday 05:41 UTC
+  # After every published release: the release workflow's own GITHUB_TOKEN
+  # raises no `release` event, so its completed tag run is the trigger.
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["Build & release packages"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: ${{ matrix.name }}
+    # workflow_run: only a successful tag run of the release workflow.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Digest-pinned and recorded in tools/ci/base-images.txt; `name` is
+          # the distribution token of the release packages.
+          - { name: ubuntu-24.04, ext: deb, image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254" }
+          - { name: debian-12, ext: deb, image: "debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443" }
+          - { name: rocky-9, ext: rpm, image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fixture from the latest published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISTRO: ${{ matrix.name }}
+        run: bash tools/ci/make-bootstrap-fixture.sh "$RUNNER_TEMP/fixture" "$DISTRO"
+
+      - name: Tampered assets are refused
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          set -euo pipefail
+          for leg in reject-sha:sha256 reject-attestation:attestation reject-identity:attestation; do
+            docker run --rm -v "$PWD":/work:ro -v "$RUNNER_TEMP/fixture":/fixture:ro -w /work "$IMAGE" \
+              bash tools/ci/smoke-bootstrap.sh --fixture "/fixture/${leg%%:*}" --expect-reject "${leg##*:}"
+          done
+
+      - name: Select the one-liner source
+        id: source
+        env:
+          EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          DISTRO: ${{ matrix.name }}
+          EXT: ${{ matrix.ext }}
+        run: |
+          set -euo pipefail
+          case "$EVENT" in
+            pull_request|workflow_dispatch)
+              echo "args=--fixture /fixture/good" >> "$GITHUB_OUTPUT"; exit 0 ;;
+          esac
+          # Fail closed: an API error or an empty tag is a failure, not a skip.
+          release="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest")"
+          tag="$(jq -er '.tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' <<< "$release")"
+          # v1.9.1 is the last release published before the bootstrap.
+          if [ "$(printf '%s\n' "$tag" v1.9.1 | sort -V | tail -n1)" = v1.9.1 ]; then
+            echo "::notice title=no published bootstrap yet::${tag} predates the bootstrap (first release after v1.9.1); using the fixture"
+            echo "args=--fixture /fixture/good" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          missing=0
+          for asset in install.sh manifest.json mmt-dpi.intoto.jsonl "mmt-dpi_${DISTRO}_amd64.${EXT}"; do
+            if ! jq -e --arg n "$asset" 'any(.assets[]; .name == $n)' <<< "$release" >/dev/null; then
+              echo "::error::${tag} lacks the bootstrap asset ${asset}"; missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ]
+          echo "args=--source published" >> "$GITHUB_OUTPUT"
+
+      - name: One-command install + first run in ${{ matrix.name }}
+        env:
+          IMAGE: ${{ matrix.image }}
+          ARGS: ${{ steps.source.outputs.args }}
+        run: |
+          # shellcheck disable=SC2086  # ARGS is two words by construction
+          docker run --rm -v "$PWD":/work:ro -v "$RUNNER_TEMP/fixture":/fixture:ro -w /work "$IMAGE" \
+            bash tools/ci/smoke-bootstrap.sh $ARGS
+
+  report:
+    name: Report a failing bootstrap smoke
+    needs: smoke
+    # Scheduled and post-release runs only: a pull request shows its own red.
+    if: >-
+      always() && needs.smoke.result == 'failure' &&
+      github.event_name != 'pull_request' && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write    # open or update the tracking issue
+    steps:
+      - name: Open or update the bootstrap smoke issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          title="Bootstrap smoke failing"
+          {
+            echo "The [bootstrap smoke run]($RUN_URL) (\`$EVENT\`) failed (issue #498)."
+            echo
+            echo "The release bootstrap (\`releases/latest/download/install.sh\`) no longer installs and verifies the native package, or no longer refuses a tampered asset. Open the run for the failing leg, and reproduce it with \`bash tools/ci/make-bootstrap-fixture.sh <dir> <distro>\` on the host, then \`bash tools/ci/smoke-bootstrap.sh --fixture <dir>/good\` (or \`--source published\`) as root in that leg's pinned image (\`.github/workflows/bootstrap-smoke.yml\`), with this checkout mounted."
+          } > "$RUNNER_TEMP/body.md"
+          # Only an issue this job opened (#598).
+          issue="$(gh issue list --state open --limit 200 --author app/github-actions \
+                    --json number,title,author \
+                    --jq ".[] | select(.title == \"$title\" and .author.is_bot) | .number" | head -n1)"
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi

@@ -38,6 +38,11 @@
 #     release-alert job — tag-gated, failure()-triggered, holding a
 #     job-scoped issues: write that no other job holds — runs
 #     tools/ci/release-alert.sh
+#   - verified bootstrap (issue #498, F-CI-112): the release job checks out
+#     and runs tools/ci/make-release-bootstrap.sh on release/ before
+#     SHA256SUMS and the attestation, publishes the attestation's bundle as
+#     release/mmt-dpi.intoto.jsonl before publish-release.sh, and a
+#     bootstrap-dry-run job behind packages-gate renders it on pull requests
 #
 # Exit codes: 0 = verifiable wiring present, 1 = a violation, 2 = helper
 # broken.
@@ -242,6 +247,53 @@ if release_job:
     else:
         fail("release job does not need release-gates — publication is not "
              "gated on exact-SHA evidence (issue #371)")
+
+# --- verified bootstrap (issue #498, F-CI-112) --------------------------------
+def pos(pattern, text):
+    m = re.search(pattern, text)
+    return m.start() if m else -1
+
+gen = pos(r'make-release-bootstrap\.sh"?\s+"?\$GITHUB_REF_NAME"?\s+release\b',
+          release_job)
+sums = pos(r"sha256sum\b[^|\n>]*>\s*SHA256SUMS", release_job)
+attest = pos(r"uses:\s*actions/attest-build-provenance@", release_job)
+bundle = pos(r"steps\.attest\.outputs\.bundle-path", release_job)
+copy = pos(r"release/mmt-dpi\.intoto\.jsonl", release_job)
+publish = pos(r"run:\s*bash\s+\S*publish-release\.sh", release_job)
+if gen >= 0 and 0 <= gen < sums and gen < attest:
+    ok("release job renders the bootstrap set before SHA256SUMS and the "
+       "attestation (install.sh, manifest.json, aliases are covered)")
+else:
+    fail("release job does not run make-release-bootstrap.sh on release/ "
+         "before SHA256SUMS and the attestation (issue #498)")
+if re.search(r"(?m)^\s*id:\s*attest\s*$", release_job) \
+        and 0 <= attest < bundle < copy < publish:
+    ok("the attestation bundle is published as mmt-dpi.intoto.jsonl "
+       "before publish-release.sh")
+else:
+    fail("the attestation's bundle-path is not copied to "
+         "release/mmt-dpi.intoto.jsonl before publish-release.sh — the "
+         "bootstrap cannot verify provenance (issue #498)")
+for script in ("make-release-bootstrap.sh", "bootstrap-install.sh",
+               "publish-release.sh"):
+    if re.search(rf"sparse-checkout:[^\n]*\n(?:\s+tools/ci/[^\n]*\n)*?\s+tools/ci/{re.escape(script)}\n",
+                 release_job) or re.search(rf"sparse-checkout:\s*tools/ci/{re.escape(script)}\b", release_job):
+        ok(f"release job checks out tools/ci/{script}")
+    else:
+        fail(f"release job's sparse checkout lacks tools/ci/{script}")
+m = re.search(r"(?m)^  bootstrap-dry-run:\n(.*?)(?=^  [a-zA-Z_][a-zA-Z0-9_-]*:[^\S\n]*$|\Z)",
+              wf, re.S)
+dry_job = m.group(1) if m else ""
+m = re.search(r"(?m)^  packages-gate:\n(.*?)(?=^  [a-zA-Z_][a-zA-Z0-9_-]*:[^\S\n]*$|\Z)",
+              wf, re.S)
+gate_job = m.group(1) if m else ""
+if "make-release-bootstrap.sh" in dry_job \
+        and re.search(r"needs:\s*\[[^\]]*\bbootstrap-dry-run\b", gate_job):
+    ok("bootstrap-dry-run renders the bootstrap from the PR's packages and "
+       "packages-gate requires it")
+else:
+    fail("no bootstrap-dry-run job behind packages-gate — a generator "
+         "refusal would first surface on the tag (issue #498)")
 
 # --- per-package SBOM -------------------------------------------------------
 if re.search(r"uses:\s*anchore/sbom-action@[0-9a-f]{40}", wf) \

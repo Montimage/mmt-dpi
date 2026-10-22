@@ -5,7 +5,13 @@ and a small capture to run it on,
 are published with the documentation site. From an empty directory, with the
 SDK installed under `/opt/mmt` (the quick-start default — substitute your
 `MMT_BASE` prefix and add `LD_LIBRARY_PATH="$MMT_BASE/dpi/lib"` to the run
-line otherwise):
+line otherwise). Compiling needs `gcc` and the libpcap headers: the source
+installer adds both; after a `.deb`/`.rpm` install, add them with
+`sudo apt-get install gcc libpcap-dev` (Debian/Ubuntu) or
+`sudo dnf --enablerepo=crb install gcc libpcap-devel` (Rocky, AlmaLinux and
+CentOS Stream 9, where `libpcap-devel` is in CRB; on RHEL 9 first run
+`sudo subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms`
+and drop `--enablerepo=crb`; plain `dnf install` on Fedora):
 
 ```bash
 curl -fsSL -O https://montimage-projects.github.io/mmt-dpi/first-run/hello_packet.c \

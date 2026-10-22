@@ -16,7 +16,10 @@ name: Build & release packages
 # release job adds a SHA256SUMS manifest over the whole asset set and a
 # build-provenance attestation covering every published file, so users can
 # run `sha256sum --check SHA256SUMS` and `gh attestation verify <pkg>`
-# before installing the package as root.
+# before installing the package as root. The release job also publishes the
+# verified bootstrap (issue #498): alias-named packages, manifest.json, an
+# install.sh with their sha256 embedded, and the attestation's Sigstore
+# bundle (mmt-dpi.intoto.jsonl) that install.sh checks offline.
 #
 # The five build container images are pinned by index digest
 # (issue #217, F-DEP-101/F-CI-012/F-SEC-007) — the same digest resolves both
@@ -111,6 +114,7 @@ jobs:
               tools/ci/release-alert.sh|tools/ci/base-images.txt|\
               tools/ci/vendored-components.*|tools/ci/check-package-split.sh|\
               tools/ci/check-package-deps.sh|tools/ci/shlib-deps.sh|\
+              tools/ci/make-release-bootstrap.sh|tools/ci/bootstrap-install.sh|\
               LICENSE|LICENSES/*|THIRD-PARTY-NOTICES|dist/ZIP/*|\
               .github/workflows/release-packages.yml)
                 echo "packaging path changed: $f"
@@ -292,13 +296,53 @@ jobs:
             "${{ matrix.image }}" \
             bash tools/ci/check-reproducible-build.sh --install-deps "${{ matrix.distro }}" "${{ matrix.pkg }}"
 
+  bootstrap-dry-run:
+    # The release job's bootstrap step (issue #498) on this run's packages:
+    # make-release-bootstrap.sh renders install.sh, manifest.json and the
+    # alias names for v<VERSION> from the full build matrix — mmt-dpi and
+    # mmt-dpi-security, every distro and arch — and the result is checked,
+    # so a package-name or matrix change that the generator would refuse
+    # fails here, on the pull request, not on the tag. Nothing is published
+    # or attested; bootstrap-smoke.yml runs the rendered bootstrap end to end
+    # against a published release.
+    needs: [changes, build]
+    if: needs.changes.outputs.packaging == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download all package artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: artifacts
+
+      - name: Render and check the bootstrap set
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^VERSION[[:space:]]*:\{0,1\}=[[:space:]]*//p' rules/common.mk | head -n1)"
+          mkdir -p release
+          find artifacts -type f \( -name '*.deb' -o -name '*.rpm' \) -exec cp {} release/ \;
+          bash tools/ci/make-release-bootstrap.sh "v${version}" release
+          sh -n release/install.sh
+          # Every built package has an alias row, and each digest matches.
+          built="$(find release -maxdepth 1 -name 'mmt-dpi*_*_*_*_*.*' | wc -l)"
+          rows="$(jq '.packages | length' release/manifest.json)"
+          echo "built=${built} manifest rows=${rows}"
+          test "$built" -eq "$rows"
+          jq -r '.packages[] | "\(.sha256)  \(.file)"' release/manifest.json \
+            | (cd release && sha256sum --check --quiet -)
+
   packages-gate:
     # Required-check aggregate (issue #490, F-CI-004): one context that
     # reports on every pull request, whatever paths it touches. It passes
-    # when the PR touches no packaging path and build + reproducibility were
-    # skipped, and otherwise requires every package leg to have succeeded —
+    # when the PR touches no packaging path and build + reproducibility (+
+    # the bootstrap dry-run, issue #498) were skipped, and otherwise requires
+    # every package leg to have succeeded —
     # a failed, cancelled or unexpectedly skipped leg fails it.
-    needs: [changes, build, reproducibility]
+    needs: [changes, build, reproducibility, bootstrap-dry-run]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -309,9 +353,10 @@ jobs:
           PACKAGING: ${{ needs.changes.outputs.packaging }}
           BUILD: ${{ needs.build.result }}
           REPRO: ${{ needs.reproducibility.result }}
+          BOOTSTRAP: ${{ needs.bootstrap-dry-run.result }}
         run: |
           set -euo pipefail
-          echo "changes=${CHANGES} packaging=${PACKAGING:-} build=${BUILD} reproducibility=${REPRO}"
+          echo "changes=${CHANGES} packaging=${PACKAGING:-} build=${BUILD} reproducibility=${REPRO} bootstrap-dry-run=${BOOTSTRAP}"
           if [ "$CHANGES" != "success" ]; then
             echo "::error::the packaging path filter did not succeed (${CHANGES})"
             exit 1
@@ -321,8 +366,8 @@ jobs:
           else
             want=skipped
           fi
-          if [ "$BUILD" != "$want" ] || [ "$REPRO" != "$want" ]; then
-            echo "::error::expected build and reproducibility ${want}, got ${BUILD} / ${REPRO}"
+          if [ "$BUILD" != "$want" ] || [ "$REPRO" != "$want" ] || [ "$BOOTSTRAP" != "$want" ]; then
+            echo "::error::expected build, reproducibility and bootstrap-dry-run ${want}, got ${BUILD} / ${REPRO} / ${BOOTSTRAP}"
             exit 1
           fi
           echo "packages-gate: ok (packaging=${PACKAGING})"
@@ -414,6 +459,18 @@ jobs:
       id-token: write      # Sigstore OIDC identity for provenance signing
       attestations: write  # publish attestations to the repo attestation store
     steps:
+      # This job has no source tree of its own: a sparse checkout fetches
+      # just the scripts it runs, at the tag's commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: src
+          sparse-checkout: |
+            tools/ci/publish-release.sh
+            tools/ci/make-release-bootstrap.sh
+            tools/ci/bootstrap-install.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Download all package artifacts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -428,8 +485,21 @@ jobs:
           echo "Assets to publish:"
           ls -l release
 
-      # The manifest covers every asset that will be attached — packages and
-      # SBOMs — so `sha256sum --check SHA256SUMS` verifies the whole download.
+      # Verified bootstrap (issue #498, F-CI-112): a copy of every package
+      # under its stable alias name (<package>_<distro>_<amd64|arm64>.<ext>),
+      # manifest.json, and install.sh rendered for this tag with each
+      # package's sha256 embedded — so
+      # `curl -fsSL …/releases/latest/download/install.sh | sh` checks the
+      # digest and the attestation below before installing the native
+      # package. Written before SHA256SUMS and the attestation, so all of it
+      # is covered by both.
+      - name: Generate the bootstrap installer, manifest and alias packages
+        run: bash src/tools/ci/make-release-bootstrap.sh "$GITHUB_REF_NAME" release
+
+      # The manifest covers every asset that will be attached — packages,
+      # SBOMs and the bootstrap set — so `sha256sum --check SHA256SUMS`
+      # verifies the whole download (the provenance bundle added after the
+      # attestation step is signed itself).
       - name: Generate SHA256SUMS manifest
         run: |
           cd release
@@ -442,22 +512,25 @@ jobs:
       # release asset (issue #198, F-SEC-005). Attest-before-publish keeps a
       # failed attestation from shipping unverifiable assets.
       - name: Attest build provenance for every release asset
+        id: attest
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: release/*
 
+      # The Sigstore bundle of that attestation, published so the bootstrap
+      # verifies provenance offline (`gh attestation verify --bundle`) with no
+      # GitHub login (issue #498). Not in SHA256SUMS: it is signed itself.
+      - name: Publish the provenance bundle for the bootstrap
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          test -s "$BUNDLE"
+          cp -v "$BUNDLE" release/mmt-dpi.intoto.jsonl
+
       # The only publisher (issue #489): refuses when a Release for the tag
       # already exists (made by hand), creates it as a draft with release/*
       # attached, then publishes it — never a Release without its assets.
-      # This job has no source tree of its own: a sparse checkout fetches
-      # just the script, at the tag's commit.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: src
-          sparse-checkout: tools/ci/publish-release.sh
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
-
       - name: Create and publish the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

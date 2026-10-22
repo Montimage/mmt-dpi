@@ -97,7 +97,10 @@ Release order:
    `gh release view v1.9.1 --json assets --jq '.assets | length'` is at
    least 12 (10 packages, `SHA256SUMS`, the SBOM); and
    `gh attestation verify mmt-dpi_*_ubuntu-24.04_x86_64.deb --repo montimage-projects/mmt-dpi`
-   passes on a downloaded `.deb`.
+   passes on a downloaded `.deb`. The verified bootstrap set (issue #498) is
+   there too: `install.sh`, `manifest.json`, `mmt-dpi.intoto.jsonl` and one
+   `mmt-dpi[-security]_<distro>_<amd64|arm64>.<deb|rpm>` alias per package,
+   and the `Bootstrap smoke` workflow run that follows the tag run is green.
 5. **Repin the installer** in a follow-up PR:
    `bash tools/ci/check-release-tag.sh --write-pin v1.9.1`, then update
    `Current release: [v1.9.1]` and `` pinned release tag (`v1.9.1`) `` in
