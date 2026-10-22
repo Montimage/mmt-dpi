@@ -49,6 +49,28 @@ release_dir() {
 
 echo "make-release-bootstrap.sh / bootstrap-install.sh self-test (issue #498)"
 
+# --- the generator's table matches the release matrix -------------------------
+# FORMAT in the generator and the build job's distro matrix list the same
+# distributions with the same format (issue #515): a matrix leg the table
+# lacks makes the release job refuse the tag, and a table entry no leg
+# builds advertises a package that never ships.
+matrix_legs() { # "<name> <pkg>" per row of the build job's distro matrix
+    sed -n '/^  build:$/,/^  [a-z-]*:$/p' "${REPO_ROOT}/.github/workflows/release-packages.yml" \
+        | sed -n 's/^ *- { *name: *\([a-z0-9.-]*\),.*pkg: *\([a-z]*\) *}.*/\1 \2/p' | LC_ALL=C sort
+}
+format_table() { # "<distro> <ext>" per FORMAT entry of the generator
+    sed -n '/^declare -A FORMAT=($/,/^)$/p' "$GEN" \
+        | grep -o '\[[a-z0-9.-]*\]=[a-z]*' | sed 's/^\[\(.*\)\]=\(.*\)$/\1 \2/' | LC_ALL=C sort
+}
+legs="$(matrix_legs)"
+check "the build matrix has legs" test -n "$legs"
+check "the generator's FORMAT table names exactly the build-matrix legs and formats" \
+    test "$legs" = "$(format_table)"
+for leg in "ubuntu-26.04 deb" "debian-13 deb" "rocky-10 rpm" "centos-stream10 rpm"; do
+    check "the build matrix carries the current-generation leg ${leg% *} (.${leg#* })" \
+        grep -qx "$leg" <<< "$legs"
+done
+
 # --- a well-formed release ----------------------------------------------------
 good="$(release_dir good \
     mmt-dpi_1.2.3_abc123_ubuntu-24.04_x86_64.deb \
@@ -170,7 +192,15 @@ rocky 9.4 rocky-9
 almalinux 9.6 rocky-9
 rhel 9.5 rocky-9
 centos 9 centos-stream9
+ubuntu 26.04 ubuntu-26.04
+debian 13 debian-13
+rocky 10.0 rocky-10
+almalinux 10.1 rocky-10
+rhel 10.0 rocky-10
+centos 10 centos-stream10
 debian 11 unsupported:debian 11
+debian 14 unsupported:debian 14
+centos 8 unsupported:centos 8
 fedora 44 unsupported:fedora 44
 ubuntu 25.10 unsupported:ubuntu 25.10
 EOF

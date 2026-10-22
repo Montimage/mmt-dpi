@@ -52,22 +52,47 @@ jobs:
     # Toolchain-floor gate (issue #218, F-DEP-207): the declared floor is
     # GCC 11 / glibc 2.34 / libstdc++ 11 (rules/common.mk, enforced by
     # rules/arch-linux.mk) — the oldest toolchain the release matrix builds
-    # on. ubuntu-22.04 is the oldest GitHub-hosted runner image and ships
-    # GCC 11.4, so this job proves the floor instead of merely asserting
-    # it: a change that silently requires a newer compiler fails here.
-    runs-on: ubuntu-22.04
+    # on. The digest-pinned ubuntu:22.04 container ships GCC 11.4, so this
+    # job proves the floor instead of merely asserting it: a change that
+    # silently requires a newer compiler fails here. A container on
+    # ubuntu-24.04, not the ubuntu-22.04 runner image, which GitHub
+    # deprecated on 2026-09-17 and removes on 2027-04-17 (issue #516); the
+    # job keeps its name, so the required context is unchanged. The image
+    # retires on the date tools/ci/base-images.txt records (docs/DECISIONS.md).
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
+    container:
+      image: "ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7"
     steps:
+    # git first, so actions/checkout makes a real clone (without git it
+    # downloads a tarball with no history, and the suites read the tree with
+    # git). archive.ubuntu.com fails an index fetch while a mirror syncs ("File
+    # has unexpected size") and this is a required check: retry the update,
+    # and make every later apt call in the container retry its fetches too.
+    - name: Install git for the checkout
+      run: |
+        echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries
+        for i in 1 2 3; do apt-get update -qq && break; [ "$i" = 3 ] && exit 1; sleep 30; done
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends git ca-certificates
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - uses: ./.github/actions/bootstrap-deps
-    - name: Assert the runner sits at the declared floor
+    # The build dependency set of the release containers, plus the tools the
+    # hosted runner image provides and the suites call (jq, pkg-config,
+    # curl). The suites then run as an unprivileged user, as on a hosted
+    # runner: as root, the installer suites skip their non-root checks.
+    - name: Install the floor toolchain and the suite prerequisites
+      run: |
+        bash tools/ci/install-build-deps.sh ubuntu-22.04 deb
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends jq pkg-config curl
+        useradd --create-home floor
+        chown -R floor: "$GITHUB_WORKSPACE"
+    - name: Assert the container sits at the declared floor
       run: |
         gcc --version | head -1
         test "$(gcc -dumpfullversion | cut -d. -f1)" -eq 11
     - name: Build the SDK on the floor toolchain
-      run: make -C sdk -j"$(nproc)"
+      run: runuser -u floor -- make -C sdk -j"$(nproc)"
     - name: Run unit test suites
-      run: bash tests/run_all_tests.sh
+      run: runuser -u floor -- bash tests/run_all_tests.sh
 
   sanitizer-tests:
     # Run the unit suites (tests/run_all_tests.sh) under the sanitizer

@@ -85,7 +85,10 @@ deb_pkg() {
             echo "libc6 (>= $GLIBC_MIN)" ;;
         libstdc++.so.*)  echo "libstdc++6 (>= $STDCXX_MIN)" ;;
         libgcc_s.so.*)   echo "libgcc-s1" ;;
-        libxml2.so.*)    echo "libxml2" ;;
+        libxml2.so.2|libxml2.so.2.*) echo "libxml2" ;;
+        # libxml2 2.14 moved the soname to .so.16 and Debian/Ubuntu name the
+        # runtime package after it: libxml2-16 (Ubuntu 26.04, issue #515).
+        libxml2.so.16|libxml2.so.16.*) echo "libxml2-16" ;;
         libnghttp2.so.*) echo "libnghttp2-14" ;;
         libpcap.so.*)    echo "libpcap0.8 | libpcap0.8t64" ;;
         libz.so.*)       echo "zlib1g" ;;

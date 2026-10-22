@@ -62,8 +62,15 @@ Rocky 9 / CentOS Stream 9 and Ubuntu 22.04. The constants live in
 the detected compiler, the generated `.deb` declares the same glibc and
 libstdc++ floors in its `Depends:` line (`sdk/Makefile` `deb` target), and
 the `toolchain-floor` job in `c-cpp.yml` builds the SDK and runs the full
-suite on `ubuntu-22.04` (GCC 11.4) so the floor is exercised, not just
-asserted.
+suite, unprivileged, in a digest-pinned `ubuntu:22.04` container (GCC 11.4)
+on an `ubuntu-24.04` runner, so the floor is exercised, not just asserted.
+The CentOS Stream 9 and Ubuntu 22.04 images retire on 2027-04-30, before
+their end of life (issue #516): the `# retire-by:` date on their
+`tools/ci/base-images.txt` lines makes `tools/ci/check-image-digests.sh`
+warn 60 days ahead and fail from that date. The floor does not move with
+them — Rocky 9 (GCC 11, glibc 2.34) stays in the matrix; the schedule and
+the floor job's next image are in
+[DECISIONS.md](https://github.com/montimage-projects/mmt-dpi/blob/main/docs/DECISIONS.md).
 
 **C dialect and toolchain ceiling (issue #514, F-DEP-301/F-DEP-307):** the
 default GCC toolchain (`ARCH=linux`) compiles C as gnu17
@@ -136,7 +143,7 @@ Notes:
 ### Documentation-site toolchain
 
 The C SDK does not require Ruby. For the documentation site, use Ruby **3.4**
-as in CI (`.github/workflows/c-cpp.yml:225-230`), with Bundler to install
+as in CI (`.github/workflows/c-cpp.yml:250-255`), with Bundler to install
 the gems and run Jekyll; every workflow's `ruby-version:` is that same
 release (issue #517). CI enables `bundler-cache` through `ruby/setup-ruby`
 and verifies the committed `docs/Gemfile.lock` under `BUNDLE_FROZEN=true`
@@ -152,7 +159,7 @@ gem install bundler
 ```
 
 `docs/Gemfile:12-17` defines Jekyll and its plugins. CI builds the site with
-`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:243`): source and
+`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:268`): source and
 built-site link checks around a frozen Jekyll 4 build, the lock-unchanged
 check, and a `docs/_site/build-manifest.json` recording the renderer versions,
 the lock digest and a site digest. GitHub Pages publishes the artifact that

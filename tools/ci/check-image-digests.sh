@@ -21,6 +21,10 @@
 #     file tools/ci/refresh-base-images.sh resolves against upstream on the
 #     schedule of .github/workflows/base-image-refresh.yml
 #   - every recorded entry is still used by some scanned file (full scan only)
+#   - no recorded entry is past its `# retire-by: YYYY-MM-DD` date (issue
+#     #516): from 60 days before it a warning names the entry, from the date
+#     on it is a violation until its workflow legs and its line are removed
+#     (an explicit file list judges only the entries those files use)
 #   - release-packages.yml actually reads that file (it greps its matrix pin)
 # References built from `${{ … }}` or shell variables are skipped: they
 # resolve to a value scanned elsewhere (the matrix rows).
@@ -31,6 +35,8 @@
 #   ROOT_DIR=<dir>        repository root to scan (default: this checkout)
 #   IMAGE_BASELINE=<path> baseline file, relative to ROOT_DIR
 #                         (default: tools/ci/base-images.txt)
+#   IMAGE_TODAY=<date>    YYYY-MM-DD the retire-by dates are read against
+#                         (default: today, UTC; a test seam)
 
 set -euo pipefail
 
@@ -42,12 +48,28 @@ BASELINE="${IMAGE_BASELINE:-tools/ci/base-images.txt}"
 command -v python3 >/dev/null 2>&1 || { echo "✗ python3 is required" >&2; exit 2; }
 
 python3 - "$BASELINE" "$@" <<'PYEOF'
+import datetime
 import glob
+import os
 import re
 import shlex
 import sys
 
 baseline_path, explicit = sys.argv[1], sys.argv[2:]
+
+DATE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+RETIRE_BY = re.compile(r'\bretire-by:\s*(\S+)')
+RETIRE_WARN_DAYS = 60
+today_arg = os.environ.get("IMAGE_TODAY", "")
+try:
+    if today_arg and not DATE.match(today_arg):
+        raise ValueError(today_arg)
+    today = (datetime.date.fromisoformat(today_arg) if today_arg
+             else datetime.datetime.now(datetime.timezone.utc).date())
+except ValueError:
+    print(f"✗ IMAGE_TODAY is not a YYYY-MM-DD date: {today_arg}",
+          file=sys.stderr)
+    sys.exit(2)
 
 if explicit:
     files = explicit
@@ -175,11 +197,17 @@ errors += len(bad_digest)
 # The pinned set must be recorded in the tracked baseline file that the
 # scheduled refresh job resolves against upstream.
 recorded, baseline_read = set(), True
+retiring = []  # (entry, retire-by value) from trailing `# retire-by:` comments
+retired = 0
 try:
-    for line in open(baseline_path, encoding="utf-8"):
-        line = line.split("#", 1)[0].strip()
+    for raw in open(baseline_path, encoding="utf-8"):
+        line, _, comment = raw.partition("#")
+        line = line.strip()
         if line and not line.startswith("digest-source"):
             recorded.add(line)
+            m = RETIRE_BY.search(comment)
+            if m:
+                retiring.append((line, m.group(1)))
 except OSError:
     print(f"  ✗ {baseline_path} not found")
     errors += 1
@@ -198,6 +226,35 @@ if baseline_read:
     if not missing and not stale:
         print(f"  ✓ {baseline_path} records all {len(pinned)} pinned image(s)")
 
+# Dated retirement (issue #516): an entry may carry `# retire-by: YYYY-MM-DD`,
+# the date by which its legs leave every workflow (docs/DECISIONS.md records
+# each date and why). Warn ahead of it; from that date on, fail. An explicit
+# file list judges only the entries those files use.
+for entry, when in retiring:
+    if not full_scan and entry not in refs:
+        continue
+    try:
+        if not DATE.match(when):
+            raise ValueError(when)
+        due = datetime.date.fromisoformat(when)
+    except ValueError:
+        print(f"  ✗ malformed retire-by date for {entry}: {when} "
+              "(want YYYY-MM-DD)")
+        errors += 1
+        continue
+    users = ", ".join(refs.get(entry, [])) or "no scanned workflow"
+    left = (due - today).days
+    if left <= 0:
+        print(f"  ✗ {entry} reached its retire-by date {when} — remove its "
+              f"legs ({users}) and its {baseline_path} line")
+        errors += 1
+        retired += 1
+    elif left <= RETIRE_WARN_DAYS:
+        print(f"  ⚠ {entry} retires on {when} ({left} day(s) left) — remove "
+              f"its legs ({users}) before then")
+    else:
+        print(f"  ✓ {entry} retires on {when} ({left} day(s) left)")
+
 for path in files:
     if path.endswith("release-packages.yml") \
             and baseline_path not in open(path, encoding="utf-8").read():
@@ -213,6 +270,11 @@ if errors:
           "with", file=sys.stderr)
     print("         docker buildx imagetools inspect <name>:<tag>",
           file=sys.stderr)
+    if retired:
+        print("         A retire-by violation is fixed by removing the image's "
+              "legs and line", file=sys.stderr)
+        print("         (the schedule is in docs/DECISIONS.md, issue #516), "
+              "never by moving the date.", file=sys.stderr)
     sys.exit(1)
 print("✓ CI container images are digest-pinned and recorded")
 PYEOF

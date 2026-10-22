@@ -122,6 +122,17 @@ ACTION_GLOBS = [".github/workflows/*.yml", ".github/workflows/*.yaml",
 # ENABLESEC=1 as tools/ci/build-package.sh builds it). Keep in sync.
 DEB_PKGS = ["libc6", "libstdc++6", "libgcc-s1", "libxml2"]
 RPM_PKGS = ["glibc", "libstdc++", "libgcc", "libxml2"]
+# Where a distribution names a runtime package differently — as
+# tools/ci/shlib-deps.sh maps it: libxml2.so.16 ships as libxml2-16 on
+# Ubuntu 26.04, which has no libxml2 package (issue #515).
+PKG_RENAMES = {"Ubuntu:26.04:LTS": {"libxml2": "libxml2-16"}}
+
+
+def runtime_pkgs(image, family):
+    """The runtime packages to probe in image, renamed for its distribution."""
+    pkgs = DEB_PKGS if family == "deb" else RPM_PKGS
+    renames = PKG_RENAMES.get((distro_of(image) or (None,))[0], {})
+    return [renames.get(p, p) for p in pkgs]
 
 # image repository (before ':' / '@') + tag -> (OSV ecosystem or None, family)
 DISTROS = {
@@ -129,12 +140,16 @@ DISTROS = {
     ("ubuntu", "jammy"): ("Ubuntu:22.04:LTS", "deb"),
     ("ubuntu", "24.04"): ("Ubuntu:24.04:LTS", "deb"),
     ("ubuntu", "noble"): ("Ubuntu:24.04:LTS", "deb"),
+    ("ubuntu", "26.04"): ("Ubuntu:26.04:LTS", "deb"),
+    ("ubuntu", "resolute"): ("Ubuntu:26.04:LTS", "deb"),
     ("debian", "12"): ("Debian:12", "deb"),
     ("debian", "bookworm"): ("Debian:12", "deb"),
     ("debian", "13"): ("Debian:13", "deb"),
     ("debian", "trixie"): ("Debian:13", "deb"),
     ("rockylinux", "9"): ("Rocky Linux:9", "rpm"),
+    ("rockylinux/rockylinux", "10"): ("Rocky Linux:10", "rpm"),
     ("quay.io/centos/centos", "stream9"): (None, "rpm"),
+    ("quay.io/centos/centos", "stream10"): (None, "rpm"),
 }
 NO_FEED_REASON = ("CentOS Stream publishes no security advisories "
                   "(no OSV ecosystem, no errata feed)")
@@ -716,7 +731,7 @@ dnf -q repoquery --latest-limit 1 --arch "$(uname -m),noarch" \
 
 def probe_image(image, family):
     """[(binary, binary_version, source, source_version)] resolved in image."""
-    pkgs = DEB_PKGS if family == "deb" else RPM_PKGS
+    pkgs = runtime_pkgs(image, family)
     probe = DEB_PROBE if family == "deb" else RPM_PROBE
     if PROBE_FIXTURE:
         # Test seam: {image: "<probe stdout>"} — a missing image is a failed probe.
@@ -1202,6 +1217,14 @@ def self_test():
           and distro_of("quay.io/centos/centos:stream9@sha256:cd") == (None, "rpm"))
     check("distro map trixie/13", distro_of("debian:13@sha256:ab") == ("Debian:13", "deb")
           and distro_of("debian:trixie@sha256:ab") == ("Debian:13", "deb"))
+    check("ubuntu 26.04 probes libxml2-16, others libxml2 (#515)",
+          runtime_pkgs("ubuntu:26.04@sha256:ab", "deb")[-1] == "libxml2-16"
+          and runtime_pkgs("debian:13@sha256:ab", "deb")[-1] == "libxml2"
+          and runtime_pkgs("rockylinux/rockylinux:10@sha256:ab", "rpm")[-1] == "libxml2")
+    check("distro map current generation (#515)",
+          distro_of("ubuntu:26.04@sha256:ab") == ("Ubuntu:26.04:LTS", "deb")
+          and distro_of("rockylinux/rockylinux:10@sha256:ab") == ("Rocky Linux:10", "rpm")
+          and distro_of("quay.io/centos/centos:stream10@sha256:ab") == (None, "rpm"))
     check("tooling image excluded", distro_of("buildpack-deps:bookworm@sha256:ab") is None
           and excluded_reason("buildpack-deps:bookworm@sha256:ab") is not None
           and excluded_reason("debian:12@sha256:ab") is None)

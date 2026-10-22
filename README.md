@@ -74,8 +74,8 @@ curl -fsSL https://raw.githubusercontent.com/montimage-projects/mmt-dpi/main/ins
 
 Every tagged release publishes ready-to-install `.deb` and `.rpm` packages
 (amd64 and arm64) — one per distribution in the release matrix: **Ubuntu
-22.04, Ubuntu 24.04, Debian 12 (.deb), Rocky Linux 9, and CentOS Stream 9
-(.rpm)**. Download the one matching your distribution from the
+22.04, Ubuntu 24.04, Ubuntu 26.04, Debian 12, Debian 13 (.deb), Rocky Linux 9,
+Rocky Linux 10, CentOS Stream 9 and CentOS Stream 10 (.rpm)**. Download the one matching your distribution from the
 [Releases page](https://github.com/montimage-projects/mmt-dpi/releases) and
 install it with your native package manager:
 
@@ -130,8 +130,8 @@ Install only after both checks pass.
 
 From the first release after v1.9.1, each release also publishes a bootstrap
 installer that does all of the above for you and installs the native
-package — Ubuntu 22.04/24.04, Debian 12, Rocky Linux / AlmaLinux 9 and
-CentOS Stream 9, amd64 or arm64:
+package — Ubuntu 22.04/24.04/26.04, Debian 12/13, Rocky Linux / AlmaLinux 9
+and 10 and CentOS Stream 9 and 10, amd64 or arm64:
 
 ```bash
 curl -fsSL https://github.com/montimage-projects/mmt-dpi/releases/latest/download/install.sh | sh

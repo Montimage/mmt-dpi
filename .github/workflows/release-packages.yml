@@ -21,7 +21,9 @@ name: Build & release packages
 # install.sh with their sha256 embedded, and the attestation's Sigstore
 # bundle (mmt-dpi.intoto.jsonl) that install.sh checks offline.
 #
-# The five build container images are pinned by index digest
+# The nine build container images — the previous distribution generation
+# plus the current one (Ubuntu 26.04, Debian 13, Rocky Linux 10, CentOS
+# Stream 10; issue #515) — are pinned by index digest
 # (issue #217, F-DEP-101/F-CI-012/F-SEC-007) — the same digest resolves both
 # the amd64 and arm64 matrix legs — and mirrored in the tracked
 # tools/ci/base-images.txt, which the daily base-image-refresh.yml workflow
@@ -147,6 +149,11 @@ jobs:
           - { name: debian-12,      image: "debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443",                       pkg: deb }
           - { name: rocky-9,        image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                    pkg: rpm }
           - { name: centos-stream9, image: "quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c",   pkg: rpm }
+          # Current generation (issue #515).
+          - { name: ubuntu-26.04,    image: "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",                    pkg: deb }
+          - { name: debian-13,       image: "debian:13@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308",                       pkg: deb }
+          - { name: rocky-10,        image: "rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834",        pkg: rpm }
+          - { name: centos-stream10, image: "quay.io/centos/centos:stream10@sha256:6f8d618844ed5af4365bad24bea19fb0435fd5ec808201af9aeb19d7a28eb515",  pkg: rpm }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -155,8 +162,11 @@ jobs:
       # The matrix pin above must be mirrored verbatim in the tracked
       # tools/ci/base-images.txt — fail fast here rather than building on an
       # unrecorded image (issue #217; check-image-digests.sh gates the same).
+      # Trailing comments (`# retire-by:`, issue #516) are stripped first.
       - name: Verify pinned base image is recorded
-        run: grep -Fx "${{ matrix.distro.image }}" tools/ci/base-images.txt
+        env:
+          IMAGE: ${{ matrix.distro.image }}
+        run: sed 's/[[:space:]]*#.*$//' tools/ci/base-images.txt | grep -Fx -- "$IMAGE"
 
       # -e CI forwards the runner's CI=true marker into the container so a
       # missing git history there is the hard error rules/common.mk intends
@@ -269,7 +279,8 @@ jobs:
     # F-CI-011 (issue #220): build the package twice inside the same
     # container and diff the sha256 sums — the AC for reproducible packages
     # is byte-identity, and this job is the gate that proves it. One amd64
-    # leg per package format on images already pinned in the build matrix.
+    # leg per package format on images already pinned in the build matrix,
+    # plus one current-generation leg (issue #515).
     name: Reproducible ${{ matrix.pkg }} build (${{ matrix.distro }})
     needs: changes
     if: needs.changes.outputs.packaging == 'true'
@@ -281,13 +292,17 @@ jobs:
         include:
           - { distro: ubuntu-24.04, image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254",                    pkg: deb }
           - { distro: rocky-9,      image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                   pkg: rpm }
+          # One current-generation leg (issue #515): GCC 15 and libxml2 2.15.
+          - { distro: ubuntu-26.04, image: "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",                    pkg: deb }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # GIT_VERSION + SOURCE_DATE_EPOCH derive from the commit
 
       - name: Verify pinned base image is recorded
-        run: grep -Fx "${{ matrix.image }}" tools/ci/base-images.txt
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: sed 's/[[:space:]]*#.*$//' tools/ci/base-images.txt | grep -Fx -- "$IMAGE"
 
       - name: Double-build and diff sha256 in ${{ matrix.image }}
         run: |

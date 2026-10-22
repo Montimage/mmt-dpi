@@ -14,8 +14,9 @@
 #
 # What it does, as root (or through sudo):
 #   1. picks the package for this distribution and architecture from the
-#      embedded table — Ubuntu 22.04/24.04 and Debian 12 (.deb), Rocky /
-#      AlmaLinux / RHEL 9 and CentOS Stream 9 (.rpm), amd64 or arm64;
+#      embedded table — Ubuntu 22.04/24.04/26.04 and Debian 12/13 (.deb),
+#      Rocky / AlmaLinux / RHEL 9 and 10 and CentOS Stream 9 and 10 (.rpm),
+#      amd64 or arm64;
 #      anything else is refused with a pointer to the source installer;
 #   2. downloads it and the release's provenance bundle (mmt-dpi.intoto.jsonl)
 #      and checks the package's sha256 against the embedded digest;
@@ -96,11 +97,14 @@ detect_distro() {
     ( . "$OS_RELEASE"
       id="${ID:-}"; ver="${VERSION_ID:-}"
       case "$id:$ver" in
-          ubuntu:22.04|ubuntu:24.04) printf 'ubuntu-%s\n' "$ver" ;;
-          debian:12)                 printf 'debian-12\n' ;;
+          ubuntu:22.04|ubuntu:24.04|ubuntu:26.04)
+                                     printf 'ubuntu-%s\n' "$ver" ;;
+          debian:12|debian:13)       printf 'debian-%s\n' "$ver" ;;
           rocky:9|rocky:9.*|almalinux:9|almalinux:9.*|rhel:9|rhel:9.*)
                                      printf 'rocky-9\n' ;;
-          centos:9)                  printf 'centos-stream9\n' ;;
+          rocky:10|rocky:10.*|almalinux:10|almalinux:10.*|rhel:10|rhel:10.*)
+                                     printf 'rocky-10\n' ;;
+          centos:9|centos:10)        printf 'centos-stream%s\n' "$ver" ;;
           *) printf 'unsupported:%s\n' "${PRETTY_NAME:-$id $ver}" ;;
       esac )
 }

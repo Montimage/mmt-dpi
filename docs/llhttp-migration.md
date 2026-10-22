@@ -54,7 +54,8 @@ Task 4.2 (issue #218, `F-DEP-207`) declared and enforces the floor:
 - **GCC ≥ 11, glibc ≥ 2.34, libstdc++6 ≥ 11** — `MMT_GCC_MIN`, `MMT_GLIBC_MIN`,
   `MMT_LIBSTDCXX_MIN` in `rules/common.mk:497-499`, enforced at parse time by
   `rules/arch-linux-gcc.mk`, documented in `docs/AGENT_ENVIRONMENT.md` §1, and
-  exercised by the `toolchain-floor` CI job on `ubuntu-22.04` (GCC 11.4).
+  exercised by the `toolchain-floor` CI job in a digest-pinned `ubuntu:22.04`
+  container (GCC 11.4).
 
 The generated llhttp sources are freestanding C89/C99 — no C++, no GNU extensions, no
 libc calls beyond `stdlib.h`/`string.h`/`stdio.h` — so **the floor is unchanged**:

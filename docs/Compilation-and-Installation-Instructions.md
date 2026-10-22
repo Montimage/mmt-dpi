@@ -9,8 +9,9 @@ title: "Before compiling"
 
 # Before compiling
 A modern C/C++ toolchain is required. MMT-DPI is continuously built and tested
-on Ubuntu 22.04 / 24.04, Debian 12, Rocky Linux 9 and CentOS Stream 9 using the
-GCC and Clang versions shipped by those distributions (GCC 11–13, Clang 14+).
+on Ubuntu 22.04 / 24.04 / 26.04, Debian 12 / 13, Rocky Linux 9 / 10 and CentOS
+Stream 9 / 10 using the GCC and Clang versions shipped by those distributions
+(GCC 11–15, Clang 14+).
 GCC 11 is the enforced floor — `rules/arch-linux.mk` fails the build on an
 older GCC; the contract and the matching glibc/libstdc++ floors are stated in
 [Agent Environment Notes §1](./AGENT_ENVIRONMENT.md#1-toolchain-requirements).

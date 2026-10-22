@@ -3,8 +3,8 @@
 #
 # Every non-comment line is the exact image reference a workflow consumes:
 # the build matrix in .github/workflows/release-packages.yml (which greps
-# this file for its matrix pin before building), the root-install job of
-# .github/workflows/c-cpp.yml, the asn1c gate container of
+# this file for its matrix pin before building), the root-install and
+# toolchain-floor jobs of .github/workflows/c-cpp.yml, the asn1c gate container of
 # .github/workflows/asn1c-regen.yml and the per-distribution install smoke
 # matrix of .github/workflows/install-smoke.yml (issue #493). tools/ci/check-image-digests.sh scans
 # every workflow and fails when an image is floating, unrecorded here, or
@@ -25,15 +25,27 @@
 # pulled only on amd64 runners (archlinux: the install smoke matrix), says so
 # with a trailing `# platforms: linux/amd64`, which refresh-base-images.sh
 # honours instead.
+# Dated retirement (issue #516): a trailing `# retire-by: YYYY-MM-DD` marks an
+# image whose legs are removed before its distribution's end of life (dates
+# and reasons: docs/DECISIONS.md). check-image-digests.sh warns from 60 days
+# before that date and fails from the date on, while the line is still here
+# (the verify-helpers job of c-cpp.yml; base-image-refresh.yml only repins).
 # Refresh every pin with: bash tools/ci/refresh-base-images.sh --write
 # Refresh a single pin with:
 digest-source: docker buildx imagetools inspect <image>:<tag>
-ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
+ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7  # retire-by: 2027-04-30 (#516)
 ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254
 debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443
 rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6
-quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c
-buildpack-deps:bookworm@sha256:b22578185ebfdbd9a4050f697638b9c9696b70616d9b01bddfa79145db2b6dfd
+quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c  # retire-by: 2027-04-30 (#516)
+buildpack-deps:trixie@sha256:880a5e3d451b50a7b1acd06093a980771a40c2fac2bce29a2145e0f4825266f4
+# Current-generation release legs (issue #515). Rocky Linux 10 is published
+# as rockylinux/rockylinux only: the Docker Hub official `rockylinux` image
+# stops at 9.
+ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944
+debian:13@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308
+rockylinux/rockylinux:10@sha256:827d37bc128288ccf160ee318bb3cb92d591164cb217e92f8bc61e3982ae1834
+quay.io/centos/centos:stream10@sha256:6f8d618844ed5af4365bad24bea19fb0435fd5ec808201af9aeb19d7a28eb515
 # Install smoke matrix only (issue #493): the advertised distributions outside
 # the release matrix. registry.opensuse.org where upstream publishes there, to
 # stay clear of Docker Hub pull limits. Fedora comes from the Docker Hub official

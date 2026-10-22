@@ -46,7 +46,9 @@ jobs:
     # libtool/bison/flex (the yacc/lex aliases the asn1c build calls) are
     # installed below. Digest-pinned and recorded in tools/ci/base-images.txt
     # (issue #491); base-image-refresh.yml repins it when the tag moves.
-    container: buildpack-deps:bookworm@sha256:b22578185ebfdbd9a4050f697638b9c9696b70616d9b01bddfa79145db2b6dfd
+    # Debian 13 since issue #516: the Debian 12 image misses the 2026 glibc
+    # fixes, and the tree reproduces byte-for-byte under trixie's toolchain.
+    container: buildpack-deps:trixie@sha256:880a5e3d451b50a7b1acd06093a980771a40c2fac2bce29a2145e0f4825266f4
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

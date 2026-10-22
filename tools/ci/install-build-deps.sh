@@ -43,7 +43,8 @@ install_build_deps_rhel() {
   local pm=dnf
   command -v dnf >/dev/null 2>&1 || pm=yum
   # libpcap-devel lives in the CRB (CodeReady Builder / PowerTools) repo on
-  # EL9, which ships disabled — enable it before installing the -devel packages.
+  # EL9 and EL10, which ship it disabled — enable it before installing the
+  # -devel packages.
   # binutils provides objdump for the NEEDED -> Requires derivation (issue
   # #219); see install_build_deps_debian for the libxml2/libpcap rationale.
   # libpcap-devel and python3 are not in the spec's BuildRequires (sdk/Makefile):

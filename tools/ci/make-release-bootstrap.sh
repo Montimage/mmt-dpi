@@ -34,6 +34,8 @@ set -euo pipefail
 declare -A FORMAT=(
     [ubuntu-22.04]=deb [ubuntu-24.04]=deb [debian-12]=deb
     [rocky-9]=rpm [centos-stream9]=rpm
+    [ubuntu-26.04]=deb [debian-13]=deb
+    [rocky-10]=rpm [centos-stream10]=rpm
 )
 
 [ $# -eq 2 ] || { echo "usage: $0 <tag> <release-dir>" >&2; exit 2; }
