@@ -21,6 +21,11 @@ static inline int _nas_msg_plain_decode(
 	 * a minimum-size security-protected PDU reaches here with length == 0. */
 	CHECK_PDU_POINTER_AND_LENGTH_DECODER( buffer, 1, length );
 
+	/* cppcheck 2.22 (issue #518) does not follow the macro's
+	 * `while (buffer == NULL) { ... return ...; }` guard above, so it reports
+	 * that test as redundant with a NULL dereference here; buffer is
+	 * non-NULL on this line. */
+	// cppcheck-suppress nullPointerRedundantCheck
 	DECODE_U8( buffer, *(uint8_t *)& msg->emm.header, size );
 
 	switch ( msg->emm.header.protocol_discriminator ){

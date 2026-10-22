@@ -23,20 +23,24 @@
 # meaningful for the cppcheck release it was measured with — a different
 # release adds or drops checks, so the total drifts on unchanged code (e.g.
 # 2.21 reports 35 findings where the baseline of 24 was measured with 2.13).
-# CPPCHECK_PINNED_VERSION below is the major.minor the lint job gets from the
-# ubuntu-24.04 cppcheck package (.github/workflows/c-cpp.yml, `lint` job).
-# The script compares `cppcheck --version` with it:
+# CPPCHECK_PINNED_VERSION below is the major.minor the lint job builds from
+# source with tools/ci/install-cppcheck.sh (issue #518) inside its
+# digest-pinned ubuntu:24.04 container (.github/workflows/c-cpp.yml, `lint`
+# job); tools/ci/tests/test-cppcheck-version.sh fails when the installer's
+# release and this pin disagree. The script compares `cppcheck --version`
+# with it:
 #   - match      -> both gates are enforced;
-#   - mismatch in CI (CI=true) -> exit 2: the runner image changed; re-measure
-#     tools/ci/cppcheck-ratchet.txt with the new release and bump the pin in
-#     the same change;
+#   - mismatch in CI (CI=true) -> exit 2: the installed release changed;
+#     re-measure tools/ci/cppcheck-ratchet.txt with the new release and bump
+#     the pin and the installer in the same change;
 #   - mismatch locally -> warning; the ratchet verdict is advisory only (the
 #     count is not comparable) while the error-severity gate stays enforced
 #     (another release may also add or drop error checks, so a local error
 #     verdict may not reproduce in CI). Only CI=true (GitHub Actions) counts
 #     as CI.
 # For a verdict that matches CI, run cppcheck $CPPCHECK_PINNED_VERSION.x
-# locally (e.g. in an ubuntu:24.04 container: apt-get install -y cppcheck).
+# locally (e.g. built by tools/ci/install-cppcheck.sh in an ubuntu:24.04
+# container, as the lint job does).
 # Never raise the baseline to absorb version drift.
 #
 # Exit codes: 0 = both gates pass, 1 = a gate tripped, 2 = the helper itself
@@ -53,8 +57,14 @@ cd "$ROOT"
 REPORT="${CPPCHECK_REPORT:-cppcheck-report.xml}"
 RATCHET="${CPPCHECK_RATCHET:-tools/ci/cppcheck-ratchet.txt}"
 JOBS="${CPPCHECK_JOBS:-$(nproc 2>/dev/null || echo 2)}"
-CPPCHECK_PINNED_VERSION="2.13"   # major.minor of ubuntu-24.04's cppcheck (CI)
+CPPCHECK_PINNED_VERSION="2.22"   # major.minor tools/ci/install-cppcheck.sh builds (CI)
 SCAN_DIRS=(src)
+# The SDK is GNU C built by GCC only (rules/arch-linux.mk): gnu.cfg teaches
+# cppcheck __builtin_expect and the kernel-style likely()/unlikely() macros,
+# whose project definitions it cannot see (no -I is passed). Without it every
+# `if (unlikely(p == NULL)) return` guard is opaque and cppcheck 2.22 reports
+# the dereference behind it (issue #518).
+LIBRARIES=(--library=gnu)
 EXCLUDE=(-i src/mmt_mobile/asn1c)   # generated ASN.1 tree — never scanned
 
 # Vendored sources are excluded by configuration, not convention
@@ -68,7 +78,7 @@ done < "$VENDOR_LIST"
 
 if ! command -v cppcheck >/dev/null 2>&1; then
     echo "✗ cppcheck is not installed" >&2
-    echo "To fix:  apt-get install -y cppcheck" >&2
+    echo "To fix:  bash tools/ci/install-cppcheck.sh   (the pinned release)" >&2
     exit 2
 fi
 
@@ -110,7 +120,7 @@ echo "── cppcheck pass 1/2: full scan (ratchet + report) ──"
 # The exit status is deliberately discarded here: pass 1 is the reporting
 # pass — the ratchet below decides, not cppcheck's own exit code.
 cppcheck --enable=warning --inline-suppr -j"$JOBS" \
-    "${EXCLUDE[@]}" \
+    "${LIBRARIES[@]}" "${EXCLUDE[@]}" \
     --xml --xml-version=2 \
     "${SCAN_DIRS[@]}" \
     2> "$REPORT" || true
@@ -149,7 +159,7 @@ echo "── cppcheck pass 2/2: error-severity gate ──"
 # --inline-suppr is honoured in both passes so a justified inline suppression
 # is counted consistently.
 if cppcheck --inline-suppr --error-exitcode=1 -j"$JOBS" -q \
-    "${EXCLUDE[@]}" "${SCAN_DIRS[@]}" 2>/dev/null; then
+    "${LIBRARIES[@]}" "${EXCLUDE[@]}" "${SCAN_DIRS[@]}" 2>/dev/null; then
     echo "✓ no error-severity findings"
 else
     echo "✗ error-severity findings present — see $REPORT" >&2

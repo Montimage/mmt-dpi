@@ -19,6 +19,9 @@
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 static inline uint8_t *mmt_segblk_data(mmt_segblk_t *b) {
+	/* Callers pass a live block; the report here is the same cppcheck 2.22
+	 * false positive as in mmt_segblk_carve() below (issue #518). */
+	// cppcheck-suppress nullPointerArithmeticRedundantCheck
 	return (uint8_t *)b + MMT_SEGBLK_HDR;
 }
 
@@ -58,9 +61,15 @@ uint8_t *mmt_segblk_carve(mmt_segblk_t **head, uint32_t size, mmt_segblk_t **blk
 		*head = nb;
 		b = nb;
 	}
+	/* cppcheck 2.22 (issue #518) loses the grow branch's b = nb and reports
+	 * the b == NULL test above as redundant with a NULL dereference here: b
+	 * is the non-NULL head or the block just allocated — every other path
+	 * returned. */
+	// cppcheck-suppress-begin nullPointerRedundantCheck
 	uint8_t *p = mmt_segblk_data(b) + b->used;
 	b->used += need;
 	b->live += need;            /* born referenced by its segment */
+	// cppcheck-suppress-end nullPointerRedundantCheck
 	*blk_out = b;
 	return p;
 }
@@ -181,7 +190,6 @@ void tcp_seg_free(tcp_seg_t * seg){
 		seg->next = NULL;
 		seg->prev = NULL;
 		free(seg);
-		seg = NULL;
 	}
 }
 

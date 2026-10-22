@@ -254,7 +254,6 @@ int mmt_path_snprintf(char * buff, int len, attribute_internal_t * attr) {
         }
         index++;
         for (; (index < p->len) && (index < 16) && offset < len; index++) {
-            if (offset >= len) break;
             size_t rem = (size_t)(len - offset);
             int n = snprintf(&buff[offset], rem, ".%u", p->proto_path[index]);
             if (n < 0) break;

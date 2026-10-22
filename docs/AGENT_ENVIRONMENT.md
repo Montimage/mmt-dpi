@@ -133,17 +133,21 @@ Notes:
 - `cppcheck` is not in the toolchain line: only the `lint` job needs it.
   `tools/ci/run-cppcheck.sh` pins the release its findings ratchet
   (`tools/ci/cppcheck-ratchet.txt`) was measured with —
-  `CPPCHECK_PINNED_VERSION`, the major.minor of ubuntu-24.04's package
-  (2.13) — because other releases report a different total on unchanged
-  code (issue #345). Under `CI=true` a different version fails the script
-  (exit 2); locally it warns and treats the ratchet as advisory while the
-  error-severity gate stays enforced. For a CI-equivalent local verdict,
-  run it with cppcheck 2.13 (e.g. in an `ubuntu:24.04` container).
+  `CPPCHECK_PINNED_VERSION` (2.22) — because other releases report a
+  different total on unchanged code (issue #345). No distribution package
+  carries it: the `lint` job runs in the digest-pinned `ubuntu:24.04`
+  container and builds it from its sha256-pinned source tarball with
+  `tools/ci/install-cppcheck.sh` (issue #518). Under `CI=true` a different
+  version fails the script (exit 2); locally it warns and treats the
+  ratchet as advisory while the error-severity gate stays enforced. For a
+  CI-equivalent local verdict, build it the same way — in an `ubuntu:24.04`
+  container with `g++ make python3 curl ca-certificates`, run
+  `bash tools/ci/install-cppcheck.sh` — then run the gate there.
 
 ### Documentation-site toolchain
 
 The C SDK does not require Ruby. For the documentation site, use Ruby **3.4**
-as in CI (`.github/workflows/c-cpp.yml:250-255`), with Bundler to install
+as in CI (`.github/workflows/c-cpp.yml:271-276`), with Bundler to install
 the gems and run Jekyll; every workflow's `ruby-version:` is that same
 release (issue #517). CI enables `bundler-cache` through `ruby/setup-ruby`
 and verifies the committed `docs/Gemfile.lock` under `BUNDLE_FROZEN=true`
@@ -159,7 +163,7 @@ gem install bundler
 ```
 
 `docs/Gemfile:12-17` defines Jekyll and its plugins. CI builds the site with
-`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:268`): source and
+`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:289`): source and
 built-site link checks around a frozen Jekyll 4 build, the lock-unchanged
 check, and a `docs/_site/build-manifest.json` recording the renderer versions,
 the lock digest and a site digest. GitHub Pages publishes the artifact that

@@ -32,7 +32,7 @@ void attributes_iterator(attribute_metadata_t *attribute, uint32_t proto_id, voi
 {
     nb_attr++;
     const char *proto_name = get_protocol_name_by_id(proto_id);
-    printf("%i,%s,%i,%s\n", proto_id, proto_name, attribute->id, attribute->alias);
+    printf("%u,%s,%i,%s\n", proto_id, proto_name, attribute->id, attribute->alias);
 }
 
 /**

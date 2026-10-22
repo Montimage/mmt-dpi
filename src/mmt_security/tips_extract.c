@@ -144,7 +144,7 @@ char *get_my_data(void *data1, short size, long type) {
             break;
         case MMT_DATA_TIMEVAL:
             t1 = *(struct timeval *) (data1);
-            (void)snprintf(buff1, 100, "%lu.%06lu", t1.tv_sec, (long) t1.tv_usec);
+            (void)snprintf(buff1, 100, "%lu.%06lu", t1.tv_sec, (unsigned long) t1.tv_usec);
             break;
         case MMT_DATA_IP_ADDR:
             (void)snprintf(buff1, 100, "%d.%d.%d.%d", *(uint8_t*) (data1), *(uint8_t*) (data1+1), *(uint8_t*) (data1+2), *(uint8_t*) (data1+3));

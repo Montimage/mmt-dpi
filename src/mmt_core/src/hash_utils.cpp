@@ -93,6 +93,11 @@ struct mmt_oa_slot {
     void * value;
 };
 
+// cppcheck 2.22 (issue #518): mmt_oa_table is a plain C-layout struct obtained from
+// malloc() and initialised field by field by mmt_oa_create() — it is never
+// constructed, so a constructor or default member initialisers would never
+// run. uninitMemberVarNoCtor does not apply to it.
+// cppcheck-suppress-begin uninitMemberVarNoCtor
 struct mmt_oa_table {
     mmt_oa_slot *          slots;
     size_t                 cap;        // power of two
@@ -129,6 +134,7 @@ struct mmt_oa_table {
         return !comp(a, b) && !comp(b, a);
     }
 };
+// cppcheck-suppress-end uninitMemberVarNoCtor
 
 static const size_t MMT_OA_INITIAL_CAP = 16; // power of two
 
@@ -345,6 +351,11 @@ struct mmt_int_slot {
     uint8_t  state; // mmt_int_state
 };
 
+// cppcheck 2.22 (issue #518): mmt_int_map is a plain C-layout struct obtained from
+// malloc() and initialised field by field by init_int_map_space() — it is never
+// constructed, so a constructor or default member initialisers would never
+// run. uninitMemberVarNoCtor does not apply to it.
+// cppcheck-suppress-begin uninitMemberVarNoCtor
 struct mmt_int_map {
     mmt_int_slot *              slots;
     size_t                      cap;
@@ -356,6 +367,7 @@ struct mmt_int_map {
         return !comp(a, b) && !comp(b, a);
     }
 };
+// cppcheck-suppress-end uninitMemberVarNoCtor
 
 static void mmt_int_alloc_slots(mmt_int_map * m, size_t cap) {
     m->slots = (mmt_int_slot *) calloc(cap, sizeof(mmt_int_slot));
@@ -1052,7 +1064,7 @@ extern "C" void * init_timeout_milestones_index(void) {
         r->slots = (mmt_timeout_slot *) calloc(MMT_RING_INITIAL_CAP, sizeof(mmt_timeout_slot));
         if (r->slots == NULL) { free(r); return NULL; }
         r->cap = MMT_RING_INITIAL_CAP;
-        return reinterpret_cast<void *>(r);
+        return r;
     } catch (...) {
         return NULL;
     }

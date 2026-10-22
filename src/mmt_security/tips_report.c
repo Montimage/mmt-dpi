@@ -214,7 +214,7 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
         if (utime != NULL) tvp = *(struct timeval *) utime;
     }
 
-    snprintf(json_buff, json_cap, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (long) tvp.tv_usec);
+    snprintf(json_buff, json_cap, "\"timestamp\":%lu.%06lu", tvp.tv_sec, (unsigned long) tvp.tv_usec);
 
     int having_ip_src = 0, having_ip_dst = 0, having_mac_src = 0, having_mac_dst = 0;
     const char *proto_name, *att_name;
@@ -293,7 +293,7 @@ void store_history( verify_ctx_t *ctx, enum_operation_type context, rule *curr_r
                 case MMT_DATA_TIMEVAL: {
                     struct timeval tv = *(struct timeval *) (data1);
                     snprintf(json_buff1, json_cap1, "{\"%s.%s\":\"%lu.%06lu\"},", proto_name,
-                            att_name, tv.tv_sec, (long) tv.tv_usec);
+                            att_name, tv.tv_sec, (unsigned long) tv.tv_usec);
                     json_grow_append(&json_buff, &json_cap, json_buff1);
                     break;
                 }

@@ -150,6 +150,9 @@ get_local_conv_proto(ipacket_t * ipacket) {
     if ((src_conv_proto | dest_conv_proto) /* Both are not null */ &&
             (((src_conv_proto ^ dest_conv_proto) == 0 /* they are equal */)
              || ((src_conv_proto ^ dest_conv_proto) == (src_conv_proto | dest_conv_proto) /* one is zero the other is not */))) {
+        // The OR is the result, not a truth value: it is the shared proto, or
+        // the non-zero one (identicalInnerCondition, cppcheck 2.22, #518).
+        // cppcheck-suppress identicalInnerCondition
         return src_conv_proto | dest_conv_proto; /*If equal Oring them is equal to them, if one is zero Oring them is equal to the non zero */
     }
     return PROTO_UNKNOWN;

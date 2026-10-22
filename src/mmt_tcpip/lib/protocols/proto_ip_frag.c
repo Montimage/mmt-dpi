@@ -46,7 +46,6 @@ void ip_frag_free( ip_frag_t *frag )
    frag->frags.le_prev = NULL;
    ip_frag_cleanup( frag );
    mmt_free( frag );
-   frag=NULL;
 }
 
 /**

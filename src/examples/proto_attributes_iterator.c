@@ -23,7 +23,7 @@ void attributes_iterator(attribute_metadata_t * attribute, uint32_t proto_id, vo
 }
 
 void protocols_iterator(uint32_t proto_id, void * args) {
-	printf("Protocol id %i --- Name %s\n", proto_id, get_protocol_name_by_id(proto_id));
+	printf("Protocol id %u --- Name %s\n", proto_id, get_protocol_name_by_id(proto_id));
 	iterate_through_protocol_attributes(proto_id, attributes_iterator, NULL);
 }
 

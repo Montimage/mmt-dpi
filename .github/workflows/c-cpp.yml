@@ -170,15 +170,36 @@ jobs:
     # on the committed findings ratchet (tools/ci/cppcheck-ratchet.txt) and
     # publishes its findings as a report artifact. The generated ASN.1 tree
     # (src/mmt_mobile/asn1c) is excluded from the scan.
+    #
+    # The ratchet is only comparable under one cppcheck release (issue #345),
+    # so the job runs in the digest-pinned ubuntu:24.04 container and builds
+    # that release (CPPCHECK_PINNED_VERSION, tools/ci/run-cppcheck.sh) from
+    # its checksum-pinned source tarball with tools/ci/install-cppcheck.sh
+    # (issue #518): neither a runner-image refresh nor an apt archive update
+    # can move the analyser under the baseline. shellcheck comes from the
+    # container's apt, the same 0.9 release the ubuntu-24.04 runner ships.
     runs-on: ubuntu-24.04
-    # cppcheck scans the whole tree single-threaded; measured at ~65-90 min on
-    # a hosted runner.
+    # cppcheck scans the whole tree; measured at ~65-90 min on a hosted runner.
     timeout-minutes: 120
+    container:
+      image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254"
     steps:
+    # git first, so actions/checkout makes a real clone (shellcheck lists the
+    # tracked scripts with git ls-files); retried as in toolchain-floor.
+    - name: Install git, shellcheck and the cppcheck build prerequisites
+      run: |
+        echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries
+        for i in 1 2 3; do apt-get update -qq && break; [ "$i" = 3 ] && exit 1; sleep 30; done
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+          git ca-certificates curl shellcheck g++ make python3
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - uses: ./.github/actions/bootstrap-deps
-      with:
-        extra-packages: shellcheck cppcheck
+    # The checkout is owned by the runner UID but the container runs as
+    # root: without this, git ls-files dies on "dubious ownership" and
+    # shellcheck would be handed no files.
+    - name: Mark the checkout as a safe git directory
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+    - name: Build the pinned cppcheck release from source
+      run: bash tools/ci/install-cppcheck.sh
     - name: shellcheck (all tracked shell scripts, blocking)
       run: shellcheck $(git ls-files '*.sh')
     - name: cppcheck (error-severity gate + findings ratchet)

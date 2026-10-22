@@ -253,13 +253,14 @@ bool str_compare(char * str1, char * str2){
     int len = 0;
     if(str2 == NULL && str1 == NULL) return NULL;
 
-    if(str1 == NULL && str2 != NULL) {
+    // Both NULL returned above, so each branch below knows which is set.
+    if(str1 == NULL) {
         len = strlen(str2);
         comb = (char *)malloc(len + 1);
         if(comb == NULL) return NULL;
         memcpy(comb,str2,len);
         comb[len]='\0';
-    }else if(str2 == NULL && str1 != NULL){
+    }else if(str2 == NULL){
         len = strlen(str1);
         comb = (char *)malloc(len + 1);
         if (comb == NULL)

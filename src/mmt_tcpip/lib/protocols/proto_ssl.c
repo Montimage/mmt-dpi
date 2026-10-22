@@ -317,7 +317,6 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
             return PROTO_UNKNOWN;
         }
         if (packet->payload[offset + nb_offset] & 0x80) {
-            if (offset + nb_offset >= packet->payload_packet_len) return PROTO_UNKNOWN;
             nb_offset += (packet->payload[offset + nb_offset] & 0xF) + 1;
             if (offset + nb_offset > packet->payload_packet_len) return PROTO_UNKNOWN;
         } else {
@@ -335,7 +334,6 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
             return PROTO_UNKNOWN;
         }
         if (packet->payload[offset + nb_offset] & 0x80) {
-            if (offset + nb_offset >= packet->payload_packet_len) return PROTO_UNKNOWN;
             nb_offset += (packet->payload[offset + nb_offset] & 0xF) + 1;
             if (offset + nb_offset > packet->payload_packet_len) return PROTO_UNKNOWN;
         } else {
@@ -363,7 +361,6 @@ int getServerNameFromServerHello(ipacket_t * ipacket, char *buffer, int buffer_l
             //printf("Test 1\n");
             if (offset + nb_offset >= packet->payload_packet_len) return PROTO_UNKNOWN;
             if (packet->payload[offset + nb_offset] & 0x80) {
-                if (offset + nb_offset >= packet->payload_packet_len) return PROTO_UNKNOWN;
                 nb_offset += (packet->payload[offset + nb_offset] & 0xF) + 1;
                 if (offset + nb_offset > packet->payload_packet_len) return PROTO_UNKNOWN;
                 if (nb_offset == 3) {

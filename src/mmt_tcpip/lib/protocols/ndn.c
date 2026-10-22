@@ -436,7 +436,6 @@ void ndn_free_session(ndn_session_t *ndn_session){
     // ndn_free_session(ndn_session->next);
 
     mmt_free(ndn_session);
-    ndn_session = NULL;
 }
 
 

@@ -191,9 +191,9 @@ tests/run_all_tests.sh:359-375	^# --- phase0 harnesses	^fi$	--with-harnesses del
 sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
 rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
 rules/arch-linux.mk:20-21	^CFLAGS \+= -std=gnu17$	^CFLAGS \+= \$\(MMT_EXTRA_CFLAGS\)$	the GCC toolchain pins gnu17, MMT_EXTRA_CFLAGS comes after
-.github/workflows/c-cpp.yml:250-255	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
+.github/workflows/c-cpp.yml:271-276	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
 docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
-.github/workflows/c-cpp.yml:268	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
+.github/workflows/c-cpp.yml:289	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
 tests/fault_injection/run_tests.sh:110-112	^make .* clean	^make .* install	fault injection builds and installs SDK
 tests/fault_injection/run_tests.sh:97-102	^if .*SDK_BUILD_PROFILE	^fi	sanitizers skip fault injection engine leg	exit 0
