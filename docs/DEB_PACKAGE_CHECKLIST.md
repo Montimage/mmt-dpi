@@ -23,7 +23,7 @@ title: ".deb Package Build & apt Repository Setup Checklist"
 - Version: `1.7.10-3ab25616`
 - Architecture: `aarch64` (dynamically detected from `uname -m`)
 - Size: ~1.5 MB
-- Libraries: `libmmt_core.so`, `libmmt_tcpip.so`, `libmmt_tmobile.so`, `libmmt_business_app.so`, `libmmt_tdicom.so` — plus `libmmt_fuzz.so` and `libmmt_security.so` when built with `ENABLESEC=1` (as the release packages now are, issue #219)
+- Libraries: `libmmt_core.so`, `libmmt_tcpip.so`, `libmmt_tmobile.so`, `libmmt_business_app.so`, `libmmt_tdicom.so` — `libmmt_fuzz.so` and `libmmt_security.so` are built with `ENABLESEC=1` (as the release packages are, issue #219) and ship in the separate `mmt-dpi-security` package (issue #497)
 
 ## Issues Fixed
 

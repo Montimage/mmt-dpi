@@ -12,6 +12,12 @@ Drives the REAL helper:
     as packages, each CONTAINed by the root, every SPDXID valid; the
     workflow's exact-name query finds llhttp and asn1c; a second run is a
     no-op (idempotent); a non-SPDX document is exit 2
+  - `notices --check` passes on the committed tree (issue #497) and fails
+    (exit 1) on a copy of it with a hand-edited THIRD-PARTY-NOTICES, a
+    drifted PKG_LICENSE / SEC_PKG_LICENSE in sdk/Makefile, a missing
+    LICENSES/<id>.txt, a component inside the engine sources, or a
+    src/mmt_security/*.c without its GPL-3.0-or-later notice; `notices`
+    regenerates the committed file byte for byte
 
 Usage: python3 tools/ci/tests/test-vendored-components.py
 Exit: 0 = all checks passed, 1 = at least one failed.
@@ -91,6 +97,90 @@ def check_fixture(root, manifest, mutate, msg):
     write_manifest(root, manifest)
     with open(vendor_paths, "w", encoding="utf-8") as fh:
         fh.write(saved)
+
+
+def notices_tree(tmp):
+    """A copy of every file `notices` reads, under tmp/notices."""
+    root = os.path.join(tmp, "notices")
+    files = [MANIFEST, "LICENSE", "THIRD-PARTY-NOTICES", "sdk/Makefile"]
+    files += [os.path.join("LICENSES", f)
+              for f in os.listdir(os.path.join(ROOT, "LICENSES"))]
+    files += [os.path.join("src", "mmt_security", f)
+              for f in os.listdir(os.path.join(ROOT, "src", "mmt_security"))
+              if f.endswith(".c")]
+    for rel in files:
+        os.makedirs(os.path.dirname(os.path.join(root, rel)), exist_ok=True)
+        shutil.copy2(os.path.join(ROOT, rel), os.path.join(root, rel))
+    return root
+
+
+def notices_fixture(tmp, mutate, msg):
+    root = notices_tree(tmp)
+    try:
+        mutate(root)
+        code, out = run("--root", root, "notices", "--check")
+        expect(code == 1, f"notices --check fails: {msg}", out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def edit(path, old, new):
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    if old not in text:
+        raise AssertionError(f"{path}: fixture anchor {old!r} not found")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text.replace(old, new, 1))
+
+
+def notices_selftest():
+    code, out = run("notices", "--check")
+    expect(code == 0, "notices --check passes on the committed tree", out)
+
+    tmp = tempfile.mkdtemp(prefix="notices-test-")
+    try:
+        root = notices_tree(tmp)
+        os.remove(os.path.join(root, "THIRD-PARTY-NOTICES"))
+        code, out = run("--root", root, "notices")
+        with open(os.path.join(root, "THIRD-PARTY-NOTICES"), "rb") as a, \
+                open(os.path.join(ROOT, "THIRD-PARTY-NOTICES"), "rb") as b:
+            same = a.read() == b.read()
+        expect(code == 0 and same,
+               "notices regenerates the committed THIRD-PARTY-NOTICES", out)
+        shutil.rmtree(root, ignore_errors=True)
+
+        notices_fixture(tmp, lambda r: edit(
+            os.path.join(r, "THIRD-PARTY-NOTICES"), "MIT License", "MIT Licence"),
+            "THIRD-PARTY-NOTICES is hand-edited")
+        notices_fixture(tmp, lambda r: edit(
+            os.path.join(r, "sdk", "Makefile"),
+            "PKG_LICENSE := Apache-2.0 AND BSD-2-Clause AND MIT",
+            "PKG_LICENSE := Apache-2.0"),
+            "PKG_LICENSE drifts from the computed expression")
+        notices_fixture(tmp, lambda r: edit(
+            os.path.join(r, "sdk", "Makefile"),
+            "SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0",
+            "SEC_PKG_LICENSE := Apache-2.0"),
+            "SEC_PKG_LICENSE drifts")
+        notices_fixture(tmp, lambda r: os.remove(
+            os.path.join(r, "LICENSES", "MIT.txt")),
+            "a component licence has no LICENSES text")
+
+        def engine_component(r):
+            path = os.path.join(r, MANIFEST)
+            with open(path, encoding="utf-8") as fh:
+                data = json.load(fh)
+            data["components"][0]["paths"].append("src/mmt_security/tips.c")
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+        notices_fixture(tmp, engine_component,
+                        "a component lies in the engine sources")
+        notices_fixture(tmp, lambda r: edit(
+            os.path.join(r, "src", "mmt_security", "tips.c"),
+            "either version 3 of the License", "version 2 of the License"),
+            "an engine source lacks its GPL-3.0-or-later notice")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def main():
@@ -184,6 +274,8 @@ def main():
         expect(code == 2, "sbom exits 2 on a non-SPDX document", out)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+    notices_selftest()
 
     if failures:
         print(f"✗ {failures} vendored-components check(s) failed")

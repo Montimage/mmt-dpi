@@ -33,6 +33,10 @@ make deb
 sudo dpkg -i mmt-dpi_*.deb
 ```
 
+An `ENABLESEC=1` build also produces `mmt-dpi-security_*.deb`, which holds the
+security and fuzz engines (GPL-3.0-or-later, issue #497). Install it alongside
+`mmt-dpi`; it requires the same version.
+
 ### Uninstall
 
 ```bash
@@ -53,7 +57,7 @@ After installation, the following files are placed:
 └── examples/        # Example sources (rules/common.mk:8)
 ```
 
-The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:126,290`): a root `make install` writes it whatever the prefix (opt out with `LDCONF=0`), and `make uninstall` removes it — see [Agent Environment Notes §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
+The library path is configured via `/etc/ld.so.conf.d/mmt-dpi.conf` (`sdk/Makefile:134,332`): a root `make install` writes it whatever the prefix (opt out with `LDCONF=0`), and `make uninstall` removes it — see [Agent Environment Notes §4](./AGENT_ENVIRONMENT.md#4-mmt_base-install-prefix-behavior).
 
 ## Linking Against MMT-DPI
 

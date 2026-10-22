@@ -71,10 +71,12 @@ export SOURCE_DATE_EPOCH
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-# One full build cycle: clean tree -> compile SDK -> assemble package ->
-# stash the artifact. `make clean` between cycles removes objects AND the
-# previous package, so the second build starts from the same state a fresh
-# checkout would.
+# One full build cycle: clean tree -> compile SDK -> assemble packages ->
+# stash the artifacts in <dest>/. `make clean` between cycles removes objects
+# AND the previous packages, so the second build starts from the same state a
+# fresh checkout would. An ENABLESEC=1 build yields two packages, mmt-dpi and
+# mmt-dpi-security (issue #497); each must be byte-identical across builds.
+EXPECTED_ARTIFACTS=2
 build_once() {
   local dest="$1"
   make -C sdk clean >/dev/null 2>&1 || true
@@ -87,27 +89,33 @@ build_once() {
     artifacts+=("$f")
   done
   shopt -u nullglob
-  if [ "${#artifacts[@]}" -ne 1 ]; then
-    echo "✗ expected exactly 1 .$PKG_TYPE under sdk/, found ${#artifacts[@]}" >&2
+  if [ "${#artifacts[@]}" -ne "$EXPECTED_ARTIFACTS" ]; then
+    echo "✗ expected exactly $EXPECTED_ARTIFACTS .$PKG_TYPE under sdk/, found ${#artifacts[@]}" >&2
     exit 1
   fi
-  cp "${artifacts[0]}" "$dest"
+  mkdir -p "$dest"
+  cp "${artifacts[@]}" "$dest/"
 }
 
 log "Build 1/2 ($PKG_TYPE on $DISTRO_ID, GIT_VERSION=$GIT_VERSION, SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH)"
-build_once "$WORK/first.$PKG_TYPE"
+build_once "$WORK/first"
 
 log "Build 2/2 (same commit, same inputs)"
-build_once "$WORK/second.$PKG_TYPE"
+build_once "$WORK/second"
 
 log "Comparing sha256"
-sha256sum "$WORK/first.$PKG_TYPE" "$WORK/second.$PKG_TYPE"
-sum1="$(sha256sum "$WORK/first.$PKG_TYPE" | awk '{print $1}')"
-sum2="$(sha256sum "$WORK/second.$PKG_TYPE" | awk '{print $1}')"
-if [ "$sum1" != "$sum2" ]; then
+(cd "$WORK/first" && sha256sum -- *) | LC_ALL=C sort -k2 > "$WORK/first.sums"
+(cd "$WORK/second" && sha256sum -- *) | LC_ALL=C sort -k2 > "$WORK/second.sums"
+cat "$WORK/first.sums"
+if ! diff -u "$WORK/first.sums" "$WORK/second.sums" >&2; then
   echo "✗ NOT reproducible: two builds of the same commit differ" >&2
-  echo "  first differing bytes (cmp -l, octal, first 20):" >&2
-  cmp -l "$WORK/first.$PKG_TYPE" "$WORK/second.$PKG_TYPE" 2>/dev/null | head -20 >&2 || true
+  for f in "$WORK"/first/*; do
+    name="$(basename "$f")"
+    if ! cmp -s "$f" "$WORK/second/$name"; then
+      echo "  $name — first differing bytes (cmp -l, octal, first 20):" >&2
+      cmp -l "$f" "$WORK/second/$name" 2>/dev/null | head -20 >&2 || true
+    fi
+  done
   exit 1
 fi
-log "OK — byte-identical .$PKG_TYPE across two builds ($sum1)"
+log "OK — byte-identical .$PKG_TYPE packages across two builds ($(wc -l < "$WORK/first.sums") packages)"

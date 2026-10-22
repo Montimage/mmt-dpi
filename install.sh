@@ -516,6 +516,7 @@ will_register_loader() {
 # loses only its libmmt_* libraries and plugins; its include and examples
 # trees are kept with a warning, since nothing records which files are ours.
 MANIFEST_NAME=".mmt-dpi-manifest"
+DOC_DIR="dpi/share/doc/mmt-dpi"
 MMT_PLUGIN_SET="libmmt_tcpip libmmt_tmobile libmmt_tdicom libmmt_business_app"
 
 uninstall_mmt() {
@@ -716,15 +717,31 @@ install_mmt() {
         $SUDO make ARCH="linux" MMT_BASE="$MMT_BASE" LDCONF="$LDCONF" install
     fi
 
-    # The pinned release tag's Makefile writes no install manifest: record
-    # what it copied from this build so --uninstall can remove exactly that.
+    # The pinned release tag's Makefile writes no install manifest and
+    # installs no licence files: lay down the clone's LICENSE (and
+    # THIRD-PARTY-NOTICES once the tag carries it, issue #497) where
+    # `make install` puts them, then record what was copied from this build
+    # so --uninstall can remove exactly that.
     if [ ! -f "$MMT_BASE/$MANIFEST_NAME" ]; then
         local priv=""
         [ "$ELEVATED" = "1" ] && priv="$SUDO"
+        install_licence_files "$BUILD_DIR/mmt-dpi" "$priv"
         write_manifest "$BUILD_DIR/mmt-dpi/sdk" "$priv"
     fi
 
     success "Installation completed"
+}
+
+# install_licence_files <checkout> [priv] — the licence files `make install`
+# lays down (issue #497), for a pinned tag whose Makefile predates them.
+install_licence_files() {
+    local src="$1" priv="${2:-}" f
+    $priv install -d -m 0755 "$MMT_BASE/$DOC_DIR"
+    for f in LICENSE THIRD-PARTY-NOTICES; do
+        if [ -f "$src/$f" ]; then
+            $priv install -m 0644 "$src/$f" "$MMT_BASE/$DOC_DIR/$f"
+        fi
+    done
 }
 
 # write_manifest <sdk dir> [priv] — the same list `make install` records in
@@ -749,6 +766,10 @@ write_manifest() {
             for f in $MMT_PLUGIN_SET; do echo "plugins/$f.so"; done
             (cd "$sdk/include" && find . -mindepth 1) | sed 's|^\./|dpi/include/|'
             (cd "$sdk/examples" && find . -mindepth 1) | sed 's|^\./|examples/|'
+            if [ -d "$MMT_BASE/$DOC_DIR" ]; then
+                printf '%s\n' dpi/share dpi/share/doc "$DOC_DIR"
+                (cd "$MMT_BASE/$DOC_DIR" && find . -mindepth 1) | sed "s|^\./|$DOC_DIR/|"
+            fi
         } | LC_ALL=C sort -u
     } | $priv tee "$tmp" >/dev/null
     $priv chmod 0644 "$tmp"

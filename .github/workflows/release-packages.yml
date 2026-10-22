@@ -109,7 +109,9 @@ jobs:
               tools/ci/check-release-gates.sh|tools/ci/publish-release.sh|\
               tools/ci/check-hardening-flags.sh|\
               tools/ci/release-alert.sh|tools/ci/base-images.txt|\
-              tools/ci/vendored-components.*|\
+              tools/ci/vendored-components.*|tools/ci/check-package-split.sh|\
+              tools/ci/check-package-deps.sh|tools/ci/shlib-deps.sh|\
+              LICENSE|LICENSES/*|THIRD-PARTY-NOTICES|dist/ZIP/*|\
               .github/workflows/release-packages.yml)
                 echo "packaging path changed: $f"
                 packaging=true ;;
@@ -176,18 +178,32 @@ jobs:
           # host. Hand it back to the runner user — the SBOM step below must
           # create <pkg>.sbom.json inside dist/packages (CI verified EACCES).
           sudo chown -R "$(id -u):$(id -g)" dist
-          # build-package.sh produces exactly one package per matrix cell —
-          # fail loudly if that ever changes so the SBOM mapping stays 1:1.
+          # build-package.sh produces exactly two packages per matrix cell —
+          # mmt-dpi and mmt-dpi-security (issue #497) — fail loudly if that
+          # ever changes so the SBOM mapping stays 1:1.
           mapfile -t pkgs < <(find dist/packages -maxdepth 1 -type f \
             \( -name '*.deb' -o -name '*.rpm' \) | LC_ALL=C sort)
-          if [ "${#pkgs[@]}" -ne 1 ]; then
-            echo "expected exactly 1 package in dist/packages," \
+          if [ "${#pkgs[@]}" -ne 2 ]; then
+            echo "expected exactly 2 packages in dist/packages," \
               "found ${#pkgs[@]}" >&2
             exit 1
           fi
+          main="" sec=""
+          for p in "${pkgs[@]}"; do
+            case "$(basename "$p")" in
+              mmt-dpi-security_*) sec="$p" ;;
+              mmt-dpi_*) main="$p" ;;
+            esac
+          done
+          if [ -z "$main" ] || [ -z "$sec" ]; then
+            echo "expected one mmt-dpi_* and one mmt-dpi-security_* package" >&2
+            exit 1
+          fi
           {
-            echo "file=${pkgs[0]}"
-            echo "sbom=${pkgs[0]}.sbom.json"
+            echo "file=${main}"
+            echo "sbom=${main}.sbom.json"
+            echo "sec_file=${sec}"
+            echo "sec_sbom=${sec}.sbom.json"
           } >> "$GITHUB_OUTPUT"
 
       # Per-package SBOM (F-SEC-015): scanned from the package file itself so
@@ -206,17 +222,30 @@ jobs:
           upload-artifact: false
           upload-release-assets: false
 
+      - name: Generate SBOM for the security package
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          file: ${{ steps.pkg.outputs.sec_file }}
+          format: spdx-json
+          output-file: ${{ steps.pkg.outputs.sec_sbom }}
+          artifact-name: sbom-security-${{ matrix.distro.name }}-${{ matrix.arch }}
+          upload-artifact: false
+          upload-release-assets: false
+
       # Vendored components (issue #496, F-DEP-305): syft sees the package as
       # one opaque file, so the SBOM would list only the package itself. Add
       # the third-party sources compiled into it — llhttp, the asn1c runtime —
       # from the tracked manifest tools/ci/vendored-components.json, before
       # the upload below and before the release job hashes and attests it.
+      # Only the mmt-dpi SBOM gains them: no vendored code is compiled into
+      # mmt-dpi-security (`notices --check` fails if one ever is, issue #497).
       - name: Add vendored components to the SBOM
         env:
           SBOM: ${{ steps.pkg.outputs.sbom }}
         run: |
           set -euo pipefail
           python3 tools/ci/vendored-components.py check
+          python3 tools/ci/vendored-components.py notices --check
           python3 tools/ci/vendored-components.py sbom "$SBOM"
           jq -e --slurpfile m tools/ci/vendored-components.json \
             '[.packages[].name] as $have

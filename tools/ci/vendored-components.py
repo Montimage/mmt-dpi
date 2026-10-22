@@ -17,8 +17,20 @@ release SBOM.
                    document FILE (in place), each CONTAINed by the element(s)
                    the document DESCRIBES; idempotent. Fails when a manifest
                    name is then missing from [.packages[].name].
+  notices          write THIRD-PARTY-NOTICES (issue #497): the SPDX licence
+                   expression of each package, then every component with its
+                   copyright line and the full text of its licence from
+                   LICENSES/<id>.txt
+  notices --check  fail when the committed THIRD-PARTY-NOTICES differs from
+                   that rendering, when sdk/Makefile's PKG_LICENSE or
+                   SEC_PKG_LICENSE differs from the expression computed here,
+                   when a component licence has no LICENSES/<id>.txt, when a
+                   component lies in the engine sources (src/mmt_security,
+                   src/mmt_fuzz_engine) the mmt-dpi-security package ships,
+                   or when a src/mmt_security/*.c lacks its GPL-3.0-or-later
+                   notice
 
-Options (both commands): --root DIR (repository root, default: this
+Options (every command): --root DIR (repository root, default: this
 checkout), --manifest FILE, --vendor-paths FILE (paths relative to --root).
 
 Exit codes: 0 = condition holds, 1 = violation, 2 = helper broken or bad
@@ -42,6 +54,27 @@ SPDX_ID_RE = re.compile(r"^SPDXRef-[A-Za-z0-9.-]+$")
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 LICENSE_RE = re.compile(r"^(LicenseRef-)?[A-Za-z0-9.+-]+$")
 CHECK_FIELDS = ("version", "pin")
+
+# Package licences (issue #497). The facts below come from the tree, not from
+# a guess; `notices --check` re-verifies the ones it can:
+#   - Montimage's own code is Apache-2.0: LICENSE, README.md "License".
+#   - mmt-dpi = that licence AND every vendored component's licence (all of
+#     them compile into the protocol libraries, none into the engines).
+#   - mmt-dpi-security ships libmmt_security, whose sources each carry a
+#     GPL-3.0-or-later notice, and libmmt_fuzz, whose sources carry no notice
+#     at all, so the repository LICENSE (Apache-2.0) is the only evidence.
+OWN_LICENSE = "Apache-2.0"
+SECURITY_LICENSE = "GPL-3.0-or-later AND Apache-2.0"
+ENGINE_SOURCES = ("src/mmt_security/", "src/mmt_fuzz_engine/")
+GPL_SOURCES = "src/mmt_security"
+GPL_NOTICE_RE = re.compile(
+    r"GNU General Public License as published by\s+the Free Software "
+    r"Foundation, either version 3 of the License, or\s+\(at your option\) "
+    r"any later version", re.I)
+NOTICES = "THIRD-PARTY-NOTICES"
+LICENSE_TEXTS = "LICENSES"
+MAKEFILE = "sdk/Makefile"
+MAKEFILE_VARS = {"PKG_LICENSE": "mmt-dpi", "SEC_PKG_LICENSE": "mmt-dpi-security"}
 
 
 class Broken(Exception):
@@ -235,6 +268,157 @@ def cmd_sbom(root, manifest, sbom_path):
     return 0
 
 
+def package_licenses(components):
+    """The SPDX expression of each package, keyed by package name."""
+    extra = sorted({c["license"] for c in components} - {OWN_LICENSE})
+    return {"mmt-dpi": " AND ".join([OWN_LICENSE] + extra),
+            "mmt-dpi-security": SECURITY_LICENSE}
+
+
+def license_text(root, spdx):
+    """The full text of an SPDX licence, from LICENSES/<id>.txt."""
+    path = os.path.join(root, LICENSE_TEXTS, f"{spdx}.txt")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return fh.read().rstrip("\n")
+    except OSError:
+        return None
+
+
+def render_notices(root, components):
+    """THIRD-PARTY-NOTICES as text (deterministic: manifest order)."""
+    lic = package_licenses(components)
+    out = [
+        "THIRD-PARTY-NOTICES for MMT-DPI",
+        "",
+        "Generated from tools/ci/vendored-components.json by",
+        "`python3 tools/ci/vendored-components.py notices`; do not edit by hand.",
+        "",
+        "Package licences (SPDX expressions)",
+        "-----------------------------------",
+        "",
+        f"mmt-dpi: {lic['mmt-dpi']}",
+        "  libmmt_core, libmmt_tcpip, libmmt_tmobile, libmmt_tdicom,",
+        "  libmmt_business_app, their headers and the examples. Montimage's",
+        f"  own code is {OWN_LICENSE} (LICENSE). The third-party code compiled",
+        "  into these libraries is listed below with its licence.",
+        "",
+        f"mmt-dpi-security: {lic['mmt-dpi-security']}",
+        "  libmmt_security: GPL-3.0-or-later, as the notice in each of its",
+        "  source files states (full text: COPYING).",
+        "  libmmt_fuzz and its headers: no per-file notice, so the repository",
+        f"  licence applies ({OWN_LICENSE}, LICENSE).",
+        "  No third-party code is compiled into this package.",
+        "",
+        "Third-party components in mmt-dpi",
+        "---------------------------------",
+    ]
+    for comp in components:
+        out += [
+            "",
+            f"{comp['name']} {comp['version']} ({comp['license']})",
+            f"  Upstream: {comp['upstream']} at {comp['pin']}",
+            f"  In-tree:  {', '.join(comp['paths'])}",
+            "",
+            comp["copyright"],
+            "",
+            license_text(root, comp["license"]) or "",
+        ]
+    out += [
+        "",
+        "Generated ASN.1 codecs",
+        "----------------------",
+        "",
+        "The S1AP and NGAP codecs under src/mmt_mobile/asn1c/s1ap and",
+        "src/mmt_mobile/asn1c/ngap, compiled into libmmt_tmobile, are asn1c",
+        "output generated from 3GPP ASN.1 modules (TS 36.413, TS 38.413; see",
+        "src/mmt_mobile/asn1c/support/README). This repository records no",
+        "licence terms for those specifications; the expressions above do not",
+        "cover them. See docs/DECISIONS.md (issue #497).",
+    ]
+    return "\n".join(out) + "\n"
+
+
+def read_makefile_vars(root):
+    try:
+        with open(os.path.join(root, MAKEFILE), encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError as exc:
+        raise Broken(f"cannot read {MAKEFILE}: {exc}") from exc
+    found = {}
+    for var in MAKEFILE_VARS:
+        m = re.search(rf"^{var}[ \t]*:=[ \t]*(.*?)[ \t]*$", text, re.M)
+        found[var] = m.group(1) if m else None
+    return found
+
+
+def cmd_notices(root, manifest, check):
+    components = load_manifest(root, manifest)
+    for comp in components:
+        if not isinstance(comp, dict) or any(not comp.get(k) for k in REQUIRED):
+            raise Broken(f"{manifest}: incomplete component; run the check command")
+    errors = []
+    for comp in components:
+        if license_text(root, comp["license"]) is None:
+            errors.append(f"{comp['name']}: no licence text "
+                          f"{LICENSE_TEXTS}/{comp['license']}.txt")
+        for rel in comp["paths"]:
+            if rel.startswith(ENGINE_SOURCES):
+                errors.append(f"{comp['name']}: {rel} is engine source — the "
+                              f"mmt-dpi-security expression does not cover it")
+    text = render_notices(root, components)
+    if not check:
+        if errors:
+            for err in errors:
+                print(f"  ✗ {err}")
+            return 1
+        path = os.path.join(root, NOTICES)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        print(f"✓ wrote {NOTICES} ({len(components)} component(s))")
+        return 0
+
+    try:
+        with open(os.path.join(root, NOTICES), encoding="utf-8") as fh:
+            committed = fh.read()
+    except OSError:
+        committed = None
+    if committed is None:
+        errors.append(f"{NOTICES} is missing — run the notices command")
+    elif committed != text:
+        errors.append(f"{NOTICES} is stale — run the notices command and "
+                      "commit the result")
+
+    want = package_licenses(components)
+    for var, value in read_makefile_vars(root).items():
+        pkg = MAKEFILE_VARS[var]
+        if value != want[pkg]:
+            errors.append(f"{MAKEFILE}: {var} is {value!r}, the {pkg} "
+                          f"expression is {want[pkg]!r}")
+
+    sources = sorted(f for f in os.listdir(os.path.join(root, GPL_SOURCES))
+                     if f.endswith(".c")) \
+        if os.path.isdir(os.path.join(root, GPL_SOURCES)) else []
+    if not sources:
+        errors.append(f"{GPL_SOURCES}: no sources — nothing backs the "
+                      "GPL-3.0-or-later term")
+    for name in sources:
+        with open(os.path.join(root, GPL_SOURCES, name), encoding="utf-8",
+                  errors="replace") as fh:
+            if not GPL_NOTICE_RE.search(fh.read()):
+                errors.append(f"{GPL_SOURCES}/{name}: no GPL-3.0-or-later "
+                              f"notice — revisit {SECURITY_LICENSE!r}")
+
+    for err in errors:
+        print(f"  ✗ {err}")
+    if errors:
+        print(f"✗ {len(errors)} licence-notice violation(s)", file=sys.stderr)
+        return 1
+    print(f"✓ {NOTICES} is current; mmt-dpi: {want['mmt-dpi']}; "
+          f"mmt-dpi-security: {want['mmt-dpi-security']}")
+    return 0
+
+
 def main(argv):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--root", default=ROOT)
@@ -244,6 +428,8 @@ def main(argv):
     sub.add_parser("check")
     sbom = sub.add_parser("sbom")
     sbom.add_argument("file")
+    notices = sub.add_parser("notices")
+    notices.add_argument("--check", action="store_true")
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:
@@ -251,6 +437,8 @@ def main(argv):
     try:
         if args.command == "check":
             return cmd_check(args.root, args.manifest, args.vendor_paths)
+        if args.command == "notices":
+            return cmd_notices(args.root, args.manifest, args.check)
         return cmd_sbom(args.root, args.manifest, args.file)
     except Broken as exc:
         print(f"✗ {exc}", file=sys.stderr)

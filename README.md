@@ -87,6 +87,16 @@ sudo apt install ./mmt-dpi_*_ubuntu-24.04_x86_64.deb
 sudo dnf install ./mmt-dpi_*_rocky-9_x86_64.rpm
 ```
 
+Each distribution gets two packages. `mmt-dpi` is the SDK. The optional
+security and fuzz engines (`libmmt_security`, `libmmt_fuzz`) are in
+`mmt-dpi-security`, because their licence differs. It requires the same
+`mmt-dpi` version, so install it next to that package only when you need the
+engines, e.g. `sudo apt install ./mmt-dpi_*.deb ./mmt-dpi-security_*.deb`.
+Each package installs `LICENSE` and `THIRD-PARTY-NOTICES` under
+`/opt/mmt/dpi/share/doc/<package>/`, and the security package adds the GPL
+text as `COPYING`. The `.rpm` `License:` field holds the SPDX expression (see
+[License](#license)).
+
 Packages are produced by the `Build & release packages` workflow
 (`.github/workflows/release-packages.yml`). Builds are reproducible: two
 builds of the same commit in the same release container produce
@@ -380,7 +390,23 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## License
 
-This project is licensed under the [Apache License 2.0](LICENSE).
+Montimage's code in this project is licensed under the
+[Apache License 2.0](LICENSE). There are two exceptions:
+
+- The security rule engine (`src/mmt_security`, `libmmt_security`) is
+  GPL-3.0-or-later, as each of its source files states
+  ([full text](LICENSES/GPL-3.0-or-later.txt)).
+- Two third-party components are vendored and compiled into the protocol
+  libraries: llhttp (MIT) and the asn1c runtime (BSD-2-Clause). They are
+  listed, with their notices, in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).
+
+That file is generated from `tools/ci/vendored-components.json`. The packages
+declare these SPDX expressions:
+
+| Package | Contents | Licence |
+|---------|----------|---------|
+| `mmt-dpi` | core, protocol plugins, headers, examples | `Apache-2.0 AND BSD-2-Clause AND MIT` |
+| `mmt-dpi-security` | `libmmt_security`, `libmmt_fuzz` (ENABLESEC=1) | `GPL-3.0-or-later AND Apache-2.0` |
 
 ## About
 

@@ -14,6 +14,11 @@ Then you can install MMT-Extract by following command:
 
 `$ sudo ./install.sh`
 
+The installer copies the licence files shipped at the ZIP root — `LICENSE`,
+`THIRD-PARTY-NOTICES` and, when the security/fuzz engines are included, the GPL
+text as `COPYING` — to `/opt/mmt/dpi/share/doc/mmt-dpi/`. `THIRD-PARTY-NOTICES`
+states which licence covers which library.
+
 You also can uninstall MMT-Extract by following command:
 
 `$ sudo ./uninstall.sh`

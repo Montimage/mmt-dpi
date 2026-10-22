@@ -2,8 +2,9 @@
 #
 # build-package.sh — distro-aware native package builder for MMT-DPI.
 #
-# Compiles the SDK and produces a single installable package (.deb or .rpm)
-# for the running container's distribution, then verifies the package installs
+# Compiles the SDK and produces the installable packages (.deb or .rpm) for
+# the running container's distribution — mmt-dpi and, for the ENABLESEC=1
+# engines, mmt-dpi-security (issue #497) — then verifies they install
 # cleanly. Intended to be invoked inside a per-distro container by the
 # release-packages.yml GitHub Actions workflow, e.g.:
 #
@@ -14,7 +15,7 @@
 #   $1  DISTRO_ID   short, filesystem-safe distro tag (e.g. ubuntu-24.04, rocky-9)
 #   $2  PKG_TYPE    deb | rpm
 #
-# Output: dist/packages/<pkg>_<DISTRO_ID>_<arch>.<PKG_TYPE>
+# Output: dist/packages/{mmt-dpi,mmt-dpi-security}_<version>_<rev>_<DISTRO_ID>_<arch>.<PKG_TYPE>
 #
 set -euo pipefail
 
@@ -36,9 +37,12 @@ A real run performs, in order:
   3. clear dist/packages/, then collect the freshly built artifact there —
      the directory is bind-mounted from the host and shared across matrix
      jobs, so a stale sibling artifact must never be picked up
-  4. smoke-test: install exactly the artifact just built (tracked path, not
-     a directory glob) and check /opt/mmt/dpi/lib/libmmt_core.so exists
-  5. installed consumer (issue #374, F-CI-002):
+  4. smoke-test: install exactly the artifacts just built — mmt-dpi and
+     mmt-dpi-security (issue #497; tracked paths, not a directory glob) — and
+     check /opt/mmt/dpi/lib/libmmt_core.so exists
+  5. package split (issue #497): tools/ci/check-package-split.sh checks the
+     licence files, the engine split and each .rpm License: field
+  6. installed consumer (issue #374, F-CI-002):
      tools/ci/tests/run-installed-consumer.sh compiles a C consumer against
      only the packaged headers/libraries, runs it through the packaged
      plugins on vendored fixtures with known labels, and fails the row on a
@@ -126,6 +130,18 @@ if [ "${#artifacts[@]}" -eq 0 ]; then
   echo "✗ No .$PKG_TYPE produced under sdk/" >&2
   exit 1
 fi
+# ENABLESEC=1 must yield both packages (issue #497): the SDK and, licensed
+# apart from it, the security/fuzz engines.
+for name in mmt-dpi mmt-dpi-security; do
+  found=0
+  for f in "${artifacts[@]}"; do
+    case "$(basename "$f")" in "${name}_"*) found=1 ;; esac
+  done
+  if [ "$found" -ne 1 ]; then
+    echo "✗ no ${name}_*.$PKG_TYPE among the built packages" >&2
+    exit 1
+  fi
+done
 
 # Issue #219: the declared dependencies must match the payload — compare the
 # package's own metadata (dpkg-deb -f / rpm -qp) with the NEEDED entries
@@ -135,6 +151,19 @@ log "Verifying declared dependencies match the shipped libraries"
 for f in "${artifacts[@]}"; do
   bash tools/ci/check-package-deps.sh --verify-package "$f"
 done
+
+# Issue #497: each package carries LICENSE and THIRD-PARTY-NOTICES, the engines
+# (and only they) are in mmt-dpi-security, and each .rpm's License: is the SPDX
+# expression sdk/Makefile declares.
+log "Verifying the package split and licence files"
+main_pkg="" sec_pkg=""
+for f in "${artifacts[@]}"; do
+  case "$(basename "$f")" in
+    mmt-dpi-security_*) sec_pkg="$f" ;;
+    mmt-dpi_*) main_pkg="$f" ;;
+  esac
+done
+bash tools/ci/check-package-split.sh "$main_pkg" "$sec_pkg"
 
 # Smoke-test: the package must install on its own distro and expose the core
 # lib. Install exactly the artifact paths collected above — never a glob over

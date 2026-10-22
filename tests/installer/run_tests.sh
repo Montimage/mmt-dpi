@@ -22,6 +22,11 @@
 #     loader is registered. Loader legs use a staged LDCONF_DIR and a fake
 #     ldconfig — the suite never writes /etc (the real root leg is
 #     tools/ci/tests/run-root-install.sh, run in a container by CI).
+#   * issue #497 (F-CI-109): every install route ships LICENSE and a
+#     THIRD-PARTY-NOTICES generated from tools/ci/vendored-components.json;
+#     the rpm spec's License: fields are the SPDX expressions the notices
+#     check derives; the ENABLESEC engines (libmmt_security, libmmt_fuzz)
+#     build into their own package, mmt-dpi-security, with the GPL text.
 #
 # Usage: tests/installer/run_tests.sh
 set -euo pipefail
@@ -199,6 +204,8 @@ for bad in '//' '/.' '/opt/./mmt' '/opt/*'; do
 done
 check "install.sh writes a manifest when the pinned Makefile did not" \
     bash -c "awk '/^install_mmt/,/^}/' '${REPO_ROOT}/install.sh' | grep -q 'write_manifest'"
+check "install.sh lays down the licence files when the pinned Makefile did not" \
+    bash -c "awk '/^install_mmt/,/^}/' '${REPO_ROOT}/install.sh' | grep -q 'install_licence_files'"
 check "dnf and yum branches enable CRB first" \
     bash -c "[ \"\$(awk '/^install_deps_linux/,/^}/' '${REPO_ROOT}/install.sh' | grep -c 'enable_el_builder_repo \(dnf\|yum\)')\" -eq 2 ]"
 
@@ -212,6 +219,29 @@ check "dist/packages cleared before collecting" \
     bash -c "grep -q 'rm -rf dist/packages' '${REPO_ROOT}/tools/ci/build-package.sh'"
 check "smoke test installs tracked artifacts" \
     bash -c "grep -q 'apt-get install -y \"\${artifacts' '${REPO_ROOT}/tools/ci/build-package.sh'"
+check "build-package.sh requires both mmt-dpi and mmt-dpi-security" \
+    grep -q 'for name in mmt-dpi mmt-dpi-security; do' "${REPO_ROOT}/tools/ci/build-package.sh"
+
+# --- 4b. Licence fields (issue #497) -----------------------------------------
+# The spec used to say `License: proprietary`; each package now carries the
+# SPDX expression `vendored-components.py notices --check` derives from the
+# repository LICENSE, the vendored-component manifest and the engine sources.
+echo "--- package licence fields ---"
+MK="${REPO_ROOT}/sdk/Makefile"
+check "PKG_LICENSE is the mmt-dpi SPDX expression" \
+    grep -qx 'PKG_LICENSE := Apache-2.0 AND BSD-2-Clause AND MIT' "${MK}"
+check "SEC_PKG_LICENSE is the mmt-dpi-security SPDX expression" \
+    grep -qx 'SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0' "${MK}"
+check "rpm spec: mmt-dpi License: is PKG_LICENSE" \
+    bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -qF '\\nLicense: \$(PKG_LICENSE)'"
+check "rpm spec: the security subpackage License: is SEC_PKG_LICENSE" \
+    bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -qF '\\nLicense: \$(SEC_PKG_LICENSE)'"
+check "rpm spec: libmmt_security/libmmt_fuzz belong to the security subpackage" \
+    bash -c "sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -q '%package security' && grep -q '^MMT_PKG_LIBS  = libmmt_core ' '${MK}' && ! grep '^MMT_PKG_LIBS' '${MK}' | grep -Eq 'SECURITY|FUZZ|security|fuzz'"
+check "no hard-coded licence literal is left in the spec" \
+    bash -c "! sed -n '/^rpm:/,/^zip:/p' '${MK}' | grep -Eq 'License: *(proprietary|Apache-2.0)'"
+check "THIRD-PARTY-NOTICES and the licence expressions are current" \
+    python3 "${REPO_ROOT}/tools/ci/vendored-components.py" notices --check
 
 # --- 5. ZIP install/uninstall round trip — no residue ----------------------
 echo "--- ZIP install/uninstall round trip ---"
@@ -225,6 +255,8 @@ for l in libmmt_core libmmt_tcpip libmmt_tmobile libmmt_tdicom \
 done
 echo '/* stub header */'  > "${Z}/include/mmt_core.h"
 echo '/* stub example */' > "${Z}/examples/stub.c"
+cp "${REPO_ROOT}/LICENSE" "${REPO_ROOT}/THIRD-PARTY-NOTICES" "${Z}/"
+cp "${REPO_ROOT}/LICENSES/GPL-3.0-or-later.txt" "${Z}/COPYING"
 
 ZPREFIX="${WORK}/prefix"
 check "ZIP install into temp prefix (unprivileged)" \
@@ -233,6 +265,10 @@ check "installed lib present"  test -f "${ZPREFIX}/dpi/lib/libmmt_core.so.1.8.0"
 check "installed .so link"     test -e "${ZPREFIX}/dpi/lib/libmmt_core.so"
 check "installed plugin"       test -f "${ZPREFIX}/plugins/libmmt_tcpip.so"
 check "installed examples dir" test -f "${ZPREFIX}/examples/stub.c"
+check "ZIP install lays down LICENSE, THIRD-PARTY-NOTICES and COPYING" \
+    bash -c "for f in LICENSE THIRD-PARTY-NOTICES COPYING; do [ -f '${ZPREFIX}/dpi/share/doc/mmt-dpi/'\$f ] || exit 1; done"
+check "make zip packs the licence files" \
+    bash -c "sed -n '/^zip:/,/^clean:/p' '${REPO_ROOT}/sdk/Makefile' | grep -q 'PKG_LICENSE_FILES'"
 check "uninstaller removes examples dir (was created by installer)" \
     bash -c "cd '${Z}' && MMT_BASE='${ZPREFIX}' bash uninstall.sh >/dev/null 2>&1 && [ ! -e '${ZPREFIX}/examples' ]"
 check "no residue under prefix after round trip" \
@@ -331,12 +367,17 @@ check "loader drop-in is mode 0644" \
 check "registration runs ldconfig" test -s "${WORK}/ldconfig.calls"
 check "make install writes the install manifest" \
     bash -c "grep -qx 'dpi/lib/libmmt_core.so' '${PREFIX2}/.mmt-dpi-manifest' && grep -qx 'examples/extract_all.c' '${PREFIX2}/.mmt-dpi-manifest'"
+DOC2="${PREFIX2}/dpi/share/doc/mmt-dpi"
+check "make install lays down LICENSE and THIRD-PARTY-NOTICES (0644)" \
+    bash -c "cmp -s '${REPO_ROOT}/LICENSE' '${DOC2}/LICENSE' && cmp -s '${REPO_ROOT}/THIRD-PARTY-NOTICES' '${DOC2}/THIRD-PARTY-NOTICES' && [ \"\$(stat -c %a '${DOC2}/LICENSE' '${DOC2}/THIRD-PARTY-NOTICES' | sort -u)\" = 644 ]"
+check "the manifest records the licence files and their directories" \
+    bash -c "for e in dpi/share dpi/share/doc dpi/share/doc/mmt-dpi dpi/share/doc/mmt-dpi/LICENSE dpi/share/doc/mmt-dpi/THIRD-PARTY-NOTICES; do grep -qx \"\$e\" '${PREFIX2}/.mmt-dpi-manifest' || exit 1; done"
 mkdir -p "${PREFIX2}/probe"; : > "${PREFIX2}/probe/keep.conf"
 : > "${PREFIX2}/examples/foreign.c"; : > "${PREFIX2}/dpi/include/foreign.h"
 check "make uninstall succeeds" \
     "${SDKM[@]}" MMT_BASE="${PREFIX2}" "${STAGE[@]}" uninstall
 check "uninstall removes the SDK files" \
-    bash -c "[ ! -e '${PREFIX2}/dpi/lib' ] && [ ! -e '${PREFIX2}/plugins' ] && [ ! -e '${PREFIX2}/.mmt-dpi-manifest' ] && [ \"\$(find '${PREFIX2}/examples' '${PREFIX2}/dpi' -type f | wc -l)\" -eq 2 ]"
+    bash -c "[ ! -e '${PREFIX2}/dpi/lib' ] && [ ! -e '${PREFIX2}/plugins' ] && [ ! -e '${PREFIX2}/.mmt-dpi-manifest' ] && [ ! -e '${PREFIX2}/dpi/share' ] && [ \"\$(find '${PREFIX2}/examples' '${PREFIX2}/dpi' -type f | wc -l)\" -eq 2 ]"
 check "uninstall keeps foreign files under the prefix" test -f "${PREFIX2}/probe/keep.conf"
 check "uninstall keeps foreign files in examples/ and dpi/include/" \
     bash -c "[ -f '${PREFIX2}/examples/foreign.c' ] && [ -f '${PREFIX2}/dpi/include/foreign.h' ]"
@@ -386,6 +427,62 @@ check "symlinked manifest target untouched" \
 rm -rf "${SYMP}"
 check "dist-clean is an alias for uninstall" \
     grep -q '^dist-clean: uninstall$' "${REPO_ROOT}/sdk/Makefile"
+
+# --- 8. Package split and licence files in the built .deb (issue #497) ------
+# An ENABLESEC=1 `make deb` yields mmt-dpi and mmt-dpi-security; both list
+# LICENSE and THIRD-PARTY-NOTICES, only the latter holds the engines and the
+# GPL text. The .rpm counterpart is built by the release containers
+# (tools/ci/build-package.sh); its spec fields are asserted in section 4b.
+echo "--- package split (make deb, ENABLESEC=1) ---"
+# The sanitizer/coverage profiles are skipped: their libraries NEED runtime
+# sonames no package maps, and no profile switch happens without a clean.
+if [ -n "${SDK_BUILD_PROFILE:-}" ]; then
+    echo "  ○ SDK_BUILD_PROFILE=${SDK_BUILD_PROFILE} — package split checked in the default profile only"
+elif ! command -v dpkg-deb >/dev/null 2>&1 || ! command -v objdump >/dev/null 2>&1; then
+    echo "  ○ dpkg-deb/objdump unavailable — package split not built here"
+elif ! pkg-config --exists libxml-2.0 2>/dev/null && [ ! -f /usr/include/libxml2/libxml/parser.h ]; then
+    echo "  ○ libxml2 headers unavailable — the ENABLESEC=1 engines cannot build here"
+else
+    DEBLOG="${WORK}/deb.log"
+    rm -f "${REPO_ROOT}"/sdk/mmt-dpi_*.deb "${REPO_ROOT}"/sdk/mmt-dpi-security_*.deb
+    if "${SDKM[@]}" ENABLESEC=1 -j"${JOBS}" >"${DEBLOG}" 2>&1 \
+        && "${SDKM[@]}" ENABLESEC=1 deb >>"${DEBLOG}" 2>&1; then
+        ok "make deb (ENABLESEC=1) builds"
+    else
+        bad "make deb (ENABLESEC=1) builds"; tail -20 "${DEBLOG}" | sed 's/^/      /'
+    fi
+    shopt -s nullglob
+    MAIN_DEB=("${REPO_ROOT}"/sdk/mmt-dpi_*.deb)
+    SEC_DEB=("${REPO_ROOT}"/sdk/mmt-dpi-security_*.deb)
+    shopt -u nullglob
+    check "exactly one mmt-dpi and one mmt-dpi-security .deb" \
+        test "${#MAIN_DEB[@]}" -eq 1 -a "${#SEC_DEB[@]}" -eq 1
+    if [ "${#MAIN_DEB[@]}" -eq 1 ] && [ "${#SEC_DEB[@]}" -eq 1 ]; then
+        check "check-package-split.sh: licence files listed, engines only in mmt-dpi-security" \
+            bash "${REPO_ROOT}/tools/ci/check-package-split.sh" "${MAIN_DEB[0]}" "${SEC_DEB[0]}"
+        dpkg-deb -c "${MAIN_DEB[0]}" > "${WORK}/main.list"
+        dpkg-deb -c "${SEC_DEB[0]}" > "${WORK}/sec.list"
+        for f in LICENSE THIRD-PARTY-NOTICES; do
+            check "dpkg-deb -c mmt-dpi lists ${f}" \
+                grep -q "/dpi/share/doc/mmt-dpi/${f}\$" "${WORK}/main.list"
+            check "dpkg-deb -c mmt-dpi-security lists ${f}" \
+                grep -q "/dpi/share/doc/mmt-dpi-security/${f}\$" "${WORK}/sec.list"
+        done
+        check "mmt-dpi holds neither engine nor the fuzz headers" \
+            bash -c "! grep -Eq 'libmmt_(security|fuzz)|/include/fuzz/' '${WORK}/main.list'"
+        check "mmt-dpi-security depends on exactly its own mmt-dpi version" \
+            bash -c "dpkg-deb -f '${SEC_DEB[0]}' Depends | tr ',' '\\n' | grep -qx \" *mmt-dpi (= \$(dpkg-deb -f '${SEC_DEB[0]}' Version))\""
+        check "mmt-dpi-security replaces the files a pre-split mmt-dpi owned" \
+            bash -c "[ \"\$(dpkg-deb -f '${SEC_DEB[0]}' Replaces)\" = mmt-dpi ]"
+        check "mmt-dpi does not depend on mmt-dpi-security" \
+            bash -c "! dpkg-deb -f '${MAIN_DEB[0]}' Depends | grep -q mmt-dpi"
+        for d in "${MAIN_DEB[0]}" "${SEC_DEB[0]}"; do
+            check "check-package-deps.sh --verify-package $(basename "${d}")" \
+                bash "${REPO_ROOT}/tools/ci/check-package-deps.sh" --verify-package "${d}"
+        done
+    fi
+    rm -f "${REPO_ROOT}"/sdk/mmt-dpi_*.deb "${REPO_ROOT}"/sdk/mmt-dpi-security_*.deb
+fi
 
 echo
 if [ "${FAIL}" -gt 0 ]; then

@@ -113,6 +113,14 @@ install: --check-built --check-prefix
 
 	@ install -m 0755 $(SDKLIB)/$(LIBBAPP).so.$(VERSION) $(MMT_PLUGINS)/$(LIBBAPP).so
 	@ echo "[MMT-]> Installed "$(MMT_PLUGINS)/$(LIBBAPP).so
+# Licence files (issue #497), laid out as the two packages lay them out.
+	@ umask 022 && install -d -m 0755 $(MMT_DOC) && install -m 0644 $(PKG_LICENSE_FILES) $(MMT_DOC)/
+	@ if $(SEC_ENGINES_BUILT); then \
+		umask 022 && install -d -m 0755 $(MMT_SEC_DOC) \
+		&& install -m 0644 $(PKG_LICENSE_FILES) $(MMT_SEC_DOC)/ \
+		&& install -m 0644 $(GPL_LICENSE_TEXT) $(MMT_SEC_DOC)/COPYING; \
+	fi
+	@ echo "[MMT-]> Installed the licence files at "$(MMT_DOCDIR)
 # Assert nothing under the library directory is group- or world-writable —
 # the directory goes on the system search path below, so a permissive mode
 # here would hand any local user write access to code loaded by everyone.
@@ -231,7 +239,26 @@ MMT_LIST_TREES   = (cd $(SDKINC) && find . -mindepth 1) | sed 's|^\./|$(call mmt
 MMT_LIST_INSTALLED = (cd $(SDKLIB) && ls -d *.so.* *.a) | sed 's|^|$(call mmt_rel,$(MMT_LIB))/|'; \
 	for f in $(MMT_LIB_LINKS); do echo "$(call mmt_rel,$(MMT_LIB))/$$f"; done; \
 	for f in $(MMT_PLUGIN_FILES); do echo "$(call mmt_rel,$(MMT_PLUGINS))/$$f"; done; \
-	$(MMT_LIST_TREES)
+	$(MMT_LIST_TREES); \
+	$(MMT_LIST_DOCS)
+
+# Licence files (issue #497): <MMT_DPI>/share/doc/<package>/, one directory per
+# package so the two packages never own the same path. The directories are
+# recorded too, so uninstall removes them once empty.
+MMT_DOCDIR        = $(MMT_DPI)/share/doc
+MMT_DOC           = $(MMT_DOCDIR)/mmt-dpi
+MMT_SEC_DOC       = $(MMT_DOCDIR)/mmt-dpi-security
+PKG_LICENSE_FILES = $(TOPDIR)/LICENSE $(TOPDIR)/THIRD-PARTY-NOTICES
+GPL_LICENSE_TEXT  = $(TOPDIR)/LICENSES/GPL-3.0-or-later.txt
+# Shell condition: the ENABLESEC engines are in this build (tested when the
+# recipe runs, so `make sdk deb` sees the libraries the same invocation built).
+SEC_ENGINES_BUILT = { [ -e $(SDKLIB)/libmmt_security.so.$(VERSION) ] || [ -e $(SDKLIB)/libmmt_fuzz.so.$(VERSION) ]; }
+MMT_LIST_DOCS     = for d in $(call mmt_rel,$(MMT_DPI)/share $(MMT_DOCDIR) $(MMT_DOC)); do echo "$$d"; done; \
+	for f in LICENSE THIRD-PARTY-NOTICES; do echo "$(call mmt_rel,$(MMT_DOC))/$$f"; done; \
+	if $(SEC_ENGINES_BUILT); then \
+		echo "$(call mmt_rel,$(MMT_SEC_DOC))"; \
+		for f in LICENSE THIRD-PARTY-NOTICES COPYING; do echo "$(call mmt_rel,$(MMT_SEC_DOC))/$$f"; done; \
+	fi
 
 #  - - - - - - -
 #  B U I L D   D E B
@@ -245,6 +272,21 @@ DEB_ARCH ?= $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/
 endif
 
 BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
+# The ENABLESEC engines ship in their own package (issue #497), because their
+# licence differs from the rest of the SDK. mmt-dpi never requires it; it
+# requires the same mmt-dpi version, since libmmt_security resolves
+# libmmt_core symbols at load time (rules/common-linux.mk, -z,defs note) and
+# the engines sit in the library directory mmt-dpi registers with the loader.
+SEC_BUILD_DIR = mmt-dpi-security_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
+# The libraries the mmt-dpi package itself ships (rpm %files).
+MMT_PKG_LIBS  = libmmt_core libmmt_tcpip $(LIBMOBILE) $(LIBBAPP) $(LIBDICOM)
+
+# SPDX licence expressions of the two packages (issue #497). Not hand-picked:
+# `tools/ci/vendored-components.py notices --check` recomputes them from the
+# repository LICENSE, tools/ci/vendored-components.json and the notices in the
+# engine sources, and fails when these lines or THIRD-PARTY-NOTICES drift.
+PKG_LICENSE := Apache-2.0 AND BSD-2-Clause AND MIT
+SEC_PKG_LICENSE := GPL-3.0-or-later AND Apache-2.0
 
 # F-SEC-012 (issue #214): this staging tree becomes a .deb/.rpm installed by
 # root, so it gets the same treatment as `install` — explicit umask, explicit
@@ -289,11 +331,35 @@ BUILD_DIR = mmt-dpi_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION)
 	#tell ldconfig to find mmt-dpi libraries at the installed folder
 	umask 022 && echo "$(MMT_LIB)" > $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf \
 	    && chmod 0644 $(BUILD_DIR)/etc/ld.so.conf.d/mmt-dpi.conf
+	# Licence files (issue #497): LICENSE and THIRD-PARTY-NOTICES in each
+	# package, under its own doc directory.
+	$(QUIET) umask 022 && install -d -m 0755 $(BUILD_DIR)$(MMT_DOC) \
+	                  && install -m 0644 $(PKG_LICENSE_FILES) $(BUILD_DIR)$(MMT_DOC)/
+	# Split the ENABLESEC engines into the mmt-dpi-security tree (issue #497):
+	# their libraries, links and archives, the fuzz headers and, beside
+	# LICENSE and THIRD-PARTY-NOTICES, the GPL text as COPYING. Without the
+	# engines no security tree is staged and the links that would dangle
+	# are dropped.
+	$(QUIET) $(RM) $(SEC_BUILD_DIR)
+	$(QUIET) if $(SEC_ENGINES_BUILT); then \
+		umask 022 && install -d -m 0755 $(SEC_BUILD_DIR)$(MMT_LIB) $(SEC_BUILD_DIR)$(MMT_INC) \
+		    $(SEC_BUILD_DIR)$(MMT_SEC_DOC) \
+		&& for f in $(BUILD_DIR)$(MMT_LIB)/libmmt_security.* $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.*; do \
+			if [ -e "$$f" ] || [ -L "$$f" ]; then mv "$$f" $(SEC_BUILD_DIR)$(MMT_LIB)/; fi; \
+		done \
+		&& if [ -d $(BUILD_DIR)$(MMT_INC)/fuzz ]; then mv $(BUILD_DIR)$(MMT_INC)/fuzz $(SEC_BUILD_DIR)$(MMT_INC)/; fi \
+		&& install -m 0644 $(PKG_LICENSE_FILES) $(SEC_BUILD_DIR)$(MMT_SEC_DOC)/ \
+		&& install -m 0644 $(GPL_LICENSE_TEXT) $(SEC_BUILD_DIR)$(MMT_SEC_DOC)/COPYING; \
+	else \
+		$(RM) $(BUILD_DIR)$(MMT_LIB)/libmmt_security.so $(BUILD_DIR)$(MMT_LIB)/libmmt_fuzz.so; \
+	fi
 	# The package is installed by root into the system search path — assert the
 	# staged library dir carries no group/world-writable file (F-SEC-012).
-	$(QUIET) if find $(BUILD_DIR)$(MMT_LIB) -type f -perm /022 -print -quit | grep -q .; then \
-		echo "ERROR: group/world-writable file under $(BUILD_DIR)$(MMT_LIB)" >&2; exit 1; \
-	fi
+	$(QUIET) for d in $(BUILD_DIR)$(MMT_LIB) $(SEC_BUILD_DIR)$(MMT_LIB); do \
+		if [ -d $$d ] && find $$d -type f -perm /022 -print -quit | grep -q .; then \
+			echo "ERROR: group/world-writable file under $$d" >&2; exit 1; \
+		fi; \
+	done
 
 deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	$(QUIET) $(MKDIR) $(BUILD_DIR)/DEBIAN
@@ -333,7 +399,34 @@ deb: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	# during staging) — to SOURCE_DATE_EPOCH, and normalise uid/gid to root
 	# so the archive does not record who built it.
 	$(QUIET) find $(BUILD_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} + && dpkg-deb --root-owner-group -b $(BUILD_DIR)
-	$(QUIET) $(RM) $(BUILD_DIR)
+
+	# mmt-dpi-security (issue #497): Depends derived from its own libraries
+	# exactly as above, plus the same mmt-dpi version (see SEC_BUILD_DIR);
+	# check-package-deps.sh --verify-package requires exactly that entry.
+	# Replaces: lets it take over the engine files an mmt-dpi built before
+	# the split still owns — unversioned, because the revision is a git hash
+	# and does not order. Same timestamp clamping.
+	$(QUIET) if [ -d $(SEC_BUILD_DIR) ]; then \
+		$(MKDIR) $(SEC_BUILD_DIR)/DEBIAN \
+		&& secdeps=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' deb '$(SEC_BUILD_DIR)$(MMT_LIB)'` \
+		&& printf '%s\n' "Package: mmt-dpi-security" "Version: $(VERSION)-$(GIT_VERSION)" \
+		    "Section: libs" "Priority: optional" "Architecture: $(DEB_ARCH)" \
+		    "Maintainer: Montimage <contact@montimage.eu>" \
+		    "Depends: $$secdeps, mmt-dpi (= $(VERSION)-$(GIT_VERSION))" "Replaces: mmt-dpi" \
+		    "Description: MMT-DPI security and fuzz engines" \
+		    " (Built time: $(BUILD_DATE))" \
+		    " The optional engines of MMT-DPI built with ENABLESEC=1: the libmmt_security" \
+		    " rule engine (GPL-3.0-or-later) and the libmmt_fuzz quality-estimation" \
+		    " engine, with the fuzz headers." \
+		    " Homepage: http://www.montimage.eu" > $(SEC_BUILD_DIR)/DEBIAN/control \
+		&& printf '%s\n' '#!/bin/sh' 'set -e' 'ldconfig' > $(SEC_BUILD_DIR)/DEBIAN/postinst \
+		&& printf '%s\n' '#!/bin/sh' 'set -e' 'if [ "$$1" = "remove" ] || [ "$$1" = "purge" ]; then' \
+		    '    ldconfig' 'fi' > $(SEC_BUILD_DIR)/DEBIAN/postrm \
+		&& chmod 0755 $(SEC_BUILD_DIR)/DEBIAN/postinst $(SEC_BUILD_DIR)/DEBIAN/postrm \
+		&& find $(SEC_BUILD_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} + \
+		&& dpkg-deb --root-owner-group -b $(SEC_BUILD_DIR); \
+	fi
+	$(QUIET) $(RM) $(BUILD_DIR) $(SEC_BUILD_DIR)
 
 #  - - - - - - - - - -
 #  B U I L D   R P M
@@ -350,13 +443,20 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	# same tools/ci/shlib-deps.sh mapping the deb Depends uses (F-DEP-206);
 	# BuildRequires: is checked against tools/ci/build-deps.txt (issue #495),
 	# floored at $(MMT_GCC_MIN); no shipped library links libpcap.
+	# License: is the SPDX expression of each package (issue #497); the
+	# security subpackage is emitted only when the engines were staged, its
+	# Requires: derived from its own libraries. The main %files names its
+	# libraries rather than globbing /opt/mmt: rpm would otherwise generate
+	# build-id links for the engine libraries in the main package as well.
 	$(QUIET) reqs=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' rpm '$(BUILD_DIR)$(MMT_LIB)' '$(BUILD_DIR)$(MMT_PLUGINS)'` \
-	    && echo -e\
+	    && sec= && if [ -d $(SEC_BUILD_DIR) ]; then sec=1 \
+	    && secreqs=`sh '$(TOPDIR)/tools/ci/shlib-deps.sh' rpm '$(SEC_BUILD_DIR)$(MMT_LIB)'`; fi \
+	    && { echo -e\
 	    "Summary:  MMT-DPI\
 	    \nName: mmt-dpi\
 	    \nVersion: $(VERSION)\
 	    \nRelease: $(GIT_VERSION)\
-	    \nLicense: proprietary\
+	    \nLicense: $(PKG_LICENSE)\
 	    \nGroup: Development/Libraries\
 	    \nURL: http://montimage.eu/\
 	    \nRequires: $$reqs\
@@ -367,23 +467,57 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	    \n%description\
 	    \nMMT-DPI is a library for deep packet inspection.\
 	    \nBuild date: $(BUILD_DATE)\
+	    \n"; \
+	    if [ -n "$$sec" ]; then echo -e\
+	    "%package security\
+	    \nSummary:  MMT-DPI security and fuzz engines\
+	    \nLicense: $(SEC_PKG_LICENSE)\
+	    \nRequires: $$secreqs, mmt-dpi = $(VERSION)-$(GIT_VERSION)\
 	    \n\
-	    \n%prep\
+	    \n%description security\
+	    \nThe optional engines of MMT-DPI built with ENABLESEC=1: the libmmt_security\
+	    \nrule engine (GPL-3.0-or-later) and the libmmt_fuzz quality-estimation\
+	    \nengine, with the fuzz headers.\
+	    \nBuild date: $(BUILD_DATE)\
+	    \n"; fi; \
+	    echo -e\
+	    "%prep\
 	    \nrm -rf %{buildroot}\
 	    \nmkdir -p %{buildroot}/\
 	    \ncp -rp %{_topdir}/../$(BUILD_DIR)/. %{buildroot}/\
-	    \nmkdir -p %{buildroot}/etc/ld.so.conf.d/\
-	    \n\
-	    \n%clean\
+	    \nmkdir -p %{buildroot}/etc/ld.so.conf.d/"; \
+	    if [ -n "$$sec" ]; then echo "cp -rp %{_topdir}/../$(SEC_BUILD_DIR)/. %{buildroot}/"; fi; \
+	    echo -e\
+	    "\n%clean\
 	    \nrm -rf %{buildroot}\
 	    \n\
 	    \n%files\
 	    \n%defattr(-,root,root,-)\
-	    \n/opt/mmt/*\
-	    \n/etc/ld.so.conf.d/mmt-dpi.conf\
-	    \n%post\
+	    \n%dir $(MMT_DPI)\
+	    \n%dir $(MMT_LIB)$(foreach l,$(MMT_PKG_LIBS),\n$(MMT_LIB)/$(l)*)\
+	    \n$(MMT_INC)\
+	    \n%exclude $(MMT_INC)/fuzz\
+	    \n$(MMT_PLUGINS)\
+	    \n$(MMT_EXAMS)\
+	    \n%dir $(MMT_DPI)/share\
+	    \n%dir $(MMT_DOCDIR)\
+	    \n$(MMT_DOC)\
+	    \n/etc/ld.so.conf.d/mmt-dpi.conf"; \
+	    echo -e\
+	    "%post\
+	    \nldconfig"; \
+	    if [ -n "$$sec" ]; then echo -e\
+	    "\n%files security\
+	    \n%defattr(-,root,root,-)\
+	    \n$(MMT_LIB)/libmmt_security*\
+	    \n$(MMT_LIB)/libmmt_fuzz*\
+	    \n$(MMT_INC)/fuzz\
+	    \n$(MMT_SEC_DOC)\
+	    \n%post security\
 	    \nldconfig\
-	" > ./mmt-dpi.spec
+	    \n%postun security\
+	    \nldconfig"; fi; \
+	    } > ./mmt-dpi.spec
 
 	# Reproducibility (issue #220, F-CI-011): clamp the staged mtimes to
 	# SOURCE_DATE_EPOCH before rpmbuild copies the tree, pin %_buildhost —
@@ -391,10 +525,14 @@ rpm: sdk $(SDKLIB) $(SDKINC) $(SDKXAM) --private-prepare-build-dir
 	# cookie — and opt in to rpm's SDE handling: %_buildhost alone leaves
 	# RPMTAG_BUILDTIME at the wall clock (rpm needs the two explicit
 	# macros; merely exporting the variable is not enough on rpm 4.16).
-	$(QUIET) find $(BUILD_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} +
-	rpmbuild --quiet --rmspec --define "_topdir `pwd`/rpmbuild" --define "_rpmfilename ../../$(BUILD_DIR).rpm" --define "_buildhost mmt-dpi" --define "use_source_date_epoch_as_buildtime 1" --define "clamp_mtime_to_source_date_epoch 1" -bb ./mmt-dpi.spec
+	# _rpmfilename is per package: %%{NAME} survives macro expansion as the
+	# header tag %{NAME}, so mmt-dpi_… and mmt-dpi-security_… do not collide
+	# (issue #497), named like the .deb files.
+	$(QUIET) find $(BUILD_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} + \
+	    && if [ -d $(SEC_BUILD_DIR) ]; then find $(SEC_BUILD_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} +; fi
+	rpmbuild --quiet --rmspec --define "_topdir `pwd`/rpmbuild" --define "_rpmfilename ../../%%{NAME}_$(VERSION)_$(GIT_VERSION)_$(SYS_NAME)_$(SYS_VERSION).rpm" --define "_buildhost mmt-dpi" --define "use_source_date_epoch_as_buildtime 1" --define "clamp_mtime_to_source_date_epoch 1" -bb ./mmt-dpi.spec
 
-	$(QUIET) $(RM) $(BUILD_DIR) rpmbuild mmt-dpi.spec
+	$(QUIET) $(RM) $(BUILD_DIR) $(SEC_BUILD_DIR) rpmbuild mmt-dpi.spec
 
 
 #  - - - - - - - - - -
@@ -413,6 +551,10 @@ zip: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 	# the bundled common file so the ZIP never drifts from the build.
 	$(QUIET) sed -i 's/^VERSION="$${VERSION:-.*}"/VERSION="$(VERSION)"/' $(BUILD_DIR)/mmt-install-common.sh 2>/dev/null || \
 	         sed -i 's/^VERSION="$${VERSION:-.*}"/VERSION="$(VERSION)"/' $(BUILD_DIR)/mmt-install-common.sh
+	# Licence files (issue #497): the ZIP carries every library, so it ships
+	# LICENSE, THIRD-PARTY-NOTICES and, with the engines, the GPL text as COPYING.
+	$(QUIET) umask 022 && install -m 0644 $(PKG_LICENSE_FILES) $(BUILD_DIR)/ \
+	    && if $(SEC_ENGINES_BUILT); then install -m 0644 $(GPL_LICENSE_TEXT) $(BUILD_DIR)/COPYING; fi
 	# Copy source to zip file
 	$(QUIET) $(CP) -R $(SDKLIB) $(BUILD_DIR)
 	$(QUIET) $(CP) -R $(SDKINC) $(BUILD_DIR)
@@ -427,12 +569,14 @@ zip: sdk $(SDKLIB) $(SDKINC) $(SDKXAM)
 
 clean:
 	$(QUIET) $(RM) $(CORE_OBJECTS) $(TCPIP_OBJECTS) $(FUZZ_OBJECTS) $(SECURITY_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS)
-	$(QUIET) $(RM) $(SDKLIB) $(SDKBIN) $(SDKINC) $(SDKDOC) $(SDKXAM) $(BUILD_DIR) rpmbuild mmt-dpi.spec $(PLUGINS_PATH_STAMP)
+	$(QUIET) $(RM) $(SDKLIB) $(SDKBIN) $(SDKINC) $(SDKDOC) $(SDKXAM) $(BUILD_DIR) $(SEC_BUILD_DIR) rpmbuild mmt-dpi.spec $(PLUGINS_PATH_STAMP)
 	$(QUIET) $(RM) $(TOPDIR)/*.log $(TOPDIR)/*.tmp $(TOPDIR)/*.bak $(TOPDIR)/coverage.info $(TOPDIR)/coverage.json $(TOPDIR)/lcov.info
 	$(QUIET) $(RM) $(TOPDIR)/cppcheck*.xml $(TOPDIR)/cppcheck_output.xml $(TOPDIR)/cppcheck-report.xml $(TOPDIR)/PVS-Studio.log $(TOPDIR)/pvs.log
 	$(QUIET) $(RM) $(TOPDIR)/mmt-dpi_*.deb $(TOPDIR)/mmt-dpi_*.rpm $(TOPDIR)/mmt-dpi_*.zip
 	$(QUIET) $(RM) $(TOPDIR)/sdk/mmt-dpi_*.deb $(TOPDIR)/sdk/mmt-dpi_*.rpm $(TOPDIR)/sdk/mmt-dpi_*.zip 2>/dev/null || true
+	$(QUIET) $(RM) $(TOPDIR)/mmt-dpi-security_*.deb $(TOPDIR)/mmt-dpi-security_*.rpm $(TOPDIR)/sdk/mmt-dpi-security_*.deb $(TOPDIR)/sdk/mmt-dpi-security_*.rpm 2>/dev/null || true
 	$(QUIET) $(RM) mmt-dpi_*.deb mmt-dpi_*.rpm mmt-dpi_*.zip *.gcda *.gcno *.gcov 2>/dev/null || true
+	$(QUIET) $(RM) mmt-dpi-security_*.deb mmt-dpi-security_*.rpm $(SEC_BUILD_DIR) 2>/dev/null || true
 	# F-DEAD-016 (issue #229): stale example binaries compiled in-tree sit
 	# inside the source directory (gitignored, so a plain build never
 	# refreshes them) — sweep every binary name src/examples can produce.

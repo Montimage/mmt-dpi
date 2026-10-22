@@ -33,7 +33,10 @@
 #   on any divergence. The payload .so files are extracted from the package
 #   when the tools allow; otherwise --payload-dir (default sdk/lib) is used.
 #   build-package.sh runs this per artifact, so a drifted declaration fails
-#   the release build itself.
+#   the release build itself. The mmt-dpi-security package (issue #497) must
+#   additionally depend on exactly its own version of mmt-dpi — libmmt_security
+#   resolves libmmt_core symbols at load time, which NEEDED does not show —
+#   and that one entry is the only dependency not backed by a NEEDED soname.
 #
 # Exit codes: 0 = consistent, 1 = a contradiction found, 2 = helper broken.
 #
@@ -299,12 +302,27 @@ if verify_pkg:
     def norm(tok):
         return re.sub(r"\s+", "", tok)
 
+    SIBLING_OF = {"mmt-dpi-security": "mmt-dpi"}
+
     if verify_pkg and ext == "deb" and scan_dir and expected:
         rc, out, err = run("dpkg-deb", "-f", verify_pkg, "Depends")
+        _, pkg_name, _ = run("dpkg-deb", "-f", verify_pkg, "Package")
+        _, pkg_ver, _ = run("dpkg-deb", "-f", verify_pkg, "Version")
         if rc != 0:
             fail(f"dpkg-deb -f Depends failed: {err.strip()}")
         else:
             declared = {norm(t) for t in out.strip().split(",") if t.strip()}
+            sibling = SIBLING_OF.get(pkg_name.strip())
+            if sibling:
+                want_sib = norm(f"{sibling} (= {pkg_ver.strip()})")
+                if want_sib in declared:
+                    ok(f"{os.path.basename(verify_pkg)}: Depends carries "
+                       f"{sibling} (= {pkg_ver.strip()})")
+                    declared.discard(want_sib)
+                else:
+                    fail(f"{verify_pkg}: Depends lacks {sibling} "
+                         f"(= {pkg_ver.strip()}) — the engines need its "
+                         "libmmt_core at load time")
             want = {norm(t) for t in expected.strip().split(",") if t.strip()}
             # Alternatives: a declared `a | b` token is covered when any of
             # its names matches a wanted entry, and vice versa.
@@ -352,11 +370,22 @@ if verify_pkg:
             fail(f"{verify_pkg}: rpm RELEASE {rel.strip()!r} is empty or "
                  "still holds the upstream version — fields inverted?")
         rc, out, err = run("rpm", "-qp", "--requires", verify_pkg)
+        _, pkg_name, _ = run("rpm", "-qp", "--qf", "%{NAME}", verify_pkg)
         if rc != 0:
             fail(f"rpm -qp --requires failed: {err.strip()}")
         else:
             lines = {re.sub(r"\s+", " ", ln.strip())
                      for ln in out.splitlines() if ln.strip()}
+            sibling = SIBLING_OF.get(pkg_name.strip())
+            if sibling:
+                want_sib = f"{sibling} = {version}-{rel.strip()}"
+                if want_sib in lines:
+                    ok(f"{os.path.basename(verify_pkg)}: Requires carries "
+                       f"{want_sib}")
+                    lines.discard(want_sib)
+                else:
+                    fail(f"{verify_pkg}: Requires lacks {want_sib} — the "
+                         "engines need its libmmt_core at load time")
             want = {re.sub(r"\s+", " ", t.strip())
                     for t in expected.strip().split(",") if t.strip()}
             missing = sorted(t for t in want

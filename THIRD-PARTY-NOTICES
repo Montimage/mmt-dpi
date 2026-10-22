@@ -1,0 +1,90 @@
+THIRD-PARTY-NOTICES for MMT-DPI
+
+Generated from tools/ci/vendored-components.json by
+`python3 tools/ci/vendored-components.py notices`; do not edit by hand.
+
+Package licences (SPDX expressions)
+-----------------------------------
+
+mmt-dpi: Apache-2.0 AND BSD-2-Clause AND MIT
+  libmmt_core, libmmt_tcpip, libmmt_tmobile, libmmt_tdicom,
+  libmmt_business_app, their headers and the examples. Montimage's
+  own code is Apache-2.0 (LICENSE). The third-party code compiled
+  into these libraries is listed below with its licence.
+
+mmt-dpi-security: GPL-3.0-or-later AND Apache-2.0
+  libmmt_security: GPL-3.0-or-later, as the notice in each of its
+  source files states (full text: COPYING).
+  libmmt_fuzz and its headers: no per-file notice, so the repository
+  licence applies (Apache-2.0, LICENSE).
+  No third-party code is compiled into this package.
+
+Third-party components in mmt-dpi
+---------------------------------
+
+llhttp 9.4.3 (MIT)
+  Upstream: https://github.com/nodejs/llhttp at release/v9.4.3
+  In-tree:  src/mmt_tcpip/lib/llhttp.h, src/mmt_tcpip/lib/llhttp.c, src/mmt_tcpip/lib/llhttp_api.c, src/mmt_tcpip/lib/llhttp_http.c
+
+Copyright Fedor Indutny, 2018.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+asn1c 0.9.29 (BSD-2-Clause)
+  Upstream: https://github.com/mouse07410/asn1c at dbd0ed0983a7b412ada27cb279f7823dcb381e80
+  In-tree:  src/mmt_mobile/asn1c/common/
+
+Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info> and contributors.
+
+BSD 2-Clause License
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+Generated ASN.1 codecs
+----------------------
+
+The S1AP and NGAP codecs under src/mmt_mobile/asn1c/s1ap and
+src/mmt_mobile/asn1c/ngap, compiled into libmmt_tmobile, are asn1c
+output generated from 3GPP ASN.1 modules (TS 36.413, TS 38.413; see
+src/mmt_mobile/asn1c/support/README). This repository records no
+licence terms for those specifications; the expressions above do not
+cover them. See docs/DECISIONS.md (issue #497).

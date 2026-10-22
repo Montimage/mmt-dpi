@@ -104,6 +104,19 @@ find "$MMT_EXAMS" -type d -exec chmod 0755 {} +
 find "$MMT_EXAMS" -type f -exec chmod 0644 {} +
 echo "[MMT-]> Installed  $SDKXAM at $MMT_EXAMS"
 
+# Licence files (issue #497): `make zip` puts LICENSE, THIRD-PARTY-NOTICES
+# and, with the security/fuzz engines, the GPL text (COPYING) at the ZIP root.
+MMT_DOC="$MMT_DPI/share/doc/mmt-dpi"
+install -d -m 0755 "$MMT_DOC"
+for f in LICENSE THIRD-PARTY-NOTICES COPYING; do
+    if [ -f "$SCRIPT_DIR/$f" ]; then
+        install -m 0644 "$SCRIPT_DIR/$f" "$MMT_DOC/$f"
+    elif [ "$f" != COPYING ]; then
+        echo "[WARN] $f not found in $SCRIPT_DIR -- not installed" >&2
+    fi
+done
+echo "[MMT-]> Installed the licence files at $MMT_DOC"
+
 for lib in "${MMT_PLUGIN_LIBS[@]}"; do
     shopt -s nullglob
     matches=("$SDKLIB/$lib.so."*)

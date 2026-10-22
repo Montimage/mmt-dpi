@@ -253,6 +253,12 @@ jobs:
       # version/pin that drifts from the tree, a missing path, or a
       # tools/ci/vendor-paths.txt entry no component covers.
       run: python3 tools/ci/vendored-components.py check
+    - name: Licence notices and package licence expressions (blocking — issue #497)
+      # THIRD-PARTY-NOTICES is generated from that manifest; the check fails
+      # when it is stale, when sdk/Makefile's PKG_LICENSE/SEC_PKG_LICENSE
+      # differ from the expressions the evidence yields, or when a licence
+      # text under LICENSES/ is missing.
+      run: python3 tools/ci/vendored-components.py notices --check
     - name: Image digest pinning (blocking — issues #217, #491)
       # The gate condition holds — every image any workflow pulls is
       # name:tag@sha256-pinned and recorded in tools/ci/base-images.txt — so

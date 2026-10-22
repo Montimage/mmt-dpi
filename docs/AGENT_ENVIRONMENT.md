@@ -75,7 +75,10 @@ survive as the `libc6`/`glibc` and `libstdc++6`/`libstdc++` entries).
 `tools/ci/build-package.sh` builds with `ENABLESEC=1` and verifies each
 artifact with `tools/ci/check-package-deps.sh --verify-package`, which
 compares `dpkg-deb -f` / `rpm -qp` output against the derived set and fails
-on divergence.
+on divergence. One entry is not derived: `mmt-dpi-security` (issue #497)
+requires exactly its own `mmt-dpi` version. `libmmt_security` resolves
+`libmmt_core` symbols at load time, which NEEDED does not show, and the
+check requires that sibling entry.
 
 **Reproducible packages (issue #220, F-CI-011):** `make -C sdk deb` /
 `make -C sdk rpm` are byte-deterministic for a given commit — the staging
@@ -382,7 +385,7 @@ documents link here.
   root install out; `LDCONF=1` forces registration; `LDCONF_DIR` and
   `LDCONFIG` relocate the drop-in and the command (the installer suite uses
   a staged directory and a fake `ldconfig`).
-- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:160-201`)
+- **`make -C sdk MMT_BASE=<prefix> uninstall`** (`sdk/Makefile:168-209`)
   removes exactly the entries `install` recorded in
   `<prefix>/.mmt-dpi-manifest` (one path per line, relative to the prefix,
   merged across reinstalls), then the SDK directories left empty (`rmdir`,
@@ -417,7 +420,7 @@ documents link here.
 
 ### The `make test` trap
 
-`sdk/Makefile`'s `test` target (`sdk/Makefile:453-458`) compiles the
+`sdk/Makefile`'s `test` target (`sdk/Makefile:597-602`) compiles the
 `proto_attributes_iterator` example **from the installed prefix**:
 
 ```
@@ -548,7 +551,7 @@ next build of any profile deletes them, so harvest them first with
 
 - Object/header selection: `rules/common.mk:201-203, 225-228, 310-313`
 - Link rules and libxml2 wiring: `rules/common-linux.mk:6-12, 249-252, 260-264, 297-313`
-- Install symlinks for both engines: `sdk/Makefile:89-90, 282-283`
+- Install symlinks for both engines: `sdk/Makefile:89-90, 324-325`
 
 Usage (requires `libxml2-dev`):
 
@@ -558,6 +561,13 @@ make -C sdk ENABLESEC=1 -j$(nproc)
 
 Without the flag those sources are skipped entirely, so a missing libxml2 is
 only fatal when `ENABLESEC=1`.
+
+With the engines built, `make -C sdk deb`/`rpm` stages them into a second
+package, `mmt-dpi-security` (issue #497): `libmmt_security` is
+GPL-3.0-or-later, unlike the rest of the SDK. That package requires the same
+`mmt-dpi` version. Each package's SPDX licence expression is `PKG_LICENSE`
+or `SEC_PKG_LICENSE` in `sdk/Makefile`, and
+`python3 tools/ci/vendored-components.py notices --check` verifies both.
 
 ## 7. Quick Verification Checklist
 
