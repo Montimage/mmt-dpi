@@ -121,13 +121,16 @@ Notes:
 
 ### Documentation-site toolchain
 
-The C SDK does not require Ruby. For the documentation site, use Ruby **3.3**
+The C SDK does not require Ruby. For the documentation site, use Ruby **3.4**
 as in CI (`.github/workflows/c-cpp.yml:225-230`), with Bundler to install
-the gems and run Jekyll. CI enables `bundler-cache` through `ruby/setup-ruby`
+the gems and run Jekyll; every workflow's `ruby-version:` is that same
+release (issue #517). CI enables `bundler-cache` through `ruby/setup-ruby`
 and verifies the committed `docs/Gemfile.lock` under `BUNDLE_FROZEN=true`
 (issue #372) — after changing `docs/Gemfile`, regenerate the lock
-(`bundle lock`) and commit it or the frozen install fails. With Ruby 3.3
-available:
+(`bundle lock`) and commit it or the frozen install fails. The Bundler
+release is the lock's `BUNDLED WITH` (4.0.x, issue #520): `ruby/setup-ruby`
+installs exactly that one, and an older local Bundler installs it and
+restarts with it. With Ruby 3.4 available:
 
 ```bash
 gem install bundler

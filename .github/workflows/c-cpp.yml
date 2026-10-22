@@ -225,7 +225,7 @@ jobs:
     - name: Set up Ruby for the docs-site build
       uses: ruby/setup-ruby@b1da4809b005e0178fe08a1d57317bffc00b7b4c # v1.332.0
       with:
-        ruby-version: "3.3"
+        ruby-version: "3.4"
         working-directory: docs
         bundler-cache: true
       env:
@@ -680,7 +680,7 @@ jobs:
     - name: Set up Ruby for the docs-site build
       uses: ruby/setup-ruby@b1da4809b005e0178fe08a1d57317bffc00b7b4c # v1.332.0
       with:
-        ruby-version: "3.3"
+        ruby-version: "3.4"
         working-directory: docs
         bundler-cache: true
       env:

@@ -190,7 +190,7 @@ rules/common.mk:548-566	^# BUILD=coverage to compile the SDK	^endif	the BUILD=co
 tests/run_all_tests.sh:359-375	^# --- phase0 harnesses	^fi$	--with-harnesses delegates to the aggregate runner	run_all_harnesses\.sh
 sdk/Makefile:1	^ARCH +\?= linux	-	default architecture is Linux
 rules/arch-linux.mk:2-3	^CXX := g\+\+	^CC  := gcc	Linux uses GCC and G++
-.github/workflows/c-cpp.yml:225-230	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.3	ruby-version: "3.3"
+.github/workflows/c-cpp.yml:225-230	Set up Ruby	bundler-cache: true	docs CI uses Ruby 3.4	ruby-version: "3.4"
 docs/Gemfile:12-17	^source	^gem "jekyll-seo-tag"	documentation gems	jekyll
 .github/workflows/c-cpp.yml:243	bash tools/ci/build-docs-site.sh	-	CI builds Jekyll
 rules/common.mk:3-8	^MMT_BASE	^MMT_EXAMS	Make install configuration
@@ -281,6 +281,44 @@ else
             ok "runtime band ${low}–${high} s brackets every measurement it records ($(echo "$measured" | tr '\n' ' ' | sed 's/ $//')) s"
         fi
     fi
+fi
+
+# Docs-site Ruby (issue #517): the PR gate and the Pages build must run the
+# Ruby release the doc states, so no workflow can drift away from the others.
+doc_ruby="$(tr '\n' ' ' < "$DOC" | grep -oE 'use Ruby \*\*[0-9]+\.[0-9]+\*\*' | head -1 | grep -oE '[0-9]+\.[0-9]+' || true)"
+# Workflows and composite actions; a ruby-version: that is not a literal
+# release (an expression, a file reference) cannot be compared, so it fails.
+ruby_lines="$(cat "$ROOT"/.github/workflows/*.y*ml "$ROOT"/.github/actions/*/action.y*ml 2>/dev/null \
+    | grep -E '^[[:space:]]*ruby-version:' || true)"
+wf_rubies="$(printf '%s\n' "$ruby_lines" \
+    | sed -nE "s/^[[:space:]]*ruby-version:[[:space:]]*[\"']?([0-9][0-9.]*)[\"']?[[:space:]]*(#.*)?\$/\1/p" \
+    | sort -u || true)"
+ruby_odd="$(printf '%s\n' "$ruby_lines" \
+    | grep -vE "^[[:space:]]*ruby-version:[[:space:]]*[\"']?[0-9][0-9.]*[\"']?[[:space:]]*(#.*)?\$" \
+    | grep . || true)"
+if [ -z "$doc_ruby" ]; then
+    fail "states no docs-site Ruby release (expected: use Ruby **X.Y**)"
+elif [ -n "$ruby_odd" ]; then
+    fail "ruby-version: not a literal release: $(printf '%s' "$ruby_odd" | sed -E 's/^[[:space:]]+//' | tr '\n' ';')"
+elif [ -z "$wf_rubies" ]; then
+    fail "no ruby-version: found in .github/workflows/*.yml"
+elif [ "$wf_rubies" = "$doc_ruby" ]; then
+    ok "every workflow ruby-version: is the documented Ruby $doc_ruby"
+else
+    fail "workflow ruby-version: $(printf '%s' "$wf_rubies" | tr '\n' ' ' | sed 's/ $//') differs from the documented Ruby $doc_ruby"
+fi
+
+# Docs-site Bundler (issue #520): the major the doc names is the one the lock's
+# BUNDLED WITH pins (ruby/setup-ruby installs exactly that release).
+# shellcheck disable=SC2016  # backticks are Markdown syntax inside the pattern
+doc_bundler="$(tr '\n' ' ' < "$DOC" | grep -oE '`BUNDLED WITH` \([0-9]+\.' | head -1 | grep -oE '[0-9]+' || true)"
+lock_bundler="$(awk '/^BUNDLED WITH$/ { getline; print $1; exit }' "$ROOT/docs/Gemfile.lock" 2>/dev/null || true)"
+if [ -z "$doc_bundler" ] || [ -z "$lock_bundler" ]; then
+    fail "docs-site Bundler not stated in the doc (\`BUNDLED WITH\` (N.x)) or not pinned by docs/Gemfile.lock"
+elif [ "${lock_bundler%%.*}" = "$doc_bundler" ]; then
+    ok "docs/Gemfile.lock BUNDLED WITH $lock_bundler is the documented Bundler $doc_bundler"
+else
+    fail "docs/Gemfile.lock BUNDLED WITH $lock_bundler differs from the documented Bundler $doc_bundler"
 fi
 
 # -----------------------------------------------------------------------------

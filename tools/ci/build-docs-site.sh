@@ -40,7 +40,7 @@ cd "$ROOT"
 for tool in bundle git python3; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "✗ $tool is required" >&2
-    echo "To fix:  install Ruby 3.3 + Bundler (docs/AGENT_ENVIRONMENT.md §1)" >&2
+    echo "To fix:  install Ruby 3.4 + Bundler (docs/AGENT_ENVIRONMENT.md §1)" >&2
     exit 2
   }
 done
