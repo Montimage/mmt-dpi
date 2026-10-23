@@ -3,6 +3,7 @@
 #include "extraction_lib.h"
 #include "../mmt_common_internal_include.h"
 
+#include "ethernet.h"
 
 /////////////// PROTOCOL INTERNAL CODE GOES HERE ///////////////////
 
@@ -46,6 +47,37 @@ struct gtp_header_extension_pdu {
 	uint8_t qfi : 6, _spare_2 : 2;
 	uint8_t next_extesnion_header_type;
 };
+
+static int _gtp_payload_looks_ipv4(const u_char *payload, uint32_t payload_len) {
+	if (payload_len < 20 || (payload[0] >> 4) != 4)
+		return 0;
+
+	uint8_t header_len = (payload[0] & 0x0f) * 4;
+	if (header_len < 20 || header_len > payload_len)
+		return 0;
+
+	uint16_t total_len = ((uint16_t) payload[2] << 8) | payload[3];
+	return total_len >= header_len && total_len <= payload_len;
+}
+
+static int _gtp_payload_looks_ipv6(const u_char *payload, uint32_t payload_len) {
+	if (payload_len < 40 || (payload[0] >> 4) != 6)
+		return 0;
+
+	uint16_t ipv6_payload_len = ((uint16_t) payload[4] << 8) | payload[5];
+	return ipv6_payload_len == 0 || (uint32_t) ipv6_payload_len + 40 <= payload_len;
+}
+
+static uint32_t _gtp_guess_payload_proto(const u_char *payload, uint32_t payload_len) {
+	if (_gtp_payload_looks_ipv4(payload, payload_len))
+		return PROTO_IP;
+	if (_gtp_payload_looks_ipv6(payload, payload_len))
+		return PROTO_IPV6;
+	if (payload_len >= sizeof(struct ethhdr))
+		return PROTO_ETHERNET;
+
+	return PROTO_IP;
+}
 
 // end of TDS header
 static void mmt_int_gtp_add_connection(ipacket_t * ipacket) {
@@ -147,7 +179,7 @@ int gtp_classify_next_proto(ipacket_t * ipacket, unsigned index) {
 
 	switch (gtp->message_type) {
 	case 0xff: //G-PDU
-		retval.proto_id = PROTO_IP;
+		retval.proto_id = _gtp_guess_payload_proto(&gtp_binary[gtp_offset], ipacket->p_hdr->caplen - (offset + gtp_offset));
 		retval.offset = gtp_offset;
 		retval.status = Classified;
 		return set_classified_proto(ipacket, index + 1, retval);
@@ -347,5 +379,3 @@ int init_proto_gtp_struct() {
 		return 0;
 	}
 }
-
-
