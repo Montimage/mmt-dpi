@@ -3,11 +3,8 @@
  * All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
-#ifndef ASN_DISABLE_OER_SUPPORT
-
 #include <asn_internal.h>
 #include <constr_CHOICE.h>
-#include <errno.h>
 
 /*
  * Return a standardized complex structure.
@@ -162,6 +159,11 @@ CHOICE_decode_oer(const asn_codec_ctx_t *opt_codec_ctx,
      * Restore parsing context.
      */
     ctx = (asn_struct_ctx_t *)((char *)st + specs->ctx_offset);
+
+    /* Check recursion depth to prevent stack overflow */
+    if(ASN__STACK_OVERFLOW_CHECK(opt_codec_ctx))
+        RETURN(RC_FAIL);
+
     switch(ctx->phase) {
     case 0: {
         /*
@@ -200,11 +202,54 @@ CHOICE_decode_oer(const asn_codec_ctx_t *opt_codec_ctx,
                     ber_tlv_tag_string(tlv_tag), td->name);
                 RETURN(RC_FAIL);
             } else {
-                /* Skip open type extension */
-                ASN_DEBUG(
-                    "Not implemented skipping open type extension for tag %s",
-                    ber_tlv_tag_string(tlv_tag));
+                /*
+                 * Unknown extension alternative: the peer selected a
+                 * CHOICE alternative added in a newer version of the
+                 * type. X.696 wraps that alternative in an Open Type;
+                 * consume the tag and skip the Open Type (length
+                 * determinant plus contents), then present the CHOICE
+                 * as having no recognized alternative selected, so that
+                 * an enclosing type can keep decoding subsequent fields
+                 * instead of failing the whole message (forward
+                 * compatibility, mirroring the UPER fix in
+                 * constr_CHOICE.c's CHOICE_decode_uper()).
+                 */
+#ifdef ASN_REJECT_UNKNOWN_EXTENSIONS
+                /*
+                 * Strict mode: restore the pre-fix behavior of cleanly
+                 * failing on an unknown extension alternative instead of
+                 * skipping its Open Type and presenting the CHOICE as
+                 * absent. Escape hatch for callers not yet prepared to
+                 * handle present==0 meaning "unknown extension skipped"
+                 * (see ASN_REJECT_UNKNOWN_EXTENSIONS in asn_internal.h).
+                 */
                 RETURN(RC_FAIL);
+#else
+                ssize_t skipped;
+                ASN_DEBUG(
+                    "Skipping unknown open type extension for tag %s "
+                    "in extensible CHOICE %s",
+                    ber_tlv_tag_string(tlv_tag), td->name);
+                /*
+                 * Do not ADVANCE() until the whole Open Type is known to
+                 * be available: on RC_WMORE nothing must be consumed
+                 * yet, since ctx->phase stays at 0 and a retry re-parses
+                 * the tag from the same (now longer) buffer from
+                 * scratch.
+                 */
+                skipped = oer_open_type_skip((const char *)ptr + tag_len,
+                                             size - tag_len);
+                if(skipped < 0) {
+                    RETURN(RC_FAIL);
+                } else if(skipped == 0) {
+                    RETURN(RC_WMORE);
+                }
+                ADVANCE(tag_len);
+                ADVANCE(skipped);
+                CHOICE_variant_set_presence(td, st, 0);
+                SET_PHASE(ctx, 2); /* Already decoded everything */
+                RETURN(RC_OK);
+#endif	/* ASN_REJECT_UNKNOWN_EXTENSIONS */
             }
         } while(0);
 
@@ -247,6 +292,10 @@ CHOICE_decode_oer(const asn_codec_ctx_t *opt_codec_ctx,
             if(got == 0) ASN__DECODE_STARVED;
             rval.code = RC_OK;
             rval.consumed = got;
+        } else if(!elm->type->op->oer_decoder) {
+            ASN_DEBUG("Member %s->%s has no OER decoder",
+                      td->name, elm->name);
+            ASN__DECODE_FAILED;
         } else {
             rval = elm->type->op->oer_decoder(
                 opt_codec_ctx, elm->type,
@@ -331,11 +380,15 @@ CHOICE_encode_oer(const asn_TYPE_descriptor_t *td,
 
     if(!sptr) ASN__ENCODE_FAILED;
 
+    /* Check recursion depth to prevent stack overflow */
+    OER_ENCODER_RECURSION_DEPTH_INC();
+
     ASN_DEBUG("OER %s encoding as CHOICE", td->name);
 
     present = CHOICE_variant_get_presence(td, sptr);
     if(present == 0 || present > td->elements_count) {
         ASN_DEBUG("CHOICE %s member is not selected", td->name);
+        OER_ENCODER_RECURSION_DEPTH_DEC();
         ASN__ENCODE_FAILED;
     }
 
@@ -345,6 +398,7 @@ CHOICE_encode_oer(const asn_TYPE_descriptor_t *td,
             *(const void *const *)((const char *)sptr + elm->memb_offset);
         if(memb_ptr == 0) {
             /* Mandatory element absent */
+            OER_ENCODER_RECURSION_DEPTH_DEC();
             ASN__ENCODE_FAILED;
         }
     } else {
@@ -353,11 +407,13 @@ CHOICE_encode_oer(const asn_TYPE_descriptor_t *td,
 
     tag = asn_TYPE_outmost_tag(elm->type, memb_ptr, elm->tag_mode, elm->tag);
     if(tag == 0) {
+        OER_ENCODER_RECURSION_DEPTH_DEC();
         ASN__ENCODE_FAILED;
     }
 
     tag_len = oer_put_tag(tag, cb, app_key);
     if(tag_len < 0) {
+        OER_ENCODER_RECURSION_DEPTH_DEC();
         ASN__ENCODE_FAILED;
     }
 
@@ -365,7 +421,10 @@ CHOICE_encode_oer(const asn_TYPE_descriptor_t *td,
         ssize_t encoded = oer_open_type_put(elm->type,
                                elm->encoding_constraints.oer_constraints,
                                memb_ptr, cb, app_key);
-        if(encoded < 0) ASN__ENCODE_FAILED;
+        if(encoded < 0) {
+            OER_ENCODER_RECURSION_DEPTH_DEC();
+            ASN__ENCODE_FAILED;
+        }
         er.encoded = tag_len + encoded;
     } else {
         er = elm->type->op->oer_encoder(
@@ -374,7 +433,6 @@ CHOICE_encode_oer(const asn_TYPE_descriptor_t *td,
         if(er.encoded >= 0) er.encoded += tag_len;
     }
 
+    OER_ENCODER_RECURSION_DEPTH_DEC();
     return er;
 }
-
-#endif  /* ASN_DISABLE_OER_SUPPORT */

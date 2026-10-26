@@ -17,406 +17,187 @@
  * NativeInteger basic type description.
  */
 static const ber_tlv_tag_t asn_DEF_NativeInteger_tags[] = {
-	(ASN_TAG_CLASS_UNIVERSAL | (2 << 2))
+    (ASN_TAG_CLASS_UNIVERSAL | (2 << 2))
 };
 asn_TYPE_operation_t asn_OP_NativeInteger = {
-	NativeInteger_free,
-	NativeInteger_print,
-	NativeInteger_compare,
-	NativeInteger_decode_ber,
-	NativeInteger_encode_der,
-	NativeInteger_decode_xer,
-	NativeInteger_encode_xer,
-#ifdef	ASN_DISABLE_OER_SUPPORT
-	0,
-	0,
+    .kind = ASN_KIND_PRIMITIVE,
+    NativeInteger_free,
+#if !defined(ASN_DISABLE_PRINT_SUPPORT)
+    NativeInteger_print,
 #else
-	NativeInteger_decode_oer,	/* OER decoder */
-	NativeInteger_encode_oer,	/* Canonical OER encoder */
-#endif  /* ASN_DISABLE_OER_SUPPORT */
-#ifdef	ASN_DISABLE_PER_SUPPORT
-	0,
-	0,
-	0,
-	0,
+    0,
+#endif  /* !defined(ASN_DISABLE_PRINT_SUPPORT) */
+    NativeInteger_compare,
+    NativeInteger_copy,
+#if !defined(ASN_DISABLE_BER_SUPPORT)
+    NativeInteger_decode_ber,
+    NativeInteger_encode_der,
 #else
-	NativeInteger_decode_uper,	/* Unaligned PER decoder */
-	NativeInteger_encode_uper,	/* Unaligned PER encoder */
-	NativeInteger_decode_aper,	/* Aligned PER decoder */
-	NativeInteger_encode_aper,	/* Aligned PER encoder */
-#endif	/* ASN_DISABLE_PER_SUPPORT */
-	NativeInteger_random_fill,
-	0	/* Use generic outmost tag fetcher */
+    0,
+    0,
+#endif  /* !defined(ASN_DISABLE_BER_SUPPORT) */
+#if !defined(ASN_DISABLE_XER_SUPPORT)
+    NativeInteger_decode_xer,
+    NativeInteger_encode_xer,
+#else
+    0,
+    0,
+#endif  /* !defined(ASN_DISABLE_XER_SUPPORT) */
+#if !defined(ASN_DISABLE_JER_SUPPORT)
+    NativeInteger_decode_jer,
+    NativeInteger_encode_jer,
+#else
+    0,
+    0,
+#endif  /* !defined(ASN_DISABLE_JER_SUPPORT) */
+#if !defined(ASN_DISABLE_OER_SUPPORT)
+    NativeInteger_decode_oer,  /* OER decoder */
+    NativeInteger_encode_oer,  /* Canonical OER encoder */
+#else
+    0,
+    0,
+#endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
+#if !defined(ASN_DISABLE_UPER_SUPPORT)
+    NativeInteger_decode_uper,  /* Unaligned PER decoder */
+    NativeInteger_encode_uper,  /* Unaligned PER encoder */
+#else
+    0,
+    0,
+#endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) */
+#if !defined(ASN_DISABLE_APER_SUPPORT)
+    NativeInteger_decode_aper,  /* Aligned PER decoder */
+    NativeInteger_encode_aper,  /* Aligned PER encoder */
+#else
+    0,
+    0,
+#endif  /* !defined(ASN_DISABLE_APER_SUPPORT) */
+#if !defined(ASN_DISABLE_RFILL_SUPPORT)
+    NativeInteger_random_fill,
+#else
+    0,
+#endif  /* !defined(ASN_DISABLE_RFILL_SUPPORT) */
+    0  /* Use generic outmost tag fetcher */,
+#if !defined(ASN_DISABLE_CBOR_SUPPORT)
+    NativeInteger_decode_cbor,
+    NativeInteger_encode_cbor,
+#else
+    0,
+    0,
+#endif  /* !defined(ASN_DISABLE_CBOR_SUPPORT) */
 };
 asn_TYPE_descriptor_t asn_DEF_NativeInteger = {
-	"INTEGER",			/* The ASN.1 type is still INTEGER */
-	"INTEGER",
-	&asn_OP_NativeInteger,
-	asn_DEF_NativeInteger_tags,
-	sizeof(asn_DEF_NativeInteger_tags) / sizeof(asn_DEF_NativeInteger_tags[0]),
-	asn_DEF_NativeInteger_tags,	/* Same as above */
-	sizeof(asn_DEF_NativeInteger_tags) / sizeof(asn_DEF_NativeInteger_tags[0]),
-	{ 0, 0, asn_generic_no_constraint },
-	0, 0,	/* No members */
-	0	/* No specifics */
+    "INTEGER",  /* The ASN.1 type is still INTEGER */
+    "INTEGER",
+    &asn_OP_NativeInteger,
+    asn_DEF_NativeInteger_tags,
+    sizeof(asn_DEF_NativeInteger_tags) / sizeof(asn_DEF_NativeInteger_tags[0]),
+    asn_DEF_NativeInteger_tags,  /* Same as above */
+    sizeof(asn_DEF_NativeInteger_tags) / sizeof(asn_DEF_NativeInteger_tags[0]),
+    {
+#if !defined(ASN_DISABLE_OER_SUPPORT)
+        0,
+#endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
+#if !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT)
+        0,
+#endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT) */
+#if !defined(ASN_DISABLE_JER_SUPPORT)
+        0,
+#endif  /* !defined(ASN_DISABLE_JER_SUPPORT) */
+        asn_generic_no_constraint
+    },
+    0, 0,  /* No members */
+    0  /* No specifics */
 };
 
 /*
- * Decode INTEGER type.
+ * Width-aware access helpers.  The native integer member occupies
+ * field_width octets (1/2/4/8); when field_width is 0 the width defaults to
+ * sizeof(long), so descriptors that do not set it behave exactly as before.
  */
-asn_dec_rval_t
-NativeInteger_decode_ber(const asn_codec_ctx_t *opt_codec_ctx,
-                         const asn_TYPE_descriptor_t *td, void **nint_ptr,
-                         const void *buf_ptr, size_t size, int tag_mode) {
-    const asn_INTEGER_specifics_t *specs =
-        (const asn_INTEGER_specifics_t *)td->specifics;
-    long *native = (long *)*nint_ptr;
-	asn_dec_rval_t rval;
-	ber_tlv_len_t length;
-
-	/*
-	 * If the structure is not there, allocate it.
-	 */
-	if(native == NULL) {
-		native = (long *)(*nint_ptr = CALLOC(1, sizeof(*native)));
-		if(native == NULL) {
-			rval.code = RC_FAIL;
-			rval.consumed = 0;
-			return rval;
-		}
-	}
-
-	ASN_DEBUG("Decoding %s as INTEGER (tm=%d)",
-		td->name, tag_mode);
-
-	/*
-	 * Check tags.
-	 */
-	rval = ber_check_tags(opt_codec_ctx, td, 0, buf_ptr, size,
-			tag_mode, 0, &length, 0);
-	if(rval.code != RC_OK)
-		return rval;
-
-	ASN_DEBUG("%s length is %d bytes", td->name, (int)length);
-
-	/*
-	 * Make sure we have this length.
-	 */
-	buf_ptr = ((const char *)buf_ptr) + rval.consumed;
-	size -= rval.consumed;
-	if(length > (ber_tlv_len_t)size) {
-		rval.code = RC_WMORE;
-		rval.consumed = 0;
-		return rval;
-	}
-
-	/*
-	 * ASN.1 encoded INTEGER: buf_ptr, length
-	 * Fill the native, at the same time checking for overflow.
-	 * If overflow occurred, return with RC_FAIL.
-	 */
-	{
-		INTEGER_t tmp;
-		union {
-			const void *constbuf;
-			void *nonconstbuf;
-		} unconst_buf;
-		long l;
-
-		unconst_buf.constbuf = buf_ptr;
-		tmp.buf = (uint8_t *)unconst_buf.nonconstbuf;
-		tmp.size = length;
-
-		if((specs&&specs->field_unsigned)
-			? asn_INTEGER2ulong(&tmp, (unsigned long *)&l) /* sic */
-			: asn_INTEGER2long(&tmp, &l)) {
-			rval.code = RC_FAIL;
-			rval.consumed = 0;
-			return rval;
-		}
-
-		*native = l;
-	}
-
-	rval.code = RC_OK;
-	rval.consumed += length;
-
-	ASN_DEBUG("Took %ld/%ld bytes to encode %s (%ld)",
-		(long)rval.consumed, (long)length, td->name, (long)*native);
-
-	return rval;
+size_t
+NativeInteger_field_width(const asn_INTEGER_specifics_t *specs) {
+    if(specs && specs->field_width)
+        return (size_t)specs->field_width;
+    return sizeof(long);
 }
 
-/*
- * Encode the NativeInteger using the standard INTEGER type DER encoder.
- */
-asn_enc_rval_t
-NativeInteger_encode_der(const asn_TYPE_descriptor_t *sd, const void *ptr,
-                         int tag_mode, ber_tlv_tag_t tag,
-                         asn_app_consume_bytes_f *cb, void *app_key) {
-	unsigned long native = *(const unsigned long *)ptr; /* Disable sign ext. */
-	asn_enc_rval_t erval = {0,0,0};
-	INTEGER_t tmp;
-
-#ifdef	WORDS_BIGENDIAN		/* Opportunistic optimization */
-
-	tmp.buf = (uint8_t *)&native;
-	tmp.size = sizeof(native);
-
-#else	/* Works even if WORDS_BIGENDIAN is not set where should've been */
-	uint8_t buf[sizeof(native)];
-	uint8_t *p;
-
-	/* Prepare a fake INTEGER */
-	for(p = buf + sizeof(buf) - 1; p >= buf; p--, native >>= 8)
-		*p = (uint8_t)native;
-
-	tmp.buf = buf;
-	tmp.size = sizeof(buf);
-#endif	/* WORDS_BIGENDIAN */
-	
-	/* Encode fake INTEGER */
-	erval = INTEGER_encode_der(sd, &tmp, tag_mode, tag, cb, app_key);
-    if(erval.structure_ptr == &tmp) {
-        erval.structure_ptr = ptr;
+intmax_t
+NativeInteger_load_s(const void *ptr, const asn_INTEGER_specifics_t *specs) {
+    switch(NativeInteger_field_width(specs)) {
+    case 1: return (intmax_t)(*(const int8_t  *)ptr);
+    case 2: return (intmax_t)(*(const int16_t *)ptr);
+    case 4: return (intmax_t)(*(const int32_t *)ptr);
+    case 8: return (intmax_t)(*(const int64_t *)ptr);
+    default: return (intmax_t)(*(const long *)ptr);
     }
-	return erval;
+}
+
+uintmax_t
+NativeInteger_load_u(const void *ptr, const asn_INTEGER_specifics_t *specs) {
+    switch(NativeInteger_field_width(specs)) {
+    case 1: return (uintmax_t)(*(const uint8_t  *)ptr);
+    case 2: return (uintmax_t)(*(const uint16_t *)ptr);
+    case 4: return (uintmax_t)(*(const uint32_t *)ptr);
+    case 8: return (uintmax_t)(*(const uint64_t *)ptr);
+    default: return (uintmax_t)(*(const unsigned long *)ptr);
+    }
+}
+
+void
+NativeInteger_store(void *ptr, const asn_INTEGER_specifics_t *specs,
+                    uintmax_t v) {
+    switch(NativeInteger_field_width(specs)) {
+    case 1: *(uint8_t  *)ptr = (uint8_t)v;  break;
+    case 2: *(uint16_t *)ptr = (uint16_t)v; break;
+    case 4: *(uint32_t *)ptr = (uint32_t)v; break;
+    case 8: *(uint64_t *)ptr = (uint64_t)v; break;
+    default: *(unsigned long *)ptr = (unsigned long)v; break;
+    }
 }
 
 /*
- * Decode the chunk of XML text encoding INTEGER.
- */
-asn_dec_rval_t
-NativeInteger_decode_xer(const asn_codec_ctx_t *opt_codec_ctx,
-                         const asn_TYPE_descriptor_t *td, void **sptr,
-                         const char *opt_mname, const void *buf_ptr,
-                         size_t size) {
-    const asn_INTEGER_specifics_t *specs =
-        (const asn_INTEGER_specifics_t *)td->specifics;
-    asn_dec_rval_t rval;
-	INTEGER_t st;
-	void *st_ptr = (void *)&st;
-	long *native = (long *)*sptr;
-
-	if(!native) {
-		native = (long *)(*sptr = CALLOC(1, sizeof(*native)));
-		if(!native) ASN__DECODE_FAILED;
-	}
-
-	memset(&st, 0, sizeof(st));
-	rval = INTEGER_decode_xer(opt_codec_ctx, td, &st_ptr, 
-		opt_mname, buf_ptr, size);
-	if(rval.code == RC_OK) {
-		long l;
-		if((specs&&specs->field_unsigned)
-			? asn_INTEGER2ulong(&st, (unsigned long *)&l) /* sic */
-			: asn_INTEGER2long(&st, &l)) {
-			rval.code = RC_FAIL;
-			rval.consumed = 0;
-		} else {
-			*native = l;
-		}
-	} else {
-		/*
-		 * Cannot restart from the middle;
-		 * there is no place to save state in the native type.
-		 * Request a continuation from the very beginning.
-		 */
-		rval.consumed = 0;
-	}
-	ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_INTEGER, &st);
-	return rval;
-}
-
-
-asn_enc_rval_t
-NativeInteger_encode_xer(const asn_TYPE_descriptor_t *td, const void *sptr,
-                         int ilevel, enum xer_encoder_flags_e flags,
-                         asn_app_consume_bytes_f *cb, void *app_key) {
-    const asn_INTEGER_specifics_t *specs =
-        (const asn_INTEGER_specifics_t *)td->specifics;
-    char scratch[32];	/* Enough for 64-bit int */
-	asn_enc_rval_t er = {0,0,0};
-	const long *native = (const long *)sptr;
-
-	(void)ilevel;
-	(void)flags;
-
-	if(!native) ASN__ENCODE_FAILED;
-
-	er.encoded = snprintf(scratch, sizeof(scratch),
-			(specs && specs->field_unsigned)
-			? "%lu" : "%ld", *native);
-	if(er.encoded <= 0 || (size_t)er.encoded >= sizeof(scratch)
-		|| cb(scratch, er.encoded, app_key) < 0)
-		ASN__ENCODE_FAILED;
-
-	ASN__ENCODED_OK(er);
-}
-
-#ifndef  ASN_DISABLE_PER_SUPPORT
-
-asn_dec_rval_t
-NativeInteger_decode_uper(const asn_codec_ctx_t *opt_codec_ctx,
-                          const asn_TYPE_descriptor_t *td,
-                          const asn_per_constraints_t *constraints, void **sptr,
-                          asn_per_data_t *pd) {
-    const asn_INTEGER_specifics_t *specs =
-        (const asn_INTEGER_specifics_t *)td->specifics;
-    asn_dec_rval_t rval;
-	long *native = (long *)*sptr;
-	INTEGER_t tmpint;
-	void *tmpintptr = &tmpint;
-
-	(void)opt_codec_ctx;
-	ASN_DEBUG("Decoding NativeInteger %s (UPER)", td->name);
-
-	if(!native) {
-		native = (long *)(*sptr = CALLOC(1, sizeof(*native)));
-		if(!native) ASN__DECODE_FAILED;
-	}
-
-	memset(&tmpint, 0, sizeof tmpint);
-	rval = INTEGER_decode_uper(opt_codec_ctx, td, constraints,
-				   &tmpintptr, pd);
-	if(rval.code == RC_OK) {
-		if((specs&&specs->field_unsigned)
-			? asn_INTEGER2ulong(&tmpint, (unsigned long *)native)
-			: asn_INTEGER2long(&tmpint, native))
-			rval.code = RC_FAIL;
-		else
-			ASN_DEBUG("NativeInteger %s got value %ld",
-				td->name, *native);
-	}
-	ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_INTEGER, &tmpint);
-
-	return rval;
-}
-
-asn_enc_rval_t
-NativeInteger_encode_uper(const asn_TYPE_descriptor_t *td,
-                          const asn_per_constraints_t *constraints,
-                          const void *sptr, asn_per_outp_t *po) {
-    const asn_INTEGER_specifics_t *specs =
-        (const asn_INTEGER_specifics_t *)td->specifics;
-    asn_enc_rval_t er = {0,0,0};
-	long native;
-	INTEGER_t tmpint;
-
-	if(!sptr) ASN__ENCODE_FAILED;
-
-    native = *(const long *)sptr;
-
-    ASN_DEBUG("Encoding NativeInteger %s %ld (UPER)", td->name, native);
-
-	memset(&tmpint, 0, sizeof(tmpint));
-	if((specs&&specs->field_unsigned)
-		? asn_ulong2INTEGER(&tmpint, native)
-		: asn_long2INTEGER(&tmpint, native))
-		ASN__ENCODE_FAILED;
-	er = INTEGER_encode_uper(td, constraints, &tmpint, po);
-	ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_INTEGER, &tmpint);
-	return er;
-}
-
-asn_dec_rval_t
-NativeInteger_decode_aper(const asn_codec_ctx_t *opt_codec_ctx,
-                          const asn_TYPE_descriptor_t *td,
-                          const asn_per_constraints_t *constraints, void **sptr, asn_per_data_t *pd) {
-
-	const asn_INTEGER_specifics_t *specs = (const asn_INTEGER_specifics_t *)td->specifics;
-	asn_dec_rval_t rval;
-	long *native = (long *)*sptr;
-	INTEGER_t tmpint;
-	void *tmpintptr = &tmpint;
-
-	(void)opt_codec_ctx;
-	ASN_DEBUG("Decoding NativeInteger %s (APER)", td->name);
-
-	if(!native) {
-		native = (long *)(*sptr = CALLOC(1, sizeof(*native)));
-		if(!native) ASN__DECODE_FAILED;
-	}
-
-	memset(&tmpint, 0, sizeof tmpint);
-	rval = INTEGER_decode_aper(opt_codec_ctx, td, constraints,
-	                           &tmpintptr, pd);
-	if(rval.code == RC_OK) {
-		if((specs&&specs->field_unsigned)
-		        ? asn_INTEGER2ulong(&tmpint, (unsigned long *)native)
-		        : asn_INTEGER2long(&tmpint, native))
-			rval.code = RC_FAIL;
-		else
-			ASN_DEBUG("NativeInteger %s got value %ld",
-			          td->name, *native);
-	}
-	ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_INTEGER, &tmpint);
-
-	return rval;
-}
-
-asn_enc_rval_t
-NativeInteger_encode_aper(const asn_TYPE_descriptor_t *td,
-                          const asn_per_constraints_t *constraints,
-                          const void *sptr, asn_per_outp_t *po) {
-
-	const asn_INTEGER_specifics_t *specs = (const asn_INTEGER_specifics_t *)td->specifics;
-	asn_enc_rval_t er = {0,0,0};
-	long native;
-	INTEGER_t tmpint;
-
-	if(!sptr) ASN__ENCODE_FAILED;
-
-	native = *(const long *)sptr;
-
-	ASN_DEBUG("Encoding NativeInteger %s %ld (APER)", td->name, native);
-
-	memset(&tmpint, 0, sizeof(tmpint));
-	if((specs&&specs->field_unsigned)
-	        ? asn_ulong2INTEGER(&tmpint, (unsigned long)native)
-	        : asn_long2INTEGER(&tmpint, native))
-		ASN__ENCODE_FAILED;
-	er = INTEGER_encode_aper(td, constraints, &tmpint, po);
-	ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_INTEGER, &tmpint);
-	return er;
-}
-
-#endif  /* ASN_DISABLE_PER_SUPPORT */
-
-/*
- * INTEGER specific human-readable output.
+ * Decode an INTEGER_t into the native member, honoring field width and
+ * signedness.  Returns 0 on success, -1 if the value does not fit the
+ * configured native width (overflow).
  */
 int
-NativeInteger_print(const asn_TYPE_descriptor_t *td, const void *sptr,
-                    int ilevel, asn_app_consume_bytes_f *cb, void *app_key) {
-    const asn_INTEGER_specifics_t *specs =
-        (const asn_INTEGER_specifics_t *)td->specifics;
-    const long *native = (const long *)sptr;
-    char scratch[32]; /* Enough for 64-bit int */
-    int ret;
-
-    (void)td;       /* Unused argument */
-    (void)ilevel;   /* Unused argument */
-
-    if(native) {
-        long value = *native;
-        ret = snprintf(scratch, sizeof(scratch),
-                       (specs && specs->field_unsigned) ? "%lu" : "%ld", value);
-        assert(ret > 0 && (size_t)ret < sizeof(scratch));
-        if(cb(scratch, ret, app_key) < 0) return -1;
-        if(specs && (value >= 0 || !specs->field_unsigned)) {
-            const asn_INTEGER_enum_map_t *el =
-                INTEGER_map_value2enum(specs, value);
-            if(el) {
-                if(cb(" (", 2, app_key) < 0) return -1;
-                if(cb(el->enum_name, el->enum_len, app_key) < 0) return -1;
-                if(cb(")", 1, app_key) < 0) return -1;
-            }
+NativeInteger_store_from_INTEGER(void *ptr,
+                                 const asn_INTEGER_specifics_t *specs,
+                                 const INTEGER_t *tmp) {
+    size_t w = NativeInteger_field_width(specs);
+    if(specs && specs->field_unsigned) {
+        uintmax_t u;
+        if(asn_INTEGER2umax(tmp, &u)) return -1;
+        if(w < sizeof(uintmax_t)) {
+            uintmax_t max = (((uintmax_t)1 << (8 * w)) - 1);
+            if(u > max) return -1;
         }
-        return 0;
-	} else {
-		return (cb("<absent>", 8, app_key) < 0) ? -1 : 0;
-	}
+        NativeInteger_store(ptr, specs, u);
+    } else {
+        intmax_t s;
+        if(asn_INTEGER2imax(tmp, &s)) return -1;
+        if(w < sizeof(intmax_t)) {
+            intmax_t hi = (((intmax_t)1 << (8 * w - 1)) - 1);
+            intmax_t lo = -hi - 1;
+            if(s < lo || s > hi) return -1;
+        }
+        NativeInteger_store(ptr, specs, (uintmax_t)s);
+    }
+    return 0;
+}
+
+/*
+ * Materialize the native member as a canonical INTEGER_t (caller frees
+ * tmp->buf).  Returns 0 on success.
+ */
+int
+NativeInteger_to_INTEGER(const void *ptr,
+                         const asn_INTEGER_specifics_t *specs,
+                         INTEGER_t *tmp) {
+    memset(tmp, 0, sizeof(*tmp));
+    if(specs && specs->field_unsigned)
+        return asn_umax2INTEGER(tmp, NativeInteger_load_u(ptr, specs));
+    return asn_imax2INTEGER(tmp, NativeInteger_load_s(ptr, specs));
 }
 
 void
@@ -435,7 +216,9 @@ NativeInteger_free(const asn_TYPE_descriptor_t *td, void *ptr,
     case ASFM_FREE_UNDERLYING:
         break;
     case ASFM_FREE_UNDERLYING_AND_RESET:
-        memset(ptr, 0, sizeof(long));
+        memset(ptr, 0,
+               NativeInteger_field_width(
+                   (const asn_INTEGER_specifics_t *)td->specifics));
         break;
     }
 }
@@ -448,25 +231,17 @@ NativeInteger_compare(const asn_TYPE_descriptor_t *td, const void *aptr, const v
         const asn_INTEGER_specifics_t *specs =
             (const asn_INTEGER_specifics_t *)td->specifics;
         if(specs && specs->field_unsigned) {
-            const unsigned long *a = aptr;
-            const unsigned long *b = bptr;
-            if(*a < *b) {
-                return -1;
-            } else if(*a > *b) {
-                return 1;
-            } else {
-                return 0;
-            }
+            uintmax_t a = NativeInteger_load_u(aptr, specs);
+            uintmax_t b = NativeInteger_load_u(bptr, specs);
+            if(a < b) return -1;
+            else if(a > b) return 1;
+            else return 0;
         } else {
-            const long *a = aptr;
-            const long *b = bptr;
-            if(*a < *b) {
-                return -1;
-            } else if(*a > *b) {
-                return 1;
-            } else {
-                return 0;
-            }
+            intmax_t a = NativeInteger_load_s(aptr, specs);
+            intmax_t b = NativeInteger_load_s(bptr, specs);
+            if(a < b) return -1;
+            else if(a > b) return 1;
+            else return 0;
         }
     } else if(!aptr) {
         return -1;
@@ -475,76 +250,29 @@ NativeInteger_compare(const asn_TYPE_descriptor_t *td, const void *aptr, const v
     }
 }
 
-asn_random_fill_result_t
-NativeInteger_random_fill(const asn_TYPE_descriptor_t *td, void **sptr,
-                          const asn_encoding_constraints_t *constraints,
-                          size_t max_length) {
+int
+NativeInteger_copy(const asn_TYPE_descriptor_t *td, void **aptr, const void *bptr) {
     const asn_INTEGER_specifics_t *specs =
-        (const asn_INTEGER_specifics_t *)td->specifics;
-    asn_random_fill_result_t result_ok = {ARFILL_OK, 1};
-    asn_random_fill_result_t result_failed = {ARFILL_FAILED, 0};
-    asn_random_fill_result_t result_skipped = {ARFILL_SKIPPED, 0};
-    long *st = *sptr;
-    const asn_INTEGER_enum_map_t *emap;
-    size_t emap_len;
-    intmax_t value;
-    int find_inside_map;
+        td ? (const asn_INTEGER_specifics_t *)td->specifics : 0;
+    size_t width = NativeInteger_field_width(specs);
+    void *a = *aptr;
 
-    if(max_length == 0) return result_skipped;
-
-    if(st == NULL) {
-        st = (long *)CALLOC(1, sizeof(*st));
-        if(st == NULL) {
-            return result_failed;
+    /* Check if source has data */
+    if(!bptr) {
+        /* Clear destination */
+        if(a) {
+            FREEMEM(a);
+            *aptr = 0;
         }
+        return 0;
     }
 
-    if(specs) {
-        emap = specs->value2enum;
-        emap_len = specs->map_count;
-        if(specs->strict_enumeration) {
-            find_inside_map = emap_len > 0;
-        } else {
-            find_inside_map = emap_len ? asn_random_between(0, 1) : 0;
-        }
-    } else {
-        emap = 0;
-        emap_len = 0;
-        find_inside_map = 0;
+    if(!a) {
+        a = *aptr = MALLOC(width);
+        if(!a) return -1;
     }
 
-    if(find_inside_map) {
-        assert(emap_len > 0);
-        value = emap[asn_random_between(0, emap_len - 1)].nat_value;
-    } else {
-        const asn_per_constraints_t *ct;
+    memcpy(a, bptr, width);
 
-        static const long variants[] = {
-            -65536, -65535, -65534, -32769, -32768, -32767, -16385, -16384,
-            -16383, -257,   -256,   -255,   -254,   -129,   -128,   -127,
-            -126,   -1,     0,      1,      126,    127,    128,    129,
-            254,    255,    256,    257,    16383,  16384,  16385,  32767,
-            32768,  32769,  65534,  65535,  65536,  65537};
-        if(specs && specs->field_unsigned) {
-            assert(variants[18] == 0);
-            value = variants[asn_random_between(
-                18, sizeof(variants) / sizeof(variants[0]) - 1)];
-        } else {
-            value = variants[asn_random_between(
-                0, sizeof(variants) / sizeof(variants[0]) - 1)];
-        }
-
-        if(!constraints) constraints = &td->encoding_constraints;
-        ct = constraints ? constraints->per_constraints : 0;
-        if(ct && (ct->value.flags & APC_CONSTRAINED)) {
-            if(value < ct->value.lower_bound || value > ct->value.upper_bound) {
-                value = asn_random_between(ct->value.lower_bound,
-                                           ct->value.upper_bound);
-            }
-        }
-    }
-
-    *sptr = st;
-    *st = value;
-    return result_ok;
+    return 0;
 }

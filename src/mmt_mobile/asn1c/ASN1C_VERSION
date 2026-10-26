@@ -5,15 +5,28 @@
 # toolchain below and re-runs the gen-s1ap/gen-ngap targets, failing the
 # job when the regenerated output drifts from the committed tree.
 #
-# The pin is mouse07410/asn1c @ dbd0ed09, which reports
-# "ASN.1 Compiler, v0.9.29" — the version string embedded in every
-# generated file header. It is the last first-parent commit on the
-# vlm_master branch before the 2020-07-07 upstream merge (8ac149d3):
-# the newest revision that still accepts the -gen-PER flag used by the
-# recipe (removed at b5ed2c1f when PER split into -gen-UPER/-gen-APER)
-# while emitting the ASN1C_PREFIX-based naming used by ngap/.
+# The pin is mouse07410/asn1c v1.5.3 (tag commit e6c2799a, 2026-10-07;
+# issue #521). It carries the upstream fixes for GHSA-x882-jvjm-xxh9
+# (ce45145ad4) and GHSA-rcj5-gcvg-x796 (e9600cf7f2), so the recipe applies
+# no runtime patch (issue #522 dropped the #513 backports).
+#
+# Flag mapping: v1.5.x removed -gen-PER (split at b5ed2c1f into
+# -gen-UPER/-gen-APER) and generates every codec by default. The recipe
+# maps -gen-PER to -gen-APER — the dissectors decode aligned PER only —
+# and passes -no-gen-UPER -no-gen-JER -no-gen-CBOR (src/mmt_mobile/asn1c/
+# Makefile, ASN1C_CODECS). ASN1C_PREFIX (ngap/ naming) is unchanged.
+#
+# Version string: v1.5.x computes it at autoreconf time from
+# `git describe` and the commit date, and falls back to NOGIT-<build date>
+# in a tarball, which every generated file header embeds. The recipe
+# therefore stamps ASN1C_VERSION_STRING and ASN1C_BUGURL into configure.ac
+# before autoreconf: the string is what `git describe --tags --long` of the
+# tag reports, the URL is upstream's tarball fallback. `asn1c -v` must
+# print exactly "ASN.1 Compiler, ${ASN1C_VERSION_STRING} (${ASN1C_BUGURL})".
 ASN1C_REPO=mouse07410/asn1c
-ASN1C_REF=dbd0ed0983a7b412ada27cb279f7823dcb381e80
-ASN1C_REF_NAME=vlm_master
-ASN1C_VERSION=0.9.29
-ASN1C_TARBALL_SHA256=eb67ca6a2fab71d0be5d0be77e231c027c61119ba10a9ce7e6330c844dc17c28
+ASN1C_REF=e6c2799ac9e64702dd425b47d838aa27b2495e7b
+ASN1C_REF_NAME=v1.5.3
+ASN1C_VERSION=1.5.3
+ASN1C_VERSION_STRING=v1.5.3-0-ge6c2799a-2026-10-07
+ASN1C_BUGURL=https://github.com/mouse07410/asn1c/issues
+ASN1C_TARBALL_SHA256=51da7f833ba88a513844df66c5c7027f5a26ad5722a3a2c31db40116fb7aa229

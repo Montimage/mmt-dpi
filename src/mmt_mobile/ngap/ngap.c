@@ -34,6 +34,19 @@ static inline const asn_codec_ctx_t * _aper_codec_ctx( void ){
 #endif
 }
 
+/*
+ * Issue #522: asn1c v1.5.3 emits each message's protocolIEs as a pointer
+ * to a forward-declared `struct NGAP_ProtocolIE_Container`, while its
+ * descriptor (ATF_POINTER, asn_DEF_NGAP_ProtocolIE_Container_124Pn) makes
+ * the decoder allocate the NGAP_ProtocolIE_Container_124Pn instance. Every
+ * instance starts with its A_SEQUENCE_OF list, so the IEs are read through
+ * asn1c's anonymous-sequence view; a missing container reads as empty.
+ */
+#define _NGAP_IE_COUNT(msg) \
+	((msg) && (msg)->protocolIEs ? _A_CSEQUENCE_FROM_VOID((msg)->protocolIEs)->count : 0)
+#define _NGAP_IE_AT(msg, idx) \
+	(_A_CSEQUENCE_FROM_VOID((msg)->protocolIEs)->array[(idx)])
+
 bool try_decode_ngap( const uint8_t * payload, const uint32_t length ){
 	NGAP_NGAP_PDU_t *pdu_p = NULL;
 	asn_dec_rval_t dec_ret;
@@ -53,6 +66,8 @@ bool try_decode_ngap( const uint8_t * payload, const uint32_t length ){
 }
 
 static inline void _get_set_amf_ue_ngap_id( action_t act, ngap_message_t *msg, NGAP_AMF_UE_NGAP_ID_t * id ){
+	if( id == NULL )
+		return;
 	if( act == SET_ACTION ){
 		asn_int642INTEGER(id, msg->amf_ue_id);
 	}else{
@@ -67,6 +82,13 @@ static inline void _get_set_amf_ue_ngap_id( action_t act, ngap_message_t *msg, N
 		b = a;                    \
 	}
 
+/* asn1c v1.5.3 holds every IE value alternative by pointer (issue #522) */
+static inline void _get_set_ran_ue_ngap_id( action_t act, ngap_message_t *msg, NGAP_RAN_UE_NGAP_ID_t *id ){
+	if( id == NULL )
+		return;
+	GET_SET( act, msg->ran_ue_id, *id );
+}
+
 static inline void _get_set_nas_pdu( action_t act, ngap_message_t *msg, const NGAP_NAS_PDU_t *nas_pdu ){
 	//NAS_PDU is meaningful only when decoding (GET_ACTION);
 	//when encoding (SET_ACTION) the PDU being built already carries its own NAS_PDU
@@ -78,14 +100,14 @@ static inline void _get_set_nas_pdu( action_t act, ngap_message_t *msg, const NG
 
 static inline bool _decode_NGAP_InitialUEMessage_t(action_t act, ngap_message_t *msg, NGAP_InitialUEMessage_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_InitialUEMessage_IEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_InitialUEMessage_IEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_InitialUEMessage_IEs__value_PR_NAS_PDU:
-			_get_set_nas_pdu( act, msg, &ie_p->value.choice.NAS_PDU );
+			_get_set_nas_pdu( act, msg, ie_p->value.choice.NAS_PDU );
 			break;
 		case NGAP_InitialUEMessage_IEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -96,17 +118,17 @@ static inline bool _decode_NGAP_InitialUEMessage_t(action_t act, ngap_message_t 
 
 static inline bool _decode_NGAP_DownlinkNASTransport(action_t act, ngap_message_t *msg, NGAP_DownlinkNASTransport_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_DownlinkNASTransport_IEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_DownlinkNASTransport_IEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_DownlinkNASTransport_IEs__value_PR_NAS_PDU:
-			_get_set_nas_pdu( act, msg, &ie_p->value.choice.NAS_PDU );
+			_get_set_nas_pdu( act, msg, ie_p->value.choice.NAS_PDU );
 			break;
 		case NGAP_DownlinkNASTransport_IEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_DownlinkNASTransport_IEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -117,17 +139,17 @@ static inline bool _decode_NGAP_DownlinkNASTransport(action_t act, ngap_message_
 
 static inline bool _decode_NGAP_UplinkNASTransport(action_t act, ngap_message_t *msg, NGAP_UplinkNASTransport_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_UplinkNASTransport_IEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_UplinkNASTransport_IEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_UplinkNASTransport_IEs__value_PR_NAS_PDU:
-			_get_set_nas_pdu( act, msg, &ie_p->value.choice.NAS_PDU );
+			_get_set_nas_pdu( act, msg, ie_p->value.choice.NAS_PDU );
 			break;
 		case NGAP_UplinkNASTransport_IEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_UplinkNASTransport_IEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -138,14 +160,14 @@ static inline bool _decode_NGAP_UplinkNASTransport(action_t act, ngap_message_t 
 
 static inline bool _decode_NGAP_HandoverRequired(action_t act, ngap_message_t *msg, NGAP_HandoverRequired_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_HandoverRequiredIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_HandoverRequiredIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_HandoverRequiredIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_HandoverRequiredIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -156,14 +178,14 @@ static inline bool _decode_NGAP_HandoverRequired(action_t act, ngap_message_t *m
 
 static inline bool _decode_NGAP_PathSwitchRequest(action_t act, ngap_message_t *msg, NGAP_PathSwitchRequest_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_PathSwitchRequestIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_PathSwitchRequestIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_PathSwitchRequestIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_PathSwitchRequestIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -176,11 +198,13 @@ static inline bool _decode_NGAP_UEContextReleaseCommand(action_t act, ngap_messa
 	int i, decoded = 0;
 	NGAP_UE_NGAP_IDs_t *id;
 	NGAP_UE_NGAP_ID_pair_t *pair;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_UEContextReleaseCommand_IEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_UEContextReleaseCommand_IEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_UEContextReleaseCommand_IEs__value_PR_UE_NGAP_IDs:
-			id = &ie_p->value.choice.UE_NGAP_IDs;
+			id = ie_p->value.choice.UE_NGAP_IDs;
+			if( id == NULL )
+				break;
 			switch( id->present ){
 			case NGAP_UE_NGAP_IDs_PR_uE_NGAP_ID_pair:
 				pair = id->choice.uE_NGAP_ID_pair;
@@ -203,14 +227,14 @@ static inline bool _decode_NGAP_UEContextReleaseCommand(action_t act, ngap_messa
 
 static inline bool _decode_NGAP_UEContextReleaseRequest(action_t act, ngap_message_t *msg, NGAP_UEContextReleaseRequest_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_UEContextReleaseRequest_IEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_UEContextReleaseRequest_IEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_UEContextReleaseRequest_IEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_UEContextReleaseRequest_IEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -221,14 +245,14 @@ static inline bool _decode_NGAP_UEContextReleaseRequest(action_t act, ngap_messa
 
 static inline bool _decode_NGAP_UERadioCapabilityInfoIndication(action_t act, ngap_message_t *msg, NGAP_UERadioCapabilityInfoIndication_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_UERadioCapabilityInfoIndicationIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_UERadioCapabilityInfoIndicationIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -239,14 +263,14 @@ static inline bool _decode_NGAP_UERadioCapabilityInfoIndication(action_t act, ng
 
 static inline bool _decode_NGAP_PDUSessionResourceSetupRequest(action_t act, ngap_message_t *msg, NGAP_PDUSessionResourceSetupRequest_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_PDUSessionResourceSetupRequestIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_PDUSessionResourceSetupRequestIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_PDUSessionResourceSetupRequestIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_PDUSessionResourceSetupRequestIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -257,14 +281,14 @@ static inline bool _decode_NGAP_PDUSessionResourceSetupRequest(action_t act, nga
 
 static inline bool _decode_NGAP_HandoverNotify(action_t act, ngap_message_t *msg, NGAP_HandoverNotify_t *data){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_HandoverNotifyIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_HandoverNotifyIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_HandoverNotifyIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_HandoverNotifyIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -276,25 +300,25 @@ static inline bool _decode_NGAP_HandoverNotify(action_t act, ngap_message_t *msg
 static inline bool _decode_initiatingMessage(action_t act, ngap_message_t *msg, NGAP_InitiatingMessage_t *data ){
 	switch( data->value.present ){
 	case NGAP_InitiatingMessage__value_PR_InitialUEMessage:
-		return _decode_NGAP_InitialUEMessage_t( act, msg, &data->value.choice.InitialUEMessage);
+		return _decode_NGAP_InitialUEMessage_t( act, msg, data->value.choice.InitialUEMessage );
 	case NGAP_InitiatingMessage__value_PR_DownlinkNASTransport:
-		return _decode_NGAP_DownlinkNASTransport( act, msg, &data->value.choice.DownlinkNASTransport);
+		return _decode_NGAP_DownlinkNASTransport( act, msg, data->value.choice.DownlinkNASTransport );
 	case NGAP_InitiatingMessage__value_PR_UplinkNASTransport:
-		return _decode_NGAP_UplinkNASTransport( act, msg, &data->value.choice.UplinkNASTransport);
+		return _decode_NGAP_UplinkNASTransport( act, msg, data->value.choice.UplinkNASTransport );
 	case NGAP_InitiatingMessage__value_PR_UEContextReleaseCommand:
-		return _decode_NGAP_UEContextReleaseCommand( act, msg, &data->value.choice.UEContextReleaseCommand);
+		return _decode_NGAP_UEContextReleaseCommand( act, msg, data->value.choice.UEContextReleaseCommand );
 	case NGAP_InitiatingMessage__value_PR_UEContextReleaseRequest:
-		return _decode_NGAP_UEContextReleaseRequest( act, msg, &data->value.choice.UEContextReleaseRequest);
+		return _decode_NGAP_UEContextReleaseRequest( act, msg, data->value.choice.UEContextReleaseRequest );
 	case NGAP_InitiatingMessage__value_PR_UERadioCapabilityInfoIndication:
-		return _decode_NGAP_UERadioCapabilityInfoIndication( act, msg, &data->value.choice.UERadioCapabilityInfoIndication);
+		return _decode_NGAP_UERadioCapabilityInfoIndication( act, msg, data->value.choice.UERadioCapabilityInfoIndication );
 	case NGAP_InitiatingMessage__value_PR_HandoverRequired:
-		return _decode_NGAP_HandoverRequired( act, msg, &data->value.choice.HandoverRequired);
+		return _decode_NGAP_HandoverRequired( act, msg, data->value.choice.HandoverRequired );
 	case NGAP_InitiatingMessage__value_PR_PathSwitchRequest:
-		return _decode_NGAP_PathSwitchRequest( act, msg, &data->value.choice.PathSwitchRequest);
+		return _decode_NGAP_PathSwitchRequest( act, msg, data->value.choice.PathSwitchRequest );
 	case NGAP_InitiatingMessage__value_PR_PDUSessionResourceSetupRequest:
-		return _decode_NGAP_PDUSessionResourceSetupRequest( act, msg, &data->value.choice.PDUSessionResourceSetupRequest);
+		return _decode_NGAP_PDUSessionResourceSetupRequest( act, msg, data->value.choice.PDUSessionResourceSetupRequest );
 	case NGAP_InitiatingMessage__value_PR_HandoverNotify:
-		return _decode_NGAP_HandoverNotify( act, msg, &data->value.choice.HandoverNotify);
+		return _decode_NGAP_HandoverNotify( act, msg, data->value.choice.HandoverNotify );
 	default:
 		break;
 	}
@@ -303,14 +327,14 @@ static inline bool _decode_initiatingMessage(action_t act, ngap_message_t *msg, 
 
 static inline bool _decode_NGAP_UEContextReleaseComplete(action_t act, ngap_message_t *msg, NGAP_UEContextReleaseComplete_t *data ){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_UEContextReleaseComplete_IEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_UEContextReleaseComplete_IEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_UEContextReleaseComplete_IEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_UEContextReleaseComplete_IEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -321,14 +345,14 @@ static inline bool _decode_NGAP_UEContextReleaseComplete(action_t act, ngap_mess
 
 static inline bool _decode_NGAP_InitialContextSetupResponse(action_t act, ngap_message_t *msg, NGAP_InitialContextSetupResponse_t *data ){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_InitialContextSetupResponseIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_InitialContextSetupResponseIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_InitialContextSetupResponseIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_InitialContextSetupResponseIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -339,14 +363,14 @@ static inline bool _decode_NGAP_InitialContextSetupResponse(action_t act, ngap_m
 
 static inline bool _decode_NGAP_HandoverRequestAcknowledge(action_t act, ngap_message_t *msg, NGAP_HandoverRequestAcknowledge_t *data ){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_HandoverRequestAcknowledgeIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_HandoverRequestAcknowledgeIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_HandoverRequestAcknowledgeIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_HandoverRequestAcknowledgeIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -357,14 +381,14 @@ static inline bool _decode_NGAP_HandoverRequestAcknowledge(action_t act, ngap_me
 
 static inline bool _decode_NGAP_HandoverCommand(action_t act, ngap_message_t *msg, NGAP_HandoverCommand_t *data ){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_HandoverCommandIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_HandoverCommandIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_HandoverCommandIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_HandoverCommandIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -376,14 +400,14 @@ static inline bool _decode_NGAP_HandoverCommand(action_t act, ngap_message_t *ms
 
 static inline bool _decode_NGAP_PDUSessionResourceSetupResponse(action_t act, ngap_message_t *msg, NGAP_PDUSessionResourceSetupResponse_t *data ){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_PDUSessionResourceSetupResponseIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_PDUSessionResourceSetupResponseIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_PDUSessionResourceSetupResponseIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_PDUSessionResourceSetupResponseIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -394,14 +418,14 @@ static inline bool _decode_NGAP_PDUSessionResourceSetupResponse(action_t act, ng
 
 static inline bool _decode_NGAP_PathSwitchRequestAcknowledge(action_t act, ngap_message_t *msg, NGAP_PathSwitchRequestAcknowledge_t *data ){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_PathSwitchRequestAcknowledgeIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_PathSwitchRequestAcknowledgeIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_PathSwitchRequestAcknowledgeIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_PathSwitchRequestAcknowledgeIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -413,17 +437,17 @@ static inline bool _decode_NGAP_PathSwitchRequestAcknowledge(action_t act, ngap_
 static bool _decode_successfulOutcome(action_t act, ngap_message_t *msg, NGAP_SuccessfulOutcome_t *data ){
 	switch( data->value.present ){
 	case NGAP_SuccessfulOutcome__value_PR_UEContextReleaseComplete:
-		return _decode_NGAP_UEContextReleaseComplete( act, msg, &data->value.choice.UEContextReleaseComplete );
+		return _decode_NGAP_UEContextReleaseComplete( act, msg, data->value.choice.UEContextReleaseComplete );
 	case NGAP_SuccessfulOutcome__value_PR_InitialContextSetupResponse:
-		return _decode_NGAP_InitialContextSetupResponse( act, msg, &data->value.choice.InitialContextSetupResponse );
+		return _decode_NGAP_InitialContextSetupResponse( act, msg, data->value.choice.InitialContextSetupResponse );
 	case NGAP_SuccessfulOutcome__value_PR_HandoverRequestAcknowledge:
-		return _decode_NGAP_HandoverRequestAcknowledge( act, msg, &data->value.choice.HandoverRequestAcknowledge );
+		return _decode_NGAP_HandoverRequestAcknowledge( act, msg, data->value.choice.HandoverRequestAcknowledge );
 	case NGAP_SuccessfulOutcome__value_PR_HandoverCommand:
-		return _decode_NGAP_HandoverCommand( act, msg, &data->value.choice.HandoverCommand );
+		return _decode_NGAP_HandoverCommand( act, msg, data->value.choice.HandoverCommand );
 	case NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse:
-		return _decode_NGAP_PDUSessionResourceSetupResponse( act, msg, &data->value.choice.PDUSessionResourceSetupResponse );
+		return _decode_NGAP_PDUSessionResourceSetupResponse( act, msg, data->value.choice.PDUSessionResourceSetupResponse );
 	case NGAP_SuccessfulOutcome__value_PR_PathSwitchRequestAcknowledge:
-		return _decode_NGAP_PathSwitchRequestAcknowledge( act, msg, &data->value.choice.PathSwitchRequestAcknowledge );
+		return _decode_NGAP_PathSwitchRequestAcknowledge( act, msg, data->value.choice.PathSwitchRequestAcknowledge );
 	default:
 		break;
 	}
@@ -433,14 +457,14 @@ static bool _decode_successfulOutcome(action_t act, ngap_message_t *msg, NGAP_Su
 
 static inline bool _decode_NGAP_UEContextModificationFailure(action_t act, ngap_message_t *msg, NGAP_UEContextModificationFailure_t *data ){
 	int i, decoded = 0;
-	for( i=0; i<data->protocolIEs.list.count; i++){
-		NGAP_UEContextModificationFailureIEs_t *ie_p = data->protocolIEs.list.array[i];
+	for( i=0; i<_NGAP_IE_COUNT(data); i++){
+		NGAP_UEContextModificationFailureIEs_t *ie_p = _NGAP_IE_AT(data, i);
 		switch( ie_p->value.present ){
 		case NGAP_UEContextModificationFailureIEs__value_PR_AMF_UE_NGAP_ID:
-			_get_set_amf_ue_ngap_id( act, msg, & ie_p->value.choice.AMF_UE_NGAP_ID );
+			_get_set_amf_ue_ngap_id( act, msg, ie_p->value.choice.AMF_UE_NGAP_ID );
 			break;
 		case NGAP_UEContextModificationFailureIEs__value_PR_RAN_UE_NGAP_ID:
-			GET_SET( act, msg->ran_ue_id, ie_p->value.choice.RAN_UE_NGAP_ID );
+			_get_set_ran_ue_ngap_id( act, msg, ie_p->value.choice.RAN_UE_NGAP_ID );
 			break;
 		default:
 			break;
@@ -452,7 +476,7 @@ static inline bool _decode_NGAP_UEContextModificationFailure(action_t act, ngap_
 static bool _decode_unsuccessfulOutcome(action_t act, ngap_message_t *msg, NGAP_UnsuccessfulOutcome_t *data ){
 	switch( data->value.present ){
 	case NGAP_UnsuccessfulOutcome__value_PR_UEContextModificationFailure:
-		return _decode_NGAP_UEContextModificationFailure( act, msg, &data->value.choice.UEContextModificationFailure );
+		return _decode_NGAP_UEContextModificationFailure( act, msg, data->value.choice.UEContextModificationFailure );
 	default:
 		break;
 	}

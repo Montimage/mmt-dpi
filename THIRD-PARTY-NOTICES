@@ -49,11 +49,11 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-asn1c 0.9.29 (BSD-2-Clause)
-  Upstream: https://github.com/mouse07410/asn1c at dbd0ed0983a7b412ada27cb279f7823dcb381e80
+asn1c 1.5.3 (BSD-2-Clause)
+  Upstream: https://github.com/mouse07410/asn1c at e6c2799ac9e64702dd425b47d838aa27b2495e7b
   In-tree:  src/mmt_mobile/asn1c/common/
 
-Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info> and contributors.
+Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info> and contributors. Copyright (c) 2022-2026 Mouse <mouse07410@users.noreply.github.com> and contributors.
 
 BSD 2-Clause License
 

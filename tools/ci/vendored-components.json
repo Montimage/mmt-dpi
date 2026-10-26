@@ -30,13 +30,13 @@
     {
       "name": "asn1c",
       "spdx_id": "SPDXRef-Vendored-asn1c",
-      "version": "0.9.29",
+      "version": "1.5.3",
       "upstream": "https://github.com/mouse07410/asn1c",
-      "pin": "dbd0ed0983a7b412ada27cb279f7823dcb381e80",
-      "download_location": "git+https://github.com/mouse07410/asn1c@dbd0ed0983a7b412ada27cb279f7823dcb381e80",
-      "purl": "pkg:github/mouse07410/asn1c@dbd0ed0983a7b412ada27cb279f7823dcb381e80",
+      "pin": "e6c2799ac9e64702dd425b47d838aa27b2495e7b",
+      "download_location": "git+https://github.com/mouse07410/asn1c@e6c2799ac9e64702dd425b47d838aa27b2495e7b",
+      "purl": "pkg:github/mouse07410/asn1c@e6c2799ac9e64702dd425b47d838aa27b2495e7b",
       "license": "BSD-2-Clause",
-      "copyright": "Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info> and contributors.",
+      "copyright": "Copyright (c) 2003-2017 Lev Walkin <vlm@lionet.info> and contributors. Copyright (c) 2022-2026 Mouse <mouse07410@users.noreply.github.com> and contributors.",
       "notice": "per-file header in the runtime skeletons; upstream LICENSE",
       "paths": [
         "src/mmt_mobile/asn1c/common/"

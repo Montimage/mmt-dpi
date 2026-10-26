@@ -3,12 +3,10 @@
  * All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
-#ifndef ASN_DISABLE_OER_SUPPORT
-
 #include <asn_internal.h>
 #include <constr_SEQUENCE.h>
+#include <asn_bit_data.h>
 #include <OPEN_TYPE.h>
-#include <errno.h>
 
 /*
  * This macro "eats" the part of the buffer which is definitely "consumed",
@@ -197,6 +195,10 @@ SEQUENCE_decode_oer(const asn_codec_ctx_t *opt_codec_ctx,
         microphase2_decode_continues:
             if(elm->flags & ATF_OPEN_TYPE) {
                 rval = OPEN_TYPE_oer_get(opt_codec_ctx, td, st, elm, ptr, size);
+            } else if(!elm->type->op->oer_decoder) {
+                ASN_DEBUG("Member %s->%s has no OER decoder",
+                          td->name, elm->name);
+                RETURN(RC_FAIL);
             } else {
                 void *save_memb_ptr; /* Temporary reference. */
                 void **memb_ptr2;  /* Pointer to a pointer to a memmber */
@@ -266,28 +268,39 @@ SEQUENCE_decode_oer(const asn_codec_ctx_t *opt_codec_ctx,
         }
 
         if(len == 0) {
-            /* 16.4.1-2 */
-            RETURN(RC_FAIL);
+            /* 
+             * Empty extension addition presence bitmap.
+             * This can be valid when no extension additions are present.
+             * Create an empty bitmap to handle extension members with defaults.
+             */
+            static const uint8_t empty_byte = 0;
+            extadds = asn_bit_data_new_contiguous(&empty_byte, 0);
+            if(!extadds) {
+                RETURN(RC_FAIL);
+            }
+            FREEMEM(preamble);
+            ctx->ptr = extadds;
+            /* No ADVANCE needed for len == 0 */
         } else if(len > size) {
             RETURN(RC_WMORE);
-        }
+        } else {
+            /* Account for unused bits */
+            unused_bits = 0x7 & *(const uint8_t *)ptr;
+            ADVANCE(1);
+            len--;
+            if(unused_bits && len == 0) {
+                RETURN(RC_FAIL);
+            }
 
-        /* Account for unused bits */
-        unused_bits = 0x7 & *(const uint8_t *)ptr;
-        ADVANCE(1);
-        len--;
-        if(unused_bits && len == 0) {
-            RETURN(RC_FAIL);
+            /* Get the extensions map */
+            extadds = asn_bit_data_new_contiguous(ptr, len * 8 - unused_bits);
+            if(!extadds) {
+                RETURN(RC_FAIL);
+            }
+            FREEMEM(preamble);
+            ctx->ptr = extadds;
+            ADVANCE(len);
         }
-
-        /* Get the extensions map */
-        extadds = asn_bit_data_new_contiguous(ptr, len * 8 - unused_bits);
-        if(!extadds) {
-            RETURN(RC_FAIL);
-        }
-        FREEMEM(preamble);
-        ctx->ptr = extadds;
-        ADVANCE(len);
     }
         NEXT_PHASE(ctx);
         ctx->step =
@@ -392,6 +405,9 @@ SEQUENCE_encode_oer(const asn_TYPE_descriptor_t *td,
 
     (void)constraints;
 
+    /* Check recursion depth to prevent stack overflow */
+    OER_ENCODER_RECURSION_DEPTH_INC();
+
     if(preamble_bits) {
         asn_bit_outp_t preamble;
 
@@ -416,6 +432,7 @@ SEQUENCE_encode_oer(const asn_TYPE_descriptor_t *td,
             ret = asn_put_few_bits(&preamble, has_extensions, 1);
             assert(ret == 0);
             if(ret < 0) {
+                OER_ENCODER_RECURSION_DEPTH_DEC();
                 ASN__ENCODE_FAILED;
             }
         }
@@ -438,6 +455,7 @@ SEQUENCE_encode_oer(const asn_TYPE_descriptor_t *td,
                     }
                     ret = asn_put_few_bits(&preamble, has_component, 1);
                     if(ret < 0) {
+                        OER_ENCODER_RECURSION_DEPTH_DEC();
                         ASN__ENCODE_FAILED;
                     }
                 }
@@ -468,18 +486,25 @@ SEQUENCE_encode_oer(const asn_TYPE_descriptor_t *td,
         } else {
             if(elm->optional) continue;
             /* Mandatory element is missing */
+            OER_ENCODER_RECURSION_DEPTH_DEC();
             ASN__ENCODE_FAILED;
         }
         if(!elm->type->op->oer_encoder) {
             ASN_DEBUG("OER encoder is not defined for type %s", elm->type->name);
+            OER_ENCODER_RECURSION_DEPTH_DEC();
             ASN__ENCODE_FAILED;
         }
-        er = elm->type->op->oer_encoder(
-            elm->type, elm->encoding_constraints.oer_constraints, memb_ptr, cb,
-            app_key);
+        if(elm->flags & ATF_OPEN_TYPE) {
+            er = OPEN_TYPE_oer_put(td, sptr, elm, cb, app_key);
+        } else {
+            er = elm->type->op->oer_encoder(
+                elm->type, elm->encoding_constraints.oer_constraints, memb_ptr, cb,
+                app_key);
+        }
         if(er.encoded == -1) {
             ASN_DEBUG("... while encoding %s member \"%s\"\n", td->name,
                       elm->name);
+            OER_ENCODER_RECURSION_DEPTH_DEC();
             return er;
         }
         computed_size += er.encoded;
@@ -505,11 +530,17 @@ SEQUENCE_encode_oer(const asn_TYPE_descriptor_t *td,
 
         /* #8.6 length determinant */
         ret = asn_put_few_bits(&extadds, (1 + aoms_length_bytes), 8);
-        if(ret < 0) ASN__ENCODE_FAILED;
+        if(ret < 0) {
+            OER_ENCODER_RECURSION_DEPTH_DEC();
+            ASN__ENCODE_FAILED;
+        }
 
         /* Number of unused bytes, #16.4.2 */
         ret = asn_put_few_bits(&extadds, unused_bits, 8);
-        if(ret < 0) ASN__ENCODE_FAILED;
+        if(ret < 0) {
+            OER_ENCODER_RECURSION_DEPTH_DEC();
+            ASN__ENCODE_FAILED;
+        }
 
         /* Encode presence bitmap #16.4.3 */
         for(edx = specs->first_extension; edx < td->elements_count; edx++) {
@@ -521,7 +552,10 @@ SEQUENCE_encode_oer(const asn_TYPE_descriptor_t *td,
             }
             ret |= asn_put_few_bits(&extadds, memb_ptr ? 1 : 0, 1);
         }
-        if(ret < 0) ASN__ENCODE_FAILED;
+        if(ret < 0) {
+            OER_ENCODER_RECURSION_DEPTH_DEC();
+            ASN__ENCODE_FAILED;
+        }
 
         asn_put_aligned_flush(&extadds);
         computed_size += extadds.flushed_bytes;
@@ -540,11 +574,13 @@ SEQUENCE_encode_oer(const asn_TYPE_descriptor_t *td,
                         elm->type, elm->encoding_constraints.oer_constraints,
                         memb_ptr, cb, app_key);
                     if(wrote == -1) {
+                        OER_ENCODER_RECURSION_DEPTH_DEC();
                         ASN__ENCODE_FAILED;
                     }
                     computed_size += wrote;
                 }
             } else if(!elm->optional) {
+                OER_ENCODER_RECURSION_DEPTH_DEC();
                 ASN__ENCODE_FAILED;
             }
         }
@@ -554,8 +590,7 @@ SEQUENCE_encode_oer(const asn_TYPE_descriptor_t *td,
     {
         asn_enc_rval_t er = {0, 0, 0};
         er.encoded = computed_size;
+        OER_ENCODER_RECURSION_DEPTH_DEC();
         ASN__ENCODED_OK(er);
     }
 }
-
-#endif  /* ASN_DISABLE_OER_SUPPORT */

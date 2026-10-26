@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <arpa/inet.h> /* ntohl(); asn1c v1.5.3 asn_system.h no longer includes <netinet/in.h> */
 #include "s1ap_common.h"
 #include "nas/nas_msg.h"
 #include "proto_s1ap.h"
@@ -251,9 +252,13 @@ static inline int _s1ap_decode_e_rabtobesetuplistctxtsureq(
 			}
 
 			//HN: extract qci, priority level
-			const S1ap_E_RABLevelQoSParameters_t *qos = &s1apERABToBeSetupItemCtxtSUReq_p->e_RABlevelQoSParameters;
-			message->qos_qci = qos->qCI;
-			message->qos_priority_level = qos->allocationRetentionPriority.priorityLevel;
+			//asn1c v1.5.3 (issue #522) holds both structures by pointer
+			const S1ap_E_RABLevelQoSParameters_t *qos = s1apERABToBeSetupItemCtxtSUReq_p->e_RABlevelQoSParameters;
+			if (qos) {
+				message->qos_qci = qos->qCI;
+				if (qos->allocationRetentionPriority)
+					message->qos_priority_level = qos->allocationRetentionPriority->priorityLevel;
+			}
 
 			//HN:here we can get gtp teid
 			message->gtp_teid = _octet_string_to_uint32_t( & s1apERABToBeSetupItemCtxtSUReq_p->gTP_TEID );
@@ -829,8 +834,10 @@ static inline int _decode_s1ap_uecontextrelease(
                 	_nas_ciphering_release( message->mme_ue_id, 0, 0 );
                 	break;
                 case S1ap_UE_S1AP_IDs_PR_uE_S1AP_ID_pair:
-                	message->mme_ue_id = s1apUES1APIDs_p->choice.uE_S1AP_ID_pair.mME_UE_S1AP_ID;
-                	message->enb_ue_id = s1apUES1APIDs_p->choice.uE_S1AP_ID_pair.eNB_UE_S1AP_ID;
+                	if( s1apUES1APIDs_p->choice.uE_S1AP_ID_pair == NULL )
+                		break;
+                	message->mme_ue_id = s1apUES1APIDs_p->choice.uE_S1AP_ID_pair->mME_UE_S1AP_ID;
+                	message->enb_ue_id = s1apUES1APIDs_p->choice.uE_S1AP_ID_pair->eNB_UE_S1AP_ID;
                 	_nas_ciphering_release( message->mme_ue_id, message->enb_ue_id, 1 );
                 	break;
                 case S1ap_UE_S1AP_IDs_PR_NOTHING:
@@ -1042,80 +1049,13 @@ static int _decode_s1ap_successfulOutcomeMessage(s1ap_message_t *message,
 }
 
 /*
- * Issue #427: every S1AP open type (S1AP-PDU value, ProtocolIE value) is
- * generated as an ANY, and the vendored ANY_decode_aper() asks
- * aper_get_length() for its length determinant with ebits = 0
- * (src/mmt_mobile/asn1c/common/ANY.c). That returns per_get_few_bits(pd, 0)
- * == 0 without reading the octet-aligned X.691 §11.2 length, so each ANY
- * decodes as empty and consumes nothing: the message handlers then fail on
- * the empty IE container ("Decoding of S1ap_InitialUEMessage failed") and no
- * s1ap.* attribute is ever extracted. The generated tree must not be edited,
- * so the corrected decoder below (the same body with ebits = -1, i.e. read
- * the general length determinant) is installed into the shared asn_OP_ANY
- * operation table once, when the library is loaded — before any thread can
- * decode — so the table is never written concurrently with a read.
- * Issue #443: the asn1c objects are built with hidden visibility
- * (rules/common.mk), so asn_OP_ANY here is always this library's own copy,
- * never an asn1c runtime the host process links itself.
+ * Issue #427 installed a corrected ANY APER decoder here: the 0.9.29
+ * ANY_decode_aper() read every S1AP open type's length determinant with
+ * ebits = 0 and so decoded each one as empty. asn1c v1.5.3's skeleton
+ * (src/mmt_mobile/asn1c/common/ANY_aper.c) reads the general X.691 length
+ * determinant with the same body, so the override was dropped with the
+ * generator upgrade (issue #522); tests/s1ap_ngap_decode pins the result.
  */
-#undef RETURN
-#define RETURN(_code)                       \
-	do {                                    \
-		asn_dec_rval_t tmprval;             \
-		tmprval.code = _code;               \
-		tmprval.consumed = consumed_myself; \
-		return tmprval;                     \
-	} while(0)
-
-static asn_dec_rval_t _any_decode_aper_open_type(
-		const asn_codec_ctx_t *opt_codec_ctx,
-		const asn_TYPE_descriptor_t *td,
-		const asn_per_constraints_t *constraints, void **sptr,
-		asn_per_data_t *pd) {
-	const asn_OCTET_STRING_specifics_t *specs =
-		td->specifics ? (const asn_OCTET_STRING_specifics_t *)td->specifics
-		              : &asn_SPC_ANY_specs;
-	size_t consumed_myself = 0;
-	int repeat;
-	ANY_t *st = (ANY_t *)*sptr;
-
-	(void)opt_codec_ctx;
-	(void)constraints;
-
-	if(!st) {
-		st = (ANY_t *)(*sptr = CALLOC(1, specs->struct_size));
-		if(!st) RETURN(RC_FAIL);
-	}
-
-	st->size = 0;
-	do {
-		ssize_t raw_len;
-		void *p;
-
-		/* unconstrained, octet-aligned length determinant (X.691 §11.9) */
-		raw_len = aper_get_length(pd, -1, -1, &repeat);
-		if(raw_len < 0) RETURN(RC_WMORE);
-		if(raw_len == 0 && st->buf) break;
-
-		p = REALLOC(st->buf, st->size + (size_t)raw_len + 1);
-		if(!p) RETURN(RC_FAIL);
-		st->buf = (uint8_t *)p;
-
-		if(per_get_many_bits(pd, &st->buf[st->size], 0, raw_len * 8) < 0)
-			RETURN(RC_WMORE);
-		consumed_myself += raw_len * 8;
-		st->size += raw_len;
-	} while(repeat);
-	st->buf[st->size] = 0; /* nul-terminate */
-
-	RETURN(RC_OK);
-}
-#undef RETURN
-
-__attribute__((constructor))
-static void _install_any_aper_decoder( void ){
-	asn_OP_ANY.aper_decoder = _any_decode_aper_open_type;
-}
 
 /**
  * This function tries to fill information to all field of s1ap_message_t from S1AP packets
@@ -1187,18 +1127,23 @@ int s1ap_decode(s1ap_message_t *message, const uint8_t * const buffer,
 	message->pdu_present = pdu_p->present;
 	int ret = 0;
 	switch(pdu_p->present) {
+	/* asn1c v1.5.3 (issue #522) holds each S1AP-PDU alternative by pointer;
+	 * a successful decode allocates the selected one. */
 	case S1AP_PDU_PR_initiatingMessage:
-		message->procedure_code = pdu_p->choice.initiatingMessage.procedureCode;
+		if( pdu_p->choice.initiatingMessage == NULL ){ ret = -1; break; }
+		message->procedure_code = pdu_p->choice.initiatingMessage->procedureCode;
 		ret = _decode_s1ap_initiatingMessage(message,
-				&pdu_p->choice.initiatingMessage);
+				pdu_p->choice.initiatingMessage);
 		break;
 	case S1AP_PDU_PR_successfulOutcome:
-		message->procedure_code = pdu_p->choice.successfulOutcome.procedureCode;
+		if( pdu_p->choice.successfulOutcome == NULL ){ ret = -1; break; }
+		message->procedure_code = pdu_p->choice.successfulOutcome->procedureCode;
 		ret = _decode_s1ap_successfulOutcomeMessage(message,
-				&pdu_p->choice.successfulOutcome);
+				pdu_p->choice.successfulOutcome);
 		break;
 	case S1AP_PDU_PR_unsuccessfulOutcome:
-		message->procedure_code = pdu_p->choice.unsuccessfulOutcome.procedureCode;
+		if( pdu_p->choice.unsuccessfulOutcome == NULL ){ ret = -1; break; }
+		message->procedure_code = pdu_p->choice.unsuccessfulOutcome->procedureCode;
 		break;
 	default:
 		fprintf(stderr, "[S1AP] Unknown S1AP presence (%d)\n", (int)pdu_p->present);

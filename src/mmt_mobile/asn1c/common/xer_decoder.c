@@ -74,8 +74,10 @@ xer_next_token(int *stateContext, const void *buffer, size_t size, pxer_chunk_ty
         *ch_type = PXER_WMORE;
 		return 0;		/* Try again with more data */
 	} else {
-		assert(arg.chunk_size);
-		assert(arg.chunk_buf == buffer);
+		if(arg.chunk_size == 0
+		|| arg.chunk_size > size
+		|| arg.chunk_buf != buffer)
+			return -1;
 	}
 
 	/*
@@ -137,8 +139,49 @@ xer_check_tag(const void *buf_ptr, int size, const char *need_tag) {
 	}
 
 	/* Sometimes we don't care about the tag */
-	if(!need_tag || !*need_tag)
+	if(!need_tag || !*need_tag) {
+		/* When need_tag is NULL, check if this is an ASN.1 keyword tag to skip */
+		static const char *asn1_keywords[] = {
+			"SEQUENCE OF", "SET OF", "SEQUENCE", "SET", "CHOICE", NULL
+		};
+		const char **kw;
+		
+		for(kw = asn1_keywords; *kw; kw++) {
+			const char *keyword = *kw;
+			const char *b = buf;
+			const char *k = keyword;
+			int match = 1;
+			
+			/* Check if tag matches keyword (with space->hyphen normalization) */
+			while(*k && b < buf + size) {
+				char bc = *b;
+				char kc = *k;
+				
+				/* Normalize: space in keyword should match hyphen or space in tag */
+				if(kc == ' ') {
+					if(bc != '-' && bc != ' ') {
+						match = 0;
+						break;
+					}
+				} else if(bc != kc) {
+					match = 0;
+					break;
+				}
+				b++;
+				k++;
+			}
+			
+			/* If keyword fully matched and we're at tag boundary, this is an ASN.1 keyword tag */
+			if(match && *k == 0) {
+				if(b == buf + size || *b == ' ' || *b == '\t' || *b == '\r' || *b == '\n') {
+					/* Return the tag type (opening/closing/both) for ASN.1 keywords */
+					return ct;
+				}
+			}
+		}
+		
 		return (xer_check_tag_e)(XCT__UNK__MASK | ct);
+	}
 
 	/*
 	 * Determine the tag name.
@@ -323,7 +366,7 @@ xer_decode_general(const asn_codec_ctx_t *opt_codec_ctx,
 size_t
 xer_whitespace_span(const void *chunk_buf, size_t chunk_size) {
 	const char *p = (const char *)chunk_buf;
-	const char *pend = p + chunk_size;
+	const char *pend = (p == NULL)? NULL : p + chunk_size;
 
 	for(; p < pend; p++) {
 		switch(*p) {

@@ -34,6 +34,10 @@
 #include "NGAP_ProtocolIE-Field.h"
 #include "NGAP_RRCEstablishmentCause.h"
 #include "S1ap-E-RABToBeSetupItemCtxtSUReq.h"
+#include "S1ap-E-RABLevelQoSParameters.h"
+#include "S1ap-AllocationAndRetentionPriority.h"
+#include "NGAP_InitialUEMessage.h"
+#include "NGAP_ProtocolIE-Container.h"
 
 static int failures = 0;
 static int checks   = 0;
@@ -305,9 +309,21 @@ static ssize_t build_s1ap_ics_request_nas(uint8_t *out, size_t cap,
 
 	if (item == NULL || cap < 512)
 		return -1;
+	/* asn1c v1.5.3 holds both QoS structures by pointer (issue #522) */
+	item->e_RABlevelQoSParameters = calloc(1, sizeof(*item->e_RABlevelQoSParameters));
+	if (item->e_RABlevelQoSParameters == NULL) {
+		free(item);
+		return -1;
+	}
+	item->e_RABlevelQoSParameters->allocationRetentionPriority =
+			calloc(1, sizeof(*item->e_RABlevelQoSParameters->allocationRetentionPriority));
+	if (item->e_RABlevelQoSParameters->allocationRetentionPriority == NULL) {
+		ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, item);
+		return -1;
+	}
 	item->e_RAB_ID = 5;
-	item->e_RABlevelQoSParameters.qCI = 9;
-	item->e_RABlevelQoSParameters.allocationRetentionPriority.priorityLevel = 1;
+	item->e_RABlevelQoSParameters->qCI = 9;
+	item->e_RABlevelQoSParameters->allocationRetentionPriority->priorityLevel = 1;
 	item->transportLayerAddress.buf = malloc(sizeof(gw));
 	if (item->transportLayerAddress.buf)
 		memcpy(item->transportLayerAddress.buf, gw, sizeof(gw));
@@ -367,6 +383,8 @@ static void test_s1ap_ics_request_ue_ipv4(void) {
 	ret = s1ap_decode(&msg, buf, (uint32_t)len);
 	CHECK("InitialContextSetupRequest decodes", ret == 0);
 	CHECK("QCI 9 extracted", msg.qos_qci == 9);
+	/* issue #522: QoS parameters and ARP are held by pointer since v1.5.3 */
+	CHECK("ARP priority level 1 extracted", msg.qos_priority_level == 1);
 	CHECK("GTP TEID 1 extracted", msg.gtp_teid == 1);
 	CHECK("UE IPv4 10.45.0.2 extracted from ESM container with EBI 5",
 			memcmp(&msg.ue_ipv4, UE_IPV4, sizeof(UE_IPV4)) == 0);
@@ -871,6 +889,7 @@ static void test_s1ap_short_imsi(void) {
 /* ------------------------------------------------------------------ */
 static NGAP_NGAP_PDU_t *build_ngap_initial_ue_message(int with_nas_pdu) {
 	NGAP_InitialUEMessage_t *iem;
+	NGAP_ProtocolIE_Container_124P36_t *ies;
 	NGAP_InitialUEMessage_IEs_t *ie;
 	NGAP_NGAP_PDU_t *pdu = calloc(1, sizeof(*pdu));
 
@@ -887,14 +906,26 @@ static NGAP_NGAP_PDU_t *build_ngap_initial_ue_message(int with_nas_pdu) {
 	pdu->choice.initiatingMessage->criticality = NGAP_Criticality_reject;
 	pdu->choice.initiatingMessage->value.present =
 			NGAP_InitiatingMessage__value_PR_InitialUEMessage;
-	iem = &pdu->choice.initiatingMessage->value.choice.InitialUEMessage;
+	/* asn1c v1.5.3 (issue #522): the message, its IE container (the
+	 * NGAP_ProtocolIE_Container_124P36 instance asn_DEF_NGAP_InitialUEMessage
+	 * names) and every IE value are held by pointer; ASN_STRUCT_FREE of the
+	 * PDU releases them all */
+	iem = calloc(1, sizeof(*iem));
+	pdu->choice.initiatingMessage->value.choice.InitialUEMessage = iem;
+	if (iem == NULL)
+		return pdu;
+	ies = calloc(1, sizeof(*ies));
+	iem->protocolIEs = (struct NGAP_ProtocolIE_Container *)ies;
+	if (ies == NULL)
+		return pdu;
 
 	ie = calloc(1, sizeof(*ie));
 	ie->id          = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
 	ie->criticality = NGAP_Criticality_reject;
 	ie->value.present = NGAP_InitialUEMessage_IEs__value_PR_RAN_UE_NGAP_ID;
-	ie->value.choice.RAN_UE_NGAP_ID = 12345;
-	ASN_SEQUENCE_ADD(&iem->protocolIEs.list, ie);
+	ie->value.choice.RAN_UE_NGAP_ID = calloc(1, sizeof(*ie->value.choice.RAN_UE_NGAP_ID));
+	*ie->value.choice.RAN_UE_NGAP_ID = 12345;
+	ASN_SEQUENCE_ADD(&ies->list, ie);
 
 	if (with_nas_pdu) {
 		static const uint8_t nas_payload[] = { 'A', 'B', 'C', 'D' };
@@ -902,9 +933,9 @@ static NGAP_NGAP_PDU_t *build_ngap_initial_ue_message(int with_nas_pdu) {
 		ie->id          = NGAP_ProtocolIE_ID_id_NAS_PDU;
 		ie->criticality = NGAP_Criticality_reject;
 		ie->value.present = NGAP_InitialUEMessage_IEs__value_PR_NAS_PDU;
-		OCTET_STRING_fromBuf(&ie->value.choice.NAS_PDU,
+		ie->value.choice.NAS_PDU = OCTET_STRING_new_fromBuf(&asn_DEF_NGAP_NAS_PDU,
 				(const char *)nas_payload, sizeof(nas_payload));
-		ASN_SEQUENCE_ADD(&iem->protocolIEs.list, ie);
+		ASN_SEQUENCE_ADD(&ies->list, ie);
 	}
 	else {
 		/* second IE without any NAS-PDU: RRC establishment cause */
@@ -914,8 +945,10 @@ static NGAP_NGAP_PDU_t *build_ngap_initial_ue_message(int with_nas_pdu) {
 		ie->value.present =
 				NGAP_InitialUEMessage_IEs__value_PR_RRCEstablishmentCause;
 		ie->value.choice.RRCEstablishmentCause =
+				calloc(1, sizeof(*ie->value.choice.RRCEstablishmentCause));
+		*ie->value.choice.RRCEstablishmentCause =
 				NGAP_RRCEstablishmentCause_mo_Signalling;
-		ASN_SEQUENCE_ADD(&iem->protocolIEs.list, ie);
+		ASN_SEQUENCE_ADD(&ies->list, ie);
 	}
 	return pdu;
 }
@@ -949,6 +982,21 @@ static void test_ngap_get_nas_pdu(void) {
 		/* nas_pdu.data points into the internally freed PDU, so only the
 		 * copied size may be inspected after decode_ngap() returns. */
 		CHECK("decoded NAS-PDU size is 4", msg.nas_pdu.size == 4);
+		/* issue #522: every IE value is held by pointer since v1.5.3 —
+		 * read it (GET_ACTION) and patch it on re-encode (SET_ACTION) */
+		CHECK("decoded RAN-UE-NGAP-ID is 12345", msg.ran_ue_id == 12345);
+		{
+			uint8_t enc_buf[256];
+			ngap_message_t back;
+			uint32_t enc_len;
+			msg.ran_ue_id = 777;
+			enc_len = encode_ngap(enc_buf, sizeof(enc_buf), &msg, buf, (uint32_t)len);
+			memset(&back, 0, sizeof(back));
+			CHECK("encode_ngap rewrites RAN-UE-NGAP-ID 777 into the PDU",
+					enc_len > 0
+					&& decode_ngap(&back, enc_buf, (enc_len + 7) / 8)
+					&& back.ran_ue_id == 777);
+		}
 	}
 	ASN_STRUCT_FREE(asn_DEF_NGAP_NGAP_PDU, pdu);
 

@@ -3,8 +3,6 @@
  * All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
-#ifndef ASN_DISABLE_OER_SUPPORT
-
 #include <asn_internal.h>
 #include <constr_SET_OF.h>
 #include <asn_SET_OF.h>
@@ -43,12 +41,12 @@
  * Return a standardized complex structure.
  */
 #undef  RETURN
-#define RETURN(_code)                    \
-    do {                                 \
-        asn_dec_rval_t rval;             \
-        rval.code = _code;               \
-        rval.consumed = consumed_myself; \
-        return rval;                     \
+#define RETURN(_code)                     \
+    do {                                  \
+        asn_dec_rval_t _rval;             \
+        _rval.code = _code;               \
+        _rval.consumed = consumed_myself; \
+        return _rval;                     \
     } while(0)
 
 /*
@@ -170,6 +168,12 @@ SET_OF_decode_oer(const asn_codec_ctx_t *opt_codec_ctx,
 
         ASN_DEBUG("OER SET OF %s Decoding PHASE 1", td->name);
 
+        if(ctx->left > 0 && !elm->type->op->oer_decoder) {
+            ASN_DEBUG("Element type %s of %s has no OER decoder",
+                      elm->type->name, td->name);
+            RETURN(RC_FAIL);
+        }
+
         for(; ctx->left > 0; ctx->left--) {
             asn_dec_rval_t rv = elm->type->op->oer_decoder(
                 opt_codec_ctx, elm->type,
@@ -253,11 +257,15 @@ SET_OF_encode_oer(const asn_TYPE_descriptor_t *td,
 
     if(!sptr) ASN__ENCODE_FAILED;
 
+    /* Check recursion depth to prevent stack overflow */
+    OER_ENCODER_RECURSION_DEPTH_INC();
+
     elm = td->elements;
     list = _A_CSET_FROM_VOID(sptr);
 
     qty_len = oer_put_quantity(list->count, cb, app_key);
     if(qty_len < 0) {
+        OER_ENCODER_RECURSION_DEPTH_DEC();
         ASN__ENCODE_FAILED;
     }
     computed_size += qty_len;
@@ -269,6 +277,7 @@ SET_OF_encode_oer(const asn_TYPE_descriptor_t *td,
             elm->type, elm->encoding_constraints.oer_constraints, memb_ptr, cb,
             app_key);
         if(er.encoded < 0) {
+            OER_ENCODER_RECURSION_DEPTH_DEC();
             return er;
         } else {
             computed_size += er.encoded;
@@ -278,8 +287,7 @@ SET_OF_encode_oer(const asn_TYPE_descriptor_t *td,
     {
         asn_enc_rval_t erval = {0,0,0};
         erval.encoded = computed_size;
+        OER_ENCODER_RECURSION_DEPTH_DEC();
         ASN__ENCODED_OK(erval);
     }
 }
-
-#endif  /* ASN_DISABLE_OER_SUPPORT */

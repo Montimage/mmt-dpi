@@ -17,7 +17,32 @@ struct asn_TYPE_descriptor_s;	/* Forward declaration */
 enum xer_encoder_flags_e {
 	/* Mode of encoding */
 	XER_F_BASIC	= 0x01,	/* BASIC-XER (pretty-printing) */
-	XER_F_CANONICAL	= 0x02	/* Canonical XER (strict rules) */
+	XER_F_CANONICAL	= 0x02,	/* Canonical XER (strict rules) */
+	/*
+	 * Request Base64 output for OCTET STRING values instead of the default
+	 * hex (xmlhstring) encoding.  Applies to OCTET STRING only; ignored for
+	 * all other types.  Flags propagate to nested members automatically.
+	 *
+	 * ENCODING PRIORITY — who wins when flags or instructions collide:
+	 *
+	 *  1. Schema ENCODING-CONTROL XER ::= hexadecimal  (highest priority)
+	 *     Always produces hex regardless of XER_F_BASE64 or XER_F_CANONICAL.
+	 *     A generated thin encoder masks XER_F_BASE64 before delegating.
+	 *
+	 *  2. Schema ENCODING-CONTROL XER ::= base64 / [BASE64] prefix
+	 *     Always produces Base64 regardless of XER_F_CANONICAL.
+	 *     (The schema instruction defines the wire format for that type.)
+	 *
+	 *  3. XER_F_CANONICAL runtime flag
+	 *     Overrides XER_F_BASE64 for un-annotated OCTET STRING types.
+	 *     Cannot override a schema ENCODING-CONTROL instruction.
+	 *
+	 *  4. XER_F_BASE64 runtime flag  (lowest priority)
+	 *     Requests Base64 for un-annotated OCTET STRING values.
+	 *     Silently ignored when XER_F_CANONICAL is also set.
+	 *     Silently ignored when the type carries a schema instruction.
+	 */
+	XER_F_BASE64	= 0x04
 };
 
 /*

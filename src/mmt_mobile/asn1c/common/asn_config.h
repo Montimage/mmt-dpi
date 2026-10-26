@@ -1,0 +1,5 @@
+// Generated automatically. Don't edit manually!
+
+#define ASN_DISABLE_UPER_SUPPORT 1
+#define ASN_DISABLE_JER_SUPPORT 1
+#define ASN_DISABLE_CBOR_SUPPORT 1

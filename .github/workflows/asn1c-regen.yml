@@ -16,15 +16,17 @@ on:
   schedule:
     - cron: '17 4 * * 1'
   workflow_dispatch:
-  # Also guard the inputs themselves: recipe, pin, ASN.1 support files and
-  # the runtime patches the recipe applies (issue #513).
+  # Also guard the inputs themselves (recipe, pin, ASN.1 support files) and
+  # the generated output, so a hand edit to it fails the PR (issue #522).
   pull_request:
     branches: [ main ]
     paths:
       - 'src/mmt_mobile/asn1c/Makefile'
       - 'src/mmt_mobile/asn1c/ASN1C_VERSION'
       - 'src/mmt_mobile/asn1c/support/**'
-      - 'src/mmt_mobile/asn1c/patches/**'
+      - 'src/mmt_mobile/asn1c/common/**'
+      - 'src/mmt_mobile/asn1c/s1ap/**'
+      - 'src/mmt_mobile/asn1c/ngap/**'
       - '.github/workflows/asn1c-regen.yml'
 
 # A newer push cancels the superseded run of the same ref (issue #188,
@@ -72,13 +74,18 @@ jobs:
           mkdir -p /tmp/asn1c-src
           tar xzf /tmp/asn1c.tar.gz -C /tmp/asn1c-src --strip-components=1
           cd /tmp/asn1c-src
+          # v1.5.x derives its version string from `git describe` at
+          # autoreconf time (NOGIT-<build date> in a tarball) and every
+          # generated header embeds it: stamp the pinned string and bug URL
+          # so the output does not depend on the build date (issue #521).
+          sed -i "/^AC_INIT(/i m4_define([ASN1C_VERSION], [${ASN1C_VERSION_STRING}])m4_define([ASN1C_BUGURL], [${ASN1C_BUGURL}])" configure.ac
           autoreconf -iv
           ./configure
           make -j"$(nproc)"
           make install
           asn1c -v 2>&1
-          # The reported version must match the pin (printed on stderr).
-          asn1c -v 2>&1 | grep -q "v${ASN1C_VERSION}"
+          # The reported version must be exactly the pin (printed on stderr).
+          test "$(asn1c -v 2>&1 | head -n 1)" = "ASN.1 Compiler, ${ASN1C_VERSION_STRING} (${ASN1C_BUGURL})"
 
       - name: Re-run the generation targets
         run: |

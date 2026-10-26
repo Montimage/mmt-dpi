@@ -1,8 +1,9 @@
 /*
  * test_s1ap_integer_length.c — crafted-fixture test for issue #513:
- * the asn1c APER runtime under src/mmt_mobile/asn1c/common/ comes from a
- * 2020 generator snapshot and carries two upstream advisories, fixed by the
- * recipe-applied patches in src/mmt_mobile/asn1c/patches/.
+ * the asn1c APER runtime under src/mmt_mobile/asn1c/common/ came from a
+ * 2020 generator snapshot carrying two upstream advisories, fixed first by
+ * recipe-applied patches and, since issue #522, by the pinned asn1c v1.5.3
+ * runtime itself (the patches were dropped); this test pins both fixes.
  *
  *  - GHSA-x882-jvjm-xxh9: INTEGER_decode_aper() read the length determinant
  *    of a constrained INTEGER wider than 16 bits without bounding it by the

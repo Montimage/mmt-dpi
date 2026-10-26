@@ -22,22 +22,71 @@ extern "C" {
 extern asn_TYPE_descriptor_t asn_DEF_NativeInteger;
 extern asn_TYPE_operation_t asn_OP_NativeInteger;
 
-asn_struct_free_f  NativeInteger_free;
+asn_struct_free_f NativeInteger_free;
+
+#if !defined(ASN_DISABLE_PRINT_SUPPORT)
 asn_struct_print_f NativeInteger_print;
+#endif  /* !defined(ASN_DISABLE_PRINT_SUPPORT) */
+
 asn_struct_compare_f NativeInteger_compare;
+asn_struct_copy_f    NativeInteger_copy;
+
+/*
+ * Width-aware access to the native integer member.  The in-memory storage
+ * width is taken from the type's asn_INTEGER_specifics_t.field_width
+ * (1, 2, 4 or 8 octets, matching int8_t..int64_t / uint8_t..uint64_t).
+ * When field_width is 0 (or there are no specifics) the width defaults to
+ * sizeof(long), preserving the historical behavior byte-for-byte.
+ */
+size_t   NativeInteger_field_width(const asn_INTEGER_specifics_t *specs);
+intmax_t  NativeInteger_load_s(const void *ptr, const asn_INTEGER_specifics_t *specs);
+uintmax_t NativeInteger_load_u(const void *ptr, const asn_INTEGER_specifics_t *specs);
+void NativeInteger_store(void *ptr, const asn_INTEGER_specifics_t *specs, uintmax_t v);
+int  NativeInteger_store_from_INTEGER(void *ptr,
+        const asn_INTEGER_specifics_t *specs, const INTEGER_t *tmp);
+int  NativeInteger_to_INTEGER(const void *ptr,
+        const asn_INTEGER_specifics_t *specs, INTEGER_t *tmp);
+
+#define NativeInteger_constraint asn_generic_no_constraint
+
+#if !defined(ASN_DISABLE_BER_SUPPORT)
 ber_type_decoder_f NativeInteger_decode_ber;
 der_type_encoder_f NativeInteger_encode_der;
+#endif  /* !defined(ASN_DISABLE_BER_SUPPORT) */
+
+#if !defined(ASN_DISABLE_XER_SUPPORT)
 xer_type_decoder_f NativeInteger_decode_xer;
+xer_type_decoder_f NativeInteger_decode_xer_text;
 xer_type_encoder_f NativeInteger_encode_xer;
+xer_type_encoder_f NativeInteger_encode_xer_text;
+#endif  /* !defined(ASN_DISABLE_XER_SUPPORT) */
+
+#if !defined(ASN_DISABLE_JER_SUPPORT)
+jer_type_decoder_f NativeInteger_decode_jer;
+jer_type_encoder_f NativeInteger_encode_jer;
+#endif  /* !defined(ASN_DISABLE_JER_SUPPORT) */
+
+#if !defined(ASN_DISABLE_OER_SUPPORT)
 oer_type_decoder_f NativeInteger_decode_oer;
 oer_type_encoder_f NativeInteger_encode_oer;
+#endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
+#if !defined(ASN_DISABLE_CBOR_SUPPORT)
+cbor_type_decoder_f NativeInteger_decode_cbor;
+cbor_type_encoder_f NativeInteger_encode_cbor;
+#endif  /* !defined(ASN_DISABLE_CBOR_SUPPORT) */
+
+#if !defined(ASN_DISABLE_UPER_SUPPORT)
 per_type_decoder_f NativeInteger_decode_uper;
 per_type_encoder_f NativeInteger_encode_uper;
+#endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) */
+#if !defined(ASN_DISABLE_APER_SUPPORT)
 per_type_decoder_f NativeInteger_decode_aper;
 per_type_encoder_f NativeInteger_encode_aper;
-asn_random_fill_f  NativeInteger_random_fill;
+#endif  /* !defined(ASN_DISABLE_APER_SUPPORT) */
 
-#define NativeInteger_constraint  asn_generic_no_constraint
+#if !defined(ASN_DISABLE_RFILL_SUPPORT)
+asn_random_fill_f NativeInteger_random_fill;
+#endif  /* !defined(ASN_DISABLE_RFILL_SUPPORT) */
 
 #ifdef __cplusplus
 }

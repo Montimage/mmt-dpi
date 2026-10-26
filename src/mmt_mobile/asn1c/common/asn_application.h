@@ -10,6 +10,7 @@
 
 #include "asn_system.h"		/* for platform-dependent types */
 #include "asn_codecs.h"		/* for ASN.1 codecs specifics */
+#include "asn_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +60,19 @@ enum asn_transfer_syntax {
      * CANONICAL-XER is a more strict variant of BASIC-XER.
      */
     ATS_BASIC_XER,
-    ATS_CANONICAL_XER
+    ATS_CANONICAL_XER,
+    /*
+     * X.697:
+     * JER: JSON Encoding Rules.
+     * MINIFIED produces a whitespace-free JSON.
+     */
+    ATS_JER,
+    ATS_JER_MINIFIED,
+    /*
+     * RFC 7049 (obsoleted by RFC 8949) / RFC 8949:
+     * CBOR: Concise Binary Object Representation.
+     */
+    ATS_CBOR,
 };
 
 /*

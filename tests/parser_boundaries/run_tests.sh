@@ -141,11 +141,12 @@
 #                               connections (handshake + close) through
 #                               mmt_init_handler + packet_process.
 #
-# Issue #513 adds the "s1ap-integer" fixture: the recipe-applied asn1c
-# runtime patches (src/mmt_mobile/asn1c/patches/) — an APER INTEGER length
-# determinant longer than the constraint permits (GHSA-x882-jvjm-xxh9) is
-# rejected without a signed overshift, and OPEN_TYPE_aper_get() fails on a
-# selector result it cannot use (GHSA-rcj5-gcvg-x796).
+# Issue #513 adds the "s1ap-integer" fixture: the asn1c APER runtime —
+# patched by the recipe until the v1.5.3 generator carried both upstream
+# fixes (issue #522) — rejects an APER INTEGER length determinant longer
+# than the constraint permits (GHSA-x882-jvjm-xxh9) without a signed
+# overshift, and OPEN_TYPE_aper_get() fails on a selector result it cannot
+# use (GHSA-rcj5-gcvg-x796).
 #
 #   test_s1ap_integer_length.c — crafted S1AP InitialContextSetupRequest
 #                               PDUs through s1ap_decode() plus direct
