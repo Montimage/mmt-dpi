@@ -264,25 +264,24 @@ jobs:
         retention-days: 14
 
   lint:
-    # Lint/static-analysis gate (issues #125, #189): shellcheck runs blocking
-    # across every tracked shell script; cppcheck gates on error severity and
-    # on the committed findings ratchet (tools/ci/cppcheck-ratchet.txt) and
-    # publishes its findings as a report artifact. The generated ASN.1 tree
-    # (src/mmt_mobile/asn1c) is excluded from the scan.
-    #
-    # The ratchet is only comparable under one cppcheck release (issue #345),
-    # so the job runs in the digest-pinned ubuntu:24.04 container and builds
-    # that release (CPPCHECK_PINNED_VERSION, tools/ci/run-cppcheck.sh) from
-    # its checksum-pinned source tarball with tools/ci/install-cppcheck.sh
-    # (issue #518): neither a runner-image refresh nor an apt archive update
-    # can move the analyser under the baseline. shellcheck comes from the
-    # container's apt, the same 0.9 release the ubuntu-24.04 runner ships.
+    # Lint gate (issues #125, #189): shellcheck on every tracked shell script
+    # (blocking); cppcheck gates on error severity and on the findings ratchet
+    # (tools/ci/cppcheck-ratchet.txt), skips the generated src/mmt_mobile/asn1c
+    # and uploads its findings. The ratchet is only comparable under one
+    # cppcheck release (#345): the job builds CPPCHECK_PINNED_VERSION from its
+    # checksum-pinned tarball (install-cppcheck.sh, #518) in a digest-pinned
+    # ubuntu:24.04 container; shellcheck 0.9 comes from its apt. Mode (#653):
+    # pull requests scan the one configuration the build compiles
+    # (CPPCHECK_MODE=pr); push, tags, merge queue and the weekly schedule scan
+    # every #ifdef configuration (full). Each mode has its own ratchet line.
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
-    # One cppcheck scan of the whole tree took ~16 min on a hosted runner
+    # One full cppcheck scan of the whole tree took ~16 min on a hosted runner
     # (issue #552); a cold cache or a widely included header rescans it all.
     timeout-minutes: 60
+    env:
+      CPPCHECK_MODE: ${{ github.event_name == 'pull_request' && 'pr' || 'full' }}
     container:
       image: "ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c"
     steps:
@@ -306,21 +305,22 @@ jobs:
       run: shellcheck $(git ls-files '*.sh')
     - name: Restore the cppcheck per-file results
       # Issue #552 (F-CI-007): --cppcheck-build-dir keeps each file's results,
-      # so a scan reanalyses only what changed. The key names the pinned
-      # release and the gate script (their change starts cold); restore-keys
-      # take the newest earlier save, and every run saves under its own SHA.
+      # so a scan reanalyses only what changed. The key names the scan mode,
+      # the pinned release and the gate script (their change starts cold);
+      # restore-keys take the newest earlier save, and every run saves under
+      # its own SHA.
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .cppcheck-build
-        key: cppcheck-${{ hashFiles('tools/ci/install-cppcheck.sh', 'tools/ci/run-cppcheck.sh') }}-${{ github.sha }}
+        key: cppcheck-${{ env.CPPCHECK_MODE }}-${{ hashFiles('tools/ci/install-cppcheck.sh', 'tools/ci/run-cppcheck.sh') }}-${{ github.sha }}
         restore-keys: |
-          cppcheck-${{ hashFiles('tools/ci/install-cppcheck.sh', 'tools/ci/run-cppcheck.sh') }}-
+          cppcheck-${{ env.CPPCHECK_MODE }}-${{ hashFiles('tools/ci/install-cppcheck.sh', 'tools/ci/run-cppcheck.sh') }}-
     - name: cppcheck (error-severity gate + findings ratchet)
       # Issue #189 (F-CI-004): two gates, both enforced, both read from one
       # scan (issue #552 dropped the second, error-only rescan). The script
       # writes cppcheck-report.xml (the artifact uploaded below) and fails
-      # when the total finding count rises above tools/ci/cppcheck-ratchet.txt
-      # or any finding has error severity.
+      # when the total finding count rises above the CPPCHECK_MODE line of
+      # tools/ci/cppcheck-ratchet.txt or any finding has error severity.
       env:
         CPPCHECK_BUILD_DIR: .cppcheck-build
       run: bash tools/ci/run-cppcheck.sh

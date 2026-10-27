@@ -31,6 +31,14 @@
 # cannot drift apart silently — and must restore its --cppcheck-build-dir
 # with actions/cache (issue #552).
 #
+# Scan modes (issue #653): CPPCHECK_MODE=pr must hand cppcheck
+# --max-configs=1 and the build's defines, full (and an unset mode) none of
+# them; each mode gates on its own `<mode> <count>` line of the ratchet; an
+# unknown mode, a missing mode line or the old bare-integer baseline is a
+# broken helper (exit 2). The lint job must run pr on pull requests and full
+# on every other event, and key its cache on the mode; the committed
+# baseline must carry both lines.
+#
 # Usage: bash tools/ci/tests/test-cppcheck-version.sh
 # Exit: 0 = all checks passed, 1 = at least one failed, 2 = self-test broke.
 
@@ -58,8 +66,8 @@ lint_job="$(awk '/^  lint:$/ {in_job=1; print; next}
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
-# Only the case that sets it passes a build dir to the gate.
-unset CPPCHECK_BUILD_DIR
+# Only the case that sets it passes a build dir or a mode to the gate.
+unset CPPCHECK_BUILD_DIR CPPCHECK_MODE
 mkdir -p "${WORK}/bin"
 
 cat > "${WORK}/bin/cppcheck" <<'STUB'
@@ -90,7 +98,8 @@ done
 exit 0
 STUB
 chmod +x "${WORK}/bin/cppcheck"
-printf '# test baseline\n10\n' > "${WORK}/ratchet.txt"
+printf '# test baseline\nfull 10\npr 5\n' > "${WORK}/ratchet.txt"
+RATCHET_FILE="${WORK}/ratchet.txt"
 
 pass=0
 fail=0
@@ -102,9 +111,10 @@ run_case() {
     env PATH="${WORK}/bin:${PATH}" CI="$6" \
         STUB_VERSION="$3" STUB_FINDINGS="$4" STUB_ERRORS="$5" \
         STUB_LOG="${WORK}/scans.log" \
-        CPPCHECK_RATCHET="${WORK}/ratchet.txt" \
+        CPPCHECK_RATCHET="${RATCHET_FILE}" \
         CPPCHECK_REPORT="${WORK}/report.xml" CPPCHECK_JOBS=1 \
         ${CPPCHECK_BUILD_DIR:+CPPCHECK_BUILD_DIR="${CPPCHECK_BUILD_DIR}"} \
+        ${CPPCHECK_MODE:+CPPCHECK_MODE="${CPPCHECK_MODE}"} \
         bash "${GATE}" > "${WORK}/out.log" 2>&1 || rc=$?
     if [ "${rc}" -eq "${want}" ]; then
         echo "  ✓ ${name} (exit ${rc})"
@@ -177,6 +187,48 @@ CPPCHECK_BUILD_DIR="${WORK}/cpb" \
 check "CPPCHECK_BUILD_DIR reaches cppcheck as --cppcheck-build-dir" \
     grep -qF -- "--cppcheck-build-dir=${WORK}/cpb" "${WORK}/scans.log"
 check "the build dir is created" test -d "${WORK}/cpb"
+
+echo "── run-cppcheck.sh scan modes (issue #653) ──"
+# scanned_with ARG — the last scan was handed ARG as a whole word.
+scanned_with() { grep -qE -- "(^| )$1( |\$)" "${WORK}/scans.log"; }
+not_scanned_with() { ! scanned_with "$1"; }
+run_case "unset mode is full, within its ratchet"  0 "Cppcheck ${pinned}.0" 10 0 ""
+check "unset mode checks every configuration" \
+    not_scanned_with '--max-configs=1'
+CPPCHECK_MODE=full \
+    run_case "full mode, within its ratchet"        0 "Cppcheck ${pinned}.0" 10 0 ""
+check "full mode passes no -D and no --max-configs" \
+    not_grep -E -- '(^| )(-D|--max-configs)' "${WORK}/scans.log"
+CPPCHECK_MODE="pr" \
+    run_case "pr mode, within its ratchet"          0 "Cppcheck ${pinned}.0" 5  0 ""
+check "pr mode checks one configuration" scanned_with '--max-configs=1'
+check "pr mode defines NDEBUG like the build" scanned_with '-DNDEBUG'
+check "pr mode defines _MMT_BUILD_SDK like the build" scanned_with '-D_MMT_BUILD_SDK'
+CPPCHECK_MODE="pr" \
+    run_case "pr mode gates on its own ratchet line" 1 "Cppcheck ${pinned}.0" 6  0 ""
+CPPCHECK_MODE="pr" \
+    run_case "pr mode, error gate trips"            1 "Cppcheck ${pinned}.0" 1  1 ""
+CPPCHECK_MODE=bogus \
+    run_case "unknown mode is a broken helper"      2 "Cppcheck ${pinned}.0" 0  0 ""
+printf '# test baseline\nfull 10\n' > "${WORK}/full-only.txt"
+RATCHET_FILE="${WORK}/full-only.txt" CPPCHECK_MODE="pr" \
+    run_case "missing mode line is a broken helper" 2 "Cppcheck ${pinned}.0" 0  0 ""
+printf '# test baseline\n10\n' > "${WORK}/bare.txt"
+RATCHET_FILE="${WORK}/bare.txt" \
+    run_case "bare-integer baseline is a broken helper" 2 "Cppcheck ${pinned}.0" 0 0 ""
+
+committed="${REPO_ROOT}/tools/ci/cppcheck-ratchet.txt"
+check "committed baseline has a full line" \
+    grep -Eq '^full [0-9]+$' "${committed}"
+check "committed baseline has a pr line" \
+    grep -Eq '^pr [0-9]+$' "${committed}"
+# shellcheck disable=SC2016 # the workflow's literal ${{ }} expressions
+check "lint job scans pr on pull requests and full otherwise" \
+    grep -qF "CPPCHECK_MODE: \${{ github.event_name == 'pull_request' && 'pr' || 'full' }}" <<< "${lint_job}"
+# shellcheck disable=SC2016 # the workflow's literal ${{ }} expression
+cache_keys="$(grep -cF 'cppcheck-${{ env.CPPCHECK_MODE }}-' <<< "${lint_job}" || true)"
+check "lint job keys its cache and restore-keys on the mode (${cache_keys}/2)" \
+    test "${cache_keys}" -eq 2
 
 echo "cppcheck version pin: ${pass} passed, ${fail} failed"
 [ "${fail}" -eq 0 ]

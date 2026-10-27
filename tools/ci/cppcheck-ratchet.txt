@@ -1,6 +1,10 @@
 # cppcheck findings ratchet (issue #189, F-CI-004).
-# Total findings in cppcheck-report.xml must not exceed this count; the
-# lint job fails the step when it does. Lower the number when findings are
+# One `<mode> <count>` line per scan mode of tools/ci/run-cppcheck.sh
+# (CPPCHECK_MODE, issue #653): `full` checks every #ifdef configuration
+# (pushes, tags, merge queue, weekly schedule), `pr` only the configuration
+# the SDK build compiles (pull requests). Total findings in
+# cppcheck-report.xml must not exceed the count of the mode that ran; the
+# lint job fails the step when they do. Lower the number when findings are
 # fixed — never raise it without a recorded justification.
 # Measured with cppcheck 2.22 (built by tools/ci/install-cppcheck.sh in the
 # lint job's digest-pinned ubuntu:24.04 container, issue #518); the count is
@@ -9,5 +13,9 @@
 # Issue #518 re-baselined it from 24 (2.13, measured 13) to 0: 2.22 reported
 # 38 findings on the unchanged tree; each was fixed or suppressed inline with
 # its reason (docs/DECISIONS.md, 2026-10-22).
-# Re-measure: bash tools/ci/run-cppcheck.sh
-0
+# Issue #653 measured the pr mode at 0 with 2.22.0 in that container
+# (722 files, one configuration each).
+# Re-measure: bash tools/ci/run-cppcheck.sh (full),
+#             CPPCHECK_MODE=pr bash tools/ci/run-cppcheck.sh (pr)
+full 0
+pr 0

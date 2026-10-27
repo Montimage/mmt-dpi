@@ -9,8 +9,9 @@
 # XML report the job uploads, and two independent checks read it:
 #
 #   1. Ratchet — the total finding count must not exceed the committed
-#      baseline in tools/ci/cppcheck-ratchet.txt. A rise fails the step; a drop
-#      is reported so the baseline can be tightened in the same change.
+#      baseline for the scan mode in tools/ci/cppcheck-ratchet.txt. A rise
+#      fails the step; a drop is reported so the baseline can be tightened
+#      in the same change.
 #   2. Error gate — any error-severity finding in the report fails the step.
 #      The checks that produce error-severity findings are always enabled
 #      (--enable=warning only adds the rest), so the report already holds
@@ -27,6 +28,20 @@
 # their stored findings into the report, so the totals do not depend on the
 # cache. The lint job restores that directory with actions/cache, keyed on
 # the pinned release.
+#
+# Scan modes (issue #653): $CPPCHECK_MODE picks how many preprocessor
+# configurations each file is checked in, and each mode has its own line in
+# the ratchet baseline:
+#   full (default) — every #ifdef configuration cppcheck finds, up to its
+#                    default of 12 per file: the `#ifdef` branches the build
+#                    never compiles stay covered. The lint job runs it on
+#                    pushes, tags, the merge queue and the weekly schedule.
+#   pr             — the one configuration the default SDK build compiles:
+#                    --max-configs=1 with the build's own defines, -DNDEBUG
+#                    (rules/common.mk:41) and -D_MMT_BUILD_SDK
+#                    (rules/common.mk:276). About 10x faster cold; the lint job
+#                    runs it on pull requests (docs/ci-audit-2026-10.md §4).
+# Macros a scanned header defines still apply in both modes.
 #
 # Pinned cppcheck version (issue #345): the ratchet baseline is only
 # meaningful for the cppcheck release it was measured with — a different
@@ -56,7 +71,8 @@
 # is broken (cppcheck missing or at an unexpected version in CI, unreadable
 # baseline, unparseable report).
 #
-# Usage: bash tools/ci/run-cppcheck.sh
+# Usage: bash tools/ci/run-cppcheck.sh                 (full scan)
+#        CPPCHECK_MODE=pr bash tools/ci/run-cppcheck.sh   (pull-request scan)
 
 set -euo pipefail
 
@@ -67,6 +83,7 @@ REPORT="${CPPCHECK_REPORT:-cppcheck-report.xml}"
 RATCHET="${CPPCHECK_RATCHET:-tools/ci/cppcheck-ratchet.txt}"
 JOBS="${CPPCHECK_JOBS:-$(nproc 2>/dev/null || echo 2)}"
 CPPCHECK_PINNED_VERSION="2.22"   # major.minor tools/ci/install-cppcheck.sh builds (CI)
+MODE="${CPPCHECK_MODE:-full}"
 SCAN_DIRS=(src)
 # The SDK is GNU C built by GCC only (rules/arch-linux.mk): gnu.cfg teaches
 # cppcheck __builtin_expect and the kernel-style likely()/unlikely() macros,
@@ -75,6 +92,14 @@ SCAN_DIRS=(src)
 # the dereference behind it (issue #518).
 LIBRARIES=(--library=gnu)
 EXCLUDE=(-i src/mmt_mobile/asn1c)   # generated ASN.1 tree — never scanned
+case "$MODE" in
+    full) CONFIG_ARGS=() ;;
+    pr)   CONFIG_ARGS=(--max-configs=1 -DNDEBUG -D_MMT_BUILD_SDK) ;;
+    *)
+        echo "✗ unknown CPPCHECK_MODE '$MODE' — expected pr or full" >&2
+        exit 2
+        ;;
+esac
 
 # Vendored sources (tools/ci/vendor-paths.txt) are excluded by configuration.
 # shellcheck source=tools/ci/vendor-paths-lib.sh
@@ -116,11 +141,11 @@ if [ ! -f "$RATCHET" ]; then
     echo "✗ ratchet baseline not found: $RATCHET" >&2
     exit 2
 fi
-# First non-comment line of the baseline file is the recorded count.
-baseline="$(awk 'NF && $1 !~ /^#/ {print $1; exit}' "$RATCHET")"
+# The baseline file holds one `<mode> <count>` line per scan mode.
+baseline="$(awk -v m="$MODE" 'NF && $1 !~ /^#/ && $1 == m {print $2; exit}' "$RATCHET")"
 if ! [[ "$baseline" =~ ^[0-9]+$ ]]; then
     echo "✗ ratchet baseline unreadable: $RATCHET" >&2
-    echo "    expected a bare integer on the first non-comment line" >&2
+    echo "    expected a '$MODE <count>' line" >&2
     exit 2
 fi
 
@@ -130,11 +155,11 @@ if [ -n "${CPPCHECK_BUILD_DIR:-}" ]; then
     BUILD_DIR_ARGS=(--cppcheck-build-dir="$CPPCHECK_BUILD_DIR")
 fi
 
-echo "── cppcheck: full scan (ratchet + error gate + report) ──"
+echo "── cppcheck: $MODE scan (ratchet + error gate + report) ──"
 # The exit status is deliberately discarded here: the ratchet and the error
 # gate below decide from the report, not cppcheck's own exit code.
 cppcheck --enable=warning --inline-suppr -j"$JOBS" \
-    "${LIBRARIES[@]}" "${EXCLUDE[@]}" "${BUILD_DIR_ARGS[@]}" \
+    "${LIBRARIES[@]}" "${EXCLUDE[@]}" "${CONFIG_ARGS[@]}" "${BUILD_DIR_ARGS[@]}" \
     --xml --xml-version=2 \
     "${SCAN_DIRS[@]}" \
     2> "$REPORT" || true
@@ -148,7 +173,7 @@ fi
 
 total="$(grep -c '<error ' "$REPORT" || true)"
 errors="$(grep -c 'severity="error"' "$REPORT" || true)"
-echo "    findings: $total total, $errors error-severity (ratchet baseline: $baseline)"
+echo "    findings: $total total, $errors error-severity ($MODE ratchet baseline: $baseline)"
 
 rc=0
 
@@ -158,11 +183,11 @@ if [ "$ratchet_enforced" -eq 0 ]; then
 elif [ "$total" -gt "$baseline" ]; then
     echo "✗ cppcheck findings rose above the ratchet: $total > $baseline" >&2
     echo "To fix:  resolve the new findings, or — only with a recorded" >&2
-    echo "         justification — raise $RATCHET" >&2
+    echo "         justification — raise the $MODE line of $RATCHET" >&2
     rc=1
 elif [ "$total" -lt "$baseline" ]; then
     echo "  note: findings dropped below the baseline ($total < $baseline) —"
-    echo "        tighten $RATCHET in this change to bank the progress"
+    echo "        tighten the $MODE line of $RATCHET in this change to bank the progress"
 else
     echo "✓ findings within the ratchet ($total ≤ $baseline)"
 fi

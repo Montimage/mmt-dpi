@@ -146,7 +146,13 @@ Notes:
   ratchet as advisory while the error-severity gate stays enforced. For a
   CI-equivalent local verdict, build it the same way — in an `ubuntu:24.04`
   container with `g++ make python3 curl ca-certificates`, run
-  `bash tools/ci/install-cppcheck.sh` — then run the gate there.
+  `bash tools/ci/install-cppcheck.sh` — then run the gate there. The
+  script has two scan modes (`CPPCHECK_MODE`, issue #653), each with its
+  own line in the ratchet: `full`, the default, checks every `#ifdef`
+  configuration; `pr` checks only the one the SDK build compiles
+  (`--max-configs=1 -DNDEBUG -D_MMT_BUILD_SDK`). The `lint` job runs `pr`
+  on pull requests and `full` on pushes, tags, the merge queue and the
+  weekly schedule.
 
 ### Documentation-site toolchain
 
