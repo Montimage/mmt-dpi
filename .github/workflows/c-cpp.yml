@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
-      image: "ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7"
+      image: "ubuntu:22.04@sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956"
     steps:
     # git first, so actions/checkout makes a real clone (without git it
     # downloads a tarball with no history, and the suites read the tree with
@@ -182,7 +182,7 @@ jobs:
     # cppcheck scans the whole tree; measured at ~65-90 min on a hosted runner.
     timeout-minutes: 120
     container:
-      image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254"
+      image: "ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac"
     steps:
     # git first, so actions/checkout makes a real clone (shellcheck lists the
     # tracked scripts with git ls-files); retried as in toolchain-floor.
@@ -507,7 +507,7 @@ jobs:
     - name: Root install / uninstall round trip in ubuntu:24.04
       run: |
         docker run --rm -v "$PWD":/work -w /work \
-          "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254" \
+          "ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac" \
           bash tools/ci/tests/run-root-install.sh --install-deps
 
   assertions-live:

@@ -144,11 +144,11 @@ jobs:
       matrix:
         arch: [amd64, arm64]
         distro:
-          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7",                    pkg: deb }
-          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254",                    pkg: deb }
-          - { name: debian-12,      image: "debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443",                       pkg: deb }
+          - { name: ubuntu-22.04,   image: "ubuntu:22.04@sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",                    pkg: deb }
+          - { name: ubuntu-24.04,   image: "ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac",                    pkg: deb }
+          - { name: debian-12,      image: "debian:12@sha256:854dd8ab51d62866dbd8f5431d15ce77b12983a2a4a1e1fe43a2395dc7ef9f61",                       pkg: deb }
           - { name: rocky-9,        image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                    pkg: rpm }
-          - { name: centos-stream9, image: "quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c",   pkg: rpm }
+          - { name: centos-stream9, image: "quay.io/centos/centos:stream9@sha256:6f8045fc4f552544d8a401d61848bafc8d06ca7c11897c5b54a2c37fc419a20a",   pkg: rpm }
           # Current generation (issue #515).
           - { name: ubuntu-26.04,    image: "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",                    pkg: deb }
           - { name: debian-13,       image: "debian:13@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308",                       pkg: deb }
@@ -290,7 +290,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { distro: ubuntu-24.04, image: "ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254",                    pkg: deb }
+          - { distro: ubuntu-24.04, image: "ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac",                    pkg: deb }
           - { distro: rocky-9,      image: "rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6",                   pkg: rpm }
           # One current-generation leg (issue #515): GCC 15 and libxml2 2.15.
           - { distro: ubuntu-26.04, image: "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",                    pkg: deb }

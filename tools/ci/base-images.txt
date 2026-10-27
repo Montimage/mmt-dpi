@@ -33,12 +33,12 @@
 # Refresh every pin with: bash tools/ci/refresh-base-images.sh --write
 # Refresh a single pin with:
 digest-source: docker buildx imagetools inspect <image>:<tag>
-ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7  # retire-by: 2027-04-30 (#516)
-ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254
-debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443
+ubuntu:22.04@sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956  # retire-by: 2027-04-30 (#516)
+ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac
+debian:12@sha256:854dd8ab51d62866dbd8f5431d15ce77b12983a2a4a1e1fe43a2395dc7ef9f61
 rockylinux:9@sha256:d7be1c094cc5845ee815d4632fe377514ee6ebcf8efaed6892889657e5ddaaa6
-quay.io/centos/centos:stream9@sha256:086f25bff2b5e44eaa6953c8165cf6c4dcb3af8018b37053b510c7d5d796613c  # retire-by: 2027-04-30 (#516)
-buildpack-deps:trixie@sha256:880a5e3d451b50a7b1acd06093a980771a40c2fac2bce29a2145e0f4825266f4
+quay.io/centos/centos:stream9@sha256:6f8045fc4f552544d8a401d61848bafc8d06ca7c11897c5b54a2c37fc419a20a  # retire-by: 2027-04-30 (#516)
+buildpack-deps:trixie@sha256:4a40a9b7f5b25cced5d5367108754eeb825a3e64c05c94e1ab7b462a96de5434
 # Current-generation release legs (issue #515). Rocky Linux 10 is published
 # as rockylinux/rockylinux only: the Docker Hub official `rockylinux` image
 # stops at 9.
@@ -52,6 +52,6 @@ quay.io/centos/centos:stream10@sha256:6f8d618844ed5af4365bad24bea19fb0435fd5ec80
 # image: quay.io retags fedora:44 daily and drops the previous digest at once,
 # so a quay pin breaks within a day.
 fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80
-registry.opensuse.org/opensuse/leap:16.0@sha256:230a53aa81c3d1e4318ba8c73a942f0f330383c229ae64dd116d4fee1a6a16ab
-alpine:3.23@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
-archlinux:base@sha256:e43f1fd80e073992c5f173efbbbf65144170bf60aeb7369940087d63eacea8f4  # platforms: linux/amd64
+registry.opensuse.org/opensuse/leap:16.0@sha256:295892214721055ace3d2b7f86b21d4143cc0edb4264149d3310a0a032fa166a
+alpine:3.23@sha256:ff7f0c727dd796aa36787bfcd9a64bf35a6ce72a73451b3359fde849b6703d63
+archlinux:base@sha256:52dfbd5afb23a220d5ee92dafcb4c788d96c026ed04179890c23adef4c897fa0  # platforms: linux/amd64
