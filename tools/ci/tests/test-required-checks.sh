@@ -11,7 +11,10 @@
 # expansion (include legs, empty values, axis products, `${{ matrix.* }}`
 # names, run-time fromJSON matrices) must resolve, and a matrix leg whose job
 # has a skippable job-level `if:` must fail while `!cancelled()` resolves
-# (issue #552). `--live` runs against a
+# (issue #552), and (the merge queue, issue #657) a context whose workflow has
+# no `merge_group` trigger, or whose job-level `if:` keeps it off merge-group
+# runs (an event_name pin, `!= 'merge_group'`, a pull-request-only value),
+# must fail while an `if:` naming both events resolves. `--live` runs against a
 # stub `gh` on PATH, so the suite needs no network and no token.
 #
 # Needs python3 with PyYAML. Without PyYAML the test reports SKIP and exits 0,
@@ -86,6 +89,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  merge_group:
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -156,6 +160,41 @@ jobs:
     if: ${{ !cancelled() && needs.build.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     steps: [ { run: "true" } ]
+  pr-pinned:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps: [ { run: "true" } ]
+  not-group:
+    if: ${{ github.event_name != 'merge_group' }}
+    runs-on: ubuntu-24.04
+    steps: [ { run: "true" } ]
+  head-ref:
+    if: github.head_ref != ''
+    runs-on: ubuntu-24.04
+    steps: [ { run: "true" } ]
+  both-events:
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-24.04
+    steps: [ { run: "true" } ]
+EOF
+cat > "${FX}/pr-only.yml" <<'EOF'
+on:
+  pull_request:
+    branches: [ main ]
+jobs:
+  pr-only-job:
+    runs-on: ubuntu-24.04
+    steps: [ { run: "true" } ]
+EOF
+cat > "${FX}/group-typed.yml" <<'EOF'
+on:
+  pull_request:
+  merge_group:
+    types: [ destroyed ]
+jobs:
+  group-typed-job:
+    runs-on: ubuntu-24.04
+    steps: [ { run: "true" } ]
 EOF
 cat > "${FX}/filtered.yml" <<'EOF'
 on:
@@ -216,6 +255,24 @@ expect 0 "fixture: a matrix job gated by !cancelled() and step if: resolves" \
 expect 0 "fixture: a single-context job may skip at job level" \
     "ok   gated-single" -- \
     --workflows "$FX" --contexts "$(ctx gated-single)"
+expect 1 "fixture: a workflow without a merge_group trigger fails" \
+    "no merge_group trigger" -- \
+    --workflows "$FX" --contexts "$(ctx pr-only-job)"
+expect 1 "fixture: a merge_group trigger without checks_requested fails" \
+    "omits \`checks_requested\`" -- \
+    --workflows "$FX" --contexts "$(ctx group-typed-job)"
+expect 1 "fixture: a job pinned to pull_request events fails" \
+    "keeps it off merge-group runs: pins event_name to 'pull_request'" -- \
+    --workflows "$FX" --contexts "$(ctx pr-pinned)"
+expect 1 "fixture: a job excluding merge_group fails" \
+    "keeps it off merge-group runs: excludes merge_group" -- \
+    --workflows "$FX" --contexts "$(ctx not-group)"
+expect 1 "fixture: a job reading a pull-request-only value fails" \
+    "reads a value only pull requests carry" -- \
+    --workflows "$FX" --contexts "$(ctx head-ref)"
+expect 0 "fixture: an if: naming pull_request and merge_group resolves" \
+    "ok   both-events" -- \
+    --workflows "$FX" --contexts "$(ctx both-events)"
 expect 1 "fixture: a duplicate context fails" "duplicate context" -- \
     --workflows "$FX" --contexts "$(ctx build build)"
 expect 1 "fixture: an empty list fails" "list is empty" -- \

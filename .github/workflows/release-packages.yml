@@ -58,9 +58,9 @@ on:
   # `packages-gate` aggregate can be a required check (issue #490, F-CI-004):
   # a workflow-level `paths:` filter left the context unreported on PRs that
   # touch no packaging path, so it could never be required. The path filter
-  # moved into the `changes` job; build and reproducibility run only when it
-  # matches.
+  # moved into the `changes` job; build and reproducibility run when it matches.
   pull_request:             # validate packaging changes without releasing
+  merge_group:              # the merge queue's run builds everything (#657)
 
 # Release builds must run to completion — a re-run of the same tag queues
 # behind the in-flight one instead of cancelling it (issue #188, F-CI-007:
@@ -79,7 +79,7 @@ jobs:
     # Packaging path filter (issue #490): on a pull request, does the change
     # touch anything the package build reads? The checkout is the PR merge
     # commit, so HEAD^1 is the base branch tip and HEAD^1..HEAD is exactly the
-    # PR's change. Tag pushes and manual dispatches always build.
+    # PR's change. Tags, dispatches and merge-queue runs (#657) always build.
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:

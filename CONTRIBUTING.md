@@ -117,14 +117,39 @@ context. The docs jobs (`doc-validators`, which then also runs the
 Renaming a job whose check is required: update `.github/required-checks.txt`
 in the same PR, and swap the context in branch protection when that PR merges.
 
+`main` merges through a merge queue once a maintainer applies the ruleset
+below (issue #657, recorded in [`docs/DECISIONS.md`](docs/DECISIONS.md)). A PR
+then does not have to be up to date with `main`: "Merge when ready" adds it to
+the queue, which tests the merge result once, on a `merge_group` run, before
+it lands. The `changes` jobs skip nothing on that run, so the queue runs the
+full check set. Every workflow that reports a required context therefore also
+triggers on `merge_group`, and `check-required-checks.sh` fails a context that
+a merge-queue run would not report: no `merge_group` trigger, or a job-level
+`if:` that keeps the job off it.
+
 The file does not change protection by itself. A maintainer with admin access
 applies it (after the PR that changed it has merged, so every context exists):
 
 ```bash
-# Required status checks: exactly the committed list, from GitHub Actions.
-jq -Rn '{strict: true, checks: [inputs | select(test("^\\s*(#|$)") | not)
+# Required status checks: exactly the committed list, from GitHub Actions. Not
+# strict (up to date before merging): the merge queue tests each merge result.
+jq -Rn '{strict: false, checks: [inputs | select(test("^\\s*(#|$)") | not)
         | {context: ., app_id: 15368}]}' .github/required-checks.txt \
   | gh api -X PATCH repos/montimage-projects/mmt-dpi/branches/main/protection/required_status_checks --input -
+# Merge queue on main: a repository ruleset (classic protection has no merge
+# queue setting). Squash is the only merge method the repository allows; the
+# 120-minute response timeout clears the longest required job chain (80 min).
+gh api -X POST repos/montimage-projects/mmt-dpi/rulesets --input - <<'JSON'
+{"name": "main merge queue", "target": "branch", "enforcement": "active",
+ "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+ "rules": [{"type": "merge_queue", "parameters": {
+   "merge_method": "SQUASH", "grouping_strategy": "ALLGREEN",
+   "max_entries_to_build": 5, "min_entries_to_merge": 1,
+   "max_entries_to_merge": 5, "min_entries_to_merge_wait_minutes": 5,
+   "check_response_timeout_minutes": 120}}]}
+JSON
+# Check: the merge queue applies to main (read-only; prints merge_queue).
+gh api repos/montimage-projects/mmt-dpi/rules/branches/main --jq '.[].type'
 # Reviews: 1 approving code-owner review, stale approvals dismissed.
 gh api -X PATCH repos/montimage-projects/mmt-dpi/branches/main/protection/required_pull_request_reviews \
   -F required_approving_review_count=1 -F require_code_owner_reviews=true -F dismiss_stale_reviews=true

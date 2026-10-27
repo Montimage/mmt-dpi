@@ -14,8 +14,8 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  # Weekly drift check (issue #188, F-CI-015): the phase0 gates also run on a
-  # schedule so toolchain/image deprecations surface before a contributor's PR.
+  merge_group: # the merge queue's run: every required context reports (#657)
+  # Weekly drift check (issue #188, F-CI-015): image deprecations surface here.
   schedule:
     - cron: '17 4 * * 1'
 

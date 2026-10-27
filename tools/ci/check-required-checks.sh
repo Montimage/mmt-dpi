@@ -11,6 +11,16 @@
 # listed context matches none of them, or matches only jobs that do not
 # report on pull requests.
 #
+# Merge queue (issue #657): main merges through a merge queue, which runs the
+# workflows again on a `merge_group` event and waits for every required
+# context on the queued merge commit. A required context must therefore also
+# be reported on merge-group runs: its workflow needs a `merge_group` trigger,
+# and its job-level `if:` may not keep it off them — an event_name pin that
+# does not name merge_group (`== 'pull_request'`, `!= 'merge_group'`) or a
+# value only pull requests carry (`github.event.pull_request`,
+# `github.head_ref`, `github.base_ref`). Such a job would leave the queue
+# waiting, or skip and report success without running.
+#
 # A matrix job with a job-level `if:` that can skip it is one of those
 # (issue #552): GitHub evaluates that `if:` before expanding the matrix, so a
 # skipped matrix job reports a single check run under its bare job name and
@@ -43,7 +53,8 @@
 #                       report the drift between the live and committed lists
 #
 # Exit codes (verify-helpers contract): 0 = every context names a job that
-# reports on pull requests; 1 = a context does not; 2 = helper broken
+# reports on pull requests and merge-group runs; 1 = a context does not;
+# 2 = helper broken
 # (missing file, unparsable workflow, no python3/PyYAML, gh failure).
 set -euo pipefail
 
@@ -101,6 +112,10 @@ MATRIX_REF = re.compile(r"^matrix((?:\.[A-Za-z0-9_-]+)+)$")
 NON_PR_IF = re.compile(
     r"refs/tags/|github\.event_name\s*==\s*'(?:schedule|push|workflow_dispatch"
     r"|release|workflow_run)'")
+# Job-level `if:` values only pull requests carry: empty on merge_group runs.
+PR_ONLY_VALUE = re.compile(
+    r"github\.(?:event\.pull_request\b|head_ref\b|base_ref\b)")
+EVENT_PIN = re.compile(r"github\.event_name\s*(==|!=)\s*'([A-Za-z_]+)'")
 # Job-level `if:` conditions that never skip a matrix job in a live run.
 NEVER_SKIPS_IF = re.compile(
     r"^\s*(?:\$\{\{\s*)?(?:always\(\)|!\s*cancelled\(\))(?:\s*\}\})?\s*$")
@@ -209,14 +224,19 @@ def check_names(job_id, job):
     return out
 
 
-def pr_trigger(doc):
-    """(runs_on_pull_requests_into_main, reason)"""
+def triggers(doc):
+    """The workflow's `on:` as a dict, or None."""
     on = doc.get("on", doc.get(True))    # PyYAML reads a bare `on` as True
     if isinstance(on, str):
-        on = {on: None}
-    elif isinstance(on, list):
-        on = {k: None for k in on}
-    elif not isinstance(on, dict):
+        return {on: None}
+    if isinstance(on, list):
+        return {k: None for k in on}
+    return on if isinstance(on, dict) else None
+
+
+def pr_trigger(on):
+    """(runs_on_pull_requests_into_main, reason)"""
+    if on is None:
         return False, "no trigger"
     if "pull_request" not in on:
         return False, "no pull_request trigger"
@@ -232,6 +252,40 @@ def pr_trigger(doc):
                                        for b in pr["branches-ignore"]):
         return False, "pull_request trigger ignores main"
     return True, ""
+
+
+def group_trigger(on):
+    """(runs_on_merge_group_into_main, reason) — the merge queue (#657)."""
+    if on is None or "merge_group" not in on:
+        return False, ("no merge_group trigger, so merge-queue runs never "
+                       "report it")
+    mg = on["merge_group"] or {}
+    if not isinstance(mg, dict):
+        return True, ""
+    types = mg.get("types")
+    if types is not None and "checks_requested" not in types:
+        return False, "merge_group trigger omits `checks_requested`"
+    branches = mg.get("branches")
+    if branches is not None and not any(fnmatchcase("main", b)
+                                        for b in branches):
+        return False, "merge_group trigger excludes main"
+    if "branches-ignore" in mg and any(fnmatchcase("main", b)
+                                       for b in mg["branches-ignore"]):
+        return False, "merge_group trigger ignores main"
+    return True, ""
+
+
+def off_group_if(cond):
+    """Why a job-level `if:` keeps the job off merge-group runs, or ''."""
+    names_group = "merge_group" in cond
+    if PR_ONLY_VALUE.search(cond) and not names_group:
+        return "reads a value only pull requests carry"
+    for op, event in EVENT_PIN.findall(cond):
+        if op == "!=" and event == "merge_group":
+            return "excludes merge_group"
+        if op == "==" and event != "merge_group" and not names_group:
+            return f"pins event_name to '{event}'"
+    return ""
 
 
 # Every check run any workflow job reports: (name, is_glob, where, why_not_pr)
@@ -252,7 +306,10 @@ for path in files:
         sys.exit(2)
     if not isinstance(doc, dict) or not isinstance(doc.get("jobs"), dict):
         continue
-    on_pr, why = pr_trigger(doc)
+    on = triggers(doc)
+    on_pr, why = pr_trigger(on)
+    if on_pr:
+        on_pr, why = group_trigger(on)
     wf = os.path.basename(path)
     for job_id, job in doc["jobs"].items():
         if not isinstance(job, dict):
@@ -261,6 +318,9 @@ for path in files:
         cond = str(job.get("if", ""))
         if on_pr and NON_PR_IF.search(cond):
             job_why = f"job `if:` keeps it off pull requests ({cond})"
+        elif on_pr and off_group_if(cond):
+            job_why = (f"job `if:` keeps it off merge-group runs: "
+                       f"{off_group_if(cond)} ({cond})")
         elif (on_pr and cond and (job.get("strategy") or {}).get("matrix")
               is not None and not NEVER_SKIPS_IF.match(cond)):
             job_why = (f"matrix job has a job-level `if:` that can skip it "
@@ -324,7 +384,9 @@ if live_path:
         print("  live protection matches the committed list")
 
 if failures:
-    print(f"Result: FAIL ({failures} context(s) no pull-request job reports)")
+    print(f"Result: FAIL ({failures} context(s) no pull-request and "
+          f"merge-group job reports)")
     sys.exit(1)
-print("Result: PASS (every required context names a pull-request job)")
+print("Result: PASS (every required context names a job that reports on "
+      "pull requests and merge-group runs)")
 PY

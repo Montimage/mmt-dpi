@@ -6,8 +6,8 @@ on:
     tags: ["v*"] # Push events to matching v*, i.e. v1.0, v20.15.10
   pull_request:
     branches: [ main ]
-  # Weekly drift check (issue #188, F-CI-015): environment deprecations and
-  # upstream changes surface here instead of on a contributor's next PR.
+  merge_group: # the merge queue's run: every required context reports (#657)
+  # Weekly drift check (issue #188, F-CI-015): upstream changes surface here.
   schedule:
     - cron: '17 4 * * 1'
 
@@ -28,8 +28,8 @@ jobs:
     # Docs-only filter (issue #552, F-CI-009): on a pull request, does the
     # change touch anything but docs/ and root-level Markdown? The checkout
     # is the PR merge commit, so HEAD^1..HEAD is exactly the PR's change;
-    # tools/ci/classify-changes.sh holds the path allowlist. Pushes, tags and
-    # the schedule always run everything.
+    # tools/ci/classify-changes.sh holds the path allowlist. Pushes, tags, the
+    # schedule and merge-queue runs (#657) always run everything.
     #
     # A docs-only change skips the C jobs, and every required context still
     # reports. A job skipped by its `if:` reports success, so the

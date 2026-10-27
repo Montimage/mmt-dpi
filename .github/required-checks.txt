@@ -19,6 +19,10 @@
 #
 # A docs-only pull request skips the C jobs (issue #552) and every context
 # here still reports: see the `changes` job of c-cpp.yml.
+#
+# main is set up to merge through a merge queue (issue #657): every workflow
+# reporting a context here also triggers on `merge_group`, and the helper
+# fails a context that a merge-queue run would not report (see its header).
 
 # --- c-cpp.yml -------------------------------------------------------------
 build
