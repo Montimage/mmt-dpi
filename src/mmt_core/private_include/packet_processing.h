@@ -788,7 +788,8 @@ int mmt_match_prefix(const u_int8_t *payload, size_t payload_len, const char *st
    *         NULL if the substring is not found
    *
    */
-char* mmt_strnstr(const char *s, const char *find, size_t slen);
+/* Issue #533: MMTAPI = exported for libmmt_tcpip until #534. */
+MMTAPI char * MMTCALL mmt_strnstr(const char *s, const char *find, size_t slen);
 
 int process_packet(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet);
 int process_packet_with_reassembly(mmt_handler_t *mmt, struct pkthdr *header, const u_char * packet);
@@ -886,13 +887,15 @@ void flush_deferred_attribute_frees(mmt_handler_t *mmt_handler);
  *   - dropped: payload bytes refused by the per-flow ceiling / late-arrival
  *   - packet_allocs: allocations performed by process_packet_with_reassembly()
  *     (slot creation or copy-buffer growth — steady-state must be 0) */
-void mmt_tcp_reasm_stat_visit(void);
-void mmt_tcp_reasm_stat_move(uint32_t bytes);
-void mmt_tcp_reasm_stat_drop(uint32_t bytes);
+MMTAPI void MMTCALL mmt_tcp_reasm_stat_visit(void);
+MMTAPI void MMTCALL mmt_tcp_reasm_stat_move(uint32_t bytes);
+MMTAPI void MMTCALL mmt_tcp_reasm_stat_drop(uint32_t bytes);
 /* Signed delta on the resident reassembly bytes (pending carves + image
  * bytes across all sessions) — the quantity the per-flow ceiling bounds. */
-void mmt_tcp_reasm_stat_live(int64_t delta);
+MMTAPI void MMTCALL mmt_tcp_reasm_stat_live(int64_t delta);
 void mmt_reassembly_stat_packet_alloc(void);
+/* Test-only getters: hidden since #533 (not MMTAPI) — harnesses that read
+ * them link libmmt_core.a (tools/phase0/tests/static_core_link.sh). */
 uint64_t mmt_tcp_reasm_insert_visits(void);
 uint64_t mmt_tcp_reasm_bytes_moved(void);
 uint64_t mmt_tcp_reasm_bytes_dropped(void);

@@ -831,24 +831,24 @@ typedef struct mmt_dpi_profile_struct {
     uint8_t ip_address_classify;      /**< 0/1 — IP-range attribution */
 } mmt_dpi_profile_t;
 
-/* The predefined profile objects are plain `extern` — never MMTAPI: inside
- * the SDK build MMTAPI is empty, which would turn these declarations into
- * one tentative definition per translation unit. */
+/* The predefined profile objects are MMTAPI data (#533): MMTAPI is `extern`
+ * in both build modes (mmt_exports.h), so these stay declarations, and its
+ * default visibility exports them from the -fvisibility=hidden core. */
 /** Today's built-in defaults, spelled out: unlimited depth, application
  * detection on, IP-range on, port attribution off. Applying this profile
  * restores the stock configuration. */
-extern const mmt_dpi_profile_t MMT_DPI_PROFILE_DEFAULT;
+MMTAPI const mmt_dpi_profile_t MMT_DPI_PROFILE_DEFAULT;
 /** Everything on: unlimited depth plus all three heuristic levers,
  * including port attribution. */
-extern const mmt_dpi_profile_t MMT_DPI_PROFILE_FULL;
+MMTAPI const mmt_dpi_profile_t MMT_DPI_PROFILE_FULL;
 /** Middle ground: inspect through the first application layer and one
  * encapsulation hop (depth 5, enough for TLS SNI attribution), application
  * and IP-range detection on, port attribution off. */
-extern const mmt_dpi_profile_t MMT_DPI_PROFILE_BALANCED;
+MMTAPI const mmt_dpi_profile_t MMT_DPI_PROFILE_BALANCED;
 /** Maximum throughput: structural classification only — path stops at the
  * transport layer (depth 3), every heuristic lever off. Sessions and
  * L2–L4 statistics still work; no application protocol is detected. */
-extern const mmt_dpi_profile_t MMT_DPI_PROFILE_MINIMAL;
+MMTAPI const mmt_dpi_profile_t MMT_DPI_PROFILE_MINIMAL;
 
 /**
  * Apply a DPI profile to a handler: sets classification_max_depth and the
@@ -1348,7 +1348,7 @@ static inline int mmt_memcmp( mmt_const_opaque_t x, mmt_const_opaque_t y, size_t
 /**
  * Print Montimage information
  */
-void mmt_print_info();
+MMTAPI void MMTCALL mmt_print_info();
 
 /* Typed inline accessors for weak-type scope (ABI-compatible wrappers, file:line mmt_core.h) */
 static inline mmt_attr_scope_t mmt_attr_get_scope_typed(const attribute_t *attr) {

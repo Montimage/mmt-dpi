@@ -18,6 +18,7 @@ extern "C" {
  #include <stdint.h>
  #include <math.h>
  #include <stdbool.h>
+ #include "mmt_exports.h"
 
 //predictor
 #ifndef likely
@@ -32,7 +33,7 @@ extern "C" {
  * @param  hc hexa character
  * @return    the value from 0->255;
  */
-int hex2int(char hc);
+MMTAPI int MMTCALL hex2int(char hc);
 
 /**
  * Convert a hexa string to an integer number
@@ -46,7 +47,7 @@ int hex2int(char hc);
  * @deprecated Use str_hex2int_n() — it takes the buffer length explicitly and
  *             never reads past it, so it is safe on non-NUL-terminated input.
  */
-int str_hex2int(char *hstr, int start_index, int end_index)
+MMTAPI int MMTCALL str_hex2int(char *hstr, int start_index, int end_index)
     __attribute__((deprecated("use str_hex2int_n")));
 
 /**
@@ -61,7 +62,7 @@ int str_hex2int(char *hstr, int start_index, int end_index)
  *                   @end_index < @start_index
  *                   @end_index >= @hstr_len
  */
-int str_hex2int_n(char *hstr, size_t hstr_len, int start_index, int end_index);
+MMTAPI int MMTCALL str_hex2int_n(char *hstr, size_t hstr_len, int start_index, int end_index);
 
 /**
  * Get printable value of a hexa string
@@ -73,7 +74,7 @@ int str_hex2int_n(char *hstr, size_t hstr_len, int start_index, int end_index);
  *                   @start_index <0
  *                   @end_index <  start_index      
  */
-char *str_hex2str(char *hstr, int start_index, int end_index);
+MMTAPI char * MMTCALL str_hex2str(char *hstr, int start_index, int end_index);
 
 /**
  * Convert a string of a hexa number to decimal number
@@ -82,7 +83,7 @@ char *str_hex2str(char *hstr, int start_index, int end_index);
  *              0 if all the characters of @str is '0'
  *             value of hexa number in decimal system
  */
-unsigned long hex2dec(char* str);
+MMTAPI unsigned long MMTCALL hex2dec(char* str);
 
 
 /**
@@ -93,7 +94,7 @@ unsigned long hex2dec(char* str);
  *           'A'->'F' -> value 10->15        
  *           -1 otherwise
  */
-int char2int(char x);
+MMTAPI int MMTCALL char2int(char x);
 
 /**
  * Convert a hex number to a character in ascii table
@@ -103,7 +104,7 @@ int char2int(char x);
  *            '\0' if b is not hexa character
  *             character which has value: a *16 + b
  */
-char hex2char(char a, char b);
+MMTAPI char MMTCALL hex2char(char a, char b);
 
 
 /**
@@ -115,7 +116,7 @@ char hex2char(char a, char b);
  *                	NULL if length of h_str is a number of: 2*n + 1
  *                 a string in ascii table
  */
-char * hex2str(char *h_str);
+MMTAPI char * MMTCALL hex2str(char *h_str);
 
 
  #define C_EASY_STR_MAX_ARRAY_SIZE 255
@@ -131,7 +132,7 @@ char * hex2str(char *h_str);
  *                  @str1 and @str2 are NULL
  *                  @str1 equals @str2
  */
- bool str_compare(char * str1, char * str2); // Passed
+ MMTAPI bool MMTCALL str_compare(char * str1, char * str2); // Passed
 
  /**
   * Get the first index of a substring in a string
@@ -143,7 +144,7 @@ char * hex2str(char *h_str);
   *               >=0: index of @substr in @str
   *               
   */
- int str_index(char * str, char *  substr); // Passed
+ MMTAPI int MMTCALL str_index(char * str, char *  substr); // Passed
 
  /**
   * Get a substring of a string with the input of start and end index
@@ -158,7 +159,7 @@ char * hex2str(char *h_str);
   * @deprecated Use str_sub_n() — it takes the buffer length explicitly and
   *             never reads past it, so it is safe on non-NUL-terminated input.
   */		
- char * str_sub(char * str, int start_index, int end_index) // Passed
+ MMTAPI char * MMTCALL str_sub(char * str, int start_index, int end_index) // Passed
     __attribute__((deprecated("use str_sub_n")));
 
  /**
@@ -173,7 +174,7 @@ char * hex2str(char *h_str);
   *                           if @start_index > @end_index
   *                     a new string which is the substring of @str from @start_index to @end_index (counts both 2 characters at index @start_index and @end_index)
   */
- char * str_sub_n(char * str, size_t str_len, int start_index, int end_index);
+ MMTAPI char * MMTCALL str_sub_n(char * str, size_t str_len, int start_index, int end_index);
 
 /**
  * Get the combination of two strings
@@ -184,7 +185,7 @@ char * hex2str(char *h_str);
  *              A copy of @str1 if @str2 is NULL
  *              A copy of @str2 if @str1 is NULL
  */
- char * str_combine(char * str1, char * str2); // Passed
+ MMTAPI char * MMTCALL str_combine(char * str1, char * str2); // Passed
 
 /**
  * Split a string by a spliter
@@ -210,7 +211,7 @@ char * hex2str(char *h_str);
  *             buffer length and never reads past it, so it is safe on
  *             non-NUL-terminated input.
  */
-int * str_get_indexes(char *str, char *str1) // Passed
+MMTAPI int * MMTCALL str_get_indexes(char *str, char *str1) // Passed
     __attribute__((deprecated("use str_get_indexes_n")));
 
 /**
@@ -225,7 +226,7 @@ int * str_get_indexes(char *str, char *str1) // Passed
  *                  @str1 does not occur in the first @str_len bytes of @str
  *             an array of indexes of @str1 in @str, terminated by -1
  */
-int * str_get_indexes_n(char *str, size_t str_len, char *str1, size_t str1_len);
+MMTAPI int * MMTCALL str_get_indexes_n(char *str, size_t str_len, char *str1, size_t str1_len);
 
 /**
  * Replace a substring by another substring in a string
@@ -240,7 +241,7 @@ int * str_get_indexes_n(char *str, size_t str_len, char *str1, size_t str1_len);
  *                       @rep is NULL
  *                  new value of @str with all the @str1 are replaced by @rep
  */
- char * str_replace(char * str, char * str1, char * rep); // Passed
+ MMTAPI char * MMTCALL str_replace(char * str, char * str1, char * rep); // Passed
 
 
 /**
@@ -259,20 +260,20 @@ int * str_get_indexes_n(char *str, size_t str_len, char *str1, size_t str1_len);
 *                   @begin and @end are overlap or next each other in @str
 *                   @begin is after @end in @str
 */
-char * str_subvalue(char *str, char* begin, char * end); // Passed
+MMTAPI char * MMTCALL str_subvalue(char *str, char* begin, char * end); // Passed
 
 /**
  * Copy a string
  * @param str2 string to be coppied
  * @return new string
  */
-char* str_copy(char *str2);
+MMTAPI char * MMTCALL str_copy(char *str2);
 
 /**
  * Print string in an array of string until the first NULL element;
  * @param array array string
  */
-void str_print_array(char **array); // Passed
+MMTAPI void MMTCALL str_print_array(char **array); // Passed
 
 #ifdef  __cplusplus
 }

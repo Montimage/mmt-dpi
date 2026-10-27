@@ -23,12 +23,17 @@ extern "C" {
 #endif
 
     /** Session management API — per-protocol session store helpers. */
-    void * get_session_from_protocol_context_by_session_key(void * protocol_context, void * key);
-    int insert_session_into_protocol_context(void * protocol_context, void * key, void * value);
-    int delete_session_from_protocol_context(void * protocol_context, void * key);
+    MMTAPI void * MMTCALL get_session_from_protocol_context_by_session_key(void * protocol_context, void * key);
+    MMTAPI int MMTCALL insert_session_into_protocol_context(void * protocol_context, void * key, void * value);
+    MMTAPI int MMTCALL delete_session_from_protocol_context(void * protocol_context, void * key);
     void clear_sessions_from_protocol_context(void * protocol_context);
-    void protocol_sessions_iteration_callback(void * protocol_context, generic_mapspace_iteration_callback fct, void * args);
+    MMTAPI void MMTCALL protocol_sessions_iteration_callback(void * protocol_context, generic_mapspace_iteration_callback fct, void * args);
     // End of API for session management
+
+    /* Issue #533: the core is built -fvisibility=hidden, so only MMTAPI
+     * declarations are exported. The MMTAPI-marked helpers in this header
+     * are internals libmmt_tcpip binds to after dlopen() — exported for the
+     * plugin libraries until #534; the rest stay hidden. */
 
     // Per-flow session store: a hash table keyed on a packed 5-tuple. The
     // equality predicate tests two keys in one call (issue #253, F-PERF-008);
@@ -43,22 +48,22 @@ extern "C" {
     // store (issue #254): hash_fct must be consistent with comp_fct equality
     // (keys equal under !cmp(a,b) && !cmp(b,a) must hash equally); NULL is a
     // correct but slow constant-hash fallback.
-    void * init_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct);
+    MMTAPI void * MMTCALL init_map_space(generic_comparison_fct comp_fct, generic_hash_fct hash_fct);
     void * init_int_map_space(generic_int_comparison_fct comp_fct);
     int getmapsize(void * maplist);
 
-    int insert_key_value(void * maplist, void * key, void * value);
+    MMTAPI int MMTCALL insert_key_value(void * maplist, void * key, void * value);
     int insert_int_key_value(void * maplist, uint32_t key, void * value);
     int update_key_value(void * maplist, void * key, void * new_value);
-    void * find_key_value(void * maplist, void * key);
+    MMTAPI void * MMTCALL find_key_value(void * maplist, void * key);
     void * find_int_key_value(void * maplist, uint32_t key);
-    int delete_key_value(void * maplist, void * key);
+    MMTAPI int MMTCALL delete_key_value(void * maplist, void * key);
     int delete_int_key_value(void * maplist, uint32_t key);
-    void clear_map_space(void * maplist);
+    MMTAPI void MMTCALL clear_map_space(void * maplist);
     void clear_int_map_space(void * maplist);
-    void delete_map_space(void * maplist);
+    MMTAPI void MMTCALL delete_map_space(void * maplist);
     void delete_int_map_space(void * maplist);
-    void mapspace_iteration_callback(void * maplist, generic_mapspace_iteration_callback fct, void * args);
+    MMTAPI void MMTCALL mapspace_iteration_callback(void * maplist, generic_mapspace_iteration_callback fct, void * args);
     void int_mapspace_iteration_callback(void * maplist, generic_mapspace_iteration_callback fct, void * args);
 
     // Session-timeout index: a timing-wheel ring bounded by the live

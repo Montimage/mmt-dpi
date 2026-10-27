@@ -35,13 +35,18 @@ else
     make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
+# Issue #533: this test calls libmmt_core internals the shared library hides,
+# so it links the static archive instead (never -lmmt_core as well).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_core_link "${PREFIX}/dpi/lib" || exit 2
 echo "[2/3] compiling session_scale_test"
 gcc -g -O1 -o "${BIN}" "${TEST_DIR}/session_scale_test.c" \
     -I"${PREFIX}/dpi/include" \
     -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
     -I"${REPO_ROOT}/src/mmt_core/private_include" \
     -I"${TEST_DIR}" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl -lpthread -lm
+    -L"${PREFIX}/dpi/lib" -lmmt_tcpip "${MMT_STATIC_CORE_LDFLAGS[@]}" -ldl -lpthread -lm
 
 echo "[3/3] running session_scale_test"
 # Run from the install prefix so the SDK's CWD-relative "plugins/" lookup

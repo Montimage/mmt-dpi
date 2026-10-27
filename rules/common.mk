@@ -585,3 +585,16 @@ ifdef ENABLESEC
 MMT_SEC_REACTION_DIR_DEFAULT ?= $(MMT_BASE)/probe/conf
 $(SECURITY_OBJECTS): CFLAGS += -DMMT_SEC_REACTION_DIR_OPT=\"$(MMT_SEC_REACTION_DIR_DEFAULT)\"
 endif
+
+# Issue #533 (appended so no cited line range moves): libmmt_core exports only
+# what is declared MMTAPI. The core objects are compiled with hidden default
+# visibility, and MMTAPI carries visibility("default") inside the SDK build
+# (src/mmt_core/public_include/mmt_exports.h), so libmmt_core.so's dynamic
+# symbol table holds the MMTAPI declarations and nothing else; every other
+# core function stays linkable inside the library and libmmt_core.a. The
+# private internals libmmt_tcpip binds to are MMTAPI until #534. Tests that
+# call hidden internals link the static archive
+# (tools/phase0/tests/static_core_link.sh). scripts/validate-exported-symbols.sh
+# enforces the export budget. Protocol libraries keep default visibility (#534).
+$(CORE_OBJECTS): CFLAGS += -fvisibility=hidden
+$(CORE_OBJECTS): CXXFLAGS += -fvisibility=hidden

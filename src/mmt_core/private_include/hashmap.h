@@ -114,10 +114,12 @@ extern void           hashmap_free      ( mmt_hashmap_t * );
 extern void           hashmap_init      ( mmt_hashmap_t * );
 extern void           hashmap_cleanup   ( mmt_hashmap_t * );
 
-extern void           hashmap_insert_kv ( mmt_hashmap_t *, mmt_key_t, void * );
-extern int            hashmap_get       ( mmt_hashmap_t *, mmt_key_t, void ** );
-extern void           hashmap_walk      ( mmt_hashmap_t *, mmt_hashmap_walker_t, void * );
-extern int            hashmap_remove    ( mmt_hashmap_t *, mmt_key_t );
+/* Issue #533: MMTAPI = exported for libmmt_tcpip until #534 (the core is
+ * built -fvisibility=hidden); the other hashmap_* entry points are hidden. */
+MMTAPI void           hashmap_insert_kv ( mmt_hashmap_t *, mmt_key_t, void * );
+MMTAPI int            hashmap_get       ( mmt_hashmap_t *, mmt_key_t, void ** );
+MMTAPI void           hashmap_walk      ( mmt_hashmap_t *, mmt_hashmap_walker_t, void * );
+MMTAPI int            hashmap_remove    ( mmt_hashmap_t *, mmt_key_t );
 
 extern void           hashmap_dump      ( mmt_hashmap_t * );
 

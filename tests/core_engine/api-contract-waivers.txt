@@ -76,12 +76,14 @@ get_session_ul_data_byte_count
 get_session_ul_data_packet_count
 get_session_ul_packet_count
 get_user_session_context
+hex2int
 init_extraction
 iterate_through_mmt_handlers
 iterate_through_protocols
 mmt_close_handler
 mmt_drop_packet
 mmt_print_all_protocols
+mmt_print_info
 mmt_strcasecmp
 mmt_strcmp
 mmt_strncasecmp
@@ -104,3 +106,5 @@ reset_statistics
 set_session_timeout_delay
 set_user_session_context
 short_time_diff
+str_compare
+str_print_array

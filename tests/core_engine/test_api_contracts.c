@@ -42,6 +42,7 @@
 #include "data_defs.h"
 #include "plugin_defs.h"
 #include "extraction_lib.h"
+#include "mmt_utils.h"
 #include "packet_processing.h" /* private: handler/session/attribute layouts */
 #include "hash_utils.h"        /* private: session store of the sessionizer */
 #include "cfg_defaults.h"      /* private: CFG_CLASSIFICATION_THRESHOLD */
@@ -2289,6 +2290,209 @@ static void e_mmt_arena_destroy(void) {
     CHECK(heap_in_use() == before, "NULL arena: no-op");
 }
 
+static void b_mmt_print_info(void) {
+    capture_t c;
+    char out[512];
+    int ok = capture_begin(&c);
+    mmt_print_info();
+    capture_end(&c, out, sizeof(out));
+    CHECK(ok && strcmp(out, MMT_PRINT_INFO) == 0, "prints the MMT_PRINT_INFO banner");
+}
+
+/* ======================================================================== */
+/*                                mmt_utils.h                               */
+/* ======================================================================== */
+
+/* Issue #533: the string/hex utilities became MMTAPI (they were exported
+ * through default visibility before the core was built hidden). Their
+ * results are malloc()ed, so the caller releases them with free(). */
+
+static void b_hex2int(void) {
+    CHECK(hex2int('A') == 65 && hex2int((char) 0xff) == 255, "byte value 0..255");
+}
+static void b_str_hex2int(void) {
+    char h[] = "\x01\x02\x03";
+    AC_ALLOW_DEPRECATED_BEGIN
+    CHECK(str_hex2int(h, 0, 1) == 0x0102, "big-endian bytes [0,1]");
+    AC_ALLOW_DEPRECATED_END
+}
+static void e_str_hex2int(void) {
+    char h[] = "\x01\x02";
+    AC_ALLOW_DEPRECATED_BEGIN
+    CHECK(str_hex2int(NULL, 0, 1) == -1, "NULL -> -1");
+    CHECK(str_hex2int(h, 1, 0) == -1, "end < start -> -1");
+    AC_ALLOW_DEPRECATED_END
+}
+static void b_str_hex2int_n(void) {
+    char h[3] = { 0x01, 0x02, 0x03 }; /* not NUL-terminated */
+    CHECK(str_hex2int_n(h, sizeof(h), 1, 2) == 0x0203, "big-endian bytes [1,2]");
+}
+static void e_str_hex2int_n(void) {
+    char h[2] = { 0x01, 0x02 };
+    CHECK(str_hex2int_n(h, sizeof(h), 0, 2) == -1, "end index past the buffer -> -1");
+    CHECK(str_hex2int_n(NULL, 2, 0, 1) == -1, "NULL -> -1");
+}
+static void b_str_hex2str(void) {
+    char h[] = "ab\x01" "c"; /* the split ends the \x escape */
+    char *r = str_hex2str(h, 0, 3);
+    CHECK(r != NULL && strcmp(r, "abc") == 0, "keeps the printable bytes");
+    free(r);
+}
+static void e_str_hex2str(void) {
+    char h[] = "abc";
+    CHECK(str_hex2str(NULL, 0, 1) == NULL, "NULL -> NULL");
+    CHECK(str_hex2str(h, 0, 3) == NULL, "end index past the string -> NULL");
+}
+static void b_hex2dec(void) {
+    CHECK(hex2dec("ff") == 255 && hex2dec("000") == 0, "hex digits -> value");
+}
+static void e_hex2dec(void) {
+    CHECK(hex2dec("fg") == (unsigned long) -1, "non-hex digit -> (unsigned long)-1");
+}
+static void b_char2int(void) {
+    CHECK(char2int('7') == 7 && char2int('a') == 10 && char2int('F') == 15, "hex digit -> 0..15");
+}
+static void e_char2int(void) {
+    CHECK(char2int('g') == -1, "non-hex character -> -1");
+}
+static void b_hex2char(void) {
+    CHECK(hex2char('4', '1') == 'A', "two hex digits -> one character");
+}
+static void e_hex2char(void) {
+    CHECK(hex2char('z', '1') == '\0', "non-hex digit -> NUL");
+}
+static void b_hex2str(void) {
+    char h[] = "41420a43";
+    char *r = hex2str(h);
+    CHECK(r != NULL && strcmp(r, "ABC") == 0, "hex pairs -> printable characters");
+    free(r);
+}
+static void e_hex2str(void) {
+    char h[] = "414";
+    CHECK(hex2str(h) == NULL, "odd length -> NULL");
+    CHECK(hex2str(NULL) == NULL, "NULL -> NULL");
+}
+static void b_str_compare(void) {
+    char a[] = "mmt", b[] = "mmt", c[] = "dpi";
+    CHECK(str_compare(a, b) == 1 && str_compare(a, c) == 0, "string equality");
+    CHECK(str_compare(NULL, NULL) == 1 && str_compare(a, NULL) == 0, "NULL compares equal only to NULL");
+}
+static void b_str_index(void) {
+    char s[] = "mmt-dpi", sub[] = "dpi";
+    CHECK(str_index(s, sub) == 4, "index of the first occurrence");
+}
+static void e_str_index(void) {
+    char s[] = "mmt-dpi", sub[] = "sdk";
+    CHECK(str_index(s, sub) == -1, "absent substring -> -1");
+    CHECK(str_index(NULL, sub) == -1, "NULL -> -1");
+}
+static void b_str_sub(void) {
+    char s[] = "mmt-dpi";
+    AC_ALLOW_DEPRECATED_BEGIN
+    char *r = str_sub(s, 4, 6);
+    AC_ALLOW_DEPRECATED_END
+    CHECK(r != NULL && strcmp(r, "dpi") == 0, "inclusive [4,6]");
+    free(r);
+}
+static void e_str_sub(void) {
+    char s[] = "mmt";
+    AC_ALLOW_DEPRECATED_BEGIN
+    CHECK(str_sub(s, 2, 1) == NULL, "start > end -> NULL");
+    CHECK(str_sub(s, 0, 3) == NULL, "end index past the string -> NULL");
+    AC_ALLOW_DEPRECATED_END
+}
+static void b_str_sub_n(void) {
+    char s[7] = { 'm', 'm', 't', '-', 'd', 'p', 'i' }; /* not NUL-terminated */
+    char *r = str_sub_n(s, sizeof(s), 4, 6);
+    CHECK(r != NULL && strcmp(r, "dpi") == 0, "inclusive [4,6] of a bounded buffer");
+    free(r);
+}
+static void e_str_sub_n(void) {
+    char s[3] = { 'm', 'm', 't' };
+    CHECK(str_sub_n(s, sizeof(s), 0, 3) == NULL, "end index past the buffer -> NULL");
+    CHECK(str_sub_n(NULL, 3, 0, 1) == NULL, "NULL -> NULL");
+}
+static void b_str_combine(void) {
+    char a[] = "mmt-", b[] = "dpi";
+    char *r = str_combine(a, b);
+    CHECK(r != NULL && strcmp(r, "mmt-dpi") == 0, "concatenation");
+    free(r);
+    r = str_combine(NULL, b);
+    CHECK(r != NULL && strcmp(r, "dpi") == 0, "NULL first operand -> copy of the second");
+    free(r);
+}
+static void e_str_combine(void) {
+    CHECK(str_combine(NULL, NULL) == NULL, "both NULL -> NULL");
+}
+static void b_str_get_indexes(void) {
+    char s[] = "a,b,c", sep[] = ",";
+    AC_ALLOW_DEPRECATED_BEGIN
+    int *r = str_get_indexes(s, sep);
+    AC_ALLOW_DEPRECATED_END
+    CHECK(r != NULL && r[0] == 1 && r[1] == 3 && r[2] == -1, "indexes terminated by -1");
+    free(r);
+}
+static void e_str_get_indexes(void) {
+    char s[] = "abc", sep[] = ",";
+    AC_ALLOW_DEPRECATED_BEGIN
+    CHECK(str_get_indexes(s, sep) == NULL, "absent needle -> NULL");
+    CHECK(str_get_indexes(NULL, sep) == NULL, "NULL -> NULL");
+    AC_ALLOW_DEPRECATED_END
+}
+static void b_str_get_indexes_n(void) {
+    char s[5] = { 'a', ',', 'b', ',', 'c' }; /* not NUL-terminated */
+    char sep[1] = { ',' };
+    int *r = str_get_indexes_n(s, sizeof(s), sep, sizeof(sep));
+    CHECK(r != NULL && r[0] == 1 && r[1] == 3 && r[2] == -1, "indexes terminated by -1");
+    free(r);
+}
+static void e_str_get_indexes_n(void) {
+    char s[3] = { 'a', ',', 'b' };
+    char sep[1] = { ',' };
+    CHECK(str_get_indexes_n(s, sizeof(s), sep, 0) == NULL, "empty needle -> NULL");
+    CHECK(str_get_indexes_n(s, 1, s, sizeof(s)) == NULL, "needle longer than the haystack -> NULL");
+}
+static void b_str_replace(void) {
+    char s[] = "a,b,c", from[] = ",", to[] = "--";
+    char *r = str_replace(s, from, to);
+    CHECK(r != NULL && strcmp(r, "a--b--c") == 0, "every occurrence replaced");
+    free(r);
+}
+static void e_str_replace(void) {
+    char from[] = ",", to[] = "-";
+    CHECK(str_replace(NULL, from, to) == NULL, "NULL string -> NULL");
+}
+static void b_str_subvalue(void) {
+    char s[] = "key=[value];", begin[] = "[", end[] = "]";
+    char *r = str_subvalue(s, begin, end);
+    CHECK(r != NULL && strcmp(r, "value") == 0, "text between the delimiters");
+    free(r);
+}
+static void e_str_subvalue(void) {
+    char s[] = "key=value", begin[] = "[", end[] = "]";
+    CHECK(str_subvalue(s, NULL, NULL) == NULL, "both delimiters NULL -> NULL");
+    CHECK(str_subvalue(s, begin, end) == NULL, "absent delimiters -> NULL");
+}
+static void b_str_copy(void) {
+    char s[] = "mmt";
+    char *r = str_copy(s);
+    CHECK(r != NULL && r != s && strcmp(r, s) == 0, "fresh copy");
+    free(r);
+}
+static void e_str_copy(void) {
+    CHECK(str_copy(NULL) == NULL, "NULL -> NULL");
+}
+static void b_str_print_array(void) {
+    char a0[] = "mmt", a1[] = "dpi";
+    char *arr[] = { a0, a1, NULL };
+    capture_t c;
+    char out[128];
+    int ok = capture_begin(&c);
+    str_print_array(arr);
+    capture_end(&c, out, sizeof(out));
+    CHECK(ok && strcmp(out, "Array[0]: mmt\nArray[1]: dpi\n") == 0, "one line per element up to NULL");
+}
+
 /* ======================================================================== */
 /*                               plugin_defs.h                              */
 /* ======================================================================== */
@@ -2884,6 +3088,30 @@ static const api_contract_t k_contracts[] = {
     CONTRACT(mmt_arena_alloc, b_mmt_arena_alloc, e_mmt_arena_alloc),
     CONTRACT(mmt_arena_reset, b_mmt_arena_reset, e_mmt_arena_reset),
     CONTRACT(mmt_arena_destroy, b_mmt_arena_destroy, e_mmt_arena_destroy),
+    NO_ERROR_PATH(mmt_print_info, b_mmt_print_info, W_NOARGS),
+
+    /* ----------------------------- mmt_utils.h --------------------------- */
+    NO_ERROR_PATH(hex2int, b_hex2int, W_TOTAL),
+    CONTRACT(str_hex2int, b_str_hex2int, e_str_hex2int),
+    CONTRACT(str_hex2int_n, b_str_hex2int_n, e_str_hex2int_n),
+    CONTRACT(str_hex2str, b_str_hex2str, e_str_hex2str),
+    CONTRACT(hex2dec, b_hex2dec, e_hex2dec),
+    CONTRACT(char2int, b_char2int, e_char2int),
+    CONTRACT(hex2char, b_hex2char, e_hex2char),
+    CONTRACT(hex2str, b_hex2str, e_hex2str),
+    NO_ERROR_PATH(str_compare, b_str_compare,
+                  "total equality predicate: NULL operands have a defined result (equal only to NULL), none is a failure"),
+    CONTRACT(str_index, b_str_index, e_str_index),
+    CONTRACT(str_sub, b_str_sub, e_str_sub),
+    CONTRACT(str_sub_n, b_str_sub_n, e_str_sub_n),
+    CONTRACT(str_combine, b_str_combine, e_str_combine),
+    CONTRACT(str_get_indexes, b_str_get_indexes, e_str_get_indexes),
+    CONTRACT(str_get_indexes_n, b_str_get_indexes_n, e_str_get_indexes_n),
+    CONTRACT(str_replace, b_str_replace, e_str_replace),
+    CONTRACT(str_subvalue, b_str_subvalue, e_str_subvalue),
+    CONTRACT(str_copy, b_str_copy, e_str_copy),
+    NO_ERROR_PATH(str_print_array, b_str_print_array,
+                  "prints a caller-owned NULL-terminated array and reports nothing: the array is a dereferenced precondition"),
 
     /* ---------------------------- plugin_defs.h -------------------------- */
     CONTRACT(mmt_packet_scratch_adopt, b_mmt_packet_scratch_adopt, e_mmt_packet_scratch_adopt),

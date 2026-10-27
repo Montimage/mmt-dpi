@@ -16,7 +16,8 @@
 # the budget counters in test_core_engine.c; test_core_engine_new.cpp replaces
 # operator new so the C++ allocation sites in hash_utils.cpp can be failed too.
 #
-# Issue #525: the same library objects (plus mmt_attr_sprintf_compat.c) also
+# Issue #525: the same library objects (plus mmt_attr_sprintf_compat.c and,
+# since #533, mmt_utils.c) also
 # link test_api_contracts — the public-API contract table, one entry per
 # MMTAPI function, linked without the allocator wraps. After it passes,
 # tools/ci/check-api-contracts.sh fails the suite when a declared MMTAPI
@@ -87,12 +88,16 @@ objects+=("$SCRIPT_DIR/test_core_engine_new.o")
     -o "$SCRIPT_DIR/test_core_engine" "${objects[@]}" -lm -lpthread -ldl
 
 # Issue #525: the public-API contract binary — library objects only, no wraps.
+# Issue #533 adds mmt_utils.c: its string/hex utilities are MMTAPI now.
 "$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
     -c "$CORE_SRC/mmt_attr_sprintf_compat.c" -o "$SCRIPT_DIR/mmt_attr_sprintf_compat.o"
 "$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
+    -c "$CORE_SRC/mmt_utils.c" -o "$SCRIPT_DIR/mmt_utils.o"
+"$CC" "${extra_cflags[@]}" -Wall -Wextra -std=gnu11 "${INCS[@]}" \
     -c "$SCRIPT_DIR/test_api_contracts.c" -o "$SCRIPT_DIR/test_api_contracts.o"
 "$CXX" "${extra_cflags[@]}" -o "$SCRIPT_DIR/test_api_contracts" "${lib_objects[@]}" \
-    "$SCRIPT_DIR/mmt_attr_sprintf_compat.o" "$SCRIPT_DIR/test_api_contracts.o" -lm -lpthread -ldl
+    "$SCRIPT_DIR/mmt_attr_sprintf_compat.o" "$SCRIPT_DIR/mmt_utils.o" \
+    "$SCRIPT_DIR/test_api_contracts.o" -lm -lpthread -ldl
 
 # Run from a scratch directory: load_plugins() scans ./plugins first, and an
 # empty/missing one deterministically takes the no-plugin early return. The

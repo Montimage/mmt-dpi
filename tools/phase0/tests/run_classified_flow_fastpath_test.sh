@@ -50,11 +50,16 @@ else
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
+# Issue #533: this test calls libmmt_core internals the shared library hides,
+# so it links the static archive instead (never -lmmt_core as well).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_core_link "${PREFIX}/dpi/lib" || exit 2
 echo "[2/3] compiling classified_flow_fastpath_test (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -o "${BIN}" "${TEST_DIR}/classified_flow_fastpath_test.c" \
     -I"${PREFIX}/dpi/include" \
-    -L"${PREFIX}/dpi/lib" -lmmt_core -ldl -lpcap
+    -L"${PREFIX}/dpi/lib" "${MMT_STATIC_CORE_LDFLAGS[@]}" -ldl -lpcap
 
 echo "[3/3] replaying ${PCAP} under ASan/UBSan"
 if [ ! -f "${PCAP}" ]; then

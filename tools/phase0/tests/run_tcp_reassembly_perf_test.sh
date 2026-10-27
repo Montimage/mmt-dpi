@@ -38,19 +38,27 @@ else
     make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
+# Issue #533: this test calls libmmt_core internals the shared library hides,
+# so it links the static archive instead (never -lmmt_core as well).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_core_link "${PREFIX}/dpi/lib" || exit 2
 echo "[2/3] compiling tcp_reassembly_perf_test"
 gcc -g -O1 -o "${BIN}" "${TEST_DIR}/tcp_reassembly_perf_test.c" \
     -I"${PREFIX}/dpi/include" \
     -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
     -I"${REPO_ROOT}/src/mmt_core/private_include" \
     -I"${TEST_DIR}" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl -lpthread -lm
+    -L"${PREFIX}/dpi/lib" -lmmt_tcpip "${MMT_STATIC_CORE_LDFLAGS[@]}" -ldl -lpthread -lm
 
 echo "[3/3] running tcp_reassembly_perf_test"
 # Run from the install prefix so the SDK's CWD-relative "plugins/" lookup
-# finds the freshly installed protocol plugins.
+# finds the freshly installed protocol plugins. Against a sanitized prefix
+# the static core brings the ASan runtime into the executable itself (#533);
+# leak detection stays with Valgrind, as for the other harnesses.
 set +e
 ( cd "${PREFIX}" && \
+  ASAN_OPTIONS="detect_leaks=0" \
   LD_LIBRARY_PATH="${PREFIX}/dpi/lib:${LD_LIBRARY_PATH:-}" \
     "${BIN}" )
 rc=$?

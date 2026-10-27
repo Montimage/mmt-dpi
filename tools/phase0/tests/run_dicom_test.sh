@@ -41,6 +41,11 @@ else
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
+# Issue #533: this test calls libmmt_core internals the shared library hides,
+# so it links the static archive instead (never -lmmt_core as well).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_core_link "${PREFIX}/dpi/lib" || exit 2
 echo "[2/3] compiling dicom_test (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -o "${BIN}" "${TEST_DIR}/dicom_test.c" \
@@ -49,7 +54,7 @@ gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -I"${REPO_ROOT}/src/mmt_core/private_include" \
     -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
     -I"${TEST_DIR}" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tdicom -lmmt_tcpip -lmmt_core -ldl -lpthread -lm -lpcap
+    -L"${PREFIX}/dpi/lib" -lmmt_tdicom -lmmt_tcpip "${MMT_STATIC_CORE_LDFLAGS[@]}" -ldl -lpthread -lm -lpcap
 
 echo "[3/3] running dicom_test under ASan/UBSan"
 # Preload the ASan runtime: the SDK plugins are pulled in via dlopen, so the

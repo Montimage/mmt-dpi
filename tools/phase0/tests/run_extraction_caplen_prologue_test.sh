@@ -37,6 +37,11 @@ else
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
+# Issue #533: this test calls libmmt_core internals the shared library hides,
+# so it links the static archive instead (never -lmmt_core as well).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_core_link "${PREFIX}/dpi/lib" || exit 2
 echo "[2/3] compiling extraction_caplen_prologue_test (ASan/UBSan)"
 # The attribute_internal_struct / mmt_handler_struct layouts come from the
 # in-tree private header, identical to what the library was compiled with.
@@ -46,7 +51,7 @@ gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -I"${REPO_ROOT}/src/mmt_core/public_include" \
     -I"${REPO_ROOT}/src/mmt_core/private_include" \
     -I"${TEST_DIR}" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl -lpthread -lm -lpcap
+    -L"${PREFIX}/dpi/lib" -lmmt_tcpip "${MMT_STATIC_CORE_LDFLAGS[@]}" -ldl -lpthread -lm -lpcap
 
 echo "[3/3] running extraction_caplen_prologue_test under ASan/UBSan over ${PCAP_DIR}"
 # Preload the ASan runtime (the SDK is also pulled in via dlopen) and run from
