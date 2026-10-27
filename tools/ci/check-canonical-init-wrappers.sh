@@ -45,12 +45,13 @@ cd "$ROOT"
 
 command -v python3 >/dev/null 2>&1 || { echo "✗ python3 is required" >&2; exit 2; }
 
-# Vendored sources are excluded by configuration, not convention
-# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
-VENDOR_LIST="tools/ci/vendor-paths.txt"
-[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
+# Vendored sources (tools/ci/vendor-paths.txt) are excluded by configuration;
+# the parsed list reaches the python below one path per line.
+# shellcheck source=tools/ci/vendor-paths-lib.sh
+. "$ROOT/tools/ci/vendor-paths-lib.sh"
+vendor_paths_load "$VENDOR_LIST" || exit 2
 
-VENDOR_LIST="$VENDOR_LIST" python3 - <<'PYEOF'
+VENDOR_PATHS_LINES="$(printf '%s\n' "${VENDOR_PATHS[@]}")" python3 - <<'PYEOF'
 import os
 import re
 import subprocess
@@ -105,12 +106,8 @@ def is_canonical(body):
         return False
     return len(stmts) == 3 or DET_ADD_RE.match(stmts[2]) is not None
 
-vendor_excludes = []
-with open(os.environ['VENDOR_LIST']) as fh:
-    for line in fh:
-        line = line.strip()
-        if line and not line.startswith('#'):
-            vendor_excludes.append(':!:' + line)
+vendor_excludes = [':!:' + p
+                   for p in os.environ['VENDOR_PATHS_LINES'].split('\n') if p]
 
 out = subprocess.run(['git', 'ls-files', 'src/*.c'] + vendor_excludes,
                      check=True, capture_output=True, text=True)

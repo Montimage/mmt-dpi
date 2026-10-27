@@ -53,16 +53,23 @@ if [ "${#FILES[@]}" -eq 0 ]; then
     echo "✗ no input files — usage: report-function-shape.sh [--report-only] FILE..." >&2
     exit 2
 fi
-# Drop vendored sources listed in tools/ci/vendor-paths.txt (issue #249,
-# F-CLEAN-019): upstream code is reported on upstream, so its shape is not
-# this repo's debt — the exclusion lives in configuration, not convention.
-VENDOR_LIST="tools/ci/vendor-paths.txt"
-[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
+# Drop vendored sources listed in tools/ci/vendor-paths.txt: upstream code is
+# reported on upstream, so its shape is not this repo's debt.
+# shellcheck source=tools/ci/vendor-paths-lib.sh
+. "$ROOT/tools/ci/vendor-paths-lib.sh"
+vendor_paths_load "$VENDOR_LIST" || exit 2
+is_vendored() {
+    local v
+    for v in "${VENDOR_PATHS[@]}"; do
+        [ "$v" = "$1" ] && return 0
+    done
+    return 1
+}
 kept=()
 while [ "${#FILES[@]}" -gt 0 ]; do
     f="${FILES[0]}"
     FILES=("${FILES[@]:1}")
-    if grep -qxF -- "$f" "$VENDOR_LIST"; then
+    if is_vendored "$f"; then
         echo "  note: $f is vendored ($VENDOR_LIST) — skipped"
         continue
     fi

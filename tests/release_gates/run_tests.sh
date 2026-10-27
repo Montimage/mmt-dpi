@@ -50,6 +50,9 @@
 # keeps every required context reporting on a docs-only pull request. Its
 # wiring half skips without PyYAML; verify-helpers runs it with PyYAML
 # required.
+# It also runs the commented-out code ratchet self-test beside
+# tools/ci/lint-commented-code.sh (issue #529), which drives the real lint on
+# a fixture git repository with fixture baselines and vendored-source lists.
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -66,3 +69,4 @@ bash "${TESTS_DIR}/test-dependency-lists.sh"
 bash "${TESTS_DIR}/test-release-bootstrap.sh"
 bash "${TESTS_DIR}/test-shlib-deps.sh"
 bash "${TESTS_DIR}/test-classify-changes.sh"
+bash "${TESTS_DIR}/test-commented-code-ratchet.sh"

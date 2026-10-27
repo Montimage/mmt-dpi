@@ -31,7 +31,7 @@ show_downloads: false
 # Exclude only heavy/binary assets from the published site; every guide is
 # published so no page is both excluded and linked from the docs index.
 exclude:
-  - docs/            # nested binary assets (mmt-flow.ep, *.png, *.csv)
+  - docs/            # nested binary assets (mmt-flow.ep, *.png)
   - "*.deb"
   - Gemfile
   - Gemfile.lock

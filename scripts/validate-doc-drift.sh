@@ -193,14 +193,15 @@ check "docs/DECISIONS.md records the deletion" \
 echo ""
 echo "-- F-CLEAN-019: vendored sources --"
 
-VENDOR_LIST="tools/ci/vendor-paths.txt"
+# shellcheck source=tools/ci/vendor-paths-lib.sh
+. "$ROOT/tools/ci/vendor-paths-lib.sh"
 check "tools/ci/vendor-paths.txt exists" "test -f $VENDOR_LIST"
 check "vendor-paths.txt carries a pinned upstream reference" \
       "grep -Eq 'nodejs/llhttp.*v9\.4\.3|v9\.4\.3.*nodejs/llhttp' $VENDOR_LIST"
 
 vendored_ok=1
-while IFS= read -r p; do
-    case "$p" in ''|'#'*) continue ;; esac
+vendor_paths_load "$VENDOR_LIST" || vendored_ok=0
+for p in "${VENDOR_PATHS[@]}"; do
     if [ ! -f "$p" ]; then
         echo "  ✗ vendored path listed but missing: $p"
         vendored_ok=0
@@ -213,7 +214,7 @@ while IFS= read -r p; do
         echo "  ✗ $p banner names no pinned upstream reference"
         vendored_ok=0
     fi
-done < "$VENDOR_LIST"
+done
 [ "$vendored_ok" -eq 1 ] && echo "  ✓ every listed vendored file exists and carries a pinned VENDORED banner" \
     || ERRORS=$((ERRORS + 1))
 
@@ -221,7 +222,8 @@ for s in tools/ci/report-function-shape.sh tools/ci/lint-markers.sh \
          tools/ci/lint-commented-code.sh tools/ci/lint-packet-path-io.sh \
          tools/ci/count-init-wrappers.sh tools/ci/run-cppcheck.sh; do
     check "$s excludes vendored sources via $VENDOR_LIST" \
-          "grep -q 'vendor-paths.txt' $s"
+          "grep -q 'vendor-paths.txt' $s \
+           && grep -q '^\. \"\$ROOT/tools/ci/vendor-paths-lib\.sh\"' $s"
 done
 
 echo ""

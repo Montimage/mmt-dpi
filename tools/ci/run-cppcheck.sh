@@ -76,14 +76,13 @@ SCAN_DIRS=(src)
 LIBRARIES=(--library=gnu)
 EXCLUDE=(-i src/mmt_mobile/asn1c)   # generated ASN.1 tree — never scanned
 
-# Vendored sources are excluded by configuration, not convention
-# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
-VENDOR_LIST="tools/ci/vendor-paths.txt"
-[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
-while IFS= read -r p; do
-    case "$p" in ''|'#'*) continue ;; esac
+# Vendored sources (tools/ci/vendor-paths.txt) are excluded by configuration.
+# shellcheck source=tools/ci/vendor-paths-lib.sh
+. "$ROOT/tools/ci/vendor-paths-lib.sh"
+vendor_paths_load "$VENDOR_LIST" || exit 2
+for p in "${VENDOR_PATHS[@]}"; do
     EXCLUDE+=(-i "$p")
-done < "$VENDOR_LIST"
+done
 
 if ! command -v cppcheck >/dev/null 2>&1; then
     echo "✗ cppcheck is not installed" >&2

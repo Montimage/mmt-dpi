@@ -30,15 +30,14 @@ BASELINE_FILE="tools/ci/init-wrappers-baseline.txt"
 STRICT=0
 [ "${1:-}" = "--strict" ] && STRICT=1
 
-# Vendored sources are excluded by configuration, not convention
-# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
-VENDOR_LIST="tools/ci/vendor-paths.txt"
+# Vendored sources (tools/ci/vendor-paths.txt) are excluded by configuration.
+# shellcheck source=tools/ci/vendor-paths-lib.sh
+. "$ROOT/tools/ci/vendor-paths-lib.sh"
+vendor_paths_load "$VENDOR_LIST" || exit 2
 vendor_excludes=()
-[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
-while IFS= read -r p; do
-    case "$p" in ''|'#'*) continue ;; esac
+for p in "${VENDOR_PATHS[@]}"; do
     vendor_excludes+=(":!:$p")
-done < "$VENDOR_LIST"
+done
 
 # `|| true`: grep exits 1 (xargs then 123) on zero matches — the intended
 # Task 5.3 end state — which would otherwise trip pipefail.

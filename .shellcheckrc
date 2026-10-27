@@ -2,3 +2,9 @@
 # it via a `# shellcheck disable=SCxxxx` directive with a justification
 # comment (issue #189, F-CI-019). A global disable would silence the rule for
 # every future script, not just the ones the justification covers.
+#
+# Follow `# shellcheck source=` directives (issue #529): the clean-code
+# helpers source tools/ci/vendor-paths-lib.sh, and the pre-commit hook passes
+# only the changed scripts, so without this a lone consumer reports SC1091.
+# The directives are repo-relative, as every lint here runs from the root.
+external-sources=true

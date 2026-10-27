@@ -1,0 +1,9 @@
+# Commented-out code ratchet (issue #529).
+# Runs of 2 or more consecutive commented-out statement lines (MIN_RUN in
+# tools/ci/lint-commented-code.sh) in tracked src/ C sources, generated asn1c
+# and vendored sources excluded, must not exceed this count; the
+# verify-helpers job fails when they do. Measured on 340947c5 (121 blocks,
+# 293 lines). Lower the number when blocks are deleted — never raise it
+# without a recorded justification.
+# Re-measure: bash tools/ci/lint-commented-code.sh
+121

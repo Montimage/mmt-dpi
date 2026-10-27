@@ -19,7 +19,7 @@
 #   original_cohort the fixed 30 sources of the 82.9% audit measurement
 #                   (floor.json sdk.original_cohort), gated by its line_pct
 #   excluded        generated ASN.1 (src/mmt_mobile/asn1c/) and vendored
-#                   (tools/ci/vendor-paths.txt) sources, measured but kept out
+#                   (VENDOR_LIST of vendor-paths-lib.sh) sources, measured but kept out
 #                   of every family, plus the handwritten sources the floor
 #                   justifies as not measured (sdk.excluded_sources)
 #   branch_coverage "Not Assessed" — only line coverage is measured
@@ -45,7 +45,7 @@
 #   --build-sources FILE   repo-relative build sources, one per line (default:
 #                          the SDK object lists, from make ENABLESEC=1)
 #   --tracked-sources FILE repo-relative tracked sources (default: git ls-files)
-#   --vendor-paths FILE    default tools/ci/vendor-paths.txt
+#   --vendor-paths FILE    default VENDOR_LIST of tools/ci/vendor-paths-lib.sh
 #
 # Exit codes: 0 = accounting complete and floors hold, 1 = gate failure,
 #             2 = helper broken (missing tool, input or floor key).
@@ -75,7 +75,9 @@ out="tests/coverage/sdk-coverage.json"
 repo_root="$ROOT"
 build_sources=""
 tracked_sources=""
-vendor_paths="tools/ci/vendor-paths.txt"
+# shellcheck source=tools/ci/vendor-paths-lib.sh
+. "$ROOT/tools/ci/vendor-paths-lib.sh"
+vendor_paths="$VENDOR_LIST"
 
 die() { echo "✗ check-sdk-coverage.sh: $*" >&2; exit 2; }
 
@@ -165,7 +167,8 @@ else
     git ls-files 'src/*.c' 'src/*.cpp' 'src/*.cc' | sort -u >"$WORK/tracked.txt"
 fi
 
-sed -e 's/#.*//' -e 's/[[:space:]]*$//' "$vendor_paths" | grep . | sort -u >"$WORK/vendored.txt" || true
+vendor_paths_load "$vendor_paths" || die "missing $vendor_paths"
+{ [ "${#VENDOR_PATHS[@]}" -eq 0 ] || printf '%s\n' "${VENDOR_PATHS[@]}"; } | sort -u >"$WORK/vendored.txt"
 jq -r '.sdk.excluded_sources | to_entries[] | "\(.key)\t\(.value)"' "$floor" \
     | sort -t "$(printf '\t')" -k 1,1 >"$WORK/excluded.tsv"
 cut -f1 "$WORK/excluded.tsv" >"$WORK/excluded.txt"
@@ -298,6 +301,7 @@ jq -n \
     --argjson vend "$(stats_json "$WORK/vend.tsv")" \
     --arg gen_prefix "$GENERATED_PREFIX" \
     --arg combined "$combined" \
+    --arg vend_file "$vendor_paths" \
     --rawfile vend_list "$WORK/vendored.txt" \
     --rawfile zero "$WORK/zero.txt" \
     --argjson rc "$rc" '
@@ -320,7 +324,7 @@ jq -n \
             generated: ($gen + {prefix: $gen_prefix, build_sources: $gen_build,
                 reason: "asn1c output regenerated from the ASN.1 specs (never hand-edited)"}),
             vendored: ($vend + {sources: $vl,
-                reason: "verbatim upstream copies pinned in tools/ci/vendor-paths.txt"}),
+                reason: ("verbatim upstream copies pinned in " + $vend_file)}),
             justified: ($fl[0].sdk.excluded_sources | to_entries | map({source: .key, reason: .value}))
         },
         zero_hit_sources: ($zero | split("\n") | map(select(length > 0))),

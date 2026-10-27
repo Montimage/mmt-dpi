@@ -8,9 +8,11 @@
 # carry a VENDORED banner naming the same pin.
 #
 # Format: one repo-relative path per line; blank lines and #-comments are
-# ignored. Consumers: tools/ci/report-function-shape.sh, lint-markers.sh,
+# ignored. tools/ci/vendor-paths-lib.sh is its single shell parser, sourced
+# by tools/ci/report-function-shape.sh, lint-markers.sh,
 # lint-commented-code.sh, lint-packet-path-io.sh, count-init-wrappers.sh,
-# run-cppcheck.sh and scripts/validate-doc-drift.sh.
+# check-canonical-init-wrappers.sh, run-cppcheck.sh, check-sdk-coverage.sh
+# and scripts/validate-doc-drift.sh.
 #
 # Provenance (upstream, pin, licence) of every vendored component, these
 # files included, is recorded in tools/ci/vendored-components.json (issue

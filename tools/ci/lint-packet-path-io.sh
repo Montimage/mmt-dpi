@@ -33,15 +33,14 @@ for d in src/mmt_core/src src/mmt_tcpip/lib; do
     [ -d "$d" ] || { echo "✗ expected source dir missing: $d" >&2; exit 2; }
 done
 
-# Vendored sources are excluded by configuration, not convention
-# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
-VENDOR_LIST="tools/ci/vendor-paths.txt"
+# Vendored sources (tools/ci/vendor-paths.txt) are excluded by configuration.
+# shellcheck source=tools/ci/vendor-paths-lib.sh
+. "$ROOT/tools/ci/vendor-paths-lib.sh"
+vendor_paths_load "$VENDOR_LIST" || exit 2
 vendor_excludes=()
-[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
-while IFS= read -r p; do
-    case "$p" in ''|'#'*) continue ;; esac
+for p in "${VENDOR_PATHS[@]}"; do
     vendor_excludes+=(":!:$p")
-done < "$VENDOR_LIST"
+done
 
 # `^[^/]*` keeps comment lines (whose first non-space char is /) out of the
 # match; the second grep drops macro-definition lines. git pathspec globs

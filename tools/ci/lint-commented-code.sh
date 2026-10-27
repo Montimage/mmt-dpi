@@ -3,7 +3,7 @@
 # lint-commented-code.sh — no commented-out code blocks (issue #232,
 # F-DEAD-007/F-CLEAN-016; helper committed under issue #190).
 #
-# Runs of five or more consecutive commented-out statement lines are real
+# Runs of MIN_RUN (2) or more consecutive commented-out statement lines are real
 # code that stopped compiling the day they were commented — they drift out
 # of sync silently and some record decisions the code still needs. Task 5.8
 # deletes them and files genuine open questions as issues.
@@ -13,9 +13,13 @@
 # `;` or `{`/`}`, or starts with a control keyword (if/for/while/return/
 # switch/else). Banner art, prose and license headers do not match.
 #
-# Exits 1 when any run of ≥ 5 such lines exists.
+# The number of such runs is ratcheted: it must not exceed the committed
+# baseline in tools/ci/commented-code-ratchet.txt (override the path with
+# $COMMENTED_CODE_RATCHET). A rise fails; a drop is reported so the baseline
+# can be tightened in the same change.
 #
-# Exit codes: 0 = clean, 1 = blocks found, 2 = helper broken.
+# Exit codes: 0 = within the ratchet, 1 = blocks rose above it,
+#             2 = helper broken (missing tool, list or baseline).
 #
 # Usage: bash tools/ci/lint-commented-code.sh
 
@@ -29,26 +33,41 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 2
 fi
 
-# Vendored sources are excluded by configuration, not convention
-# (issue #249, F-CLEAN-019): tools/ci/vendor-paths.txt lists them.
-VENDOR_LIST="tools/ci/vendor-paths.txt"
+MIN_RUN=2   # consecutive commented-out statement lines that make a block
+RATCHET="${COMMENTED_CODE_RATCHET:-tools/ci/commented-code-ratchet.txt}"
+
+if [ ! -f "$RATCHET" ] || [ ! -r "$RATCHET" ]; then
+    echo "✗ ratchet baseline not found: $RATCHET" >&2
+    exit 2
+fi
+# First non-comment line of the baseline file is the recorded count.
+baseline="$(awk 'NF && $1 !~ /^#/ {print $1; exit}' "$RATCHET")"
+if ! [[ "$baseline" =~ ^[0-9]+$ ]]; then
+    echo "✗ ratchet baseline unreadable: $RATCHET" >&2
+    echo "    expected a bare integer on the first non-comment line" >&2
+    exit 2
+fi
+
+# Vendored sources (tools/ci/vendor-paths.txt) are excluded by configuration.
+# shellcheck source=tools/ci/vendor-paths-lib.sh
+. "$ROOT/tools/ci/vendor-paths-lib.sh"
+vendor_paths_load "$VENDOR_LIST" || exit 2
 vendor_excludes=()
-[ -f "$VENDOR_LIST" ] || { echo "✗ vendored-source list not found: $VENDOR_LIST" >&2; exit 2; }
-while IFS= read -r p; do
-    case "$p" in ''|'#'*) continue ;; esac
+for p in "${VENDOR_PATHS[@]}"; do
     vendor_excludes+=(":!:$p")
-done < "$VENDOR_LIST"
+done
 
 # A private mktemp file, not a predictable /tmp/<name>.$$ path (issue #508).
 TRACKED="$(mktemp)"
-trap 'rm -f "$TRACKED"' EXIT
+TOTALS="$(mktemp)"
+trap 'rm -f "$TRACKED" "$TOTALS"' EXIT
 git ls-files -z 'src/*.[ch]' ':!:src/mmt_mobile/asn1c/*' "${vendor_excludes[@]}" > "$TRACKED"
 
-python3 - "$TRACKED" <<'PYEOF'
+python3 - "$TRACKED" "$MIN_RUN" "$TOTALS" <<'PYEOF' || { echo "✗ commented-code scan failed" >&2; exit 2; }
 import re
 import sys
 
-MIN_RUN = 5
+MIN_RUN = int(sys.argv[2])
 
 tracked = [p.decode("utf-8", "surrogateescape")
            for p in open(sys.argv[1], "rb").read().split(b"\0") if p]
@@ -117,12 +136,22 @@ for path in tracked:
         total_lines += length
         print(f"      {path}:{start}  {length} commented-out statement lines")
 
-if total_blocks:
-    print(f"✗ {total_blocks} commented-out code block(s) "
-          f"({total_lines} lines) of ≥{MIN_RUN} lines", file=sys.stderr)
-    print("To fix:  delete the dead code, or file an issue for the open", file=sys.stderr)
-    print("         question it records and reference it (issue #232)", file=sys.stderr)
-    sys.exit(1)
-
-print("✓ no commented-out code blocks of ≥5 lines")
+with open(sys.argv[3], "w") as out:
+    out.write(f"{total_blocks} {total_lines}\n")
 PYEOF
+
+read -r blocks lines < "$TOTALS"
+echo "    commented-out code blocks of ≥$MIN_RUN lines: $blocks ($lines lines, ratchet baseline: $baseline)"
+
+if [ "$blocks" -gt "$baseline" ]; then
+    echo "✗ commented-out code blocks rose above the ratchet: $blocks > $baseline" >&2
+    echo "To fix:  delete the dead code, or file an issue for the open question it" >&2
+    echo "         records and reference it; raise $RATCHET only with a" >&2
+    echo "         recorded justification" >&2
+    exit 1
+elif [ "$blocks" -lt "$baseline" ]; then
+    echo "  note: commented-out code blocks dropped below the baseline ($blocks < $baseline) —"
+    echo "        tighten $RATCHET in this change to bank the progress"
+else
+    echo "✓ commented-out code blocks of ≥$MIN_RUN lines within the ratchet ($blocks ≤ $baseline)"
+fi

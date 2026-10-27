@@ -459,9 +459,10 @@ jobs:
         bash tools/ci/check-dependency-lists.sh
         bash tools/ci/tests/test-dependency-lists.sh
     - name: Commented-out code lint (blocking — issue #232)
-      # The gate condition holds — zero commented-out statement blocks of
-      # ≥5 lines — so this helper runs as an ordinary blocking step, not in
-      # the advisory loop. A regression now fails the job.
+      # Blocks of ≥2 commented-out statement lines are held to the count
+      # ratchet in tools/ci/commented-code-ratchet.txt (issue #529), so this
+      # helper runs as an ordinary blocking step, not in the advisory loop.
+      # A rise above the baseline fails the job.
       run: bash tools/ci/lint-commented-code.sh
     - name: Packet-path I/O lint (blocking — issue #246)
       # The gate condition holds — zero unconditional printf/fprintf on
