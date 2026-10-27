@@ -22,16 +22,32 @@ runs:
         sudo mkdir -p /var/cache/apt/archives
         sudo chown -R "$(id -un)" /var/cache/apt/archives
 
+    # ImageOS and ImageVersion are set by the GitHub-hosted runner image.
+    - name: Identify the runner image
+      id: image
+      shell: bash
+      run: |
+        echo "os=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "version=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+
+    # Only the downloaded .deb files are cached (issue #660). apt hands
+    # archives/partial back to _apt (mode 700) and keeps archives/lock
+    # root-only, so caching the whole directory made the post-job save fail
+    # with "Permission denied" and no apt-* entry was ever written.
     # The architecture is part of the key: arm64 jobs (unit-tests-arm,
-    # issue #528) must not restore amd64 archives, or the reverse.
+    # issue #528) must not restore amd64 archives, or the reverse. The image
+    # OS keeps ubuntu-24.04 and ubuntu-26.04 apart, and the image version
+    # saves a fresh entry each time the runner image is updated, seeded from
+    # the previous one.
     - name: Cache apt archives
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: /var/cache/apt/archives
-        key: apt-${{ runner.os }}-${{ runner.arch }}-bootstrap-${{ inputs.extra-packages }}-${{ hashFiles('.github/actions/bootstrap-deps/action.yml') }}
+        path: /var/cache/apt/archives/*.deb
+        key: apt-${{ runner.os }}-${{ runner.arch }}-${{ steps.image.outputs.os }}-bootstrap-${{ inputs.extra-packages }}-${{ hashFiles('.github/actions/bootstrap-deps/action.yml') }}-${{ steps.image.outputs.version }}
         restore-keys: |
-          apt-${{ runner.os }}-${{ runner.arch }}-bootstrap-${{ inputs.extra-packages }}-
-          apt-${{ runner.os }}-${{ runner.arch }}-bootstrap-
+          apt-${{ runner.os }}-${{ runner.arch }}-${{ steps.image.outputs.os }}-bootstrap-${{ inputs.extra-packages }}-${{ hashFiles('.github/actions/bootstrap-deps/action.yml') }}-
+          apt-${{ runner.os }}-${{ runner.arch }}-${{ steps.image.outputs.os }}-bootstrap-${{ inputs.extra-packages }}-
+          apt-${{ runner.os }}-${{ runner.arch }}-${{ steps.image.outputs.os }}-bootstrap-
 
     - name: Install build dependencies
       shell: bash

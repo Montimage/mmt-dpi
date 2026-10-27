@@ -11,12 +11,13 @@ on:
   schedule:
     - cron: '17 4 * * 1'
 
-# A newer push cancels the superseded run of the same ref (issue #188,
-# F-CI-007): stale matrix jobs no longer burn runner time alongside their
-# replacement.
+# A newer push to a pull request cancels its superseded run (issue #188,
+# F-CI-007). Push, tag and scheduled runs each get their own group and always
+# complete (issue #660): a quick second merge no longer cancels the first
+# main run before its jobs save their caches.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Least-privilege default (F-SEC-005): every job gets a read-only token unless
 # it declares its own elevated permissions block.
@@ -356,6 +357,9 @@ jobs:
         languages: c-cpp
         queries: security-extended
         build-mode: manual
+        # TRAP caches (92-160 MB per main commit) filled most of the 10 GB
+        # repository cache budget and crowded out the small caches (#660).
+        trap-caching: false
     - name: Build the SDK for CodeQL extraction
       run: make -C sdk ENABLESEC=1 -j"$(nproc)"
     - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
