@@ -119,12 +119,13 @@ bool ipv4_session_equal(void * key1, void * key2) {
  * next_proto, both ports and the 4 bytes of each interned IP address — so
  * that any two keys that compare equal hash to the same value.
  *
- * Dependent-multiply count (asserted by tools/phase0/tests/
- * session_lookup_perf_test.sh): FNV-1a over the 13 key bytes ran 13
+ * Dependent-multiply count (issue #253): FNV-1a over the 13 key bytes ran 13
  * serially-dependent multiplies; the three multiplies below are INDEPENDENT
  * (the CPU overlaps them in one multiply-latency window) and the finalizer
  * adds one dependent step — a chain 2 multiplies deep before the table's
- * inlined fmix64, versus ~16 before.
+ * inlined fmix64, versus ~16 before. tools/phase0/tests/
+ * session_lookup_perf_test.c pins this function's output for fixed keys
+ * (golden values, little-endian) and asserts it differs from FNV-1a.
  */
 uint64_t ipv4_session_hash(void * key) {
     mmt_session_key_t * s = (mmt_session_key_t *) key;

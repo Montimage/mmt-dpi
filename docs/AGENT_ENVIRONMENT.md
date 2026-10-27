@@ -291,7 +291,7 @@ Key property for agents: these suites are **standalone** — no prior build, no
 install, no `sudo` needed. Most suites' `run_tests.sh` compiles the test
 directly against sources under `src/` with plain `gcc`; suites that need the
 built SDK (`hashmap`, `citrix_ica_detection`, `http_header_case`,
-`s1ap_ngap_decode`, `rule_engine`, `nas_ies_tail`, `installer`,
+`s1ap_ngap_decode`, `rule_engine`, `radius_hardening`, `nas_ies_tail`, `installer`,
 `installed_consumer`, `parser_boundaries`, `sdk_coverage`, `docs_lifecycle`, `docs_onboarding`, and the engine
 leg of `fault_injection`, `tests/fault_injection/run_tests.sh:110-112`) run `make -C sdk clean` and build
 it themselves into a throwaway prefix, so running them discards an existing

@@ -1,68 +1,100 @@
 #!/usr/bin/env bash
-# run_tests.sh — regression for issue #128: RADIUS parser hardening.
+# run_tests.sh — regression for issue #128: RADIUS parser hardening, run
+# against the SHIPPED parser (issue #526, F-TEST-008).
 #
-# Verifies crafted-packet guards in src/mmt_tcpip/lib/protocols/proto_radius.c:
-#   - len==1 TLV rejected (F-BUG-102)
-#   - large vlen 67-255 clamped to BINARY_64DATA_LEN (no overflow)
-#   - truncated type-26 vendor-specific TLV guards
-#   - 3-5-byte TLVs rejected for read_be32 sites
+# test_radius_hardening.c feeds crafted Ethernet/IPv4/UDP/RADIUS frames
+# through the installed SDK (mmt_init_handler + packet_process) and asserts
+# the attributes src/mmt_tcpip/lib/protocols/proto_radius.c reports:
+#   - len<2 attributes end the TLV walk (F-BUG-102; len 0 used to hang it)
+#   - over-long values clamped to the 64-byte attribute buffer
+#   - 32-bit attributes shorter than 6 bytes rejected
+#   - 3GPP vendor-specific attribute guards
+#   - attributes running past the capture never stored
 #
-# Two layers:
-#   1. source-level grep: ensure the fixed guards exist in proto_radius.c
-#   2. runtime harness: synthetic packets exercise the parsing/extraction
-#      logic under ASan+UBSan (via EXTRA_CFLAGS from run_all_tests.sh)
+# The suite builds and installs the SDK into a throwaway prefix (the
+# tests/parser_boundaries pattern), so it discards an existing sdk/ build.
+# SDK_BUILD_PROFILE (set by run_all_tests.sh for SANITIZE=asan|tsan and
+# --coverage) selects the SDK profile; EXTRA_CFLAGS instruments the test.
 #
 # Usage: tests/radius_hardening/run_tests.sh
+#   MMT_PREFIX=<dir> — install into <dir> instead of a mktemp prefix
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-SRC="${REPO_ROOT}/src/mmt_tcpip/lib/protocols/proto_radius.c"
 TEST_SRC="${SCRIPT_DIR}/test_radius_hardening.c"
 TEST_BIN="${SCRIPT_DIR}/test_radius_hardening"
 
-echo "  repo root : ${REPO_ROOT}"
-echo "  source    : ${SRC#"$REPO_ROOT"/}"
+CC="${CC:-gcc}"
+JOBS="${JOBS:-$(nproc 2>/dev/null || echo 2)}"
+read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
 
-# --- 1. source-level guard verification ---------------------------------
-echo "  [1/2] verifying source guards in proto_radius.c ..."
-fail=0
-check_grep() {
-    local desc="$1" pat="$2"
-    if grep -q -E -- "$pat" "$SRC"; then
-        echo "    ok   $desc"
-    else
-        echo "    FAIL $desc (pattern: $pat)" >&2
-        fail=1
-    fi
-}
-check_grep "TLV len<2 rejection (F-BUG-102)" 'current_tlv->len < 2'
-check_grep "TLV truncated guard (caplen check)" 'tlv_offset \+ \(size_t\)current_tlv->len'
-check_grep "binary vlen clamp to BINARY_64DATA_LEN" 'vlen > BINARY_64DATA_LEN'
-check_grep "string vlen clamp (BINARY_64DATA_LEN -1)" 'BINARY_64DATA_LEN - 1'
-check_grep "read_be32 len<6 guard (NAS-IP etc)" '->len < 6'
-check_grep "vendor specific v_remaining <6 guard" 'v_remaining < 6'
-check_grep "vendor sub-TLV len<2 guard" 'tlv->len < 2'
-check_grep "vendor sub_remaining len guard" 'tlv->len > sub_remaining'
-check_grep "vendor type bounds check" 'VENDOR_3GPP_MAX_TLV_TYPE'
-
-if [ "$fail" -ne 0 ]; then
-    echo "✗ source guard verification failed" >&2
-    exit 1
+if [ -z "${MMT_PREFIX:-}" ]; then
+    PREFIX="$(mktemp -d)"
+    PREFIX_CREATED=1
+else
+    PREFIX="${MMT_PREFIX}"
+fi
+WORK="$(mktemp -d)"
+BUILD_LOG="${WORK}/build.log"
+if [ -n "${PREFIX_CREATED:-}" ]; then
+    trap 'rm -rf "${WORK}" "${PREFIX}"' EXIT
+else
+    trap 'rm -rf "${WORK}"' EXIT
 fi
 
-# --- 2. compile + run harness -------------------------------------------
-echo "  [2/2] compiling and running harness ..."
-read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
-# shellcheck disable=SC2153
-${CC:-gcc} "${extra_cflags[@]}" -O2 -Wall -Wextra -std=c11 \
-    -o "${TEST_BIN}" "${TEST_SRC}"
+sdk_make_args=()
+if [ -n "${SDK_BUILD_PROFILE:-}" ]; then
+    sdk_make_args=("BUILD=${SDK_BUILD_PROFILE}")
+fi
 
-echo "  running test_radius_hardening ..."
-if "${TEST_BIN}"; then
+echo "  repo root      : ${REPO_ROOT}"
+echo "  install prefix : ${PREFIX}"
+
+# --- [1/3] SDK build+install ------------------------------------------------
+echo "  [1/3] building + installing SDK ..."
+make -C "${REPO_ROOT}/sdk" clean >/dev/null 2>&1 || true
+if ! make -C "${REPO_ROOT}/sdk" "${sdk_make_args[@]}" -j"${JOBS}" MMT_BASE="${PREFIX}" >"${BUILD_LOG}" 2>&1; then
+    echo "✗ SDK build failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+fi
+if ! make -C "${REPO_ROOT}/sdk" "${sdk_make_args[@]}" MMT_BASE="${PREFIX}" install >>"${BUILD_LOG}" 2>&1; then
+    echo "✗ SDK install failed — last lines:" >&2; tail -20 "${BUILD_LOG}" >&2; exit 1
+fi
+LIB="${PREFIX}/dpi/lib"
+
+# --- [2/3] compile ----------------------------------------------------------
+echo "  [2/3] compiling test_radius_hardening ..."
+"${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
+    -o "${TEST_BIN}" "${TEST_SRC}" \
+    -I"${PREFIX}/dpi/include" \
+    -L"${LIB}" -lmmt_tcpip -lmmt_core -ldl -lpcap -lpthread -lm
+
+# --- [3/3] run --------------------------------------------------------------
+# The protocol plugins are loaded via dlopen, so under a sanitizer profile
+# the runtime must be preloaded (same contract as tests/parser_boundaries).
+# `timeout` turns a walk that never terminates (a len-0 attribute accepted)
+# into a failure instead of a hung suite.
+echo "  [3/3] running test_radius_hardening ..."
+env_prefix=()
+case "${SDK_BUILD_PROFILE:-}" in
+    asan) env_prefix=(LD_PRELOAD="$("${CC}" -print-file-name=libasan.so)") ;;
+    tsan) env_prefix=(LD_PRELOAD="$("${CC}" -print-file-name=libtsan.so)") ;;
+esac
+rc=0
+( cd "${PREFIX}" && \
+    env "${env_prefix[@]}" \
+        ASAN_OPTIONS="detect_leaks=0" \
+        UBSAN_OPTIONS="print_stacktrace=1" \
+        LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \
+        timeout 60 "${TEST_BIN}" ) || rc=$?
+
+if [ "${rc}" -eq 0 ]; then
     echo
     echo "✓ RADIUS hardening regression tests passed"
+elif [ "${rc}" -eq 124 ]; then
+    echo "✗ RADIUS hardening regression tests timed out (TLV walk did not terminate)" >&2
+    exit 1
 else
-    echo "✗ RADIUS hardening regression tests failed" >&2
+    echo "✗ RADIUS hardening regression tests failed (rc=${rc})" >&2
     exit 1
 fi

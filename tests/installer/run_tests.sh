@@ -320,13 +320,75 @@ check "MAC_extraction processes google-fr.pcap" \
 check "simple_traffic_reporting processes google-fr.pcap" \
     bash -c "cd '${WORK}' && LD_LIBRARY_PATH='${LIB}' '${WORK}/simple_traffic_reporting' '${REPO_ROOT}/src/examples/google-fr.pcap' >'${WORK}/str.txt' 2>/dev/null"
 
-# Signal handling: handler must only flag + breakloop (no printf/clean inside).
+# Signal handling: the handler only flags the stop + breaks the pcap loop,
+# and clean() runs once, from main. The live-capture path (pcap_loop) needs
+# capture privileges, so its pcap_breakloop stays pinned by source text.
 check "extract_all handler uses pcap_breakloop" \
     grep -q 'pcap_breakloop' "${REPO_ROOT}/src/examples/extract_all.c"
-check "extract_all handler never calls clean()/printf" \
-    bash -c "! sed -n '/^void signal_handler/,/^}/p' '${REPO_ROOT}/src/examples/extract_all.c' | grep -qE 'clean|printf|fflush'"
-check "extract_all loop observes the stop flag" \
-    grep -q 'stop_flag' "${REPO_ROOT}/src/examples/extract_all.c"
+
+# Issue #526 (F-TEST-016): the offline path is exercised for real. extract_all
+# reads a FIFO that this shell keeps open for writing (no EOF), so its
+# capture loop only ends if the signal handler stops it. Sequence: wait
+# until extract_all has opened the FIFO (pcap_open_offline runs after the
+# handlers are installed), write the pcap header + one record, deliver the
+# signal, write one more record (wakes the read that SA_RESTART resumed),
+# then require exit status 0 within 10 s and exactly one clean() pass.
+printf '\xd4\xc3\xb2\xa1\x02\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x01\x00\x00\x00' \
+    > "${WORK}/sig.hdr"
+printf '\x01\x00\x00\x00\x00\x00\x00\x00\x3c\x00\x00\x00\x3c\x00\x00\x00' > "${WORK}/sig.rec"
+head -c 60 /dev/zero >> "${WORK}/sig.rec"
+
+# signal_stops_extract_all <SIGNAL> — the stop sequence above; prints the
+# outcome and returns 0 only for status 0 + one "[info] Cleaning" line.
+signal_stops_extract_all() {
+    local sig="$1"
+    local fifo="${WORK}/sig-${sig}.fifo" out="${WORK}/sig-${sig}.out"
+    local wfd pid opened=0 status=0 cleans
+    rm -f "${fifo}"
+    mkfifo "${fifo}"
+    exec {wfd}<>"${fifo}"   # read-write: opening never blocks; holds the writer side
+    ( exec {wfd}>&-; cd "${WORK}" && LD_LIBRARY_PATH="${LIB}" exec "${WORK}/extract_all" -t "${fifo}" ) \
+        >"${out}" 2>&1 &
+    pid=$!
+    for _ in $(seq 1 300); do
+        if find "/proc/${pid}/fd" -lname "${fifo}" 2>/dev/null | grep -q .; then opened=1; break; fi
+        kill -0 "${pid}" 2>/dev/null || break
+        sleep 0.1
+    done
+    if [ "${opened}" -ne 1 ]; then
+        echo "extract_all never opened ${fifo}"
+        kill -KILL "${pid}" 2>/dev/null || true
+        wait "${pid}" 2>/dev/null || true
+        exec {wfd}>&-
+        return 1
+    fi
+    cat "${WORK}/sig.hdr" "${WORK}/sig.rec" >&"${wfd}"
+    sleep 1                      # record 1 processed; blocked reading record 2
+    kill -s "${sig}" "${pid}"
+    sleep 0.2
+    cat "${WORK}/sig.rec" >&"${wfd}"
+    for _ in $(seq 1 100); do
+        kill -0 "${pid}" 2>/dev/null || break
+        sleep 0.1
+    done
+    if kill -0 "${pid}" 2>/dev/null; then
+        kill -KILL "${pid}" 2>/dev/null || true
+        wait "${pid}" 2>/dev/null || true
+        exec {wfd}>&-
+        echo "extract_all still running 10 s after ${sig}: the handler did not stop the capture loop"
+        return 1
+    fi
+    wait "${pid}" || status=$?
+    exec {wfd}>&-
+    cleans="$(grep -c '^\[info\] Cleaning' "${out}" || true)"
+    echo "extract_all after ${sig}: exit status ${status}, clean() passes ${cleans}"
+    tail -5 "${out}"
+    [ "${status}" -eq 0 ] && [ "${cleans}" -eq 1 ]
+}
+for sig in INT TERM; do
+    check "extract_all stops its capture loop on SIG${sig}, exits 0, cleans once" \
+        signal_stops_extract_all "${sig}"
+done
 check "simple_traffic_reporting uses bounded hierarchy API" \
     grep -q 'proto_hierarchy_to_str_with_size' "${REPO_ROOT}/src/examples/simple_traffic_reporting.c"
 

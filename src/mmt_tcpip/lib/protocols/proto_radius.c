@@ -46,7 +46,7 @@ static MMT_SELECTION_BITMASK_PROTOCOL_SIZE selection_bitmask;
 
 static inline uint32_t
 read_be32( const uint8_t *x )
-{ return (x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3]; }
+{ return ((uint32_t)x[0] << 24) | ((uint32_t)x[1] << 16) | ((uint32_t)x[2] << 8) | (uint32_t)x[3]; }
 
 /*
  * RADIUS data extraction routines

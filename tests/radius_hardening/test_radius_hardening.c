@@ -1,364 +1,468 @@
 /*
- * test_radius_hardening.c — regression for #128: RADIUS parser hardening.
+ * test_radius_hardening.c — regression for #128 (RADIUS parser hardening),
+ * driven through the SHIPPED parser (issue #526, F-TEST-008).
  *
- * Covers:
- *  - len==1 attribute (TLV len 1 rejected, no crash, no over-read)
- *  - len 67-255 attribute (large vlen clamped to BINARY_64DATA_LEN, no overflow)
- *  - truncated type-26 vendor specific (parent TLV truncated, sub-TLV)
- *  - 3-5-byte TLVs (short reads for read_be32 sites: nas_ip, nas_port, etc.)
+ * The suite used to replicate the parsing/extraction logic of
+ * src/mmt_tcpip/lib/protocols/proto_radius.c in this file and grep the
+ * source for the guards; a regression in the shipped parser could leave
+ * both green. Every case below instead feeds a crafted
+ * Ethernet/IPv4/UDP/RADIUS frame through the installed SDK —
+ * mmt_init_handler + register_extraction_attribute + packet_process — and
+ * asserts what get_attribute_extracted_data() reports for it, so
+ * radius_session_data_analysis(), radius_vendor_specific_fields_analysis()
+ * and the extractors run exactly as shipped:
  *
- * The test replicates the fixed parsing/extraction logic from
- * src/mmt_tcpip/lib/protocols/proto_radius.c and exercises it against
- * crafted buffers under ASan+UBSan. Source-level grep guards are verified
- * by run_tests.sh before this binary runs.
+ *   A. TLV length < 2 (F-BUG-102): a len-1 or len-0 attribute ends the
+ *      walk — the bytes after it are never parsed as attributes (a len-0
+ *      attribute used to spin the walk forever: run_tests.sh bounds the
+ *      binary with `timeout`); a len-2 attribute (empty value) is accepted.
+ *   B. value clamps: User-Name values over 64 bytes are clamped to 64,
+ *      Called-Station-Id to 63 bytes plus a NUL.
+ *   C. 32-bit attributes: NAS-IP-Address shorter than 6 bytes is rejected;
+ *      a 6-byte one reads 100.64.1.10, and 192.168.1.10 — a first octet
+ *      >= 0x80, which read_be32() once shifted into the int sign bit.
+ *   D. 3GPP vendor-specific attribute (type 26): IMSI extracted from a valid
+ *      sub-attribute; not reported for a VSA too short for vendor id +
+ *      sub-header, an over-long sub-attribute, a len-1 sub-attribute, a
+ *      foreign vendor id or a sub-type past the 3GPP table.
+ *   E. truncated attributes (declared length past the capture) are never
+ *      stored, so nothing past caplen is read.
+ *
+ * Positive controls, so an "absent" assertion can never pass vacuously
+ * (a frame that is not classified as RADIUS, or not parsed at all, reports
+ * nothing): every frame must appear with PROTO_RADIUS in its protocol path,
+ * and every absent case carries a valid sibling attribute (NAS-IP-Address
+ * or User-Name) placed BEFORE the malformed one, which must be reported
+ * from the same packets.
+ *
+ * Each case uses its own UDP source port (its own session) and is sent
+ * twice, as tests/parser_boundaries/test_radius_dns_ipv6_api.c does; frames
+ * are exactly-sized heap copies so ASan brackets the capture under
+ * SANITIZE=asan.
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <arpa/inet.h>
 
-#define BINARY_64DATA_LEN 64
-#define BINARY_64DATA_TYPE_LEN 68
-#define IPv6_ALEN 16
-#define VENDOR_3GPP_ID 10415
-#define VENDOR_3GPP_MAX_TLV_TYPE 27
+#include <pcap.h>            /* DLT_EN10MB */
 
-typedef struct tlv_struct {
-    uint8_t type;
-    uint8_t len;
-    uint8_t val;
-} tlv_t;
+#include "mmt_core.h"
+#include "tcpip/mmt_tcpip.h"
+#include "tcpip/mmt_tcpip_attributes.h" /* RADIUS_* attribute ids */
 
-typedef struct vendor_tlv_struct {
-    uint32_t vendor_id;
-    uint8_t type;
-    uint8_t len;
-    uint8_t val;
-} vendor_tlv_t;
+static int g_failures = 0;
+static int g_checks   = 0;
 
-static inline uint32_t read_be32(const uint8_t *x) {
-    return ((uint32_t)x[0] << 24) | ((uint32_t)x[1] << 16) | ((uint32_t)x[2] << 8) | (uint32_t)x[3];
-}
+#define CHECK(cond, msg) do {                                        \
+        g_checks++;                                                  \
+        if (cond) {                                                  \
+            printf("  PASS: %s\n", (msg));                           \
+        } else {                                                     \
+            printf("  FAIL: %s\n", (msg));                           \
+            g_failures++;                                            \
+        }                                                            \
+    } while (0)
 
-static int failures = 0;
-static int checks = 0;
-#define CHECK(desc, cond) do { \
-    checks++; \
-    if (cond) { printf("  ok   %s\n", desc); } \
-    else { printf("  FAIL %s\n", desc); failures++; } \
-} while (0)
+/* ---- observed attributes ------------------------------------------------ */
 
-/* ---------------------------------------------------------------
- * Simulated session context (subset of radius_session_context_t)
- * --------------------------------------------------------------- */
+enum { A_USER_NAME, A_NAS_IP, A_CALLED_STATION, A_IMSI, A_COUNT };
+
+static const struct { uint32_t id; int binary; } g_attrs[A_COUNT] = {
+    [A_USER_NAME]      = { RADIUS_USER_NAME, 1 },
+    [A_NAS_IP]         = { RADIUS_NAS_IP_ADDRESS, 0 },
+    [A_CALLED_STATION] = { RADIUS_CALLED_STATION_ID, 1 },
+    [A_IMSI]           = { RADIUS_3GPP_IMSI, 1 },
+};
+
+/* BINARY attributes are a 4-byte length then up to 64 value bytes
+ * (BINARY_64DATA_TYPE_LEN = 68); U32 attributes are one uint32_t. */
+#define ATTR_BUF 68
+
 typedef struct {
-    int tlv_count;
-    tlv_t *packet_tlvs[0xFF];
-    tlv_t *vendor_3gpp_tlvs[VENDOR_3GPP_MAX_TLV_TYPE + 1];
-} ctx_t;
+    int      radius;                 /* PROTO_RADIUS in the protocol path */
+    int      present[A_COUNT];
+    uint32_t len[A_COUNT];           /* BINARY: reported length */
+    uint32_t u32[A_COUNT];           /* U32: value */
+    uint8_t  raw[A_COUNT][ATTR_BUF]; /* BINARY: the whole attribute buffer */
+} obs_t;
 
-/* Replicate radius_vendor_specific_fields_analysis guards
- * Use memcpy for vendor_id to stay UBSan-clean on unaligned packet data. */
-static void vendor_specific_fields_analysis(ctx_t *ctx, uint8_t *v_field, size_t v_remaining) {
-    if (v_remaining < 6) return;
-    uint32_t vendor_id;
-    memcpy(&vendor_id, v_field, 4);
-    if (ntohl(vendor_id) != VENDOR_3GPP_ID) return;
-    if (ctx == NULL) return;
-    tlv_t *tlv = (tlv_t *)&v_field[4];
-    size_t sub_remaining = v_remaining - 4;
-    if (sub_remaining < 2) return;
-    if (tlv->len < 2) return;
-    if ((size_t)tlv->len > sub_remaining) return;
-    if (tlv->type > VENDOR_3GPP_MAX_TLV_TYPE) return;
-    if (tlv->type >= VENDOR_3GPP_MAX_TLV_TYPE + 1) return;
-    ctx->vendor_3gpp_tlvs[tlv->type] = tlv;
-}
+#define SENDS 2
+static obs_t g_obs[SENDS];
+static int   g_pkt;
 
-/* Replicate radius_session_data_analysis loop */
-static void parse_tlvs(ctx_t *ctx, uint8_t *data, size_t caplen, int proto_offset) {
-    int tlv_offset = proto_offset + 20; /* 4 header + 16 authenticator */
-    memset(ctx->packet_tlvs, 0, sizeof(ctx->packet_tlvs));
-    memset(ctx->vendor_3gpp_tlvs, 0, sizeof(ctx->vendor_3gpp_tlvs));
-    ctx->tlv_count = 0;
-    while (caplen > (size_t)tlv_offset + 2) {
-        tlv_t *cur = (tlv_t *)&data[tlv_offset];
-        if (cur->len < 2) break; /* F-BUG-102 guard */
-        if ((size_t)tlv_offset + (size_t)cur->len > caplen) break; /* truncated */
-        ctx->packet_tlvs[cur->type] = cur;
-        if (cur->type == 26) {
-            size_t v_remaining = (size_t)cur->len - 2;
-            vendor_specific_fields_analysis(ctx, (uint8_t *)&cur->val, v_remaining);
-        }
-        ctx->tlv_count += 1;
-        tlv_offset += cur->len;
+static int packet_handler(const ipacket_t *ipacket, void *user_args) {
+    (void) user_args;
+    if (g_pkt >= SENDS) return 0;
+    obs_t *o = &g_obs[g_pkt];
+    if (ipacket->proto_hierarchy != NULL) {
+        for (int i = 0; i < ipacket->proto_hierarchy->len; i++)
+            if (ipacket->proto_hierarchy->proto_path[i] == PROTO_RADIUS)
+                o->radius = 1;
     }
-}
-
-/* Replicate extraction guards for BINARY (clamped) */
-static int extract_binary_clamped(ctx_t *ctx, uint8_t tlv_type, uint8_t *out, size_t *out_len) {
-    if (ctx->packet_tlvs[tlv_type] == NULL) return 0;
-    if (ctx->packet_tlvs[tlv_type]->len < 2) return 0;
-    size_t vlen = (size_t)ctx->packet_tlvs[tlv_type]->len - 2;
-    if (vlen > BINARY_64DATA_LEN) vlen = BINARY_64DATA_LEN;
-    memcpy(out, &ctx->packet_tlvs[tlv_type]->val, vlen);
-    *out_len = vlen;
-    return 1;
-}
-
-/* String-type with NUL terminator (called_station etc: >= BINARY_64DATA_LEN -> 63) */
-static int extract_string_nul(ctx_t *ctx, uint8_t tlv_type, uint8_t *out, size_t *out_len) {
-    if (ctx->packet_tlvs[tlv_type] == NULL) return 0;
-    if (ctx->packet_tlvs[tlv_type]->len < 2) return 0;
-    size_t vlen = (size_t)ctx->packet_tlvs[tlv_type]->len - 2;
-    if (vlen >= BINARY_64DATA_LEN) vlen = BINARY_64DATA_LEN - 1;
-    memcpy(out, &ctx->packet_tlvs[tlv_type]->val, vlen);
-    out[vlen] = '\0';
-    *out_len = vlen;
-    return 1;
-}
-
-static int extract_u32(ctx_t *ctx, uint8_t tlv_type, uint32_t *out) {
-    if (ctx->packet_tlvs[tlv_type] == NULL) return 0;
-    if (ctx->packet_tlvs[tlv_type]->len < 6) return 0;
-    *out = read_be32(&ctx->packet_tlvs[tlv_type]->val);
-    return 1;
-}
-
-/* Helper: build a fake RADIUS packet buffer */
-static void build_header(uint8_t *buf, size_t total_len) {
-    memset(buf, 0, total_len);
-    buf[0] = 1; /* code Access-Request */
-    buf[1] = 0x5A;
-    uint16_t nlen = htons((uint16_t)total_len);
-    memcpy(&buf[2], &nlen, 2);
-    /* bytes 4..19 authenticator: leave zero */
-}
-
-/* ------------------------------------------------------------------ */
-static void test_len_1_rejected(void) {
-    printf("len==1 TLV (must be rejected, no crash):\n");
-    uint8_t pkt[64];
-    ctx_t ctx;
-    build_header(pkt, sizeof(pkt));
-    /* Place a TLV at offset 20 with len=1 (illegal) */
-    pkt[20] = 1; /* type User-Name */
-    pkt[21] = 1; /* len 1 <2 */
-    pkt[22] = 0x41;
-    parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-    CHECK("len==1 TLV does not advance tlv_count", ctx.tlv_count == 0);
-    CHECK("len==1 TLV not stored in packet_tlvs[1]", ctx.packet_tlvs[1] == NULL);
-    /* Also test len==0 */
-    memset(pkt, 0, sizeof(pkt));
-    build_header(pkt, sizeof(pkt));
-    pkt[20] = 1;
-    pkt[21] = 0;
-    parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-    CHECK("len==0 TLV rejected", ctx.tlv_count == 0 && ctx.packet_tlvs[1] == NULL);
-    /* len==2 with zero-length value should be accepted (boundary) */
-    memset(pkt, 0, sizeof(pkt));
-    build_header(pkt, sizeof(pkt));
-    pkt[20] = 1;
-    pkt[21] = 2;
-    parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-    CHECK("len==2 TLV accepted (empty value)", ctx.tlv_count == 1 && ctx.packet_tlvs[1] != NULL);
-}
-
-static void test_large_vlen_clamped(void) {
-    printf("large vlen 67..255 clamped to BINARY_64DATA_LEN (no overflow):\n");
-    ctx_t ctx;
-    uint8_t out[128];
-    size_t out_len = 0;
-    /* Build packet with a large User-Name TLV: type 1, len 255, value 253 bytes.
-     * We craft a buffer large enough to hold it, then parse it. The extraction
-     * must clamp vlen to 64. */
-    size_t pkt_len = 20 + 255;
-    uint8_t *pkt = calloc(1, pkt_len);
-    build_header(pkt, pkt_len);
-    pkt[20] = 1;
-    pkt[21] = 255;
-    memset(&pkt[22], 'A', 253);
-    parse_tlvs(&ctx, pkt, pkt_len, 0);
-    CHECK("large TLV (len 255) is stored", ctx.packet_tlvs[1] != NULL);
-    int ok = extract_binary_clamped(&ctx, 1, out, &out_len);
-    CHECK("large vlen extraction succeeds with clamp", ok == 1);
-    CHECK("large vlen clamped to 64", out_len == BINARY_64DATA_LEN);
-    /* Check that out buffer not overflowed (we filled 128 with sentinel) */
-    memset(out, 0xAA, sizeof(out));
-    extract_binary_clamped(&ctx, 1, out, &out_len);
-    CHECK("no overflow past 64 bytes (sentinel intact)", out[64] == 0xAA);
-    /* String variant (called_station) clamps to 63 + NUL */
-    {
-        uint8_t spkt[20 + 255];
-        build_header(spkt, sizeof(spkt));
-        spkt[20] = 30; /* Called-Station-Id */
-        spkt[21] = 255;
-        memset(&spkt[22], 'B', 253);
-        parse_tlvs(&ctx, spkt, sizeof(spkt), 0);
-        uint8_t sout[128];
-        memset(sout, 0xAA, sizeof(sout));
-        size_t slen = 0;
-        int sok = extract_string_nul(&ctx, 30, sout, &slen);
-        CHECK("string large vlen clamped to 63 with NUL", sok == 1 && slen == BINARY_64DATA_LEN - 1 && sout[63] == '\0');
-        CHECK("string no overflow past 64 (sentinel)", sout[64] == 0xAA);
-    }
-    /* Test len 67 (vlen 65) is also clamped */
-    {
-        uint8_t p2[20 + 67];
-        build_header(p2, sizeof(p2));
-        p2[20] = 1;
-        p2[21] = 67;
-        memset(&p2[22], 'C', 65);
-        parse_tlvs(&ctx, p2, sizeof(p2), 0);
-        memset(out, 0xAA, sizeof(out));
-        extract_binary_clamped(&ctx, 1, out, &out_len);
-        CHECK("vlen 65 (len 67) clamped to 64", out_len == 64 && out[64] == 0xAA);
-    }
-    free(pkt);
-}
-
-static void test_truncated_vendor_specific(void) {
-    printf("truncated type-26 vendor specific (no crash, sub-TLV guards):\n");
-    ctx_t ctx;
-    /* Case 1: parent TLV len declares more than available (truncated) */
-    {
-        uint8_t pkt[32];
-        build_header(pkt, sizeof(pkt));
-        pkt[20] = 26; /* Vendor-Specific */
-        pkt[21] = 30; /* claims 30 bytes but only 12 bytes remain before caplen check will break */
-        /* Actually make caplen small so parser sees truncated and breaks */
-        parse_tlvs(&ctx, pkt, 22, 0); /* caplen 22 -> only 2 bytes of TLV header fit, but len=30 > remaining => break */
-        CHECK("truncated parent TLV (caplen < tlv_offset+len) rejected", ctx.tlv_count == 0 && ctx.packet_tlvs[26] == NULL);
-    }
-    /* Case 2: parent TLV fits but sub-TLV truncated (v_remaining <6) */
-    {
-        uint8_t pkt[64];
-        build_header(pkt, sizeof(pkt));
-        pkt[20] = 26;
-        pkt[21] = 6; /* minimal: 2 header + 4 vendor ID only */
-        uint32_t vid = htonl(VENDOR_3GPP_ID);
-        memcpy(&pkt[22], &vid, 4);
-        /* No sub-TLV bytes beyond vendor ID; v_remaining=4 <6 => vendor handler returns */
-        parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-        CHECK("vendor TLV with v_remaining<6 does not populate vendor tlvs", ctx.packet_tlvs[26] != NULL);
-        int any_vendor = 0;
-        for (int i = 0; i <= VENDOR_3GPP_MAX_TLV_TYPE; i++) if (ctx.vendor_3gpp_tlvs[i]) any_vendor = 1;
-        CHECK("vendor sub-TLV not extracted when v_remaining<6", any_vendor == 0);
-    }
-    /* Case 3: parent fits, sub-TLV header present but len <2 */
-    {
-        uint8_t pkt[64];
-        build_header(pkt, sizeof(pkt));
-        pkt[20] = 26;
-        pkt[21] = 8; /* 2+4+2 */
-        uint32_t vid = htonl(VENDOR_3GPP_ID);
-        memcpy(&pkt[22], &vid, 4);
-        pkt[26] = 6; /* sub-type */
-        pkt[27] = 1; /* sub-len <2 */
-        parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-        int any_vendor = 0;
-        for (int i = 0; i <= VENDOR_3GPP_MAX_TLV_TYPE; i++) if (ctx.vendor_3gpp_tlvs[i]) any_vendor = 1;
-        CHECK("sub-TLV len==1 rejected", any_vendor == 0);
-    }
-    /* Case 4: sub-TLV len > sub_remaining */
-    {
-        uint8_t pkt[64];
-        build_header(pkt, sizeof(pkt));
-        pkt[20] = 26;
-        pkt[21] = 8;
-        uint32_t vid = htonl(VENDOR_3GPP_ID);
-        memcpy(&pkt[22], &vid, 4);
-        pkt[26] = 6;
-        pkt[27] = 20; /* claims 20 bytes but only 2 remain */
-        parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-        int any_vendor = 0;
-        for (int i = 0; i <= VENDOR_3GPP_MAX_TLV_TYPE; i++) if (ctx.vendor_3gpp_tlvs[i]) any_vendor = 1;
-        CHECK("sub-TLV len > sub_remaining rejected", any_vendor == 0);
-    }
-    /* Case 5: valid vendor TLV should be extracted */
-    {
-        uint8_t pkt[64];
-        build_header(pkt, sizeof(pkt));
-        pkt[20] = 26;
-        pkt[21] = 10; /* 2+4+4 */
-        uint32_t vid = htonl(VENDOR_3GPP_ID);
-        memcpy(&pkt[22], &vid, 4);
-        pkt[26] = 1; /* IMSI */
-        pkt[27] = 4; /* len 4 -> vlen 2 */
-        pkt[28] = 'X'; pkt[29] = 'Y';
-        parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-        CHECK("valid vendor sub-TLV extracted", ctx.vendor_3gpp_tlvs[1] != NULL && ctx.vendor_3gpp_tlvs[1]->type == 1);
-    }
-    /* Case 6: wrong vendor ID must be ignored */
-    {
-        uint8_t pkt[64];
-        build_header(pkt, sizeof(pkt));
-        pkt[20] = 26;
-        pkt[21] = 10;
-        uint32_t vid = htonl(12345);
-        memcpy(&pkt[22], &vid, 4);
-        pkt[26] = 1;
-        pkt[27] = 4;
-        pkt[28] = 'X'; pkt[29] = 'Y';
-        parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-        int any_vendor = 0;
-        for (int i = 0; i <= VENDOR_3GPP_MAX_TLV_TYPE; i++) if (ctx.vendor_3gpp_tlvs[i]) any_vendor = 1;
-        CHECK("wrong vendor ID ignored", any_vendor == 0);
-    }
-}
-
-static void test_short_reads_read_be32(void) {
-    printf("3-5-byte TLVs rejected for read_be32 sites (no short read):\n");
-    ctx_t ctx;
-    uint32_t val = 0;
-    /* TLVs that carry u32 must be at least len 6 (2 header + 4 value). */
-    uint8_t types_u32[] = {4, 5, 6, 7, 8, 9, 12, 27, 28, 40, 41, 42, 43, 45, 46, 47, 48, 49, 55, 61};
-    for (size_t ti = 0; ti < sizeof(types_u32); ti++) {
-        uint8_t t = types_u32[ti];
-        for (int len = 2; len <= 5; len++) {
-            uint8_t pkt[64];
-            build_header(pkt, sizeof(pkt));
-            pkt[20] = t;
-            pkt[21] = (uint8_t)len;
-            for (int i = 0; i < len - 2; i++) pkt[22 + i] = 0xFF;
-            parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-            /* parser stores it (len>=2), but extraction must reject */
-            if (ctx.packet_tlvs[t] == NULL) continue; /* should be stored for len>=2 */
-            int rc = extract_u32(&ctx, t, &val);
-            char desc[128];
-            snprintf(desc, sizeof(desc), "type %u len %d rejected for u32", t, len);
-            CHECK(desc, rc == 0);
+    for (int a = 0; a < A_COUNT; a++) {
+        const uint8_t *d = (const uint8_t *)
+            get_attribute_extracted_data(ipacket, PROTO_RADIUS, g_attrs[a].id);
+        if (d == NULL) continue;
+        o->present[a] = 1;
+        if (g_attrs[a].binary) {
+            memcpy(&o->len[a], d, sizeof(uint32_t));
+            memcpy(o->raw[a], d, ATTR_BUF);
+        } else {
+            memcpy(&o->u32[a], d, sizeof(uint32_t));
         }
     }
-    /* len 6 must be accepted */
-    {
-        uint8_t pkt[64];
-        build_header(pkt, sizeof(pkt));
-        pkt[20] = 4; /* NAS-IP-Address */
-        pkt[21] = 6;
-        pkt[22] = 192; pkt[23] = 168; pkt[24] = 1; pkt[25] = 10;
-        parse_tlvs(&ctx, pkt, sizeof(pkt), 0);
-        int rc = extract_u32(&ctx, 4, &val);
-        CHECK("type 4 len 6 accepted for u32", rc == 1 && val == 0xC0A8010A);
+    return 0;
+}
+
+/* ---- frame builder ------------------------------------------------------ */
+
+static uint8_t  g_attr_bytes[512];
+static unsigned g_attr_len;
+
+static void put_be16(uint8_t *p, uint16_t v) { p[0] = v >> 8; p[1] = v & 0xff; }
+
+static void attrs_reset(void) { g_attr_len = 0; }
+
+/* Raw attribute bytes, exactly as given (malformed TLVs are spelled out). */
+static void raw(const uint8_t *b, unsigned n) {
+    if (g_attr_len + n > sizeof(g_attr_bytes)) { fprintf(stderr, "attr overflow\n"); exit(2); }
+    memcpy(g_attr_bytes + g_attr_len, b, n);
+    g_attr_len += n;
+}
+
+/* A well-formed attribute: type, 2 + n, n value bytes. */
+static void tlv(uint8_t type, const void *val, unsigned n) {
+    uint8_t h[2] = { type, (uint8_t)(2 + n) };
+    raw(h, 2);
+    raw((const uint8_t *) val, n);
+}
+
+/* An attribute of declared length `len` whose value is `len - 2` copies of
+ * `fill` (len >= 2). */
+static void tlv_fill(uint8_t type, unsigned len, uint8_t fill) {
+    uint8_t v[255];
+    memset(v, fill, sizeof(v));
+    uint8_t h[2] = { type, (uint8_t) len };
+    raw(h, 2);
+    raw(v, len - 2);
+}
+
+static const uint8_t NAS_IP_OK[4] = { 10, 0, 0, 9 };      /* 0x0A000009 */
+#define NAS_IP_OK_U32 0x0A000009u
+static void sibling_nas_ip(void)    { tlv(4, NAS_IP_OK, 4); }
+static void sibling_user_name(void) { tlv(1, "ok", 2); }
+
+#define VENDOR_3GPP 10415u
+static const char IMSI[] = "208150123456789";
+
+/* Wraps the attributes in an Access-Request and Ethernet/IPv4/UDP. */
+static unsigned build_frame(uint8_t *pkt, uint16_t sport) {
+    unsigned rlen = 20 + g_attr_len;
+    uint8_t *r = pkt + 14 + 20 + 8;
+    r[0] = 1;                                /* Access-Request */
+    r[1] = 0x5a;                             /* identifier */
+    put_be16(r + 2, (uint16_t) rlen);        /* == UDP payload length */
+    memset(r + 4, 0x11, 16);                 /* authenticator */
+    memcpy(r + 20, g_attr_bytes, g_attr_len);
+
+    static const uint8_t dst[6] = {0x00,0x11,0x22,0x33,0x44,0x55};
+    static const uint8_t src[6] = {0x66,0x77,0x88,0x99,0xaa,0xbb};
+    memcpy(pkt, dst, 6); memcpy(pkt + 6, src, 6); put_be16(pkt + 12, 0x0800);
+    uint8_t *ip = pkt + 14;
+    memset(ip, 0, 20);
+    ip[0] = 0x45; put_be16(ip + 2, (uint16_t)(20 + 8 + rlen));
+    ip[8] = 64; ip[9] = 17;
+    ip[12] = 10; ip[15] = 1; ip[16] = 10; ip[19] = 2;
+    uint8_t *u = pkt + 34;
+    put_be16(u, sport); put_be16(u + 2, 1812);
+    put_be16(u + 4, (uint16_t)(8 + rlen)); put_be16(u + 6, 0);
+    return 42 + rlen;
+}
+
+static mmt_handler_t *g_h;
+static uint16_t g_sport = 41000;
+
+/* Sends the current attribute set twice on a fresh session. */
+static void send_case(void) {
+    static uint8_t frame[14 + 20 + 8 + 20 + sizeof(g_attr_bytes)];
+    unsigned len = build_frame(frame, g_sport++);
+    memset(g_obs, 0, sizeof(g_obs));
+    for (g_pkt = 0; g_pkt < SENDS; g_pkt++) {
+        uint8_t *data = malloc(len);
+        if (!data) { perror("malloc"); exit(2); }
+        memcpy(data, frame, len);
+        struct pkthdr hdr;
+        memset(&hdr, 0, sizeof(hdr));
+        hdr.ts.tv_sec = 1 + g_pkt;
+        hdr.caplen = len;
+        hdr.len = len;
+        packet_process(g_h, &hdr, data);
+        free(data);
     }
-    /* len 5 with caplen truncated mid-TLV must not be parsed at all */
-    {
-        uint8_t pkt[25];
-        build_header(pkt, sizeof(pkt));
-        pkt[20] = 4;
-        pkt[21] = 6; /* claims 6 but caplen only 25 -> only 5 bytes available after header? */
-        /* caplen 25 => tlv_offset 20, need 6 bytes but only 5 remain => truncated, loop breaks before storing */
-        parse_tlvs(&ctx, pkt, 25, 0);
-        CHECK("truncated u32 TLV (caplen < offset+len) not stored", ctx.packet_tlvs[4] == NULL);
+}
+
+/* ---- case verdicts -------------------------------------------------------- */
+
+static int all_radius(void) {
+    for (int i = 0; i < SENDS; i++) if (!g_obs[i].radius) return 0;
+    return 1;
+}
+
+/* Index of the last packet that reported attribute `a`, or -1. */
+static int last_with(int a) {
+    for (int i = SENDS - 1; i >= 0; i--) if (g_obs[i].present[a]) return i;
+    return -1;
+}
+
+static int none_with(int a) { return last_with(a) < 0; }
+
+/* The sibling must be reported by every packet: the same packets then prove
+ * the target's absence is the parser's verdict, not a frame it skipped. */
+static int all_with(int a) {
+    for (int i = 0; i < SENDS; i++) if (!g_obs[i].present[a]) return 0;
+    return 1;
+}
+
+static void expect_classified(const char *what) {
+    char msg[160];
+    snprintf(msg, sizeof(msg), "%s: every packet is classified as RADIUS", what);
+    CHECK(all_radius(), msg);
+}
+
+/* Absent case: `target` reported by no packet, `sibling` by every packet. */
+static void expect_absent(const char *what, int target, int sibling) {
+    char msg[200];
+    expect_classified(what);
+    snprintf(msg, sizeof(msg), "%s: sibling attribute ahead of it is reported", what);
+    CHECK(all_with(sibling), msg);
+    snprintf(msg, sizeof(msg), "%s: not reported", what);
+    CHECK(none_with(target), msg);
+}
+
+/* BINARY attribute reported with exactly `want_len` copies of `fill`. */
+static void expect_binary_fill(const char *what, int a, uint32_t want_len, uint8_t fill) {
+    char msg[200];
+    expect_classified(what);
+    int i = last_with(a);
+    snprintf(msg, sizeof(msg), "%s: reported with length %u", what, want_len);
+    CHECK(i >= 0 && g_obs[i].len[a] == want_len, msg);
+    if (i < 0) return;
+    int same = g_obs[i].len[a] == want_len;
+    for (uint32_t k = 0; same && k < want_len; k++)
+        if (g_obs[i].raw[a][4 + k] != fill) same = 0;
+    snprintf(msg, sizeof(msg), "%s: value is the first %u attribute bytes", what, want_len);
+    CHECK(same, msg);
+}
+
+/* ---- A. TLV length < 2 (F-BUG-102) ------------------------------------- */
+
+/* After a malformed attribute at offset X, the bytes from X+1 read as a
+ * well-formed User-Name "evil": a walk that accepted the len-1 attribute
+ * (advancing by 1) would report it, one that accepted len 0 never ends. */
+static void test_tlv_len_below_2(void) {
+    printf("A. attribute length < 2 ends the walk (F-BUG-102)\n");
+    static const uint8_t len1[] = { 0x63, 1, 6, 'e', 'v', 'i', 'l' };
+    attrs_reset(); sibling_nas_ip(); raw(len1, sizeof(len1));
+    send_case();
+    expect_absent("len-1 attribute: bytes after it are not parsed as User-Name",
+                  A_USER_NAME, A_NAS_IP);
+
+    static const uint8_t len0[] = { 0x63, 0, 1, 6, 'e', 'v', 'i', 'l' };
+    attrs_reset(); sibling_nas_ip(); raw(len0, sizeof(len0));
+    send_case();
+    expect_absent("len-0 attribute: the walk stops (no hang), User-Name after it not parsed",
+                  A_USER_NAME, A_NAS_IP);
+
+    attrs_reset(); tlv(1, "", 0); sibling_nas_ip();
+    send_case();
+    expect_classified("len-2 User-Name (empty value)");
+    int i = last_with(A_USER_NAME);
+    CHECK(i >= 0 && g_obs[i].len[A_USER_NAME] == 0,
+          "len-2 User-Name (empty value): reported with length 0");
+    CHECK(all_with(A_NAS_IP),
+          "len-2 User-Name (empty value): the walk continues to the next attribute");
+}
+
+/* ---- B. value clamps ------------------------------------------------------ */
+
+static void test_value_clamps(void) {
+    printf("B. over-long values are clamped to the attribute buffer\n");
+    /* The 1-byte-over case first: without the clamp it is reported as 65
+     * bytes; the len-255 case would overrun the 68-byte buffer by 189. */
+    attrs_reset(); tlv_fill(1, 67, 'C'); sibling_nas_ip();
+    send_case();
+    expect_binary_fill("User-Name len 67 (value 65)", A_USER_NAME, 64, 'C');
+
+    attrs_reset(); tlv_fill(1, 255, 'A'); sibling_nas_ip();
+    send_case();
+    expect_binary_fill("User-Name len 255", A_USER_NAME, 64, 'A');
+
+    attrs_reset(); tlv_fill(30, 255, 'B'); sibling_nas_ip();
+    send_case();
+    expect_binary_fill("Called-Station-Id len 255", A_CALLED_STATION, 63, 'B');
+    int i = last_with(A_CALLED_STATION);
+    CHECK(i >= 0 && g_obs[i].raw[A_CALLED_STATION][4 + 63] == '\0',
+          "Called-Station-Id len 255: value is NUL-terminated at byte 63");
+}
+
+/* ---- C. 32-bit attributes ------------------------------------------------- */
+
+static void test_u32_short(void) {
+    printf("C. NAS-IP-Address shorter than 6 bytes is rejected\n");
+    for (unsigned len = 2; len <= 5; len++) {
+        char what[96];
+        snprintf(what, sizeof(what), "NAS-IP-Address len %u", len);
+        attrs_reset(); sibling_user_name(); tlv_fill(4, len, 0xff);
+        send_case();
+        expect_absent(what, A_NAS_IP, A_USER_NAME);
     }
+    /* First octet below 0x80. */
+    static const uint8_t ip[4] = { 100, 64, 1, 10 };
+    attrs_reset(); sibling_user_name(); tlv(4, ip, 4);
+    send_case();
+    expect_classified("NAS-IP-Address len 6");
+    int i = last_with(A_NAS_IP);
+    CHECK(i >= 0 && g_obs[i].u32[A_NAS_IP] == 0x6440010Au,
+          "NAS-IP-Address len 6: reads 100.64.1.10");
+    /* First octet >= 0x80: read_be32() (proto_radius.c:49) shifted the
+     * int-promoted first byte left by 24, undefined behaviour that UBSan
+     * reports under SANITIZE=asan (issue #526); it now shifts uint32_t. */
+    static const uint8_t ip_hi[4] = { 192, 168, 1, 10 };
+    attrs_reset(); sibling_user_name(); tlv(4, ip_hi, 4);
+    send_case();
+    expect_classified("NAS-IP-Address len 6, first octet >= 0x80");
+    i = last_with(A_NAS_IP);
+    CHECK(i >= 0 && g_obs[i].u32[A_NAS_IP] == 0xC0A8010Au,
+          "NAS-IP-Address len 6: reads 192.168.1.10");
+}
+
+/* ---- D. 3GPP vendor-specific attribute -------------------------------- */
+
+/* VSA = 26, len, vendor id (4), sub-type, sub-len, sub-value. */
+static void vsa(uint32_t vendor, uint8_t sub_type, unsigned sub_len,
+                const void *sub_val, unsigned sub_val_len) {
+    uint8_t h[8] = { 26, (uint8_t)(2 + 4 + 2 + sub_val_len),
+                     (uint8_t)(vendor >> 24), (uint8_t)(vendor >> 16),
+                     (uint8_t)(vendor >> 8), (uint8_t) vendor,
+                     sub_type, (uint8_t) sub_len };
+    raw(h, 8);
+    raw((const uint8_t *) sub_val, sub_val_len);
+}
+
+static void test_vendor_specific(void) {
+    printf("D. 3GPP vendor-specific attribute guards\n");
+    unsigned n = (unsigned) strlen(IMSI);
+
+    attrs_reset(); sibling_nas_ip(); vsa(VENDOR_3GPP, 1, 2 + n, IMSI, n);
+    send_case();
+    expect_classified("valid 3GPP IMSI");
+    int i = last_with(A_IMSI);
+    CHECK(i >= 0 && g_obs[i].len[A_IMSI] == n
+          && memcmp(&g_obs[i].raw[A_IMSI][4], IMSI, n) == 0,
+          "valid 3GPP IMSI: reported as 208150123456789");
+
+    /* A 4-byte VSA (2-byte value) cannot hold a vendor id. The next
+     * attribute (type 0x28, len 0xaf) is laid out so that reading the
+     * vendor id across the VSA boundary yields 0x000028af = 10415 (3GPP) and
+     * an underflowed remaining length would accept the bytes after it as an
+     * IMSI sub-attribute "evil". */
+    attrs_reset(); sibling_nas_ip();
+    static const uint8_t short_vsa[] = { 26, 4, 0x00, 0x00 };
+    raw(short_vsa, sizeof(short_vsa));
+    uint8_t next[0xaf];
+    memset(next, 0, sizeof(next));
+    next[0] = 0x28; next[1] = 0xaf;
+    next[2] = 1; next[3] = 6; memcpy(&next[4], "evil", 4);
+    raw(next, sizeof(next));
+    send_case();
+    expect_absent("VSA too short for vendor id + sub-header (value 2 bytes)",
+                  A_IMSI, A_NAS_IP);
+
+    /* Sub-attribute declares 20 bytes, 4 remain in the VSA; a trailing
+     * attribute keeps an over-read inside the capture. */
+    attrs_reset(); sibling_nas_ip(); vsa(VENDOR_3GPP, 1, 20, "XY", 2);
+    tlv_fill(0x63, 40, 0);
+    send_case();
+    expect_absent("IMSI sub-attribute longer than the VSA", A_IMSI, A_NAS_IP);
+
+    attrs_reset(); sibling_nas_ip(); vsa(VENDOR_3GPP, 1, 1, "XY", 2);
+    send_case();
+    expect_absent("IMSI sub-attribute len 1", A_IMSI, A_NAS_IP);
+
+    attrs_reset(); sibling_nas_ip(); vsa(12345, 1, 2 + n, IMSI, n);
+    send_case();
+    expect_absent("IMSI sub-attribute under a foreign vendor id (12345)",
+                  A_IMSI, A_NAS_IP);
+
+    /* Sub-type 28 is one past the 3GPP table (VENDOR_3GPP_MAX_TLV_TYPE 27):
+     * storing it would write just past the per-session context, which ASan
+     * reports under SANITIZE=asan. */
+    attrs_reset(); sibling_nas_ip(); vsa(VENDOR_3GPP, 28, 2 + n, IMSI, n);
+    send_case();
+    expect_absent("3GPP sub-attribute type 28 (past the table) is ignored, IMSI not reported",
+                  A_IMSI, A_NAS_IP);
+}
+
+/* ---- E. truncated attributes ----------------------------------------- */
+
+static void test_truncated(void) {
+    printf("E. attributes running past the capture are not stored\n");
+    static const uint8_t trunc_user[] = { 1, 40, 'T','T','T','T','T','T','T','T','T','T' };
+    attrs_reset(); sibling_nas_ip(); raw(trunc_user, sizeof(trunc_user));
+    send_case();
+    expect_absent("User-Name declaring 40 bytes, 12 captured", A_USER_NAME, A_NAS_IP);
+
+    static const uint8_t trunc_ip[] = { 4, 6, 1, 2, 3 };
+    attrs_reset(); sibling_user_name(); raw(trunc_ip, sizeof(trunc_ip));
+    send_case();
+    expect_absent("NAS-IP-Address declaring 6 bytes, 5 captured", A_NAS_IP, A_USER_NAME);
+
+    unsigned n = (unsigned) strlen(IMSI);
+    uint8_t trunc_vsa[8 + 15];
+    trunc_vsa[0] = 26; trunc_vsa[1] = 40;                /* 23 captured */
+    trunc_vsa[2] = 0; trunc_vsa[3] = 0; trunc_vsa[4] = 0x28; trunc_vsa[5] = 0xaf;
+    trunc_vsa[6] = 1; trunc_vsa[7] = (uint8_t)(2 + n);
+    memcpy(&trunc_vsa[8], IMSI, n);
+    attrs_reset(); sibling_nas_ip(); raw(trunc_vsa, sizeof(trunc_vsa));
+    send_case();
+    expect_absent("VSA declaring 40 bytes, 23 captured (IMSI inside)", A_IMSI, A_NAS_IP);
 }
 
 int main(void) {
-    test_len_1_rejected();
-    test_large_vlen_clamped();
-    test_truncated_vendor_specific();
-    test_short_reads_read_be32();
-    printf("\n%d checks, %d failure(s)\n", checks, failures);
-    return failures ? 1 : 0;
+    char errbuf[1024];
+    /* Line-buffered: a case that crashes the parser keeps the verdicts
+     * printed before it. */
+    setvbuf(stdout, NULL, _IOLBF, 0);
+    if (!init_extraction()) {
+        fprintf(stderr, "init_extraction failed\n");
+        return 2;
+    }
+    g_h = mmt_init_handler(DLT_EN10MB, 0, errbuf);
+    if (g_h == NULL) {
+        fprintf(stderr, "mmt_init_handler failed: %s\n", errbuf);
+        close_extraction();
+        return 2;
+    }
+    register_packet_handler(g_h, 1, packet_handler, NULL);
+    for (int a = 0; a < A_COUNT; a++) {
+        if (register_extraction_attribute(g_h, PROTO_RADIUS, g_attrs[a].id) != true) {
+            fprintf(stderr, "register_extraction_attribute(%u) failed\n", g_attrs[a].id);
+            mmt_close_handler(g_h);
+            close_extraction();
+            return 2;
+        }
+    }
+
+    printf("issue #128 / #526: RADIUS hardening through the shipped parser\n");
+    test_tlv_len_below_2();
+    test_value_clamps();
+    test_u32_short();
+    test_vendor_specific();
+    test_truncated();
+
+    mmt_close_handler(g_h);
+    close_extraction();
+    printf("\n%d checks, %d failure(s)\n", g_checks, g_failures);
+    return g_failures ? 1 : 0;
 }

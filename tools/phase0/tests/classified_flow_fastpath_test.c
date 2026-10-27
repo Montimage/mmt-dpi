@@ -26,6 +26,15 @@
  *      the previous observation, the IP/TCP/UDP checker deltas MUST be 0.
  *      Any non-zero delta is an F-PERF-002 regression.
  *
+ *   5. Issue #526 (F-TEST-009): the issue #99 give-up on the SDK path. 50
+ *      packets of ONE unknown TCP flow (crafted Ethernet/IPv4/TCP frames,
+ *      ACK-only, unassigned ports, a payload no checker claims) go through a
+ *      fresh handler's packet_process; the TCP chain's checker-call delta
+ *      must be > 0 on packets 1..40 (still classifying) and == 0 from packet
+ *      41 on (tcp_pre_classification_function returned MMT_CLASSIFY_SKIP).
+ *      tests/tcp_pending_order/test_tcp_classify_giveup.c pins the same
+ *      boundary on the function itself.
+ *
  * The counters are declared __attribute__((weak)) so the binary still links
  * against an SDK that predates them; a missing symbol fails the test loudly
  * instead of passing vacuously.
@@ -124,6 +133,82 @@ static uint64_t count_for(uint32_t proto_id) {
     return mmt_classify_checker_calls_for_proto
         ? mmt_classify_checker_calls_for_proto(proto_id)
         : 0;
+}
+
+/* ---- issue #526: unknown-TCP give-up through packet_process ----------- */
+
+#define GIVEUP_PACKETS       50
+#define GIVEUP_LAST_WALKED   40   /* 2 * CFG_CLASSIFICATION_THRESHOLD */
+#define GIVEUP_PAYLOAD_LEN   16
+
+static void put_be16(uint8_t *p, uint16_t v) { p[0] = v >> 8; p[1] = v & 0xff; }
+static void put_be32(uint8_t *p, uint32_t v) {
+    p[0] = v >> 24; p[1] = (v >> 16) & 0xff; p[2] = (v >> 8) & 0xff; p[3] = v & 0xff;
+}
+
+/* Returns the number of violations (0 = the give-up holds on the SDK path). */
+static int unknown_tcp_giveup_check(void) {
+    char errbuf[1024];
+    mmt_handler_t *h = mmt_init_handler(DLT_EN10MB, 0, errbuf);
+    if (h == NULL) {
+        fprintf(stderr, "FAIL: giveup: mmt_init_handler failed: %s\n", errbuf);
+        return 1;
+    }
+    enum { LEN = 14 + 20 + 20 + GIVEUP_PAYLOAD_LEN };
+    uint8_t frame[LEN];
+    memset(frame, 0, sizeof(frame));
+    static const uint8_t dst[6] = {0x00,0x11,0x22,0x33,0x44,0x55};
+    static const uint8_t src[6] = {0x66,0x77,0x88,0x99,0xaa,0xbb};
+    memcpy(frame, dst, 6); memcpy(frame + 6, src, 6); put_be16(frame + 12, 0x0800);
+    uint8_t *ip = frame + 14, *tcp = ip + 20;
+    ip[0] = 0x45; put_be16(ip + 2, 20 + 20 + GIVEUP_PAYLOAD_LEN); ip[8] = 64; ip[9] = 6;
+    ip[12] = 10; ip[15] = 1; ip[16] = 10; ip[19] = 2;
+    put_be16(tcp, 40001); put_be16(tcp + 2, 47123);   /* unassigned ports */
+    put_be32(tcp + 8, 5000u);                          /* ack_seq */
+    tcp[12] = 0x50;                                    /* doff 5 */
+    tcp[13] = 0x10;                                    /* ACK only */
+    put_be16(tcp + 14, 0xffff);                        /* window */
+    memset(tcp + 20, 0xa5, GIVEUP_PAYLOAD_LEN);
+
+    int violations = 0;
+    uint64_t walked = 0;
+    for (int n = 1; n <= GIVEUP_PACKETS; n++) {
+        put_be32(tcp + 4, 1000u + (uint32_t) n * GIVEUP_PAYLOAD_LEN);   /* seq */
+        /* An exactly-sized heap copy lets ASan bracket the capture. */
+        uint8_t *data = (uint8_t *) malloc(LEN);
+        if (data == NULL) { perror("malloc"); exit(2); }
+        memcpy(data, frame, LEN);
+        struct pkthdr hdr;
+        memset(&hdr, 0, sizeof(hdr));
+        hdr.ts.tv_sec = 100;
+        hdr.ts.tv_usec = n;
+        hdr.caplen = LEN;
+        hdr.len = LEN;
+        uint64_t tcp0 = count_for(PROTO_TCP);
+        packet_process(h, &hdr, data);
+        uint64_t delta = count_for(PROTO_TCP) - tcp0;
+        free(data);
+        if (n <= GIVEUP_LAST_WALKED) {
+            walked += delta;
+            if (delta == 0) {
+                violations++;
+                fprintf(stderr, "FAIL giveup packet %d: unknown TCP flow walked 0 TCP "
+                        "checkers before the give-up boundary (flow classified "
+                        "early, or the walk stopped before packet %d)\n",
+                        n, GIVEUP_LAST_WALKED + 1);
+            }
+        } else if (delta != 0) {
+            violations++;
+            fprintf(stderr, "FAIL giveup packet %d: unknown TCP flow still walked %llu "
+                    "TCP checkers after packet %d (issue #99 give-up not applied)\n",
+                    n, (unsigned long long) delta, GIVEUP_LAST_WALKED);
+        }
+    }
+    mmt_close_handler(h);
+    fprintf(stdout, "unknown_tcp_giveup: packets=%d tcp_checker_calls_1_to_%d=%llu "
+            "violations=%d\n", GIVEUP_PACKETS, GIVEUP_LAST_WALKED,
+            (unsigned long long) walked, violations);
+    return violations;
 }
 
 int main(int argc, char **argv) {
@@ -256,6 +341,10 @@ int main(int argc, char **argv) {
     }
     if (skips == 0) {
         fprintf(stderr, "FAIL: classified-flow packets present but the fast path never engaged\n");
+        return 1;
+    }
+    if (unknown_tcp_giveup_check() != 0) {
+        fprintf(stderr, "FAIL: unknown TCP flow give-up (issue #99) violated on the SDK path\n");
         return 1;
     }
     fprintf(stdout, "PASS: %d packets on already-classified flows invoked 0 IP/TCP/UDP checkers\n",

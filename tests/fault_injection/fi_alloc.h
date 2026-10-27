@@ -51,6 +51,12 @@ int      fi_double_free_count(void);
 /* Allocation calls that were forced to fail while armed. */
 uint64_t fi_failed_allocs(void);
 
+/* Call `observer` with the 1-based index of every allocation counted while
+ * armed, before the fail decision (NULL removes it). Allocations made inside
+ * the observer are neither counted nor failed (issue #526: the phase0 OOM
+ * sweep records each allocation's call site this way). */
+void     fi_set_observer(void (*observer)(uint64_t index));
+
 /* Unit-mode allocator front-ends (see header comment). */
 void *fiu_malloc(size_t size);
 void *fiu_calloc(size_t nmemb, size_t size);

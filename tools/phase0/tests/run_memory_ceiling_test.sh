@@ -15,9 +15,16 @@
 # library — which is why this harness belongs to the "default" build
 # profile group under run_all_harnesses.sh.
 #
+# Every pcap listed in tools/phase0/ci/golden_pcaps.txt must be measured
+# (issue #526, F-TEST-014): a listed pcap that is missing, a driver run that
+# fails, or a library_rss_kib field that is not a plain number fails the
+# gate, naming the pcap — none of them is skipped, so the ceiling can never
+# be checked against a subset that silently shrank.
+#
 # Usage: tools/phase0/tests/run_memory_ceiling_test.sh
-# Exit:  0 when every pcap's library RSS is <= the ceiling; 1 otherwise;
-#        2 on setup failure (missing baseline, unreadable ceiling).
+# Exit:  0 when every listed pcap was measured and its library RSS is <= the
+#        ceiling; 1 otherwise (over the ceiling, or a pcap not measured);
+#        2 on setup failure (missing baseline, unreadable ceiling, empty list).
 set -euo pipefail
 
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -64,25 +71,46 @@ echo "[3/3] measuring library RSS over the CI pcap subset (ceiling: ${CEILING} K
 max_lib=-1
 worst=""
 count=0
+listed=0
+unmeasured=()
 while read -r rel; do
+    listed=$((listed + 1))
     pcap="${PCAP_DIR}/${rel}"
-    [ -f "${pcap}" ] || continue
-    # 2 passes: the second pass confirms no growth once session state exists.
-    if line="$(cd "${WORK}" && LD_LIBRARY_PATH="${PREFIX}/dpi/lib:${LD_LIBRARY_PATH:-}" \
-               "${BIN}" "${pcap}" 2 2>/dev/null)"; then
-        lib="$(printf '%s' "${line}" | cut -f6)"
-        case "${lib}" in ''|*[!0-9-]*) lib=-1 ;; esac
-        printf '    %-50s library_rss=%s KiB\n' "${rel}" "${lib}"
-        if [ "${lib}" -gt "${max_lib}" ]; then max_lib="${lib}"; worst="${rel}"; fi
-        count=$((count + 1))
-    else
-        echo "    ${rel}: skipped (driver failed / unsupported link-type)"
+    if [ ! -f "${pcap}" ]; then
+        echo "    ${rel}: FAIL — listed pcap is missing (${pcap})" >&2
+        unmeasured+=("${rel} (missing)")
+        continue
     fi
+    # 2 passes: the second pass confirms no growth once session state exists.
+    if ! line="$(cd "${WORK}" && LD_LIBRARY_PATH="${PREFIX}/dpi/lib:${LD_LIBRARY_PATH:-}" \
+               "${BIN}" "${pcap}" 2 2>"${WORK}/driver.err")"; then
+        echo "    ${rel}: FAIL — phase0_throughput exited non-zero:" >&2
+        sed 's/^/      /' "${WORK}/driver.err" | tail -5 >&2
+        unmeasured+=("${rel} (driver failed)")
+        continue
+    fi
+    lib="$(printf '%s' "${line}" | cut -f6)"
+    # Digits only: phase0_throughput prints -1 when /proc is unreadable, and
+    # an empty or garbled field is no reading either.
+    case "${lib}" in
+        ''|*[!0-9]*)
+            echo "    ${rel}: FAIL — library_rss_kib is not a number ('${lib}')" >&2
+            unmeasured+=("${rel} (library_rss_kib '${lib}')")
+            continue ;;
+    esac
+    printf '    %-50s library_rss=%s KiB\n' "${rel}" "${lib}"
+    if [ "${lib}" -gt "${max_lib}" ]; then max_lib="${lib}"; worst="${rel}"; fi
+    count=$((count + 1))
 done < <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "${GOLDEN_LIST}")
 
-if [ "${count}" -eq 0 ] || [ "${max_lib}" -lt 0 ]; then
-    echo "✗ memory ceiling: no pcap produced a library_rss_kib reading" >&2
+if [ "${listed}" -eq 0 ]; then
+    echo "✗ memory ceiling: ${GOLDEN_LIST} lists no pcap" >&2
     exit 2
+fi
+if [ "${#unmeasured[@]}" -gt 0 ]; then
+    echo "✗ memory ceiling: FAILED — ${#unmeasured[@]} of ${listed} listed pcap(s) not measured:" >&2
+    printf '    %s\n' "${unmeasured[@]}" >&2
+    exit 1
 fi
 
 echo "  worst: ${worst} library_rss=${max_lib} KiB (ceiling ${CEILING} KiB)"

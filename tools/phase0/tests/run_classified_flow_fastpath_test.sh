@@ -9,7 +9,10 @@
 # had converged, because standard checkers return 4 (bits 0-1 unset) and the
 # walk only stops on MMT_CLASSIFY_MATCHED_MASK. The harness asserts the
 # acceptance criterion directly: a packet on an already-classified session
-# invokes 0 checkers on its own chain (IP/TCP/UDP).
+# invokes 0 checkers on its own chain (IP/TCP/UDP). The same binary then
+# replays 50 crafted packets of one unknown TCP flow and asserts the issue
+# #99 give-up on the SDK path (issue #526): TCP checkers walked on packets
+# 1..40, none from packet 41.
 #
 # Steps:
 #   1. Build + install the SDK with BUILD=asan into an isolated prefix (the

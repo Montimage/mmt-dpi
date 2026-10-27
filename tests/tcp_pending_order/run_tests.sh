@@ -9,6 +9,12 @@
 #                              unmodified; it and memory.c are compiled with
 #                              -Dmalloc=tcm_malloc (etc.) so teardown can
 #                              prove every allocation is returned.
+#   test_tcp_classify_giveup.c — issue #526 (F-TEST-009): the same include
+#                              pattern, calling the shipped
+#                              tcp_pre_classification_function() and its
+#                              reassembling twin to pin the issue #99
+#                              unknown-flow give-up (CONTINUE through packet
+#                              40, SKIP on packet 41).
 #
 # Reused from tests/resource_bounds (issue #380 tcp-memory fixture): the
 # counting allocator (tcp_alloc_count.c/.h) and the mmt_core link stubs and
@@ -67,12 +73,23 @@ echo "  [1/2] compiling ..."
     -c "${SHARED}/tcp_alloc_count.c" -o "${SCRIPT_DIR}/tcp_alloc_count.o"
 "${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_tcp_pending_order" \
     "${SCRIPT_DIR}/test_tcp_pending_order.o" "${SCRIPT_DIR}/memory_counted.o" "${SCRIPT_DIR}/tcp_alloc_count.o"
+# -DNDEBUG as in the default SDK build: proto_tcp.c's per-packet debug()
+# lines would otherwise print 160 times (the test asserts with CHECK).
+"${CC}" "${extra_cflags[@]}" -Wall -Wextra -Wno-unused-parameter -std=gnu11 \
+    -DNDEBUG "${count[@]}" "${INCS[@]}" \
+    -c "${SCRIPT_DIR}/test_tcp_classify_giveup.c" -o "${SCRIPT_DIR}/test_tcp_classify_giveup.o"
+"${CC}" "${extra_cflags[@]}" -o "${SCRIPT_DIR}/test_tcp_classify_giveup" \
+    "${SCRIPT_DIR}/test_tcp_classify_giveup.o" "${SCRIPT_DIR}/memory_counted.o" "${SCRIPT_DIR}/tcp_alloc_count.o"
 
 echo "  [2/2] running ..."
-if "${SCRIPT_DIR}/test_tcp_pending_order"; then
-    echo "  ✓ test_tcp_pending_order: PASSED"
-else
-    echo "  ✗ test_tcp_pending_order: FAILED" >&2
-    exit 1
-fi
-echo "✓ tcp pending-order characterization passed (issue #381)"
+rc=0
+for t in test_tcp_pending_order test_tcp_classify_giveup; do
+    if "${SCRIPT_DIR}/${t}"; then
+        echo "  ✓ ${t}: PASSED"
+    else
+        echo "  ✗ ${t}: FAILED" >&2
+        rc=1
+    fi
+done
+[ "${rc}" -eq 0 ] || exit 1
+echo "✓ tcp pending-order characterization (issue #381) and unknown-flow give-up (issue #526) passed"

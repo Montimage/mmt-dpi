@@ -110,11 +110,22 @@ static int fi_track_free(void *p)
     return 1;
 }
 
+/* Optional per-allocation observer (fi_set_observer). Allocations made
+ * while it runs are neither counted nor failed, so observing a window does
+ * not shift the allocation indices a later fi_begin(n) targets. */
+static void (*fi_observer)(uint64_t index);
+static int fi_observing;
+
 static int fi_try_fail(void)
 {
-    if (!fi_armed)
+    if (!fi_armed || fi_observing)
         return 0;
     fi_count++;
+    if (fi_observer) {
+        fi_observing = 1;
+        fi_observer(fi_count);
+        fi_observing = 0;
+    }
     if (fi_fail_at != 0 && fi_count == fi_fail_at) {
         fi_failed++;
         return 1;
@@ -152,6 +163,11 @@ int fi_double_free_count(void)
 uint64_t fi_failed_allocs(void)
 {
     return fi_failed;
+}
+
+void fi_set_observer(void (*observer)(uint64_t index))
+{
+    fi_observer = observer;
 }
 
 /* ------------------------------------------------------------------ *

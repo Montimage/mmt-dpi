@@ -21,10 +21,15 @@
  *             two-call fallback table — the A/B reports ns/lookup on the
  *             same machine in the same run (no absolute bound: the
  *             assertion is on the counters, not the clock).
- *   MULS      the dependent-multiply count inside ipv4_session_hash /
- *             ipv6_session_hash is asserted source-side by
- *             run_session_lookup_perf_test.sh (count of multiply ops in
- *             the function body vs the documented budget).
+ *   GOLDEN    the shipped ipv4_session_hash / ipv6_session_hash return
+ *             pinned values for fixed keys — the word-parallel hash the
+ *             #253 fix introduced (3 / 5 independent multiplies plus one
+ *             finalizer step) — and differ from the FNV-1a byte loop it
+ *             replaced (13 / 37 dependent multiplies) on the same keys.
+ *             Issue #526 (F-TEST-016) replaced the source-side
+ *             multiply-count grep with this executed check: a revert to
+ *             FNV-1a or any change to the mixing fails here, and a renamed
+ *             function fails to link instead of passing vacuously.
  *
  * Keys point at caller-owned uint32_t storage — the key functions read the
  * 4 address bytes at offset 0, exactly as they do for a real interned
@@ -107,9 +112,79 @@ static double bench_find(void *sessions_map, mmt_session_key_t *keys,
     return dt;
 }
 
+/* ---- GOLDEN: pinned outputs of the shipped session-key hashes ---------- */
+
+/* The FNV-1a byte loop the #253 fix replaced (proto_ip.c / proto_ipv6.c
+ * before 1e6d3708): next_proto, both ports low byte first, then the
+ * address bytes. */
+static uint64_t fnv1a_session_hash(const mmt_session_key_t *s, int alen) {
+    const unsigned char *lip = (const unsigned char *) s->lower_ip;
+    const unsigned char *hip = (const unsigned char *) s->higher_ip;
+    uint64_t h = 1469598103934665603ULL;
+#define FNV(b) do { h ^= (uint8_t)(b); h *= 1099511628211ULL; } while (0)
+    FNV(s->next_proto);
+    FNV(s->lower_ip_port & 0xFF);
+    FNV((s->lower_ip_port >> 8) & 0xFF);
+    FNV(s->higher_ip_port & 0xFF);
+    FNV((s->higher_ip_port >> 8) & 0xFF);
+    for (int i = 0; i < alen; i++) FNV(lip[i]);
+    for (int i = 0; i < alen; i++) FNV(hip[i]);
+#undef FNV
+    return h;
+}
+
+static void check_hash(const char *name, uint64_t (*fn)(void *), int alen,
+                       uint8_t next_proto, uint16_t lport, uint16_t hport,
+                       const uint8_t *lip, const uint8_t *hip, uint64_t want) {
+    mmt_session_key_t k;
+    memset(&k, 0, sizeof(k));
+    k.ip_type = alen == 4 ? 4 : 6;
+    k.next_proto = next_proto;
+    k.lower_ip_port = lport;
+    k.higher_ip_port = hport;
+    k.lower_ip = (void *) lip;
+    k.higher_ip = (void *) hip;
+    uint64_t got = fn(&k);
+    char msg[160];
+    snprintf(msg, sizeof(msg), "%s(proto %u, %u/%u) = 0x%016llx (pinned 0x%016llx)",
+             name, next_proto, lport, hport,
+             (unsigned long long) got, (unsigned long long) want);
+    CHECK(got == want, msg);
+    snprintf(msg, sizeof(msg), "%s(proto %u, %u/%u) is not the replaced FNV-1a hash",
+             name, next_proto, lport, hport);
+    CHECK(got != fnv1a_session_hash(&k, alen), msg);
+}
+
+static void check_golden_hashes(void) {
+    /* The hashes memcpy the addresses into native words, so these values are
+     * little-endian results (x86-64, aarch64 — every CI target). */
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    static const uint8_t a4[4] = {10, 0, 0, 1}, b4[4] = {192, 168, 0, 1};
+    static const uint8_t c4[4] = {172, 16, 0, 9}, d4[4] = {8, 8, 8, 8};
+    static const uint8_t a6[16] = {0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,1};
+    static const uint8_t b6[16] = {0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,2};
+    static const uint8_t c6[16] = {0xfe,0x80,0,0,0,0,0,0,0x02,0x11,0x22,0xff,0xfe,0x33,0x44,0x55};
+    static const uint8_t d6[16] = {0xff,0x02,0,0,0,0,0,0,0,0,0,0,0,0,0,0xfb};
+    check_hash("ipv4_session_hash", ipv4_session_hash, 4, 6, 1024, 80, a4, b4,
+               0x09093b20a5b7907fULL);
+    check_hash("ipv4_session_hash", ipv4_session_hash, 4, 17, 53, 40000, c4, d4,
+               0xfc5c2db1114bba8cULL);
+    check_hash("ipv6_session_hash", ipv6_session_hash, 16, 6, 443, 50000, a6, b6,
+               0x85522b09eb0776f4ULL);
+    check_hash("ipv6_session_hash", ipv6_session_hash, 16, 17, 5353, 5353, c6, d6,
+               0x9038263526cc9e2fULL);
+#else
+    CHECK(0, "pinned session-hash values are little-endian results; "
+             "regenerate them for this host before trusting this gate");
+#endif
+}
+
 int main(void)
 {
     printf("== session_lookup_perf_test (issue #253, F-PERF-008) ==\n");
+
+    /* ---- GOLDEN: shipped hash outputs pinned (issue #526) --------------- */
+    check_golden_hashes();
 
     static mmt_session_key_t keys[NKEYS];
     static uint32_t ips[NKEYS], hps[NKEYS];
