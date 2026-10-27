@@ -49,9 +49,12 @@
 # Missing assessment is never reported as zero vulnerabilities: a required
 # scanner that did not run, an unreadable pin, or an affected advisory whose
 # severity cannot be established makes the verdict NOT ASSESSED / INCOMPLETE.
-# CentOS Stream 9 has no advisory feed (no OSV ecosystem, no errata), so it is
-# always listed as Not Assessed — its revisions are still recorded when the
-# pinned image can be pulled.
+# CentOS Stream 9 and 10 have no advisory feed (no OSV ecosystem, no errata),
+# so they are always listed as Not Assessed — their revisions are still
+# recorded when the pinned image can be pulled. A no-feed target never sets
+# the exit code: a PASS carries a "(N target(s) Not Assessed)" suffix, and
+# only blocking/expired (1) or failures/unrated advisories (2) change it
+# (issue #644; the Stream 9 leg retires by 2027-04-30, issue #516).
 #
 # Exit codes:
 #   0 = every required scanner ran; no affected High/Critical advisory

@@ -65,3 +65,9 @@ CVE-2026-86140 | debian:13 | 2026-12-31 | #515 | HIGH libxml2 @ 2.12.7+dfsg+real
 CVE-2026-86142 | debian:13 | 2026-12-31 | #515 | HIGH libxml2 @ 2.12.7+dfsg+really2.9.14-2.1+deb13u3: unfixed in the distro, no fixed revision published
 CVE-2026-86143 | debian:13 | 2026-12-31 | #515 | HIGH libxml2 @ 2.12.7+dfsg+really2.9.14-2.1+deb13u3: unfixed in the distro, no fixed revision published
 CVE-2026-86144 | debian:13 | 2026-12-31 | #515 | HIGH libxml2 @ 2.12.7+dfsg+really2.9.14-2.1+deb13u3: unfixed in the distro, no fixed revision published
+# Missed by the 2026-10-22 #515 measurement and added for #644: the same
+# upstream glibc CVEs as the unrated debian:12 pair above, with the same
+# evidence (no rating in any source, unfixed in trixie), so they share that
+# pair's expiry and #492 tracking.
+CVE-2026-6368 | debian:13 | 2026-12-31 | #492 | glibc @ 2.41-12+deb13u4: no rating in any source and unfixed in the distro
+CVE-2026-6791 | debian:13 | 2026-12-31 | #492 | glibc @ 2.41-12+deb13u4: no rating in any source and unfixed in the distro

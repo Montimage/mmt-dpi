@@ -16,6 +16,11 @@ No docker, no network.
   - that disposition past its expiry date -> exit 1
   - an expired disposition matching no advisory -> still exit 1
   - a malformed disposition file -> exit 2
+  - an affected record with no rating in any source and no disposition ->
+    NOT ASSESSED (no rating), exit 2; under a debian:13 disposition -> exit 0
+    (issue #644)
+  - CentOS Stream 9 and 10 have no advisory feed: listed as Not Assessed,
+    never a failure, and they leave the exit code at 0 (issue #644)
   - repository advisories of the direct gems: GHSA-572m-7cg5-6j5r and
     GHSA-3343-386p-v26g are reported against docs/Gemfile.lock at the
     pre-#494 pins and not at the patched ones; a direct gem without a GitHub
@@ -53,6 +58,9 @@ D12 = "debian:12@sha256:" + "1" * 64
 U22 = "ubuntu:22.04@sha256:" + "2" * 64
 D13 = "debian:trixie@sha256:" + "3" * 64
 TOOLING = "buildpack-deps:bookworm@sha256:" + "4" * 64
+D13U4 = "debian:13@sha256:" + "5" * 64
+CS9 = "quay.io/centos/centos:stream9@sha256:" + "6" * 64
+CS10 = "quay.io/centos/centos:stream10@sha256:" + "7" * 64
 TODAY = "2026-10-21"
 
 
@@ -221,6 +229,33 @@ try:
     check("malformed disposition file -> exit 2 (assessment incomplete)",
           res.returncode == 2 and rep is not None
           and any(f.startswith("dispositions:") for f in rep["failures"]), res)
+
+    # An affected record no source rates (the debian:13 glibc pair of #644).
+    res, rep = scan(tree("trixie-unrated", [D13U4]), ["native"])
+    a = adv(rep, "DEBIAN-CVE-2099-0004")
+    check("unrated affected record without a disposition -> NOT ASSESSED (no rating), exit 2",
+          res.returncode == 2 and a is not None and a["severity"] is None and not a["blocking"]
+          and a["status"] == "NOT ASSESSED (no rating)" and not rep["failures"]
+          and rep["verdict"].startswith("NOT ASSESSED"), res)
+
+    unrated = ("CVE-2099-0004 | debian:13 | 2026-12-31 | #492 | glibc @ 2.41-12+deb13u4: "
+               "no rating in any source and unfixed in the distro\n")
+    res, rep = scan(tree("trixie-unrated-dispositioned", [D13U4], unrated), ["native"])
+    a = adv(rep, "DEBIAN-CVE-2099-0004")
+    check("the same record under a debian:13 disposition -> exit 0",
+          res.returncode == 0 and a is not None and not a["blocking"]
+          and a["status"].startswith("dispositioned until 2026-12-31 (#492)")
+          and rep["verdict"].startswith("PASS"), res)
+
+    # CentOS Stream: no advisory feed, so Not Assessed but never the exit code.
+    res, rep = scan(tree("centos-stream", [CS9, CS10]), ["native"])
+    na = (rep or {}).get("not_assessed", [])
+    check("CentOS Stream 9 and 10 are listed as Not Assessed (no feed), not failures -> exit 0",
+          res.returncode == 0 and rep is not None and not rep["failures"]
+          and all(any(n.startswith(img + ": CentOS Stream publishes no security advisories")
+                      for n in na) for img in (CS9, CS10))
+          and "(2 target(s) Not Assessed" in rep["verdict"]
+          and sum(1 for r in rep["native"] if not r["assessed"]) == 8, res)
 
     # Repository advisories of the direct gems (the pre-#494 pins).
     old = {"jekyll-seo-tag": "2.9.0", "jekyll-remote-theme": "0.5.2",

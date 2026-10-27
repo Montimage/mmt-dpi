@@ -3,8 +3,9 @@
   "osv_query": {
     "Debian:12|glibc": ["DEBIAN-CVE-2019-1010022"],
     "Debian:12|glibc|2.36-9+deb12u14": ["DEBIAN-CVE-2019-1010022"],
-    "Debian:13|glibc": ["DEBIAN-CVE-2019-1010022", "DEBIAN-CVE-2099-0001"],
+    "Debian:13|glibc": ["DEBIAN-CVE-2019-1010022", "DEBIAN-CVE-2099-0001", "DEBIAN-CVE-2099-0004"],
     "Debian:13|glibc|2.41-12": ["DEBIAN-CVE-2019-1010022", "DEBIAN-CVE-2099-0001"],
+    "Debian:13|glibc|2.41-12+deb13u4": ["DEBIAN-CVE-2099-0004"],
     "Ubuntu:22.04:LTS|glibc": ["UBUNTU-CVE-2099-0002"],
     "Ubuntu:22.04:LTS|glibc|2.35-0ubuntu3.11": ["UBUNTU-CVE-2099-0002"]
   },
@@ -31,6 +32,15 @@
       "id": "DEBIAN-CVE-2099-0001",
       "upstream": ["CVE-2099-0001"],
       "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}],
+      "affected": [
+        {"package": {"name": "glibc", "ecosystem": "Debian:13"},
+         "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "0"}]}],
+         "ecosystem_specific": {"urgency": "not yet assigned"}}
+      ]
+    },
+    "DEBIAN-CVE-2099-0004": {
+      "id": "DEBIAN-CVE-2099-0004",
+      "upstream": ["CVE-2099-0004"],
       "affected": [
         {"package": {"name": "glibc", "ecosystem": "Debian:13"},
          "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "0"}]}],
@@ -85,6 +95,9 @@
   "probe": {
     "debian:12@sha256:1111111111111111111111111111111111111111111111111111111111111111": "libc6|2.36-9+deb12u14|glibc\nlibstdc++6|12.2.0-14+deb12u1|gcc-12 (12.2.0-14+deb12u1)\nlibgcc-s1|12.2.0-14+deb12u1|gcc-12 (12.2.0-14+deb12u1)\nlibxml2|2.9.14+dfsg-1.3~deb12u6|libxml2 (2.9.14+dfsg-1.3~deb12u6)\n",
     "debian:trixie@sha256:3333333333333333333333333333333333333333333333333333333333333333": "libc6|2.41-12|glibc\nlibstdc++6|14.2.0-19|gcc-14 (14.2.0-19)\nlibgcc-s1|14.2.0-19|gcc-14 (14.2.0-19)\nlibxml2|2.12.7+dfsg+really2.9.14-2.1|libxml2 (2.12.7+dfsg+really2.9.14-2.1)\n",
+    "debian:13@sha256:5555555555555555555555555555555555555555555555555555555555555555": "libc6|2.41-12+deb13u4|glibc\nlibstdc++6|14.2.0-19|gcc-14 (14.2.0-19)\nlibgcc-s1|14.2.0-19|gcc-14 (14.2.0-19)\nlibxml2|2.12.7+dfsg+really2.9.14-2.1+deb13u3|libxml2 (2.12.7+dfsg+really2.9.14-2.1+deb13u3)\n",
+    "quay.io/centos/centos:stream9@sha256:6666666666666666666666666666666666666666666666666666666666666666": "glibc|0:2.34-245.el9|glibc-2.34-245.el9.src.rpm\nlibstdc++|0:11.5.0-11.el9|gcc-11.5.0-11.el9.src.rpm\nlibgcc|0:11.5.0-11.el9|gcc-11.5.0-11.el9.src.rpm\nlibxml2|0:2.9.13-14.el9|libxml2-2.9.13-14.el9.src.rpm\n",
+    "quay.io/centos/centos:stream10@sha256:7777777777777777777777777777777777777777777777777777777777777777": "glibc|0:2.39-114.el10|glibc-2.39-114.el10.src.rpm\nlibstdc++|0:14.3.1-2.el10|gcc-14.3.1-2.el10.src.rpm\nlibgcc|0:14.3.1-2.el10|gcc-14.3.1-2.el10.src.rpm\nlibxml2|0:2.12.5-9.el10|libxml2-2.12.5-9.el10.src.rpm\n",
     "ubuntu:22.04@sha256:2222222222222222222222222222222222222222222222222222222222222222": "libc6|2.35-0ubuntu3.11|glibc\nlibstdc++6|12.3.0-1ubuntu1~22.04.3|gcc-12 (12.3.0-1ubuntu1~22.04.3)\nlibgcc-s1|12.3.0-1ubuntu1~22.04.3|gcc-12 (12.3.0-1ubuntu1~22.04.3)\nlibxml2|2.9.13+dfsg-1ubuntu0.11|libxml2 (2.9.13+dfsg-1ubuntu0.11)\n"
   }
 }
