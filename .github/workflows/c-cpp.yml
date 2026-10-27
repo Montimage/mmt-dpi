@@ -24,12 +24,55 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    # Docs-only filter (issue #552, F-CI-009): on a pull request, does the
+    # change touch anything but docs/ and root-level Markdown? The checkout
+    # is the PR merge commit, so HEAD^1..HEAD is exactly the PR's change;
+    # tools/ci/classify-changes.sh holds the path allowlist. Pushes, tags and
+    # the schedule always run everything.
+    #
+    # A docs-only change skips the C jobs, and every required context still
+    # reports. A job skipped by its `if:` reports success, so the
+    # single-context jobs gate at job level — with !cancelled(), so a failed
+    # `changes` runs them instead of skipping them (fail-closed). A skipped
+    # matrix job would report one check run under its bare job name and
+    # leave each leg's context pending, so the matrix jobs (unit-tests,
+    # sanitizer-tests, resource-budgets) always start and skip their steps.
+    # tools/ci/check-required-checks.sh rejects a skippable `if:` on a matrix
+    # job a required context names, and tools/ci/tests/
+    # test-classify-changes.sh pins this wiring.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 2
+        persist-credentials: false
+    - name: Classify the changed files
+      id: filter
+      env:
+        EVENT: ${{ github.event_name }}
+      run: |
+        set -euo pipefail
+        if [ "$EVENT" != pull_request ]; then
+          echo "code=true" | tee -a "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        # A diff that cannot run fails the job, and the gated jobs then run.
+        git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
+        bash tools/ci/classify-changes.sh < "$RUNNER_TEMP/changed.txt" | tee -a "$GITHUB_OUTPUT"
+
   unit-tests:
     # Compile-and-run the standalone unit suites (tests/run_all_tests.sh).
     # The full set runs with the default toolchain; the core suites are also
-    # built with -fsigned-char so signed/unsigned-char portability bugs (plain
-    # `char` is signed on x86, unsigned on ARM) are caught in CI rather than
-    # only on the developer's machine.
+    # built with -fsigned-char (signed is already x86's default, so the
+    # unsigned-char side is covered by unit-tests-arm and
+    # unit-tests-unsigned-char below, issue #528).
+    # A matrix job: on a docs-only change its steps skip (see `changes`).
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -42,11 +85,57 @@ jobs:
             suites: "hashmap memory hexdump mmt_utils mmt_inet_ntop"
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      if: needs.changes.outputs.code != 'false'
     - uses: ./.github/actions/bootstrap-deps
+      if: needs.changes.outputs.code != 'false'
     - name: Run unit test suites
+      if: needs.changes.outputs.code != 'false'
       env:
         EXTRA_CFLAGS: ${{ matrix.extra_cflags }}
       run: bash tests/run_all_tests.sh ${{ matrix.suites }}
+
+  unit-tests-arm:
+    # Native ARM run of the full suite set (issue #528, F-TEST-010). Plain
+    # `char` is unsigned on AArch64, so every suite — and every SDK the
+    # suites build — runs with ARM's char signedness, which the x86 legs
+    # never see. The native ubuntu-24.04-arm runner is the one
+    # resource-budgets and the arm64 release packages already use.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+      with:
+        extra-packages: jq
+    - name: Assert plain char is unsigned on this runner
+      run: |
+        uname -m
+        echo | gcc -dM -E - | grep -q '__CHAR_UNSIGNED__'
+    - name: Run unit test suites
+      run: bash tests/run_all_tests.sh
+
+  unit-tests-unsigned-char:
+    # x86 mirror of unit-tests-arm (issue #528): the full suite set with
+    # -funsigned-char on every suite compile (EXTRA_CFLAGS) and on every SDK
+    # the suites build (MMT_EXTRA_CFLAGS, appended after the dialect pin in
+    # rules/arch-linux.mk), so an unsigned-char bug fails on both
+    # architectures and an ARM-only failure points at something else.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      EXTRA_CFLAGS: -funsigned-char
+      MMT_EXTRA_CFLAGS: -funsigned-char
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/bootstrap-deps
+    - name: Assert -funsigned-char makes plain char unsigned
+      run: echo | gcc $EXTRA_CFLAGS -dM -E - | grep -q '__CHAR_UNSIGNED__'
+    - name: Run unit test suites
+      run: bash tests/run_all_tests.sh
 
   toolchain-floor:
     # Toolchain-floor gate (issue #218, F-DEP-207): the declared floor is
@@ -59,6 +148,8 @@ jobs:
     # deprecated on 2026-09-17 and removes on 2027-04-17 (issue #516); the
     # job keeps its name, so the required context is unchanged. The image
     # retires on the date tools/ci/base-images.txt records (docs/DECISIONS.md).
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
@@ -100,6 +191,9 @@ jobs:
     # (BUILD=asan / BUILD=tsan in rules/common.mk); the runner translates
     # them into per-suite instrumentation via SANITIZE=asan|tsan, and suites
     # that build the SDK internally inherit the matching BUILD= profile.
+    # A matrix job: on a docs-only change its steps skip (see `changes`).
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
@@ -112,8 +206,11 @@ jobs:
             sanitize: tsan
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      if: needs.changes.outputs.code != 'false'
     - uses: ./.github/actions/bootstrap-deps
+      if: needs.changes.outputs.code != 'false'
     - name: Run unit test suites under sanitizers (${{ matrix.profile }})
+      if: needs.changes.outputs.code != 'false'
       env:
         SANITIZE: ${{ matrix.sanitize }}
       run: bash tests/run_all_tests.sh
@@ -126,6 +223,8 @@ jobs:
     # library line percentage and instrumented-file count, enforce the
     # committed floor (tests/coverage/floor.json), and publish the report as
     # a CI artifact.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -178,9 +277,12 @@ jobs:
     # (issue #518): neither a runner-image refresh nor an apt archive update
     # can move the analyser under the baseline. shellcheck comes from the
     # container's apt, the same 0.9 release the ubuntu-24.04 runner ships.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
-    # cppcheck scans the whole tree; measured at ~65-90 min on a hosted runner.
-    timeout-minutes: 120
+    # One cppcheck scan of the whole tree took ~16 min on a hosted runner
+    # (issue #552); a cold cache or a widely included header rescans it all.
+    timeout-minutes: 60
     container:
       image: "ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c"
     steps:
@@ -202,11 +304,25 @@ jobs:
       run: bash tools/ci/install-cppcheck.sh
     - name: shellcheck (all tracked shell scripts, blocking)
       run: shellcheck $(git ls-files '*.sh')
+    - name: Restore the cppcheck per-file results
+      # Issue #552 (F-CI-007): --cppcheck-build-dir keeps each file's results,
+      # so a scan reanalyses only what changed. The key names the pinned
+      # release and the gate script (their change starts cold); restore-keys
+      # take the newest earlier save, and every run saves under its own SHA.
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .cppcheck-build
+        key: cppcheck-${{ hashFiles('tools/ci/install-cppcheck.sh', 'tools/ci/run-cppcheck.sh') }}-${{ github.sha }}
+        restore-keys: |
+          cppcheck-${{ hashFiles('tools/ci/install-cppcheck.sh', 'tools/ci/run-cppcheck.sh') }}-
     - name: cppcheck (error-severity gate + findings ratchet)
-      # Issue #189 (F-CI-004): two gates, both enforced. Pass 1 in the script
-      # writes cppcheck-report.xml (the artifact uploaded below) and fails when
-      # the total finding count rises above tools/ci/cppcheck-ratchet.txt;
-      # pass 2 fails on any error-severity finding.
+      # Issue #189 (F-CI-004): two gates, both enforced, both read from one
+      # scan (issue #552 dropped the second, error-only rescan). The script
+      # writes cppcheck-report.xml (the artifact uploaded below) and fails
+      # when the total finding count rises above tools/ci/cppcheck-ratchet.txt
+      # or any finding has error severity.
+      env:
+        CPPCHECK_BUILD_DIR: .cppcheck-build
       run: bash tools/ci/run-cppcheck.sh
     - name: Upload cppcheck findings report
       if: always()
@@ -224,6 +340,8 @@ jobs:
     # Security tab. The ENABLESEC=1 build is traced so the optional
     # security/fuzz engines — code that only exists to parse hostile input —
     # are inside the analysis surface too.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -325,6 +443,7 @@ jobs:
         }
         bash tools/ci/check-required-checks.sh
         REQUIRE_PYYAML=1 bash tools/ci/tests/test-required-checks.sh
+        REQUIRE_PYYAML=1 bash tools/ci/tests/test-classify-changes.sh
     - name: Package-declaration consistency (blocking — issue #219)
       # Was advisory until the .deb/.rpm declarations were reconciled with
       # the build; the contradictions it tracked are closed, so a regression
@@ -415,6 +534,13 @@ jobs:
     # built to stop documentation drift is exercised so a stale doc citation
     # fails CI instead of accumulating silently. The glob picks up newly
     # added validators with no workflow edit.
+    #
+    # A docs job (issue #552): it never skips. On a docs-only change, when
+    # unit-tests skips its steps, it also runs the docs_lifecycle suite,
+    # which checks docs/USER_GUIDE.md's and docs/MMT-Handler.md's path:line
+    # citations; on any other change unit-tests runs that suite.
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -427,6 +553,9 @@ jobs:
           echo "=== $s"
           bash "$s"
         done
+    - name: Check the documented lifecycle citations (docs-only change)
+      if: needs.changes.outputs.code == 'false'
+      run: bash tests/run_all_tests.sh docs_lifecycle
 
   version-agreement:
     # Single version source (issue #483): every version site must agree with
@@ -460,7 +589,9 @@ jobs:
       run: bash tools/ci/tests/test-release-tag-pin.sh
 
   build:
-
+    # Never skips on a docs-only change (issue #552): its runtime
+    # protocol-count check compares README.md, docs/index.html and
+    # docs/_config.yml with the built SDK, so it is a docs job too.
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
@@ -499,6 +630,8 @@ jobs:
     # must leave neither the prefix nor the drop-in, and `make -n install`
     # must not compile. It writes /etc, so it runs in a throwaway container
     # (the ubuntu:24.04 pin recorded in tools/ci/base-images.txt).
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
@@ -519,6 +652,8 @@ jobs:
     # compile line, then runs the full unit-suite set with the variable in
     # the environment so the SDK the suites build internally is the
     # assertions-live one too.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -540,18 +675,21 @@ jobs:
       run: bash tests/run_all_tests.sh
 
   enablesec:
-    # Compile-and-test the optional security/fuzz engines, which are only
-    # built when the SDK is built with ENABLESEC=1 (issue #126 / F-TEST-003).
-    # The rule-engine suite (tests/rule_engine) builds the SDK with
-    # ENABLESEC=1 internally, but this job is the CI gate that proves the
-    # engines compile in the shipped configuration and that the suite runs.
+    # Compile the optional security/fuzz engines, which are only built when
+    # the SDK is built with ENABLESEC=1 (issue #126 / F-TEST-003): the CI gate
+    # that proves the engines compile in the shipped configuration. The
+    # rule_engine suite that exercises them is in DEFAULT_SUITES, so the
+    # unit-tests job runs it; this job no longer re-runs it (issue #552,
+    # F-CI-015).
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - uses: ./.github/actions/bootstrap-deps
-    - name: Build & test the security rule engine (ENABLESEC=1)
-      run: bash tests/run_all_tests.sh rule_engine
+    - name: Build the SDK with the security engines (ENABLESEC=1)
+      run: make -C sdk ENABLESEC=1 -j"$(nproc)"
 
   secret-scan:
     # Secret scanning gate (issue #160 / F-SEC-006): fail the workflow if
@@ -617,6 +755,8 @@ jobs:
     # fuzz-artifacts/ and the job fails. Every run first replays the
     # committed reproducers in tools/ci/fuzz/regressions (issue #486), so a
     # crash once found stays gated on every pull request whatever the seed.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -681,6 +821,9 @@ jobs:
     # workload record or metric. The checker's --self-test proves each of
     # those failures is detected. Wall-clock is recorded as a labelled
     # observation only; no budget reads it.
+    # A matrix job: on a docs-only change its steps skip (see `changes`).
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     strategy:
@@ -689,20 +832,25 @@ jobs:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      if: needs.changes.outputs.code != 'false'
     - name: Ensure jq and python3
+      if: needs.changes.outputs.code != 'false'
       run: command -v jq >/dev/null && command -v python3 >/dev/null || { sudo apt-get update -y && sudo apt-get install -y jq python3; }
     - name: Self-test the budget checker (breach and missing-record fixtures)
+      if: needs.changes.outputs.code != 'false'
       run: python3 tools/ci/check-resource-budgets.py --self-test
     - name: Run the resource_bounds fixtures and check every budget
+      if: needs.changes.outputs.code != 'false'
       env:
         RESOURCE_BOUNDS_RESULTS: ${{ runner.temp }}/resource-bounds/results.json
       run: bash tests/resource_bounds/run_tests.sh all
     - name: Re-check the published results (all dimensions required)
       # Explicit full-mode re-check of the uploaded file, independent of the
       # runner's own invocation.
+      if: needs.changes.outputs.code != 'false'
       run: python3 tools/ci/check-resource-budgets.py "${{ runner.temp }}/resource-bounds/results.json"
     - name: Upload resource-bound results
-      if: success() || failure()
+      if: (success() || failure()) && needs.changes.outputs.code != 'false'
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: resource-bounds-results-${{ runner.arch }}
@@ -749,6 +897,8 @@ jobs:
     # 15's C23 default where none is pinned) and get the GCC >= 15
     # diagnostics. The floor job above is unchanged. ubuntu-26.04 is a
     # GitHub preview runner label.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     env:

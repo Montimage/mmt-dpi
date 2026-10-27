@@ -9,7 +9,9 @@
 # job, a context only a path-filtered / schedule-only / tag-gated job
 # reports, and a duplicate context must each fail, while matrix-name
 # expansion (include legs, empty values, axis products, `${{ matrix.* }}`
-# names, run-time fromJSON matrices) must resolve. `--live` runs against a
+# names, run-time fromJSON matrices) must resolve, and a matrix leg whose job
+# has a skippable job-level `if:` must fail while `!cancelled()` resolves
+# (issue #552). `--live` runs against a
 # stub `gh` on PATH, so the suite needs no network and no token.
 #
 # Needs python3 with PyYAML. Without PyYAML the test reports SKIP and exits 0,
@@ -131,6 +133,29 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     steps: [ { run: "true" } ]
+  skippable-matrix:
+    needs: build
+    if: ${{ !cancelled() && needs.build.outputs.code != 'false' }}
+    strategy:
+      matrix:
+        profile: [ asan ]
+    runs-on: ubuntu-24.04
+    steps: [ { run: "true" } ]
+  live-matrix:
+    needs: build
+    if: ${{ !cancelled() }}
+    strategy:
+      matrix:
+        profile: [ asan ]
+    runs-on: ubuntu-24.04
+    steps:
+      - if: needs.build.outputs.code != 'false'
+        run: "true"
+  gated-single:
+    needs: build
+    if: ${{ !cancelled() && needs.build.outputs.code != 'false' }}
+    runs-on: ubuntu-24.04
+    steps: [ { run: "true" } ]
 EOF
 cat > "${FX}/filtered.yml" <<'EOF'
 on:
@@ -182,6 +207,15 @@ expect 0 "fixture: a name shared with a non-PR job resolves to the PR job" \
     --workflows "$FX" --contexts "$(ctx build)"
 expect 1 "fixture: a tag-gated job fails" "keeps it off pull requests" -- \
     --workflows "$FX" --contexts "$(ctx tag-only)"
+expect 1 "fixture: a matrix leg behind a skippable job-level if: fails" \
+    "matrix job has a job-level \`if:\` that can skip it" -- \
+    --workflows "$FX" --contexts "$(ctx 'skippable-matrix (asan)')"
+expect 0 "fixture: a matrix job gated by !cancelled() and step if: resolves" \
+    "ok   live-matrix (asan)" -- \
+    --workflows "$FX" --contexts "$(ctx 'live-matrix (asan)')"
+expect 0 "fixture: a single-context job may skip at job level" \
+    "ok   gated-single" -- \
+    --workflows "$FX" --contexts "$(ctx gated-single)"
 expect 1 "fixture: a duplicate context fails" "duplicate context" -- \
     --workflows "$FX" --contexts "$(ctx build build)"
 expect 1 "fixture: an empty list fails" "list is empty" -- \

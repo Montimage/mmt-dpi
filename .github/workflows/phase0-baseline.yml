@@ -31,8 +31,39 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    # Docs-only filter (issue #552, F-CI-009) — the same classifier as the
+    # `changes` job of c-cpp.yml (see there): on a pull request that changes
+    # only docs/ and root-level Markdown, the phase0 gates skip, and each
+    # still reports its required context (a skipped job reports success;
+    # harness-gate accepts a skipped matrix only then). !cancelled() runs
+    # the gates when this job fails (fail-closed).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Classify the changed files
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != pull_request ]; then
+            echo "code=true" | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
+          bash tools/ci/classify-changes.sh < "$RUNNER_TEMP/changed.txt" | tee -a "$GITHUB_OUTPUT"
+
   asan-build:
     name: ASan/UBSan profile compiles
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -57,6 +88,8 @@ jobs:
     # enumerating tools/phase0/tests/run_*.sh, so a newly added harness is
     # gated automatically with no workflow edit.
     name: Enumerate phase0 harnesses
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
@@ -104,21 +137,33 @@ jobs:
     # them in branch protection would soft-lock merges on the first change.
     # This aggregate fails whenever the matrix fails, is cancelled, or is
     # skipped (e.g. a broken list-harnesses), giving branch protection one
-    # stable context to require: `harness-gate`.
+    # stable context to require: `harness-gate`. The one accepted skip is a
+    # docs-only pull request (`changes` succeeded with code=false, #552).
     name: harness-gate
-    needs: harness
+    needs: [changes, harness]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Harness matrix must succeed
+        env:
+          RESULT: ${{ needs.harness.result }}
+          CHANGES: ${{ needs.changes.result }}
+          CODE: ${{ needs.changes.outputs.code }}
         run: |
-          result="${{ needs.harness.result }}"
-          echo "harness matrix result: ${result}"
-          [ "${result}" = "success" ]
+          echo "harness matrix result: ${RESULT} (changes: ${CHANGES}, code=${CODE})"
+          [ "${RESULT}" = "success" ] && exit 0
+          if [ "${RESULT}" = "skipped" ] && [ "${CHANGES}" = "success" ] \
+             && [ "${CODE}" = "false" ]; then
+            echo "docs-only change: the harness matrix is skipped by design"
+            exit 0
+          fi
+          exit 1
 
   classification-gate:
     name: Golden classification fingerprint unchanged
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -142,6 +187,8 @@ jobs:
     # harness matrix above — on hosts without valgrind it falls back to an
     # ASan detect_leaks=1 build — but this job pins the Valgrind oracle.
     # It reports under its job id, a short stable required context (#490).
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -154,6 +201,8 @@ jobs:
 
   precision-gate:
     name: Labelled-pcap precision/recall holds or improves (M9, issue #74)
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:

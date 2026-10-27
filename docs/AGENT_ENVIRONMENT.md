@@ -51,7 +51,11 @@ must hold, by `tools/ci/check-dependency-lists.sh`: change a package there
 first.
 
 CI builds and tests on `ubuntu-24.04` (GCC 13) — see
-`.github/workflows/c-cpp.yml`. That is the reference toolchain.
+`.github/workflows/c-cpp.yml`. That is the reference toolchain. The full
+suite also runs on the native `ubuntu-24.04-arm` runner (`unit-tests-arm`)
+and with `-funsigned-char` on x86 (`unit-tests-unsigned-char`, through
+`EXTRA_CFLAGS` and `MMT_EXTRA_CFLAGS`), so ARM's unsigned plain `char` is
+exercised (issue #528).
 
 **Supported floor (issue #218, F-DEP-207):** GCC ≥ 11 with glibc ≥ 2.34 and
 libstdc++6 ≥ 11 — the oldest toolchain the release matrix
@@ -147,7 +151,7 @@ Notes:
 ### Documentation-site toolchain
 
 The C SDK does not require Ruby. For the documentation site, use Ruby **3.4**
-as in CI (`.github/workflows/c-cpp.yml:271-276`), with Bundler to install
+as in CI (`.github/workflows/c-cpp.yml:389-394`), with Bundler to install
 the gems and run Jekyll; every workflow's `ruby-version:` is that same
 release (issue #517). CI enables `bundler-cache` through `ruby/setup-ruby`
 and verifies the committed `docs/Gemfile.lock` under `BUNDLE_FROZEN=true`
@@ -163,7 +167,7 @@ gem install bundler
 ```
 
 `docs/Gemfile:12-17` defines Jekyll and its plugins. CI builds the site with
-`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:289`): source and
+`tools/ci/build-docs-site.sh` (`.github/workflows/c-cpp.yml:407`): source and
 built-site link checks around a frozen Jekyll 4 build, the lock-unchanged
 check, and a `docs/_site/build-manifest.json` recording the renderer versions,
 the lock digest and a site digest. GitHub Pages publishes the artifact that
@@ -257,9 +261,10 @@ issue #345, and the version-agreement self-test `test-version-agreement.sh`,
 issue #483, the release-tag pin self-test `test-release-tag-pin.sh`, issue
 #484, the single-publisher self-test `test-release-publish.sh`, issue
 #489, the vendored-inventory self-test `test-vendored-components.py`,
-issue #496, and the release-hardening self-test
+issue #496, the release-hardening self-test
 `test-hardening-identity.sh`, issue #508, which evaluates the makefiles
-without compiling) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
+without compiling, and the docs-only CI filter self-test
+`test-classify-changes.sh`, issues #528/#552) and the SDK integration coverage path (`test-sdk-coverage.sh`, issue
 #387); the first three build nothing, `sdk_coverage` builds its own
 `BUILD=coverage` SDK whatever the mode and cleans `sdk/` afterwards. `installed_consumer` (issue #374) drives the
 other

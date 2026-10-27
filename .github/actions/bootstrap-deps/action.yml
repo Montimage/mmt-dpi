@@ -22,14 +22,16 @@ runs:
         sudo mkdir -p /var/cache/apt/archives
         sudo chown -R "$(id -un)" /var/cache/apt/archives
 
+    # The architecture is part of the key: arm64 jobs (unit-tests-arm,
+    # issue #528) must not restore amd64 archives, or the reverse.
     - name: Cache apt archives
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: /var/cache/apt/archives
-        key: apt-${{ runner.os }}-bootstrap-${{ inputs.extra-packages }}-${{ hashFiles('.github/actions/bootstrap-deps/action.yml') }}
+        key: apt-${{ runner.os }}-${{ runner.arch }}-bootstrap-${{ inputs.extra-packages }}-${{ hashFiles('.github/actions/bootstrap-deps/action.yml') }}
         restore-keys: |
-          apt-${{ runner.os }}-bootstrap-${{ inputs.extra-packages }}-
-          apt-${{ runner.os }}-bootstrap-
+          apt-${{ runner.os }}-${{ runner.arch }}-bootstrap-${{ inputs.extra-packages }}-
+          apt-${{ runner.os }}-${{ runner.arch }}-bootstrap-
 
     - name: Install build dependencies
       shell: bash

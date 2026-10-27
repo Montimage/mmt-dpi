@@ -94,12 +94,14 @@ git diff tools/phase0/baseline/classification.txt   # must be empty for phases 1
 ## CI gate
 
 `.github/workflows/phase0-baseline.yml` enforces these gates on every push
-and PR to `main`. The job list below is **generated from the workflow** —
+and PR to `main`, except that the `changes` job skips them on a PR that
+changes only `docs/` and root-level Markdown (issue #552). The job list below is **generated from the workflow** —
 run `bash tools/phase0/ci/check_readme_gates.sh --write` after editing the
 workflow (the check mode runs in the `verify-helpers` CI job, so a stale
 list fails the build):
 
 <!-- begin-generated: ci-gates -->
+- `changes` — changes
 - `asan-build` — ASan/UBSan profile compiles
 - `list-harnesses` — Enumerate phase0 harnesses
 - `harness-*` — harness-${{ matrix.harness }}

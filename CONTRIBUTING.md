@@ -105,6 +105,15 @@ Path-filtered work reports through an always-running aggregate instead:
 `packages-gate` in `release-packages.yml` passes when a PR touches no
 packaging path and otherwise requires every package leg.
 
+A docs-only PR — every changed file under `docs/` or a Markdown file at the
+repository root — skips the C jobs of `c-cpp.yml` and `phase0-baseline.yml`
+(issue #552). The `changes` job classifies the diff with
+`tools/ci/classify-changes.sh`; a job skipped by its `if:` reports success, and
+the matrix jobs run with their steps skipped so each leg still reports its own
+context. The docs jobs (`doc-validators`, which then also runs the
+`docs_lifecycle` suite, `verify-helpers`, `version-agreement`, `pre-commit`,
+`secret-scan`, `site-onboarding` and `build`) always run.
+
 Renaming a job whose check is required: update `.github/required-checks.txt`
 in the same PR, and swap the context in branch protection when that PR merges.
 

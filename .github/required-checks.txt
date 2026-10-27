@@ -16,6 +16,9 @@
 # Renaming a job listed here: update this file in the same PR, and swap the
 # context in branch protection when that PR merges (the old name is never
 # reported again, so every later PR would wait on it).
+#
+# A docs-only pull request skips the C jobs (issue #552) and every context
+# here still reports: see the `changes` job of c-cpp.yml.
 
 # --- c-cpp.yml -------------------------------------------------------------
 build
@@ -23,6 +26,10 @@ unit-tests
 # Fragile: the suffix is the matrix suite list (rename: a follow-up that
 # swaps the context at its merge, #490).
 unit-tests (-fsigned-char, hashmap memory hexdump mmt_utils mmt_inet_ntop)
+# Unsigned plain char: the full suite set on native ARM and with
+# -funsigned-char on x86 (issue #528).
+unit-tests-arm
+unit-tests-unsigned-char
 toolchain-floor
 # Runs on the ubuntu-26.04 preview runner label (GCC >= 15, C23; #514).
 toolchain-ceiling

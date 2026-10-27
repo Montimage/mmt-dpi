@@ -11,6 +11,13 @@
 # listed context matches none of them, or matches only jobs that do not
 # report on pull requests.
 #
+# A matrix job with a job-level `if:` that can skip it is one of those
+# (issue #552): GitHub evaluates that `if:` before expanding the matrix, so a
+# skipped matrix job reports a single check run under its bare job name and
+# every leg's context stays pending. Only `always()` and `!cancelled()`
+# (which never skip a live run) are accepted there; a matrix job that must
+# not run on some pull requests skips its steps instead.
+#
 # The list it checks is .github/required-checks.txt — the committed,
 # reviewed record of the contexts branch protection on main must require
 # (one context per line; blank lines and lines starting with `#` ignored).
@@ -94,6 +101,9 @@ MATRIX_REF = re.compile(r"^matrix((?:\.[A-Za-z0-9_-]+)+)$")
 NON_PR_IF = re.compile(
     r"refs/tags/|github\.event_name\s*==\s*'(?:schedule|push|workflow_dispatch"
     r"|release|workflow_run)'")
+# Job-level `if:` conditions that never skip a matrix job in a live run.
+NEVER_SKIPS_IF = re.compile(
+    r"^\s*(?:\$\{\{\s*)?(?:always\(\)|!\s*cancelled\(\))(?:\s*\}\})?\s*$")
 
 
 def read_list(path):
@@ -251,6 +261,12 @@ for path in files:
         cond = str(job.get("if", ""))
         if on_pr and NON_PR_IF.search(cond):
             job_why = f"job `if:` keeps it off pull requests ({cond})"
+        elif (on_pr and cond and (job.get("strategy") or {}).get("matrix")
+              is not None and not NEVER_SKIPS_IF.match(cond)):
+            job_why = (f"matrix job has a job-level `if:` that can skip it "
+                       f"({cond}); a skipped matrix job reports only its "
+                       f"bare name, so its legs never report — skip the "
+                       f"steps instead")
         for cname, is_glob in check_names(str(job_id), job):
             reported.append((cname, is_glob, f"{wf}:{job_id}", job_why))
 

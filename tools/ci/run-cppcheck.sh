@@ -5,19 +5,28 @@
 # The lint job used to run cppcheck with its exit status discarded: findings
 # were counted and uploaded, but nothing gated on them, so error-severity
 # findings shipped green and the total had no ceiling. This script is the gate
-# the report-only step used to lack; it applies two independent checks:
+# the report-only step used to lack. One `--enable=warning` scan writes the
+# XML report the job uploads, and two independent checks read it:
 #
-#   1. Ratchet — a full `--enable=warning` scan writes the XML report the job
-#      uploads, and the total finding count must not exceed the committed
+#   1. Ratchet — the total finding count must not exceed the committed
 #      baseline in tools/ci/cppcheck-ratchet.txt. A rise fails the step; a drop
 #      is reported so the baseline can be tightened in the same change.
-#   2. Error gate — a second pass restricted to error severity (cppcheck's
-#      default check scope — the checks that produce error-severity findings
-#      are always enabled; --enable=warning adds the rest) with
-#      --error-exitcode=1, so any error-severity finding fails the step.
+#   2. Error gate — any error-severity finding in the report fails the step.
+#      The checks that produce error-severity findings are always enabled
+#      (--enable=warning only adds the rest), so the report already holds
+#      every finding a separate error-only pass would print. That second pass
+#      used to rescan the whole tree and doubled the lint job (issue #552,
+#      F-CI-007).
 #
-# Writes the pass-1 findings to cppcheck-report.xml at the repo root (override
+# Writes the findings to cppcheck-report.xml at the repo root (override
 # with $CPPCHECK_REPORT) — the same artifact the lint job publishes.
+#
+# Incremental analysis (issue #552): with $CPPCHECK_BUILD_DIR set, cppcheck
+# keeps its per-file results there (--cppcheck-build-dir) and reanalyses only
+# a file whose preprocessed code or options changed; unchanged files replay
+# their stored findings into the report, so the totals do not depend on the
+# cache. The lint job restores that directory with actions/cache, keyed on
+# the pinned release.
 #
 # Pinned cppcheck version (issue #345): the ratchet baseline is only
 # meaningful for the cppcheck release it was measured with — a different
@@ -29,7 +38,7 @@
 # job); tools/ci/tests/test-cppcheck-version.sh fails when the installer's
 # release and this pin disagree. The script compares `cppcheck --version`
 # with it:
-#   - match      -> both gates are enforced;
+#   - match      -> both checks are enforced;
 #   - mismatch in CI (CI=true) -> exit 2: the installed release changed;
 #     re-measure tools/ci/cppcheck-ratchet.txt with the new release and bump
 #     the pin and the installer in the same change;
@@ -43,7 +52,7 @@
 # container, as the lint job does).
 # Never raise the baseline to absorb version drift.
 #
-# Exit codes: 0 = both gates pass, 1 = a gate tripped, 2 = the helper itself
+# Exit codes: 0 = both checks pass, 1 = a check tripped, 2 = the helper itself
 # is broken (cppcheck missing or at an unexpected version in CI, unreadable
 # baseline, unparseable report).
 #
@@ -116,11 +125,17 @@ if ! [[ "$baseline" =~ ^[0-9]+$ ]]; then
     exit 2
 fi
 
-echo "── cppcheck pass 1/2: full scan (ratchet + report) ──"
-# The exit status is deliberately discarded here: pass 1 is the reporting
-# pass — the ratchet below decides, not cppcheck's own exit code.
+BUILD_DIR_ARGS=()
+if [ -n "${CPPCHECK_BUILD_DIR:-}" ]; then
+    mkdir -p "$CPPCHECK_BUILD_DIR"
+    BUILD_DIR_ARGS=(--cppcheck-build-dir="$CPPCHECK_BUILD_DIR")
+fi
+
+echo "── cppcheck: full scan (ratchet + error gate + report) ──"
+# The exit status is deliberately discarded here: the ratchet and the error
+# gate below decide from the report, not cppcheck's own exit code.
 cppcheck --enable=warning --inline-suppr -j"$JOBS" \
-    "${LIBRARIES[@]}" "${EXCLUDE[@]}" \
+    "${LIBRARIES[@]}" "${EXCLUDE[@]}" "${BUILD_DIR_ARGS[@]}" \
     --xml --xml-version=2 \
     "${SCAN_DIRS[@]}" \
     2> "$REPORT" || true
@@ -153,16 +168,13 @@ else
     echo "✓ findings within the ratchet ($total ≤ $baseline)"
 fi
 
-echo "── cppcheck pass 2/2: error-severity gate ──"
-# Default check scope (no --enable=...) runs only the checks whose findings
-# are error-severity, so --error-exitcode=1 makes any such finding fail here.
-# --inline-suppr is honoured in both passes so a justified inline suppression
-# is counted consistently.
-if cppcheck --inline-suppr --error-exitcode=1 -j"$JOBS" -q \
-    "${LIBRARIES[@]}" "${EXCLUDE[@]}" "${SCAN_DIRS[@]}" 2>/dev/null; then
+# Error gate: read from the same report, enforced whatever the version check
+# decided about the ratchet. --inline-suppr applies to the scan above, so a
+# justified inline suppression is honoured here too.
+if [ "$errors" -eq 0 ]; then
     echo "✓ no error-severity findings"
 else
-    echo "✗ error-severity findings present — see $REPORT" >&2
+    echo "✗ $errors error-severity finding(s) — see $REPORT" >&2
     echo "To fix:  fix the finding, or suppress it inline with a justification" >&2
     echo "         comment (// cppcheck-suppress <id> — reason)" >&2
     rc=1
