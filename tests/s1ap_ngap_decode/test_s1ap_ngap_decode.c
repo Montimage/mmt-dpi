@@ -38,6 +38,16 @@
 #include "S1ap-AllocationAndRetentionPriority.h"
 #include "NGAP_InitialUEMessage.h"
 #include "NGAP_ProtocolIE-Container.h"
+#include "NGAP_SecondaryRATDataUsageReport.h"
+#include "NGAP_HandoverFlag.h"
+#include "S1ap-IE.h"
+#include "S1ap-NRUESecurityCapabilities.h"
+#include "S1ap-InitialContextSetupRequest.h"
+#include "S1ap-UEAggregateMaximumBitrate.h"
+#include "S1ap-UESecurityCapabilities.h"
+#include "S1ap-SecurityKey.h"
+#include "S1ap-BearerType.h"
+#include "S1ap-Packet-LossRate.h"
 
 static int failures = 0;
 static int checks   = 0;
@@ -889,7 +899,7 @@ static void test_s1ap_short_imsi(void) {
 /* ------------------------------------------------------------------ */
 static NGAP_NGAP_PDU_t *build_ngap_initial_ue_message(int with_nas_pdu) {
 	NGAP_InitialUEMessage_t *iem;
-	NGAP_ProtocolIE_Container_124P36_t *ies;
+	NGAP_ProtocolIE_Container_6976P34_t *ies;
 	NGAP_InitialUEMessage_IEs_t *ie;
 	NGAP_NGAP_PDU_t *pdu = calloc(1, sizeof(*pdu));
 
@@ -907,7 +917,7 @@ static NGAP_NGAP_PDU_t *build_ngap_initial_ue_message(int with_nas_pdu) {
 	pdu->choice.initiatingMessage->value.present =
 			NGAP_InitiatingMessage__value_PR_InitialUEMessage;
 	/* asn1c v1.5.3 (issue #522): the message, its IE container (the
-	 * NGAP_ProtocolIE_Container_124P36 instance asn_DEF_NGAP_InitialUEMessage
+	 * NGAP_ProtocolIE_Container_6976P34 instance asn_DEF_NGAP_InitialUEMessage
 	 * names) and every IE value are held by pointer; ASN_STRUCT_FREE of the
 	 * PDU releases them all */
 	iem = calloc(1, sizeof(*iem));
@@ -1199,6 +1209,228 @@ static void test_ngap_choice_discriminant(void) {
 	}
 }
 
+/* Issue #523: both decoders are generated from the r16.1.0 modules. The
+ * constants are the r16.1.0 ones, an IE r10.5.0 lacks round-trips through
+ * the S1AP dissector's IE-by-IE ANY path, and decode_ngap() reads a
+ * message procedure r15.2.0 lacks. */
+static void test_rel16_generation(void) {
+	static const uint8_t enc_alg[2] = { 0xE0, 0x00 };
+	static const uint8_t int_alg[2] = { 0xC0, 0x00 };
+	S1ap_NRUESecurityCapabilities_t *caps, *back = NULL;
+	S1ap_IE_t ie, *ie_back = NULL;
+	NGAP_NGAP_PDU_t *pdu;
+	NGAP_SecondaryRATDataUsageReport_t *report;
+	NGAP_ProtocolIE_Container_6976P77_t *ies;
+	NGAP_SecondaryRATDataUsageReportIEs_t *nie;
+	ngap_message_t msg;
+	asn_enc_rval_t enc;
+	asn_dec_rval_t rv;
+	uint8_t buf[128];
+	ssize_t len;
+
+	printf("Rel-16 generation (issue #523):\n");
+	CHECK("S1AP procedure codes are the r16.1.0 ones",
+			S1ap_ProcedureCode_id_UEContextResume == 56
+			&& S1ap_ProcedureCode_id_SecondaryRATDataUsageReport == 62);
+	CHECK("S1AP protocol IE ids are the r16.1.0 ones",
+			S1ap_ProtocolIE_ID_id_NRUESecurityCapabilities == 269);
+	CHECK("NGAP procedure codes are the r16.1.0 ones",
+			NGAP_ProcedureCode_id_SecondaryRATDataUsageReport == 52
+			&& NGAP_ProtocolIE_ID_id_HandoverFlag == 143);
+
+	/* S1AP: NRUESecurityCapabilities (id 269, r15+) as an S1ap-IE value */
+	caps = calloc(1, sizeof(*caps));
+	if (caps == NULL)
+		return;
+	OCTET_STRING_fromBuf((OCTET_STRING_t *)&caps->nRencryptionAlgorithms,
+			(const char *)enc_alg, sizeof(enc_alg));
+	OCTET_STRING_fromBuf((OCTET_STRING_t *)&caps->nRintegrityProtectionAlgorithms,
+			(const char *)int_alg, sizeof(int_alg));
+	memset(&ie, 0, sizeof(ie));
+	ie.id = S1ap_ProtocolIE_ID_id_NRUESecurityCapabilities;
+	ie.criticality = S1ap_Criticality_ignore;
+	CHECK("r16-only S1AP IE value encodes into an S1ap-IE",
+			ANY_fromType_aper(&ie.value, &asn_DEF_S1ap_NRUESecurityCapabilities, caps) == 0);
+	ASN_STRUCT_FREE(asn_DEF_S1ap_NRUESecurityCapabilities, caps);
+	enc = aper_encode_to_buffer(&asn_DEF_S1ap_IE, NULL, &ie, buf, sizeof(buf));
+	ASN_STRUCT_RESET(asn_DEF_S1ap_IE, &ie);
+	CHECK("S1ap-IE carrying it encodes", enc.encoded > 0);
+	if (enc.encoded <= 0)
+		return;
+	rv = aper_decode(NULL, &asn_DEF_S1ap_IE, (void **)&ie_back, buf,
+			(size_t)((enc.encoded + 7) / 8), 0, 0);
+	CHECK("S1ap-IE decodes with its r16 id",
+			rv.code == RC_OK && ie_back != NULL
+			&& ie_back->id == S1ap_ProtocolIE_ID_id_NRUESecurityCapabilities);
+	if (rv.code == RC_OK && ie_back != NULL
+			&& ANY_to_type_aper(&ie_back->value,
+					&asn_DEF_S1ap_NRUESecurityCapabilities, (void **)&back) == 0) {
+		CHECK("its ANY value decodes as NRUESecurityCapabilities",
+				back->nRencryptionAlgorithms.size == 2
+				&& back->nRencryptionAlgorithms.buf[0] == 0xE0
+				&& back->nRintegrityProtectionAlgorithms.size == 2
+				&& back->nRintegrityProtectionAlgorithms.buf[0] == 0xC0);
+	} else {
+		CHECK("its ANY value decodes as NRUESecurityCapabilities", 0);
+	}
+	ASN_STRUCT_FREE(asn_DEF_S1ap_NRUESecurityCapabilities, back);
+	ASN_STRUCT_FREE(asn_DEF_S1ap_IE, ie_back);
+
+	/* NGAP: SecondaryRATDataUsageReport (procedure 52) carrying HandoverFlag
+	 * (IE 143); the IE container is the asn1c instance the message's
+	 * descriptor names (asn_DEF_NGAP_ProtocolIE_Container_6976P77) */
+	pdu = calloc(1, sizeof(*pdu));
+	if (pdu == NULL)
+		return;
+	pdu->present = NGAP_NGAP_PDU_PR_initiatingMessage;
+	pdu->choice.initiatingMessage = calloc(1, sizeof(*pdu->choice.initiatingMessage));
+	report = calloc(1, sizeof(*report));
+	ies = calloc(1, sizeof(*ies));
+	nie = calloc(1, sizeof(*nie));
+	if (pdu->choice.initiatingMessage == NULL || report == NULL || ies == NULL || nie == NULL) {
+		free(nie);
+		free(ies);
+		free(report);
+		ASN_STRUCT_FREE(asn_DEF_NGAP_NGAP_PDU, pdu);
+		return;
+	}
+	pdu->choice.initiatingMessage->procedureCode =
+			NGAP_ProcedureCode_id_SecondaryRATDataUsageReport;
+	pdu->choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
+	pdu->choice.initiatingMessage->value.present =
+			NGAP_InitiatingMessage__value_PR_SecondaryRATDataUsageReport;
+	pdu->choice.initiatingMessage->value.choice.SecondaryRATDataUsageReport = report;
+	report->protocolIEs = (struct NGAP_ProtocolIE_Container *)ies;
+	nie->id = NGAP_ProtocolIE_ID_id_HandoverFlag;
+	nie->criticality = NGAP_Criticality_ignore;
+	nie->value.present = NGAP_SecondaryRATDataUsageReportIEs__value_PR_HandoverFlag;
+	nie->value.choice.HandoverFlag = calloc(1, sizeof(*nie->value.choice.HandoverFlag));
+	if (nie->value.choice.HandoverFlag != NULL)
+		*nie->value.choice.HandoverFlag = NGAP_HandoverFlag_handover_preparation;
+	ASN_SEQUENCE_ADD(&ies->list, nie);
+	len = encode_ngap_pdu(pdu, buf, sizeof(buf));
+	ASN_STRUCT_FREE(asn_DEF_NGAP_NGAP_PDU, pdu);
+	CHECK("r16-only NGAP message encodes", len > 0);
+	if (len <= 0)
+		return;
+	memset(&msg, 0, sizeof(msg));
+	CHECK("decode_ngap reads the r16-only procedure",
+			decode_ngap(&msg, buf, (uint32_t)len)
+			&& msg.pdu_present == NGAP_NGAP_PDU_PR_initiatingMessage
+			&& msg.procedure_code == NGAP_ProcedureCode_id_SecondaryRATDataUsageReport);
+}
+
+/* Issue #523: an InitialContextSetupRequest encoded by a codec independent
+ * of the derived S1AP schema -- asn1c v1.5.3 run on the unmodified,
+ * class-based 36413-g10.asn (ASN1C_PREFIX=S1AP_ -findirect-choice, the
+ * recipe's codec flags). It carries Rel-16 content inside the containers
+ * s1ap-simplify.py rewrites: the E-RAB list item has an iE-Extensions
+ * (BearerType, id 233) and its QoS parameters one too (Packet-LossRate,
+ * id 273), and the message carries NRUESecurityCapabilities (id 269). The
+ * derived schema must decode every level of it. */
+static const uint8_t REL16_ICS_REQUEST[] = {
+	0x00, 0x09, 0x00, 0x7d, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x02, 0x00,
+	0x07, 0x00, 0x08, 0x00, 0x02, 0x00, 0x09, 0x00, 0x42, 0x00, 0x0a, 0x18,
+	0x05, 0xf5, 0xe1, 0x00, 0x60, 0x02, 0xfa, 0xf0, 0x80, 0x00, 0x18, 0x00,
+	0x26, 0x00, 0x00, 0x34, 0x00, 0x21, 0x65, 0x20, 0x09, 0x04, 0x00, 0x00,
+	0x01, 0x11, 0x40, 0x02, 0x00, 0x0a, 0x0f, 0x80, 0xc0, 0xa8, 0x00, 0x01,
+	0x00, 0x00, 0x00, 0x01, 0x03, 0x07, 0x42, 0x01, 0x00, 0x00, 0x00, 0xe9,
+	0x00, 0x01, 0x00, 0x00, 0x6b, 0x00, 0x05, 0x1c, 0x00, 0x0e, 0x00, 0x00,
+	0x00, 0x49, 0x00, 0x20, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x01, 0x0d, 0x40, 0x05, 0x1c, 0x00, 0x0e, 0x00, 0x00,
+};
+
+/* Decode one ANY into `td`; 1 when it decodes. */
+static int any_decodes(ANY_t *any, asn_TYPE_descriptor_t *td, void **out) {
+	*out = NULL;
+	return ANY_to_type_aper(any, td, out) == 0 && *out != NULL;
+}
+
+static void test_s1ap_rel16_independent_vector(void) {
+	static const struct { long id; asn_TYPE_descriptor_t *td; } ies[] = {
+		{ S1ap_ProtocolIE_ID_id_MME_UE_S1AP_ID, &asn_DEF_S1ap_MME_UE_S1AP_ID },
+		{ S1ap_ProtocolIE_ID_id_eNB_UE_S1AP_ID, &asn_DEF_S1ap_ENB_UE_S1AP_ID },
+		{ S1ap_ProtocolIE_ID_id_uEaggregateMaximumBitrate, &asn_DEF_S1ap_UEAggregateMaximumBitrate },
+		{ S1ap_ProtocolIE_ID_id_E_RABToBeSetupListCtxtSUReq, &asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq },
+		{ S1ap_ProtocolIE_ID_id_UESecurityCapabilities, &asn_DEF_S1ap_UESecurityCapabilities },
+		{ S1ap_ProtocolIE_ID_id_SecurityKey, &asn_DEF_S1ap_SecurityKey },
+		{ S1ap_ProtocolIE_ID_id_NRUESecurityCapabilities, &asn_DEF_S1ap_NRUESecurityCapabilities },
+	};
+	static const uint8_t SGW[4] = { 192, 168, 0, 1 };
+	s1ap_message_t msg;
+	S1AP_PDU_t *pdu = NULL;
+	S1ap_InitialContextSetupRequest_t *req = NULL;
+	S1ap_E_RABToBeSetupListCtxtSUReq_t *list = NULL;
+	S1ap_E_RABToBeSetupItemCtxtSUReq_t *item = NULL;
+	asn_dec_rval_t rv;
+	void *value;
+	int i, decoded = 0;
+
+	printf("S1AP Rel-16 vector from the class-based codec (issue #523):\n");
+	memset(&msg, 0, sizeof(msg));
+	CHECK("s1ap_decode accepts it",
+			s1ap_decode(&msg, REL16_ICS_REQUEST, sizeof(REL16_ICS_REQUEST)) == 0);
+	CHECK("procedure, QCI, ARP, TEID and gateway extracted",
+			msg.procedure_code == S1ap_ProcedureCode_id_InitialContextSetup
+			&& msg.qos_qci == 9 && msg.qos_priority_level == 1
+			&& msg.gtp_teid == 1 && memcmp(&msg.gw_ipv4, SGW, 4) == 0);
+
+	rv = aper_decode(NULL, &asn_DEF_S1AP_PDU, (void **)&pdu,
+			REL16_ICS_REQUEST, sizeof(REL16_ICS_REQUEST), 0, 0);
+	/* aper_decode() reports the bits it consumed */
+	CHECK("the whole PDU is consumed",
+			rv.code == RC_OK && rv.consumed == 8 * sizeof(REL16_ICS_REQUEST)
+			&& pdu->present == S1AP_PDU_PR_initiatingMessage
+			&& pdu->choice.initiatingMessage != NULL);
+	if (rv.code != RC_OK || pdu->choice.initiatingMessage == NULL
+			|| !any_decodes(&pdu->choice.initiatingMessage->value,
+					&asn_DEF_S1ap_InitialContextSetupRequest, (void **)&req)) {
+		CHECK("message body decodes", 0);
+		ASN_STRUCT_FREE(asn_DEF_S1AP_PDU, pdu);
+		return;
+	}
+	CHECK("message body holds the 7 IEs",
+			req->s1ap_InitialContextSetupRequest_ies.list.count == 7);
+	for (i = 0; i < req->s1ap_InitialContextSetupRequest_ies.list.count && i < 7; i++) {
+		S1ap_IE_t *ie = req->s1ap_InitialContextSetupRequest_ies.list.array[i];
+		if (ie->id != ies[i].id || !any_decodes(&ie->value, ies[i].td, &value))
+			continue;
+		decoded++;
+		if (ies[i].td == &asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq)
+			list = value;
+		else
+			ASN_STRUCT_FREE(*ies[i].td, value);
+	}
+	CHECK("every IE value decodes into its derived type", decoded == 7);
+	if (list != NULL && list->list.count == 1
+			&& any_decodes(&list->list.array[0]->value,
+					&asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, (void **)&item)) {
+		const S1ap_IE_Extensions_t *ext = item->iE_Extensions;
+		const S1ap_IE_Extensions_t *qext = item->e_RABlevelQoSParameters
+				? item->e_RABlevelQoSParameters->iE_Extensions : NULL;
+		S1ap_BearerType_t *bt = NULL;
+		S1ap_Packet_LossRate_t *plr = NULL;
+		CHECK("E-RAB item extension BearerType (id 233) decodes",
+				ext && ext->list.count == 1 && ext->list.array[0]->id == 233
+				&& any_decodes(&ext->list.array[0]->value, &asn_DEF_S1ap_BearerType, (void **)&bt)
+				&& *bt == S1ap_BearerType_non_IP);
+		CHECK("QoS extension Packet-LossRate (id 273) decodes",
+				qext && qext->list.count == 1 && qext->list.array[0]->id == 273
+				&& any_decodes(&qext->list.array[0]->value, &asn_DEF_S1ap_Packet_LossRate, (void **)&plr)
+				&& *plr == 10);
+		ASN_STRUCT_FREE(asn_DEF_S1ap_BearerType, bt);
+		ASN_STRUCT_FREE(asn_DEF_S1ap_Packet_LossRate, plr);
+	} else {
+		CHECK("E-RAB item decodes", 0);
+	}
+	ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupItemCtxtSUReq, item);
+	ASN_STRUCT_FREE(asn_DEF_S1ap_E_RABToBeSetupListCtxtSUReq, list);
+	ASN_STRUCT_FREE(asn_DEF_S1ap_InitialContextSetupRequest, req);
+	ASN_STRUCT_FREE(asn_DEF_S1AP_PDU, pdu);
+}
+
 int main(void) {
 	test_s1ap_outer_ok_inner_fail();
 	test_s1ap_valid_vectors();
@@ -1213,6 +1445,8 @@ int main(void) {
 	test_s1ap_decode_failure_no_leak();
 	test_s1ap_entity_store_cap();
 	test_ngap_choice_discriminant();
+	test_rel16_generation();
+	test_s1ap_rel16_independent_vector();
 
 	printf("\n%d checks, %d failure(s)\n", checks, failures);
 	return failures ? 1 : 0;

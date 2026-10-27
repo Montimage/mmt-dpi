@@ -72,6 +72,28 @@ fi
 if [ -e "${ASN1C_DIR}/patches" ] || grep -qE '^[[:space:]]+[^#]*\bpatch\b' "${ASN1C_DIR}/Makefile"; then
     echo "✗ the asn1c recipe applies a runtime patch again (dropped by #522)" >&2; exit 1
 fi
+# Issue #523: the decoders are generated from the r16.1.0 modules -- every
+# generated s1ap/ngap source was found in an r16.1.0 input, the committed
+# S1AP schema derived from 36413-g10.asn is current, and so is the delta
+# inventory (support/DELTA-r16.1.0.md) against the r10.5.0/r15.2.0 inputs.
+off_input="$( { grep -rhF --include='*.[ch]' 'found in "' "${ASN1C_DIR}/s1ap" \
+        | grep -vF 'found in "./support/s1ap-r16.1.0/simplified/' ;
+    grep -rhF --include='*.[ch]' 'found in "' "${ASN1C_DIR}/ngap" \
+        | grep -vF -e 'found in "./support/ngap-r16.1.0/38413-g10.asn"' \
+            -e 'found in "/usr/local/share/asn1c/standard-modules/' ; } | sort -u || true)"
+if [ -n "${off_input}" ]; then
+    echo "✗ generated sources not from the r16.1.0 inputs:" >&2
+    head -5 <<<"${off_input}" >&2; exit 1
+fi
+if ! python3 "${ASN1C_DIR}/s1ap-simplify.py" --check \
+        "${ASN1C_DIR}/support/s1ap-r16.1.0/36413-g10.asn" \
+        "${ASN1C_DIR}/support/s1ap-r16.1.0/simplified"; then
+    echo "✗ support/s1ap-r16.1.0/simplified/ is not the derivation of 36413-g10.asn" >&2; exit 1
+fi
+if ! python3 "${ASN1C_DIR}/delta-inventory.py" --check \
+        "${ASN1C_DIR}/support/DELTA-r16.1.0.md"; then
+    echo "✗ support/DELTA-r16.1.0.md is stale" >&2; exit 1
+fi
 
 # --- 1. build + install the SDK to the isolated prefix ---------------------
 echo "  [1/3] building + installing SDK ..."

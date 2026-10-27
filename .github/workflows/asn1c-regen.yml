@@ -22,6 +22,7 @@ on:
     branches: [ main ]
     paths:
       - 'src/mmt_mobile/asn1c/Makefile'
+      - 'src/mmt_mobile/asn1c/s1ap-simplify.py'
       - 'src/mmt_mobile/asn1c/ASN1C_VERSION'
       - 'src/mmt_mobile/asn1c/support/**'
       - 'src/mmt_mobile/asn1c/common/**'
@@ -57,7 +58,8 @@ jobs:
       - name: Install asn1c build dependencies
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends libtool bison flex
+          # python3 runs src/mmt_mobile/asn1c/s1ap-simplify.py in gen-s1ap (issue #523).
+          apt-get install -y --no-install-recommends libtool bison flex python3
           # The checkout is owned by the runner UID but the container runs
           # as root; allow git to read it (fatal "dubious ownership"
           # otherwise).

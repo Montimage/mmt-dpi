@@ -1,2 +1,7 @@
 - ngap-r15.2.0: https://github.com/OPENAIRINTERFACE/oai-libngapcodec/tree/support/15.2.0/asn.1
 - s1ap-r16.1.0 + ngap-r16.1.0: https://github.com/open5gs/open5gs/tree/v2.1.1/lib/asn1c/support
+- s1ap-r10.5.0: OAI-style S1AP schema the S1AP dissector was written against (moved from src/mmt_mobile/s1ap/asn1_R10.5 in 2020)
+- s1ap-r16.1.0/simplified: derived from s1ap-r16.1.0/36413-g10.asn by ../s1ap-simplify.py (issue #523); `make gen-s1ap` rewrites it
+- DELTA-r16.1.0.md: IEs/procedures r16.1.0 adds over s1ap-r10.5.0 and ngap-r15.2.0, written by ../delta-inventory.py (issue #523)
+
+The gen-s1ap and gen-ngap targets (../Makefile) generate from the r16.1.0 modules; the r10.5.0 and r15.2.0 inputs are kept for the delta inventory.

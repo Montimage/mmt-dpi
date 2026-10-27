@@ -23,6 +23,17 @@
 # DEBUG), OER, print and random-fill stay as before.
 ASN1C_CODECS := -gen-APER -no-gen-UPER -no-gen-JER -no-gen-CBOR
 
+# Inputs (issue #523): both decoders are generated from the Rel-16 3GPP
+# modules, TS 36.413 / TS 38.413 v16.1.0. The S1AP dissector decodes the
+# OAI-style schema (S1ap- types, each message a SEQUENCE OF S1ap-IE whose
+# value is an ANY decoded per IE id), so gen-s1ap first derives that schema
+# from the 3GPP module with ./s1ap-simplify.py into $(S1AP_SIMPLIFIED) --
+# committed, so the regen gate also proves the derivation. The r10.5.0 and
+# r15.2.0 inputs stay for ./delta-inventory.py (support/DELTA-r16.1.0.md).
+S1AP_SPEC := ./support/s1ap-r16.1.0/36413-g10.asn
+S1AP_SIMPLIFIED := ./support/s1ap-r16.1.0/simplified
+NGAP_SPEC := ./support/ngap-r16.1.0/38413-g10.asn
+
 
 all: gen-s1ap gen-ngap
 common:
@@ -32,12 +43,13 @@ common:
 # - Generate all files to ./common
 # - Move sepcific (S1ap) files to ./s1ap
 gen-s1ap: common
-	asn1c -D ./common $(ASN1C_CODECS) -pdu=all -fcompound-names -fno-include-deps -no-gen-example ./support/s1ap-r10.5.0/S1AP-CommonDataTypes.asn ./support/s1ap-r10.5.0/S1AP-Constants.asn ./support/s1ap-r10.5.0/S1AP-IEs.asn ./support/s1ap-r10.5.0/S1AP-PDU.asn
+	python3 ./s1ap-simplify.py $(S1AP_SPEC) $(S1AP_SIMPLIFIED)
+	asn1c -D ./common $(ASN1C_CODECS) -pdu=all -fcompound-names -fno-include-deps -no-gen-example $(S1AP_SIMPLIFIED)/S1AP-CommonDataTypes.asn $(S1AP_SIMPLIFIED)/S1AP-Constants.asn $(S1AP_SIMPLIFIED)/S1AP-IEs.asn $(S1AP_SIMPLIFIED)/S1AP-PDU.asn
 	mkdir -p ./s1ap
 	mv -f ./common/S1ap* ./common/Makefile* ./s1ap
 
 gen-ngap: common
-	ASN1C_PREFIX=NGAP_ asn1c -D ./common $(ASN1C_CODECS) -pdu=all -fcompound-names -findirect-choice -fno-include-deps -no-gen-example ./support/ngap-r15.2.0/*.asn1
+	ASN1C_PREFIX=NGAP_ asn1c -D ./common $(ASN1C_CODECS) -pdu=all -fcompound-names -findirect-choice -fno-include-deps -no-gen-example $(NGAP_SPEC)
 	mkdir -p ./ngap
 	mv -f ./common/NGAP_* ./common/Makefile* ./ngap
 

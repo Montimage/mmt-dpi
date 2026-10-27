@@ -223,7 +223,7 @@ static asn_type_selector_result_t select_past_elements(
 	/* A real type, but an alternative index one past the open type's
 	 * alternatives (the value member's CHOICE). */
 	asn_type_selector_result_t r = { &asn_DEF_NGAP_Cause,
-			asn_MBR_NGAP_UEContextReleaseCommand_IEs_169[2].type->elements_count + 1 };
+			asn_DEF_NGAP_UEContextReleaseCommand_IEs.elements[2].type->elements_count + 1 };
 	(void)td; (void)sptr;
 	return r;
 }
@@ -231,7 +231,7 @@ static asn_type_selector_result_t select_past_elements(
 static int open_type_get(asn_type_selector_f *selector) {
 	/* A 1-octet open type holding 0x00 */
 	static const uint8_t WIRE[] = { 0x01, 0x00 };
-	asn_TYPE_member_t elm = asn_MBR_NGAP_UEContextReleaseCommand_IEs_169[2];
+	asn_TYPE_member_t elm = asn_DEF_NGAP_UEContextReleaseCommand_IEs.elements[2];
 	NGAP_UEContextReleaseCommand_IEs_t *ie = calloc(1, sizeof(*ie));
 	asn_per_data_t pd;
 	asn_dec_rval_t rv;

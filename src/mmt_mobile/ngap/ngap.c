@@ -37,8 +37,8 @@ static inline const asn_codec_ctx_t * _aper_codec_ctx( void ){
 /*
  * Issue #522: asn1c v1.5.3 emits each message's protocolIEs as a pointer
  * to a forward-declared `struct NGAP_ProtocolIE_Container`, while its
- * descriptor (ATF_POINTER, asn_DEF_NGAP_ProtocolIE_Container_124Pn) makes
- * the decoder allocate the NGAP_ProtocolIE_Container_124Pn instance. Every
+ * descriptor (ATF_POINTER, asn_DEF_NGAP_ProtocolIE_Container_6976Pn) makes
+ * the decoder allocate the NGAP_ProtocolIE_Container_6976Pn instance. Every
  * instance starts with its A_SEQUENCE_OF list, so the IEs are read through
  * asn1c's anonymous-sequence view; a missing container reads as empty.
  */

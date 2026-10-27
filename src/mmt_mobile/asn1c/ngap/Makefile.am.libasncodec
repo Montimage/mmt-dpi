@@ -1,26 +1,91 @@
 ASN_MODULE_SRCS=	\
-	./common/NGAP_Criticality.c	\
-	./common/NGAP_Presence.c	\
-	./common/NGAP_PrivateIE-ID.c	\
-	./common/NGAP_ProcedureCode.c	\
-	./common/NGAP_ProtocolExtensionID.c	\
-	./common/NGAP_ProtocolIE-ID.c	\
-	./common/NGAP_TriggeringMessage.c	\
-	./common/NGAP_ProtocolIE-Container.c	\
-	./common/NGAP_ProtocolIE-SingleContainer.c	\
-	./common/NGAP_ProtocolIE-Field.c	\
-	./common/NGAP_ProtocolIE-ContainerPair.c	\
-	./common/NGAP_ProtocolIE-FieldPair.c	\
-	./common/NGAP_ProtocolIE-ContainerList.c	\
-	./common/NGAP_ProtocolIE-ContainerPairList.c	\
-	./common/NGAP_ProtocolExtensionContainer.c	\
-	./common/NGAP_ProtocolExtensionField.c	\
-	./common/NGAP_PrivateIE-Container.c	\
-	./common/NGAP_PrivateIE-Field.c	\
 	./common/NGAP_NGAP-PDU.c	\
 	./common/NGAP_InitiatingMessage.c	\
 	./common/NGAP_SuccessfulOutcome.c	\
 	./common/NGAP_UnsuccessfulOutcome.c	\
+	./common/NGAP_PDUSessionResourceSetupRequest.c	\
+	./common/NGAP_PDUSessionResourceSetupResponse.c	\
+	./common/NGAP_PDUSessionResourceReleaseCommand.c	\
+	./common/NGAP_PDUSessionResourceReleaseResponse.c	\
+	./common/NGAP_PDUSessionResourceModifyRequest.c	\
+	./common/NGAP_PDUSessionResourceModifyResponse.c	\
+	./common/NGAP_PDUSessionResourceNotify.c	\
+	./common/NGAP_PDUSessionResourceModifyIndication.c	\
+	./common/NGAP_PDUSessionResourceModifyConfirm.c	\
+	./common/NGAP_InitialContextSetupRequest.c	\
+	./common/NGAP_InitialContextSetupResponse.c	\
+	./common/NGAP_InitialContextSetupFailure.c	\
+	./common/NGAP_UEContextReleaseRequest.c	\
+	./common/NGAP_UEContextReleaseCommand.c	\
+	./common/NGAP_UEContextReleaseComplete.c	\
+	./common/NGAP_UEContextModificationRequest.c	\
+	./common/NGAP_UEContextModificationResponse.c	\
+	./common/NGAP_UEContextModificationFailure.c	\
+	./common/NGAP_RRCInactiveTransitionReport.c	\
+	./common/NGAP_HandoverRequired.c	\
+	./common/NGAP_HandoverCommand.c	\
+	./common/NGAP_HandoverPreparationFailure.c	\
+	./common/NGAP_HandoverRequest.c	\
+	./common/NGAP_HandoverRequestAcknowledge.c	\
+	./common/NGAP_HandoverFailure.c	\
+	./common/NGAP_HandoverNotify.c	\
+	./common/NGAP_PathSwitchRequest.c	\
+	./common/NGAP_PathSwitchRequestAcknowledge.c	\
+	./common/NGAP_PathSwitchRequestFailure.c	\
+	./common/NGAP_HandoverCancel.c	\
+	./common/NGAP_HandoverCancelAcknowledge.c	\
+	./common/NGAP_UplinkRANStatusTransfer.c	\
+	./common/NGAP_DownlinkRANStatusTransfer.c	\
+	./common/NGAP_Paging.c	\
+	./common/NGAP_InitialUEMessage.c	\
+	./common/NGAP_DownlinkNASTransport.c	\
+	./common/NGAP_UplinkNASTransport.c	\
+	./common/NGAP_NASNonDeliveryIndication.c	\
+	./common/NGAP_RerouteNASRequest.c	\
+	./common/NGAP_NGSetupRequest.c	\
+	./common/NGAP_NGSetupResponse.c	\
+	./common/NGAP_NGSetupFailure.c	\
+	./common/NGAP_RANConfigurationUpdate.c	\
+	./common/NGAP_RANConfigurationUpdateAcknowledge.c	\
+	./common/NGAP_RANConfigurationUpdateFailure.c	\
+	./common/NGAP_AMFConfigurationUpdate.c	\
+	./common/NGAP_AMFConfigurationUpdateAcknowledge.c	\
+	./common/NGAP_AMFConfigurationUpdateFailure.c	\
+	./common/NGAP_AMFStatusIndication.c	\
+	./common/NGAP_NGReset.c	\
+	./common/NGAP_NGResetAcknowledge.c	\
+	./common/NGAP_ErrorIndication.c	\
+	./common/NGAP_OverloadStart.c	\
+	./common/NGAP_OverloadStop.c	\
+	./common/NGAP_UplinkRANConfigurationTransfer.c	\
+	./common/NGAP_DownlinkRANConfigurationTransfer.c	\
+	./common/NGAP_WriteReplaceWarningRequest.c	\
+	./common/NGAP_WriteReplaceWarningResponse.c	\
+	./common/NGAP_PWSCancelRequest.c	\
+	./common/NGAP_PWSCancelResponse.c	\
+	./common/NGAP_PWSRestartIndication.c	\
+	./common/NGAP_PWSFailureIndication.c	\
+	./common/NGAP_DownlinkUEAssociatedNRPPaTransport.c	\
+	./common/NGAP_UplinkUEAssociatedNRPPaTransport.c	\
+	./common/NGAP_DownlinkNonUEAssociatedNRPPaTransport.c	\
+	./common/NGAP_UplinkNonUEAssociatedNRPPaTransport.c	\
+	./common/NGAP_TraceStart.c	\
+	./common/NGAP_TraceFailureIndication.c	\
+	./common/NGAP_DeactivateTrace.c	\
+	./common/NGAP_CellTrafficTrace.c	\
+	./common/NGAP_LocationReportingControl.c	\
+	./common/NGAP_LocationReportingFailureIndication.c	\
+	./common/NGAP_LocationReport.c	\
+	./common/NGAP_UETNLABindingReleaseRequest.c	\
+	./common/NGAP_UERadioCapabilityInfoIndication.c	\
+	./common/NGAP_UERadioCapabilityCheckRequest.c	\
+	./common/NGAP_UERadioCapabilityCheckResponse.c	\
+	./common/NGAP_PrivateMessage.c	\
+	./common/NGAP_SecondaryRATDataUsageReport.c	\
+	./common/NGAP_UplinkRIMInformationTransfer.c	\
+	./common/NGAP_DownlinkRIMInformationTransfer.c	\
+	./common/NGAP_AdditionalDLUPTNLInformationForHOList.c	\
+	./common/NGAP_AdditionalDLUPTNLInformationForHOItem.c	\
 	./common/NGAP_AdditionalQosFlowInformation.c	\
 	./common/NGAP_AllocationAndRetentionPriority.c	\
 	./common/NGAP_AllowedNSSAI.c	\
@@ -85,6 +150,11 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_CellIDListForRestart.c	\
 	./common/NGAP_CellSize.c	\
 	./common/NGAP_CellType.c	\
+	./common/NGAP_CNAssistedRANTuning.c	\
+	./common/NGAP_CNTypeRestrictionsForEquivalent.c	\
+	./common/NGAP_CNTypeRestrictionsForEquivalentItem.c	\
+	./common/NGAP_CNTypeRestrictionsForServing.c	\
+	./common/NGAP_CommonNetworkInstance.c	\
 	./common/NGAP_CompletedCellsInEAI-EUTRA.c	\
 	./common/NGAP_CompletedCellsInEAI-EUTRA-Item.c	\
 	./common/NGAP_CompletedCellsInEAI-NR.c	\
@@ -96,7 +166,7 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_ConcurrentWarningMessageInd.c	\
 	./common/NGAP_ConfidentialityProtectionIndication.c	\
 	./common/NGAP_ConfidentialityProtectionResult.c	\
-	./common/NGAP_CoreNetworkAssistanceInformation.c	\
+	./common/NGAP_CoreNetworkAssistanceInformationForInactive.c	\
 	./common/NGAP_COUNTValueForPDCP-SN12.c	\
 	./common/NGAP_COUNTValueForPDCP-SN18.c	\
 	./common/NGAP_CPTransportLayerInformation.c	\
@@ -108,6 +178,8 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_DataForwardingNotPossible.c	\
 	./common/NGAP_DataForwardingResponseDRBList.c	\
 	./common/NGAP_DataForwardingResponseDRBItem.c	\
+	./common/NGAP_DataForwardingResponseERABList.c	\
+	./common/NGAP_DataForwardingResponseERABListItem.c	\
 	./common/NGAP_DelayCritical.c	\
 	./common/NGAP_DLForwarding.c	\
 	./common/NGAP_DL-NGU-TNLInformationReused.c	\
@@ -138,6 +210,8 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_EmergencyFallbackIndicator.c	\
 	./common/NGAP_EmergencyFallbackRequestIndicator.c	\
 	./common/NGAP_EmergencyServiceTargetCN.c	\
+	./common/NGAP_EN-DCSONConfigurationTransfer.c	\
+	./common/NGAP_EndpointIPAddressAndPort.c	\
 	./common/NGAP_EquivalentPLMNs.c	\
 	./common/NGAP_EPS-TAC.c	\
 	./common/NGAP_EPS-TAI.c	\
@@ -159,6 +233,8 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_ExpectedUEMobility.c	\
 	./common/NGAP_ExpectedUEMovingTrajectory.c	\
 	./common/NGAP_ExpectedUEMovingTrajectoryItem.c	\
+	./common/NGAP_ExtendedRATRestrictionInformation.c	\
+	./common/NGAP_ExtendedRNC-ID.c	\
 	./common/NGAP_FiveG-S-TMSI.c	\
 	./common/NGAP_FiveG-TMSI.c	\
 	./common/NGAP_FiveQI.c	\
@@ -174,7 +250,9 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_GTP-TEID.c	\
 	./common/NGAP_GTPTunnel.c	\
 	./common/NGAP_GUAMI.c	\
+	./common/NGAP_GUAMIType.c	\
 	./common/NGAP_HandoverCommandTransfer.c	\
+	./common/NGAP_HandoverFlag.c	\
 	./common/NGAP_HandoverPreparationUnsuccessfulTransfer.c	\
 	./common/NGAP_HandoverRequestAcknowledgeTransfer.c	\
 	./common/NGAP_HandoverRequiredTransfer.c	\
@@ -187,12 +265,15 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_IntegrityProtectionResult.c	\
 	./common/NGAP_IntendedNumberOfPagingAttempts.c	\
 	./common/NGAP_InterfacesToTrace.c	\
+	./common/NGAP_LAC.c	\
+	./common/NGAP_LAI.c	\
 	./common/NGAP_LastVisitedCellInformation.c	\
 	./common/NGAP_LastVisitedCellItem.c	\
 	./common/NGAP_LastVisitedEUTRANCellInformation.c	\
 	./common/NGAP_LastVisitedGERANCellInformation.c	\
 	./common/NGAP_LastVisitedNGRANCellInformation.c	\
 	./common/NGAP_LastVisitedUTRANCellInformation.c	\
+	./common/NGAP_LocationReportingAdditionalInfo.c	\
 	./common/NGAP_LocationReportingReferenceID.c	\
 	./common/NGAP_LocationReportingRequestType.c	\
 	./common/NGAP_MaskedIMEISV.c	\
@@ -201,7 +282,6 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_MaximumIntegrityProtectedDataRate.c	\
 	./common/NGAP_MICOModeIndication.c	\
 	./common/NGAP_MobilityRestrictionList.c	\
-	./common/NGAP_MultipleTNLInformation.c	\
 	./common/NGAP_N3IWF-ID.c	\
 	./common/NGAP_NAS-PDU.c	\
 	./common/NGAP_NASSecurityParametersFromNGRAN.c	\
@@ -211,6 +291,8 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_NextPagingAreaScope.c	\
 	./common/NGAP_NgENB-ID.c	\
 	./common/NGAP_NGRAN-CGI.c	\
+	./common/NGAP_NGRAN-TNLAssociationToRemoveList.c	\
+	./common/NGAP_NGRAN-TNLAssociationToRemoveItem.c	\
 	./common/NGAP_NGRANTraceID.c	\
 	./common/NGAP_NonDynamic5QIDescriptor.c	\
 	./common/NGAP_NotAllowedTACs.c	\
@@ -297,6 +379,8 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_PDUSessionResourceReleasedListRelRes.c	\
 	./common/NGAP_PDUSessionResourceReleasedItemRelRes.c	\
 	./common/NGAP_PDUSessionResourceReleaseResponseTransfer.c	\
+	./common/NGAP_PDUSessionResourceSecondaryRATUsageList.c	\
+	./common/NGAP_PDUSessionResourceSecondaryRATUsageItem.c	\
 	./common/NGAP_PDUSessionResourceSetupListCxtReq.c	\
 	./common/NGAP_PDUSessionResourceSetupItemCxtReq.c	\
 	./common/NGAP_PDUSessionResourceSetupListCxtRes.c	\
@@ -319,6 +403,7 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_PDUSessionResourceToReleaseListRelCmd.c	\
 	./common/NGAP_PDUSessionResourceToReleaseItemRelCmd.c	\
 	./common/NGAP_PDUSessionType.c	\
+	./common/NGAP_PDUSessionUsageReport.c	\
 	./common/NGAP_PeriodicRegistrationUpdateTimer.c	\
 	./common/NGAP_PLMNIdentity.c	\
 	./common/NGAP_PLMNSupportList.c	\
@@ -340,25 +425,29 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_QosFlowInformationList.c	\
 	./common/NGAP_QosFlowInformationItem.c	\
 	./common/NGAP_QosFlowLevelQosParameters.c	\
-	./common/NGAP_QosFlowList.c	\
-	./common/NGAP_QosFlowItem.c	\
+	./common/NGAP_QosMonitoringRequest.c	\
+	./common/NGAP_QosFlowListWithCause.c	\
+	./common/NGAP_QosFlowWithCauseItem.c	\
 	./common/NGAP_QosFlowModifyConfirmList.c	\
 	./common/NGAP_QosFlowModifyConfirmItem.c	\
 	./common/NGAP_QosFlowNotifyList.c	\
 	./common/NGAP_QosFlowNotifyItem.c	\
 	./common/NGAP_QosFlowPerTNLInformation.c	\
+	./common/NGAP_QosFlowPerTNLInformationList.c	\
+	./common/NGAP_QosFlowPerTNLInformationItem.c	\
 	./common/NGAP_QosFlowSetupRequestList.c	\
 	./common/NGAP_QosFlowSetupRequestItem.c	\
-	./common/NGAP_QosFlowSetupResponseListHOReqAck.c	\
-	./common/NGAP_QosFlowSetupResponseItemHOReqAck.c	\
-	./common/NGAP_QosFlowSetupResponseListSURes.c	\
-	./common/NGAP_QosFlowSetupResponseItemSURes.c	\
+	./common/NGAP_QosFlowListWithDataForwarding.c	\
+	./common/NGAP_QosFlowItemWithDataForwarding.c	\
 	./common/NGAP_QosFlowToBeForwardedList.c	\
 	./common/NGAP_QosFlowToBeForwardedItem.c	\
+	./common/NGAP_QoSFlowsUsageReportList.c	\
+	./common/NGAP_QoSFlowsUsageReport-Item.c	\
 	./common/NGAP_RANNodeName.c	\
 	./common/NGAP_RANPagingPriority.c	\
 	./common/NGAP_RANStatusTransfer-TransparentContainer.c	\
 	./common/NGAP_RAN-UE-NGAP-ID.c	\
+	./common/NGAP_RAT-Information.c	\
 	./common/NGAP_RATRestrictions.c	\
 	./common/NGAP_RATRestrictions-Item.c	\
 	./common/NGAP_RATRestrictionInformation.c	\
@@ -368,19 +457,26 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_RecommendedRANNodesForPaging.c	\
 	./common/NGAP_RecommendedRANNodeList.c	\
 	./common/NGAP_RecommendedRANNodeItem.c	\
+	./common/NGAP_RedirectionVoiceFallback.c	\
 	./common/NGAP_ReflectiveQosAttribute.c	\
-	./common/NGAP_ReferenceID.c	\
 	./common/NGAP_RelativeAMFCapacity.c	\
 	./common/NGAP_ReportArea.c	\
 	./common/NGAP_RepetitionPeriod.c	\
 	./common/NGAP_ResetAll.c	\
 	./common/NGAP_ResetType.c	\
+	./common/NGAP_RNC-ID.c	\
 	./common/NGAP_RoutingID.c	\
 	./common/NGAP_RRCContainer.c	\
 	./common/NGAP_RRCEstablishmentCause.c	\
 	./common/NGAP_RRCInactiveTransitionReportRequest.c	\
 	./common/NGAP_RRCState.c	\
+	./common/NGAP_RIMInformationTransfer.c	\
+	./common/NGAP_RIMInformation.c	\
+	./common/NGAP_GNBSetID.c	\
+	./common/NGAP_SCTP-TLAs.c	\
 	./common/NGAP_SD.c	\
+	./common/NGAP_SecondaryRATUsageInformation.c	\
+	./common/NGAP_SecondaryRATDataUsageReportTransfer.c	\
 	./common/NGAP_SecurityContext.c	\
 	./common/NGAP_SecurityIndication.c	\
 	./common/NGAP_SecurityKey.c	\
@@ -390,7 +486,7 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_ServedGUAMIItem.c	\
 	./common/NGAP_ServiceAreaInformation.c	\
 	./common/NGAP_ServiceAreaInformation-Item.c	\
-	./common/NGAP_SingleTNLInformation.c	\
+	./common/NGAP_SgNB-UE-X2AP-ID.c	\
 	./common/NGAP_SliceOverloadList.c	\
 	./common/NGAP_SliceOverloadItem.c	\
 	./common/NGAP_SliceSupportList.c	\
@@ -404,6 +500,11 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_SourceOfUEActivityBehaviourInformation.c	\
 	./common/NGAP_SourceRANNodeID.c	\
 	./common/NGAP_SourceToTarget-TransparentContainer.c	\
+	./common/NGAP_SourceToTarget-AMFInformationReroute.c	\
+	./common/NGAP_SRVCCOperationPossible.c	\
+	./common/NGAP_ConfiguredNSSAI.c	\
+	./common/NGAP_RejectedNSSAIinPLMN.c	\
+	./common/NGAP_RejectedNSSAIinTA.c	\
 	./common/NGAP_SST.c	\
 	./common/NGAP_SupportedTAList.c	\
 	./common/NGAP_SupportedTAItem.c	\
@@ -427,6 +528,7 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_TargetID.c	\
 	./common/NGAP_TargetNGRANNode-ToSourceNGRANNode-TransparentContainer.c	\
 	./common/NGAP_TargetRANNodeID.c	\
+	./common/NGAP_TargetRNC-ID.c	\
 	./common/NGAP_TargetToSource-TransparentContainer.c	\
 	./common/NGAP_TimerApproachForGUAMIRemoval.c	\
 	./common/NGAP_TimeStamp.c	\
@@ -437,10 +539,6 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_TNLAssociationList.c	\
 	./common/NGAP_TNLAssociationItem.c	\
 	./common/NGAP_TNLAssociationUsage.c	\
-	./common/NGAP_TNLInformationList.c	\
-	./common/NGAP_TNLInformationItem.c	\
-	./common/NGAP_TNLMappingList.c	\
-	./common/NGAP_TNLMappingItem.c	\
 	./common/NGAP_TraceActivation.c	\
 	./common/NGAP_TraceDepth.c	\
 	./common/NGAP_TrafficLoadReductionIndication.c	\
@@ -462,18 +560,25 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_UERadioCapabilityForPaging.c	\
 	./common/NGAP_UERadioCapabilityForPagingOfNR.c	\
 	./common/NGAP_UERadioCapabilityForPagingOfEUTRA.c	\
+	./common/NGAP_UERetentionInformation.c	\
 	./common/NGAP_UESecurityCapabilities.c	\
 	./common/NGAP_UL-NGU-UP-TNLModifyList.c	\
 	./common/NGAP_UL-NGU-UP-TNLModifyItem.c	\
 	./common/NGAP_UnavailableGUAMIList.c	\
 	./common/NGAP_UnavailableGUAMIItem.c	\
-	./common/NGAP_UP-TNLInformation.c	\
+	./common/NGAP_ULForwarding.c	\
 	./common/NGAP_UPTransportLayerInformation.c	\
+	./common/NGAP_UPTransportLayerInformationList.c	\
+	./common/NGAP_UPTransportLayerInformationItem.c	\
+	./common/NGAP_UPTransportLayerInformationPairList.c	\
+	./common/NGAP_UPTransportLayerInformationPairItem.c	\
 	./common/NGAP_UserLocationInformation.c	\
 	./common/NGAP_UserLocationInformationEUTRA.c	\
 	./common/NGAP_UserLocationInformationN3IWF.c	\
 	./common/NGAP_UserLocationInformationNR.c	\
 	./common/NGAP_UserPlaneSecurityInformation.c	\
+	./common/NGAP_VolumeTimedReportList.c	\
+	./common/NGAP_VolumeTimedReport-Item.c	\
 	./common/NGAP_WarningAreaCoordinates.c	\
 	./common/NGAP_WarningAreaList.c	\
 	./common/NGAP_WarningMessageContents.c	\
@@ -484,109 +589,114 @@ ASN_MODULE_SRCS=	\
 	./common/NGAP_XnGTP-TLAs.c	\
 	./common/NGAP_XnTLAs.c	\
 	./common/NGAP_XnTNLConfigurationInfo.c	\
-	./common/NGAP_PDUSessionResourceSetupRequest.c	\
-	./common/NGAP_PDUSessionResourceSetupResponse.c	\
-	./common/NGAP_PDUSessionResourceReleaseCommand.c	\
-	./common/NGAP_PDUSessionResourceReleaseResponse.c	\
-	./common/NGAP_PDUSessionResourceModifyRequest.c	\
-	./common/NGAP_PDUSessionResourceModifyResponse.c	\
-	./common/NGAP_PDUSessionResourceNotify.c	\
-	./common/NGAP_PDUSessionResourceModifyIndication.c	\
-	./common/NGAP_PDUSessionResourceModifyConfirm.c	\
-	./common/NGAP_InitialContextSetupRequest.c	\
-	./common/NGAP_InitialContextSetupResponse.c	\
-	./common/NGAP_InitialContextSetupFailure.c	\
-	./common/NGAP_UEContextReleaseRequest.c	\
-	./common/NGAP_UEContextReleaseCommand.c	\
-	./common/NGAP_UEContextReleaseComplete.c	\
-	./common/NGAP_UEContextModificationRequest.c	\
-	./common/NGAP_UEContextModificationResponse.c	\
-	./common/NGAP_UEContextModificationFailure.c	\
-	./common/NGAP_RRCInactiveTransitionReport.c	\
-	./common/NGAP_HandoverRequired.c	\
-	./common/NGAP_HandoverCommand.c	\
-	./common/NGAP_HandoverPreparationFailure.c	\
-	./common/NGAP_HandoverRequest.c	\
-	./common/NGAP_HandoverRequestAcknowledge.c	\
-	./common/NGAP_HandoverFailure.c	\
-	./common/NGAP_HandoverNotify.c	\
-	./common/NGAP_PathSwitchRequest.c	\
-	./common/NGAP_PathSwitchRequestAcknowledge.c	\
-	./common/NGAP_PathSwitchRequestFailure.c	\
-	./common/NGAP_HandoverCancel.c	\
-	./common/NGAP_HandoverCancelAcknowledge.c	\
-	./common/NGAP_UplinkRANStatusTransfer.c	\
-	./common/NGAP_DownlinkRANStatusTransfer.c	\
-	./common/NGAP_Paging.c	\
-	./common/NGAP_InitialUEMessage.c	\
-	./common/NGAP_DownlinkNASTransport.c	\
-	./common/NGAP_UplinkNASTransport.c	\
-	./common/NGAP_NASNonDeliveryIndication.c	\
-	./common/NGAP_RerouteNASRequest.c	\
-	./common/NGAP_NGSetupRequest.c	\
-	./common/NGAP_NGSetupResponse.c	\
-	./common/NGAP_NGSetupFailure.c	\
-	./common/NGAP_RANConfigurationUpdate.c	\
-	./common/NGAP_RANConfigurationUpdateAcknowledge.c	\
-	./common/NGAP_RANConfigurationUpdateFailure.c	\
-	./common/NGAP_AMFConfigurationUpdate.c	\
-	./common/NGAP_AMFConfigurationUpdateAcknowledge.c	\
-	./common/NGAP_AMFConfigurationUpdateFailure.c	\
-	./common/NGAP_AMFStatusIndication.c	\
-	./common/NGAP_NGReset.c	\
-	./common/NGAP_NGResetAcknowledge.c	\
-	./common/NGAP_ErrorIndication.c	\
-	./common/NGAP_OverloadStart.c	\
-	./common/NGAP_OverloadStop.c	\
-	./common/NGAP_UplinkRANConfigurationTransfer.c	\
-	./common/NGAP_DownlinkRANConfigurationTransfer.c	\
-	./common/NGAP_WriteReplaceWarningRequest.c	\
-	./common/NGAP_WriteReplaceWarningResponse.c	\
-	./common/NGAP_PWSCancelRequest.c	\
-	./common/NGAP_PWSCancelResponse.c	\
-	./common/NGAP_PWSRestartIndication.c	\
-	./common/NGAP_PWSFailureIndication.c	\
-	./common/NGAP_DownlinkUEAssociatedNRPPaTransport.c	\
-	./common/NGAP_UplinkUEAssociatedNRPPaTransport.c	\
-	./common/NGAP_DownlinkNonUEAssociatedNRPPaTransport.c	\
-	./common/NGAP_UplinkNonUEAssociatedNRPPaTransport.c	\
-	./common/NGAP_TraceStart.c	\
-	./common/NGAP_TraceFailureIndication.c	\
-	./common/NGAP_DeactivateTrace.c	\
-	./common/NGAP_CellTrafficTrace.c	\
-	./common/NGAP_LocationReportingControl.c	\
-	./common/NGAP_LocationReportingFailureIndication.c	\
-	./common/NGAP_LocationReport.c	\
-	./common/NGAP_UETNLABindingReleaseRequest.c	\
-	./common/NGAP_UERadioCapabilityInfoIndication.c	\
-	./common/NGAP_UERadioCapabilityCheckRequest.c	\
-	./common/NGAP_UERadioCapabilityCheckResponse.c	\
-	./common/NGAP_PrivateMessage.c	\
+	./common/NGAP_Criticality.c	\
+	./common/NGAP_Presence.c	\
+	./common/NGAP_PrivateIE-ID.c	\
+	./common/NGAP_ProcedureCode.c	\
+	./common/NGAP_ProtocolExtensionID.c	\
+	./common/NGAP_ProtocolIE-ID.c	\
+	./common/NGAP_TriggeringMessage.c	\
+	./common/NGAP_ProtocolIE-Container.c	\
+	./common/NGAP_ProtocolIE-SingleContainer.c	\
+	./common/NGAP_ProtocolIE-Field.c	\
+	./common/NGAP_ProtocolIE-ContainerPair.c	\
+	./common/NGAP_ProtocolIE-FieldPair.c	\
+	./common/NGAP_ProtocolIE-ContainerList.c	\
+	./common/NGAP_ProtocolIE-ContainerPairList.c	\
+	./common/NGAP_ProtocolExtensionContainer.c	\
+	./common/NGAP_ProtocolExtensionField.c	\
+	./common/NGAP_PrivateIE-Container.c	\
+	./common/NGAP_PrivateIE-Field.c	\
 	./common/NGAP_EXTERNAL.c
 
 ASN_MODULE_HDRS=	\
-	./common/NGAP_Criticality.h	\
-	./common/NGAP_Presence.h	\
-	./common/NGAP_PrivateIE-ID.h	\
-	./common/NGAP_ProcedureCode.h	\
-	./common/NGAP_ProtocolExtensionID.h	\
-	./common/NGAP_ProtocolIE-ID.h	\
-	./common/NGAP_TriggeringMessage.h	\
-	./common/NGAP_ProtocolIE-Container.h	\
-	./common/NGAP_ProtocolIE-SingleContainer.h	\
-	./common/NGAP_ProtocolIE-Field.h	\
-	./common/NGAP_ProtocolIE-ContainerPair.h	\
-	./common/NGAP_ProtocolIE-FieldPair.h	\
-	./common/NGAP_ProtocolIE-ContainerList.h	\
-	./common/NGAP_ProtocolIE-ContainerPairList.h	\
-	./common/NGAP_ProtocolExtensionContainer.h	\
-	./common/NGAP_ProtocolExtensionField.h	\
-	./common/NGAP_PrivateIE-Container.h	\
-	./common/NGAP_PrivateIE-Field.h	\
 	./common/NGAP_NGAP-PDU.h	\
 	./common/NGAP_InitiatingMessage.h	\
 	./common/NGAP_SuccessfulOutcome.h	\
 	./common/NGAP_UnsuccessfulOutcome.h	\
+	./common/NGAP_PDUSessionResourceSetupRequest.h	\
+	./common/NGAP_PDUSessionResourceSetupResponse.h	\
+	./common/NGAP_PDUSessionResourceReleaseCommand.h	\
+	./common/NGAP_PDUSessionResourceReleaseResponse.h	\
+	./common/NGAP_PDUSessionResourceModifyRequest.h	\
+	./common/NGAP_PDUSessionResourceModifyResponse.h	\
+	./common/NGAP_PDUSessionResourceNotify.h	\
+	./common/NGAP_PDUSessionResourceModifyIndication.h	\
+	./common/NGAP_PDUSessionResourceModifyConfirm.h	\
+	./common/NGAP_InitialContextSetupRequest.h	\
+	./common/NGAP_InitialContextSetupResponse.h	\
+	./common/NGAP_InitialContextSetupFailure.h	\
+	./common/NGAP_UEContextReleaseRequest.h	\
+	./common/NGAP_UEContextReleaseCommand.h	\
+	./common/NGAP_UEContextReleaseComplete.h	\
+	./common/NGAP_UEContextModificationRequest.h	\
+	./common/NGAP_UEContextModificationResponse.h	\
+	./common/NGAP_UEContextModificationFailure.h	\
+	./common/NGAP_RRCInactiveTransitionReport.h	\
+	./common/NGAP_HandoverRequired.h	\
+	./common/NGAP_HandoverCommand.h	\
+	./common/NGAP_HandoverPreparationFailure.h	\
+	./common/NGAP_HandoverRequest.h	\
+	./common/NGAP_HandoverRequestAcknowledge.h	\
+	./common/NGAP_HandoverFailure.h	\
+	./common/NGAP_HandoverNotify.h	\
+	./common/NGAP_PathSwitchRequest.h	\
+	./common/NGAP_PathSwitchRequestAcknowledge.h	\
+	./common/NGAP_PathSwitchRequestFailure.h	\
+	./common/NGAP_HandoverCancel.h	\
+	./common/NGAP_HandoverCancelAcknowledge.h	\
+	./common/NGAP_UplinkRANStatusTransfer.h	\
+	./common/NGAP_DownlinkRANStatusTransfer.h	\
+	./common/NGAP_Paging.h	\
+	./common/NGAP_InitialUEMessage.h	\
+	./common/NGAP_DownlinkNASTransport.h	\
+	./common/NGAP_UplinkNASTransport.h	\
+	./common/NGAP_NASNonDeliveryIndication.h	\
+	./common/NGAP_RerouteNASRequest.h	\
+	./common/NGAP_NGSetupRequest.h	\
+	./common/NGAP_NGSetupResponse.h	\
+	./common/NGAP_NGSetupFailure.h	\
+	./common/NGAP_RANConfigurationUpdate.h	\
+	./common/NGAP_RANConfigurationUpdateAcknowledge.h	\
+	./common/NGAP_RANConfigurationUpdateFailure.h	\
+	./common/NGAP_AMFConfigurationUpdate.h	\
+	./common/NGAP_AMFConfigurationUpdateAcknowledge.h	\
+	./common/NGAP_AMFConfigurationUpdateFailure.h	\
+	./common/NGAP_AMFStatusIndication.h	\
+	./common/NGAP_NGReset.h	\
+	./common/NGAP_NGResetAcknowledge.h	\
+	./common/NGAP_ErrorIndication.h	\
+	./common/NGAP_OverloadStart.h	\
+	./common/NGAP_OverloadStop.h	\
+	./common/NGAP_UplinkRANConfigurationTransfer.h	\
+	./common/NGAP_DownlinkRANConfigurationTransfer.h	\
+	./common/NGAP_WriteReplaceWarningRequest.h	\
+	./common/NGAP_WriteReplaceWarningResponse.h	\
+	./common/NGAP_PWSCancelRequest.h	\
+	./common/NGAP_PWSCancelResponse.h	\
+	./common/NGAP_PWSRestartIndication.h	\
+	./common/NGAP_PWSFailureIndication.h	\
+	./common/NGAP_DownlinkUEAssociatedNRPPaTransport.h	\
+	./common/NGAP_UplinkUEAssociatedNRPPaTransport.h	\
+	./common/NGAP_DownlinkNonUEAssociatedNRPPaTransport.h	\
+	./common/NGAP_UplinkNonUEAssociatedNRPPaTransport.h	\
+	./common/NGAP_TraceStart.h	\
+	./common/NGAP_TraceFailureIndication.h	\
+	./common/NGAP_DeactivateTrace.h	\
+	./common/NGAP_CellTrafficTrace.h	\
+	./common/NGAP_LocationReportingControl.h	\
+	./common/NGAP_LocationReportingFailureIndication.h	\
+	./common/NGAP_LocationReport.h	\
+	./common/NGAP_UETNLABindingReleaseRequest.h	\
+	./common/NGAP_UERadioCapabilityInfoIndication.h	\
+	./common/NGAP_UERadioCapabilityCheckRequest.h	\
+	./common/NGAP_UERadioCapabilityCheckResponse.h	\
+	./common/NGAP_PrivateMessage.h	\
+	./common/NGAP_SecondaryRATDataUsageReport.h	\
+	./common/NGAP_UplinkRIMInformationTransfer.h	\
+	./common/NGAP_DownlinkRIMInformationTransfer.h	\
+	./common/NGAP_AdditionalDLUPTNLInformationForHOList.h	\
+	./common/NGAP_AdditionalDLUPTNLInformationForHOItem.h	\
 	./common/NGAP_AdditionalQosFlowInformation.h	\
 	./common/NGAP_AllocationAndRetentionPriority.h	\
 	./common/NGAP_AllowedNSSAI.h	\
@@ -651,6 +761,11 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_CellIDListForRestart.h	\
 	./common/NGAP_CellSize.h	\
 	./common/NGAP_CellType.h	\
+	./common/NGAP_CNAssistedRANTuning.h	\
+	./common/NGAP_CNTypeRestrictionsForEquivalent.h	\
+	./common/NGAP_CNTypeRestrictionsForEquivalentItem.h	\
+	./common/NGAP_CNTypeRestrictionsForServing.h	\
+	./common/NGAP_CommonNetworkInstance.h	\
 	./common/NGAP_CompletedCellsInEAI-EUTRA.h	\
 	./common/NGAP_CompletedCellsInEAI-EUTRA-Item.h	\
 	./common/NGAP_CompletedCellsInEAI-NR.h	\
@@ -662,7 +777,7 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_ConcurrentWarningMessageInd.h	\
 	./common/NGAP_ConfidentialityProtectionIndication.h	\
 	./common/NGAP_ConfidentialityProtectionResult.h	\
-	./common/NGAP_CoreNetworkAssistanceInformation.h	\
+	./common/NGAP_CoreNetworkAssistanceInformationForInactive.h	\
 	./common/NGAP_COUNTValueForPDCP-SN12.h	\
 	./common/NGAP_COUNTValueForPDCP-SN18.h	\
 	./common/NGAP_CPTransportLayerInformation.h	\
@@ -674,6 +789,8 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_DataForwardingNotPossible.h	\
 	./common/NGAP_DataForwardingResponseDRBList.h	\
 	./common/NGAP_DataForwardingResponseDRBItem.h	\
+	./common/NGAP_DataForwardingResponseERABList.h	\
+	./common/NGAP_DataForwardingResponseERABListItem.h	\
 	./common/NGAP_DelayCritical.h	\
 	./common/NGAP_DLForwarding.h	\
 	./common/NGAP_DL-NGU-TNLInformationReused.h	\
@@ -704,6 +821,8 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_EmergencyFallbackIndicator.h	\
 	./common/NGAP_EmergencyFallbackRequestIndicator.h	\
 	./common/NGAP_EmergencyServiceTargetCN.h	\
+	./common/NGAP_EN-DCSONConfigurationTransfer.h	\
+	./common/NGAP_EndpointIPAddressAndPort.h	\
 	./common/NGAP_EquivalentPLMNs.h	\
 	./common/NGAP_EPS-TAC.h	\
 	./common/NGAP_EPS-TAI.h	\
@@ -725,6 +844,8 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_ExpectedUEMobility.h	\
 	./common/NGAP_ExpectedUEMovingTrajectory.h	\
 	./common/NGAP_ExpectedUEMovingTrajectoryItem.h	\
+	./common/NGAP_ExtendedRATRestrictionInformation.h	\
+	./common/NGAP_ExtendedRNC-ID.h	\
 	./common/NGAP_FiveG-S-TMSI.h	\
 	./common/NGAP_FiveG-TMSI.h	\
 	./common/NGAP_FiveQI.h	\
@@ -740,7 +861,9 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_GTP-TEID.h	\
 	./common/NGAP_GTPTunnel.h	\
 	./common/NGAP_GUAMI.h	\
+	./common/NGAP_GUAMIType.h	\
 	./common/NGAP_HandoverCommandTransfer.h	\
+	./common/NGAP_HandoverFlag.h	\
 	./common/NGAP_HandoverPreparationUnsuccessfulTransfer.h	\
 	./common/NGAP_HandoverRequestAcknowledgeTransfer.h	\
 	./common/NGAP_HandoverRequiredTransfer.h	\
@@ -753,12 +876,15 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_IntegrityProtectionResult.h	\
 	./common/NGAP_IntendedNumberOfPagingAttempts.h	\
 	./common/NGAP_InterfacesToTrace.h	\
+	./common/NGAP_LAC.h	\
+	./common/NGAP_LAI.h	\
 	./common/NGAP_LastVisitedCellInformation.h	\
 	./common/NGAP_LastVisitedCellItem.h	\
 	./common/NGAP_LastVisitedEUTRANCellInformation.h	\
 	./common/NGAP_LastVisitedGERANCellInformation.h	\
 	./common/NGAP_LastVisitedNGRANCellInformation.h	\
 	./common/NGAP_LastVisitedUTRANCellInformation.h	\
+	./common/NGAP_LocationReportingAdditionalInfo.h	\
 	./common/NGAP_LocationReportingReferenceID.h	\
 	./common/NGAP_LocationReportingRequestType.h	\
 	./common/NGAP_MaskedIMEISV.h	\
@@ -767,7 +893,6 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_MaximumIntegrityProtectedDataRate.h	\
 	./common/NGAP_MICOModeIndication.h	\
 	./common/NGAP_MobilityRestrictionList.h	\
-	./common/NGAP_MultipleTNLInformation.h	\
 	./common/NGAP_N3IWF-ID.h	\
 	./common/NGAP_NAS-PDU.h	\
 	./common/NGAP_NASSecurityParametersFromNGRAN.h	\
@@ -777,6 +902,8 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_NextPagingAreaScope.h	\
 	./common/NGAP_NgENB-ID.h	\
 	./common/NGAP_NGRAN-CGI.h	\
+	./common/NGAP_NGRAN-TNLAssociationToRemoveList.h	\
+	./common/NGAP_NGRAN-TNLAssociationToRemoveItem.h	\
 	./common/NGAP_NGRANTraceID.h	\
 	./common/NGAP_NonDynamic5QIDescriptor.h	\
 	./common/NGAP_NotAllowedTACs.h	\
@@ -863,6 +990,8 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_PDUSessionResourceReleasedListRelRes.h	\
 	./common/NGAP_PDUSessionResourceReleasedItemRelRes.h	\
 	./common/NGAP_PDUSessionResourceReleaseResponseTransfer.h	\
+	./common/NGAP_PDUSessionResourceSecondaryRATUsageList.h	\
+	./common/NGAP_PDUSessionResourceSecondaryRATUsageItem.h	\
 	./common/NGAP_PDUSessionResourceSetupListCxtReq.h	\
 	./common/NGAP_PDUSessionResourceSetupItemCxtReq.h	\
 	./common/NGAP_PDUSessionResourceSetupListCxtRes.h	\
@@ -885,6 +1014,7 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_PDUSessionResourceToReleaseListRelCmd.h	\
 	./common/NGAP_PDUSessionResourceToReleaseItemRelCmd.h	\
 	./common/NGAP_PDUSessionType.h	\
+	./common/NGAP_PDUSessionUsageReport.h	\
 	./common/NGAP_PeriodicRegistrationUpdateTimer.h	\
 	./common/NGAP_PLMNIdentity.h	\
 	./common/NGAP_PLMNSupportList.h	\
@@ -906,25 +1036,29 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_QosFlowInformationList.h	\
 	./common/NGAP_QosFlowInformationItem.h	\
 	./common/NGAP_QosFlowLevelQosParameters.h	\
-	./common/NGAP_QosFlowList.h	\
-	./common/NGAP_QosFlowItem.h	\
+	./common/NGAP_QosMonitoringRequest.h	\
+	./common/NGAP_QosFlowListWithCause.h	\
+	./common/NGAP_QosFlowWithCauseItem.h	\
 	./common/NGAP_QosFlowModifyConfirmList.h	\
 	./common/NGAP_QosFlowModifyConfirmItem.h	\
 	./common/NGAP_QosFlowNotifyList.h	\
 	./common/NGAP_QosFlowNotifyItem.h	\
 	./common/NGAP_QosFlowPerTNLInformation.h	\
+	./common/NGAP_QosFlowPerTNLInformationList.h	\
+	./common/NGAP_QosFlowPerTNLInformationItem.h	\
 	./common/NGAP_QosFlowSetupRequestList.h	\
 	./common/NGAP_QosFlowSetupRequestItem.h	\
-	./common/NGAP_QosFlowSetupResponseListHOReqAck.h	\
-	./common/NGAP_QosFlowSetupResponseItemHOReqAck.h	\
-	./common/NGAP_QosFlowSetupResponseListSURes.h	\
-	./common/NGAP_QosFlowSetupResponseItemSURes.h	\
+	./common/NGAP_QosFlowListWithDataForwarding.h	\
+	./common/NGAP_QosFlowItemWithDataForwarding.h	\
 	./common/NGAP_QosFlowToBeForwardedList.h	\
 	./common/NGAP_QosFlowToBeForwardedItem.h	\
+	./common/NGAP_QoSFlowsUsageReportList.h	\
+	./common/NGAP_QoSFlowsUsageReport-Item.h	\
 	./common/NGAP_RANNodeName.h	\
 	./common/NGAP_RANPagingPriority.h	\
 	./common/NGAP_RANStatusTransfer-TransparentContainer.h	\
 	./common/NGAP_RAN-UE-NGAP-ID.h	\
+	./common/NGAP_RAT-Information.h	\
 	./common/NGAP_RATRestrictions.h	\
 	./common/NGAP_RATRestrictions-Item.h	\
 	./common/NGAP_RATRestrictionInformation.h	\
@@ -934,19 +1068,26 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_RecommendedRANNodesForPaging.h	\
 	./common/NGAP_RecommendedRANNodeList.h	\
 	./common/NGAP_RecommendedRANNodeItem.h	\
+	./common/NGAP_RedirectionVoiceFallback.h	\
 	./common/NGAP_ReflectiveQosAttribute.h	\
-	./common/NGAP_ReferenceID.h	\
 	./common/NGAP_RelativeAMFCapacity.h	\
 	./common/NGAP_ReportArea.h	\
 	./common/NGAP_RepetitionPeriod.h	\
 	./common/NGAP_ResetAll.h	\
 	./common/NGAP_ResetType.h	\
+	./common/NGAP_RNC-ID.h	\
 	./common/NGAP_RoutingID.h	\
 	./common/NGAP_RRCContainer.h	\
 	./common/NGAP_RRCEstablishmentCause.h	\
 	./common/NGAP_RRCInactiveTransitionReportRequest.h	\
 	./common/NGAP_RRCState.h	\
+	./common/NGAP_RIMInformationTransfer.h	\
+	./common/NGAP_RIMInformation.h	\
+	./common/NGAP_GNBSetID.h	\
+	./common/NGAP_SCTP-TLAs.h	\
 	./common/NGAP_SD.h	\
+	./common/NGAP_SecondaryRATUsageInformation.h	\
+	./common/NGAP_SecondaryRATDataUsageReportTransfer.h	\
 	./common/NGAP_SecurityContext.h	\
 	./common/NGAP_SecurityIndication.h	\
 	./common/NGAP_SecurityKey.h	\
@@ -956,7 +1097,7 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_ServedGUAMIItem.h	\
 	./common/NGAP_ServiceAreaInformation.h	\
 	./common/NGAP_ServiceAreaInformation-Item.h	\
-	./common/NGAP_SingleTNLInformation.h	\
+	./common/NGAP_SgNB-UE-X2AP-ID.h	\
 	./common/NGAP_SliceOverloadList.h	\
 	./common/NGAP_SliceOverloadItem.h	\
 	./common/NGAP_SliceSupportList.h	\
@@ -970,6 +1111,11 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_SourceOfUEActivityBehaviourInformation.h	\
 	./common/NGAP_SourceRANNodeID.h	\
 	./common/NGAP_SourceToTarget-TransparentContainer.h	\
+	./common/NGAP_SourceToTarget-AMFInformationReroute.h	\
+	./common/NGAP_SRVCCOperationPossible.h	\
+	./common/NGAP_ConfiguredNSSAI.h	\
+	./common/NGAP_RejectedNSSAIinPLMN.h	\
+	./common/NGAP_RejectedNSSAIinTA.h	\
 	./common/NGAP_SST.h	\
 	./common/NGAP_SupportedTAList.h	\
 	./common/NGAP_SupportedTAItem.h	\
@@ -993,6 +1139,7 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_TargetID.h	\
 	./common/NGAP_TargetNGRANNode-ToSourceNGRANNode-TransparentContainer.h	\
 	./common/NGAP_TargetRANNodeID.h	\
+	./common/NGAP_TargetRNC-ID.h	\
 	./common/NGAP_TargetToSource-TransparentContainer.h	\
 	./common/NGAP_TimerApproachForGUAMIRemoval.h	\
 	./common/NGAP_TimeStamp.h	\
@@ -1003,10 +1150,6 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_TNLAssociationList.h	\
 	./common/NGAP_TNLAssociationItem.h	\
 	./common/NGAP_TNLAssociationUsage.h	\
-	./common/NGAP_TNLInformationList.h	\
-	./common/NGAP_TNLInformationItem.h	\
-	./common/NGAP_TNLMappingList.h	\
-	./common/NGAP_TNLMappingItem.h	\
 	./common/NGAP_TraceActivation.h	\
 	./common/NGAP_TraceDepth.h	\
 	./common/NGAP_TrafficLoadReductionIndication.h	\
@@ -1028,18 +1171,25 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_UERadioCapabilityForPaging.h	\
 	./common/NGAP_UERadioCapabilityForPagingOfNR.h	\
 	./common/NGAP_UERadioCapabilityForPagingOfEUTRA.h	\
+	./common/NGAP_UERetentionInformation.h	\
 	./common/NGAP_UESecurityCapabilities.h	\
 	./common/NGAP_UL-NGU-UP-TNLModifyList.h	\
 	./common/NGAP_UL-NGU-UP-TNLModifyItem.h	\
 	./common/NGAP_UnavailableGUAMIList.h	\
 	./common/NGAP_UnavailableGUAMIItem.h	\
-	./common/NGAP_UP-TNLInformation.h	\
+	./common/NGAP_ULForwarding.h	\
 	./common/NGAP_UPTransportLayerInformation.h	\
+	./common/NGAP_UPTransportLayerInformationList.h	\
+	./common/NGAP_UPTransportLayerInformationItem.h	\
+	./common/NGAP_UPTransportLayerInformationPairList.h	\
+	./common/NGAP_UPTransportLayerInformationPairItem.h	\
 	./common/NGAP_UserLocationInformation.h	\
 	./common/NGAP_UserLocationInformationEUTRA.h	\
 	./common/NGAP_UserLocationInformationN3IWF.h	\
 	./common/NGAP_UserLocationInformationNR.h	\
 	./common/NGAP_UserPlaneSecurityInformation.h	\
+	./common/NGAP_VolumeTimedReportList.h	\
+	./common/NGAP_VolumeTimedReport-Item.h	\
 	./common/NGAP_WarningAreaCoordinates.h	\
 	./common/NGAP_WarningAreaList.h	\
 	./common/NGAP_WarningMessageContents.h	\
@@ -1050,84 +1200,24 @@ ASN_MODULE_HDRS=	\
 	./common/NGAP_XnGTP-TLAs.h	\
 	./common/NGAP_XnTLAs.h	\
 	./common/NGAP_XnTNLConfigurationInfo.h	\
-	./common/NGAP_PDUSessionResourceSetupRequest.h	\
-	./common/NGAP_PDUSessionResourceSetupResponse.h	\
-	./common/NGAP_PDUSessionResourceReleaseCommand.h	\
-	./common/NGAP_PDUSessionResourceReleaseResponse.h	\
-	./common/NGAP_PDUSessionResourceModifyRequest.h	\
-	./common/NGAP_PDUSessionResourceModifyResponse.h	\
-	./common/NGAP_PDUSessionResourceNotify.h	\
-	./common/NGAP_PDUSessionResourceModifyIndication.h	\
-	./common/NGAP_PDUSessionResourceModifyConfirm.h	\
-	./common/NGAP_InitialContextSetupRequest.h	\
-	./common/NGAP_InitialContextSetupResponse.h	\
-	./common/NGAP_InitialContextSetupFailure.h	\
-	./common/NGAP_UEContextReleaseRequest.h	\
-	./common/NGAP_UEContextReleaseCommand.h	\
-	./common/NGAP_UEContextReleaseComplete.h	\
-	./common/NGAP_UEContextModificationRequest.h	\
-	./common/NGAP_UEContextModificationResponse.h	\
-	./common/NGAP_UEContextModificationFailure.h	\
-	./common/NGAP_RRCInactiveTransitionReport.h	\
-	./common/NGAP_HandoverRequired.h	\
-	./common/NGAP_HandoverCommand.h	\
-	./common/NGAP_HandoverPreparationFailure.h	\
-	./common/NGAP_HandoverRequest.h	\
-	./common/NGAP_HandoverRequestAcknowledge.h	\
-	./common/NGAP_HandoverFailure.h	\
-	./common/NGAP_HandoverNotify.h	\
-	./common/NGAP_PathSwitchRequest.h	\
-	./common/NGAP_PathSwitchRequestAcknowledge.h	\
-	./common/NGAP_PathSwitchRequestFailure.h	\
-	./common/NGAP_HandoverCancel.h	\
-	./common/NGAP_HandoverCancelAcknowledge.h	\
-	./common/NGAP_UplinkRANStatusTransfer.h	\
-	./common/NGAP_DownlinkRANStatusTransfer.h	\
-	./common/NGAP_Paging.h	\
-	./common/NGAP_InitialUEMessage.h	\
-	./common/NGAP_DownlinkNASTransport.h	\
-	./common/NGAP_UplinkNASTransport.h	\
-	./common/NGAP_NASNonDeliveryIndication.h	\
-	./common/NGAP_RerouteNASRequest.h	\
-	./common/NGAP_NGSetupRequest.h	\
-	./common/NGAP_NGSetupResponse.h	\
-	./common/NGAP_NGSetupFailure.h	\
-	./common/NGAP_RANConfigurationUpdate.h	\
-	./common/NGAP_RANConfigurationUpdateAcknowledge.h	\
-	./common/NGAP_RANConfigurationUpdateFailure.h	\
-	./common/NGAP_AMFConfigurationUpdate.h	\
-	./common/NGAP_AMFConfigurationUpdateAcknowledge.h	\
-	./common/NGAP_AMFConfigurationUpdateFailure.h	\
-	./common/NGAP_AMFStatusIndication.h	\
-	./common/NGAP_NGReset.h	\
-	./common/NGAP_NGResetAcknowledge.h	\
-	./common/NGAP_ErrorIndication.h	\
-	./common/NGAP_OverloadStart.h	\
-	./common/NGAP_OverloadStop.h	\
-	./common/NGAP_UplinkRANConfigurationTransfer.h	\
-	./common/NGAP_DownlinkRANConfigurationTransfer.h	\
-	./common/NGAP_WriteReplaceWarningRequest.h	\
-	./common/NGAP_WriteReplaceWarningResponse.h	\
-	./common/NGAP_PWSCancelRequest.h	\
-	./common/NGAP_PWSCancelResponse.h	\
-	./common/NGAP_PWSRestartIndication.h	\
-	./common/NGAP_PWSFailureIndication.h	\
-	./common/NGAP_DownlinkUEAssociatedNRPPaTransport.h	\
-	./common/NGAP_UplinkUEAssociatedNRPPaTransport.h	\
-	./common/NGAP_DownlinkNonUEAssociatedNRPPaTransport.h	\
-	./common/NGAP_UplinkNonUEAssociatedNRPPaTransport.h	\
-	./common/NGAP_TraceStart.h	\
-	./common/NGAP_TraceFailureIndication.h	\
-	./common/NGAP_DeactivateTrace.h	\
-	./common/NGAP_CellTrafficTrace.h	\
-	./common/NGAP_LocationReportingControl.h	\
-	./common/NGAP_LocationReportingFailureIndication.h	\
-	./common/NGAP_LocationReport.h	\
-	./common/NGAP_UETNLABindingReleaseRequest.h	\
-	./common/NGAP_UERadioCapabilityInfoIndication.h	\
-	./common/NGAP_UERadioCapabilityCheckRequest.h	\
-	./common/NGAP_UERadioCapabilityCheckResponse.h	\
-	./common/NGAP_PrivateMessage.h	\
+	./common/NGAP_Criticality.h	\
+	./common/NGAP_Presence.h	\
+	./common/NGAP_PrivateIE-ID.h	\
+	./common/NGAP_ProcedureCode.h	\
+	./common/NGAP_ProtocolExtensionID.h	\
+	./common/NGAP_ProtocolIE-ID.h	\
+	./common/NGAP_TriggeringMessage.h	\
+	./common/NGAP_ProtocolIE-Container.h	\
+	./common/NGAP_ProtocolIE-SingleContainer.h	\
+	./common/NGAP_ProtocolIE-Field.h	\
+	./common/NGAP_ProtocolIE-ContainerPair.h	\
+	./common/NGAP_ProtocolIE-FieldPair.h	\
+	./common/NGAP_ProtocolIE-ContainerList.h	\
+	./common/NGAP_ProtocolIE-ContainerPairList.h	\
+	./common/NGAP_ProtocolExtensionContainer.h	\
+	./common/NGAP_ProtocolExtensionField.h	\
+	./common/NGAP_PrivateIE-Container.h	\
+	./common/NGAP_PrivateIE-Field.h	\
 	./common/NGAP_EXTERNAL.h
 
 ASN_MODULE_HDRS+=./common/ANY.h
