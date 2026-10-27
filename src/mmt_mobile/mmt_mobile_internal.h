@@ -22,6 +22,12 @@ int init_proto_ngap_struct();
 int init_proto_s1ap();
 int init_proto_nas_5g_struct();
 
+/* Plugin entry points, dlsym()ed by plugins_engine.c. libmmt_tmobile is built
+ * -fvisibility=hidden (issue #534): with the s1ap_entities_* and
+ * update_ngap_data declarations of include/, these are all it exports. */
+MMTAPI int init_proto();
+MMTAPI int cleanup_proto();
+
 
 #define __PACKED __attribute__((packed))
 

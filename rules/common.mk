@@ -592,9 +592,24 @@ endif
 # (src/mmt_core/public_include/mmt_exports.h), so libmmt_core.so's dynamic
 # symbol table holds the MMTAPI declarations and nothing else; every other
 # core function stays linkable inside the library and libmmt_core.a. The
-# private internals libmmt_tcpip binds to are MMTAPI until #534. Tests that
-# call hidden internals link the static archive
+# private internals libmmt_tcpip binds to stay MMTAPI while it needs them. Tests
+# that call hidden internals link the static archive
 # (tools/phase0/tests/static_core_link.sh). scripts/validate-exported-symbols.sh
-# enforces the export budget. Protocol libraries keep default visibility (#534).
+# enforces the export budget. The protocol libraries follow in the #534 block.
 $(CORE_OBJECTS): CFLAGS += -fvisibility=hidden
 $(CORE_OBJECTS): CXXFLAGS += -fvisibility=hidden
+
+# Issue #534 (appended so no cited line range moves): the protocol plugins
+# export only what is declared MMTAPI, as libmmt_core does since #533. Their
+# objects are compiled with hidden default visibility; the MMTAPI declarations
+# are the dlsym() entry points init_proto/cleanup_proto plus the functions
+# their installed headers declare (mmt_tcpip_plugin.h, proto_s1ap.h,
+# proto_ngap.h, dicom.h) and the #237 alias proto_irc.c keeps until 2.0.0.
+# MMTAPI only carries visibility("default") under _MMT_BUILD_SDK, which
+# business_app and dicom did not get. Tests that call plugin internals link
+# the static archive (tools/phase0/tests/static_core_link.sh,
+# mmt_static_plugin_link). scripts/validate-exported-symbols.sh compares each
+# plugin's exports with docs/Exported-Symbols.md.
+$(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS): CFLAGS += -D_MMT_BUILD_SDK
+$(TCPIP_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS): CFLAGS += -fvisibility=hidden
+$(TCPIP_OBJECTS) $(LIBMOBILE_OBJECTS) $(LIBBAPP_OBJECTS) $(LIBDICOM_OBJECTS): CXXFLAGS += -fvisibility=hidden

@@ -28,6 +28,11 @@ else
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
+# Issue #534: this test calls libmmt_tcpip internals the plugin hides, so
+# it links the static archive instead (tools/phase0/tests/static_core_link.sh).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_plugin_link "${PREFIX}/dpi/lib" tcpip || exit 2
 echo "[2/3] compiling ssl_record_test (ASan/UBSan)"
 # The internal packet struct (mmt_tcpip_internal_packet_struct) is not part of
 # the installed public headers, so add the in-tree plugin include paths. The
@@ -37,7 +42,7 @@ gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -I"${PREFIX}/dpi/include" \
     -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
     -I"${REPO_ROOT}/src/mmt_core/public_include" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl -lpthread -lm
+    -L"${PREFIX}/dpi/lib" "${MMT_STATIC_PLUGIN_LDFLAGS[@]}" -lmmt_core -ldl -lpthread -lm
 
 echo "[3/3] running ssl_record_test under ASan/UBSan"
 rc=0

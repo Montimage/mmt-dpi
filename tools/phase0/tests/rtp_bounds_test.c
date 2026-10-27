@@ -153,7 +153,13 @@ int main(void)
          * (the old init wrapper was folded into it); init_extraction()
          * allocates the registry it registers into. */
         init_extraction();
-        init_proto_rtp_struct();
+        /* Issue #534: this test links libmmt_tcpip's static archive, a copy
+         * apart from the plugin init_extraction() loaded, which registered
+         * PROTO_RTP already. Register it again through this copy, the one the
+         * direct calls below read, so its file-scope bitmasks are filled. */
+        unregister_protocol_by_id(PROTO_RTP);
+        CHECK(init_proto_rtp_struct() == PROTO_REGISTERED,
+              "init_proto_rtp_struct() registers PROTO_RTP through the static copy");
 
         struct mmt_internal_tcpip_session_struct flow;
         struct mmt_tcpip_internal_packet_struct ip;

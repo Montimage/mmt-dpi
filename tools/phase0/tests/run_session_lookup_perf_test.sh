@@ -42,6 +42,8 @@ fi
 # shellcheck source=tools/phase0/tests/static_core_link.sh
 . "${TEST_DIR}/static_core_link.sh"
 mmt_static_core_link "${PREFIX}/dpi/lib" || exit 2
+# Issue #534: it calls libmmt_tcpip internals too, which the plugin hides.
+mmt_static_plugin_link "${PREFIX}/dpi/lib" tcpip || exit 2
 echo "[2/3] compiling session_lookup_perf_test (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -o "${BIN}" "${TEST_DIR}/session_lookup_perf_test.c" \
@@ -51,7 +53,7 @@ gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -I"${REPO_ROOT}/src/mmt_tcpip/lib" \
     -I"${REPO_ROOT}/src/mmt_tcpip/lib/protocols" \
     -I"${TEST_DIR}" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tcpip "${MMT_STATIC_CORE_LDFLAGS[@]}" -ldl -lpthread -lm
+    -L"${PREFIX}/dpi/lib" "${MMT_STATIC_PLUGIN_LDFLAGS[@]}" "${MMT_STATIC_CORE_LDFLAGS[@]}" -ldl -lpthread -lm
 
 echo "[3/3] running session_lookup_perf_test under ASan/UBSan"
 # Preload the ASan runtime: the SDK is pulled in via dlopen, so the runtime

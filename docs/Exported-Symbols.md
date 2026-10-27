@@ -4,14 +4,16 @@ title: "Exported Symbols"
 ---
 
 > ⚠️ This document is auto-generated and may drift as symbols change.
-> The table lists the `T` symbols `nm -gC --defined-only` reports for the built
-> `libmmt_core.so`; the `public` column is derived from membership in the
-> installed public headers (`src/mmt_core/public_include/*.h`), not from the
-> symbol table. Regenerate/check with:
+> The first table lists the `T` symbols `nm -gC --defined-only` reports for
+> the built `libmmt_core.so`; the `public` column is derived from membership
+> in the installed public headers (`src/mmt_core/public_include/*.h`), not
+> from the symbol table. The protocol-plugin tables at the end list what
+> `nm -D --defined-only` reports for each plugin. Regenerate/check with:
 > `bash scripts/validate-exported-symbols.sh [--write]` — the doc-validators CI
 > job runs it on every PR (issue #187, Task 0.7).
 
-Here is the complete list of the functions `libmmt_core.so` exports.
+Here is the complete list of the functions `libmmt_core.so` exports, followed
+by the export sets of the protocol plugins.
 
 Since issue #533, `MMTAPI` is the export marker: the core objects are compiled
 with `-fvisibility=hidden` (`rules/common.mk`, the #533 block at the end of the
@@ -20,7 +22,8 @@ file) and `MMTAPI` carries `visibility("default")` inside the SDK build
 when it is declared `MMTAPI`. The `public = N` rows are private-header
 internals that `libmmt_tcpip` resolves after `dlopen()`
 (`src/mmt_core/private_include/hash_utils.h`, `hashmap.h`,
-`packet_processing.h`). They stay `MMTAPI` until #534 removes the need. The
+`packet_processing.h`). They stay `MMTAPI` while `libmmt_tcpip` needs them
+(#534 hid the plugins' own internals and left these in place). The
 four `MMT_DPI_PROFILE_*` objects are exported `R` (read-only data) symbols, so
 this `T` table does not list them. Tests that call hidden internals link
 `libmmt_core.a` (`tools/phase0/tests/static_core_link.sh`).
@@ -41,7 +44,9 @@ one of those declarations, or misses one of them.
 
 > **Deprecation note (2026-09, #237):** `mmt_search_irc_ssl_detect_ninty_percent_but_very_fast`
 > (libmmt_tcpip) keeps its exported symbol for ABI stability but is now
-> `__attribute__((deprecated))` in `src/mmt_tcpip/lib/protocols/proto_irc.c:375-376`.
+> `__attribute__((deprecated))` in `src/mmt_tcpip/lib/protocols/proto_irc.c:376-377`.
+> It is declared `MMTAPI` there, so it stays exported from the hidden-visibility
+> plugin (issue #534) until its removal.
 > Use the correctly named alias `mmt_search_irc_ssl_detect` (same signature and
 > behaviour, defined alongside at `proto_irc.c:356`). The misspelled name is
 > scheduled for removal in release 2.0.0.
@@ -326,3 +331,79 @@ Symbol table
 |273|`unregister_protocol_by_name`|**Y**|
 |274|`unregister_protocol_stack`|**Y**|
 |275|`update_protocol`|**Y**|
+
+## Protocol plugins
+
+Since issue #534 the protocol plugins are built like the core: their objects
+are compiled with `-fvisibility=hidden` (`rules/common.mk`, the #534 block at
+the end of the file), so a plugin exports only what is declared `MMTAPI`:
+the entry points `init_proto`/`cleanup_proto` that `plugins_engine.c` looks
+up with `dlsym()`, and the functions the plugin's installed headers declare.
+Everything else, such as the protocol classifiers, the attribute extractors
+and the vendored llhttp parser, stays inside the library and its static
+archive. Tests that call a hidden plugin internal link that archive
+(`tools/phase0/tests/static_core_link.sh`, `mmt_static_plugin_link`).
+
+`scripts/validate-exported-symbols.sh` compares each table below with the
+built library and fails when they differ, naming every symbol added or
+removed (the loader's `_init`/`_fini` and the linker's `_edata`/`_end`/
+`__bss_start` are not listed). A change to a plugin's export set is recorded
+by regenerating these tables with `--write` in the same pull request; the
+prose above each table is kept as written.
+
+## libmmt_tcpip
+
+`init_proto`, `cleanup_proto`, `init_tcpip_plugin` and `cleanup_tcpip_plugin`
+are declared in `src/mmt_tcpip/include/mmt_tcpip_plugin.h`. The misspelled
+`mmt_search_irc_ssl_detect_ninty_percent_but_very_fast` stays exported until
+2.0.0 (the #237 note above).
+
+| symbol |
+|:-|
+|`cleanup_proto`|
+|`cleanup_tcpip_plugin`|
+|`init_proto`|
+|`init_tcpip_plugin`|
+|`mmt_search_irc_ssl_detect_ninty_percent_but_very_fast`|
+
+## libmmt_tmobile
+
+`init_proto` and `cleanup_proto` are declared in
+`src/mmt_mobile/mmt_mobile_internal.h`, the `s1ap_entities_*` functions in
+`src/mmt_mobile/include/proto_s1ap.h`, and `update_ngap_data` in
+`src/mmt_mobile/include/proto_ngap.h` (5Greplay calls it to rewrite NGAP
+attributes). The asn1c runtime has been hidden since #443.
+
+| symbol |
+|:-|
+|`cleanup_proto`|
+|`init_proto`|
+|`s1ap_entities_count`|
+|`s1ap_entities_reset`|
+|`s1ap_entities_update`|
+|`update_ngap_data`|
+
+## libmmt_business_app
+
+`init_proto` and `cleanup_proto` are declared in
+`src/mmt_business_app/mmt_business_app_internal.h`.
+
+| symbol |
+|:-|
+|`cleanup_proto`|
+|`init_proto`|
+
+## libmmt_tdicom
+
+Every symbol is declared in `src/mmt_dicom/include/dicom.h`.
+
+| symbol |
+|:-|
+|`cleanup_proto`|
+|`dicom_stack_classification`|
+|`init_dicom_proto_struct`|
+|`init_proto`|
+|`mmt_check_dicom`|
+|`mmt_check_dicom_hdr`|
+|`mmt_check_dicom_payload`|
+|`mmt_check_dicom_tcp`|

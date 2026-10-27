@@ -14,10 +14,13 @@ extern "C" {
 
 //#include "mmt_tcpip.h"
 
-int init_proto();
+/* init_proto/cleanup_proto are the entry points plugins_engine.c dlsym()s.
+ * The plugin is built -fvisibility=hidden (issue #534): these MMTAPI
+ * declarations are what libmmt_tcpip.so exports. */
+MMTAPI int init_proto();
 MMTAPI int init_tcpip_plugin();
 
-int cleanup_proto();
+MMTAPI int cleanup_proto();
 MMTAPI int cleanup_tcpip_plugin();
 
 #ifdef __cplusplus

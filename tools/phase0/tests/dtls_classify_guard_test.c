@@ -244,7 +244,13 @@ int main(void)
      * folded the old init wrapper into it); init_extraction() allocates the
      * registry it registers into. */
     init_extraction();
-    init_proto_dtls_struct();
+    /* Issue #534: this test links libmmt_tcpip's static archive, a copy
+     * apart from the plugin init_extraction() loaded, which registered
+     * PROTO_DTLS already. Register it again through this copy, the one the
+     * direct calls below read, so its file-scope bitmasks are filled. */
+    unregister_protocol_by_id(PROTO_DTLS);
+    CHECK(init_proto_dtls_struct() == PROTO_REGISTERED,
+          "init_proto_dtls_struct() registers PROTO_DTLS through the static copy");
     test_already_classified_flow_not_reclassified();
     test_excluded_flow_not_reclassified();
     test_version_0x0100_rejected();

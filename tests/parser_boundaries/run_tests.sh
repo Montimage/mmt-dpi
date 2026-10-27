@@ -285,15 +285,24 @@ done
 # shellcheck source=tools/phase0/tests/static_core_link.sh
 . "${REPO_ROOT}/tools/phase0/tests/static_core_link.sh"
 mmt_static_core_link "${LIB}" || exit 2
+# Issue #534: the tests below call libmmt_tcpip internals (_dtls_extract_attribute,
+# the nfs_*/tcp_* extraction functions), which the plugin hides, so they link
+# its static archive instead of -lmmt_tcpip.
+mmt_static_plugin_link "${LIB}" tcpip || exit 2
 for name in "${API_TESTS[@]}"; do
     core_link=(-lmmt_core)
     if [ "${name}" = dtls_wire_extent_unit ]; then
         core_link=("${MMT_STATIC_CORE_LDFLAGS[@]}")
     fi
+    tcpip_link=(-lmmt_tcpip)
+    case "${name}" in
+        dtls_wire_extent_unit|dtls_wire_extent_api|nfs_rpc_header_bounds|tcp_options_bounds)
+            tcpip_link=("${MMT_STATIC_PLUGIN_LDFLAGS[@]}") ;;
+    esac
     "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \
         -o "${SCRIPT_DIR}/test_${name}" "${SCRIPT_DIR}/test_${name}.c" \
         -I"${INC}" -I"${REPO_ROOT}/src/mmt_tcpip/lib" "${UNIT_INCS[@]}" \
-        -L"${LIB}" -lmmt_tcpip "${core_link[@]}" -ldl -lpcap -lpthread -lm
+        -L"${LIB}" "${tcpip_link[@]}" "${core_link[@]}" -ldl -lpcap -lpthread -lm
 done
 for name in "${MOBILE_TESTS[@]}"; do
     "${CC}" "${extra_cflags[@]}" -O1 -g -Wall -Wextra -std=gnu11 \

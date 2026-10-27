@@ -149,8 +149,8 @@ echo "  [3/3] running tests ..."
 # Issue #443: no asn1c runtime symbol is exported from the shipped mobile
 # library (a host linking its own asn1c runtime must not interpose them, nor
 # decode through the host's asn_OP_ANY), while the plugin entry points and the
-# handwritten decoders still are. The asn1c symbol set is read from the
-# in-tree objects the build just produced.
+# header-declared functions still are (issue #534). The asn1c symbol set is
+# read from the in-tree objects the build just produced.
 MOBILE_SO="${LIB}/libmmt_tmobile.so"
 ASN1C_SYMS="${WORK}/asn1c.syms"
 EXPORTED_SYMS="${WORK}/exported.syms"
@@ -168,11 +168,17 @@ if [ -n "${leaked}" ]; then
     head -5 <<<"${leaked}" >&2
     exit 1
 fi
-for sym in init_proto cleanup_proto s1ap_decode; do
+# Issue #534: the plugin is built -fvisibility=hidden and exports its MMTAPI
+# declarations only — the entry points and the header-declared functions stay
+# exported, the handwritten decoders (s1ap_decode) no longer are.
+for sym in init_proto cleanup_proto s1ap_entities_count update_ngap_data; do
     if ! grep -qx "${sym}" "${EXPORTED_SYMS}"; then
         echo "✗ libmmt_tmobile.so no longer exports ${sym}" >&2; exit 1
     fi
 done
+if grep -qx 's1ap_decode' "${EXPORTED_SYMS}"; then
+    echo "✗ libmmt_tmobile.so exports the internal s1ap_decode (issue #534 hides it)" >&2; exit 1
+fi
 echo "  ok   no asn1c runtime symbol exported from libmmt_tmobile.so ($(wc -l < "${ASN1C_SYMS}") hidden)"
 # The malformed-S1AP loop is the F-BUG-078 regression; LSAN is its oracle.
 # run_all_tests.sh exports ASAN_OPTIONS=detect_leaks=0 for SANITIZE=asan

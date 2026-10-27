@@ -185,7 +185,13 @@ int main(void)
      * allocates the global protocol registry init_proto_quic_struct()
      * registers into. */
     init_extraction();
-    init_proto_quic_struct();
+    /* Issue #534: this test links libmmt_tcpip's static archive, a copy
+     * apart from the plugin init_extraction() loaded, which registered
+     * PROTO_QUIC already. Register it again through this copy, the one the
+     * direct calls below read, so its file-scope bitmasks are filled. */
+    unregister_protocol_by_id(PROTO_QUIC);
+    CHECK(init_proto_quic_struct() == PROTO_REGISTERED,
+          "init_proto_quic_struct() registers PROTO_QUIC through the static copy");
     test_min_len_gate();
     test_version_read_in_bounds();
     printf("=== %d checks, %d failure(s) ===\n", g_checks, g_failures);

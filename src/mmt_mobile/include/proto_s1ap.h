@@ -8,6 +8,8 @@
 #ifndef SRC_MMT_MOBILE_PROTO_S1AP_H_
 #define SRC_MMT_MOBILE_PROTO_S1AP_H_
 
+#include "mmt_exports.h"
+
 #define S1AP_PROCEDURE_CODE_ALIAS "procedure_code"
 #define S1AP_PDU_PRESENT_ALIAS    "pdu_present"
 
@@ -226,8 +228,9 @@ struct s1ap_message; /* defined in s1ap/s1ap_common.h (internal header) */
  */
 #define S1AP_MAX_ENTITIES 4096
 
-uint32_t s1ap_entities_update( s1ap_entity_type_t type, const struct s1ap_message *msg );
-uint32_t s1ap_entities_count( void );
-void     s1ap_entities_reset( void );
+/* Exported by libmmt_tmobile, which is built -fvisibility=hidden (issue #534). */
+MMTAPI uint32_t s1ap_entities_update( s1ap_entity_type_t type, const struct s1ap_message *msg );
+MMTAPI uint32_t s1ap_entities_count( void );
+MMTAPI void     s1ap_entities_reset( void );
 
 #endif /* SRC_MMT_MOBILE_PROTO_S1AP_H_ */

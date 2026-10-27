@@ -371,8 +371,9 @@ uint8_t mmt_search_irc_ssl_detect(ipacket_t * ipacket) {
 
 /* Backward-compatible alias for the misspelled exported name ("ninty" and an
  * unverifiable accuracy claim). Kept for ABI stability; the canonical entry
- * point is mmt_search_irc_ssl_detect(). Removal release: 2.0.0. */
-uint8_t mmt_search_irc_ssl_detect_ninty_percent_but_very_fast(ipacket_t * ipacket)
+ * point is mmt_search_irc_ssl_detect(). Removal release: 2.0.0. MMTAPI keeps it
+ * exported from the hidden-visibility plugin until then (issue #534). */
+MMTAPI uint8_t mmt_search_irc_ssl_detect_ninty_percent_but_very_fast(ipacket_t * ipacket)
         __attribute__((deprecated("use mmt_search_irc_ssl_detect; removal in 2.0.0")));
 
 uint8_t mmt_search_irc_ssl_detect_ninty_percent_but_very_fast(ipacket_t * ipacket) {

@@ -15,4 +15,9 @@
 
 int init_proto_ips_data();
 
+/* Plugin entry points, dlsym()ed by plugins_engine.c. libmmt_business_app is
+ * built -fvisibility=hidden (issue #534): these are all it exports. */
+MMTAPI int init_proto();
+MMTAPI int cleanup_proto();
+
 #endif /* SRC_MMT_BUSINESS_APP_MMT_BUSINESS_APP_INTERNAL_H_ */

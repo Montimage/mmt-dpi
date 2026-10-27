@@ -57,9 +57,14 @@ SRC_INC=(
 
 echo "  [2/3] compiling test ..."
 read -r -a extra_cflags <<< "${EXTRA_CFLAGS:-}"
+# Issue #534: the test calls the nas_* decoders, which libmmt_tmobile.so
+# hides, so it links the static archive (tools/phase0/tests/static_core_link.sh).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${REPO_ROOT}/tools/phase0/tests/static_core_link.sh"
+mmt_static_plugin_link "${LIB}" tmobile || exit 2
 ${CC} "${extra_cflags[@]}" -O2 -Wall -o "${SCRIPT_DIR}/test_nas_ies_tail" \
     "${TEST_SRC}" "${SRC_INC[@]}" \
-    -I "${INC}" -L "${LIB}" -lmmt_tmobile -lmmt_core
+    -I "${INC}" -L "${LIB}" "${MMT_STATIC_PLUGIN_LDFLAGS[@]}" -lmmt_core
 
 echo "  [3/3] running test ..."
 LD_LIBRARY_PATH="${LIB}:${LD_LIBRARY_PATH:-}" \

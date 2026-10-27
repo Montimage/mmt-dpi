@@ -2,8 +2,10 @@
  * internal_decls.h — the single declaration point for the non-static SDK
  * internals the phase0 harnesses exercise (issue #186, F-TEST-012).
  *
- * These entry points are exported (external linkage) but deliberately absent
- * from the installed public headers: they are internals. The harnesses used
+ * These entry points have external linkage but are deliberately absent
+ * from the installed public headers: they are internals. The shared
+ * libraries do not export them (issues #533, #534), so a harness calling one
+ * links the static archive (static_core_link.sh). The harnesses used
  * to re-declare them per file — and one test hand-copied the private
  * dns_name_t layout — so a signature or field change in the library still
  * linked and then read wrong offsets. One shared header means exactly one

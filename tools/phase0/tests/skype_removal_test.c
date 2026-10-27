@@ -299,7 +299,13 @@ int main(void)
      * init wrapper into it); init_extraction() allocates the registry it
      * registers into. */
     init_extraction();
-    init_proto_skype_struct();
+    /* Issue #534: this test links libmmt_tcpip's static archive, a copy
+     * apart from the plugin init_extraction() loaded, which registered
+     * PROTO_SKYPE already. Register it again through this copy, the one the
+     * direct calls below read, so its file-scope bitmasks are filled. */
+    unregister_protocol_by_id(PROTO_SKYPE);
+    CHECK(init_proto_skype_struct() == PROTO_REGISTERED,
+          "init_proto_skype_struct() registers PROTO_SKYPE through the static copy");
     test_tcp_coincidental_shape_no_longer_classifies_skype();
     test_udp_coincidental_shape_no_longer_classifies_skype();
     test_tcp_already_classified_flow_not_reclassified();

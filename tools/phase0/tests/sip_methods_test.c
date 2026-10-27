@@ -116,7 +116,13 @@ int main(void)
     /* issue #227: the old init wrapper was folded into the registered
      * init_proto_sip_struct(), which also populates the file-scope bitmasks
      * mmt_check_sip()'s gate reads. */
-    init_proto_sip_struct();
+    /* Issue #534: this test links libmmt_tcpip's static archive, a copy
+     * apart from the plugin init_extraction() loaded, which registered
+     * PROTO_SIP already. Register it again through this copy, the one the
+     * direct calls below read, so its file-scope bitmasks are filled. */
+    unregister_protocol_by_id(PROTO_SIP);
+    CHECK(init_proto_sip_struct() == PROTO_REGISTERED,
+          "init_proto_sip_struct() registers PROTO_SIP through the static copy");
 
     printf("issue #205: SIP method casing + response compare bounds\n");
 

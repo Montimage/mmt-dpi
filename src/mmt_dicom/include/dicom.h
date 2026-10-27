@@ -108,16 +108,18 @@ struct __attribute__((packed)) dicomhdr {
     uint32_t pdu_len ;
 };
 
-int init_dicom_proto_struct();
-classified_proto_t dicom_stack_classification(ipacket_t * ipacket);
-int mmt_check_dicom_hdr(struct dicomhdr* header);
-int mmt_check_dicom_payload(struct dicomhdr* header, unsigned int packet_len);
-int mmt_check_dicom(struct dicomhdr * header, unsigned int packet_len);
-int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index);
+/* libmmt_tdicom is built -fvisibility=hidden (issue #534): it exports
+ * exactly these MMTAPI declarations. */
+MMTAPI int init_dicom_proto_struct();
+MMTAPI classified_proto_t dicom_stack_classification(ipacket_t * ipacket);
+MMTAPI int mmt_check_dicom_hdr(struct dicomhdr* header);
+MMTAPI int mmt_check_dicom_payload(struct dicomhdr* header, unsigned int packet_len);
+MMTAPI int mmt_check_dicom(struct dicomhdr * header, unsigned int packet_len);
+MMTAPI int mmt_check_dicom_tcp(ipacket_t * ipacket, unsigned index);
 
 #ifndef CORE
-	int init_proto();
-	int cleanup_proto();
+	MMTAPI int init_proto();
+	MMTAPI int cleanup_proto();
 #endif //CORE
 
 #ifdef	__cplusplus

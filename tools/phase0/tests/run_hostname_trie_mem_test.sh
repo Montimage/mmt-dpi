@@ -33,6 +33,11 @@ else
     make -C "${REPO_ROOT}/sdk" MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
+# Issue #534: this test calls libmmt_tcpip internals the plugin hides, so
+# it links the static archive instead (tools/phase0/tests/static_core_link.sh).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_plugin_link "${PREFIX}/dpi/lib" tcpip || exit 2
 echo "[2/3] compiling hostname_trie_mem_test"
 gcc -g -O2 -o "${BIN}" "${TEST_DIR}/hostname_trie_mem_test.c" \
     -I"${PREFIX}/dpi/include" \
@@ -40,7 +45,7 @@ gcc -g -O2 -o "${BIN}" "${TEST_DIR}/hostname_trie_mem_test.c" \
     -I"${REPO_ROOT}/src/mmt_core/private_include" \
     -I"${REPO_ROOT}/src/mmt_tcpip/include" \
     -I"${TEST_DIR}" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl -lpthread -lm
+    -L"${PREFIX}/dpi/lib" "${MMT_STATIC_PLUGIN_LDFLAGS[@]}" -lmmt_core -ldl -lpthread -lm
 
 echo "[3/3] running hostname_trie_mem_test"
 # Run from a neutral directory — the test links libmmt_tcpip directly and

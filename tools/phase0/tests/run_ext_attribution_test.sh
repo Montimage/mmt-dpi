@@ -33,14 +33,19 @@ else
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
+# Issue #534: this test calls libmmt_tcpip internals the plugin hides, so
+# it links the static archive instead (tools/phase0/tests/static_core_link.sh).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_plugin_link "${PREFIX}/dpi/lib" tcpip || exit 2
 echo "[2/3] compiling ext_attribution_test (ASan/UBSan)"
-# Link libmmt_tcpip directly to reach its exported loaders / AVL lookup. The
+# Link libmmt_tcpip directly to reach its loaders / AVL lookup. The
 # protocol registry is populated at run time by init_extraction(), which loads
 # the same plugin set from $PREFIX/plugins (libpcap is pulled in for DLT_EN10MB).
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -o "${BIN}" "${TEST_DIR}/ext_attribution_test.c" \
     -I"${PREFIX}/dpi/include" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl -lpthread -lm -lpcap
+    -L"${PREFIX}/dpi/lib" "${MMT_STATIC_PLUGIN_LDFLAGS[@]}" -lmmt_core -ldl -lpthread -lm -lpcap
 
 echo "[3/3] running ext_attribution_test under ASan/UBSan"
 # Preload the ASan runtime (the SDK is also pulled in via dlopen) and run from

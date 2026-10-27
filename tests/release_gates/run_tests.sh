@@ -60,6 +60,10 @@
 # ABI-diff self-test beside tools/ci/abi-diff.sh (issue #525), which maps stub
 # abidiff exit codes to verdicts on dummy libraries (no SDK build, no
 # network).
+# It also runs the plugin export-gate self-test beside
+# scripts/validate-exported-symbols.sh (issue #534), which drives the real
+# validator on a fixture shared object and fixture documents (an unrecorded
+# export, a removed one, a missing section, --write; no SDK build).
 set -e
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/ci/tests"
 python3 "${TESTS_DIR}/test-release-gates.py" "$@"
@@ -79,3 +83,4 @@ bash "${TESTS_DIR}/test-classify-changes.sh"
 bash "${TESTS_DIR}/test-commented-code-ratchet.sh"
 bash "${TESTS_DIR}/test-api-contracts.sh"
 bash "${TESTS_DIR}/test-abi-diff.sh"
+bash "${TESTS_DIR}/test-exported-symbols.sh"

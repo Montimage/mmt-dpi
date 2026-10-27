@@ -37,11 +37,15 @@ else
     make -C "${REPO_ROOT}/sdk" BUILD=asan MMT_BASE="${PREFIX}" install >/dev/null
 fi
 
-echo "[2/3] compiling ip_frag_bounds_test (ASan/UBSan)"
 # Link mmt_core (+ libpcap for DLT_EN10MB). libmmt_tcpip is also linked
 # directly (not just dlopen'd): the test reaches internal helpers —
 # tcp_seg_*, mmt_bytestream_to_number, the dgram structs — whose symbols
-# live in that plugin.
+# live in that plugin. The plugin hides them (issue #534), so the test links
+# its static archive (tools/phase0/tests/static_core_link.sh).
+# shellcheck source=tools/phase0/tests/static_core_link.sh
+. "${TEST_DIR}/static_core_link.sh"
+mmt_static_plugin_link "${PREFIX}/dpi/lib" tcpip || exit 2
+echo "[2/3] compiling ip_frag_bounds_test (ASan/UBSan)"
 gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -o "${BIN}" "${TEST_DIR}/ip_frag_bounds_test.c" \
     -I"${PREFIX}/dpi/include" \
@@ -52,7 +56,7 @@ gcc -g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all \
     -I"${REPO_ROOT}/src/mmt_tcpip/include" \
     -I"${REPO_ROOT}/src/mmt_fuzz_engine" \
     -I"${TEST_DIR}" \
-    -L"${PREFIX}/dpi/lib" -lmmt_tcpip -lmmt_core -ldl -lpcap
+    -L"${PREFIX}/dpi/lib" "${MMT_STATIC_PLUGIN_LDFLAGS[@]}" -lmmt_core -ldl -lpcap
 
 echo "[3/3] running ip_frag_bounds_test under ASan/UBSan"
 # Preload the ASan runtime: the SDK is pulled in via dlopen, so the runtime
