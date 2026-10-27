@@ -162,3 +162,8 @@ Gemfile.lock
 !docs/Gemfile.lock
 .bundle/
 vendor/bundle/
+
+# Local environment files (secrets, tokens)
+.env
+.env.*
+!.env.example
