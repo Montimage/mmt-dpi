@@ -21,6 +21,8 @@
  *    EEA0, and is parsed best-effort when the algorithm is unknown.
  *  - F-BUG-221: NGAP hygiene - explicit codes instead of false-from-pointer
  *    functions, encode_ngap() NULL-check, act-aware NAS_PDU handling.
+ *  - Issue #532: every per-message NGAP decoder reads the UE ids of its
+ *    message and encode_ngap() patches new ones into it.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +42,11 @@
 #include "NGAP_ProtocolIE-Container.h"
 #include "NGAP_SecondaryRATDataUsageReport.h"
 #include "NGAP_HandoverFlag.h"
+#include "NGAP_AMF-UE-NGAP-ID.h"
+#include "NGAP_RAN-UE-NGAP-ID.h"
+#include "NGAP_NAS-PDU.h"
+#include "NGAP_UE-NGAP-IDs.h"
+#include "NGAP_UE-NGAP-ID-pair.h"
 #include "S1ap-IE.h"
 #include "S1ap-NRUESecurityCapabilities.h"
 #include "S1ap-InitialContextSetupRequest.h"
@@ -1209,6 +1216,220 @@ static void test_ngap_choice_discriminant(void) {
 	}
 }
 
+/* ------------------------------------------------------------------ */
+/* Issue #532: every per-message NGAP decoder. NGAP-PDU shares the     */
+/* S1AP outer layout, so put_s1ap_pdu()/put_ie() lay out the PDU (CHOICE */
+/* octet 0x00 initiating, 0x20 successful, 0x40 unsuccessful); the IE   */
+/* values come from the library's own APER encoder.                    */
+/* ------------------------------------------------------------------ */
+
+/* APER-encode one IE value: its length in octets, 0 on failure */
+static size_t ngap_ie_value(const asn_TYPE_descriptor_t *td, const void *sptr,
+		uint8_t *out, size_t cap) {
+	asn_enc_rval_t enc = aper_encode_to_buffer(td, NULL, sptr, out, cap);
+	return enc.encoded > 0 ? (size_t)((enc.encoded + 7) / 8) : 0;
+}
+
+/* AMF-UE-NGAP-ID (INTEGER 0..2^40-1) under IE id ie_id */
+static size_t put_ngap_amf_ie(uint8_t *out, uint16_t ie_id, uint64_t amf) {
+	INTEGER_t v;
+	uint8_t val[16];
+	size_t n = 0;
+
+	memset(&v, 0, sizeof(v));
+	if (asn_int642INTEGER(&v, (int64_t)amf) == 0)
+		n = ngap_ie_value(&asn_DEF_NGAP_AMF_UE_NGAP_ID, &v, val, sizeof(val));
+	ASN_STRUCT_RESET(asn_DEF_NGAP_AMF_UE_NGAP_ID, &v);
+	return n ? put_ie(out, ie_id, val, n) : 0;
+}
+
+static size_t put_ngap_ran_ie(uint8_t *out, unsigned long ran) {
+	NGAP_RAN_UE_NGAP_ID_t v = ran;
+	uint8_t val[16];
+	size_t n = ngap_ie_value(&asn_DEF_NGAP_RAN_UE_NGAP_ID, &v, val, sizeof(val));
+	return n ? put_ie(out, NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID, val, n) : 0;
+}
+
+static size_t put_ngap_nas_ie(uint8_t *out, const uint8_t *nas, size_t len) {
+	uint8_t copy[32], val[40];
+	OCTET_STRING_t v;
+	size_t n;
+
+	memcpy(copy, nas, len);
+	memset(&v, 0, sizeof(v));
+	v.buf  = copy;
+	v.size = len;
+	n = ngap_ie_value(&asn_DEF_NGAP_NAS_PDU, &v, val, sizeof(val));
+	return n ? put_ie(out, NGAP_ProtocolIE_ID_id_NAS_PDU, val, n) : 0;
+}
+
+/* UE-NGAP-IDs CHOICE: the uE-NGAP-ID-pair arm when pair, else aMF-UE-NGAP-ID */
+static size_t put_ngap_ue_ids_ie(uint8_t *out, int pair, uint64_t amf,
+		unsigned long ran) {
+	NGAP_UE_NGAP_IDs_t *ids = calloc(1, sizeof(*ids));
+	INTEGER_t *amf_v;
+	uint8_t val[32];
+	size_t n = 0;
+
+	if (ids == NULL)
+		return 0;
+	if (pair) {
+		ids->present = NGAP_UE_NGAP_IDs_PR_uE_NGAP_ID_pair;
+		ids->choice.uE_NGAP_ID_pair = calloc(1, sizeof(*ids->choice.uE_NGAP_ID_pair));
+		if (ids->choice.uE_NGAP_ID_pair == NULL) {
+			free(ids);
+			return 0;
+		}
+		amf_v = &ids->choice.uE_NGAP_ID_pair->aMF_UE_NGAP_ID;
+		ids->choice.uE_NGAP_ID_pair->rAN_UE_NGAP_ID = ran;
+	} else {
+		ids->present = NGAP_UE_NGAP_IDs_PR_aMF_UE_NGAP_ID;
+		amf_v = &ids->choice.aMF_UE_NGAP_ID;
+	}
+	if (asn_int642INTEGER(amf_v, (int64_t)amf) == 0)
+		n = ngap_ie_value(&asn_DEF_NGAP_UE_NGAP_IDs, ids, val, sizeof(val));
+	ASN_STRUCT_FREE(asn_DEF_NGAP_UE_NGAP_IDs, ids);
+	return n ? put_ie(out, NGAP_ProtocolIE_ID_id_UE_NGAP_IDs, val, n) : 0;
+}
+
+enum { NGAP_IDS_IES, NGAP_IDS_PAIR, NGAP_IDS_AMF_ONLY };
+
+struct ngap_vector {
+	const char      *name;
+	uint8_t          choice;      /* NGAP-PDU CHOICE octet */
+	uint8_t          procedure;
+	NGAP_NGAP_PDU_PR present;
+	uint16_t         amf_ie;      /* IE id carrying the AMF-UE-NGAP-ID */
+	int              ids;         /* separate AMF/RAN IEs, or UE-NGAP-IDs arm */
+	int              nas;         /* carries a NAS-PDU IE */
+};
+
+#define NGAP_INIT(name, proc, amf_ie, ids, nas) { name, 0x00, proc, \
+	NGAP_NGAP_PDU_PR_initiatingMessage, amf_ie, ids, nas }
+#define NGAP_SUCC(name, proc) { name, 0x20, proc, \
+	NGAP_NGAP_PDU_PR_successfulOutcome, NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, \
+	NGAP_IDS_IES, 0 }
+#define NGAP_AMF NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID
+
+static const struct ngap_vector NGAP_VECTORS[] = {
+	NGAP_INIT("DownlinkNASTransport", NGAP_ProcedureCode_id_DownlinkNASTransport,
+			NGAP_AMF, NGAP_IDS_IES, 1),
+	NGAP_INIT("UplinkNASTransport", NGAP_ProcedureCode_id_UplinkNASTransport,
+			NGAP_AMF, NGAP_IDS_IES, 1),
+	NGAP_INIT("UEContextReleaseCommand (UE-NGAP-ID-pair)",
+			NGAP_ProcedureCode_id_UEContextRelease, 0, NGAP_IDS_PAIR, 0),
+	NGAP_INIT("UEContextReleaseCommand (AMF-UE-NGAP-ID arm)",
+			NGAP_ProcedureCode_id_UEContextRelease, 0, NGAP_IDS_AMF_ONLY, 0),
+	NGAP_INIT("UEContextReleaseRequest", NGAP_ProcedureCode_id_UEContextReleaseRequest,
+			NGAP_AMF, NGAP_IDS_IES, 0),
+	NGAP_INIT("UERadioCapabilityInfoIndication",
+			NGAP_ProcedureCode_id_UERadioCapabilityInfoIndication,
+			NGAP_AMF, NGAP_IDS_IES, 0),
+	NGAP_INIT("HandoverRequired", NGAP_ProcedureCode_id_HandoverPreparation,
+			NGAP_AMF, NGAP_IDS_IES, 0),
+	/* PathSwitchRequest names its AMF id SourceAMF-UE-NGAP-ID (id 100) */
+	NGAP_INIT("PathSwitchRequest", NGAP_ProcedureCode_id_PathSwitchRequest,
+			NGAP_ProtocolIE_ID_id_SourceAMF_UE_NGAP_ID, NGAP_IDS_IES, 0),
+	NGAP_INIT("PDUSessionResourceSetupRequest",
+			NGAP_ProcedureCode_id_PDUSessionResourceSetup, NGAP_AMF, NGAP_IDS_IES, 0),
+	NGAP_INIT("HandoverNotify", NGAP_ProcedureCode_id_HandoverNotification,
+			NGAP_AMF, NGAP_IDS_IES, 0),
+	NGAP_SUCC("UEContextReleaseComplete", NGAP_ProcedureCode_id_UEContextRelease),
+	NGAP_SUCC("InitialContextSetupResponse", NGAP_ProcedureCode_id_InitialContextSetup),
+	NGAP_SUCC("HandoverRequestAcknowledge",
+			NGAP_ProcedureCode_id_HandoverResourceAllocation),
+	NGAP_SUCC("HandoverCommand", NGAP_ProcedureCode_id_HandoverPreparation),
+	NGAP_SUCC("PDUSessionResourceSetupResponse",
+			NGAP_ProcedureCode_id_PDUSessionResourceSetup),
+	NGAP_SUCC("PathSwitchRequestAcknowledge", NGAP_ProcedureCode_id_PathSwitchRequest),
+	{ "UEContextModificationFailure", 0x40, NGAP_ProcedureCode_id_UEContextModification,
+	  NGAP_NGAP_PDU_PR_unsuccessfulOutcome, NGAP_AMF, NGAP_IDS_IES, 0 },
+};
+
+/* The PDU of v carrying amf/ran (and a NAS-PDU when v->nas); 0 on failure */
+static size_t build_ngap_vector(uint8_t *pdu, const struct ngap_vector *v,
+		uint64_t amf, unsigned long ran, const uint8_t *nas, size_t nas_len) {
+	uint8_t ies[128], scratch[160];
+	size_t n = 0, ie;
+	uint16_t count = 0;
+
+	if (v->ids == NGAP_IDS_IES) {
+		if ((ie = put_ngap_amf_ie(ies + n, v->amf_ie, amf)) == 0)
+			return 0;
+		n += ie;
+		if ((ie = put_ngap_ran_ie(ies + n, ran)) == 0)
+			return 0;
+		n += ie;
+		count = 2;
+	} else {
+		if ((ie = put_ngap_ue_ids_ie(ies + n, v->ids == NGAP_IDS_PAIR, amf, ran)) == 0)
+			return 0;
+		n += ie;
+		count = 1;
+	}
+	if (v->nas) {
+		if ((ie = put_ngap_nas_ie(ies + n, nas, nas_len)) == 0)
+			return 0;
+		n += ie;
+		count++;
+	}
+	return put_s1ap_pdu(pdu, v->choice, v->procedure, 0x00, count, ies, n, scratch);
+}
+
+static void test_ngap_message_decoders(void) {
+	static const uint8_t nas[] = { 0x7E, 0x00, 0x56, 0x01 };
+	char desc[160];
+	size_t i;
+
+	printf("NGAP per-message decoders (issue #532):\n");
+	for (i = 0; i < sizeof(NGAP_VECTORS) / sizeof(NGAP_VECTORS[0]); i++) {
+		const struct ngap_vector *v = &NGAP_VECTORS[i];
+		/* 5-octet AMF ids and 4-octet RAN ids, distinct per vector */
+		const uint64_t amf = 0x0123456789ULL + i, amf2 = 0xFEDCBA9876ULL - i;
+		const unsigned long ran = 0x80000000UL + i, ran2 = 1000 + i;
+		const int has_ran = v->ids != NGAP_IDS_AMF_ONLY;
+		uint8_t pdu[192], out[256], nas_out[16];
+		ngap_message_t msg, back;
+		uint32_t enc;
+		size_t n = build_ngap_vector(pdu, v, amf, ran, nas, sizeof(nas));
+
+		snprintf(desc, sizeof(desc), "%s: vector builds", v->name);
+		CHECK(desc, n > 0);
+		if (n == 0)
+			continue;
+
+		memset(&msg, 0, sizeof(msg));
+		snprintf(desc, sizeof(desc), "%s: decodes with procedure %u and its UE ids",
+				v->name, v->procedure);
+		CHECK(desc, try_decode_ngap(pdu, (uint32_t)n)
+				&& decode_ngap(&msg, pdu, (uint32_t)n)
+				&& msg.pdu_present == v->present
+				&& msg.procedure_code == v->procedure
+				&& msg.amf_ue_id == amf
+				&& msg.ran_ue_id == (has_ran ? ran : 0));
+
+		if (v->nas) {
+			snprintf(desc, sizeof(desc), "%s: NAS-PDU extracted", v->name);
+			CHECK(desc, msg.nas_pdu.size == sizeof(nas)
+					&& get_nas_pdu(nas_out, sizeof(nas_out), pdu, (uint32_t)n) == sizeof(nas)
+					&& memcmp(nas_out, nas, sizeof(nas)) == 0);
+		}
+
+		/* SET_ACTION: the same decoder writes the new ids into the PDU */
+		msg.amf_ue_id = amf2;
+		msg.ran_ue_id = ran2;
+		enc = encode_ngap(out, sizeof(out), &msg, pdu, (uint32_t)n);
+		memset(&back, 0, sizeof(back));
+		snprintf(desc, sizeof(desc), "%s: encode_ngap rewrites the UE ids", v->name);
+		CHECK(desc, enc > 0
+				&& decode_ngap(&back, out, (enc + 7) / 8)
+				&& back.pdu_present == v->present
+				&& back.procedure_code == v->procedure
+				&& back.amf_ue_id == amf2
+				&& back.ran_ue_id == (has_ran ? ran2 : 0));
+	}
+}
+
 /* Issue #523: both decoders are generated from the r16.1.0 modules. The
  * constants are the r16.1.0 ones, an IE r10.5.0 lacks round-trips through
  * the S1AP dissector's IE-by-IE ANY path, and decode_ngap() reads a
@@ -1445,6 +1666,7 @@ int main(void) {
 	test_s1ap_decode_failure_no_leak();
 	test_s1ap_entity_store_cap();
 	test_ngap_choice_discriminant();
+	test_ngap_message_decoders();
 	test_rel16_generation();
 	test_s1ap_rel16_independent_vector();
 

@@ -413,8 +413,8 @@ of the audit, and the recorded exclusions: generated asn1c, vendored llhttp
 Assessed. The coverage CI job fails when a built handwritten source is
 missing from the records, a tracked one is neither built nor justified, a
 family measures nothing or drops below its `sdk.family_floors` entry
-(issue #524: core 85.3, tcpip 60.3, mobile 63.7, business_app 88.8, dicom
-88.1, security_fuzz 70.4), the original cohort drops below 82.9% or the
+(issue #524: core 85.3, tcpip 60.3, mobile 74.3 since issue #532,
+business_app 88.8, dicom 88.1, security_fuzz 70.4), the original cohort drops below 82.9% or the
 whole SDK drops below `sdk.whole_sdk_line_pct` (measured 65.53% at issue
 #524 with the harness cohort, floor 64.5%). The same job runs
 `tools/ci/report-uncovered-runs.sh` as a gate: a contiguous run of more than
